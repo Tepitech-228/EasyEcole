@@ -45,10 +45,10 @@
                     <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin" (click)="closeMenu()" icon="lab_profile" text="Notes d'évaluation" link="/cours/notes"></app-nav-menu-item>
                 </app-nav-menu-group>
 
-                <app-nav-menu-group title="Demandes" *ngIf="rolesValue.isInstitution"></app-nav-menu-group>
-                <app-nav-menu-group title="Stages" *ngIf="rolesValue.isInstitution"></app-nav-menu-group>
-                <app-nav-menu-group title="Stocks" *ngIf="rolesValue.isInstitution"></app-nav-menu-group>
-                <app-nav-menu-group title="Immobilisations" *ngIf="rolesValue.isInstitution"></app-nav-menu-group>
+                <app-nav-menu-group title="Demandes" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin"></app-nav-menu-group>
+                <app-nav-menu-group title="Stages" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin"></app-nav-menu-group>
+                <app-nav-menu-group title="Stocks" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin"></app-nav-menu-group>
+                <app-nav-menu-group title="Immobilisations" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin"></app-nav-menu-group>
             </div>
 
             <div class="mb-2 flex flex-col justify-end gap-y-8">
