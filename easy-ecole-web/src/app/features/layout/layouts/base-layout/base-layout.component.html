@@ -15,34 +15,34 @@
                     </button>
                 </div>
                 <app-nav-menu-group [showTitle]="false">
-                    <app-nav-menu-item *ngIf="rolesValue.isApprenant" (click)="closeMenu()" icon="dashboard-outline" text="Tableau de bord"
+                    <app-nav-menu-item *ngIf="rolesValue.isApprenant || rolesValue.isAdmin" (click)="closeMenu()" icon="dashboard-outline" text="Tableau de bord"
                         link="/"></app-nav-menu-item>
                 </app-nav-menu-group>
                 <app-nav-menu-group title="Orientation" *ngIf="!rolesValue.isEnseignant">
-                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isApprenant" (click)="closeMenu()" icon="route" text="Parcours" link="/orientation/parcours"></app-nav-menu-item>
-                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isApprenant" (click)="closeMenu()" icon="receipt_long" text="Demandes"
+                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isAdmin" (click)="closeMenu()" icon="route" text="Parcours" link="/orientation/parcours"></app-nav-menu-item>
+                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isAdmin" (click)="closeMenu()" icon="receipt_long" text="Demandes"
                         link="/orientation/demandes"></app-nav-menu-item>
                 </app-nav-menu-group>
 
                 <app-nav-menu-group title="Inscription" *ngIf="!rolesValue.isEnseignant">
-                    <app-nav-menu-item *ngIf="rolesValue.isInstitution" (click)="closeMenu()" icon="cycle" text="Sessions" link="/inscription/sessions"></app-nav-menu-item>
-                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isApprenant" (click)="closeMenu()" icon="school" text="Parcours" link="/inscription/parcours"></app-nav-menu-item>
-                    <!-- <app-nav-menu-item *ngIf="rolesValue.isApprenant" *ngIf="rolesValue.isInstitution || rolesValue.isApprenant" (click)="closeMenu()" icon="book" text="Cours" link="/inscription/cours"></app-nav-menu-item> -->
-                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isApprenant" (click)="closeMenu()" icon="receipt_long" text="Demandes" link="/inscription/demandes"></app-nav-menu-item>
-                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isCaissierBanque" (click)="closeMenu()" icon="paid" text="Paiements" link="/inscription/paiements"></app-nav-menu-item>
-                    <app-nav-menu-item *ngIf="rolesValue.isApprenant" (click)="closeMenu()" icon="event_list" text="Mon cursus" link="/inscription/cursus"></app-nav-menu-item>
+                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="closeMenu()" icon="cycle" text="Sessions" link="/inscription/sessions"></app-nav-menu-item>
+                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isAdmin" (click)="closeMenu()" icon="school" text="Parcours" link="/inscription/parcours"></app-nav-menu-item>
+                    <!-- <app-nav-menu-item *ngIf="rolesValue.isApprenant" *ngIf="rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isAdmin" (click)="closeMenu()" icon="book" text="Cours" link="/inscription/cours"></app-nav-menu-item> -->
+                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isAdmin" (click)="closeMenu()" icon="receipt_long" text="Demandes" link="/inscription/demandes"></app-nav-menu-item>
+                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isCaissierBanque || rolesValue.isAdmin" (click)="closeMenu()" icon="paid" text="Paiements" link="/inscription/paiements"></app-nav-menu-item>
+                    <app-nav-menu-item *ngIf="rolesValue.isApprenant || rolesValue.isAdmin" (click)="closeMenu()" icon="event_list" text="Mon cursus" link="/inscription/cursus"></app-nav-menu-item>
 
                     <app-nav-menu-item *ngIf="rolesValue.isApprenant" (click)="closeMenu()" icon="settings" text="Paramètres" [isGroup]="true"></app-nav-menu-item>
                 </app-nav-menu-group>
 
                 <app-nav-menu-group title="Cours">
-                    <app-nav-menu-item *ngIf="rolesValue.isInstitution" (click)="closeMenu()" icon="cycle" text="Enseignants" link="/cours/enseignants"></app-nav-menu-item>
-                    <!-- <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isApprenant" (click)="closeMenu()" icon="school" text="Parcours" link="/cours/parcours"></app-nav-menu-item> -->
-                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant" (click)="closeMenu()" icon="book" text="Cours" link="/cours/cours"></app-nav-menu-item>
-                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant" (click)="closeMenu()" icon="checklist" text="Présences" link="/cours/presences"></app-nav-menu-item>
-                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant" (click)="closeMenu()" icon="note_stack" text="Cahiers de texte" link="/cours/cahiers-de-texte"></app-nav-menu-item>
-                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant" (click)="closeMenu()" icon="event_note" text="Emplois du temps" link="/cours/emplois-du-temps"></app-nav-menu-item>
-                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant" (click)="closeMenu()" icon="lab_profile" text="Notes d'évaluation" link="/cours/notes"></app-nav-menu-item>
+                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="closeMenu()" icon="cycle" text="Enseignants" link="/cours/enseignants"></app-nav-menu-item>
+                    <!-- <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isAdmin" (click)="closeMenu()" icon="school" text="Parcours" link="/cours/parcours"></app-nav-menu-item> -->
+                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin" (click)="closeMenu()" icon="book" text="Cours" link="/cours/cours"></app-nav-menu-item>
+                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin" (click)="closeMenu()" icon="checklist" text="Présences" link="/cours/presences"></app-nav-menu-item>
+                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin" (click)="closeMenu()" icon="note_stack" text="Cahiers de texte" link="/cours/cahiers-de-texte"></app-nav-menu-item>
+                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin" (click)="closeMenu()" icon="event_note" text="Emplois du temps" link="/cours/emplois-du-temps"></app-nav-menu-item>
+                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin" (click)="closeMenu()" icon="lab_profile" text="Notes d'évaluation" link="/cours/notes"></app-nav-menu-item>
                 </app-nav-menu-group>
 
                 <app-nav-menu-group title="Demandes"></app-nav-menu-group>
@@ -85,7 +85,7 @@
                     <div class="flex items-center justify-end">
                         <div class="ml-4 flex items-center gap-x-4 md:ml-6">
                             <div class="relative">
-                                <button *ngIf="rolesValue.isApprenant" type="button" (click)="openModal()"
+                                <button *ngIf="rolesValue.isApprenant || rolesValue.isAdmin" type="button" (click)="openModal()"
                                     class="rounded-full p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
                                     <span class="sr-only">View cart</span>
                                     <img src="assets/icons/cart-sharp.svg" alt="notif">
