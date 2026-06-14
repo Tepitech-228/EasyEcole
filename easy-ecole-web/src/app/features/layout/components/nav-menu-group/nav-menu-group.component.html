@@ -1,0 +1,6 @@
+<div class="block">
+    <div *ngIf="showTitle" class="menu-group font-medium px-4 uppercase mb-1">{{ title }}</div>
+    <div class="flex flex-col gap-y-1 px-2">
+        <ng-content></ng-content>
+    </div>
+</div>

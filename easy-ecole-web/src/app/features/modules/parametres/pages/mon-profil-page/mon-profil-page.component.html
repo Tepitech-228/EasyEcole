@@ -1,0 +1,605 @@
+<app-custom-alert [show]="updateError" title="Erreur">
+    {{ updateError ? 'Une erreur est survenue lors de la mise à jour de votre profil' : '' }}
+</app-custom-alert>
+
+<app-custom-alert [show]="updateSuccess || updatePhotoSuccess" title="Succès" color="green">
+    {{ updateSuccess ? 'Profil mis à jour avec succès' : '' }}
+    {{ updatePhotoSuccess ? 'Photo mise à jour avec succès' : '' }}
+</app-custom-alert>
+
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Mon profil"
+        subtitle="Vos informations personnelles telles votre identité, votre adresse et autres"></app-header-title>
+    <!-- <div class="flex justify-end items-center">
+        <app-custom-button *ngIf="rolesValue.isInstitution" text="Nouveau parcours" link="/orientation/parcours/nouveau"></app-custom-button>
+    </div> -->
+</div>
+
+<div class="w-full" *ngIf="apprenant && rolesValue.isApprenant">
+    <div class="w-full mb-8">
+        <!-- <label for="titre" class="mb-2 block text-sm leading-6 text-gray-600">Titre</label> -->
+        <div class="mt-2 flex items-center gap-x-8">
+            <img class="h-36 w-36 rounded-md object-cover object-center border-2 border-gray-300"
+                [src]="imageURL ? imageURL : apprenant.photo ? PHOTOS_PATH + apprenant.photo : 'assets/images/blank-profile-picture.png'" alt="profile">
+            <div class="flex flex-col gap-y-5">
+                <div *ngIf="apprenant.dateNaissance" class="flex gap-x-5">
+                    <app-custom-button (click)="!file ? choisirFichier() : modifierPhotoProfil()" [text]="!file ? 'Changer' : 'Enregistrer'" [outlined]="!file ? true : false"></app-custom-button>
+                    <app-custom-button *ngIf="file" (click)="supprimerFichier()" text="Annuler" color="red" [outlined]="true"></app-custom-button>
+                </div>
+                <p *ngIf="!apprenant.dateNaissance" class="text-xs leading-5 text-red-600">Veuillez renseigner vos informations <br> avant d'ajouter une photo</p>
+                <p class="text-xs leading-5 text-gray-600">Images: PNG, JPG, JEPG</p>
+            </div>
+        </div>
+    </div>
+    <form [formGroup]="profilForm" *ngIf="profilForm">
+        <div class="flex flex-col gap-x-4 mb-8">
+            <!-- <h2 class="text-base font-semibold leading-7 text-gray-900">Profile</h2> -->
+            <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
+                <div class="col-span-3">
+                    <label for="dateNaissance" class="mb-2 block text-sm leading-6 text-gray-600">Date de naissance</label>
+                    <input type="date" id="dateNaissance" formControlName="dateNaissance"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('dateNaissance')!.invalid && (profilForm.get('dateNaissance')!.dirty || profilForm.get('dateNaissance')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('dateNaissance')!.errors?.['required']"
+                            text="Veuillez saisir votre date de naissance"></app-form-message>
+                    </div>
+                </div>
+                <div class="col-span-3">
+                    <label for="lieuNaissance" class="mb-2 block text-sm leading-6 text-gray-600">Lieu de naissance</label>
+                    <input type="text" id="lieuNaissance" formControlName="lieuNaissance"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('lieuNaissance')!.invalid && (profilForm.get('lieuNaissance')!.dirty || profilForm.get('lieuNaissance')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('lieuNaissance')!.errors?.['required']"
+                            text="Veuillez saisir votre lieu de naissance"></app-form-message>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div formGroupName="identite" class="flex flex-col gap-x-4 mb-8">
+            <h2 class="text-base font-semibold leading-7 text-gray-900 mb-2">Identité</h2>
+            <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
+                <div class="col-span-2">
+                    <label for="nationalite" class="mb-2 block text-sm leading-6 text-gray-600">Nationalité</label>
+                    <input type="text" id="nationalite" formControlName="nationalite"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('identite.nationalite')!.invalid && (profilForm.get('identite.nationalite')!.dirty || profilForm.get('identite.nationalite')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('identite.nationalite')!.errors?.['required']"
+                            text="Veuillez entrer votre nationalité"></app-form-message>
+                    </div>
+                </div>
+                <div class="col-span-2">
+                    <label for="ethnie" class="mb-2 block text-sm leading-6 text-gray-600">Ethnie</label>
+                    <input type="text" id="ethnie" formControlName="ethnie"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="prefecture" class="mb-2 block text-sm leading-6 text-gray-600">Préfecture</label>
+                    <input type="text" id="prefecture" formControlName="prefecture"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-3">
+                    <label for="religion" class="mb-2 block text-sm leading-6 text-gray-600">Réligion</label>
+                    <input type="text" id="religion" formControlName="religion"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-3">
+                    <label for="situationMatrimoniale" class="mb-2 block text-sm leading-6 text-gray-600">Situation matrimoniale</label>
+                    <select id="situationMatrimoniale" formControlName="situationMatrimoniale"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        <option [value]="situationsMatrimoniales.CELIBATAIRE">Célibataire</option>
+                        <option [value]="situationsMatrimoniales.MARIE">Marié(e)</option>
+                        <option [value]="situationsMatrimoniales.DIVORCE">Divorcé(e)</option>
+                    </select>
+                    <div *ngIf="profilForm.get('identite.situationMatrimoniale')!.invalid && (profilForm.get('identite.situationMatrimoniale')!.dirty || profilForm.get('identite.situationMatrimoniale')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('identite.situationMatrimoniale')!.errors?.['required']"
+                            text="Veuillez préciser votre situation matrimoniale"></app-form-message>
+                    </div>
+                </div>
+                <div class="col-span-3">
+                    <label for="etatPhysique" class="mb-2 block text-sm leading-6 text-gray-600">Etat physique</label>
+                    <select id="etatPhysique" formControlName="etatPhysique"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        <option [value]="etatsPhysique.VALIDE">Valide</option>
+                        <option [value]="etatsPhysique.HANDICAPE">Handicapé(e)</option>
+                    </select>
+                    <div *ngIf="profilForm.get('identite.etatPhysique')!.invalid && (profilForm.get('identite.etatPhysique')!.dirty || profilForm.get('identite.etatPhysique')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('identite.etatPhysique')!.errors?.['required']"
+                            text="Veuillez préciser votre état physique"></app-form-message>
+                    </div>
+                </div>
+                <div class="col-span-2" *ngIf="profilForm.get('identite.etatPhysique')!.value == etatsPhysique.HANDICAPE">
+                    <label for="titre" class="mb-2 block text-sm leading-6 text-gray-600">Handicapé(e)</label>
+                    <div class="flex items-center py-1 gap-x-4">
+                        <div class="flex items-center gap-x-3">
+                            <input id="moteur" formControlName="handicapMoteur" type="checkbox"
+                                class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                            <label for="moteur"
+                                class="block text-sm font-regular leading-6 text-gray-700">Moteur</label>
+                        </div>
+                        <div class="flex items-center gap-x-3">
+                            <input id="visuel" formControlName="handicapVisuel" type="checkbox"
+                                class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                            <label for="visuel"
+                                class="block text-sm font-regular leading-6 text-gray-700">Visuel</label>
+                        </div>
+                        <div class="flex items-center gap-x-3">
+                            <input id="auditif" formControlName="handicapAuditif" type="checkbox"
+                                class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                            <label for="auditif"
+                                class="block text-sm font-regular leading-6 text-gray-700">Auditif</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div formGroupName="adresse" class="flex flex-col gap-x-4 mb-8">
+            <h2 class="text-base font-semibold leading-7 text-gray-900 mb-2">Adresse</h2>
+            <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
+                <div class="col-span-3">
+                    <label for="boitePostale" class="mb-2 block text-sm leading-6 text-gray-600">Boîte postale</label>
+                    <input type="text" id="boitePostale" formControlName="boitePostale"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('adresse.boitePostale')!.invalid && (profilForm.get('adresse.boitePostale')!.dirty || profilForm.get('adresse.boitePostale')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('adresse.boitePostale')!.errors?.['required']"
+                            text="Veuillez entrer une boîte postale"></app-form-message>
+                    </div>
+                </div>
+                <div class="col-span-3">
+                    <label for="prorietaireBoitePostale" class="mb-2 block text-sm leading-6 text-gray-600">Propriétaire de la boîte
+                        postale</label>
+                    <input type="text" id="prorietaireBoitePostale" formControlName="prorietaireBoitePostale"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('adresse.prorietaireBoitePostale')!.invalid && (profilForm.get('adresse.prorietaireBoitePostale')!.dirty || profilForm.get('adresse.prorietaireBoitePostale')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('adresse.prorietaireBoitePostale')!.errors?.['required']"
+                            text="Veuillez préciser le propriétaire de la boîte postale"></app-form-message>
+                    </div>
+                </div>
+                <div class="col-span-3">
+                    <label for="telMobile" class="mb-2 block text-sm leading-6 text-gray-600">Téléphone mobile</label>
+                    <input type="text" id="telMobile" formControlName="telMobile"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('adresse.telMobile')!.invalid && (profilForm.get('adresse.telMobile')!.dirty || profilForm.get('adresse.telMobile')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('adresse.telMobile')!.errors?.['required']"
+                            text="Veuillez saisir votre téléphone mobile"></app-form-message>
+                    </div>
+                </div>
+                <div class="col-span-3">
+                    <label for="telDomicile" class="mb-2 block text-sm leading-6 text-gray-600">Téléphone domicile</label>
+                    <input type="text" id="telDomicile" formControlName="telDomicile"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="quartier" class="mb-2 block text-sm leading-6 text-gray-600">Quartier</label>
+                    <input type="text" id="quartier" formControlName="quartier"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('adresse.quartier')!.invalid && (profilForm.get('adresse.quartier')!.dirty || profilForm.get('adresse.quartier')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('adresse.quartier')!.errors?.['required']"
+                            text="Veuillez préciser votre quartier"></app-form-message>
+                    </div>
+                </div>
+                <div class="col-span-2">
+                    <label for="ville" class="mb-2 block text-sm leading-6 text-gray-600">Ville</label>
+                    <input type="text" id="ville" formControlName="ville"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('adresse.ville')!.invalid && (profilForm.get('adresse.ville')!.dirty || profilForm.get('adresse.ville')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('adresse.ville')!.errors?.['required']"
+                            text="Veuillez préciser votre pays"></app-form-message>
+                    </div>
+                </div>
+                <div class="col-span-2">
+                    <label for="pays" class="mb-2 block text-sm leading-6 text-gray-600">Pays</label>
+                    <input type="text" id="pays" formControlName="pays"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('adresse.pays')!.invalid && (profilForm.get('adresse.pays')!.dirty || profilForm.get('adresse.pays')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('adresse.pays')!.errors?.['required']"
+                            text="Veuillez préciser votre pays"></app-form-message>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div formGroupName="informationsSalarie" class="flex flex-col gap-x-4 mb-8">
+            <h2 class="text-base font-semibold leading-7 text-gray-900 mb-2">Informations sur salarié</h2>
+            <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
+                <div class="col-span-2">
+                    <label for="titre" class="mb-2 block text-sm leading-6 text-gray-600">Êtes-vous salarié ?</label>
+                    <div class="flex items-center py-1 gap-x-4">
+                        <div class="flex items-center gap-x-3">
+                            <input id="oui" formControlName="estSalarie" type="radio" [value]="true"
+                                class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                            <label for="oui" class="block text-sm font-regular leading-6 text-gray-700">Oui</label>
+                        </div>
+                        <div class="flex items-center gap-x-3">
+                            <input id="non" formControlName="estSalarie" type="radio" [value]="false"
+                                class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                            <label for="non" class="block text-sm font-regular leading-6 text-gray-700">Non</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-span-2">
+                    <label for="profession" class="mb-2 block text-sm leading-6 text-gray-600">Profession</label>
+                    <input type="text" id="profession" formControlName="profession"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="entreprise" class="mb-2 block text-sm leading-6 text-gray-600">Entreprise (où vous travaillez)</label>
+                    <input type="text" id="entreprise" formControlName="entreprise"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+            </div>
+        </div>
+        <div formGroupName="informationsParents" class="flex flex-col gap-x-4 mb-8">
+            <h2 class="text-base font-semibold leading-7 text-gray-900 mb-2">Vos parents</h2>
+            <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
+                <div class="col-span-3">
+                    <label class="mb-2 block text-sm leading-6 text-gray-600">Père</label>
+                    <div class="flex flex-col">
+                        <div class="mb-5 flex items-center gap-x-3">
+                            <input id="pereVivant" formControlName="pereVivant" type="checkbox" checked
+                                class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                            <label for="pereVivant" class="block text-sm font-regular leading-6 text-gray-700">Père vivant</label>
+                        </div>
+                        <input type="text" id="nomPrenomsPere" formControlName="nomPrenomsPere" placeholder="Nom & Prénoms de votre père"
+                            class="categorie w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        <div *ngIf="profilForm.get('informationsParents.nomPrenomsPere')!.invalid && (profilForm.get('informationsParents.nomPrenomsPere')!.dirty || profilForm.get('informationsParents.nomPrenomsPere')!.touched)">
+                            <app-form-message *ngIf="profilForm.get('informationsParents.nomPrenomsPere')!.errors?.['required']"
+                                text="Veuillez préciser le nom et prénoms de votre père"></app-form-message>
+                        </div>
+                        <div class="mb-8"></div>
+                        
+                        <input type="text" id="professionPere" formControlName="professionPere"
+                                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        <div *ngIf="profilForm.get('informationsParents.professionPere')!.invalid && (profilForm.get('informationsParents.professionPere')!.dirty || profilForm.get('informationsParents.professionPere')!.touched)">
+                            <app-form-message *ngIf="profilForm.get('informationsParents.professionPere')!.errors?.['required']"
+                                text="Veuillez préciser la profession de votre père"></app-form-message>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-span-3">
+                    <label for="titre" class="mb-2 block text-sm leading-6 text-gray-600">Mère</label>
+                    <div class="flex flex-col">
+                        <div class="mb-5 flex items-center gap-x-3">
+                            <input id="mereVivante" type="checkbox" formControlName="mereVivante" checked
+                                class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                            <label for="mereVivante" class="block text-sm font-regular leading-6 text-gray-700">Mère vivante</label>
+                        </div>
+                        <input type="text" id="nomPrenomsMere" formControlName="nomPrenomsMere" placeholder="Nom & Prénoms de votre mère"
+                            class="categorie w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        <div *ngIf="profilForm.get('informationsParents.nomPrenomsMere')!.invalid && (profilForm.get('informationsParents.nomPrenomsMere')!.dirty || profilForm.get('informationsParents.nomPrenomsMere')!.touched)">
+                            <app-form-message *ngIf="profilForm.get('informationsParents.nomPrenomsMere')!.errors?.['required']"
+                                text="Veuillez préciser le nom et prénoms de votre mère"></app-form-message>
+                        </div>
+                        <div class="mb-8"></div>
+                        
+                        <input type="text" id="professionMere" formControlName="professionMere"
+                                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        <div *ngIf="profilForm.get('informationsParents.professionMere')!.invalid && (profilForm.get('informationsParents.professionMere')!.dirty || profilForm.get('informationsParents.professionMere')!.touched)">
+                            <app-form-message *ngIf="profilForm.get('informationsParents.professionMere')!.errors?.['required']"
+                                text="Veuillez préciser la profession de votre mère"></app-form-message>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div formGroupName="personnePrevenir" class="flex flex-col gap-x-4 mb-8">
+            <h2 class="text-base font-semibold leading-7 text-gray-900 mb-2">Personne à prevenir</h2>
+            <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
+                <div class="col-span-2">
+                    <label for="nom" class="mb-2 block text-sm leading-6 text-gray-600">Nom</label>
+                    <input type="text" id="nom" formControlName="nom"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        <div *ngIf="profilForm.get('personnePrevenir.nom')!.invalid && (profilForm.get('personnePrevenir.nom')!.dirty || profilForm.get('personnePrevenir.nom')!.touched)">
+                            <app-form-message *ngIf="profilForm.get('personnePrevenir.nom')!.errors?.['required']"
+                                text="Veuillez entrer votre nom"></app-form-message>
+                        </div>
+                </div>
+                <div class="col-span-2">
+                    <label for="prenoms" class="mb-2 block text-sm leading-6 text-gray-600">Prénoms</label>
+                    <input type="text" id="prenoms" formControlName="prenoms"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        <div *ngIf="profilForm.get('personnePrevenir.prenoms')!.invalid && (profilForm.get('personnePrevenir.prenoms')!.dirty || profilForm.get('personnePrevenir.prenoms')!.touched)">
+                            <app-form-message *ngIf="profilForm.get('personnePrevenir.prenoms')!.errors?.['required']"
+                                text="Veuillez entrer vos prénoms"></app-form-message>
+                        </div>
+                </div>
+                <div class="col-span-2">
+                    <label for="boitePostale" class="mb-2 block text-sm leading-6 text-gray-600">Boîte postale</label>
+                    <input type="text" id="boitePostale" formControlName="boitePostale"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                
+                <div class="col-span-2">
+                    <label for="email" class="mb-2 block text-sm leading-6 text-gray-600">Email</label>
+                    <input type="email" id="email" formControlName="email"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        <div *ngIf="profilForm.get('personnePrevenir.email')!.invalid && (profilForm.get('personnePrevenir.email')!.dirty || profilForm.get('personnePrevenir.email')!.touched)">
+                            <app-form-message *ngIf="profilForm.get('personnePrevenir.email')!.errors?.['required']"
+                                text="Veuillez saisir votre email"></app-form-message>
+                            <app-form-message *ngIf="profilForm.get('personnePrevenir.email')!.errors?.['email']"
+                                text="Email invalide"></app-form-message>
+                        </div>
+                </div>
+                
+                <div class="col-span-2">
+                    <label for="telMobile" class="mb-2 block text-sm leading-6 text-gray-600">Téléphone mobile</label>
+                    <input type="text" id="telMobile" formControlName="telMobile"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        <div *ngIf="profilForm.get('personnePrevenir.telMobile')!.invalid && (profilForm.get('personnePrevenir.telMobile')!.dirty || profilForm.get('personnePrevenir.telMobile')!.touched)">
+                            <app-form-message *ngIf="profilForm.get('personnePrevenir.telMobile')!.errors?.['required']"
+                                text="Veuillez entrer votre téléphone mobile"></app-form-message>
+                        </div>
+                </div>
+                
+                <div class="col-span-2">
+                    <label for="telDomicile" class="mb-2 block text-sm leading-6 text-gray-600">Téléphone domicile</label>
+                    <input type="text" id="telDomicile" formControlName="telDomicile"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+
+                <div class="col-span-2">
+                    <label for="quartier" class="mb-2 block text-sm leading-6 text-gray-600">Quartier</label>
+                    <input type="text" id="quartier" formControlName="quartier"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        <div *ngIf="profilForm.get('personnePrevenir.quartier')!.invalid && (profilForm.get('personnePrevenir.quartier')!.dirty || profilForm.get('personnePrevenir.quartier')!.touched)">
+                            <app-form-message *ngIf="profilForm.get('personnePrevenir.quartier')!.errors?.['required']"
+                                text="Veuillez préciser votre quartier"></app-form-message>
+                        </div>
+                </div>
+                <div class="col-span-2">
+                    <label for="ville" class="mb-2 block text-sm leading-6 text-gray-600">Ville</label>
+                    <input type="text" id="ville" formControlName="ville"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        <div *ngIf="profilForm.get('personnePrevenir.ville')!.invalid && (profilForm.get('personnePrevenir.ville')!.dirty || profilForm.get('personnePrevenir.ville')!.touched)">
+                            <app-form-message *ngIf="profilForm.get('personnePrevenir.ville')!.errors?.['required']"
+                                text="Veuillez préciser votre ville"></app-form-message>
+                        </div>
+                </div>
+                <div class="col-span-2">
+                    <label for="pays" class="mb-2 block text-sm leading-6 text-gray-600">Pays</label>
+                    <input type="text" id="pays" formControlName="pays"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        <div *ngIf="profilForm.get('personnePrevenir.pays')!.invalid && (profilForm.get('personnePrevenir.pays')!.dirty || profilForm.get('personnePrevenir.pays')!.touched)">
+                            <app-form-message *ngIf="profilForm.get('personnePrevenir.pays')!.errors?.['required']"
+                                text="Veuillez préciser votre pays"></app-form-message>
+                        </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full flex justify-end items-center pb-12">
+            <app-custom-button [disabled]="false" (click)="validerProfilApprenant()" text="Enregistrer"></app-custom-button>
+        </div>
+    </form>
+</div>
+
+<div class="w-full" *ngIf="institution && rolesValue.isInstitution">
+    <form [formGroup]="profilForm" *ngIf="profilForm">
+        <div class="flex flex-col gap-x-4 mb-8">
+            <!-- <h2 class="text-base font-semibold leading-7 text-gray-900">Profile</h2> -->
+            <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
+                <div class="col-span-2">
+                    <label for="dateNaissance" class="mb-2 block text-sm leading-6 text-gray-600">Date de naissance</label>
+                    <input type="date" id="dateNaissance" formControlName="dateNaissance"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="lieuNaissance" class="mb-2 block text-sm leading-6 text-gray-600">Lieu de naissance</label>
+                    <input type="text" id="lieuNaissance" formControlName="lieuNaissance"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="fonction" class="mb-2 block text-sm leading-6 text-gray-600">Fonction</label>
+                    <input type="text" id="fonction" formControlName="fonction"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+            </div>
+        </div>
+        <div formGroupName="adresse" class="flex flex-col gap-x-4 mb-8">
+            <h2 class="text-base font-semibold leading-7 text-gray-900 mb-2">Adresse</h2>
+            <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
+                <div class="col-span-3">
+                    <label for="boitePostale" class="mb-2 block text-sm leading-6 text-gray-600">Boîte postale</label>
+                    <input type="text" id="boitePostale" formControlName="boitePostale"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-3">
+                    <label for="prorietaireBoitePostale" class="mb-2 block text-sm leading-6 text-gray-600">Propriétaire de la boîte
+                        postale</label>
+                    <input type="text" id="prorietaireBoitePostale" formControlName="prorietaireBoitePostale"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-3">
+                    <label for="telMobile" class="mb-2 block text-sm leading-6 text-gray-600">Téléphone mobile</label>
+                    <input type="text" id="telMobile" formControlName="telMobile"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-3">
+                    <label for="telDomicile" class="mb-2 block text-sm leading-6 text-gray-600">Téléphone domicile</label>
+                    <input type="text" id="telDomicile" formControlName="telDomicile"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="quartier" class="mb-2 block text-sm leading-6 text-gray-600">Quartier</label>
+                    <input type="text" id="quartier" formControlName="quartier"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="ville" class="mb-2 block text-sm leading-6 text-gray-600">Ville</label>
+                    <input type="text" id="ville" formControlName="ville"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="pays" class="mb-2 block text-sm leading-6 text-gray-600">Pays</label>
+                    <input type="text" id="pays" formControlName="pays"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full flex justify-end items-center pb-12">
+            <app-custom-button [disabled]="false" (click)="validerProfilInstitution()" text="Enregistrer"></app-custom-button>
+        </div>
+    </form>
+</div>
+
+<div class="w-full" *ngIf="enseignant && rolesValue.isEnseignant">
+    <div class="w-full mb-8">
+        <!-- <label for="titre" class="mb-2 block text-sm leading-6 text-gray-600">Titre</label> -->
+        <div class="mt-2 flex items-center gap-x-8">
+            <img class="h-36 w-36 rounded-md object-cover object-center border-2 border-gray-300"
+                [src]="imageURL ? imageURL : enseignant.photo ? PHOTOS_PATH + enseignant.photo : 'assets/images/blank-profile-picture.png'" alt="profile">
+            <div class="flex flex-col gap-y-5">
+                <div *ngIf="enseignant.dateNaissance" class="flex gap-x-5">
+                    <app-custom-button (click)="!file ? choisirFichier() : modifierPhotoProfilEnseignant()" [text]="!file ? 'Changer' : 'Enregistrer'" [outlined]="!file ? true : false"></app-custom-button>
+                    <app-custom-button *ngIf="file" (click)="supprimerFichier()" text="Annuler" color="red" [outlined]="true"></app-custom-button>
+                </div>
+                <p *ngIf="!enseignant.dateNaissance" class="text-xs leading-5 text-red-600">Veuillez renseigner vos informations <br> avant d'ajouter une photo</p>
+                <p class="text-xs leading-5 text-gray-600">Images: PNG, JPG, JEPG</p>
+            </div>
+        </div>
+    </div>
+    <form [formGroup]="profilForm" *ngIf="profilForm">
+        <div class="flex flex-col gap-x-4 mb-8">
+            <!-- <h2 class="text-base font-semibold leading-7 text-gray-900">Profile</h2> -->
+            <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
+                <div class="col-span-2">
+                    <label for="fonction" class="mb-2 block text-sm leading-6 text-gray-600">Fonction</label>
+                    <input type="text" id="fonction" formControlName="fonction"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="dateNaissance" class="mb-2 block text-sm leading-6 text-gray-600">Date de naissance</label>
+                    <input type="date" id="dateNaissance" formControlName="dateNaissance"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('dateNaissance')!.invalid && (profilForm.get('dateNaissance')!.dirty || profilForm.get('dateNaissance')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('dateNaissance')!.errors?.['required']"
+                            text="Veuillez saisir votre date de naissance"></app-form-message>
+                    </div>
+                </div>
+                <div class="col-span-2">
+                    <label for="lieuNaissance" class="mb-2 block text-sm leading-6 text-gray-600">Lieu de naissance</label>
+                    <input type="text" id="lieuNaissance" formControlName="lieuNaissance"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('lieuNaissance')!.invalid && (profilForm.get('lieuNaissance')!.dirty || profilForm.get('lieuNaissance')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('lieuNaissance')!.errors?.['required']"
+                            text="Veuillez saisir votre lieu de naissance"></app-form-message>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div formGroupName="adresse" class="flex flex-col gap-x-4 mb-8">
+            <h2 class="text-base font-semibold leading-7 text-gray-900 mb-2">Adresse</h2>
+            <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
+                <div class="col-span-3">
+                    <label for="boitePostale" class="mb-2 block text-sm leading-6 text-gray-600">Boîte postale</label>
+                    <input type="text" id="boitePostale" formControlName="boitePostale"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-3">
+                    <label for="prorietaireBoitePostale" class="mb-2 block text-sm leading-6 text-gray-600">Propriétaire de la boîte
+                        postale</label>
+                    <input type="text" id="prorietaireBoitePostale" formControlName="prorietaireBoitePostale"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-3">
+                    <label for="telMobile" class="mb-2 block text-sm leading-6 text-gray-600">Téléphone mobile</label>
+                    <input type="text" id="telMobile" formControlName="telMobile"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-3">
+                    <label for="telDomicile" class="mb-2 block text-sm leading-6 text-gray-600">Téléphone domicile</label>
+                    <input type="text" id="telDomicile" formControlName="telDomicile"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="quartier" class="mb-2 block text-sm leading-6 text-gray-600">Quartier</label>
+                    <input type="text" id="quartier" formControlName="quartier"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="ville" class="mb-2 block text-sm leading-6 text-gray-600">Ville</label>
+                    <input type="text" id="ville" formControlName="ville"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="pays" class="mb-2 block text-sm leading-6 text-gray-600">Pays</label>
+                    <input type="text" id="pays" formControlName="pays"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full flex justify-end items-center pb-12">
+            <app-custom-button [disabled]="false" (click)="validerProfilEnseignant()" text="Enregistrer"></app-custom-button>
+        </div>
+    </form>
+</div>
+
+<div class="w-full" *ngIf="caissier && rolesValue.isCaissierBanque">
+    <form [formGroup]="profilForm" *ngIf="profilForm">
+        <div class="flex flex-col gap-x-4 mb-8">
+            <!-- <h2 class="text-base font-semibold leading-7 text-gray-900">Profile</h2> -->
+            <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
+                <div class="col-span-2">
+                    <label for="dateNaissance" class="mb-2 block text-sm leading-6 text-gray-600">Date de naissance</label>
+                    <input type="date" id="dateNaissance" formControlName="dateNaissance"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="lieuNaissance" class="mb-2 block text-sm leading-6 text-gray-600">Lieu de naissance</label>
+                    <input type="text" id="lieuNaissance" formControlName="lieuNaissance"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="fonction" class="mb-2 block text-sm leading-6 text-gray-600">Fonction</label>
+                    <input type="text" id="fonction" formControlName="fonction"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+            </div>
+        </div>
+        <div formGroupName="adresse" class="flex flex-col gap-x-4 mb-8">
+            <h2 class="text-base font-semibold leading-7 text-gray-900 mb-2">Adresse</h2>
+            <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
+                <div class="col-span-3">
+                    <label for="boitePostale" class="mb-2 block text-sm leading-6 text-gray-600">Boîte postale</label>
+                    <input type="text" id="boitePostale" formControlName="boitePostale"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-3">
+                    <label for="prorietaireBoitePostale" class="mb-2 block text-sm leading-6 text-gray-600">Propriétaire de la boîte
+                        postale</label>
+                    <input type="text" id="prorietaireBoitePostale" formControlName="prorietaireBoitePostale"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-3">
+                    <label for="telMobile" class="mb-2 block text-sm leading-6 text-gray-600">Téléphone mobile</label>
+                    <input type="text" id="telMobile" formControlName="telMobile"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-3">
+                    <label for="telDomicile" class="mb-2 block text-sm leading-6 text-gray-600">Téléphone domicile</label>
+                    <input type="text" id="telDomicile" formControlName="telDomicile"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="quartier" class="mb-2 block text-sm leading-6 text-gray-600">Quartier</label>
+                    <input type="text" id="quartier" formControlName="quartier"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="ville" class="mb-2 block text-sm leading-6 text-gray-600">Ville</label>
+                    <input type="text" id="ville" formControlName="ville"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="pays" class="mb-2 block text-sm leading-6 text-gray-600">Pays</label>
+                    <input type="text" id="pays" formControlName="pays"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full flex justify-end items-center pb-12">
+            <app-custom-button [disabled]="false" (click)="validerProfilCaissierBanque()" text="Enregistrer"></app-custom-button>
+        </div>
+    </form>
+</div>

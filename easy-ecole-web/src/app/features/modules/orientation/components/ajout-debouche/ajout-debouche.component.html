@@ -1,0 +1,53 @@
+<app-custom-modal title="Ajouter un débouché" subtitle="" (onCloseModal)="closeModal()" [center]="true" [showModal]="showDebouchesModal">
+    <form [formGroup]="nouveauDeboucheForm">
+        <div class="mb-6">
+            <span class="mb-2 block text-sm text-gray-400">Titre</span>
+            <input type="text" id="titre" formControlName="deb_titre" placeholder="Saisir le titre ici..."
+                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+
+            <div class="mb-8"
+                *ngIf="nouveauDeboucheForm.get('deb_titre')!.invalid && (nouveauDeboucheForm.get('deb_titre')!.dirty || nouveauDeboucheForm.get('deb_titre')!.touched)">
+                <app-form-message *ngIf="nouveauDeboucheForm.get('deb_titre')!.errors?.['required']"
+                    text="Veuillez saisir le titre"></app-form-message>
+            </div>
+        </div>
+        <div class="mb-6">
+            <span class="mb-2 block text-sm text-gray-400">Description (facultative)</span>
+            <textarea rows="5" id="titre" formControlName="deb_description"
+                placeholder="Saisir la description ici..."
+                class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
+        </div>
+        <div class="mb-6">
+            <div class="flex flex-wrap gap-y-2 items-center justify-between mb-2">
+                <span class="block text-sm text-gray-400 md:mb-0 mb-4">Vidéo (facultative)</span>
+                <div class="flex gap-x-8 gap-y-4">
+                    <div class="flex items-center gap-x-3">
+                        <input id="check1" name="deb_isLink" type="radio" formControlName="deb_isLink" value="0"
+                            class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                        <label for="check1" class="block text-sm font-regular leading-6 text-gray-600">Locale</label>
+                    </div>
+                    <div class="flex items-center gap-x-3">
+                        <input id="check2" name="deb_isLink" type="radio" formControlName="deb_isLink" value="1"
+                            class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                        <label for="check2" class="block text-sm font-regular leading-6 text-gray-600">En Ligne</label>
+                    </div>
+                </div>
+            </div>
+            <input [type]="nouveauDeboucheForm.get('deb_isLink')!.value == 0 ? 'file' : 'text'"
+                [ngClass]="nouveauDeboucheForm.get('deb_isLink')!.value == 0 ? 'sm:leading-8' : 'sm:leading-6'"
+                [accept]="nouveauDeboucheForm.get('deb_isLink')!.value == 0 ? 'video/mp4,video/mkv, video/x-m4v,video/*' : ''" (change)="onFileChange($event)"
+                formControlName="deb_video" placeholder="Saisir le lien ici..."
+                class="block w-full rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+
+            <!-- <div class="mb-8"
+                *ngIf="nouveauDeboucheForm.get('deb_video')!.invalid && (nouveauDeboucheForm.get('deb_video')!.dirty || nouveauDeboucheForm.get('deb_video')!.touched)">
+                <app-form-message *ngIf="nouveauDeboucheForm.get('deb_video')!.errors?.['required']"
+                    text="Veuillez s titre"></app-form-message>
+            </div> -->
+        </div>
+    </form>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="closeModal()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+        <app-custom-button (click)="ajouterDebouches()" text="Enregistrer"></app-custom-button>
+    </div>
+</app-custom-modal>

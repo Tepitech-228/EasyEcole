@@ -1,0 +1,15 @@
+<a *ngIf="link != undefined" [routerLink]="link" routerLinkActive="active" [routerLinkActiveOptions]="{exact: link == '/'}">
+    <div id="menu" class="flex items-center w-full px-3">
+        <app-custom-svg-icon id="icon" class="mr-2" [path]="'assets/icons/' + icon + '.svg'"></app-custom-svg-icon>
+        <div id="text" class="text-sm">{{ text }}</div>
+    </div>
+</a>
+
+<div *ngIf="link == undefined || isGroup" class="cursor-pointer relative">
+    <div id="menu" class="flex items-center w-full px-3">
+        <app-custom-svg-icon id="icon" class="mr-2" [path]="'assets/icons/' + icon + '.svg'"></app-custom-svg-icon>
+        <div id="text" class="text-sm">{{ text }}</div>
+    </div>
+
+    <!-- <div *ngIf="isGroup" class="py-20 w-full bg-yellow-600"></div> -->
+</div>

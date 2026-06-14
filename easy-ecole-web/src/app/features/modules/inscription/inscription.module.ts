@@ -1,0 +1,51 @@
+import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+import { InscriptionRoutingModule } from './inscription-routing.module';
+import { MonCursusPageComponent } from './pages/mon-cursus-page/mon-cursus-page.component';
+import { PaiementsPageComponent } from './pages/paiements-page/paiements-page.component';
+import { ListeCoursPageComponent } from './pages/liste-cours-page/liste-cours-page.component';
+import { ListeParcoursPageComponent } from './pages/liste-parcours-page/liste-parcours-page.component';
+import { ListeDemandesPageComponent } from './pages/liste-demandes-page/liste-demandes-page.component';
+import { SharedModule } from 'src/app/shared/shared.module';
+import { DetailsParcoursPageComponent } from './pages/details-parcours-page/details-parcours-page.component';
+import { ListeSessionsPageComponent } from './pages/liste-sessions-page/liste-sessions-page.component';
+import { DetailsSessionPageComponent } from './pages/details-session-page/details-session-page.component';
+import { NouveauParcoursPageComponent } from './pages/nouveau-parcours-page/nouveau-parcours-page.component';
+import { DetailsDemandePageComponent } from './pages/details-demande-page/details-demande-page.component';
+import { InfosSectionComponent } from './pages/details-demande-page/infos-section/infos-section.component';
+import { ChoixParcoursSectionComponent } from './pages/details-demande-page/choix-parcours-section/choix-parcours-section.component';
+import { CoursSectionComponent } from './pages/details-demande-page/cours-section/cours-section.component';
+import { PaiementsSectionComponent } from './pages/details-demande-page/paiements-section/paiements-section.component';
+import { ValidationSectionComponent } from './pages/details-demande-page/validation-section/validation-section.component';
+import { ChoixParcoursPageComponent } from './pages/choix-parcours-page/choix-parcours-page.component';
+import { DocumentsSectionComponent } from './pages/details-demande-page/documents-section/documents-section.component';
+
+
+@NgModule({
+  declarations: [
+    MonCursusPageComponent,
+    PaiementsPageComponent,
+    ListeCoursPageComponent,
+    ListeParcoursPageComponent,
+    DetailsParcoursPageComponent,
+    NouveauParcoursPageComponent,
+    ListeDemandesPageComponent,
+    ListeSessionsPageComponent,
+    DetailsSessionPageComponent,
+    DetailsDemandePageComponent,
+    InfosSectionComponent,
+    ChoixParcoursSectionComponent,
+    CoursSectionComponent,
+    PaiementsSectionComponent,
+    ValidationSectionComponent,
+    ChoixParcoursPageComponent,
+    DocumentsSectionComponent
+  ],
+  imports: [
+    CommonModule,
+    InscriptionRoutingModule,
+    SharedModule
+  ]
+})
+export class InscriptionModule { }

@@ -1,0 +1,42 @@
+<app-custom-modal title="Panier" subtitle="Consulter la liste des parcours choisis pour la demande d'orientation" [center]="true" [showModal]="showPanierModal" (onCloseModal)="closeModal()">
+        <div *ngIf="panierParcoursChoisis.length == 0" class="text-sm text-gray-400 text-center py-8">Aucun parcours
+            choisi</div>
+        <div *ngFor="let panierParcoursChoisi of panierParcoursChoisis" class="w-full flex gap-x-8 py-4 border-b">
+            <img class="md:block hidden w-44 h-16 object-cover rounded-md object-center"
+                [src]="panierParcoursChoisi.parcoursChoisi!.parcours!.image ? 'http:///localhost:3000/parcours/' + panierParcoursChoisi.parcoursChoisi!.parcours!.image :  'assets/images/blank-card-picture.jpg'"
+                alt="img">
+            <div class="flex w-full flex-col justify-between py-1">
+                <div class="text-sm font-medium text-gray-700 line-clamp-1">{{
+                    panierParcoursChoisi.parcoursChoisi!.parcours!.titre }}</div>
+                <div class="mt-2 flex flex-wrap gap-x-4 gap-y-2">
+                    <div *ngIf="panierParcoursChoisi.parcoursChoisi!.parcours!.categorie" class="flex items-center text-secondary">
+                        <img width="16" src="assets/icons/category-light.svg" alt="icon">
+                        <div class="px-2 text-sm">{{
+                            panierParcoursChoisi.parcoursChoisi!.parcours!.categorie!.libelle }}</div>
+                    </div>
+                    <div class="flex items-center text-secondary">
+                        <img width="16" src="assets/icons/student.svg" alt="icon">
+                        <div class="px-2 text-sm">{{
+                            panierParcoursChoisi.parcoursChoisi!.parcours!.niveauEtude!.libelle }}</div>
+                    </div>
+                    <div class="flex items-center text-secondary">
+                        <img width="16" src="assets/icons/clock-outline.svg" alt="icon">
+                        <div class="px-2 text-sm">{{ getDuree(panierParcoursChoisi.parcoursChoisi!.parcours!) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="py-1 flex items-center">
+                <button (click)="removePanierParcoursChoisi(panierParcoursChoisi.id!)"
+                    class="p-1 rounded focus:ring-1 focus:ring-gray-300">
+                    <img width="30" src="assets/icons/remove.svg" alt="remove">
+                </button>
+            </div>
+        </div>
+        <div *ngIf="panierParcoursChoisis.length != 0" class="flex justify-between items-stretch gap-x-8 gap-y-2 mt-6">
+            <app-custom-button (click)="viderPanier()" text="Vider le panier" color="red" [outlined]="true"></app-custom-button>
+
+            <app-custom-button (click)="faireDemandeOrientation()"
+                text="Faire une demande"></app-custom-button>
+        </div>
+</app-custom-modal>

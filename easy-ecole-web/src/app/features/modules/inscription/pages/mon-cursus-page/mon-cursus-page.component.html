@@ -1,0 +1,206 @@
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Mon cursus" subtitle="Retrouver la liste de vos parcours actuel et antérieurs"></app-header-title>
+    <div class="flex justify-end items-center">
+        <app-custom-button (click)="ajouterNouveauCursus()" *ngIf="rolesValue.isInstitution" text="Nouveau cursus"></app-custom-button>
+    </div>
+</div>
+
+<div class="w-full mb-8">
+    <div class="overflow-x-auto">
+        <div class="py-2 inline-block min-w-full">
+            <div class="overflow-hidden">
+                <table class="min-w-full">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    #
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    Parcours
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    Niveau d'étude
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    Classe
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    Année académique
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
+                                <div class="px-2">
+                                    Action
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngIf="cursusApprenantInternes?.length==0"
+                            class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                colspan="5">Aucun cursus</td>
+                        </tr>
+                        <tr *ngFor="let cursusApprenant of cursusApprenantInternes; index as index"
+                            class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                            <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div
+                                    class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    {{ index + 1 }}
+                                </div>
+                            </td>
+                            <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div
+                                    class="inline w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6 flex">
+                                    <div class="mr-2">{{ cursusApprenant.parcours ? cursusApprenant.parcours.titre : '---' }}</div>
+                                    <app-custom-badge *ngIf="index == 0" color="blue" text="Actuel"></app-custom-badge>
+                                </div>
+                            </td>
+                            <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div
+                                    class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    {{ cursusApprenant.niveauEtude ? cursusApprenant.niveauEtude.libelle : '---' }}</div>
+                            </td>
+                            <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div
+                                    class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    {{ cursusApprenant.classe ? cursusApprenant.classe.libelle : '---' }}</div>
+                            </td>
+                            <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div
+                                    class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    {{ cursusApprenant.anneeAcademique ? cursusApprenant.anneeAcademique.libelle : '---' }}</div>
+                            </td>
+                            <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div
+                                    class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    <span>
+                                        <app-custom-button [link]="'/inscription/cursusApprenants/' + cursusApprenant.id"
+                                            text="Détails"></app-custom-button>
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="w-full mb-8">
+    <app-details-section text="Externes">
+        <div *ngIf="rolesValue.isInstitution || rolesValue.isApprenant" class="relative">
+            <div>
+                <button (click)="showNouveauCursusModal = true"
+                    class="p-1 rounded focus:ring-1 focus:ring-gray-300">
+                    <img src="assets/icons/add.svg" alt="add">
+                </button>
+            </div>
+        </div>
+    </app-details-section>
+    <div class="overflow-x-auto">
+        <div class="py-2 inline-block min-w-full">
+            <div class="overflow-hidden">
+                <table class="min-w-full">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    #
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    Etablissement
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    Parcours
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    Niveau d'étude
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    Classe
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    Année académique
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngIf="cursusApprenantExternes?.length==0"
+                            class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                colspan="5">Aucun cursus</td>
+                        </tr>
+                        <tr *ngFor="let cursusApprenant of cursusApprenantExternes; index as index"
+                            class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                            <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div
+                                    class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    {{ index + 1 }}
+                                </div>
+                            </td>
+                            <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div
+                                    class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    {{ cursusApprenant.etablissement }}</div>
+                            </td>
+                            <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div
+                                    class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    {{ cursusApprenant.intituleParcours }}</div>
+                            </td>
+                            <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div
+                                    class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    {{ cursusApprenant.niveauEtude ? cursusApprenant.niveauEtude.libelle : '---' }}</div>
+                            </td>
+                            <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div
+                                    class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    {{ cursusApprenant.classe ? cursusApprenant.classe.libelle : '---' }}</div>
+                            </td>
+                            <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div
+                                    class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    {{ cursusApprenant.anneeAcademique ? cursusApprenant.anneeAcademique.libelle : '---' }}</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,114 @@
+/* You can add global styles to this file, and also import other style files */
+
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* Ng Select CSS */
+@import "~@ng-select/ng-select/themes/default.theme.css";
+
+/* Fonts */
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url('assets/fonts/InterVariable.ttf') format('ttf');
+}
+
+@font-face {
+    font-family: 'Inter';
+    font-style: italic;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url('assets/fonts/InterVariable-Italic.ttf') format('ttf');
+}
+
+@font-face {
+    font-family: 'Open Sans';
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url('assets/fonts/OpenSans-VariableFont_wdth,wght.ttf') format('ttf');
+}
+
+@font-face {
+    font-family: 'Open Sans';
+    font-style: italic;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url('assets/fonts/OpenSans-Italic-VariableFont_wdth,wght.ttf') format('ttf');
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    position: relative;
+}
+
+.prerequis-select {
+    background-image: none !important;
+    opacity: 100% !important;
+}
+
+.prerequis-no-arrow {
+
+    /* Chrome, Safari, Edge, Opera */
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    /* Firefox */
+    input[type=number] {
+        -moz-appearance: textfield;
+    }
+}
+
+.file-icon:before {
+    font-size: 18px !important;
+}
+
+/* Full Calendar */
+.fc {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    color: #000000DE;
+}
+
+.fc-col-header-cell {
+    font-size: 15px;
+    text-transform: capitalize;
+    font-weight: 500 !important;
+    padding: 15px 0 !important;
+}
+
+
+/* Scrollbar custom*/
+*::-webkit-scrollbar {
+    --sb-size: 8px;
+
+    width: var(--sb-size);
+    height: var(--sb-size);
+}
+
+*::-webkit-scrollbar-track {
+    --sb-track-color: #eaeaea;
+
+    background: var(--sb-track-color);
+    border-radius: 6px;
+}
+
+*::-webkit-scrollbar-thumb {
+    --sb-thumb-color: #737373;
+
+    background: var(--sb-thumb-color);
+    border-radius: 6px;
+
+}

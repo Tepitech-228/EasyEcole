@@ -1,0 +1,164 @@
+<app-return-back></app-return-back>
+
+<ng-container *ngIf="demande">
+    <div *ngIf="rolesValue.isInstitution"
+        class="flex md:flex-row flex-col gap-y-6 justify-between md:items-start md-items-end w-full border-0 py-4">
+        <div class="flex items-center gap-x-4">
+            <img class="object-cover w-16 h-16 rounded-full border-2 border-gray-300"
+                [src]="demande.utilisateur!.apprenant?.photo ? PHOTOS_PATH + demande.utilisateur!.apprenant?.photo : 'assets/images/blank-profile-picture.png'"
+                alt="">
+            <div class="flex flex-col justify-evenly h-16">
+                <h2 class="text-md font-semibold text-gray-800 dark:text-white">{{
+                    demande.utilisateur!.nom + ' ' + demande.utilisateur!.prenoms }}
+                </h2>
+                <p class="text-sm font-normal text-gray-600 dark:text-gray-400">{{
+                    demande!.utilisateur!.email }}</p>
+            </div>
+        </div>
+        <div *ngIf="demande.reponseOrientation == undefined" class="flex justify-end items-center gap-x-8">
+            <app-custom-button (click)="showReponseModal = true" text="Terminer"></app-custom-button>
+        </div>
+    </div>
+
+    <div class="mb-8">
+        <!-- <div class="text-sm text-gray-600 font-regular">Informations de la demande: </div> -->
+        <div class="flex items-center gap-x-10 mb-8">
+            <div class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0"
+                [ngSwitch]="demande.reponseOrientation == undefined">
+                <app-custom-badge *ngSwitchCase="false" color="green" text="Terminé"></app-custom-badge>
+                <app-custom-badge *ngSwitchDefault text="En cours"></app-custom-badge>
+            </div>
+            <div class="block w-full h-full border-0 m-0 px-2 py-4 text-xs text-gray-600 bg-transparent">
+                Faite le {{ demande!.dateDemande! | date: 'dd/MM/YYYY' }} à {{ demande!.dateDemande! | date:
+                'HH:mm' }}</div>
+        </div>
+    </div>
+
+    <div class="flex justify-between items-start mb-8">
+
+        <button [ngClass]="(this.index > 0) ? 'visible' : 'invisible'" type="button" (click)="prevParcoursChoisi()"
+            class="bg-white rounded-md p-2 inline-flex items-center justify-center text-gray-500 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+            <span class="sr-only">Left</span>
+            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 -960 960 960"
+                stroke="currentColor" aria-hidden="true">
+                <path d="M640-80 240-480l400-400 71 71-329 329 329 329-71 71Z" />
+            </svg>
+        </button>
+
+        <app-header-title class="text-s text-center" title="{{ demande.parcoursChoisis![index].parcours!.titre }}">
+            <div class="mt-2 mb-6 flex flex-wrap gap-x-4 gap-y-2 justify-center">
+                <div *ngIf="demande.parcoursChoisis![index].parcours!.categorie" class="flex items-center text-secondary">
+                    <img width="16" src="assets/icons/category-light.svg" alt="icon">
+                    <div class="px-2 text-sm">{{ demande.parcoursChoisis![index].parcours!.categorie?.libelle }}</div>
+                </div>
+                <div class="flex items-center text-secondary">
+                    <img width="16" src="assets/icons/student.svg" alt="icon">
+                    <div class="px-2 text-sm">{{ demande.parcoursChoisis![index].parcours!.niveauEtude?.libelle }}</div>
+                </div>
+                <div class="flex items-center text-secondary">
+                    <img width="16" src="assets/icons/clock-outline.svg" alt="icon">
+                    <div class="px-2 text-sm">{{ getDuree(demande.parcoursChoisis![index].parcours!) }}</div>
+                </div>
+            </div>
+            <div *ngIf="rolesValue.isInstitution || demande.reponseOrientation != undefined" class="flex justify-center" [ngSwitch]="demande.parcoursChoisis![index].etatDeValidation!">
+                <app-custom-badge *ngSwitchCase="etatsValidationParcours.VALIDE" color="green"
+                    text="Validé"></app-custom-badge>
+                <app-custom-badge *ngSwitchCase="etatsValidationParcours.REJETE" color="red"
+                    text="Rejeté"></app-custom-badge>
+                <app-custom-badge *ngSwitchDefault text="En cours"></app-custom-badge>
+            </div>
+        </app-header-title>
+
+        <button [ngClass]="(this.index < this.demande!.parcoursChoisis!.length - 1) ? 'visible' : 'invisible'"
+            type="button" (click)="nextParcoursChoisi()"
+            class="bg-white rounded-md p-2 inline-flex items-center justify-center text-gray-500 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+            <span class="sr-only">Right</span>
+            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 -960 960 960"
+                stroke="currentColor" aria-hidden="true">
+                <path d="m321-80-71-71 329-329-329-329 71-71 400 400L321-80Z" />
+            </svg>
+        </button>
+    </div>
+
+    <div class="w-full mb-8">
+        <app-details-section text=""></app-details-section>
+        <div *ngIf="_prerequisParcours.length == 0" class="text-sm text-gray-400 text-center py-8">Aucun prérequis</div>
+        <div *ngFor="let prerequis of _prerequisParcours" class="w-full">
+            <div class="w-full flex flex-col items-center mb-12">
+                <div class="w-full mb-3 text-sm font-semibold text-gray-700 text-center">{{ prerequis[0].libelle }}
+                </div>
+                <div class="w-full overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-100 border-b">
+                            <tr>
+                                <th scope="col" *ngFor="let col of columnsSchema"
+                                    class="text-sm font-semibold text-gray-600 px-2 py-4 text-left">
+                                    <div class="px-2">{{ col.label }}</div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="prerequis-no-arrow">
+                            <tr *ngIf="prerequis[1].length == 0"
+                                class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                                <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                    colspan="5">Aucune note requise</td>
+                            </tr>
+                            <tr *ngFor="let row of prerequis[1]"
+                                class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                <td *ngFor="let col of columnsSchema"
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <input readonly *ngIf="col.type == 'number'" type="number"
+                                        class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6 focus:ring-0 focus:border-0"
+                                        [value]="row[col.key]" />
+
+                                    <input type="text" *ngIf="col.key == columnsSchema[0].key" readonly
+                                        class="block min-w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6 focus:ring-0 focus:border-0"
+                                        [value]="row[col.key]" />
+
+                                    <select disabled *ngIf="col.type == 'list' && col.key != columnsSchema[0].key"
+                                        [ngSwitch]="col.key"
+                                        class="prerequis-select w-full h-full bg-transparent border-0 m-0 px-2 py-4 sm:text-sm sm:leading-6 focus:ring-0 focus:border-0"
+                                        [value]="row[col.key]">
+                                        <ng-container *ngSwitchCase="columnsSchema[1].key">
+                                            <option [value]="periodesEvaluation.EXAM">Examen</option>
+                                            <option [value]="periodesEvaluation.TRIM1">1er Trimestre</option>
+                                            <option [value]="periodesEvaluation.TRIM2">2e Trimestre</option>
+                                            <option [value]="periodesEvaluation.TRIM3">3e Trimestre</option>
+                                            <option [value]="periodesEvaluation.SEM1">1er Semestre</option>
+                                            <option [value]="periodesEvaluation.SEM2">3e Semestre</option>
+                                        </ng-container>
+                                        <ng-container *ngSwitchCase="columnsSchema[2].key">
+                                            <option [value]="typesEvaluation.MOY">Moyenne</option>
+                                            <option [value]="typesEvaluation.DST">Devoir sur table</option>
+                                            <option [value]="typesEvaluation.COMPO">Composition</option>
+                                        </ng-container>
+                                    </select>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div *ngIf="rolesValue.isInstitution && demande.reponseOrientation == undefined" class="flex justify-between items-center mb-2">
+        <app-custom-button (click)="rejeterParcoursChoisi()" text="Rejeter" [outlined]="true"
+            color="red"></app-custom-button>
+        <app-custom-button (click)="validerParcoursChoisi()" text="Valider" color="green"></app-custom-button>
+    </div>
+</ng-container>
+
+<!-- Modals -->
+<app-custom-modal title="Réponse" subtitle="Valider la réponse et saisir un message qui sera envoyé à l'apprenant" (onCloseModal)="closeModal()" [center]="true" [showModal]="showReponseModal">
+    <label class="text-sm leading-6 text-gray-800">Message (facultif)</label>
+    <textarea [(ngModel)]="messageReponseOrientation"
+                class="mt-1 mb-4 w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                placeholder="" rows="5">
+    </textarea>
+    <app-form-message *ngIf="!demandeTraitee" text="Veuillez traiter tous les parcours de la demande"></app-form-message>
+    <div class="py-3 flex justify-between items-center">
+        <app-custom-button (click)="closeModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+        <app-custom-button (click)="envoyerReponseOrientation()" text="Envoyer"></app-custom-button>
+    </div>
+</app-custom-modal>

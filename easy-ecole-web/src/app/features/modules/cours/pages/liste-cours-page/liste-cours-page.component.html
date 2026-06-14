@@ -1,0 +1,44 @@
+<div class="flex justify-between items-start gap-x-8 mb-8">
+    <app-header-title title="Cours" subtitle="Consulter la liste des cours proposés"></app-header-title>
+    <!-- <div class="flex justify-end items-center">
+        <app-custom-button *ngIf="rolesValue.isInstitution" text="Nouveau cours" link="/orientation/cours/nouveau"></app-custom-button>
+    </div> -->
+</div>
+
+<div class="w-full flex justify-between items-center mb-8">
+    <div class="flex md:flex-row flex-col gap-4">
+        <select *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant" [(ngModel)]="selectedNiveauEtude" (change)="filtrerCours()"
+            class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+            <option [value]="'undefined'">Filter par niveau d'étude...</option>
+            <option *ngFor="let niveau of _niveauxEtude" [value]="niveau.id">{{ niveau.libelle }}</option>
+        </select>
+        <select *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant" [(ngModel)]="selectedClasse" (change)="filtrerCours()"
+            class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+            <option [value]="'undefined'">Filter par classe...</option>
+            <option *ngFor="let classe of _classes" [value]="classe.id">{{ classe.libelle }}</option>
+        </select>
+        <select *ngIf="rolesValue.isApprenant || rolesValue.isInstitution || rolesValue.isEnseignant" [(ngModel)]="selectedParcours" (change)="filtrerCours()"
+            class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+            <option [value]="'undefined'">Filter par parcours...</option>
+            <option *ngFor="let parcours of _parcours" [value]="parcours.id">{{ parcours.titre }}</option>
+        </select>
+    </div>
+    <div class="flex md:flex-row flex-col gap-4">
+        <input type="text" [(ngModel)]="searchCours" (keyup)="rechercherCours()" placeholder="Rechercher..." class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+    </div>
+</div>
+
+<div class="w-full flex justify-center items-center mb-8">
+    <div *ngIf="_cours.length == 0"
+        class="w-full py-24 flex flex-col gap-y-8 items-center justify-center">
+        <img class="h-56" src="assets/images/selection-pana.svg" alt="no resource">
+        <div class="text-sm text-gray-500">Aucun cours disponible, ou bien</div>
+        <app-custom-button text="Effacer les filtres" (click)="supprimerFiltres()"></app-custom-button>
+    </div>
+</div>
+
+<div class="w-full flex justify-between items-center mb-8">
+    <div class="grid 2xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-2 md:grid-cols-2 grid-cols-1 w-full gap-x-12 gap-y-4">
+        <app-cours-card *ngFor="let cours of _cours" [cours]="cours"></app-cours-card>
+    </div>
+</div>

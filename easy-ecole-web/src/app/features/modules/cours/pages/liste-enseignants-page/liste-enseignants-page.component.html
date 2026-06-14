@@ -1,0 +1,156 @@
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Enseignants" subtitle="Retrouver la liste de vos enseignants"></app-header-title>
+    <div class="flex justify-end items-center">
+        <app-custom-button (click)="openNouvelEnseignantModal()" *ngIf="rolesValue.isInstitution" text="Nouvel enseignant"></app-custom-button>
+    </div>
+</div>
+
+<div class="flex flex-col">
+    <div class="overflow-x-auto">
+        <div class="py-2 inline-block min-w-full">
+            <div class="overflow-hidden">
+                <table class="min-w-full">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    #
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    Enseignant
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    Contact
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
+                                <div class="px-2">
+                                    Action
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngIf="enseignants.length == 0"
+                            class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                colspan="5">Aucun enseignant</td>
+                        </tr>
+                        <tr *ngFor="let enseignant of enseignants; index as index"
+                            class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                            <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div
+                                    class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    {{ index + 1 }}
+                                </div>
+                            </td>
+                            <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    <div class="flex items-center gap-x-2">
+                                        <img class="object-cover w-8 h-8 rounded-full border-2 border-gray-300"
+                                            [src]="enseignant.utilisateur!.apprenant?.photo ? PHOTOS_PATH + enseignant.utilisateur!.apprenant?.photo : 'assets/images/blank-profile-picture.png'"
+                                            alt="">
+                                        <div class="pr-8">
+                                            <h2 class="text-sm font-medium text-gray-800 dark:text-white ">{{
+                                                enseignant.utilisateur!.nom + ' ' + enseignant.utilisateur!.prenoms }}
+                                            </h2>
+                                            <p class="text-xs font-normal text-gray-600 dark:text-gray-400">{{
+                                                enseignant.utilisateur!.email }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ enseignant.utilisateur!.contact }}</div>
+                            </td>
+                            
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div
+                                    class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    <app-custom-button [link]="'/cours/enseignants/' + enseignant.id" text="Details"></app-custom-button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- // Modals -->
+<app-custom-modal title="Nouvel enseignant" subtitle="Enregistrer un nouvel enseignant" (onCloseModal)="showNouvelEnseignantModal = false" [center]="true" [showModal]="showNouvelEnseignantModal">
+    <form [formGroup]="enseignantForm">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="md:col-span-3 col-span-full">
+                <label for="identifiant" class="mb-2 block text-sm leading-6 text-gray-600">Identifiant</label>
+                <input type="text" id="identifiant" formControlName="identifiant" placeholder="Saisir l'identifiant ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                
+                <div
+                    *ngIf="enseignantForm.get('identifiant')!.invalid && (enseignantForm.get('identifiant')!.dirty || enseignantForm.get('identifiant')!.touched)">
+                    <app-form-message *ngIf="enseignantForm.get('identifiant')!.errors?.['required']"
+                        text="Veuillez saisir l'identifiant"></app-form-message>
+                </div>
+            </div>
+            <div class="md:col-span-3 col-span-full">
+                <label for="email" class="mb-2 block text-sm leading-6 text-gray-600">Email</label>
+                <input type="email" id="email" formControlName="email" placeholder="Saisir l'email ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                
+                <div
+                    *ngIf="enseignantForm.get('email')!.invalid && (enseignantForm.get('email')!.dirty || enseignantForm.get('email')!.touched)">
+                    <app-form-message *ngIf="enseignantForm.get('email')!.errors?.['required']"
+                        text="Veuillez saisir l'email"></app-form-message>
+                    <app-form-message *ngIf="enseignantForm.get('email')!.errors?.['email']"
+                        text="Email invalid"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Nom</span>
+                <input type="text" id="nom" formControlName="nom" placeholder="Saisir le nom ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+    
+                <div
+                    *ngIf="enseignantForm.get('nom')!.invalid && (enseignantForm.get('nom')!.dirty || enseignantForm.get('nom')!.touched)">
+                    <app-form-message *ngIf="enseignantForm.get('nom')!.errors?.['required']"
+                        text="Veuillez saisir le nom"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Prénoms</span>
+                <input type="text" id="prenoms" formControlName="prenoms" placeholder="Saisir les prénoms ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+    
+                <div
+                    *ngIf="enseignantForm.get('prenoms')!.invalid && (enseignantForm.get('prenoms')!.dirty || enseignantForm.get('prenoms')!.touched)">
+                    <app-form-message *ngIf="enseignantForm.get('prenoms')!.errors?.['required']"
+                        text="Veuillez saisir les prénoms"></app-form-message>
+                </div>
+            </div>
+            <div class="md:col-span-3 col-span-full">
+                <label for="contact" class="mb-2 block text-sm leading-6 text-gray-600">Contact</label>
+                <input type="text" id="contact" formControlName="contact" placeholder="Saisir le contact ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                
+                <div
+                    *ngIf="enseignantForm.get('contact')!.invalid && (enseignantForm.get('contact')!.dirty || enseignantForm.get('contact')!.touched)">
+                    <app-form-message *ngIf="enseignantForm.get('contact')!.errors?.['required']"
+                        text="Veuillez saisir le contact"></app-form-message>
+                </div>
+            </div>
+        </div>
+    </form>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="closeNouvelEnseignantModal()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+        <app-custom-button (click)="ajouterEnseignant()" text="Enregistrer"></app-custom-button>
+    </div>
+</app-custom-modal>

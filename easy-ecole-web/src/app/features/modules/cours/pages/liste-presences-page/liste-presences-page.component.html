@@ -1,0 +1,118 @@
+<div class="flex justify-between items-start gap-x-8 mb-8">
+    <app-header-title title="Listes de présence" subtitle="Consulter la liste des présences de vos apprenants"></app-header-title>
+    <!-- <div class="flex justify-end items-center">
+        <app-custom-button *ngIf="rolesValue.isInstitution" text="Nouveau cours" link="/orientation/cours/nouveau"></app-custom-button>
+    </div> -->
+    <div class="flex justify-end items-center gap-x-4">
+        <app-custom-button *ngIf="(rolesValue.isEnseignant || rolesValue.isInstitution)" text="Nouvelle liste" (click)="openNouvelleListePresenceModal()"></app-custom-button>
+    </div>
+</div>
+
+<div class="w-full flex justify-between items-center mb-8">
+    <div class="flex md:flex-row flex-col gap-4">
+        <select *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant" [(ngModel)]="selectedNiveauEtude" (change)="filtrerListesPresences()"
+            class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+            <option [value]="'undefined'">Filter par niveau d'étude...</option>
+            <option *ngFor="let niveau of _niveauxEtude" [value]="niveau.id">{{ niveau.libelle }}</option>
+        </select>
+        <select *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant" [(ngModel)]="selectedClasse" (change)="filtrerListesPresences()"
+            class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+            <option [value]="'undefined'">Filter par classe...</option>
+            <option *ngFor="let classe of _classes" [value]="classe.id">{{ classe.libelle }}</option>
+        </select>
+        <select *ngIf="rolesValue.isApprenant || rolesValue.isInstitution || rolesValue.isEnseignant" [(ngModel)]="selectedParcours" (change)="filtrerListesPresences()"
+            class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+            <option [value]="'undefined'">Filter par parcours...</option>
+            <option *ngFor="let parcours of _parcours" [value]="parcours.id">{{ parcours.titre }}</option>
+        </select>
+    </div>
+    <div class="flex md:flex-row flex-col gap-4">
+        <input type="text" [(ngModel)]="searchListePresence" (keyup)="rechercherPresence()" placeholder="Rechercher..." class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+    </div>
+</div>
+
+<div class="w-full flex justify-center items-center mb-8">
+    <div *ngIf="_listesPresences.length == 0"
+        class="w-full py-24 flex flex-col gap-y-8 items-center justify-center">
+        <img class="h-56" src="assets/images/selection-pana.svg" alt="no resource">
+        <div class="text-sm text-gray-500">Aucune liste de présence n'est disponible, ou bien</div>
+        <app-custom-button text="Effacer les filtres" (click)="supprimerFiltres()"></app-custom-button>
+    </div>
+</div>
+
+<div class="w-full flex justify-between items-center mb-8">
+    <div class="grid 2xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-2 md:grid-cols-2 grid-cols-1 w-full gap-x-12 gap-y-4">
+        <app-liste-presence-card *ngFor="let listePresence of _listesPresences" [listePresence]="listePresence"></app-liste-presence-card>
+    </div>
+</div>
+
+<!-- Modals -->
+<app-custom-modal title="Nouvelle liste de présence" subtitle="Cela peut être par rapport à un cours ou un autre type de séance" (onCloseModal)="closeNouvelleListePresenceModal()" [center]="true" [showModal]="showNouvelleListePresenceModal">
+    <form [formGroup]="nouvelleListePresenceForm">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="col-span-full">
+                <div class="flex justify-between items-center">
+                    <label for="titre" class="mb-2 block text-sm leading-6 text-gray-600">Titre</label>
+                    <div class="flex items-center gap-x-3">
+                        <label for="choisirParmiLesCours" class="text-sm text-gray-600">Choisir parmi les cours</label>
+                        <input id="choisirParmiLesCours" type="checkbox" formControlName="choisirParmiLesCours" class="h-4 w-4 border-gray-600 text-indigo-600 focus:ring-indigo-600">
+                    </div>
+                </div>
+
+                <input *ngIf="!nouvelleListePresenceForm.get('choisirParmiLesCours')!.value" type="text" id="titre" formControlName="titre" placeholder="Saisir le titre ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+
+                <ng-select *ngIf="nouvelleListePresenceForm.get('choisirParmiLesCours')!.value"
+                    [items]="cours"
+                    bindValue="id"
+                    [loading]="coursLoading"
+                    [searchFn]="customCoursSearchFn"
+                    formControlName="cours"
+                    placeholder="Sélectionner un cours"
+                    (change)="onCoursChange($event)"
+                    class="block w-full rounded-md text-gray-900 placeholder:text-gray-400 sm:text-sm sm:leading-6">
+                    <ng-template ng-label-tmp let-item="item">
+                        {{ item.code }}
+                    </ng-template>
+                    <ng-template ng-option-tmp let-item="item">
+                        {{ item.intitule }} <br />
+                        <small>{{ item.code }}</small>
+                    </ng-template>
+                </ng-select>
+
+                <div *ngIf="nouvelleListePresenceForm.get('titre')!.invalid && (nouvelleListePresenceForm.get('titre')!.dirty || nouvelleListePresenceForm.get('titre')!.touched)">
+                    <app-form-message *ngIf="nouvelleListePresenceForm.get('titre')!.errors?.['required']"
+                        text="Veuillez saisir le titre ou choisir un cours"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-full">
+                <label for="enseignant" class="mb-2 block text-sm leading-6 text-gray-600">Enseignant</label>
+                <ng-select
+                    [items]="enseignants"
+                    bindValue="id"
+                    [loading]="enseignantsLoading"
+                    [searchFn]="customEnseignantSearchFn"
+                    formControlName="enseignant"
+                    placeholder="Choisir l'enseignant concerné"
+                    class="block w-full rounded-md text-gray-900 placeholder:text-gray-400 sm:text-sm sm:leading-6">
+                    <ng-template ng-label-tmp let-item="item">
+                        {{ item.utilisateur?.nom + ' ' + item.utilisateur?.prenoms }}
+                    </ng-template>
+                    <ng-template ng-option-tmp let-item="item">
+                        {{ item.utilisateur?.nom + ' ' + item.utilisateur?.prenoms }}
+                    </ng-template>
+                </ng-select>
+            </div>
+            <div class="col-span-full">
+                <label for="description" class="mb-2 block text-sm leading-6 text-gray-600">Description (facultative)</label>
+                <textarea rows="5" id="description" formControlName="description"
+                placeholder="Saisir la description ici..."
+                class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
+            </div>
+        </div>
+    </form>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="closeNouvelleListePresenceModal()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+        <app-custom-button (click)="ajouterPresence()" text="Enregistrer"></app-custom-button>
+    </div>
+</app-custom-modal>

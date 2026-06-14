@@ -1,0 +1,314 @@
+<div *ngIf="demande.dateValidation == undefined" class="w-full">
+    <app-custom-alert color="blue" [inline]="true" [show]="rolesValue.isApprenant">Validation en cours. Veuillez patienter...</app-custom-alert>
+    <app-custom-alert color="yellow" [inline]="true" [show]="rolesValue.isInstitution">Validation en attente...</app-custom-alert>
+</div>
+
+<div class="w-full mb-8">
+    <app-details-section text="Informations de l'apprenant"></app-details-section>
+    <div class="flex gap-x-24">
+        <div class="flex-grow">
+            <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
+                <div class="col-span-3">
+                    <label class="mb-2 block text-sm leading-6 text-gray-600">Nom</label>
+                    <div class="block w-full text-gray-900">{{ demande!.utilisateur!.nom }}</div>
+                </div>
+                <div class="col-span-3">
+                    <label class="mb-2 block text-sm leading-6 text-gray-600">Prénoms</label>
+                    <div class="block w-full text-gray-900">{{ demande!.utilisateur!.prenoms }}</div>
+                </div>
+                <div class="col-span-3">
+                    <label class="mb-2 block text-sm leading-6 text-gray-600">Date de naissance</label>
+                    <div class="block w-full text-gray-900">{{ demande!.utilisateur!.apprenant!.dateNaissance | date: 'dd/MM/YYYY' }}</div>
+                </div>
+                <div class="col-span-3">
+                    <label class="mb-2 block text-sm leading-6 text-gray-600">Lieu de naissance</label>
+                    <div class="block w-full text-gray-900">{{ demande!.utilisateur!.apprenant!.lieuNaissance }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="flex-none">
+            <label class="mb-2 block text-sm leading-6 text-gray-600">Photo</label>
+            <div class="mt-2 flex items-center gap-x-8">
+                <img class="h-36 w-36 rounded-md object-cover object-center border-2 border-gray-300"
+                    [src]="demande!.utilisateur!.apprenant!.photo ? PHOTOS_PATH + demande!.utilisateur!.apprenant!.photo : 'assets/images/blank-profile-picture.png'" alt="profile">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="w-full mb-8">
+    <app-details-section text="Parcours"></app-details-section>
+    <div class="">
+        <div class="overflow-x-auto">
+            <div class="py-2 inline-block min-w-full">
+                <div class="overflow-hidden">
+                    <!-- <div class="min-w-full">
+                        <div class="flex flex-col items-center mx-auto">
+                            <div class="flex items-center"></div>
+                        </div>
+                    </div> -->
+                    <div>
+                        <table class="min-w-full mb-12">
+                            <tbody>
+                                <tr *ngIf="demande!.parcoursChoisis!.length == 0"
+                                    class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                                    <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                        colspan="5">Aucun parcours choisi</td>
+                                </tr>
+                                <tr *ngFor="let parcoursChoisi of demande!.parcoursChoisis!; index as i" class="bg-white hover:bg-gray-50 p-0 border-b border-slate-200 transition duration-300 ease-in-out">
+                                    <!-- <td class="w-12 text-sm text-center py-6 text-gray-600 font-regular whitespace-nowrap">{{ i + 1 }}</td> -->
+                                    <td class="text-sm py-6 text-gray-600 font-regular p-0 whitespace-nowrap">
+                                        {{ parcoursChoisi.parcours!.titre }}
+                                    </td>
+                                    <td class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2"
+                                        [ngSwitch]="parcoursChoisi.etatDeValidation">
+                                        <app-custom-badge *ngSwitchCase="etatsValidationParcours.VALIDE" color="green" text="Validé"></app-custom-badge>
+                                        <app-custom-badge *ngSwitchCase="etatsValidationParcours.REJETE" color="red" text="Rejeté"></app-custom-badge>
+                                    </td>
+                                    <td class="w-12 text-sm text-center py-6 text-gray-600 font-regular whitespace-nowrap">
+                                        <input type="radio" [(ngModel)]="choixParcoursFinal" name="choixParcoursFinal" [value]="parcoursChoisi.id" [disabled]="(rolesValue.isInstitution || parcoursChoisi.etatDeValidation == etatsValidationParcours.REJETE) || parcours != undefined">
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="w-full mb-8">
+    <app-details-section text="Cours"></app-details-section>
+    <div class="mb-8">
+        <div class="overflow-x-auto">
+            <div class="py-2 inline-block min-w-full">
+                <div class="overflow-hidden">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-100 border-b">
+                            <tr>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Code
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Libellé
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Crédit / Coefficient
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Annee / Classe
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Semestre
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Etat
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngIf="demande!.cours!.length == 0"
+                                class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                                <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                    colspan="5">Aucun cours</td>
+                            </tr>
+                            <tr *ngFor="let c of demande!.cours; index as index"
+                                class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ c.code }}</div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ c.intitule }}</div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ c.credit ?? '---' }}</div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        <span>{{c.classe?.libelle}}</span>
+                                    </div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div [ngSwitch]="c.semestre" class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        <span *ngSwitchCase="semestresParcours.SEMESTRE1">1</span>
+                                        <span *ngSwitchCase="semestresParcours.SEMESTRE2">2</span>
+                                        <span *ngSwitchCase="semestresParcours.SEMESTRE3">3</span>
+                                        <span *ngSwitchCase="semestresParcours.SEMESTRE4">4</span>
+                                        <span *ngSwitchCase="semestresParcours.SEMESTRE5">5</span>
+                                        <span *ngSwitchCase="semestresParcours.SEMESTRE6">6</span>
+                                    </div>
+                                </td>
+                                
+                                <td class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2"
+                                    [ngSwitch]="getEtatCoursChoisi(c.id!)">
+                                    <app-custom-badge *ngSwitchCase="etatsCoursChoisi.ENCOURS" color="blue" text="En cours"></app-custom-badge>
+                                    <app-custom-badge *ngSwitchCase="etatsCoursChoisi.VALIDE" color="green" text="Validé"></app-custom-badge>
+                                    <app-custom-badge *ngSwitchCase="etatsCoursChoisi.REJETE" color="red" text="Rejeté"></app-custom-badge>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="w-full mb-8">
+    <app-details-section text="Paiements"></app-details-section>
+    <div class="mb-8">
+        <div class="overflow-x-auto">
+            <div class="py-2 inline-block min-w-full">
+                <div class="overflow-hidden">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-100 border-b">
+                            <tr>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        #
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Numéro
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Date de paiement
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Type
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
+                                    <div class="px-2">
+                                        Montant
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngIf="demande.paiementsInscription?.length == 0"
+                                class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                                <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                    colspan="5">Aucun paiement effectué</td>
+                            </tr>
+                            <tr *ngFor="let paiement of demande.paiementsInscription; index as index"
+                                class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div
+                                        class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        {{ index + 1 }}
+                                    </div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ paiement.numero }}</div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ paiement.datePaiement! | date: 'dd/MM/YYYY' }} à {{ paiement.datePaiement! | date:
+                                        'HH:mm' }}</div>
+                                </td>
+                                <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2"
+                                    [ngSwitch]="paiement.type">
+                                    <app-custom-badge *ngSwitchCase="typesPaiement.EN_LIGNE" color="green" text="En ligne"></app-custom-badge>
+                                    <app-custom-badge *ngSwitchDefault text="En espèces"></app-custom-badge>
+                                </td>
+                                <td
+                                    class="bg-transparent text-right text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ paiement.montant | currency:'XAF' }}</div>
+                                </td>
+                            </tr>
+                            <tr
+                                class="bg-white font-bold hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div
+                                        class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    </div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">Total</div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6"></div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6"></div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-right text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ getFraisPayes() | currency:'XAF' }}</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="w-full mb-8">
+    <app-details-section text="Dossiers"></app-details-section>
+    <div class="mb-8">
+        <div class="overflow-x-auto">
+            <div class="py-2 inline-block min-w-full">
+                <div class="overflow-hidden">
+                    <div>
+                        <!-- <input id="file" type="file" name="file" (change)="onFileChange($event)" accept="application/pdf" class="hidden"> -->
+                        <table class="min-w-full mb-12">
+                            <tbody>
+                                <tr *ngIf="demande.session!.dossiersInscription!.length == 0"
+                                    class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                                    <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                        colspan="5">Aucun dossier à fournir</td>
+                                </tr>
+                                <tr *ngFor="let dossier of demande.session!.dossiersInscription!; index as index"
+                                    class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                    <td
+                                        class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                        <div
+                                            class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                            <img width="20" [src]="'assets/icons/' + (checkDossier(dossier.id!) ? 'check' : 'error') + '-badge.svg'" alt="">
+                                        </div>
+                                    </td>
+                                    <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                        <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ dossier.titre }}</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

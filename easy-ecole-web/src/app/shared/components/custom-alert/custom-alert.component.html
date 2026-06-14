@@ -1,0 +1,23 @@
+<ng-container>
+    <div *ngIf="show" [ngClass]="inline ? 'w-full mb-8' : 'fixed inset-0  p-4'" class="z-50 overflow-x-hidden overflow-y-auto transition-all md:inset-0">
+        <div class="relative">
+            <div [ngClass]="inline ? '' : 'fixed pt-4 pr-8 right-0'">
+                <div [ngClass]="inline ? 'bg-' + color + '-200' : 'bg-' + color + '-700 max-w-sm'" class="flex w-full overflow-hidden rounded-lg shadow-md">
+                    <div class="flex items-center justify-center w-12">
+                        <svg [ngClass]="inline ? 'text-gray-800' : 'text-white'" class="w-6 h-6 fill-current" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                d="M20 3.36667C10.8167 3.36667 3.3667 10.8167 3.3667 20C3.3667 29.1833 10.8167 36.6333 20 36.6333C29.1834 36.6333 36.6334 29.1833 36.6334 20C36.6334 10.8167 29.1834 3.36667 20 3.36667ZM19.1334 33.3333V22.9H13.3334L21.6667 6.66667V17.1H27.25L19.1334 33.3333Z" />
+                        </svg>
+                    </div>
+    
+                    <div [ngClass]="inline ? 'text-gray-800' : 'text-white'" class="pl-1 pr-4 py-4">
+                        <span class="font-semibold opacity-90">{{title}}</span>
+                        <p class="text-sm opacity-70">
+                            <ng-content></ng-content>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</ng-container>

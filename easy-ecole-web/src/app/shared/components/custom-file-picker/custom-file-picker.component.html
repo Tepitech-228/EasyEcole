@@ -1,0 +1,32 @@
+<div id="drag-target" (drop)="onDropFile($event)" (dragover)="onDragOver($event)" (dragenter)="onDragEnter()"
+    (dragleave)="onDragLeave()"
+    [ngClass]="[isOver ? 'ring-2 ring-indigo-600' : '']" 
+    class="flex justify-center rounded-lg border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 px-6 py-10" style="z-index: 10000 !important;">
+    <div class="flex flex-col items-center text-center" style="z-index: 10 !important;">
+        <img src="assets/icons/upload-cloud-fill.svg" alt="upload">
+        <div class="mt-4 flex text-sm leading-6 text-gray-600">
+            <p class="pr-1">Glisser/Déposer ou </p>
+            <label [for]="inputID" (dragover)="isOver = true" (dragenter)="isOver = true" (dragleave)="isOver = true"
+                class="relative cursor-pointer rounded-md bg-white font-semibold text-indigo-600 hover:text-indigo-500">
+                <span>Sélectionner un fichier</span>
+                <input [id]="inputID" type="file" [name]="inputID" (change)="onFileChange($event)"
+                    [accept]="mediaType == typesMedia.IMAGE ? 'image/png, image/jpg, image/jpeg' : mediaType == typesMedia.VIDEO ? 'video/mp4, video/mkv, video/x-m4v, video/*' : '*/*'" class="sr-only">
+            </label>
+        </div>
+        <p class="text-xs leading-5 text-gray-600">{{ mediaType == typesMedia.IMAGE ? 'Images: PNG, JPG, JEPG' : mediaType == typesMedia.VIDEO ? 'Vidéos: MP4, MKV, etc.' : 'Tous les types de fichier' }}</p>
+    </div>
+</div>
+
+<div class="flex justify-between items-center mt-2 bg-blue-100 rounded-lg px-3 py-2">
+    <div class="flex justify-start items-center gap-x-3">
+        <img *ngIf="media == undefined" width="20" [src]="mediaType == typesMedia.IMAGE ? 'assets/icons/image-file.svg' : mediaType == typesMedia.VIDEO ? 'assets/icons/video-file.svg' : 'assets/icons/file.svg'" alt="icon">
+        <div *ngIf="media != undefined" [ngClass]="getFichierRessourceIcone(media)" class="file-icon"></div>
+        <div *ngIf="media != undefined" class="text-sm text-blue-600">{{media}}</div>
+    </div>
+    <div class="flex justify-end items-center">
+        <div *ngIf="media == undefined" class="text-sm text-gray-700">Aucun fichier sélectionné</div>
+        <button *ngIf="media != undefined" (click)="removeFile()">
+            <img src="assets/icons/baseline-delete.svg" alt="icon">
+        </button>
+    </div>
+</div>

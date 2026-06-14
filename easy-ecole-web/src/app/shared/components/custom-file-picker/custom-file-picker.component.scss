@@ -1,0 +1,9 @@
+#drag-target {
+    * {
+        pointer-events: none;
+    }
+
+    label {
+        pointer-events: all;
+    }
+}

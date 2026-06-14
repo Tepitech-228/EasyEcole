@@ -1,0 +1,35 @@
+{
+    "development": {
+        "username": "root",
+        "password": null,
+        "database": "easyecole",
+        "options": {
+            "dialect": "mysql",
+            "host": "localhost",
+            "port": 3306,
+            "logging": false
+        }
+    },
+    "test": {
+        "username": null,
+        "password": null,
+        "database": null,
+        "options": {
+            "dialect": null,
+            "host": null,
+            "port": null,
+            "logging": null
+        }
+    },
+    "production": {
+        "username": null,
+        "password": null,
+        "database": null,
+        "options": {
+            "dialect": null,
+            "host": null,
+            "port": null,
+            "logging": null
+        }
+    }
+}

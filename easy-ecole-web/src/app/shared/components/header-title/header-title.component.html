@@ -1,0 +1,7 @@
+<div class="flex flex-col">
+    <div class="header font-semibold ld:text-lg">{{ title }}</div>
+    <div class="text-secondary text-sm">
+        {{ subtitle ?? '' }}
+        <ng-content *ngIf="subtitle == undefined"></ng-content>
+    </div>
+</div>

@@ -1,0 +1,13 @@
+<ng-container *ngIf="utilisateur.apprenant == null">
+    <div class="flex flex-col items-center mt-24">
+        <p class="text-sm text-secondary mb-8 text-center">Aucune information personnelle n'a été renseignée<br> Veuillez remédier à cela en cliquant sur le button ci-dessous</p>
+        <app-custom-button text="Accéder à mon profil" link="/parametres/profil"></app-custom-button>
+    </div>
+</ng-container>
+
+<ng-container *ngIf="utilisateur.apprenant != null">
+    <div class="flex flex-col items-center mt-24">
+        <p class="text-sm text-secondary mb-8 text-center">Bravo!!! Les informations ont belle et bien été renseignées</p>
+        <app-custom-button text="Voir mon profil" link="/parametres/profil"></app-custom-button>
+    </div>
+</ng-container>

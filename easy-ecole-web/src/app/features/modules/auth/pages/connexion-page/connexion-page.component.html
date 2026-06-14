@@ -1,0 +1,32 @@
+<app-custom-alert [show]="error || emptyError" title="Erreur">
+    {{ emptyError ? 'Veuillez renseigner tous les champs' : '' }}
+    {{ error ? 'Identifiants de connexion incorrects' : '' }}
+</app-custom-alert>
+
+<app-auth-layout title="Connexion" subtitle="Veuillez entrer vos identifiants pour vous connecter" [showBottom]="true"
+    bottomText="Vous n'avez pas un compte?" bottomLinkText="Inscrivez-vous" bottomLink="../inscription">
+    <form [formGroup]="connexionForm">
+        <div class="grid grid-cols-1 gap-10">
+            <div class="block">
+                <label class="text-sm leading-6 text-gray-900">Email ou nom d'utilisateur</label>
+                <input type="text"
+                    class="mt-1 w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                    formControlName="usernameOrEmail" placeholder="example@gmail.com" required />
+            </div>
+            <div class="block">
+                <div class="flex items-center justify-between">
+                    <label class="text-sm leading-6 text-gray-900">Mot de passe</label>
+                    <div class="text-sm">
+                        <a href="#" class="text-indigo-600 hover:text-indigo-500">Mot de passe oublié ?</a>
+                    </div>
+                </div>
+                <input type="password"
+                    class="mt-1 w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                    formControlName="password" placeholder="********" required />
+            </div>
+            <div class="mt-8 w-full">
+                <app-custom-button class="w-full" (click)="connexion()" type="submit" text="Se connecter" [fullWidth]="true" [disabled]="disableButton"></app-custom-button>
+            </div>
+        </div>
+    </form>
+</app-auth-layout>

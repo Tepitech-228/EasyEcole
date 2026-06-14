@@ -1,0 +1,17 @@
+{
+    "development": {
+        "url": "https://api-checkout.cinetpay.com/v2/payment",
+        "site_id": "5865931",
+        "apikey": "15300778846557a06f4267d7.52002805"
+    },
+    "test": {
+        "url": null,
+        "site_id": null,
+        "apikey": null
+    },
+    "production": {
+        "url": null,
+        "site_id": null,
+        "apikey": null
+    }
+}

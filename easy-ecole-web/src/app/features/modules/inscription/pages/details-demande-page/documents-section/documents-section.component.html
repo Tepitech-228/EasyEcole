@@ -1,0 +1,65 @@
+<div *ngIf="demande.dossiersDemande!.length == 0 && demande.session!.dossiersInscription!.length != 0" class="w-full">
+    <app-custom-alert color="blue" [inline]="true" [show]="rolesValue.isApprenant">Veuillez uploader vos dossiers d'inscription</app-custom-alert>
+    <app-custom-alert color="blue" [inline]="true" [show]="rolesValue.isInstitution">Téléversement des dossiers en cours</app-custom-alert>
+</div>
+
+<div class="flex flex-col">
+    <div class="mb-8 overflow-x-auto">
+        <div class="py-2 inline-block min-w-full">
+            <div class="overflow-hidden">
+                <div class="w-7/12 max-w-4xl mx-auto">
+                    <!-- <input id="file" type="file" name="file" (change)="onFileChange($event)" accept="application/pdf" class="hidden"> -->
+                    <table class="min-w-full mb-12">
+                        <tbody>
+                            <tr *ngIf="demande.session!.dossiersInscription!.length == 0"
+                                class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                                <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                    colspan="5">Aucun dossier à fournir</td>
+                            </tr>
+                            <tr *ngFor="let dossier of demande.session!.dossiersInscription!; index as index"
+                                class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div
+                                        class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        <img width="20" [src]="'assets/icons/' + (dossiersInscription[dossier.id!] || checkDossier(dossier.id!) ? 'check' : 'error') + '-badge.svg'" alt="">
+                                    </div>
+                                </td>
+                                <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ dossier.titre }}</div>
+                                </td>
+                                <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div
+                                        class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        <button *ngIf="checkDossier(dossier.id!)" (click)="openDossierModal(dossier)"
+                                            class="p-1 rounded focus:ring-1 focus:ring-gray-300">
+                                            <img width="25" src="assets/icons/file.svg" alt="open">
+                                        </button>
+                                        <ng-container *ngIf="rolesValue.isApprenant">
+                                            <button (click)="choisirFichier(dossier.id!)"
+                                                class="p-1 rounded focus:ring-1 focus:ring-gray-300">
+                                                <img width="25" [src]="'assets/icons/upload-cloud-fill.svg'" alt="upload">
+                                            </button>
+                                        </ng-container>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div *ngIf="rolesValue.isApprenant && demande.session!.dossiersInscription!.length != 0" class="flex items-center justify-center">
+                        <app-custom-button (click)="validerDossiersInscription()" text="Valider" color="green" [fullWidth]="true" [disabled]="dossiersInscription.length == 0"></app-custom-button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div *ngIf="rolesValue.isApprenant" class="w-full flex justify-end items-center">
+        <app-custom-button (click)="nextStep.emit()" [disabled]="false" text="Terminer"></app-custom-button>
+    </div>
+</div>
+
+<!-- Modals -->
+<app-custom-modal *ngIf="selectedDossier && selectedDossierDemande" [title]="selectedDossier.titre!" [subtitle]="selectedDossier.description" (onCloseModal)="closeDossierModal()" [center]="true" [showModal]="showDossierModal">
+    <embed [src]="DOSSIERS_PATH + selectedDossierDemande.nomFichier | safeUrl | async" class="w-full h-full" style="height: 80vh !important;" />
+</app-custom-modal>

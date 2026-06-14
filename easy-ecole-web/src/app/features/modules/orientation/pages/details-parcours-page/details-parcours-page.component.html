@@ -1,0 +1,226 @@
+<app-return-back></app-return-back>
+
+<ng-container *ngIf="parcours">
+    <div class="flex md:flex-row flex-col items-start justify-between mb-8">
+        <app-header-title title="{{ parcours.titre }}">
+            <div class="mt-2 md:mb-0 mb-8 flex md:flex-row flex-wrap gap-x-4 gap-y-2">
+                <div *ngIf="parcours.categorie" class="flex items-center text-secondary">
+                    <img src="assets/icons/category-light.svg" alt="icon">
+                    <div class="px-2 text-sm">{{ parcours.categorie.libelle }}</div>
+                </div>
+                <div class="flex items-center text-secondary">
+                    <img src="assets/icons/student.svg" alt="icon">
+                    <div class="px-2 text-sm">{{ parcours.niveauEtude?.libelle }}</div>
+                </div>
+                <div class="flex items-center text-secondary">
+                    <img src="assets/icons/clock-outline.svg" alt="icon">
+                    <div class="px-2 text-sm">{{ getDuree() }}</div>
+                </div>
+            </div>
+        </app-header-title>
+        <div *ngIf="rolesValue.isApprenant"
+            class="flex w-full md:w-64 md:justify-end justify-between items-stretch gap-x-4">
+            <button
+                class="flex items-center justify-center gap-x-2 border border-gray-400 rounded-md bg-white px-4 py-2 text-sm font-medium leading-6 text-white shadow-sm hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                <img src="assets/icons/mail.svg" alt="mail">
+            </button>
+            <button (click)="showParcoursChoisiModal = true"
+                class="flex w-full items-center justify-center gap-x-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium leading-6 text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600">
+                <img src="assets/icons/cart-outline.svg" alt="cart">
+                Ajouter au panier
+            </button>
+        </div>
+        <div *ngIf="rolesValue.isInstitution" class="w-full md:w-32 flex justify-end items-center gap-x-4">
+            <!-- <button
+                class="flex items-center justify-center gap-x-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium leading-6 text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
+                <img src="assets/icons/pencil.svg" alt="cart">
+                Modifier
+            </button> -->
+            <button (click)="supprimerParcours()"
+                class="flex w-full items-center justify-center gap-x-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium leading-6 text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
+                <img src="assets/icons/trash.svg" alt="cart">
+                Supprimer
+            </button>
+        </div>
+    </div>
+
+    <div *ngIf="parcours.videoExplicative" class="w-full mb-8 md:px-6 xl:px-12">
+        <app-video-player [src]="PARCOURS_PATH + parcours.videoExplicative"></app-video-player>
+    </div>
+
+    <div class="text-gray-500 mb-8">
+        <div class="ql-container ql-snow" [style.border]="'none'">
+            <div class="w-full ql-editor p-0" [innerHTML]="getContenu()"></div>
+        </div>
+    </div>
+
+    <div class="w-full mb-8">
+        <app-details-section text="Prérequis"></app-details-section>
+        <div *ngIf="_prerequisParcours.length == 0" class="text-sm text-gray-400 text-center py-8">Aucun prérequis</div>
+        <div *ngFor="let prerequis of _prerequisParcours" class="w-full">
+            <div class="w-full flex flex-col items-center mb-12">
+                <div class="w-full mb-3 text-sm font-semibold text-gray-700 text-center">{{ prerequis[0].libelle }}
+                </div>
+                <div class="w-full overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-100 border-b">
+                            <tr>
+                                <th scope="col" *ngFor="let col of columnsSchema"
+                                    class="text-sm font-semibold text-gray-600 px-2 py-4 text-left">
+                                    <div class="px-2">{{ col.label }}</div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="prerequis-no-arrow">
+                            <tr *ngIf="prerequis[1].length == 0"
+                                class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                                <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                    colspan="5">Aucune note requise</td>
+                            </tr>
+                            <tr *ngFor="let row of prerequis[1]"
+                                class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                <td *ngFor="let col of columnsSchema"
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <input readonly *ngIf="col.type == 'number'" type="number"
+                                        class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6 focus:ring-0 focus:border-0"
+                                        [value]="row[col.key]" />
+
+                                    <input type="text" *ngIf="col.key == columnsSchema[0].key" readonly
+                                        class="block min-w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6 focus:ring-0 focus:border-0"
+                                        [value]="row[col.key]" />
+
+                                    <select disabled *ngIf="col.type == 'list' && col.key != columnsSchema[0].key"
+                                        [ngSwitch]="col.key"
+                                        class="prerequis-select w-full h-full bg-transparent border-0 m-0 px-2 py-4 sm:text-sm sm:leading-6 focus:ring-0 focus:border-0"
+                                        [value]="row[col.key]">
+                                        <ng-container *ngSwitchCase="columnsSchema[1].key">
+                                            <option [value]="periodesEvaluation.EXAM">Examen</option>
+                                            <option [value]="periodesEvaluation.TRIM1">1er Trimestre</option>
+                                            <option [value]="periodesEvaluation.TRIM2">2e Trimestre</option>
+                                            <option [value]="periodesEvaluation.TRIM3">3e Trimestre</option>
+                                            <option [value]="periodesEvaluation.SEM1">1er Semestre</option>
+                                            <option [value]="periodesEvaluation.SEM2">3e Semestre</option>
+                                        </ng-container>
+                                        <ng-container *ngSwitchCase="columnsSchema[2].key">
+                                            <option [value]="typesEvaluation.MOY">Moyenne</option>
+                                            <option [value]="typesEvaluation.DST">Devoir sur table</option>
+                                            <option [value]="typesEvaluation.COMPO">Composition</option>
+                                        </ng-container>
+                                    </select>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="w-full mb-8">
+        <app-details-section text="Débouchés"></app-details-section>
+        <div *ngIf="parcours.debouchesParcours!.length == 0" class="text-sm text-gray-400 text-center py-8">Aucun
+            débouché</div>
+        <div *ngIf="parcours.debouchesParcours!.length != 0"
+            class="grid 2xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-2 md:grid-cols-2 grid-cols-1 w-full gap-x-12 gap-y-6">
+            <div *ngFor="let debouche of parcours.debouchesParcours!" (click)="openModal(debouche)" id="card"
+                class="w-full bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden hover:border-indigo-200 cursor-pointer">
+                <div class="relative">
+                    <img class="w-full h-36 object-cover object-center"
+                        src="assets/images/blank-card-picture.jpg"
+                        alt="img">
+                    <div class="absolute top-0 right-0 bottom-0 left-0 bg-gray-700 opacity-70 z-2">
+                        <div class="h-full flex items-center justify-center" style="opacity: 1 !important;">
+                            <img src="assets/icons/play.svg" alt="play">
+                        </div>
+                    </div>
+                </div>
+                <div class="py-4 px-4">
+                    <div class="text-sm leading-6 font-medium text-gray-600">{{ debouche.titre }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</ng-container>
+
+<!-- // Modals -->
+<app-custom-modal title="Ajouter au panier" subtitle="Enregistrer le parcours choisi dans votre panier des choix" (onCloseModal)="showParcoursChoisiModal = false" [center]="true" [showModal]="showParcoursChoisiModal">
+    <div *ngIf="_prerequisParcours.length == 0" class="text-sm text-gray-400 text-center py-8">Aucun prérequis
+    </div>
+    <div *ngFor="let prerequis of _prerequisParcours" class="w-full">
+        <div class="w-full flex flex-col items-center mb-5">
+            <div class="w-full mb-3 text-sm font-semibold text-gray-700 text-center">{{ prerequis[0].libelle }}
+            </div>
+            <div class="w-full overflow-x-auto">
+                <table class="min-w-full">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th scope="col" *ngFor="let col of columnsSchema"
+                                class="text-sm font-semibold text-gray-600 px-2 py-4 text-left">
+                                <div class="px-2">{{ col.label }}</div>
+                            </th>
+                            <th scope="col" class="text-sm font-semibold text-gray-600 px-2 py-4 text-left">
+                                <div class="px-2">Note obtenue</div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngIf="prerequis[1].length == 0"
+                            class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                colspan="5">Aucune note requise</td>
+                        </tr>
+                        <tr *ngFor="let row of prerequis[1]"
+                            class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                            <td *ngFor="let col of columnsSchema"
+                                class="prerequis-no-arrow bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <input style="width: 120px;" readonly *ngIf="col.type == 'number'" type="number"
+                                    class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6 focus:ring-0 focus:border-0"
+                                    [value]="row[col.key]" />
+
+                                <input type="text" *ngIf="col.key == columnsSchema[0].key" readonly
+                                    class="block min-w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6 focus:ring-0 focus:border-0"
+                                    [value]="row[col.key]" />
+
+                                <select disabled *ngIf="col.type == 'list' && col.key != columnsSchema[0].key"
+                                    [ngSwitch]="col.key"
+                                    class="prerequis-select w-full h-full bg-transparent border-0 m-0 px-2 py-4 sm:text-sm sm:leading-6 focus:ring-0 focus:border-0"
+                                    [value]="row[col.key]">
+                                    <ng-container *ngSwitchCase="columnsSchema[1].key">
+                                        <option [value]="periodesEvaluation.EXAM">Examen</option>
+                                        <option [value]="periodesEvaluation.TRIM1">1er Trimestre</option>
+                                        <option [value]="periodesEvaluation.TRIM2">2e Trimestre</option>
+                                        <option [value]="periodesEvaluation.TRIM3">3e Trimestre</option>
+                                        <option [value]="periodesEvaluation.SEM1">1er Semestre</option>
+                                        <option [value]="periodesEvaluation.SEM2">3e Semestre</option>
+                                    </ng-container>
+                                    <ng-container *ngSwitchCase="columnsSchema[2].key">
+                                        <option [value]="typesEvaluation.MOY">Moyenne</option>
+                                        <option [value]="typesEvaluation.DST">Devoir sur table</option>
+                                        <option [value]="typesEvaluation.COMPO">Composition</option>
+                                    </ng-container>
+                                </select>
+                            </td>
+
+                            <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <input style="width: 120px;" [(ngModel)]="_prerequisParcoursChoisi[row['id']]"
+                                    type="number" min="0" step=0.01 oninput="validity.valid||(value='');"
+                                    class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6" />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="w-full">
+        <app-form-message *ngIf="containsEmptyNote" text="Veuillez saisir toutes les notes"></app-form-message>
+    </div>
+    <div class="py-3 flex justify-end gap-x-10">
+        <app-custom-button (click)="ajouterAuPanier()" text="Valider"></app-custom-button>
+    </div>
+</app-custom-modal>
+
+<app-custom-modal title="{{ selectedDebouche!.titre }}" subtitle="{{ selectedDebouche!.description ?? 'Aucune description' }}" (onCloseModal)="closeModal()" *ngIf="selectedDebouche" [center]="true" [showModal]="showDeboucheModal">
+    <app-video-player *ngIf="selectedDebouche.video" [src]="getFullLink(selectedDebouche.video)"></app-video-player>
+    <div *ngIf="!selectedDebouche.video" class="text-sm text-gray-400 text-center py-8">Aucune vidéo</div>
+</app-custom-modal>

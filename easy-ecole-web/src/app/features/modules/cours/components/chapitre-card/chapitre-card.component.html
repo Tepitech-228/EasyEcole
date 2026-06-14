@@ -1,0 +1,59 @@
+<div class="chapitre-card flex flex-col gap-y-2 cursor-pointer hover:bg-gray-50 py-4 px-4 rounded">
+    <div class="flex gap-x-6 mb-6" [routerLink]="'./chapitres/' + chapitre.id">
+        <div>
+            <div [ngClass]="'bg-' + color + '-500'" class="rounded w-24 h-24 flex justify-center items-center text-white chapitre-icon">
+                <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
+                    <path fill="currentColor" d="M172.309-180.001q-30.308 0-51.308-21t-21-51.308v-455.382q0-30.308 21-51.308t51.308-21h219.613l80 80h315.769q30.308 0 51.308 21t21 51.308v375.382q0 30.308-21 51.308t-51.308 21H172.309Zm0-59.999h615.382q5.385 0 8.847-3.462 3.462-3.462 3.462-8.847v-375.382q0-5.385-3.462-8.847-3.462-3.462-8.847-3.462H447.385l-80-80H172.309q-5.385 0-8.847 3.462-3.462 3.462-3.462 8.847v455.382q0 5.385 3.462 8.847 3.462 3.462 8.847 3.462ZM160-240v-480 480Z"/>
+                </svg>
+            </div>
+        </div>
+        <div class="px-4 pt-4 flex justify-center items-center">
+            <div class="text-gray-600">
+                <div class="text-md text-gray-700 font-semibold">{{chapitre.titre}}</div>
+                <br>
+                <!-- <div class="px-12">
+                    <li>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</li>
+                    <li>Cras consectetur orci quis dignissim accumsan.</li>
+                    <li>Donec eu magna at arcu dignissim posuere elementum et nunc.</li>
+                    <li>Praesent in nisl ac ligula commodo facilisis dictum nec nulla.</li>
+                    <li>Phasellus viverra lectus maximus laoreet porta.</li>
+                </div> -->
+                <div *ngIf="chapitre.description" class="text-gray-500 px-0">
+                    <div class="ql-container ql-snow" [style.border]="'none'">
+                        <div class="w-full ql-editor p-0 text-base" [innerHTML]="getContenu()"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div *ngIf="rolesValue.isEnseignant" class="chapitre-options-btn flex justify-end items-center gap-x-8">
+        <button [routerLink]="'./chapitres/' + chapitre.id + '/modification'" class="px-4 py-2 bg-gray-50 hover:bg-blue-200 border border-blue-200 rounded-md text-center">
+            <div class="flex gap-x-2 items-center justify-center text-blue-500 text-sm">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
+                    <path fill="currentColor" d="M200-200h50.461l409.463-409.463-50.461-50.461L200-250.461V-200Zm-59.999 59.999v-135.383l527.616-527.384q9.073-8.241 20.036-12.736 10.963-4.495 22.993-4.495 12.029 0 23.307 4.27 11.277 4.269 19.969 13.576l48.846 49.461q9.308 8.692 13.269 20.004 3.962 11.311 3.962 22.622 0 12.065-4.121 23.028-4.12 10.964-13.11 20.037l-527.384 527H140.001Zm620.384-570.153-50.231-50.231 50.231 50.231Zm-126.134 75.903-24.788-25.673 50.461 50.461-25.673-24.788Z"/>
+                </svg>
+                <div>Modifier</div>
+            </div>
+        </button>
+        <button (click)="openSupprimerChapitreCoursModal()" class="px-4 py-2 bg-gray-50 hover:bg-red-200 border border-red-200 rounded-md text-center">
+            <div class="flex gap-x-2 items-center justify-center text-red-500 text-sm">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
+                    <path fill="currentColor" d="M292.309-140.001q-29.923 0-51.115-21.193-21.193-21.192-21.193-51.115V-720h-40v-59.999H360v-35.384h240v35.384h179.999V-720h-40v507.691q0 30.308-21 51.308t-51.308 21H292.309ZM680-720H280v507.691q0 5.385 3.462 8.847 3.462 3.462 8.847 3.462h375.382q4.616 0 8.463-3.846 3.846-3.847 3.846-8.463V-720ZM376.155-280h59.999v-360h-59.999v360Zm147.691 0h59.999v-360h-59.999v360ZM280-720v520-520Z"/>
+                </svg>
+                <div>Supprimer</div>
+            </div>
+        </button>
+    </div>
+</div>
+
+<!-- Modals -->
+<app-custom-modal title="Supprimer" subtitles="Déplacer ce chapitre de cours dans la corbeille" (onCloseModal)="closeSupprimerChapitreCoursModal()" [center]="true" [showModal]="showSupprimerChapitreCoursModal">
+    <div class="text-gray-500 mb-8">
+        Êtes-vous de vouloir supprimer le chapitre <b>{{ chapitre.titre }}</b> de ce cours ?
+    </div>
+    <div class="flex items-center justify-between py-30">
+        <app-custom-button (click)="closeSupprimerChapitreCoursModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+        <app-custom-button (click)="supprimerChapitreCours()" text="Supprimer" color="red"></app-custom-button>
+    </div>
+</app-custom-modal>

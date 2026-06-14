@@ -1,0 +1,45 @@
+<app-custom-alert [show]="error || alreadyExists" title="Erreur">
+    {{ error ? 'Une erreur est survenue lors de la création' : '' }}
+    {{ alreadyExists ? 'Ce chapitre existe déjà.\nVeuillez changer le titre' : '' }}
+</app-custom-alert>
+
+<app-return-back [doubleBack]="true"></app-return-back>
+
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Ajouter un nouveau chapitre" subtitle="Veuillez renseigner les informations ci-dessous pour ajouter un nouveau chapitre"></app-header-title>
+    <div class="flex justify-end items-center">
+        <!-- <app-custom-button (click)="ajouterParcours()" text="Enregistrer"></app-custom-button> -->
+    </div>
+</div>
+
+<div class="w-full mb-8">
+    <form [formGroup]="nouveauChapitreForm" id="nouveauChapitreForm">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="col-span-full">
+                <label for="titre" class="mb-2 block text-sm leading-6 text-gray-600">Titre</label>
+                <input type="text" id="titre" formControlName="titre" placeholder="Saisir le titre ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <app-form-message *ngIf="alreadyExists"
+                    text="Titre déjà utilisé"></app-form-message>
+                <div *ngIf="nouveauChapitreForm.get('titre')!.invalid && (nouveauChapitreForm.get('titre')!.dirty || nouveauChapitreForm.get('titre')!.touched)">
+                    <app-form-message *ngIf="nouveauChapitreForm.get('titre')!.errors?.['required']"
+                        text="Veuillez saisir le titre"></app-form-message>
+                </div>
+            </div>
+            <!-- <div class="col-span-full">
+                <label for="" class="mb-2 block text-sm leading-6 text-gray-600">Image bannière (facultative)</label>
+                <app-custom-file-picker inputID="image" (onFileChanged)="onImageChange($event)"></app-custom-file-picker>
+            </div> -->
+            <div class="col-span-full">
+                <label for="" class="mb-2 block text-sm leading-6 text-gray-600">Description</label>
+                <quill-editor formControlName="description" [placeholder]="'Description du chapitre...'" [modules]="modules"
+                    [styles]="{height: '400px', fontSize: '0.875rem', lineHeight: '1.25rem'}" [preserveWhitespace]="true" (onFocus)="focus($event)"
+                    (onBlur)="blur($event)"></quill-editor>
+            </div>
+        </div>
+
+        <div class="w-full flex justify-end items-center pb-12">
+            <app-custom-button (click)="ajouterChapitre()" [disabled]="disableButton" text="Enregistrer"></app-custom-button>
+        </div>
+    </form>
+</div>

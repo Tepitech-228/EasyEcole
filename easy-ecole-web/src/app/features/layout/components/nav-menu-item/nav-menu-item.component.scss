@@ -1,0 +1,28 @@
+#menu {
+    height: 46px;
+    border-radius: 8px;
+    
+    $color: rgba($color: #fff, $alpha: 0.75);
+    #icon {
+        background-color: $color !important;
+    }
+
+    #text {
+        color: $color !important;
+    }
+}
+
+.active #menu,
+#menu:hover {
+    $color: rgba($color: #fff, $alpha: 0.65);
+    $iconColor: #2f59ad;
+    background-color: #040B2B;
+
+    #icon {
+        background-color: $iconColor !important;
+    }
+
+    #text {
+        color: $color !important;
+    }
+}

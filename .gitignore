@@ -9,6 +9,5 @@ temp/
 Thumbs.db
 .idea/
 .vscode/
-easy-ecole-backend/
-easy-ecole-web/
+# sub-project git dirs removed - now tracked in root repo
 

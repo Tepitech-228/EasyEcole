@@ -1,0 +1,166 @@
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Sessions" subtitle="Retrouver la liste de vos sessions"></app-header-title>
+    <div class="flex justify-end items-center">
+        <app-custom-button (click)="openNouvelleSessionModal()" *ngIf="rolesValue.isInstitution" text="Nouvelle session"></app-custom-button>
+    </div>
+</div>
+
+<div class="flex flex-col">
+    <div class="overflow-x-auto">
+        <div class="py-2 inline-block min-w-full">
+            <div class="overflow-hidden">
+                <table class="min-w-full">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    #
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    Date de début
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    Date de fin
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    Etat
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-center">
+                                <div class="px-2">
+                                    Niveau d'étude
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-center">
+                                <div class="px-2">
+                                    Année académique
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
+                                <div class="px-2">
+                                    Action
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngIf="sessions.length == 0"
+                            class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                colspan="5">Aucune session</td>
+                        </tr>
+                        <tr *ngFor="let session of sessions; index as index"
+                            class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                            <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div
+                                    class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    {{ index + 1 }}
+                                </div>
+                            </td>
+                            <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ session.dateDebut | date: 'dd MMMM YYYY' }}</div>
+                            </td>
+                            <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ session.dateFin | date: 'dd MMMM YYYY' }}</div>
+                            </td>
+                            
+                            <td class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2"
+                                [ngSwitch]="getEtatSession(session.dateDebut, session.dateFin)">
+                                <app-custom-badge *ngSwitchCase="etatsSession.A_VENIR" color="blue" text="A venir"></app-custom-badge>
+                                <app-custom-badge *ngSwitchCase="etatsSession.OUVERTE" color="green" text="Ouverte"></app-custom-badge>
+                                <app-custom-badge *ngSwitchCase="etatsSession.CLOTUREE" color="red" text="Clôturée"></app-custom-badge>
+                            </td>
+
+                            <td
+                                class="bg-transparent text-center text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ session.niveauEtude ? session.niveauEtude.libelle : '---' }}</div>
+                            </td>
+                            <td
+                                class="bg-transparent text-center text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ session.anneeAcademique ? session.anneeAcademique.libelle : '---' }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div
+                                    class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    <app-custom-button [link]="'/inscription/sessions/' + session.id" text="Details"></app-custom-button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- // Modals -->
+<app-custom-modal title="Nouvelle session" subtitle="Ajouter une nouvelle session à votre catalogue" (onCloseModal)="showNouvelleSessionModal = false" [center]="true" [showModal]="showNouvelleSessionModal">
+    <form [formGroup]="sessionForm">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Date de début</span>
+                <input type="date" id="dateDebut" [min]="TODAY_DATE" formControlName="dateDebut" placeholder="Saisir la date de début ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+
+                <div class="mb-8"
+                    *ngIf="sessionForm.get('dateDebut')!.invalid && (sessionForm.get('dateDebut')!.dirty || sessionForm.get('dateDebut')!.touched)">
+                    <app-form-message *ngIf="sessionForm.get('dateDebut')!.errors?.['required']"
+                        text="Veuillez saisir la date de début"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Date de fin</span>
+                <input type="date" id="dateFin" formControlName="dateFin" placeholder="Saisir la date de fin ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+
+                <div class="mb-8"
+                    *ngIf="sessionForm.get('dateFin')!.invalid && (sessionForm.get('dateFin')!.dirty || sessionForm.get('dateFin')!.touched)">
+                    <app-form-message *ngIf="sessionForm.get('dateFin')!.errors?.['required']"
+                        text="Veuillez saisir la date de fin"></app-form-message>
+                </div>
+            </div>
+            <div class="md:col-span-3 col-span-full">
+                <label for="niveauEtude" class="mb-2 block text-sm text-gray-400">Niveau d'étude</label>
+                <select id="niveauEtude" formControlName="niveauEtude"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option *ngFor="let niveau of niveauxEtude" [value]="niveau.id">{{ niveau.libelle }}</option>
+                </select>
+                <div *ngIf="sessionForm.get('niveauEtude')!.invalid && (sessionForm.get('niveauEtude')!.dirty || sessionForm.get('niveauEtude')!.touched)">
+                    <app-form-message *ngIf="sessionForm.get('niveauEtude')!.errors?.['required']"
+                        text="Veuillez saisir le niveau d'étude"></app-form-message>
+                </div>
+            </div>
+            <div class="md:col-span-3 col-span-full">
+                <label for="anneeAcademique" class="mb-2 block text-sm text-gray-400">Année académique</label>
+                <select id="anneeAcademique" formControlName="anneeAcademique"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option *ngFor="let anneeAcademique of anneesAcademiques" [value]="anneeAcademique.id">{{ anneeAcademique.libelle }}</option>
+                </select>
+                <div *ngIf="sessionForm.get('anneeAcademique')!.invalid && (sessionForm.get('anneeAcademique')!.dirty || sessionForm.get('anneeAcademique')!.touched)">
+                    <app-form-message *ngIf="sessionForm.get('anneeAcademique')!.errors?.['required']"
+                        text="Veuillez saisir le niveau d'étude"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Description (facultative)</span>
+                <textarea rows="5" id="description" formControlName="description"
+                    placeholder="Saisir la description ici..."
+                    class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
+            </div>
+        </div>
+    </form>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="closeNouvelleSessionModal()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+        <app-custom-button (click)="ajouterSession()" text="Enregistrer"></app-custom-button>
+    </div>
+</app-custom-modal>

@@ -1,0 +1,18 @@
+.resource-icon {
+    width: 5em !important;
+    height: 5em !important;
+}
+
+.resource-card {
+    // cursor: pointer !important;
+
+    .resource-options-btn {
+        display: none;
+    }
+}
+
+.resource-card:hover {
+    .resource-options-btn {
+        display: flex;
+    }
+}

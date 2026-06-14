@@ -1,0 +1,35 @@
+<app-custom-modal title="Ajouter un fichier" subtitle="" (onCloseModal)="closeModal(); customFilePicker.reset()" [center]="true" [showModal]="showFichierRessourceModal">
+    <form [formGroup]="nouveauFichierRessourceForm">
+        <div class="mb-6">
+            <span class="block text-sm text-gray-400 md:mb-0 mb-4">Fichier</span>
+            <app-custom-file-picker #customFilePicker [mediaType]="typesMedia.ALL" inputID="fichier" (onFileChanged)="onFichierChange($event)"></app-custom-file-picker>
+
+            <div class="mb-8"
+                *ngIf="nouveauFichierRessourceForm.get('fichier')!.invalid && (nouveauFichierRessourceForm.get('fichier')!.dirty || nouveauFichierRessourceForm.get('fichier')!.touched)">
+                <app-form-message *ngIf="nouveauFichierRessourceForm.get('fichier')!.errors?.['required']"
+                    text="Veuillez sélectionnner un fichier"></app-form-message>
+            </div>
+        </div>
+        <div class="mb-6">
+            <span class="mb-2 block text-sm text-gray-400">Titre (optionnel)</span>
+            <input type="text" id="titre" formControlName="titre" placeholder="Saisir le titre ici..."
+                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+
+            <div class="mb-8"
+                *ngIf="nouveauFichierRessourceForm.get('titre')!.invalid && (nouveauFichierRessourceForm.get('titre')!.dirty || nouveauFichierRessourceForm.get('titre')!.touched)">
+                <app-form-message *ngIf="nouveauFichierRessourceForm.get('titre')!.errors?.['required']"
+                    text="Veuillez saisir le titre"></app-form-message>
+            </div>
+        </div>
+        <div class="mb-6">
+            <span class="mb-2 block text-sm text-gray-400">Description (optionnel)</span>
+            <textarea rows="5" id="titre" formControlName="description"
+                placeholder="Saisir la description ici..."
+                class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
+        </div>
+    </form>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="closeModal(); customFilePicker.reset()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+        <app-custom-button (click)="ajouterFichierRessource(); customFilePicker.reset()" text="Enregistrer"></app-custom-button>
+    </div>
+</app-custom-modal>

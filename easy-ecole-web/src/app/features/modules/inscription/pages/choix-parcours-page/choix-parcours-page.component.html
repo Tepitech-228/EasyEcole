@@ -1,0 +1,162 @@
+<app-return-back></app-return-back>
+
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Choix de parcours" subtitle="Choisissez vos parcours dans l'ordre de préférence"></app-header-title>
+    <div class="flex justify-end items-center">
+        <app-custom-button (click)="confirmerChoix()" text="Valider"></app-custom-button>
+    </div>
+</div>
+
+<div *ngIf="demandeInscription" class="flex flex-col">
+    <div>
+        <div class="overflow-x-auto">
+            <div class="py-2 inline-block min-w-full">
+                <div class="overflow-hidden">
+                    <!-- <div class="min-w-full">
+                        <div class="flex flex-col items-center mx-auto">
+                            <div class="flex items-center"></div>
+                        </div>
+                    </div> -->
+                    <div class="w-7/12 max-w-4xl mx-auto">
+                        <table class="min-w-full mb-12">
+                            <tbody>
+                                <tr *ngIf="parcoursChoisis!.length == 0"
+                                    class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                                    <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                        colspan="5">Aucun parcours choisi</td>
+                                </tr>
+                                <tr *ngFor="let parcoursChoisi of parcoursChoisis; index as i" class="bg-white hover:bg-gray-50 p-0 border-b border-slate-200 transition duration-300 ease-in-out">
+                                    <!-- <td class="w-12 text-sm text-center py-4 text-gray-600 font-regular whitespace-nowrap">
+
+                                    </td> -->
+                                    <td class="w-12 text-sm text-center py-4 text-gray-600 font-regular whitespace-nowrap">{{ i + 1 }}</td>
+                                    <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap">
+                                        {{ parcoursChoisi.parcours!.titre }}
+                                    </td>
+                                    <td class="w-12 text-sm text-center py-4 text-gray-600 font-regular whitespace-nowrap">
+                                        <button (click)="retirerParcours(i)"
+                                            class="p-1 rounded focus:ring-1 focus:ring-gray-300">
+                                            <img src="assets/icons/remove.svg" alt="remove">
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="w-full mb-8">
+                            <app-form-message *ngIf="minParcoursChoisisError" [text]="'Veuillez choisir au moins ' + MIN_PARCOURS_CHOISIS + ' parcours'"></app-form-message>
+                            <app-form-message *ngIf="maxParcoursChoisisError" [text]="'Vous devez choisir moins de ' + MAX_PARCOURS_CHOISIS + ' parcours'"></app-form-message>
+                        </div>
+                        <div class="flex items-center justify-center">
+                            <!-- <button (click)="openChoixParcoursModal()"
+                                class="p-1 rounded focus:ring-1 focus:ring-gray-300">
+                                <img src="assets/icons/add.svg" alt="add">
+                            </button> -->
+                            <app-custom-button (click)="openChoixParcoursModal()" text="Ajouter" [outlined]="true" [fullWidth]="true" [disabled]="parcoursChoisis.length == MAX_PARCOURS_CHOISIS"></app-custom-button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- <div class="w-full flex justify-end items-center">
+        <app-custom-button (click)="null" [disabled]="true" text="Valider"></app-custom-button>
+    </div> -->
+</div>
+
+<!-- // Modals -->
+<app-custom-modal title="Choisir un parcours" subtitle="Faites votre choix de parcours pour la demande d'inscription" (onCloseModal)="closeChoixParcoursModal()" [center]="true" [showModal]="showChoixParcoursModal">
+    <div class="mb-6 w-full">
+        <span class="mb-2 block text-sm text-gray-400">Parcours</span>
+        <select [(ngModel)]="selectedParcoursId" (change)="onChange($event)"
+            class="block min-w-full rounded-md border-0 py-1.5 text-gray-600 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:max-w-xs sm:text-sm sm:leading-6">
+            <option *ngFor="let p of parcours" [value]="p.id">{{ p.titre }}</option>
+        </select>
+        <app-form-message *ngIf="selectedParcoursId == undefined" text="Veuillez choisir un parcours"></app-form-message>
+    </div>
+
+    <ng-container *ngIf="selectedParcoursId && !alreadySelected">
+        <div *ngIf="_prerequisParcours.length == 0" class="text-sm text-gray-400 text-center py-8">Aucun prérequis
+        </div>
+        <div *ngFor="let prerequis of _prerequisParcours" class="w-full">
+            <div class="w-full flex flex-col items-center mb-5">
+                <div class="w-full mb-3 text-sm font-semibold text-gray-700 text-center">{{ prerequis[0].libelle }}
+                </div>
+                <div class="w-full overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-100 border-b">
+                            <tr>
+                                <th scope="col" *ngFor="let col of columnsSchema"
+                                    class="text-sm font-semibold text-gray-600 px-2 py-4 text-left">
+                                    <div class="px-2">{{ col.label }}</div>
+                                </th>
+                                <th scope="col" class="text-sm font-semibold text-gray-600 px-2 py-4 text-left">
+                                    <div class="px-2">Note obtenue</div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngIf="prerequis[1].length == 0"
+                                class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                                <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                    colspan="5">Aucune note requise</td>
+                            </tr>
+                            <tr *ngFor="let row of prerequis[1]"
+                                class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                <td *ngFor="let col of columnsSchema"
+                                    class="prerequis-no-arrow bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <input style="width: 120px;" readonly *ngIf="col.type == 'number'" type="number"
+                                        class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6 focus:ring-0 focus:border-0"
+                                        [value]="row[col.key]" />
+    
+                                    <input type="text" *ngIf="col.key == columnsSchema[0].key" readonly
+                                        class="block min-w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6 focus:ring-0 focus:border-0"
+                                        [value]="row[col.key]" />
+    
+                                    <select disabled *ngIf="col.type == 'list' && col.key != columnsSchema[0].key"
+                                        [ngSwitch]="col.key"
+                                        class="prerequis-select w-full h-full bg-transparent border-0 m-0 px-2 py-4 sm:text-sm sm:leading-6 focus:ring-0 focus:border-0"
+                                        [value]="row[col.key]">
+                                        <ng-container *ngSwitchCase="columnsSchema[1].key">
+                                            <option [value]="periodesEvaluation.EXAM">Examen</option>
+                                            <option [value]="periodesEvaluation.TRIM1">1er Trimestre</option>
+                                            <option [value]="periodesEvaluation.TRIM2">2e Trimestre</option>
+                                            <option [value]="periodesEvaluation.TRIM3">3e Trimestre</option>
+                                            <option [value]="periodesEvaluation.SEM1">1er Semestre</option>
+                                            <option [value]="periodesEvaluation.SEM2">3e Semestre</option>
+                                        </ng-container>
+                                        <ng-container *ngSwitchCase="columnsSchema[2].key">
+                                            <option [value]="typesEvaluation.MOY">Moyenne</option>
+                                            <option [value]="typesEvaluation.DST">Devoir sur table</option>
+                                            <option [value]="typesEvaluation.COMPO">Composition</option>
+                                        </ng-container>
+                                    </select>
+                                </td>
+    
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <input style="width: 120px;" [(ngModel)]="_prerequisParcoursChoisi[row['id']]"
+                                        type="number" min="0" step=0.01 oninput="validity.valid||(value='');"
+                                        class="block w-full h-full border-0 m-0 px-2 py-4 ring-1 ring-inset ring-gray-300 text-gray-600 bg-transparent sm:text-sm sm:leading-6" />
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </ng-container>
+    <div class="w-full">
+        <app-form-message *ngIf="containsEmptyNote" text="Veuillez saisir toutes les notes"></app-form-message>
+        <app-form-message *ngIf="alreadySelected" text="Ce parcours a été déjà choisi. Veuillez choisir un autre"></app-form-message>
+    </div>
+    <div class="py-3 flex justify-end gap-x-10">
+        <app-custom-button [disabled]="alreadySelected || containsEmptyNote" (click)="choisirParcours()" text="Valider"></app-custom-button>
+    </div>
+</app-custom-modal>
+
+<app-custom-modal title="Confirmer vos choix" subtitle="En confirmant vos choix de parcours, vous ne pourrez plus revenir en arrière" (onCloseModal)="showConfirmationModal = false" [center]="true" [showModal]="showConfirmationModal">
+	<div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="showConfirmationModal = false" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+        <app-custom-button (click)="valider()" text="Confirmer"></app-custom-button>
+    </div>
+</app-custom-modal>

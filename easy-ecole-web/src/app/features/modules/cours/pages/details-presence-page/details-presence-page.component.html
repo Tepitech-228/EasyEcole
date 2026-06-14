@@ -1,0 +1,434 @@
+<app-return-back></app-return-back>
+
+<ng-container *ngIf="listePresence">
+    <div class="flex md:flex-row flex-col items-start justify-between mb-8">
+        <app-header-title title="Liste de présences: {{ listePresence.cours ? listePresence.cours.code + ' - ' + listePresence.cours.intitule : listePresence.titre }}">
+            <div *ngIf="listePresence.cours" class="mt-2 md:mb-0 mb-8 flex md:flex-row flex-wrap gap-x-4 gap-y-2">
+                <div *ngIf="listePresence.cours.parcours?.niveauEtude" class="flex items-center text-secondary">
+                    <img src="assets/icons/student.svg" alt="icon">
+                    <div class="px-2 text-sm">{{ listePresence.cours.parcours?.niveauEtude?.libelle ?? '---' }}</div>
+                </div>
+                <div class="flex items-center text-secondary">
+                    <img src="assets/icons/category-light.svg" alt="icon">
+                    <div class="px-2 text-sm">{{ listePresence.cours.classe ? listePresence.cours.classe.libelle : '---' }}</div>
+                </div>
+            </div>
+        </app-header-title>
+        <div class="flex justify-end items-center gap-x-4">
+            <app-custom-button *ngIf="(rolesValue.isEnseignant || rolesValue.isInstitution)" text="Nouvelle présence" (click)="openNouvellePresenceModal()"></app-custom-button>
+        </div>
+    </div>
+
+    <div class="w-full flex justify-between items-center mb-8">
+        <div class="grid grid-cols-4 w-full gap-x-2 gap-y-4">
+            <div class="block xl:col-span-3 lg:col-span-3 md:col-span-3 col-span-full">
+                <div class="flex flex-col">
+                    <div class="overflow-x-auto mb-8">
+                        <div class="py-2 inline-block min-w-full">
+                            <div class="overflow-hidden">
+                                <table class="min-w-full">
+                                    <thead class="bg-gray-100 border-b">
+                                        <tr>
+                                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                                <div class="px-2">
+                                                    #
+                                                </div>
+                                            </th>
+                                            <th scope="col"
+                                                class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                                <div class="px-2">
+                                                    Apprenant
+                                                </div>
+                                            </th>
+                                            <th *ngFor="let presence of presences" scope="col" class="min-w-96 text-sm font-medium text-gray-900 px-2 py-4 text-left" style="min-width: 200px !important;">
+                                                <div class="px-2 flex justify-center items-center gap-x-2">
+                                                    <img class="opacity-80" width="20" src="assets/icons/clock-outline.svg" alt="icon">
+                                                    <div>{{ presence.heureDebut }} à {{ presence.heureFin }}</div>
+                                                </div>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr *ngIf="coursParticipants.length==0"
+                                            class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                                colspan="5">Aucun participant</td>
+                                        </tr>
+                                        <tr *ngFor="let coursParticipant of coursParticipants; index as index"
+                                            class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                            <td
+                                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                                <div
+                                                    class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                    {{ index + 1 }}
+                                                </div>
+                                            </td>
+                                            <td
+                                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                                <div
+                                                    class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                    <div class="flex items-center gap-x-2">
+                                                        <img class="object-cover w-8 h-8 rounded-full border-2 border-gray-300"
+                                                            [src]="coursParticipant.utilisateur!.apprenant?.photo ? PHOTOS_PATH + coursParticipant.utilisateur!.apprenant?.photo : 'assets/images/blank-profile-picture.png'"
+                                                            alt="">
+                                                        <div class="pr-8">
+                                                            <h2 class="text-sm font-medium text-gray-800 dark:text-white ">{{
+                                                                coursParticipant.utilisateur!.nom + ' ' + coursParticipant.utilisateur!.prenoms }}
+                                                            </h2>
+                                                            <p class="text-xs font-normal text-gray-600 dark:text-gray-400">{{
+                                                                coursParticipant.utilisateur!.email }}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td *ngFor="let presence of presences; index as presenceIndex" class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2" [ngSwitch]="getEtatPresence(presenceIndex, coursParticipant.id!)">
+                                                <div *ngSwitchCase="etatsDePresence.PRESENT" class="flex justify-center">
+                                                    <app-custom-badge color="green" text="Présent"></app-custom-badge>
+                                                </div>
+                                                <div *ngSwitchCase="etatsDePresence.ABSENT" class="flex justify-center">
+                                                    <app-custom-badge color="red" text="Absent"></app-custom-badge>
+                                                </div>
+                                                <div *ngSwitchCase="etatsDePresence.ABSENCE_JUSTIFIEE" class="flex justify-center">
+                                                    <app-custom-badge color="yellow" text="Absence justifiée"></app-custom-badge>
+                                                </div>
+                                                <div *ngSwitchDefault class="flex justify-center">
+                                                    <app-custom-badge color="gray" text="Non renseigné"></app-custom-badge>
+                                                </div>
+                                            </td>
+                                            <!-- <td
+                                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                                <div
+                                                    class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                    {{ demande.dateDemande! | date: 'dd/MM/YYYY' }} à {{ demande.dateDemande! | date:
+                                                    'HH:mm' }}</div>
+                                            </td>
+                                            <td *ngIf="rolesValue.isInstitution"
+                                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                                <div
+                                                    class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                    <span>
+                                                        <app-custom-button [link]="'/inscription/demandes/' + demande.id"
+                                                            [text]="demande.reponseInscription == undefined ? 'Traiter' : 'Details'"></app-custom-button>
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td *ngIf="rolesValue.isApprenant"
+                                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                                <div
+                                                    class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                    <span>
+                                                        <app-custom-button [link]="'/inscription/demandes/' + demande.id"
+                                                            text="Détails"></app-custom-button>
+                                                    </span>
+                                                </div>
+                                            </td> -->
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- <div class="flex justify-between items-center mb-8">
+                        <div class="text-sm text-gray-500">Affichage de 5 - 10 sur 25 résultats</div>
+                        <div class="flex space-x-1">
+                            <button class="rounded border border-slate-300 py-2 px-3 text-center text-sm transition-all shadow-sm hover:shadow-lg text-slate-600 hover:text-white hover:bg-gray-800 hover:border-slate-800 focus:text-white focus:bg-gray-800 focus:border-slate-800 active:border-slate-800 active:text-white active:bg-gray-800 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none ml-2">
+                                Précédent
+                            </button>
+                            <button class="min-w-9 rounded bg-gray-800 py-2 px-3 border border-transparent text-center text-sm text-white transition-all shadow-md hover:shadow-lg focus:bg-slate-700 focus:shadow-none active:bg-slate-700 hover:bg-slate-700 active:shadow-none disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none ml-2">
+                                1
+                            </button>
+                            <button class="min-w-9 rounded border border-slate-300 py-2 px-3 text-center text-sm transition-all shadow-sm hover:shadow-lg text-slate-600 hover:text-white hover:bg-gray-800 hover:border-slate-800 focus:text-white focus:bg-gray-800 focus:border-slate-800 active:border-slate-800 active:text-white active:bg-gray-800 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none ml-2">
+                                2
+                            </button>
+                            <button class="min-w-9 rounded border border-slate-300 py-2 px-3 text-center text-sm transition-all shadow-sm hover:shadow-lg text-slate-600 hover:text-white hover:bg-gray-800 hover:border-slate-800 focus:text-white focus:bg-gray-800 focus:border-slate-800 active:border-slate-800 active:text-white active:bg-gray-800 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none ml-2">
+                                3
+                            </button>
+                            <button class="min-w-9 rounded border border-slate-300 py-2 px-3 text-center text-sm transition-all shadow-sm hover:shadow-lg text-slate-600 hover:text-white hover:bg-gray-800 hover:border-slate-800 focus:text-white focus:bg-gray-800 focus:border-slate-800 active:border-slate-800 active:text-white active:bg-gray-800 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none ml-2">
+                                Suivant
+                            </button>
+                          </div>
+                    </div> -->
+                </div>
+                <!-- <div *ngFor="let presence of [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]" class="flex flex-col">
+                    <app-details-section text="12 H 00 - 15 H 00">
+                        <div *ngIf="rolesValue.isInstitution || rolesValue.isApprenant" class="relative">
+                            <div>
+                                <button (click)="null"
+                                    class="p-1 rounded focus:ring-1 focus:ring-gray-300">
+                                    <img src="assets/icons/keyboard_arrow_down.svg" alt="add">
+                                </button>
+                            </div>
+                        </div>
+                    </app-details-section>
+                    <div class="overflow-x-auto transition delay-150 duration-300 ease-in-out">
+                        <div class="py-2 inline-block min-w-full">
+                            <div class="overflow-hidden">
+                                <table class="min-w-full">
+                                    <thead class="bg-gray-100 border-b">
+                                        <tr>
+                                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                                <div class="px-2">
+                                                    #
+                                                </div>
+                                            </th>
+                                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                                <div class="px-2">
+                                                    Nom
+                                                </div>
+                                            </th>
+                                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                                <div class="px-2">
+                                                    Prénoms
+                                                </div>
+                                            </th>
+                                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                                <div class="px-2">
+                                                Justification
+                                                </div>
+                                            </th>
+                                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
+                                                <div class="px-2">
+                                                    Action
+                                                </div>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr *ngIf="demandesInscription.length==0"
+                                            class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                                colspan="5">Aucune demande</td>
+                                        </tr>
+                                        <tr *ngFor="let participant of [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]"
+                                            class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                            <td
+                                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                                <div
+                                                    class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                    <img class="object-cover w-12 h-12 rounded-full border-2 border-gray-300"
+                                                        [src]="'assets/images/blank-profile-picture.png'" alt="">
+                                                </div>
+                                            </td>
+                                            <td
+                                                class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                                <div
+                                                    class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:leading-6">
+                                                    KAYI
+                                                </div>
+                                            </td>
+                                            <td
+                                                class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                                <div
+                                                    class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:leading-6">
+                                                    Kofjo Armand
+                                                </div>
+                                            </td>
+                                            <td
+                                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                                <div
+                                                    class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                    {{ '02-02-24' | date: 'dd/MM/YYYY' }}
+                                                </div>
+                                            </td>
+                                            <td *ngIf="rolesValue.isInstitution"
+                                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                                <div
+                                                    class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                    <span>
+                                                        <app-custom-button [link]="'/inscription/demandes/' + demande.id"
+                                                            [text]="demande.reponseInscription == undefined ? 'Traiter' : 'Details'"></app-custom-button>
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td *ngIf="rolesValue.isApprenant"
+                                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                                <div
+                                                    class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                    <span>
+                                                        <app-custom-button [link]="'/inscription/demandes/' + demande.id"
+                                                            text="Détails"></app-custom-button>
+                                                    </span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div> -->
+            </div>
+            <div class="block xl:col-span-1 lg:col-span-1 md:col-span-1 col-span-full">
+                <div class="w-full h-full border-l-2 border-gray-500">
+                    <div class="pl-10">
+                        <div class="flex flex-col gap-y-4">
+                            <div class="text-md text-gray-600 mb-2">Choisir une date</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</ng-container>
+
+
+<!-- Modals -->
+<app-custom-modal title="Nouvelle présence" subtitle="Ajouter une nouvelle présence" (onCloseModal)="closeNouvellePresenceModal()" [center]="true" [showModal]="showNouvellePresenceModal">
+    <form [formGroup]="nouvellePresenceForm">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="col-span-2">
+                <label for="date" class="mb-2 block text-sm leading-6 text-gray-600">Date</label>
+                <input type="date" id="date" formControlName="date" placeholder="Saisir la date ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <div *ngIf="nouvellePresenceForm.get('date')!.invalid && (nouvellePresenceForm.get('date')!.dirty || nouvellePresenceForm.get('date')!.touched)">
+                    <app-form-message *ngIf="nouvellePresenceForm.get('date')!.errors?.['required']"
+                        text="Veuillez choisir la date"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-2">
+                <label for="heureDebut" class="mb-2 block text-sm leading-6 text-gray-600">Heure de début</label>
+                <input type="time" id="heureDebut" formControlName="heureDebut" placeholder="Saisir l'écheance ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <div *ngIf="nouvellePresenceForm.get('heureDebut')!.invalid && (nouvellePresenceForm.get('heureDebut')!.dirty || nouvellePresenceForm.get('heureDebut')!.touched)">
+                    <app-form-message *ngIf="nouvellePresenceForm.get('heureDebut')!.errors?.['required']"
+                        text="Veuillez entrer l'heure de début"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-2">
+                <label for="heureFin" class="mb-2 block text-sm leading-6 text-gray-600">Heure de fin</label>
+                <input type="time" id="heureFin" formControlName="heureFin" placeholder="Saisir l'écheance ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <div *ngIf="nouvellePresenceForm.get('heureFin')!.invalid && (nouvellePresenceForm.get('heureFin')!.dirty || nouvellePresenceForm.get('heureFin')!.touched)">
+                    <app-form-message *ngIf="nouvellePresenceForm.get('heureFin')!.errors?.['required']"
+                        text="Veuillez entrer l'heure de fin"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-full">
+                <div class="flex items-center justify-between">
+                    <label for="" class="mb-2 block text-sm leading-6 text-gray-600">Participants</label>
+                    <div class="relative">
+                        <div>
+                            <!-- <button (click)="showPrerequisModal = true"
+                                class="p-1 rounded focus:ring-1 focus:ring-gray-300">
+                                <img src="assets/icons/add.svg" alt="add">
+                            </button> -->
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <div class="py-2 inline-block min-w-full">
+                        <div class="overflow-hidden">
+                            <table class="min-w-full">
+                                <thead class="bg-gray-100 border-b">
+                                    <tr>
+                                        <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                            <div class="px-2">
+                                                #
+                                            </div>
+                                        </th>
+                                        <th scope="col"
+                                            class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                            <div class="px-2">
+                                                Apprenant
+                                            </div>
+                                        </th>
+                                        <th scope="col" class="min-w-96 text-sm font-medium text-gray-900 px-2 py-4 text-left" style="min-width: 200px !important;">
+                                            <div class="px-2 flex justify-center items-center gap-x-2">
+                                                Présence
+                                            </div>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody formArrayName="participants">
+                                    <tr *ngIf="coursParticipants.length==0"
+                                        class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                                        <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                            colspan="5">Aucun participant</td>
+                                    </tr>
+                                    <tr *ngFor="let participant of participantsControls.controls; index as index" [formGroupName]="index"
+                                        class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                        <td
+                                            class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <div
+                                                class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                {{ index + 1 }}
+                                            </div>
+                                        </td>
+                                        <td
+                                            class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <div
+                                                class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                <div class="flex items-center gap-x-2">
+                                                    <img *ngIf="participant.value.utilisateur" class="object-cover w-8 h-8 rounded-full border-2 border-gray-300"
+                                                        [src]="participant.value.utilisateur!.apprenant?.photo ? PHOTOS_PATH + participant.value.utilisateur!.apprenant?.photo : 'assets/images/blank-profile-picture.png'"
+                                                        alt="">
+                                                    <div *ngIf="participant.value.utilisateur" class="pr-8">
+                                                        <h2 class="text-sm font-medium text-gray-800 dark:text-white ">{{
+                                                            participant.value.utilisateur!.nom + ' ' + participant.value.utilisateur!.prenoms }}
+                                                        </h2>
+                                                        <p class="text-xs font-normal text-gray-600 dark:text-gray-400">{{
+                                                            participant.value.utilisateur!.email }}</p>
+                                                    </div>
+                                                    <input type="hidden" formControlName="coursParticipant">
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <!-- <app-custom-badge *ngSwitchCase="false" color="green" text="Validée"></app-custom-badge>
+                                            <app-custom-badge *ngSwitchDefault text="En cours"></app-custom-badge>
+
+                                             -->
+                                            <ng-select
+                                                [items]="etatsDePresenceTextAndColor"
+                                                bindValue="type"
+                                                bindLabel="text"
+                                                [clearable]="false"
+                                                [searchable]="false"
+                                                formControlName="etatDePresence"
+                                                class="block w-full rounded-md text-gray-900 placeholder:text-gray-400 sm:text-sm sm:leading-6">
+                                                <ng-template ng-label-tmp let-item="item">
+                                                    <app-custom-badge [color]="item.color" [text]="item.text"></app-custom-badge>
+                                                </ng-template>
+                                            </ng-select>
+                                        </td>
+                                        <!-- <td
+                                            class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <div
+                                                class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                {{ demande.dateDemande! | date: 'dd/MM/YYYY' }} à {{ demande.dateDemande! | date:
+                                                'HH:mm' }}</div>
+                                        </td>
+                                        <td *ngIf="rolesValue.isInstitution"
+                                            class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <div
+                                                class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                <span>
+                                                    <app-custom-button [link]="'/inscription/demandes/' + demande.id"
+                                                        [text]="demande.reponseInscription == undefined ? 'Traiter' : 'Details'"></app-custom-button>
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td *ngIf="rolesValue.isApprenant"
+                                            class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <div
+                                                class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                <span>
+                                                    <app-custom-button [link]="'/inscription/demandes/' + demande.id"
+                                                        text="Détails"></app-custom-button>
+                                                </span>
+                                            </div>
+                                        </td> -->
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="closeNouvellePresenceModal()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+        <app-custom-button (click)="ajouterPresence()" text="Enregistrer"></app-custom-button>
+    </div>
+</app-custom-modal>

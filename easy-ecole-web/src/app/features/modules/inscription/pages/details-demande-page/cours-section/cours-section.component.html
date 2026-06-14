@@ -1,0 +1,161 @@
+<ng-container *ngIf="parcours">
+    <ng-container *ngIf="cours.length != 0">
+        <div *ngIf="!coursChoisis || coursChoisis.length == 0" class="w-full">
+            <app-custom-alert color="blue" [inline]="true" [show]="rolesValue.isApprenant">Veuillez choisir vos cours</app-custom-alert>
+            <app-custom-alert color="blue" [inline]="true" [show]="rolesValue.isInstitution">Choix des cours en cours</app-custom-alert>
+        </div>
+        
+        <div class="flex flex-col">
+            <div *ngIf="(!coursChoisis || coursChoisis.length == 0) && rolesValue.isApprenant" class="flex items-center justify-end py-1 gap-x-8 mb-4">
+                <div class="flex items-center gap-x-2">
+                    <input id="select" type="checkbox" [(ngModel)]="allSelected" (change)="selectAllCours()"
+                        class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                    <label for="select"
+                        class="block text-sm font-regular leading-6 text-gray-700">Tout sélectionner</label>
+                </div>
+                <div class="flex items-center gap-x-2">
+                    <input id="deselect" type="checkbox" [(ngModel)]="allDeselected" (change)="deselectAllCours()"
+                        class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                    <label for="deselect"
+                        class="block text-sm font-regular leading-6 text-gray-700">Tout déselectionner</label>
+                </div>
+            </div>
+
+            <div *ngIf="coursChoisis && coursChoisis.length != 0 && rolesValue.isInstitution" class="flex items-center justify-end py-1 gap-x-2 mb-4">
+                <app-custom-button (click)="updateAllCoursChoisi(etatsCoursChoisi.VALIDE)" [outlined]="true" text="Tout valider" color="green"></app-custom-button>
+                <app-custom-button (click)="updateAllCoursChoisi(etatsCoursChoisi.REJETE)" [outlined]="true" text="Tout rejeter" color="red"></app-custom-button>
+            </div>
+
+            <div class="mb-8">
+                <div class="overflow-x-auto">
+                    <div class="py-2 inline-block min-w-full">
+                        <div class="overflow-hidden">
+                            <table class="min-w-full">
+                                <thead class="bg-gray-100 border-b">
+                                    <tr>
+                                        <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                            <div class="px-2">
+                                                Code
+                                            </div>
+                                        </th>
+                                        <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                            <div class="px-2">
+                                                Libellé
+                                            </div>
+                                        </th>
+                                        <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                            <div class="px-2">
+                                                Crédit / Coefficient
+                                            </div>
+                                        </th>
+                                        <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                            <div class="px-2">
+                                                Annee / Classe
+                                            </div>
+                                        </th>
+                                        <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                            <div class="px-2">
+                                                Semestre
+                                            </div>
+                                        </th>
+                                        <th *ngIf="!coursChoisis || coursChoisis.length == 0" scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-center">
+                                            <div class="px-2">
+                                                Choix
+                                            </div>
+                                        </th>
+                                        <th *ngIf="coursChoisis && coursChoisis.length != 0" scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                            <div class="px-2">
+                                                Etat
+                                            </div>
+                                        </th>
+                                        <th *ngIf="coursChoisis && coursChoisis.length != 0 && rolesValue.isInstitution" scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
+                                            <div class="px-2">
+                                                Action
+                                            </div>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngIf="cours.length == 0"
+                                        class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                                        <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                            colspan="5">Aucun cours</td>
+                                    </tr>
+                                    <tr *ngFor="let c of cours; index as index"
+                                        class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                        <td
+                                        class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ c.code }}</div>
+                                        </td>
+                                        <td
+                                            class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ c.intitule }}</div>
+                                        </td>
+                                        <td
+                                            class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ c.credit ?? '---' }}</div>
+                                        </td>
+                                        <td
+                                            class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                <span>{{c.classe?.libelle}}</span>
+                                            </div>
+                                        </td>
+                                        <td
+                                            class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <div [ngSwitch]="c.semestre" class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                <span *ngSwitchCase="semestresParcours.SEMESTRE1">1</span>
+                                                <span *ngSwitchCase="semestresParcours.SEMESTRE2">2</span>
+                                                <span *ngSwitchCase="semestresParcours.SEMESTRE3">3</span>
+                                                <span *ngSwitchCase="semestresParcours.SEMESTRE4">4</span>
+                                                <span *ngSwitchCase="semestresParcours.SEMESTRE5">5</span>
+                                                <span *ngSwitchCase="semestresParcours.SEMESTRE6">6</span>
+                                            </div>
+                                        </td>
+                                        <td *ngIf="coursChoisis && coursChoisis.length != 0" class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2"
+                                            [ngSwitch]="getEtatCoursChoisi(c.id!)">
+                                            <app-custom-badge *ngSwitchCase="etatsCoursChoisi.ENCOURS" color="blue" text="En cours"></app-custom-badge>
+                                            <app-custom-badge *ngSwitchCase="etatsCoursChoisi.VALIDE" color="green" text="Validé"></app-custom-badge>
+                                            <app-custom-badge *ngSwitchCase="etatsCoursChoisi.REJETE" color="red" text="Rejeté"></app-custom-badge>
+                                        </td>
+                                        <td *ngIf="!coursChoisis || coursChoisis.length == 0" class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <div
+                                                class="block flex justify-center gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                <div class="flex items-center gap-x-3">
+                                                    <input type="checkbox" [disabled]="c.estObligatoire ?? false || rolesValue.isInstitution" [(ngModel)]="choixCours[c.id!]"
+                                                        class="h-4 w-4 border-gray-600 text-indigo-600 focus:ring-indigo-600">
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td *ngIf="coursChoisis && coursChoisis.length != 0 && rolesValue.isInstitution" class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <div
+                                                class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                <app-custom-button *ngIf="getEtatCoursChoisi(c.id!) != etatsCoursChoisi.VALIDE" (click)="updateCoursChoisi(c.id!, etatsCoursChoisi.VALIDE)" text="Valider" color="green"></app-custom-button>
+                                                <app-custom-button *ngIf="getEtatCoursChoisi(c.id!) != etatsCoursChoisi.REJETE" (click)="updateCoursChoisi(c.id!, etatsCoursChoisi.REJETE)" text="Rejeter" color="red"></app-custom-button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div *ngIf="coursChoisis && coursChoisis.length != 0 && rolesValue.isInstitution" class="w-full flex justify-end items-center">
+                <app-custom-button (click)="nextStep.emit()" [disabled]="false" text="Terminer"></app-custom-button>
+            </div>
+        </div>
+    </ng-container>
+
+    <ng-container *ngIf="cours.length == 0">
+        <p class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap">Auncun cours pour ce parcours</p>
+    </ng-container>
+</ng-container>
+
+<!-- Modals  -->
+<app-custom-modal title="Confirmer vos choix" subtitle="En confirmant vos choix de cours, vous ne pourrez plus revenir en arrière" (onCloseModal)="showValidationModal = false" [center]="true" [showModal]="showValidationModal">
+	<div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="showValidationModal = false" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+        <app-custom-button (click)="validerCoursChoisis()" text="Confirmer"></app-custom-button>
+    </div>
+</app-custom-modal>

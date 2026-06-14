@@ -1,0 +1,115 @@
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Demandes" subtitle="Retrouver la liste des demandes d'inscription"></app-header-title>
+</div>
+
+<div class="flex flex-col">
+    <div class="overflow-x-auto">
+        <div class="py-2 inline-block min-w-full">
+            <div class="overflow-hidden">
+                <table class="min-w-full">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    #
+                                </div>
+                            </th>
+                            <th *ngIf="rolesValue.isInstitution" scope="col"
+                                class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    Apprenant
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    Etat de traitement
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    Faite le
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
+                                <div class="px-2">
+                                    Action
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngIf="demandesInscription.length==0"
+                            class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                colspan="5">Aucune demande</td>
+                        </tr>
+                        <tr *ngFor="let demande of demandesInscription; index as index"
+                            class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                            <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div
+                                    class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    {{ index + 1 }}
+                                </div>
+                            </td>
+                            <td *ngIf="rolesValue.isInstitution"
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div
+                                    class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    <div class="flex items-center gap-x-2">
+                                        <img class="object-cover w-8 h-8 rounded-full border-2 border-gray-300"
+                                            [src]="demande.utilisateur!.apprenant?.photo ? PHOTOS_PATH + demande.utilisateur!.apprenant?.photo : 'assets/images/blank-profile-picture.png'"
+                                            alt="">
+                                        <div class="pr-8">
+                                            <h2 class="text-sm font-medium text-gray-800 dark:text-white ">{{
+                                                demande.utilisateur!.nom + ' ' + demande.utilisateur!.prenoms }}
+                                            </h2>
+                                            <p class="text-xs font-normal text-gray-600 dark:text-gray-400">{{
+                                                demande.utilisateur!.email }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2"
+                                [ngSwitch]="demande.dateValidation == undefined">
+                                <app-custom-badge *ngSwitchCase="false" color="green" text="Validée"></app-custom-badge>
+                                <app-custom-badge *ngSwitchDefault text="En cours"></app-custom-badge>
+                            </td>
+                            <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div
+                                    class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    {{ demande.dateDemande! | date: 'dd/MM/YYYY' }} à {{ demande.dateDemande! | date:
+                                    'HH:mm' }}</div>
+                            </td>
+                            <td *ngIf="rolesValue.isInstitution"
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div
+                                    class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    <span>
+                                        <app-custom-button [link]="'/inscription/demandes/' + demande.id"
+                                            [text]="demande.reponseInscription == undefined ? 'Traiter' : 'Details'"></app-custom-button>
+                                    </span>
+                                </div>
+                            </td>
+                            <td *ngIf="rolesValue.isApprenant"
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div
+                                    class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    <span>
+                                        <app-custom-button [link]="'/inscription/demandes/' + demande.id"
+                                            text="Détails"></app-custom-button>
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- // Modals -->
+<!-- <app-traitement-demande *ngIf="selectedDemande" [demande]="selectedDemande!" [showModal]="showModal" (onCloseModal)="closeModal()"></app-traitement-demande> -->

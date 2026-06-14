@@ -1,0 +1,137 @@
+<app-return-back></app-return-back>
+
+<ng-container *ngIf="demande">
+    <div *ngIf="rolesValue.isInstitution"
+        class="flex md:flex-row flex-col gap-y-6 justify-between md:items-start md-items-end w-full border-0 py-4 mb-6">
+        <div class="flex items-center gap-x-4">
+            <img class="object-cover w-16 h-16 rounded-full border-2 border-gray-300"
+                [src]="demande.utilisateur!.apprenant?.photo ? PHOTOS_PATH + demande.utilisateur!.apprenant?.photo : 'assets/images/blank-profile-picture.png'"
+                alt="">
+            <div class="flex flex-col justify-evenly h-16">
+                <h2 class="text-md font-semibold text-gray-800 dark:text-white">{{
+                    demande.utilisateur!.nom + ' ' + demande.utilisateur!.prenoms }}
+                </h2>
+                <p class="text-sm font-normal text-gray-600 dark:text-gray-400">{{
+                    demande!.utilisateur!.email }}</p>
+            </div>
+        </div>
+        <div *ngIf="currentItemSection == 1 && demande!.parcoursChoisis!.length != 0 && demande.reponseInscription == undefined" class="flex justify-end items-center gap-x-8">
+            <app-custom-button (click)="showReponseModal = true" text="Terminer"></app-custom-button>
+        </div>
+        <div *ngIf="currentItemSection == 5 && demande!.dateValidation == undefined" class="flex justify-end items-center gap-x-8">
+            <app-custom-button (click)="openValidationModal()" text="Valider"></app-custom-button>
+        </div>
+    </div>
+
+    <p class="text-sm font-normal text-gray-600 dark:text-gray-400">Matricule: {{
+        demande!.matricule }}</p>
+
+    <div class="mb-8">
+        <div class="flex items-center gap-x-10 mb-8">
+            <div class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0"
+                [ngSwitch]="demande.dateValidation == undefined">
+                <app-custom-badge *ngSwitchCase="false" color="green" text="Validée"></app-custom-badge>
+                <app-custom-badge *ngSwitchDefault text="En cours"></app-custom-badge>
+            </div>
+            <div class="block w-full h-full border-0 m-0 px-2 py-4 text-xs text-gray-600 bg-transparent">
+                Faite le {{ demande!.dateDemande! | date: 'dd/MM/YYYY' }} à {{ demande!.dateDemande! | date:
+                'HH:mm' }}</div>
+        </div>
+    </div>
+
+    <app-custom-wizard [items]="wizardItems" activeColor="bg-green-600" incompleteColor="bg-red-500"></app-custom-wizard>
+
+    <ng-container>
+        <!-- Section: Informations personnelles -->
+        <ng-container *ngIf="currentItemSection == 0">
+            <app-infos-section [utilisateur]="demande.utilisateur!"></app-infos-section>
+        </ng-container>
+        
+        <!-- Section: Choix parcours -->
+        <ng-container *ngIf="currentItemSection == 1">
+            <app-choix-parcours-section [parcours]="parcoursFinal" [demande]="demande" [rolesValue]="rolesValue" (nextStep)="initSteps()"></app-choix-parcours-section>
+        </ng-container>
+
+        <!-- Section: Cours -->
+        <ng-container *ngIf="currentItemSection == 2">
+            <app-cours-section [demandeId]="demande!.id!" [parcours]="parcoursFinal" [coursChoisis]="demande!.coursChoisis" [rolesValue]="rolesValue" (nextStep)="getDemandeInscription()"></app-cours-section>
+        </ng-container>
+
+        <!-- Section: Paiements -->
+        <ng-container *ngIf="currentItemSection == 3">
+            <app-paiements-section [demande]="demande" [coursChoisis]="demande!.coursChoisis" [rolesValue]="rolesValue"></app-paiements-section>
+        </ng-container>
+
+        <!-- Section: Documents -->
+        <ng-container *ngIf="currentItemSection == 4">
+            <app-documents-section [demande]="demande" [rolesValue]="rolesValue" (nextStep)="getDemandeInscription()"></app-documents-section>
+        </ng-container>
+
+        <!-- Section: Validation -->
+        <ng-container *ngIf="currentItemSection == 5">
+            <app-validation-section [parcours]="parcoursFinal" [demande]="demande" [coursChoisis]="demande!.coursChoisis" [rolesValue]="rolesValue"></app-validation-section>
+        </ng-container>
+    </ng-container>
+
+    <div class="flex justify-end items-end" *ngIf="rolesValue.isInstitution">
+        <div *ngIf="currentItemSection == 5 && demande!.dateValidation == undefined" class="flex justify-end items-center gap-x-8">
+            <app-custom-button (click)="openValidationModal()" text="Valider"></app-custom-button>
+        </div>
+    </div>
+</ng-container>
+
+<!-- Modals -->
+<app-custom-modal title="Réponse" subtitle="Valider la réponse et saisir un message qui sera envoyé à l'apprenant" (onCloseModal)="closeReponseModal()" [center]="true" [showModal]="showReponseModal">
+    <label class="text-sm leading-6 text-gray-800">Message (facultif)</label>
+    <textarea [(ngModel)]="messageReponseInscription"
+                class="mt-1 mb-4 w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                placeholder="" rows="5">
+    </textarea>
+    <app-form-message *ngIf="!demandeTraitee" text="Veuillez traiter tous les parcours de la demande"></app-form-message>
+    <div class="py-3 flex justify-between items-center">
+        <app-custom-button (click)="closeReponseModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+        <app-custom-button (click)="envoyerReponseInscription()" text="Envoyer"></app-custom-button>
+    </div>
+</app-custom-modal>
+
+<app-custom-modal title="Validation" subtitle="Valider la demande d'inscription et saisir un message qui sera envoyé à l'apprenant" (onCloseModal)="closeValidationModal()" [center]="true" [showModal]="showValidationModal">
+    <!-- <label class="text-sm leading-6 text-gray-800">Message (facultif)</label>
+    <textarea [(ngModel)]="messageValidationInscription"
+                class="mt-1 mb-4 w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                placeholder="" rows="5">
+    </textarea> -->
+
+    <form [formGroup]="validationDemandeInscriptionForm" class="">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Année / Classe</span>
+                <select id="classe" formControlName="classe"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option [value]="null">Sélectionnner une année ou une classe</option>
+                    <option *ngFor="let classe of classes" [value]="classe.id">{{ classe.libelle }}</option>
+                </select>
+                <div *ngIf="validationDemandeInscriptionForm.get('classe')!.invalid && (validationDemandeInscriptionForm.get('classe')!.dirty || validationDemandeInscriptionForm.get('classe')!.touched)">
+                    <app-form-message *ngIf="validationDemandeInscriptionForm.get('classe')!.errors?.['required']"
+                        text="Veuillez choisir la classe"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Année académique</span>
+                <select id="classe" formControlName="anneeAcademique"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option [value]="null">Sélectionnner une année académique</option>
+                    <option *ngFor="let anneeAcademique of anneesAcademiques" [value]="anneeAcademique.id">{{ anneeAcademique.libelle }}</option>
+                </select>
+                <div *ngIf="validationDemandeInscriptionForm.get('anneeAcademique')!.invalid && (validationDemandeInscriptionForm.get('anneeAcademique')!.dirty || validationDemandeInscriptionForm.get('anneeAcademique')!.touched)">
+                    <app-form-message *ngIf="validationDemandeInscriptionForm.get('anneeAcademique')!.errors?.['required']"
+                        text="Veuillez choisir l'année académique"></app-form-message>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="py-3 flex justify-between items-center">
+        <app-custom-button (click)="closeValidationModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+        <app-custom-button (click)="envoyerValidationInscription()" text="Envoyer"></app-custom-button>
+    </div>
+</app-custom-modal>

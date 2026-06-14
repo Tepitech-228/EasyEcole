@@ -1,0 +1,30 @@
+<div class="flex justify-between items-start gap-x-8 mb-8">
+    <app-header-title title="Parcours" subtitle="Consulter la liste des parcours proposés"></app-header-title>
+    <div class="flex justify-end items-center">
+        <app-custom-button *ngIf="rolesValue.isInstitution" text="Nouveau parcours" link="/orientation/parcours/nouveau"></app-custom-button>
+    </div>
+</div>
+
+<div class="w-full flex justify-between items-center mb-8">
+    <div class="flex md:flex-row flex-col gap-4">
+        <select [(ngModel)]="selectedCategorie" (change)="filtrerParcours()"
+            class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+            <option [value]="'undefined'">Filter par catégorie...</option>
+            <option *ngFor="let categorie of categories" [value]="categorie.id">{{ categorie.libelle }}</option>
+        </select>
+        <select [(ngModel)]="selectedNiveauEtude" (change)="filtrerParcours()"
+            class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+            <option [value]="'undefined'">Filter par niveau d'étude...</option>
+            <option *ngFor="let niveau of niveauxEtude" [value]="niveau.id">{{ niveau.libelle }}</option>
+        </select>
+    </div>
+    <div class="flex md:flex-row flex-col gap-4">
+        <input type="text" [(ngModel)]="searchParcours" (keyup)="rechercherParcours()" placeholder="Rechercher..." class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+    </div>
+</div>
+
+<div class="w-full flex justify-between items-center mb-8">
+    <div class="grid 2xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-2 md:grid-cols-2 grid-cols-1 w-full gap-x-12 gap-y-4">
+        <app-parcours-card *ngFor="let parcours of _parcours" [parcours]="parcours"></app-parcours-card>
+    </div>
+</div>

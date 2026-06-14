@@ -1,0 +1,291 @@
+<app-return-back></app-return-back>
+
+<ng-container *ngIf="cahierDeTexte">
+    <div class="flex md:flex-row flex-col items-start justify-between mb-8">
+        <app-header-title title="Cahier de texte: {{ cahierDeTexte.cours ? cahierDeTexte.cours.code + ' - ' + cahierDeTexte.cours.intitule : cahierDeTexte.titre }}">
+            <div *ngIf="cahierDeTexte.cours" class="mt-2 md:mb-0 mb-8 flex md:flex-row flex-wrap gap-x-4 gap-y-2">
+                <div *ngIf="cahierDeTexte.cours.parcours?.niveauEtude" class="flex items-center text-secondary">
+                    <img src="assets/icons/student.svg" alt="icon">
+                    <div class="px-2 text-sm">{{ cahierDeTexte.cours.parcours?.niveauEtude?.libelle ?? '---' }}</div>
+                </div>
+                <div class="flex items-center text-secondary">
+                    <img src="assets/icons/category-light.svg" alt="icon">
+                    <div class="px-2 text-sm">{{ cahierDeTexte.cours.classe ? cahierDeTexte.cours.classe.libelle : '---' }}</div>
+                </div>
+            </div>
+        </app-header-title>
+        <div class="flex justify-end items-center gap-x-4">
+            <app-custom-button *ngIf="(rolesValue.isEnseignant || rolesValue.isInstitution)" text="Nouveau bloc" (click)="openNouveauBlocCahierDeTexteModal()"></app-custom-button>
+        </div>
+    </div>
+
+    <div class="w-full flex justify-between items-center mb-8">
+        <div class="grid grid-cols-4 w-full gap-x-2 gap-y-4">
+            <div class="block xl:col-span-3 lg:col-span-3 md:col-span-3 col-span-full">
+                <div class="flex flex-col">
+                    <div class="overflow-x-auto mb-8">
+                        <div class="py-2 inline-block min-w-full">
+                            <div class="overflow-hidden">
+                                <table class="min-w-full">
+                                    <thead class="bg-gray-100 border-b">
+                                        <tr>
+                                            <!-- <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                                <div class="px-2">
+                                                    #
+                                                </div>
+                                            </th> -->
+                                            <th scope="col"
+                                                class="text-sm w-56 font-medium text-gray-900 px-2 py-4 text-left">
+                                                <div class="px-2">
+                                                    Heure
+                                                </div>
+                                            </th>
+                                            <th scope="col"
+                                                class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                                <div class="px-2">
+                                                    Contenu
+                                                </div>
+                                            </th>
+                                            <th scope="col"
+                                                class="text-sm w-48 font-medium text-gray-900 px-2 py-4 text-left">
+                                                <div class="px-2">
+                                                    Action
+                                                </div>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- <tr *ngIf="blocsCahierDeTexte.length==0"
+                                            class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                                colspan="5">Aucun participant</td>
+                                        </tr> -->
+                                        <tr *ngFor="let blocCahierDeTexte of blocsCahierDeTexte; index as index"
+                                            class="bg-white hover:bg-gray-100 p-0 border transition duration-300 ease-in-out">
+                                            <!-- <td
+                                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                                <div
+                                                    class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                    {{ index + 1 }}
+                                                </div>
+                                            </td> -->
+                                            <td
+                                                class="bg-yellow-50 text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                                <div
+                                                    class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                    <div class="px-2 flex justify-center items-center gap-x-2">
+                                                        <img class="opacity-80" width="20" src="assets/icons/clock-outline.svg" alt="icon">
+                                                        <div>{{ blocCahierDeTexte.heureDebut }} à {{ blocCahierDeTexte.heureFin }}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td
+                                                class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                                <div
+                                                    class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                    <div class="text-gray-500">
+                                                        <div class="ql-container ql-snow" [style.border]="'none'">
+                                                            <div class="w-full ql-editor p-0 text*base" [innerHTML]="getContenu(blocCahierDeTexte.contenu)"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td
+                                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                                <div
+                                                    class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- <div class="flex justify-between items-center mb-8">
+                        <div class="text-sm text-gray-500">Affichage de 5 - 10 sur 25 résultats</div>
+                        <div class="flex space-x-1">
+                            <button class="rounded border border-slate-300 py-2 px-3 text-center text-sm transition-all shadow-sm hover:shadow-lg text-slate-600 hover:text-white hover:bg-gray-800 hover:border-slate-800 focus:text-white focus:bg-gray-800 focus:border-slate-800 active:border-slate-800 active:text-white active:bg-gray-800 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none ml-2">
+                                Précédent
+                            </button>
+                            <button class="min-w-9 rounded bg-gray-800 py-2 px-3 border border-transparent text-center text-sm text-white transition-all shadow-md hover:shadow-lg focus:bg-slate-700 focus:shadow-none active:bg-slate-700 hover:bg-slate-700 active:shadow-none disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none ml-2">
+                                1
+                            </button>
+                            <button class="min-w-9 rounded border border-slate-300 py-2 px-3 text-center text-sm transition-all shadow-sm hover:shadow-lg text-slate-600 hover:text-white hover:bg-gray-800 hover:border-slate-800 focus:text-white focus:bg-gray-800 focus:border-slate-800 active:border-slate-800 active:text-white active:bg-gray-800 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none ml-2">
+                                2
+                            </button>
+                            <button class="min-w-9 rounded border border-slate-300 py-2 px-3 text-center text-sm transition-all shadow-sm hover:shadow-lg text-slate-600 hover:text-white hover:bg-gray-800 hover:border-slate-800 focus:text-white focus:bg-gray-800 focus:border-slate-800 active:border-slate-800 active:text-white active:bg-gray-800 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none ml-2">
+                                3
+                            </button>
+                            <button class="min-w-9 rounded border border-slate-300 py-2 px-3 text-center text-sm transition-all shadow-sm hover:shadow-lg text-slate-600 hover:text-white hover:bg-gray-800 hover:border-slate-800 focus:text-white focus:bg-gray-800 focus:border-slate-800 active:border-slate-800 active:text-white active:bg-gray-800 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none ml-2">
+                                Suivant
+                            </button>
+                          </div>
+                    </div> -->
+                </div>
+                <!-- <div *ngFor="let presence of [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]" class="flex flex-col">
+                    <app-details-section text="12 H 00 - 15 H 00">
+                        <div *ngIf="rolesValue.isInstitution || rolesValue.isApprenant" class="relative">
+                            <div>
+                                <button (click)="null"
+                                    class="p-1 rounded focus:ring-1 focus:ring-gray-300">
+                                    <img src="assets/icons/keyboard_arrow_down.svg" alt="add">
+                                </button>
+                            </div>
+                        </div>
+                    </app-details-section>
+                    <div class="overflow-x-auto transition delay-150 duration-300 ease-in-out">
+                        <div class="py-2 inline-block min-w-full">
+                            <div class="overflow-hidden">
+                                <table class="min-w-full">
+                                    <thead class="bg-gray-100 border-b">
+                                        <tr>
+                                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                                <div class="px-2">
+                                                    #
+                                                </div>
+                                            </th>
+                                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                                <div class="px-2">
+                                                    Nom
+                                                </div>
+                                            </th>
+                                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                                <div class="px-2">
+                                                    Prénoms
+                                                </div>
+                                            </th>
+                                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                                <div class="px-2">
+                                                Justification
+                                                </div>
+                                            </th>
+                                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
+                                                <div class="px-2">
+                                                    Action
+                                                </div>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr *ngIf="demandesInscription.length==0"
+                                            class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                                colspan="5">Aucune demande</td>
+                                        </tr>
+                                        <tr *ngFor="let participant of [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]"
+                                            class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                            <td
+                                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                                <div
+                                                    class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                    <img class="object-cover w-12 h-12 rounded-full border-2 border-gray-300"
+                                                        [src]="'assets/images/blank-profile-picture.png'" alt="">
+                                                </div>
+                                            </td>
+                                            <td
+                                                class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                                <div
+                                                    class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:leading-6">
+                                                    KAYI
+                                                </div>
+                                            </td>
+                                            <td
+                                                class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                                <div
+                                                    class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:leading-6">
+                                                    Kofjo Armand
+                                                </div>
+                                            </td>
+                                            <td
+                                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                                <div
+                                                    class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                    {{ '02-02-24' | date: 'dd/MM/YYYY' }}
+                                                </div>
+                                            </td>
+                                            <td *ngIf="rolesValue.isInstitution"
+                                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                                <div
+                                                    class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                    <span>
+                                                        <app-custom-button [link]="'/inscription/demandes/' + demande.id"
+                                                            [text]="demande.reponseInscription == undefined ? 'Traiter' : 'Details'"></app-custom-button>
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td *ngIf="rolesValue.isApprenant"
+                                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                                <div
+                                                    class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                    <span>
+                                                        <app-custom-button [link]="'/inscription/demandes/' + demande.id"
+                                                            text="Détails"></app-custom-button>
+                                                    </span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div> -->
+            </div>
+            <div class="block xl:col-span-1 lg:col-span-1 md:col-span-1 col-span-full">
+                <div class="w-full h-full border-l-2 border-gray-500">
+                    <div class="pl-10">
+                        <div class="flex flex-col gap-y-4">
+                            <div class="text-md text-gray-600 mb-2">Choisir une date</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</ng-container>
+
+<!-- Modals -->
+<app-custom-modal title="Nouveau bloc" subtitle="Ajouter un nouveau bloc dans ce cahier de texte" (onCloseModal)="closeNouveauBlocCahierDeTexteModal()" [center]="true" [showModal]="showNouveauBlocCahierDeTexteModal">
+    <form [formGroup]="nouveauBlocCahierDeTexteForm">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="col-span-2">
+                <label for="date" class="mb-2 block text-sm leading-6 text-gray-600">Date</label>
+                <input type="date" id="date" formControlName="date" placeholder="Saisir la date ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <div *ngIf="nouveauBlocCahierDeTexteForm.get('date')!.invalid && (nouveauBlocCahierDeTexteForm.get('date')!.dirty || nouveauBlocCahierDeTexteForm.get('date')!.touched)">
+                    <app-form-message *ngIf="nouveauBlocCahierDeTexteForm.get('date')!.errors?.['required']"
+                        text="Veuillez choisir la date"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-2">
+                <label for="heureDebut" class="mb-2 block text-sm leading-6 text-gray-600">Heure de début</label>
+                <input type="time" id="heureDebut" formControlName="heureDebut" placeholder="Saisir l'écheance ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <div *ngIf="nouveauBlocCahierDeTexteForm.get('heureDebut')!.invalid && (nouveauBlocCahierDeTexteForm.get('heureDebut')!.dirty || nouveauBlocCahierDeTexteForm.get('heureDebut')!.touched)">
+                    <app-form-message *ngIf="nouveauBlocCahierDeTexteForm.get('heureDebut')!.errors?.['required']"
+                        text="Veuillez entrer l'heure de début"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-2">
+                <label for="heureFin" class="mb-2 block text-sm leading-6 text-gray-600">Heure de fin</label>
+                <input type="time" id="heureFin" formControlName="heureFin" placeholder="Saisir l'écheance ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <div *ngIf="nouveauBlocCahierDeTexteForm.get('heureFin')!.invalid && (nouveauBlocCahierDeTexteForm.get('heureFin')!.dirty || nouveauBlocCahierDeTexteForm.get('heureFin')!.touched)">
+                    <app-form-message *ngIf="nouveauBlocCahierDeTexteForm.get('heureFin')!.errors?.['required']"
+                        text="Veuillez entrer l'heure de fin"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-full">
+                <label for="" class="mb-2 block text-sm leading-6 text-gray-600">Contenu</label>
+                <quill-editor formControlName="contenu" [placeholder]="'Contenu du cahier de texte...'" [modules]="modules"
+                    [styles]="{height: '400px', fontSize: '0.875rem', lineHeight: '1.25rem'}" [preserveWhitespace]="true" (onFocus)="focus($event)"
+                    (onBlur)="blur($event)"></quill-editor>
+            </div>
+        </div>
+    </form>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="closeNouveauBlocCahierDeTexteModal()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+        <app-custom-button (click)="ajouterBlocCahierDeTexte()" text="Enregistrer"></app-custom-button>
+    </div>
+</app-custom-modal>

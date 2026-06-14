@@ -1,0 +1,25 @@
+<vg-player *ngIf="!isYoutubeVideo(src)" class="z-0">
+    <vg-overlay-play></vg-overlay-play>
+    <vg-buffering></vg-buffering>
+    <vg-scrub-bar>
+        <vg-scrub-bar-current-time></vg-scrub-bar-current-time>
+        <vg-scrub-bar-buffering-time></vg-scrub-bar-buffering-time>
+    </vg-scrub-bar>
+    <vg-controls>
+        <vg-play-pause></vg-play-pause>
+        <vg-playback-button></vg-playback-button>
+        <vg-time-display vgProperty="current" vgFormat="mm:ss"></vg-time-display>
+        <vg-scrub-bar style="pointer-events: none;"></vg-scrub-bar>
+        <!-- <vg-time-display vgProperty="left" vgFormat="mm:ss"></vg-time-display> -->
+        <vg-time-display vgProperty="total" vgFormat="mm:ss"></vg-time-display>
+        <!-- <vg-track-selector></vg-track-selector> -->
+        <vg-mute></vg-mute>
+        <vg-volume></vg-volume>
+        <vg-fullscreen></vg-fullscreen>
+    </vg-controls>
+    <video #media [vgMedia]="$any(media)" id="singleVideo" preload="auto">
+        <source [src]="src">
+    </video>
+</vg-player>
+
+<iframe *ngIf="isYoutubeVideo(src)" class="w-full" style="aspect-ratio: 16 / 9 !important;" [src]="sanitizeUrl(src)" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" frameborder="0" allowfullscreen></iframe>
