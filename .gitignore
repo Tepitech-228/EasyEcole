@@ -1,0 +1,14 @@
+node_modules/
+dist/
+lib/
+build/
+tmp/
+temp/
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+easy-ecole-backend/
+easy-ecole-web/
+
