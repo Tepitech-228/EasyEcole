@@ -45,10 +45,24 @@
                     <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin" (click)="closeMenu()" icon="lab_profile" text="Notes d'évaluation" link="/cours/notes"></app-nav-menu-item>
                 </app-nav-menu-group>
 
-                <app-nav-menu-group title="Demandes" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin || rolesValue.isEnseignant"></app-nav-menu-group>
-                <app-nav-menu-group title="Stages" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin || rolesValue.isEnseignant"></app-nav-menu-group>
-                <app-nav-menu-group title="Stocks" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin || rolesValue.isEnseignant"></app-nav-menu-group>
-                <app-nav-menu-group title="Immobilisations" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin || rolesValue.isEnseignant"></app-nav-menu-group>
+                <app-nav-menu-group title="Stages" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin || rolesValue.isEnseignant">
+                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isAdmin" (click)="closeMenu()" icon="work" text="Offres de stage" link="/stages/offres"></app-nav-menu-item>
+                    <app-nav-menu-item *ngIf="rolesValue.isApprenant || rolesValue.isAdmin" (click)="closeMenu()" icon="receipt_long" text="Demandes" link="/stages/demandes"></app-nav-menu-item>
+                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="closeMenu()" icon="business" text="Entreprises" link="/stages/entreprises"></app-nav-menu-item>
+                </app-nav-menu-group>
+
+                <app-nav-menu-group title="Stocks" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin || rolesValue.isCaissierBanque">
+                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isAdmin || rolesValue.isCaissierBanque" (click)="closeMenu()" icon="inventory_2" text="Articles" link="/stocks/articles"></app-nav-menu-item>
+                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isAdmin || rolesValue.isCaissierBanque" (click)="closeMenu()" icon="swap_horiz" text="Mouvements" link="/stocks/mouvements"></app-nav-menu-item>
+                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="closeMenu()" icon="local_shipping" text="Fournisseurs" link="/stocks/fournisseurs"></app-nav-menu-item>
+                </app-nav-menu-group>
+
+                <app-nav-menu-group title="Immobilisations" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin || rolesValue.isEnseignant">
+                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isAdmin || rolesValue.isEnseignant" (click)="closeMenu()" icon="business" text="Immobilisations" link="/immobilisations"></app-nav-menu-item>
+                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="closeMenu()" icon="location_on" text="Sites" link="/immobilisations/sites"></app-nav-menu-item>
+                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="closeMenu()" icon="category" text="Catégories" link="/immobilisations/categories"></app-nav-menu-item>
+                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="closeMenu()" icon="build" text="Maintenances" link="/immobilisations/maintenances"></app-nav-menu-item>
+                </app-nav-menu-group>
             </div>
 
             <div class="mb-2 flex flex-col justify-end gap-y-8">

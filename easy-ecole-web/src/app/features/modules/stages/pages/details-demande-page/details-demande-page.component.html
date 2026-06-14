@@ -1,0 +1,23 @@
+<app-custom-alert [show]="error" title="Erreur">Une erreur est survenue</app-custom-alert>
+<app-return-back></app-return-back>
+
+<ng-container *ngIf="demande">
+    <div class="flex md:flex-row flex-col items-start justify-between mb-8">
+        <app-header-title title="Demande de stage">
+            <div class="mt-2 md:mb-0 mb-8 flex md:flex-row flex-wrap gap-x-4 gap-y-2">
+                <div class="flex items-center text-secondary">
+                    <div class="px-2 text-sm">{{ demande.apprenant?.prenom }} {{ demande.apprenant?.nom }}</div>
+                </div>
+                <div class="flex items-center text-secondary">
+                    <div class="px-2 text-sm">{{ demande.offre?.titre }}</div>
+                </div>
+            </div>
+        </app-header-title>
+        <div *ngIf="rolesValue.isInstitution" class="w-full md:w-32 flex justify-end items-center gap-x-4">
+            <button (click)="delete()" class="flex w-full items-center justify-center gap-x-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium leading-6 text-white shadow-sm hover:bg-red-500">
+                <img src="assets/icons/trash.svg" alt="delete"> Supprimer
+            </button>
+        </div>
+    </div>
+    <div class="text-gray-500 mb-8">{{ demande.motivation }}</div>
+</ng-container>

@@ -1,0 +1,50 @@
+<div class="flex justify-between items-start gap-x-8 mb-8">
+    <app-header-title title="Demandes de stage" subtitle="Consulter la liste des demandes de stage"></app-header-title>
+</div>
+
+<div class="flex flex-col">
+    <div class="overflow-x-auto">
+        <div class="py-2 inline-block min-w-full">
+            <div class="overflow-hidden">
+                <table class="min-w-full">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">#</div></th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Apprenant</div></th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Offre</div></th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Statut</div></th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right"><div class="px-2">Action</div></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngIf="demandes.length==0" class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap" colspan="5">Aucune demande</td>
+                        </tr>
+                        <tr *ngFor="let demande of demandes; index as index" class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ index + 1 }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ demande.apprenant?.prenom }} {{ demande.apprenant?.nom }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ demande.offre?.titre }}</div>
+                            </td>
+                            <td class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2" [ngSwitch]="demande.statut">
+                                <app-custom-badge *ngSwitchCase="'en_attente'" color="yellow" text="En attente"></app-custom-badge>
+                                <app-custom-badge *ngSwitchCase="'acceptee'" color="green" text="Acceptée"></app-custom-badge>
+                                <app-custom-badge *ngSwitchCase="'refusee'" color="red" text="Refusée"></app-custom-badge>
+                                <app-custom-badge *ngSwitchDefault color="gray" text="{{ demande.statut }}"></app-custom-badge>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    <span><app-custom-button [link]="'/stages/demandes/' + demande.id" text="Détails"></app-custom-button></span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

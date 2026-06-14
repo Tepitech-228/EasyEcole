@@ -1,0 +1,50 @@
+<div class="flex justify-between items-start gap-x-8 mb-8">
+    <app-header-title title="Fournisseurs" subtitle="Gérer les fournisseurs"></app-header-title>
+    <div class="flex justify-end items-center">
+        <app-custom-button *ngIf="rolesValue.isInstitution || rolesValue.isCaissierBanque" text="Nouveau fournisseur" link="/stocks/fournisseurs/nouveau"></app-custom-button>
+    </div>
+</div>
+
+<div class="flex flex-col">
+    <div class="overflow-x-auto">
+        <div class="py-2 inline-block min-w-full">
+            <div class="overflow-hidden">
+                <table class="min-w-full">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">#</div></th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Nom</div></th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Contact</div></th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Email</div></th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right"><div class="px-2">Action</div></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngIf="fournisseurs.length==0" class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap" colspan="5">Aucun fournisseur</td>
+                        </tr>
+                        <tr *ngFor="let fournisseur of fournisseurs; index as index" class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ index + 1 }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ fournisseur.nom }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ fournisseur.contact }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ fournisseur.email }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    <span><app-custom-button [link]="'/stocks/fournisseurs/' + fournisseur.id" text="Détails"></app-custom-button></span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

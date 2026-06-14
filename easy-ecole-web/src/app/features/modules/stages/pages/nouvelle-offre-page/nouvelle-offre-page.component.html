@@ -1,0 +1,40 @@
+<app-custom-alert [show]="error || alreadyExists" title="Erreur">
+    {{ error ? 'Une erreur est survenue' : '' }}
+    {{ alreadyExists ? 'Cette offre existe déjà.' : '' }}
+</app-custom-alert>
+
+<app-return-back></app-return-back>
+
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Créer une nouvelle offre" subtitle="Veuillez renseigner les informations ci-dessous"></app-header-title>
+</div>
+
+<div class="w-full mb-8">
+    <form [formGroup]="form" id="form">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="col-span-full">
+                <label for="titre" class="mb-2 block text-sm leading-6 text-gray-600">Titre</label>
+                <input type="text" id="titre" formControlName="titre" placeholder="Saisir le titre..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <div *ngIf="form.get('titre')!.invalid && (form.get('titre')!.dirty || form.get('titre')!.touched)">
+                    <app-form-message *ngIf="form.get('titre')!.errors?.['required']" text="Veuillez saisir le titre"></app-form-message>
+                </div>
+            </div>
+            <div class="md:col-span-3 col-span-full">
+                <label for="dateDebut" class="mb-2 block text-sm leading-6 text-gray-600">Date de début</label>
+                <input type="date" id="dateDebut" formControlName="dateDebut" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="md:col-span-3 col-span-full">
+                <label for="dateFin" class="mb-2 block text-sm leading-6 text-gray-600">Date de fin</label>
+                <input type="date" id="dateFin" formControlName="dateFin" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-full">
+                <label for="description" class="mb-2 block text-sm leading-6 text-gray-600">Description</label>
+                <textarea rows="5" id="description" formControlName="description" placeholder="Saisir la description..." class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
+            </div>
+        </div>
+        <div class="w-full flex justify-end items-center pb-12">
+            <app-custom-button (click)="create()" [disabled]="disableButton" text="Enregistrer"></app-custom-button>
+        </div>
+    </form>
+</div>

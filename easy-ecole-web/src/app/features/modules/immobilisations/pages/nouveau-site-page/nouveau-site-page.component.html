@@ -1,0 +1,40 @@
+<app-custom-alert [show]="error || alreadyExists" title="Erreur">
+    {{ error ? 'Une erreur est survenue lors de la création' : '' }}
+    {{ alreadyExists ? 'Ce site existe déjà.\nVeuillez changer le nom' : '' }}
+</app-custom-alert>
+
+<app-return-back></app-return-back>
+
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Nouveau site" subtitle="Veuillez renseigner les informations ci-dessous pour ajouter un nouveau site"></app-header-title>
+    <div class="flex justify-end items-center">
+    </div>
+</div>
+
+<div class="w-full mb-8">
+    <form [formGroup]="siteForm" id="siteForm">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="md:col-span-4 col-span-full">
+                <label for="nom" class="mb-2 block text-sm leading-6 text-gray-600">Nom</label>
+                <input type="text" id="nom" formControlName="nom" placeholder="Saisir le nom du site ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <app-form-message *ngIf="alreadyExists"
+                    text="Nom déjà utilisé"></app-form-message>
+                <div *ngIf="siteForm.get('nom')!.invalid && (siteForm.get('nom')!.dirty || siteForm.get('nom')!.touched)">
+                    <app-form-message *ngIf="siteForm.get('nom')!.errors?.['required']"
+                        text="Veuillez saisir le nom"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-full">
+                <label for="adresse" class="mb-2 block text-sm leading-6 text-gray-600">Adresse (facultative)</label>
+                <textarea rows="3" id="adresse" formControlName="adresse"
+                    placeholder="Saisir l'adresse ici..."
+                    class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
+            </div>
+        </div>
+
+        <div class="w-full flex justify-end items-center pb-12">
+            <app-custom-button (click)="create()" text="Enregistrer"></app-custom-button>
+        </div>
+    </form>
+</div>

@@ -58,6 +58,27 @@ const routes: Routes = [
         loadChildren: () => import('./features/modules/parametres/parametres.module').then(m => m.ParametresModule),
         canLoad: [AuthGuard]
       },
+
+      // Module "Stages"
+      {
+        path: 'stages',
+        loadChildren: () => import('./features/modules/stages/stages.module').then(m => m.StagesModule),
+        canLoad: [AuthGuard]
+      },
+
+      // Module "Stocks"
+      {
+        path: 'stocks',
+        loadChildren: () => import('./features/modules/stocks/stocks.module').then(m => m.StocksModule),
+        canLoad: [AuthGuard]
+      },
+
+      // Module "Immobilisations"
+      {
+        path: 'immobilisations',
+        loadChildren: () => import('./features/modules/immobilisations/immobilisations.module').then(m => m.ImmobilisationsModule),
+        canLoad: [AuthGuard]
+      },
     ]
   },
 
