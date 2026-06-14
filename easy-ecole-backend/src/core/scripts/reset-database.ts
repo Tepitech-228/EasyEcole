@@ -34,6 +34,9 @@ async function resetDatabase() {
     require('../../modules/auth/models/_associations');
     require('../../modules/orientation/models/_associations');
     require('../../modules/inscription/models/_associations');
+    require('../../modules/stage/models/_associations');
+    require('../../modules/stock/models/_associations');
+    require('../../modules/immobilisation/models/_associations');
 
     await sequelize.sync({ alter: true });
     console.log('All tables synced');
