@@ -1,6 +1,10 @@
 <div class="flex justify-between items-start mb-8">
     <app-header-title title="Catégories d'immobilisations" subtitle="Retrouver la liste de vos catégories"></app-header-title>
     <div class="flex justify-end items-center">
+        <app-custom-button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin"
+                           link="/immobilisations/categories/nouveau"
+                           text="Nouvelle catégorie">
+        </app-custom-button>
     </div>
 </div>
 

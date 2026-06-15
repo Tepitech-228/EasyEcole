@@ -1,0 +1,57 @@
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Mes présences" subtitle="Gérer les présences de vos cours"></app-header-title>
+</div>
+
+<div *ngIf="loading" class="text-center py-8 text-gray-500">Chargement...</div>
+
+<div *ngIf="!loading && coursList.length == 0" class="text-center py-8 text-gray-500">Aucun cours trouvé</div>
+
+<div *ngIf="!loading && coursList.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    <div *ngFor="let cours of coursList"
+        class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+        <div class="p-5">
+            <div class="flex items-start justify-between mb-3">
+                <div>
+                    <div class="text-xs text-gray-400 mb-1">{{ cours.code }}</div>
+                    <h3 class="text-base font-semibold text-gray-900">{{ cours.intitule }}</h3>
+                </div>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                    {{ cours.classe?.libelle }}
+                </span>
+            </div>
+
+            <div class="flex items-center gap-x-4 text-sm text-gray-500 mb-4">
+                <div class="flex items-center gap-x-1">
+                    <span class="font-medium">{{ getTotalPresences(cours) }}</span>
+                    <span>séances</span>
+                </div>
+                <div *ngIf="cours.parcours" class="text-gray-400">
+                    {{ cours.parcours.titre }}
+                </div>
+            </div>
+
+            <div class="border-t border-gray-100 pt-3">
+                <div *ngIf="cours.listesPresences && cours.listesPresences.length > 0">
+                    <div class="text-xs font-medium text-gray-500 mb-2">Dernières sessions</div>
+                    <div *ngFor="let lp of cours.listesPresences" class="mb-2">
+                        <div *ngFor="let p of (lp.presences || []).slice(0, 3)" 
+                            class="flex items-center justify-between text-xs py-1.5 px-2 bg-gray-50 rounded mb-1">
+                            <span class="text-gray-600">{{ p.date | date: 'dd/MM/yyyy' }}</span>
+                            <span class="text-gray-400">{{ p.heureDebut }} - {{ p.heureFin }}</span>
+                            <span class="text-gray-500">
+                                {{ getPresentCount(p) }}/{{ getTotalCount(p) }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div *ngIf="!cours.listesPresences || cours.listesPresences.length === 0" class="text-xs text-gray-400 text-center py-2">
+                    Aucune session de présence
+                </div>
+            </div>
+        </div>
+
+        <div class="px-5 py-3 bg-gray-50 border-t border-gray-100 flex gap-x-2">
+            <app-custom-button (click)="goToPresences(cours)" text="Voir les présences" [outlined]="true" color="gray"></app-custom-button>
+        </div>
+    </div>
+</div>

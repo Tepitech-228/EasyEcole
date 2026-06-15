@@ -31,7 +31,9 @@ export const environment = {
     INSCRIPTION: {
       DOSSIERS: apiBaseUrl + "inscription/dossiers/"
     }
-  }
+  },
+  QR_CODES_PATH: apiBaseUrl + "auth/apprenants/qr-codes/",
+  QR_CODES_ENSEIGNANTS_PATH: apiBaseUrl + "auth/enseignants/qr-codes/"
 };
 
 /*

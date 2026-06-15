@@ -5,6 +5,7 @@ import { Cours } from "../../inscription/models/Cours.model";
 export class Enseignant {
   declare id?: string
   declare photo?: string
+  declare qrCode?: string
   declare dateNaissance?: Date
   declare lieuNaissance?: string
   declare fonction?: string

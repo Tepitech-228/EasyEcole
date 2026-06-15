@@ -35,6 +35,10 @@ export class CoursService {
     return this.httpClient.put<Cours>(`${this.SERVICE_URL}/${cours.id!}`, cours)
   }
 
+  getMesPresences(): Observable<Cours[]> {
+    return this.httpClient.get<Cours[]>(`${this.SERVICE_URL}/mes-presences`)
+  }
+
   assignerEnseignant(cours: Cours, enseignant: Enseignant): Observable<Cours> {
     return this.httpClient.put<Cours>(`${this.SERVICE_URL}/${cours.id!}/enseignant`, {enseignantId: enseignant.id!})
   }

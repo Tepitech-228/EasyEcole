@@ -13,6 +13,9 @@ async function seed() {
     require('../../modules/auth/models/_associations');
     require('../../modules/orientation/models/_associations');
     require('../../modules/inscription/models/_associations');
+    require('../../modules/stage/models/_associations');
+    require('../../modules/stock/models/_associations');
+    require('../../modules/immobilisation/models/_associations');
 
     // ── MODELS ──
     const M = (name: string) => sequelize.model(name);
@@ -76,6 +79,37 @@ async function seed() {
     const InsTNE = M('InsTypeNoteEvaluation');
     const InsLNE = M('InsListeNoteEvaluation');
     const InsNE = M('InsNoteEvaluation');
+
+    // ── STAGE MODELS ──
+    const StgEnt = M('StgEntreprise');
+    const StgTut = M('StgTuteur');
+    const StgOff = M('StgOffreStage');
+    const StgDem = M('StgDemandeStage');
+    const StgConv = M('StgConventionStage');
+    const StgRap = M('StgRapportStage');
+    const StgNote = M('StgNoteStage');
+    const StgAtt = M('StgAttestationStage');
+
+    // ── STOCK MODELS ──
+    const StkCat = M('StkCategorieArticle');
+    const StkArt = M('StkArticle');
+    const StkFour = M('StkFournisseur');
+    const StkMouv = M('StkMouvementStock');
+    const StkBC = M('StkBonCommande');
+    const StkLBC = M('StkLigneBonCommande');
+
+    // ── IMMOBILISATION MODELS ──
+    const ImmSite = M('ImmSite');
+    const ImmBat = M('ImmBatiment');
+    const ImmLoc = M('ImmLocalisation');
+    const ImmDep = M('ImmDepartement');
+    const ImmCat = M('ImmCategorieImmobilisation');
+    const ImmImmo = M('ImmImmobilisation');
+    const ImmAcq = M('ImmAcquisition');
+    const ImmAmort = M('ImmAmortissement');
+    const ImmMaint = M('ImmMaintenance');
+    const ImmMaintP = M('ImmMaintenanceProgrammee');
+    const ImmCess = M('ImmCession');
 
     const hash = bcrypt.hashSync('password123', 10);
 
@@ -473,8 +507,181 @@ async function seed() {
     }
     console.log('  ✓ Notes d\'évaluation (3 types, 1 note par étudiant par liste)');
 
+    // ════════════════════════════════════════════════════
+    //  STAGE MODULE
+    // ════════════════════════════════════════════════════
+    console.log('\n── STAGES ──');
+
+    // Entreprises
+    const stgEnt1 = await StgEnt.create({ nom: 'Orange CI', adresse: 'Abidjan, Plateau', telephone: '+2252720202020', email: 'contact@orange.ci', siteWeb: 'https://orange.ci', description: 'Opérateur de télécommunications' });
+    const stgEnt2 = await StgEnt.create({ nom: 'MTN CI', adresse: 'Abidjan, Marcory', telephone: '+2252721212121', email: 'info@mtn.ci', siteWeb: 'https://mtn.ci', description: 'Opérateur mobile' });
+    const stgEnt3 = await StgEnt.create({ nom: 'Ecobank CI', adresse: 'Abidjan, Plateau', telephone: '+2252723222323', email: 'ecobank@ecobank.ci', siteWeb: 'https://ecobank.ci', description: 'Banque panafricaine' });
+    console.log('  ✓ 3 Entreprises');
+
+    // Tuteurs
+    await StgTut.create({ nom: 'Koffi Aimé', fonction: 'Responsable RH', email: 'aime.koffi@orange.ci', telephone: '+2250701010101', entrepriseId: stgEnt1.id });
+    await StgTut.create({ nom: 'Diallo Mariam', fonction: 'Chef de service', email: 'mariam.diallo@mtn.ci', telephone: '+2250702020202', entrepriseId: stgEnt2.id });
+    await StgTut.create({ nom: 'N\'Guessan Patrice', fonction: 'Directeur Financier', email: 'patrice.nguessan@ecobank.ci', telephone: '+2250703030303', entrepriseId: stgEnt3.id });
+    console.log('  ✓ 3 Tuteurs');
+
+    // Offres de stage
+    const uInst1Id = (await AutI.findOne({ where: { utilisateurId: (await AutU.findOne({ where: { identifiant: 'institution1' } })).id } })).id;
+    const stgOff1 = await StgOff.create({ titre: 'Développeur Web Full Stack', description: 'Stage en développement web avec Angular et Node.js', dateDebut: new Date('2025-06-01'), dateFin: new Date('2025-09-30'), lieu: 'Abidjan', nombrePlaces: 2, statut: 'ouvert', institutionId: uInst1Id });
+    const stgOff2 = await StgOff.create({ titre: 'Assistant Comptable', description: 'Stage en comptabilité et gestion financière', dateDebut: new Date('2025-06-15'), dateFin: new Date('2025-10-15'), lieu: 'Abidjan', nombrePlaces: 1, statut: 'ouvert', institutionId: uInst1Id });
+    const stgOff3 = await StgOff.create({ titre: 'Technicien Réseaux', description: 'Stage en administration réseaux et cybersécurité', dateDebut: new Date('2025-07-01'), dateFin: new Date('2025-10-31'), lieu: 'Abidjan', nombrePlaces: 3, statut: 'ouvert', institutionId: uInst1Id });
+    console.log('  ✓ 3 Offres de stage');
+
+    // Demandes de stage (quelques apprenants)
+    const appIds = await AutA.findAll({ limit: 6 });
+    const stgDems: any[] = [];
+    for (let i = 0; i < 3; i++) {
+        const ens = await AutE.findOne({ where: { utilisateurId: (await AutU.findOne({ where: { identifiant: `enseignant${i + 1}` } })).id } });
+        const dem = await StgDem.create({ offreStageId: [stgOff1.id, stgOff2.id, stgOff3.id][i].id, apprenantId: appIds[i].id, entrepriseId: [stgEnt1.id, stgEnt2.id, stgEnt3.id][i].id, dateDebut: new Date('2025-06-01'), dateFin: new Date('2025-09-30'), statut: 'valide' });
+        stgDems.push(dem);
+
+        if (i < 2) {
+            await StgConv.create({ demandeStageId: dem.id, fichier: `/stages/conventions/convention-${i + 1}.pdf`, dateSignature: new Date('2025-05-15') });
+            await StgRap.create({ demandeStageId: dem.id, fichier: `/stages/rapports/rapport-${i + 1}.pdf`, dateSoumission: new Date('2025-09-25') });
+            await StgNote.create({ demandeStageId: dem.id, enseignantId: ens.id, note: 16.5, appreciation: 'Excellent travail, très bon rapport' });
+            await StgAtt.create({ demandeStageId: dem.id, fichier: `/stages/attestations/attestation-${i + 1}.pdf`, dateEmission: new Date('2025-10-01') });
+        }
+    }
+    console.log('  ✓ 3 Demandes de stage, conventions, rapports, notes, attestations');
+
+    // ════════════════════════════════════════════════════
+    //  STOCK MODULE
+    // ════════════════════════════════════════════════════
+    console.log('\n── STOCKS ──');
+
+    const skCat1 = await StkCat.create({ nom: 'Fournitures de bureau', description: 'Stylos, cahiers, ramettes de papier' });
+    const skCat2 = await StkCat.create({ nom: 'Matériel informatique', description: 'Ordinateurs, imprimantes, accessoires' });
+    const skCat3 = await StkCat.create({ nom: 'Mobilier', description: 'Tables, chaises, armoires' });
+    console.log('  ✓ 3 Catégories d\'articles');
+
+    const skArt1 = await StkArt.create({ nom: 'Ramette de papier A4', reference: 'FOUR-A4-001', description: 'Ramette 500 feuilles', stockActuel: 150, stockMinimum: 20, prixUnitaire: 5000, categorieId: skCat1.id });
+    const skArt2 = await StkArt.create({ nom: 'Stylo bleu', reference: 'FOUR-STY-001', description: 'Stylo à bille bleu', stockActuel: 500, stockMinimum: 100, prixUnitaire: 200, categorieId: skCat1.id });
+    const skArt3 = await StkArt.create({ nom: 'Ordinateur Portable Dell', reference: 'INFO-DELL-001', description: 'Dell Latitude 5440 i5 16Go', stockActuel: 10, stockMinimum: 2, prixUnitaire: 450000, categorieId: skCat2.id });
+    const skArt4 = await StkArt.create({ nom: 'Imprimante HP LaserJet', reference: 'INFO-HP-001', description: 'Imprimante laser noir et blanc', stockActuel: 5, stockMinimum: 1, prixUnitaire: 150000, categorieId: skCat2.id });
+    const skArt5 = await StkArt.create({ nom: 'Table bureau', reference: 'MOB-TBL-001', description: 'Table de bureau 120x60cm', stockActuel: 25, stockMinimum: 5, prixUnitaire: 75000, categorieId: skCat3.id });
+    console.log('  ✓ 5 Articles');
+
+    const skFour1 = await StkFour.create({ nom: 'Fournitures Modernes SARL', contact: 'Kouamé Paul', email: 'contact@fournitures-modernes.ci', telephone: '+2252727272727', adresse: 'Abidjan, Treichville' });
+    const skFour2 = await StkFour.create({ nom: 'Informatique Pro CI', contact: 'Koné Moussa', email: 'info@informatiquepro.ci', telephone: '+2252728282828', adresse: 'Abidjan, Cocody' });
+    console.log('  ✓ 2 Fournisseurs');
+
+    // Mouvements de stock
+    await StkMouv.create({ type: 'entree', quantite: 50, motif: 'Réapprovisionnement', prixUnitaire: 4500, articleId: skArt1.id, fournisseurId: skFour1.id, utilisateurId: 1 });
+    await StkMouv.create({ type: 'sortie', quantite: 10, motif: 'Distribution service compta', articleId: skArt1.id, utilisateurId: 1 });
+    await StkMouv.create({ type: 'entree', quantite: 3, motif: 'Nouvel achat', prixUnitaire: 440000, articleId: skArt3.id, fournisseurId: skFour2.id, utilisateurId: 1 });
+    await StkMouv.create({ type: 'sortie', quantite: 1, motif: 'Attribution enseignant', articleId: skArt3.id, utilisateurId: 1 });
+    console.log('  ✓ 4 Mouvements de stock');
+
+    // Bons de commande
+    const bc1 = await StkBC.create({ dateCommande: new Date('2025-01-15'), dateLivraisonPrevue: new Date('2025-01-30'), statut: 'livree', montantTotal: 225000, fournisseurId: skFour1.id });
+    const bc2 = await StkBC.create({ dateCommande: new Date('2025-02-01'), dateLivraisonPrevue: new Date('2025-02-15'), statut: 'en_attente', montantTotal: 1320000, fournisseurId: skFour2.id });
+    console.log('  ✓ 2 Bons de commande');
+
+    await StkLBC.create({ quantite: 50, prixUnitaire: 4500, bonCommandeId: bc1.id, articleId: skArt1.id });
+    await StkLBC.create({ quantite: 3, prixUnitaire: 440000, bonCommandeId: bc2.id, articleId: skArt3.id });
+    console.log('  ✓ 2 Lignes de bon de commande');
+
+    // ════════════════════════════════════════════════════
+    //  IMMOBILISATION MODULE
+    // ════════════════════════════════════════════════════
+    console.log('\n── IMMOBILISATIONS ──');
+
+    // Sites
+    const immSite1 = await ImmSite.create({ nom: 'Campus Principal Riviera', adresse: 'Abidjan, Riviera 3, BP 567' });
+    const immSite2 = await ImmSite.create({ nom: 'Annexe Abobo', adresse: 'Abidjan, Abobo, BP 890' });
+    console.log('  ✓ 2 Sites');
+
+    // Bâtiments
+    const immBat1 = await ImmBat.create({ nom: 'Bâtiment A (Administration)', siteId: immSite1.id, adresse: 'Riviera 3 - Bloc A' });
+    const immBat2 = await ImmBat.create({ nom: 'Bâtiment B (Salles de cours)', siteId: immSite1.id, adresse: 'Riviera 3 - Bloc B' });
+    const immBat3 = await ImmBat.create({ nom: 'Bâtiment C (Labos)', siteId: immSite1.id, adresse: 'Riviera 3 - Bloc C' });
+    const immBat4 = await ImmBat.create({ nom: 'Bâtiment Principal', siteId: immSite2.id, adresse: 'Abobo - Central' });
+    console.log('  ✓ 4 Bâtiments');
+
+    // Localisations
+    const immLoc1 = await ImmLoc.create({ code: 'A-001', batimentId: immBat1.id, capacite: 10 });
+    const immLoc2 = await ImmLoc.create({ code: 'B-101', batimentId: immBat2.id, capacite: 40 });
+    const immLoc3 = await ImmLoc.create({ code: 'B-102', batimentId: immBat2.id, capacite: 30 });
+    const immLoc4 = await ImmLoc.create({ code: 'C-LAB1', batimentId: immBat3.id, capacite: 20 });
+    const immLoc5 = await ImmLoc.create({ code: 'AB-001', batimentId: immBat4.id, capacite: 50 });
+    console.log('  ✓ 5 Localisations');
+
+    // Départements
+    await ImmDep.create({ nom: 'Direction' });
+    await ImmDep.create({ nom: 'Comptabilité' });
+    await ImmDep.create({ nom: 'Pédagogie' });
+    await ImmDep.create({ nom: 'Informatique' });
+    console.log('  ✓ 4 Départements');
+
+    // Catégories d'immobilisations
+    const immCat1 = await ImmCat.create({ nom: 'Matériel Informatique', description: 'Ordinateurs, serveurs, périphériques', tauxAmortissement: 25, dureeVie: 4 });
+    const immCat2 = await ImmCat.create({ nom: 'Mobilier de Bureau', description: 'Tables, chaises, armoires, étagères', tauxAmortissement: 10, dureeVie: 10 });
+    const immCat3 = await ImmCat.create({ nom: 'Véhicules', description: 'Voitures, motos', tauxAmortissement: 20, dureeVie: 5 });
+    const immCat4 = await ImmCat.create({ nom: 'Bâtiments & Infrastructures', description: 'Bâtiments, installations', tauxAmortissement: 5, dureeVie: 20 });
+    const immCat5 = await ImmCat.create({ nom: 'Équipements de Bureau', description: 'Climatiseurs, onduleurs, photocopieurs', tauxAmortissement: 15, dureeVie: 7 });
+    console.log('  ✓ 5 Catégories d\'immobilisations');
+
+    // Immobilisations
+    const immoDir = (await ImmDep.findOne({ where: { nom: 'Direction' } })).id;
+    const immoComp = (await ImmDep.findOne({ where: { nom: 'Comptabilité' } })).id;
+    const immoPed = (await ImmDep.findOne({ where: { nom: 'Pédagogie' } })).id;
+    const immoInfo = (await ImmDep.findOne({ where: { nom: 'Informatique' } })).id;
+
+    const immImmo1 = await ImmImmo.create({ nom: 'Ordinateur Dell Serveur', reference: 'SRV-DELL-001', description: 'Serveur principal Dell PowerEdge', etat: 'bon', dateMiseEnService: new Date('2023-01-15'), valeurAcquisition: 2500000, responsableNom: 'Kouamé Mamadou', categorieId: immCat1.id, localisationId: immLoc1.id, departementId: immoInfo, siteId: immSite1.id });
+    const immImmo2 = await ImmImmo.create({ nom: 'Ordinateur HP Pro', reference: 'PC-HPPRO-001', description: 'PC de bureau HP ProDesk', etat: 'neuf', dateMiseEnService: new Date('2025-03-01'), valeurAcquisition: 600000, responsableNom: 'Koné Mariam', categorieId: immCat1.id, localisationId: immLoc2.id, departementId: immoComp, siteId: immSite1.id });
+    const immImmo3 = await ImmImmo.create({ nom: 'Table Bureau Directeur', reference: 'TBL-DIR-001', description: 'Table bureau direction en bois', etat: 'bon', dateMiseEnService: new Date('2022-06-01'), valeurAcquisition: 350000, responsableNom: 'Konan Bernard', categorieId: immCat2.id, localisationId: immLoc1.id, departementId: immoDir, siteId: immSite1.id });
+    const immImmo4 = await ImmImmo.create({ nom: 'Climatiseur Salle B101', reference: 'CLIM-B101', description: 'Climatiseur mural 12000 BTU', etat: 'moyen', dateMiseEnService: new Date('2021-09-01'), valeurAcquisition: 250000, responsableNom: 'Touré Fatim', categorieId: immCat5.id, localisationId: immLoc2.id, departementId: immoPed, siteId: immSite1.id });
+    const immImmo5 = await ImmImmo.create({ nom: 'Véhicule Toyota Hilux', reference: 'VHL-TOY-001', description: 'Pick-up double cabine', etat: 'bon', dateMiseEnService: new Date('2024-01-10'), valeurAcquisition: 15000000, responsableNom: 'Konan Bernard', categorieId: immCat3.id, departementId: immoDir, siteId: immSite1.id });
+    const immImmo6 = await ImmImmo.create({ nom: 'Photocopieur Canon', reference: 'CP-CAN-001', description: 'Photocopieur multifonction Canon', etat: 'moyen', dateMiseEnService: new Date('2022-03-15'), valeurAcquisition: 800000, responsableNom: 'N\'Guessan Aminata', categorieId: immCat5.id, localisationId: immLoc5.id, departementId: immoPed, siteId: immSite2.id });
+    const immImmo7 = await ImmImmo.create({ nom: 'Tableau Blanc Interactif', reference: 'TBI-SMART-001', description: 'Tableau blanc interactif Smart Board', etat: 'neuf', dateMiseEnService: new Date('2025-09-01'), valeurAcquisition: 1200000, responsableNom: 'Bamba Souleymane', categorieId: immCat5.id, localisationId: immLoc3.id, departementId: immoPed, siteId: immSite1.id });
+    console.log('  ✓ 7 Immobilisations');
+
+    // Acquisitions
+    await ImmAcq.create({ immobilisationId: immImmo1.id, fournisseurNom: 'Informatique Pro CI', montant: 2500000, dateAcquisition: new Date('2023-01-10'), modeAcquisition: 'achat' });
+    await ImmAcq.create({ immobilisationId: immImmo2.id, fournisseurNom: 'Informatique Pro CI', montant: 600000, dateAcquisition: new Date('2025-02-20'), modeAcquisition: 'achat' });
+    await ImmAcq.create({ immobilisationId: immImmo3.id, fournisseurNom: 'Mobilier Moderne SARL', montant: 350000, dateAcquisition: new Date('2022-05-25'), modeAcquisition: 'achat' });
+    await ImmAcq.create({ immobilisationId: immImmo5.id, fournisseurNom: 'Toyota CI', montant: 15000000, dateAcquisition: new Date('2024-01-05'), modeAcquisition: 'achat' });
+    await ImmAcq.create({ immobilisationId: immImmo7.id, fournisseurNom: 'EduTech Solutions', montant: 1200000, dateAcquisition: new Date('2025-08-15'), modeAcquisition: 'achat' });
+    console.log('  ✓ 5 Acquisitions');
+
+    // Amortissements
+    for (const immo of [immImmo1, immImmo2, immImmo3, immImmo4, immImmo6]) {
+        const categorie = await ImmCat.findByPk(immo.categorieId);
+        const taux = Number(categorie.tauxAmortissement) / 100;
+        let vnc = Number(immo.valeurAcquisition);
+        const duree = Number(categorie.dureeVie);
+        for (let an = 1; an <= Math.min(duree, 3); an++) {
+            const montantAmorti = vnc * taux;
+            vnc -= montantAmorti;
+            await ImmAmort.create({ immobilisationId: immo.id, annee: 2022 + an, montantAmorti: Math.round(montantAmorti * 100) / 100, valeurResiduelle: Math.round(vnc * 100) / 100, dateCalcul: new Date(2022 + an, 11, 31) });
+        }
+    }
+    console.log('  ✓ Amortissements');
+
+    // Maintenances
+    await ImmMaint.create({ immobilisationId: immImmo1.id, dateMaintenance: new Date('2024-06-15'), type: 'preventive', description: 'Nettoyage et vérification des composants', cout: 50000, prestataire: 'IT Services CI' });
+    await ImmMaint.create({ immobilisationId: immImmo1.id, dateMaintenance: new Date('2025-03-20'), type: 'corrective', description: 'Remplacement disque dur défectueux', cout: 150000, prestataire: 'IT Services CI' });
+    await ImmMaint.create({ immobilisationId: immImmo4.id, dateMaintenance: new Date('2024-11-10'), type: 'corrective', description: 'Recharge de gaz climatiseur', cout: 35000, prestataire: 'Clim Services' });
+    await ImmMaint.create({ immobilisationId: immImmo5.id, dateMaintenance: new Date('2025-05-05'), type: 'preventive', description: 'Révision 20 000 km', cout: 200000, prestataire: 'Toyota CI Garage' });
+    await ImmMaint.create({ immobilisationId: immImmo6.id, dateMaintenance: new Date('2024-09-01'), type: 'preventive', description: 'Maintenance annuelle photocopieur', cout: 75000, prestataire: 'Canon Services' });
+    console.log('  ✓ 5 Maintenances');
+
+    // Maintenances programmées
+    await ImmMaintP.create({ immobilisationId: immImmo1.id, description: 'Maintenance trimestrielle serveur', periodicite: 'trimestrielle', prochaineEcheance: new Date('2025-06-15'), actif: true });
+    await ImmMaintP.create({ immobilisationId: immImmo4.id, description: 'Vérification climatiseur avant saison chaude', periodicite: 'annuelle', prochaineEcheance: new Date('2026-02-01'), actif: true });
+    await ImmMaintP.create({ immobilisationId: immImmo5.id, description: 'Révision vidange tous les 5000 km', periodicite: 'semestrielle', prochaineEcheance: new Date('2025-11-05'), actif: true });
+    console.log('  ✓ 3 Maintenances programmées');
+
+    // Cessions
+    await ImmCess.create({ immobilisationId: immImmo4.id, dateCession: new Date('2025-12-15'), motif: 'Vétusté - remplacement prévu', prixCession: 50000, destinataire: 'Recyclage Electronique CI' });
+    console.log('  ✓ 1 Cession');
+
     console.log('\n═══════════════════════════════════════════');
-    console.log('  SEED COMPLETED — 58 modèles');
+    console.log('  SEED COMPLETED — 83 modèles');
     console.log('═══════════════════════════════════════════');
     console.log('\n📋 COMPTES DE DÉMO :');
     console.log('───────────────────────────────────────────');
@@ -491,6 +698,9 @@ async function seed() {
     console.log('───────────────────────────────────────────');
     console.log('📊 Données : 8 parcours, 16 cours, 4 classes,');
     console.log('  2 sessions, 2 années, 16 demandes ins.,');
+    console.log('  3 offres stage, 3 demandes stage,');
+    console.log('  5 articles, 2 fournisseurs, 2 bons cmde,');
+    console.log('  7 immobilisations, 5 maintenances,');
     console.log('  présences, notes, cahiers de texte, etc.');
     console.log('═══════════════════════════════════════════\n');
 }

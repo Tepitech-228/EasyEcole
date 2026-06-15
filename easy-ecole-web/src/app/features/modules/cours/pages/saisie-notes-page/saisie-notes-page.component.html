@@ -1,0 +1,60 @@
+<app-custom-alert [show]="error" title="Erreur">
+    Une erreur est survenue lors de l'enregistrement
+</app-custom-alert>
+<app-custom-alert [show]="success" title="Succès" color="green">
+    Notes enregistrées avec succès
+</app-custom-alert>
+
+<app-return-back></app-return-back>
+
+<div class="flex justify-between items-start mb-8">
+    <app-header-title
+        [title]="'Saisie des notes — ' + (evaluation?.cours?.code || '')"
+        [subtitle]="evaluation ? (evaluation.typeNoteEvaluation?.libelle || '') + ' — ' + (evaluation.date | date:'dd MMMM YYYY') : ''">
+    </app-header-title>
+    <div class="flex justify-end items-center">
+    </div>
+</div>
+
+<div *ngIf="loading" class="w-full py-24 flex justify-center">
+    <div class="text-sm text-gray-500">Chargement...</div>
+</div>
+
+<div *ngIf="!loading && participants.length === 0" class="w-full py-24 flex justify-center">
+    <div class="text-sm text-gray-500">Aucun étudiant inscrit à ce cours</div>
+</div>
+
+<div *ngIf="!loading && participants.length > 0" class="w-full overflow-x-auto bg-white shadow-sm rounded-lg">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Étudiant</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Note /20</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            <tr *ngFor="let p of participants; index as i" class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ i + 1 }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {{ p.utilisateur?.nom }} {{ p.utilisateur?.prenoms }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <input type="number" [(ngModel)]="notesInput[p.id!]" min="0" max="20" step="0.5"
+                        placeholder="Note"
+                        class="w-24 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    <span *ngIf="notesInput[p.id!] !== null && notesInput[p.id!] !== undefined" class="text-green-600 font-medium">Noté</span>
+                    <span *ngIf="notesInput[p.id!] === null || notesInput[p.id!] === undefined" class="text-gray-400">En attente</span>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="px-6 py-4 flex justify-end">
+        <app-custom-button (click)="save()" [disabled]="saving" [text]="saving ? 'Enregistrement...' : 'Enregistrer les notes'">
+        </app-custom-button>
+    </div>
+</div>

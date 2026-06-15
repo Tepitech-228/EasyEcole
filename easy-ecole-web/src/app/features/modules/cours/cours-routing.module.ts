@@ -12,10 +12,14 @@ import { ModificationChapitrePageComponent } from './pages/modification-chapitre
 import { ModificationRessourcePageComponent } from './pages/modification-ressource-page/modification-ressource-page.component';
 import { ListePresencesPageComponent } from './pages/liste-presences-page/liste-presences-page.component';
 import { ListeNotesPageComponent } from './pages/liste-notes-page/liste-notes-page.component';
+import { NouvelleEvaluationPageComponent } from './pages/nouvelle-evaluation-page/nouvelle-evaluation-page.component';
+import { SaisieNotesPageComponent } from './pages/saisie-notes-page/saisie-notes-page.component';
 import { ListeEmploisDuTempsPageComponent } from './pages/liste-emplois-du-temps-page/liste-emplois-du-temps-page.component';
 import { ListeCahiersDeTextePageComponent } from './pages/liste-cahiers-de-texte-page/liste-cahiers-de-texte-page.component';
 import { DetailsPresencePageComponent } from './pages/details-presence-page/details-presence-page.component';
+import { ScanPresencePageComponent } from './pages/scan-presence-page/scan-presence-page.component';
 import { DetailsCahierDeTextePageComponent } from './pages/details-cahier-de-texte-page/details-cahier-de-texte-page.component';
+import { MesPresencesPageComponent } from './pages/mes-presences-page/mes-presences-page.component';
 
 const routes: Routes = [
   {
@@ -99,6 +103,12 @@ const routes: Routes = [
 
   // Présences
   {
+    path: 'mes-presences',
+    component: MesPresencesPageComponent,
+    pathMatch: 'full'
+  },
+
+  {
     path: 'presences',
     children: [
       {
@@ -110,6 +120,11 @@ const routes: Routes = [
       {
         path: ':id',
         component: DetailsPresencePageComponent,
+        pathMatch: 'full'
+      },
+      {
+        path: ':id/scan',
+        component: ScanPresencePageComponent,
         pathMatch: 'full'
       },
     ],
@@ -152,6 +167,16 @@ const routes: Routes = [
       {
         path: '',
         component: ListeNotesPageComponent,
+        pathMatch: 'full'
+      },
+      {
+        path: 'nouveau',
+        component: NouvelleEvaluationPageComponent,
+        pathMatch: 'full'
+      },
+      {
+        path: ':id/saisie',
+        component: SaisieNotesPageComponent,
         pathMatch: 'full'
       },
     ],

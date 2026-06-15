@@ -11,6 +11,7 @@ import { PersonnePrevenirApprenant } from "./PersonnePrevenirApprenant";
 export class Apprenant extends Model<InferAttributes<Apprenant>, InferCreationAttributes<Apprenant>> {
   declare id: CreationOptional<string>
   declare photo: CreationOptional<string>
+  declare qrCode: CreationOptional<string>
   declare dateNaissance: Date
   declare lieuNaissance: string
   declare adresseId: ForeignKey<AdresseApprenant['id']>
@@ -46,6 +47,11 @@ Apprenant.init({
     primaryKey: true
   },
   photo: {
+    type: new DataTypes.STRING,
+    allowNull: true,
+    unique: true
+  },
+  qrCode: {
     type: new DataTypes.STRING,
     allowNull: true,
     unique: true

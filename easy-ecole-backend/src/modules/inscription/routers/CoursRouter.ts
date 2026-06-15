@@ -8,6 +8,7 @@ const router = express.Router()
 router
     .get('/', CoursController.getAllCours)
     .post('/', [AuthInstitution], CoursController.createCours)
+    .get('/mes-presences', [], CoursController.getMesPresences)
     .get('/:id', CoursController.getCours)
     .get('/:id/participants', CoursController.getCoursParticipants)
     .put('/:id', [AuthInstitution], CoursController.updateCours)

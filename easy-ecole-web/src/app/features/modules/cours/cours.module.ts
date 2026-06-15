@@ -24,6 +24,10 @@ import { ListeCahiersDeTextePageComponent } from './pages/liste-cahiers-de-texte
 import { ListeEmploisDuTempsPageComponent } from './pages/liste-emplois-du-temps-page/liste-emplois-du-temps-page.component';
 import { DetailsPresencePageComponent } from './pages/details-presence-page/details-presence-page.component';
 import { DetailsCahierDeTextePageComponent } from './pages/details-cahier-de-texte-page/details-cahier-de-texte-page.component';
+import { NouvelleEvaluationPageComponent } from './pages/nouvelle-evaluation-page/nouvelle-evaluation-page.component';
+import { SaisieNotesPageComponent } from './pages/saisie-notes-page/saisie-notes-page.component';
+import { ScanPresencePageComponent } from './pages/scan-presence-page/scan-presence-page.component';
+import { MesPresencesPageComponent } from './pages/mes-presences-page/mes-presences-page.component';
 
 @NgModule({
   declarations: [
@@ -45,7 +49,11 @@ import { DetailsCahierDeTextePageComponent } from './pages/details-cahier-de-tex
     ListeCahiersDeTextePageComponent,
     ListeEmploisDuTempsPageComponent,
     DetailsPresencePageComponent,
-    DetailsCahierDeTextePageComponent
+    DetailsCahierDeTextePageComponent,
+    NouvelleEvaluationPageComponent,
+    SaisieNotesPageComponent,
+    ScanPresencePageComponent,
+    MesPresencesPageComponent
   ],
   imports: [
     CommonModule,

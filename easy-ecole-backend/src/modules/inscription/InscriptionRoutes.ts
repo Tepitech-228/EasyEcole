@@ -29,6 +29,7 @@ import CahierDeTexteRouter from "./routers/CahierDeTexteRouter";
 import BlocCahierDeTexteRouter from "./routers/BlocCahierDeTexteRouter";
 import TypeNoteEvaluationRouter from "./routers/TypeNoteEvaluationRouter";
 import ListeNoteEvaluationRouter from "./routers/ListeNoteEvaluationRouter";
+import PointageRouter from "./routers/PointageRouter";
 
 const router = express.Router();
 
@@ -61,5 +62,6 @@ router
     .use('/blocsCahierDeTexte', [Authenticate], BlocCahierDeTexteRouter)
     .use('/typesNoteEvaluation', [Authenticate], TypeNoteEvaluationRouter)
     .use('/listesNoteEvaluation', [Authenticate], ListeNoteEvaluationRouter)
+    .use('/pointages', [Authenticate], PointageRouter)
 
 export default router;

@@ -30,6 +30,7 @@ import { ListePresence } from "./ListePresence";
 import { CahierDeTexte } from "./CahierDeTexte";
 import { BlocCahierDeTexte } from "./BlocCahierDeTexte";
 import { TypeNoteEvaluation } from "./TypeNoteEvaluation";
+import { Pointage } from "./Pointage";
 import { ListeNoteEvaluation } from "./ListeNoteEvaluation";
 import { NoteEvaluation } from "./NoteEvaluation";
 
@@ -245,3 +246,7 @@ NoteEvaluation.belongsTo(ListeNoteEvaluation, { as: 'listeNoteEvaluation', forei
 // CoursParticipant - NoteEvaluation
 CoursParticipant.hasMany(NoteEvaluation, { foreignKey: 'coursParticipantId', as: 'notesEvaluation' })
 NoteEvaluation.belongsTo(CoursParticipant, { as: 'coursParticipant', foreignKey: 'coursParticipantId' })
+
+// Utilisateur - Pointage
+Utilisateur.hasMany(Pointage, { foreignKey: 'utilisateurId', as: 'pointages' })
+Pointage.belongsTo(Utilisateur, { as: 'utilisateur', foreignKey: 'utilisateurId' })

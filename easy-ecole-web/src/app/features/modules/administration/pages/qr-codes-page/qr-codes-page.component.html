@@ -1,0 +1,64 @@
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="QR Codes" subtitle="Gérer les QR codes des étudiants"></app-header-title>
+    <div class="flex justify-end items-center gap-x-4">
+        <app-custom-button (click)="generateQrCodes()" *ngIf="rolesValue.isInstitution" [disabled]="generating" [text]="generating ? 'Génération...' : 'Générer tous les QR codes'"></app-custom-button>
+    </div>
+</div>
+
+<div *ngIf="loading" class="text-center py-8 text-gray-500">Chargement...</div>
+
+<div *ngIf="!loading && apprenants.length == 0" class="text-center py-8 text-gray-500">Aucun étudiant trouvé</div>
+
+<div *ngIf="!loading && apprenants.length > 0" class="flex flex-col">
+    <div class="overflow-x-auto">
+        <div class="py-2 inline-block min-w-full">
+            <div class="overflow-hidden">
+                <table class="min-w-full">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">#</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Étudiant</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-center">
+                                <div class="px-2">QR Code</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-center">
+                                <div class="px-2">Statut</div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let apprenant of apprenants; index as index"
+                            class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    {{ index + 1 }}
+                                </div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    {{ apprenant.utilisateur?.nom }} {{ apprenant.utilisateur?.prenoms }}
+                                </div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="flex justify-center">
+                                    <img *ngIf="apprenant.qrCode" [src]="QR_CODES_PATH + apprenant.qrCode" class="h-16 w-16 object-contain">
+                                    <span *ngIf="!apprenant.qrCode" class="text-gray-400 text-xs">Non généré</span>
+                                </div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="flex justify-center">
+                                    <app-custom-badge *ngIf="apprenant.qrCode" color="green" text="Généré"></app-custom-badge>
+                                    <app-custom-badge *ngIf="!apprenant.qrCode" color="red" text="En attente"></app-custom-badge>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

@@ -30,6 +30,7 @@ router
     .get('/:id', EnseignantController.getEnseignant)
     .put('/', [], EnseignantController.updateEnseignant)
     .put('/photo', [AuthEnseignant, upload.fields([{name: 'photo', maxCount: 1}])], EnseignantController.updatePhoto)
+    .post('/qr-codes/generate', [AuthInstitution], EnseignantController.generateQrCodes)
     .delete('/', [AuthInstitution], EnseignantController.deleteEnseignant)
     .get('/statistics/count', [AuthEnseignant], EnseignantController.getCount)
 

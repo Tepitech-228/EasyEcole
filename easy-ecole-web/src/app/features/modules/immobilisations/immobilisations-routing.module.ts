@@ -8,6 +8,8 @@ import { ListeSitesPageComponent } from './pages/liste-sites-page/liste-sites-pa
 import { NouveauSitePageComponent } from './pages/nouveau-site-page/nouveau-site-page.component';
 import { ListeCategoriesPageComponent } from './pages/liste-categories-page/liste-categories-page.component';
 import { ListeMaintenancesPageComponent } from './pages/liste-maintenances-page/liste-maintenances-page.component';
+import { NouvelleMaintenancePageComponent } from './pages/nouvelle-maintenance-page/nouvelle-maintenance-page.component';
+import { NouvelleCategoriePageComponent } from './pages/nouvelle-categorie-page/nouvelle-categorie-page.component';
 
 const routes: Routes = [
     {
@@ -19,7 +21,6 @@ const routes: Routes = [
                 canActivateChild: [AuthGuard],
                 children: [{ path: '', component: NouvelleImmobilisationPageComponent, pathMatch: 'full' }]
             },
-            { path: ':id', component: DetailsImmobilisationPageComponent, pathMatch: 'full' },
         ]
     },
     {
@@ -37,14 +38,25 @@ const routes: Routes = [
         path: 'categories',
         children: [
             { path: '', component: ListeCategoriesPageComponent, pathMatch: 'full' },
+            {
+                path: 'nouveau',
+                canActivateChild: [AuthGuard],
+                children: [{ path: '', component: NouvelleCategoriePageComponent, pathMatch: 'full' }]
+            },
         ]
     },
     {
         path: 'maintenances',
         children: [
             { path: '', component: ListeMaintenancesPageComponent, pathMatch: 'full' },
+            {
+                path: 'nouveau',
+                canActivateChild: [AuthGuard],
+                children: [{ path: '', component: NouvelleMaintenancePageComponent, pathMatch: 'full' }]
+            },
         ]
     },
+    { path: ':id', component: DetailsImmobilisationPageComponent, pathMatch: 'full' },
 ];
 
 @NgModule({ imports: [RouterModule.forChild(routes)], exports: [RouterModule] })

@@ -8,6 +8,7 @@ import { Cours } from "../../inscription/models/Cours";
 export class Enseignant extends Model<InferAttributes<Enseignant>, InferCreationAttributes<Enseignant>> {
   declare id: CreationOptional<string>
   declare photo: CreationOptional<string>
+  declare qrCode: CreationOptional<string>
   declare dateNaissance: CreationOptional<Date>
   declare lieuNaissance: CreationOptional<string>
   declare fonction: CreationOptional<string>
@@ -33,6 +34,11 @@ Enseignant.init({
     primaryKey: true
   },
   photo: {
+    type: new DataTypes.STRING,
+    allowNull: true,
+    unique: true
+  },
+  qrCode: {
     type: new DataTypes.STRING,
     allowNull: true,
     unique: true

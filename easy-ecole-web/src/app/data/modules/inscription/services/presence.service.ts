@@ -32,4 +32,8 @@ export class PresenceService {
   delete(id: string): Observable<any> {
     return this.httpClient.delete(`${this.SERVICE_URL}/${id}`)
   }
+
+  scanPresence(presenceId: string, userId: string): Observable<any> {
+    return this.httpClient.post(`${this.SERVICE_URL}/scan`, { presenceId, userId })
+  }
 }

@@ -7,6 +7,9 @@ import { Enseignant } from "../../auth/models/Enseignant";
 import { DemandeInscription } from "../models/DemandeInscription";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { CoursParticipant } from "../models/CoursParticipant";
+import { ListePresence } from "../models/ListePresence";
+import { Presence } from "../models/Presence";
+import { PresenceCoursParticipant } from "../models/PresenceCoursParticipant";
 
 export default class CoursController {
 
@@ -305,6 +308,39 @@ export default class CoursController {
         }
 
         return null
+    }
+
+    static async getMesPresences(req: Request, res: Response): Promise<Response | null> {
+        if ((req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT) {
+            return res.status(403).json({ success: false })
+        }
+
+        try {
+            const coursList = await Cours.findAll({
+                include: [{
+                    association: Cours.associations.enseignant,
+                    where: { utilisateurId: (req as any).utilisateurId },
+                    required: true
+                }, {
+                    association: 'listesPresences' as any,
+                    include: [{
+                        association: 'presences' as any,
+                        include: [{
+                            association: 'presencesCoursParticipants' as any
+                        }]
+                    }]
+                }, {
+                    association: Cours.associations.classe
+                }, {
+                    association: Cours.associations.parcours,
+                    include: [Parcours.associations.niveauEtude]
+                }]
+            })
+
+            return res.status(200).send(coursList)
+        } catch (error) {
+            return res.status(500).json({ success: false, error: error })
+        }
     }
 
     static async getCount(req: Request, res: Response): Promise<Response | null> {

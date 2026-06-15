@@ -10,6 +10,7 @@ export class Entreprise extends Model<InferAttributes<Entreprise>, InferCreation
   declare telephone: string
   declare email: string
   declare siteWeb: CreationOptional<string>
+  declare description: CreationOptional<string>
   declare tuteurs?: Tuteur[]
 
   declare readonly createdAt: CreationOptional<Date>
@@ -44,6 +45,10 @@ Entreprise.init({
   },
   siteWeb: {
     type: new DataTypes.STRING,
+    allowNull: true
+  },
+  description: {
+    type: DataTypes.TEXT,
     allowNull: true
   },
   createdAt: DataTypes.DATE,

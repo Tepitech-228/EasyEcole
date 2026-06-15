@@ -31,7 +31,7 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
   file?: File
 
   readonly PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS
-  readonly PHOTOS_ENSEIGNANTS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS_ENSEIGNANTS
+  readonly PHOTOS_ENSEIGNANTS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS
 
   updateError: boolean = false
   updateSuccess: boolean = false

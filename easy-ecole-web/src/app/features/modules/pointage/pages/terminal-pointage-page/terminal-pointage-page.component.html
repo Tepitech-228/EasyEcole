@@ -1,0 +1,54 @@
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Terminal de pointage" subtitle="Pointer votre arrivée et départ"></app-header-title>
+</div>
+
+<div *ngIf="loading" class="text-center py-8 text-gray-500">Chargement...</div>
+
+<div *ngIf="!loading">
+    <!-- Mes pointages du jour -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8 max-w-lg">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Mon pointage aujourd'hui</h3>
+
+        <div *ngIf="!todayPointage" class="text-gray-500 mb-4">Aucun pointage enregistré aujourd'hui</div>
+
+        <div *ngIf="todayPointage" class="space-y-2 mb-4">
+            <div class="flex justify-between text-sm">
+                <span class="text-gray-500">Arrivée</span>
+                <span class="font-medium" [class.text-green-600]="todayPointage.heureArrivee">{{ todayPointage.heureArrivee || '---' }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+                <span class="text-gray-500">Départ</span>
+                <span class="font-medium" [class.text-red-600]="todayPointage.heureDepart">{{ todayPointage.heureDepart || '---' }}</span>
+            </div>
+        </div>
+
+        <div class="flex gap-x-4">
+            <app-custom-button *ngIf="!todayPointage" (click)="pointerArrivee()" text="Pointer arrivée"></app-custom-button>
+            <app-custom-button *ngIf="todayPointage && !todayPointage.heureDepart" (click)="pointerDepart()" text="Pointer départ" color="orange"></app-custom-button>
+        </div>
+    </div>
+
+    <!-- Scan QR pour enseignants/institution -->
+    <div *ngIf="rolesValue.isEnseignant || rolesValue.isInstitution" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8 max-w-lg">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Scanner un QR étudiant</h3>
+
+        <div *ngIf="!scanning && !successMessage && !errorMessage">
+            <app-custom-button (click)="startScanner()" text="Lancer le scan"></app-custom-button>
+        </div>
+
+        <div *ngIf="scanning" class="w-full max-w-sm">
+            <div id="qr-reader-pointage" class="mx-auto rounded-lg overflow-hidden border border-gray-200"></div>
+            <div class="text-center mt-2 text-sm text-gray-500">Caméra active</div>
+            <app-custom-button class="mt-4" (click)="stopScanner()" text="Arrêter le scan" color="gray"></app-custom-button>
+        </div>
+
+        <div *ngIf="successMessage" class="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+            <div class="text-green-600 font-medium">{{ successMessage }}</div>
+        </div>
+
+        <div *ngIf="errorMessage" class="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+            <div class="text-red-600 font-medium">{{ errorMessage }}</div>
+            <app-custom-button class="mt-4" (click)="startScanner()" text="Réessayer"></app-custom-button>
+        </div>
+    </div>
+</div>

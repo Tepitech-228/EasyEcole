@@ -2,6 +2,9 @@ import { Request, Response } from "express";
 import { CountOptions, FindOptions, InferAttributes } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Presence } from "../models/Presence";
+import { PresenceCoursParticipant } from "../models/PresenceCoursParticipant";
+import { CoursParticipant } from "../models/CoursParticipant";
+import { ListePresence } from "../models/ListePresence";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { Cours } from "../models/Cours";
 import { Parcours } from "../models/Parcours";
@@ -153,5 +156,63 @@ export default class PresenceController {
             });
 
         return null
+    }
+
+    static async scanPresence(req: Request, res: Response): Promise<Response | null> {
+        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT) {
+            return res.status(403).json({ success: false })
+        }
+
+        const { presenceId, userId } = req.body
+        if (!presenceId || !userId) {
+            return res.status(400).json({ success: false, message: "presenceId et userId requis" })
+        }
+
+        try {
+            const presence = await Presence.findByPk(presenceId, {
+                include: [{
+                    association: Presence.associations.listePresence,
+                    include: [ListePresence.associations.cours]
+                }]
+            })
+
+            if (!presence || !presence.listePresence || !presence.listePresence.cours) {
+                return res.status(404).json({ success: false, message: "Présence ou cours non trouvé" })
+            }
+
+            const coursId = presence.listePresence.cours.id
+
+            const coursParticipant = await CoursParticipant.findOne({
+                where: {
+                    utilisateurId: userId,
+                    coursId: coursId
+                }
+            })
+
+            if (!coursParticipant) {
+                return res.status(404).json({ success: false, message: "Participant non inscrit à ce cours" })
+            }
+
+            const existing = await PresenceCoursParticipant.findOne({
+                where: {
+                    presenceId: presenceId,
+                    coursParticipantId: coursParticipant.id
+                }
+            })
+
+            if (existing) {
+                return res.status(400).json({ success: false, alreadyExists: true, message: "Présence déjà marquée pour cet étudiant" })
+            }
+
+            const presenceCoursParticipant = new PresenceCoursParticipant()
+            presenceCoursParticipant.presenceId = presenceId
+            presenceCoursParticipant.coursParticipantId = coursParticipant.id
+
+            await presenceCoursParticipant.save()
+
+            return res.status(201).json({ success: true, data: presenceCoursParticipant })
+        } catch (error) {
+            return res.status(500).json({ success: false, error: error })
+        }
     }
 }

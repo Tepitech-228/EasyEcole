@@ -5,6 +5,7 @@ export class Entreprise {
     declare telephone?: string
     declare email?: string
     declare siteWeb?: string
+    declare description?: string
 
     declare readonly createdAt?: Date
     declare readonly updatedAt?: Date

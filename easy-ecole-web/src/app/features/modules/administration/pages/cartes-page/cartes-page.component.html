@@ -1,0 +1,60 @@
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Cartes étudiantes" subtitle="Générer et imprimer les cartes étudiantes"></app-header-title>
+</div>
+
+<div *ngIf="loading" class="text-center py-8 text-gray-500">Chargement...</div>
+
+<div *ngIf="!loading && apprenants.length == 0" class="text-center py-8 text-gray-500">Aucun étudiant trouvé</div>
+
+<div *ngIf="!loading && apprenants.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div *ngFor="let apprenant of apprenants"
+        class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+        (click)="openCard(apprenant)">
+        <div class="p-4">
+            <div class="flex items-center gap-x-4 mb-3">
+                <img [src]="apprenant.photo ? PHOTOS_PATH + apprenant.photo : 'assets/images/blank-profile-picture.png'"
+                    class="h-14 w-14 rounded-full object-cover border-2 border-gray-200">
+                <div class="min-w-0">
+                    <div class="text-sm font-medium text-gray-900 truncate">{{ apprenant.utilisateur?.nom }} {{ apprenant.utilisateur?.prenoms }}</div>
+                    <div class="text-xs text-gray-500">Matricule: {{ getMatricule(apprenant) }}</div>
+                    <div class="text-xs text-gray-400 truncate">{{ getParcours(apprenant) }}</div>
+                </div>
+            </div>
+            <div class="flex justify-center mt-2">
+                <div *ngIf="apprenant.qrCode; else noQR" class="text-center">
+                    <img [src]="QR_CODES_PATH + apprenant.qrCode" class="h-20 w-20 object-contain mx-auto">
+                    <div class="text-xs text-gray-400 mt-1">Cliquez pour voir la carte</div>
+                </div>
+                <ng-template #noQR>
+                    <app-custom-badge color="red" text="QR code non généré"></app-custom-badge>
+                </ng-template>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Carte modale pour impression -->
+<app-custom-modal *ngIf="selectedApprenant" title="Carte étudiante" [showModal]="showPrintModal" (onCloseModal)="closeCard()">
+    <div id="carte-etudiante" class="bg-white rounded-lg overflow-hidden" style="width: 350px; margin: 0 auto;">
+        <div class="bg-primary p-4 text-white text-center">
+            <div class="text-lg font-bold">CARTE ÉTUDIANTE</div>
+            <div class="text-xs opacity-75">{{ getAnneeScolaire(selectedApprenant) }}</div>
+        </div>
+        <div class="p-6 text-center">
+            <img [src]="selectedApprenant.photo ? PHOTOS_PATH + selectedApprenant.photo : 'assets/images/blank-profile-picture.png'"
+                class="h-24 w-24 rounded-full object-cover border-4 border-gray-200 mx-auto mb-4">
+            <div class="text-lg font-bold text-gray-900">{{ selectedApprenant.utilisateur?.nom }} {{ selectedApprenant.utilisateur?.prenoms }}</div>
+            <div class="text-sm text-gray-600">Matricule: {{ getMatricule(selectedApprenant) }}</div>
+            <div class="text-sm text-gray-500">{{ getParcours(selectedApprenant) }}</div>
+            <div class="text-xs text-gray-400">{{ getClasse(selectedApprenant) }}</div>
+            <div class="border-t border-gray-200 my-4"></div>
+            <div *ngIf="selectedApprenant.qrCode">
+                <img [src]="QR_CODES_PATH + selectedApprenant.qrCode" class="h-28 w-28 object-contain mx-auto">
+            </div>
+        </div>
+    </div>
+    <div class="flex items-center justify-between py-3 print-hidden">
+        <app-custom-button (click)="closeCard()" text="Fermer" color="gray" [outlined]="true"></app-custom-button>
+        <app-custom-button (click)="printCard()" text="Imprimer"></app-custom-button>
+    </div>
+</app-custom-modal>

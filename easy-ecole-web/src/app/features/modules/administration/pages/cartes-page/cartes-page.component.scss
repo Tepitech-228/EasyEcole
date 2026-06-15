@@ -1,0 +1,4 @@
+@media print {
+  .print-hidden { display: none !important; }
+  app-custom-modal { position: static !important; }
+}

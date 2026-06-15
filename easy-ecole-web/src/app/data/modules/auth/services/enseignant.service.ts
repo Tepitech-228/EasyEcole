@@ -31,4 +31,8 @@ export class EnseignantService {
 
     return this.httpClient.put<Enseignant>(`${this.SERVICE_URL}/photo`, formData)
   }
+
+  generateQrCodes(enseignantId?: string): Observable<any> {
+    return this.httpClient.post(`${this.SERVICE_URL}/qr-codes/generate`, { enseignantId })
+  }
 }

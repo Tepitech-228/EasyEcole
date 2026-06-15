@@ -1,0 +1,25 @@
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Scan QR Code" subtitle="Scannez le QR code de l'étudiant pour marquer sa présence"></app-header-title>
+    <app-custom-button (click)="goBack()" text="Retour" color="gray" [outlined]="true"></app-custom-button>
+</div>
+
+<div class="flex flex-col items-center">
+    <div *ngIf="!scannedUserId && !successMessage && !errorMessage" class="w-full max-w-md">
+        <div id="qr-reader" class="mx-auto rounded-lg overflow-hidden shadow-lg border border-gray-200"></div>
+        <div class="text-center mt-4 text-sm text-gray-500">
+            <div *ngIf="scanning">Caméra active - Pointez le QR code étudiant</div>
+            <div *ngIf="!scanning && !errorMessage">Démarrage de la caméra...</div>
+        </div>
+    </div>
+
+    <div *ngIf="successMessage" class="bg-green-50 border border-green-200 rounded-lg p-6 text-center max-w-md mx-auto">
+        <div class="text-green-600 text-lg font-medium mb-2">✓ Présence marquée</div>
+        <div class="text-green-700">{{ scannedUserNom }}</div>
+    </div>
+
+    <div *ngIf="errorMessage" class="bg-red-50 border border-red-200 rounded-lg p-6 text-center max-w-md mx-auto">
+        <div class="text-red-600 text-lg font-medium mb-2">Erreur</div>
+        <div class="text-red-700">{{ errorMessage }}</div>
+        <app-custom-button class="mt-4" (click)="startScanner()" text="Réessayer"></app-custom-button>
+    </div>
+</div>

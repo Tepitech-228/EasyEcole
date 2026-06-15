@@ -8,6 +8,7 @@ import { Utilisateur } from "./Utilisateur.model";
 export class Apprenant {
   declare id?: string
   declare photo: string
+  declare qrCode?: string
   declare dateNaissance: Date
   declare lieuNaissance: string
   declare adresseId: string

@@ -15,7 +15,7 @@ import { environment } from 'src/environments/environment';
 })
 export class ListeEnseignantsPageComponent extends BaseComponentClass implements OnInit {
 
-  readonly PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS_ENSEIGNANTS
+  readonly PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS
   showNouvelEnseignantModal: boolean = false
 
   enseignants: Enseignant[] = []

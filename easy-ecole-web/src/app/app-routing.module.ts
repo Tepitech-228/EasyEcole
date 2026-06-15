@@ -79,6 +79,20 @@ const routes: Routes = [
         loadChildren: () => import('./features/modules/immobilisations/immobilisations.module').then(m => m.ImmobilisationsModule),
         canLoad: [AuthGuard]
       },
+
+      // Module "Administration"
+      {
+        path: 'administration',
+        loadChildren: () => import('./features/modules/administration/administration.module').then(m => m.AdministrationModule),
+        canLoad: [AuthGuard]
+      },
+
+      // Module "Pointage"
+      {
+        path: 'pointage',
+        loadChildren: () => import('./features/modules/pointage/pointage.module').then(m => m.PointageModule),
+        canLoad: [AuthGuard]
+      },
     ]
   },
 

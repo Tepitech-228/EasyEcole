@@ -21,6 +21,14 @@ export class ApprenantService {
     return this.httpClient.put<Apprenant>(`${this.SERVICE_URL}/`, apprenant)
   }
 
+  getAll(): Observable<Apprenant[]> {
+    return this.httpClient.get<Apprenant[]>(`${this.SERVICE_URL}`)
+  }
+
+  generateQrCodes(apprenantId?: string): Observable<any> {
+    return this.httpClient.post(`${this.SERVICE_URL}/qr-codes/generate`, { apprenantId })
+  }
+
   updatePhoto(photo: File): Observable<Apprenant> {
     let formData: FormData = new FormData()
       formData.append('photo', photo, photo.name)

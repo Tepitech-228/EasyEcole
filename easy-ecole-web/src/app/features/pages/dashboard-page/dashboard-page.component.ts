@@ -27,6 +27,7 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
 
   utilisateur?: Utilisateur
   readonly PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS
+  readonly QR_CODES_PATH: string = environment.QR_CODES_PATH
 
   constructor(
     private router: Router,

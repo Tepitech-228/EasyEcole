@@ -65,6 +65,21 @@
                 </app-nav-menu-group>
             </div>
 
+            <app-nav-menu-group title="Administration" *ngIf="rolesValue.isInstitution">
+                    <app-nav-menu-item (click)="closeMenu()" icon="qr_code" text="QR Codes Étudiants" link="/administration/qr-codes"></app-nav-menu-item>
+                    <app-nav-menu-item (click)="closeMenu()" icon="qr_code_2" text="QR Codes Enseignants" link="/administration/qr-codes-enseignants"></app-nav-menu-item>
+                    <app-nav-menu-item (click)="closeMenu()" icon="credit_card" text="Cartes" link="/administration/cartes"></app-nav-menu-item>
+                </app-nav-menu-group>
+
+                <app-nav-menu-group title="Présences" *ngIf="rolesValue.isEnseignant">
+                    <app-nav-menu-item (click)="closeMenu()" icon="fact_check" text="Mes cours" link="/cours/mes-presences"></app-nav-menu-item>
+                </app-nav-menu-group>
+
+                <app-nav-menu-group title="Pointage">
+                    <app-nav-menu-item (click)="closeMenu()" icon="touch_app" text="Terminal" link="/pointage"></app-nav-menu-item>
+                    <app-nav-menu-item (click)="closeMenu()" icon="history" text="Historique" link="/pointage/historique"></app-nav-menu-item>
+                </app-nav-menu-group>
+
             <div class="mb-2 flex flex-col justify-end gap-y-8">
                 <app-nav-menu-group title="Paramètres">
                     <app-nav-menu-item (click)="closeMenu()" icon="badge" text="Mon profil" link="/parametres/profil"></app-nav-menu-item>

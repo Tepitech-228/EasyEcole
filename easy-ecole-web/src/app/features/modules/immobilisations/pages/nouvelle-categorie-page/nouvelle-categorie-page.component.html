@@ -1,0 +1,47 @@
+<app-custom-alert [show]="error" title="Erreur">
+    Une erreur est survenue lors de la création
+</app-custom-alert>
+
+<app-return-back></app-return-back>
+
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Nouvelle catégorie" subtitle="Veuillez renseigner les informations ci-dessous pour ajouter une nouvelle catégorie"></app-header-title>
+    <div class="flex justify-end items-center">
+    </div>
+</div>
+
+<div class="w-full mb-8">
+    <form [formGroup]="categorieForm" id="categorieForm">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="md:col-span-4 col-span-full">
+                <label for="nom" class="mb-2 block text-sm leading-6 text-gray-600">Nom</label>
+                <input type="text" id="nom" formControlName="nom" placeholder="Saisir le nom de la catégorie ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <div *ngIf="categorieForm.get('nom')!.invalid && (categorieForm.get('nom')!.dirty || categorieForm.get('nom')!.touched)">
+                    <app-form-message *ngIf="categorieForm.get('nom')!.errors?.['required']"
+                        text="Veuillez saisir le nom"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-full">
+                <label for="description" class="mb-2 block text-sm leading-6 text-gray-600">Description (facultative)</label>
+                <textarea rows="3" id="description" formControlName="description"
+                    placeholder="Saisir la description ici..."
+                    class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
+            </div>
+            <div class="md:col-span-4 col-span-full">
+                <label for="tauxAmortissement" class="mb-2 block text-sm leading-6 text-gray-600">Taux d'amortissement (%)</label>
+                <input type="number" id="tauxAmortissement" formControlName="tauxAmortissement" placeholder="Saisir le taux ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="md:col-span-4 col-span-full">
+                <label for="dureeVie" class="mb-2 block text-sm leading-6 text-gray-600">Durée de vie (années)</label>
+                <input type="number" id="dureeVie" formControlName="dureeVie" placeholder="Saisir la durée ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+        </div>
+
+        <div class="w-full flex justify-end items-center pb-12">
+            <app-custom-button (click)="create()" text="Enregistrer"></app-custom-button>
+        </div>
+    </form>
+</div>

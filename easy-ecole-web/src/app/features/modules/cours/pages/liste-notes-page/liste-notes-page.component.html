@@ -1,5 +1,11 @@
 <div class="flex justify-between items-start gap-x-8 mb-8">
     <app-header-title title="Notes d'évaluation" subtitle="Consulter la liste des notes de vos évaluations"></app-header-title>
+    <div class="flex justify-end items-center">
+        <app-custom-button *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isAdmin"
+                           link="/cours/notes/nouveau"
+                           text="Nouvelle évaluation">
+        </app-custom-button>
+    </div>
 </div>
 
 <div class="w-full flex justify-between items-center mb-8">
@@ -45,6 +51,7 @@
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Poids</th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Moyenne</th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Étudiants</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -69,6 +76,13 @@
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     {{ liste.notesEvaluation?.length || 0 }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <app-custom-button [link]="'/cours/notes/' + liste.id + '/saisie'"
+                                       text="Saisir"
+                                       color="primary"
+                                       [outlined]="true">
+                    </app-custom-button>
                 </td>
             </tr>
         </tbody>

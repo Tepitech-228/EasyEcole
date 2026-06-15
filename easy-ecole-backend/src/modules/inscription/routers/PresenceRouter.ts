@@ -7,6 +7,7 @@ const router = express.Router()
 router
     .get('/', PresenceController.getAllPresences)
     .post('/', [], PresenceController.createPresence)
+    .post('/scan', [], PresenceController.scanPresence)
     .get('/:id', PresenceController.getPresence)
     .put('/:id', [], PresenceController.updatePresence)
     .delete('/:id', [], PresenceController.deletePresence)

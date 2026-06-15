@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CountOptions, FindOptions, InferAttributes } from "sequelize";
+import { CountOptions, FindOptions, InferAttributes, Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Apprenant } from "../models/Apprenant";
 import { AdresseApprenant } from "../models/AdresseApprenant";
@@ -7,17 +7,33 @@ import { InformationsParentsApprenant } from "../models/InformationsParentsAppre
 import { IdentiteApprenant } from "../models/IdentiteApprenant";
 import { InformationsSalarieApprenant } from "../models/InformationsSalarieApprenant";
 import { PersonnePrevenirApprenant } from "../models/PersonnePrevenirApprenant";
+import * as path from "path";
+import * as fs from "fs";
+import QRCode from "qrcode";
 
 export default class ApprenantController {
 
     constructor() { }
 
     static async getAllApprenants(req: Request, res: Response): Promise<Response> {
-        let options: FindOptions<InferAttributes<Apprenant>> = {}
+        let options: FindOptions<InferAttributes<Apprenant>> = {
+            include: [{
+                association: Apprenant.associations.utilisateur,
+                include: [{
+                    association: 'cursusApprenant' as any,
+                    include: [
+                        { association: 'parcours' as any },
+                        { association: 'classe' as any },
+                        { association: 'anneeAcademique' as any },
+                        { association: 'demandeInscription' as any }
+                    ]
+                }]
+            }]
+        }
 
         try {
             let apprenants: Apprenant[];
-            apprenants = await Apprenant.findAll();
+            apprenants = await Apprenant.findAll(options);
 
             return res.status(200).send(apprenants);
         } catch (error) {
@@ -221,6 +237,57 @@ export default class ApprenantController {
         }
 
         return null
+    }
+
+    static async generateQrCodes(req: Request, res: Response): Promise<Response | null> {
+        const dir: string = "public/auth/apprenants/qr-codes/"
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true })
+        }
+
+        try {
+            let whereClause: any = {}
+            if (req.body.apprenantId) {
+                whereClause.id = req.body.apprenantId
+            }
+
+            const apprenants: Apprenant[] = await Apprenant.findAll({
+                where: whereClause,
+                include: [Apprenant.associations.utilisateur]
+            })
+
+            const results: { apprenantId: string, userId: string, qrCode: string }[] = []
+
+            for (const apprenant of apprenants) {
+                if (!apprenant.utilisateur) continue
+
+                const userId = String(apprenant.utilisateur.id)
+                const fileName = `${userId}.png`
+                const filePath = path.join(dir, fileName)
+
+                await QRCode.toFile(filePath, userId, {
+                    type: 'png',
+                    width: 400,
+                    margin: 2,
+                    color: {
+                        dark: '#000000',
+                        light: '#ffffff'
+                    }
+                })
+
+                await apprenant.update({ qrCode: fileName })
+
+                results.push({
+                    apprenantId: apprenant.id,
+                    userId: userId,
+                    qrCode: fileName
+                })
+            }
+
+            return res.status(200).json({ success: true, data: results })
+        } catch (error) {
+            return res.status(500).json({ success: false, error: error })
+        }
     }
 
     static async getCount(req: Request, res: Response): Promise<Response | null> {

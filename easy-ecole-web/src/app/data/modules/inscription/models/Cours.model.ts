@@ -5,6 +5,7 @@ import { ChapitreCours } from "./ChapitreCours.model";
 import { Classe } from "./Classe.model";
 import { Parcours } from "./Parcours.model";
 import { Seance } from "./Seance.model";
+import { ListePresence } from "./ListePresence.model";
 
 export class Cours {
   declare id?: string
@@ -23,6 +24,8 @@ export class Cours {
 
   declare enseignantId?: string
   declare enseignant?: Enseignant
+
+  declare listesPresences?: ListePresence[]
 
   declare readonly createdAt?: Date
   declare readonly updatedAt?: Date

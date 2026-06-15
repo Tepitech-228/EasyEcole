@@ -2,6 +2,7 @@ import { RolesUtilisateur } from "../../../enums/RolesUtilisateur";
 import { Apprenant } from "./Apprenant.model";
 import { CaissierBanque } from "./CaissierBanque.model";
 import { Institution } from "./Institution.model";
+import { CursusApprenant } from "../../inscription/models/CursusApprenant.model";
 
 export class Utilisateur {
   declare id?: string
@@ -18,6 +19,7 @@ export class Utilisateur {
   declare apprenant?: Apprenant
   declare institution?: Institution
   declare caissier?: CaissierBanque
+  declare cursusApprenant?: CursusApprenant[]
 
   declare readonly createdAt?: Date
   declare readonly updatedAt?: Date
