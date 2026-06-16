@@ -8,6 +8,8 @@ import { ListePresence } from "../models/ListePresence";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { Cours } from "../models/Cours";
 import { Parcours } from "../models/Parcours";
+import * as fs from "fs"
+import * as path from "path"
 
 export default class PresenceController {
 
@@ -211,6 +213,59 @@ export default class PresenceController {
             await presenceCoursParticipant.save()
 
             return res.status(201).json({ success: true, data: presenceCoursParticipant })
+        } catch (error) {
+            return res.status(500).json({ success: false, error: error })
+        }
+    }
+
+    static async signPresence(req: Request, res: Response): Promise<Response | null> {
+        if ((req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT) {
+            return res.status(403).json({ success: false, message: "Seul un enseignant peut signer" })
+        }
+
+        const { signature } = req.body
+        if (!signature) {
+            return res.status(400).json({ success: false, message: "Signature requise" })
+        }
+
+        try {
+            const presence = await Presence.findByPk(req.params.id, {
+                include: [{
+                    association: Presence.associations.listePresence,
+                    include: [{
+                        association: ListePresence.associations.cours,
+                        include: [Cours.associations.enseignant]
+                    }]
+                }]
+            })
+
+            if (!presence) {
+                return res.status(404).json({ success: false, message: "Présence non trouvée" })
+            }
+
+            const enseignant = presence.listePresence?.cours?.enseignant as any
+            if (!enseignant || enseignant.utilisateurId != (req as any).utilisateurId) {
+                return res.status(403).json({ success: false, message: "Vous n'êtes pas l'enseignant de ce cours" })
+            }
+
+            if (presence.signature) {
+                return res.status(400).json({ success: false, message: "Cette présence est déjà signée" })
+            }
+
+            const base64Data = signature.replace(/^data:image\/png;base64,/, "")
+            const dir = "public/inscription/presences/signatures/"
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir, { recursive: true })
+            }
+            const fileName = `${req.params.id}.png`
+            const filePath = path.join(dir, fileName)
+            fs.writeFileSync(filePath, base64Data, "base64")
+
+            presence.signature = fileName
+            presence.signedAt = new Date()
+            await presence.save()
+
+            return res.status(200).send(presence)
         } catch (error) {
             return res.status(500).json({ success: false, error: error })
         }
