@@ -36,4 +36,8 @@ export class PresenceService {
   scanPresence(presenceId: string, userId: string): Observable<any> {
     return this.httpClient.post(`${this.SERVICE_URL}/scan`, { presenceId, userId })
   }
+
+  signPresence(id: string, signature: string): Observable<Presence> {
+    return this.httpClient.put<Presence>(`${this.SERVICE_URL}/${id}/sign`, { signature })
+  }
 }
