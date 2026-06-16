@@ -8,6 +8,7 @@ export class TypeNoteEvaluation extends Model<InferAttributes<TypeNoteEvaluation
   declare libelle: string
   declare description: CreationOptional<string>
   declare poids: CreationOptional<Number>
+  declare categorie: CreationOptional<string>
   
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -30,6 +31,10 @@ TypeNoteEvaluation.init({
   },
   poids: {
     type: DataTypes.FLOAT,
+    allowNull: true
+  },
+  categorie: {
+    type: DataTypes.ENUM('controle_continu', 'devoir', 'examen'),
     allowNull: true
   },
   createdAt: DataTypes.DATE,

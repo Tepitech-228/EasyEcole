@@ -5,7 +5,7 @@ import { customAlphabet } from 'nanoid'
 
 import ApprenantController from "../controllers/ApprenantController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
-import { AuthApprenant } from "../../../core/middlewares/AuthApprenant";
+import Authenticate from "../../../core/middlewares/Authenticate";
 
 const router = express.Router()
 const storage = multer.diskStorage({
@@ -30,7 +30,8 @@ router
     // .post('/', [AuthInstitution], ApprenantController.createApprenant)
     .get('/:id', ApprenantController.getApprenant)
     .put('/', [], ApprenantController.updateApprenant)
-    .put('/photo', [AuthApprenant, upload.fields([{name: 'photo', maxCount: 1}])], ApprenantController.updatePhoto)
+    .put('/photo', [Authenticate, upload.fields([{name: 'photo', maxCount: 1}])], ApprenantController.updatePhoto)
+    .put('/photo/:apprenantId', [Authenticate, upload.fields([{name: 'photo', maxCount: 1}])], ApprenantController.updatePhoto)
     .post('/qr-codes/generate', [AuthInstitution], ApprenantController.generateQrCodes)
     .delete('/', [AuthInstitution], ApprenantController.deleteApprenant)
     .get('/statistics/count', [AuthInstitution], ApprenantController.getCount)

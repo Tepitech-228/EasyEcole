@@ -174,11 +174,16 @@ export default class ApprenantController {
 
     static async updatePhoto(req: Request, res: Response): Promise<Response | null> {
         let options: FindOptions<InferAttributes<Apprenant>> = {}
-        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
+        const role = (req as any).utilisateurRole
+
+        if (role == RolesUtilisateur.APPRENANT) {
             options = { where: { utilisateurId: (req as any).utilisateurId } }
-        }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
-            return res.status(403).json({ success: false })
+        } else {
+            const apprenantId = req.params.apprenantId || req.body.apprenantId
+            if (!apprenantId) {
+                return res.status(400).json({ success: false, message: "apprenantId requis" })
+            }
+            options = { where: { id: apprenantId } }
         }
 
         let files: any = req.files
@@ -186,13 +191,12 @@ export default class ApprenantController {
             let photo: Express.Multer.File | undefined = (files['photo'])[0] as Express.Multer.File | undefined
 
             if (photo) {
+                const photoFilename = photo.filename
                 let apprenant: Apprenant | null = await Apprenant.findOne(options);
                 if (apprenant != null) {
-                    await apprenant.update({
-                        photo: photo.filename,
-                    })
+                    await apprenant.update({ photo: photoFilename })
                         .then(async () => {
-                            return res.status(200).json({ success: false });
+                            return res.status(200).json({ success: true, photo: photoFilename });
                         })
                         .catch((error) => {
                             return res.status(400).json({ success: false, error: error });
@@ -253,7 +257,18 @@ export default class ApprenantController {
 
             const apprenants: Apprenant[] = await Apprenant.findAll({
                 where: whereClause,
-                include: [Apprenant.associations.utilisateur]
+                include: [{
+                    association: Apprenant.associations.utilisateur,
+                    include: [{
+                        association: 'cursusApprenant' as any,
+                        include: [
+                            { association: 'parcours' as any },
+                            { association: 'classe' as any },
+                            { association: 'anneeAcademique' as any },
+                            { association: 'demandeInscription' as any }
+                        ]
+                    }]
+                }]
             })
 
             const results: { apprenantId: string, userId: string, qrCode: string }[] = []
@@ -261,11 +276,26 @@ export default class ApprenantController {
             for (const apprenant of apprenants) {
                 if (!apprenant.utilisateur) continue
 
-                const userId = String(apprenant.utilisateur.id)
-                const fileName = `${userId}.png`
+                const user = apprenant.utilisateur
+                const cursus = (user as any).cursusApprenant?.[0]
+                const demande = cursus?.demandeInscription
+
+                const qrData = JSON.stringify({
+                    id: String(user.id),
+                    nom: user.nom,
+                    prenoms: user.prenoms,
+                    matricule: demande?.matricule || user.identifiant || '',
+                    parcours: cursus?.parcours?.titre || '',
+                    classe: cursus?.classe?.libelle || '',
+                    annee: cursus?.anneeAcademique?.libelle || '',
+                    email: user.email || '',
+                    contact: user.contact || ''
+                })
+
+                const fileName = `${user.id}.png`
                 const filePath = path.join(dir, fileName)
 
-                await QRCode.toFile(filePath, userId, {
+                await QRCode.toFile(filePath, qrData, {
                     type: 'png',
                     width: 400,
                     margin: 2,
@@ -279,7 +309,7 @@ export default class ApprenantController {
 
                 results.push({
                     apprenantId: apprenant.id,
-                    userId: userId,
+                    userId: String(user.id),
                     qrCode: fileName
                 })
             }

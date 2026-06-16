@@ -1,4 +1,38 @@
 @media print {
   .print-hidden { display: none !important; }
-  app-custom-modal { position: static !important; }
+  app-custom-modal {
+    position: static !important;
+    box-shadow: none !important;
+  }
+  app-custom-modal > div {
+    box-shadow: none !important;
+  }
+  body > *:not(#carte-etudiante) {
+    display: none !important;
+  }
+  #carte-etudiante {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+    border-radius: 16px !important;
+    width: 380px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  #carte-etudiante .bg-gradient-to-br {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  #carte-etudiante img {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+@page {
+  size: auto;
+  margin: 0;
 }

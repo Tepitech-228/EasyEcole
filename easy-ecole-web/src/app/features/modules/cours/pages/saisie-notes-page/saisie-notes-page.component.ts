@@ -6,6 +6,7 @@ import { ListeNoteEvaluation } from 'src/app/data/modules/inscription/models/Lis
 import { NoteEvaluation } from 'src/app/data/modules/inscription/models/NoteEvaluation.model';
 import { CoursService } from 'src/app/data/modules/inscription/services/cours.service';
 import { ListeNoteEvaluationService } from 'src/app/data/modules/inscription/services/liste-note-evaluation.service';
+import { PvEvaluationService, PvImportResult } from 'src/app/data/modules/inscription/services/pv-evaluation.service';
 
 @Component({
   selector: 'app-saisie-notes-page',
@@ -23,11 +24,19 @@ export class SaisieNotesPageComponent extends BaseComponentClass implements OnIn
   success: boolean = false
   error: boolean = false
 
+  exportingPv: boolean = false
+  importingPv: boolean = false
+  showImportModal: boolean = false
+  selectedFile: File | null = null
+  importResult: PvImportResult | null = null
+  importError: string | null = null
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private listeNoteEvaluationService: ListeNoteEvaluationService,
-    private coursService: CoursService) {
+    private coursService: CoursService,
+    private pvEvaluationService: PvEvaluationService) {
     super()
   }
 
@@ -108,6 +117,72 @@ export class SaisieNotesPageComponent extends BaseComponentClass implements OnIn
         this.saving = false
         this.error = true
         setTimeout(() => this.error = false, 3000)
+      }
+    })
+  }
+
+  exportPv(): void {
+    if (!this.evaluation?.id) return
+    this.exportingPv = true
+
+    this.pvEvaluationService.exportPv(this.evaluation.id).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `PV_${this.evaluation?.cours?.code || 'notes'}_${new Date().toISOString().split('T')[0]}.xlsx`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        window.URL.revokeObjectURL(url)
+        this.exportingPv = false
+      },
+      error: (err) => {
+        console.log(err)
+        this.exportingPv = false
+      }
+    })
+  }
+
+  onFileSelected(event: any): void {
+    const file = event.target?.files?.[0]
+    if (file) {
+      this.selectedFile = file
+    }
+  }
+
+  openImportModal(): void {
+    this.showImportModal = true
+    this.selectedFile = null
+    this.importResult = null
+    this.importError = null
+  }
+
+  closeImportModal(): void {
+    this.showImportModal = false
+    this.selectedFile = null
+    this.importResult = null
+    this.importError = null
+  }
+
+  importPv(): void {
+    if (!this.evaluation?.id || !this.selectedFile) return
+
+    this.importingPv = true
+    this.importResult = null
+    this.importError = null
+
+    this.pvEvaluationService.importPv(this.evaluation.id, this.selectedFile).subscribe({
+      next: (result) => {
+        this.importResult = result
+        this.importingPv = false
+        if (result.success) {
+          this.loadEvaluation(this.evaluation!.id!)
+        }
+      },
+      error: (err) => {
+        this.importingPv = false
+        this.importError = err.error?.message || 'Erreur lors de l\'import du fichier'
       }
     })
   }

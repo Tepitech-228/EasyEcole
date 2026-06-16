@@ -1,4 +1,7 @@
 import * as bcrypt from 'bcrypt';
+import * as QRCode from 'qrcode';
+import * as path from 'path';
+import * as fs from 'fs';
 const env = process.env.NODE_ENV || 'development';
 const config = require('../config/sequelize.json')[env];
 
@@ -439,8 +442,32 @@ async function seed() {
         });
 
         // Cursus
+        const parcoursMap = [insPar1, insPar2, insPar3, insPar4];
         const curNiveauId = classIdx === 3 ? insNiv2.id : insNiv1.id;
-        const cur = await InsCur.create({ utilisateurId: apprenantRecords[i].id, classeId: classes[classIdx].id, niveauEtudeId: curNiveauId });
+        const cur = await InsCur.create({
+            utilisateurId: apprenantRecords[i].id, classeId: classes[classIdx].id,
+            niveauEtudeId: curNiveauId, demandeInscriptionId: dem.id,
+            parcoursId: parcoursMap[classIdx].id, anneeAcademiqueId: an2.id,
+        });
+
+        // QR code avec toutes les infos étudiant
+        const a = apprenants[i];
+        const qrData = JSON.stringify({
+            id: String(apprenantRecords[i].utilisateurId),
+            nom: a.nom,
+            prenoms: a.prenoms,
+            matricule: dem.matricule,
+            parcours: parcoursMap[classIdx].titre,
+            classe: classes[classIdx].libelle,
+            annee: an2.libelle,
+            email: a.email,
+            contact: a.tel,
+        });
+        const fileName = `${apprenantRecords[i].utilisateurId}.png`;
+        const qrDir = "public/auth/apprenants/qr-codes/";
+        if (!fs.existsSync(qrDir)) fs.mkdirSync(qrDir, { recursive: true });
+        await QRCode.toFile(path.join(qrDir, fileName), qrData, { type: 'png', width: 400, margin: 2, color: { dark: '#000000', light: '#ffffff' } });
+        await apprenantRecords[i].update({ qrCode: fileName });
 
         // CoursParticipant (4 cours par apprenant)
         const cpIds: any[] = [];

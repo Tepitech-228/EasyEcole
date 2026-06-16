@@ -54,6 +54,21 @@ export class CartesPageComponent extends BaseComponentClass {
     return this.getCursus(apprenant)?.classe?.libelle || '---'
   }
 
+  onPhotoSelected(apprenant: Apprenant, event: any): void {
+    const file = event.target?.files?.[0]
+    if (!file) return
+    event.target.value = ''
+
+    this.apprenantService.updatePhoto(file, apprenant.id as any).subscribe({
+      next: (res) => {
+        if (res?.photo) {
+          apprenant.photo = res.photo
+        }
+      },
+      error: () => {}
+    })
+  }
+
   openCard(apprenant: Apprenant): void {
     this.selectedApprenant = apprenant
     this.showPrintModal = true

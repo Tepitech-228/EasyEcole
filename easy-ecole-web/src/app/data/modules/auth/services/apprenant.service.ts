@@ -29,10 +29,14 @@ export class ApprenantService {
     return this.httpClient.post(`${this.SERVICE_URL}/qr-codes/generate`, { apprenantId })
   }
 
-  updatePhoto(photo: File): Observable<Apprenant> {
+  updatePhoto(photo: File, apprenantId?: number): Observable<any> {
     let formData: FormData = new FormData()
-      formData.append('photo', photo, photo.name)
+    formData.append('photo', photo, photo.name)
 
-    return this.httpClient.put<Apprenant>(`${this.SERVICE_URL}/photo`, formData)
+    const url = apprenantId
+      ? `${this.SERVICE_URL}/photo/${apprenantId}`
+      : `${this.SERVICE_URL}/photo`
+
+    return this.httpClient.put<any>(url, formData)
   }
 }

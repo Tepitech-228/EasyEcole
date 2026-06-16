@@ -8,6 +8,7 @@ import { ListeNoteEvaluationService } from 'src/app/data/modules/inscription/ser
 import { NiveauEtudeService } from 'src/app/data/modules/inscription/services/niveau-etude.service';
 import { ClasseService } from 'src/app/data/modules/inscription/services/classe.service';
 import { ParcoursService } from 'src/app/data/modules/inscription/services/parcours.service';
+import { PvEvaluationService, PvImportResult } from 'src/app/data/modules/inscription/services/pv-evaluation.service';
 
 @Component({
   selector: 'app-liste-notes-page',
@@ -32,11 +33,19 @@ export class ListeNotesPageComponent extends BaseComponentClass implements OnIni
 
   searchNote?: string
 
+  exportingPvId: string | null = null
+  showImportModal: boolean = false
+  importingPvId: string | null = null
+  selectedFile: File | null = null
+  importResult: PvImportResult | null = null
+  importError: string | null = null
+
   constructor(
     private listeNoteEvaluationService: ListeNoteEvaluationService,
     private niveauEtudeService: NiveauEtudeService,
     private classeService: ClasseService,
     private parcoursService: ParcoursService,
+    private pvEvaluationService: PvEvaluationService,
   ) {
     super()
     this.getNiveauxEtude()
@@ -137,5 +146,62 @@ export class ListeNotesPageComponent extends BaseComponentClass implements OnIni
     if (!liste.notesEvaluation || liste.notesEvaluation.length === 0) return 0
     const sum = liste.notesEvaluation.reduce((acc, n) => acc + (n.note || 0), 0)
     return Math.round((sum / liste.notesEvaluation.length) * 100) / 100
+  }
+
+  exportPv(liste: ListeNoteEvaluation): void {
+    if (!liste.id) return
+    this.exportingPvId = liste.id
+    this.pvEvaluationService.exportPv(liste.id).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `PV_${liste.cours?.code || 'notes'}_${new Date().toISOString().split('T')[0]}.xlsx`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        window.URL.revokeObjectURL(url)
+        this.exportingPvId = null
+      },
+      error: () => { this.exportingPvId = null }
+    })
+  }
+
+  openImportModal(liste: ListeNoteEvaluation): void {
+    this.importingPvId = liste.id!
+    this.showImportModal = true
+    this.selectedFile = null
+    this.importResult = null
+    this.importError = null
+  }
+
+  closeImportModal(): void {
+    this.showImportModal = false
+    this.importingPvId = null
+    this.selectedFile = null
+    this.importResult = null
+    this.importError = null
+  }
+
+  onFileSelected(event: any): void {
+    const file = event.target?.files?.[0]
+    if (file) this.selectedFile = file
+  }
+
+  importPv(): void {
+    if (!this.importingPvId || !this.selectedFile) return
+    this.importResult = null
+    this.importError = null
+    this.pvEvaluationService.importPv(this.importingPvId, this.selectedFile).subscribe({
+      next: (result) => {
+        this.importResult = result
+        if (result.success) {
+          this.getListesNotes()
+        }
+      },
+      error: (err) => {
+        this.importError = err.error?.message || "Erreur lors de l'import"
+      }
+    })
   }
 }
