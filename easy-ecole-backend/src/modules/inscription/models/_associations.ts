@@ -254,3 +254,7 @@ NoteEvaluation.belongsTo(CoursParticipant, { as: 'coursParticipant', foreignKey:
 // Utilisateur - Pointage
 Utilisateur.hasMany(Pointage, { foreignKey: 'utilisateurId', as: 'pointages' })
 Pointage.belongsTo(Utilisateur, { as: 'utilisateur', foreignKey: 'utilisateurId' })
+
+// Bulletin associations
+import { initBulletinAssociations } from "../../bulletins/models/_associations";
+initBulletinAssociations();
