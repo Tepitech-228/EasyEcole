@@ -52,6 +52,13 @@ const routes: Routes = [
         canLoad: [AuthGuard]
       },
 
+      // Module "Bulletins"
+      {
+        path: 'bulletins',
+        loadChildren: () => import('./features/modules/bulletins/bulletins.module').then(m => m.BulletinsModule),
+        canLoad: [AuthGuard]
+      },
+
       // Module "Parametres"
       {
         path: 'parametres',
