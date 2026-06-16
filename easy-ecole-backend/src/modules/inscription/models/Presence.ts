@@ -9,6 +9,8 @@ export class Presence extends Model<InferAttributes<Presence>, InferCreationAttr
   declare date: Date
   declare heureDebut: Date
   declare heureFin: Date
+  declare signature: CreationOptional<string>
+  declare signedAt: CreationOptional<Date>
 
   declare listePresenceId: ForeignKey<ListePresence['id']>
   declare listePresence?: NonAttribute<ListePresence>
@@ -40,6 +42,14 @@ Presence.init({
   heureFin: {
     type: DataTypes.TIME,
     allowNull: false,
+  },
+  signature: {
+    type: new DataTypes.STRING,
+    allowNull: true
+  },
+  signedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
