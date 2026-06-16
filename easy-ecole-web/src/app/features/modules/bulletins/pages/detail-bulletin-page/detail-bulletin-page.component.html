@@ -1,1 +1,77 @@
-<p>detail-bulletin-page works!</p>
+<div *ngIf="bulletin() as b">
+  <div class="page-actions no-print">
+    <button class="btn btn-outline-primary" (click)="imprimer()">Imprimer</button>
+    <button *ngIf="b.statut === 'brouillon'" class="btn btn-success" (click)="publier()">Publier</button>
+  </div>
+
+  <div class="bulletin-print">
+    <div class="bulletin-header">
+      <h2>BULLETIN DE NOTES</h2>
+      <p>{{ b.anneeAcademique?.libelle }} | {{ b.semestre === 'semestre1' ? 'Semestre 1' : 'Semestre 2' }}</p>
+      <p>{{ b.classe?.libelle }} — {{ b.parcours?.titre }}</p>
+    </div>
+
+    <div class="bulletin-eleve">
+      <h3>{{ b.utilisateur?.nom }} {{ b.utilisateur?.prenoms }}</h3>
+    </div>
+
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Matières</th>
+          <th>CC</th>
+          <th>Devoir</th>
+          <th>Examen</th>
+          <th>Moyenne</th>
+          <th>Coef</th>
+          <th>Validé</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let l of b.lignesBulletins">
+          <td>{{ l.cours?.intitule }}</td>
+          <td class="text-center">{{ l.moyenneCC != null ? l.moyenneCC : '-' }}</td>
+          <td class="text-center">{{ l.noteDevoir != null ? l.noteDevoir : '-' }}</td>
+          <td class="text-center">{{ l.noteExamen != null ? l.noteExamen : '-' }}</td>
+          <td class="text-center"><strong>{{ l.moyenne != null ? l.moyenne + '/20' : '-' }}</strong></td>
+          <td class="text-center">{{ l.coefficient || '-' }}</td>
+          <td class="text-center">{{ l.moyenne != null && l.moyenne >= 10 ? 'Oui' : 'Non' }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="bulletin-footer">
+      <div class="row">
+        <div class="col"><strong>Moyenne Générale :</strong> {{ b.moyenneGenerale != null ? b.moyenneGenerale + '/20' : '-' }}</div>
+        <div class="col"><strong>Mention :</strong> {{ b.mention || '-' }}</div>
+        <div class="col"><strong>Rang :</strong> {{ b.rang ? b.rang + '/' + b.effectifClasse : '-' }}</div>
+        <div class="col"><strong>Crédits :</strong> {{ b.totalCredits || '-' }}</div>
+      </div>
+
+      <div *ngIf="b.statut === 'brouillon'" class="form-group mt-3">
+        <label>Appréciation</label>
+        <textarea class="form-control" [(ngModel)]="appreciation" rows="2"></textarea>
+        <button class="btn btn-sm btn-outline-secondary mt-1" (click)="sauvegarderAppreciation()">Sauvegarder</button>
+      </div>
+
+      <div *ngIf="b.statut === 'publie' && b.appreciation" class="mt-3">
+        <p><strong>Appréciation :</strong> {{ b.appreciation }}</p>
+      </div>
+
+      <div class="signatures mt-4">
+        <div class="signature-box">
+          Signature Enseignant
+          <div class="sig-line"></div>
+        </div>
+        <div class="signature-box">
+          Signature Chef d'Établissement
+          <div class="sig-line"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="loading()" class="text-center mt-5">
+  <p>Chargement...</p>
+</div>
