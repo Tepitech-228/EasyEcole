@@ -45,6 +45,12 @@
                     <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin" (click)="closeMenu()" icon="lab_profile" text="Notes d'évaluation" link="/cours/notes"></app-nav-menu-item>
                 </app-nav-menu-group>
 
+                <app-nav-menu-group title="Bulletins">
+                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin" (click)="closeMenu()" icon="badge" text="Tous les bulletins" link="/bulletins"></app-nav-menu-item>
+                    <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="closeMenu()" icon="add" text="Générer" link="/bulletins/generer"></app-nav-menu-item>
+                    <app-nav-menu-item *ngIf="rolesValue.isApprenant || rolesValue.isAdmin" (click)="closeMenu()" icon="receipt_long" text="Mon relevé" link="/bulletins/mon-releve"></app-nav-menu-item>
+                </app-nav-menu-group>
+
                 <app-nav-menu-group title="Stages" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin || rolesValue.isEnseignant">
                     <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isAdmin" (click)="closeMenu()" icon="work" text="Offres de stage" link="/stages/offres"></app-nav-menu-item>
                     <app-nav-menu-item *ngIf="rolesValue.isApprenant || rolesValue.isAdmin" (click)="closeMenu()" icon="receipt_long" text="Demandes" link="/stages/demandes"></app-nav-menu-item>
