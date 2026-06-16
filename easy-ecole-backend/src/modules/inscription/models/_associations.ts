@@ -243,6 +243,10 @@ ListeNoteEvaluation.belongsTo(Cours, { as: 'cours', foreignKey: 'coursId' })
 ListeNoteEvaluation.hasMany(NoteEvaluation, { foreignKey: 'listeNoteEvaluationId', as: 'notesEvaluation' })
 NoteEvaluation.belongsTo(ListeNoteEvaluation, { as: 'listeNoteEvaluation', foreignKey: 'listeNoteEvaluationId' })
 
+// AnneeAcademique - ListeNoteEvaluation
+AnneeAcademique.hasMany(ListeNoteEvaluation, { foreignKey: 'anneeAcademiqueId', as: 'listesNotesEvaluation' })
+ListeNoteEvaluation.belongsTo(AnneeAcademique, { as: 'anneeAcademique', foreignKey: 'anneeAcademiqueId' })
+
 // CoursParticipant - NoteEvaluation
 CoursParticipant.hasMany(NoteEvaluation, { foreignKey: 'coursParticipantId', as: 'notesEvaluation' })
 NoteEvaluation.belongsTo(CoursParticipant, { as: 'coursParticipant', foreignKey: 'coursParticipantId' })

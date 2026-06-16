@@ -2,6 +2,7 @@ import { TypeNoteEvaluation } from "./TypeNoteEvaluation.model"
 import { Cours } from "./Cours.model"
 import { Enseignant } from "../../auth/models/Enseignant.model"
 import { NoteEvaluation } from "./NoteEvaluation.model"
+import { AnneeAcademique } from "./AnneeAcademique.model"
 
 export class ListeNoteEvaluation {
   declare id?: string
@@ -17,6 +18,8 @@ export class ListeNoteEvaluation {
   declare cours?: Cours
   declare enseignantId?: string
   declare enseignant?: Enseignant
+  declare anneeAcademiqueId?: number
+  declare anneeAcademique?: AnneeAcademique
   declare notesEvaluation?: NoteEvaluation[]
 
   declare readonly createdAt?: Date

@@ -5,6 +5,7 @@ import { Cours } from "./Cours";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { TypeNoteEvaluation } from "./TypeNoteEvaluation";
 import { NoteEvaluation } from "./NoteEvaluation";
+import { AnneeAcademique } from "./AnneeAcademique";
 
 export class ListeNoteEvaluation extends Model<InferAttributes<ListeNoteEvaluation>, InferCreationAttributes<ListeNoteEvaluation>> {
   declare id: CreationOptional<string>
@@ -21,6 +22,9 @@ export class ListeNoteEvaluation extends Model<InferAttributes<ListeNoteEvaluati
   declare enseignantId: ForeignKey<Enseignant['id']>
   declare enseignant?: NonAttribute<Enseignant>
 
+  declare anneeAcademiqueId: ForeignKey<AnneeAcademique['id']>
+  declare anneeAcademique?: NonAttribute<AnneeAcademique>
+
   declare notesEvaluation?: NonAttribute<NoteEvaluation[]>
 
   declare readonly createdAt: CreationOptional<Date>
@@ -30,6 +34,7 @@ export class ListeNoteEvaluation extends Model<InferAttributes<ListeNoteEvaluati
     cours: Association<ListeNoteEvaluation, Cours>,
     enseignant: Association<ListeNoteEvaluation, Enseignant>,
     typeNoteEvaluation: Association<ListeNoteEvaluation, TypeNoteEvaluation>,
+    anneeAcademique: Association<ListeNoteEvaluation, AnneeAcademique>,
     notesEvaluation: Association<ListeNoteEvaluation, NoteEvaluation>
   };
 }
@@ -59,6 +64,10 @@ ListeNoteEvaluation.init({
   commentaire: {
     type: new DataTypes.STRING,
     allowNull: true
+  },
+  anneeAcademiqueId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: false
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
