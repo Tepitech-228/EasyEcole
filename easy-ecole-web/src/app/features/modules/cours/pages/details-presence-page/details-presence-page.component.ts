@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { SignatureModalComponent } from '../../components/signature-modal/signature-modal.component'
 import { FormGroup, FormControl, Validators, FormArray } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
@@ -65,6 +66,11 @@ export class DetailsPresencePageComponent extends BaseComponentClass implements 
     heureDebut: new FormControl(null, [Validators.required]),
     heureFin: new FormControl(null, [Validators.required]),
   })
+
+  @ViewChild(SignatureModalComponent) signatureModal!: SignatureModalComponent
+  signingPresenceId: string | null = null
+  signing: boolean = false
+  readonly SIGNATURES_PATH: string = 'http://localhost:3000/inscription/presences/signatures/'
 
   readonly PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS
 
@@ -293,5 +299,26 @@ export class DetailsPresencePageComponent extends BaseComponentClass implements 
 
   closeSuppressionPresenceModal(): void {
     this.showSuppressionPresenceModal = false
+  }
+
+  openSignatureModal(presenceId: string | null): void {
+    this.signingPresenceId = presenceId
+    this.signatureModal.open()
+  }
+
+  onSignatureConfirm(signatureBase64: string): void {
+    if (!this.signingPresenceId) return
+    this.signing = true
+    this.presenceService.signPresence(this.signingPresenceId, signatureBase64).subscribe({
+      next: () => {
+        this.signing = false
+        this.signingPresenceId = null
+        this.getListePresence()
+      },
+      error: (err) => {
+        this.signing = false
+        console.error(err)
+      }
+    })
   }
 }

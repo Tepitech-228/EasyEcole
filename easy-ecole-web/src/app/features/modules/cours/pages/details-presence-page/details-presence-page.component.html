@@ -16,6 +16,11 @@
         </app-header-title>
         <div class="flex justify-end items-center gap-x-4">
             <app-custom-button *ngIf="(rolesValue.isEnseignant || rolesValue.isInstitution)" text="Nouvelle présence" (click)="openNouvellePresenceModal()"></app-custom-button>
+            <app-custom-button *ngIf="rolesValue.isEnseignant && presences.length > 0"
+                text="Signer la feuille"
+                color="primary"
+                (click)="openSignatureModal(presences[0]?.id)">
+            </app-custom-button>
         </div>
     </div>
 
@@ -41,9 +46,17 @@
                                                 </div>
                                             </th>
                                             <th *ngFor="let presence of presences" scope="col" class="min-w-96 text-sm font-medium text-gray-900 px-2 py-4 text-left" style="min-width: 200px !important;">
-                                                <div class="px-2 flex justify-center items-center gap-x-2">
-                                                    <img class="opacity-80" width="20" src="assets/icons/clock-outline.svg" alt="icon">
-                                                    <div>{{ presence.heureDebut }} à {{ presence.heureFin }}</div>
+                                                <div class="px-2 flex flex-col items-center gap-x-2">
+                                                    <div class="flex items-center gap-x-2">
+                                                        <img class="opacity-80" width="20" src="assets/icons/clock-outline.svg" alt="icon">
+                                                        <div>{{ presence.heureDebut }} à {{ presence.heureFin }}</div>
+                                                    </div>
+                                                    <div *ngIf="presence.signature" class="text-xs text-green-600 flex items-center gap-1 mt-1">
+                                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                                        </svg>
+                                                        Signé
+                                                    </div>
                                                 </div>
                                             </th>
                                         </tr>
@@ -432,3 +445,5 @@
         <app-custom-button (click)="ajouterPresence()" text="Enregistrer"></app-custom-button>
     </div>
 </app-custom-modal>
+
+<app-signature-modal (onConfirm)="onSignatureConfirm($event)" (onClose)="signingPresenceId = null"></app-signature-modal>
