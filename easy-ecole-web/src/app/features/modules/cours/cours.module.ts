@@ -28,6 +28,7 @@ import { NouvelleEvaluationPageComponent } from './pages/nouvelle-evaluation-pag
 import { SaisieNotesPageComponent } from './pages/saisie-notes-page/saisie-notes-page.component';
 import { ScanPresencePageComponent } from './pages/scan-presence-page/scan-presence-page.component';
 import { MesPresencesPageComponent } from './pages/mes-presences-page/mes-presences-page.component';
+import { SignatureModalComponent } from './components/signature-modal/signature-modal.component';
 
 @NgModule({
   declarations: [
@@ -53,7 +54,8 @@ import { MesPresencesPageComponent } from './pages/mes-presences-page/mes-presen
     NouvelleEvaluationPageComponent,
     SaisieNotesPageComponent,
     ScanPresencePageComponent,
-    MesPresencesPageComponent
+    MesPresencesPageComponent,
+    SignatureModalComponent
   ],
   imports: [
     CommonModule,

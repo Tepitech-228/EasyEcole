@@ -1,0 +1,26 @@
+<app-custom-modal title="Signature électronique" subtitle="Dessinez votre signature ci-dessous" [showModal]="show" (onCloseModal)="close()">
+    <div class="py-4 flex flex-col items-center gap-4">
+        <canvas #signatureCanvas
+            width="400"
+            height="200"
+            class="border-2 border-gray-300 rounded-lg bg-white cursor-crosshair"
+            (mousedown)="onMouseDown($event)"
+            (mousemove)="onMouseMove($event)"
+            (mouseup)="onMouseUp()"
+            (mouseleave)="onMouseUp()"
+            (touchstart)="onTouchStart($event)"
+            (touchmove)="onTouchMove($event)"
+            (touchend)="onTouchEnd()">
+        </canvas>
+        <p class="text-xs text-gray-400">Signez avec votre souris ou votre doigt (sur mobile)</p>
+    </div>
+    <div class="flex items-center justify-between py-3">
+        <div class="flex gap-2">
+            <app-custom-button (click)="clear()" text="Effacer" color="gray" [outlined]="true"></app-custom-button>
+        </div>
+        <div class="flex gap-2">
+            <app-custom-button (click)="close()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+            <app-custom-button (click)="confirm()" text="Valider la signature"></app-custom-button>
+        </div>
+    </div>
+</app-custom-modal>
