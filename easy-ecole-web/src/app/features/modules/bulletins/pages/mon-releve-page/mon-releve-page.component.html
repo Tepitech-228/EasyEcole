@@ -1,0 +1,47 @@
+<div class="page-header">
+  <h1>Mon relevé de notes</h1>
+</div>
+
+<div *ngIf="loading()">
+  <p>Chargement...</p>
+</div>
+
+<div *ngIf="error() as msg" class="alert alert-info">
+  {{ msg }}
+</div>
+
+<div *ngIf="releve() as r" class="card">
+  <div class="card-body">
+    <div class="text-center mb-3">
+      <h3>{{ r.anneeAcademique?.libelle }} — {{ r.semestre === 'semestre1' ? 'Semestre 1' : 'Semestre 2' }}</h3>
+      <p class="text-muted">{{ r.classe?.libelle }}</p>
+    </div>
+
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Matière</th>
+          <th>Moyenne</th>
+          <th>Coef</th>
+          <th>Crédit</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let l of r.lignesBulletins">
+          <td>{{ l.cours?.intitule }}</td>
+          <td class="text-center"><strong>{{ l.moyenne != null ? l.moyenne + '/20' : '-' }}</strong></td>
+          <td class="text-center">{{ l.coefficient || '-' }}</td>
+          <td class="text-center">{{ l.moyenne != null && l.moyenne >= 10 ? 'Validé' : '-' }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="row mt-3">
+      <div class="col"><strong>Moyenne Générale :</strong> {{ r.moyenneGenerale }}/20</div>
+      <div class="col"><strong>Mention :</strong> {{ r.mention }}</div>
+      <div class="col"><strong>Rang :</strong> {{ r.rang }}/{{ r.effectifClasse }}</div>
+    </div>
+  </div>
+</div>
+
+<button *ngIf="releve()" class="btn btn-outline-primary mt-2" (click)="imprimer()">Imprimer</button>

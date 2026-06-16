@@ -5,12 +5,14 @@ import { BulletinsRoutingModule } from './bulletins-routing.module';
 import { ListeBulletinsPageComponent } from './pages/liste-bulletins-page/liste-bulletins-page.component';
 import { GenererBulletinsPageComponent } from './pages/generer-bulletins-page/generer-bulletins-page.component';
 import { DetailBulletinPageComponent } from './pages/detail-bulletin-page/detail-bulletin-page.component';
+import { MonRelevePageComponent } from './pages/mon-releve-page/mon-releve-page.component';
 
 @NgModule({
   declarations: [
     ListeBulletinsPageComponent,
     GenererBulletinsPageComponent,
-    DetailBulletinPageComponent
+    DetailBulletinPageComponent,
+    MonRelevePageComponent,
   ],
   imports: [
     CommonModule,
