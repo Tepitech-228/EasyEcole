@@ -1,1 +1,55 @@
-<p>liste-bulletins-page works!</p>
+<div class="page-header">
+  <h1>Bulletins de notes</h1>
+  <a routerLink="/bulletins/generer" class="btn btn-primary">+ GÃ©nÃ©rer</a>
+</div>
+
+<div class="filters">
+  <select [(ngModel)]="filtres.anneeAcademiqueId" (change)="charger()">
+    <option value="">AnnÃ©e scolaire</option>
+  </select>
+  <select [(ngModel)]="filtres.semestre" (change)="charger()">
+    <option value="">Semestre</option>
+    <option value="semestre1">Semestre 1</option>
+    <option value="semestre2">Semestre 2</option>
+  </select>
+  <select [(ngModel)]="filtres.classeId" (change)="charger()">
+    <option value="">Classe</option>
+  </select>
+  <select [(ngModel)]="filtres.statut" (change)="charger()">
+    <option value="">Tous</option>
+    <option value="brouillon">Brouillon</option>
+    <option value="publie">PubliÃ©</option>
+  </select>
+</div>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Ã‰lÃ¨ve</th>
+      <th>Classe</th>
+      <th>Semestre</th>
+      <th>Moy. GÃ©n.</th>
+      <th>Mention</th>
+      <th>Rang</th>
+      <th>Statut</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let b of bulletins(); trackBy: trackByFn">
+      <td>{{ b.utilisateur?.nom }} {{ b.utilisateur?.prenoms }}</td>
+      <td>{{ b.classe?.libelle }}</td>
+      <td>{{ b.semestre === 'semestre1' ? 'S1' : 'S2' }}</td>
+      <td>{{ b.moyenneGenerale != null ? b.moyenneGenerale + '/20' : '-' }}</td>
+      <td><span class="mention" [ngClass]="getMentionClass(b.mention)">{{ b.mention || '-' }}</span></td>
+      <td>{{ b.rang ? b.rang + '/' + b.effectifClasse : '-' }}</td>
+      <td><span class="badge" [ngClass]="b.statut === 'brouillon' ? 'badge-warning' : 'badge-success'">{{ b.statut }}</span></td>
+      <td>
+        <a [routerLink]="b.id">Voir</a>
+      </td>
+    </tr>
+    <tr *ngIf="bulletins().length === 0">
+      <td colspan="8">Aucun bulletin</td>
+    </tr>
+  </tbody>
+</table>
