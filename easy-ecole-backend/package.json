@@ -13,7 +13,8 @@
     "db:sync": "ts-node src/core/scripts/sync-database.ts",
     "db:seed": "ts-node src/core/scripts/seed.ts",
     "db:reset": "ts-node src/core/scripts/reset-database.ts",
-    "db:setup": "ts-node src/core/scripts/reset-database.ts"
+    "db:setup": "ts-node src/core/scripts/reset-database.ts",
+    "db:seed-bulletins": "ts-node src/core/scripts/seed-bulletins.ts"
   },
   "keywords": [],
   "author": "",
@@ -31,6 +32,8 @@
     "@types/morgan": "^1.9.4",
     "@types/node": "^20.4.1",
     "@types/qrcode": "^1.5.6",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
     "ts-node": "^10.9.1",
     "typescript": "^5.1.6"
   },
@@ -54,6 +57,8 @@
     "nodemon": "^3.0.1",
     "pg": "^8.11.1",
     "qrcode": "^1.5.4",
-    "sequelize": "^6.32.1"
+    "sequelize": "^6.32.1",
+    "swagger-jsdoc": "^6.3.0",
+    "swagger-ui-express": "^5.0.1"
   }
 }

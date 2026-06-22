@@ -104,6 +104,7 @@ Bulletin.init({
   datePublication: { type: DataTypes.DATE, allowNull: true },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
+  deletedAt: DataTypes.DATE,
 }, {
   sequelize: DatabaseConnection.getInstance().sequelize,
   tableName: TABLE_PREFIX + 'bulletins',

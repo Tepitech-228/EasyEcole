@@ -276,42 +276,54 @@ export default class ApprenantController {
             for (const apprenant of apprenants) {
                 if (!apprenant.utilisateur) continue
 
-                const user = apprenant.utilisateur
-                const cursus = (user as any).cursusApprenant?.[0]
-                const demande = cursus?.demandeInscription
+                try {
+                    const user = apprenant.utilisateur
+                    const cursus = (user as any).cursusApprenant?.[0]
+                    const demande = cursus?.demandeInscription
 
-                const qrData = JSON.stringify({
-                    id: String(user.id),
-                    nom: user.nom,
-                    prenoms: user.prenoms,
-                    matricule: demande?.matricule || user.identifiant || '',
-                    parcours: cursus?.parcours?.titre || '',
-                    classe: cursus?.classe?.libelle || '',
-                    annee: cursus?.anneeAcademique?.libelle || '',
-                    email: user.email || '',
-                    contact: user.contact || ''
-                })
+                    const qrData = JSON.stringify({
+                        id: String(user.id),
+                        nom: user.nom,
+                        prenoms: user.prenoms,
+                        matricule: demande?.matricule || user.identifiant || '',
+                        parcours: cursus?.parcours?.titre || '',
+                        classe: cursus?.classe?.libelle || '',
+                        annee: cursus?.anneeAcademique?.libelle || '',
+                        email: user.email || '',
+                        contact: user.contact || ''
+                    })
 
-                const fileName = `${user.id}.png`
-                const filePath = path.join(dir, fileName)
+                    const baseName = `${user.id}`;
+                    let fileName = `${baseName}.png`;
+                    let filePath = path.join(dir, fileName);
 
-                await QRCode.toFile(filePath, qrData, {
-                    type: 'png',
-                    width: 400,
-                    margin: 2,
-                    color: {
-                        dark: '#000000',
-                        light: '#ffffff'
+                    if (fs.existsSync(filePath)) {
+                        try { fs.unlinkSync(filePath) } catch (_) {
+                            fileName = `${baseName}_${Date.now()}.png`;
+                            filePath = path.join(dir, fileName);
+                        }
                     }
-                })
 
-                await apprenant.update({ qrCode: fileName })
+                    await QRCode.toFile(filePath, qrData, {
+                        type: 'png',
+                        width: 400,
+                        margin: 2,
+                        color: {
+                            dark: '#000000',
+                            light: '#ffffff'
+                        }
+                    })
 
-                results.push({
-                    apprenantId: apprenant.id,
-                    userId: String(user.id),
-                    qrCode: fileName
-                })
+                    await apprenant.update({ qrCode: fileName })
+
+                    results.push({
+                        apprenantId: apprenant.id,
+                        userId: String(user.id),
+                        qrCode: fileName
+                    })
+                } catch (apprenantError: any) {
+                    console.error(`QR code skip for apprenant ${apprenant.utilisateur?.id}: ${apprenantError.code || apprenantError.message}`)
+                }
             }
 
             return res.status(200).json({ success: true, data: results })

@@ -1,40 +1,135 @@
-<div class="page-header">
-  <h1>Générer les bulletins</h1>
-</div>
-
-<div class="card">
-  <div class="card-body">
-    <div class="form-group">
-      <label>Année académique</label>
-      <select class="form-control" [(ngModel)]="anneeAcademiqueId">
-        <option [ngValue]="null">Sélectionner...</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Semestre</label>
-      <select class="form-control" [(ngModel)]="semestre">
-        <option value="">Sélectionner...</option>
-        <option value="semestre1">Semestre 1</option>
-        <option value="semestre2">Semestre 2</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Classe</label>
-      <select class="form-control" [(ngModel)]="classeId">
-        <option [ngValue]="null">Sélectionner...</option>
-      </select>
-    </div>
-    <button class="btn btn-primary" (click)="generer()" [disabled]="!anneeAcademiqueId() || !semestre() || !classeId() || loading()">
-      {{ loading() ? 'Génération...' : 'Générer les bulletins' }}
-    </button>
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-8">
+    <a routerLink="/bulletins" class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4 transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      Retour aux bulletins
+    </a>
+    <h1 class="text-2xl font-bold text-gray-900">Générer les bulletins</h1>
+    <p class="mt-1 text-sm text-gray-500">Sélectionnez les paramètres pour générer les bulletins d'une classe</p>
   </div>
-</div>
 
-<div *ngIf="resultat() as bulletins" class="alert alert-success mt-3">
-  {{ bulletins.length }} bulletin(s) créé(s)
-  <a routerLink="/bulletins" class="btn btn-outline-primary ml-2">Voir les bulletins</a>
-</div>
+  <!-- Generation Form -->
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="px-6 py-5 border-b border-gray-50">
+      <div class="flex items-center gap-3">
+        <div class="h-8 w-8 rounded-lg bg-red-100 flex items-center justify-center">
+          <svg class="w-4 h-4 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+        </div>
+        <div>
+          <h2 class="text-base font-semibold text-gray-900">Paramètres de génération</h2>
+          <p class="text-xs text-gray-400">Remplissez tous les champs pour activer la génération</p>
+        </div>
+      </div>
+    </div>
 
-<div *ngIf="erreur() as msg" class="alert alert-danger mt-3">
-  {{ msg }}
+    <div class="px-6 py-6 space-y-5">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Année académique</label>
+          <select [(ngModel)]="anneeAcademiqueId"
+                  class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-red-600 transition-shadow">
+            <option [ngValue]="null">Sélectionner...</option>
+            <option *ngFor="let aa of anneesAcademiques" [ngValue]="aa.id">{{ aa.libelle }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Semestre</label>
+          <select [(ngModel)]="semestre"
+                  class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-red-600 transition-shadow">
+            <option value="">Sélectionner...</option>
+            <option value="semestre1">Semestre 1</option>
+            <option value="semestre2">Semestre 2</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Classe</label>
+          <select [(ngModel)]="classeId"
+                  class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-red-600 transition-shadow">
+            <option [ngValue]="null">Sélectionner...</option>
+            <option *ngFor="let c of classes" [ngValue]="c.id">{{ c.libelle }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 pt-2">
+        <button (click)="generer()" [disabled]="!anneeAcademiqueId || !semestre || !classeId || genererLoading"
+                class="inline-flex items-center px-6 py-2.5 bg-red-700 hover:bg-red-800 disabled:bg-gray-200 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-colors shadow-sm">
+          <svg *ngIf="genererLoading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+          </svg>
+          <svg *ngIf="!genererLoading" class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          {{ genererLoading ? 'Génération en cours...' : 'Générer les bulletins' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Progress -->
+  <div *ngIf="genererLoading" class="mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+    <div class="flex items-center gap-4">
+      <div class="animate-spin h-6 w-6 border-2 border-red-600 border-t-transparent rounded-full"></div>
+      <div>
+        <p class="text-sm font-semibold text-gray-900">Génération en cours...</p>
+        <p class="text-xs text-gray-400 mt-0.5">Création des bulletins en cours, veuillez patienter</p>
+      </div>
+    </div>
+    <div class="mt-4 h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div class="h-full bg-gradient-to-r from-red-600 to-red-400 rounded-full animate-pulse" style="width: 60%"></div>
+    </div>
+  </div>
+
+  <!-- Success Result -->
+  <div *ngIf="resultat && !genererLoading" class="mt-6 bg-white rounded-2xl border border-emerald-100 shadow-sm overflow-hidden">
+    <div class="px-6 py-4 bg-emerald-50 border-b border-emerald-100">
+      <div class="flex items-center gap-3">
+        <div class="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center">
+          <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold text-emerald-900">Génération réussie</h3>
+          <p class="text-xs text-emerald-700">{{ getReussi() }} bulletin(s) créé(s) pour la classe {{ getClasseLibelle() }} ({{ getAnneeLibelle() }} - {{ semestre === 'semestre1' ? 'Semestre 1' : 'Semestre 2' }})</p>
+        </div>
+      </div>
+    </div>
+    <div class="px-6 py-4 flex items-center justify-between">
+      <div class="text-xs text-gray-500">
+        <span class="font-semibold text-gray-700">{{ getReussi() }}</span> bulletin{{ getReussi() > 1 ? 's' : '' }} généré{{ getReussi() > 1 ? 's' : '' }}
+      </div>
+      <div class="flex items-center gap-3">
+        <button (click)="generer()" class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+          <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          Re-générer
+        </button>
+        <a routerLink="/bulletins" class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+          Voir les bulletins
+          <svg class="w-3.5 h-3.5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Result -->
+  <div *ngIf="erreur && !genererLoading" class="mt-6 bg-white rounded-2xl border border-red-100 shadow-sm p-5">
+    <div class="flex items-start gap-3">
+      <div class="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
+        <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <div>
+        <h3 class="text-sm font-semibold text-red-900">Erreur de génération</h3>
+        <p class="text-sm text-red-700 mt-1">{{ erreur }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info Card -->
+  <div class="mt-6 bg-amber-50 rounded-2xl border border-amber-100 p-4">
+    <div class="flex items-start gap-3">
+      <svg class="w-5 h-5 text-amber-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <div class="text-xs text-amber-800">
+        <p class="font-semibold mb-1">Note importante</p>
+        <p>Les bulletins sont générés à partir des notes déjà saisies dans le système (CC, Devoirs, Examens). Assurez-vous que toutes les notes sont renseignées avant de lancer la génération.</p>
+      </div>
+    </div>
+  </div>
 </div>

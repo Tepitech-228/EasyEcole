@@ -7,7 +7,7 @@ export default class ArticleController {
     constructor() { }
 
     static async getAll(req: Request, res: Response): Promise<Response> {
-        let options: FindOptions<InferAttributes<Article>> = { include: [Article.associations.categorie] }
+        let options: FindOptions<InferAttributes<Article>> = { include: [Article.associations.categorie, Article.associations.site] }
 
         try {
             let items: Article[];
@@ -20,7 +20,7 @@ export default class ArticleController {
     }
 
     static async get(req: Request, res: Response): Promise<Response> {
-        let options: FindOptions<InferAttributes<Article>> = { where: { id: req.params.id }, include: [Article.associations.categorie] }
+        let options: FindOptions<InferAttributes<Article>> = { where: { id: req.params.id }, include: [Article.associations.categorie, Article.associations.site] }
 
         try {
             const item: Article | null = await Article.findOne(options);

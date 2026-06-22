@@ -9,7 +9,7 @@ export const environment = {
     AUTH: apiUrl + '/auth',
     ORIENTATION: apiUrl + '/orientation',
     INSCRIPTION: apiUrl + '/inscription',
-    COURS: apiUrl + 'cours',
+    COURS: apiUrl + '/cours',
     IMMOBILISATIONS: apiUrl + '/immobilisations',
     STOCKS: apiUrl + '/stocks',
     STAGES: apiUrl + '/stages',

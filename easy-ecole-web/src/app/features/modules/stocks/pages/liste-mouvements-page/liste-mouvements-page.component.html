@@ -16,6 +16,7 @@
                             <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Article</div></th>
                             <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Type</div></th>
                             <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Quantité</div></th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Site</div></th>
                             <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Date</div></th>
                             <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Motif</div></th>
                             <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right"><div class="px-2">Action</div></th>
@@ -23,7 +24,7 @@
                     </thead>
                     <tbody>
                         <tr *ngIf="mouvements.length==0" class="bg-white p-0 border-b transition duration-300 ease-in-out">
-                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap" colspan="7">Aucun mouvement</td>
+                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap" colspan="8">Aucun mouvement</td>
                         </tr>
                         <tr *ngFor="let mvt of mouvements; index as index" class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
                             <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
@@ -39,6 +40,9 @@
                             </td>
                             <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                 <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ mvt.quantite }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ mvt.site?.nom || '-' }}</div>
                             </td>
                             <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                 <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ mvt.dateMouvement | date: 'dd/MM/YYYY' }}</div>

@@ -1,6 +1,8 @@
 export class BonCommande {
     declare id?: string
     declare fournisseurId?: string
+    declare siteId?: string
+    declare site?: any
     declare dateCommande?: Date
     declare dateLivraisonPrevue?: Date
     declare statut?: string

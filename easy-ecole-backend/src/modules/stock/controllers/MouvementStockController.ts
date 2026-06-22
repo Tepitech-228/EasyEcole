@@ -7,7 +7,7 @@ export default class MouvementStockController {
     constructor() { }
 
     static async getAll(req: Request, res: Response): Promise<Response> {
-        let options: FindOptions<InferAttributes<MouvementStock>> = { include: [MouvementStock.associations.article, MouvementStock.associations.fournisseur] }
+        let options: FindOptions<InferAttributes<MouvementStock>> = { include: [MouvementStock.associations.article, MouvementStock.associations.fournisseur, MouvementStock.associations.site] }
 
         try {
             let items: MouvementStock[];
@@ -20,7 +20,7 @@ export default class MouvementStockController {
     }
 
     static async get(req: Request, res: Response): Promise<Response> {
-        let options: FindOptions<InferAttributes<MouvementStock>> = { where: { id: req.params.id }, include: [MouvementStock.associations.article, MouvementStock.associations.fournisseur] }
+        let options: FindOptions<InferAttributes<MouvementStock>> = { where: { id: req.params.id }, include: [MouvementStock.associations.article, MouvementStock.associations.fournisseur, MouvementStock.associations.site] }
 
         try {
             const item: MouvementStock | null = await MouvementStock.findOne(options);

@@ -1,38 +1,744 @@
+$primary: #1565C0;
+$primary-dark: #0D47A1;
+$primary-light: #42A5F5;
+$accent: #FF8F00;
+$gray-50: #FAFAFA;
+$gray-100: #F5F5F5;
+$gray-200: #EEEEEE;
+$gray-300: #E0E0E0;
+$gray-400: #BDBDBD;
+$gray-500: #9E9E9E;
+$gray-600: #757575;
+$gray-700: #616161;
+$gray-800: #424242;
+$gray-900: #212121;
+$white: #FFFFFF;
+
+/* ====================================================
+   PAGE BACKGROUND
+   ==================================================== */
+.cartes-page-wrapper {
+  position: relative;
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 70% 50% at 0% 0%, rgba($primary, 0.04) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 100% 100%, rgba($accent, 0.04) 0%, transparent 60%),
+    $gray-50;
+}
+
+/* ====================================================
+   STUDENT GRID CARDS
+   ==================================================== */
+.student-grid-card {
+  background: $white;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+
+.student-grid-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba($primary, 0.10), 0 4px 8px rgba(0,0,0,0.06);
+}
+
+/* ====================================================
+   CARTE ÉTUDIANTE — PREMIUM UNIVERSITY CARD
+   ==================================================== */
+.carte-container {
+  width: 700px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.card-side {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  background: $white;
+}
+
+/* ---------- FRONT FACE ---------- */
+.card-front {
+  position: relative;
+}
+
+.card-front-content {
+  position: relative;
+  min-height: 430px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- Top branding bar --- */
+.cf-header {
+  background: linear-gradient(135deg, $primary-dark, $primary);
+  padding: 14px 24px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.cf-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20px;
+  right: 20px;
+  height: 1px;
+  background: rgba($white, 0.15);
+}
+
+.cf-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.cf-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba($white, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 2px solid rgba($white, 0.25);
+}
+
+.cf-logo svg {
+  width: 24px;
+  height: 24px;
+  fill: $white;
+}
+
+.cf-school-name {
+  display: flex;
+  flex-direction: column;
+}
+
+.cf-school-primary {
+  font-size: 13px;
+  font-weight: 700;
+  color: $white;
+  letter-spacing: 0.5px;
+  line-height: 1.3;
+}
+
+.cf-school-secondary {
+  font-size: 10px;
+  font-weight: 400;
+  color: rgba($white, 0.7);
+  letter-spacing: 1px;
+  line-height: 1.2;
+}
+
+.cf-issuer-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba($white, 0.1);
+  border: 1px solid rgba($white, 0.15);
+  border-radius: 6px;
+  padding: 4px 10px;
+}
+
+.cf-issuer-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4CAF50;
+}
+
+.cf-issuer-text {
+  font-size: 8px;
+  font-weight: 600;
+  color: rgba($white, 0.8);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* --- Motto bar --- */
+.cf-motto {
+  background: $gray-100;
+  padding: 5px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.cf-motto-item {
+  font-size: 8px;
+  font-weight: 600;
+  color: $gray-600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.cf-motto-sep {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: $gray-300;
+}
+
+/* --- Main content area --- */
+.cf-body {
+  flex: 1;
+  display: flex;
+  padding: 20px 24px 16px;
+  gap: 20px;
+}
+
+/* Photo */
+.cf-photo-col {
+  flex-shrink: 0;
+}
+
+.cf-photo-frame {
+  width: 110px;
+  height: 140px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  position: relative;
+}
+
+.cf-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cf-photo-type {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,0.6));
+  padding: 6px 8px;
+  text-align: center;
+  font-size: 7px;
+  font-weight: 600;
+  color: $white;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* Info section */
+.cf-info-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cf-card-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: $primary-dark;
+  letter-spacing: 1.5px;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.cf-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
+}
+
+.cf-field {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.cf-field.span-2 {
+  grid-column: 1 / -1;
+}
+
+.cf-field-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cf-field-icon svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: $primary;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cf-field-content {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cf-field-label {
+  font-size: 8px;
+  font-weight: 600;
+  color: $gray-500;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+}
+
+.cf-field-value {
+  font-size: 10px;
+  font-weight: 500;
+  color: $gray-900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cf-value-matricule {
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  color: $primary-dark;
+  letter-spacing: 0.5px;
+}
+
+/* QR Code */
+.cf-qr-col {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.cf-qr-box {
+  border: 2px solid $gray-200;
+  border-radius: 8px;
+  padding: 6px;
+  background: $white;
+}
+
+.cf-qr-wrap {
+  width: 80px;
+  height: 80px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cf-qr-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.cf-qr-placeholder {
+  width: 100%;
+  height: 100%;
+  background: $gray-100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.cf-qr-placeholder svg {
+  width: 28px;
+  height: 28px;
+  stroke: $gray-300;
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cf-qr-label {
+  font-size: 6.5px;
+  font-weight: 600;
+  color: $gray-400;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* --- Footer bar --- */
+.cf-footer {
+  background: $gray-800;
+  padding: 9px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+
+.cf-footer-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cf-footer-item svg {
+  width: 12px;
+  height: 12px;
+  stroke: rgba($white, 0.5);
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
+.cf-footer-text {
+  font-size: 8px;
+  color: rgba($white, 0.65);
+  font-weight: 400;
+  letter-spacing: 0.3px;
+}
+
+/* --- Bottom stripe --- */
+.cf-stripe-bar {
+  height: 4px;
+  background: linear-gradient(90deg, $primary-dark, $primary, $primary-light, $accent);
+}
+
+/* ---------- BACK FACE ---------- */
+.card-back-content {
+  min-height: 430px;
+  padding: 16px 20px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cb-boxes-row {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+}
+
+.cb-box {
+  flex: 1;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid $gray-200;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cb-box-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.cb-box-header svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
+.cb-box.academic .cb-box-header {
+  background: #E3F2FD;
+  color: $primary-dark;
+}
+.cb-box.academic .cb-box-header svg { stroke: $primary; }
+
+.cb-box.emergency .cb-box-header {
+  background: #FBE9E7;
+  color: #BF360C;
+}
+.cb-box.emergency .cb-box-header svg { stroke: #E64A19; }
+
+.cb-box.address .cb-box-header {
+  background: #F1F8E9;
+  color: #33691E;
+}
+.cb-box.address .cb-box-header svg { stroke: #689F38; }
+
+.cb-box-body {
+  padding: 5px 10px 7px;
+  background: $white;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.cb-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 7.5px;
+  line-height: 1.6;
+}
+
+.cb-lbl {
+  font-weight: 600;
+  color: $gray-500;
+  font-size: 6.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  flex-shrink: 0;
+  min-width: 28px;
+}
+
+.cb-val {
+  color: $gray-800;
+  font-weight: 500;
+  font-size: 7.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- Separator --- */
+.cb-divider {
+  height: 1px;
+  background: $gray-200;
+}
+
+/* --- Legal --- */
+.cb-legal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cb-legal svg {
+  width: 16px;
+  height: 16px;
+  stroke: $gray-400;
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
+.cb-legal-text {
+  font-size: 6.5px;
+  color: $gray-500;
+  line-height: 1.4;
+}
+
+/* --- Signature + Stamp --- */
+.cb-signature-area {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.cb-sig-box {
+  flex: 1;
+}
+
+.cb-sig-label {
+  font-size: 6.5px;
+  color: $gray-400;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cb-sig-line {
+  width: 130px;
+  height: 1px;
+  background: $gray-300;
+  margin-top: 3px;
+}
+
+.cb-stamp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.cb-stamp-ring {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid $primary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.5;
+}
+
+.cb-stamp-ring svg {
+  width: 16px;
+  height: 16px;
+  stroke: $primary;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cb-stamp-label {
+  font-size: 5px;
+  color: $gray-400;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* --- Footer motto --- */
+.cb-motto {
+  text-align: center;
+  font-size: 7px;
+  font-weight: 600;
+  color: $gray-400;
+  letter-spacing: 3px;
+  padding-top: 4px;
+  border-top: 1px solid $gray-200;
+}
+
+/* ====================================================
+   PRINT STYLES
+   ==================================================== */
 @media print {
   .print-hidden { display: none !important; }
-  app-custom-modal {
-    position: static !important;
-    box-shadow: none !important;
-  }
-  app-custom-modal > div {
-    box-shadow: none !important;
-  }
-  body > *:not(#carte-etudiante) {
+
+  body > app-root > * {
     display: none !important;
   }
-  #carte-etudiante {
+  body > app-root > app-custom-modal {
+    display: block !important;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 9999 !important;
+  }
+
+  app-custom-modal .modal-overlay,
+  app-custom-modal .modal-header {
+    display: none !important;
+  }
+
+  .card-print-wrapper {
     position: fixed !important;
     top: 50% !important;
     left: 50% !important;
     transform: translate(-50%, -50%) !important;
+    width: auto !important;
+    height: auto !important;
+  }
+
+  .carte-container {
+    width: 85.6mm !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+  }
+
+  .card-side {
+    width: 85.6mm !important;
+    height: 54mm !important;
+    border-radius: 16px !important;
     box-shadow: none !important;
     border: 1px solid #ddd !important;
-    border-radius: 16px !important;
-    width: 380px !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
-  }
-  #carte-etudiante .bg-gradient-to-br {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  #carte-etudiante img {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
+
+  .card-side.front { margin-bottom: 0 !important; }
+  .card-side.back { page-break-before: always !important; margin-top: 0 !important; }
+
+  .card-front-content,
+  .card-back-content {
+    width: 85.6mm !important;
+    height: 54mm !important;
+    overflow: hidden !important;
   }
+
+  .cf-header { padding: 2mm 3mm 1.8mm !important; }
+  .cf-logo { width: 6mm !important; height: 6mm !important; }
+  .cf-logo svg { width: 3.5mm !important; height: 3.5mm !important; }
+  .cf-school-primary { font-size: 3.2pt !important; }
+  .cf-school-secondary { font-size: 2.5pt !important; }
+  .cf-issuer-badge { padding: 0.3mm 0.8mm !important; }
+  .cf-issuer-dot { width: 1mm !important; height: 1mm !important; }
+  .cf-issuer-text { font-size: 2pt !important; }
+
+  .cf-motto { padding: 0.8mm 3mm !important; gap: 2mm !important; }
+  .cf-motto-item { font-size: 2pt !important; }
+  .cf-motto-sep { width: 0.5mm !important; height: 0.5mm !important; }
+
+  .cf-body { padding: 2mm 3mm 1.5mm !important; gap: 2mm !important; }
+  .cf-photo-frame { width: 14mm !important; height: 18mm !important; }
+  .cf-photo-type { font-size: 1.8pt !important; padding: 0.5mm !important; }
+  .cf-card-title { font-size: 3.5pt !important; margin-bottom: 0.8mm !important; }
+  .cf-info-grid { gap: 0.3mm 1.5mm !important; }
+  .cf-field { gap: 0.5mm !important; }
+  .cf-field-icon svg { width: 1.8mm !important; height: 1.8mm !important; }
+  .cf-field-label { font-size: 2pt !important; }
+  .cf-field-value { font-size: 2.5pt !important; }
+
+  .cf-qr-box { padding: 0.5mm !important; }
+  .cf-qr-wrap { width: 10mm !important; height: 10mm !important; }
+  .cf-qr-placeholder svg { width: 4mm !important; height: 4mm !important; }
+  .cf-qr-label { font-size: 1.8pt !important; }
+
+  .cf-footer { padding: 1mm 3mm !important; gap: 2.5mm !important; }
+  .cf-footer-item svg { width: 1.8mm !important; height: 1.8mm !important; }
+  .cf-footer-text { font-size: 2pt !important; }
+  .cf-stripe-bar { height: 0.5mm !important; }
+
+  .card-back-content { padding: 2mm 2.5mm 1.5mm !important; gap: 0.8mm !important; }
+  .cb-boxes-row { gap: 1mm !important; }
+  .cb-box { border-radius: 1mm !important; }
+  .cb-box-header { padding: 0.5mm 0.8mm !important; font-size: 2pt !important; gap: 0.5mm !important; }
+  .cb-box-header svg { width: 2mm !important; height: 2mm !important; }
+  .cb-box-body { padding: 0.5mm 0.8mm 0.8mm !important; gap: 0.2mm !important; }
+  .cb-row { font-size: 1.8pt !important; gap: 0.3mm !important; }
+  .cb-lbl { font-size: 1.5pt !important; min-width: 3.5mm !important; }
+  .cb-val { font-size: 1.8pt !important; }
+
+  .cb-legal svg { width: 2.5mm !important; height: 2.5mm !important; }
+  .cb-legal-text { font-size: 1.6pt !important; }
+  .cb-sig-label { font-size: 1.6pt !important; }
+  .cb-sig-line { width: 18mm !important; }
+  .cb-stamp-ring { width: 4.5mm !important; height: 4.5mm !important; }
+  .cb-stamp-ring svg { width: 2.5mm !important; height: 2.5mm !important; }
+  .cb-stamp-label { font-size: 1.2pt !important; }
+  .cb-motto { font-size: 1.8pt !important; padding-top: 0.5mm !important; letter-spacing: 1pt !important; }
 }
 
 @page {
-  size: auto;
+  size: 85.6mm 54mm;
   margin: 0;
+}
+
+@media print {
+  @page :first { size: 85.6mm 54mm; margin: 0; }
+  @page :second { size: 85.6mm 54mm; margin: 0; }
 }

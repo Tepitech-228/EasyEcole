@@ -19,7 +19,7 @@
             <app-custom-button *ngIf="rolesValue.isEnseignant && presences.length > 0"
                 text="Signer la feuille"
                 color="primary"
-                (click)="openSignatureModal(presences[0]?.id)">
+                (click)="openSignatureModal(presences[0]?.id ?? null)">
             </app-custom-button>
         </div>
     </div>

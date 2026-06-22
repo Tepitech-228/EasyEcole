@@ -5,7 +5,6 @@ import InscriptionRoutes from "./modules/inscription/InscriptionRoutes";
 import StageRoutes from "./modules/stage/StageRoutes";
 import StockRoutes from "./modules/stock/StockRoutes";
 import ImmobilisationRoutes from "./modules/immobilisation/ImmobilisationRoutes";
-
 const router = express.Router();
 
 router

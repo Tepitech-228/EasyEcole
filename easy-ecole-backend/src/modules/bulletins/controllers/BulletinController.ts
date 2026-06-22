@@ -1,13 +1,12 @@
 import { Request, Response } from "express";
 import { Op } from "sequelize";
+import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { Bulletin } from "../models/Bulletin";
 import { LigneBulletin } from "../models/LigneBulletin";
 import { ListeNoteEvaluation } from "../../inscription/models/ListeNoteEvaluation";
-import { NoteEvaluation } from "../../inscription/models/NoteEvaluation";
 import { Cours } from "../../inscription/models/Cours";
 import { CoursParticipant } from "../../inscription/models/CoursParticipant";
 import { CursusApprenant } from "../../inscription/models/CursusApprenant";
-import { Utilisateur } from "../../auth/models/Utilisateur";
 
 function calculerMention(moyenne: number): string {
   if (moyenne >= 16) return 'Très Bien';
@@ -22,10 +21,13 @@ export default class BulletinController {
 
   // POST /bulletins/generer
   async generer(req: Request, res: Response) {
+    const t = await DatabaseConnection.getInstance().sequelize.transaction();
+
     try {
       const { classeId, semestre, anneeAcademiqueId } = req.body;
 
       if (!classeId || !semestre || !anneeAcademiqueId) {
+        await t.rollback();
         return res.status(400).json({ message: 'classeId, semestre, anneeAcademiqueId requis' });
       }
 
@@ -35,6 +37,7 @@ export default class BulletinController {
       });
 
       if (!cursusList.length) {
+        await t.rollback();
         return res.status(404).json({ message: 'Aucun apprenant trouvé dans cette classe' });
       }
 
@@ -43,6 +46,7 @@ export default class BulletinController {
       });
 
       if (!coursList.length) {
+        await t.rollback();
         return res.status(404).json({ message: 'Aucun cours trouvé pour ce semestre' });
       }
 
@@ -55,7 +59,7 @@ export default class BulletinController {
         if (existant) continue;
 
         const lignesBulletin: Array<{
-          coursId: number;
+          coursId: string;
           moyenneCC: number | null;
           noteDevoir: number | null;
           noteExamen: number | null;
@@ -82,41 +86,54 @@ export default class BulletinController {
             ]
           });
 
-          let notesCC: number[] = [];
+          let notesPonderees: { note: number; poids: number }[] = [];
           let noteDevoir: number | null = null;
+          let poidsDevoir: number | null = null;
           let noteExamen: number | null = null;
+          let poidsExamen: number | null = null;
 
           for (const evalList of listesEval) {
             if (evalList.notesEvaluation?.length) {
-              const note = evalList.notesEvaluation[0].note;
+              const note = Number(evalList.notesEvaluation[0].note);
               if (note == null) continue;
 
+              const poids = Number(evalList.poidsTypeNoteEvaluation) || 0;
               const categorie = (evalList as any).typeNoteEvaluation?.categorie;
+
               if (categorie === 'devoir') {
                 noteDevoir = note;
+                poidsDevoir = poids;
               } else if (categorie === 'examen') {
                 noteExamen = note;
-              } else {
-                notesCC.push(note);
+                poidsExamen = poids;
+              } else if (poids > 0) {
+                notesPonderees.push({ note, poids });
               }
             }
           }
 
-          const moyenneCC = notesCC.length ? notesCC.reduce((a, b) => a + b, 0) / notesCC.length : null;
-          const poidsCC = moyenneCC != null ? 0.2 : 0;
-          const poidsDevoir = noteDevoir != null ? 0.3 : 0;
-          const poidsExamen = noteExamen != null ? 0.5 : 0;
-          const poidsTotal = poidsCC + poidsDevoir + poidsExamen;
+          let sommePonderee = 0;
+          let sommePoids = 0;
 
-          let moyenne = 0;
-          if (poidsTotal > 0) {
-            moyenne = (
-              (moyenneCC ?? 0) * poidsCC +
-              (noteDevoir ?? 0) * poidsDevoir +
-              (noteExamen ?? 0) * poidsExamen
-            ) / poidsTotal;
-            moyenne = Math.round(moyenne * 100) / 100;
+          for (const np of notesPonderees) {
+            sommePonderee += np.note * np.poids;
+            sommePoids += np.poids;
           }
+          if (noteDevoir != null && poidsDevoir != null) {
+            sommePonderee += noteDevoir * poidsDevoir;
+            sommePoids += poidsDevoir;
+          }
+          if (noteExamen != null && poidsExamen != null) {
+            sommePonderee += noteExamen * poidsExamen;
+            sommePoids += poidsExamen;
+          }
+
+          const moyenne = sommePoids > 0
+            ? Math.round((sommePonderee / sommePoids) * 100) / 100
+            : 0;
+          const moyenneCC = notesPonderees.length
+            ? Math.round((notesPonderees.reduce((a, n) => a + n.note * n.poids, 0) / notesPonderees.reduce((a, n) => a + n.poids, 0)) * 100) / 100
+            : null;
 
           lignesBulletin.push({
             coursId: cours.id,
@@ -130,10 +147,14 @@ export default class BulletinController {
 
         let sommeNotesCoef = 0;
         let sommeCoefs = 0;
+        let creditsValides = 0;
         for (const l of lignesBulletin) {
           if (l.coefficient) {
             sommeNotesCoef += l.moyenne * l.coefficient;
             sommeCoefs += l.coefficient;
+            if (l.moyenne >= 10) {
+              creditsValides += l.coefficient;
+            }
           }
         }
         const moyenneGenerale = sommeCoefs > 0
@@ -150,10 +171,10 @@ export default class BulletinController {
           niveauEtudeId: cursus.niveauEtudeId,
           moyenneGenerale,
           totalCredits: sommeCoefs,
-          creditsValides: null,
+          creditsValides,
           statut: 'brouillon',
           dateGeneration: new Date(),
-        });
+        }, { transaction: t });
 
         for (const l of lignesBulletin) {
           await LigneBulletin.create({
@@ -164,13 +185,15 @@ export default class BulletinController {
             noteExamen: l.noteExamen,
             moyenne: l.moyenne,
             coefficient: l.coefficient,
-          });
+          }, { transaction: t });
         }
 
         bulletinsCrees.push(bulletin.id);
       }
 
-      await this.calculerRangs(classeId, semestre, anneeAcademiqueId);
+      await this.calculerRangs(classeId, semestre, anneeAcademiqueId, t);
+
+      await t.commit();
 
       const bulletins = await Bulletin.findAll({
         where: { id: { [Op.in]: bulletinsCrees } },
@@ -179,15 +202,17 @@ export default class BulletinController {
 
       return res.status(201).json(bulletins);
     } catch (error) {
+      await t.rollback();
       console.error('Erreur génération bulletins:', error);
       return res.status(500).json({ message: 'Erreur lors de la génération' });
     }
   }
 
-  private async calculerRangs(classeId: number, semestre: string, anneeAcademiqueId: number) {
+  private async calculerRangs(classeId: number, semestre: string, anneeAcademiqueId: number, t?: any) {
     const bulletins = await Bulletin.findAll({
       where: { classeId, semestre, anneeAcademiqueId, statut: 'brouillon' },
-      order: [['moyenneGenerale', 'DESC']]
+      order: [['moyenneGenerale', 'DESC']],
+      transaction: t
     });
     const effectif = bulletins.length;
     for (let i = 0; i < bulletins.length; i++) {
@@ -197,21 +222,26 @@ export default class BulletinController {
         mention: bulletins[i].moyenneGenerale != null
           ? calculerMention(bulletins[i].moyenneGenerale!)
           : null
-      });
+      }, { transaction: t });
     }
   }
 
   // GET /bulletins
   async getAll(req: Request, res: Response) {
     try {
-      const { classeId, semestre, anneeAcademiqueId, statut } = req.query;
+      const { classeId, semestre, anneeAcademiqueId, statut, page, limit } = req.query;
+
       const where: any = {};
       if (classeId) where.classeId = classeId;
       if (semestre) where.semestre = semestre;
       if (anneeAcademiqueId) where.anneeAcademiqueId = anneeAcademiqueId;
       if (statut) where.statut = statut;
 
-      const bulletins = await Bulletin.findAll({
+      const pageNum = Math.max(1, parseInt(page as string) || 1);
+      const limitNum = Math.min(100, Math.max(1, parseInt(limit as string) || 50));
+      const offset = (pageNum - 1) * limitNum;
+
+      const { count, rows: bulletins } = await Bulletin.findAndCountAll({
         where,
         include: [
           { association: Bulletin.associations.utilisateur },
@@ -219,9 +249,20 @@ export default class BulletinController {
           { association: Bulletin.associations.anneeAcademique },
           { association: Bulletin.associations.lignesBulletins }
         ],
-        order: [['createdAt', 'DESC']]
+        order: [['createdAt', 'DESC']],
+        limit: limitNum,
+        offset
       });
-      return res.json(bulletins);
+
+      return res.json({
+        data: bulletins,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total: count,
+          totalPages: Math.ceil(count / limitNum)
+        }
+      });
     } catch (error) {
       console.error('Erreur liste bulletins:', error);
       return res.status(500).json({ message: 'Erreur lors de la récupération' });
@@ -292,11 +333,25 @@ export default class BulletinController {
     }
   }
 
+  // DELETE /bulletins/:id
+  async delete(req: Request, res: Response) {
+    try {
+      const bulletin = await Bulletin.findByPk(req.params.id);
+      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvé' });
+
+      await bulletin.destroy();
+      return res.status(204).end();
+    } catch (error) {
+      console.error('Erreur suppression bulletin:', error);
+      return res.status(500).json({ message: 'Erreur lors de la suppression' });
+    }
+  }
+
   // GET /bulletins/mon-releve
   async monReleve(req: Request, res: Response) {
     try {
       const utilisateurId = (req as any).utilisateurId;
-      if (!utilisateurId) return res.status(401).json({ message: 'Non authentifiÃ©' });
+      if (!utilisateurId) return res.status(401).json({ message: 'Non authentifié' });
 
       const bulletin = await Bulletin.findOne({
         where: { utilisateurId, statut: 'publie' },
@@ -310,11 +365,11 @@ export default class BulletinController {
         ],
         order: [['datePublication', 'DESC']]
       });
-      if (!bulletin) return res.status(404).json({ message: 'Aucun bulletin publiÃ© trouvÃ©' });
+      if (!bulletin) return res.status(404).json({ message: 'Aucun bulletin publié trouvé' });
       return res.json(bulletin);
     } catch (error) {
-      console.error('Erreur relevÃ©:', error);
-      return res.status(500).json({ message: 'Erreur lors de la rÃ©cupÃ©ration' });
+      console.error('Erreur relevé:', error);
+      return res.status(500).json({ message: 'Erreur lors de la récupération' });
     }
   }
 }

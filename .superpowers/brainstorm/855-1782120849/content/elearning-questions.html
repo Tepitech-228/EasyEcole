@@ -1,0 +1,57 @@
+<h2>Module E-learning — Précisions</h2>
+
+<div class="section">
+  <h3>1. Compression vidéo</h3>
+  <p class="subtitle">Comment gérer la compression ?</p>
+  <div class="options">
+    <div class="option" data-choice="backend" onclick="toggleSelect(this)">
+      <div class="letter">A</div>
+      <div class="content">
+        <h3>Compression backend (FFmpeg)</h3>
+        <p>À l'upload, l'API compresse la vidéo automatiquement. Pas de dépendance externe.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="cloud" onclick="toggleSelect(this)">
+      <div class="letter">B</div>
+      <div class="content">
+        <h3>Service cloud (Cloudinary/Mux)</h3>
+        <p>Upload vers un service externe qui gère compression et streaming.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="multi" onclick="toggleSelect(this)">
+      <div class="letter">C</div>
+      <div class="content">
+        <h3>Multi-qualité</h3>
+        <p>Proposer 2 versions (haute/basse qualité) à l'upload, l'étudiant choisit.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>2. Chat</h3>
+  <p class="subtitle">Quel type de chat pour les dates d'évaluation ?</p>
+  <div class="options">
+    <div class="option" data-choice="chat-simple" onclick="toggleSelect(this)">
+      <div class="letter">A</div>
+      <div class="content">
+        <h3>Chat simple (par cours)</h3>
+        <p>Fil de discussion par cours, enseignants publient les dates, étudiants voient. Pas de temps réel.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="chat-realtime" onclick="toggleSelect(this)">
+      <div class="letter">B</div>
+      <div class="content">
+        <h3>Chat temps réel (Socket.io)</h3>
+        <p>Messagerie instantanée par cours avec Socket.io. Plus complexe.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="annonces" onclick="toggleSelect(this)">
+      <div class="letter">C</div>
+      <div class="content">
+        <h3>Système d'annonces</h3>
+        <p>Les enseignants publient des annonces (dates éval, examens) sur le cours. Les étudiants reçoivent une notification. Pas de chat.</p>
+      </div>
+    </div>
+  </div>
+</div>

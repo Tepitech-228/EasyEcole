@@ -15,6 +15,7 @@
         <div><span class="text-sm text-gray-500">Stock actuel:</span> <span class="text-sm font-semibold" [class.text-red-600]="article.stockActuel! <= article.stockMinimum!">{{ article.stockActuel }}</span></div>
         <div><span class="text-sm text-gray-500">Stock minimum:</span> <span class="text-sm">{{ article.stockMinimum }}</span></div>
         <div><span class="text-sm text-gray-500">Prix unitaire:</span> <span class="text-sm">{{ article.prixUnitaire | number }} FCFA</span></div>
-        <div><span class="text-sm text-gray-500">Description:</span> <span class="text-sm">{{ article.description }}</span></div>
+        <div><span class="text-sm text-gray-500">Site:</span> <span class="text-sm">{{ article.site?.nom || 'Tous les sites' }}</span></div>
+        <div class="col-span-2"><span class="text-sm text-gray-500">Description:</span> <span class="text-sm">{{ article.description }}</span></div>
     </div>
 </ng-container>

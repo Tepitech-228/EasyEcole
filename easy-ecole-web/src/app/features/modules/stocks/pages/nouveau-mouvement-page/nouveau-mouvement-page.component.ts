@@ -5,6 +5,8 @@ import { Router } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { MouvementStockService } from 'src/app/data/modules/stocks/services/mouvement-stock.service';
 import { MouvementStock } from 'src/app/data/modules/stocks/models/MouvementStock.model';
+import { Site } from 'src/app/data/modules/immobilisations/models/Site.model';
+import { SiteService } from 'src/app/data/modules/immobilisations/services/site.service';
 
 @Component({
     selector: 'app-nouveau-mouvement-page',
@@ -15,19 +17,28 @@ export class NouveauMouvementPageComponent extends BaseComponentClass implements
     error: boolean = false
     disableButton: boolean = false
     alreadyExists: boolean = false
+    sites: Site[] = []
     form: FormGroup = new FormGroup({
         articleId: new FormControl(null, [Validators.required]),
         type: new FormControl(null, [Validators.required]),
         quantite: new FormControl(null, [Validators.required]),
         motif: new FormControl(null, []),
         fournisseurId: new FormControl(null, []),
+        siteId: new FormControl(null, []),
         prixUnitaire: new FormControl(null, []),
     })
-    constructor(private router: Router, private mouvementStockService: MouvementStockService) {
+    constructor(private router: Router, private mouvementStockService: MouvementStockService, private siteService: SiteService) {
         super()
         if (!this.rolesValue.isInstitution && !this.rolesValue.isCaissierBanque) { this.router.navigate(['/stocks/mouvements']) }
+        this.getSites()
     }
     ngOnInit(): void {}
+    private getSites(): void {
+        this.siteService.getAll().subscribe({
+            next: (res) => { this.sites = res },
+            error: (err) => { console.log(err) }
+        })
+    }
     create(): void {
         this.form.markAllAsTouched()
         if (this.form.valid) {
@@ -37,6 +48,7 @@ export class NouveauMouvementPageComponent extends BaseComponentClass implements
             mouvement.quantite = this.form.get('quantite')!.value
             mouvement.motif = this.form.get('motif')!.value
             mouvement.fournisseurId = this.form.get('fournisseurId')!.value
+            mouvement.siteId = this.form.get('siteId')!.value
             mouvement.prixUnitaire = this.form.get('prixUnitaire')!.value
             this.disableButton = true
             this.mouvementStockService.create(mouvement).subscribe({

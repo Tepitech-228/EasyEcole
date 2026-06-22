@@ -3,6 +3,7 @@ import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../StockModule";
 import { Article } from "./Article";
 import { Fournisseur } from "./Fournisseur";
+import { Site } from "../../immobilisation/models/Site";
 
 export class MouvementStock extends Model<InferAttributes<MouvementStock>, InferCreationAttributes<MouvementStock>> {
   declare id: CreationOptional<string>
@@ -13,6 +14,8 @@ export class MouvementStock extends Model<InferAttributes<MouvementStock>, Infer
   declare motif: CreationOptional<string>
   declare fournisseurId: ForeignKey<Fournisseur['id'] | null>
   declare fournisseur?: NonAttribute<Fournisseur>
+  declare siteId: ForeignKey<Site['id'] | null>
+  declare site?: NonAttribute<Site>
   declare prixUnitaire: CreationOptional<number>
   declare dateMouvement: Date
   declare utilisateurId: number
@@ -22,6 +25,7 @@ export class MouvementStock extends Model<InferAttributes<MouvementStock>, Infer
   declare static associations: {
     article: Association<MouvementStock, Article>
     fournisseur: Association<MouvementStock, Fournisseur>
+    site: Association<MouvementStock, Site>
   };
 }
 
@@ -30,6 +34,7 @@ MouvementStock.init({
   type: { type: DataTypes.ENUM('entree', 'sortie'), allowNull: false },
   quantite: { type: DataTypes.INTEGER, allowNull: false },
   motif: { type: new DataTypes.STRING, allowNull: true },
+  siteId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
   prixUnitaire: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
   dateMouvement: { type: DataTypes.DATE, defaultValue: new Date(), allowNull: false },
   utilisateurId: { type: DataTypes.INTEGER, allowNull: false },

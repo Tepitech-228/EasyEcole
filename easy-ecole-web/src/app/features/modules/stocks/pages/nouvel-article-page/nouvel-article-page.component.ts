@@ -5,6 +5,8 @@ import { Router } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { ArticleService } from 'src/app/data/modules/stocks/services/article.service';
 import { Article } from 'src/app/data/modules/stocks/models/Article.model';
+import { Site } from 'src/app/data/modules/immobilisations/models/Site.model';
+import { SiteService } from 'src/app/data/modules/immobilisations/services/site.service';
 
 @Component({
     selector: 'app-nouvel-article-page',
@@ -15,18 +17,27 @@ export class NouvelArticlePageComponent extends BaseComponentClass implements On
     error: boolean = false
     disableButton: boolean = false
     alreadyExists: boolean = false
+    sites: Site[] = []
     form: FormGroup = new FormGroup({
         nom: new FormControl(null, [Validators.required]),
         reference: new FormControl(null, [Validators.required]),
         description: new FormControl(null, []),
         stockMinimum: new FormControl(null, []),
         prixUnitaire: new FormControl(null, []),
+        siteId: new FormControl(null, []),
     })
-    constructor(private router: Router, private articleService: ArticleService) {
+    constructor(private router: Router, private articleService: ArticleService, private siteService: SiteService) {
         super()
         if (!this.rolesValue.isInstitution && !this.rolesValue.isCaissierBanque) { this.router.navigate(['/stocks/articles']) }
+        this.getSites()
     }
     ngOnInit(): void {}
+    private getSites(): void {
+        this.siteService.getAll().subscribe({
+            next: (res) => { this.sites = res },
+            error: (err) => { console.log(err) }
+        })
+    }
     create(): void {
         this.form.markAllAsTouched()
         if (this.form.valid) {
@@ -36,6 +47,7 @@ export class NouvelArticlePageComponent extends BaseComponentClass implements On
             article.description = this.form.get('description')!.value
             article.stockMinimum = this.form.get('stockMinimum')!.value
             article.prixUnitaire = this.form.get('prixUnitaire')!.value
+            article.siteId = this.form.get('siteId')!.value
             this.disableButton = true
             this.articleService.create(article).subscribe({
                 next: () => { this.router.navigateByUrl("/stocks/articles") },

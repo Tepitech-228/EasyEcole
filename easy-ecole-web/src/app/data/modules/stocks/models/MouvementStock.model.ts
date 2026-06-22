@@ -5,6 +5,8 @@ export class MouvementStock {
     declare quantite?: number
     declare motif?: string
     declare fournisseurId?: string
+    declare siteId?: string
+    declare site?: any
     declare prixUnitaire?: number
     declare dateMouvement?: Date
     declare utilisateurId?: string

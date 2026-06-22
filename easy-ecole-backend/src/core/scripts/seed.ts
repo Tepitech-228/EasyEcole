@@ -19,6 +19,7 @@ async function seed() {
     require('../../modules/stage/models/_associations');
     require('../../modules/stock/models/_associations');
     require('../../modules/immobilisation/models/_associations');
+    require('../../modules/bulletins/models/_associations');
 
     // ── MODELS ──
     const M = (name: string) => sequelize.model(name);
@@ -463,10 +464,18 @@ async function seed() {
             email: a.email,
             contact: a.tel,
         });
-        const fileName = `${apprenantRecords[i].utilisateurId}.png`;
+        const baseName = `${apprenantRecords[i].utilisateurId}`;
+        let fileName = `${baseName}.png`;
         const qrDir = "public/auth/apprenants/qr-codes/";
         if (!fs.existsSync(qrDir)) fs.mkdirSync(qrDir, { recursive: true });
-        await QRCode.toFile(path.join(qrDir, fileName), qrData, { type: 'png', width: 400, margin: 2, color: { dark: '#000000', light: '#ffffff' } });
+        const qrPath = path.join(qrDir, fileName);
+        if (fs.existsSync(qrPath)) {
+            try { fs.unlinkSync(qrPath) } catch (_) {
+                fileName = `${baseName}_${Date.now()}.png`;
+            }
+        }
+        const finalPath = path.join(qrDir, fileName);
+        await QRCode.toFile(finalPath, qrData, { type: 'png', width: 400, margin: 2, color: { dark: '#000000', light: '#ffffff' } });
         await apprenantRecords[i].update({ qrCode: fileName });
 
         // CoursParticipant (4 cours par apprenant)
@@ -515,19 +524,19 @@ async function seed() {
         if (participants.length === 0) continue;
 
         // Contrôle Continu
-        const lne1 = await InsLNE.create({ date: new Date(), poidsTypeNoteEvaluation: 20, heureDebut: '08:00', heureFin: '10:00', typeNoteEvaluationId: tne1.id, coursId: c.id });
+        const lne1 = await InsLNE.create({ date: new Date(), poidsTypeNoteEvaluation: 20, heureDebut: '08:00', heureFin: '10:00', typeNoteEvaluationId: tne1.id, coursId: c.id, anneeAcademiqueId: an2.id });
         for (const p of participants) {
             await InsNE.create({ note: Math.floor(Math.random() * 8) + 12, listeNoteEvaluationId: lne1.id, coursParticipantId: p.id });
         }
 
         // Devoir
-        const lne3 = await InsLNE.create({ date: new Date(), poidsTypeNoteEvaluation: 30, heureDebut: '10:00', heureFin: '12:00', typeNoteEvaluationId: tne3.id, coursId: c.id });
+        const lne3 = await InsLNE.create({ date: new Date(), poidsTypeNoteEvaluation: 30, heureDebut: '10:00', heureFin: '12:00', typeNoteEvaluationId: tne3.id, coursId: c.id, anneeAcademiqueId: an2.id });
         for (const p of participants) {
             await InsNE.create({ note: Math.floor(Math.random() * 8) + 10, listeNoteEvaluationId: lne3.id, coursParticipantId: p.id });
         }
 
         // Examen Final
-        const lne2 = await InsLNE.create({ date: new Date(), poidsTypeNoteEvaluation: 50, heureDebut: '13:00', heureFin: '16:00', typeNoteEvaluationId: tne2.id, coursId: c.id });
+        const lne2 = await InsLNE.create({ date: new Date(), poidsTypeNoteEvaluation: 50, heureDebut: '13:00', heureFin: '16:00', typeNoteEvaluationId: tne2.id, coursId: c.id, anneeAcademiqueId: an2.id });
         for (const p of participants) {
             await InsNE.create({ note: Math.floor(Math.random() * 8) + 10, listeNoteEvaluationId: lne2.id, coursParticipantId: p.id });
         }

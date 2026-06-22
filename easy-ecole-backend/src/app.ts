@@ -2,7 +2,9 @@ import express from 'express'
 import cors from 'cors'
 import morgan from 'morgan'
 import http from "http"
+import swaggerUi from 'swagger-ui-express'
 import router from "./routes"
+import { swaggerSpec } from './core/swagger'
 import { DatabaseConnection } from './core/helpers/DatabaseConnection'
 import { IDGenerator } from './core/helpers/IDGenerator'
 import { EmailSender } from './core/helpers/EmailSender'
@@ -39,6 +41,12 @@ app.use(morgan("dev"))
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 app.use(express.static('public'))
+
+/** Swagger Documentation */
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'EasyEcole API Docs'
+}))
 
 const API_BASE_URL = "/api/v1"
 app.use(API_BASE_URL, router)

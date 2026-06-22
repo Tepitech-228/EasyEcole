@@ -7,7 +7,7 @@ export default class BonCommandeController {
     constructor() { }
 
     static async getAll(req: Request, res: Response): Promise<Response> {
-        let options: FindOptions<InferAttributes<BonCommande>> = { include: [BonCommande.associations.fournisseur, BonCommande.associations.lignesBonCommande] }
+        let options: FindOptions<InferAttributes<BonCommande>> = { include: [BonCommande.associations.fournisseur, BonCommande.associations.lignesBonCommande, BonCommande.associations.site] }
 
         try {
             let items: BonCommande[];
@@ -20,7 +20,7 @@ export default class BonCommandeController {
     }
 
     static async get(req: Request, res: Response): Promise<Response> {
-        let options: FindOptions<InferAttributes<BonCommande>> = { where: { id: req.params.id }, include: [BonCommande.associations.fournisseur, BonCommande.associations.lignesBonCommande] }
+        let options: FindOptions<InferAttributes<BonCommande>> = { where: { id: req.params.id }, include: [BonCommande.associations.fournisseur, BonCommande.associations.lignesBonCommande, BonCommande.associations.site] }
 
         try {
             const item: BonCommande | null = await BonCommande.findOne(options);

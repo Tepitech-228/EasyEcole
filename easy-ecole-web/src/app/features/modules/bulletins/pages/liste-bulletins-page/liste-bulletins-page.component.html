@@ -1,55 +1,174 @@
-<div class="page-header">
-  <h1>Bulletins de notes</h1>
-  <a routerLink="/bulletins/generer" class="btn btn-primary">+ GÃ©nÃ©rer</a>
-</div>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Bulletins de notes</h1>
+      <p class="mt-1 text-sm text-gray-500">Gérez et consultez les bulletins des étudiants</p>
+    </div>
+    <div class="mt-4 sm:mt-0 flex items-center gap-3">
+      <a *ngIf="rolesValue.isInstitution" routerLink="/bulletins/generer"
+         class="inline-flex items-center px-4 py-2.5 bg-red-700 hover:bg-red-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Générer
+      </a>
+    </div>
+  </div>
 
-<div class="filters">
-  <select [(ngModel)]="filtres.anneeAcademiqueId" (change)="charger()">
-    <option value="">AnnÃ©e scolaire</option>
-  </select>
-  <select [(ngModel)]="filtres.semestre" (change)="charger()">
-    <option value="">Semestre</option>
-    <option value="semestre1">Semestre 1</option>
-    <option value="semestre2">Semestre 2</option>
-  </select>
-  <select [(ngModel)]="filtres.classeId" (change)="charger()">
-    <option value="">Classe</option>
-  </select>
-  <select [(ngModel)]="filtres.statut" (change)="charger()">
-    <option value="">Tous</option>
-    <option value="brouillon">Brouillon</option>
-    <option value="publie">PubliÃ©</option>
-  </select>
-</div>
+  <!-- Loading State -->
+  <div *ngIf="loading && !bulletins.length" class="space-y-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div *ngFor="let _ of [1,2,3,4]" class="h-24 bg-gray-100 rounded-2xl animate-pulse"></div>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      <div class="p-6 space-y-4">
+        <div *ngFor="let _ of [1,2,3,4,5]" class="h-12 bg-gray-50 rounded-xl animate-pulse"></div>
+      </div>
+    </div>
+  </div>
 
-<table class="table">
-  <thead>
-    <tr>
-      <th>Ã‰lÃ¨ve</th>
-      <th>Classe</th>
-      <th>Semestre</th>
-      <th>Moy. GÃ©n.</th>
-      <th>Mention</th>
-      <th>Rang</th>
-      <th>Statut</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let b of bulletins(); trackBy: trackByFn">
-      <td>{{ b.utilisateur?.nom }} {{ b.utilisateur?.prenoms }}</td>
-      <td>{{ b.classe?.libelle }}</td>
-      <td>{{ b.semestre === 'semestre1' ? 'S1' : 'S2' }}</td>
-      <td>{{ b.moyenneGenerale != null ? b.moyenneGenerale + '/20' : '-' }}</td>
-      <td><span class="mention" [ngClass]="getMentionClass(b.mention)">{{ b.mention || '-' }}</span></td>
-      <td>{{ b.rang ? b.rang + '/' + b.effectifClasse : '-' }}</td>
-      <td><span class="badge" [ngClass]="b.statut === 'brouillon' ? 'badge-warning' : 'badge-success'">{{ b.statut }}</span></td>
-      <td>
-        <a [routerLink]="b.id">Voir</a>
-      </td>
-    </tr>
-    <tr *ngIf="bulletins().length === 0">
-      <td colspan="8">Aucun bulletin</td>
-    </tr>
-  </tbody>
-</table>
+  <!-- Stats Cards -->
+  <div *ngIf="!loading && bulletins.length" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total</p>
+          <p class="mt-1 text-2xl font-bold text-gray-900">{{ bulletins.length }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-xl bg-red-50 flex items-center justify-center"><svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
+      </div>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Publiés</p>
+          <p class="mt-1 text-2xl font-bold text-green-700">{{ getStatutCount('publie') }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-xl bg-green-50 flex items-center justify-center"><svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+      </div>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Brouillons</p>
+          <p class="mt-1 text-2xl font-bold text-amber-700">{{ getStatutCount('brouillon') }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center"><svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></div>
+      </div>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Moy. Générale</p>
+          <p class="mt-1 text-2xl font-bold text-gray-900">{{ getMoyenneGenerale() }}/20</p>
+        </div>
+        <div class="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center"><svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div *ngIf="!loading && (rolesValue.isInstitution || rolesValue.isEnseignant)" class="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm mb-6">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <select [(ngModel)]="filtres.anneeAcademiqueId" (change)="charger()"
+              class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-red-600">
+        <option value="">Année scolaire</option>
+        <option *ngFor="let aa of anneesAcademiques" [value]="aa.id">{{ aa.libelle }}</option>
+      </select>
+      <select [(ngModel)]="filtres.semestre" (change)="charger()"
+              class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-red-600">
+        <option value="">Semestre</option>
+        <option value="semestre1">Semestre 1</option>
+        <option value="semestre2">Semestre 2</option>
+      </select>
+      <select [(ngModel)]="filtres.classeId" (change)="charger()"
+              class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-red-600">
+        <option value="">Classe</option>
+        <option *ngFor="let c of classes" [value]="c.id">{{ c.libelle }}</option>
+      </select>
+      <select [(ngModel)]="filtres.statut" (change)="charger()"
+              class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-red-600">
+        <option value="">Tous</option>
+        <option value="brouillon">Brouillon</option>
+        <option value="publie">Publié</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!loading && bulletins.length" class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-100">
+        <thead>
+          <tr class="bg-gray-50/50">
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Élève</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Classe</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Semestre</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Moyenne</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Mention</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Rang</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Statut</th>
+            <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngFor="let b of bulletins; trackBy: trackByFn" class="hover:bg-gray-50/50 transition-colors">
+            <td class="px-5 py-4 whitespace-nowrap">
+              <div class="flex items-center gap-3">
+                <div class="h-8 w-8 rounded-full bg-gradient-to-br from-red-100 to-red-50 flex items-center justify-center text-xs font-bold text-red-700 uppercase">
+                  {{ (b.utilisateur?.nom || '?')[0] }}{{ (b.utilisateur?.prenoms || '')[0] }}
+                </div>
+                <div>
+                  <div class="text-sm font-semibold text-gray-900">{{ b.utilisateur?.nom }} {{ b.utilisateur?.prenoms }}</div>
+                  <div class="text-xs text-gray-400">{{ b.utilisateur?.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ b.classe?.libelle }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ b.semestre === 'semestre1' ? 'S1' : 'S2' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-center">
+              <span class="inline-flex items-center justify-center text-sm font-bold" [ngClass]="getMoyenneClass(b.moyenneGenerale)">
+                {{ b.moyenneGenerale != null ? b.moyenneGenerale : '-' }}
+              </span>
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap text-center">
+              <span *ngIf="b.mention" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                    [ngClass]="getMentionBadgeClass(b.mention)">{{ b.mention }}</span>
+              <span *ngIf="!b.mention" class="text-gray-300 text-sm">-</span>
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap text-center text-sm text-gray-700">{{ b.rang ? b.rang + '/' + b.effectifClasse : '-' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-center">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                    [ngClass]="b.statut === 'publie' ? 'bg-green-50 text-green-700 ring-1 ring-green-200' : 'bg-amber-50 text-amber-700 ring-1 ring-amber-200'">
+                <span class="w-1.5 h-1.5 rounded-full mr-1.5" [ngClass]="b.statut === 'publie' ? 'bg-green-500' : 'bg-amber-500'"></span>
+                {{ b.statut === 'publie' ? 'Publié' : 'Brouillon' }}
+              </span>
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap text-right">
+              <a [routerLink]="b.id"
+                 class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                Consulter
+                <svg class="w-3.5 h-3.5 ml-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+              </a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div *ngIf="bulletins.length === 0" class="px-5 py-12 text-center">
+      <svg class="mx-auto h-12 w-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      <p class="mt-4 text-sm text-gray-500">Aucun bulletin trouvé</p>
+      <p *ngIf="rolesValue.isInstitution" class="mt-1 text-xs text-gray-400">Générez les bulletins pour commencer</p>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div *ngIf="!loading && bulletins.length === 0" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
+    <svg class="mx-auto h-16 w-16 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+    <h3 class="mt-4 text-lg font-semibold text-gray-900">Aucun bulletin</h3>
+    <p class="mt-1 text-sm text-gray-500">Aucun bulletin ne correspond à vos critères</p>
+    <button *ngIf="filtres.anneeAcademiqueId || filtres.semestre || filtres.classeId || filtres.statut"
+            (click)="resetFiltres()" class="mt-4 inline-flex items-center px-4 py-2 text-sm font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-xl transition-colors">
+      Réinitialiser les filtres
+    </button>
+  </div>
+</div>

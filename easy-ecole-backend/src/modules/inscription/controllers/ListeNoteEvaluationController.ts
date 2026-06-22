@@ -100,7 +100,7 @@ export default class ListeNoteEvaluationController {
             return res.status(403).json({ success: false })
         }
 
-        let existing: ListeNoteEvaluation | null = await ListeNoteEvaluation.findOne({ where: { typeNoteEvaluationId: req.body.typeNoteEvaluationId, coursId: req.body.coursId } });
+        let existing: ListeNoteEvaluation | null = await ListeNoteEvaluation.findOne({ where: { typeNoteEvaluationId: req.body.typeNoteEvaluationId, coursId: req.body.coursId, anneeAcademiqueId: req.body.anneeAcademiqueId } });
 
         if (existing != null) {
             return res.status(400).json({ success: false, alreadyExists: true });
