@@ -29,7 +29,8 @@ export const environment = {
       DEBOUCHES: apiBaseUrl + "orientation/debouches/",
     },
     INSCRIPTION: {
-      DOSSIERS: apiBaseUrl + "inscription/dossiers/"
+      DOSSIERS: apiBaseUrl + "inscription/dossiers/",
+      BORDEREAUX: apiBaseUrl + "inscription/bordereaux/"
     }
   },
   QR_CODES_PATH: apiBaseUrl + "auth/apprenants/qr-codes/",

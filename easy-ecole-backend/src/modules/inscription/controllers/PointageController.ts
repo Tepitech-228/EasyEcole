@@ -3,6 +3,8 @@ import { FindOptions, InferAttributes, Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Pointage } from "../models/Pointage";
 import { Utilisateur } from "../../auth/models/Utilisateur";
+import { DossierEtudiant } from "../models/DossierEtudiant";
+import { Echeance } from "../models/Echeance";
 
 export default class PointageController {
 
@@ -178,5 +180,59 @@ export default class PointageController {
         }
 
         return null
+    }
+
+    static async verifierStatutByQR(req: Request, res: Response): Promise<Response> {
+        const { codeQR } = req.params
+
+        try {
+            let dossier: DossierEtudiant | null = null
+
+            if (codeQR.startsWith('{')) {
+                const qrData = JSON.parse(codeQR)
+                dossier = await DossierEtudiant.findOne({
+                    where: { matricule: qrData.matricule },
+                    include: [{
+                        association: DossierEtudiant.associations.echeances
+                    }]
+                })
+            }
+            else {
+                dossier = await DossierEtudiant.findOne({
+                    where: { matricule: codeQR },
+                    include: [{
+                        association: DossierEtudiant.associations.echeances
+                    }]
+                })
+            }
+
+            if (dossier == null) {
+                return res.status(404).json({ statut: 'rouge', message: "Dossier étudiant non trouvé" });
+            }
+
+            if (dossier.statut == 'suspendu' || dossier.statut == 'archive') {
+                return res.status(200).json({
+                    statut: 'rouge',
+                    message: `Dossier ${dossier.statut}`
+                });
+            }
+
+            const echeancesImpayees = (dossier.echeances || []).filter(
+                e => e.statut == 'impaye' || e.statut == 'en_retard'
+            )
+
+            if (echeancesImpayees.length > 0) {
+                const premiereImpayee = echeancesImpayees[0]
+                return res.status(200).json({
+                    statut: 'rouge',
+                    message: `Échéance mois ${premiereImpayee.numeroEcheance} ${premiereImpayee.statut == 'en_retard' ? 'en retard' : 'impayée'}`,
+                    echeancesRestantes: echeancesImpayees
+                });
+            }
+
+            return res.status(200).json({ statut: 'vert', message: 'Accès autorisé' });
+        } catch (error) {
+            return res.status(500).json({ success: false, error: error });
+        }
     }
 }

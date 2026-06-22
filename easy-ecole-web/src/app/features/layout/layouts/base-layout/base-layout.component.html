@@ -81,6 +81,17 @@
                     <app-nav-menu-item (click)="closeMenu()" icon="fact_check" text="Mes cours" link="/cours/mes-presences"></app-nav-menu-item>
                 </app-nav-menu-group>
 
+                <app-nav-menu-group title="Ressources Humaines" *ngIf="rolesValue.isRessourcesHumaines || rolesValue.isAdmin">
+                    <app-nav-menu-item (click)="closeMenu()" icon="dashboard-outline" text="Tableau de bord RH" link="/rh"></app-nav-menu-item>
+                    <app-nav-menu-item (click)="closeMenu()" icon="badge" text="Employés" link="/rh/employes"></app-nav-menu-item>
+                    <app-nav-menu-item (click)="closeMenu()" icon="work" text="Offres d'emploi" link="/rh/offres-emploi"></app-nav-menu-item>
+                    <app-nav-menu-item (click)="closeMenu()" icon="receipt_long" text="Candidatures" link="/rh/candidatures"></app-nav-menu-item>
+                    <app-nav-menu-item (click)="closeMenu()" icon="school" text="Formations" link="/rh/formations"></app-nav-menu-item>
+                    <app-nav-menu-item (click)="closeMenu()" icon="checklist" text="Évaluations" link="/rh/evaluations"></app-nav-menu-item>
+                    <app-nav-menu-item (click)="closeMenu()" icon="paid" text="Paie" link="/rh/paie"></app-nav-menu-item>
+                    <app-nav-menu-item (click)="closeMenu()" icon="cycle" text="Prestations" link="/rh/prestations"></app-nav-menu-item>
+                </app-nav-menu-group>
+
                 <app-nav-menu-group title="Pointage">
                     <app-nav-menu-item (click)="closeMenu()" icon="touch_app" text="Terminal" link="/pointage"></app-nav-menu-item>
                     <app-nav-menu-item (click)="closeMenu()" icon="history" text="Historique" link="/pointage/historique"></app-nav-menu-item>

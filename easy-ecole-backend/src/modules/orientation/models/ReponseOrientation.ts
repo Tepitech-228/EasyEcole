@@ -1,4 +1,4 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, NonAttribute, ForeignKey } from "sequelize";
+import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, NonAttribute, ForeignKey, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { DemandeOrientation } from "./DemandeOrientation";
 import { Utilisateur } from "../../auth/models/Utilisateur";
@@ -8,6 +8,8 @@ export class ReponseOrientation extends Model<InferAttributes<ReponseOrientation
   declare id: CreationOptional<string>
   declare message: CreationOptional<string>
   declare dateReponse: Date
+  declare dateAutorisationProvisoire: CreationOptional<Date>
+  declare statutAutorisation: CreationOptional<string>
   declare utilisateurId: ForeignKey<Utilisateur['id']>
   declare utilisateur?: NonAttribute<Utilisateur>
   declare demandeOrientationId: ForeignKey<DemandeOrientation['id']>
@@ -15,6 +17,11 @@ export class ReponseOrientation extends Model<InferAttributes<ReponseOrientation
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
+
+  declare static associations: {
+    utilisateur: Association<ReponseOrientation, Utilisateur>
+    demandeOrientation: Association<ReponseOrientation, DemandeOrientation>
+  };
 }
 
 ReponseOrientation.init({
@@ -30,6 +37,15 @@ ReponseOrientation.init({
   dateReponse: {
     type: DataTypes.DATE,
     defaultValue: new Date(),
+    allowNull: false
+  },
+  dateAutorisationProvisoire: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  statutAutorisation: {
+    type: DataTypes.ENUM('en_attente', 'autorise', 'refuse'),
+    defaultValue: 'en_attente',
     allowNull: false
   },
   createdAt: DataTypes.DATE,

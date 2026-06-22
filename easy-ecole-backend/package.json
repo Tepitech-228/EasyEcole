@@ -14,7 +14,9 @@
     "db:seed": "ts-node src/core/scripts/seed.ts",
     "db:reset": "ts-node src/core/scripts/reset-database.ts",
     "db:setup": "ts-node src/core/scripts/reset-database.ts",
-    "db:seed-bulletins": "ts-node src/core/scripts/seed-bulletins.ts"
+    "db:seed-bulletins": "ts-node src/core/scripts/seed-bulletins.ts",
+    "db:sync-reporting": "ts-node src/core/scripts/sync-reporting.ts",
+    "db:seed-esa": "ts-node src/core/scripts/seed-esa.ts"
   },
   "keywords": [],
   "author": "",
@@ -42,11 +44,13 @@
     "@types/bcrypt": "^5.0.0",
     "@types/multer": "^1.4.7",
     "@types/nodemailer": "^6.4.8",
+    "@types/pdfkit": "^0.17.6",
     "axios": "^1.6.2",
     "bcrypt": "^5.1.0",
     "cors": "^2.8.5",
     "exceljs": "^4.4.0",
     "express": "^4.18.2",
+    "fluent-ffmpeg": "^2.1.2",
     "helmet": "^7.0.0",
     "jsonwebtoken": "^9.0.1",
     "morgan": "^1.10.0",
@@ -55,9 +59,11 @@
     "nanoid": "^3.3.6",
     "nodemailer": "^6.9.3",
     "nodemon": "^3.0.1",
+    "pdfkit": "^0.19.1",
     "pg": "^8.11.1",
     "qrcode": "^1.5.4",
     "sequelize": "^6.32.1",
+    "socket.io": "^4.6.1",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1"
   }

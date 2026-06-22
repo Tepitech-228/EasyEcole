@@ -1,0 +1,32 @@
+<app-header-title title="Candidatures"></app-header-title>
+
+<div class="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
+  <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+    <p class="text-sm text-gray-500">Suivez les candidatures reçues pour chaque offre.</p>
+    <select class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+      <option value="">Tous les statuts</option>
+      <option value="soumise">Soumise</option>
+      <option value="étudiée">Étudiée</option>
+      <option value="retenue">Retenue</option>
+      <option value="rejetée">Rejetée</option>
+    </select>
+  </div>
+  <table class="min-w-full divide-y divide-gray-200">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Candidat</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Offre</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+      </tr>
+    </thead>
+    <tbody class="bg-white divide-y divide-gray-200">
+      <tr class="hover:bg-gray-50">
+        <td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500">
+          Aucune candidature trouvée
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

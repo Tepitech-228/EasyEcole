@@ -2,6 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import morgan from 'morgan'
 import http from "http"
+import { Server as SocketIOServer } from "socket.io"
 import swaggerUi from 'swagger-ui-express'
 import router from "./routes"
 import { swaggerSpec } from './core/swagger'
@@ -9,6 +10,7 @@ import { DatabaseConnection } from './core/helpers/DatabaseConnection'
 import { IDGenerator } from './core/helpers/IDGenerator'
 import { EmailSender } from './core/helpers/EmailSender'
 import { MobileMoneyCinetpay } from './core/helpers/MobileMoneyCinetpay'
+import { setupChatSocket } from './modules/elearning/socket/chatSocket'
 
 // Tests
 
@@ -53,6 +55,12 @@ app.use(API_BASE_URL, router)
 
 /** HTTP Server setup */
 const server = http.createServer(app)
+
+/** Socket.io setup */
+const io = new SocketIOServer(server, {
+    cors: { origin: '*' }
+})
+setupChatSocket(io)
 
 server.listen(port, hostname)
 server.on("listening", async () => {

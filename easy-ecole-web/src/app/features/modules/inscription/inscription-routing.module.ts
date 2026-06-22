@@ -11,6 +11,10 @@ import { ListeSessionsPageComponent } from './pages/liste-sessions-page/liste-se
 import { MonCursusPageComponent } from './pages/mon-cursus-page/mon-cursus-page.component';
 import { NouveauParcoursPageComponent } from './pages/nouveau-parcours-page/nouveau-parcours-page.component';
 import { PaiementsPageComponent } from './pages/paiements-page/paiements-page.component';
+import { BordereauxPageComponent } from './pages/bordereaux-page/bordereaux-page.component';
+import { ValidationBordereauxPageComponent } from './pages/validation-bordereaux-page/validation-bordereaux-page.component';
+import { MonDossierPageComponent } from './pages/mon-dossier-page/mon-dossier-page.component';
+import { GestionEcheancesPageComponent } from './pages/gestion-echeances-page/gestion-echeances-page.component';
 
 const routes: Routes = [
   {
@@ -96,6 +100,30 @@ const routes: Routes = [
   {
     path: 'cursus',
     component: MonCursusPageComponent,
+    pathMatch: 'full'
+  },
+
+  {
+    path: 'bordereaux',
+    component: BordereauxPageComponent,
+    pathMatch: 'full'
+  },
+
+  {
+    path: 'validation-bordereaux',
+    component: ValidationBordereauxPageComponent,
+    pathMatch: 'full'
+  },
+
+  {
+    path: 'mon-dossier',
+    component: MonDossierPageComponent,
+    pathMatch: 'full'
+  },
+
+  {
+    path: 'echeances',
+    component: GestionEcheancesPageComponent,
     pathMatch: 'full'
   },
 ];

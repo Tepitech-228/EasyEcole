@@ -172,6 +172,19 @@ export class EmailSender {
         })
     }
 
+    public sendMail(mailOptions: SendMailOptions): Promise<void> {
+        return new Promise((resolve, reject) => {
+            this.transporter.sendMail(mailOptions, function (err, data) {
+                if (err) {
+                    reject(err)
+                }
+                else {
+                    resolve()
+                }
+            })
+        })
+    }
+
     public sendValidationDemandeInscription(username: string, email: string): Promise<void> {
         const mailOptions: SendMailOptions = {
             from: `Easy Ecole <${config.username}>`,

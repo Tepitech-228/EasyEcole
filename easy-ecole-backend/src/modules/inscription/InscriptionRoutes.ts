@@ -14,6 +14,7 @@ import ReponseInscriptionRouter from "./routers/ReponseInscriptionRouter"
 import FraisInscriptionRouter from "./routers/FraisInscriptionRouter"
 import Authenticate from "../../core/middlewares/Authenticate";
 import PaiementInscriptionRouter from "./routers/PaiementInscriptionRouter";
+import QuitusRouter from "./routers/QuitusRouter";
 import DossierInscriptionRouter from "./routers/DossierInscriptionRouter";
 import AnneeAcademiqueRouter from "./routers/AnneeAcademiqueRouter";
 import CursusApprenantRouter from "./routers/CursusApprenantRouter";
@@ -32,6 +33,9 @@ import ListeNoteEvaluationRouter from "./routers/ListeNoteEvaluationRouter";
 import PointageRouter from "./routers/PointageRouter";
 import NoteEvaluationRouter from "./routers/NoteEvaluationRouter";
 import BulletinRouter from "../bulletins/routers/BulletinRouter"
+import EcheanceRouter from "./routers/EcheanceRouter";
+import BordereauRouter from "./routers/BordereauRouter";
+import DossierEtudiantRouter from "./routers/DossierEtudiantRouter";
 
 const router = express.Router();
 
@@ -49,6 +53,7 @@ router
     .use('/reponsesInscription', [Authenticate], ReponseInscriptionRouter)
     .use('/fraisInscription', [Authenticate], FraisInscriptionRouter)
     .use('/paiementsInscription', [Authenticate], PaiementInscriptionRouter)
+    .use('/quitus', [Authenticate], QuitusRouter)
     .use('/dossiersInscription', [Authenticate], DossierInscriptionRouter)
     .use('/anneesAcademiques', [Authenticate], AnneeAcademiqueRouter)
     .use('/cursusApprenant', [Authenticate], CursusApprenantRouter)
@@ -67,5 +72,8 @@ router
     .use('/notesEvaluation', [Authenticate], NoteEvaluationRouter)
     .use('/pointages', [Authenticate], PointageRouter)
     .use('/', [Authenticate], BulletinRouter)
+    .use('/echeances', [Authenticate], EcheanceRouter)
+    .use('/bordereaux', [Authenticate], BordereauRouter)
+    .use('/dossiers', [Authenticate], DossierEtudiantRouter)
 
 export default router;

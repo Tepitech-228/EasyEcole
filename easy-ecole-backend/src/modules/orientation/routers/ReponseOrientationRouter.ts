@@ -58,6 +58,32 @@ router
     // .put('/:id', [], ReponseOrientationController.updateReponseOrientation)
     /**
      * @openapi
+     * /orientation/reponses-orientation/{id}/autoriser:
+     *   put:
+     *     tags: [Réponses d'orientation]
+     *     summary: Autorise ou refuse l'inscription provisoire
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema:
+     *           type: string
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             properties:
+     *               statutAutorisation:
+     *                 type: string
+     *     responses:
+     *       200:
+     *         description: Autorisation mise à jour
+     */
+    .put('/:id/autoriser', [], ReponseOrientationController.autoriserInscription)
+    /**
+     * @openapi
      * /orientation/reponses-orientation/{id}:
      *   delete:
      *     tags: [Réponses d'orientation]

@@ -78,5 +78,22 @@ router
  *         description: Arrivée par scan enregistrée
  */
     .post('/scan/arrivee', [], PointageController.pointerArriveeByScan)
+/**
+ * @openapi
+ * /inscription/pointages/scan/verifier-statut/{codeQR}:
+ *   get:
+ *     tags: [Pointage]
+ *     summary: Vérifie le statut d'un étudiant par QR code (vert/rouge)
+ *     parameters:
+ *       - in: path
+ *         name: codeQR
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Statut de l'étudiant
+ */
+    .get('/scan/verifier-statut/:codeQR', [], PointageController.verifierStatutByQR)
 
 export default router

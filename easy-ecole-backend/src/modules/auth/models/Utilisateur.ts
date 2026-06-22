@@ -66,7 +66,7 @@ Utilisateur.init({
   },
   role: {
     type: DataTypes.ENUM,
-    values: [RolesUtilisateur.APPRENANT, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.CAISSIER_BANQUE, RolesUtilisateur.ADMIN],
+    values: [RolesUtilisateur.APPRENANT, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.CAISSIER_BANQUE, RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.ADMIN],
     defaultValue: RolesUtilisateur.APPRENANT
   },
   contact: {

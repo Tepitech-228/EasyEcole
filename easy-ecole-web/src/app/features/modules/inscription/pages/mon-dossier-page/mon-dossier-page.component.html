@@ -1,0 +1,96 @@
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Mon dossier étudiant" subtitle="Consulter votre dossier étudiant et votre QR code"></app-header-title>
+</div>
+
+<div *ngIf="!dossier && !error" class="text-center py-12">
+    <p class="text-gray-500">Chargement...</p>
+</div>
+
+<div *ngIf="error && !dossier" class="text-center py-12">
+    <p class="text-gray-500">Aucun dossier étudiant trouvé. Contactez l'administration.</p>
+</div>
+
+<div *ngIf="dossier" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Infos dossier -->
+    <div class="md:col-span-2">
+        <div class="bg-white shadow rounded-lg p-6 mb-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Informations du dossier</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <span class="block text-sm text-gray-400">Matricule</span>
+                    <span class="block text-sm font-medium text-gray-800">{{ dossier.matricule }}</span>
+                </div>
+                <div>
+                    <span class="block text-sm text-gray-400">Statut</span>
+                    <app-custom-badge [color]="getStatutBadgeColor(dossier.statut)" [text]="dossier.statut"></app-custom-badge>
+                </div>
+                <div>
+                    <span class="block text-sm text-gray-400">Date de création</span>
+                    <span class="block text-sm font-medium text-gray-800">{{ dossier.dateCreation | date:'dd/MM/YYYY' }}</span>
+                </div>
+                <div>
+                    <span class="block text-sm text-gray-400">Mode de paiement</span>
+                    <span class="block text-sm font-medium text-gray-800">{{ dossier.modePaiement == 'mensuel' ? 'Mensuel (' + dossier.nbMensualites + 'x)' : 'Unique' }}</span>
+                </div>
+                <div>
+                    <span class="block text-sm text-gray-400">Frais de scolarité</span>
+                    <span class="block text-sm font-medium text-gray-800">{{ dossier.fraisScolarite | currency:'XAF' }}</span>
+                </div>
+                <div>
+                    <span class="block text-sm text-gray-400">Démarrage parcours</span>
+                    <span class="block text-sm font-medium text-gray-800">{{ dossier.demarrageParcours | date:'dd/MM/YYYY' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Échéances -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Échéances</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th class="text-sm font-medium text-gray-900 px-2 py-3 text-left">N°</th>
+                            <th class="text-sm font-medium text-gray-900 px-2 py-3 text-left">Mois</th>
+                            <th class="text-sm font-medium text-gray-900 px-2 py-3 text-left">Date limite</th>
+                            <th class="text-sm font-medium text-gray-900 px-2 py-3 text-right">Montant</th>
+                            <th class="text-sm font-medium text-gray-900 px-2 py-3 text-left">Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let echeance of dossier.echeances"
+                            class="bg-white hover:bg-gray-100 border-b transition duration-300 ease-in-out">
+                            <td class="text-sm text-gray-600 px-2 py-3">{{ echeance.numeroEcheance }}</td>
+                            <td class="text-sm text-gray-600 px-2 py-3">{{ echeance.moisConcerne }}</td>
+                            <td class="text-sm text-gray-600 px-2 py-3">{{ echeance.dateLimite | date:'dd/MM/YYYY' }}</td>
+                            <td class="text-sm text-gray-600 px-2 py-3 text-right">{{ echeance.montant | currency:'XAF' }}</td>
+                            <td class="text-sm text-gray-600 px-2 py-3">
+                                <app-custom-badge [color]="getStatutEcheanceColor(echeance.statut)" [text]="echeance.statut"></app-custom-badge>
+                            </td>
+                        </tr>
+                        <tr *ngIf="(!dossier.echeances || dossier.echeances.length == 0)"
+                            class="bg-white border-b">
+                            <td class="text-sm text-center py-4 text-gray-500" colspan="5">Aucune échéance</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code -->
+    <div class="md:col-span-1">
+        <div class="bg-white shadow rounded-lg p-6 text-center">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">QR Code</h3>
+            <div *ngIf="qrCodeData" class="flex justify-center mb-4">
+                <img [src]="'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrCodeData)" 
+                     alt="QR Code" class="w-48 h-48">
+            </div>
+            <p class="text-xs text-gray-400 mb-4">Scannez ce QR code pour le pointage</p>
+            <div class="bg-gray-50 rounded p-3">
+                <span class="block text-xs text-gray-500 mb-1">Matricule</span>
+                <span class="block text-sm font-bold text-gray-800">{{ dossier.matricule }}</span>
+            </div>
+        </div>
+    </div>
+</div>

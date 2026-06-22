@@ -1,0 +1,108 @@
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Validation des bordereaux" subtitle="Vérifier et valider les bordereaux de paiement soumis par les étudiants"></app-header-title>
+</div>
+
+<div *ngIf="successMessage" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+    {{ successMessage }}
+</div>
+
+<div class="mb-8">
+    <div class="overflow-x-auto">
+        <div class="py-2 inline-block min-w-full">
+            <div class="overflow-hidden">
+                <table class="min-w-full">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">#</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Étudiant</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Échéance</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Référence</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
+                                <div class="px-2">Montant</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Date soumission</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
+                                <div class="px-2">Action</div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngIf="bordereauxEnAttente.length == 0"
+                            class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                colspan="7">Aucun bordereau en attente de validation</td>
+                        </tr>
+                        <tr *ngFor="let bordereau of bordereauxEnAttente; index as index"
+                            class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ index + 1 }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    {{ bordereau.utilisateur ? bordereau.utilisateur.nom + ' ' + bordereau.utilisateur.prenoms : '---' }}
+                                </div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    {{ bordereau.echeance ? 'Mois ' + bordereau.echeance.numeroEcheance : '---' }}
+                                </div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ bordereau.referenceBancaire || '---' }}</div>
+                            </td>
+                            <td class="bg-transparent text-right text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ bordereau.montant | currency:'XAF' }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ bordereau.dateSoumission | date: 'dd/MM/YYYY' }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    <span>
+                                        <app-custom-button (click)="openValidationModal(bordereau)" text="Valider" color="green"></app-custom-button>
+                                    </span>
+                                    <span>
+                                        <app-custom-button (click)="openRejetModal(bordereau)" text="Rejeter" color="red"></app-custom-button>
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<app-custom-modal title="Valider le bordereau" subtitle="Confirmer la validation de ce bordereau de paiement" (onCloseModal)="closeValidationModal()" [center]="true" [showModal]="showValidationModal">
+    <div *ngIf="selectedBordereau" class="mb-6">
+        <p class="text-sm text-gray-600">Êtes-vous sûr de vouloir valider ce bordereau de <strong>{{ selectedBordereau.montant | currency:'XAF' }}</strong> ?</p>
+        <p class="text-sm text-gray-600 mt-2">L'échéance concernée sera marquée comme payée.</p>
+    </div>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="closeValidationModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+        <app-custom-button (click)="validerBordereau()" text="Valider" color="green"></app-custom-button>
+    </div>
+</app-custom-modal>
+
+<app-custom-modal title="Rejeter le bordereau" subtitle="Motif du rejet de ce bordereau" (onCloseModal)="closeRejetModal()" [center]="true" [showModal]="showRejetModal">
+    <div class="mb-6">
+        <span class="mb-2 block text-sm text-gray-400">Commentaire (obligatoire)</span>
+        <textarea rows="4" [(ngModel)]="commentaireRejet" placeholder="Saisir le motif du rejet..."
+            class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
+    </div>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="closeRejetModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+        <app-custom-button (click)="rejeterBordereau()" text="Rejeter" color="red"></app-custom-button>
+    </div>
+</app-custom-modal>

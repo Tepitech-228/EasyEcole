@@ -3,5 +3,7 @@ export type RolesValueType = {
     isInstitution: boolean
     isEnseignant: boolean
     isCaissierBanque: boolean
+    isRessourcesHumaines: boolean
+    isCabinetComptable: boolean
     isAdmin: boolean
 }

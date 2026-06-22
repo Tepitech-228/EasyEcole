@@ -1,0 +1,166 @@
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Mes bordereaux" subtitle="Uploader et consulter l'historique de vos bordereaux de paiement"></app-header-title>
+    <div class="flex justify-end items-center">
+        <app-custom-button (click)="showUploadBordereauModal = true" *ngIf="rolesValue.isApprenant" text="Uploader un bordereau"></app-custom-button>
+    </div>
+</div>
+
+<div class="mb-8">
+    <div class="overflow-x-auto">
+        <div class="py-2 inline-block min-w-full">
+            <div class="overflow-hidden">
+                <table class="min-w-full">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">#</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Échéance</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Référence bancaire</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Statut</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
+                                <div class="px-2">Montant</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Date</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
+                                <div class="px-2">Action</div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngIf="bordereaux.length == 0"
+                            class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                colspan="7">Aucun bordereau uploadé</td>
+                        </tr>
+                        <tr *ngFor="let bordereau of bordereaux; index as index"
+                            class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ index + 1 }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    {{ bordereau.echeance ? 'Mois ' + bordereau.echeance.numeroEcheance : '---' }}
+                                </div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ bordereau.referenceBancaire || '---' }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2"
+                                [ngSwitch]="bordereau.statut">
+                                <app-custom-badge *ngSwitchCase="'valide'" color="green" text="Validé"></app-custom-badge>
+                                <app-custom-badge *ngSwitchCase="'rejete'" color="red" text="Rejeté"></app-custom-badge>
+                                <app-custom-badge *ngSwitchDefault color="yellow" text="En attente"></app-custom-badge>
+                            </td>
+                            <td class="bg-transparent text-right text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ bordereau.montant | currency:'XAF' }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ bordereau.dateSoumission | date: 'dd/MM/YYYY' }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    <span>
+                                        <app-custom-button (click)="openDetailsBordereauModal(bordereau)" text="Détails"></app-custom-button>
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<app-custom-modal title="Uploader un bordereau" subtitle="Soumettre un bordereau de paiement pour validation" (onCloseModal)="closeUploadBordereauModal()" [center]="true" [showModal]="showUploadBordereauModal">
+    <form [formGroup]="bordereauForm" class="">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Échéance concernée</span>
+                <select formControlName="echeanceId"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option value="" disabled>Sélectionner une échéance</option>
+                    <option *ngFor="let echeance of echeances" [value]="echeance.id">
+                        {{ echeance.type }} - Mois {{ echeance.numeroEcheance }} ({{ echeance.montant | currency:'XAF' }}) - {{ echeance.moisConcerne }}
+                    </option>
+                </select>
+                <div *ngIf="bordereauForm.get('echeanceId')!.invalid && (bordereauForm.get('echeanceId')!.dirty || bordereauForm.get('echeanceId')!.touched)">
+                    <app-form-message *ngIf="bordereauForm.get('echeanceId')!.errors?.['required']" text="Veuillez sélectionner une échéance"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Fichier bordereau (PDF ou image)</span>
+                <input type="file" id="fichier" accept=".pdf,.jpg,.jpeg,.png" (change)="onFileSelected($event)"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Montant</span>
+                <input type="number" min="0" id="montant" formControlName="montant" placeholder="Saisir le montant ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <div *ngIf="bordereauForm.get('montant')!.invalid && (bordereauForm.get('montant')!.dirty || bordereauForm.get('montant')!.touched)">
+                    <app-form-message *ngIf="bordereauForm.get('montant')!.errors?.['required']" text="Veuillez entrer le montant"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Référence bancaire</span>
+                <input type="text" id="referenceBancaire" formControlName="referenceBancaire" placeholder="Référence banque..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+        </div>
+    </form>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="closeUploadBordereauModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+        <app-custom-button (click)="uploadBordereau()" text="Uploader"></app-custom-button>
+    </div>
+</app-custom-modal>
+
+<app-custom-modal title="Détails du bordereau" subtitle="Informations complètes sur ce bordereau" (onCloseModal)="closeDetailsBordereauModal()" [center]="true" [showModal]="showDetailsBordereauModal">
+    <form *ngIf="selectedBordereau">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Échéance</span>
+                <input type="text" readonly [value]="selectedBordereau.echeance ? 'Mois ' + selectedBordereau.echeance.numeroEcheance : '---'"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Montant</span>
+                <input type="text" readonly [value]="selectedBordereau.montant | currency:'XAF'"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Référence bancaire</span>
+                <input type="text" readonly [value]="selectedBordereau.referenceBancaire || '---'"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Statut</span>
+                <input type="text" readonly [value]="selectedBordereau.statut"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Date soumission</span>
+                <input type="text" readonly [value]="selectedBordereau.dateSoumission | date:'dd/MM/YYYY'"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Date validation</span>
+                <input type="text" readonly [value]="selectedBordereau.dateValidation ? (selectedBordereau.dateValidation | date:'dd/MM/YYYY') : '---'"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Commentaire</span>
+                <textarea rows="3" readonly
+                    class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">{{ selectedBordereau.commentaire || '---' }}</textarea>
+            </div>
+        </div>
+    </form>
+</app-custom-modal>

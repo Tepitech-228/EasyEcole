@@ -124,6 +124,51 @@ export default class ReponseOrientationController {
         return null
     }
 
+    static async autoriserInscription(req: Request, res: Response): Promise<Response | null> {
+        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION) {
+            return res.status(403).json({ success: false })
+        }
+
+        let reponseOrientation: ReponseOrientation | null = await ReponseOrientation.findOne({
+            where: { id: req.params.id },
+            include: [{ association: ReponseOrientation.associations.demandeOrientation, include: [DemandeOrientation.associations.utilisateur] }]
+        });
+
+        if (reponseOrientation == null) {
+            return res.status(404).json({ success: false, message: "Réponse non trouvée" });
+        }
+
+        await reponseOrientation.update({
+            statutAutorisation: req.body.statutAutorisation || 'autorise',
+            dateAutorisationProvisoire: new Date()
+        })
+            .then(async (reponseOrientation) => {
+                let demandeOrientation = reponseOrientation.demandeOrientation
+                if (demandeOrientation && demandeOrientation.utilisateur) {
+                    if (reponseOrientation.statutAutorisation == 'autorise') {
+                        EmailSender.getInstance().sendReponseOrientation(
+                            demandeOrientation.utilisateur.identifiant,
+                            demandeOrientation.utilisateur.email,
+                            'Félicitations ! Votre demande d\'inscription a été autorisée provisoirement. Veuillez finaliser votre inscription.'
+                        )
+                    } else {
+                        EmailSender.getInstance().sendReponseOrientation(
+                            demandeOrientation.utilisateur.identifiant,
+                            demandeOrientation.utilisateur.email,
+                            'Votre demande d\'autorisation d\'inscription a été refusée.'
+                        )
+                    }
+                }
+
+                return res.status(200).send(reponseOrientation);
+            })
+            .catch((error) => {
+                return res.status(400).json({ success: false, error: error });
+            });
+
+        return null
+    }
+
     static async getCount(req: Request, res: Response): Promise<Response | null> {
         let options: CountOptions<InferAttributes<ReponseOrientation>> = {}
 

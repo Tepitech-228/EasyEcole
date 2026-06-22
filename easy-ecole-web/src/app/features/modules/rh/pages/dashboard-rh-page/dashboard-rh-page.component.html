@@ -1,0 +1,80 @@
+<app-header-title title="Tableau de bord RH"></app-header-title>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+  <div class="bg-white rounded-lg shadow p-6 border border-gray-100">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm text-gray-500 font-medium">Employés</p>
+        <p class="text-2xl font-bold text-gray-900 mt-1">--</p>
+      </div>
+      <div class="p-3 bg-blue-50 rounded-full">
+        <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow p-6 border border-gray-100">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm text-gray-500 font-medium">Offres d'emploi</p>
+        <p class="text-2xl font-bold text-gray-900 mt-1">--</p>
+      </div>
+      <div class="p-3 bg-green-50 rounded-full">
+        <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow p-6 border border-gray-100">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm text-gray-500 font-medium">Candidatures</p>
+        <p class="text-2xl font-bold text-gray-900 mt-1">--</p>
+      </div>
+      <div class="p-3 bg-yellow-50 rounded-full">
+        <svg class="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow p-6 border border-gray-100">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm text-gray-500 font-medium">Formations</p>
+        <p class="text-2xl font-bold text-gray-900 mt-1">--</p>
+      </div>
+      <div class="p-3 bg-purple-50 rounded-full">
+        <svg class="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z"/></svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="bg-white rounded-lg shadow p-6 border border-gray-100">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Actions rapides</h3>
+    <div class="space-y-3">
+      <a routerLink="/rh/employes" class="block p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+        <span class="font-medium text-gray-700">Gérer les employés</span>
+        <p class="text-sm text-gray-500 mt-1">Ajouter, modifier ou consulter les employés</p>
+      </a>
+      <a routerLink="/rh/offres-emploi" class="block p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+        <span class="font-medium text-gray-700">Offres d'emploi</span>
+        <p class="text-sm text-gray-500 mt-1">Publier et gérer les offres</p>
+      </a>
+      <a routerLink="/rh/candidatures" class="block p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+        <span class="font-medium text-gray-700">Candidatures</span>
+        <p class="text-sm text-gray-500 mt-1">Suivre les candidatures reçues</p>
+      </a>
+      <a routerLink="/rh/paie" class="block p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+        <span class="font-medium text-gray-700">Paie</span>
+        <p class="text-sm text-gray-500 mt-1">Gérer les bulletins et périodes de paie</p>
+      </a>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow p-6 border border-gray-100">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Dernières activités</h3>
+    <p class="text-sm text-gray-500">Aucune activité récente</p>
+  </div>
+</div>

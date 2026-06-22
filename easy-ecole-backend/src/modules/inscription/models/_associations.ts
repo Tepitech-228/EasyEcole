@@ -255,6 +255,34 @@ NoteEvaluation.belongsTo(CoursParticipant, { as: 'coursParticipant', foreignKey:
 Utilisateur.hasMany(Pointage, { foreignKey: 'utilisateurId', as: 'pointages' })
 Pointage.belongsTo(Utilisateur, { as: 'utilisateur', foreignKey: 'utilisateurId' })
 
+// Quitus - PaiementInscription
+import { Quitus } from "./Quitus";
+Quitus.belongsTo(PaiementInscription, { foreignKey: 'paiementInscriptionId', as: 'paiementInscription' })
+PaiementInscription.hasOne(Quitus, { foreignKey: 'paiementInscriptionId', as: 'quitus' })
+
+// DossierEtudiant - Utilisateur
+import { DossierEtudiant } from "./DossierEtudiant";
+Utilisateur.hasMany(DossierEtudiant, { foreignKey: 'utilisateurId', as: 'dossiersEtudiants' })
+DossierEtudiant.belongsTo(Utilisateur, { foreignKey: 'utilisateurId', as: 'utilisateur' })
+
+// DossierEtudiant - Echeance
+import { Echeance } from "./Echeance";
+DossierEtudiant.hasMany(Echeance, { foreignKey: 'dossierEtudiantId', as: 'echeances' })
+Echeance.belongsTo(DossierEtudiant, { foreignKey: 'dossierEtudiantId', as: 'dossierEtudiant' })
+
+// Bordereau - Echeance
+import { Bordereau } from "./Bordereau";
+Echeance.hasMany(Bordereau, { foreignKey: 'echeanceId', as: 'bordereaux' })
+Bordereau.belongsTo(Echeance, { foreignKey: 'echeanceId', as: 'echeance' })
+
+// Bordereau - Utilisateur (soumis par)
+Utilisateur.hasMany(Bordereau, { foreignKey: 'utilisateurId', as: 'bordereaux' })
+Bordereau.belongsTo(Utilisateur, { foreignKey: 'utilisateurId', as: 'utilisateur' })
+
+// Bordereau - Utilisateur (validé par)
+Utilisateur.hasMany(Bordereau, { foreignKey: 'valideParId', as: 'bordereauxValides' })
+Bordereau.belongsTo(Utilisateur, { foreignKey: 'valideParId', as: 'validePar' })
+
 // Bulletin associations
 import { initBulletinAssociations } from "../../bulletins/models/_associations";
 initBulletinAssociations();

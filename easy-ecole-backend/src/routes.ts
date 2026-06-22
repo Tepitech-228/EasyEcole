@@ -5,6 +5,12 @@ import InscriptionRoutes from "./modules/inscription/InscriptionRoutes";
 import StageRoutes from "./modules/stage/StageRoutes";
 import StockRoutes from "./modules/stock/StockRoutes";
 import ImmobilisationRoutes from "./modules/immobilisation/ImmobilisationRoutes";
+import ElearningRoutes from "./modules/elearning/ElearningRoutes";
+import ReportingRoutes from "./modules/reporting/ReportingRoutes";
+import AchatsRoutes from "./modules/achats/AchatsRoutes";
+import RhRoutes from "./modules/rh/RhRoutes";
+import CommunicationRoutes from "./modules/communication/CommunicationRoutes";
+import ScolariteRoutes from "./modules/scolarite/ScolariteRoutes";
 const router = express.Router();
 
 router
@@ -17,6 +23,12 @@ router
     .use('/stages', StageRoutes)
     .use('/stocks', StockRoutes)
     .use('/immobilisations', ImmobilisationRoutes)
+    .use('/elearning', ElearningRoutes)
+    .use('/reporting', ReportingRoutes)
+    .use('/achats', AchatsRoutes)
+    .use('/rh', RhRoutes)
+    .use('/communication', CommunicationRoutes)
+    .use('/scolarite', ScolariteRoutes)
 
     // Not found
     .use('*', (req: Request, res: Response) => {

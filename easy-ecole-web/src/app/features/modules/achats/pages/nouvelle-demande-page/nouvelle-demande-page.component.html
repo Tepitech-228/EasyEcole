@@ -1,0 +1,45 @@
+<div class="mb-8">
+    <app-header-title title="Nouvelle demande d'achat" subtitle="Soumettre une expression de besoin"></app-header-title>
+</div>
+
+<div class="bg-white rounded-lg shadow p-6">
+    <form>
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <textarea class="w-full border rounded-lg px-3 py-2 text-sm" rows="3" placeholder="Décrivez votre besoin..."></textarea>
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Validateur</label>
+            <select class="w-full border rounded-lg px-3 py-2 text-sm">
+                <option value="">Sélectionner un validateur</option>
+            </select>
+        </div>
+
+        <h3 class="text-md font-semibold text-gray-800 mb-3">Lignes de demande</h3>
+        <div class="overflow-x-auto mb-4">
+            <table class="min-w-full border">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500">Désignation</th>
+                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500">Quantité</th>
+                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500">Prix estimé</th>
+                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500">Unité</th>
+                        <th class="px-2 py-2 text-right text-xs font-medium text-gray-500">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-sm text-gray-500">Aucune ligne ajoutée</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="flex justify-end gap-x-3">
+            <app-custom-button text="Annuler" link="/achats/demandes"></app-custom-button>
+            <app-custom-button text="Enregistrer comme brouillon"></app-custom-button>
+            <app-custom-button text="Soumettre"></app-custom-button>
+        </div>
+    </form>
+</div>

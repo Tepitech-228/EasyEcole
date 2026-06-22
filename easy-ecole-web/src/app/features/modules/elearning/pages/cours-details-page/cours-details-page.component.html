@@ -1,0 +1,39 @@
+<div class="p-6">
+  <app-return-back></app-return-back>
+
+  <div *ngIf="loading" class="flex justify-center py-12">
+    <div class="spinner-border text-primary" role="status">
+      <span class="sr-only">Chargement...</span>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && cours" class="mt-4">
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <img [src]="'/orientation/parcours/' + cours.image" alt="{{ cours.titre }}" class="w-full h-48 object-cover rounded-lg mb-4" *ngIf="cours.image">
+      <h1 class="text-2xl font-bold text-gray-800">{{ cours.titre }}</h1>
+      <p class="text-gray-600 mt-2">{{ cours.description }}</p>
+    </div>
+
+    <div class="mt-6" *ngFor="let module of cours.modules">
+      <div class="bg-white rounded-lg shadow-md p-4 mb-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-lg font-semibold text-gray-800">{{ module.titre }}</h2>
+            <p class="text-sm text-gray-500">{{ module.description }}</p>
+          </div>
+          <span class="text-xs text-gray-400">Ordre {{ module.ordre }}</span>
+        </div>
+
+        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3" *ngIf="module.supports?.length > 0">
+          <app-support-card *ngFor="let support of module.supports" [support]="support"></app-support-card>
+        </div>
+        <p *ngIf="!module.supports?.length" class="text-sm text-gray-400 mt-2">Aucun support pour ce module.</p>
+      </div>
+    </div>
+
+    <div class="flex gap-4 mt-6">
+      <a [routerLink]="['/elearning', cours.id, 'chat']" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Accéder au chat</a>
+      <a [routerLink]="['/elearning', cours.id, 'upload']" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Ajouter un support</a>
+    </div>
+  </div>
+</div>

@@ -94,10 +94,52 @@ const routes: Routes = [
         canLoad: [AuthGuard]
       },
 
+      // Module "Achats"
+      {
+        path: 'achats',
+        loadChildren: () => import('./features/modules/achats/achats.module').then(m => m.AchatsModule),
+        canLoad: [AuthGuard]
+      },
+
       // Module "Pointage"
       {
         path: 'pointage',
         loadChildren: () => import('./features/modules/pointage/pointage.module').then(m => m.PointageModule),
+        canLoad: [AuthGuard]
+      },
+
+      // Module "Ressources Humaines"
+      {
+        path: 'rh',
+        loadChildren: () => import('./features/modules/rh/rh.module').then(m => m.RhModule),
+        canLoad: [AuthGuard]
+      },
+
+      // Module "Reporting"
+      {
+        path: 'reporting',
+        loadChildren: () => import('./features/modules/reporting/reporting.module').then(m => m.ReportingModule),
+        canLoad: [AuthGuard]
+      },
+
+      // Module "Communication"
+      {
+        path: 'communication',
+        loadChildren: () => import('./features/modules/communication/communication.module').then(m => m.CommunicationModule),
+        canLoad: [AuthGuard]
+      },
+
+      // Module "Scolarite"
+      {
+        path: 'scolarite',
+        loadChildren: () => import('./features/modules/scolarite/scolarite.module').then(m => m.ScolariteModule),
+        canLoad: [AuthGuard]
+      },
+
+      // Module "E-learning"
+      {
+        path: 'elearning',
+        loadChildren: () => import('./features/modules/elearning/elearning.module').then(m => m.ElearningModule),
         canLoad: [AuthGuard]
       },
     ]

@@ -1,0 +1,209 @@
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Gestion des échéances" subtitle="Créer et gérer les échéances de paiement des étudiants"></app-header-title>
+    <div class="flex justify-end items-center gap-x-3">
+        <app-custom-button (click)="openGenererEcheancesModal()" *ngIf="rolesValue.isInstitution" text="Génération automatique"></app-custom-button>
+        <app-custom-button (click)="openNouvelleEcheanceModal()" *ngIf="rolesValue.isInstitution" text="Nouvelle échéance"></app-custom-button>
+    </div>
+</div>
+
+<app-form-message *ngIf="successMessage" [text]="successMessage" color="green"></app-form-message>
+
+<div class="mb-8">
+    <div class="overflow-x-auto">
+        <div class="py-2 inline-block min-w-full">
+            <div class="overflow-hidden">
+                <table class="min-w-full">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">#</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Dossier</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Type</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">N° Échéance</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Mois</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Date limite</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
+                                <div class="px-2">Montant</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Statut</div>
+                            </th>
+                            <th *ngIf="rolesValue.isInstitution" scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
+                                <div class="px-2">Action</div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngIf="echeances.length == 0"
+                            class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                colspan="9">Aucune échéance</td>
+                        </tr>
+                        <tr *ngFor="let echeance of echeances; index as index"
+                            class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ index + 1 }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    {{ echeance.dossierEtudiant ? echeance.dossierEtudiant.matricule : '---' }}
+                                </div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ echeance.type }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ echeance.numeroEcheance }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ echeance.moisConcerne || '---' }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ echeance.dateLimite | date:'dd/MM/YYYY' }}</div>
+                            </td>
+                            <td class="bg-transparent text-right text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ echeance.montant | currency:'XAF' }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <app-custom-badge [color]="getStatutColor(echeance.statut)" [text]="echeance.statut"></app-custom-badge>
+                            </td>
+                            <td *ngIf="rolesValue.isInstitution" class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    <span>
+                                        <app-custom-button (click)="openEditerEcheanceModal(echeance)" text="Modifier"></app-custom-button>
+                                    </span>
+                                    <span>
+                                        <app-custom-button (click)="openSupprimerEcheanceModal(echeance)" text="Supprimer" color="red"></app-custom-button>
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nouvelle échéance -->
+<app-custom-modal title="Nouvelle échéance" subtitle="Créer une échéance de paiement" (onCloseModal)="closeNouvelleEcheanceModal()" [center]="true" [showModal]="showNouvelleEcheanceModal">
+    <form [formGroup]="echeanceForm" class="">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Dossier étudiant</span>
+                <select formControlName="dossierEtudiantId"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option value="" disabled>Sélectionner un dossier</option>
+                    <option *ngFor="let dossier of dossiers" [value]="dossier.id">{{ dossier.matricule }}</option>
+                </select>
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Type</span>
+                <select formControlName="type"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option value="scolarite">Scolarité</option>
+                    <option value="inscription">Inscription</option>
+                </select>
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Numéro échéance</span>
+                <input type="number" min="0" id="numeroEcheance" formControlName="numeroEcheance"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Montant</span>
+                <input type="number" min="0" id="montant" formControlName="montant"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Date limite</span>
+                <input type="date" id="dateLimite" formControlName="dateLimite"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Mois concerné (ex: 2026-09)</span>
+                <input type="text" id="moisConcerne" formControlName="moisConcerne"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+        </div>
+    </form>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="closeNouvelleEcheanceModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+        <app-custom-button (click)="createEcheance()" text="Créer"></app-custom-button>
+    </div>
+</app-custom-modal>
+
+<!-- Modal Éditer -->
+<app-custom-modal *ngIf="selectedEcheance" title="Modifier l'échéance" subtitle="Mettre à jour les informations" (onCloseModal)="closeEditerEcheanceModal()" [center]="true" [showModal]="showEditerEcheanceModal">
+    <form [formGroup]="echeanceForm" class="">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Type</span>
+                <select formControlName="type"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option value="scolarite">Scolarité</option>
+                    <option value="inscription">Inscription</option>
+                </select>
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Montant</span>
+                <input type="number" min="0" id="montant" formControlName="montant"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Date limite</span>
+                <input type="date" id="dateLimite" formControlName="dateLimite"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Statut</span>
+                <select formControlName="statut"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option value="impaye">Impayé</option>
+                    <option value="paye">Payé</option>
+                    <option value="en_retard">En retard</option>
+                </select>
+            </div>
+        </div>
+    </form>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="closeEditerEcheanceModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+        <app-custom-button (click)="updateEcheance()" text="Modifier"></app-custom-button>
+    </div>
+</app-custom-modal>
+
+<!-- Modal Supprimer -->
+<app-custom-modal *ngIf="selectedEcheance" title="Supprimer" subtitle="Supprimer cette échéance. Voulez-vous continuer ?" (onCloseModal)="closeSupprimerEcheanceModal()" [center]="true" [showModal]="showSupprimerEcheanceModal">
+    <div class="flex items-center justify-between py-30">
+        <app-custom-button (click)="closeSupprimerEcheanceModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+        <app-custom-button (click)="deleteEcheance()" text="Supprimer" color="red"></app-custom-button>
+    </div>
+</app-custom-modal>
+
+<!-- Modal Génération automatique -->
+<app-custom-modal title="Génération automatique" subtitle="Générer les échéances pour un dossier étudiant" (onCloseModal)="closeGenererEcheancesModal()" [center]="true" [showModal]="showGenererEcheancesModal">
+    <div class="mb-6">
+        <span class="mb-2 block text-sm text-gray-400">Dossier étudiant</span>
+        <select [(ngModel)]="selectedDossierId"
+            class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            <option value="" disabled>Sélectionner un dossier</option>
+            <option *ngFor="let dossier of dossiers" [value]="dossier.id">{{ dossier.matricule }} - {{ dossier.modePaiement }} ({{ dossier.nbMensualites }}x)</option>
+        </select>
+        <p class="text-xs text-gray-400 mt-2">Les échéances seront générées selon le mode de paiement du dossier (mensuel ou unique).</p>
+    </div>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="closeGenererEcheancesModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+        <app-custom-button (click)="genererEcheances()" text="Générer"></app-custom-button>
+    </div>
+</app-custom-modal>

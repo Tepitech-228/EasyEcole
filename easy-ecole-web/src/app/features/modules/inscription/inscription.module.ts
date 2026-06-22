@@ -20,6 +20,11 @@ import { PaiementsSectionComponent } from './pages/details-demande-page/paiement
 import { ValidationSectionComponent } from './pages/details-demande-page/validation-section/validation-section.component';
 import { ChoixParcoursPageComponent } from './pages/choix-parcours-page/choix-parcours-page.component';
 import { DocumentsSectionComponent } from './pages/details-demande-page/documents-section/documents-section.component';
+import { BordereauxPageComponent } from './pages/bordereaux-page/bordereaux-page.component';
+import { ValidationBordereauxPageComponent } from './pages/validation-bordereaux-page/validation-bordereaux-page.component';
+import { MonDossierPageComponent } from './pages/mon-dossier-page/mon-dossier-page.component';
+import { GestionEcheancesPageComponent } from './pages/gestion-echeances-page/gestion-echeances-page.component';
+import { FormsModule } from '@angular/forms';
 
 
 @NgModule({
@@ -40,12 +45,17 @@ import { DocumentsSectionComponent } from './pages/details-demande-page/document
     PaiementsSectionComponent,
     ValidationSectionComponent,
     ChoixParcoursPageComponent,
-    DocumentsSectionComponent
+    DocumentsSectionComponent,
+    BordereauxPageComponent,
+    ValidationBordereauxPageComponent,
+    MonDossierPageComponent,
+    GestionEcheancesPageComponent
   ],
   imports: [
     CommonModule,
     InscriptionRoutingModule,
-    SharedModule
+    SharedModule,
+    FormsModule
   ]
 })
 export class InscriptionModule { }
