@@ -14,10 +14,12 @@ Tuteur.belongsTo(Entreprise, { as: 'entreprise', foreignKey: 'entrepriseId' })
 Entreprise.hasMany(Tuteur, { as: 'tuteurs', foreignKey: 'entrepriseId' })
 
 OffreStage.belongsTo(AutInstitution, { as: 'institution', foreignKey: 'institutionId' })
+AutInstitution.hasMany(OffreStage, { as: 'offresStage', foreignKey: 'institutionId' })
 
 DemandeStage.belongsTo(OffreStage, { as: 'offreStage', foreignKey: 'offreStageId' })
 DemandeStage.belongsTo(Entreprise, { as: 'entreprise', foreignKey: 'entrepriseId' })
 DemandeStage.belongsTo(AutApprenant, { as: 'apprenant', foreignKey: 'apprenantId' })
+AutApprenant.hasMany(DemandeStage, { as: 'demandesStage', foreignKey: 'apprenantId' })
 
 ConventionStage.belongsTo(DemandeStage, { as: 'demandeStage', foreignKey: 'demandeStageId' })
 DemandeStage.hasOne(ConventionStage, { as: 'conventionStage', foreignKey: 'demandeStageId' })
@@ -27,6 +29,7 @@ DemandeStage.hasOne(RapportStage, { as: 'rapportStage', foreignKey: 'demandeStag
 
 NoteStage.belongsTo(DemandeStage, { as: 'demandeStage', foreignKey: 'demandeStageId' })
 NoteStage.belongsTo(AutEnseignant, { as: 'enseignant', foreignKey: 'enseignantId' })
+AutEnseignant.hasMany(NoteStage, { as: 'notesStage', foreignKey: 'enseignantId' })
 DemandeStage.hasOne(NoteStage, { as: 'noteStage', foreignKey: 'demandeStageId' })
 
 AttestationStage.belongsTo(DemandeStage, { as: 'demandeStage', foreignKey: 'demandeStageId' })

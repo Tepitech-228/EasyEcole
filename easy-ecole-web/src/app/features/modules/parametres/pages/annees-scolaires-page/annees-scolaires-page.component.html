@@ -1,0 +1,36 @@
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Années scolaires" subtitle="Gérer les années scolaires de l'établissement"></app-header-title>
+    <a routerLink="nouveau" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
+        + Nouvelle année
+    </a>
+</div>
+
+<div class="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Année</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date début</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date fin</th>
+                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Statut</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            <tr *ngFor="let annee of anneesScolaires" class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ annee.libelle }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ annee.dateDebut | date:'dd/MM/yyyy' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ annee.dateFin | date:'dd/MM/yyyy' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <app-custom-badge [color]="annee.estCourante ? 'green' : 'yellow'" [text]="annee.statut"></app-custom-badge>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                    <a [routerLink]="[annee.id]" class="text-indigo-600 hover:text-indigo-900">Modifier</a>
+                </td>
+            </tr>
+            <tr *ngIf="anneesScolaires.length == 0">
+                <td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500">Aucune année scolaire trouvée</td>
+            </tr>
+        </tbody>
+    </table>
+</div>

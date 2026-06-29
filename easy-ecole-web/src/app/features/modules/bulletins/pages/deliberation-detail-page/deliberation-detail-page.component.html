@@ -1,0 +1,135 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <button (click)="retour()"
+          class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-6 transition-colors bg-transparent border-0 cursor-pointer">
+    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    Retour aux délibérations
+  </button>
+
+  <div *ngIf="loading" class="text-center py-12">
+    <div class="inline-block h-8 w-8 animate-spin rounded-full border-2 border-red-600 border-t-transparent"></div>
+    <p class="mt-2 text-sm text-gray-500">Chargement...</p>
+  </div>
+
+  <ng-container *ngIf="!loading && deliberation">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">{{ deliberation.libelle }}</h1>
+        <p class="mt-1 text-sm text-gray-500">
+          {{ deliberation.classe?.libelle || '-' }} — {{ deliberation.periode === 'semestre1' ? 'Semestre 1' : 'Semestre 2' }} — {{ deliberation.date | date:'dd/MM/yyyy' }}
+        </p>
+      </div>
+      <div class="flex items-center gap-3 mt-2 sm:mt-0">
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
+              [ngClass]="getStatutClass(deliberation.statut)">
+          {{ getStatutLabel(deliberation.statut) }}
+        </span>
+        <button *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && deliberation.statut === 'planifiee' && !resultats.length"
+                (click)="chargerResultats()" [disabled]="loadingResultats"
+                class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+          <svg class="w-3.5 h-3.5 mr-1" [ngClass]="{'animate-spin': loadingResultats}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          Charger résultats
+        </button>
+        <button *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && deliberation.statut === 'en_cours' && resultats.length"
+                (click)="cloturer()"
+                class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
+          <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Clôturer
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-5 gap-4 mb-6">
+      <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Effectif</p>
+        <p class="mt-1 text-2xl font-bold text-gray-900">{{ resultats.length }}</p>
+      </div>
+      <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Admis</p>
+        <p class="mt-1 text-2xl font-bold text-green-700">{{ nbAdmis }}</p>
+      </div>
+      <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Rattrapage</p>
+        <p class="mt-1 text-2xl font-bold text-amber-700">{{ nbRattrapage }}</p>
+      </div>
+      <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Redoublement</p>
+        <p class="mt-1 text-2xl font-bold text-red-700">{{ nbRedouble }}</p>
+      </div>
+      <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Taux de réussite</p>
+        <p class="mt-1 text-2xl font-bold text-blue-700">{{ getTauxReussite() }}%</p>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-100">
+          <thead>
+            <tr class="bg-gray-50/50">
+              <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">N°</th>
+              <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Élève</th>
+              <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Matricule</th>
+              <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Moyenne</th>
+              <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Mention</th>
+              <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Rang</th>
+              <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Décision</th>
+              <th *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && deliberation.statut !== 'cloturee'" class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+            <tr *ngFor="let r of resultats; trackBy: trackByFn" class="hover:bg-gray-50/50 transition-colors">
+              <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-500">{{ r.rang }}</td>
+              <td class="px-5 py-4 whitespace-nowrap">
+                <div class="flex items-center gap-3">
+                  <div class="h-8 w-8 rounded-full bg-gradient-to-br from-red-100 to-red-50 flex items-center justify-center text-xs font-bold text-red-700 uppercase">
+                    {{ (r.nom?.[0] || '') + (r.prenoms?.[0] || '') }}
+                  </div>
+                  <span class="text-sm font-semibold text-gray-900">{{ r.nom }} {{ r.prenoms }}</span>
+                </div>
+              </td>
+              <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-500">{{ r.matricule || '-' }}</td>
+              <td class="px-5 py-4 whitespace-nowrap text-center">
+                <span class="text-sm font-bold" [ngClass]="getMoyenneClass(r.moyenne)">{{ r.moyenne != null ? r.moyenne : '-' }}</span>
+              </td>
+              <td class="px-5 py-4 whitespace-nowrap">
+                <span *ngIf="r.mention" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium" [ngClass]="getMentionClass(r.mention)">
+                  {{ r.mention }}
+                </span>
+                <span *ngIf="!r.mention" class="text-sm text-gray-400">-</span>
+              </td>
+              <td class="px-5 py-4 whitespace-nowrap text-center text-sm text-gray-700">{{ r.rang }}</td>
+              <td class="px-5 py-4 whitespace-nowrap text-center">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" [ngClass]="getDecisionClass(r.decision)">
+                  {{ getDecisionLabel(r.decision) }}
+                </span>
+              </td>
+              <td *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && deliberation.statut !== 'cloturee'" class="px-5 py-4 whitespace-nowrap text-center">
+                <div class="flex items-center justify-center gap-1">
+                  <button (click)="mettreAJourDecision(r.id, 'admis')"
+                          class="px-2 py-1 text-xs font-medium rounded transition-colors"
+                          [ngClass]="r.decision === 'admis' ? 'bg-green-100 text-green-700' : 'bg-gray-50 text-gray-500 hover:bg-green-50 hover:text-green-600'">
+                    Admis
+                  </button>
+                  <button (click)="mettreAJourDecision(r.id, 'rattrapage')"
+                          class="px-2 py-1 text-xs font-medium rounded transition-colors"
+                          [ngClass]="r.decision === 'rattrapage' ? 'bg-amber-100 text-amber-700' : 'bg-gray-50 text-gray-500 hover:bg-amber-50 hover:text-amber-600'">
+                    Rattrapage
+                  </button>
+                  <button (click)="mettreAJourDecision(r.id, 'redouble')"
+                          class="px-2 py-1 text-xs font-medium rounded transition-colors"
+                          [ngClass]="r.decision === 'redouble' ? 'bg-red-100 text-red-700' : 'bg-gray-50 text-gray-500 hover:bg-red-50 hover:text-red-600'">
+                    Redouble
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="!resultats.length" class="px-5 py-12 text-center">
+        <svg class="mx-auto h-12 w-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <p class="mt-4 text-sm text-gray-500">Aucun résultat chargé. Cliquez sur "Charger résultats" pour importer les bulletins.</p>
+      </div>
+    </div>
+  </ng-container>
+</div>

@@ -25,6 +25,10 @@ export class EnseignantService {
     return this.httpClient.put<Enseignant>(`${this.SERVICE_URL}/`, enseignant)
   }
 
+  getCount(): Observable<{ success: boolean, count: number }> {
+    return this.httpClient.get<{ success: boolean, count: number }>(`${this.SERVICE_URL}/statistics/count`)
+  }
+
   updatePhoto(photo: File): Observable<Enseignant> {
     let formData: FormData = new FormData()
       formData.append('photo', photo, photo.name)

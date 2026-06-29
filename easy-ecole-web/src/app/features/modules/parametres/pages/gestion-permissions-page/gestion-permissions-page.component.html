@@ -1,0 +1,128 @@
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Gestion des permissions" subtitle="Configurer les permissions par utilisateur"></app-header-title>
+</div>
+
+<!-- Sélection utilisateur -->
+<div class="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+    <ng-container *ngIf="!selectedUtilisateur">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Rechercher un utilisateur</label>
+        <input type="text" [(ngModel)]="searchTerm" placeholder="Nom, prénom, email ou identifiant..."
+            class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+        <div class="mt-3 max-h-60 overflow-y-auto border border-gray-200 rounded-md">
+            <div *ngFor="let u of filteredUtilisateurs"
+                (click)="selectUtilisateur(u)"
+                class="px-4 py-3 hover:bg-indigo-50 cursor-pointer border-b border-gray-100 last:border-b-0 flex items-center gap-x-3">
+                <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-sm font-medium">
+                    {{ (u.nom?.charAt(0) || '') + (u.prenoms?.charAt(0) || '') }}
+                </div>
+                <div>
+                    <div class="text-sm font-medium text-gray-900">{{ u.nom }} {{ u.prenoms }}</div>
+                    <div class="text-xs text-gray-500">{{ u.email }} · {{ u.role }}</div>
+                </div>
+            </div>
+            <div *ngIf="filteredUtilisateurs.length == 0" class="px-4 py-6 text-center text-sm text-gray-500">
+                Aucun utilisateur trouvé
+            </div>
+        </div>
+    </ng-container>
+
+    <ng-container *ngIf="selectedUtilisateur">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-x-3">
+                <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-sm font-bold">
+                    {{ (selectedUtilisateur.nom?.charAt(0) || '') + (selectedUtilisateur.prenoms?.charAt(0) || '') }}
+                </div>
+                <div>
+                    <div class="text-sm font-semibold text-gray-900">{{ selectedUtilisateur.nom }} {{ selectedUtilisateur.prenoms }}</div>
+                    <div class="text-xs text-gray-500">{{ selectedUtilisateur.email }} · {{ selectedUtilisateur.role }}</div>
+                </div>
+            </div>
+            <div class="flex items-center gap-x-2">
+                <button (click)="openCopyModal()"
+                    class="text-xs text-indigo-600 hover:text-indigo-800 underline">Copier depuis...</button>
+                <button (click)="clearSelection()"
+                    class="text-xs text-gray-500 hover:text-gray-700 underline">Changer</button>
+            </div>
+        </div>
+    </ng-container>
+</div>
+
+<!-- Loading -->
+<div *ngIf="loading" class="text-center py-12">
+    <p class="text-gray-500">Chargement...</p>
+</div>
+
+<!-- Grille des permissions -->
+<div *ngIf="!loading && selectedUtilisateur" class="space-y-6">
+    <div *ngFor="let module of getObjectKeys(permissionsGrouped)" class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <div class="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
+            <h3 class="text-sm font-semibold text-gray-800">{{ module }}</h3>
+            <div class="flex items-center gap-x-3">
+                <button (click)="toggleModule(module, true)"
+                    class="text-xs text-green-600 hover:text-green-800 font-medium">Tout cocher</button>
+                <button (click)="toggleModule(module, false)"
+                    class="text-xs text-red-600 hover:text-red-800 font-medium">Tout décocher</button>
+            </div>
+        </div>
+        <div class="divide-y divide-gray-100">
+            <div *ngFor="let perm of permissionsGrouped[module]"
+                class="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50">
+                <div class="flex items-center gap-x-2">
+                    <span [ngClass]="{'text-xs px-1.5 py-0.5 rounded font-medium': true,
+                        'bg-blue-100 text-blue-700': perm.type === 'menu',
+                        'bg-purple-100 text-purple-700': perm.type === 'action'}">
+                        {{ perm.type === 'menu' ? 'Menu' : 'Action' }}
+                    </span>
+                    <span class="text-sm text-gray-700">{{ perm.libelle }}</span>
+                    <span *ngIf="perm.parentKey" class="text-xs text-gray-400">({{ perm.key }})</span>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" [checked]="hasPermission(perm.id)"
+                        (change)="togglePermission(perm.id, $any($event.target).checked)"
+                        class="sr-only peer">
+                    <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bouton enregistrer -->
+    <div class="flex justify-end sticky bottom-0 bg-white border-t border-gray-200 px-4 py-3 rounded-b-lg">
+        <button (click)="savePermissions()" [disabled]="saving"
+            class="px-6 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">
+            {{ saving ? 'Enregistrement...' : 'Enregistrer les permissions' }}
+        </button>
+    </div>
+</div>
+
+<!-- Message si aucun utilisateur sélectionné -->
+<div *ngIf="!loading && !selectedUtilisateur" class="text-center py-12 bg-white border border-gray-200 rounded-lg">
+    <span class="material-symbols-outlined text-5xl text-gray-300 mb-4">security</span>
+    <p class="text-gray-500">Sélectionnez un utilisateur pour gérer ses permissions</p>
+</div>
+
+<!-- Modal Copier depuis -->
+<div *ngIf="showCopyModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Copier les permissions depuis...</h3>
+        <input type="text" [(ngModel)]="searchTerm" placeholder="Rechercher un utilisateur..."
+            class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 mb-3">
+        <div class="max-h-60 overflow-y-auto border border-gray-200 rounded-md">
+            <div *ngFor="let u of filteredUtilisateurs"
+                (click)="copyFromUser(u)"
+                class="px-4 py-3 hover:bg-indigo-50 cursor-pointer border-b border-gray-100 last:border-b-0 flex items-center gap-x-3">
+                <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-700 text-sm font-medium">
+                    {{ (u.nom?.charAt(0) || '') + (u.prenoms?.charAt(0) || '') }}
+                </div>
+                <div>
+                    <div class="text-sm font-medium text-gray-900">{{ u.nom }} {{ u.prenoms }}</div>
+                    <div class="text-xs text-gray-500">{{ u.email }} · {{ u.role }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="flex justify-end mt-4">
+            <button (click)="closeCopyModal()"
+                class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
+        </div>
+    </div>
+</div>

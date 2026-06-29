@@ -1,7 +1,7 @@
 <div class="flex justify-between items-start mb-8">
     <app-header-title title="Enseignants" subtitle="Retrouver la liste de vos enseignants"></app-header-title>
     <div class="flex justify-end items-center">
-        <app-custom-button (click)="openNouvelEnseignantModal()" *ngIf="rolesValue.isInstitution" text="Nouvel enseignant"></app-custom-button>
+        <app-custom-button (click)="openNouvelEnseignantModal()" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" text="Nouvel enseignant"></app-custom-button>
     </div>
 </div>
 

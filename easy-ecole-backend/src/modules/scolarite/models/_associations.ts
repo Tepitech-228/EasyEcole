@@ -3,7 +3,12 @@ import { TypeDocument } from "./TypeDocument";
 import { DocumentDelivre } from "./DocumentDelivre";
 import { Reclamation } from "./Reclamation";
 import { ReponseReclamation } from "./ReponseReclamation";
+import { ConseilClasse } from "./ConseilClasse";
+import { DecisionConseil } from "./DecisionConseil";
 import { Utilisateur } from "../../auth/models/Utilisateur";
+
+ConseilClasse.hasMany(DecisionConseil, { foreignKey: 'conseilClasseId', as: 'decisions' })
+DecisionConseil.belongsTo(ConseilClasse, { foreignKey: 'conseilClasseId', as: 'conseilClasse' })
 
 TypeDocument.hasMany(DemandeDocument, { foreignKey: 'typeDocumentId', as: 'demandesDocument' })
 DemandeDocument.belongsTo(TypeDocument, { foreignKey: 'typeDocumentId', as: 'typeDocument' })

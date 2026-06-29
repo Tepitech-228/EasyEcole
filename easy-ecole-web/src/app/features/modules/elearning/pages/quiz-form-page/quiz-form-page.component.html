@@ -1,0 +1,88 @@
+<div class="p-6">
+  <app-header-title title="Créer un nouveau quiz"></app-header-title>
+
+  <div class="bg-white rounded-lg shadow-md p-6 mt-6 max-w-3xl">
+    <form [formGroup]="quizForm" (ngSubmit)="onSubmit()">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Titre du quiz</label>
+          <input formControlName="titre" type="text" class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="Ex: Algèbre - Chapitre 1">
+          <app-custom-alert *ngIf="submitted && quizForm.get('titre')?.invalid" [show]="true" title="Le titre est requis" color="red" [inline]="true"></app-custom-alert>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Cours associé</label>
+          <input formControlName="coursTitre" type="text" class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="Ex: Mathématiques">
+          <app-custom-alert *ngIf="submitted && quizForm.get('coursTitre')?.invalid" [show]="true" title="Le cours est requis" color="red" [inline]="true"></app-custom-alert>
+        </div>
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        <textarea formControlName="description" rows="3" class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="Décrivez le contenu du quiz"></textarea>
+        <app-custom-alert *ngIf="submitted && quizForm.get('description')?.invalid" [show]="true" title="La description est requise" color="red" [inline]="true"></app-custom-alert>
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Temps limite (minutes)</label>
+        <input formControlName="timeLimit" type="number" min="5" class="w-32 border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+      </div>
+
+      <div class="border-t pt-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-800">Questions</h3>
+          <app-custom-button text="Ajouter une question" color="primary" (click)="addQuestion()"></app-custom-button>
+        </div>
+
+        <div formArrayName="questions">
+          <div *ngFor="let question of questions.controls; let i = index" [formGroupName]="i" class="border border-gray-200 rounded-lg p-4 mb-4">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="font-medium text-gray-700">Question {{ i + 1 }}</h4>
+              <button *ngIf="questions.length > 1" type="button" (click)="removeQuestion(i)" class="text-red-500 hover:text-red-700 text-sm">Supprimer</button>
+            </div>
+
+            <div class="mb-3">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Texte de la question</label>
+              <input formControlName="texte" type="text" class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="Ex: Quelle est la solution de l'équation 2x + 5 = 13 ?">
+            </div>
+
+            <div formGroupName="options" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Option A</label>
+                <input formControlName="optionA" type="text" class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="Option A">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Option B</label>
+                <input formControlName="optionB" type="text" class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="Option B">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Option C (optionnelle)</label>
+                <input formControlName="optionC" type="text" class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="Option C">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Option D (optionnelle)</label>
+                <input formControlName="optionD" type="text" class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="Option D">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Bonne réponse</label>
+              <select formControlName="correctAnswer" class="w-32 border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <app-custom-alert *ngIf="submitted && quizForm.get('questions')?.invalid" [show]="true" title="Ajoutez au moins une question" color="red"></app-custom-alert>
+      </div>
+
+      <div class="flex gap-3 mt-6">
+        <app-custom-button text="Créer le quiz" color="primary" [disabled]="submitted && quizForm.invalid" type="submit"></app-custom-button>
+        <app-custom-button text="Annuler" color="primary" [outlined]="true" (click)="cancel()"></app-custom-button>
+      </div>
+    </form>
+  </div>
+</div>

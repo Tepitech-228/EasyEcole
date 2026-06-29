@@ -2,6 +2,7 @@ import express from "express"
 
 import AnneeAcademiqueController from "../controllers/AnneeAcademiqueController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
+import CheckPermission from "../../../core/middlewares/CheckPermission";
 
 const router = express.Router()
 
@@ -41,7 +42,7 @@ router
  *       201:
  *         description: Année académique créée
  */
-    .post('/', [AuthInstitution], AnneeAcademiqueController.createAnneeAcademique)
+    .post('/', [AuthInstitution, CheckPermission('action.inscription.annee-academique.creer')], AnneeAcademiqueController.createAnneeAcademique)
 
 /**
  * @openapi
@@ -90,7 +91,7 @@ router
  *       200:
  *         description: Année académique mise à jour
  */
-    .put('/:id', [AuthInstitution], AnneeAcademiqueController.updateAnneeAcademique)
+    .put('/:id', [AuthInstitution, CheckPermission('action.inscription.annee-academique.modifier')], AnneeAcademiqueController.updateAnneeAcademique)
 
 /**
  * @openapi
@@ -110,7 +111,7 @@ router
  *       200:
  *         description: Année académique supprimée
  */
-    .delete('/:id', [AuthInstitution], AnneeAcademiqueController.deleteAnneeAcademique)
+    .delete('/:id', [AuthInstitution, CheckPermission('action.inscription.annee-academique.supprimer')], AnneeAcademiqueController.deleteAnneeAcademique)
 
 /**
  * @openapi

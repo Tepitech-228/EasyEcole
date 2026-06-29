@@ -3,9 +3,11 @@ import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { Echeance } from "./Echeance";
 import { Utilisateur } from "../../auth/models/Utilisateur";
+import { Quitus } from "./Quitus";
 
 export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAttributes<Bordereau>> {
   declare id: CreationOptional<string>
+  declare type: 'inscription' | 'scolarite'
   declare echeanceId: ForeignKey<Echeance['id']>
   declare utilisateurId: ForeignKey<Utilisateur['id']>
   declare fichier: string
@@ -16,9 +18,11 @@ export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAt
   declare dateValidation: CreationOptional<Date | null>
   declare valideParId: CreationOptional<ForeignKey<Utilisateur['id']> | null>
   declare commentaire: CreationOptional<string>
+  declare quitusId: CreationOptional<ForeignKey<Quitus['id']>>
   declare echeance?: NonAttribute<Echeance>
   declare utilisateur?: NonAttribute<Utilisateur>
   declare validePar?: NonAttribute<Utilisateur>
+  declare quitus?: NonAttribute<Quitus>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -27,6 +31,7 @@ export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAt
     echeance: Association<Bordereau, Echeance>
     utilisateur: Association<Bordereau, Utilisateur>
     validePar: Association<Bordereau, Utilisateur>
+    quitus: Association<Bordereau, Quitus>
   };
 }
 
@@ -35,6 +40,10 @@ Bordereau.init({
     type: DataTypes.INTEGER.UNSIGNED,
     autoIncrement: true,
     primaryKey: true
+  },
+  type: {
+    type: DataTypes.ENUM('inscription', 'scolarite'),
+    allowNull: false
   },
   fichier: {
     type: new DataTypes.STRING,
@@ -71,6 +80,11 @@ Bordereau.init({
   commentaire: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  quitusId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true,
+    defaultValue: null
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

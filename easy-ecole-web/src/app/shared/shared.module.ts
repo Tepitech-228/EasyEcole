@@ -26,6 +26,9 @@ import { CoursCardComponent } from './components/cours-card/cours-card.component
 import { NgSelectModule } from '@ng-select/ng-select';
 import { ListePresenceCardComponent } from './components/liste-presence-card/liste-presence-card.component';
 import { CahierDeTexteCardComponent } from './components/cahier-de-texte-card/cahier-de-texte-card.component';
+import { LoadingSpinnerComponent } from './components/loading-spinner/loading-spinner.component';
+import { ToastContainerComponent } from './components/toast-container/toast-container.component';
+import { HasPermissionDirective } from '../core/directives/has-permission.directive';
 
 @NgModule({
   declarations: [
@@ -46,9 +49,14 @@ import { CahierDeTexteCardComponent } from './components/cahier-de-texte-card/ca
     CoursCardComponent,
     ListePresenceCardComponent,
     CahierDeTexteCardComponent,
+    LoadingSpinnerComponent,
+    ToastContainerComponent,
 
     // Pipes
     SafeUrlPipe,
+
+    // Directives
+    HasPermissionDirective,
   ],
   imports: [
     // Modules
@@ -94,9 +102,14 @@ import { CahierDeTexteCardComponent } from './components/cahier-de-texte-card/ca
     CoursCardComponent,
     ListePresenceCardComponent,
     CahierDeTexteCardComponent,
+    LoadingSpinnerComponent,
+    ToastContainerComponent,
 
     // Pipes
     SafeUrlPipe,
+
+    // Directives
+    HasPermissionDirective,
   ]
 })
 export class SharedModule { }

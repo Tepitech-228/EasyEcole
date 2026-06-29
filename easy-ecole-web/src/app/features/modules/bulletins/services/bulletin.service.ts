@@ -32,4 +32,8 @@ export class BulletinService {
   monReleve(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/mon-releve`);
   }
+
+  getMoyennes(params?: any): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/moyennes`, { params });
+  }
 }

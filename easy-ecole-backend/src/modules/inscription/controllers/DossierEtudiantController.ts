@@ -3,8 +3,13 @@ import { FindOptions, InferAttributes } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { DossierEtudiant } from "../models/DossierEtudiant";
 import { Utilisateur } from "../../auth/models/Utilisateur";
+import { Apprenant } from "../../auth/models/Apprenant";
 import { IDGenerator } from "../../../core/helpers/IDGenerator";
 import { Echeance } from "../models/Echeance";
+import { DemandeInscription } from "../models/DemandeInscription";
+import { Session } from "../models/Session";
+import { ParcoursChoisi } from "../models/ParcoursChoisi";
+import { CoursParticipant } from "../models/CoursParticipant";
 
 export default class DossierEtudiantController {
 
@@ -13,13 +18,45 @@ export default class DossierEtudiantController {
     static async getAllDossiers(req: Request, res: Response): Promise<Response> {
         let options: FindOptions<InferAttributes<DossierEtudiant>> = {
             include: [
-                DossierEtudiant.associations.utilisateur,
-                DossierEtudiant.associations.echeances
+                { association: DossierEtudiant.associations.utilisateur, include: [{ model: Apprenant, as: 'apprenant' }] },
+                DossierEtudiant.associations.echeances,
+                { association: DossierEtudiant.associations.coursParticipants, include: [CoursParticipant.associations.cours] }
             ]
         }
 
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
             options.where = { utilisateurId: (req as any).utilisateurId }
+        }
+
+        if (req.query.anneeAcademiqueId || req.query.niveauEtudeId || req.query.parcoursId) {
+            const demandeWhere: any = { include: [] as any[] }
+            const sessionWhere: any = {}
+
+            if (req.query.anneeAcademiqueId) sessionWhere.anneeAcademiqueId = req.query.anneeAcademiqueId
+            if (req.query.niveauEtudeId) sessionWhere.niveauEtudeId = req.query.niveauEtudeId
+
+            if (Object.keys(sessionWhere).length > 0) {
+                demandeWhere.include.push({
+                    association: DemandeInscription.associations.session,
+                    where: sessionWhere
+                })
+            }
+
+            if (req.query.parcoursId) {
+                demandeWhere.include.push({
+                    association: DemandeInscription.associations.parcoursChoisis,
+                    where: { choixFinal: true, parcoursId: req.query.parcoursId }
+                })
+            }
+
+            const matchingDemandes = await DemandeInscription.findAll(demandeWhere)
+            const utilisateurIds = [...new Set(matchingDemandes.map(d => d.utilisateurId))]
+
+            if (utilisateurIds.length === 0) {
+                return res.status(200).send([])
+            }
+
+            options.where = { ...options.where, utilisateurId: utilisateurIds as any }
         }
 
         try {
@@ -36,8 +73,9 @@ export default class DossierEtudiantController {
         let options: FindOptions<InferAttributes<DossierEtudiant>> = {
             where: { id: req.params.id },
             include: [
-                DossierEtudiant.associations.utilisateur,
-                DossierEtudiant.associations.echeances
+                { association: DossierEtudiant.associations.utilisateur, include: [{ model: Apprenant, as: 'apprenant' }] },
+                DossierEtudiant.associations.echeances,
+                { association: DossierEtudiant.associations.coursParticipants, include: [CoursParticipant.associations.cours] }
             ]
         }
 
@@ -62,10 +100,14 @@ export default class DossierEtudiantController {
             const dossier: DossierEtudiant | null = await DossierEtudiant.findOne({
                 where: { utilisateurId: (req as any).utilisateurId },
                 include: [
-                    DossierEtudiant.associations.utilisateur,
-                    DossierEtudiant.associations.echeances
+                    { association: DossierEtudiant.associations.utilisateur, include: [{ model: Apprenant, as: 'apprenant' }] },
+                    DossierEtudiant.associations.echeances,
+                    { association: DossierEtudiant.associations.coursParticipants, include: [CoursParticipant.associations.cours] }
                 ]
             });
+
+            if (dossier == null)
+                return res.status(404).json({ success: false, message: "Dossier étudiant non trouvé" });
 
             return res.status(200).send(dossier);
         } catch (error) {

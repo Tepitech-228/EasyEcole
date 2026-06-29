@@ -18,7 +18,7 @@ export class ParcoursCardComponent implements OnInit {
   ngOnInit(): void {}
 
   getDuree(): string {
-    return Parcours.getDuree(this.parcours!.dureeDeFormation!)
+    return Parcours.getDuree(this.parcours?.dureeDeFormation)
   }
 
 }

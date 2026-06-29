@@ -217,8 +217,9 @@ export default class PointageController {
                 });
             }
 
+            const now = new Date()
             const echeancesImpayees = (dossier.echeances || []).filter(
-                e => e.statut == 'impaye' || e.statut == 'en_retard'
+                e => (e.statut == 'impaye' || e.statut == 'en_retard') && new Date(e.dateLimite) <= now
             )
 
             if (echeancesImpayees.length > 0) {

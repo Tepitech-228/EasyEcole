@@ -14,6 +14,10 @@ export default class ParcoursController {
             include: [Parcours.associations.niveauEtude]
         }
 
+        if (req.query.niveauEtudeId) {
+            options.where = { niveauEtudeId: req.query.niveauEtudeId as string }
+        }
+
         try {
             let parcours: Parcours[];
             parcours = await Parcours.findAll(options);

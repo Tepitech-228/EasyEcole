@@ -43,7 +43,7 @@ import { HttpClient } from '@angular/common/http';
 })
 export class RapportBudgetPageComponent implements OnInit {
   rows: any[] = [];
-  ecart: any = {};
+  ecart: any = { totalPrevu: 0, totalReel: 0, ecartTotal: 0 };
 
   constructor(private http: HttpClient) {}
 

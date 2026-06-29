@@ -24,11 +24,9 @@ export class AuthService {
   }
 
   register(utilisateur: Utilisateur): Observable<any> {
-    const redirectTo: string = window.location.origin + '/auth/confirm'
-
+    const redirectTo: string = window.location.origin + '/auth/confirmation-email'
     let queryParams: HttpParams = new HttpParams()
     queryParams = queryParams.append("redirectTo", redirectTo)
-
     return this.httpClient.post(`${this.SERVICE_URL}/register`, utilisateur, { params: queryParams })
   }
 
@@ -39,12 +37,32 @@ export class AuthService {
   updateProfile(id: string, photo: File): Observable<Utilisateur> {
     let formData: FormData = new FormData()
       formData.append('photo', photo, photo.name)
-
     return this.httpClient.put<Utilisateur>(`${this.SERVICE_URL}`, formData)
   }
 
   resetPassword(data: { oldPassword: string, password: string }): Observable<any> {
     return this.httpClient.put(`${this.SERVICE_URL}/reset`, data)
+  }
+
+  sendEmailConfirmLink(): Observable<any> {
+    const redirectTo = window.location.origin + '/auth/confirmation-email'
+    const params = new HttpParams().set('redirectTo', redirectTo)
+    return this.httpClient.get(`${this.SERVICE_URL}/send-email-confirm-link`, { params })
+  }
+
+  confirmEmail(token: string): Observable<any> {
+    const params = new HttpParams().set('token', token)
+    return this.httpClient.post(`${this.SERVICE_URL}/confirm`, {}, { params })
+  }
+
+  sendPasswordResetLink(email: string): Observable<any> {
+    const redirectTo = window.location.origin + '/auth/reinitialisation-mot-de-passe'
+    const params = new HttpParams().set('email', email).set('redirectTo', redirectTo)
+    return this.httpClient.get(`${this.SERVICE_URL}/send-password-reset-link`, { params })
+  }
+
+  resetPasswordWithToken(token: string, motDePasse: string): Observable<any> {
+    return this.httpClient.post(`${this.SERVICE_URL}/reset-password`, { token, motDePasse })
   }
 
   logout(): void {

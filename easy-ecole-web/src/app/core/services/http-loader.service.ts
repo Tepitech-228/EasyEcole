@@ -6,16 +6,20 @@ import { BehaviorSubject, Observable } from 'rxjs';
 })
 export class HttpLoaderService {
 
+  private pendingRequests = 0
   private isLoading = new BehaviorSubject<boolean>(false)
 
-  constructor() { }
-
   show(): void {
+    this.pendingRequests++
     this.isLoading.next(true)
   }
 
   hide(): void {
-    this.isLoading.next(false)
+    this.pendingRequests--
+    if (this.pendingRequests <= 0) {
+      this.pendingRequests = 0
+      this.isLoading.next(false)
+    }
   }
 
   get getValue(): Observable<boolean> {

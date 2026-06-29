@@ -16,10 +16,16 @@
                                 <div class="px-2">#</div>
                             </th>
                             <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Type</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
                                 <div class="px-2">Échéance</div>
                             </th>
                             <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
                                 <div class="px-2">Référence bancaire</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Fichier</div>
                             </th>
                             <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
                                 <div class="px-2">Statut</div>
@@ -39,12 +45,20 @@
                         <tr *ngIf="bordereaux.length == 0"
                             class="bg-white p-0 border-b transition duration-300 ease-in-out">
                             <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
-                                colspan="7">Aucun bordereau uploadé</td>
+                                colspan="9">Aucun bordereau uploadé</td>
                         </tr>
                         <tr *ngFor="let bordereau of bordereaux; index as index"
                             class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
                             <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                 <div class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ index + 1 }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 bg-transparent sm:text-sm sm:leading-6">
+                                    <app-custom-badge *ngIf="bordereau.type == 'inscription'" color="violet" text="Inscription"></app-custom-badge>
+                                    <app-custom-badge *ngIf="bordereau.type == 'scolarite'" color="orange" text="Scolarité"></app-custom-badge>
+                                    <span *ngIf="!bordereau.type && bordereau.echeance?.type == 'inscription'" class="text-gray-400 text-xs">Inscription</span>
+                                    <span *ngIf="!bordereau.type && bordereau.echeance?.type == 'scolarite'" class="text-gray-400 text-xs">Scolarité</span>
+                                </div>
                             </td>
                             <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                 <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
@@ -53,6 +67,22 @@
                             </td>
                             <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                 <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ bordereau.referenceBancaire || '---' }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 bg-transparent sm:text-sm sm:leading-6">
+                                    <div *ngIf="bordereau.fichier" (click)="openPdfModal(bordereau)"
+                                        class="inline-flex items-center gap-x-2 cursor-pointer group">
+                                        <img *ngIf="isImageFile(bordereau.fichier)"
+                                            [src]="getDocUrl(bordereau.fichier)"
+                                            class="w-16 h-20 object-cover rounded border border-gray-200 group-hover:border-indigo-400 transition"
+                                            alt="Bordereau">
+                                        <span *ngIf="!isImageFile(bordereau.fichier)"
+                                            class="inline-flex items-center gap-x-1 text-indigo-600 hover:text-indigo-800 underline text-sm">
+                                            Voir le PDF
+                                        </span>
+                                    </div>
+                                    <span *ngIf="!bordereau.fichier" class="text-gray-400">---</span>
+                                </div>
                             </td>
                             <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2"
                                 [ngSwitch]="bordereau.statut">
@@ -84,17 +114,29 @@
 <app-custom-modal title="Uploader un bordereau" subtitle="Soumettre un bordereau de paiement pour validation" (onCloseModal)="closeUploadBordereauModal()" [center]="true" [showModal]="showUploadBordereauModal">
     <form [formGroup]="bordereauForm" class="">
         <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
-            <div class="col-span-full">
-                <span class="mb-2 block text-sm text-gray-400">Échéance concernée</span>
-                <select formControlName="echeanceId"
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Type</span>
+                <select formControlName="type" (change)="onTypeChange()"
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-                    <option value="" disabled>Sélectionner une échéance</option>
-                    <option *ngFor="let echeance of echeances" [value]="echeance.id">
-                        {{ echeance.type }} - Mois {{ echeance.numeroEcheance }} ({{ echeance.montant | currency:'XAF' }}) - {{ echeance.moisConcerne }}
+                    <option value="" disabled>Sélectionner le type</option>
+                    <option value="inscription">Inscription</option>
+                    <option value="scolarite">Scolarité</option>
+                </select>
+                <div *ngIf="bordereauForm.get('type')!.invalid && (bordereauForm.get('type')!.dirty || bordereauForm.get('type')!.touched)">
+                    <app-form-message *ngIf="bordereauForm.get('type')!.errors?.['required']" text="Veuillez sélectionner le type de bordereau"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-full" *ngIf="bordereauForm.get('type')?.value === 'scolarite'">
+                <span class="mb-2 block text-sm text-gray-400">Mois concerné</span>
+                <select formControlName="echeanceId" (change)="onMonthChange()"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option value="" disabled>Sélectionner un mois</option>
+                    <option *ngFor="let mois of sessionMonths" [value]="mois.value">
+                        {{ mois.label }}
                     </option>
                 </select>
                 <div *ngIf="bordereauForm.get('echeanceId')!.invalid && (bordereauForm.get('echeanceId')!.dirty || bordereauForm.get('echeanceId')!.touched)">
-                    <app-form-message *ngIf="bordereauForm.get('echeanceId')!.errors?.['required']" text="Veuillez sélectionner une échéance"></app-form-message>
+                    <app-form-message *ngIf="bordereauForm.get('echeanceId')!.errors?.['required']" text="Veuillez sélectionner un mois"></app-form-message>
                 </div>
             </div>
             <div class="col-span-full">
@@ -163,4 +205,25 @@
             </div>
         </div>
     </form>
+</app-custom-modal>
+
+<app-custom-modal title="Bordereau" subtitle="Aperçu du fichier" (onCloseModal)="closePdfModal()" [center]="true" [showModal]="showPdfModal">
+    <div class="w-full">
+        <div *ngIf="pdfBordereau && pdfBordereau.fichier" class="flex flex-col items-center">
+            <div *ngIf="isImageFile(pdfBordereau.fichier)" class="mb-4">
+                <img [src]="getDocUrl(pdfBordereau.fichier)" alt="Bordereau" class="max-w-full h-auto rounded border border-gray-200">
+            </div>
+            <div *ngIf="!isImageFile(pdfBordereau.fichier)" class="w-full">
+                <iframe [src]="getDocUrl(pdfBordereau.fichier)" class="w-full h-[70vh] rounded border border-gray-200"></iframe>
+            </div>
+            <div class="mt-4 flex gap-x-4">
+                <a [href]="getDocUrl(pdfBordereau.fichier)" target="_blank" class="inline-flex items-center gap-x-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-500">
+                    Télécharger
+                </a>
+            </div>
+        </div>
+        <div *ngIf="!pdfBordereau?.fichier" class="text-center text-gray-400 py-8">
+            Aucun fichier disponible
+        </div>
+    </div>
 </app-custom-modal>

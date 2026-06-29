@@ -8,6 +8,7 @@ import { Session } from 'src/app/data/modules/inscription/models/Session.model';
 import { PaiementInscriptionService } from 'src/app/data/modules/inscription/services/paiement-inscription.service';
 import { SessionService } from 'src/app/data/modules/inscription/services/session.service';
 import { RolesValueType } from 'src/app/data/types/RolesValueType';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-paiements-section',
@@ -27,6 +28,11 @@ export class PaiementsSectionComponent implements OnInit {
   fraisAPayer: any[] = []
   fraisTotal: number = 0
 
+  showPaiementModal: boolean = false
+  paiementMontant?: number
+  paiementDescription?: string
+  paiementError: boolean = false
+
   constructor(
     private sessionService: SessionService,
     private paiementInscriptionService: PaiementInscriptionService
@@ -34,7 +40,6 @@ export class PaiementsSectionComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // this.getSession(this.demande.sessionId!)
     this.session = this.demande.session!
     this.getFraisInscription()
   }
@@ -75,7 +80,45 @@ export class PaiementsSectionComponent implements OnInit {
     }, 0) as number
   }
 
-  getFichePaiement(): void { }
+  getFichePaiement(): void {
+    if (this.demande?.id) {
+      window.open(
+        `${environment.API_MODULES.INSCRIPTION}/demandesInscription/${this.demande.id}/fiche-paiement`,
+        '_blank'
+      )
+    }
+  }
+
+  enregistrerPaiement(): void {
+    if (!this.paiementMontant || this.paiementMontant <= 0) {
+      this.paiementError = true
+      return
+    }
+
+    this.paiementError = false
+    let paiement: PaiementInscription = new PaiementInscription()
+    paiement.montant = this.paiementMontant
+    paiement.description = this.paiementDescription || "Paiement en espèces"
+    paiement.matriculeInscription = this.demande!.matricule!
+    paiement.datePaiement = new Date()
+
+    this.paiementInscriptionService.create(paiement).subscribe({
+      next: (value) => {
+        this.closePaiementModal()
+        window.location.reload()
+      },
+      error: (error) => {
+        console.log(error)
+      }
+    })
+  }
+
+  closePaiementModal(): void {
+    this.showPaiementModal = false
+    this.paiementMontant = undefined
+    this.paiementDescription = undefined
+    this.paiementError = false
+  }
 
   paiementMobileMoney(): void {
     let paiement: PaiementInscription = new PaiementInscription()

@@ -39,6 +39,10 @@ Parcours.init({
     type: new DataTypes.STRING,
     allowNull: true
   },
+  niveauEtudeId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
+  },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
 }, {

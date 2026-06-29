@@ -1,7 +1,7 @@
 <div class="flex justify-between items-start gap-x-8 mb-8">
     <app-header-title title="Parcours" subtitle="Consulter la liste des parcours proposés"></app-header-title>
     <div class="flex justify-end items-center">
-        <app-custom-button *ngIf="rolesValue.isInstitution" text="Nouveau parcours" link="/orientation/parcours/nouveau"></app-custom-button>
+        <app-custom-button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" text="Nouveau parcours" link="/orientation/parcours/nouveau"></app-custom-button>
     </div>
 </div>
 

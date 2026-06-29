@@ -2,6 +2,7 @@ import express from "express"
 
 import CursusApprenantController from "../controllers/CursusApprenantController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
+import CheckPermission from "../../../core/middlewares/CheckPermission";
 
 const router = express.Router()
 
@@ -38,7 +39,7 @@ router
  *       201:
  *         description: Cursus apprenant créé
  */
-    .post('/', [AuthInstitution], CursusApprenantController.createCursusApprenant)
+    .post('/', [AuthInstitution, CheckPermission('action.inscription.cursus.creer')], CursusApprenantController.createCursusApprenant)
 
 /**
  * @openapi
@@ -104,7 +105,7 @@ router
  *       200:
  *         description: Cursus apprenant mis à jour
  */
-    .put('/:id', [AuthInstitution], CursusApprenantController.updateCursusApprenant)
+    .put('/:id', [AuthInstitution, CheckPermission('action.inscription.cursus.modifier')], CursusApprenantController.updateCursusApprenant)
 
 /**
  * @openapi
@@ -124,7 +125,7 @@ router
  *       200:
  *         description: Cursus apprenant supprimé
  */
-    .delete('/:id', [AuthInstitution], CursusApprenantController.deleteCursusApprenant)
+    .delete('/:id', [AuthInstitution, CheckPermission('action.inscription.cursus.supprimer')], CursusApprenantController.deleteCursusApprenant)
 
 /**
  * @openapi

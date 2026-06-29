@@ -1,0 +1,245 @@
+<div class="mb-8">
+  <app-header-title title="Comptabilité OHADA" subtitle="Gestion complète de la comptabilité de l'école"></app-header-title>
+</div>
+
+<!-- Erreur -->
+<div *ngIf="error" class="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+  Une erreur est survenue lors du chargement des données comptables.
+</div>
+
+<!-- Onglets de navigation -->
+<div class="mb-6 flex gap-2 border-b border-gray-200">
+  <button
+    (click)="changeTab('plan-comptable')"
+    [ngClass]="activeTab === 'plan-comptable' ? 'border-b-2 border-primary text-primary' : 'text-gray-600 hover:text-gray-900'"
+    class="px-4 py-3 font-medium transition">
+    Plan comptable
+  </button>
+  <button
+    (click)="changeTab('balance')"
+    [ngClass]="activeTab === 'balance' ? 'border-b-2 border-primary text-primary' : 'text-gray-600 hover:text-gray-900'"
+    class="px-4 py-3 font-medium transition">
+    Balance
+  </button>
+  <button
+    (click)="changeTab('grand-livre')"
+    [ngClass]="activeTab === 'grand-livre' ? 'border-b-2 border-primary text-primary' : 'text-gray-600 hover:text-gray-900'"
+    class="px-4 py-3 font-medium transition">
+    Grand livre
+  </button>
+  <button
+    (click)="changeTab('ecritures')"
+    [ngClass]="activeTab === 'ecritures' ? 'border-b-2 border-primary text-primary' : 'text-gray-600 hover:text-gray-900'"
+    class="px-4 py-3 font-medium transition">
+    Écritures
+  </button>
+</div>
+
+<!-- PLAN COMPTABLE -->
+<div *ngIf="activeTab === 'plan-comptable'" class="space-y-6">
+  <div *ngIf="loading" class="flex justify-center py-8">
+    <div class="text-gray-500">Chargement du plan comptable...</div>
+  </div>
+
+  <div *ngIf="!loading" class="space-y-6">
+    <!-- Classe 1 -->
+    <div
+      *ngFor="let classe of ['1', '2', '3', '4', '5', '6', '7', '8']"
+      [ngIf]="getClasseComptes(classe).length > 0"
+      class="rounded-lg border border-gray-200 bg-white shadow-sm">
+      <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+        <h3 class="font-semibold text-gray-900">{{ classesLibelles[classe] }}</h3>
+        <p class="text-sm text-gray-500">Classe {{ classe }}</p>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Numéro</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Libellé</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Nature</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Catégorie</th>
+              <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">Solde</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            <tr *ngFor="let compte of getClasseComptes(classe)" class="hover:bg-gray-50">
+              <td class="px-4 py-3 text-sm font-mono text-gray-900">{{ compte.numero }}</td>
+              <td class="px-4 py-3 text-sm text-gray-900">{{ compte.libelle }}</td>
+              <td class="px-4 py-3 text-sm text-gray-600">{{ compte.nature }}</td>
+              <td class="px-4 py-3 text-sm text-gray-600">{{ compte.categorie }}</td>
+              <td class="px-4 py-3 text-right text-sm font-semibold text-gray-900">
+                {{ getSaldeCompte(compte) | currency: 'XAF' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BALANCE COMPTABLE -->
+<div *ngIf="activeTab === 'balance'" class="space-y-6">
+  <div *ngIf="loading" class="flex justify-center py-8">
+    <div class="text-gray-500">Chargement de la balance...</div>
+  </div>
+
+  <div *ngIf="!loading" class="space-y-6">
+    <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <div>
+          <p class="text-sm text-gray-500">Total Débits</p>
+          <p class="text-2xl font-semibold text-gray-900">{{ totalDebit | currency:'XAF' }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">Total Crédits</p>
+          <p class="text-2xl font-semibold text-gray-900">{{ totalCredit | currency:'XAF' }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">Différence</p>
+          <p
+            [ngClass]="(totalDebit - totalCredit) === 0 ? 'text-green-600' : 'text-red-600'"
+            class="text-2xl font-semibold">
+            {{ (totalDebit - totalCredit) | currency:'XAF' }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Numéro</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Libellé</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">Débits</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">Crédits</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">Solde</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          <tr *ngFor="let item of balance" class="hover:bg-gray-50">
+            <td class="px-4 py-3 text-sm font-mono font-semibold text-gray-900">{{ item.compte.numero }}</td>
+            <td class="px-4 py-3 text-sm text-gray-900">{{ item.compte.libelle }}</td>
+            <td class="px-4 py-3 text-right text-sm text-gray-600">{{ item.debit | currency:'XAF' }}</td>
+            <td class="px-4 py-3 text-right text-sm text-gray-600">{{ item.credit | currency:'XAF' }}</td>
+            <td
+              class="px-4 py-3 text-right text-sm font-semibold"
+              [ngClass]="item.debit - item.credit > 0 ? 'text-blue-600' : 'text-red-600'">
+              {{ (item.debit - item.credit) | currency:'XAF' }}
+            </td>
+          </tr>
+          <tr class="bg-gray-50 font-semibold">
+            <td colspan="2" class="px-4 py-3 text-sm text-gray-900">TOTAUX</td>
+            <td class="px-4 py-3 text-right text-sm text-gray-900">{{ totalDebit | currency:'XAF' }}</td>
+            <td class="px-4 py-3 text-right text-sm text-gray-900">{{ totalCredit | currency:'XAF' }}</td>
+            <td
+              class="px-4 py-3 text-right text-sm"
+              [ngClass]="(totalDebit - totalCredit) === 0 ? 'text-green-600' : 'text-red-600'">
+              {{ (totalDebit - totalCredit) | currency:'XAF' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- GRAND LIVRE -->
+<div *ngIf="activeTab === 'grand-livre'" class="space-y-6">
+  <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+    <label class="block text-sm font-medium text-gray-700 mb-4">Sélectionner un compte</label>
+    <select
+      #compteSelect
+      (change)="onCompteChange(compteSelect.value)"
+      class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:ring-primary">
+      <option value="">-- Choisir un compte --</option>
+      <option *ngFor="let compte of comptes" [value]="compte.id">
+        {{ compte.numero }} - {{ compte.libelle }}
+      </option>
+    </select>
+    <h3 class="font-semibold text-gray-900">
+      Grand livre - {{ selectedCompteLivre?.numero }} {{ selectedCompteLivre?.libelle }}
+    </h3>
+    <div class="mt-2 flex gap-6 text-sm">
+      <div><span class="text-gray-500">Débits:</span> <span class="font-semibold">{{ grandLivre.soldeDebit | currency:'XAF' }}</span></div>
+      <div><span class="text-gray-500">Crédits:</span> <span class="font-semibold">{{ grandLivre.soldeCredit | currency:'XAF' }}</span></div>
+      <div><span class="text-gray-500">Solde:</span> <span class="font-semibold">{{ grandLivre.solde | currency:'XAF' }}</span></div>
+    </div>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50 border-b border-gray-200">
+        <tr>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Date</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">N° Écriture</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Libellé</th>
+          <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">Débit</th>
+          <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">Crédit</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        <tr *ngFor="let mvt of grandLivre.mouvements" class="hover:bg-gray-50">
+          <td class="px-4 py-3 text-sm text-gray-600">{{ mvt.dateEcriture | date:'dd/MM/yyyy' }}</td>
+          <td class="px-4 py-3 text-sm font-mono text-gray-900">{{ mvt.numeroEcriture }}</td>
+          <td class="px-4 py-3 text-sm text-gray-900">{{ mvt.libelle }}</td>
+          <td
+            class="px-4 py-3 text-right text-sm"
+            [ngClass]="mvt.typeEcriture === 'D' ? 'font-semibold text-blue-600' : 'text-gray-600'">
+            {{ mvt.typeEcriture === 'D' ? (mvt.montant | currency:'XAF') : '---' }}
+          </td>
+          <td
+            class="px-4 py-3 text-right text-sm"
+            [ngClass]="mvt.typeEcriture === 'C' ? 'font-semibold text-red-600' : 'text-gray-600'">
+            {{ mvt.typeEcriture === 'C' ? (mvt.montant | currency:'XAF') : '---' }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="!grandLivre && !loading" class="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center">
+    <p class="text-gray-500">Sélectionnez un compte pour afficher son grand livre</p>
+  </div>
+</div>
+
+<!-- ÉCRITURES -->
+<div *ngIf="activeTab === 'ecritures'" class="space-y-6">
+  <div *ngIf="loading" class="flex justify-center py-8">
+    <div class="text-gray-500">Chargement des écritures...</div>
+  </div>
+
+  <div *ngIf="!loading" class="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">N° Écriture</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Date</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Journal</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Compte Débit</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Compte Crédit</th>
+          <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">Montant</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Libellé</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        <tr *ngIf="ecritures.length === 0">
+          <td colspan="7" class="px-4 py-5 text-center text-sm text-gray-500">Aucune écriture validée</td>
+        </tr>
+        <tr *ngFor="let ecriture of ecritures" class="hover:bg-gray-50">
+          <td class="px-4 py-3 text-sm font-mono font-semibold text-gray-900">{{ ecriture.numeroEcriture }}</td>
+          <td class="px-4 py-3 text-sm text-gray-600">{{ ecriture.dateEcriture | date:'dd/MM/yyyy' }}</td>
+          <td class="px-4 py-3 text-sm"><span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">{{ ecriture.journal?.code }}</span></td>
+          <td class="px-4 py-3 text-sm text-gray-600">{{ ecriture.compteDebit?.numero }} - {{ ecriture.compteDebit?.libelle }}</td>
+          <td class="px-4 py-3 text-sm text-gray-600">{{ ecriture.compteCredit?.numero }} - {{ ecriture.compteCredit?.libelle }}</td>
+          <td class="px-4 py-3 text-right text-sm font-semibold text-gray-900">{{ ecriture.montant | currency:'XAF' }}</td>
+          <td class="px-4 py-3 text-sm text-gray-600">{{ ecriture.libelle }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+

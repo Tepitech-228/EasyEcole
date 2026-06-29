@@ -18,7 +18,7 @@ export default class DemandeOrientationController {
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
             options = { where: { utilisateurId: (req as any).utilisateurId }, include: [{ association: DemandeOrientation.associations.utilisateur, include: [{ model: Apprenant, as: 'apprenant' }] }, DemandeOrientation.associations.reponseOrientation, DemandeOrientation.associations.parcoursChoisis] }
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
+        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
             options = { include: [{ association: DemandeOrientation.associations.utilisateur, include: [{ model: Apprenant, as: 'apprenant' }] }, DemandeOrientation.associations.reponseOrientation, DemandeOrientation.associations.parcoursChoisis] }
         }
 
@@ -43,7 +43,7 @@ export default class DemandeOrientationController {
                 ] }]
             }
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
+        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
             options = {
                 where: { id: req.params.id },
                 include: [{ association: DemandeOrientation.associations.utilisateur, include: [{ model: Apprenant, as: 'apprenant' }] }, DemandeOrientation.associations.reponseOrientation, { model: ParcoursChoisi, as: 'parcoursChoisis', include: [

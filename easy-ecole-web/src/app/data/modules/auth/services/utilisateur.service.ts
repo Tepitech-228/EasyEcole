@@ -13,11 +13,19 @@ export class UtilisateurService {
 
   constructor(private httpClient: HttpClient) { }
 
+  getAll(): Observable<Utilisateur[]> {
+    return this.httpClient.get<Utilisateur[]>(`${this.SERVICE_URL}`)
+  }
+
   get(id?: string): Observable<Utilisateur> {
-    return this.httpClient.get<Utilisateur>(`${this.SERVICE_URL}/${id}`)
+    return this.httpClient.get<Utilisateur>(`${this.SERVICE_URL}/${id || ''}`)
   }
 
   update(utilisateur: Utilisateur): Observable<Utilisateur> {
     return this.httpClient.put<Utilisateur>(`${this.SERVICE_URL}/`, utilisateur)
-  } 
+  }
+
+  getCount(): Observable<{ success: boolean, count: number }> {
+    return this.httpClient.get<{ success: boolean, count: number }>(`${this.SERVICE_URL}/statistics/count`)
+  }
 }

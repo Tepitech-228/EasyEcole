@@ -75,8 +75,8 @@ export default class DossierInscriptionController {
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
             options = { where: { dossierId: req.body.dossierId, demandeId: req.body.demandeId } }
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
-            return res.status(403).json({ success: false })
+        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
+            options = { where: { dossierId: req.body.dossierId, demandeId: req.body.demandeId } }
         }
 
 

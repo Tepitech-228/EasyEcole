@@ -3,6 +3,7 @@ import express from "express"
 import UtilisateurController from "../controllers/UtilisateurController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
 import Authenticate from "../../../core/middlewares/Authenticate";
+import CheckPermission from "../../../core/middlewares/CheckPermission";
 
 const router = express.Router()
 
@@ -85,7 +86,7 @@ router
      *       401:
      *         description: Non autorisé
      */
-    .delete('/:id', [AuthInstitution], UtilisateurController.deleteUtilisateur)
+    .delete('/:id', [AuthInstitution, CheckPermission('action.administration.utilisateur.supprimer')], UtilisateurController.deleteUtilisateur)
     /**
      * @openapi
      * /auth/utilisateurs/statistics/count:

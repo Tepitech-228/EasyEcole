@@ -85,7 +85,7 @@ export default class ReclamationController {
 
         await reponse.save()
             .then(async (reponse) => {
-                await reclamation.update({ statut: 'traitee' })
+                await reclamation!.update({ statut: 'traitee' })
                 return res.status(201).send(reponse);
             })
             .catch((error) => {

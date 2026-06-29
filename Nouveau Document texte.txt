@@ -1,0 +1,10 @@
+[•] Create scolarite data services (demande-document, reclamation)
+[ ] Rewrite DemandesDocumentsPage with proper UI + service
+[ ] Rewrite TraiterDemandesPage with proper UI + service
+[ ] Rewrite MesReclamationsPage with proper UI + service
+[ ] Rewrite TraiterReclamationsPage with proper UI + service
+[ ] Rewrite RegistresPage with proper UI (new design)
+[ ] Rewrite CalendrierPage with proper UI (new design)
+[ ] Rewrite DisciplinePage with proper UI (new design)
+[ ] Rewrite ConseilsPage with proper UI (new design)
+[ ] Verify compilation

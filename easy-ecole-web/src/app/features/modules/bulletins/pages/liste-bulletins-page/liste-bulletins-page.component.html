@@ -72,7 +72,7 @@
       <select [(ngModel)]="filtres.anneeAcademiqueId" (change)="charger()"
               class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-red-600">
         <option value="">Année scolaire</option>
-        <option *ngFor="let aa of anneesAcademiques" [value]="aa.id">{{ aa.libelle }}</option>
+        <option *ngFor="let aa of anneesAcademiques" [ngValue]="aa.id">{{ aa.libelle }}</option>
       </select>
       <select [(ngModel)]="filtres.semestre" (change)="charger()"
               class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-red-600">
@@ -83,7 +83,7 @@
       <select [(ngModel)]="filtres.classeId" (change)="charger()"
               class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-red-600">
         <option value="">Classe</option>
-        <option *ngFor="let c of classes" [value]="c.id">{{ c.libelle }}</option>
+        <option *ngFor="let c of classes" [ngValue]="c.id">{{ c.libelle }}</option>
       </select>
       <select [(ngModel)]="filtres.statut" (change)="charger()"
               class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-red-600">

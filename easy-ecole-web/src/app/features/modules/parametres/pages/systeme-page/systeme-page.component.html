@@ -1,0 +1,75 @@
+<app-custom-alert [show]="success" title="Succès" color="green">Paramètres système enregistrés</app-custom-alert>
+
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Système" subtitle="Préférences générales du système"></app-header-title>
+</div>
+
+<div class="bg-white rounded-lg shadow border border-gray-100 p-8">
+    <form [formGroup]="form">
+        <app-parametres-section title="Localisation" subtitle="Langue et fuseau horaire">
+            <div class="grid grid-cols-1 gap-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Langue</label>
+                        <select formControlName="langue" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <option value="fr">Français</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Fuseau horaire</label>
+                        <select formControlName="fuseauHoraire" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <option value="Africa/Douala">Afrique/Douala (UTC+1)</option>
+                            <option value="Africa/Abidjan">Afrique/Abidjan (UTC+0)</option>
+                            <option value="Europe/Paris">Europe/Paris (UTC+1)</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Format de date</label>
+                    <select formControlName="formatDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        <option value="dd/MM/yyyy">JJ/MM/AAAA</option>
+                        <option value="MM/dd/yyyy">MM/JJ/AAAA</option>
+                        <option value="yyyy-MM-dd">AAAA-MM-JJ</option>
+                    </select>
+                </div>
+            </div>
+        </app-parametres-section>
+
+        <app-parametres-section title="Sécurité" subtitle="Politique de mots de passe et sessions">
+            <div class="grid grid-cols-1 gap-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Politique mot de passe</label>
+                        <select formControlName="politesseMotDePasse" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <option value="6car">6 caractères minimum</option>
+                            <option value="8car">8 caractères minimum</option>
+                            <option value="12car">12 caractères minimum</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Timeout session (minutes)</label>
+                        <input type="number" formControlName="sessionTimeout" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    </div>
+                </div>
+            </div>
+        </app-parametres-section>
+
+        <app-parametres-section title="Fonctionnalités" subtitle="Activer ou désactiver des fonctionnalités">
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-700">Mode maintenance</span>
+                    <input type="checkbox" formControlName="modeMaintenance" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-700">Inscriptions ouvertes</span>
+                    <input type="checkbox" formControlName="inscriptionOuverte" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                </div>
+            </div>
+        </app-parametres-section>
+
+        <div class="flex justify-end mt-6">
+            <app-custom-button (click)="save()" [text]="saving ? 'Enregistrement...' : 'Enregistrer'" [disabled]="saving"></app-custom-button>
+        </div>
+    </form>
+</div>

@@ -20,7 +20,7 @@ export class GestionElearningPageComponent implements OnInit {
 
   loadCours(): void {
     this.loading = true;
-    this.http.get(`${environment.apiUrl}/elearning/cours`).subscribe({
+    this.http.get(`${environment.API_URL}/elearning/cours`).subscribe({
       next: (data: any) => {
         this.coursList = data;
         this.loading = false;
@@ -34,7 +34,7 @@ export class GestionElearningPageComponent implements OnInit {
   }
 
   createCours(): void {
-    this.http.post(`${environment.apiUrl}/elearning/cours`, this.newCours).subscribe({
+    this.http.post(`${environment.API_URL}/elearning/cours`, this.newCours).subscribe({
       next: () => {
         this.showCreateForm = false;
         this.newCours = { titre: '', description: '' };
@@ -46,10 +46,11 @@ export class GestionElearningPageComponent implements OnInit {
 
   deleteCours(id: string): void {
     if (confirm('Supprimer ce cours ?')) {
-      this.http.delete(`${environment.apiUrl}/elearning/cours/${id}`).subscribe({
+      this.http.delete(`${environment.API_URL}/elearning/cours/${id}`).subscribe({
         next: () => this.loadCours(),
         error: (err) => console.error(err)
       });
     }
   }
 }
+

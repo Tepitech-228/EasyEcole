@@ -2,6 +2,7 @@ import express from "express"
 
 import CoursController from "../controllers/CoursController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
+import CheckPermission from "../../../core/middlewares/CheckPermission";
 
 const router = express.Router()
 
@@ -38,7 +39,7 @@ router
  *       201:
  *         description: Cours créé
  */
-    .post('/', [AuthInstitution], CoursController.createCours)
+    .post('/', [AuthInstitution, CheckPermission('action.inscription.cours.creer')], CoursController.createCours)
 
 /**
  * @openapi
@@ -118,7 +119,7 @@ router
  *       200:
  *         description: Cours mis à jour
  */
-    .put('/:id', [AuthInstitution], CoursController.updateCours)
+    .put('/:id', [AuthInstitution, CheckPermission('action.inscription.cours.modifier')], CoursController.updateCours)
 
 /**
  * @openapi
@@ -144,7 +145,7 @@ router
  *       200:
  *         description: Enseignant assigné
  */
-    .put('/:id/enseignant', [AuthInstitution], CoursController.assignerCours)
+    .put('/:id/enseignant', [AuthInstitution, CheckPermission('action.inscription.cours.assigner-enseignant')], CoursController.assignerCours)
 
 /**
  * @openapi
@@ -164,7 +165,7 @@ router
  *       200:
  *         description: Assignation révoquée
  */
-    .delete('/:id/enseignant', [AuthInstitution], CoursController.revoquerAssignationCours)
+    .delete('/:id/enseignant', [AuthInstitution, CheckPermission('action.inscription.cours.retirer-enseignant')], CoursController.revoquerAssignationCours)
 
 /**
  * @openapi
@@ -184,7 +185,7 @@ router
  *       200:
  *         description: Cours supprimé
  */
-    .delete('/:id', [AuthInstitution], CoursController.deleteCours)
+    .delete('/:id', [AuthInstitution, CheckPermission('action.inscription.cours.supprimer')], CoursController.deleteCours)
 
 /**
  * @openapi

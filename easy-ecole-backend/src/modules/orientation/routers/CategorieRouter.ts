@@ -2,6 +2,7 @@ import express from "express"
 
 import CategorieController from "../controllers/CategorieController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution"
+import CheckPermission from "../../../core/middlewares/CheckPermission"
 
 const router = express.Router()
 
@@ -39,7 +40,7 @@ router
      *       201:
      *         description: Catégorie créée
      */
-    .post('/', [AuthInstitution], CategorieController.createCategorie)
+    .post('/', [AuthInstitution, CheckPermission('action.orientation.categorie.creer')], CategorieController.createCategorie)
     /**
      * @openapi
      * /orientation/categories/{id}:
@@ -85,7 +86,7 @@ router
      *       200:
      *         description: Catégorie mise à jour
      */
-    .put('/:id', [AuthInstitution], CategorieController.updateCategorie)
+    .put('/:id', [AuthInstitution, CheckPermission('action.orientation.categorie.modifier')], CategorieController.updateCategorie)
     /**
      * @openapi
      * /orientation/categories/{id}:
@@ -103,7 +104,7 @@ router
      *       200:
      *         description: Catégorie supprimée
      */
-    .delete('/:id', [AuthInstitution], CategorieController.deleteCategorie)
+    .delete('/:id', [AuthInstitution, CheckPermission('action.orientation.categorie.supprimer')], CategorieController.deleteCategorie)
     /**
      * @openapi
      * /orientation/categories/statistics/count:

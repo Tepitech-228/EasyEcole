@@ -4,9 +4,13 @@ import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Quitus } from "../models/Quitus";
 import { PaiementInscription } from "../models/PaiementInscription";
 import { DemandeInscription } from "../models/DemandeInscription";
+import { DossierEtudiant } from "../models/DossierEtudiant";
+import { Session } from "../models/Session";
+import { ParcoursChoisi } from "../models/ParcoursChoisi";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { DocumentPDFGenerator } from "../../../core/helpers/DocumentPDFGenerator";
 import { IDGenerator } from "../../../core/helpers/IDGenerator";
+import { EmailSender } from "../../../core/helpers/EmailSender";
 
 export default class QuitusController {
 
@@ -78,7 +82,21 @@ export default class QuitusController {
         }
 
         const etudiant = paiement.utilisateur
-        const demande = paiement.demandeInscription
+        let demande = paiement.demandeInscription
+
+        if (!demande) {
+            return res.status(404).json({ success: false, message: "Demande d'inscription non trouvée" });
+        }
+
+        // Re-fetch demande with full details for dossier creation
+        demande = await DemandeInscription.findOne({
+            where: { id: demande.id },
+            include: [
+                { association: DemandeInscription.associations.session, include: [Session.associations.fraisInscription] },
+                { association: DemandeInscription.associations.parcoursChoisis, include: [{ association: ParcoursChoisi.associations.parcours }] }
+            ]
+        }) as DemandeInscription;
+
         const code = 'QTS-' + IDGenerator.getInstance().generateNumeroPaiement()
 
         const filename = DocumentPDFGenerator.generateQuitus(
@@ -99,6 +117,41 @@ export default class QuitusController {
 
         await quitus.save()
             .then(async (quitus) => {
+                // Création automatique du dossier étudiant
+                try {
+                    const existingDossier = await DossierEtudiant.findOne({
+                        where: { utilisateurId: etudiant?.id }
+                    })
+
+                    if (!existingDossier && demande) {
+                        const fraisTotal = demande.session?.fraisInscription?.reduce((sum, f) => sum + f.montant, 0) || 0
+                        const parcoursChoisi = demande.parcoursChoisis?.find(pc => pc.choixFinal == true)
+                        const demarrage = parcoursChoisi?.createdAt || demande.createdAt || new Date()
+
+                        let dossier = new DossierEtudiant()
+                        dossier.utilisateurId = etudiant!.id
+                        dossier.matricule = demande.matricule
+                        dossier.statut = 'actif'
+                        dossier.fraisScolarite = fraisTotal
+                        dossier.modePaiement = 'mensuel'
+                        dossier.nbMensualites = 10
+                        dossier.demarrageParcours = demarrage
+
+                        await dossier.save()
+
+                        // Email avec matricule
+                        if (etudiant) {
+                            EmailSender.getInstance().sendQuitusEtMatricule(
+                                etudiant.identifiant,
+                                etudiant.email,
+                                demande.matricule
+                            ).catch(err => console.error("Erreur envoi email quitus:", err))
+                        }
+                    }
+                } catch (dossierError) {
+                    console.error("Erreur création dossier étudiant:", dossierError)
+                }
+
                 return res.status(201).send(quitus);
             })
             .catch((error) => {

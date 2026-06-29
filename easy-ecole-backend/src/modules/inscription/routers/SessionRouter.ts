@@ -2,6 +2,7 @@ import express from "express"
 
 import SessionController from "../controllers/SessionController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
+import CheckPermission from "../../../core/middlewares/CheckPermission";
 
 const router = express.Router()
 
@@ -35,7 +36,7 @@ router
  *       201:
  *         description: Session créée
  */
-    .post('/', [AuthInstitution], SessionController.createSession)
+    .post('/', [AuthInstitution, CheckPermission('action.inscription.session.creer')], SessionController.createSession)
 /**
  * @openapi
  * /inscription/sessions/{id}:
@@ -76,7 +77,7 @@ router
  *       404:
  *         description: Session non trouvée
  */
-    .put('/:id', [AuthInstitution], SessionController.updateSession)
+    .put('/:id', [AuthInstitution, CheckPermission('action.inscription.session.modifier')], SessionController.updateSession)
 /**
  * @openapi
  * /inscription/sessions/{id}:
@@ -91,7 +92,7 @@ router
  *       404:
  *         description: Session non trouvée
  */
-    .delete('/:id', [AuthInstitution], SessionController.deleteSession)
+    .delete('/:id', [AuthInstitution, CheckPermission('action.inscription.session.supprimer')], SessionController.deleteSession)
 /**
  * @openapi
  * /inscription/sessions/statistics/count:

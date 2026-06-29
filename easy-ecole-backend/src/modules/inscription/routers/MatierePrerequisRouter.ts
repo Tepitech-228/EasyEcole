@@ -2,6 +2,7 @@ import express from "express"
 
 import MatierePrerequisController from "../controllers/MatierePrerequisController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution"
+import CheckPermission from "../../../core/middlewares/CheckPermission"
 
 const router = express.Router()
 
@@ -38,7 +39,7 @@ router
  *       201:
  *         description: Matière prérequis créée
  */
-    .post('/', [AuthInstitution], MatierePrerequisController.createMatierePrerequis)
+    .post('/', [AuthInstitution, CheckPermission('action.inscription.matiere-prerequis.creer')], MatierePrerequisController.createMatierePrerequis)
 
 /**
  * @openapi
@@ -84,7 +85,7 @@ router
  *       200:
  *         description: Matière prérequis mise à jour
  */
-    .put('/:id', [AuthInstitution], MatierePrerequisController.updateMatierePrerequis)
+    .put('/:id', [AuthInstitution, CheckPermission('action.inscription.matiere-prerequis.modifier')], MatierePrerequisController.updateMatierePrerequis)
 
 /**
  * @openapi
@@ -104,7 +105,7 @@ router
  *       200:
  *         description: Matière prérequis supprimée
  */
-    .delete('/:id', [AuthInstitution], MatierePrerequisController.deleteMatierePrerequis)
+    .delete('/:id', [AuthInstitution, CheckPermission('action.inscription.matiere-prerequis.supprimer')], MatierePrerequisController.deleteMatierePrerequis)
 
 /**
  * @openapi

@@ -17,7 +17,7 @@ export class CoursDetailsPageComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.loading = true;
-      this.http.get(`${environment.apiUrl}/elearning/cours/${id}`).subscribe({
+      this.http.get(`${environment.API_URL}/elearning/cours/${id}`).subscribe({
         next: (data: any) => {
           this.cours = data;
           this.loading = false;
@@ -27,3 +27,4 @@ export class CoursDetailsPageComponent implements OnInit {
     }
   }
 }
+

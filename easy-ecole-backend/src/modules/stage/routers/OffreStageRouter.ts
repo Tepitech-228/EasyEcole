@@ -118,4 +118,5 @@ router
      *         description: Offre de stage supprimée
      */
     .delete('/:id', [Authenticate], OffreStageController.delete)
+    .put('/:id/toggle-statut', [Authenticate], OffreStageController.toggleStatut)
 export default router;

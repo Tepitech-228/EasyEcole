@@ -1,82 +1,158 @@
 import { Component, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { environment } from 'src/environments/environment';
+import { DemandeDocument } from 'src/app/data/modules/scolarite/models/DemandeDocument.model';
+import { TypeDocument } from 'src/app/data/modules/scolarite/models/TypeDocument.model';
+import { DemandeDocumentService } from 'src/app/data/modules/scolarite/services/demande-document.service';
+import { TypeDocumentService } from 'src/app/data/modules/scolarite/services/type-document.service';
+import { BaseComponentClass } from 'src/app/core/base-component-class';
 
 @Component({
   selector: 'app-demandes-documents-page',
-  template: `
-    <div class="p-6">
-      <h1 class="text-2xl font-bold mb-6">Demandes de documents</h1>
-
-      <div class="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 class="text-lg font-semibold mb-4">Nouvelle demande</h2>
-        <div class="mb-4">
-          <label class="block text-sm font-medium mb-2">Type de document</label>
-          <select [(ngModel)]="newDemande.typeDocumentId" class="w-full border rounded-lg px-3 py-2">
-            <option *ngFor="let type of typesDocument" [value]="type.id">{{ type.libelle }} - {{ type.frais }} FC</option>
-          </select>
-        </div>
-        <button (click)="submitDemande()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-          Soumettre
-        </button>
-      </div>
-
-      <div class="bg-white rounded-lg shadow">
-        <div class="p-4 border-b">
-          <h2 class="text-lg font-semibold">Mes demandes</h2>
-        </div>
-        <div *ngFor="let demande of demandes" class="p-4 border-b hover:bg-gray-50">
-          <div class="flex justify-between items-start">
-            <div>
-              <p class="font-medium">{{ demande.typeDocument?.libelle }}</p>
-              <p class="text-sm text-gray-600">Date: {{ demande.date | date:'short' }}</p>
-              <p *ngIf="demande.documentDelivre" class="text-sm text-green-600">
-                Document: {{ demande.documentDelivre.fichierPDF }}
-              </p>
-            </div>
-            <span class="px-2 py-1 text-xs rounded-full"
-              [ngClass]="{
-                'bg-yellow-100 text-yellow-800': demande.statut === 'soumise',
-                'bg-blue-100 text-blue-800': demande.statut === 'validee',
-                'bg-red-100 text-red-800': demande.statut === 'rejetee',
-                'bg-green-100 text-green-800': demande.statut === 'delivree'
-              }">
-              {{ demande.statut }}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  `
+  templateUrl: './demandes-documents-page.component.html',
+  styleUrls: ['./demandes-documents-page.component.scss']
 })
-export class DemandesDocumentsPageComponent implements OnInit {
-  demandes: any[] = [];
-  typesDocument: any[] = [];
+export class DemandesDocumentsPageComponent extends BaseComponentClass implements OnInit {
+  demandes: DemandeDocument[] = [];
+  _demandes: DemandeDocument[] = [];
+  typesDocument: TypeDocument[] = [];
   newDemande: any = { typeDocumentId: '' };
+  searchQuery: string = '';
+  filterStatut: string = 'undefined';
+  loading: boolean = false;
+  errorMessage: string = '';
+  successMessage: string = '';
+  showDeleteModal: boolean = false;
+  demandeToDelete: DemandeDocument | null = null;
 
-  constructor(private http: HttpClient) {}
+  currentPage: number = 1;
+  pageSize: number = 10;
+
+  constructor(
+    private demandeService: DemandeDocumentService,
+    private typeDocumentService: TypeDocumentService
+  ) {
+    super();
+  }
 
   ngOnInit() {
     this.loadDemandes();
     this.loadTypesDocument();
   }
 
+  get selectedTypeFrais(): number | null {
+    if (!this.newDemande.typeDocumentId) return null;
+    const type = this.typesDocument.find(t => t.id === this.newDemande.typeDocumentId);
+    return type ? type.frais : null;
+  }
+
+  get paginatedDemandes(): DemandeDocument[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this._demandes.slice(start, start + this.pageSize);
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this._demandes.length / this.pageSize) || 1;
+  }
+
   loadDemandes() {
-    this.http.get(`${environment.API_URL}/scolarite/demandesDocument`).subscribe((data: any) => {
-      this.demandes = data;
+    this.loading = true;
+    this.errorMessage = '';
+    this.demandeService.getAll().subscribe({
+      next: (data) => {
+        this.demandes = data;
+        this._demandes = [...this.demandes];
+        this.loading = false;
+      },
+      error: () => {
+        this.errorMessage = 'Erreur lors du chargement des demandes';
+        this.loading = false;
+      }
     });
   }
 
   loadTypesDocument() {
-    this.http.get(`${environment.API_URL}/scolarite/typesDocument`).subscribe((data: any) => {
+    this.typeDocumentService.getAll().subscribe(data => {
       this.typesDocument = data;
     });
   }
 
   submitDemande() {
-    this.http.post(`${environment.API_URL}/scolarite/demandesDocument`, this.newDemande).subscribe(() => {
-      this.newDemande = { typeDocumentId: '' };
-      this.loadDemandes();
+    if (!this.newDemande.typeDocumentId) return;
+    this.loading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.demandeService.create(this.newDemande).subscribe({
+      next: () => {
+        this.newDemande = { typeDocumentId: '' };
+        this.successMessage = 'Demande soumise avec succès';
+        this.loadDemandes();
+      },
+      error: () => {
+        this.errorMessage = 'Erreur lors de la soumission de la demande';
+        this.loading = false;
+      }
     });
+  }
+
+  confirmDelete(demande: DemandeDocument) {
+    this.demandeToDelete = demande;
+    this.showDeleteModal = true;
+  }
+
+  deleteDemande() {
+    if (!this.demandeToDelete?.id) return;
+    this.demandeService.delete(this.demandeToDelete.id).subscribe({
+      next: () => {
+        this.showDeleteModal = false;
+        this.demandeToDelete = null;
+        this.successMessage = 'Demande annulée avec succès';
+        this.loadDemandes();
+      },
+      error: () => {
+        this.errorMessage = 'Erreur lors de l\'annulation';
+        this.showDeleteModal = false;
+      }
+    });
+  }
+
+  filtrer(): void {
+    this.currentPage = 1;
+    this._demandes = this.demandes.filter(d => {
+      const matchSearch = !this.searchQuery ||
+        d.typeDocument?.libelle?.toLowerCase().includes(this.searchQuery.toLowerCase());
+      const matchStatut = this.filterStatut === 'undefined' || d.statut === this.filterStatut;
+      return matchSearch && matchStatut;
+    });
+  }
+
+  statutLabel(statut: string): string {
+    switch (statut) {
+      case 'soumise': return 'Soumise';
+      case 'validee': return 'Validée';
+      case 'rejetee': return 'Rejetée';
+      case 'delivree': return 'Délivrée';
+      default: return statut;
+    }
+  }
+
+  statutColor(statut: string): string {
+    switch (statut) {
+      case 'soumise': return 'yellow';
+      case 'validee': return 'blue';
+      case 'rejetee': return 'red';
+      case 'delivree': return 'green';
+      default: return 'gray';
+    }
+  }
+
+  getStatutCount(statut: string): number {
+    return this.demandes.filter(d => d.statut === statut).length;
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages) this.currentPage++;
+  }
+
+  prevPage(): void {
+    if (this.currentPage > 1) this.currentPage--;
   }
 }

@@ -1,0 +1,24 @@
+<div class="p-6">
+  <app-header-title title="Discussions" subtitle="Forum de discussion"></app-header-title>
+
+  <div class="bg-white rounded-lg shadow mt-6">
+    <div class="p-4 border-b bg-gray-50 flex items-center justify-between">
+      <span class="text-sm font-medium text-gray-700">{{ discussions.length }} sujet(s)</span>
+    </div>
+    <div *ngFor="let topic of discussions" class="p-4 border-b hover:bg-gray-50">
+      <div class="flex justify-between items-center">
+        <div class="flex-1 min-w-0">
+          <h3 class="text-sm font-semibold text-blue-600 cursor-pointer hover:text-blue-800">{{ topic.titre }}</h3>
+          <p class="text-xs text-gray-500 mt-1">Lancé par <span class="font-medium">{{ topic.auteur }}</span></p>
+        </div>
+        <div class="text-right text-xs text-gray-500 shrink-0 ml-4">
+          <p class="font-medium">{{ topic.nbMessages }} message(s)</p>
+          <p class="mt-0.5">Dernière activité: {{ topic.derniereActivite | date:'dd/MM/yyyy' }}</p>
+        </div>
+      </div>
+    </div>
+    <div *ngIf="discussions.length === 0" class="p-8 text-center text-gray-500">
+      Aucune discussion pour le moment
+    </div>
+  </div>
+</div>

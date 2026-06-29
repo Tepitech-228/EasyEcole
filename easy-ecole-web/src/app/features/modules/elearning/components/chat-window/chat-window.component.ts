@@ -16,7 +16,7 @@ export class ChatWindowComponent implements OnInit, OnDestroy {
   constructor(private http: HttpClient) { }
 
   ngOnInit(): void {
-    this.socket = io(environment.apiUrl);
+    this.socket = io(environment.API_URL);
     this.loadMessages();
 
     if (this.socket) {
@@ -38,7 +38,7 @@ export class ChatWindowComponent implements OnInit, OnDestroy {
   }
 
   loadMessages(): void {
-    this.http.get(`${environment.apiUrl}/elearning/chat/salons/${this.salon.id}/messages`).subscribe({
+    this.http.get(`${environment.API_URL}/elearning/chat/salons/${this.salon.id}/messages`).subscribe({
       next: (data: any) => this.messages = data
     });
   }
@@ -56,3 +56,4 @@ export class ChatWindowComponent implements OnInit, OnDestroy {
     this.messageText = '';
   }
 }
+

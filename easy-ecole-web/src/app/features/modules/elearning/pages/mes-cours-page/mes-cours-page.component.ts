@@ -14,7 +14,7 @@ export class MesCoursPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.loading = true;
-    this.http.get(`${environment.apiUrl}/elearning/cours`).subscribe({
+    this.http.get(`${environment.API_URL}/elearning/cours`).subscribe({
       next: (data: any) => {
         this.coursList = data;
         this.loading = false;
@@ -23,3 +23,4 @@ export class MesCoursPageComponent implements OnInit {
     });
   }
 }
+

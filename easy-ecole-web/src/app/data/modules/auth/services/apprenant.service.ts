@@ -25,6 +25,10 @@ export class ApprenantService {
     return this.httpClient.get<Apprenant[]>(`${this.SERVICE_URL}`)
   }
 
+  getCount(): Observable<{ success: boolean, count: number }> {
+    return this.httpClient.get<{ success: boolean, count: number }>(`${this.SERVICE_URL}/statistics/count`)
+  }
+
   generateQrCodes(apprenantId?: string): Observable<any> {
     return this.httpClient.post(`${this.SERVICE_URL}/qr-codes/generate`, { apprenantId })
   }

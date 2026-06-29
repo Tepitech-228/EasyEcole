@@ -27,6 +27,9 @@ export class ListeSessionsPageComponent  extends BaseComponentClass implements O
   selectedAnneeAcademique: string = 'undefined'
   readonly etatsSession = EtatsSession
 
+  nouveauxFrais: Array<{ titre: string, montant: number, description: string, fraisDesCours: boolean }> = []
+  nouveauxDossiers: Array<{ titre: string, tailleMax: number | null, description: string }> = []
+
   sessionForm: FormGroup = new FormGroup({
     dateDebut: new FormControl(this.TODAY_DATE, [Validators.required]),
     dateFin: new FormControl(null, [Validators.required]),
@@ -41,7 +44,7 @@ export class ListeSessionsPageComponent  extends BaseComponentClass implements O
     private sessionService: SessionService,
     private anneeAcademiqueService: AnneeAcademiqueService) {
     super()
-    if (!this.rolesValue.isInstitution) {
+    if (!this.rolesValue.isInstitution && !this.rolesValue.isAdmin) {
       this.router.navigate(['/'])
     }
     else {
@@ -102,24 +105,49 @@ export class ListeSessionsPageComponent  extends BaseComponentClass implements O
   ajouterSession(): void {
     this.sessionForm.markAllAsTouched()
     if(this.sessionForm.valid) {
-      let session: Session = new Session()
+      let session: any = {}
       session.dateDebut = this.sessionForm.get('dateDebut')!.value ?? new Date()
       session.dateFin = this.sessionForm.get('dateFin')!.value
       session.niveauEtudeId = this.sessionForm.get('niveauEtude')!.value
       session.anneeAcademiqueId = this.sessionForm.get('anneeAcademique')!.value
       session.description = this.sessionForm.get('description')!.value
+      session.frais = this.nouveauxFrais
+      session.dossiers = this.nouveauxDossiers
 
       this.sessionService.create(session).subscribe({
         next: (res) => {
-          // this.getSessions()
-          // this.closeNouvelleSessionModal()
-            this.router.navigate(['/inscription/sessions/' + res.id])
+          this.router.navigate(['/inscription/sessions/' + res.id])
         },
         error: (err) => {
-
+          console.log(err)
         },
       })
     }
+  }
+
+  ajouterNouveauFrais(): void {
+    this.nouveauxFrais.push({
+      titre: '',
+      montant: 0,
+      description: '',
+      fraisDesCours: false,
+    })
+  }
+
+  supprimerNouveauFrais(index: number): void {
+    this.nouveauxFrais.splice(index, 1)
+  }
+
+  ajouterNouveauDossier(): void {
+    this.nouveauxDossiers.push({
+      titre: '',
+      tailleMax: null,
+      description: '',
+    })
+  }
+
+  supprimerNouveauDossier(index: number): void {
+    this.nouveauxDossiers.splice(index, 1)
   }
 
   // Modals
@@ -133,6 +161,8 @@ export class ListeSessionsPageComponent  extends BaseComponentClass implements O
   closeNouvelleSessionModal(): void {
     this.showNouvelleSessionModal = false
     this.sessionForm.reset()
+    this.nouveauxFrais = []
+    this.nouveauxDossiers = []
   }
 
 }

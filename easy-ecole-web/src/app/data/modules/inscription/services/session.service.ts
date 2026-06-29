@@ -24,4 +24,8 @@ export class SessionService {
   create(session: Session): Observable<Session> {
     return this.httpClient.post<Session>(`${this.SERVICE_URL}`, session)
   }
+
+  getCount(): Observable<{ success: boolean, count: number }> {
+    return this.httpClient.get<{ success: boolean, count: number }>(`${this.SERVICE_URL}/statistics/count`)
+  }
 }

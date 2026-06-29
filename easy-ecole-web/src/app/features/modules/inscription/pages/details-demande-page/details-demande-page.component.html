@@ -18,7 +18,7 @@
         <div *ngIf="currentItemSection == 1 && demande!.parcoursChoisis!.length != 0 && demande.reponseInscription == undefined" class="flex justify-end items-center gap-x-8">
             <app-custom-button (click)="showReponseModal = true" text="Terminer"></app-custom-button>
         </div>
-        <div *ngIf="currentItemSection == 5 && demande!.dateValidation == undefined" class="flex justify-end items-center gap-x-8">
+        <div *ngIf="currentItemSection == 6 && demande!.dateValidation == undefined" class="flex justify-end items-center gap-x-8">
             <app-custom-button (click)="openValidationModal()" text="Valider"></app-custom-button>
         </div>
     </div>
@@ -46,35 +46,40 @@
         <ng-container *ngIf="currentItemSection == 0">
             <app-infos-section [utilisateur]="demande.utilisateur!"></app-infos-section>
         </ng-container>
-        
+
         <!-- Section: Choix parcours -->
         <ng-container *ngIf="currentItemSection == 1">
             <app-choix-parcours-section [parcours]="parcoursFinal" [demande]="demande" [rolesValue]="rolesValue" (nextStep)="initSteps()"></app-choix-parcours-section>
         </ng-container>
 
-        <!-- Section: Cours -->
+        <!-- Section: Documents (déplacé avant préinscription) -->
         <ng-container *ngIf="currentItemSection == 2">
+            <app-documents-section [demande]="demande" [rolesValue]="rolesValue" (nextStep)="getDemandeInscription()"></app-documents-section>
+        </ng-container>
+
+        <!-- Section: Préinscription (déplacé après documents) -->
+        <ng-container *ngIf="currentItemSection == 3">
+            <app-pre-inscription-section [demande]="demande" [rolesValue]="rolesValue" (nextStep)="initSteps()" (refresh)="getDemandeInscription()"></app-pre-inscription-section>
+        </ng-container>
+
+        <!-- Section: Cours -->
+        <ng-container *ngIf="currentItemSection == 4">
             <app-cours-section [demandeId]="demande!.id!" [parcours]="parcoursFinal" [coursChoisis]="demande!.coursChoisis" [rolesValue]="rolesValue" (nextStep)="getDemandeInscription()"></app-cours-section>
         </ng-container>
 
         <!-- Section: Paiements -->
-        <ng-container *ngIf="currentItemSection == 3">
+        <ng-container *ngIf="currentItemSection == 5">
             <app-paiements-section [demande]="demande" [coursChoisis]="demande!.coursChoisis" [rolesValue]="rolesValue"></app-paiements-section>
         </ng-container>
 
-        <!-- Section: Documents -->
-        <ng-container *ngIf="currentItemSection == 4">
-            <app-documents-section [demande]="demande" [rolesValue]="rolesValue" (nextStep)="getDemandeInscription()"></app-documents-section>
-        </ng-container>
-
         <!-- Section: Validation -->
-        <ng-container *ngIf="currentItemSection == 5">
+        <ng-container *ngIf="currentItemSection == 6">
             <app-validation-section [parcours]="parcoursFinal" [demande]="demande" [coursChoisis]="demande!.coursChoisis" [rolesValue]="rolesValue"></app-validation-section>
         </ng-container>
     </ng-container>
 
     <div class="flex justify-end items-end" *ngIf="rolesValue.isInstitution">
-        <div *ngIf="currentItemSection == 5 && demande!.dateValidation == undefined" class="flex justify-end items-center gap-x-8">
+        <div *ngIf="currentItemSection == 6 && demande!.dateValidation == undefined" class="flex justify-end items-center gap-x-8">
             <app-custom-button (click)="openValidationModal()" text="Valider"></app-custom-button>
         </div>
     </div>

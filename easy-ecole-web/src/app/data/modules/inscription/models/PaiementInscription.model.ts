@@ -10,6 +10,8 @@ export class PaiementInscription {
   declare montant?: number
   declare matriculeInscription?: string
   declare type?: TypesPaiement
+  declare referenceBancaire?: string
+  declare fichierBordereauRCU?: string
   declare utilisateurId?: string
   declare utilisateur?: Utilisateur
   declare demandeInscription?: DemandeInscription

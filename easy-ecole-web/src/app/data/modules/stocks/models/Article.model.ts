@@ -4,6 +4,7 @@ export class Article {
     declare reference?: string
     declare description?: string
     declare categorieId?: string
+    declare categorie?: any
     declare siteId?: string
     declare site?: any
     declare stockActuel?: number

@@ -3,6 +3,7 @@ import multer from "multer"
 
 import DeboucheParcoursController from "../controllers/DeboucheParcoursController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
+import CheckPermission from "../../../core/middlewares/CheckPermission";
 
 const router = express.Router()
 const upload = multer({ dest: "public/orientation/debouches/" });
@@ -44,7 +45,7 @@ router
      *       201:
      *         description: Débouché créé
      */
-    .post('/', [AuthInstitution, upload.single('video')], DeboucheParcoursController.createDeboucheParcours)
+    .post('/', [AuthInstitution, CheckPermission('action.orientation.debouche.creer'), upload.single('video')], DeboucheParcoursController.createDeboucheParcours)
     /**
      * @openapi
      * /orientation/debouches-parcours/{id}:
@@ -93,7 +94,7 @@ router
      *       200:
      *         description: Débouché mis à jour
      */
-    .put('/:id', [AuthInstitution, upload.single('video')], DeboucheParcoursController.updateDeboucheParcours)
+    .put('/:id', [AuthInstitution, CheckPermission('action.orientation.debouche.modifier'), upload.single('video')], DeboucheParcoursController.updateDeboucheParcours)
     /**
      * @openapi
      * /orientation/debouches-parcours/{id}:
@@ -111,7 +112,7 @@ router
      *       200:
      *         description: Débouché supprimé
      */
-    .delete('/:id', [AuthInstitution], DeboucheParcoursController.deleteDeboucheParcours)
+    .delete('/:id', [AuthInstitution, CheckPermission('action.orientation.debouche.supprimer')], DeboucheParcoursController.deleteDeboucheParcours)
     /**
      * @openapi
      * /orientation/debouches-parcours/statistics/count:

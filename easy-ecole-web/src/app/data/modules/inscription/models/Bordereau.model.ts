@@ -1,8 +1,10 @@
 import { Utilisateur } from "../../auth/models/Utilisateur.model"
 import { Echeance } from "./Echeance.model"
+import { Quitus } from "./Quitus.model"
 
 export class Bordereau {
   declare id?: string
+  declare type?: 'inscription' | 'scolarite'
   declare echeanceId?: string
   declare utilisateurId?: string
   declare fichier?: string
@@ -16,6 +18,7 @@ export class Bordereau {
   declare echeance?: Echeance
   declare utilisateur?: Utilisateur
   declare validePar?: Utilisateur
+  declare quitus?: Quitus
 
   declare readonly createdAt?: Date
   declare readonly updatedAt?: Date

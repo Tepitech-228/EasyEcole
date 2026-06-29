@@ -36,7 +36,7 @@
                                             class="p-1 rounded focus:ring-1 focus:ring-gray-300">
                                             <img width="25" src="assets/icons/file.svg" alt="open">
                                         </button>
-                                        <ng-container *ngIf="rolesValue.isApprenant">
+                                        <ng-container *ngIf="rolesValue.isApprenant || rolesValue.isInstitution">
                                             <button (click)="choisirFichier(dossier.id!)"
                                                 class="p-1 rounded focus:ring-1 focus:ring-gray-300">
                                                 <img width="25" [src]="'assets/icons/upload-cloud-fill.svg'" alt="upload">
@@ -47,14 +47,14 @@
                             </tr>
                         </tbody>
                     </table>
-                    <div *ngIf="rolesValue.isApprenant && demande.session!.dossiersInscription!.length != 0" class="flex items-center justify-center">
+                    <div *ngIf="(rolesValue.isApprenant || rolesValue.isInstitution) && demande.session!.dossiersInscription!.length != 0" class="flex items-center justify-center">
                         <app-custom-button (click)="validerDossiersInscription()" text="Valider" color="green" [fullWidth]="true" [disabled]="dossiersInscription.length == 0"></app-custom-button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <div *ngIf="rolesValue.isApprenant" class="w-full flex justify-end items-center">
+    <div *ngIf="rolesValue.isApprenant || rolesValue.isInstitution" class="w-full flex justify-end items-center">
         <app-custom-button (click)="nextStep.emit()" [disabled]="false" text="Terminer"></app-custom-button>
     </div>
 </div>

@@ -132,7 +132,7 @@ export default class ParcoursController {
             }
 
             await parcours.update({
-                titre: req.body.name,
+                titre: req.body.titre,
                 videoExplicative: req.body.videoExplicative,
                 contenu: req.body.contenu,
             })

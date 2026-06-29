@@ -1,0 +1,65 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <app-header-title
+    title="Échelles de notes"
+    subtitle="Configurez les barèmes et les mentions attribuées aux notes">
+  </app-header-title>
+
+  <div class="mt-8 flex items-center justify-between">
+    <p class="text-sm text-gray-500">{{ echelles.length }} échelle(s) configurée(s)</p>
+    <a routerLink="/bulletins/echelles/nouveau"
+       class="inline-flex items-center px-4 py-2.5 bg-red-700 hover:bg-red-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm">
+      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      Nouvelle échelle
+    </a>
+  </div>
+
+  <div class="mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-100">
+        <thead>
+          <tr class="bg-gray-50/50">
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nom</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Note min</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Note max</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Mention</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Statut</th>
+            <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngFor="let e of echelles; trackBy: trackByFn" class="hover:bg-gray-50/50 transition-colors">
+            <td class="px-5 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ e.nom }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-center text-sm text-gray-700">{{ e.noteMin }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-center text-sm text-gray-700">{{ e.noteMax }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ e.mention }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-center">
+              <button (click)="basculerStatut(e.id)"
+                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border-0 cursor-pointer"
+                      [ngClass]="e.actif ? 'bg-green-50 text-green-700 ring-1 ring-green-200' : 'bg-gray-50 text-gray-400 ring-1 ring-gray-200'">
+                <span class="w-1.5 h-1.5 rounded-full mr-1.5" [ngClass]="e.actif ? 'bg-green-500' : 'bg-gray-300'"></span>
+                {{ e.actif ? 'Actif' : 'Inactif' }}
+              </button>
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap text-right">
+              <div class="flex items-center justify-end gap-2">
+                <a [routerLink]="['/bulletins/echelles', e.id]"
+                   class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                  Modifier
+                </a>
+                <button (click)="supprimer(e.id)"
+                        class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border-0 cursor-pointer">
+                  Supprimer
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div *ngIf="echelles.length === 0" class="px-5 py-12 text-center">
+      <svg class="mx-auto h-12 w-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      <p class="mt-4 text-sm text-gray-500">Aucune échelle de notes configurée</p>
+      <a routerLink="/bulletins/echelles/nouveau" class="mt-2 inline-block text-sm text-red-600 hover:text-red-700 font-medium">Créer une échelle</a>
+    </div>
+  </div>
+</div>

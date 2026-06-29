@@ -1,0 +1,130 @@
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <app-header-title
+    title="Paramètres des bulletins"
+    subtitle="Personnalisez l'apparence et le contenu des bulletins de notes">
+  </app-header-title>
+
+  <app-custom-alert *ngIf="saved" type="success" message="Paramètres enregistrés avec succès"></app-custom-alert>
+
+  <div class="mt-8 space-y-8">
+    <!-- En-tête -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
+      <h2 class="text-lg font-semibold text-gray-900 mb-6">En-tête du bulletin</h2>
+      <form [formGroup]="form" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">Nom de l'établissement</label>
+            <input type="text" formControlName="enteteEcole"
+                   class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-red-600">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">Adresse</label>
+            <input type="text" formControlName="enteteAdresse"
+                   class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-red-600">
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">Téléphone</label>
+            <input type="text" formControlName="enteteTelephone"
+                   class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-red-600">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+            <input type="email" formControlName="enteteEmail"
+                   class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-red-600">
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Pied de page -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
+      <h2 class="text-lg font-semibold text-gray-900 mb-6">Pied de page</h2>
+      <form [formGroup]="form">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">Texte du pied de page</label>
+          <input type="text" formControlName="piedPage"
+                 class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-red-600">
+        </div>
+      </form>
+    </div>
+
+    <!-- Options d'affichage -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
+      <h2 class="text-lg font-semibold text-gray-900 mb-6">Options d'affichage</h2>
+      <form [formGroup]="form">
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <label class="text-sm font-medium text-gray-700">Afficher le logo</label>
+            <input type="checkbox" formControlName="afficherLogo"
+                   class="h-4 w-4 rounded border-gray-300 text-red-700 focus:ring-red-600">
+          </div>
+          <div class="flex items-center justify-between">
+            <label class="text-sm font-medium text-gray-700">Afficher la moyenne de la classe</label>
+            <input type="checkbox" formControlName="afficherMoyenneClasse"
+                   class="h-4 w-4 rounded border-gray-300 text-red-700 focus:ring-red-600">
+          </div>
+          <div class="flex items-center justify-between">
+            <label class="text-sm font-medium text-gray-700">Afficher le rang</label>
+            <input type="checkbox" formControlName="afficherRang"
+                   class="h-4 w-4 rounded border-gray-300 text-red-700 focus:ring-red-600">
+          </div>
+          <div class="flex items-center justify-between">
+            <label class="text-sm font-medium text-gray-700">Afficher la mention</label>
+            <input type="checkbox" formControlName="afficherMention"
+                   class="h-4 w-4 rounded border-gray-300 text-red-700 focus:ring-red-600">
+          </div>
+          <div class="flex items-center justify-between">
+            <label class="text-sm font-medium text-gray-700">Afficher l'appréciation</label>
+            <input type="checkbox" formControlName="afficherAppreciation"
+                   class="h-4 w-4 rounded border-gray-300 text-red-700 focus:ring-red-600">
+          </div>
+          <div class="flex items-center justify-between">
+            <label class="text-sm font-medium text-gray-700">Afficher la signature</label>
+            <input type="checkbox" formControlName="afficherSignature"
+                   class="h-4 w-4 rounded border-gray-300 text-red-700 focus:ring-red-600">
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Format -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
+      <h2 class="text-lg font-semibold text-gray-900 mb-6">Format d'impression</h2>
+      <form [formGroup]="form">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">Format de papier</label>
+            <select formControlName="formatPapier"
+                    class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-red-600">
+              <option value="A4">A4</option>
+              <option value="A5">A5</option>
+              <option value="Lettre">Lettre</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">Orientation</label>
+            <select formControlName="orientation"
+                    class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-red-600">
+              <option value="portrait">Portrait</option>
+              <option value="paysage">Paysage</option>
+            </select>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center justify-end gap-3">
+      <button type="button" (click)="resetForm()"
+              class="px-4 py-2.5 text-sm font-semibold text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors border-0 cursor-pointer">
+        Réinitialiser
+      </button>
+      <button type="button" (click)="onSave()"
+              class="px-6 py-2.5 bg-red-700 hover:bg-red-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm border-0 cursor-pointer">
+        Enregistrer
+      </button>
+    </div>
+  </div>
+</div>

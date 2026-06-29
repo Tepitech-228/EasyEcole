@@ -4,6 +4,7 @@ import Authenticate from "../../../core/middlewares/Authenticate";
 import { AuthApprenant } from "../../../core/middlewares/AuthApprenant";
 import { AuthEnseignant } from "../../../core/middlewares/AuthEnseignant";
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
+import CheckPermission from "../../../core/middlewares/CheckPermission";
 import { validerGeneration, validerUpdate, validerPagination } from "../validators/BulletinValidator";
 
 const router = Router();
@@ -34,7 +35,7 @@ const controller = new BulletinController();
  *       401:
  *         description: Non autorisé
  */
-router.post('/bulletins/generer', [AuthInstitution, validerGeneration], controller.generer.bind(controller));
+router.post('/bulletins/generer', [AuthInstitution, CheckPermission('action.evaluation.bulletin.generer'), validerGeneration], controller.generer.bind(controller));
 /**
  * @openapi
  * /inscription/bulletins:
@@ -74,6 +75,7 @@ router.get('/bulletins', [Authenticate], validerPagination, controller.getAll.bi
  *         description: Non autorisé
  */
 router.get('/bulletins/mon-releve', [Authenticate, AuthApprenant], controller.monReleve.bind(controller));
+router.get('/bulletins/moyennes', [Authenticate], controller.getMoyennes.bind(controller));
 /**
  * @openapi
  * /inscription/bulletins/{id}:
@@ -124,7 +126,7 @@ router.get('/bulletins/:id', [Authenticate], controller.getOne.bind(controller))
  *       401:
  *         description: Non autorisé
  */
-router.put('/bulletins/:id', [AuthInstitution, validerUpdate], controller.update.bind(controller));
+router.put('/bulletins/:id', [AuthInstitution, CheckPermission('action.evaluation.bulletin.modifier'), validerUpdate], controller.update.bind(controller));
 /**
  * @openapi
  * /inscription/bulletins/{id}/publier:
@@ -145,7 +147,7 @@ router.put('/bulletins/:id', [AuthInstitution, validerUpdate], controller.update
  *       401:
  *         description: Non autorisé
  */
-router.put('/bulletins/:id/publier', [AuthInstitution], controller.publier.bind(controller));
+router.put('/bulletins/:id/publier', [AuthInstitution, CheckPermission('action.evaluation.bulletin.publier')], controller.publier.bind(controller));
 /**
  * @openapi
  * /inscription/bulletins/{id}:
@@ -166,6 +168,6 @@ router.put('/bulletins/:id/publier', [AuthInstitution], controller.publier.bind(
  *       401:
  *         description: Non autorisé
  */
-router.delete('/bulletins/:id', [AuthInstitution], controller.delete.bind(controller));
+router.delete('/bulletins/:id', [AuthInstitution, CheckPermission('action.evaluation.bulletin.supprimer')], controller.delete.bind(controller));
 
 export default router;

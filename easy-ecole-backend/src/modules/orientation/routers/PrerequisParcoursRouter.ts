@@ -2,6 +2,7 @@ import express from "express"
 
 import PrerequisParcoursController from "../controllers/PrerequisParcoursController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution"
+import CheckPermission from "../../../core/middlewares/CheckPermission"
 
 const router = express.Router()
 
@@ -39,7 +40,7 @@ router
      *       201:
      *         description: Prérequis créé
      */
-    .post('/', [AuthInstitution], PrerequisParcoursController.createPrerequisParcours)
+    .post('/', [AuthInstitution, CheckPermission('action.orientation.prerequis.creer')], PrerequisParcoursController.createPrerequisParcours)
     /**
      * @openapi
      * /orientation/prerequis-parcours/{id}:
@@ -85,7 +86,7 @@ router
      *       200:
      *         description: Prérequis mis à jour
      */
-    .put('/:id', [AuthInstitution], PrerequisParcoursController.updatePrerequisParcours)
+    .put('/:id', [AuthInstitution, CheckPermission('action.orientation.prerequis.modifier')], PrerequisParcoursController.updatePrerequisParcours)
     /**
      * @openapi
      * /orientation/prerequis-parcours/{id}:
@@ -103,7 +104,7 @@ router
      *       200:
      *         description: Prérequis supprimé
      */
-    .delete('/:id', [AuthInstitution], PrerequisParcoursController.deletePrerequisParcours)
+    .delete('/:id', [AuthInstitution, CheckPermission('action.orientation.prerequis.supprimer')], PrerequisParcoursController.deletePrerequisParcours)
     /**
      * @openapi
      * /orientation/prerequis-parcours/statistics/count:

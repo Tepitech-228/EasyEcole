@@ -1,4 +1,7 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { NiveauEtude } from 'src/app/data/modules/inscription/models/NiveauEtude.model';
 import { Cours } from 'src/app/data/modules/inscription/models/Cours.model';
@@ -8,7 +11,6 @@ import { Classe } from 'src/app/data/modules/inscription/models/Classe.model';
 import { ClasseService } from 'src/app/data/modules/inscription/services/classe.service';
 import { CursusApprenant } from 'src/app/data/modules/inscription/models/CursusApprenant.model';
 import { CursusApprenantService } from 'src/app/data/modules/inscription/services/cursus-apprenant.service';
-import { Router } from '@angular/router';
 import { Parcours } from 'src/app/data/modules/inscription/models/Parcours.model';
 import { ParcoursService } from 'src/app/data/modules/inscription/services/parcours.service';
 
@@ -35,7 +37,20 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
 
   searchCours?: string
 
+  showNouveauCoursModal: boolean = false
+  nouveauCoursForm: FormGroup = new FormGroup({
+    code: new FormControl(null, [Validators.required]),
+    intitule: new FormControl(null, [Validators.required]),
+    credit: new FormControl(null, []),
+    semestre: new FormControl(null, []),
+    description: new FormControl(null, []),
+    estObligatoire: new FormControl(false, []),
+    parcoursId: new FormControl(null, [Validators.required]),
+    classeId: new FormControl(null, [Validators.required]),
+  })
+
   constructor(
+    private router: Router,
     private niveauEtudeService: NiveauEtudeService,
     private coursService: CoursService,
     private classeService: ClasseService,
@@ -52,6 +67,39 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
     }
     else {
       this.getCours()
+    }
+  }
+
+  openNouveauCoursModal(): void {
+    this.nouveauCoursForm.reset()
+    this.showNouveauCoursModal = true
+  }
+
+  closeNouveauCoursModal(): void {
+    this.showNouveauCoursModal = false
+  }
+
+  ajouterCours(): void {
+    this.nouveauCoursForm.markAllAsTouched()
+    if (this.nouveauCoursForm.valid) {
+      const cours = new Cours()
+      cours.code = this.nouveauCoursForm.get('code')!.value
+      cours.intitule = this.nouveauCoursForm.get('intitule')!.value
+      cours.credit = this.nouveauCoursForm.get('credit')!.value
+      cours.semestre = this.nouveauCoursForm.get('semestre')!.value
+      cours.description = this.nouveauCoursForm.get('description')!.value
+      cours.estObligatoire = this.nouveauCoursForm.get('estObligatoire')!.value
+      cours.parcoursId = this.nouveauCoursForm.get('parcoursId')!.value
+      cours.classeId = this.nouveauCoursForm.get('classeId')!.value
+
+      this.coursService.create(cours).subscribe({
+        next: (res) => {
+          this.router.navigate(['/cours/cours/' + res.id])
+        },
+        error: (err: HttpErrorResponse) => {
+          console.log(err)
+        },
+      })
     }
   }
 

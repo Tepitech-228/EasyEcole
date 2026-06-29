@@ -6,6 +6,7 @@ import { customAlphabet } from 'nanoid'
 import AuthController from "../controllers/AuthController"
 import Authenticate from "../../../core/middlewares/Authenticate";
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
+import CheckPermission from "../../../core/middlewares/CheckPermission";
 
 const router = express.Router()
 const storage = multer.diskStorage({
@@ -105,7 +106,7 @@ router
      *       401:
      *         description: Non autorisé
      */
-    .post('/register/enseignant', [Authenticate, AuthInstitution], AuthController.registerEnseignant)
+    .post('/register/enseignant', [Authenticate, AuthInstitution, CheckPermission('action.administration.enseignant.inscrire')], AuthController.registerEnseignant)
     /**
      * @openapi
      * /auth/update-profile:
@@ -214,5 +215,6 @@ router
      *         description: Non autorisé
      */
     .put('/reset', [Authenticate], AuthController.passwordReset)
+    .post('/reset-password', AuthController.passwordResetWithToken)
 
 export default router

@@ -9,6 +9,7 @@ import { Banque } from "../../auth/models/Banque";
 import { CaissierBanque } from "../../auth/models/CaissierBanque";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { MobileMoneyCinetpay } from "../../../core/helpers/MobileMoneyCinetpay";
+import { creerEcritureComptable } from "../../comptabilite/helpers/ComptabiliteHelper";
 
 export default class PaiementInscriptionController {
 
@@ -98,6 +99,18 @@ export default class PaiementInscriptionController {
 
             await paiementInscription.save()
                 .then(async (paiementInscription) => {
+                    await creerEcritureComptable({
+                        req,
+                        journalCode: 'VEN',
+                        compteDebitNumero: '512',
+                        compteCreditNumero: '702',
+                        montant: paiementInscription.montant,
+                        libelle: paiementInscription.description || `Paiement inscription #${paiementInscription.numero}`,
+                        reference: paiementInscription.numero,
+                        moduleSource: 'inscription',
+                        referenceModuleId: String(paiementInscription.id)
+                    })
+
                     return res.status(201).send(paiementInscription);
                 })
                 .catch((error) => {

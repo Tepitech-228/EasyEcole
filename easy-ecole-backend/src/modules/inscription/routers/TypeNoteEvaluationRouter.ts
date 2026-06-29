@@ -2,6 +2,7 @@ import express from "express"
 
 import TypeNoteEvaluationController from "../controllers/TypeNoteEvaluationController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
+import CheckPermission from "../../../core/middlewares/CheckPermission";
 
 const router = express.Router()
 
@@ -35,7 +36,7 @@ router
  *       201:
  *         description: Type d'évaluation créé
  */
-    .post('/', [AuthInstitution], TypeNoteEvaluationController.createTypeNoteEvaluation)
+    .post('/', [AuthInstitution, CheckPermission('action.inscription.type-note.creer')], TypeNoteEvaluationController.createTypeNoteEvaluation)
 /**
  * @openapi
  * /inscription/typesNoteEvaluation/{id}:
@@ -76,7 +77,7 @@ router
  *       404:
  *         description: Type d'évaluation non trouvé
  */
-    .put('/:id', [AuthInstitution], TypeNoteEvaluationController.updateTypeNoteEvaluation)
+    .put('/:id', [AuthInstitution, CheckPermission('action.inscription.type-note.modifier')], TypeNoteEvaluationController.updateTypeNoteEvaluation)
 /**
  * @openapi
  * /inscription/typesNoteEvaluation/{id}:
@@ -91,7 +92,7 @@ router
  *       404:
  *         description: Type d'évaluation non trouvé
  */
-    .delete('/:id', [AuthInstitution], TypeNoteEvaluationController.deleteTypeNoteEvaluation)
+    .delete('/:id', [AuthInstitution, CheckPermission('action.inscription.type-note.supprimer')], TypeNoteEvaluationController.deleteTypeNoteEvaluation)
 /**
  * @openapi
  * /inscription/typesNoteEvaluation/statistics/count:

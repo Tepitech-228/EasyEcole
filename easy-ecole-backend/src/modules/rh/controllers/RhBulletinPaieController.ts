@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { RhBulletinPaie } from "../models/RhBulletinPaie";
 import { RhLigneBulletin } from "../models/RhLigneBulletin";
+import { creerEcritureComptable } from "../../comptabilite/helpers/ComptabiliteHelper";
 
 export default class RhBulletinPaieController {
 
@@ -39,6 +40,19 @@ export default class RhBulletinPaieController {
       const data = await RhBulletinPaie.findByPk(req.params.id);
       if (!data) return res.status(404).json({ success: false, message: "Bulletin non trouvé" });
       await data.update({ statut: 'versé' });
+      if (data.netAPayer && Number(data.netAPayer) > 0) {
+        await creerEcritureComptable({
+          req,
+          journalCode: 'PAI',
+          compteDebitNumero: '611',
+          compteCreditNumero: '512',
+          montant: Number(data.netAPayer),
+          libelle: `Versement bulletin paie #${data.id}`,
+          reference: `Bulletin #${data.id}`,
+          moduleSource: 'rh',
+          referenceModuleId: String(data.id)
+        })
+      }
       return res.status(200).send(data);
     } catch (error) {
       return res.status(500).json({ success: false, error });

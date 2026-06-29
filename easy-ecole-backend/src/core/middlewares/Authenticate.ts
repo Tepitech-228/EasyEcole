@@ -1,10 +1,9 @@
 import { Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
 import { RolesUtilisateur } from '../enums/RolesUtilisateur'
+import { JWT_SECRET } from '../config/jwt'
 
 export default (req: Request, res: Response, next: Function) => {
-    const SECRET_KEY : any = 'secret'
-
     if (!req.headers['authorization']) {
         return res.status(400).json({ success: false, message: 'No access token provided' })
     }
@@ -12,11 +11,11 @@ export default (req: Request, res: Response, next: Function) => {
     const accessToken = req.headers.authorization.split(' ')[1]
 
     try {
-        const decoded = jwt.verify(accessToken, SECRET_KEY) as unknown as EncodePayload
-        (req as any).utilisateurId = decoded.id;
-        (req as any).utilisateurIdentifiant = decoded.identifiant;
-        (req as any).utilisateurEmail = decoded.email;
-        (req as any).utilisateurRole = decoded.role;
+        const decoded = jwt.verify(accessToken, JWT_SECRET) as unknown as EncodePayload
+        ;(req as any).utilisateurId = decoded.id;
+        ;(req as any).utilisateurIdentifiant = decoded.identifiant;
+        ;(req as any).utilisateurEmail = decoded.email;
+        ;(req as any).utilisateurRole = decoded.role;
 
         return next()
     } catch (error: any) {

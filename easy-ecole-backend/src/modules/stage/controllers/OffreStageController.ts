@@ -1,18 +1,40 @@
 import { Request, Response } from "express";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { OffreStage } from "../models/OffreStage";
+import { Institution } from "../../auth/models/Institution";
+import { Utilisateur } from "../../auth/models/Utilisateur";
 
 export default class OffreStageController {
     constructor() { }
 
     static async getAll(req: Request, res: Response): Promise<Response> {
-        try { const items = await OffreStage.findAll(); return res.status(200).send(items); }
+        try {
+            const items = await OffreStage.findAll({
+                include: [{ association: OffreStage.associations.institution, include: [{ association: Institution.associations.utilisateur }] }]
+            });
+            return res.status(200).send(items);
+        }
         catch (error) { return res.status(500).json({ success: false, error: error }); }
+    }
+
+    static async toggleStatut(req: Request, res: Response): Promise<Response> {
+        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT || (req as any).utilisateurRole == RolesUtilisateur.ENSEIGNANT) {
+            return res.status(403).json({ success: false });
+        }
+        try {
+            const item = await OffreStage.findByPk(req.params.id);
+            if (item == null) return res.status(404).json({ success: false, message: "Non trouvé" });
+            const nouveauStatut = item.statut === 'ouvert' ? 'ferme' : 'ouvert';
+            await item.update({ statut: nouveauStatut });
+            return res.status(200).send(item);
+        } catch (error) { return res.status(500).json({ success: false, error: error }); }
     }
 
     static async get(req: Request, res: Response): Promise<Response> {
         try {
-            const item = await OffreStage.findByPk(req.params.id);
+            const item = await OffreStage.findByPk(req.params.id, {
+                include: [{ association: OffreStage.associations.institution, include: [{ association: Institution.associations.utilisateur }] }]
+            });
             if (item == null) return res.status(404).json({ success: false, message: "Non trouvé" });
             return res.status(200).send(item);
         } catch (error) { return res.status(500).json({ success: false, error: error }); }

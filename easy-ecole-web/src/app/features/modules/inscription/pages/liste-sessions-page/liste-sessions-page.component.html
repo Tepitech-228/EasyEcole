@@ -1,7 +1,7 @@
 <div class="flex justify-between items-start mb-8">
     <app-header-title title="Sessions" subtitle="Retrouver la liste de vos sessions"></app-header-title>
     <div class="flex justify-end items-center">
-        <app-custom-button (click)="openNouvelleSessionModal()" *ngIf="rolesValue.isInstitution" text="Nouvelle session"></app-custom-button>
+        <app-custom-button (click)="openNouvelleSessionModal()" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" text="Nouvelle session"></app-custom-button>
     </div>
 </div>
 
@@ -156,6 +156,97 @@
                 <textarea rows="5" id="description" formControlName="description"
                     placeholder="Saisir la description ici..."
                     class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
+            </div>
+
+            <!-- Frais d'inscription -->
+            <div class="col-span-full border-t border-gray-200 pt-6 mt-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-base font-semibold text-gray-700">Frais d'inscription</h3>
+                    <button type="button" (click)="ajouterNouveauFrais()"
+                        class="flex items-center gap-x-1 text-sm font-medium text-primary-600 hover:text-primary-500">
+                        <img src="assets/icons/add.svg" alt="add" class="w-4 h-4">
+                        Ajouter un frais
+                    </button>
+                </div>
+                <div *ngIf="nouveauxFrais.length == 0" class="text-sm text-gray-400 text-center py-4">Aucun frais ajouté</div>
+                <div *ngFor="let frais of nouveauxFrais; index as i" class="border border-gray-200 rounded-md p-4 mb-3">
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="text-sm font-medium text-gray-600">Frais #{{ i + 1 }}</span>
+                        <button type="button" (click)="supprimerNouveauFrais(i)" class="text-red-500 hover:text-red-700">
+                            <img src="assets/icons/delete.svg" alt="supprimer" class="w-4 h-4">
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-6 gap-x-4 gap-y-4">
+                        <div class="col-span-3">
+                            <span class="mb-1 block text-xs text-gray-400">Titre</span>
+                            <input type="text" [(ngModel)]="frais.titre" [ngModelOptions]="{standalone: true}" placeholder="Ex: Frais d'inscription"
+                                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        </div>
+                        <div class="col-span-3">
+                            <span class="mb-1 block text-xs text-gray-400">Montant (FCFA)</span>
+                            <input type="number" min="0" [(ngModel)]="frais.montant" [ngModelOptions]="{standalone: true}" placeholder="Ex: 50000"
+                                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        </div>
+                        <div class="col-span-6">
+                            <span class="mb-1 block text-xs text-gray-400">Description (facultative)</span>
+                            <input type="text" [(ngModel)]="frais.description" [ngModelOptions]="{standalone: true}" placeholder="Description du frais"
+                                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        </div>
+                        <div class="col-span-6">
+                            <span class="mb-1 block text-xs text-gray-400">Appliquer à chaque cours ?</span>
+                            <div class="flex items-center gap-x-4">
+                                <label class="flex items-center gap-x-2 text-sm text-gray-600">
+                                    <input type="radio" name="fraisDesCours-{{i}}" [value]="true" [(ngModel)]="frais.fraisDesCours" [ngModelOptions]="{standalone: true}"
+                                        class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                                    Oui
+                                </label>
+                                <label class="flex items-center gap-x-2 text-sm text-gray-600">
+                                    <input type="radio" name="fraisDesCours-{{i}}" [value]="false" [(ngModel)]="frais.fraisDesCours" [ngModelOptions]="{standalone: true}"
+                                        class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                                    Non
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dossiers à fournir -->
+            <div class="col-span-full border-t border-gray-200 pt-6 mt-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-base font-semibold text-gray-700">Dossiers à fournir</h3>
+                    <button type="button" (click)="ajouterNouveauDossier()"
+                        class="flex items-center gap-x-1 text-sm font-medium text-primary-600 hover:text-primary-500">
+                        <img src="assets/icons/add.svg" alt="add" class="w-4 h-4">
+                        Ajouter un dossier
+                    </button>
+                </div>
+                <div *ngIf="nouveauxDossiers.length == 0" class="text-sm text-gray-400 text-center py-4">Aucun dossier ajouté</div>
+                <div *ngFor="let dossier of nouveauxDossiers; index as i" class="border border-gray-200 rounded-md p-4 mb-3">
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="text-sm font-medium text-gray-600">Dossier #{{ i + 1 }}</span>
+                        <button type="button" (click)="supprimerNouveauDossier(i)" class="text-red-500 hover:text-red-700">
+                            <img src="assets/icons/delete.svg" alt="supprimer" class="w-4 h-4">
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-6 gap-x-4 gap-y-4">
+                        <div class="col-span-3">
+                            <span class="mb-1 block text-xs text-gray-400">Titre</span>
+                            <input type="text" [(ngModel)]="dossier.titre" [ngModelOptions]="{standalone: true}" placeholder="Ex: Relevé de notes"
+                                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        </div>
+                        <div class="col-span-3">
+                            <span class="mb-1 block text-xs text-gray-400">Taille max. (Ko)</span>
+                            <input type="number" min="0" [(ngModel)]="dossier.tailleMax" [ngModelOptions]="{standalone: true}" placeholder="Ex: 2048"
+                                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        </div>
+                        <div class="col-span-6">
+                            <span class="mb-1 block text-xs text-gray-400">Description (facultative)</span>
+                            <input type="text" [(ngModel)]="dossier.description" [ngModelOptions]="{standalone: true}" placeholder="Description du dossier"
+                                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </form>

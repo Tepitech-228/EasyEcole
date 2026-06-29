@@ -5,7 +5,7 @@ import { DossierEtudiant } from "./DossierEtudiant";
 
 export class Echeance extends Model<InferAttributes<Echeance>, InferCreationAttributes<Echeance>> {
   declare id: CreationOptional<string>
-  declare dossierEtudiantId: ForeignKey<DossierEtudiant['id']>
+  declare dossierEtudiantId: CreationOptional<ForeignKey<DossierEtudiant['id']>>
   declare type: 'inscription' | 'scolarite'
   declare numeroEcheance: number
   declare montant: number
@@ -29,6 +29,11 @@ Echeance.init({
     type: DataTypes.INTEGER.UNSIGNED,
     autoIncrement: true,
     primaryKey: true
+  },
+  dossierEtudiantId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true,
+    defaultValue: null
   },
   type: {
     type: DataTypes.ENUM('inscription', 'scolarite'),

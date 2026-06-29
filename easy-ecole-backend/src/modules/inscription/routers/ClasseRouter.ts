@@ -2,6 +2,7 @@ import express from "express"
 
 import ClasseController from "../controllers/ClasseController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
+import CheckPermission from "../../../core/middlewares/CheckPermission";
 
 const router = express.Router()
 
@@ -38,7 +39,7 @@ router
  *       201:
  *         description: Classe créée
  */
-    .post('/', [AuthInstitution], ClasseController.createClasse)
+    .post('/', [AuthInstitution, CheckPermission('action.inscription.classe.creer')], ClasseController.createClasse)
 
 /**
  * @openapi
@@ -84,7 +85,7 @@ router
  *       200:
  *         description: Classe mise à jour
  */
-    .put('/:id', [AuthInstitution], ClasseController.updateClasse)
+    .put('/:id', [AuthInstitution, CheckPermission('action.inscription.classe.modifier')], ClasseController.updateClasse)
 
 /**
  * @openapi
@@ -104,7 +105,7 @@ router
  *       200:
  *         description: Classe supprimée
  */
-    .delete('/:id', [AuthInstitution], ClasseController.deleteClasse)
+    .delete('/:id', [AuthInstitution, CheckPermission('action.inscription.classe.supprimer')], ClasseController.deleteClasse)
 
 /**
  * @openapi

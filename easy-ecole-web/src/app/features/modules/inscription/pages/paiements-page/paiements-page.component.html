@@ -80,6 +80,7 @@
                             <td *ngIf="!rolesValue.isCaissierBanque" class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2"
                                 [ngSwitch]="paiement.type">
                                 <app-custom-badge *ngSwitchCase="typesPaiement.EN_LIGNE" color="green" text="En ligne"></app-custom-badge>
+                                <app-custom-badge *ngSwitchCase="typesPaiement.BANCAIRE" color="blue" text="Bancaire"></app-custom-badge>
                                 <app-custom-badge *ngSwitchDefault text="En espèces"></app-custom-badge>
                             </td>
                             <td
@@ -202,6 +203,11 @@
             <div class="col-span-3">
                 <span class="mb-2 block text-sm text-gray-400">Montant</span>
                 <input type="number" min="0" id="montant" readonly [value]="selectedPaiement.montant" 
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-full" *ngIf="selectedPaiement.type == typesPaiement.BANCAIRE">
+                <span class="mb-2 block text-sm text-gray-400">Référence bancaire</span>
+                <input type="text" readonly [value]="selectedPaiement.referenceBancaire"
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
             </div>
             <div class="col-span-full">

@@ -1,0 +1,28 @@
+<div class="p-6">
+  <app-header-title title="Messagerie" [subtitle]="nonLus > 0 ? nonLus + ' message(s) non lu(s)' : 'Boîte de réception'"></app-header-title>
+
+  <div class="mt-6">
+    <app-custom-button text="Nouveau message" link="/communication/messagerie/nouveau"></app-custom-button>
+  </div>
+
+  <div class="bg-white rounded-lg shadow mt-4">
+    <div *ngFor="let msg of messages" class="p-4 border-b hover:bg-gray-50 cursor-pointer flex items-start gap-3" [routerLink]="['/communication/messagerie', msg.id]" (click)="marquerCommeLu(msg.id)">
+      <div class="mt-1.5">
+        <span class="block w-2.5 h-2.5 rounded-full" [class.bg-blue-600]="!msg.lu" [class.bg-gray-300]="msg.lu"></span>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex justify-between items-center">
+          <span class="text-sm font-medium truncate" [class.font-bold]="!msg.lu">{{ msg.expediteur }}</span>
+          <span class="text-xs text-gray-400 shrink-0">{{ msg.date | date:'dd/MM/yyyy' }}</span>
+        </div>
+        <p class="text-sm truncate" [class.font-semibold]="!msg.lu" [class.text-gray-900]="!msg.lu" [class.text-gray-500]="msg.lu">{{ msg.sujet }}</p>
+      </div>
+      <button (click)="supprimerMessage(msg.id, $event)" class="text-gray-400 hover:text-red-600 shrink-0" title="Supprimer">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+      </button>
+    </div>
+    <div *ngIf="messages.length === 0" class="p-8 text-center text-gray-500">
+      Aucun message
+    </div>
+  </div>
+</div>

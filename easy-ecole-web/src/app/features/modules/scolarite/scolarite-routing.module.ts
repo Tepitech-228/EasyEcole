@@ -5,6 +5,10 @@ import { DemandesDocumentsPageComponent } from './pages/demandes-documents-page/
 import { TraiterDemandesPageComponent } from './pages/traiter-demandes-page/traiter-demandes-page.component';
 import { MesReclamationsPageComponent } from './pages/mes-reclamations-page/mes-reclamations-page.component';
 import { TraiterReclamationsPageComponent } from './pages/traiter-reclamations-page/traiter-reclamations-page.component';
+import { RegistresPageComponent } from './pages/registres-page/registres-page.component';
+import { CalendrierPageComponent } from './pages/calendrier-page/calendrier-page.component';
+import { DisciplinePageComponent } from './pages/discipline-page/discipline-page.component';
+import { ConseilsPageComponent } from './pages/conseils-page/conseils-page.component';
 
 const routes: Routes = [
   {
@@ -25,6 +29,26 @@ const routes: Routes = [
   {
     path: 'traiter-reclamations',
     component: TraiterReclamationsPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'registres',
+    component: RegistresPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'calendrier',
+    component: CalendrierPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'discipline',
+    component: DisciplinePageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'conseils',
+    component: ConseilsPageComponent,
     pathMatch: 'full'
   },
   {

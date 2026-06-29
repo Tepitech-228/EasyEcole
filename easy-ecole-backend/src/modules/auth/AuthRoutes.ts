@@ -7,6 +7,9 @@ import Authenticate from "../../core/middlewares/Authenticate";
 import InstitutionRouter from "./routers/InstitutionRouter";
 import CaissierBanqueRouter from "./routers/CaissierBanqueRouter";
 import EnseignantRouter from "./routers/EnseignantRouter";
+import ComiteOrientationRouter from "./routers/ComiteOrientationRouter";
+import PermissionRouter from "./routers/PermissionRouter";
+import RoleRouter from "./routers/RoleRouter";
 
 const router = express.Router();
 
@@ -17,5 +20,8 @@ router
     .use('/institutions', [Authenticate], InstitutionRouter)
     .use('/caissiersBanque', [Authenticate], CaissierBanqueRouter)
     .use('/enseignants', [Authenticate], EnseignantRouter)
+    .use('/comite-orientation', [Authenticate], ComiteOrientationRouter)
+    .use('/permissions', [Authenticate], PermissionRouter)
+    .use('/roles', [Authenticate], RoleRouter)
 
 export default router;

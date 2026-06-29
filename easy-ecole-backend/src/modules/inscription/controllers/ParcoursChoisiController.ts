@@ -39,7 +39,10 @@ export default class ParcoursChoisiController {
 
     static async createParcoursChoisi(req: Request, res: Response): Promise<Response | null> {
 
-        if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
+        if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
+            // Allow admin to create parcours choices for learners
+        }
+        else if ((req as any).utilisateurRole != RolesUtilisateur.APPRENANT) {
             return res.status(403).json({ success: false })
         }
 

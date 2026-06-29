@@ -12,6 +12,7 @@ import { DossierInscription } from "./DossierInscription";
 import { DemandeInscriptionDossier } from "./DemandeInscriptionDossier";
 import { CursusApprenant } from "./CursusApprenant";
 import { DemandeInscriptionCours } from "./DemandeInscriptionCours";
+import { PreInscription } from "./PreInscription";
 
 export class DemandeInscription extends Model<InferAttributes<DemandeInscription>, InferCreationAttributes<DemandeInscription>> {
   declare id: CreationOptional<string>
@@ -25,6 +26,7 @@ export class DemandeInscription extends Model<InferAttributes<DemandeInscription
   declare utilisateurId: ForeignKey<Utilisateur['id']>
   declare utilisateur?: NonAttribute<Utilisateur>
   declare reponseInscription?: NonAttribute<ReponseInscription>
+  declare preInscription?: NonAttribute<PreInscription>
   declare parcoursChoisis?: ParcoursChoisi[]
   declare cours?: Cours[]
   declare coursChoisis?: DemandeInscriptionCours[]
@@ -38,6 +40,7 @@ export class DemandeInscription extends Model<InferAttributes<DemandeInscription
   declare static associations: {
     utilisateur: Association<DemandeInscription, Utilisateur>
     reponseInscription: Association<DemandeInscription, ReponseInscription>
+    preInscription: Association<DemandeInscription, PreInscription>
     parcoursChoisis: Association<DemandeInscription, ParcoursChoisi>
     etapeInscription: Association<DemandeInscription, EtapeInscription>
     session: Association<DemandeInscription, Session>

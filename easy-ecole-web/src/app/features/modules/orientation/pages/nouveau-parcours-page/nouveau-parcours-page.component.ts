@@ -74,7 +74,7 @@ export class NouveauParcoursPageComponent extends BaseComponentClass implements 
     private deboucheParcoursService: DeboucheParcoursService,
   ) {
     super()
-    if (!this.rolesValue.isInstitution) {
+    if (!this.rolesValue.isInstitution && !this.rolesValue.isAdmin) {
       this.router.navigate(['/orientation/parcours'])
     }
     else {

@@ -3,6 +3,7 @@ import multer from "multer"
 
 import ParcoursController from "../controllers/ParcoursController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
+import CheckPermission from "../../../core/middlewares/CheckPermission";
 
 const router = express.Router()
 const upload = multer({ dest: "public/orientation/parcours/" });
@@ -49,7 +50,7 @@ router
      *       201:
      *         description: Parcours créé
      */
-    .post('/', [AuthInstitution, upload.fields([{name: 'image', maxCount: 1}, {name: 'video', maxCount: 1}])], ParcoursController.createParcours)
+    .post('/', [AuthInstitution, CheckPermission('action.orientation.parcours.creer'), upload.fields([{name: 'image', maxCount: 1}, {name: 'video', maxCount: 1}])], ParcoursController.createParcours)
     /**
      * @openapi
      * /orientation/parcours/{id}:
@@ -101,7 +102,7 @@ router
      *       200:
      *         description: Parcours mis à jour
      */
-    .put('/:id', [AuthInstitution, upload.fields([{name: 'image', maxCount: 1}, {name: 'video', maxCount: 1}])], ParcoursController.updateParcours)
+    .put('/:id', [AuthInstitution, CheckPermission('action.orientation.parcours.modifier'), upload.fields([{name: 'image', maxCount: 1}, {name: 'video', maxCount: 1}])], ParcoursController.updateParcours)
     /**
      * @openapi
      * /orientation/parcours/{id}:
@@ -119,7 +120,7 @@ router
      *       200:
      *         description: Parcours supprimé
      */
-    .delete('/:id', [AuthInstitution], ParcoursController.deleteParcours)
+    .delete('/:id', [AuthInstitution, CheckPermission('action.orientation.parcours.supprimer')], ParcoursController.deleteParcours)
     /**
      * @openapi
      * /orientation/parcours/statistics/count:

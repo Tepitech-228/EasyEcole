@@ -1,0 +1,70 @@
+<app-custom-alert [show]="success" title="Succès" color="green">Configuration enregistrée</app-custom-alert>
+
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Configuration système" subtitle="Paramètres généraux de l'application"></app-header-title>
+</div>
+
+<div class="bg-white rounded-lg shadow border border-gray-100 p-8">
+    <form [formGroup]="form">
+        <h3 class="text-lg font-medium text-gray-900 mb-6">Général</h3>
+        <div class="grid grid-cols-1 gap-6 max-w-lg mb-8">
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-700">Mode maintenance</span>
+                <input type="checkbox" formControlName="maintenance" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-700">Inscriptions libres</span>
+                <input type="checkbox" formControlName="inscriptionLibre" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Validation des inscriptions</label>
+                <select formControlName="validationInscription" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    <option value="auto">Automatique</option>
+                    <option value="manuelle">Manuelle</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Nombre max d'étudiants</label>
+                <input type="number" formControlName="nbMaxEtudiants" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+            </div>
+        </div>
+
+        <h3 class="text-lg font-medium text-gray-900 mb-6">Sécurité</h3>
+        <div class="grid grid-cols-1 gap-6 max-w-lg mb-8">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Niveau de sécurité mot de passe</label>
+                <select formControlName="securiteMdp" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    <option value="faible">Faible (6 car.)</option>
+                    <option value="moyen">Moyen (8 car.)</option>
+                    <option value="fort">Fort (12 car. + spéciaux)</option>
+                </select>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Timeout session (min)</label>
+                    <input type="number" formControlName="sessionTimeout" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Tentatives max</label>
+                    <input type="number" formControlName="tentativesMax" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                </div>
+            </div>
+        </div>
+
+        <h3 class="text-lg font-medium text-gray-900 mb-6">Modules actifs</h3>
+        <div class="grid grid-cols-1 gap-4 max-w-lg mb-8">
+            <div *ngFor="let item of [
+                {key:'stockActif', label:'Gestion des stocks'},
+                {key:'immobilisationsActif', label:'Immobilisations'},
+                {key:'pointageActif', label:'Pointage'},
+            ]" class="flex items-center justify-between">
+                <span class="text-sm text-gray-700">{{ item.label }}</span>
+                <input type="checkbox" [formControlName]="item.key" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+            </div>
+        </div>
+
+        <div class="flex justify-end mt-6">
+            <app-custom-button (click)="save()" [text]="saving ? 'Enregistrement...' : 'Enregistrer'" [disabled]="saving"></app-custom-button>
+        </div>
+    </form>
+</div>

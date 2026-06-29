@@ -1,51 +1,152 @@
-<div class="flex justify-between items-start gap-x-8 mb-8">
-    <app-header-title title="Offres de stage" subtitle="Consulter la liste des offres de stage disponibles"></app-header-title>
-    <div class="flex justify-end items-center">
-        <app-custom-button *ngIf="rolesValue.isInstitution" text="Nouvelle offre" link="/stages/offres/nouveau"></app-custom-button>
-    </div>
-</div>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <app-header-title
+    title="Offres de stage"
+    subtitle="Consultez et gérez les offres de stage disponibles">
+  </app-header-title>
 
-<div class="flex flex-col">
-    <div class="overflow-x-auto">
-        <div class="py-2 inline-block min-w-full">
-            <div class="overflow-hidden">
-                <table class="min-w-full">
-                    <thead class="bg-gray-100 border-b">
-                        <tr>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">#</div></th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Titre</div></th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Date début</div></th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Statut</div></th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right"><div class="px-2">Action</div></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngIf="offres.length==0" class="bg-white p-0 border-b transition duration-300 ease-in-out">
-                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap" colspan="5">Aucune offre</td>
-                        </tr>
-                        <tr *ngFor="let offre of offres; index as index" class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
-                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ index + 1 }}</div>
-                            </td>
-                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ offre.titre }}</div>
-                            </td>
-                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ offre.dateDebut | date: 'dd/MM/YYYY' }}</div>
-                            </td>
-                            <td class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2" [ngSwitch]="offre.statut">
-                                <app-custom-badge *ngSwitchCase="'ouvert'" color="green" text="Ouvert"></app-custom-badge>
-                                <app-custom-badge *ngSwitchDefault color="red" text="Fermé"></app-custom-badge>
-                            </td>
-                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
-                                    <span><app-custom-button [link]="'/stages/offres/' + offre.id" text="Détails"></app-custom-button></span>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+  <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total</p>
+          <p class="mt-1 text-2xl font-bold text-gray-900">{{ offres.length }}</p>
         </div>
+        <div class="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        </div>
+      </div>
     </div>
+    <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Ouvertes</p>
+          <p class="mt-1 text-2xl font-bold text-green-700">{{ nbOuvertes }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-xl bg-green-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+      </div>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Fermées</p>
+          <p class="mt-1 text-2xl font-bold text-red-700">{{ nbFermees }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div class="flex flex-wrap gap-3">
+        <select [(ngModel)]="filtreStatut" (change)="resetFiltres()" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+          <option value="">Tous les statuts</option>
+          <option value="ouvert">Ouvert</option>
+          <option value="ferme">Fermé</option>
+        </select>
+        <button *ngIf="filtreStatut" (click)="resetFiltres()" class="text-sm px-3 py-2 text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200">
+          Réinitialiser
+        </button>
+      </div>
+      <button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="ouvrirFormulaire()" class="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors shadow-sm">
+        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Nouvelle offre
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="showForm" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Nouvelle offre de stage</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Titre *</label>
+        <input [(ngModel)]="formData.titre" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="Ex: Stage développeur web" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Date début *</label>
+        <input [(ngModel)]="formData.dateDebut" type="date" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Date fin *</label>
+        <input [(ngModel)]="formData.dateFin" type="date" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Lieu</label>
+        <input [(ngModel)]="formData.lieu" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="Ex: Abidjan" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Nombre de places</label>
+        <input [(ngModel)]="formData.nombrePlaces" type="number" min="1" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" />
+      </div>
+    </div>
+    <div class="mt-4">
+      <label class="block text-xs font-medium text-gray-500 mb-1">Description</label>
+      <textarea [(ngModel)]="formData.description" rows="3" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="Description de l'offre..."></textarea>
+    </div>
+    <div class="flex justify-end gap-3 mt-4">
+      <button (click)="fermerFormulaire()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Annuler</button>
+      <button (click)="creerOffre()" class="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors">Créer</button>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-100">
+        <thead>
+          <tr class="bg-gray-50/50">
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Titre</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Lieu</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Période</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Places</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Statut</th>
+            <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngFor="let o of offresFiltrees; trackBy: trackByFn" class="hover:bg-gray-50/50 transition-colors">
+            <td class="px-5 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ o.titre }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ o.lieu || '-' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ o.dateDebut | date:'dd/MM/yyyy' }} - {{ o.dateFin | date:'dd/MM/yyyy' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-center text-sm text-gray-700">{{ o.nombrePlaces || '-' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-center">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" [ngClass]="getStatutClass(o.statut)">
+                {{ getStatutLabel(o.statut) }}
+              </span>
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap text-right">
+              <div class="flex items-center justify-end gap-2">
+                <a [routerLink]="['/stages/offres', o.id]"
+                   class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                  Détails
+                  <svg class="w-3.5 h-3.5 ml-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </a>
+                <button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="toggleStatut(o)"
+                        class="inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors"
+                        [ngClass]="o.statut === 'ouvert' ? 'text-amber-700 bg-amber-50 hover:bg-amber-100' : 'text-green-700 bg-green-50 hover:bg-green-100'">
+                  <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                  {{ o.statut === 'ouvert' ? 'Fermer' : 'Ouvrir' }}
+                </button>
+                <button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="supprimer(o.id!)"
+                        class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div *ngIf="loading" class="px-5 py-8 text-center">
+      <div class="inline-block h-6 w-6 animate-spin rounded-full border-2 border-red-600 border-t-transparent"></div>
+      <p class="mt-2 text-sm text-gray-500">Chargement...</p>
+    </div>
+    <div *ngIf="!loading && offresFiltrees.length === 0" class="px-5 py-12 text-center">
+      <svg class="mx-auto h-12 w-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+      <p class="mt-4 text-sm text-gray-500">Aucune offre de stage trouvée</p>
+    </div>
+  </div>
 </div>

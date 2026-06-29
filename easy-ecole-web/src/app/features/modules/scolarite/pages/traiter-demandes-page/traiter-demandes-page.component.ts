@@ -1,68 +1,145 @@
 import { Component, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { environment } from 'src/environments/environment';
+import { DemandeDocument } from 'src/app/data/modules/scolarite/models/DemandeDocument.model';
+import { DemandeDocumentService } from 'src/app/data/modules/scolarite/services/demande-document.service';
+import { BaseComponentClass } from 'src/app/core/base-component-class';
 
 @Component({
   selector: 'app-traiter-demandes-page',
-  template: `
-    <div class="p-6">
-      <h1 class="text-2xl font-bold mb-6">Traiter les demandes de documents</h1>
-
-      <div class="bg-white rounded-lg shadow">
-        <div class="p-4 border-b">
-          <h2 class="text-lg font-semibold">Demandes en attente</h2>
-        </div>
-        <div *ngFor="let demande of demandes" class="p-4 border-b hover:bg-gray-50">
-          <div class="flex justify-between items-start">
-            <div class="flex-1">
-              <p class="font-medium">{{ demande.typeDocument?.libelle }}</p>
-              <p class="text-sm text-gray-600">Étudiant #{{ demande.etudiantId }}</p>
-              <p class="text-sm text-gray-500">Date: {{ demande.date | date:'short' }}</p>
-
-              <div class="mt-3 flex gap-2" *ngIf="demande.statut === 'soumise'">
-                <button (click)="traiter(demande.id, 'validee')"
-                  class="bg-green-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-green-700">
-                  Valider
-                </button>
-                <button (click)="traiter(demande.id, 'rejetee')"
-                  class="bg-red-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-700">
-                  Rejeter
-                </button>
-              </div>
-            </div>
-            <span class="px-2 py-1 text-xs rounded-full ml-4"
-              [ngClass]="{
-                'bg-yellow-100 text-yellow-800': demande.statut === 'soumise',
-                'bg-blue-100 text-blue-800': demande.statut === 'validee',
-                'bg-red-100 text-red-800': demande.statut === 'rejetee',
-                'bg-green-100 text-green-800': demande.statut === 'delivree'
-              }">
-              {{ demande.statut }}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  `
+  templateUrl: './traiter-demandes-page.component.html',
+  styleUrls: ['./traiter-demandes-page.component.scss']
 })
-export class TraiterDemandesPageComponent implements OnInit {
-  demandes: any[] = [];
+export class TraiterDemandesPageComponent extends BaseComponentClass implements OnInit {
+  demandes: DemandeDocument[] = [];
+  _demandes: DemandeDocument[] = [];
+  searchQuery: string = '';
+  filterStatut: string = 'undefined';
+  loading: boolean = false;
+  traiterLoading: boolean = false;
+  errorMessage: string = '';
+  successMessage: string = '';
+  showRejetModal: boolean = false;
+  demandeToRejeter: DemandeDocument | null = null;
+  motifRejet: string = '';
 
-  constructor(private http: HttpClient) {}
+  currentPage: number = 1;
+  pageSize: number = 10;
+
+  constructor(private demandeService: DemandeDocumentService) {
+    super();
+  }
 
   ngOnInit() {
     this.loadDemandes();
   }
 
+  get paginatedDemandes(): DemandeDocument[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this._demandes.slice(start, start + this.pageSize);
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this._demandes.length / this.pageSize) || 1;
+  }
+
   loadDemandes() {
-    this.http.get(`${environment.API_URL}/scolarite/demandesDocument`).subscribe((data: any) => {
-      this.demandes = data;
+    this.loading = true;
+    this.errorMessage = '';
+    this.demandeService.getAll().subscribe({
+      next: (data) => {
+        this.demandes = data;
+        this._demandes = [...this.demandes];
+        this.loading = false;
+      },
+      error: () => {
+        this.errorMessage = 'Erreur lors du chargement des demandes';
+        this.loading = false;
+      }
     });
   }
 
-  traiter(id: number, statut: string) {
-    this.http.put(`${environment.API_URL}/scolarite/demandesDocument/${id}`, { statut }).subscribe(() => {
-      this.loadDemandes();
+  traiter(demande: DemandeDocument, statut: string) {
+    if (!demande.id) return;
+    this.traiterLoading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.demandeService.updateStatus(demande.id, statut).subscribe({
+      next: () => {
+        this.successMessage = `Demande ${statut === 'validee' ? 'validée' : 'marquée comme délivrée'} avec succès`;
+        this.traiterLoading = false;
+        this.loadDemandes();
+      },
+      error: () => {
+        this.errorMessage = 'Erreur lors du traitement';
+        this.traiterLoading = false;
+      }
     });
+  }
+
+  confirmRejet(demande: DemandeDocument) {
+    this.demandeToRejeter = demande;
+    this.motifRejet = '';
+    this.showRejetModal = true;
+  }
+
+  rejeter() {
+    if (!this.demandeToRejeter?.id) return;
+    this.traiterLoading = true;
+    this.demandeService.updateStatus(this.demandeToRejeter.id, 'rejetee').subscribe({
+      next: () => {
+        this.showRejetModal = false;
+        this.demandeToRejeter = null;
+        this.motifRejet = '';
+        this.successMessage = 'Demande rejetée';
+        this.traiterLoading = false;
+        this.loadDemandes();
+      },
+      error: () => {
+        this.errorMessage = 'Erreur lors du rejet';
+        this.traiterLoading = false;
+      }
+    });
+  }
+
+  filtrer(): void {
+    this.currentPage = 1;
+    this._demandes = this.demandes.filter(d => {
+      const matchSearch = !this.searchQuery ||
+        d.etudiant?.nom?.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        `${d.etudiantId}`.includes(this.searchQuery);
+      const matchStatut = this.filterStatut === 'undefined' || d.statut === this.filterStatut;
+      return matchSearch && matchStatut;
+    });
+  }
+
+  statutLabel(statut: string): string {
+    switch (statut) {
+      case 'soumise': return 'Soumise';
+      case 'validee': return 'Validée';
+      case 'rejetee': return 'Rejetée';
+      case 'delivree': return 'Délivrée';
+      default: return statut;
+    }
+  }
+
+  statutColor(statut: string): string {
+    switch (statut) {
+      case 'soumise': return 'yellow';
+      case 'validee': return 'blue';
+      case 'rejetee': return 'red';
+      case 'delivree': return 'green';
+      default: return 'gray';
+    }
+  }
+
+  getStatutCount(statut: string): number {
+    return this.demandes.filter(d => d.statut === statut).length;
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages) this.currentPage++;
+  }
+
+  prevPage(): void {
+    if (this.currentPage > 1) this.currentPage--;
   }
 }

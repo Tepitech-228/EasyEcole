@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Router } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { AnneesParcours } from 'src/app/data/enums/AnneesParcours';
 import { EtatsCoursChoisi } from 'src/app/data/enums/EtatsCoursChoisi';
@@ -36,7 +37,20 @@ export class CoursSectionComponent implements OnInit {
 
   constructor(
     private coursService: CoursService,
-    private demandeInscriptionService: DemandeInscriptionService) {
+    private demandeInscriptionService: DemandeInscriptionService,
+    private router: Router) {
+  }
+
+  choisirCoursFacultatifs(): void {
+    this.router.navigate(['/inscription/demandes/' + this.demandeId + '/choix-cours'])
+  }
+
+  get coursFacultatifs(): Cours[] {
+    return this.cours.filter(c => !c.estObligatoire)
+  }
+
+  get coursObligatoires(): Cours[] {
+    return this.cours.filter(c => c.estObligatoire)
   }
 
   ngOnInit(): void {
@@ -97,23 +111,36 @@ export class CoursSectionComponent implements OnInit {
   }
 
   validerCoursChoisis(): void {
+    let completed = 0
+    let total = 0
     for (let key in this.choixCours) {
-      console.log(key + ': ' + this.choixCours[key])
       if (this.choixCours[key]) {
+        total++
         let demandeInscriptionCours: DemandeInscriptionCours = new DemandeInscriptionCours()
         demandeInscriptionCours.coursId = key
         this.demandeInscriptionService.createCours(this.demandeId, demandeInscriptionCours).subscribe({
-          next: (res) => {
-
+          next: () => {
+            completed++
+            if (completed >= total) {
+              this.showValidationModal = false
+              this.nextStep.emit()
+            }
           },
           error: (err) => {
             console.log(err)
+            completed++
+            if (completed >= total) {
+              this.showValidationModal = false
+              this.nextStep.emit()
+            }
           }
         })
       }
     }
-
-    window.location.reload()
+    if (total === 0) {
+      this.showValidationModal = false
+      this.nextStep.emit()
+    }
   }
 
   updateCoursChoisi(coursId: string, etat: EtatsCoursChoisi): void {

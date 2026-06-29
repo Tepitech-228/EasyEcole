@@ -3,6 +3,7 @@ import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { Echeance } from "./Echeance";
+import { CoursParticipant } from "./CoursParticipant";
 
 export class DossierEtudiant extends Model<InferAttributes<DossierEtudiant>, InferCreationAttributes<DossierEtudiant>> {
   declare id: CreationOptional<string>
@@ -18,6 +19,7 @@ export class DossierEtudiant extends Model<InferAttributes<DossierEtudiant>, Inf
   declare demarrageParcours: Date
   declare utilisateur?: NonAttribute<Utilisateur>
   declare echeances?: NonAttribute<Echeance[]>
+  declare coursParticipants?: NonAttribute<CoursParticipant[]>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -25,6 +27,7 @@ export class DossierEtudiant extends Model<InferAttributes<DossierEtudiant>, Inf
   declare static associations: {
     utilisateur: Association<DossierEtudiant, Utilisateur>
     echeances: Association<DossierEtudiant, Echeance>
+    coursParticipants: Association<DossierEtudiant, CoursParticipant>
   };
 }
 

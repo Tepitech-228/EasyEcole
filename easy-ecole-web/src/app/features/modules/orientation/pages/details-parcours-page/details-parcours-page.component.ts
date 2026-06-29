@@ -57,7 +57,7 @@ export class DetailsParcoursPageComponent extends BaseComponentClass implements 
   }
 
   getDuree(): string {
-    return Parcours.getDuree(this.parcours!.dureeDeFormation!)
+    return Parcours.getDuree(this.parcours?.dureeDeFormation)
   }
 
   getContenu(): SafeHtml | null {

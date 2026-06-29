@@ -1,0 +1,54 @@
+<app-custom-alert [show]="success" title="Succès" color="green">Paramètres de notification enregistrés</app-custom-alert>
+
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Notifications" subtitle="Configurer les notifications envoyées"></app-header-title>
+</div>
+
+<div class="bg-white rounded-lg shadow border border-gray-100 p-8">
+    <form [formGroup]="form">
+        <app-parametres-section title="Notifications Email" subtitle="Notifications envoyées par email">
+            <div class="space-y-4">
+                <div *ngFor="let item of [
+                    {key:'emailInscription', label:'Inscription d\'un étudiant'},
+                    {key:'emailPaiement', label:'Confirmation de paiement'},
+                    {key:'emailAbsence', label:'Signalement d\'absence'},
+                    {key:'emailNotes', label:'Publication des notes'},
+                    {key:'emailBulletins', label:'Publication des bulletins'}
+                ]" class="flex items-center justify-between">
+                    <span class="text-sm text-gray-700">{{ item.label }}</span>
+                    <input type="checkbox" [formControlName]="item.key" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                </div>
+            </div>
+        </app-parametres-section>
+
+        <app-parametres-section title="Notifications SMS" subtitle="Notifications envoyées par SMS">
+            <div class="space-y-4">
+                <div *ngFor="let item of [
+                    {key:'smsInscription', label:'Inscription d\'un étudiant'},
+                    {key:'smsPaiement', label:'Confirmation de paiement'},
+                    {key:'smsAbsence', label:'Signalement d\'absence'},
+                    {key:'smsNotes', label:'Publication des notes'}
+                ]" class="flex items-center justify-between">
+                    <span class="text-sm text-gray-700">{{ item.label }}</span>
+                    <input type="checkbox" [formControlName]="item.key" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                </div>
+            </div>
+        </app-parametres-section>
+
+        <app-parametres-section title="Rappels automatiques" subtitle="Notifications automatiques programmées">
+            <div class="space-y-4">
+                <div *ngFor="let item of [
+                    {key:'rappelPaiement', label:'Rappel de paiement avant échéance'},
+                    {key:'rappelAbsence', label:'Rappel d\'absence non justifiée'}
+                ]" class="flex items-center justify-between">
+                    <span class="text-sm text-gray-700">{{ item.label }}</span>
+                    <input type="checkbox" [formControlName]="item.key" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                </div>
+            </div>
+        </app-parametres-section>
+
+        <div class="flex justify-end mt-6">
+            <app-custom-button (click)="save()" [text]="saving ? 'Enregistrement...' : 'Enregistrer'" [disabled]="saving"></app-custom-button>
+        </div>
+    </form>
+</div>

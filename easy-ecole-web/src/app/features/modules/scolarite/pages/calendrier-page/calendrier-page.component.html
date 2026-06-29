@@ -1,0 +1,131 @@
+<div class="page-container">
+  <app-header-title title="Calendrier académique" subtitle="Dates importantes de l'année scolaire"></app-header-title>
+
+  <app-custom-alert *ngIf="errorMessage" [show]="true" [title]="errorMessage" type="danger" [inline]="true"></app-custom-alert>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-icon text-blue-600 bg-blue-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ evenements.length }}</p>
+        <p class="stat-label">Total événements</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon text-red-600 bg-red-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ getTypeCount('Examen') }}</p>
+        <p class="stat-label">Examens</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon text-green-600 bg-green-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ getTypeCount('Rentrée') }}</p>
+        <p class="stat-label">Rentrées</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon text-blue-600 bg-blue-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ getTypeCount('Vacances') }}</p>
+        <p class="stat-label">Vacances</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-6" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin">
+    <div class="card-header">
+      <h2 class="card-title">Ajouter un événement</h2>
+      <p class="card-subtitle">Créer un nouvel événement au calendrier académique</p>
+    </div>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Titre</label>
+          <input type="text" [(ngModel)]="newEvent.titre" class="form-input" placeholder="Titre de l'événement">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input type="date" [(ngModel)]="newEvent.date" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Type</label>
+          <select [(ngModel)]="newEvent.type" class="form-select">
+            <option value="" disabled>Sélectionner un type</option>
+            <option value="Examen">Examen</option>
+            <option value="Vacances">Vacances</option>
+            <option value="Rentrée">Rentrée</option>
+            <option value="Conseil">Conseil</option>
+            <option value="Fin">Fin</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea [(ngModel)]="newEvent.description" rows="3" class="form-textarea" placeholder="Description..."></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <app-custom-button (click)="createEvent()" text="Ajouter" color="primary" [disabled]="!newEvent.titre || !newEvent.date || addingEvent"></app-custom-button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header border-b">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 class="card-title">Événements</h2>
+          <p class="card-subtitle">Tous les événements du calendrier académique</p>
+        </div>
+        <div class="flex gap-4 items-center">
+          <select [(ngModel)]="filterType" (change)="filtrer()" class="form-select-sm">
+            <option value="undefined">Tous les types</option>
+            <option *ngFor="let t of typeList" [value]="t">{{ t }}</option>
+          </select>
+          <app-custom-button *ngIf="filterType !== 'undefined'" (click)="reinitialiserFiltres()" text="Réinitialiser" color="gray" [outlined]="true"></app-custom-button>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div *ngIf="loading" class="loading-shimmer">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div *ngFor="let _ of [1,2,3]" class="h-32 bg-gray-100 rounded-lg animate-pulse"></div>
+        </div>
+      </div>
+      <div *ngIf="!loading && _evenements.length === 0" class="empty-state">
+        <img class="h-40" src="assets/images/selection-pana.svg" alt="no data">
+        <p class="text-gray-500">Aucun événement trouvé</p>
+      </div>
+      <div *ngIf="!loading && _evenements.length > 0" class="events-grid">
+        <div *ngFor="let ev of _evenements" class="event-card"
+          [class.border-red-500]="ev.type === 'Examen'"
+          [class.border-blue-500]="ev.type === 'Vacances'"
+          [class.border-green-500]="ev.type === 'Rentrée'"
+          [class.border-orange-500]="ev.type === 'Conseil'"
+          [class.border-gray-500]="ev.type === 'Fin'">
+          <div class="event-card-header">
+            <h3 class="event-card-title">{{ ev.titre }}</h3>
+            <app-custom-badge [text]="ev.type" [color]="getColor(ev.type)"></app-custom-badge>
+          </div>
+          <p class="event-card-date">{{ ev.date | date:'EEEE d MMMM yyyy' }}</p>
+          <p class="event-card-desc">{{ ev.description }}</p>
+          <button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="deleteEvent(ev)"
+            class="event-card-delete" title="Supprimer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

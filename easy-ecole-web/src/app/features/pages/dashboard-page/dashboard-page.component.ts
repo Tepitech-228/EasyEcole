@@ -4,6 +4,8 @@ import { Router } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { EtatsSession } from 'src/app/data/enums/EtatsSession';
 import { Utilisateur } from 'src/app/data/modules/auth/models/Utilisateur.model';
+import { ApprenantService } from 'src/app/data/modules/auth/services/apprenant.service';
+import { EnseignantService } from 'src/app/data/modules/auth/services/enseignant.service';
 import { UtilisateurService } from 'src/app/data/modules/auth/services/utilisateur.service';
 import { DemandeInscription } from 'src/app/data/modules/inscription/models/DemandeInscription.model';
 import { Session } from 'src/app/data/modules/inscription/models/Session.model';
@@ -29,14 +31,41 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
   readonly PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS
   readonly QR_CODES_PATH: string = environment.QR_CODES_PATH
 
+  totalUtilisateurs: number = 0
+  totalSessions: number = 0
+  totalApprenants: number = 0
+  totalEnseignants: number = 0
+
   constructor(
     private router: Router,
     private sessionService: SessionService,
     private demandeInscriptionService: DemandeInscriptionService,
-    private utilisateurService: UtilisateurService) {
+    private utilisateurService: UtilisateurService,
+    private apprenantService: ApprenantService,
+    private enseignantService: EnseignantService) {
     super()
     this.getSessions()
     this.getUtilisateur()
+    this.getStats()
+  }
+
+  private getStats(): void {
+    this.utilisateurService.getCount().subscribe({
+      next: (res) => this.totalUtilisateurs = res.count,
+      error: (err) => console.log(err)
+    })
+    this.sessionService.getCount().subscribe({
+      next: (res) => this.totalSessions = res.count,
+      error: (err) => console.log(err)
+    })
+    this.apprenantService.getCount().subscribe({
+      next: (res) => this.totalApprenants = res.count,
+      error: (err) => console.log(err)
+    })
+    this.enseignantService.getCount().subscribe({
+      next: (res) => this.totalEnseignants = res.count,
+      error: (err) => console.log(err)
+    })
   }
 
   ngOnInit(): void {

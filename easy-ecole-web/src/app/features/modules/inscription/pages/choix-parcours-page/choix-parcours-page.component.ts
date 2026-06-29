@@ -42,7 +42,7 @@ export class ChoixParcoursPageComponent extends BaseComponentClass implements On
   parcours?: Parcours[]
 
   parcoursChoisis: ParcoursChoisi[] = []
-  readonly MIN_PARCOURS_CHOISIS: number = 2
+  readonly MIN_PARCOURS_CHOISIS: number = 1
   readonly MAX_PARCOURS_CHOISIS: number = 3
 
   constructor(

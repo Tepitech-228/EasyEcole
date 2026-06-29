@@ -20,7 +20,8 @@ export class Parcours {
   declare readonly createdAt?: Date
   declare readonly updatedAt?: Date
 
-  public static getDuree(dureeDeFormation: string): string {
+  public static getDuree(dureeDeFormation?: string | null): string {
+    if (!dureeDeFormation) return ''
     const [duree, unit] = dureeDeFormation.split('/')
     let unitString: string = ''
     switch (unit) {

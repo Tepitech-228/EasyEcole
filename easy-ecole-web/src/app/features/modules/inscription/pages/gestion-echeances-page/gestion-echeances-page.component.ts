@@ -147,7 +147,7 @@ export class GestionEcheancesPageComponent extends BaseComponentClass implements
     }
   }
 
-  getStatutColor(statut: string): string {
+  getStatutColor(statut?: string): string {
     switch (statut) {
       case 'paye': return 'green'
       case 'en_retard': return 'red'

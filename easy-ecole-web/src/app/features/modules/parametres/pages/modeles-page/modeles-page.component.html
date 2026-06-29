@@ -1,0 +1,30 @@
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Modèles" subtitle="Modèles d'emails et SMS"></app-header-title>
+</div>
+
+<div class="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sujet</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dernière modification</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            <tr *ngFor="let m of modeles" class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ m.nom }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <app-custom-badge [text]="m.type" [color]="m.type == 'Email' ? 'blue' : 'yellow'"></app-custom-badge>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ m.sujet }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ m.modifieLe }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                    <a [routerLink]="[m.id]" class="text-indigo-600 hover:text-indigo-900">Modifier</a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>

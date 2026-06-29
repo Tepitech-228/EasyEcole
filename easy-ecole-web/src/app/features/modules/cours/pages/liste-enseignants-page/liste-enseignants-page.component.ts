@@ -33,7 +33,7 @@ export class ListeEnseignantsPageComponent extends BaseComponentClass implements
     private authService: AuthService,
     private enseignantService: EnseignantService) {
     super()
-    if (!this.rolesValue.isInstitution) {
+    if (!this.rolesValue.isInstitution && !this.rolesValue.isAdmin) {
       this.router.navigate(['/'])
     }
     else {

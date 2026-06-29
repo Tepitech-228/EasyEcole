@@ -1,0 +1,130 @@
+<div class="page-container">
+  <app-header-title title="Traiter les demandes" subtitle="Gérer et traiter les demandes de documents des étudiants"></app-header-title>
+
+  <app-custom-alert *ngIf="errorMessage" [show]="true" [title]="errorMessage" type="danger" [inline]="true"></app-custom-alert>
+  <app-custom-alert *ngIf="successMessage" [show]="true" [title]="successMessage" type="success" [inline]="true"></app-custom-alert>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-icon text-yellow-600 bg-yellow-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ getStatutCount('soumise') }}</p>
+        <p class="stat-label">En attente</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon text-blue-600 bg-blue-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ getStatutCount('validee') }}</p>
+        <p class="stat-label">Validées</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon text-green-600 bg-green-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ getStatutCount('delivree') }}</p>
+        <p class="stat-label">Délivrées</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon text-red-600 bg-red-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ getStatutCount('rejetee') }}</p>
+        <p class="stat-label">Rejetées</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header border-b">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 class="card-title">Demandes de documents</h2>
+          <p class="card-subtitle">Toutes les demandes soumises par les étudiants</p>
+        </div>
+        <div class="flex gap-4 items-center">
+          <input type="text" [(ngModel)]="searchQuery" (keyup)="filtrer()" placeholder="Rechercher étudiant..."
+            class="form-input-sm">
+          <select [(ngModel)]="filterStatut" (change)="filtrer()" class="form-select-sm">
+            <option value="undefined">Tous les statuts</option>
+            <option value="soumise">Soumise</option>
+            <option value="validee">Validée</option>
+            <option value="rejetee">Rejetée</option>
+            <option value="delivree">Délivrée</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <div *ngIf="loading" class="loading-shimmer">
+        <div *ngFor="let _ of [1,2,3]" class="shimmer-row"></div>
+      </div>
+      <div *ngIf="!loading && _demandes.length === 0" class="empty-state">
+        <img class="h-40" src="assets/images/selection-pana.svg" alt="no data">
+        <p class="text-gray-500">Aucune demande trouvée</p>
+      </div>
+      <div *ngFor="let demande of paginatedDemandes" class="list-item">
+        <div class="list-item-left">
+          <div class="list-item-content">
+            <div class="flex items-center gap-2">
+              <p class="list-item-title">{{ demande.typeDocument?.libelle || 'Document' }}</p>
+              <app-custom-badge [text]="statutLabel(demande.statut)" [color]="statutColor(demande.statut)"></app-custom-badge>
+            </div>
+            <p class="list-item-subtitle">
+              {{ demande.etudiant?.nom || 'Étudiant #' + demande.etudiantId }} |
+              {{ demande.date | date:'short' }}
+            </p>
+            <p *ngIf="demande.statut === 'soumise' || demande.statut === 'validee'" class="list-item-subtitle">
+              <span [class.text-green-600]="demande.fraisPayes" [class.text-orange-600]="!demande.fraisPayes">
+                {{ demande.fraisPayes ? 'Frais payés' : 'Frais non payés' }}
+              </span>
+            </p>
+          </div>
+        </div>
+        <div class="list-item-right">
+          <ng-container [ngSwitch]="demande.statut">
+            <div *ngSwitchCase="'soumise'" class="flex gap-2">
+              <app-custom-button (click)="traiter(demande, 'validee')" text="Valider" color="green" [disabled]="traiterLoading"></app-custom-button>
+              <app-custom-button (click)="confirmRejet(demande)" text="Rejeter" color="red" [outlined]="true" [disabled]="traiterLoading"></app-custom-button>
+            </div>
+            <div *ngSwitchCase="'validee'" class="flex gap-2">
+              <app-custom-button (click)="traiter(demande, 'delivree')" text="Marquer délivrée" color="green" [disabled]="traiterLoading"></app-custom-button>
+              <app-custom-button (click)="confirmRejet(demande)" text="Rejeter" color="red" [outlined]="true" [disabled]="traiterLoading"></app-custom-button>
+            </div>
+            <div *ngSwitchDefault>
+              <span class="text-sm text-gray-400 italic">Traité</span>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer" *ngIf="_demandes.length > pageSize">
+      <div class="flex justify-between items-center">
+        <span class="text-sm text-gray-600">{{ _demandes.length }} demande(s) - Page {{ currentPage }}/{{ totalPages }}</span>
+        <div class="flex gap-2">
+          <app-custom-button (click)="prevPage()" text="Précédent" color="gray" [outlined]="true" [disabled]="currentPage === 1"></app-custom-button>
+          <app-custom-button (click)="nextPage()" text="Suivant" color="gray" [outlined]="true" [disabled]="currentPage === totalPages"></app-custom-button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-custom-modal [showModal]="showRejetModal" title="Rejeter la demande" subtitle="Voulez-vous vraiment rejeter cette demande de document ?" (onCloseModal)="showRejetModal = false">
+  <div class="mb-4">
+    <label class="form-label">Motif du rejet (optionnel)</label>
+    <textarea [(ngModel)]="motifRejet" rows="3" class="form-textarea" placeholder="Expliquez la raison du rejet..."></textarea>
+  </div>
+  <div class="flex gap-4 justify-end">
+    <app-custom-button (click)="showRejetModal = false" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+    <app-custom-button (click)="rejeter()" text="Rejeter" color="red"></app-custom-button>
+  </div>
+</app-custom-modal>

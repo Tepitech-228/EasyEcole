@@ -6,6 +6,7 @@ import { Apprenant } from "./Apprenant";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../AuthModule";
 import { CaissierBanque } from "./CaissierBanque";
 import { Enseignant } from "./Enseignant";
+import { ComiteOrientation } from "./ComiteOrientation";
 
 export class Utilisateur extends Model<InferAttributes<Utilisateur>, InferCreationAttributes<Utilisateur>> {
   declare id: CreationOptional<string>
@@ -25,12 +26,14 @@ export class Utilisateur extends Model<InferAttributes<Utilisateur>, InferCreati
   declare institution?: NonAttribute<Institution>
   declare enseignant?: NonAttribute<Enseignant>
   declare caissierBanque?: NonAttribute<CaissierBanque>
+  declare comiteOrientation?: NonAttribute<ComiteOrientation>
 
   declare static associations: {
     apprenant: Association<Utilisateur, Apprenant>
     institution: Association<Utilisateur, Institution>
     enseignant: Association<Utilisateur, Enseignant>
     caissierBanque: Association<Utilisateur, CaissierBanque>
+    comiteOrientation: Association<Utilisateur, ComiteOrientation>
   }
 }
 
@@ -66,7 +69,7 @@ Utilisateur.init({
   },
   role: {
     type: DataTypes.ENUM,
-    values: [RolesUtilisateur.APPRENANT, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.CAISSIER_BANQUE, RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.ADMIN],
+    values: [RolesUtilisateur.APPRENANT, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.CAISSIER_BANQUE, RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.COMITE_ORIENTATION, RolesUtilisateur.ADMIN],
     defaultValue: RolesUtilisateur.APPRENANT
   },
   contact: {

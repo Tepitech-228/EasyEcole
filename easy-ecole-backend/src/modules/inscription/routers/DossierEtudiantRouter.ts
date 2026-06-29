@@ -2,6 +2,7 @@ import express from "express"
 
 import DossierEtudiantController from "../controllers/DossierEtudiantController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
+import CheckPermission from "../../../core/middlewares/CheckPermission";
 
 const router = express.Router()
 
@@ -66,7 +67,7 @@ router
      *       201:
      *         description: Dossier créé
      */
-    .post('/generer', [AuthInstitution], DossierEtudiantController.genererDossier)
+    .post('/generer', [AuthInstitution, CheckPermission('action.inscription.dossier.generer')], DossierEtudiantController.genererDossier)
     /**
      * @openapi
      * /inscription/dossiers/{matricule}/statut:
@@ -131,6 +132,6 @@ router
      *       200:
      *         description: Dossier mis à jour
      */
-    .put('/:id', [AuthInstitution], DossierEtudiantController.updateStatut)
+    .put('/:id', [AuthInstitution, CheckPermission('action.inscription.dossier.modifier-statut')], DossierEtudiantController.updateStatut)
 
 export default router

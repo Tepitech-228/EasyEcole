@@ -2,6 +2,7 @@ import express from "express"
 
 import SalleDeClasseController from "../controllers/SalleDeClasseController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
+import CheckPermission from "../../../core/middlewares/CheckPermission";
 
 const router = express.Router()
 
@@ -35,7 +36,7 @@ router
  *       201:
  *         description: Salle de classe créée
  */
-    .post('/', [AuthInstitution], SalleDeClasseController.createSalleDeClasse)
+    .post('/', [AuthInstitution, CheckPermission('action.inscription.salle.creer')], SalleDeClasseController.createSalleDeClasse)
 /**
  * @openapi
  * /inscription/sallesDeClasse/{id}:
@@ -76,7 +77,7 @@ router
  *       404:
  *         description: Salle de classe non trouvée
  */
-    .put('/:id', [AuthInstitution], SalleDeClasseController.updateSalleDeClasse)
+    .put('/:id', [AuthInstitution, CheckPermission('action.inscription.salle.modifier')], SalleDeClasseController.updateSalleDeClasse)
 /**
  * @openapi
  * /inscription/sallesDeClasse/{id}:
@@ -91,7 +92,7 @@ router
  *       404:
  *         description: Salle de classe non trouvée
  */
-    .delete('/:id', [AuthInstitution], SalleDeClasseController.deleteSalleDeClasse)
+    .delete('/:id', [AuthInstitution, CheckPermission('action.inscription.salle.supprimer')], SalleDeClasseController.deleteSalleDeClasse)
 /**
  * @openapi
  * /inscription/sallesDeClasse/statistics/count:

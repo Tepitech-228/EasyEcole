@@ -89,10 +89,10 @@ export default class DemandeDocumentController {
             return res.status(404).json({ success: false, message: "Demande non trouvée" });
         }
 
-        if (req.body.statut == 'validee' || req.body.statut == 'delivree') {
+            if (req.body.statut == 'validee' || req.body.statut == 'delivree') {
             let typeDocument = demande.typeDocument
             if (!typeDocument) {
-                typeDocument = await TypeDocument.findOne({ where: { id: demande.typeDocumentId } })
+                typeDocument = (await TypeDocument.findOne({ where: { id: demande.typeDocumentId } })) ?? undefined
             }
 
             const filename = DocumentPDFGenerator.generateDocument(

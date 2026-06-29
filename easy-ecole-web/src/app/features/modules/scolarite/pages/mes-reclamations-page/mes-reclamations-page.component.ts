@@ -1,68 +1,94 @@
 import { Component, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { environment } from 'src/environments/environment';
+import { Reclamation } from 'src/app/data/modules/scolarite/models/Reclamation.model';
+import { ReclamationService } from 'src/app/data/modules/scolarite/services/reclamation.service';
+import { BaseComponentClass } from 'src/app/core/base-component-class';
 
 @Component({
   selector: 'app-mes-reclamations-page',
-  template: `
-    <div class="p-6">
-      <h1 class="text-2xl font-bold mb-6">Mes réclamations</h1>
-
-      <div class="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 class="text-lg font-semibold mb-4">Nouvelle réclamation</h2>
-        <div class="mb-4">
-          <label class="block text-sm font-medium mb-2">Motif</label>
-          <textarea [(ngModel)]="newReclamation.motif" rows="4" class="w-full border rounded-lg px-3 py-2"></textarea>
-        </div>
-        <button (click)="submitReclamation()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-          Envoyer
-        </button>
-      </div>
-
-      <div class="bg-white rounded-lg shadow">
-        <div class="p-4 border-b">
-          <h2 class="text-lg font-semibold">Historique</h2>
-        </div>
-        <div *ngFor="let rec of reclamations" class="p-4 border-b hover:bg-gray-50">
-          <div class="flex justify-between items-start">
-            <div>
-              <p>{{ rec.motif }}</p>
-              <span class="text-xs text-gray-500">{{ rec.date | date:'short' }}</span>
-            </div>
-            <span class="px-2 py-1 text-xs rounded-full"
-              [ngClass]="{
-                'bg-yellow-100 text-yellow-800': rec.statut === 'ouverte',
-                'bg-green-100 text-green-800': rec.statut === 'traitee',
-                'bg-gray-100 text-gray-800': rec.statut === 'fermee'
-              }">
-              {{ rec.statut }}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  `
+  templateUrl: './mes-reclamations-page.component.html',
+  styleUrls: ['./mes-reclamations-page.component.scss']
 })
-export class MesReclamationsPageComponent implements OnInit {
-  reclamations: any[] = [];
-  newReclamation: any = { motif: '', evaluationId: '' };
+export class MesReclamationsPageComponent extends BaseComponentClass implements OnInit {
+  reclamations: Reclamation[] = [];
+  _reclamations: Reclamation[] = [];
+  newReclamation: any = { motif: '' };
+  filterStatut: string = 'undefined';
+  loading: boolean = false;
+  errorMessage: string = '';
+  successMessage: string = '';
+  expandedId: string | null = null;
 
-  constructor(private http: HttpClient) {}
+  constructor(private reclamationService: ReclamationService) {
+    super();
+  }
 
   ngOnInit() {
     this.loadReclamations();
   }
 
   loadReclamations() {
-    this.http.get(`${environment.API_URL}/scolarite/reclamations`).subscribe((data: any) => {
-      this.reclamations = data;
+    this.loading = true;
+    this.errorMessage = '';
+    this.reclamationService.getAll().subscribe({
+      next: (data) => {
+        this.reclamations = data;
+        this._reclamations = [...this.reclamations];
+        this.loading = false;
+      },
+      error: () => {
+        this.errorMessage = 'Erreur lors du chargement des réclamations';
+        this.loading = false;
+      }
     });
   }
 
   submitReclamation() {
-    this.http.post(`${environment.API_URL}/scolarite/reclamations`, this.newReclamation).subscribe(() => {
-      this.newReclamation = { motif: '', evaluationId: '' };
-      this.loadReclamations();
+    if (!this.newReclamation.motif.trim()) return;
+    this.loading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.reclamationService.create(this.newReclamation).subscribe({
+      next: () => {
+        this.newReclamation = { motif: '' };
+        this.successMessage = 'Réclamation envoyée avec succès';
+        this.loadReclamations();
+      },
+      error: () => {
+        this.errorMessage = 'Erreur lors de l\'envoi de la réclamation';
+        this.loading = false;
+      }
     });
+  }
+
+  filtrer(): void {
+    this._reclamations = this.filterStatut === 'undefined'
+      ? [...this.reclamations]
+      : this.reclamations.filter(r => r.statut === this.filterStatut);
+  }
+
+  toggleExpand(id: string | undefined): void {
+    this.expandedId = this.expandedId === id ? null : id ?? null;
+  }
+
+  statutLabel(statut: string): string {
+    switch (statut) {
+      case 'ouverte': return 'Ouverte';
+      case 'traitee': return 'Traitée';
+      case 'fermee': return 'Fermée';
+      default: return statut;
+    }
+  }
+
+  statutColor(statut: string): string {
+    switch (statut) {
+      case 'ouverte': return 'yellow';
+      case 'traitee': return 'green';
+      case 'fermee': return 'gray';
+      default: return 'gray';
+    }
+  }
+
+  getStatutCount(statut: string): number {
+    return this.reclamations.filter(r => r.statut === statut).length;
   }
 }

@@ -2,6 +2,7 @@ import express from "express"
 
 import InstitutionController from "../controllers/InstitutionController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
+import CheckPermission from "../../../core/middlewares/CheckPermission";
 
 const router = express.Router()
 
@@ -63,7 +64,7 @@ router
      *       401:
      *         description: Non autorisé
      */
-    .put('/', [AuthInstitution], InstitutionController.updateInstitution)
+    .put('/', [AuthInstitution, CheckPermission('action.administration.institution.modifier')], InstitutionController.updateInstitution)
     /**
      * @openapi
      * /auth/institutions:
@@ -78,7 +79,7 @@ router
      *       401:
      *         description: Non autorisé
      */
-    .delete('/', [AuthInstitution], InstitutionController.deleteInstitution)
+    .delete('/', [AuthInstitution, CheckPermission('action.administration.institution.supprimer')], InstitutionController.deleteInstitution)
     /**
      * @openapi
      * /auth/institutions/statistics/count:

@@ -1,6 +1,7 @@
 #menu {
     height: 46px;
     border-radius: 8px;
+    position: relative;
     
     $color: rgba($color: #fff, $alpha: 0.75);
     #icon {
@@ -25,4 +26,30 @@
     #text {
         color: $color !important;
     }
+}
+
+.collapsed-tooltip {
+    position: fixed;
+    left: 72px;
+    background: #1e293b;
+    color: #fff;
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    white-space: nowrap;
+    z-index: 9999;
+    pointer-events: none;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+    line-height: 1.4;
+    transform: translateY(-50%);
+}
+
+.collapsed-tooltip::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 4px solid transparent;
+    border-right-color: #1e293b;
 }

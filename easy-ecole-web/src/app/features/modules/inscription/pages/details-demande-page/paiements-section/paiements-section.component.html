@@ -100,10 +100,11 @@
     </div>
     
     <div class="flex flex-col items-center mt-4 mb-8">
-        <!-- <p class="text-sm text-secondary mb-8 text-center">Aucun paiement n'a été effectué pour l'instant</p> -->
         <div class="flex gap-x-12">
+            <app-custom-button (click)="getFichePaiement()" text="Bordereau de paiement" color="indigo"></app-custom-button>
             <app-custom-button *ngIf="rolesValue.isApprenant && fraisTotal > 0" [disabled]="getFraisPayes() >= fraisTotal" (click)="paiementMobileMoney()" text="Payer par Mobile Money" color="gray" [outlined]="true"></app-custom-button>
-            <!-- <app-custom-button (click)="getFichePaiement()" text="Télécharger la fiche de paiement" color="gray" [outlined]="true"></app-custom-button> -->
+            <app-custom-button *ngIf="rolesValue.isInstitution && demande.sessionId" [link]="'/inscription/sessions/' + demande.sessionId" text="Gérer les frais" color="gray" [outlined]="true"></app-custom-button>
+            <app-custom-button *ngIf="rolesValue.isInstitution" (click)="showPaiementModal = true" text="Enregistrer un paiement" color="gray" [outlined]="true"></app-custom-button>
             <app-custom-button text="Paiements" link="/inscription/paiements"></app-custom-button>
         </div>
     </div>
@@ -180,3 +181,19 @@
         </div>
     </div>
 </ng-container>
+
+<app-custom-modal title="Enregistrer un paiement" subtitle="Saisir le montant du paiement effectué en espèces" (onCloseModal)="closePaiementModal()" [center]="true" [showModal]="showPaiementModal">
+    <div class="mb-4">
+        <span class="mb-2 block text-sm text-gray-400">Montant (FCFA)</span>
+        <input type="number" [(ngModel)]="paiementMontant" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="Montant du paiement">
+    </div>
+    <div class="mb-4">
+        <span class="mb-2 block text-sm text-gray-400">Description</span>
+        <input type="text" [(ngModel)]="paiementDescription" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="Description du paiement">
+    </div>
+    <app-form-message *ngIf="paiementError" text="Veuillez saisir un montant valide"></app-form-message>
+    <div class="py-3 flex justify-between items-center">
+        <app-custom-button (click)="closePaiementModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+        <app-custom-button (click)="enregistrerPaiement()" text="Enregistrer"></app-custom-button>
+    </div>
+</app-custom-modal>

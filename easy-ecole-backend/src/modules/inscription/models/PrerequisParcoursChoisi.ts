@@ -30,6 +30,14 @@ PrerequisParcoursChoisi.init({
     type: DataTypes.FLOAT.UNSIGNED,
     allowNull: false
   },
+  prerequisParcoursId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
+  },
+  parcoursChoisiId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
+  },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
 }, {

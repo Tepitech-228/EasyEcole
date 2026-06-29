@@ -1,7 +1,7 @@
 <app-return-back></app-return-back>
 
 <ng-container *ngIf="demande">
-    <div *ngIf="rolesValue.isInstitution"
+    <div *ngIf="rolesValue.isInstitution || rolesValue.isAdmin"
         class="flex md:flex-row flex-col gap-y-6 justify-between md:items-start md-items-end w-full border-0 py-4">
         <div class="flex items-center gap-x-4">
             <img class="object-cover w-16 h-16 rounded-full border-2 border-gray-300"
@@ -142,7 +142,7 @@
         </div>
     </div>
 
-    <div *ngIf="rolesValue.isInstitution && demande.reponseOrientation == undefined" class="flex justify-between items-center mb-2">
+    <div *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && demande.reponseOrientation == undefined" class="flex justify-between items-center mb-2">
         <app-custom-button (click)="rejeterParcoursChoisi()" text="Rejeter" [outlined]="true"
             color="red"></app-custom-button>
         <app-custom-button (click)="validerParcoursChoisi()" text="Valider" color="green"></app-custom-button>

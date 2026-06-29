@@ -1,23 +1,23 @@
 <div class="flex justify-between items-start gap-x-8 mb-8">
     <app-header-title title="Cours" subtitle="Consulter la liste des cours proposés"></app-header-title>
-    <!-- <div class="flex justify-end items-center">
-        <app-custom-button *ngIf="rolesValue.isInstitution" text="Nouveau cours" link="/orientation/cours/nouveau"></app-custom-button>
-    </div> -->
+    <div class="flex justify-end items-center">
+        <app-custom-button (click)="openNouveauCoursModal()" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" text="Nouveau cours"></app-custom-button>
+    </div>
 </div>
 
 <div class="w-full flex justify-between items-center mb-8">
     <div class="flex md:flex-row flex-col gap-4">
-        <select *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant" [(ngModel)]="selectedNiveauEtude" (change)="filtrerCours()"
+        <select *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isAdmin" [(ngModel)]="selectedNiveauEtude" (change)="filtrerCours()"
             class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
             <option [value]="'undefined'">Filter par niveau d'étude...</option>
             <option *ngFor="let niveau of _niveauxEtude" [value]="niveau.id">{{ niveau.libelle }}</option>
         </select>
-        <select *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant" [(ngModel)]="selectedClasse" (change)="filtrerCours()"
+        <select *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isAdmin" [(ngModel)]="selectedClasse" (change)="filtrerCours()"
             class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
             <option [value]="'undefined'">Filter par classe...</option>
             <option *ngFor="let classe of _classes" [value]="classe.id">{{ classe.libelle }}</option>
         </select>
-        <select *ngIf="rolesValue.isApprenant || rolesValue.isInstitution || rolesValue.isEnseignant" [(ngModel)]="selectedParcours" (change)="filtrerCours()"
+        <select *ngIf="rolesValue.isApprenant || rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isAdmin" [(ngModel)]="selectedParcours" (change)="filtrerCours()"
             class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
             <option [value]="'undefined'">Filter par parcours...</option>
             <option *ngFor="let parcours of _parcours" [value]="parcours.id">{{ parcours.titre }}</option>
@@ -28,17 +28,72 @@
     </div>
 </div>
 
-<div class="w-full flex justify-center items-center mb-8">
-    <div *ngIf="_cours.length == 0"
-        class="w-full py-24 flex flex-col gap-y-8 items-center justify-center">
-        <img class="h-56" src="assets/images/selection-pana.svg" alt="no resource">
-        <div class="text-sm text-gray-500">Aucun cours disponible, ou bien</div>
-        <app-custom-button text="Effacer les filtres" (click)="supprimerFiltres()"></app-custom-button>
-    </div>
-</div>
-
 <div class="w-full flex justify-between items-center mb-8">
     <div class="grid 2xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-2 md:grid-cols-2 grid-cols-1 w-full gap-x-12 gap-y-4">
         <app-cours-card *ngFor="let cours of _cours" [cours]="cours"></app-cours-card>
     </div>
 </div>
+
+<app-custom-modal title="Nouveau cours" subtitle="Ajouter un nouveau cours" (onCloseModal)="showNouveauCoursModal = false" [center]="true" [showModal]="showNouveauCoursModal">
+    <form [formGroup]="nouveauCoursForm">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-6 mb-8">
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Code</span>
+                <input type="text" formControlName="code" placeholder="Ex: INF101"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <div *ngIf="nouveauCoursForm.get('code')!.invalid && (nouveauCoursForm.get('code')!.dirty || nouveauCoursForm.get('code')!.touched)">
+                    <app-form-message *ngIf="nouveauCoursForm.get('code')!.errors?.['required']" text="Veuillez saisir le code"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Intitulé</span>
+                <input type="text" formControlName="intitule" placeholder="Ex: Programmation Web"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <div *ngIf="nouveauCoursForm.get('intitule')!.invalid && (nouveauCoursForm.get('intitule')!.dirty || nouveauCoursForm.get('intitule')!.touched)">
+                    <app-form-message *ngIf="nouveauCoursForm.get('intitule')!.errors?.['required']" text="Veuillez saisir l'intitulé"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Crédits</span>
+                <input type="number" formControlName="credit" placeholder="Ex: 4"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Semestre</span>
+                <input type="number" formControlName="semestre" placeholder="Ex: 1"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-3">
+                <label class="mb-2 block text-sm text-gray-400">Parcours</label>
+                <select formControlName="parcoursId"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option [value]="null" disabled>Sélectionner un parcours</option>
+                    <option *ngFor="let p of _parcours" [value]="p.id">{{ p.titre }}</option>
+                </select>
+            </div>
+            <div class="col-span-3">
+                <label class="mb-2 block text-sm text-gray-400">Classe</label>
+                <select formControlName="classeId"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option [value]="null" disabled>Sélectionner une classe</option>
+                    <option *ngFor="let classe of _classes" [value]="classe.id">{{ classe.libelle }}</option>
+                </select>
+            </div>
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Description (facultative)</span>
+                <textarea rows="3" formControlName="description" placeholder="Description du cours..."
+                    class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
+            </div>
+            <div class="col-span-full">
+                <label class="inline-flex items-center gap-2">
+                    <input type="checkbox" formControlName="estObligatoire">
+                    <span class="text-sm text-gray-600">Cours obligatoire</span>
+                </label>
+            </div>
+        </div>
+    </form>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="closeNouveauCoursModal()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+        <app-custom-button (click)="ajouterCours()" text="Enregistrer"></app-custom-button>
+    </div>
+</app-custom-modal>

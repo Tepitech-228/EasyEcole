@@ -21,6 +21,8 @@ import { DemandeInscriptionCours } from 'src/app/data/modules/inscription/models
 import { EtatsCoursChoisi } from 'src/app/data/enums/EtatsCoursChoisi';
 import { AnneeAcademique } from 'src/app/data/modules/inscription/models/AnneeAcademique.model';
 import { AnneeAcademiqueService } from 'src/app/data/modules/inscription/services/annee-academique.service';
+import { EtatPreInscription } from 'src/app/data/modules/inscription/models/PreInscription.model';
+import { PreInscriptionService } from 'src/app/data/modules/inscription/services/pre-inscription.service';
 
 @Component({
   selector: 'app-details-demande-page',
@@ -61,6 +63,7 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
     private coursService: CoursService,
     private demandeInscriptionService: DemandeInscriptionService,
     private reponseInscriptionService: ReponseInscriptionService,
+    private preInscriptionService: PreInscriptionService,
     private classeService: ClasseService,
     private anneeAcademiqueService: AnneeAcademiqueService,
     private activatedRoute: ActivatedRoute,
@@ -120,62 +123,82 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
     this.wizardItems = [
       { text: "Informations personnelles", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 0 } },
       { text: "Choix parcours", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 1 } },
-      { text: "Cours", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 2 } },
-      { text: "Paiements", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 3 } },
-      { text: "Documents", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 4 } },
-      { text: "Validation", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 5 } },
+      { text: "Documents", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 2 } },
+      { text: "Préinscription", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 3 } },
+      { text: "Cours", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 4 } },
+      { text: "Paiements", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 5 } },
+      { text: "Validation", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 6 } },
     ]
   }
 
   initSteps(): void {
     this.initWizardItems()
 
-    // Check: informations personnelles
+    // Check: informations personnelles (step 0)
     if (this.demande!.utilisateur!.apprenant != null) {
       this.wizardItems[0].condition = true
-      this.currentItemSection = 0 + 1
+      this.currentItemSection = 1
     }
 
-    // Check: choix parcours && choix final
+    // Check: choix parcours (step 1)
     if (this.demande!.parcoursChoisis!.length != 0) {
       this.wizardItems[1].condition = true
-      this.wizardItems[1 + 1].isBlocked = true
 
       if (this.demande!.reponseInscription != null) {
+        // Institution flow: reponse requise + choixFinal avant de continuer
         if (this.demande!.parcoursChoisis!.filter(element => element.choixFinal == true).length == 0) {
           this.currentItemSection = 1
         }
         else {
-          // Go to step 3
           this.parcoursFinal = this.demande!.parcoursChoisis!.filter(element => element.choixFinal == true)[0].parcours
-          this.currentItemSection = 1 + 1
-          this.wizardItems[1 + 1].isBlocked = false
+          this.currentItemSection = 2
+          this.wizardItems[2].isBlocked = false
+        }
+      }
+      else {
+        // Student flow: use first parcours as default final, proceed to documents
+        this.parcoursFinal = this.demande!.parcoursChoisis![0].parcours
+        this.currentItemSection = 2
+        this.wizardItems[2].isBlocked = false
+      }
+    }
 
-          // Check: choix des cours
-          if (this.checkCours()) {
-            this.currentItemSection = 2 + 1
-            this.wizardItems[2].condition = true
+    // Check: documents (step 2) - moved before préinscription
+    if (this.currentItemSection >= 2 && this.demande!.session) {
+      const dossiersRequis = this.demande!.session!.dossiersInscription || []
+      const dossiersUploades = this.demande!.dossiersDemande || []
+      if (dossiersRequis.length == 0 || dossiersUploades.length != 0) {
+        this.wizardItems[2].condition = true
+        this.wizardItems[2].incomplete = dossiersRequis.length > 0 && dossiersUploades.length != dossiersRequis.length
+        if (!this.wizardItems[2].incomplete) {
+          this.currentItemSection = 3
+          this.wizardItems[3].isBlocked = false
+        }
+      }
+    }
 
-            // Check: Paiements
-            if (this.checkFraisInscription()) {
-              this.currentItemSection = 3 + 1
-              this.wizardItems[3].condition = true
+    // Check: préinscription (step 3) - moved after documents
+    if (this.demande!.preInscription != null) {
+      this.wizardItems[3].condition = true
+      if (this.demande!.preInscription!.statut == EtatPreInscription.VALIDE) {
+        this.currentItemSection = 4
 
-              // Check: Documents
-              console.log(this.demande!.dossiersDemande!.length)
-              if (this.demande!.session!.dossiersInscription!.length == 0 || this.demande!.dossiersDemande!.length != 0) {
-                this.currentItemSection = 4 + 1
-                this.wizardItems[4].condition = true
-                this.wizardItems[4].incomplete = this.demande!.dossiersDemande!.length != this.demande!.session!.dossiersInscription!.length
+        this.wizardItems[4].isBlocked = false
+        if (this.checkCours()) {
+          this.currentItemSection = 5
+          this.wizardItems[4].condition = true
 
-                // Check: Validation
-                if (this.demande!.dateValidation != undefined) {
-                  this.wizardItems[5].condition = true
-                }
-              }
+          if (this.checkFraisInscription()) {
+            this.currentItemSection = 6
+            this.wizardItems[5].condition = true
+
+            if (this.demande!.dateValidation != undefined) {
+              this.wizardItems[6].condition = true
             }
           }
         }
+      } else {
+        this.currentItemSection = 3
       }
     }
   }

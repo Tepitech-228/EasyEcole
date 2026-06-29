@@ -65,6 +65,8 @@ ReponseOrientation.belongsTo(Utilisateur, { foreignKey: 'utilisateurId', as: 'ut
 
 // PanierParcoursChoisi - ParcoursChoisi
 PanierParcoursChoisi.belongsTo(ParcoursChoisi, { as: 'parcoursChoisi', foreignKey: 'parcoursChoisiId' })
+ParcoursChoisi.hasMany(PanierParcoursChoisi, { as: 'panierParcoursChoisis', foreignKey: 'parcoursChoisiId' })
 
 // PanierParcoursChoisi - Utilisateur
 PanierParcoursChoisi.belongsTo(Utilisateur, { as: 'utilisateur', foreignKey: 'utilisateurId' })
+Utilisateur.hasMany(PanierParcoursChoisi, { as: 'panierParcoursChoisis', foreignKey: 'utilisateurId' })

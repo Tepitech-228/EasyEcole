@@ -1,0 +1,128 @@
+<div class="page-container">
+  <app-header-title title="Mes réclamations" subtitle="Soumettre et suivre l'état de vos réclamations"></app-header-title>
+
+  <app-custom-alert *ngIf="errorMessage" [show]="true" [title]="errorMessage" type="danger" [inline]="true"></app-custom-alert>
+  <app-custom-alert *ngIf="successMessage" [show]="true" [title]="successMessage" type="success" [inline]="true"></app-custom-alert>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-icon text-blue-600 bg-blue-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ reclamations.length }}</p>
+        <p class="stat-label">Total</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon text-yellow-600 bg-yellow-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ getStatutCount('ouverte') }}</p>
+        <p class="stat-label">Ouvertes</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon text-green-600 bg-green-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ getStatutCount('traitee') }}</p>
+        <p class="stat-label">Traitées</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon text-gray-600 bg-gray-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ getStatutCount('fermee') }}</p>
+        <p class="stat-label">Fermées</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-6">
+    <div class="card-header">
+      <h2 class="card-title">Nouvelle réclamation</h2>
+      <p class="card-subtitle">Décrivez votre réclamation en détail</p>
+    </div>
+    <div class="card-body">
+      <div class="form-group">
+        <label class="form-label">Motif de la réclamation</label>
+        <textarea [(ngModel)]="newReclamation.motif" rows="5" class="form-textarea"
+          placeholder="Expliquez clairement l'objet de votre réclamation..."
+          maxlength="2000"></textarea>
+        <div class="flex justify-between mt-1">
+          <span class="form-helper">{{ newReclamation.motif.length }}/2000 caractères</span>
+        </div>
+      </div>
+      <div class="form-actions">
+        <app-custom-button (click)="submitReclamation()" text="Envoyer la réclamation" color="primary"
+          [disabled]="!newReclamation.motif.trim() || loading"></app-custom-button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header border-b">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 class="card-title">Historique des réclamations</h2>
+          <p class="card-subtitle">Suivez l'évolution de vos réclamations</p>
+        </div>
+        <div class="flex gap-4 items-center">
+          <select [(ngModel)]="filterStatut" (change)="filtrer()" class="form-select-sm">
+            <option value="undefined">Tous les statuts</option>
+            <option value="ouverte">Ouverte</option>
+            <option value="traitee">Traitée</option>
+            <option value="fermee">Fermée</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <div *ngIf="loading" class="loading-shimmer">
+        <div *ngFor="let _ of [1,2,3]" class="shimmer-row"></div>
+      </div>
+      <div *ngIf="!loading && _reclamations.length === 0" class="empty-state">
+        <img class="h-40" src="assets/images/selection-pana.svg" alt="no data">
+        <p class="text-gray-500">Aucune réclamation trouvée</p>
+      </div>
+      <div *ngFor="let rec of _reclamations" class="list-item">
+        <div class="list-item-header" (click)="toggleExpand(rec.id)">
+          <div class="list-item-left">
+            <div class="list-item-content">
+              <p class="list-item-title">{{ rec.motif | slice:0:100 }}{{ rec.motif.length > 100 ? '...' : '' }}</p>
+              <p class="list-item-subtitle">{{ rec.date | date:'EEEE d MMMM yyyy, HH:mm' }}</p>
+            </div>
+          </div>
+          <div class="list-item-right">
+            <app-custom-badge [text]="statutLabel(rec.statut)" [color]="statutColor(rec.statut)"></app-custom-badge>
+            <svg class="w-5 h-5 text-gray-400 transition-transform duration-200"
+              [class.rotate-180]="expandedId === rec.id" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </div>
+        </div>
+        <div *ngIf="expandedId === rec.id" class="list-item-detail">
+          <div class="detail-section">
+            <h4 class="detail-title">Description</h4>
+            <p class="detail-text">{{ rec.motif }}</p>
+          </div>
+          <div *ngIf="rec.reponsesReclamation && rec.reponsesReclamation.length > 0" class="detail-section">
+            <h4 class="detail-title">Réponses</h4>
+            <div *ngFor="let rep of rec.reponsesReclamation" class="response-card">
+              <p class="response-text">{{ rep.reponse }}</p>
+              <p class="response-date">{{ rep.date | date:'short' }}</p>
+            </div>
+          </div>
+          <div *ngIf="!rec.reponsesReclamation || rec.reponsesReclamation.length === 0" class="detail-section">
+            <p class="text-sm text-gray-400 italic">Aucune réponse pour le moment</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

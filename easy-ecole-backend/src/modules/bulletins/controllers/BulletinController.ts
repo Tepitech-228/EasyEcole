@@ -347,6 +347,70 @@ export default class BulletinController {
     }
   }
 
+  // GET /bulletins/moyennes
+  async getMoyennes(req: Request, res: Response) {
+    try {
+      const { anneeAcademiqueId, semestre, classeId } = req.query;
+      const where: any = { statut: { [Op.ne]: 'brouillon' } };
+      if (anneeAcademiqueId) where.anneeAcademiqueId = anneeAcademiqueId;
+      if (semestre) where.semestre = semestre;
+      if (classeId) where.classeId = classeId;
+
+      const bulletins = await Bulletin.findAll({
+        where,
+        include: [
+          { association: Bulletin.associations.utilisateur },
+          { association: Bulletin.associations.classe }
+        ]
+      });
+
+      const grouped: any = {};
+      for (const b of bulletins) {
+        const key = String(b.classeId);
+        if (!grouped[key]) {
+          grouped[key] = {
+            classeId: b.classeId,
+            classe: (b as any).classe?.libelle || '',
+            effectif: 0,
+            sommeMoyennes: 0,
+            moyenneMin: Infinity,
+            moyenneMax: -Infinity,
+            admis: 0,
+            meilleurEleve: '',
+            meilleureMoyenne: -Infinity
+          };
+        }
+        const g = grouped[key];
+        g.effectif++;
+        if (b.moyenneGenerale != null) {
+          g.sommeMoyennes += b.moyenneGenerale;
+          g.moyenneMin = Math.min(g.moyenneMin, b.moyenneGenerale);
+          g.moyenneMax = Math.max(g.moyenneMax, b.moyenneGenerale);
+          if (b.moyenneGenerale >= 10) g.admis++;
+          if (b.moyenneGenerale > g.meilleureMoyenne) {
+            g.meilleureMoyenne = b.moyenneGenerale;
+            g.meilleurEleve = ((b as any).utilisateur?.nom || '') + ' ' + ((b as any).utilisateur?.prenoms || '');
+          }
+        }
+      }
+
+      const resultats = Object.values(grouped).map((g: any) => ({
+        classe: g.classe,
+        effectif: g.effectif,
+        moyenneGenerale: g.effectif > 0 ? +(g.sommeMoyennes / g.effectif).toFixed(2) : 0,
+        moyenneMin: g.moyenneMin === Infinity ? 0 : g.moyenneMin,
+        moyenneMax: g.moyenneMax === -Infinity ? 0 : g.moyenneMax,
+        tauxReussite: g.effectif > 0 ? +((g.admis / g.effectif) * 100).toFixed(1) : 0,
+        meilleurEleve: g.meilleurEleve
+      }));
+
+      return res.json(resultats);
+    } catch (error) {
+      console.error('Erreur moyennes:', error);
+      return res.status(500).json({ message: 'Erreur lors du calcul des moyennes' });
+    }
+  }
+
   // GET /bulletins/mon-releve
   async monReleve(req: Request, res: Response) {
     try {

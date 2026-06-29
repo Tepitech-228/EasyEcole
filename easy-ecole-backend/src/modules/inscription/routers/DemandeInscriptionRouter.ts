@@ -180,6 +180,26 @@ router
 
 /**
  * @openapi
+ * /inscription/demandesInscription/{id}/fiche-paiement:
+ *   get:
+ *     tags: [Demandes d'Inscription]
+ *     summary: Génère et télécharge la fiche de paiement (bordereau) PDF
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Fiche de paiement PDF
+ */
+    .get('/:id/fiche-paiement', DemandeInscriptionController.getFichePaiement)
+
+/**
+ * @openapi
  * /inscription/demandesInscription/statistics/count:
  *   get:
  *     tags: [Demandes d'Inscription]

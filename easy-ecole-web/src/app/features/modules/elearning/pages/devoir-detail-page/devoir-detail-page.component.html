@@ -1,0 +1,92 @@
+<div class="p-6">
+  <app-header-title title="{{ devoir?.titre || 'Détail du devoir' }}"></app-header-title>
+
+  <button (click)="goBack()" class="text-blue-600 hover:underline text-sm mt-2 inline-block">&larr; Retour aux devoirs</button>
+
+  <div *ngIf="!devoir" class="text-center py-12 text-gray-500">
+    Devoir introuvable.
+  </div>
+
+  <div *ngIf="devoir" class="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2 space-y-6">
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-bold text-gray-800">{{ devoir.titre }}</h2>
+          <app-custom-badge [text]="devoir.statut" [color]="devoir.statut === 'à rendre' ? 'yellow' : devoir.statut === 'soumis' ? 'blue' : 'green'"></app-custom-badge>
+        </div>
+        <p class="text-gray-600 mb-4">{{ devoir.description }}</p>
+
+        <div class="bg-gray-50 rounded-lg p-4 mb-4">
+          <h4 class="font-semibold text-gray-700 mb-2">Consignes</h4>
+          <pre class="text-sm text-gray-600 whitespace-pre-wrap font-sans">{{ devoir.consigne }}</pre>
+        </div>
+
+        <div class="flex items-center gap-4 text-sm text-gray-500">
+          <span>Matière: <strong>{{ devoir.coursTitre }}</strong></span>
+          <span>Date limite: <strong [ngClass]="isLate() && canSubmit() ? 'text-red-600' : ''">{{ devoir.dateLimite | date:'dd/MM/yyyy' }}</strong></span>
+          <span *ngIf="devoir.note !== undefined">Note: <strong class="text-lg text-green-600">{{ devoir.note }}/20</strong></span>
+        </div>
+
+        <app-custom-alert *ngIf="isLate() && canSubmit()" [show]="true" title="Date limite dépassée" message="Ce devoir est en retard. Vous pouvez toujours le soumettre." type="warning"></app-custom-alert>
+      </div>
+
+      <div *ngIf="devoir.soumission && devoir.statut !== 'à rendre'" class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-3">Votre soumission</h3>
+        <div class="bg-blue-50 rounded-lg p-4">
+          <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ devoir.soumission }}</p>
+        </div>
+        <div *ngIf="devoir.commentaireProf" class="mt-4 bg-green-50 rounded-lg p-4">
+          <h4 class="font-medium text-green-800 mb-1">Commentaire du professeur</h4>
+          <p class="text-sm text-green-700">{{ devoir.commentaireProf }}</p>
+        </div>
+      </div>
+
+      <div *ngIf="canSubmit()" class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Soumettre votre devoir</h3>
+
+        <app-custom-alert *ngIf="submitSuccess" [show]="true" title="Devoir soumis avec succès !" type="success"></app-custom-alert>
+
+        <form [formGroup]="submissionForm" (ngSubmit)="soumettre()" *ngIf="!submitSuccess">
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Votre réponse</label>
+            <textarea formControlName="contenu" rows="6" class="w-full border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="Saisissez votre réponse ici..."></textarea>
+            <app-custom-alert *ngIf="submitted && submissionForm.get('contenu')?.invalid" [show]="true" title="Veuillez saisir une réponse d\'au moins 20 caractères" color="red" [inline]="true"></app-custom-alert>
+          </div>
+
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Fichier joint (optionnel)</label>
+            <input type="file" (change)="onFileSelected($event)" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+          </div>
+
+          <app-custom-button text="Soumettre" color="primary" type="submit" [disabled]="submitted && submissionForm.invalid"></app-custom-button>
+        </form>
+      </div>
+    </div>
+
+    <div class="lg:col-span-1">
+      <div class="bg-white rounded-lg shadow-md p-5 sticky top-6">
+        <h3 class="font-semibold text-gray-800 mb-3">Informations</h3>
+        <div class="space-y-3 text-sm">
+          <div>
+            <span class="text-gray-500">Matière</span>
+            <p class="font-medium text-gray-700">{{ devoir.coursTitre }}</p>
+          </div>
+          <div>
+            <span class="text-gray-500">Statut</span>
+            <p class="font-medium">
+              <app-custom-badge [text]="devoir.statut" [color]="devoir.statut === 'à rendre' ? 'yellow' : devoir.statut === 'soumis' ? 'blue' : 'green'"></app-custom-badge>
+            </p>
+          </div>
+          <div>
+            <span class="text-gray-500">Date limite</span>
+            <p class="font-medium" [ngClass]="isLate() ? 'text-red-600' : 'text-gray-700'">{{ devoir.dateLimite | date:'dd/MM/yyyy' }}</p>
+          </div>
+          <div *ngIf="devoir.note !== undefined">
+            <span class="text-gray-500">Note obtenue</span>
+            <p class="font-bold text-lg text-green-600">{{ devoir.note }}/20</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

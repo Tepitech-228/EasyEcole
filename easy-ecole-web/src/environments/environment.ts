@@ -9,14 +9,17 @@ const apiUrl: string = apiBaseUrl + "api/v1"
 export const environment = {
   production: false,
   API_URL: apiUrl,
+  apiUrl: apiUrl,
   API_MODULES: {
     AUTH: apiUrl + '/auth',
     ORIENTATION: apiUrl + '/orientation',
     INSCRIPTION: apiUrl + '/inscription',
+    COMPTABILITE: apiUrl + '/comptabilite',
     COURS: apiUrl + '/cours',
     IMMOBILISATIONS: apiUrl + '/immobilisations',
     STOCKS: apiUrl + '/stocks',
     STAGES: apiUrl + '/stages',
+    SCOLARITE: apiUrl + '/scolarite',
   },
   MEDIAS_PATH: {
     AUTH: {

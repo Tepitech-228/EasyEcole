@@ -13,8 +13,8 @@ export class DossierEtudiantService {
 
   constructor(private httpClient: HttpClient) { }
 
-  getAll(): Observable<DossierEtudiant[]> {
-    return this.httpClient.get<DossierEtudiant[]>(`${this.SERVICE_URL}`)
+  getAll(params?: any): Observable<DossierEtudiant[]> {
+    return this.httpClient.get<DossierEtudiant[]>(`${this.SERVICE_URL}`, { params })
   }
 
   get(id: string): Observable<DossierEtudiant> {

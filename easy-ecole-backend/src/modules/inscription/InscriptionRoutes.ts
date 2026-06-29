@@ -33,11 +33,17 @@ import ListeNoteEvaluationRouter from "./routers/ListeNoteEvaluationRouter";
 import PointageRouter from "./routers/PointageRouter";
 import NoteEvaluationRouter from "./routers/NoteEvaluationRouter";
 import BulletinRouter from "../bulletins/routers/BulletinRouter"
+import DeliberationRouter from "../bulletins/routers/DeliberationRouter"
 import EcheanceRouter from "./routers/EcheanceRouter";
+import BordereauController from "./controllers/BordereauController";
 import BordereauRouter from "./routers/BordereauRouter";
 import DossierEtudiantRouter from "./routers/DossierEtudiantRouter";
+import PreInscriptionRouter from "./routers/PreInscriptionRouter";
 
 const router = express.Router();
+
+// Route publique pour téléchargement (sans Authenticate)
+router.get('/bordereaux/:id/download', BordereauController.downloadBordereau)
 
 router
     .use('/sessions', [Authenticate], SessionRouter)
@@ -72,8 +78,10 @@ router
     .use('/notesEvaluation', [Authenticate], NoteEvaluationRouter)
     .use('/pointages', [Authenticate], PointageRouter)
     .use('/', [Authenticate], BulletinRouter)
+    .use('/', [Authenticate], DeliberationRouter)
     .use('/echeances', [Authenticate], EcheanceRouter)
     .use('/bordereaux', [Authenticate], BordereauRouter)
     .use('/dossiers', [Authenticate], DossierEtudiantRouter)
+    .use('/pre-inscriptions', [Authenticate], PreInscriptionRouter)
 
 export default router;

@@ -1,5 +1,6 @@
 import { Utilisateur } from "../../auth/models/Utilisateur.model"
 import { Echeance } from "./Echeance.model"
+import { CoursParticipant } from "./CoursParticipant.model"
 
 export class DossierEtudiant {
   declare id?: string
@@ -15,6 +16,7 @@ export class DossierEtudiant {
   declare demarrageParcours?: Date
   declare utilisateur?: Utilisateur
   declare echeances?: Echeance[]
+  declare coursParticipants?: CoursParticipant[]
 
   declare readonly createdAt?: Date
   declare readonly updatedAt?: Date

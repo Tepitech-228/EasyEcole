@@ -5,7 +5,7 @@ import * as fs from "fs"
 import { customAlphabet } from 'nanoid'
 
 import DossierInscriptionController from "../controllers/DossierInscriptionController"
-import { AuthApprenant } from "../../../core/middlewares/AuthApprenant";
+import Authenticate from "../../../core/middlewares/Authenticate";
 
 const router = express.Router()
 
@@ -84,7 +84,7 @@ router
  *       200:
  *         description: Fichier téléchargé
  */
-    .put('/', [AuthApprenant, upload.fields([{name: 'fichier', maxCount: 1}])], DossierInscriptionController.uploadDossierInscription)
+    .put('/', [Authenticate, upload.fields([{name: 'fichier', maxCount: 1}])], DossierInscriptionController.uploadDossierInscription)
 
 /**
  * @openapi

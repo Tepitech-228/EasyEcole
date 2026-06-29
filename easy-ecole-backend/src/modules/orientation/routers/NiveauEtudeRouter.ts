@@ -2,6 +2,7 @@ import express from "express"
 
 import NiveauEtudeController from "../controllers/NiveauEtudeController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution"
+import CheckPermission from "../../../core/middlewares/CheckPermission"
 
 const router = express.Router()
 
@@ -39,7 +40,7 @@ router
      *       201:
      *         description: Niveau d'étude créé
      */
-    .post('/', [AuthInstitution], NiveauEtudeController.createNiveauEtude)
+    .post('/', [AuthInstitution, CheckPermission('action.orientation.niveau-etude.creer')], NiveauEtudeController.createNiveauEtude)
     /**
      * @openapi
      * /orientation/niveaux-etude/{id}:
@@ -85,7 +86,7 @@ router
      *       200:
      *         description: Niveau d'étude mis à jour
      */
-    .put('/:id', [AuthInstitution], NiveauEtudeController.updateNiveauEtude)
+    .put('/:id', [AuthInstitution, CheckPermission('action.orientation.niveau-etude.modifier')], NiveauEtudeController.updateNiveauEtude)
     /**
      * @openapi
      * /orientation/niveaux-etude/{id}:
@@ -103,7 +104,7 @@ router
      *       200:
      *         description: Niveau d'étude supprimé
      */
-    .delete('/:id', [AuthInstitution], NiveauEtudeController.deleteNiveauEtude)
+    .delete('/:id', [AuthInstitution, CheckPermission('action.orientation.niveau-etude.supprimer')], NiveauEtudeController.deleteNiveauEtude)
     /**
      * @openapi
      * /orientation/niveaux-etude/statistics/count:

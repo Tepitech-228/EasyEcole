@@ -95,4 +95,5 @@ router
      *         description: Demande de stage rejetée
      */
     .put('/rejeter/:id', [Authenticate], DemandeStageController.rejeter)
+    .delete('/:id', [Authenticate], DemandeStageController.delete)
 export default router;

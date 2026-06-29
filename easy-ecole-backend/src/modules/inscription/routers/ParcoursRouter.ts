@@ -2,6 +2,7 @@ import express from "express"
 
 import ParcoursController from "../controllers/ParcoursController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
+import CheckPermission from "../../../core/middlewares/CheckPermission";
 
 const router = express.Router()
 
@@ -35,7 +36,7 @@ router
  *       201:
  *         description: Parcours créé
  */
-    .post('/', [AuthInstitution], ParcoursController.createParcours)
+    .post('/', [AuthInstitution, CheckPermission('action.inscription.parcours.creer')], ParcoursController.createParcours)
 /**
  * @openapi
  * /inscription/parcours/{id}:
@@ -76,7 +77,7 @@ router
  *       404:
  *         description: Parcours non trouvé
  */
-    .put('/:id', [AuthInstitution], ParcoursController.updateParcours)
+    .put('/:id', [AuthInstitution, CheckPermission('action.inscription.parcours.modifier')], ParcoursController.updateParcours)
 /**
  * @openapi
  * /inscription/parcours/{id}:
@@ -91,7 +92,7 @@ router
  *       404:
  *         description: Parcours non trouvé
  */
-    .delete('/:id', [AuthInstitution], ParcoursController.deleteParcours)
+    .delete('/:id', [AuthInstitution, CheckPermission('action.inscription.parcours.supprimer')], ParcoursController.deleteParcours)
 /**
  * @openapi
  * /inscription/parcours/statistics/count:

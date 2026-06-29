@@ -7,6 +7,7 @@ import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { EmailSender } from "../../../core/helpers/EmailSender";
 import { Enseignant } from "../models/Enseignant";
 import { IDGenerator } from "../../../core/helpers/IDGenerator";
+import { JWT_SECRET } from "../../../core/config/jwt";
 
 export default class AuthController {
 
@@ -23,7 +24,7 @@ export default class AuthController {
                 }
             },
             //TODO change and move in config file
-            'secret'
+            JWT_SECRET
         );
     }
 
@@ -45,7 +46,7 @@ export default class AuthController {
                         identifiant: utilisateur.identifiant,
                         role: utilisateur.role,
                     },
-                    'secret'
+                    JWT_SECRET
                 );
 
                 return res.status(200).json({ identifiant: utilisateur.identifiant, token: token });
@@ -219,7 +220,7 @@ export default class AuthController {
         let decoded: any
 
         try {
-            decoded = jwt.verify(token, 'secret')
+            decoded = jwt.verify(token, JWT_SECRET)
         } catch (error) {
             return res.status(404).json({ success: false, error: error })
         }
@@ -269,7 +270,7 @@ export default class AuthController {
                             }
                         },
                         //TODO change and move in config file
-                        'secret'
+                        JWT_SECRET
                     );
 
                     await EmailSender.getInstance().sendPasswordResetLink(utilisateur.identifiant, utilisateur.email, redirectTo, token)
@@ -321,6 +322,31 @@ export default class AuthController {
         }
 
         return null
+    }
+
+    static async passwordResetWithToken(req: Request, res: Response): Promise<Response | null> {
+        const { token, motDePasse } = req.body
+        if (!token || !motDePasse) {
+            return res.status(400).json({ success: false, message: "Token et mot de passe requis" })
+        }
+
+        let decoded: any
+        try {
+            decoded = jwt.verify(token, JWT_SECRET)
+        } catch (error) {
+            return res.status(400).json({ success: false, message: "Token invalide ou expiré" })
+        }
+
+        const utilisateur = await Utilisateur.findOne({ where: { email: decoded.data.email } })
+        if (!utilisateur) {
+            return res.status(404).json({ success: false, message: "Utilisateur non trouvé" })
+        }
+
+        await utilisateur.update({
+            motDePasse: bcrypt.hashSync(motDePasse, 10)
+        })
+
+        return res.status(200).json({ success: true, message: "Mot de passe réinitialisé" })
     }
 
 

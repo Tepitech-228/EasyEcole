@@ -105,9 +105,10 @@ export default class SuggestionController {
         reponse.suggestionId = req.body.suggestionId
         reponse.utilisateurId = (req as any).utilisateurId
 
+        const suggestionNonNull = suggestion;
         await reponse.save()
             .then(async (reponse) => {
-                await suggestion.update({ statut: 'traitee' })
+                await suggestionNonNull.update({ statut: 'traitee' })
                 return res.status(201).send(reponse);
             })
             .catch((error) => {

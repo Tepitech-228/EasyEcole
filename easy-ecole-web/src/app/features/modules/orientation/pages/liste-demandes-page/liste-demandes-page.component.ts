@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { DemandeOrientation } from 'src/app/data/modules/orientation/models/DemandeOrientation.model';
 import { ParcoursChoisi } from 'src/app/data/modules/orientation/models/ParcoursChoisi.model';
@@ -13,12 +14,15 @@ import { environment } from 'src/environments/environment';
 export class ListeDemandesPageComponent extends BaseComponentClass implements OnInit {
 
   showModal: boolean = true
+  showNouvelleDemandeModal: boolean = false
   selectedDemande?: DemandeOrientation
   demandesOrientation: DemandeOrientation[] = []
 
   readonly PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS
 
-  constructor(private demandeOrientationService: DemandeOrientationService) {
+  constructor(
+    private router: Router,
+    private demandeOrientationService: DemandeOrientationService) {
     super()
     this.getDemandesOrientation()
   }
@@ -50,6 +54,11 @@ export class ListeDemandesPageComponent extends BaseComponentClass implements On
   
   closeModal(): void {
     this.showModal = false
+  }
+
+  navigateToParcours(): void {
+    this.showNouvelleDemandeModal = false
+    this.router.navigate(['/orientation/parcours'])
   }
 
 }

@@ -5,5 +5,6 @@ export type RolesValueType = {
     isCaissierBanque: boolean
     isRessourcesHumaines: boolean
     isCabinetComptable: boolean
+    isComiteOrientation: boolean
     isAdmin: boolean
 }

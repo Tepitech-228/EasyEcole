@@ -22,7 +22,7 @@ export class ChatPageComponent implements OnInit {
 
   loadSalons(): void {
     this.loading = true;
-    this.http.get(`${environment.apiUrl}/elearning/chat/salons`).subscribe({
+    this.http.get(`${environment.API_URL}/elearning/chat/salons`).subscribe({
       next: (data: any) => {
         this.salons = data.filter((s: any) => !this.coursId || s.coursId == this.coursId);
         this.loading = false;
@@ -35,3 +35,4 @@ export class ChatPageComponent implements OnInit {
     this.selectedSalon = salon;
   }
 }
+

@@ -16,6 +16,7 @@ MouvementStock.belongsTo(Article, { as: 'article', foreignKey: 'articleId' })
 Article.hasMany(MouvementStock, { foreignKey: 'articleId', as: 'mouvementsStock' })
 
 MouvementStock.belongsTo(Fournisseur, { as: 'fournisseur', foreignKey: 'fournisseurId' })
+Fournisseur.hasMany(MouvementStock, { as: 'mouvementsStock', foreignKey: 'fournisseurId' })
 MouvementStock.belongsTo(Site, { as: 'site', foreignKey: 'siteId' })
 Site.hasMany(MouvementStock, { foreignKey: 'siteId', as: 'mouvementsStock' })
 

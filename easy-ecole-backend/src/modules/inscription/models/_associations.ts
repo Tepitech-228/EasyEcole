@@ -33,6 +33,12 @@ import { TypeNoteEvaluation } from "./TypeNoteEvaluation";
 import { Pointage } from "./Pointage";
 import { ListeNoteEvaluation } from "./ListeNoteEvaluation";
 import { NoteEvaluation } from "./NoteEvaluation";
+import { PreInscription } from "./PreInscription";
+import { Quitus } from "./Quitus";
+import { DossierEtudiant } from "./DossierEtudiant";
+import { Echeance } from "./Echeance";
+import { Bordereau } from "./Bordereau";
+import { initBulletinAssociations } from "../../bulletins/models/_associations";
 
 // Cours - Parcours
 Parcours.hasMany(Cours, { foreignKey: 'parcoursId', as: 'cours' })
@@ -93,6 +99,14 @@ ParcoursChoisi.belongsTo(DemandeInscription, { foreignKey: 'demandeInscriptionId
 // DemandeInscription - ReponseInscription
 ReponseInscription.belongsTo(DemandeInscription, { foreignKey: 'demandeInscriptionId', as: 'demandeInscription' })
 DemandeInscription.hasOne(ReponseInscription, { foreignKey: 'demandeInscriptionId', as: 'reponseInscription' })
+
+// DemandeInscription - PreInscription
+PreInscription.belongsTo(DemandeInscription, { foreignKey: 'demandeInscriptionId', as: 'demandeInscription' })
+DemandeInscription.hasOne(PreInscription, { foreignKey: 'demandeInscriptionId', as: 'preInscription' })
+
+// PreInscription - Utilisateur (traitePar)
+Utilisateur.hasMany(PreInscription, { foreignKey: 'traiteParId', as: 'preInscriptionsTraitees' })
+PreInscription.belongsTo(Utilisateur, { foreignKey: 'traiteParId', as: 'traitePar' })
 
 // DemandeInscription - Utilisateur
 Utilisateur.hasMany(DemandeInscription, { foreignKey: 'utilisateurId', as: 'demandesInscription' })
@@ -247,6 +261,10 @@ NoteEvaluation.belongsTo(ListeNoteEvaluation, { as: 'listeNoteEvaluation', forei
 AnneeAcademique.hasMany(ListeNoteEvaluation, { foreignKey: 'anneeAcademiqueId', as: 'listesNotesEvaluation' })
 ListeNoteEvaluation.belongsTo(AnneeAcademique, { as: 'anneeAcademique', foreignKey: 'anneeAcademiqueId' })
 
+// Enseignant - ListeNoteEvaluation
+Enseignant.hasMany(ListeNoteEvaluation, { foreignKey: 'enseignantId', as: 'listesNotesEvaluation' })
+ListeNoteEvaluation.belongsTo(Enseignant, { as: 'enseignant', foreignKey: 'enseignantId' })
+
 // CoursParticipant - NoteEvaluation
 CoursParticipant.hasMany(NoteEvaluation, { foreignKey: 'coursParticipantId', as: 'notesEvaluation' })
 NoteEvaluation.belongsTo(CoursParticipant, { as: 'coursParticipant', foreignKey: 'coursParticipantId' })
@@ -256,22 +274,21 @@ Utilisateur.hasMany(Pointage, { foreignKey: 'utilisateurId', as: 'pointages' })
 Pointage.belongsTo(Utilisateur, { as: 'utilisateur', foreignKey: 'utilisateurId' })
 
 // Quitus - PaiementInscription
-import { Quitus } from "./Quitus";
 Quitus.belongsTo(PaiementInscription, { foreignKey: 'paiementInscriptionId', as: 'paiementInscription' })
 PaiementInscription.hasOne(Quitus, { foreignKey: 'paiementInscriptionId', as: 'quitus' })
 
 // DossierEtudiant - Utilisateur
-import { DossierEtudiant } from "./DossierEtudiant";
 Utilisateur.hasMany(DossierEtudiant, { foreignKey: 'utilisateurId', as: 'dossiersEtudiants' })
 DossierEtudiant.belongsTo(Utilisateur, { foreignKey: 'utilisateurId', as: 'utilisateur' })
 
 // DossierEtudiant - Echeance
-import { Echeance } from "./Echeance";
 DossierEtudiant.hasMany(Echeance, { foreignKey: 'dossierEtudiantId', as: 'echeances' })
 Echeance.belongsTo(DossierEtudiant, { foreignKey: 'dossierEtudiantId', as: 'dossierEtudiant' })
 
+// DossierEtudiant - CoursParticipant (via utilisateurId)
+DossierEtudiant.hasMany(CoursParticipant, { foreignKey: 'utilisateurId', as: 'coursParticipants' })
+
 // Bordereau - Echeance
-import { Bordereau } from "./Bordereau";
 Echeance.hasMany(Bordereau, { foreignKey: 'echeanceId', as: 'bordereaux' })
 Bordereau.belongsTo(Echeance, { foreignKey: 'echeanceId', as: 'echeance' })
 
@@ -283,6 +300,9 @@ Bordereau.belongsTo(Utilisateur, { foreignKey: 'utilisateurId', as: 'utilisateur
 Utilisateur.hasMany(Bordereau, { foreignKey: 'valideParId', as: 'bordereauxValides' })
 Bordereau.belongsTo(Utilisateur, { foreignKey: 'valideParId', as: 'validePar' })
 
+// Bordereau - Quitus
+Bordereau.hasOne(Quitus, { foreignKey: 'bordereauId', as: 'quitus' })
+Quitus.belongsTo(Bordereau, { foreignKey: 'bordereauId', as: 'bordereau' })
+
 // Bulletin associations
-import { initBulletinAssociations } from "../../bulletins/models/_associations";
 initBulletinAssociations();

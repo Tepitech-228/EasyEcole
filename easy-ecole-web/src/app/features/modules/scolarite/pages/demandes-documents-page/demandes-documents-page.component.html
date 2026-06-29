@@ -1,0 +1,145 @@
+<div class="page-container">
+  <app-header-title title="Demandes de documents" subtitle="Soumettez et suivez vos demandes de documents administratifs"></app-header-title>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-icon text-yellow-600 bg-yellow-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ demandes.length }}</p>
+        <p class="stat-label">Total demandes</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon text-green-600 bg-green-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ getStatutCount('delivree') }}</p>
+        <p class="stat-label">Délivrées</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon text-yellow-600 bg-yellow-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ getStatutCount('soumise') }}</p>
+        <p class="stat-label">En attente</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon text-red-600 bg-red-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ getStatutCount('rejetee') }}</p>
+        <p class="stat-label">Rejetées</p>
+      </div>
+    </div>
+  </div>
+
+  <app-custom-alert *ngIf="errorMessage" [show]="true" [title]="errorMessage" type="danger" [inline]="true"></app-custom-alert>
+  <app-custom-alert *ngIf="successMessage" [show]="true" [title]="successMessage" type="success" [inline]="true"></app-custom-alert>
+
+  <div class="card mb-6">
+    <div class="card-header">
+      <h2 class="card-title">Nouvelle demande</h2>
+      <p class="card-subtitle">Sélectionnez le type de document que vous souhaitez obtenir</p>
+    </div>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Type de document</label>
+          <select [(ngModel)]="newDemande.typeDocumentId" class="form-select">
+            <option value="" disabled>Sélectionner un type</option>
+            <option *ngFor="let type of typesDocument" [value]="type.id">{{ type.libelle }} - {{ type.frais | number }} FC</option>
+          </select>
+          <p *ngIf="selectedTypeFrais" class="form-helper">Frais : {{ selectedTypeFrais | number }} FC</p>
+        </div>
+      </div>
+      <div class="form-actions">
+        <app-custom-button (click)="submitDemande()" text="Soumettre la demande" color="primary" [disabled]="!newDemande.typeDocumentId || loading"></app-custom-button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header border-b">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 class="card-title">Mes demandes</h2>
+          <p class="card-subtitle">Historique de vos demandes de documents</p>
+        </div>
+        <div class="flex gap-4 items-center">
+          <input type="text" [(ngModel)]="searchQuery" (keyup)="filtrer()" placeholder="Rechercher..."
+            class="form-input-sm">
+          <select [(ngModel)]="filterStatut" (change)="filtrer()" class="form-select-sm">
+            <option value="undefined">Tous les statuts</option>
+            <option value="soumise">Soumise</option>
+            <option value="validee">Validée</option>
+            <option value="rejetee">Rejetée</option>
+            <option value="delivree">Délivrée</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <div *ngIf="loading" class="loading-shimmer">
+        <div *ngFor="let _ of [1,2,3]" class="shimmer-row"></div>
+      </div>
+      <div *ngIf="!loading && _demandes.length === 0" class="empty-state">
+        <img class="h-40" src="assets/images/selection-pana.svg" alt="no data">
+        <p class="text-gray-500">Aucune demande trouvée</p>
+      </div>
+      <div *ngFor="let demande of paginatedDemandes" class="list-item">
+        <div class="list-item-left">
+          <div class="list-item-icon"
+            [class.text-yellow-600]="demande.statut === 'soumise'"
+            [class.text-blue-600]="demande.statut === 'validee'"
+            [class.text-red-600]="demande.statut === 'rejetee'"
+            [class.text-green-600]="demande.statut === 'delivree'">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+          <div>
+            <p class="list-item-title">{{ demande.typeDocument?.libelle || 'Document' }}</p>
+            <p class="list-item-subtitle">Date: {{ demande.date | date:'EEEE d MMMM yyyy, HH:mm' }}</p>
+            <p *ngIf="demande.fraisPayes" class="list-item-subtitle text-green-600">Frais payés</p>
+            <p *ngIf="!demande.fraisPayes && demande.statut === 'validee'" class="list-item-subtitle text-orange-600">Frais non payés</p>
+            <p *ngIf="demande.documentDelivre" class="list-item-subtitle text-green-600">
+              Délivré le {{ demande.documentDelivre.dateDelivrance | date:'short' }}
+            </p>
+          </div>
+        </div>
+        <div class="list-item-right">
+          <app-custom-badge [text]="statutLabel(demande.statut)" [color]="statutColor(demande.statut)"></app-custom-badge>
+          <button *ngIf="demande.statut === 'soumise'" (click)="confirmDelete(demande)"
+            class="btn-icon text-red-500 hover:text-red-700" title="Annuler la demande">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer" *ngIf="_demandes.length > pageSize">
+      <div class="flex justify-between items-center">
+        <span class="text-sm text-gray-600">{{ _demandes.length }} demande(s) - Page {{ currentPage }}/{{ totalPages }}</span>
+        <div class="flex gap-2">
+          <app-custom-button (click)="prevPage()" text="Précédent" color="gray" [outlined]="true" [disabled]="currentPage === 1"></app-custom-button>
+          <app-custom-button (click)="nextPage()" text="Suivant" color="gray" [outlined]="true" [disabled]="currentPage === totalPages"></app-custom-button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-custom-modal [showModal]="showDeleteModal" title="Annuler la demande" subtitle="Voulez-vous vraiment annuler cette demande ?" (onCloseModal)="showDeleteModal = false">
+  <div class="flex gap-4 justify-end mt-6">
+    <app-custom-button (click)="showDeleteModal = false" text="Non" color="gray" [outlined]="true"></app-custom-button>
+    <app-custom-button (click)="deleteDemande()" text="Oui, annuler" color="red"></app-custom-button>
+  </div>
+</app-custom-modal>

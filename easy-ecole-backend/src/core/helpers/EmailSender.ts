@@ -229,6 +229,69 @@ export class EmailSender {
         })
     }
 
+    public sendPreInscriptionValidee(username: string, email: string): Promise<void> {
+        const mailOptions: SendMailOptions = {
+            from: `Easy Ecole <${config.username}>`,
+            to: email,
+            encoding: 'UTF-8',
+            subject: 'Easy Ecole: Votre préinscription a été validée',
+            html: `<p>Bonjour <b>${username},</b></p>
+            <p>Votre dossier de préinscription a été validé par le comité d'orientation.</p>
+            <p>Une autorisation provisoire d'inscription est disponible dans votre espace. Connectez-vous à la plateforme pour la télécharger.</p>
+            <p>Vous pouvez maintenant procéder au paiement des frais d'inscription auprès de la banque muni de cette autorisation.</p>
+            <p>Coridialement, <br> Easy Ecole</p>`
+        }
+
+        return new Promise((resolve, reject) => {
+            this.transporter.sendMail(mailOptions, function (err, data) {
+                if (err) reject(err)
+                else resolve()
+            })
+        })
+    }
+
+    public sendPreInscriptionRejetee(username: string, email: string, motif: string): Promise<void> {
+        const mailOptions: SendMailOptions = {
+            from: `Easy Ecole <${config.username}>`,
+            to: email,
+            encoding: 'UTF-8',
+            subject: 'Easy Ecole: Votre préinscription a été rejetée',
+            html: `<p>Bonjour <b>${username},</b></p>
+            <p>Votre dossier de préinscription a été rejeté par le comité d'orientation.</p>
+            <p>Motif: <b>${motif}</b></p>
+            <p>Pour plus d'informations, veuillez contacter l'établissement.</p>
+            <p>Coridialement, <br> Easy Ecole</p>`
+        }
+
+        return new Promise((resolve, reject) => {
+            this.transporter.sendMail(mailOptions, function (err, data) {
+                if (err) reject(err)
+                else resolve()
+            })
+        })
+    }
+
+    public sendQuitusEtMatricule(username: string, email: string, matricule: string): Promise<void> {
+        const mailOptions: SendMailOptions = {
+            from: `Easy Ecole <${config.username}>`,
+            to: email,
+            encoding: 'UTF-8',
+            subject: 'Easy Ecole: Votre dossier étudiant est prêt',
+            html: `<p>Bonjour <b>${username},</b></p>
+            <p>Votre dossier étudiant a été créé avec succès.</p>
+            <p>Votre numéro matricule est: <strong>${matricule}</strong></p>
+            <p>Vous pouvez desormais utiliser ce matricule pour toutes vos démarches au sein de l'établissement.</p>
+            <p>Coridialement, <br> Easy Ecole</p>`
+        }
+
+        return new Promise((resolve, reject) => {
+            this.transporter.sendMail(mailOptions, function (err, data) {
+                if (err) reject(err)
+                else resolve()
+            })
+        })
+    }
+
     public sendEmailConfirmLink(username: string, email: string, redirectTo: string, token: string): Promise<void> {
         const template: EmailTemplateType = {
             title: 'Confirmer votre email',

@@ -5,6 +5,7 @@ import { AdresseInstitution } from "./AdresseInstitution";
 import { Apprenant } from "./Apprenant";
 import { Banque } from "./Banque";
 import { CaissierBanque } from "./CaissierBanque";
+import { ComiteOrientation } from "./ComiteOrientation";
 import { Enseignant } from "./Enseignant";
 import { IdentiteApprenant } from "./IdentiteApprenant";
 import { InformationsParentsApprenant } from "./InformationsParentsApprenant";
@@ -12,6 +13,11 @@ import { InformationsSalarieApprenant } from "./InformationsSalarieApprenant";
 import { Institution } from "./Institution";
 import { PersonnePrevenirApprenant } from "./PersonnePrevenirApprenant";
 import { Utilisateur } from "./Utilisateur";
+import { UserPermission } from "./UserPermission";
+import { Permission } from "./Permission";
+import { Role } from "./Role";
+import { RolePermission } from "./RolePermission";
+import { UserRole } from "./UserRole";
 
 // Utilisateur - Apprenant
 Apprenant.belongsTo(Utilisateur, { as: 'utilisateur', foreignKey: 'utilisateurId' })
@@ -64,3 +70,23 @@ Utilisateur.hasOne(Enseignant, { as: 'enseignant', foreignKey: 'utilisateurId' }
 // Enseignant - AdresseEnseignant
 AdresseEnseignant.belongsTo(Enseignant, { as: 'enseignant', foreignKey: 'enseignantId' })
 Enseignant.hasOne(AdresseEnseignant, { as: 'adresse', foreignKey: 'enseignantId' })
+
+// Utilisateur - ComiteOrientation
+ComiteOrientation.belongsTo(Utilisateur, { as: 'utilisateur', foreignKey: 'utilisateurId' })
+Utilisateur.hasOne(ComiteOrientation, { as: 'comiteOrientation', foreignKey: 'utilisateurId' })
+
+// UserPermission - Permission
+UserPermission.belongsTo(Permission, { as: 'permission', foreignKey: 'permissionId' })
+Permission.hasMany(UserPermission, { as: 'userPermissions', foreignKey: 'permissionId' })
+
+// UserPermission - Utilisateur
+UserPermission.belongsTo(Utilisateur, { as: 'utilisateur', foreignKey: 'utilisateurId' })
+Utilisateur.hasMany(UserPermission, { as: 'userPermissions', foreignKey: 'utilisateurId' })
+
+// Role - Permission (via RolePermission)
+Role.belongsToMany(Permission, { through: RolePermission, as: 'permissions', foreignKey: 'roleId' })
+Permission.belongsToMany(Role, { through: RolePermission, as: 'roles', foreignKey: 'permissionId' })
+
+// Role - Utilisateur (via UserRole)
+Role.belongsToMany(Utilisateur, { through: UserRole, as: 'utilisateurs', foreignKey: 'roleId' })
+Utilisateur.belongsToMany(Role, { through: UserRole, as: 'roles', foreignKey: 'utilisateurId' })

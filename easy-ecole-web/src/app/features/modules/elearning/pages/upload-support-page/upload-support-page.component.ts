@@ -22,7 +22,7 @@ export class UploadSupportPageComponent implements OnInit {
   ngOnInit(): void {
     this.coursId = this.route.snapshot.paramMap.get('id');
     if (this.coursId) {
-      this.http.get(`${environment.apiUrl}/elearning/modules?coursId=${this.coursId}`).subscribe({
+      this.http.get(`${environment.API_URL}/elearning/modules?coursId=${this.coursId}`).subscribe({
         next: (data: any) => this.modules = data
       });
     }
@@ -41,7 +41,7 @@ export class UploadSupportPageComponent implements OnInit {
     formData.append('moduleId', this.selectedModuleId);
     formData.append('type', this.supportType);
 
-    this.http.post(`${environment.apiUrl}/elearning/supports`, formData).subscribe({
+    this.http.post(`${environment.API_URL}/elearning/supports`, formData).subscribe({
       next: () => {
         this.successMessage = 'Support uploadé avec succès.';
         this.uploading = false;
@@ -53,3 +53,4 @@ export class UploadSupportPageComponent implements OnInit {
     });
   }
 }
+

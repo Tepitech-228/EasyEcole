@@ -6,6 +6,107 @@
     {{ successMessage }}
 </div>
 
+<div *ngIf="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+    Une erreur est survenue lors du traitement
+</div>
+
+<!-- Filtres par année / niveau / parcours -->
+<div class="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+    <div class="flex items-center gap-x-2 mb-3">
+        <span class="material-symbols-outlined text-gray-500">folder</span>
+        <span class="text-sm font-medium text-gray-700">Filtrer par dossier</span>
+        <button *ngIf="selectedAnneeId || selectedNiveauId || selectedParcoursId" (click)="effriterFiltres()"
+            class="ml-auto text-xs text-indigo-600 hover:text-indigo-800 underline">Effacer les filtres</button>
+    </div>
+
+    <!-- Fil d'Ariane du dossier sélectionné -->
+    <div *ngIf="selectedAnneeId" class="flex items-center gap-x-2 mb-4 text-sm text-gray-600 bg-gray-50 rounded px-3 py-2">
+        <span class="material-symbols-outlined text-base text-yellow-600">folder</span>
+        <span class="font-medium">{{ getAnneeLibelle(selectedAnneeId) }}</span>
+        <span class="material-symbols-outlined text-base text-gray-400">chevron_right</span>
+        <ng-container *ngIf="selectedNiveauId">
+            <span class="material-symbols-outlined text-base text-blue-600">folder</span>
+            <span class="font-medium">{{ getNiveauLibelle(selectedNiveauId) }}</span>
+            <span class="material-symbols-outlined text-base text-gray-400">chevron_right</span>
+        </ng-container>
+        <ng-container *ngIf="selectedParcoursId">
+            <span class="material-symbols-outlined text-base text-green-600">folder</span>
+            <span class="font-medium">{{ getParcoursTitre(selectedParcoursId) }}</span>
+        </ng-container>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-x-6 gap-y-4">
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1.5">
+                <span class="material-symbols-outlined text-sm align-text-bottom mr-1">calendar_month</span>
+                Année académique
+            </label>
+            <select [(ngModel)]="selectedAnneeId" (change)="onAnneeChange()"
+                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <option value="">Toutes les années</option>
+                <option *ngFor="let a of annees" [value]="a.id">{{ a.libelle }}</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1.5">
+                <span class="material-symbols-outlined text-sm align-text-bottom mr-1">school</span>
+                Niveau d'étude
+            </label>
+            <select [(ngModel)]="selectedNiveauId" (change)="onNiveauChange()"
+                [disabled]="!selectedAnneeId"
+                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 disabled:opacity-50 disabled:cursor-not-allowed">
+                <option value="">Tous les niveaux</option>
+                <option *ngFor="let n of niveauxFiltres" [value]="n.id">{{ n.libelle }}</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1.5">
+                <span class="material-symbols-outlined text-sm align-text-bottom mr-1">route</span>
+                Parcours
+            </label>
+            <select [(ngModel)]="selectedParcoursId" (change)="onParcoursChange()"
+                [disabled]="!selectedNiveauId"
+                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 disabled:opacity-50 disabled:cursor-not-allowed">
+                <option value="">Tous les parcours</option>
+                <option *ngFor="let p of parcoursFiltres" [value]="p.id">{{ p.titre }}</option>
+            </select>
+        </div>
+        <div class="flex items-end">
+            <span class="text-xs text-gray-400">
+                {{ bordereauxEnAttente.length }} bordereau(x) trouvé(s)
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Filtres par type -->
+<div class="flex gap-x-2 mb-6 border-b border-gray-200">
+    <button (click)="setFilter('tous')"
+        class="px-4 py-2 text-sm font-medium transition"
+        [class.text-indigo-600]="activeFilter == 'tous'"
+        [class.border-b-2]="activeFilter == 'tous'"
+        [class.border-indigo-600]="activeFilter == 'tous'"
+        [class.text-gray-500]="activeFilter != 'tous'">
+        Tous ({{ bordereauxEnAttente.length }})
+    </button>
+    <button (click)="setFilter('inscription')"
+        class="px-4 py-2 text-sm font-medium transition"
+        [class.text-indigo-600]="activeFilter == 'inscription'"
+        [class.border-b-2]="activeFilter == 'inscription'"
+        [class.border-indigo-600]="activeFilter == 'inscription'"
+        [class.text-gray-500]="activeFilter != 'inscription'">
+        Inscription ({{ nbInscription }})
+    </button>
+    <button (click)="setFilter('scolarite')"
+        class="px-4 py-2 text-sm font-medium transition"
+        [class.text-indigo-600]="activeFilter == 'scolarite'"
+        [class.border-b-2]="activeFilter == 'scolarite'"
+        [class.border-indigo-600]="activeFilter == 'scolarite'"
+        [class.text-gray-500]="activeFilter != 'scolarite'">
+        Scolarité ({{ nbScolarite }})
+    </button>
+</div>
+
 <div class="mb-8">
     <div class="overflow-x-auto">
         <div class="py-2 inline-block min-w-full">
@@ -20,6 +121,9 @@
                                 <div class="px-2">Étudiant</div>
                             </th>
                             <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Type</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
                                 <div class="px-2">Échéance</div>
                             </th>
                             <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
@@ -29,7 +133,10 @@
                                 <div class="px-2">Montant</div>
                             </th>
                             <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                <div class="px-2">Date soumission</div>
+                                <div class="px-2">PDF</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Date</div>
                             </th>
                             <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
                                 <div class="px-2">Action</div>
@@ -37,12 +144,12 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr *ngIf="bordereauxEnAttente.length == 0"
+                        <tr *ngIf="filteredBordereaux.length == 0"
                             class="bg-white p-0 border-b transition duration-300 ease-in-out">
                             <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
-                                colspan="7">Aucun bordereau en attente de validation</td>
+                                colspan="9">Aucun bordereau en attente</td>
                         </tr>
-                        <tr *ngFor="let bordereau of bordereauxEnAttente; index as index"
+                        <tr *ngFor="let bordereau of filteredBordereaux; index as index"
                             class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
                             <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                 <div class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ index + 1 }}</div>
@@ -52,9 +159,17 @@
                                     {{ bordereau.utilisateur ? bordereau.utilisateur.nom + ' ' + bordereau.utilisateur.prenoms : '---' }}
                                 </div>
                             </td>
+                            <td class="bg-transparent text-sm font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 bg-transparent sm:text-sm sm:leading-6">
+                                    <app-custom-badge *ngIf="(bordereau.type || bordereau.echeance?.type) == 'inscription'" color="violet" text="Inscription"></app-custom-badge>
+                                    <app-custom-badge *ngIf="(bordereau.type || bordereau.echeance?.type) == 'scolarite'" color="orange" text="Scolarité"></app-custom-badge>
+                                    <span *ngIf="!(bordereau.type || bordereau.echeance?.type)" class="text-gray-400">---</span>
+                                </div>
+                            </td>
                             <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                 <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
                                     {{ bordereau.echeance ? 'Mois ' + bordereau.echeance.numeroEcheance : '---' }}
+                                    <span *ngIf="bordereau.echeance?.moisConcerne" class="text-gray-400 text-xs"> ({{ bordereau.echeance?.moisConcerne }})</span>
                                 </div>
                             </td>
                             <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
@@ -62,6 +177,23 @@
                             </td>
                             <td class="bg-transparent text-right text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                 <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ bordereau.montant | currency:'XAF' }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 bg-transparent sm:text-sm sm:leading-6">
+                                    <div *ngIf="bordereau.fichier" (click)="openPdfModal(bordereau)"
+                                        class="inline-flex items-center gap-x-2 cursor-pointer group">
+                                        <img *ngIf="isImageFile(bordereau.fichier)"
+                                            [src]="BORDEREAUX_PATH + bordereau.fichier"
+                                            class="w-16 h-20 object-cover rounded border border-gray-200 group-hover:border-indigo-400 transition"
+                                            alt="Bordereau">
+                                        <span *ngIf="!isImageFile(bordereau.fichier)"
+                                            class="inline-flex items-center gap-x-1 text-indigo-600 hover:text-indigo-800 underline text-sm">
+                                            <span class="material-symbols-outlined text-lg">picture_as_pdf</span>
+                                            Voir le PDF
+                                        </span>
+                                    </div>
+                                    <span *ngIf="!bordereau.fichier" class="text-gray-400">---</span>
+                                </div>
                             </td>
                             <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                 <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ bordereau.dateSoumission | date: 'dd/MM/YYYY' }}</div>
@@ -84,10 +216,28 @@
     </div>
 </div>
 
+<!-- Modal Validation -->
 <app-custom-modal title="Valider le bordereau" subtitle="Confirmer la validation de ce bordereau de paiement" (onCloseModal)="closeValidationModal()" [center]="true" [showModal]="showValidationModal">
     <div *ngIf="selectedBordereau" class="mb-6">
-        <p class="text-sm text-gray-600">Êtes-vous sûr de vouloir valider ce bordereau de <strong>{{ selectedBordereau.montant | currency:'XAF' }}</strong> ?</p>
-        <p class="text-sm text-gray-600 mt-2">L'échéance concernée sera marquée comme payée.</p>
+        <div class="flex items-center gap-x-2 mb-4">
+            <app-custom-badge *ngIf="(selectedBordereau.type || selectedBordereau.echeance?.type) == 'inscription'" color="violet" text="Inscription"></app-custom-badge>
+            <app-custom-badge *ngIf="(selectedBordereau.type || selectedBordereau.echeance?.type) == 'scolarite'" color="orange" text="Scolarité"></app-custom-badge>
+        </div>
+        <p class="text-sm text-gray-600">
+            Êtes-vous sûr de vouloir valider ce bordereau de <strong>{{ selectedBordereau.montant | currency:'XAF' }}</strong> ?
+        </p>
+        <ng-container [ngSwitch]="selectedBordereau.type || selectedBordereau.echeance?.type">
+            <div *ngSwitchCase="'inscription'" class="mt-3 p-3 bg-violet-50 border border-violet-200 rounded text-sm text-violet-700">
+                <span class="material-symbols-outlined text-sm align-middle mr-1">badge</span>
+                Un <strong>dossier étudiant</strong> sera créé avec un matricule et un QR code.
+                Les échéances de scolarité (10 mensualités) seront automatiquement générées.
+            </div>
+            <div *ngSwitchCase="'scolarite'" class="mt-3 p-3 bg-orange-50 border border-orange-200 rounded text-sm text-orange-700">
+                <span class="material-symbols-outlined text-sm align-middle mr-1">receipt</span>
+                Un <strong>quitus</strong> de paiement sera généré et envoyé à l'étudiant.
+                L'échéance sera marquée comme payée.
+            </div>
+        </ng-container>
     </div>
     <div class="flex items-center justify-between py-3">
         <app-custom-button (click)="closeValidationModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
@@ -95,6 +245,7 @@
     </div>
 </app-custom-modal>
 
+<!-- Modal Rejet -->
 <app-custom-modal title="Rejeter le bordereau" subtitle="Motif du rejet de ce bordereau" (onCloseModal)="closeRejetModal()" [center]="true" [showModal]="showRejetModal">
     <div class="mb-6">
         <span class="mb-2 block text-sm text-gray-400">Commentaire (obligatoire)</span>
@@ -104,5 +255,71 @@
     <div class="flex items-center justify-between py-3">
         <app-custom-button (click)="closeRejetModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
         <app-custom-button (click)="rejeterBordereau()" text="Rejeter" color="red"></app-custom-button>
+    </div>
+</app-custom-modal>
+
+<!-- Modal Preview document -->
+<div *ngIf="showPdfModal && pdfBordereau?.fichier" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4 max-h-[90vh] flex flex-col">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900">Bordereau de paiement</h3>
+                <p class="text-sm text-gray-500">
+                    {{ pdfBordereau?.utilisateur?.nom }} {{ pdfBordereau?.utilisateur?.prenoms }}
+                    - {{ pdfBordereau?.montant | currency:'XAF' }}
+                    - {{ pdfBordereau?.dateSoumission | date:'dd/MM/YYYY' }}
+                </p>
+            </div>
+            <button (click)="closePdfModal()" class="text-gray-400 hover:text-gray-600">
+                <span class="material-symbols-outlined text-3xl">close</span>
+            </button>
+        </div>
+        <div class="flex-1 overflow-auto p-6 bg-gray-100 flex items-center justify-center">
+            <img *ngIf="isImageFile(pdfBordereau!.fichier!)"
+                [src]="BORDEREAUX_PATH + pdfBordereau!.fichier"
+                class="max-w-full max-h-[70vh] object-contain rounded shadow"
+                alt="Bordereau">
+            <iframe *ngIf="!isImageFile(pdfBordereau!.fichier!)"
+                [src]="getDocUrl(pdfBordereau!.fichier!)"
+                class="w-full h-[70vh] rounded shadow"></iframe>
+        </div>
+        <div class="flex items-center justify-center gap-x-4 px-6 py-4 border-t border-gray-200">
+            <app-custom-button (click)="closePdfModal(); openValidationModal(pdfBordereau!)" text="Valider" color="green"></app-custom-button>
+            <app-custom-button (click)="closePdfModal(); openRejetModal(pdfBordereau!)" text="Rejeter" color="red"></app-custom-button>
+            <app-custom-button (click)="closePdfModal()" text="Fermer" [outlined]="true" color="gray"></app-custom-button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Succès -->
+<app-custom-modal title="Opération réussie" subtitle="Le bordereau a été validé avec succès" (onCloseModal)="closeSuccessModal()" [center]="true" [showModal]="showSuccessModal">
+    <div class="mb-6 text-center py-6">
+        <ng-container [ngSwitch]="successResult?.type">
+            <div *ngSwitchCase="'inscription'">
+                <span class="material-symbols-outlined text-6xl text-violet-500">badge</span>
+                <p class="text-sm text-gray-600 mt-4">
+                    Le <strong>dossier étudiant</strong> a été créé avec succès.
+                </p>
+                <p class="text-sm text-gray-600 mt-2">
+                    Un matricule et un QR code ont été générés, et les échéances de scolarité (10 mensualités) ont été créées automatiquement.
+                </p>
+                <p class="text-sm text-gray-600 mt-2">
+                    Un email contenant le matricule a été envoyé à l'étudiant.
+                </p>
+            </div>
+            <div *ngSwitchCase="'scolarite'">
+                <span class="material-symbols-outlined text-6xl text-orange-500">receipt</span>
+                <p class="text-sm text-gray-600 mt-4">
+                    Le <strong>quitus</strong> de paiement a été généré avec succès.
+                </p>
+                <p class="text-sm text-gray-600 mt-2">
+                    L'échéance est marquée comme payée.
+                    Un email de confirmation a été envoyé à l'étudiant.
+                </p>
+            </div>
+        </ng-container>
+    </div>
+    <div class="flex items-center justify-center py-3">
+        <app-custom-button (click)="closeSuccessModal()" text="Fermer"></app-custom-button>
     </div>
 </app-custom-modal>

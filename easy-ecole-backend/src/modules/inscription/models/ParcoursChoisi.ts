@@ -21,6 +21,7 @@ export class ParcoursChoisi extends Model<InferAttributes<ParcoursChoisi>, Infer
   declare readonly updatedAt: CreationOptional<Date>
 
   declare static associations: {
+    parcours: Association<ParcoursChoisi, Parcours>
     prerequisParcoursChoisis: Association<ParcoursChoisi, PrerequisParcoursChoisi>
   };
 }
@@ -44,6 +45,14 @@ ParcoursChoisi.init({
   },
   messageDeValidation: {
     type: new DataTypes.STRING,
+    allowNull: true
+  },
+  parcoursId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
+  },
+  demandeInscriptionId: {
+    type: DataTypes.INTEGER.UNSIGNED,
     allowNull: true
   },
   createdAt: DataTypes.DATE,

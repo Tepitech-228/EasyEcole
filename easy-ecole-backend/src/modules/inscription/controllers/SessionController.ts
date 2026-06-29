@@ -4,6 +4,9 @@ import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Session } from "../models/Session";
 import { DemandeInscription } from "../models/DemandeInscription";
 import { Apprenant } from "../../auth/models/Apprenant";
+import { FraisInscription } from "../models/FraisInscription";
+import { DossierInscription } from "../models/DossierInscription";
+import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 
 export default class SessionController {
 
@@ -44,21 +47,57 @@ export default class SessionController {
             return res.status(403).json({ success: false })
         }
 
-        let session: Session = new Session();
-        session.dateDebut = req.body.dateDebut
-        session.dateFin = req.body.dateFin
-        session.anneeAcademiqueId = req.body.anneeAcademiqueId
-        session.niveauEtudeId = req.body.niveauEtudeId
+        const sequelize = DatabaseConnection.getInstance().sequelize;
 
-        await session.save()
-            .then((session) => {
-                return res.status(201).send(session);
-            })
-            .catch((error) => {
-                return res.status(400).json({ success: false, error: error });
+        try {
+            const result = await sequelize.transaction(async (t) => {
+                const session = await Session.create({
+                    dateDebut: req.body.dateDebut,
+                    dateFin: req.body.dateFin,
+                    anneeAcademiqueId: req.body.anneeAcademiqueId,
+                    niveauEtudeId: req.body.niveauEtudeId,
+                    description: req.body.description,
+                }, { transaction: t });
+
+                if (req.body.frais && Array.isArray(req.body.frais)) {
+                    for (const fraisData of req.body.frais) {
+                        await FraisInscription.create({
+                            titre: fraisData.titre,
+                            montant: fraisData.montant,
+                            description: fraisData.description,
+                            fraisDesCours: fraisData.fraisDesCours ?? true,
+                            sessionId: session.id,
+                        }, { transaction: t });
+                    }
+                }
+
+                if (req.body.dossiers && Array.isArray(req.body.dossiers)) {
+                    for (const dossierData of req.body.dossiers) {
+                        await DossierInscription.create({
+                            titre: dossierData.titre,
+                            description: dossierData.description,
+                            tailleMax: dossierData.tailleMax,
+                            sessionId: session.id,
+                        }, { transaction: t });
+                    }
+                }
+
+                return session;
             });
 
-        return null
+            const session = await Session.findByPk(result.id, {
+                include: [
+                    Session.associations.niveauEtude,
+                    Session.associations.anneeAcademique,
+                    Session.associations.fraisInscription,
+                    Session.associations.dossiersInscription,
+                ]
+            });
+
+            return res.status(201).send(session);
+        } catch (error) {
+            return res.status(400).json({ success: false, error: error });
+        }
     }
 
     static async updateSession(req: Request, res: Response): Promise<Response | null> {

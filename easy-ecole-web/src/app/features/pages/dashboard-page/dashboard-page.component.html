@@ -5,6 +5,61 @@
     Une demande d'inscription est déjà en cours pour cette session
 </app-custom-alert>
 
+<div class="mb-8" *ngIf="rolesValue.isAdmin">
+  <div class="text-gray-700 text-lg font-semibold mb-4">Bienvenue, {{ utilisateur?.prenoms || 'Admin' }}</div>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-lg border border-gray-200 p-4 flex items-center gap-4">
+      <div class="p-3 rounded-full bg-blue-100">
+        <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 -960 960 960"><path d="M160-80q-33 0-56.5-23.5T80-160v-440q0-33 23.5-56.5T160-680h200v-120q0-33 23.5-56.5T440-880h80q33 0 56.5 23.5T600-800v120h200q33 0 56.5 23.5T880-600v440q0 33-23.5 56.5T800-80H160Zm320-280q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35ZM240-160h480v-36q0-17-9.5-31.5T696-244q-45-23-93.5-34.5T480-290q-54 0-102.5 11.5T284-244q-17 9-26.5 23.5T248-189v29Z"/></svg>
+      </div>
+      <div>
+        <div class="text-2xl font-bold text-gray-900">{{ totalUtilisateurs }}</div>
+        <div class="text-sm text-gray-500">Utilisateurs</div>
+      </div>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4 flex items-center gap-4">
+      <div class="p-3 rounded-full bg-green-100">
+        <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 -960 960 960"><path d="M160-80q-33 0-56.5-23.5T80-160v-440q0-33 23.5-56.5T160-680h200v-120q0-33 23.5-56.5T440-880h80q33 0 56.5 23.5T600-800v120h200q33 0 56.5 23.5T880-600v440q0 33-23.5 56.5T800-80H160Z"/></svg>
+      </div>
+      <div>
+        <div class="text-2xl font-bold text-gray-900">{{ totalSessions }}</div>
+        <div class="text-sm text-gray-500">Sessions</div>
+      </div>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4 flex items-center gap-4">
+      <div class="p-3 rounded-full bg-purple-100">
+        <svg class="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 -960 960 960"><path d="M480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Z"/></svg>
+      </div>
+      <div>
+        <div class="text-2xl font-bold text-gray-900">{{ totalApprenants }}</div>
+        <div class="text-sm text-gray-500">Apprenants</div>
+      </div>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4 flex items-center gap-4">
+      <div class="p-3 rounded-full bg-yellow-100">
+        <svg class="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 -960 960 960"><path d="M480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Z"/></svg>
+      </div>
+      <div>
+        <div class="text-2xl font-bold text-gray-900">{{ totalEnseignants }}</div>
+        <div class="text-sm text-gray-500">Enseignants</div>
+      </div>
+    </div>
+  </div>
+  <div class="bg-white rounded-lg border border-gray-200 p-4">
+    <div class="text-gray-700 font-medium mb-3">Accès rapide</div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <a routerLink="/inscription/sessions" class="px-3 py-2 bg-blue-50 text-blue-700 rounded text-sm hover:bg-blue-100 transition">Sessions</a>
+      <a routerLink="/inscription/demandes" class="px-3 py-2 bg-green-50 text-green-700 rounded text-sm hover:bg-green-100 transition">Demandes</a>
+      <a routerLink="/inscription/paiements" class="px-3 py-2 bg-purple-50 text-purple-700 rounded text-sm hover:bg-purple-100 transition">Paiements</a>
+      <a routerLink="/cours/cours" class="px-3 py-2 bg-orange-50 text-orange-700 rounded text-sm hover:bg-orange-100 transition">Cours</a>
+      <a routerLink="/bulletins" class="px-3 py-2 bg-pink-50 text-pink-700 rounded text-sm hover:bg-pink-100 transition">Bulletins</a>
+      <a routerLink="/stages/offres" class="px-3 py-2 bg-teal-50 text-teal-700 rounded text-sm hover:bg-teal-100 transition">Stages</a>
+      <a routerLink="/stocks/articles" class="px-3 py-2 bg-indigo-50 text-indigo-700 rounded text-sm hover:bg-indigo-100 transition">Stocks</a>
+      <a routerLink="/immobilisations" class="px-3 py-2 bg-red-50 text-red-700 rounded text-sm hover:bg-red-100 transition">Immobilisations</a>
+    </div>
+  </div>
+</div>
+
 <div *ngIf="rolesValue.isApprenant && sessions.length != 0" class="mb-8">
 	<div class="relative w-full h-56">
 		<div *ngFor="let session of sessions; index as i" [ngClass]="i != currentSession ? ' opacity-0 bg-blue-50' : 'opacity-100 bg-blue-100'" class="absolute inset-0 transition-all ease-in-out duration-1000 mb-4 rounded-lg px-6 py-6">

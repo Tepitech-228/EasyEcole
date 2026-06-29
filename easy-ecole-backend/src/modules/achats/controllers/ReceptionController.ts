@@ -7,6 +7,7 @@ import { MouvementStock } from "../../stock/models/MouvementStock";
 import { Immobilisation } from "../../immobilisation/models/Immobilisation";
 import { Sequelize } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
+import { creerEcritureComptable } from "../../comptabilite/helpers/ComptabiliteHelper";
 
 export default class ReceptionController {
     constructor() { }
@@ -100,6 +101,28 @@ export default class ReceptionController {
                                 description: 'Créé depuis réception commande #' + commande.id
                             }, { transaction });
                         }
+
+                        const montantLigne = Number(ligneCommande.prixUnitaire) * Number(ligne.quantiteRecue)
+                        let compteDebitNumero = '601'
+
+                        if (ligneCommande.actifImmobilise) {
+                            compteDebitNumero = ligneCommande.designation.toLowerCase().includes('informatique') ? '215' : '216'
+                        } else if (ligneCommande.gereEnStock) {
+                            compteDebitNumero = ligneCommande.designation.toLowerCase().includes('informatique') ? '302' : '301'
+                        }
+
+                        await creerEcritureComptable({
+                            req,
+                            transaction,
+                            journalCode: 'ACH',
+                            compteDebitNumero,
+                            compteCreditNumero: '401',
+                            montant: montantLigne,
+                            libelle: `Réception commande #${commande.id} - ${ligneCommande.designation}`,
+                            reference: `Réception ${reception.id}`,
+                            moduleSource: 'achats',
+                            referenceModuleId: String(reception.id)
+                        })
                     }
                 }
             }

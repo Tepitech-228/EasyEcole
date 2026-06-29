@@ -2,6 +2,7 @@ import express from "express"
 
 import EcheanceController from "../controllers/EcheanceController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
+import CheckPermission from "../../../core/middlewares/CheckPermission";
 
 const router = express.Router()
 
@@ -157,6 +158,6 @@ router
      *       201:
      *         description: Échéances générées
      */
-    .post('/generer/:dossierEtudiantId', [AuthInstitution], EcheanceController.genererEcheances)
+    .post('/generer/:dossierEtudiantId', [AuthInstitution, CheckPermission('action.inscription.echeance.generer')], EcheanceController.genererEcheances)
 
 export default router

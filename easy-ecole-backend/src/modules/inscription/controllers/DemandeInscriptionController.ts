@@ -16,6 +16,10 @@ import { Cours } from "../models/Cours";
 import { CursusApprenant } from "../models/CursusApprenant";
 import { EtatsCoursChoisi } from "../../../core/enums/EtatsCoursChoisi";
 import { CoursParticipant } from "../models/CoursParticipant";
+import { PreInscription, EtatPreInscription } from "../models/PreInscription";
+import fs from "fs";
+import path from "path";
+import { DocumentPDFGenerator } from "../../../core/helpers/DocumentPDFGenerator";
 
 export default class DemandeInscriptionController {
 
@@ -24,10 +28,10 @@ export default class DemandeInscriptionController {
     static async getAllDemandesInscription(req: Request, res: Response): Promise<Response> {
         let options: FindOptions<InferAttributes<DemandeInscription>> = {}
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
-            options = { where: { utilisateurId: (req as any).utilisateurId }, include: [{ association: DemandeInscription.associations.utilisateur, include: [{ model: Apprenant, as: 'apprenant' }] }, DemandeInscription.associations.reponseInscription, DemandeInscription.associations.parcoursChoisis] }
+            options = { where: { utilisateurId: (req as any).utilisateurId }, include: [{ association: DemandeInscription.associations.utilisateur, include: [{ model: Apprenant, as: 'apprenant' }] }, DemandeInscription.associations.reponseInscription, DemandeInscription.associations.parcoursChoisis, DemandeInscription.associations.session] }
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
-            options = { include: [{ association: DemandeInscription.associations.utilisateur, include: [{ model: Apprenant, as: 'apprenant' }] }, DemandeInscription.associations.reponseInscription, DemandeInscription.associations.parcoursChoisis] }
+        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
+            options = { include: [{ association: DemandeInscription.associations.utilisateur, include: [{ model: Apprenant, as: 'apprenant' }] }, DemandeInscription.associations.reponseInscription, DemandeInscription.associations.parcoursChoisis, DemandeInscription.associations.session] }
         }
 
         try {
@@ -52,6 +56,7 @@ export default class DemandeInscriptionController {
                         }]
                     },
                     { association: DemandeInscription.associations.session, include: [Session.associations.dossiersInscription, Session.associations.fraisInscription] },
+                    DemandeInscription.associations.preInscription,
                     DemandeInscription.associations.reponseInscription,
                     { association: DemandeInscription.associations.cours, include: [Cours.associations.classe] },
                     {
@@ -68,7 +73,7 @@ export default class DemandeInscriptionController {
                     }]
             }
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
+        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
             options = {
                 where: { id: req.params.id },
                 include: [
@@ -78,6 +83,7 @@ export default class DemandeInscriptionController {
                         }]
                     },
                     { association: DemandeInscription.associations.session, include: [Session.associations.dossiersInscription, Session.associations.fraisInscription] },
+                    DemandeInscription.associations.preInscription,
                     DemandeInscription.associations.reponseInscription,
                     { association: DemandeInscription.associations.cours, include: [Cours.associations.classe] },
                     {
@@ -146,8 +152,45 @@ export default class DemandeInscriptionController {
         }
     }
 
-    static async getFichePaiement(req: Request, res: Response): Promise<Response | null> {
-        return null
+    static async getFichePaiement(req: Request, res: Response): Promise<void> {
+        const demande = await DemandeInscription.findByPk(req.params.id, {
+            include: [
+                { association: DemandeInscription.associations.utilisateur },
+                { association: DemandeInscription.associations.session, include: [Session.associations.fraisInscription] },
+                { association: DemandeInscription.associations.coursChoisis, include: [{ association: DemandeInscriptionCours.associations.cours }] },
+                { association: DemandeInscription.associations.paiementsInscription },
+            ]
+        })
+
+        if (!demande) {
+            res.status(404).json({ success: false, message: "Demande non trouvée" })
+            return
+        }
+
+        const etudiantNom = demande.utilisateur ? `${demande.utilisateur.nom} ${demande.utilisateur.prenoms}` : 'Étudiant'
+        const frais = demande.session?.fraisInscription || []
+        const coursChoisis = demande.coursChoisis || []
+
+        const filename = DocumentPDFGenerator.generateFichePaiement(
+            demande.id!,
+            etudiantNom,
+            demande.matricule,
+            frais.map(f => ({ titre: f.titre, montant: f.montant, fraisDesCours: f.fraisDesCours })),
+            [],
+            (demande.paiementsInscription || []).reduce((sum, p) => sum + (p.montant || 0), 0),
+            "public/inscription/bordereaux/"
+        )
+
+        const filePath = path.resolve(process.cwd(), 'public/inscription/bordereaux/', filename)
+        if (!fs.existsSync(filePath)) {
+            res.status(500).json({ success: false, message: "Erreur lors de la génération du fichier" })
+            return
+        }
+
+        res.setHeader('Content-Type', 'application/pdf')
+        res.setHeader('Content-Disposition', `inline; filename="${filename}"`)
+        const stream = fs.createReadStream(filePath)
+        stream.pipe(res)
     }
 
     static async createDemandeInscription(req: Request, res: Response): Promise<Response | null> {
@@ -190,12 +233,23 @@ export default class DemandeInscriptionController {
     }
 
     static async createDemandeInscriptionCours(req: Request, res: Response): Promise<Response | null> {
+        if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
+            return res.status(403).json({ success: false })
+        }
+
+        const demande = await DemandeInscription.findByPk(req.params.id, {
+            include: [{ association: DemandeInscription.associations.preInscription }]
+        })
+        if (!demande) {
+            return res.status(404).json({ success: false, message: "Demande non trouvée" })
+        }
+        if (!demande.preInscription || demande.preInscription.statut != EtatPreInscription.VALIDE) {
+            return res.status(400).json({ success: false, message: "La préinscription doit d'abord être validée" })
+        }
+
         let options: FindOptions<InferAttributes<DemandeInscriptionCours>> = {}
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
             options = { where: { coursId: req.body.coursId, demandeInscriptionId: req.params.id } }
-        }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
-            return res.status(403).json({ success: false })
         }
 
         let demandeInscriptionCours: DemandeInscriptionCours | null = await DemandeInscriptionCours.findOne(options);
@@ -249,62 +303,117 @@ export default class DemandeInscriptionController {
     }
 
     static async validerDemandeInscription(req: Request, res: Response): Promise<Response | null> {
-        let options: FindOptions<InferAttributes<DemandeInscription>> = {}
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
             return res.status(403).json({ success: false })
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
-            options = { where: { id: req.params.id }, include: [DemandeInscription.associations.utilisateur, DemandeInscription.associations.coursChoisis] }
+
+        const demandeInscription = await DemandeInscription.findByPk(req.params.id, {
+            include: [
+                { association: DemandeInscription.associations.utilisateur, include: [{ model: Apprenant, as: 'apprenant' }] },
+                { association: DemandeInscription.associations.parcoursChoisis, include: [{ association: ParcoursChoisi.associations.parcours }] },
+                { association: DemandeInscription.associations.preInscription },
+                { association: DemandeInscription.associations.session, include: [Session.associations.dossiersInscription, Session.associations.fraisInscription] },
+                { association: DemandeInscription.associations.dossiersDemande },
+                { association: DemandeInscription.associations.cours, include: [Cours.associations.classe] },
+                { association: DemandeInscription.associations.coursChoisis },
+                DemandeInscription.associations.paiementsInscription,
+                DemandeInscription.associations.reponseInscription,
+            ]
+        })
+
+        if (!demandeInscription) {
+            return res.status(404).json({ success: false, message: "Demande non trouvée" })
         }
 
-        let demandeInscription: DemandeInscription | null = await DemandeInscription.findOne(options);
-        if (demandeInscription != null) {
-            await demandeInscription.update({
-                dateValidation: req.body.dateValidation ?? new Date(),
-            })
-                .then(async () => {
-                    if (demandeInscription && demandeInscription.utilisateur) {
-                        let cursusApprenant: CursusApprenant = new CursusApprenant()
-                        cursusApprenant.externe = false
-                        cursusApprenant.parcoursId = req.body.cursusApprenant.parcoursId
-                        cursusApprenant.classeId = req.body.cursusApprenant.classeId
-                        cursusApprenant.anneeAcademiqueId = req.body.cursusApprenant.anneeAcademiqueId
-                        cursusApprenant.niveauEtudeId = req.body.cursusApprenant.niveauEtudeId
-                        cursusApprenant.utilisateurId = demandeInscription.utilisateurId
-                        cursusApprenant.demandeInscriptionId = demandeInscription.id
+        // Vérifier info personnelles
+        if (!demandeInscription.utilisateur?.apprenant) {
+            return res.status(400).json({ success: false, message: "Les informations personnelles ne sont pas complètes" })
+        }
 
-                        await cursusApprenant.save()
-                            .then(async (res: CursusApprenant) => {
-                                if(demandeInscription && demandeInscription.coursChoisis) {
-                                    for (let index = 0; index < demandeInscription.coursChoisis.length; index++) {
-                                        const coursChoisi: DemandeInscriptionCours = demandeInscription.coursChoisis[index];
-                                        
-                                        if(coursChoisi.etat == EtatsCoursChoisi.VALIDE) {
-                                            let coursParticipant: CoursParticipant = new CoursParticipant()
-                                            coursParticipant.coursId = coursChoisi.coursId
-                                            coursParticipant.utilisateurId = demandeInscription.utilisateurId!
-                                            coursParticipant.cursusApprenantId = res.id
+        // Vérifier parcours choisis + reponseInscription + choixFinal
+        if (!demandeInscription.parcoursChoisis || demandeInscription.parcoursChoisis.length == 0) {
+            return res.status(400).json({ success: false, message: "Aucun parcours choisi" })
+        }
+        if (!demandeInscription.reponseInscription) {
+            return res.status(400).json({ success: false, message: "La réponse de l'institution n'a pas été envoyée" })
+        }
+        if (demandeInscription.parcoursChoisis.filter(pc => pc.choixFinal == true).length == 0) {
+            return res.status(400).json({ success: false, message: "Aucun parcours final sélectionné" })
+        }
 
-                                            await coursParticipant.save()
-                                        }
-                                    }
-                                }
-                            })
+        // Vérifier documents uploadés
+        const dossiersRequis = demandeInscription.session?.dossiersInscription || []
+        const dossiersUploades = demandeInscription.dossiersDemande || []
+        if (dossiersRequis.length > 0 && dossiersUploades.length != dossiersRequis.length) {
+            return res.status(400).json({ success: false, message: "Tous les documents requis doivent être téléversés" })
+        }
 
-                        EmailSender.getInstance().sendValidationDemandeInscription(demandeInscription.utilisateur.identifiant, demandeInscription.utilisateur.email)
+        // Vérifier préinscription validée
+        if (!demandeInscription.preInscription || demandeInscription.preInscription.statut != EtatPreInscription.VALIDE) {
+            return res.status(400).json({ success: false, message: "La préinscription doit être validée" })
+        }
+
+        // Vérifier cours choisis
+        const parcoursFinal = demandeInscription.parcoursChoisis.find(pc => pc.choixFinal == true)
+        if (parcoursFinal && parcoursFinal.parcoursId) {
+            const coursParcours = demandeInscription.cours || []
+            const coursObligatoires = coursParcours.filter(c => c.estObligatoire)
+            if (coursObligatoires.length > 0) {
+                const coursChoisisIds = (demandeInscription.coursChoisis || []).map(cc => cc.coursId)
+                const tousObligatoiresChoisis = coursObligatoires.every(c => coursChoisisIds.includes(c.id))
+                if (!tousObligatoiresChoisis) {
+                    return res.status(400).json({ success: false, message: "Tous les cours obligatoires doivent être choisis" })
+                }
+                if ((demandeInscription.coursChoisis || []).filter(cc => cc.etat == EtatsCoursChoisi.ENCOURS).length > 0) {
+                    return res.status(400).json({ success: false, message: "Tous les cours choisis doivent être validés par l'institution" })
+                }
+            }
+        }
+
+        // Vérifier paiements
+        const fraisTotal = (demandeInscription.session?.fraisInscription || []).reduce((sum, f) => sum + f.montant, 0)
+        const fraisPayes = (demandeInscription.paiementsInscription || []).reduce((sum, p) => sum + (p.montant || 0), 0)
+        if (fraisPayes < fraisTotal) {
+            return res.status(400).json({ success: false, message: "Les frais d'inscription ne sont pas entièrement payés" })
+        }
+
+        // Tout est ok, valider
+        await demandeInscription.update({
+            dateValidation: req.body.dateValidation ?? new Date(),
+        })
+
+        if (demandeInscription.utilisateur) {
+            const parcoursChoisiFinal = demandeInscription.parcoursChoisis.find(pc => pc.choixFinal == true)
+            const cursusApprenant = new CursusApprenant()
+            cursusApprenant.externe = false
+            cursusApprenant.parcoursId = parcoursChoisiFinal?.parcoursId || req.body.cursusApprenant?.parcoursId
+            cursusApprenant.classeId = req.body.cursusApprenant?.classeId
+            cursusApprenant.anneeAcademiqueId = req.body.cursusApprenant?.anneeAcademiqueId
+            cursusApprenant.niveauEtudeId = parcoursChoisiFinal?.parcours?.niveauEtudeId || req.body.cursusApprenant?.niveauEtudeId
+            cursusApprenant.utilisateurId = demandeInscription.utilisateurId
+            cursusApprenant.demandeInscriptionId = demandeInscription.id
+
+            const savedCursus = await cursusApprenant.save()
+
+            if (demandeInscription.coursChoisis) {
+                for (const coursChoisi of demandeInscription.coursChoisis) {
+                    if (coursChoisi.etat == EtatsCoursChoisi.VALIDE) {
+                        const coursParticipant = new CoursParticipant()
+                        coursParticipant.coursId = coursChoisi.coursId
+                        coursParticipant.utilisateurId = demandeInscription.utilisateurId
+                        coursParticipant.cursusApprenantId = savedCursus.id
+                        await coursParticipant.save()
                     }
+                }
+            }
 
-                    return res.status(200).send(demandeInscription);
-                })
-                .catch((error) => {
-                    return res.status(400).json({ success: false, error: error });
-                });
-        }
-        else {
-            return res.status(404).json({ success: false, message: "Demande non trouvée" });
+            EmailSender.getInstance().sendValidationDemandeInscription(
+                demandeInscription.utilisateur.identifiant,
+                demandeInscription.utilisateur.email
+            )
         }
 
-        return null
+        return res.status(200).send(demandeInscription)
     }
 
     static async deleteDemandeInscription(req: Request, res: Response): Promise<Response | null> {

@@ -6,6 +6,7 @@ import { customAlphabet } from 'nanoid'
 import EnseignantController from "../controllers/EnseignantController"
 import { AuthEnseignant } from "../../../core/middlewares/AuthEnseignant";
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
+import CheckPermission from "../../../core/middlewares/CheckPermission";
 
 const router = express.Router()
 const storage = multer.diskStorage({
@@ -119,7 +120,7 @@ router
      *       401:
      *         description: Non autorisé
      */
-    .post('/qr-codes/generate', [AuthInstitution], EnseignantController.generateQrCodes)
+    .post('/qr-codes/generate', [AuthInstitution, CheckPermission('action.administration.enseignant.generer-qr')], EnseignantController.generateQrCodes)
     /**
      * @openapi
      * /auth/enseignants:
@@ -134,7 +135,7 @@ router
      *       401:
      *         description: Non autorisé
      */
-    .delete('/', [AuthInstitution], EnseignantController.deleteEnseignant)
+    .delete('/', [AuthInstitution, CheckPermission('action.administration.enseignant.supprimer')], EnseignantController.deleteEnseignant)
     /**
      * @openapi
      * /auth/enseignants/statistics/count:
@@ -149,6 +150,6 @@ router
      *       401:
      *         description: Non autorisé
      */
-    .get('/statistics/count', [AuthEnseignant], EnseignantController.getCount)
+    .get('/statistics/count', [AuthInstitution], EnseignantController.getCount)
 
 export default router

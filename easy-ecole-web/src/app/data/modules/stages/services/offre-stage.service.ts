@@ -7,7 +7,7 @@ import { OffreStage } from '../models/OffreStage.model';
 @Injectable({ providedIn: 'root' })
 export class OffreStageService {
 
-    private readonly SERVICE_URL: string = `${environment.API_MODULES.STAGES}/offres-stage`
+    private readonly SERVICE_URL: string = `${environment.API_MODULES.STAGES}/offres`
 
     constructor(private httpClient: HttpClient) { }
 
@@ -29,5 +29,9 @@ export class OffreStageService {
 
     delete(id: string): Observable<any> {
         return this.httpClient.delete(`${this.SERVICE_URL}/${id}`)
+    }
+
+    toggleStatut(id: string): Observable<OffreStage> {
+        return this.httpClient.put<OffreStage>(`${this.SERVICE_URL}/${id}/toggle-statut`, {})
     }
 }

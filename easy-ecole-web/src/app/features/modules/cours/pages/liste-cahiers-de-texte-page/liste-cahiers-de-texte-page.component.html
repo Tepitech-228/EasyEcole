@@ -1,23 +1,23 @@
 <div class="flex justify-between items-start gap-x-8 mb-8">
     <app-header-title title="Cahiers de texte" subtitle="Consulter les cahiers de correpondance de vos cours"></app-header-title>
     <div class="flex justify-end items-center gap-x-4">
-        <app-custom-button *ngIf="(rolesValue.isEnseignant || rolesValue.isInstitution)" text="Nouveau cahier de texte" (click)="openNouveauCahierDeTexteModal()"></app-custom-button>
+        <app-custom-button *ngIf="(rolesValue.isEnseignant || rolesValue.isInstitution || rolesValue.isAdmin)" text="Nouveau cahier de texte" (click)="openNouveauCahierDeTexteModal()"></app-custom-button>
     </div>
 </div>
 
 <div class="w-full flex justify-between items-center mb-8">
     <div class="flex md:flex-row flex-col gap-4">
-        <select *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant" [(ngModel)]="selectedNiveauEtude" (change)="filtrerCahiersDeTexte()"
+        <select *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isAdmin" [(ngModel)]="selectedNiveauEtude" (change)="filtrerCahiersDeTexte()"
             class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
             <option [value]="'undefined'">Filter par niveau d'étude...</option>
             <option *ngFor="let niveau of _niveauxEtude" [value]="niveau.id">{{ niveau.libelle }}</option>
         </select>
-        <select *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant" [(ngModel)]="selectedClasse" (change)="filtrerCahiersDeTexte()"
+        <select *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isAdmin" [(ngModel)]="selectedClasse" (change)="filtrerCahiersDeTexte()"
             class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
             <option [value]="'undefined'">Filter par classe...</option>
             <option *ngFor="let classe of _classes" [value]="classe.id">{{ classe.libelle }}</option>
         </select>
-        <select *ngIf="rolesValue.isApprenant || rolesValue.isInstitution || rolesValue.isEnseignant" [(ngModel)]="selectedParcours" (change)="filtrerCahiersDeTexte()"
+        <select *ngIf="rolesValue.isApprenant || rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isAdmin || rolesValue.isAdmin" [(ngModel)]="selectedParcours" (change)="filtrerCahiersDeTexte()"
             class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
             <option [value]="'undefined'">Filter par parcours...</option>
             <option *ngFor="let parcours of _parcours" [value]="parcours.id">{{ parcours.titre }}</option>

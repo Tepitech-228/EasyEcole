@@ -53,7 +53,7 @@ export class NouveauParcoursPageComponent extends BaseComponentClass implements 
     private prerequisParcoursService: PrerequisParcoursService,
   ) {
     super()
-    if (!this.rolesValue.isInstitution) {
+    if (!this.rolesValue.isInstitution && !this.rolesValue.isAdmin) {
       this.router.navigate(['/inscription/parcours'])
     }
     else {

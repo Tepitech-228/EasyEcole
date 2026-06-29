@@ -1,5 +1,7 @@
 import { Bulletin } from './Bulletin';
 import { LigneBulletin } from './LigneBulletin';
+import { Deliberation } from './Deliberation';
+import { ResultatDeliberation } from './ResultatDeliberation';
 import { AnneeAcademique } from '../../inscription/models/AnneeAcademique';
 import { CursusApprenant } from '../../inscription/models/CursusApprenant';
 import { Classe } from '../../inscription/models/Classe';
@@ -46,5 +48,28 @@ export function initBulletinAssociations() {
   LigneBulletin.belongsTo(Cours, {
     foreignKey: 'coursId',
     as: 'cours'
+  });
+
+  Deliberation.hasMany(ResultatDeliberation, {
+    foreignKey: 'deliberationId',
+    as: 'resultats'
+  });
+  ResultatDeliberation.belongsTo(Deliberation, {
+    foreignKey: 'deliberationId',
+    as: 'deliberation'
+  });
+
+  Deliberation.belongsTo(Classe, {
+    foreignKey: 'classeId',
+    as: 'classe'
+  });
+  Deliberation.belongsTo(AnneeAcademique, {
+    foreignKey: 'anneeAcademiqueId',
+    as: 'anneeAcademique'
+  });
+
+  ResultatDeliberation.belongsTo(CursusApprenant, {
+    foreignKey: 'cursusApprenantId',
+    as: 'cursusApprenant'
   });
 }

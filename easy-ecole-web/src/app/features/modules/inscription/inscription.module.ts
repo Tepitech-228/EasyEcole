@@ -24,7 +24,13 @@ import { BordereauxPageComponent } from './pages/bordereaux-page/bordereaux-page
 import { ValidationBordereauxPageComponent } from './pages/validation-bordereaux-page/validation-bordereaux-page.component';
 import { MonDossierPageComponent } from './pages/mon-dossier-page/mon-dossier-page.component';
 import { GestionEcheancesPageComponent } from './pages/gestion-echeances-page/gestion-echeances-page.component';
+import { ComptabilitePageComponent } from './pages/comptabilite-page/comptabilite-page.component';
 import { FormsModule } from '@angular/forms';
+import { ComiteOrientationPageComponent } from './pages/comite-orientation-page/comite-orientation-page.component';
+import { ComiteDetailsPageComponent } from './pages/comite-details-page/comite-details-page.component';
+import { PreInscriptionSectionComponent } from './pages/details-demande-page/pre-inscription-section/pre-inscription-section.component';
+import { ChoixCoursPageComponent } from './pages/choix-cours-page/choix-cours-page.component';
+import { ListeDossiersPageComponent } from './pages/liste-dossiers-page/liste-dossiers-page.component';
 
 
 @NgModule({
@@ -49,7 +55,13 @@ import { FormsModule } from '@angular/forms';
     BordereauxPageComponent,
     ValidationBordereauxPageComponent,
     MonDossierPageComponent,
-    GestionEcheancesPageComponent
+    GestionEcheancesPageComponent,
+    ComptabilitePageComponent,
+    ComiteOrientationPageComponent,
+    ComiteDetailsPageComponent,
+    PreInscriptionSectionComponent,
+    ChoixCoursPageComponent,
+    ListeDossiersPageComponent
   ],
   imports: [
     CommonModule,

@@ -12,7 +12,7 @@ import { Component, Input } from '@angular/core';
 })
 export class StatCardComponent {
   @Input() label: string = '';
-  @Input() value: string | number = '';
+  @Input() value: string | number | null = '';
   @Input() subtitle: string = '';
   @Input() colorClass: string = 'text-gray-900';
 }

@@ -1,5 +1,15 @@
+<app-custom-alert [show]="demandeError" title="Erreur">
+    Une erreur est survenue lors de votre demande d'inscription
+</app-custom-alert>
+<app-custom-alert [show]="alreadySignUp" title="Demande d'inscription">
+    Une demande d'inscription est déjà en cours pour cette session
+</app-custom-alert>
+
 <div class="flex justify-between items-start mb-8">
     <app-header-title title="Demandes" subtitle="Retrouver la liste des demandes d'inscription"></app-header-title>
+    <div *ngIf="rolesValue.isApprenant">
+        <app-custom-button (click)="showNouvelleDemandeModal = true" text="Nouvelle demande"></app-custom-button>
+    </div>
 </div>
 
 <div class="flex flex-col">
@@ -14,7 +24,7 @@
                                     #
                                 </div>
                             </th>
-                            <th *ngIf="rolesValue.isInstitution" scope="col"
+                            <th *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" scope="col"
                                 class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
                                 <div class="px-2">
                                     Apprenant
@@ -52,7 +62,7 @@
                                     {{ index + 1 }}
                                 </div>
                             </td>
-                            <td *ngIf="rolesValue.isInstitution"
+                            <td *ngIf="rolesValue.isInstitution || rolesValue.isAdmin"
                                 class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                 <div
                                     class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
@@ -82,7 +92,7 @@
                                     {{ demande.dateDemande! | date: 'dd/MM/YYYY' }} à {{ demande.dateDemande! | date:
                                     'HH:mm' }}</div>
                             </td>
-                            <td *ngIf="rolesValue.isInstitution"
+                            <td *ngIf="rolesValue.isInstitution || rolesValue.isAdmin"
                                 class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                 <div
                                     class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
@@ -112,4 +122,16 @@
 
 
 <!-- // Modals -->
+<app-custom-modal title="Nouvelle demande" subtitle="Faire une nouvelle demande d'inscription" (onCloseModal)="showNouvelleDemandeModal = false" [center]="true" [showModal]="showNouvelleDemandeModal">
+    <div *ngIf="sessions.length === 0" class="py-4 text-sm text-gray-600">
+        Aucune session d'inscription ouverte pour le moment
+    </div>
+    <div *ngIf="sessions.length > 0" class="py-4 text-sm text-gray-600">
+        Vous allez créer une demande d'inscription pour la session en cours
+    </div>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="showNouvelleDemandeModal = false" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+        <app-custom-button *ngIf="sessions.length > 0" (click)="faireDemandeInscription()" text="Confirmer"></app-custom-button>
+    </div>
+</app-custom-modal>
 <!-- <app-traitement-demande *ngIf="selectedDemande" [demande]="selectedDemande!" [showModal]="showModal" (onCloseModal)="closeModal()"></app-traitement-demande> -->

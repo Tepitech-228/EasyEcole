@@ -77,7 +77,7 @@ export default class SupportController {
         }
     }
 
-    private static async compressVideo(filename: string, supportId: number): Promise<void> {
+    private static async compressVideo(filename: string, supportId: string): Promise<void> {
         try {
             const ffmpeg = require('fluent-ffmpeg');
             const inputPath = path.join('public/elearning/videos/', filename);

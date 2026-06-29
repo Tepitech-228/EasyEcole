@@ -7,6 +7,7 @@ import { Cours } from "./Cours.model";
 import { PaiementInscription } from "./PaiementInscription.model";
 import { DemandeInscriptionDossier } from "./DemandeInscriptionDossier.model";
 import { DemandeInscriptionCours } from "./DemandeInscriptionCours.model";
+import { PreInscription } from "./PreInscription.model";
 
 export class DemandeInscription {
   declare id?: string
@@ -18,6 +19,7 @@ export class DemandeInscription {
   declare utilisateurId?: string
   declare utilisateur?: Utilisateur
   declare reponseInscription?: ReponseInscription
+  declare preInscription?: PreInscription
   declare parcoursChoisis?: ParcoursChoisi[]
   declare cours?: Cours[]
   declare paiementsInscription?: PaiementInscription[]
