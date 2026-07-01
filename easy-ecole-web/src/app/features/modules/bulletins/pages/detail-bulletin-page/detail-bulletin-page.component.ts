@@ -14,6 +14,8 @@ export class DetailBulletinPageComponent extends BaseComponentClass implements O
   appreciation: string = '';
   sauvegardeSuccess: boolean = false;
   publicationSuccess: boolean = false;
+  signingEnseignant: boolean = false;
+  signingChef: boolean = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -71,12 +73,32 @@ export class DetailBulletinPageComponent extends BaseComponentClass implements O
     window.print();
   }
 
+  saveSignatureEnseignant(signature: string) {
+    if (!this.bulletin?.id) return;
+    this.bulletinService.signerEnseignant(this.bulletin.id, signature).subscribe({
+      next: (data) => {
+        this.bulletin = data;
+        this.signingEnseignant = false;
+      }
+    });
+  }
+
+  saveSignatureChef(signature: string) {
+    if (!this.bulletin?.id) return;
+    this.bulletinService.signerChef(this.bulletin.id, signature).subscribe({
+      next: (data) => {
+        this.bulletin = data;
+        this.signingChef = false;
+      }
+    });
+  }
+
   getSemestre(s: string): string {
     return s === 'semestre1' ? 'Semestre 1' : 'Semestre 2';
   }
 
   getNoteClass(v: number | null): string {
     if (v == null) return '';
-    return v >= 10 ? 'text-green-700' : 'text-red-700';
+    return v >= 10 ? 'text-green-700' : 'text-blue-700';
   }
 }

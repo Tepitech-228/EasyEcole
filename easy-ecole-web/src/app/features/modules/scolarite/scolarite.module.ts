@@ -12,6 +12,8 @@ import { RegistresPageComponent } from './pages/registres-page/registres-page.co
 import { CalendrierPageComponent } from './pages/calendrier-page/calendrier-page.component';
 import { DisciplinePageComponent } from './pages/discipline-page/discipline-page.component';
 import { ConseilsPageComponent } from './pages/conseils-page/conseils-page.component';
+import { BibliothequePageComponent } from './pages/bibliotheque-page/bibliotheque-page.component';
+import { GestionBibliothequePageComponent } from './pages/gestion-bibliotheque-page/gestion-bibliotheque-page.component';
 
 @NgModule({
   declarations: [
@@ -22,7 +24,9 @@ import { ConseilsPageComponent } from './pages/conseils-page/conseils-page.compo
     RegistresPageComponent,
     CalendrierPageComponent,
     DisciplinePageComponent,
-    ConseilsPageComponent
+    ConseilsPageComponent,
+    BibliothequePageComponent,
+    GestionBibliothequePageComponent
   ],
   imports: [
     CommonModule,

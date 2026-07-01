@@ -7,6 +7,7 @@ import RegistreAcademiqueRouter from "./routers/RegistreAcademiqueRouter"
 import EvenementCalendrierRouter from "./routers/EvenementCalendrierRouter"
 import SanctionDisciplineRouter from "./routers/SanctionDisciplineRouter"
 import ConseilClasseRouter from "./routers/ConseilClasseRouter"
+import LivreRouter from "./routers/LivreRouter"
 import Authenticate from "../../core/middlewares/Authenticate";
 
 const router = express.Router();
@@ -19,5 +20,6 @@ router
     .use('/calendrier', [Authenticate], EvenementCalendrierRouter)
     .use('/discipline', [Authenticate], SanctionDisciplineRouter)
     .use('/conseils', [Authenticate], ConseilClasseRouter)
+    .use('/bibliotheque', [Authenticate], LivreRouter)
 
 export default router;

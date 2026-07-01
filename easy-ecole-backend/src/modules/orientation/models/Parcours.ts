@@ -11,6 +11,7 @@ export class Parcours extends Model<InferAttributes<Parcours>, InferCreationAttr
   declare titre: string
   declare image: CreationOptional<string>
   declare dureeDeFormation: CreationOptional<string>
+  declare type: CreationOptional<string>
   declare videoExplicative: CreationOptional<string>
   declare contenu: string
   declare categorieId: ForeignKey<Categorie['id']>
@@ -44,6 +45,10 @@ Parcours.init({
   },
   dureeDeFormation: {
     type: new DataTypes.STRING,
+    allowNull: true
+  },
+  type: {
+    type: DataTypes.ENUM('LICENCE', 'MASTER', 'DOCTORAT'),
     allowNull: true
   },
   image: {

@@ -32,7 +32,7 @@ export default class ParcoursController {
             const parcours: Parcours | null = await Parcours.findOne(options);
 
             if (parcours == null)
-                return res.status(404).json({ success: false, message: "Parcours non trouvé" });
+                return res.status(404).json({ success: false, message: "Filière non trouvée" });
 
             return res.status(200).send(parcours);
         } catch (error) {
@@ -88,6 +88,7 @@ export default class ParcoursController {
             parcours.contenu = req.body.contenu
             parcours.categorieId = req.body.categorieId
             parcours.niveauEtudeId = req.body.niveauEtudeId
+            parcours.type = req.body.type
 
             await parcours.save()
                 .then(async (parcours) => {
@@ -127,13 +128,17 @@ export default class ParcoursController {
         if (parcours != null) {
             if (req.body.titre) {
                 if (await Parcours.findOne({ where: { titre: req.body.titre } })) {
-                    return res.status(400).json({ success: false, message: "Parcours déjà existant" });
+                    return res.status(400).json({ success: false, message: "Filière déjà existante" });
                 }
             }
 
             await parcours.update({
                 titre: req.body.titre,
+                dureeDeFormation: req.body.dureeDeFormation,
                 videoExplicative: req.body.videoExplicative,
+                categorieId: req.body.categorieId,
+                niveauEtudeId: req.body.niveauEtudeId,
+                type: req.body.type,
                 contenu: req.body.contenu,
             })
                 .then(async (parcours) => {
@@ -163,7 +168,7 @@ export default class ParcoursController {
         if (parcours) {
             await parcours.destroy()
                 .then(() => {
-                    return res.status(200).json({ success: true, message: "Parcours supprimé" });
+                    return res.status(200).json({ success: true, message: "Filière supprimée" });
                 })
                 .catch((error) => {
                     return res.status(500).json({ success: false, error: error });

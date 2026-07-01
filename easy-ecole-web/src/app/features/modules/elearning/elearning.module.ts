@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ElearningRoutingModule } from './elearning-routing.module';
 import { SharedModule } from 'src/app/shared/shared.module';
@@ -40,6 +40,7 @@ import { SupportCardComponent } from './components/support-card/support-card.com
     CommonModule,
     ElearningRoutingModule,
     SharedModule,
+    FormsModule,
     ReactiveFormsModule
   ]
 })

@@ -51,6 +51,7 @@ export class NouveauParcoursPageComponent extends BaseComponentClass implements 
     titre: new FormControl(null, [Validators.required]),
     duree: new FormControl(0, [Validators.required]),
     dureeUnite: new FormControl('y', [Validators.required]),
+    type: new FormControl('LICENCE', [Validators.required]),
     niveauEtude: new FormControl(null, [Validators.required]),
     categorie: new FormControl(null, []),
     image: new FormControl(null, []),
@@ -209,6 +210,7 @@ export class NouveauParcoursPageComponent extends BaseComponentClass implements 
     if (this.nouveauParcoursForm.valid) {
       let parcours: Parcours = new Parcours()
       parcours.titre = this.nouveauParcoursForm.get('titre')!.value
+      parcours.type = this.nouveauParcoursForm.get('type')!.value
       parcours.dureeDeFormation = this.nouveauParcoursForm.get('duree')!.value + '/' + this.nouveauParcoursForm.get('dureeUnite')!.value
       parcours.niveauEtudeId = this.nouveauParcoursForm.get('niveauEtude')!.value
       parcours.categorieId = this.nouveauParcoursForm.get('categorie')!.value

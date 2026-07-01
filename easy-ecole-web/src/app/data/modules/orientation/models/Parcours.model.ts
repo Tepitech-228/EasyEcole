@@ -7,6 +7,7 @@ export class Parcours {
   declare id?: string
   declare titre?: string
   declare dureeDeFormation?: string
+  declare type?: string
   declare image?: string
   declare videoExplicative?: string
   declare contenu?: string

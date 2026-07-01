@@ -1,7 +1,7 @@
 <app-return-back></app-return-back>
 
 <div class="flex justify-between items-start mb-8">
-    <app-header-title title="Choix de parcours" subtitle="Choisissez vos parcours dans l'ordre de préférence"></app-header-title>
+    <app-header-title title="Choix des filières" subtitle="Choisissez vos filières dans l'ordre de préférence"></app-header-title>
     <div class="flex justify-end items-center">
         <app-custom-button (click)="confirmerChoix()" text="Valider"></app-custom-button>
     </div>
@@ -23,7 +23,7 @@
                                 <tr *ngIf="parcoursChoisis!.length == 0"
                                     class="bg-white p-0 border-b transition duration-300 ease-in-out">
                                     <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
-                                        colspan="5">Aucun parcours choisi</td>
+                                        colspan="5">Aucune filière choisie</td>
                                 </tr>
                                 <tr *ngFor="let parcoursChoisi of parcoursChoisis; index as i" class="bg-white hover:bg-gray-50 p-0 border-b border-slate-200 transition duration-300 ease-in-out">
                                     <!-- <td class="w-12 text-sm text-center py-4 text-gray-600 font-regular whitespace-nowrap">
@@ -43,8 +43,8 @@
                             </tbody>
                         </table>
                         <div class="w-full mb-8">
-                            <app-form-message *ngIf="minParcoursChoisisError" [text]="'Veuillez choisir au moins ' + MIN_PARCOURS_CHOISIS + ' parcours'"></app-form-message>
-                            <app-form-message *ngIf="maxParcoursChoisisError" [text]="'Vous devez choisir moins de ' + MAX_PARCOURS_CHOISIS + ' parcours'"></app-form-message>
+                            <app-form-message *ngIf="minParcoursChoisisError" [text]="'Veuillez choisir au moins ' + MIN_PARCOURS_CHOISIS + ' filière(s)'"></app-form-message>
+                            <app-form-message *ngIf="maxParcoursChoisisError" [text]="'Vous devez choisir moins de ' + MAX_PARCOURS_CHOISIS + ' filières'"></app-form-message>
                         </div>
                         <div class="flex items-center justify-center">
                             <!-- <button (click)="openChoixParcoursModal()"
@@ -64,9 +64,9 @@
 </div>
 
 <!-- // Modals -->
-<app-custom-modal title="Choisir un parcours" subtitle="Faites votre choix de parcours pour la demande d'inscription" (onCloseModal)="closeChoixParcoursModal()" [center]="true" [showModal]="showChoixParcoursModal">
+<app-custom-modal title="Choisir une filière" subtitle="Faites votre choix de filière pour la demande d'inscription" (onCloseModal)="closeChoixParcoursModal()" [center]="true" [showModal]="showChoixParcoursModal">
     <div class="mb-6 w-full">
-        <span class="mb-2 block text-sm text-gray-400">Parcours</span>
+        <span class="mb-2 block text-sm text-gray-400">Filière</span>
         <select [(ngModel)]="selectedParcoursId" (change)="onChange($event)"
             class="block min-w-full rounded-md border-0 py-1.5 text-gray-600 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:max-w-xs sm:text-sm sm:leading-6">
             <option *ngFor="let p of parcours" [value]="p.id">{{ p.titre }}</option>
@@ -147,7 +147,7 @@
     </ng-container>
     <div class="w-full">
         <app-form-message *ngIf="containsEmptyNote" text="Veuillez saisir toutes les notes"></app-form-message>
-        <app-form-message *ngIf="alreadySelected" text="Ce parcours a été déjà choisi. Veuillez choisir un autre"></app-form-message>
+        <app-form-message *ngIf="alreadySelected" text="Cette filière a été déjà choisie. Veuillez en choisir une autre"></app-form-message>
     </div>
     <div class="py-3 flex justify-end gap-x-10">
         <app-custom-button [disabled]="alreadySelected || containsEmptyNote" (click)="choisirParcours()" text="Valider"></app-custom-button>

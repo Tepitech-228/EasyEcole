@@ -1,8 +1,8 @@
-import { HttpClient } from '@angular/common/http';
+﻿import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { Seance } from '../models/Seance.model';
+import { ConflitSeance, PlanningEvent, Seance } from '../models/Seance.model';
 
 @Injectable({
   providedIn: 'root'
@@ -15,6 +15,13 @@ export class SeanceService {
 
   getAll(): Observable<Seance[]> {
     return this.httpClient.get<Seance[]>(`${this.SERVICE_URL}`)
+  }
+
+  getPlanning(semaineDebut: string, semaineFin: string, enseignantId?: string, classeId?: string): Observable<PlanningEvent[]> {
+    let url = `${this.SERVICE_URL}/planning?semaineDebut=${semaineDebut}&semaineFin=${semaineFin}`
+    if (enseignantId) url += `&enseignantId=${enseignantId}`
+    if (classeId) url += `&classeId=${classeId}`
+    return this.httpClient.get<PlanningEvent[]>(url)
   }
 
   get(id: string): Observable<Seance> {
@@ -31,5 +38,9 @@ export class SeanceService {
 
   delete(id: string): Observable<any> {
     return this.httpClient.delete(`${this.SERVICE_URL}/${id}`)
+  }
+
+  checkConflits(data: any): Observable<ConflitSeance[]> {
+    return this.httpClient.post<ConflitSeance[]>(`${this.SERVICE_URL}/check-conflits`, data)
   }
 }

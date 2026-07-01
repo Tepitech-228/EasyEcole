@@ -11,8 +11,8 @@
           <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total</p>
           <p class="mt-1 text-2xl font-bold text-gray-900">{{ deliberations.length }}</p>
         </div>
-        <div class="h-10 w-10 rounded-xl bg-red-50 flex items-center justify-center">
-          <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        <div class="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
         </div>
       </div>
     </div>
@@ -54,20 +54,20 @@
   <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div class="flex flex-wrap gap-3">
-        <select [(ngModel)]="filtres.classeId" (change)="charger()" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+        <select [(ngModel)]="filtres.classeId" (change)="charger()" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
           <option value="">Toutes les classes</option>
           <option *ngFor="let c of classes" [value]="c.id">{{ c.libelle }}</option>
         </select>
-        <select [(ngModel)]="filtres.anneeAcademiqueId" (change)="charger()" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+        <select [(ngModel)]="filtres.anneeAcademiqueId" (change)="charger()" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
           <option value="">Toutes les années</option>
           <option *ngFor="let a of anneesAcademiques" [value]="a.id">{{ a.libelle }}</option>
         </select>
-        <select [(ngModel)]="filtres.periode" (change)="charger()" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+        <select [(ngModel)]="filtres.periode" (change)="charger()" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
           <option value="">Toutes périodes</option>
           <option value="semestre1">Semestre 1</option>
           <option value="semestre2">Semestre 2</option>
         </select>
-        <select [(ngModel)]="filtres.statut" (change)="charger()" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+        <select [(ngModel)]="filtres.statut" (change)="charger()" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
           <option value="">Tous statuts</option>
           <option value="planifiee">Planifiée</option>
           <option value="en_cours">En cours</option>
@@ -77,7 +77,7 @@
           Réinitialiser
         </button>
       </div>
-      <button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="ouvrirFormulaire()" class="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors shadow-sm">
+      <button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="ouvrirFormulaire()" class="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-sm">
         <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
         Planifier
       </button>
@@ -89,37 +89,37 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
       <div>
         <label class="block text-xs font-medium text-gray-500 mb-1">Libellé</label>
-        <input [(ngModel)]="formData.libelle" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="Ex: Délibération S1 - 6ème A" />
+        <input [(ngModel)]="formData.libelle" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Ex: Délibération S1 - 6ème A" />
       </div>
       <div>
         <label class="block text-xs font-medium text-gray-500 mb-1">Classe</label>
-        <select [(ngModel)]="formData.classeId" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+        <select [(ngModel)]="formData.classeId" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
           <option value="">Sélectionner</option>
           <option *ngFor="let c of classes" [value]="c.id">{{ c.libelle }}</option>
         </select>
       </div>
       <div>
         <label class="block text-xs font-medium text-gray-500 mb-1">Année scolaire</label>
-        <select [(ngModel)]="formData.anneeAcademiqueId" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+        <select [(ngModel)]="formData.anneeAcademiqueId" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
           <option value="">Sélectionner</option>
           <option *ngFor="let a of anneesAcademiques" [value]="a.id">{{ a.libelle }}</option>
         </select>
       </div>
       <div>
         <label class="block text-xs font-medium text-gray-500 mb-1">Période</label>
-        <select [(ngModel)]="formData.periode" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+        <select [(ngModel)]="formData.periode" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
           <option value="semestre1">Semestre 1</option>
           <option value="semestre2">Semestre 2</option>
         </select>
       </div>
       <div>
         <label class="block text-xs font-medium text-gray-500 mb-1">Date</label>
-        <input [(ngModel)]="formData.date" type="date" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" />
+        <input [(ngModel)]="formData.date" type="date" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
       </div>
     </div>
     <div class="flex justify-end gap-3 mt-4">
       <button (click)="fermerFormulaire()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Annuler</button>
-      <button (click)="creerDeliberation()" class="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors">Créer</button>
+      <button (click)="creerDeliberation()" class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">Créer</button>
     </div>
   </div>
 
@@ -156,12 +156,12 @@
             <td class="px-5 py-4 whitespace-nowrap text-right">
               <div class="flex items-center justify-end gap-2">
                 <a [routerLink]="[d.id]"
-                   class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                   class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
                   Détails
                   <svg class="w-3.5 h-3.5 ml-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                 </a>
                 <button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="supprimer(d.id)"
-                        class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                        class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 </button>
               </div>
@@ -171,7 +171,7 @@
       </table>
     </div>
     <div *ngIf="loading" class="px-5 py-8 text-center">
-      <div class="inline-block h-6 w-6 animate-spin rounded-full border-2 border-red-600 border-t-transparent"></div>
+      <div class="inline-block h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
       <p class="mt-2 text-sm text-gray-500">Chargement...</p>
     </div>
     <div *ngIf="!loading && deliberations.length === 0" class="px-5 py-12 text-center">

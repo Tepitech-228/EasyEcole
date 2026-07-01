@@ -32,4 +32,12 @@ export class PointageService {
   pointerArriveeByScan(userId: string): Observable<Pointage> {
     return this.httpClient.post<Pointage>(`${this.SERVICE_URL}/scan/arrivee`, { userId })
   }
+
+  pointerDepartByScan(userId: string): Observable<Pointage> {
+    return this.httpClient.post<Pointage>(`${this.SERVICE_URL}/scan/depart`, { userId })
+  }
+
+  verifierStatutByQR(codeQR: string): Observable<any> {
+    return this.httpClient.get<any>(`${this.SERVICE_URL}/scan/verifier-statut/${encodeURIComponent(codeQR)}`)
+  }
 }

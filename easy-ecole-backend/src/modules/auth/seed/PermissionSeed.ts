@@ -135,6 +135,8 @@ const ALL_PERMISSIONS: Array<{ key: string; libelle: string; module: string; typ
     { key: 'menu.scolarite.calendrier', libelle: 'Calendrier', module: 'Scolarité', type: 'menu', parentKey: 'menu.scolarite' },
     { key: 'menu.scolarite.discipline', libelle: 'Discipline', module: 'Scolarité', type: 'menu', parentKey: 'menu.scolarite' },
     { key: 'menu.scolarite.conseils', libelle: 'Conseils classe', module: 'Scolarité', type: 'menu', parentKey: 'menu.scolarite' },
+    { key: 'menu.scolarite.bibliotheque', libelle: 'Bibliothèque', module: 'Scolarité', type: 'menu', parentKey: 'menu.scolarite' },
+    { key: 'menu.scolarite.bibliotheque.gestion', libelle: 'Gestion bibliothèque', module: 'Scolarité', type: 'menu', parentKey: 'menu.scolarite.bibliotheque' },
     { key: 'action.scolarite.document.traiter', libelle: 'Traiter un document', module: 'Scolarité', type: 'action', parentKey: 'menu.scolarite.traiter-demandes' },
     { key: 'action.scolarite.reclamation.traiter', libelle: 'Traiter une réclamation', module: 'Scolarité', type: 'action', parentKey: 'menu.scolarite.traiter-reclamations' },
     { key: 'action.scolarite.discipline.sanctionner', libelle: 'Ajouter une sanction', module: 'Scolarité', type: 'action', parentKey: 'menu.scolarite.discipline' },

@@ -6,6 +6,7 @@ export class Parcours {
   declare id?: string
   declare titre?: string
   declare description?: string
+  declare type?: string
   declare niveauEtudeId?: string
   declare niveauEtude?: NiveauEtude
   declare prerequisParcours?: PrerequisParcours[]

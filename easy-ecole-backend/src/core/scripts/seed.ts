@@ -18,6 +18,19 @@ async function seed() {
     require('../../modules/stock/models/_associations');
     require('../../modules/immobilisation/models/_associations');
     require('../../modules/bulletins/models/_associations');
+    require('../../modules/scolarite/models/_associations');
+    require('../../modules/scolarite/models/SanctionDiscipline');
+    require('../../modules/scolarite/models/RegistreAcademique');
+    require('../../modules/scolarite/models/EvenementCalendrier');
+    require('../../modules/rh/models/_associations');
+    require('../../modules/achats/models/_associations');
+    require('../../modules/comptabilite/models/_associations');
+    require('../../modules/communication/models/_associations');
+    require('../../modules/communication/models/Communication');
+    require('../../modules/communication/models/Actualite');
+    require('../../modules/elearning/models/_associations');
+    require('../../modules/elearning/models/Notification');
+    require('../../modules/reporting/models/_associations');
 
     const M = (name: string) => sequelize.model(name);
 
@@ -94,6 +107,85 @@ async function seed() {
     const ImmImmo = M('ImmImmobilisation');
     const ImmAcq = M('ImmAcquisition');
     const ImmMaint = M('ImmMaintenance');
+
+    const InsTypeNote = M('InsTypeNoteEvaluation');
+    const InsListeNote = M('InsListeNoteEvaluation');
+    const InsNoteEval = M('InsNoteEvaluation');
+
+    const Bulletin = M('Bulletin');
+    const LigneBulletin = M('LigneBulletin');
+    const Deliberation = M('Deliberation');
+    const ResultatDelib = M('ResultatDeliberation');
+
+    const StgNoteSt = M('StgNoteStage');
+    const StgDem = M('StgDemandeStage');
+    const StgConv = M('StgConventionStage');
+    const StgRap = M('StgRapportStage');
+
+    const ScolTypeDoc = M('ScolTypeDocument');
+    const ScolDemDoc = M('ScolDemandeDocument');
+    const ScolDocDel = M('ScolDocumentDelivre');
+    const ScolRecl = M('ScolReclamation');
+    const ScolRepRecl = M('ScolReponseReclamation');
+    const ScolSanction = M('ScolSanctionDiscipline');
+    const ScolRegAcad = M('ScolRegistreAcademique');
+    const ScolEven = M('ScolEvenementCalendrier');
+    const ScolConseil = M('ScolConseilClasse');
+    const ScolDecision = M('ScolDecisionConseil');
+
+    const RhDep = M('RhDepartement');
+    const RhPoste = M('RhPoste');
+    const RhTypeContrat = M('RhTypeContrat');
+    const RhEmploye = M('RhEmploye');
+    const RhOffre = M('RhOffreEmploi');
+    const RhCandidature = M('RhCandidature');
+    const RhEntretien = M('RhEntretien');
+    const RhFormation = M('RhFormation');
+    const RhPartForm = M('RhParticipationFormation');
+    const RhCritEval = M('RhCritereEvaluation');
+    const RhFicheEval = M('RhFicheEvaluation');
+    const RhEvalCrit = M('RhEvaluationCritere');
+    const RhRubPaie = M('RhRubriquePaie');
+    const RhPerPaie = M('RhPeriodePaie');
+    const RhBulPaie = M('RhBulletinPaie');
+    const RhLigBul = M('RhLigneBulletin');
+    const RhPresEns = M('RhPrestationEnseignant');
+
+    const AchCat = M('AchCategorieAchat');
+    const AchFour = M('AchFournisseur');
+    const AchDem = M('AchDemande');
+    const AchLigDem = M('AchLigneDemande');
+    const AchBud = M('AchBudget');
+    const AchLigBud = M('AchLigneBudget');
+    const AchEng = M('AchEngagement');
+    const AchCmd = M('AchCommande');
+    const AchLigCmd = M('AchLigneCommande');
+    const AchRec = M('AchReception');
+    const AchLigRec = M('AchLigneReception');
+    const AchFact = M('AchFactureProforma');
+    const AchLigFact = M('AchLigneFacture');
+    const AchVal = M('AchValidateur');
+    const AchValid = M('AchValidation');
+
+    const CptCompte = M('CptCompte');
+    const CptJournal = M('CptJournalComptable');
+    const CptEcriture = M('CptEcritureComptable');
+
+    const ComCom = M('ComCommunication');
+    const ComActu = M('ComActualite');
+    const ComSug = M('ComSuggestion');
+    const ComRepSug = M('ComReponseSuggestion');
+
+    require('../../modules/elearning/models/Notification');
+    const ElearnCours = M('ELearningCoursEnLigne');
+    const ElearnModule = M('ELearningModule');
+    const ElearnSupport = M('ELearningSupport');
+    const ElearnSalon = M('ELearningSalon');
+    const ElearnPart = M('ELearningParticipantSalon');
+    const ElearnMsg = M('ELearningMessage');
+    const ElearnNotif = M('ELearningNotification');
+    const ElearnComment = M('ELearningCommentaire');
+    const ElearnMail = M('ELearningCouplageMail');
 
     const hash = bcrypt.hashSync('password123', 10);
 
@@ -200,11 +292,11 @@ async function seed() {
     const catOri3 = await OriCat.create({ libelle: 'Sciences Juridiques', description: 'Filières de droit' });
     console.log('  ✓ Catégories');
 
-    const parcOri1 = await OriPar.create({ titre: 'Informatique de Gestion', contenu: 'Développement et gestion de projets informatiques', categorieId: catOri1.id, niveauEtudeId: nivOri2.id, dureeDeFormation: '2/y' });
-    const parcOri2 = await OriPar.create({ titre: 'Réseaux et Télécoms', contenu: 'Infrastructures réseau et télécommunications', categorieId: catOri1.id, niveauEtudeId: nivOri2.id, dureeDeFormation: '2/y' });
-    const parcOri3 = await OriPar.create({ titre: 'Comptabilité Finance', contenu: 'Comptabilité et audit financier', categorieId: catOri2.id, niveauEtudeId: nivOri3.id, dureeDeFormation: '3/y' });
-    const parcOri4 = await OriPar.create({ titre: 'Marketing Digital', contenu: 'Marketing digital et communication', categorieId: catOri2.id, niveauEtudeId: nivOri3.id, dureeDeFormation: '3/y' });
-    const parcOri5 = await OriPar.create({ titre: 'Droit des Affaires', contenu: 'Droit des sociétés et fiscalité', categorieId: catOri3.id, niveauEtudeId: nivOri3.id, dureeDeFormation: '3/y' });
+    const parcOri1 = await OriPar.create({ titre: 'Informatique de Gestion', contenu: 'Développement et gestion de projets informatiques', categorieId: catOri1.id, niveauEtudeId: nivOri2.id, dureeDeFormation: '2/y', type: 'LICENCE' });
+    const parcOri2 = await OriPar.create({ titre: 'Réseaux et Télécoms', contenu: 'Infrastructures réseau et télécommunications', categorieId: catOri1.id, niveauEtudeId: nivOri2.id, dureeDeFormation: '2/y', type: 'LICENCE' });
+    const parcOri3 = await OriPar.create({ titre: 'Comptabilité Finance', contenu: 'Comptabilité et audit financier', categorieId: catOri2.id, niveauEtudeId: nivOri3.id, dureeDeFormation: '3/y', type: 'LICENCE' });
+    const parcOri4 = await OriPar.create({ titre: 'Marketing Digital', contenu: 'Marketing digital et communication', categorieId: catOri2.id, niveauEtudeId: nivOri3.id, dureeDeFormation: '3/y', type: 'LICENCE' });
+    const parcOri5 = await OriPar.create({ titre: 'Droit des Affaires', contenu: 'Droit des sociétés et fiscalité', categorieId: catOri3.id, niveauEtudeId: nivOri3.id, dureeDeFormation: '3/y', type: 'LICENCE' });
     console.log('  ✓ Parcours (Orientation)');
 
     for (const p of [parcOri1, parcOri2, parcOri3, parcOri4, parcOri5]) {
@@ -236,12 +328,14 @@ async function seed() {
     const nivIns1 = await InsNiv.create({ libelle: 'Licence 1', description: 'Première année de Licence' });
     const nivIns2 = await InsNiv.create({ libelle: 'Licence 2', description: 'Deuxième année de Licence' });
     const nivIns3 = await InsNiv.create({ libelle: 'Licence 3', description: 'Troisième année de Licence' });
+    const nivIns4 = await InsNiv.create({ libelle: 'Master 1', description: 'Première année de Master' });
+    const nivIns5 = await InsNiv.create({ libelle: 'Master 2', description: 'Deuxième année de Master' });
     console.log('  ✓ Niveaux d\'étude (Inscription)');
 
-    const parcIns1 = await InsPar.create({ titre: 'Informatique', description: 'Génie Logiciel et Intelligence Artificielle', niveauEtudeId: nivIns1.id });
-    const parcIns2 = await InsPar.create({ titre: 'Gestion des Entreprises', description: 'Comptabilité et Finance', niveauEtudeId: nivIns1.id });
-    const parcIns3 = await InsPar.create({ titre: 'Droit des Affaires', description: 'Droit commercial et fiscal', niveauEtudeId: nivIns1.id });
-    const parcIns4 = await InsPar.create({ titre: 'Marketing Digital', description: 'Stratégies marketing et E-commerce', niveauEtudeId: nivIns1.id });
+    const parcIns1 = await InsPar.create({ titre: 'Informatique', description: 'Génie Logiciel et Intelligence Artificielle', niveauEtudeId: nivIns1.id, type: 'LICENCE' });
+    const parcIns2 = await InsPar.create({ titre: 'Gestion des Entreprises', description: 'Comptabilité et Finance', niveauEtudeId: nivIns1.id, type: 'LICENCE' });
+    const parcIns3 = await InsPar.create({ titre: 'Droit des Affaires', description: 'Droit commercial et fiscal', niveauEtudeId: nivIns1.id, type: 'LICENCE' });
+    const parcIns4 = await InsPar.create({ titre: 'Marketing Digital', description: 'Stratégies marketing et E-commerce', niveauEtudeId: nivIns1.id, type: 'LICENCE' });
     console.log('  ✓ Parcours (Inscription)');
 
     const cls1 = await InsClasse.create({ libelle: 'LIC1-A', description: 'Licence 1 Groupe A', niveauEtudeId: nivIns1.id });
@@ -307,7 +401,11 @@ async function seed() {
 
         await InsDosEt.create({ utilisateurId: userId, matricule: mat, statut: 'actif', fraisScolarite: 2075000, modePaiement: 'mensuel', nbMensualites: 10, demarrageParcours: new Date('2024-10-01') });
 
-        await InsCur.create({ parcoursId: etuParcours[i].id, niveauEtudeId: nivIns1.id, classeId: cls1.id, anneeAcademiqueId: an1.id, utilisateurId: userId, demandeInscriptionId: demande.id, externe: false });
+        const cur = await InsCur.create({ parcoursId: etuParcours[i].id, niveauEtudeId: nivIns1.id, classeId: cls1.id, anneeAcademiqueId: an1.id, utilisateurId: userId, demandeInscriptionId: demande.id, externe: false });
+
+        for (const c of coursList) {
+            await InsCourP.create({ utilisateurId: userId, coursId: c.id, cursusApprenantId: cur.id });
+        }
 
         if (i < 3) {
             for (let m = 1; m <= 5; m++) {
@@ -316,7 +414,7 @@ async function seed() {
         }
 
         if (i < 8) {
-            await InsBor.create({ echeanceId: 1, fichier: 'bordereau.pdf', utilisateurId: userId, montant: 207500, statut: 'valide', dateSoumission: new Date(), dateValidation: new Date() });
+            await InsBor.create({ echeanceId: 1, fichier: 'bordereau.pdf', type: 'inscription', utilisateurId: userId, montant: 207500, statut: 'valide', dateSoumission: new Date(), dateValidation: new Date() });
         }
     }
     console.log('  ✓ Demandes, préinscriptions, paiements, dossiers, cursus');
@@ -394,6 +492,494 @@ async function seed() {
         await ImmMaint.create({ type: 'preventive', description: `Maintenance annuelle PC ${j}`, dateMaintenance: new Date(2025, 5, 1), cout: 25000, immobilisationId: immo.id });
     }
     console.log('  ✓ Immobilisations');
+
+    // ════════════════════════════════════════════════════
+    //  NOTES / EVALUATIONS
+    // ════════════════════════════════════════════════════
+    console.log('\n── NOTES / EVALUATIONS ──');
+
+    const typeCC = await InsTypeNote.create({ libelle: 'Contrôle Continu', description: 'Évaluation continue en cours de semestre', poids: 40, categorie: 'controle_continu' });
+    const typeDevoir = await InsTypeNote.create({ libelle: 'Devoir', description: 'Devoir surveillé de mi-semestre', poids: 30, categorie: 'devoir' });
+    const typeExamen = await InsTypeNote.create({ libelle: 'Examen', description: 'Examen de fin de semestre', poids: 30, categorie: 'examen' });
+    console.log('  ✓ Types d\'évaluation (CC 40%, Devoir 30%, Examen 30%)');
+
+    const allCours = [cours1, cours2, cours3, cours4, cours5, cours6, cours7, cours8];
+    const allListes: any[] = [];
+    for (const c of allCours) {
+        const l1 = await InsListeNote.create({ poidsTypeNoteEvaluation: 40, date: new Date('2025-02-15'), heureDebut: '08:00', heureFin: '10:00', commentaire: `CC ${c.code}`, typeNoteEvaluationId: typeCC.id, coursId: c.id, enseignantId: c.enseignantId, anneeAcademiqueId: an1.id });
+        const l2 = await InsListeNote.create({ poidsTypeNoteEvaluation: 30, date: new Date('2025-04-10'), heureDebut: '08:00', heureFin: '10:00', commentaire: `Devoir ${c.code}`, typeNoteEvaluationId: typeDevoir.id, coursId: c.id, enseignantId: c.enseignantId, anneeAcademiqueId: an1.id });
+        const l3 = await InsListeNote.create({ poidsTypeNoteEvaluation: 30, date: new Date('2025-06-20'), heureDebut: '14:00', heureFin: '17:00', commentaire: `Examen ${c.code}`, typeNoteEvaluationId: typeExamen.id, coursId: c.id, enseignantId: c.enseignantId, anneeAcademiqueId: an1.id });
+        allListes.push(l1, l2, l3);
+    }
+    console.log('  ✓ Listes d\'évaluation (3 par cours)');
+
+    const allCoursParts = await InsCourP.findAll();
+    for (const cp of allCoursParts) {
+        for (const liste of allListes) {
+            if (String(liste.coursId) === String(cp.coursId)) {
+                const note = +(8 + Math.random() * 11).toFixed(2);
+                await InsNoteEval.create({ note, listeNoteEvaluationId: liste.id, coursParticipantId: cp.id });
+            }
+        }
+    }
+    console.log('  ✓ Notes individuelles saisies');
+
+    // ════════════════════════════════════════════════════
+    //  BULLETINS
+    // ════════════════════════════════════════════════════
+    console.log('\n── BULLETINS ──');
+
+    const allCursus = await InsCur.findAll({ include: [{ association: 'utilisateur' }] });
+    const createdBulletins: any[] = [];
+    for (const cur of allCursus) {
+        const coursParts = await InsCourP.findAll({ where: { cursusApprenantId: cur.id, utilisateurId: cur.utilisateurId } });
+        let totalMoy = 0;
+        let totalCredits = 0;
+        let count = 0;
+        const lignes: { coursId: number; cc: number; dev: number; exam: number; credits: number }[] = [];
+
+        for (const cp of coursParts) {
+            const notes = await InsNoteEval.findAll({
+                where: { coursParticipantId: cp.id },
+                include: [{ association: 'listeNoteEvaluation' }]
+            });
+            if (notes.length < 3) continue;
+            const nCC = notes.find((n: any) => n.listeNoteEvaluation.typeNoteEvaluationId === typeCC.id);
+            const nDev = notes.find((n: any) => n.listeNoteEvaluation.typeNoteEvaluationId === typeDevoir.id);
+            const nExam = notes.find((n: any) => n.listeNoteEvaluation.typeNoteEvaluationId === typeExamen.id);
+            const cc = nCC?.note ?? 0;
+            const dev = nDev?.note ?? 0;
+            const exam = nExam?.note ?? 0;
+            const moy = cc * 0.4 + dev * 0.3 + exam * 0.3;
+            const crs = await InsCours.findByPk(cp.coursId);
+            const credits = crs?.credit ?? 0;
+            totalMoy += moy;
+            totalCredits += credits;
+            count++;
+            lignes.push({ coursId: cp.coursId, cc: +cc.toFixed(2), dev: +dev.toFixed(2), exam: +exam.toFixed(2), credits });
+        }
+
+        if (count === 0) continue;
+        const moyenneGen = +(totalMoy / count).toFixed(2);
+        const mention = moyenneGen >= 16 ? 'Très Bien' : moyenneGen >= 14 ? 'Bien' : moyenneGen >= 12 ? 'Assez Bien' : moyenneGen >= 10 ? 'Passable' : 'Insuffisant';
+
+        const bull = await Bulletin.create({
+            anneeAcademiqueId: an1.id, semestre: 'semestre1',
+            cursusApprenantId: cur.id, utilisateurId: cur.utilisateurId,
+            classeId: cls1.id, parcoursId: cur.parcoursId, niveauEtudeId: cur.niveauEtudeId,
+            moyenneGenerale: moyenneGen, totalCredits: totalCredits, creditsValides: Math.floor(totalCredits * (moyenneGen >= 10 ? 0.8 : 0.3)),
+            rang: 0, effectifClasse: allCursus.length, mention, appreciation: mention,
+            statut: 'publie', dateGeneration: new Date(), datePublication: new Date()
+        });
+
+        for (let idx = 0; idx < lignes.length; idx++) {
+            const l = lignes[idx];
+            const moyLigne = +(l.cc * 0.4 + l.dev * 0.3 + l.exam * 0.3).toFixed(2);
+            await LigneBulletin.create({
+                bulletinId: bull.id, coursId: l.coursId,
+                moyenneCC: l.cc, noteDevoir: l.dev, noteExamen: l.exam,
+                moyenne: moyLigne, coefficient: 1, rang: idx + 1,
+                appreciation: moyLigne >= 10 ? 'Acquis' : 'Non acquis'
+            });
+        }
+        createdBulletins.push(bull);
+    }
+    console.log(`  ✓ ${createdBulletins.length} bulletins générés avec lignes`);
+
+    // Délibération
+    const delib = await Deliberation.create({
+        libelle: 'Semestre 1 - 2024-2025', classeId: cls1.id,
+        anneeAcademiqueId: an1.id, periode: 'Semestre 1', date: new Date('2025-07-15'),
+        statut: 'cloturee', effectif: allCursus.length,
+        admis: createdBulletins.filter((b: any) => (b.moyenneGenerale ?? 0) >= 10).length
+    });
+
+    createdBulletins.sort((a: any, b: any) => (b.moyenneGenerale ?? 0) - (a.moyenneGenerale ?? 0));
+    for (let r = 0; r < createdBulletins.length; r++) {
+        const b = createdBulletins[r];
+        const user = await AutU.findByPk(b.utilisateurId);
+        await Bulletin.update({ rang: r + 1 }, { where: { id: b.id } });
+        await ResultatDelib.create({
+            deliberationId: delib.id, cursusApprenantId: b.cursusApprenantId,
+            nom: user?.nom ?? '', prenoms: user?.prenoms ?? '',
+            matricule: `UST${String(2024000 + r + 1)}`,
+            moyenne: b.moyenneGenerale, mention: b.mention, rang: r + 1,
+            decision: b.moyenneGenerale >= 10 ? 'admis' : b.moyenneGenerale >= 8 ? 'rattrapage' : 'redouble'
+        });
+    }
+    console.log('  ✓ Délibérations et résultats');
+
+    // ════════════════════════════════════════════════════
+    //  STAGE — Notes de stage
+    // ════════════════════════════════════════════════════
+    console.log('\n── STAGES : NOTES ──');
+    const stages = await StgDem.findAll().catch(() => []);
+    if (stages.length > 0) {
+        for (let si = 0; si < Math.min(stages.length, 5); si++) {
+            await StgNoteSt.create({ demandeStageId: stages[si].id, enseignantId: ens2.id, note: +(12 + Math.random() * 7).toFixed(2), appreciation: 'Bon travail' });
+        }
+        console.log(`  ✓ ${Math.min(stages.length, 5)} notes de stage`);
+    } else {
+        const stgApprenants = await AutU.findAll({ where: { role: 'apprenant' }, limit: 3, order: [['id', 'ASC']] });
+        for (let si = 0; si < stgApprenants.length; si++) {
+            const dem = await StgDem.create({ utilisateurId: stgApprenants[si].id, entrepriseId: ent1.id, tuteurId: tut1.id, dateDebut: new Date('2025-06-01'), dateFin: new Date('2025-08-31'), statut: 'valide' });
+            await StgNoteSt.create({ demandeStageId: dem.id, enseignantId: ens2.id, note: +(12 + Math.random() * 7).toFixed(2), appreciation: 'Bon travail' });
+        }
+        console.log('  ✓ Demandes de stage + notes créées');
+    }
+
+    // ════════════════════════════════════════════════════
+    //  SCOLARITÉ
+    // ════════════════════════════════════════════════════
+    console.log('\n── SCOLARITÉ ──');
+
+    const docCertif = await ScolTypeDoc.create({ libelle: 'Certificat de scolarité', frais: 5000, format: 'PDF' });
+    const docReleve = await ScolTypeDoc.create({ libelle: 'Relevé de notes', frais: 3000, format: 'PDF' });
+    const docAttest = await ScolTypeDoc.create({ libelle: 'Attestation de réussite', frais: 0, format: 'PDF' });
+    const docDiplome = await ScolTypeDoc.create({ libelle: 'Diplôme', frais: 15000, format: 'PDF' });
+    console.log('  ✓ Types de documents');
+
+    const etuUsers = await AutU.findAll({ where: { role: 'apprenant' }, order: [['id', 'ASC']], limit: 5 });
+    for (let ei = 0; ei < etuUsers.length; ei++) {
+        const doc = await ScolDemDoc.create({ etudiantId: etuUsers[ei].id, typeDocumentId: ei < 2 ? docCertif.id : docReleve.id, statut: ei < 3 ? 'delivree' : 'soumise', date: new Date(), fraisPayes: ei < 3 });
+        if (ei < 3) {
+            await ScolDocDel.create({ demandeId: doc.id, fichierPDF: `${ei < 2 ? 'certificat' : 'releve'}_${etuUsers[ei].id}.pdf`, dateDelivrance: new Date() });
+        }
+    }
+    console.log('  ✓ Demandes de documents');
+
+    for (let ri = 0; ri < 3; ri++) {
+        const recl = await ScolRecl.create({ etudiantId: etuUsers[ri].id, motif: ri === 0 ? 'Erreur sur mon relevé de notes' : ri === 1 ? 'Demande de révision de note' : 'Problème d\'emploi du temps', statut: ri < 2 ? 'traitee' : 'ouverte', date: new Date() });
+        if (ri < 2) {
+            await ScolRepRecl.create({ reclamationId: recl.id, repondeurId: admin.id, reponse: ri === 0 ? 'La note a été vérifiée et est correcte.' : 'La demande de révision a été transmise au professeur.', date: new Date() });
+        }
+    }
+    console.log('  ✓ Réclamations');
+
+    await ScolSanction.create({ etudiant: 'Traoré Aminata', matricule: 'UST2024001', classe: 'LIC1-A', date: new Date('2025-03-10'), motif: 'Absences répétées', sanction: 'Avertissement écrit', statut: 'notifiée' });
+    await ScolSanction.create({ etudiant: 'Kouamé Jean', matricule: 'UST2024002', classe: 'LIC1-A', date: new Date('2025-04-05'), motif: 'Retards fréquents', sanction: 'Blâme', statut: 'notifiée' });
+    console.log('  ✓ Sanctions disciplinaires');
+
+    await ScolConseil.create({ classe: 'LIC1-A', date: new Date('2025-07-10'), trimestre: 1, president: 'Konan Yves', statut: 'cloturé' });
+    await ScolDecision.create({ conseilClasseId: 1, theme: 'Validation du semestre 1', description: 'Tous les étudiants ayant une moyenne ≥ 10 sont admis en LIC2' });
+    console.log('  ✓ Conseil de classe');
+
+    await ScolEven.create({ titre: 'Début des cours', date: new Date('2024-10-01'), description: 'Rentrée académique 2024-2025', type: 'academique' });
+    await ScolEven.create({ titre: 'Examens semestre 1', date: new Date('2025-06-15'), description: 'Période des examens', type: 'examen' });
+    await ScolEven.create({ titre: 'Vacances de Noël', date: new Date('2024-12-23'), description: 'Fermeture de l\'université', type: 'vacance' });
+    console.log('  ✓ Événements calendrier');
+
+    const allNotesEval = await InsNoteEval.findAll({
+        include: [{ association: 'coursParticipant' }, { association: 'listeNoteEvaluation' }]
+    });
+    const notesByCoursParticipant: Record<string, number[]> = {};
+    for (const n of allNotesEval) {
+        const key = String(n.coursParticipantId);
+        if (!notesByCoursParticipant[key]) notesByCoursParticipant[key] = [];
+        notesByCoursParticipant[key].push(n.note);
+    }
+    for (const cur of allCursus) {
+        const cp = await InsCourP.findOne({ where: { cursusApprenantId: cur.id } });
+        if (!cp) continue;
+        const key = String(cp.id);
+        const notes = notesByCoursParticipant[key] || [];
+        const moy = notes.length > 0 ? +(notes.reduce((a: number, b: number) => a + b, 0) / notes.length).toFixed(2) : 0;
+        const allMoyennes = allCursus.map((c: any) => {
+            const p = notesByCoursParticipant[String(c.id)] || [];
+            return p.length > 0 ? p.reduce((a: number, b: number) => a + b, 0) / p.length : 0;
+        });
+        allMoyennes.sort((a: number, b: number) => b - a);
+        const rang = allMoyennes.indexOf(moy) + 1;
+        await ScolRegAcad.create({ etudiant: `${cp.utilisateur?.prenoms ?? ''} ${cp.utilisateur?.nom ?? ''}`, matricule: `UST${String(2024000 + 1)}`, classe: 'LIC1-A', moyenne: moy, rang: rang || 1, decision: moy >= 10 ? 'Admis' : 'Rattrapage', anneeScolaire: '2024-2025' });
+    }
+    console.log('  ✓ Registres académiques');
+
+    // ════════════════════════════════════════════════════
+    //  RH
+    // ════════════════════════════════════════════════════
+    console.log('\n── RH ──');
+
+    const depEns = await RhDep.create({ nom: 'Enseignement et Recherche', description: 'Département pédagogique' });
+    const depFin = await RhDep.create({ nom: 'Finance et Comptabilité', description: 'Gestion financière' });
+    const depRh = await RhDep.create({ nom: 'Ressources Humaines', description: 'Gestion du personnel' });
+    const depScol = await RhDep.create({ nom: 'Scolarité', description: 'Gestion des inscriptions et dossiers' });
+    const depTech = await RhDep.create({ nom: 'Services Techniques', description: 'Maintenance et logistique' });
+    console.log('  ✓ Départements');
+
+    const postes = [
+        { titre: 'Professeur', dep: depEns.id }, { titre: 'Maître de Conférences', dep: depEns.id },
+        { titre: 'Comptable', dep: depFin.id }, { titre: 'Chef comptable', dep: depFin.id },
+        { titre: 'Responsable RH', dep: depRh.id }, { titre: 'Assistant RH', dep: depRh.id },
+        { titre: 'Agent de scolarité', dep: depScol.id }, { titre: 'Chef de service scolarité', dep: depScol.id },
+        { titre: 'Technicien de maintenance', dep: depTech.id }, { titre: 'Chef de service technique', dep: depTech.id }
+    ];
+    const createdPostes: any[] = [];
+    for (const p of postes) {
+        createdPostes.push(await RhPoste.create({ titre: p.titre, description: `Poste de ${p.titre}`, departementId: p.dep }));
+    }
+    console.log('  ✓ Postes');
+
+    const cdi = await RhTypeContrat.create({ code: 'CDI', libelle: 'Contrat à Durée Indéterminée' });
+    const cdd = await RhTypeContrat.create({ code: 'CDD', libelle: 'Contrat à Durée Déterminée' });
+    const vac = await RhTypeContrat.create({ code: 'VAC', libelle: 'Vacataire' });
+    console.log('  ✓ Types de contrat');
+
+    const ensUsers = await AutU.findAll({ where: { role: 'enseignant' }, order: [['id', 'ASC']] });
+    for (let ei = 0; ei < ensUsers.length; ei++) {
+        await RhEmploye.create({ utilisateurId: ensUsers[ei].id, posteId: createdPostes[ei].id, departementId: depEns.id, dateEmbauche: new Date('2020-09-01'), typeContratId: cdi.id, salaireBase: 800000 + ei * 200000, statut: 'actif' });
+    }
+    const adminUser = await AutU.findOne({ where: { identifiant: 'admin' } });
+    await RhEmploye.create({ utilisateurId: adminUser?.id ?? admin.id, posteId: createdPostes[4].id, departementId: depRh.id, dateEmbauche: new Date('2019-01-15'), typeContratId: cdi.id, salaireBase: 1200000, statut: 'actif' });
+    console.log('  ✓ Employés');
+
+    const rubSalaire = await RhRubPaie.create({ code: 'SAL', libelle: 'Salaire de base', type: 'gain', modeCalcul: 'fixe', valeur: 0, imposable: true });
+    const rubLogement = await RhRubPaie.create({ code: 'LOG', libelle: 'Indemnité logement', type: 'gain', modeCalcul: 'pourcentage', valeur: 15, imposable: false });
+    const rubTransport = await RhRubPaie.create({ code: 'TRANS', libelle: 'Indemnité transport', type: 'gain', modeCalcul: 'fixe', valeur: 50000, imposable: false });
+    const rubIR = await RhRubPaie.create({ code: 'IR', libelle: 'Impôt sur le revenu', type: 'retenue', modeCalcul: 'pourcentage', valeur: 5, imposable: false });
+    const rubCNPS = await RhRubPaie.create({ code: 'CNPS', libelle: 'Cotisation CNPS', type: 'cotisation', modeCalcul: 'pourcentage', valeur: 4, imposable: false });
+    console.log('  ✓ Rubriques paie');
+
+    const perPaie = await RhPerPaie.create({ mois: 6, annee: 2025, dateDebut: new Date('2025-06-01'), dateFin: new Date('2025-06-30'), statut: 'ouverte' });
+    const allRhEmployes = await RhEmploye.findAll();
+    for (const emp of allRhEmployes) {
+        const salBase = emp.salaireBase ?? 0;
+        const logement = salBase * 0.15;
+        const transport = 50000;
+        const ir = (salBase + logement + transport) * 0.05;
+        const cnps = salBase * 0.04;
+        const totalGains = salBase + logement + transport;
+        const totalRetenues = ir + cnps;
+        const net = totalGains - totalRetenues;
+
+        const bp = await RhBulPaie.create({ employeId: emp.id, periodeId: perPaie.id, totalGains, totalRetenues, netAPayer: net, statut: 'validé' });
+
+        await RhLigBul.create({ bulletinId: bp.id, rubriqueId: rubSalaire.id, libelle: 'Salaire de base', base: salBase, taux: 0, montant: salBase });
+        await RhLigBul.create({ bulletinId: bp.id, rubriqueId: rubLogement.id, libelle: 'Indemnité logement', base: salBase, taux: 15, montant: logement });
+        await RhLigBul.create({ bulletinId: bp.id, rubriqueId: rubTransport.id, libelle: 'Indemnité transport', base: 0, taux: 0, montant: transport });
+        await RhLigBul.create({ bulletinId: bp.id, rubriqueId: rubIR.id, libelle: 'Impôt sur le revenu', base: totalGains, taux: 5, montant: ir });
+        await RhLigBul.create({ bulletinId: bp.id, rubriqueId: rubCNPS.id, libelle: 'Cotisation CNPS', base: salBase, taux: 4, montant: cnps });
+    }
+    console.log('  ✓ Bulletins de paie');
+
+    const rhEns = await RhEmploye.findAll({ include: [{ association: 'poste' }] });
+    for (let pi = 0; pi < Math.min(rhEns.length, 8); pi++) {
+        await RhPresEns.create({ enseignantId: rhEns[pi].id, coursId: allCours[pi % allCours.length].id, mois: 6, annee: 2025, nombreHeures: 20 + pi * 4, tauxHoraire: 5000, montant: (20 + pi * 4) * 5000, statut: 'validée' });
+    }
+    console.log('  ✓ Prestations enseignants');
+
+    const form1 = await RhFormation.create({ titre: 'Pédagogie universitaire', description: 'Formation aux méthodes pédagogiques', dateDebut: new Date('2025-04-01'), dateFin: new Date('2025-04-05'), formateur: 'Dr. Kouamé Paul', type: 'interne' });
+    const form2 = await RhFormation.create({ titre: 'Excel avancé', description: 'Tableaux de bord et reporting', dateDebut: new Date('2025-05-10'), dateFin: new Date('2025-05-12'), formateur: 'Bureau Plus Formation', type: 'externe' });
+    console.log('  ✓ Formations');
+
+    for (let fi = 0; fi < Math.min(rhEns.length, 3); fi++) {
+        await RhPartForm.create({ formationId: form1.id, employeId: rhEns[fi].id, statut: 'terminé' });
+    }
+    for (let fi = 0; fi < Math.min(rhEns.length, 2); fi++) {
+        await RhPartForm.create({ formationId: form2.id, employeId: rhEns[fi].id, statut: 'terminé' });
+    }
+    console.log('  ✓ Participations formations');
+
+    const poste1 = createdPostes[0];
+    const offre1 = await RhOffre.create({ posteId: poste1.id, description: 'Recherche professeur d\'informatique', datePublication: new Date('2025-01-15'), dateCloture: new Date('2025-03-15'), statut: 'fermée' });
+    const offre2 = await RhOffre.create({ posteId: createdPostes[2].id, description: 'Recherche comptable expérimenté', datePublication: new Date('2025-06-01'), dateCloture: new Date('2025-08-01'), statut: 'publiée' });
+    console.log('  ✓ Offres d\'emploi');
+
+    const cand1 = await RhCandidature.create({ offreId: offre1.id, nom: 'Koné Moussa', email: 'moussa.kone@email.ci', telephone: '+22507010101', cv: 'cv_kone.pdf', lettreMotivation: 'lm_kone.pdf', statut: 'retenue' });
+    const cand2 = await RhCandidature.create({ offreId: offre1.id, nom: 'Diallo Aïcha', email: 'aicha.diallo@email.ci', telephone: '+22507020202', cv: 'cv_diallo.pdf', lettreMotivation: 'lm_diallo.pdf', statut: 'soumise' });
+    await RhCandidature.create({ offreId: offre2.id, nom: 'Tano Jean', email: 'jean.tano@email.ci', cv: 'cv_tano.pdf', statut: 'soumise' });
+    console.log('  ✓ Candidatures');
+
+    await RhEntretien.create({ candidatureId: cand1.id, date: new Date('2025-02-20'), heure: '10:00', lieu: 'Bureau RH', commentaire: 'Candidat très compétent', statut: 'retenu' });
+    await RhEntretien.create({ candidatureId: cand2.id, date: new Date('2025-02-21'), heure: '14:00', lieu: 'Salle 101', commentaire: 'À recontacter', statut: 'en_attente' });
+    console.log('  ✓ Entretiens');
+
+    const critPonctualite = await RhCritEval.create({ nom: 'Ponctualité', description: 'Respect des horaires', poids: 20 });
+    const critCompetence = await RhCritEval.create({ nom: 'Compétence technique', description: 'Maîtrise des outils', poids: 30 });
+    const critRelation = await RhCritEval.create({ nom: 'Relationnel', description: 'Travail en équipe', poids: 20 });
+    const critProductivite = await RhCritEval.create({ nom: 'Productivité', description: 'Efficacité au travail', poids: 30 });
+    console.log('  ✓ Critères d\'évaluation');
+
+    for (let ei = 0; ei < Math.min(rhEns.length, 3); ei++) {
+        const fiche = await RhFicheEval.create({ employeId: rhEns[ei].id, evaluateurId: admin.id, dateEvaluation: new Date('2025-06-15'), noteGlobale: 14 + ei, commentaire: 'Bon travail' });
+        await RhEvalCrit.create({ ficheId: fiche.id, critereId: critPonctualite.id, note: 14 + ei });
+        await RhEvalCrit.create({ ficheId: fiche.id, critereId: critCompetence.id, note: 15 + ei });
+        await RhEvalCrit.create({ ficheId: fiche.id, critereId: critRelation.id, note: 13 + ei });
+        await RhEvalCrit.create({ ficheId: fiche.id, critereId: critProductivite.id, note: 14 + ei });
+    }
+    console.log('  ✓ Fiches d\'évaluation');
+
+    // ════════════════════════════════════════════════════
+    //  ACHATS
+    // ════════════════════════════════════════════════════
+    console.log('\n── ACHATS ──');
+
+    const achCat1 = await AchCat.create({ nom: 'Fournitures de bureau', description: 'Papeterie et consommables' });
+    const achCat2 = await AchCat.create({ nom: 'Matériel pédagogique', description: 'Équipements pour salles de classe' });
+    const achCat3 = await AchCat.create({ nom: 'Informatique', description: 'Matériel et logiciels' });
+    console.log('  ✓ Catégories');
+
+    const achFour1 = await AchFour.create({ nom: 'Bureau Plus CI', contact: 'Kouamé Paul', email: 'commandes@bureauplus.ci', telephone: '+22521212121', adresse: 'Abidjan Plateau' });
+    const achFour2 = await AchFour.create({ nom: 'Techno Shop', contact: 'Koné Moussa', email: 'ventes@technoshop.ci', telephone: '+22522222222', adresse: 'Abidjan Cocody' });
+    console.log('  ✓ Fournisseurs');
+
+    const immDepEns = await M('ImmDepartement').create({ nom: 'Enseignement et Recherche' });
+    const immDepFin = await M('ImmDepartement').create({ nom: 'Finance' });
+    const achBud = await AchBud.create({ departementId: immDepEns.id, periode: '2025', montantAlloue: 50000000, montantUtilise: 2350000 });
+    await AchLigBud.create({ budgetId: achBud.id, categorieAchatId: achCat1.id, montantAlloue: 10000000, montantUtilise: 500000 });
+    await AchLigBud.create({ budgetId: achBud.id, categorieAchatId: achCat2.id, montantAlloue: 20000000, montantUtilise: 1200000 });
+    await AchLigBud.create({ budgetId: achBud.id, categorieAchatId: achCat3.id, montantAlloue: 20000000, montantUtilise: 650000 });
+    console.log('  ✓ Budgets');
+
+    const achDem1 = await AchDem.create({ soumisParId: admin.id, description: 'Fournitures pour le département', statut: 'validee', dateSoumission: new Date('2025-01-10'), validateurChoisiId: admin.id });
+    await AchLigDem.create({ demandeId: achDem1.id, designation: 'Ramettes de papier A4 (10 cartons)', quantite: 10, prixEstime: 50000, unite: 'carton' });
+    await AchLigDem.create({ demandeId: achDem1.id, designation: 'Stylos bleus (20 boîtes)', quantite: 20, prixEstime: 7500, unite: 'boîte' });
+    console.log('  ✓ Demandes d\'achat');
+
+    await AchVal.create({ utilisateurId: admin.id, niveau: 1, montantMax: 5000000, actif: true });
+    await AchVal.create({ utilisateurId: admin.id, niveau: 2, montantMax: 20000000, actif: true });
+    console.log('  ✓ Validateurs');
+
+    const achCmd1 = await AchCmd.create({ demandeId: achDem1.id, fournisseurId: achFour1.id, dateCommande: new Date('2025-01-15'), statut: 'livree' });
+    const ligCmd1 = await AchLigCmd.create({ commandeId: achCmd1.id, designation: 'Ramettes de papier A4 (10 cartons)', quantite: 10, prixUnitaire: 45000, total: 450000, gereEnStock: true });
+    const ligCmd2 = await AchLigCmd.create({ commandeId: achCmd1.id, designation: 'Stylos bleus (20 boîtes)', quantite: 20, prixUnitaire: 7000, total: 140000, gereEnStock: true });
+    console.log('  ✓ Commandes');
+
+    const rec1 = await AchRec.create({ commandeId: achCmd1.id, date: new Date('2025-01-20'), statut: 'totale', notes: 'Livraison complète' });
+    await AchLigRec.create({ receptionId: rec1.id, ligneCommandeId: ligCmd1.id, quantiteRecue: 10 });
+    await AchLigRec.create({ receptionId: rec1.id, ligneCommandeId: ligCmd2.id, quantiteRecue: 20 });
+    console.log('  ✓ Réceptions');
+
+    const fact1 = await AchFact.create({ commandeId: achCmd1.id, dateEmission: new Date('2025-01-22'), montantTotal: 590000, statut: 'payee' });
+    await AchLigFact.create({ factureId: fact1.id, ligneCommandeId: ligCmd1.id, designation: 'Ramettes de papier', quantite: 10, prixUnitaire: 45000, total: 450000 });
+    await AchLigFact.create({ factureId: fact1.id, ligneCommandeId: ligCmd2.id, designation: 'Stylos bleus', quantite: 20, prixUnitaire: 7000, total: 140000 });
+    console.log('  ✓ Factures');
+
+    await AchEng.create({ budgetId: achBud.id, demandeId: achDem1.id, montant: 590000, date: new Date('2025-01-16'), statut: 'actif' });
+    console.log('  ✓ Engagements');
+
+    // ════════════════════════════════════════════════════
+    //  COMPTABILITÉ
+    // ════════════════════════════════════════════════════
+    console.log('\n── COMPTABILITÉ ──');
+
+    const comptes = [
+        { numero: '101', libelle: 'Capital social', classe: '1', sousClasse: '10', nature: 'Crédit', categorie: 'Capitaux propres' },
+        { numero: '164', libelle: 'Emprunts', classe: '1', sousClasse: '16', nature: 'Crédit', categorie: 'Dettes financières' },
+        { numero: '211', libelle: 'Terrains', classe: '2', sousClasse: '21', nature: 'Débit', categorie: 'Immobilisations corporelles' },
+        { numero: '2183', libelle: 'Matériel informatique', classe: '2', sousClasse: '21', nature: 'Débit', categorie: 'Immobilisations corporelles' },
+        { numero: '281', libelle: 'Amortissements', classe: '2', sousClasse: '28', nature: 'Crédit', categorie: 'Amortissements' },
+        { numero: '401', libelle: 'Fournisseurs', classe: '4', sousClasse: '40', nature: 'Crédit', categorie: 'Dettes' },
+        { numero: '411', libelle: 'Clients', classe: '4', sousClasse: '41', nature: 'Débit', categorie: 'Créances' },
+        { numero: '512', libelle: 'Banque', classe: '5', sousClasse: '51', nature: 'Débit/Crédit', categorie: 'Trésorerie' },
+        { numero: '531', libelle: 'Caisse', classe: '5', sousClasse: '53', nature: 'Débit', categorie: 'Trésorerie' },
+        { numero: '601', libelle: 'Achats', classe: '6', sousClasse: '60', nature: 'Débit', categorie: 'Charges' },
+        { numero: '606', libelle: 'Fournitures', classe: '6', sousClasse: '60', nature: 'Débit', categorie: 'Charges' },
+        { numero: '641', libelle: 'Salaires', classe: '6', sousClasse: '64', nature: 'Débit', categorie: 'Charges' },
+        { numero: '645', libelle: 'Charges sociales', classe: '6', sousClasse: '64', nature: 'Débit', categorie: 'Charges' },
+        { numero: '701', libelle: 'Ventes', classe: '7', sousClasse: '70', nature: 'Crédit', categorie: 'Produits' },
+        { numero: '706', libelle: 'Prestations de services', classe: '7', sousClasse: '70', nature: 'Crédit', categorie: 'Produits' },
+    ];
+    const createdComptes: any[] = [];
+    for (const c of comptes) {
+        createdComptes.push(await CptCompte.create({
+            numero: c.numero, libelle: c.libelle, classe: c.classe as any,
+            sousClasse: c.sousClasse, nature: c.nature as any,
+            categorie: c.categorie, description: `Compte ${c.libelle}`, actif: true, moduleSource: 'seed'
+        }));
+    }
+    console.log('  ✓ Plan comptable');
+
+    const jrnAch = await CptJournal.create({ code: 'AC', libelle: 'Journal des achats', type: 'Achat', description: 'Saisie des factures fournisseurs', actif: true });
+    const jrnBan = await CptJournal.create({ code: 'BQ', libelle: 'Journal de banque', type: 'Banque', description: 'Opérations bancaires', actif: true });
+    const jrnOD = await CptJournal.create({ code: 'OD', libelle: 'Journal des opérations diverses', type: 'OD', description: 'OD de clôture et diverses', actif: true });
+    console.log('  ✓ Journaux comptables');
+
+    const cptAchat = createdComptes.find((c: any) => c.numero === '601');
+    const cptFour = createdComptes.find((c: any) => c.numero === '401');
+    const cptBanque = createdComptes.find((c: any) => c.numero === '512');
+    const cptVentes = createdComptes.find((c: any) => c.numero === '701');
+    const cptSal = createdComptes.find((c: any) => c.numero === '641');
+
+    await CptEcriture.create({ journalId: jrnAch.id, numeroEcriture: 'AC-001', dateEcriture: new Date('2025-01-22'), dateComptable: new Date('2025-01-22'), compteDebitId: cptAchat.id, compteCreditId: cptFour.id, montant: 590000, libelle: 'Achat fournitures bureau', reference: 'FACT-001', moduleSource: 'achats', utilisateurSaisieId: admin.id, validee: true, utilisateurValidationId: admin.id, dateValidation: new Date('2025-01-22') });
+    await CptEcriture.create({ journalId: jrnBan.id, numeroEcriture: 'BQ-001', dateEcriture: new Date('2025-01-25'), dateComptable: new Date('2025-01-25'), compteDebitId: cptFour.id, compteCreditId: cptBanque.id, montant: 590000, libelle: 'Paiement facture fournitures', moduleSource: 'achats', utilisateurSaisieId: admin.id, validee: true });
+    await CptEcriture.create({ journalId: jrnBan.id, numeroEcriture: 'BQ-002', dateEcriture: new Date('2025-06-30'), dateComptable: new Date('2025-06-30'), compteDebitId: cptSal.id, compteCreditId: cptBanque.id, montant: 8000000, libelle: 'Paie juin 2025', moduleSource: 'rh', utilisateurSaisieId: admin.id, validee: true });
+    console.log('  ✓ Écritures comptables');
+
+    // ════════════════════════════════════════════════════
+    //  COMMUNICATION
+    // ════════════════════════════════════════════════════
+    console.log('\n── COMMUNICATION ──');
+
+    await ComCom.create({ titre: 'Rentrée universitaire 2025-2026', contenu: 'Les inscriptions pour la rentrée 2025-2026 sont ouvertes du 1er septembre au 31 octobre 2025.', datePublication: new Date('2025-08-15'), statut: 'publiee' });
+    await ComCom.create({ titre: 'Calendrier des examens', contenu: 'Les examens du semestre 1 auront lieu du 15 au 30 juin 2025.', datePublication: new Date('2025-05-01'), statut: 'publiee' });
+    await ComCom.create({ titre: 'Note de service', contenu: 'Réunion pédagogique obligatoire le 10 septembre 2025 à 9h.', datePublication: new Date('2025-09-01'), statut: 'brouillon' });
+    console.log('  ✓ Communications');
+
+    await ComActu.create({ titre: 'L\'UST célèbre ses 10 ans', contenu: 'L\'Université des Sciences et Technologies fête sa première décennie d\'excellence.', date: new Date('2025-03-20'), categorie: 'Événement' });
+    await ComActu.create({ titre: 'Partenariat avec Orange CI', contenu: 'L\'UST signe un partenariat avec Orange Côte d\'Ivoire pour la formation aux métiers du numérique.', date: new Date('2025-04-10'), categorie: 'Partenariat' });
+    console.log('  ✓ Actualités');
+
+    const sug1 = await ComSug.create({ utilisateurId: etuUsers[0]?.id ?? admin.id, type: 'Amélioration', message: 'Suggestion d\'ajouter un laboratoire de langues', statut: 'traitee', date: new Date() });
+    await ComRepSug.create({ suggestionId: sug1.id, utilisateurId: admin.id, message: 'Merci pour votre suggestion. Elle sera étudiée par la direction.', date: new Date() });
+    await ComSug.create({ utilisateurId: etuUsers[1]?.id ?? admin.id, type: 'Réclamation', message: 'Horaires d\'ouverture de la bibliothèque trop restrictifs', statut: 'ouverte', date: new Date() });
+    console.log('  ✓ Suggestions');
+
+    // ════════════════════════════════════════════════════
+    //  E-LEARNING
+    // ════════════════════════════════════════════════════
+    console.log('\n── E-LEARNING ──');
+
+    const elearnC1 = await ElearnCours.create({ coursId: String(cours1.id), titre: 'Algorithmique et Programmation', description: 'Cours en ligne d\'initiation à la programmation', statut: 'actif' });
+    const elearnC2 = await ElearnCours.create({ coursId: String(cours7.id), titre: 'Bases de données', description: 'Cours en ligne de SQL et conception BD', statut: 'actif' });
+    console.log('  ✓ Cours en ligne');
+
+    const mod1 = await ElearnModule.create({ coursId: elearnC1.id, titre: 'Introduction à Python', description: 'Variables, types et structures de contrôle', ordre: 1 });
+    const mod2 = await ElearnModule.create({ coursId: elearnC1.id, titre: 'Fonctions et modules', description: 'Définition de fonctions et import de modules', ordre: 2 });
+    const mod3 = await ElearnModule.create({ coursId: elearnC2.id, titre: 'SQL Fondamentaux', description: 'Requêtes SELECT, INSERT, UPDATE', ordre: 1 });
+    console.log('  ✓ Modules');
+
+    const sup1 = await ElearnSupport.create({ moduleId: mod1.id, type: 'PDF', fichierOriginal: 'python_intro.pdf', fichierCompresse: 'python_intro_comp.pdf', taille: '2.5 MB' });
+    const sup2 = await ElearnSupport.create({ moduleId: mod1.id, type: 'VIDEO', fichierOriginal: 'python_video.mp4', dureeVideo: '45:30', taille: '120 MB' });
+    const sup3 = await ElearnSupport.create({ moduleId: mod3.id, type: 'PDF', fichierOriginal: 'sql_fundamentals.pdf', taille: '1.8 MB' });
+    console.log('  ✓ Supports');
+
+    const sal1 = await ElearnSalon.create({ coursId: elearnC1.id, titre: 'Chat Programmation', type: 'cours' });
+    const sal2 = await ElearnSalon.create({ coursId: elearnC2.id, titre: 'Chat Base de données', type: 'cours' });
+    console.log('  ✓ Salons');
+
+    for (const u of etuUsers) {
+        await ElearnPart.create({ salonId: sal1.id, utilisateurId: u.id as any });
+        await ElearnPart.create({ salonId: sal2.id, utilisateurId: u.id as any });
+    }
+    console.log('  ✓ Participants salons');
+
+    await ElearnMsg.create({ salonId: sal1.id, utilisateurId: etuUsers[0]?.id as any ?? admin.id, message: 'Bonjour à tous !', date: new Date(), lu: false });
+    await ElearnMsg.create({ salonId: sal1.id, utilisateurId: ens2.id as any, message: 'Bonjour ! Le cours commence cette semaine.', date: new Date(), lu: true });
+    await ElearnMsg.create({ salonId: sal1.id, utilisateurId: etuUsers[1]?.id as any ?? admin.id, message: 'Merci professeur !', date: new Date(), lu: false });
+    await ElearnMsg.create({ salonId: sal2.id, utilisateurId: ens2.id as any, message: 'Nouveau module SQL disponible.', date: new Date(), lu: false });
+    await ElearnMsg.create({ salonId: sal2.id, utilisateurId: etuUsers[0]?.id as any ?? admin.id, message: 'Super, merci !', date: new Date(), lu: false });
+    console.log('  ✓ Messages');
+
+    for (const u of etuUsers.slice(0, 3)) {
+        await ElearnNotif.create({ utilisateurId: u.id as any, type: 'cours', message: 'Nouveau cours disponible : Algorithmique', lu: false, date: new Date() });
+    }
+    await ElearnNotif.create({ utilisateurId: admin.id as any, type: 'system', message: 'Mise à jour système effectuée', lu: true, date: new Date() });
+    console.log('  ✓ Notifications');
+
+    for (const sup of [sup1, sup2, sup3]) {
+        await ElearnComment.create({ supportId: sup.id, utilisateurId: etuUsers[0]?.id as any ?? admin.id, message: 'Très bon support !', date: new Date() });
+    }
+    console.log('  ✓ Commentaires');
+
+    await ElearnMail.create({ supportId: sup1.id, emailEnvoye: 'etudiant1@etu.ust.ci', dateEnvoi: new Date() });
+    await ElearnMail.create({ supportId: sup3.id, emailEnvoye: 'etudiant2@etu.ust.ci', dateEnvoi: new Date() });
+    console.log('  ✓ Couplages mail');
+
+    // ════════════════════════════════════════════════════
+    //  REPORTING
+    // ════════════════════════════════════════════════════
+    console.log('\n── REPORTING ──');
+    console.log('  ⚡ Lancer après: npm run db:sync-reporting');
 
     console.log('\n═══════════════════════════════════════════');
     console.log('  SEED TERMINÉ — UST');

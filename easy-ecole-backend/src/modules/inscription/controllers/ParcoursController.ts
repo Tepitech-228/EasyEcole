@@ -36,7 +36,7 @@ export default class ParcoursController {
             const parcours: Parcours | null = await Parcours.findOne(options);
 
             if (parcours == null)
-                return res.status(404).json({ success: false, message: "Parcours non trouvé" });
+                return res.status(404).json({ success: false, message: "Filière non trouvée" });
 
             return res.status(200).send(parcours);
         } catch (error) {
@@ -59,6 +59,7 @@ export default class ParcoursController {
             let parcours: Parcours = new Parcours();
             parcours.titre = req.body.titre
             parcours.description = req.body.description
+            parcours.type = req.body.type
             parcours.niveauEtudeId = req.body.niveauEtudeId
 
             await parcours.save()
@@ -92,6 +93,7 @@ export default class ParcoursController {
                 await parcours.update({
                     titre: req.body.titre,
                     description: req.body.description,
+                    type: req.body.type,
                     niveauEtudeId: req.body.niveauEtudeId,
                 })
                     .then(async (parcours) => {
@@ -122,7 +124,7 @@ export default class ParcoursController {
         if (parcours) {
             await parcours.destroy()
                 .then(() => {
-                    return res.status(200).json({ success: true, message: "Parcours supprimé" });
+                    return res.status(200).json({ success: true, message: "Filière supprimée" });
                 })
                 .catch((error) => {
                     return res.status(500).json({ success: false, error: error });

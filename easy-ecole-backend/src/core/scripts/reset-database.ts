@@ -36,10 +36,39 @@ async function resetDatabase() {
     require('../../modules/inscription/models/_associations');
     require('../../modules/stage/models/_associations');
     require('../../modules/stock/models/_associations');
-        require('../../modules/immobilisation/models/_associations');
-        require('../../modules/bulletins/models/_associations');
+    require('../../modules/immobilisation/models/_associations');
+    require('../../modules/bulletins/models/_associations');
+    require('../../modules/scolarite/models/_associations');
+    require('../../modules/scolarite/models/SanctionDiscipline');
+    require('../../modules/scolarite/models/RegistreAcademique');
+    require('../../modules/scolarite/models/EvenementCalendrier');
+    require('../../modules/rh/models/_associations');
+    require('../../modules/achats/models/_associations');
+    require('../../modules/comptabilite/models/_associations');
+    require('../../modules/communication/models/_associations');
+    require('../../modules/communication/models/Communication');
+    require('../../modules/communication/models/Actualite');
+    require('../../modules/elearning/models/_associations');
+    require('../../modules/elearning/models/Notification');
+    require('../../modules/reporting/models/_associations');
+    require('../../modules/reporting/models/RptEffectif');
+    require('../../modules/reporting/models/RptInscription');
+    require('../../modules/reporting/models/RptNoteMoyenne');
+    require('../../modules/reporting/models/RptPresence');
+    require('../../modules/reporting/models/RptReussite');
+    require('../../modules/reporting/models/RptDocumentAcademique');
+    require('../../modules/reporting/models/RptPaiement');
+    require('../../modules/reporting/models/RptBudgetVsReel');
+    require('../../modules/reporting/models/RptFacture');
+    require('../../modules/reporting/models/RptEffectifRh');
+    require('../../modules/reporting/models/RptPaie');
+    require('../../modules/reporting/models/RptFormationRh');
+    require('../../modules/reporting/models/RptEvaluation');
+    require('../../modules/reporting/models/RptAchat');
+    require('../../modules/reporting/models/RptStock');
+    require('../../modules/reporting/models/RptImmobilisation');
 
-        await sequelize.sync({ alter: true });
+    await sequelize.sync({ alter: true });
     console.log('All tables synced');
 
     // Step 3: Run seed

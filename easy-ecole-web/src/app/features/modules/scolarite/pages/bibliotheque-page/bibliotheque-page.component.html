@@ -1,0 +1,70 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="flex justify-between items-start gap-x-8 mb-8">
+    <app-header-title title="Bibliothèque" subtitle="Consulter les livres et documents PDF"></app-header-title>
+    <div *ngIf="rolesValue.isInstitution || rolesValue.isAdmin">
+      <a routerLink="/scolarite/gestion-bibliotheque"
+        class="inline-flex items-center px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-xl transition-colors border-0 cursor-pointer no-underline">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Gérer
+      </a>
+    </div>
+  </div>
+
+  <!-- Search bar -->
+  <div class="mb-6 max-w-md">
+    <input type="text" [(ngModel)]="searchTerm" placeholder="Rechercher par titre ou auteur..."
+      class="block w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600">
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="text-center py-20">
+    <div class="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-3"></div>
+    <p class="text-sm text-gray-400">Chargement de la bibliothèque...</p>
+  </div>
+
+  <!-- Books grid -->
+  <div *ngIf="!loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div *ngFor="let livre of filteredLivres"
+      (click)="consulterLivre(livre)"
+      class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-5 cursor-pointer group">
+      <div class="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center mb-4 group-hover:bg-blue-100 transition-colors">
+        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+      </div>
+      <h3 class="text-sm font-semibold text-gray-900 mb-1 line-clamp-2">{{ livre.titre }}</h3>
+      <p class="text-xs text-gray-500 mb-3">{{ livre.auteur }}</p>
+      <p *ngIf="livre.description" class="text-xs text-gray-400 mb-3 line-clamp-2">{{ livre.description }}</p>
+      <div class="flex items-center justify-between text-xs text-gray-400">
+        <span>{{ livre.taille || '?' }}</span>
+        <span>{{ livre.consultations || 0 }} consultation(s)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div *ngIf="!loading && filteredLivres.length === 0" class="text-center py-20">
+    <div class="h-16 w-16 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto mb-4">
+      <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+    </div>
+    <p class="text-sm text-gray-500">Aucun livre disponible</p>
+    <p class="text-xs text-gray-400 mt-1">La bibliothèque est vide pour le moment</p>
+  </div>
+</div>
+
+<!-- PDF Viewer Modal -->
+<div *ngIf="showPdfViewer && selectedLivre" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <div>
+        <h3 class="text-sm font-semibold text-gray-900">{{ selectedLivre.titre }}</h3>
+        <p class="text-xs text-gray-500">{{ selectedLivre.auteur }}</p>
+      </div>
+      <button (click)="closePdfViewer()"
+        class="h-8 w-8 rounded-lg hover:bg-gray-100 flex items-center justify-center border-0 bg-transparent cursor-pointer">
+        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="flex-1 min-h-0">
+      <iframe [src]="pdfSrc | safeUrl" class="w-full h-full" style="min-height: 80vh;"></iframe>
+    </div>
+  </div>
+</div>

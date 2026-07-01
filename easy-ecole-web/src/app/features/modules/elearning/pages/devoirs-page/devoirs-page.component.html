@@ -1,7 +1,12 @@
 <div class="p-6">
-  <app-header-title title="Devoirs" subtitle="Liste des devoirs et exercices à rendre"></app-header-title>
+  <div class="flex items-center justify-between mb-6">
+    <app-header-title title="Devoirs" subtitle="Liste des devoirs et exercices à rendre"></app-header-title>
+    <app-custom-button *ngIf="canManage()" text="Nouveau devoir" color="primary" (click)="openCreateModal()"></app-custom-button>
+  </div>
 
-  <div *ngIf="devoirs.length === 0" class="text-center py-12 text-gray-500">
+  <div *ngIf="loading" class="text-center py-12 text-gray-500">Chargement...</div>
+
+  <div *ngIf="!loading && devoirs.length === 0" class="text-center py-12 text-gray-500">
     Aucun devoir pour le moment.
   </div>
 
@@ -15,15 +20,46 @@
           </div>
           <p class="text-sm text-gray-600 mb-2">{{ devoir.description }}</p>
           <div class="flex items-center gap-4 text-xs text-gray-400">
-            <span>{{ devoir.coursTitre }}</span>
+            <span *ngIf="devoir.cours?.titre">{{ devoir.cours.titre }}</span>
             <span>Date limite: {{ devoir.dateLimite | date:'dd/MM/yyyy' }}</span>
-            <span *ngIf="devoir.note !== undefined" class="font-semibold text-gray-600">Note: {{ devoir.note }}/20</span>
+            <span *ngIf="devoir.soumission?.note !== null && devoir.soumission?.note !== undefined" class="font-semibold text-green-600">Note: {{ devoir.soumission.note }}/20</span>
           </div>
         </div>
-        <svg class="w-5 h-5 text-gray-400 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-        </svg>
+        <div class="flex items-center gap-2">
+          <button *ngIf="canManage()" (click)="deleteDevoir(devoir.id, $event)" class="text-red-500 hover:text-red-700 p-1" title="Supprimer">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
+          <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+        </div>
       </div>
     </div>
   </div>
 </div>
+
+<app-custom-modal title="Nouveau devoir" [showModal]="showCreateModal" (onCloseModal)="showCreateModal = false">
+  <div class="space-y-4 p-4">
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Titre</label>
+      <input [(ngModel)]="createForm.titre" type="text" class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+      <textarea [(ngModel)]="createForm.description" rows="3" class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Cours</label>
+      <select [(ngModel)]="createForm.coursId" class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+        <option value="">Sélectionnez un cours</option>
+        <option *ngFor="let c of coursList" [value]="c.id">{{ c.titre }}</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Date limite</label>
+      <input [(ngModel)]="createForm.dateLimite" type="date" class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+    </div>
+    <div class="flex gap-3 pt-2">
+      <app-custom-button text="Créer" color="primary" (click)="createDevoir()"></app-custom-button>
+      <app-custom-button text="Annuler" color="primary" [outlined]="true" (click)="showCreateModal = false"></app-custom-button>
+    </div>
+  </div>
+</app-custom-modal>

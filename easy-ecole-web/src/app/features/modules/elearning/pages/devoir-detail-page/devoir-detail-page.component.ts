@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+import { DevoirService } from 'src/app/data/modules/elearning/services/devoir.service';
 
 @Component({
   selector: 'app-devoir-detail-page',
@@ -10,24 +10,37 @@ import { BaseComponentClass } from 'src/app/core/base-component-class';
 })
 export class DevoirDetailPageComponent extends BaseComponentClass implements OnInit {
   devoir: any = null;
-  submissionForm: FormGroup;
-  submitted = false;
-  submitSuccess = false;
+  loading = true;
   selectedFile: File | null = null;
+  submitSuccess = false;
+  showNoterModal = false;
+  selectedSoumissionId: string = '';
+  noteValue: number = 0;
+  soumissions: any[] = [];
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private fb: FormBuilder
+    private devoirService: DevoirService
   ) {
     super();
-    this.submissionForm = this.fb.group({
-      contenu: ['', [Validators.required, Validators.minLength(20)]]
-    });
   }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
+    if (id) this.loadDevoir(id);
+  }
+
+  loadDevoir(id: string): void {
+    this.loading = true;
+    this.devoirService.get(id).subscribe({
+      next: (data) => {
+        this.devoir = data;
+        this.soumissions = data.soumissions || [];
+        this.loading = false;
+      },
+      error: () => this.loading = false
+    });
   }
 
   onFileSelected(event: any): void {
@@ -35,24 +48,40 @@ export class DevoirDetailPageComponent extends BaseComponentClass implements OnI
   }
 
   soumettre(): void {
-    this.submitted = true;
-    if (this.submissionForm.invalid) return;
-
-    this.devoir.statut = 'soumis';
-    this.devoir.soumission = this.submissionForm.value.contenu;
-    this.submitSuccess = true;
+    if (!this.selectedFile) return;
+    const fd = new FormData();
+    fd.append('fichier', this.selectedFile);
+    this.devoirService.soumettre(this.devoir.id, fd).subscribe({
+      next: () => { this.submitSuccess = true; this.loadDevoir(this.devoir.id); }
+    });
   }
 
-  goBack(): void {
-    this.router.navigate(['/elearning/devoirs']);
+  openNoterModal(soumissionId: string): void {
+    this.selectedSoumissionId = soumissionId;
+    this.noteValue = 0;
+    this.showNoterModal = true;
   }
 
-  canSubmit(): boolean {
-    return this.devoir?.statut === 'à rendre';
+  noterSoumission(): void {
+    this.devoirService.noter(this.devoir.id, this.selectedSoumissionId, { note: this.noteValue }).subscribe({
+      next: () => { this.showNoterModal = false; this.loadDevoir(this.devoir.id); }
+    });
   }
 
-  isLate(): boolean {
-    return this.devoir && new Date(this.devoir.dateLimite) < new Date();
+  downloadSoumission(soumissionId: string): void {
+    this.devoirService.downloadSoumission(this.devoir.id, soumissionId).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.click();
+        window.URL.revokeObjectURL(url);
+      }
+    });
   }
+
+  goBack(): void { this.router.navigate(['/elearning/devoirs']); }
+
+  canSubmit(): boolean { return this.devoir?.statut === 'à rendre' || !this.devoir?.statut; }
+  isLate(): boolean { return this.devoir && new Date(this.devoir.dateLimite) < new Date(); }
+  canManage(): boolean { return this.rolesValue.isInstitution || this.rolesValue.isAdmin || this.rolesValue.isEnseignant; }
 }
-

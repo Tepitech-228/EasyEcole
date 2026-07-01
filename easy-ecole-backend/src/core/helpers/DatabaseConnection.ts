@@ -44,7 +44,7 @@ export class DatabaseConnection {
             await this._sequelize.authenticate();
             console.log('Database connected successfully');
 
-            await this._sequelize.sync({ alter: false });
+            await this._sequelize.sync({ alter: true });
             console.log("Database: all data synchronized");
         } catch (error) {
             console.error('Database not connected:', error);

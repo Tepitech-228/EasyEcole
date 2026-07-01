@@ -13,9 +13,12 @@ import { DeliberationsPageComponent } from './pages/deliberations-page/deliberat
 import { DeliberationDetailPageComponent } from './pages/deliberation-detail-page/deliberation-detail-page.component';
 import { ParametresBulletinsPageComponent } from './pages/parametres-bulletins-page/parametres-bulletins-page.component';
 import { MoyennesPageComponent } from './pages/moyennes-page/moyennes-page.component';
+import { SignaturePadComponent } from './components/signature-pad/signature-pad.component';
+import { FormsModule } from '@angular/forms';
 
 @NgModule({
   declarations: [
+    SignaturePadComponent,
     ListeBulletinsPageComponent,
     GenererBulletinsPageComponent,
     DetailBulletinPageComponent,
@@ -30,6 +33,7 @@ import { MoyennesPageComponent } from './pages/moyennes-page/moyennes-page.compo
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    FormsModule,
     BulletinsRoutingModule,
     SharedModule,
   ]

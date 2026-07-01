@@ -64,6 +64,8 @@
                         <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.scolarite.calendrier')" (click)="closeMenu()" icon="calendar_month" text="Calendrier" link="/scolarite/calendrier"></app-nav-menu-item>
                         <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.scolarite.discipline')" (click)="closeMenu()" icon="block" text="Discipline" link="/scolarite/discipline"></app-nav-menu-item>
                         <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isAdmin) && hasPermission('menu.scolarite.conseils')" (click)="closeMenu()" icon="groups" text="Conseils classe" link="/scolarite/conseils"></app-nav-menu-item>
+                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.scolarite.bibliotheque')" (click)="closeMenu()" icon="library_books" text="Bibliothèque" link="/scolarite/bibliotheque"></app-nav-menu-item>
+                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.scolarite.bibliotheque.gestion')" (click)="closeMenu()" icon="manage_search" text="Gestion bibliothèque" link="/scolarite/gestion-bibliotheque"></app-nav-menu-item>
                     </app-nav-menu-group>
                     <app-nav-menu-group title="E-Learning" [isSubGroup]="true" [startExpanded]="false">
                         <app-nav-menu-item *ngIf="hasPermission('menu.elearning.mes-cours')" (click)="closeMenu()" icon="school" text="Mes cours" link="/elearning"></app-nav-menu-item>

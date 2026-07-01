@@ -1,1 +1,16 @@
-// Reporting tables are standalone (no associations needed)
+import { RptEffectif } from "./RptEffectif";
+import { RptInscription } from "./RptInscription";
+import { RptNoteMoyenne } from "./RptNoteMoyenne";
+import { RptPresence } from "./RptPresence";
+import { RptReussite } from "./RptReussite";
+import { RptDocumentAcademique } from "./RptDocumentAcademique";
+import { RptPaiement } from "./RptPaiement";
+import { RptBudgetVsReel } from "./RptBudgetVsReel";
+import { RptFacture } from "./RptFacture";
+import { RptEffectifRh } from "./RptEffectifRh";
+import { RptPaie } from "./RptPaie";
+import { RptFormationRh } from "./RptFormationRh";
+import { RptEvaluation } from "./RptEvaluation";
+import { RptAchat } from "./RptAchat";
+import { RptStock } from "./RptStock";
+import { RptImmobilisation } from "./RptImmobilisation";

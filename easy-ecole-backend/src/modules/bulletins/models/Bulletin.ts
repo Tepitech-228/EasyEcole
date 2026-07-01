@@ -30,6 +30,10 @@ export class Bulletin extends Model<InferAttributes<Bulletin>, InferCreationAttr
   declare statut: CreationOptional<string>
   declare dateGeneration: CreationOptional<Date | null>
   declare datePublication: CreationOptional<Date | null>
+  declare signatureEnseignant: CreationOptional<string | null>
+  declare signatureChef: CreationOptional<string | null>
+  declare dateSignatureEnseignant: CreationOptional<Date | null>
+  declare dateSignatureChef: CreationOptional<Date | null>
 
   declare anneeAcademique?: NonAttribute<AnneeAcademique>
   declare cursusApprenant?: NonAttribute<CursusApprenant>
@@ -102,6 +106,10 @@ Bulletin.init({
   },
   dateGeneration: { type: DataTypes.DATE, allowNull: true },
   datePublication: { type: DataTypes.DATE, allowNull: true },
+  signatureEnseignant: { type: DataTypes.TEXT, allowNull: true },
+  signatureChef: { type: DataTypes.TEXT, allowNull: true },
+  dateSignatureEnseignant: { type: DataTypes.DATE, allowNull: true },
+  dateSignatureChef: { type: DataTypes.DATE, allowNull: true },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
   deletedAt: DataTypes.DATE,

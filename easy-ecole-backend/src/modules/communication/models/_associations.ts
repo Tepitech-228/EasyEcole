@@ -1,3 +1,5 @@
+import { Communication } from "./Communication";
+import { Actualite } from "./Actualite";
 import { Suggestion } from "./Suggestion";
 import { ReponseSuggestion } from "./ReponseSuggestion";
 import { Utilisateur } from "../../auth/models/Utilisateur";

@@ -1,29 +1,33 @@
 <div class="p-6">
   <div class="flex items-center justify-between mb-6">
     <app-header-title title="Quiz et examens"></app-header-title>
-    <app-custom-button text="Nouveau quiz" color="primary" (click)="createQuiz()"></app-custom-button>
+    <app-custom-button *ngIf="canManage()" text="Nouveau quiz" color="primary" (click)="createQuiz()"></app-custom-button>
   </div>
 
-  <div *ngIf="quizList.length === 0" class="text-center py-12 text-gray-500">
-    Aucun quiz disponible pour le moment.
-  </div>
+  <div *ngIf="loading" class="text-center py-12 text-gray-500">Chargement...</div>
+
+  <div *ngIf="!loading && quizList.length === 0" class="text-center py-12 text-gray-500">Aucun quiz disponible.</div>
 
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     <div *ngFor="let quiz of quizList" class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
       <div class="p-5">
         <div class="flex items-center justify-between mb-2">
           <h3 class="text-lg font-semibold text-gray-800">{{ quiz.titre }}</h3>
-          <app-custom-badge [text]="quiz.coursTitre" color="blue"></app-custom-badge>
+          <app-custom-badge [text]="quiz.cours?.titre || '—'" color="blue"></app-custom-badge>
         </div>
         <p class="text-sm text-gray-600 mb-4">{{ quiz.description }}</p>
         <div class="flex items-center gap-4 text-xs text-gray-400 mb-4">
-          <span>{{ quiz.questionCount }} questions</span>
-          <span>{{ quiz.timeLimit }} min</span>
-          <span>Créé le {{ quiz.createdAt | date:'dd/MM/yyyy' }}</span>
+          <span>{{ quiz.nbQuestions || 0 }} questions</span>
+          <span>{{ quiz.tempsLimite || '—' }} min</span>
+          <span>{{ quiz.createdAt | date:'dd/MM/yyyy' }}</span>
         </div>
-        <button (click)="takeQuiz(quiz.id)" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
-          Commencer le quiz
-        </button>
+        <div *ngIf="quiz.reponse" class="mb-3">
+          <app-custom-alert [show]="true" title="Score: {{ quiz.reponse.score }}/{{ quiz.reponse.total }}" [type]="getScoreLabel(quiz.reponse.score / quiz.reponse.total * 100)" [inline]="true"></app-custom-alert>
+        </div>
+        <div class="flex gap-2">
+          <button *ngIf="canManage()" (click)="deleteQuiz(quiz.id)" class="flex-1 border border-red-300 text-red-600 py-2 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium">Supprimer</button>
+          <button (click)="takeQuiz(quiz.id)" class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">Commencer</button>
+        </div>
       </div>
     </div>
   </div>

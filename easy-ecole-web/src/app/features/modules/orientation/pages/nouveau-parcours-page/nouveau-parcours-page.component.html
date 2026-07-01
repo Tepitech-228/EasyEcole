@@ -1,12 +1,12 @@
 <app-custom-alert [show]="error || alreadyExists" title="Erreur">
     {{ error ? 'Une erreur est survenue lors de la création' : '' }}
-    {{ alreadyExists ? 'Ce parcours existe déjà.\nVeuillez changer le titre' : '' }}
+    {{ alreadyExists ? 'Cette filière existe déjà.\nVeuillez changer le titre' : '' }}
 </app-custom-alert>
 
 <app-return-back></app-return-back>
 
 <div class="flex justify-between items-start mb-8">
-    <app-header-title title="Créer un nouveau parcours" subtitle="Veuillez renseigner les informations ci-dessous pour ajouter un nouveau parcours"></app-header-title>
+    <app-header-title title="Créer une nouvelle filière" subtitle="Veuillez renseigner les informations ci-dessous pour ajouter une nouvelle filière"></app-header-title>
     <div class="flex justify-end items-center">
         <!-- <app-custom-button (click)="ajouterParcours()" text="Enregistrer"></app-custom-button> -->
     </div>
@@ -31,12 +31,12 @@
                 </div>
             </div>
             <div class="md:col-span-2 col-span-full">
-                <label for="duree" class="mb-2 block text-sm leading-6 text-gray-600">Durée du parcours</label>
+                <label for="duree" class="mb-2 block text-sm leading-6 text-gray-600">Durée de la filière</label>
                 <div class="relative">
                     <input type="number" formControlName="duree" min="0" step=0.01 oninput="validity.valid||(value='');" id="duree" placeholder="0"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                     <div class="absolute top-0 bottom-0 right-0 flex items-center">
-                        <label for="duree" class="sr-only">Durée du parcours</label>
+                            <label for="duree" class="sr-only">Durée de la filière</label>
                         <select id="duree" formControlName="dureeUnite"
                             class="h-full rounded-md border-0 bg-transparent py-0 pl-2 pr-7 text-gray-500 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
                             <option value="y">an(s)</option>
@@ -58,6 +58,19 @@
                 </select>
             </div>
             <div class="md:col-span-3 col-span-full">
+                <label for="type" class="mb-2 block text-sm leading-6 text-gray-600">Type de filière</label>
+                <select id="type" formControlName="type"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option [value]="'LICENCE'">Licence</option>
+                    <option [value]="'MASTER'">Master</option>
+                    <option [value]="'DOCTORAT'">Doctorat</option>
+                </select>
+                <div *ngIf="nouveauParcoursForm.get('type')!.invalid && (nouveauParcoursForm.get('type')!.dirty || nouveauParcoursForm.get('type')!.touched)">
+                    <app-form-message *ngIf="nouveauParcoursForm.get('type')!.errors?.['required']"
+                        text="Veuillez sélectionner le type de filière"></app-form-message>
+                </div>
+            </div>
+            <div class="md:col-span-3 col-span-full">
                 <label for="niveauEtude" class="mb-2 block text-sm leading-6 text-gray-600">Niveau d'étude</label>
                 <select id="niveauEtude" formControlName="niveauEtude"
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
@@ -74,7 +87,7 @@
             </div>
             <div class="col-span-full">
                 <label for="" class="mb-2 block text-sm leading-6 text-gray-600">Contenu</label>
-                <quill-editor formControlName="contenu" [placeholder]="'Description du parcours...'" [modules]="modules"
+                <quill-editor formControlName="contenu" [placeholder]="'Description de la filière...'" [modules]="modules"
                     [styles]="{height: '400px', fontSize: '0.875rem', lineHeight: '1.25rem'}" [preserveWhitespace]="true" (onFocus)="focus($event)"
                     (onBlur)="blur($event)"></quill-editor>
             </div>

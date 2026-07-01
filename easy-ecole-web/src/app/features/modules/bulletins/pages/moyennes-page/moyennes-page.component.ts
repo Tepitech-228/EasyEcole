@@ -75,7 +75,7 @@ export class MoyennesPageComponent extends BaseComponentClass implements OnInit 
   getMoyenneClass(moyenne: number): string {
     if (moyenne >= 14) return 'text-green-700';
     if (moyenne >= 10) return 'text-amber-700';
-    return 'text-red-700';
+    return 'text-blue-700';
   }
 
   trackByFn(index: number, item: any): number {

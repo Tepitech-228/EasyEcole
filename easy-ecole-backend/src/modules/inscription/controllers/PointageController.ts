@@ -6,6 +6,17 @@ import { Utilisateur } from "../../auth/models/Utilisateur";
 import { DossierEtudiant } from "../models/DossierEtudiant";
 import { Echeance } from "../models/Echeance";
 
+const ROLES_POINTAGE = [
+  RolesUtilisateur.APPRENANT,
+  RolesUtilisateur.ENSEIGNANT,
+  RolesUtilisateur.INSTITUTION,
+  RolesUtilisateur.ADMIN,
+  RolesUtilisateur.RESSOURCES_HUMAINES,
+  RolesUtilisateur.CAISSIER_BANQUE,
+  RolesUtilisateur.CABINET_COMPTABLE,
+  RolesUtilisateur.COMITE_ORIENTATION,
+];
+
 export default class PointageController {
 
     constructor() { }
@@ -14,12 +25,12 @@ export default class PointageController {
         let options: FindOptions<InferAttributes<Pointage>> = {
             include: [
                 Pointage.associations.utilisateur
-            ]
+            ],
+            order: [['date', 'DESC'], ['heureArrivee', 'DESC']]
         }
 
-        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
-            options.where = { utilisateurId: (req as any).utilisateurId }
-        } else if ((req as any).utilisateurRole == RolesUtilisateur.ENSEIGNANT) {
+        const role = (req as any).utilisateurRole;
+        if (role == RolesUtilisateur.APPRENANT || role == RolesUtilisateur.ENSEIGNANT) {
             options.where = { utilisateurId: (req as any).utilisateurId }
         }
 
@@ -50,9 +61,9 @@ export default class PointageController {
     }
 
     static async pointerArrivee(req: Request, res: Response): Promise<Response | null> {
-        if ((req as any).utilisateurRole != RolesUtilisateur.APPRENANT &&
-            (req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT) {
-            return res.status(403).json({ success: false })
+        const role = (req as any).utilisateurRole;
+        if (!ROLES_POINTAGE.includes(role)) {
+            return res.status(403).json({ success: false, message: "Rôle non autorisé" })
         }
 
         const today = new Date().toISOString().split('T')[0]
@@ -91,9 +102,9 @@ export default class PointageController {
     }
 
     static async pointerDepart(req: Request, res: Response): Promise<Response | null> {
-        if ((req as any).utilisateurRole != RolesUtilisateur.APPRENANT &&
-            (req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT) {
-            return res.status(403).json({ success: false })
+        const role = (req as any).utilisateurRole;
+        if (!ROLES_POINTAGE.includes(role)) {
+            return res.status(403).json({ success: false, message: "Rôle non autorisé" })
         }
 
         const today = new Date().toISOString().split('T')[0]
@@ -132,9 +143,12 @@ export default class PointageController {
     }
 
     static async pointerArriveeByScan(req: Request, res: Response): Promise<Response | null> {
-        if ((req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT &&
-            (req as any).utilisateurRole != RolesUtilisateur.INSTITUTION) {
-            return res.status(403).json({ success: false })
+        const role = (req as any).utilisateurRole;
+        if (role != RolesUtilisateur.ENSEIGNANT &&
+            role != RolesUtilisateur.INSTITUTION &&
+            role != RolesUtilisateur.ADMIN &&
+            role != RolesUtilisateur.RESSOURCES_HUMAINES) {
+            return res.status(403).json({ success: false, message: "Rôle non autorisé" })
         }
 
         const { userId } = req.body
@@ -182,22 +196,73 @@ export default class PointageController {
         return null
     }
 
+    static async pointerDepartByScan(req: Request, res: Response): Promise<Response | null> {
+        const role = (req as any).utilisateurRole;
+        if (role != RolesUtilisateur.ENSEIGNANT &&
+            role != RolesUtilisateur.INSTITUTION &&
+            role != RolesUtilisateur.ADMIN &&
+            role != RolesUtilisateur.RESSOURCES_HUMAINES) {
+            return res.status(403).json({ success: false, message: "Rôle non autorisé" })
+        }
+
+        const { userId } = req.body
+        if (!userId) {
+            return res.status(400).json({ success: false, message: "userId requis" });
+        }
+
+        const today = new Date().toISOString().split('T')[0]
+        const now = new Date()
+        const time = now.toTimeString().split(' ')[0]
+
+        try {
+            const pointage: Pointage | null = await Pointage.findOne({
+                where: {
+                    utilisateurId: userId,
+                    date: today
+                }
+            });
+
+            if (!pointage) {
+                return res.status(404).json({ success: false, message: "Aucun pointage trouvé aujourd'hui pour cet utilisateur" });
+            }
+
+            if (pointage.heureDepart) {
+                return res.status(400).json({ success: false, alreadyExists: true, message: "Départ déjà pointé pour cet utilisateur" });
+            }
+
+            await pointage.update({ heureDepart: time as any })
+                .then((pointage) => {
+                    return res.status(200).send(pointage);
+                })
+                .catch((error) => {
+                    return res.status(400).json({ success: false, error: error });
+                });
+
+        } catch (error) {
+            return res.status(500).json({ success: false, error: error });
+        }
+
+        return null
+    }
+
     static async verifierStatutByQR(req: Request, res: Response): Promise<Response> {
         const { codeQR } = req.params
 
         try {
-            let dossier: DossierEtudiant | null = null
+            let userId: string | null = null;
+            let dossier: DossierEtudiant | null = null;
 
             if (codeQR.startsWith('{')) {
                 const qrData = JSON.parse(codeQR)
+                userId = qrData.id || null;
                 dossier = await DossierEtudiant.findOne({
                     where: { matricule: qrData.matricule },
                     include: [{
                         association: DossierEtudiant.associations.echeances
                     }]
                 })
-            }
-            else {
+            } else {
+                userId = codeQR;
                 dossier = await DossierEtudiant.findOne({
                     where: { matricule: codeQR },
                     include: [{
@@ -206,32 +271,50 @@ export default class PointageController {
                 })
             }
 
-            if (dossier == null) {
-                return res.status(404).json({ statut: 'rouge', message: "Dossier étudiant non trouvé" });
-            }
+            if (dossier) {
+                if (dossier.statut == 'suspendu' || dossier.statut == 'archive') {
+                    return res.status(200).json({
+                        statut: 'rouge',
+                        message: `Dossier ${dossier.statut}`
+                    });
+                }
 
-            if (dossier.statut == 'suspendu' || dossier.statut == 'archive') {
+                const now = new Date()
+                const echeancesImpayees = (dossier.echeances || []).filter(
+                    e => (e.statut == 'impaye' || e.statut == 'en_retard') && new Date(e.dateLimite) <= now
+                )
+
+                if (echeancesImpayees.length > 0) {
+                    const premiereImpayee = echeancesImpayees[0]
+                    return res.status(200).json({
+                        statut: 'rouge',
+                        message: `Échéance mois ${premiereImpayee.numeroEcheance} ${premiereImpayee.statut == 'en_retard' ? 'en retard' : 'impayée'}`,
+                        echeancesRestantes: echeancesImpayees
+                    });
+                }
+
                 return res.status(200).json({
-                    statut: 'rouge',
-                    message: `Dossier ${dossier.statut}`
+                    statut: 'vert',
+                    message: 'Accès autorisé',
+                    utilisateurId: dossier.utilisateurId
                 });
             }
 
-            const now = new Date()
-            const echeancesImpayees = (dossier.echeances || []).filter(
-                e => (e.statut == 'impaye' || e.statut == 'en_retard') && new Date(e.dateLimite) <= now
-            )
-
-            if (echeancesImpayees.length > 0) {
-                const premiereImpayee = echeancesImpayees[0]
-                return res.status(200).json({
-                    statut: 'rouge',
-                    message: `Échéance mois ${premiereImpayee.numeroEcheance} ${premiereImpayee.statut == 'en_retard' ? 'en retard' : 'impayée'}`,
-                    echeancesRestantes: echeancesImpayees
-                });
+            if (userId) {
+                const utilisateur = await Utilisateur.findByPk(userId)
+                if (utilisateur) {
+                    return res.status(200).json({
+                        statut: 'vert',
+                        message: 'Personnel autorisé',
+                        utilisateurId: userId,
+                        nom: utilisateur.nom,
+                        prenoms: utilisateur.prenoms,
+                        role: utilisateur.role
+                    });
+                }
             }
 
-            return res.status(200).json({ statut: 'vert', message: 'Accès autorisé' });
+            return res.status(404).json({ statut: 'rouge', message: "Utilisateur non trouvé" });
         } catch (error) {
             return res.status(500).json({ success: false, error: error });
         }

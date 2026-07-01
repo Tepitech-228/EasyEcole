@@ -26,7 +26,7 @@ export class DetailsCoursPageComponent extends BaseComponentClass implements OnI
 
   alreadyExists: boolean = false
   error: boolean = false
-  
+
   id: string
   cours?: Cours
   activeTab: number = 1
@@ -35,17 +35,26 @@ export class DetailsCoursPageComponent extends BaseComponentClass implements OnI
   showNouvelleSeanceModal: boolean = false
   readonly joursSemaine = JoursSemaine
 
+  joursSemaineList = [
+    { value: JoursSemaine.LUNDI, label: 'Lundi' },
+    { value: JoursSemaine.MARDI, label: 'Mardi' },
+    { value: JoursSemaine.MERCREDI, label: 'Mercredi' },
+    { value: JoursSemaine.JEUDI, label: 'Jeudi' },
+    { value: JoursSemaine.VENDREDI, label: 'Vendredi' },
+    { value: JoursSemaine.SAMEDI, label: 'Samedi' },
+  ]
+
   nouvelleSeanceForm: FormGroup = new FormGroup({
     titre: new FormControl(null, []),
     description: new FormControl(null, []),
-    jour: new FormControl(null, []),
-    date: new FormControl(null, []),
+    jourSemaine: new FormControl(null, []),
+    salle: new FormControl(null, [Validators.required]),
+    dateDebut: new FormControl(null, [Validators.required]),
+    dateFin: new FormControl(null, [Validators.required]),
     heureDebut: new FormControl(null, [Validators.required]),
     heureFin: new FormControl(null, [Validators.required]),
   })
 
-  // @ViewChild('calendar') calendarComponent?: FullCalendarComponent
-  
   calendarOptions?: CalendarOptions
 
   constructor(
@@ -69,14 +78,8 @@ export class DetailsCoursPageComponent extends BaseComponentClass implements OnI
         timeZone: 'UTC',
         headerToolbar: {
           left: 'prev next',
-          // center: 'title',
           right: 'today'
         },
-        // headerToolbar: {
-        //   left: 'prev,next today',
-        //   center: 'title',
-        //   right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
-        // },
         plugins: [dayGridPlugin, interactionPlugin, timeGridPlugin, listPlugin],
         dateClick: (arg) => this.handleDateClick(arg),
         eventClick: this.handleEventClick.bind(this),
@@ -84,21 +87,23 @@ export class DetailsCoursPageComponent extends BaseComponentClass implements OnI
         locales: allLocales,
         firstDay: 1,
         titleFormat: { year: 'numeric', month: 'long', day: 'numeric' },
-        // weekNumbers: true,
         dayMaxEvents: true,
         expandRows: true,
         contentHeight: 800,
         events: this.getSeances()
       };
     }, 100);
-
-    // let calendarApi = this.calendarComponent?.getApi();
-    // console.log(calendarApi)
-    // calendarApi?.next();
   }
 
   handleDateClick(arg) {
     this.selectedDate = arg.date
+    const dayOfWeek = (arg.date.getDay() + 6) % 7 + 1
+    const jourMap: Record<number, string> = {
+      1: JoursSemaine.LUNDI, 2: JoursSemaine.MARDI, 3: JoursSemaine.MERCREDI,
+      4: JoursSemaine.JEUDI, 5: JoursSemaine.VENDREDI, 6: JoursSemaine.SAMEDI,
+      7: JoursSemaine.DIMANCHE
+    }
+    this.nouvelleSeanceForm.get('jourSemaine')!.setValue(jourMap[dayOfWeek])
     this.openNouvelleSeanceModal()
   }
 
@@ -131,16 +136,28 @@ export class DetailsCoursPageComponent extends BaseComponentClass implements OnI
 
     if(this.cours) {
       events = this.cours.seances?.map((seance: Seance) => {
-        let event: EventInput = {
-          id: seance.id,
-          title: seance.titre ?? this.cours!.code + " - " + this.cours!.intitule,
-          start: seance.date ? seance.date?.toString() + "T" + seance.heureDebut?.toString() : seance.date,
-          end: seance.date ? seance.date?.toString() + "T" + seance.heureFin?.toString() : seance.date,
-          backgroundColor: 'amber',
-          allDay: seance.date == undefined
+        const dayNames: Record<string, string> = {
+          [JoursSemaine.LUNDI]: 'Lundi',
+          [JoursSemaine.MARDI]: 'Mardi',
+          [JoursSemaine.MERCREDI]: 'Mercredi',
+          [JoursSemaine.JEUDI]: 'Jeudi',
+          [JoursSemaine.VENDREDI]: 'Vendredi',
+          [JoursSemaine.SAMEDI]: 'Samedi',
         }
-
-        return event
+        return {
+          id: seance.id,
+          title: `${seance.titre ?? this.cours!.code} - ${dayNames[seance.jourSemaine!] || ''} (${seance.salle || ''})`,
+          start: seance.heureDebut?.toString(),
+          end: seance.heureFin?.toString(),
+          backgroundColor: 'amber',
+          allDay: false,
+          description: seance.description,
+          daysOfWeek: [parseInt(seance.jourSemaine || '1')],
+          startTime: seance.heureDebut?.toString(),
+          endTime: seance.heureFin?.toString(),
+          startRecur: seance.dateDebut?.toString(),
+          endRecur: seance.dateFin?.toString(),
+        }
       }) ?? []
     }
 
@@ -148,18 +165,18 @@ export class DetailsCoursPageComponent extends BaseComponentClass implements OnI
   }
 
   ajouterSeance(): void {
-    console.log(this.nouvelleSeanceForm.value)
     this.nouvelleSeanceForm.markAllAsTouched()
     if (this.nouvelleSeanceForm.valid && this.cours) {
       let seance: Seance = new Seance()
       seance.titre = this.nouvelleSeanceForm.get('titre')!.value
       seance.description = this.nouvelleSeanceForm.get('description')!.value
-      // seance.jour = this.nouvelleSeanceForm.get('jour')!.value
-      seance.date = this.nouvelleSeanceForm.get('date')!.value
+      seance.jourSemaine = this.nouvelleSeanceForm.get('jourSemaine')!.value
+      seance.salle = this.nouvelleSeanceForm.get('salle')!.value
+      seance.dateDebut = this.nouvelleSeanceForm.get('dateDebut')!.value
+      seance.dateFin = this.nouvelleSeanceForm.get('dateFin')!.value
       seance.heureDebut = this.nouvelleSeanceForm.get('heureDebut')!.value
       seance.heureFin = this.nouvelleSeanceForm.get('heureFin')!.value
       seance.coursId = this.cours.id
-      // seance.enseignantId = this.cours.id
 
       this.seanceService.create(seance).subscribe({
         next: (res) => {

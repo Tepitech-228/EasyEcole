@@ -1,32 +1,41 @@
 <div class="flex justify-between items-start gap-x-8 mb-8">
-    <app-header-title title="Emplois du temps" subtitle="Consulter la liste des emplois du temps de vos cours"></app-header-title>
-    <!-- <div class="flex justify-end items-center">
-        <app-custom-button *ngIf="rolesValue.isInstitution" text="Nouveau cours" link="/orientation/cours/nouveau"></app-custom-button>
-    </div> -->
+    <app-header-title title="Emplois du temps" subtitle="Consulter et gérer les emplois du temps"></app-header-title>
 </div>
 
-<div class="w-full flex justify-between items-center mb-8">
+<!-- Filters -->
+<div class="w-full flex flex-wrap items-center gap-4 mb-6">
     <div class="grid grid-cols-8 w-full gap-x-2 gap-y-4">
         <div class="block col-span-2 flex justify-start gap-x-4">
             <app-custom-button (click)="prevDate()" text="Précédent"></app-custom-button>
             <app-custom-button (click)="nextDate()" text="Suivant"></app-custom-button>
         </div>
-        <div class="block col-span-4 flex justify-center">
-            
+        <div *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" class="block col-span-4 flex justify-center items-center gap-4">
+            <select [(ngModel)]="filterEnseignantId" (change)="onFilterChange()"
+                class="block w-full max-w-[200px] rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <option value="">Tous les enseignants</option>
+                <option *ngFor="let e of enseignants" [value]="e.id">
+                    {{ e.utilisateur?.nom + ' ' + e.utilisateur?.prenoms }}
+                </option>
+            </select>
+            <select [(ngModel)]="filterClasseId" (change)="onFilterChange()"
+                class="block w-full max-w-[200px] rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <option value="">Toutes les classes</option>
+                <option *ngFor="let c of classes" [value]="c.id">{{ c.libelle }}</option>
+            </select>
         </div>
         <div class="block col-span-2 flex justify-end">
             <label for="goToDate">
-                <input id="goToDate" type="date" (change)="onDateChange($event)" />
-                <!-- <app-custom-button text="Aller à la date"></app-custom-button> -->
+                <input id="goToDate" type="date" (change)="onDateChange($event)"
+                    class="rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" />
             </label>
         </div>
         <div class="block col-span-full mt-8">
             <full-calendar class="w-full" #calendar [options]="calendarOptions" [deepChangeDetection]="true">
                 <ng-template #eventContent let-arg>
-                    <!-- <b>{{ arg.event.title }}</b>     -->
-                     <div class="w-full h-full m-0 rounded-lg flex">
-                        <div class="bg-yellow-400 w-1 h-full"></div>
-                        <div class="flex flex-col w-full h-full justify-between gap-y-1 px-4 pt-2 pb-1 text-sm text-gray-700 bg-yellow-100">
+                    <div class="w-full h-full m-0 rounded-lg flex" [style.borderLeft]="'4px solid ' + (arg.event.extendedProps['couleur'] || '#3b82f6')">
+                        <div class="flex flex-col w-full h-full justify-between gap-y-1 px-4 pt-2 pb-1 text-sm"
+                            [style.background]="(arg.event.extendedProps['couleur'] || '#3b82f6') + '15'"
+                            [style.color]="arg.event.extendedProps['couleur'] || '#3b82f6'">
                             <div class="flex flex-col">
                                 <div class="flex items-start gap-x-2 mb-2">
                                     <img src="assets/icons/clock-outline.svg" alt="icon">
@@ -34,34 +43,63 @@
                                 </div>
                                 <div class="flex items-start gap-x-2 mb-2">
                                     <img src="assets/icons/category-light.svg" alt="icon">
-                                    <div class="">{{ arg.event.title }}</div>
+                                    <div class="font-semibold">{{ arg.event.title }}</div>
                                 </div>
                                 <div class="flex items-start gap-x-2 mb-2">
                                     <img src="assets/icons/student.svg" alt="icon">
                                     <div>{{ arg.event.extendedProps.enseignant }}</div>
                                 </div>
-                                <!-- <div>{{ arg.event.extendedProps.description }}</div> -->
+                                <div class="flex items-start gap-x-2 mb-2">
+                                    <img src="assets/icons/location_on.svg" alt="icon">
+                                    <div>{{ arg.event.extendedProps.salle }}</div>
+                                </div>
                             </div>
-                            <div class="flex justify-between items-center bg-yellow-100">
+                            <div *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" class="flex justify-between items-center">
                                 <button (click)="openModificationSeanceModal(arg)"
-                                    class="p-1 rounded focus:ring-1 focus:ring-gray-300">
+                                    class="p-1 rounded focus:ring-1 focus:ring-gray-300 border-0 bg-transparent cursor-pointer">
                                     <img width="20" src="assets/icons/pencil-blue.svg" alt="edit icon">
                                 </button>
                                 <button (click)="openSuppressionSeanceModal(arg)"
-                                    class="p-1 rounded focus:ring-1 focus:ring-gray-300">
+                                    class="p-1 rounded focus:ring-1 focus:ring-gray-300 border-0 bg-transparent cursor-pointer">
                                     <img width="20" src="assets/icons/delete-red.svg" alt="delete icon">
                                 </button>
                             </div>
                         </div>
-                     </div>
+                    </div>
                 </ng-template>
             </full-calendar>
         </div>
     </div>
 </div>
 
+<!-- Conflits Banner (shown when conflicts detected from API 409) -->
+<div *ngIf="showConflits && conflits.length > 0" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+    <div class="flex items-start gap-3">
+        <svg class="w-5 h-5 text-red-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+        <div class="flex-1">
+            <h4 class="text-sm font-semibold text-red-800 mb-2">Conflits détectés</h4>
+            <ul class="space-y-1">
+                <li *ngFor="let c of conflits" class="text-xs text-red-700 flex items-start gap-2">
+                    <span class="inline-block w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 shrink-0"></span>
+                    <span>{{ c.message }}</span>
+                </li>
+            </ul>
+            <div class="flex items-center gap-3 mt-3">
+                <button (click)="forcerSauvegarde()"
+                    class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition-colors border-0 cursor-pointer">
+                    Forcer l'enregistrement
+                </button>
+                <button (click)="conflitModeCreation ? closeNouvelleSeanceModal() : closeModificationSeanceModal()"
+                    class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors border-0 cursor-pointer">
+                    Annuler
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modals -->
-<app-custom-modal title="Nouvelle seance" subtitle="Ajouter une nouvelle seance" (onCloseModal)="closeNouvelleSeanceModal()" [center]="true" [showModal]="showNouvelleSeanceModal">
+<app-custom-modal title="Nouvelle seance" subtitle="Ajouter une nouvelle séance hebdomadaire" (onCloseModal)="closeNouvelleSeanceModal()" [center]="true" [showModal]="showNouvelleSeanceModal">
     <form [formGroup]="nouvelleSeanceForm">
         <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
             <div class="col-span-full">
@@ -99,32 +137,48 @@
                         text="Veuillez saisir le titre ou choisir un cours"></app-form-message>
                 </div>
             </div>
-            <!-- <div class="col-span-3">
-                <label for="jour" class="mb-2 block text-sm leading-6 text-gray-600">Jour de la semaine</label>
-                <select id="jour" formControlName="jour"
+            <div class="col-span-2">
+                <label for="jourSemaine" class="mb-2 block text-sm leading-6 text-gray-600">Jour de la semaine</label>
+                <select id="jourSemaine" formControlName="jourSemaine"
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                     <option [value]="null">Sélectionner un jour</option>
-                    <option [value]="joursSemaine.LUNDI">Lundi</option>
-                    <option [value]="joursSemaine.MARDI">Mardi</option>
-                    <option [value]="joursSemaine.MERCREDI">Mercredi</option>
-                    <option [value]="joursSemaine.JEUDI">Jeudi</option>
-                    <option [value]="joursSemaine.VENDREDI">Vendredi</option>
-                    <option [value]="joursSemaine.SAMEDI">Samedi</option>
-                    <option [value]="joursSemaine.DIMANCHE">Dimanche</option>
+                    <option *ngFor="let j of joursSemaineList" [value]="j.value">{{ j.label }}</option>
                 </select>
-            </div> -->
+                <div *ngIf="nouvelleSeanceForm.get('jourSemaine')!.invalid && (nouvelleSeanceForm.get('jourSemaine')!.dirty || nouvelleSeanceForm.get('jourSemaine')!.touched)">
+                    <app-form-message *ngIf="nouvelleSeanceForm.get('jourSemaine')!.errors?.['required']"
+                        text="Veuillez choisir le jour"></app-form-message>
+                </div>
+            </div>
             <div class="col-span-2">
-                <label for="date" class="mb-2 block text-sm leading-6 text-gray-600">Date</label>
-                <input type="date" id="date" formControlName="date" placeholder="Saisir la date ici..."
+                <label for="salle" class="mb-2 block text-sm leading-6 text-gray-600">Salle</label>
+                <input type="text" id="salle" formControlName="salle" placeholder="Saisir la salle..."
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-                <div *ngIf="nouvelleSeanceForm.get('date')!.invalid && (nouvelleSeanceForm.get('date')!.dirty || nouvelleSeanceForm.get('date')!.touched)">
-                    <app-form-message *ngIf="nouvelleSeanceForm.get('date')!.errors?.['required']"
-                        text="Veuillez choisir la date"></app-form-message>
+                <div *ngIf="nouvelleSeanceForm.get('salle')!.invalid && (nouvelleSeanceForm.get('salle')!.dirty || nouvelleSeanceForm.get('salle')!.touched)">
+                    <app-form-message *ngIf="nouvelleSeanceForm.get('salle')!.errors?.['required']"
+                        text="Veuillez saisir la salle"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-2">
+                <label for="dateDebut" class="mb-2 block text-sm leading-6 text-gray-600">Date début</label>
+                <input type="date" id="dateDebut" formControlName="dateDebut"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <div *ngIf="nouvelleSeanceForm.get('dateDebut')!.invalid && (nouvelleSeanceForm.get('dateDebut')!.dirty || nouvelleSeanceForm.get('dateDebut')!.touched)">
+                    <app-form-message *ngIf="nouvelleSeanceForm.get('dateDebut')!.errors?.['required']"
+                        text="Veuillez choisir la date de début"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-2">
+                <label for="dateFin" class="mb-2 block text-sm leading-6 text-gray-600">Date fin</label>
+                <input type="date" id="dateFin" formControlName="dateFin"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <div *ngIf="nouvelleSeanceForm.get('dateFin')!.invalid && (nouvelleSeanceForm.get('dateFin')!.dirty || nouvelleSeanceForm.get('dateFin')!.touched)">
+                    <app-form-message *ngIf="nouvelleSeanceForm.get('dateFin')!.errors?.['required']"
+                        text="Veuillez choisir la date de fin"></app-form-message>
                 </div>
             </div>
             <div class="col-span-2">
                 <label for="heureDebut" class="mb-2 block text-sm leading-6 text-gray-600">Heure de début</label>
-                <input type="time" id="heureDebut" formControlName="heureDebut" placeholder="Saisir l'écheance ici..."
+                <input type="time" id="heureDebut" formControlName="heureDebut" placeholder="Saisir l'heure de début..."
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                 <div *ngIf="nouvelleSeanceForm.get('heureDebut')!.invalid && (nouvelleSeanceForm.get('heureDebut')!.dirty || nouvelleSeanceForm.get('heureDebut')!.touched)">
                     <app-form-message *ngIf="nouvelleSeanceForm.get('heureDebut')!.errors?.['required']"
@@ -133,7 +187,7 @@
             </div>
             <div class="col-span-2">
                 <label for="heureFin" class="mb-2 block text-sm leading-6 text-gray-600">Heure de fin</label>
-                <input type="time" id="heureFin" formControlName="heureFin" placeholder="Saisir l'écheance ici..."
+                <input type="time" id="heureFin" formControlName="heureFin" placeholder="Saisir l'heure de fin..."
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                 <div *ngIf="nouvelleSeanceForm.get('heureFin')!.invalid && (nouvelleSeanceForm.get('heureFin')!.dirty || nouvelleSeanceForm.get('heureFin')!.touched)">
                     <app-form-message *ngIf="nouvelleSeanceForm.get('heureFin')!.errors?.['required']"
@@ -168,11 +222,11 @@
     </form>
     <div class="flex items-center justify-between py-3">
         <app-custom-button (click)="closeNouvelleSeanceModal()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
-        <app-custom-button (click)="ajouterSeance()" text="Enregistrer"></app-custom-button>
+        <app-custom-button (click)="verifierConflitsAvantCreation()" text="Enregistrer"></app-custom-button>
     </div>
 </app-custom-modal>
 
-<app-custom-modal title="Modifier la séance" subtitle="Editer les informations de cette séance" (onCloseModal)="closeModificationSeanceModal()" [center]="true" [showModal]="showModificationSeanceModal">
+<app-custom-modal title="Modifier la séance" subtitle="Editer les informations de cette séance hebdomadaire" (onCloseModal)="closeModificationSeanceModal()" [center]="true" [showModal]="showModificationSeanceModal">
     <form [formGroup]="modificationSeanceForm">
         <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
             <div class="col-span-full">
@@ -210,32 +264,48 @@
                         text="Veuillez saisir le titre ou choisir un cours"></app-form-message>
                 </div>
             </div>
-            <!-- <div class="col-span-3">
-                <label for="jour" class="mb-2 block text-sm leading-6 text-gray-600">Jour de la semaine</label>
-                <select id="jour" formControlName="jour"
+            <div class="col-span-2">
+                <label for="jourSemaine" class="mb-2 block text-sm leading-6 text-gray-600">Jour de la semaine</label>
+                <select id="jourSemaine" formControlName="jourSemaine"
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                     <option [value]="null">Sélectionner un jour</option>
-                    <option [value]="joursSemaine.LUNDI">Lundi</option>
-                    <option [value]="joursSemaine.MARDI">Mardi</option>
-                    <option [value]="joursSemaine.MERCREDI">Mercredi</option>
-                    <option [value]="joursSemaine.JEUDI">Jeudi</option>
-                    <option [value]="joursSemaine.VENDREDI">Vendredi</option>
-                    <option [value]="joursSemaine.SAMEDI">Samedi</option>
-                    <option [value]="joursSemaine.DIMANCHE">Dimanche</option>
+                    <option *ngFor="let j of joursSemaineList" [value]="j.value">{{ j.label }}</option>
                 </select>
-            </div> -->
+                <div *ngIf="modificationSeanceForm.get('jourSemaine')!.invalid && (modificationSeanceForm.get('jourSemaine')!.dirty || modificationSeanceForm.get('jourSemaine')!.touched)">
+                    <app-form-message *ngIf="modificationSeanceForm.get('jourSemaine')!.errors?.['required']"
+                        text="Veuillez choisir le jour"></app-form-message>
+                </div>
+            </div>
             <div class="col-span-2">
-                <label for="date" class="mb-2 block text-sm leading-6 text-gray-600">Date</label>
-                <input type="date" id="date" formControlName="date" placeholder="Saisir la date ici..."
+                <label for="salle" class="mb-2 block text-sm leading-6 text-gray-600">Salle</label>
+                <input type="text" id="salle" formControlName="salle" placeholder="Saisir la salle..."
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-                <div *ngIf="modificationSeanceForm.get('date')!.invalid && (modificationSeanceForm.get('date')!.dirty || modificationSeanceForm.get('date')!.touched)">
-                    <app-form-message *ngIf="modificationSeanceForm.get('date')!.errors?.['required']"
-                        text="Veuillez choisir la date"></app-form-message>
+                <div *ngIf="modificationSeanceForm.get('salle')!.invalid && (modificationSeanceForm.get('salle')!.dirty || modificationSeanceForm.get('salle')!.touched)">
+                    <app-form-message *ngIf="modificationSeanceForm.get('salle')!.errors?.['required']"
+                        text="Veuillez saisir la salle"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-2">
+                <label for="dateDebut" class="mb-2 block text-sm leading-6 text-gray-600">Date début</label>
+                <input type="date" id="dateDebut" formControlName="dateDebut"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <div *ngIf="modificationSeanceForm.get('dateDebut')!.invalid && (modificationSeanceForm.get('dateDebut')!.dirty || modificationSeanceForm.get('dateDebut')!.touched)">
+                    <app-form-message *ngIf="modificationSeanceForm.get('dateDebut')!.errors?.['required']"
+                        text="Veuillez choisir la date de début"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-2">
+                <label for="dateFin" class="mb-2 block text-sm leading-6 text-gray-600">Date fin</label>
+                <input type="date" id="dateFin" formControlName="dateFin"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <div *ngIf="modificationSeanceForm.get('dateFin')!.invalid && (modificationSeanceForm.get('dateFin')!.dirty || modificationSeanceForm.get('dateFin')!.touched)">
+                    <app-form-message *ngIf="modificationSeanceForm.get('dateFin')!.errors?.['required']"
+                        text="Veuillez choisir la date de fin"></app-form-message>
                 </div>
             </div>
             <div class="col-span-2">
                 <label for="heureDebut" class="mb-2 block text-sm leading-6 text-gray-600">Heure de début</label>
-                <input type="time" id="heureDebut" formControlName="heureDebut" placeholder="Saisir l'écheance ici..."
+                <input type="time" id="heureDebut" formControlName="heureDebut" placeholder="Saisir l'heure de début..."
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                 <div *ngIf="modificationSeanceForm.get('heureDebut')!.invalid && (modificationSeanceForm.get('heureDebut')!.dirty || modificationSeanceForm.get('heureDebut')!.touched)">
                     <app-form-message *ngIf="modificationSeanceForm.get('heureDebut')!.errors?.['required']"
@@ -244,7 +314,7 @@
             </div>
             <div class="col-span-2">
                 <label for="heureFin" class="mb-2 block text-sm leading-6 text-gray-600">Heure de fin</label>
-                <input type="time" id="heureFin" formControlName="heureFin" placeholder="Saisir l'écheance ici..."
+                <input type="time" id="heureFin" formControlName="heureFin" placeholder="Saisir l'heure de fin..."
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                 <div *ngIf="modificationSeanceForm.get('heureFin')!.invalid && (modificationSeanceForm.get('heureFin')!.dirty || modificationSeanceForm.get('heureFin')!.touched)">
                     <app-form-message *ngIf="modificationSeanceForm.get('heureFin')!.errors?.['required']"
@@ -279,7 +349,7 @@
     </form>
     <div class="flex items-center justify-between py-3">
         <app-custom-button (click)="closeModificationSeanceModal()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
-        <app-custom-button (click)="modifierSeance()" text="Enregistrer"></app-custom-button>
+        <app-custom-button (click)="verifierConflitsAvantModification()" text="Enregistrer"></app-custom-button>
     </div>
 </app-custom-modal>
 

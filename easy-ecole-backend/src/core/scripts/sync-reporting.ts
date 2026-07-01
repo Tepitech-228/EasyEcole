@@ -18,10 +18,31 @@ async function syncReporting() {
     require('../../modules/stock/models/_associations');
     require('../../modules/immobilisation/models/_associations');
     require('../../modules/bulletins/models/_associations');
+    require('../../modules/scolarite/models/_associations');
+    require('../../modules/rh/models/_associations');
+    require('../../modules/achats/models/_associations');
+    require('../../modules/comptabilite/models/_associations');
+    require('../../modules/communication/models/_associations');
     require('../../modules/elearning/models/_associations');
 
     // Load reporting models
     require('../../modules/reporting/models/_associations');
+    require('../../modules/reporting/models/RptEffectif');
+    require('../../modules/reporting/models/RptInscription');
+    require('../../modules/reporting/models/RptNoteMoyenne');
+    require('../../modules/reporting/models/RptPresence');
+    require('../../modules/reporting/models/RptReussite');
+    require('../../modules/reporting/models/RptDocumentAcademique');
+    require('../../modules/reporting/models/RptPaiement');
+    require('../../modules/reporting/models/RptBudgetVsReel');
+    require('../../modules/reporting/models/RptFacture');
+    require('../../modules/reporting/models/RptEffectifRh');
+    require('../../modules/reporting/models/RptPaie');
+    require('../../modules/reporting/models/RptFormationRh');
+    require('../../modules/reporting/models/RptEvaluation');
+    require('../../modules/reporting/models/RptAchat');
+    require('../../modules/reporting/models/RptStock');
+    require('../../modules/reporting/models/RptImmobilisation');
 
     // Register reporting models for sync
     const RptEffectif = sequelize.model('RptEffectif');
@@ -40,6 +61,9 @@ async function syncReporting() {
     const RptAchat = sequelize.model('RptAchat');
     const RptStock = sequelize.model('RptStock');
     const RptImmobilisation = sequelize.model('RptImmobilisation');
+
+    await sequelize.sync({ alter: true });
+    console.log('Reporting tables synced');
 
     console.log('Clearing existing reporting data...');
     const rptModels = [

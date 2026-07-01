@@ -169,5 +169,7 @@ router.put('/bulletins/:id/publier', [AuthInstitution, CheckPermission('action.e
  *         description: Non autorisé
  */
 router.delete('/bulletins/:id', [AuthInstitution, CheckPermission('action.evaluation.bulletin.supprimer')], controller.delete.bind(controller));
+router.put('/bulletins/:id/signer-enseignant', [Authenticate, AuthEnseignant], controller.signerEnseignant.bind(controller));
+router.put('/bulletins/:id/signer-chef', [Authenticate, AuthInstitution], controller.signerChef.bind(controller));
 
 export default router;

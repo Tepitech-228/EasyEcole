@@ -7,7 +7,7 @@
     </div>
     <div class="mt-4 sm:mt-0 flex items-center gap-3">
       <a *ngIf="rolesValue.isInstitution" routerLink="/bulletins/generer"
-         class="inline-flex items-center px-4 py-2.5 bg-red-700 hover:bg-red-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm">
+         class="inline-flex items-center px-4 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm">
         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
         Générer
       </a>
@@ -34,7 +34,7 @@
           <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total</p>
           <p class="mt-1 text-2xl font-bold text-gray-900">{{ bulletins.length }}</p>
         </div>
-        <div class="h-10 w-10 rounded-xl bg-red-50 flex items-center justify-center"><svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
+        <div class="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center"><svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
       </div>
     </div>
     <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
@@ -70,23 +70,23 @@
   <div *ngIf="!loading && (rolesValue.isInstitution || rolesValue.isEnseignant)" class="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm mb-6">
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
       <select [(ngModel)]="filtres.anneeAcademiqueId" (change)="charger()"
-              class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-red-600">
+              class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600">
         <option value="">Année scolaire</option>
         <option *ngFor="let aa of anneesAcademiques" [ngValue]="aa.id">{{ aa.libelle }}</option>
       </select>
       <select [(ngModel)]="filtres.semestre" (change)="charger()"
-              class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-red-600">
+              class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600">
         <option value="">Semestre</option>
         <option value="semestre1">Semestre 1</option>
         <option value="semestre2">Semestre 2</option>
       </select>
       <select [(ngModel)]="filtres.classeId" (change)="charger()"
-              class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-red-600">
+              class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600">
         <option value="">Classe</option>
         <option *ngFor="let c of classes" [ngValue]="c.id">{{ c.libelle }}</option>
       </select>
       <select [(ngModel)]="filtres.statut" (change)="charger()"
-              class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-red-600">
+              class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600">
         <option value="">Tous</option>
         <option value="brouillon">Brouillon</option>
         <option value="publie">Publié</option>
@@ -114,7 +114,7 @@
           <tr *ngFor="let b of bulletins; trackBy: trackByFn" class="hover:bg-gray-50/50 transition-colors">
             <td class="px-5 py-4 whitespace-nowrap">
               <div class="flex items-center gap-3">
-                <div class="h-8 w-8 rounded-full bg-gradient-to-br from-red-100 to-red-50 flex items-center justify-center text-xs font-bold text-red-700 uppercase">
+                <div class="h-8 w-8 rounded-full bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center text-xs font-bold text-blue-700 uppercase">
                   {{ (b.utilisateur?.nom || '?')[0] }}{{ (b.utilisateur?.prenoms || '')[0] }}
                 </div>
                 <div>
@@ -144,8 +144,8 @@
               </span>
             </td>
             <td class="px-5 py-4 whitespace-nowrap text-right">
-              <a [routerLink]="b.id"
-                 class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                <a [routerLink]="b.id"
+                   class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
                 Consulter
                 <svg class="w-3.5 h-3.5 ml-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
               </a>
@@ -167,7 +167,7 @@
     <h3 class="mt-4 text-lg font-semibold text-gray-900">Aucun bulletin</h3>
     <p class="mt-1 text-sm text-gray-500">Aucun bulletin ne correspond à vos critères</p>
     <button *ngIf="filtres.anneeAcademiqueId || filtres.semestre || filtres.classeId || filtres.statut"
-            (click)="resetFiltres()" class="mt-4 inline-flex items-center px-4 py-2 text-sm font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-xl transition-colors">
+            (click)="resetFiltres()" class="mt-4 inline-flex items-center px-4 py-2 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors">
       Réinitialiser les filtres
     </button>
   </div>

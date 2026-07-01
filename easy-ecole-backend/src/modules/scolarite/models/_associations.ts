@@ -5,6 +5,10 @@ import { Reclamation } from "./Reclamation";
 import { ReponseReclamation } from "./ReponseReclamation";
 import { ConseilClasse } from "./ConseilClasse";
 import { DecisionConseil } from "./DecisionConseil";
+import { SanctionDiscipline } from "./SanctionDiscipline";
+import { RegistreAcademique } from "./RegistreAcademique";
+import { EvenementCalendrier } from "./EvenementCalendrier";
+import { Livre } from "./Livre";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 
 ConseilClasse.hasMany(DecisionConseil, { foreignKey: 'conseilClasseId', as: 'decisions' })
@@ -27,3 +31,6 @@ ReponseReclamation.belongsTo(Reclamation, { foreignKey: 'reclamationId', as: 're
 
 Utilisateur.hasMany(ReponseReclamation, { foreignKey: 'repondeurId', as: 'reponsesReclamation' })
 ReponseReclamation.belongsTo(Utilisateur, { foreignKey: 'repondeurId', as: 'repondeur' })
+
+Utilisateur.hasMany(Livre, { foreignKey: 'uploaderId', as: 'livres' })
+Livre.belongsTo(Utilisateur, { as: 'uploader', foreignKey: 'uploaderId' })

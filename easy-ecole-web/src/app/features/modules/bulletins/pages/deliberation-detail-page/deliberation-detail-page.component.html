@@ -6,7 +6,7 @@
   </button>
 
   <div *ngIf="loading" class="text-center py-12">
-    <div class="inline-block h-8 w-8 animate-spin rounded-full border-2 border-red-600 border-t-transparent"></div>
+    <div class="inline-block h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
     <p class="mt-2 text-sm text-gray-500">Chargement...</p>
   </div>
 
@@ -53,7 +53,7 @@
       </div>
       <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
         <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Redoublement</p>
-        <p class="mt-1 text-2xl font-bold text-red-700">{{ nbRedouble }}</p>
+        <p class="mt-1 text-2xl font-bold text-blue-700">{{ nbRedouble }}</p>
       </div>
       <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
         <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Taux de réussite</p>
@@ -81,7 +81,7 @@
               <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-500">{{ r.rang }}</td>
               <td class="px-5 py-4 whitespace-nowrap">
                 <div class="flex items-center gap-3">
-                  <div class="h-8 w-8 rounded-full bg-gradient-to-br from-red-100 to-red-50 flex items-center justify-center text-xs font-bold text-red-700 uppercase">
+                  <div class="h-8 w-8 rounded-full bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center text-xs font-bold text-blue-700 uppercase">
                     {{ (r.nom?.[0] || '') + (r.prenoms?.[0] || '') }}
                   </div>
                   <span class="text-sm font-semibold text-gray-900">{{ r.nom }} {{ r.prenoms }}</span>
@@ -117,7 +117,7 @@
                   </button>
                   <button (click)="mettreAJourDecision(r.id, 'redouble')"
                           class="px-2 py-1 text-xs font-medium rounded transition-colors"
-                          [ngClass]="r.decision === 'redouble' ? 'bg-red-100 text-red-700' : 'bg-gray-50 text-gray-500 hover:bg-red-50 hover:text-red-600'">
+                           [ngClass]="r.decision === 'redouble' ? 'bg-blue-100 text-blue-700' : 'bg-gray-50 text-gray-500 hover:bg-blue-50 hover:text-blue-600'">
                     Redouble
                   </button>
                 </div>

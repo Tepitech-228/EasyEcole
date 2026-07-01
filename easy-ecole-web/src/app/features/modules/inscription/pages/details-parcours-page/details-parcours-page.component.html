@@ -9,6 +9,13 @@
     <div class="flex md:flex-row flex-col items-start justify-between mb-8">
         <app-header-title title="{{ parcours.titre }}">
             <div class="mt-2 md:mb-0 mb-8 flex md:flex-row flex-wrap gap-x-4 gap-y-2">
+                <div *ngIf="parcours.type" class="flex items-center text-secondary">
+                    <div class="px-2 text-sm">
+                        <span *ngIf="parcours.type === 'LICENCE'" class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">Licence</span>
+                        <span *ngIf="parcours.type === 'MASTER'" class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-700">Master</span>
+                        <span *ngIf="parcours.type === 'DOCTORAT'" class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">Doctorat</span>
+                    </div>
+                </div>
                 <div *ngIf="parcours.niveauEtude" class="flex items-center text-secondary">
                     <img src="assets/icons/student.svg" alt="icon">
                     <div class="px-2 text-sm">{{ parcours.niveauEtude.libelle }}</div>

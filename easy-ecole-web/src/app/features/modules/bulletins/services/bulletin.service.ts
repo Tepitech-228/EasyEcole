@@ -36,4 +36,12 @@ export class BulletinService {
   getMoyennes(params?: any): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/moyennes`, { params });
   }
+
+  signerEnseignant(id: number, signature: string): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/${id}/signer-enseignant`, { signature });
+  }
+
+  signerChef(id: number, signature: string): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/${id}/signer-chef`, { signature });
+  }
 }

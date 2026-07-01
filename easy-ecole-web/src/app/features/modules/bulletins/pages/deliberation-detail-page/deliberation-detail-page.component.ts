@@ -101,7 +101,7 @@ export class DeliberationDetailPageComponent extends BaseComponentClass implemen
     switch (decision) {
       case 'admis': return 'bg-green-50 text-green-700 ring-1 ring-green-200';
       case 'rattrapage': return 'bg-amber-50 text-amber-700 ring-1 ring-amber-200';
-      case 'redouble': return 'bg-red-50 text-red-700 ring-1 ring-red-200';
+      case 'redouble': return 'bg-blue-50 text-blue-700 ring-1 ring-blue-200';
       default: return 'bg-gray-50 text-gray-400 ring-1 ring-gray-200';
     }
   }
@@ -119,7 +119,7 @@ export class DeliberationDetailPageComponent extends BaseComponentClass implemen
     if (moyenne == null) return 'text-gray-300';
     if (moyenne >= 14) return 'text-green-700';
     if (moyenne >= 10) return 'text-amber-700';
-    return 'text-red-700';
+    return 'text-blue-700';
   }
 
   getMentionClass(mention: string): string {
@@ -129,7 +129,7 @@ export class DeliberationDetailPageComponent extends BaseComponentClass implemen
     if (m.includes('bien')) return 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200';
     if (m.includes('assez')) return 'bg-blue-50 text-blue-700 ring-1 ring-blue-200';
     if (m.includes('passable')) return 'bg-amber-50 text-amber-700 ring-1 ring-amber-200';
-    return 'bg-red-50 text-red-700 ring-1 ring-red-200';
+    return 'bg-blue-50 text-blue-700 ring-1 ring-blue-200';
   }
 
   retour(): void {

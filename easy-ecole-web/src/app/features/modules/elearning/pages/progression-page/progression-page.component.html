@@ -1,41 +1,56 @@
 <div class="p-6">
-  <app-header-title title="Suivi de progression" subtitle="Consultez votre avancement dans chaque cours"></app-header-title>
+  <app-header-title title="Suivi de progression" subtitle="Consultez votre avancement dans l'apprentissage"></app-header-title>
 
-  <div class="bg-white rounded-lg shadow-md p-6 mt-6 mb-6">
-    <div class="flex items-center justify-between mb-4">
-      <h3 class="text-lg font-semibold text-gray-800">Progression globale</h3>
-      <span class="text-2xl font-bold text-blue-600">{{ globalProgress }}%</span>
-    </div>
-    <div class="w-full bg-gray-200 rounded-full h-4">
-      <div class="bg-blue-600 h-4 rounded-full transition-all" [style.width.%]="globalProgress"></div>
-    </div>
-  </div>
+  <div *ngIf="loading" class="text-center py-12 text-gray-500">Chargement...</div>
 
-  <div *ngIf="progressions.length === 0" class="text-center py-12 text-gray-500">
-    Aucune progression enregistrée.
-  </div>
-
-  <div class="space-y-4">
-    <div *ngFor="let prog of progressions" class="bg-white rounded-lg shadow-md p-5">
-      <div class="flex items-center justify-between mb-3">
-        <div>
-          <h4 class="font-semibold text-gray-800">{{ prog.coursTitre }}</h4>
-          <p class="text-sm text-gray-500">{{ prog.modulesCompleted }} / {{ prog.modulesTotal }} modules complétés</p>
-        </div>
-        <div class="text-right">
-          <div class="text-xl font-bold"
-               [ngClass]="prog.pourcentage === 100 ? 'text-green-600' : prog.pourcentage >= 50 ? 'text-blue-600' : 'text-gray-500'">
-            {{ prog.pourcentage }}%
-          </div>
-          <app-custom-badge *ngIf="prog.pourcentage === 100" text="Terminé" color="green"></app-custom-badge>
-          <app-custom-badge *ngIf="prog.pourcentage > 0 && prog.pourcentage < 100" text="En cours" color="blue"></app-custom-badge>
-          <app-custom-badge *ngIf="prog.pourcentage === 0" text="Non commencé" color="gray"></app-custom-badge>
-        </div>
+  <div *ngIf="data && !loading" class="mt-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div class="bg-white rounded-lg shadow-md p-5 text-center">
+        <div class="text-3xl font-bold text-blue-600">{{ data.totalCours }}</div>
+        <div class="text-sm text-gray-500 mt-1">Cours</div>
       </div>
-      <div class="w-full bg-gray-200 rounded-full h-3">
-        <div class="h-3 rounded-full transition-all"
-             [ngClass]="prog.pourcentage === 100 ? 'bg-green-500' : prog.pourcentage >= 50 ? 'bg-blue-500' : 'bg-gray-400'"
-             [style.width.%]="prog.pourcentage"></div>
+      <div class="bg-white rounded-lg shadow-md p-5 text-center">
+        <div class="text-3xl font-bold text-green-600">{{ data.totalModules }}</div>
+        <div class="text-sm text-gray-500 mt-1">Modules</div>
+      </div>
+      <div class="bg-white rounded-lg shadow-md p-5 text-center">
+        <div class="text-3xl font-bold text-purple-600">{{ data.totalQuiz }}</div>
+        <div class="text-sm text-gray-500 mt-1">Quiz</div>
+      </div>
+      <div class="bg-white rounded-lg shadow-md p-5 text-center">
+        <div class="text-3xl font-bold text-orange-600">{{ data.totalDevoirs }}</div>
+        <div class="text-sm text-gray-500 mt-1">Devoirs</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div class="bg-white rounded-lg shadow-md p-5 text-center">
+        <div class="text-2xl font-bold text-blue-600">{{ data.quizFaits }}</div>
+        <div class="text-sm text-gray-500 mt-1">Quiz faits</div>
+      </div>
+      <div class="bg-white rounded-lg shadow-md p-5 text-center">
+        <div class="text-2xl font-bold text-green-600">{{ data.devoirsRemis }}</div>
+        <div class="text-sm text-gray-500 mt-1">Devoirs remis</div>
+      </div>
+      <div class="bg-white rounded-lg shadow-md p-5 text-center">
+        <div class="text-2xl font-bold text-purple-600">{{ data.certifications }}</div>
+        <div class="text-sm text-gray-500 mt-1">Certifications</div>
+      </div>
+      <div class="bg-white rounded-lg shadow-md p-5 text-center">
+        <div class="text-2xl font-bold" [ngClass]="getScoreColor(data.moyenneQuiz)">{{ data.moyenneQuiz }}/10</div>
+        <div class="text-sm text-gray-500 mt-1">Moyenne quiz</div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4">Quiz récents</h3>
+      <div *ngIf="data.quizRecents?.length === 0" class="text-gray-500 text-sm">Aucun quiz effectué.</div>
+      <div *ngFor="let r of data.quizRecents" class="flex items-center justify-between border-b border-gray-100 py-3 last:border-0">
+        <div>
+          <span class="font-medium text-gray-700">{{ r.quiz?.titre || 'Quiz' }}</span>
+          <span class="text-xs text-gray-400 ml-2">{{ r.date | date:'dd/MM/yyyy' }}</span>
+        </div>
+        <span class="font-bold" [ngClass]="(r.score / r.total * 100) >= 70 ? 'text-green-600' : (r.score / r.total * 100) >= 40 ? 'text-yellow-600' : 'text-red-600'">{{ r.score }}/{{ r.total }}</span>
       </div>
     </div>
   </div>

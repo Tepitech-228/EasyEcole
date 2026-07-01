@@ -9,6 +9,7 @@ export class Parcours extends Model<InferAttributes<Parcours>, InferCreationAttr
   declare id: CreationOptional<string>
   declare titre: string
   declare description: CreationOptional<string>
+  declare type: CreationOptional<string>
   declare niveauEtudeId: ForeignKey<NiveauEtude['id']>
   declare niveauEtude?: NonAttribute<NiveauEtude>
   declare prerequisParcours?: NonAttribute<PrerequisParcours[]>
@@ -37,6 +38,10 @@ Parcours.init({
   },
   description: {
     type: new DataTypes.STRING,
+    allowNull: true
+  },
+  type: {
+    type: DataTypes.ENUM('LICENCE', 'MASTER', 'DOCTORAT'),
     allowNull: true
   },
   niveauEtudeId: {

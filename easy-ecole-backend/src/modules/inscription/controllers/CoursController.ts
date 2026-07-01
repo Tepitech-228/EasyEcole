@@ -18,7 +18,7 @@ export default class CoursController {
     static async getAllCours(req: Request, res: Response): Promise<Response> {
         let options: FindOptions<InferAttributes<Cours>> = {}
 
-        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT || (req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
+        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT || (req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
             if (req.query.parcoursId) {
                 options = {
                     include: [

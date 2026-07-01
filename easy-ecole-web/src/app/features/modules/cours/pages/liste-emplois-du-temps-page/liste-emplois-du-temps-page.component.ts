@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
-import { CalendarOptions, EventClickArg, EventInput } from '@fullcalendar/core';
+import { CalendarOptions, EventInput } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -9,12 +9,20 @@ import { FullCalendarComponent } from '@fullcalendar/angular';
 import { JoursSemaine } from 'src/app/data/enums/JoursSemaine';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { SeanceService } from 'src/app/data/modules/inscription/services/seance.service';
-import { Seance } from 'src/app/data/modules/inscription/models/Seance.model';
+import { ConflitSeance, PlanningEvent, Seance } from 'src/app/data/modules/inscription/models/Seance.model';
 import { Cours } from 'src/app/data/modules/inscription/models/Cours.model';
 import { CoursService } from 'src/app/data/modules/inscription/services/cours.service';
 import { Enseignant } from 'src/app/data/modules/auth/models/Enseignant.model';
 import { EnseignantService } from 'src/app/data/modules/auth/services/enseignant.service';
+import { ClasseService } from 'src/app/data/modules/inscription/services/classe.service';
+import { Classe } from 'src/app/data/modules/inscription/models/Classe.model';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+
+const COULEURS_PALETTE = [
+  '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
+  '#ec4899', '#06b6d4', '#f97316', '#14b8a6', '#6366f1',
+  '#84cc16', '#d946ef', '#0ea5e9', '#e11d48', '#65a30d',
+];
 
 @Component({
   selector: 'app-liste-emplois-du-temps-page',
@@ -38,12 +46,37 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
   coursLoading: boolean = false
   enseignants: Enseignant[] = []
   enseignantsLoading: boolean = false
+  classes: Classe[] = []
+  classesLoading: boolean = false
   seances: Seance[] = []
   selectedSeance?: Seance
+  currentWeekStart: string = ''
+  currentWeekEnd: string = ''
+  couleurCoursMap: Record<string, string> = {}
+
+  filterEnseignantId: string = ''
+  filterClasseId: string = ''
+
+  conflits: ConflitSeance[] = []
+  showConflits: boolean = false
+  conflitModeCreation: boolean = false
+  forceSave: boolean = false
+
+  joursSemaineList = [
+    { value: JoursSemaine.LUNDI, label: 'Lundi' },
+    { value: JoursSemaine.MARDI, label: 'Mardi' },
+    { value: JoursSemaine.MERCREDI, label: 'Mercredi' },
+    { value: JoursSemaine.JEUDI, label: 'Jeudi' },
+    { value: JoursSemaine.VENDREDI, label: 'Vendredi' },
+    { value: JoursSemaine.SAMEDI, label: 'Samedi' },
+  ]
 
   nouvelleSeanceForm: FormGroup = new FormGroup({
     titre: new FormControl(null, [Validators.required]),
-    date: new FormControl(null, [Validators.required]),
+    jourSemaine: new FormControl(null, [Validators.required]),
+    salle: new FormControl(null, [Validators.required]),
+    dateDebut: new FormControl(null, [Validators.required]),
+    dateFin: new FormControl(null, [Validators.required]),
     heureDebut: new FormControl(null, [Validators.required]),
     heureFin: new FormControl(null, [Validators.required]),
     cours: new FormControl(null, []),
@@ -54,7 +87,10 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
 
   modificationSeanceForm: FormGroup = new FormGroup({
     titre: new FormControl(null, [Validators.required]),
-    date: new FormControl(null, [Validators.required]),
+    jourSemaine: new FormControl(null, [Validators.required]),
+    salle: new FormControl(null, [Validators.required]),
+    dateDebut: new FormControl(null, [Validators.required]),
+    dateFin: new FormControl(null, [Validators.required]),
     heureDebut: new FormControl(null, [Validators.required]),
     heureFin: new FormControl(null, [Validators.required]),
     cours: new FormControl(null, []),
@@ -66,7 +102,8 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
   constructor(
     private seanceService: SeanceService,
     private coursService: CoursService,
-    private enseignantService: EnseignantService
+    private enseignantService: EnseignantService,
+    private classeService: ClasseService,
   ) {
     super()
     this.calendarOptions = {
@@ -74,14 +111,9 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
       timeZone: 'UTC',
       headerToolbar: false,
       allDaySlot: false,
-      // headerToolbar: {
-      //   left: 'prev,next today',
-      //   center: 'title',
-      //   right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
-      // },
       plugins: [dayGridPlugin, interactionPlugin, timeGridPlugin, listPlugin],
       dateClick: (arg) => this.handleDateClick(arg),
-      // eventClick: this.handleEventClick.bind(this),
+      eventClick: (arg) => this.handleEventClick(arg),
       locale: 'fr',
       locales: allLocales,
       nowIndicator: true,
@@ -96,7 +128,6 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
       slotMinTime: '06:00:00',
       slotMaxTime: '22:00:00',
       slotDuration: '00:15:00',
-      // weekNumbers: true,
       dayMaxEvents: true,
       expandRows: true,
       contentHeight: 800,
@@ -107,42 +138,147 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
   ngOnInit(): void {
     this.getCours()
     this.getEnseignants()
-    this.getSeances()
+    this.getClasses()
+    this.loadPlanningForCurrentWeek()
   }
 
   ngAfterViewInit(): void {
-    // console.log(this.calendarComponent)
   }
 
-  handleDateClick(arg) {
-    if (this.rolesValue.isEnseignant || this.rolesValue.isInstitution) {
-      // console.log(arg.dateStr.split('T')[0], arg.dateStr.split('T')[1].split('Z')[0])
-      this.nouvelleSeanceForm.get('date')!.setValue(arg.dateStr.split('T')[0])
-      this.nouvelleSeanceForm.get('heureDebut')!.setValue(arg.dateStr.split('T')[1].split('Z')[0])
-      this.openNouvelleSeanceModal()
+  getWeekRange(date: Date): { start: string, end: string } {
+    const day = date.getDay()
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1)
+    const start = new Date(date.setDate(diff))
+    const end = new Date(start)
+    end.setDate(end.getDate() + 6)
+    return {
+      start: start.toISOString().split('T')[0],
+      end: end.toISOString().split('T')[0]
     }
   }
 
-  handleEventClick(clickInfo: EventClickArg) {
-    if (confirm(`Are you sure you want to delete the event '${clickInfo.event.title}'`)) {
-      alert()
+  loadPlanningForCurrentWeek(): void {
+    const range = this.getWeekRange(new Date())
+    this.currentWeekStart = range.start
+    this.currentWeekEnd = range.end
+    this.loadPlanning(range.start, range.end)
+  }
+
+  getCouleurCours(coursId: string): string {
+    if (!coursId) return '#3b82f6'
+    if (this.couleurCoursMap[coursId]) return this.couleurCoursMap[coursId]
+    const index = Object.keys(this.couleurCoursMap).length % COULEURS_PALETTE.length
+    this.couleurCoursMap[coursId] = COULEURS_PALETTE[index]
+    return this.couleurCoursMap[coursId]
+  }
+
+  loadPlanning(semaineDebut: string, semaineFin: string): void {
+    const enseignantId = this.filterEnseignantId || undefined
+    const classeId = this.filterClasseId || undefined
+    this.seanceService.getPlanning(semaineDebut, semaineFin, enseignantId, classeId)
+      .subscribe({
+        next: (events) => {
+          const calendarEvents: EventInput[] = events.map((event: PlanningEvent, index: number) => {
+            const couleur = this.getCouleurCours(event.coursId || '')
+            return {
+              id: event.id,
+              title: event.titre,
+              start: event.date + "T" + event.heureDebut?.toString(),
+              end: event.date + "T" + event.heureFin?.toString(),
+              backgroundColor: couleur + '20',
+              borderColor: couleur,
+              textColor: couleur,
+              extendedProps: {
+                seanceId: event.seanceId,
+                index: index,
+                description: event.description,
+                salle: event.salle,
+                startTime: event.heureDebut?.toString().split(':')[0] + ':' + event.heureDebut?.toString().split(':')[1],
+                endTime: event.heureFin?.toString().split(':')[0] + ':' + event.heureFin?.toString().split(':')[1],
+                enseignant: event.enseignant?.utilisateur?.nom + ' ' + event.enseignant?.utilisateur?.prenoms,
+                cours: event.cours,
+                couleur: couleur,
+              },
+            }
+          })
+
+          const calendarApi = this.calendarComponent?.getApi()
+          if (calendarApi) {
+            calendarApi.removeAllEvents()
+            calendarApi.addEventSource(calendarEvents)
+          } else if (this.calendarOptions) {
+            this.calendarOptions.events = calendarEvents
+          }
+        },
+        error: (err) => {
+          console.log(err)
+        }
+      })
+  }
+
+  onFilterChange(): void {
+    if (this.currentWeekStart && this.currentWeekEnd) {
+      this.loadPlanning(this.currentWeekStart, this.currentWeekEnd)
+    }
+  }
+
+  handleDateClick(arg: any) {
+    if (!this.rolesValue.isInstitution && !this.rolesValue.isAdmin) return
+
+    const dateStr = arg.dateStr || ''
+    const parts = dateStr.split('T')
+    const clickedDate = parts[0]
+    const timePart = parts[1] || ''
+
+    if (clickedDate) {
+      this.nouvelleSeanceForm.get('dateDebut')!.setValue(clickedDate)
+    }
+    if (timePart) {
+      this.nouvelleSeanceForm.get('heureDebut')!.setValue(timePart.split('Z')[0].slice(0, 5))
+    }
+    if (clickedDate) {
+      const dayOfWeek = (new Date(clickedDate).getDay() + 6) % 7 + 1
+      const jourMap: Record<number, string> = {
+        1: JoursSemaine.LUNDI, 2: JoursSemaine.MARDI, 3: JoursSemaine.MERCREDI,
+        4: JoursSemaine.JEUDI, 5: JoursSemaine.VENDREDI, 6: JoursSemaine.SAMEDI,
+        7: JoursSemaine.DIMANCHE
+      }
+      this.nouvelleSeanceForm.get('jourSemaine')!.setValue(jourMap[dayOfWeek])
+    }
+    this.openNouvelleSeanceModal()
+  }
+
+  handleEventClick(clickInfo: any) {
+    if (this.rolesValue.isInstitution || this.rolesValue.isAdmin) {
+      this.openModificationSeanceModal(clickInfo)
     }
   }
 
   prevDate(): void {
     let calendarApi = this.calendarComponent.getApi();
     calendarApi.prev();
+    const range = this.getWeekRange(calendarApi.getDate())
+    this.currentWeekStart = range.start
+    this.currentWeekEnd = range.end
+    this.loadPlanning(range.start, range.end)
   }
 
   nextDate(): void {
     let calendarApi = this.calendarComponent.getApi();
     calendarApi.next();
+    const range = this.getWeekRange(calendarApi.getDate())
+    this.currentWeekStart = range.start
+    this.currentWeekEnd = range.end
+    this.loadPlanning(range.start, range.end)
   }
 
   onDateChange(event: any): void {
-    console.log(event.target.value)
     let calendarApi = this.calendarComponent.getApi();
     calendarApi.gotoDate(event.target.value);
+    const range = this.getWeekRange(calendarApi.getDate())
+    this.currentWeekStart = range.start
+    this.currentWeekEnd = range.end
+    this.loadPlanning(range.start, range.end)
   }
 
   getCours(): void {
@@ -179,6 +315,35 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
       })
   }
 
+  getClasses(): void {
+    this.classesLoading = true
+
+    this.classeService.getAll()
+      .subscribe({
+        next: (res) => {
+          this.classes = res
+        },
+        error: (err) => {
+          console.log(err)
+        },
+        complete: () => {
+          this.classesLoading = false
+        }
+      })
+  }
+
+  getSeances(): void {
+    this.seanceService.getAll()
+      .subscribe({
+        next: (res) => {
+          this.seances = res
+        },
+        error: (err) => {
+          console.log(err)
+        }
+      })
+  }
+
   customCoursSearchFn(term: string, item: Cours) {
     term = term.toLowerCase();
     return item.intitule!.toLowerCase().indexOf(term) > -1 || item.code!.toLowerCase().indexOf(term) > -1;
@@ -190,7 +355,6 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
   }
 
   onCoursChange(event: Cours, modification: boolean = false): void {
-    // console.log(event)
     if (event) {
       if (!modification) {
         this.nouvelleSeanceForm.get('titre')!.setValue(event.code)
@@ -205,85 +369,125 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
     }
   }
 
-  getSeances(): void {
-    this.seanceService.getAll()
-      .subscribe({
-        next: (res) => {
-          this.seances = res
+  private collectFormData(form: FormGroup): any {
+    return {
+      titre: form.get('titre')!.value,
+      jourSemaine: form.get('jourSemaine')!.value,
+      salle: form.get('salle')!.value,
+      dateDebut: form.get('dateDebut')!.value,
+      dateFin: form.get('dateFin')!.value,
+      heureDebut: form.get('heureDebut')!.value,
+      heureFin: form.get('heureFin')!.value,
+      description: form.get('description')!.value,
+      coursId: form.get('cours')!.value,
+      enseignantId: form.get('enseignant')!.value,
+    }
+  }
 
-          let events: EventInput[] = this.seances.map((seance: Seance, index: number) => {
-            let event: EventInput = {
-              id: seance.id,
-              title: seance.titre,
-              start: seance.date ? seance.date?.toString() + "T" + seance.heureDebut?.toString() : seance.date,
-              end: seance.date ? seance.date?.toString() + "T" + seance.heureFin?.toString() : seance.date,
-              color: 'white',
-              extendedProps: {
-                id: seance.id,
-                index: index,
-                description: seance.description,
-                startTime: seance.heureDebut?.toString().split(':')[0] + ':' + seance.heureDebut?.toString().split(':')[1],
-                endTime: seance.heureFin?.toString().split(':')[0] + ':' + seance.heureFin?.toString().split(':')[1],
-                enseignant: seance.enseignant?.utilisateur?.nom + ' ' + seance.enseignant?.utilisateur?.prenoms,
-                cours: seance.cours
-              },
-            }
+  verifierConflitsAvantCreation(): void {
+    this.nouvelleSeanceForm.markAllAsTouched()
+    if (!this.nouvelleSeanceForm.valid) return
+    this.conflits = []
+    this.showConflits = false
+    this.forceSave = false
+    const data = this.collectFormData(this.nouvelleSeanceForm)
 
-            return event
-          }) ?? []
-
-          if (this.calendarOptions) {
-            this.calendarOptions.events = events
-          }
-        },
-        error: (err) => {
-          console.log(err)
+    this.seanceService.checkConflits(data).subscribe({
+      next: (conflits) => {
+        if (conflits.length > 0) {
+          this.conflits = conflits
+          this.showConflits = true
+          this.conflitModeCreation = true
+        } else {
+          this.ajouterSeance()
         }
-      })
+      },
+      error: () => {
+        this.ajouterSeance()
+      }
+    })
+  }
+
+  verifierConflitsAvantModification(): void {
+    this.modificationSeanceForm.markAllAsTouched()
+    if (!this.modificationSeanceForm.valid || !this.selectedSeance) return
+    this.conflits = []
+    this.showConflits = false
+    this.forceSave = false
+    const data = { ...this.collectFormData(this.modificationSeanceForm), excludeId: this.selectedSeance.id }
+
+    this.seanceService.checkConflits(data).subscribe({
+      next: (conflits) => {
+        if (conflits.length > 0) {
+          this.conflits = conflits
+          this.showConflits = true
+          this.conflitModeCreation = false
+        } else {
+          this.modifierSeance()
+        }
+      },
+      error: () => {
+        this.modifierSeance()
+      }
+    })
+  }
+
+  forcerSauvegarde(): void {
+    if (this.conflitModeCreation) {
+      this.ajouterSeance()
+    } else {
+      this.modifierSeance()
+    }
+    this.showConflits = false
+    this.conflits = []
   }
 
   ajouterSeance(): void {
-    console.log(this.nouvelleSeanceForm.value)
-    this.nouvelleSeanceForm.markAllAsTouched()
-    if (this.nouvelleSeanceForm.valid) {
-      let seance: Seance = new Seance()
-      seance.titre = this.nouvelleSeanceForm.get('titre')!.value
-      seance.date = this.nouvelleSeanceForm.get('date')!.value
-      seance.heureDebut = this.nouvelleSeanceForm.get('heureDebut')!.value
-      seance.heureFin = this.nouvelleSeanceForm.get('heureFin')!.value
-      seance.description = this.nouvelleSeanceForm.get('description')!.value
-      seance.coursId = this.nouvelleSeanceForm.get('cours')!.value
-      seance.enseignantId = this.nouvelleSeanceForm.get('enseignant')!.value
+    let seance: Seance = new Seance()
+    seance.titre = this.nouvelleSeanceForm.get('titre')!.value
+    seance.jourSemaine = this.nouvelleSeanceForm.get('jourSemaine')!.value
+    seance.salle = this.nouvelleSeanceForm.get('salle')!.value
+    seance.dateDebut = this.nouvelleSeanceForm.get('dateDebut')!.value
+    seance.dateFin = this.nouvelleSeanceForm.get('dateFin')!.value
+    seance.heureDebut = this.nouvelleSeanceForm.get('heureDebut')!.value
+    seance.heureFin = this.nouvelleSeanceForm.get('heureFin')!.value
+    seance.description = this.nouvelleSeanceForm.get('description')!.value
+    seance.coursId = this.nouvelleSeanceForm.get('cours')!.value
+    seance.enseignantId = this.nouvelleSeanceForm.get('enseignant')!.value
 
-      this.seanceService.create(seance).subscribe({
-        next: (res) => {
-          this.getSeances()
-          this.closeNouvelleSeanceModal()
-        },
-        error: (err) => {
-          console.log(err)
+    this.seanceService.create(seance).subscribe({
+      next: (res) => {
+        this.loadPlanning(this.currentWeekStart, this.currentWeekEnd)
+        this.closeNouvelleSeanceModal()
+      },
+      error: (err) => {
+        if (err.status === 409) {
+          this.conflits = err.error?.conflits || []
+          this.showConflits = true
+          this.conflitModeCreation = true
+        } else {
           this.alreadyExists = err.error.alreadyExists
           if (!this.alreadyExists) {
             this.error = true
           }
-
           setTimeout(() => {
             this.error = false
             this.alreadyExists = false
           }, 3000)
         }
-      })
-    }
+      }
+    })
   }
 
   modifierSeance(): void {
-    console.log(this.modificationSeanceForm.value)
-    this.modificationSeanceForm.markAllAsTouched()
-    if (this.selectedSeance && this.modificationSeanceForm.valid) {
+    if (this.selectedSeance) {
       let seance: Seance = new Seance()
       seance.id = this.selectedSeance.id
       seance.titre = this.modificationSeanceForm.get('titre')!.value
-      seance.date = this.modificationSeanceForm.get('date')!.value
+      seance.jourSemaine = this.modificationSeanceForm.get('jourSemaine')!.value
+      seance.salle = this.modificationSeanceForm.get('salle')!.value
+      seance.dateDebut = this.modificationSeanceForm.get('dateDebut')!.value
+      seance.dateFin = this.modificationSeanceForm.get('dateFin')!.value
       seance.heureDebut = this.modificationSeanceForm.get('heureDebut')!.value
       seance.heureFin = this.modificationSeanceForm.get('heureFin')!.value
       seance.description = this.modificationSeanceForm.get('description')!.value
@@ -292,20 +496,24 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
 
       this.seanceService.update(seance).subscribe({
         next: (res) => {
-          this.getSeances()
+          this.loadPlanning(this.currentWeekStart, this.currentWeekEnd)
           this.closeModificationSeanceModal()
         },
         error: (err) => {
-          console.log(err)
-          this.alreadyExists = err.error.alreadyExists
-          if (!this.alreadyExists) {
-            this.error = true
+          if (err.status === 409) {
+            this.conflits = err.error?.conflits || []
+            this.showConflits = true
+            this.conflitModeCreation = false
+          } else {
+            this.alreadyExists = err.error.alreadyExists
+            if (!this.alreadyExists) {
+              this.error = true
+            }
+            setTimeout(() => {
+              this.error = false
+              this.alreadyExists = false
+            }, 3000)
           }
-
-          setTimeout(() => {
-            this.error = false
-            this.alreadyExists = false
-          }, 3000)
         }
       })
     }
@@ -315,7 +523,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
     if (this.selectedSeance) {
       this.seanceService.delete(this.selectedSeance.id!).subscribe({
         next: (res) => {
-          this.getSeances()
+          this.loadPlanning(this.currentWeekStart, this.currentWeekEnd)
           this.closeSuppressionSeanceModal()
         },
         error: (err) => {
@@ -332,6 +540,8 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
 
   // Modals
   openNouvelleSeanceModal(): void {
+    this.showConflits = false
+    this.conflits = []
     this.showNouvelleSeanceModal = true
   }
 
@@ -339,23 +549,36 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
     this.nouvelleSeanceForm.reset()
     this.nouvelleSeanceForm.get('choisirParmiLesCours')!.setValue(true)
     this.showNouvelleSeanceModal = false
+    this.showConflits = false
+    this.conflits = []
   }
 
   openModificationSeanceModal(arg: any): void {
-    console.log(arg);
-    const seanceIndex = arg.event.extendedProps.index
-    this.selectedSeance = this.seances[seanceIndex]
+    const seanceId = arg.event.extendedProps['seanceId']
 
-    if (this.selectedSeance) {
-      this.modificationSeanceForm.get('titre')!.setValue(this.selectedSeance.titre)
-      this.modificationSeanceForm.get('date')!.setValue(this.selectedSeance.date)
-      this.modificationSeanceForm.get('heureDebut')!.setValue(this.selectedSeance.heureDebut)
-      this.modificationSeanceForm.get('heureFin')!.setValue(this.selectedSeance.heureFin)
-      this.modificationSeanceForm.get('description')!.setValue(this.selectedSeance.description)
-      this.modificationSeanceForm.get('cours')!.setValue(this.selectedSeance.coursId)
-      this.modificationSeanceForm.get('enseignant')!.setValue(this.selectedSeance.enseignantId)
+    if (seanceId) {
+      this.seanceService.get(seanceId).subscribe({
+        next: (seance) => {
+          this.selectedSeance = seance
+          this.modificationSeanceForm.get('titre')!.setValue(seance.titre)
+          this.modificationSeanceForm.get('jourSemaine')!.setValue(seance.jourSemaine)
+          this.modificationSeanceForm.get('salle')!.setValue(seance.salle)
+          this.modificationSeanceForm.get('dateDebut')!.setValue(seance.dateDebut)
+          this.modificationSeanceForm.get('dateFin')!.setValue(seance.dateFin)
+          this.modificationSeanceForm.get('heureDebut')!.setValue(seance.heureDebut)
+          this.modificationSeanceForm.get('heureFin')!.setValue(seance.heureFin)
+          this.modificationSeanceForm.get('description')!.setValue(seance.description)
+          this.modificationSeanceForm.get('cours')!.setValue(seance.coursId)
+          this.modificationSeanceForm.get('enseignant')!.setValue(seance.enseignantId)
 
-      this.showModificationSeanceModal = true
+          this.showConflits = false
+          this.conflits = []
+          this.showModificationSeanceModal = true
+        },
+        error: (err) => {
+          console.log(err)
+        }
+      })
     }
   }
 
@@ -363,15 +586,23 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
     this.modificationSeanceForm.reset()
     this.modificationSeanceForm.get('choisirParmiLesCours')!.setValue(true)
     this.showModificationSeanceModal = false
+    this.showConflits = false
+    this.conflits = []
   }
 
   openSuppressionSeanceModal(arg: any): void {
-    console.log(arg);
-    const seanceIndex = arg.event.extendedProps.index
-    this.selectedSeance = this.seances[seanceIndex]
+    const seanceId = arg.event.extendedProps['seanceId']
 
-    if(this.selectedSeance) {
-      this.showSuppressionSeanceModal = true
+    if (seanceId) {
+      this.seanceService.get(seanceId).subscribe({
+        next: (seance) => {
+          this.selectedSeance = seance
+          this.showSuppressionSeanceModal = true
+        },
+        error: (err) => {
+          console.log(err)
+        }
+      })
     }
   }
 

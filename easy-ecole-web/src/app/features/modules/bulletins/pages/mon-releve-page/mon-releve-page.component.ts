@@ -28,7 +28,7 @@ export class MonRelevePageComponent extends BaseComponentClass implements OnInit
 
   getNoteClass(v: number | null): string {
     if (v == null) return '';
-    return v >= 10 ? 'text-emerald-700' : 'text-red-700';
+    return v >= 10 ? 'text-emerald-700' : 'text-blue-700';
   }
 
   getMentionLabel(m: string): { class: string; label: string } {
@@ -37,7 +37,7 @@ export class MonRelevePageComponent extends BaseComponentClass implements OnInit
       'Bien': { class: 'from-blue-400 to-blue-600', label: 'Bien' },
       'Assez Bien': { class: 'from-indigo-400 to-indigo-600', label: 'Assez Bien' },
       'Passable': { class: 'from-amber-400 to-amber-600', label: 'Passable' },
-      'Insuffisant': { class: 'from-red-400 to-red-600', label: 'Insuffisant' },
+      'Insuffisant': { class: 'from-blue-400 to-blue-600', label: 'Insuffisant' },
     };
     return map[m] || { class: 'from-gray-400 to-gray-600', label: m };
   }

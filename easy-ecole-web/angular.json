@@ -23,6 +23,7 @@
             "outputPath": "dist/easy-ecole-web",
             "index": "src/index.html",
             "main": "src/main.ts",
+            "poll": 2000,
             "polyfills": "src/polyfills.ts",
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
@@ -83,6 +84,9 @@
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "poll": 2000
+          },
           "configurations": {
             "production": {
               "browserTarget": "easy-ecole-web:build:production"

@@ -333,6 +333,48 @@ export default class BulletinController {
     }
   }
 
+  // PUT /bulletins/:id/signer-enseignant
+  async signerEnseignant(req: Request, res: Response) {
+    try {
+      const bulletin = await Bulletin.findByPk(req.params.id);
+      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvé' });
+
+      const { signature } = req.body;
+      if (!signature) return res.status(400).json({ message: 'Signature requise' });
+
+      await bulletin.update({
+        signatureEnseignant: signature,
+        dateSignatureEnseignant: new Date()
+      });
+
+      return res.json(bulletin);
+    } catch (error) {
+      console.error('Erreur signature enseignant:', error);
+      return res.status(500).json({ message: 'Erreur lors de la signature' });
+    }
+  }
+
+  // PUT /bulletins/:id/signer-chef
+  async signerChef(req: Request, res: Response) {
+    try {
+      const bulletin = await Bulletin.findByPk(req.params.id);
+      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvé' });
+
+      const { signature } = req.body;
+      if (!signature) return res.status(400).json({ message: 'Signature requise' });
+
+      await bulletin.update({
+        signatureChef: signature,
+        dateSignatureChef: new Date()
+      });
+
+      return res.json(bulletin);
+    } catch (error) {
+      console.error('Erreur signature chef:', error);
+      return res.status(500).json({ message: 'Erreur lors de la signature' });
+    }
+  }
+
   // DELETE /bulletins/:id
   async delete(req: Request, res: Response) {
     try {

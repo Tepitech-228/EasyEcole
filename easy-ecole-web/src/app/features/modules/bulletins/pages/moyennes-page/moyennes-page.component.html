@@ -22,8 +22,8 @@
           <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Moy. générale</p>
           <p class="mt-1 text-2xl font-bold text-gray-900">{{ moyenneEnsemble }}/20</p>
         </div>
-        <div class="h-10 w-10 rounded-xl bg-red-50 flex items-center justify-center">
-          <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+        <div class="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
         </div>
       </div>
     </div>
@@ -54,32 +54,32 @@
   <div class="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm mb-6">
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
       <select [(ngModel)]="filtreAnneeAcademiqueId" (change)="charger()"
-              class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-red-600">
+              class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600">
         <option value="">Toutes les années</option>
         <option *ngFor="let a of anneesAcademiques" [value]="a.id">{{ a.libelle }}</option>
       </select>
       <select [(ngModel)]="filtreSemestre" (change)="charger()"
-              class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-red-600">
+              class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600">
         <option value="">Tous les semestres</option>
         <option value="semestre1">Semestre 1</option>
         <option value="semestre2">Semestre 2</option>
       </select>
       <select [(ngModel)]="filtreClasseId" (change)="charger()"
-              class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-red-600">
+              class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600">
         <option value="">Toutes les classes</option>
         <option *ngFor="let c of classes" [value]="c.id">{{ c.libelle }}</option>
       </select>
     </div>
     <button *ngIf="filtreAnneeAcademiqueId || filtreSemestre || filtreClasseId"
             (click)="resetFiltres()"
-            class="mt-3 text-sm text-red-600 hover:text-red-700 font-medium bg-transparent border-0 cursor-pointer">
+            class="mt-3 text-sm text-blue-600 hover:text-blue-700 font-medium bg-transparent border-0 cursor-pointer">
       Réinitialiser les filtres
     </button>
   </div>
 
   <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
     <div *ngIf="loading" class="px-5 py-12 text-center">
-      <div class="inline-block h-6 w-6 animate-spin rounded-full border-2 border-red-600 border-t-transparent"></div>
+      <div class="inline-block h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
       <p class="mt-2 text-sm text-gray-500">Chargement...</p>
     </div>
     <ng-container *ngIf="!loading">
@@ -101,13 +101,13 @@
               <td class="px-5 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{{ m.classe }}</td>
               <td class="px-5 py-4 whitespace-nowrap text-center text-sm text-gray-700">{{ m.effectif }}</td>
               <td class="px-5 py-4 whitespace-nowrap text-center text-sm font-bold" [ngClass]="getMoyenneClass(m.moyenneGenerale)">{{ m.moyenneGenerale }}</td>
-              <td class="px-5 py-4 whitespace-nowrap text-center text-sm text-red-600">{{ m.moyenneMin }}</td>
+              <td class="px-5 py-4 whitespace-nowrap text-center text-sm text-blue-600">{{ m.moyenneMin }}</td>
               <td class="px-5 py-4 whitespace-nowrap text-center text-sm text-green-600">{{ m.moyenneMax }}</td>
               <td class="px-5 py-4 whitespace-nowrap text-center">
                 <div class="flex items-center justify-center gap-2">
                   <div class="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                     <div class="h-full rounded-full" [style.width.%]="m.tauxReussite"
-                         [ngClass]="m.tauxReussite >= 70 ? 'bg-green-500' : m.tauxReussite >= 50 ? 'bg-amber-500' : 'bg-red-500'"></div>
+                          [ngClass]="m.tauxReussite >= 70 ? 'bg-green-500' : m.tauxReussite >= 50 ? 'bg-amber-500' : 'bg-blue-500'"></div>
                   </div>
                   <span class="text-sm" [ngClass]="getMoyenneClass(m.tauxReussite)">{{ m.tauxReussite }}%</span>
                 </div>

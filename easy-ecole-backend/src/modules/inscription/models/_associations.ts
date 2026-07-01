@@ -212,6 +212,10 @@ Seance.belongsTo(Cours, { as: 'cours', foreignKey: 'coursId' })
 Enseignant.hasMany(Seance, { foreignKey: 'enseignantId', as: 'seances' })
 Seance.belongsTo(Enseignant, { as: 'enseignant', foreignKey: 'enseignantId' })
 
+// SalleDeClasse - Seance
+SalleDeClasse.hasMany(Seance, { foreignKey: 'salleDeClasseId', as: 'seances' })
+Seance.belongsTo(SalleDeClasse, { as: 'salleDeClasse', foreignKey: 'salleDeClasseId' })
+
 // Cours - ListePresence
 Cours.hasMany(ListePresence, { foreignKey: 'coursId', as: 'listesPresences' })
 ListePresence.belongsTo(Cours, { as: 'cours', foreignKey: 'coursId' })
