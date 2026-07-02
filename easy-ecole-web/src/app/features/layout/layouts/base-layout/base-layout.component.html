@@ -1,5 +1,5 @@
 <main [ngClass]="[showMenu ? 'showMenu' : 'hideMenu', sidebarCollapsed && !hoverExpanded ? 'collapsed' : '', hoverExpanded ? 'hover-expand' : '']" class="flex justify-end">
-    <div id="left" (mouseenter)="onSidebarEnter()" (mouseleave)="onSidebarLeave()" class="fixed z-50 left-0 top-0 h-screen bg-primary shadow-md overflow-hidden">
+    <div id="left" (mouseenter)="onSidebarEnter()" (mouseleave)="onSidebarLeave()" class="fixed z-50 left-0 top-0 h-screen bg-primary shadow-md overflow-x-hidden">
         <div class="flex flex-col h-full justify-between overflow-x-hidden overflow-y-auto gap-y-6">
             <div class="flex flex-col gap-y-4">
                 <div class="mb-2 px-3 pt-5 flex items-center justify-between" style="border-color: #696969 !important;">
@@ -124,6 +124,9 @@
                         <app-nav-menu-item *ngIf="hasPermission('menu.pointage.absences')" (click)="closeMenu()" icon="block" text="Absences" link="/pointage/absences"></app-nav-menu-item>
                         <app-nav-menu-item *ngIf="hasPermission('menu.pointage.planning')" (click)="closeMenu()" icon="calendar_view_week" text="Planning" link="/pointage/planning"></app-nav-menu-item>
                         <app-nav-menu-item *ngIf="hasPermission('menu.pointage.rapports')" (click)="closeMenu()" icon="assessment" text="Rapports" link="/pointage/rapports"></app-nav-menu-item>
+                    </app-nav-menu-group>
+                    <app-nav-menu-group title="GED" [isSubGroup]="true" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" [startExpanded]="false">
+                        <app-nav-menu-item (click)="closeMenu()" icon="folder_open" text="GED" link="/ged"></app-nav-menu-item>
                     </app-nav-menu-group>
                 </app-nav-menu-group>
 

@@ -1,27 +1,40 @@
-<div class="p-6">
-  <div class="flex items-center justify-between mb-6">
-    <app-header-title title="Certificats" subtitle="Certificats de completion obtenus"></app-header-title>
-    <app-custom-button *ngIf="canManage()" text="Nouveau certificat" color="primary" (click)="openCreate()"></app-custom-button>
+<div class="p-6 space-y-6">
+  <div class="rounded-3xl border border-slate-200 bg-gradient-to-r from-emerald-900 via-slate-800 to-slate-900 p-6 text-white shadow-sm">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <p class="text-sm uppercase tracking-[0.3em] text-slate-300">Récompenses académiques</p>
+        <h2 class="mt-2 text-2xl font-semibold">Certificats obtenus</h2>
+        <p class="mt-2 max-w-2xl text-sm text-slate-300">Consultez vos attestations et vos acquis de formation dans un espace dédié et professionnel.</p>
+      </div>
+      <app-custom-button *ngIf="canManage()" text="Nouveau certificat" color="primary" (click)="openCreate()"></app-custom-button>
+    </div>
   </div>
 
-  <div *ngIf="loading" class="text-center py-12 text-gray-500">Chargement...</div>
+  <div *ngIf="loading" class="rounded-2xl border border-slate-200 bg-white py-16 text-center text-slate-500 shadow-sm">Chargement des certificats...</div>
 
-  <div *ngIf="!loading && certificats.length === 0" class="text-center py-12 text-gray-500">Aucun certificat.</div>
+  <div *ngIf="!loading && certificats.length === 0" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-16 text-center text-slate-500">Aucun certificat disponible.</div>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-    <div *ngFor="let cert of certificats" class="bg-white rounded-lg shadow-md overflow-hidden border-t-4 border-blue-500 cursor-pointer hover:shadow-lg transition-shadow" (click)="openDetail(cert)">
-      <div class="p-5">
-        <div class="text-3xl mb-3">🎓</div>
-        <h3 class="text-lg font-semibold text-gray-800 mb-1">{{ cert.titre }}</h3>
-        <p class="text-sm text-gray-600 mb-3">{{ cert.cours?.titre || '—' }}</p>
-        <div class="flex items-center justify-between text-sm text-gray-500 border-t pt-3">
-          <span>Obtenu le {{ cert.dateObtention | date:'dd/MM/yyyy' }}</span>
-          <span class="font-mono text-xs text-gray-400">{{ cert.code }}</span>
+  <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+    <div *ngFor="let cert of certificats" class="cursor-pointer overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md" (click)="openDetail(cert)">
+      <div class="bg-gradient-to-r from-emerald-600 to-teal-600 p-5 text-white">
+        <div class="flex items-center justify-between">
+          <div class="rounded-full bg-white/20 p-2">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.84 3.422"></path></svg>
+          </div>
+          <span class="rounded-full bg-white/20 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.2em]">Certifié</span>
         </div>
+        <h3 class="mt-4 text-lg font-semibold">{{ cert.titre }}</h3>
+        <p class="mt-1 text-sm text-emerald-50">{{ cert.cours?.titre || '—' }}</p>
       </div>
-      <div class="bg-blue-50 px-5 py-3 border-t border-blue-100 flex items-center justify-between">
-        <span class="text-sm text-gray-600">{{ cert.apprenant?.nom }} {{ cert.apprenant?.prenoms }}</span>
-        <button *ngIf="canManage()" (click)="deleteCertificat(cert.id); $event.stopPropagation()" class="text-red-500 hover:text-red-700 text-sm">Supprimer</button>
+      <div class="p-5">
+        <div class="flex items-center justify-between text-sm text-slate-500">
+          <span>Obtenu le {{ cert.dateObtention | date:'dd/MM/yyyy' }}</span>
+          <span class="font-mono text-xs text-slate-400">{{ cert.code }}</span>
+        </div>
+        <div class="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
+          <span class="text-sm text-slate-600">{{ cert.apprenant?.nom }} {{ cert.apprenant?.prenoms }}</span>
+          <button *ngIf="canManage()" (click)="deleteCertificat(cert.id); $event.stopPropagation()" class="text-sm font-semibold text-red-600 transition hover:text-red-700">Supprimer</button>
+        </div>
       </div>
     </div>
   </div>

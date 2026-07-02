@@ -22,7 +22,7 @@ const router = express.Router()
  *         description: Non autorisé
  */
 router
-    .get('/', [AuthInstitution], UtilisateurController.getAllUtilisateurs)
+    .get('/', [Authenticate], UtilisateurController.getAllUtilisateurs)
     /**
      * @openapi
      * /auth/utilisateurs/{id}:

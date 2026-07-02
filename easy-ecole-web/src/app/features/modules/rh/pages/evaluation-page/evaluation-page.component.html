@@ -1,6 +1,50 @@
 <app-return-back link="/rh/evaluations" text="Retour aux évaluations"></app-return-back>
 
-<div class="bg-white rounded-lg shadow border border-gray-100 p-6">
-  <h2 class="text-xl font-semibold text-gray-900 mb-4">Nouvelle évaluation</h2>
-  <p class="text-sm text-gray-500">Formulaire d'évaluation à implémenter.</p>
+<div class="evaluation-shell flex justify-between items-start mb-8">
+  <app-header-title title="Nouvelle évaluation" subtitle="Créer une évaluation et définir les critères associés"></app-header-title>
+</div>
+
+<div class="evaluation-card bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="rounded-lg border border-gray-200 p-5 bg-gray-50/70">
+      <h3 class="text-base font-semibold text-gray-900">Informations générales</h3>
+      <div class="mt-4 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Employé</label>
+          <input type="text" placeholder="Sélectionner un employé" class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Évaluateur</label>
+          <input type="text" placeholder="Sélectionner un évaluateur" class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Date d’évaluation</label>
+          <input type="date" class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+        </div>
+      </div>
+    </div>
+
+    <div class="rounded-lg border border-gray-200 p-5 bg-gray-50/70">
+      <h3 class="text-base font-semibold text-gray-900">Critères et notes</h3>
+      <div class="mt-4 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Type d’évaluation</label>
+          <select class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+            <option>Performance</option>
+            <option>Compétences</option>
+            <option>Comportement</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Commentaire</label>
+          <textarea rows="4" placeholder="Ajouter un commentaire..." class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-8 flex flex-wrap justify-end gap-3 border-t border-gray-200 pt-6">
+    <app-custom-button text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+    <app-custom-button text="Enregistrer"></app-custom-button>
+  </div>
 </div>

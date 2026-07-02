@@ -1,16 +1,20 @@
 <a *ngIf="link != undefined" [routerLink]="link" routerLinkActive="active" [routerLinkActiveOptions]="{exact: link == '/'}" class="relative block">
-    <div id="menu" (mouseenter)="onMouseEnter($event)" (mouseleave)="onMouseLeave()" class="flex items-center w-full px-3 relative">
+    <div id="menu" (mouseenter)="onMouseEnter($event)" (mouseleave)="onMouseLeave()" class="nav-menu-item-inner flex items-center w-full px-3 py-2 relative">
         <div class="active-indicator"></div>
-        <app-custom-svg-icon id="icon" class="mr-2" [path]="'assets/icons/' + icon + '.svg'"></app-custom-svg-icon>
+        <div class="menu-icon-wrap">
+            <app-custom-svg-icon id="icon" [path]="'assets/icons/' + icon + '.svg'"></app-custom-svg-icon>
+        </div>
         <div id="text" class="text-sm nav-text">{{ text }}</div>
     </div>
     <div *ngIf="showTooltip" class="collapsed-tooltip" [style.top.px]="tooltipTop">{{ text }}</div>
 </a>
 
 <div *ngIf="link == undefined" class="cursor-pointer relative">
-    <div id="menu" (mouseenter)="onMouseEnter($event)" (mouseleave)="onMouseLeave()" class="flex items-center w-full px-3 relative">
+    <div id="menu" (mouseenter)="onMouseEnter($event)" (mouseleave)="onMouseLeave()" class="nav-menu-item-inner flex items-center w-full px-3 py-2 relative">
         <div class="active-indicator"></div>
-        <app-custom-svg-icon id="icon" class="mr-2" [path]="'assets/icons/' + icon + '.svg'"></app-custom-svg-icon>
+        <div class="menu-icon-wrap">
+            <app-custom-svg-icon id="icon" [path]="'assets/icons/' + icon + '.svg'"></app-custom-svg-icon>
+        </div>
         <div id="text" class="text-sm nav-text">{{ text }}</div>
     </div>
     <div *ngIf="showTooltip" class="collapsed-tooltip" [style.top.px]="tooltipTop">{{ text }}</div>

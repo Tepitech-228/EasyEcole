@@ -1,30 +1,49 @@
-<div class="p-6">
-  <app-header-title title="Mes cours e-learning"></app-header-title>
-
-  <div *ngIf="loading" class="flex justify-center py-12">
-    <div class="spinner-border text-primary" role="status">
-      <span class="sr-only">Chargement...</span>
+<div class="p-6 space-y-6">
+  <div class="rounded-3xl border border-slate-200 bg-gradient-to-r from-slate-900 via-slate-800 to-blue-900 p-6 text-white shadow-sm">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <p class="text-sm uppercase tracking-[0.3em] text-slate-300">Espace pédagogique</p>
+        <h2 class="mt-2 text-2xl font-semibold">Mes cours en ligne</h2>
+        <p class="mt-2 max-w-2xl text-sm text-slate-300">Consultez vos supports de cours, vos modules et les échanges pédagogiques depuis une interface claire et universitaire.</p>
+      </div>
+      <div class="rounded-2xl bg-white/10 px-4 py-3 backdrop-blur">
+        <p class="text-xs uppercase tracking-[0.2em] text-slate-300">Parcours actif</p>
+        <p class="mt-1 text-lg font-semibold">{{ coursList.length || 0 }} cours disponibles</p>
+      </div>
     </div>
   </div>
 
-  <div *ngIf="!loading && coursList.length === 0" class="text-center py-12 text-gray-500">
-    Aucun cours e-learning disponible.
+  <div *ngIf="loading" class="flex justify-center rounded-2xl border border-slate-200 bg-white py-16 shadow-sm">
+    <div class="flex items-center gap-3 text-slate-600">
+      <div class="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600"></div>
+      <span>Chargement de vos cours...</span>
+    </div>
   </div>
 
-  <div *ngIf="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-    <div *ngFor="let cours of coursList" class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-      <img [src]="'/orientation/parcours/' + cours.image" alt="{{ cours.titre }}" class="w-full h-40 object-cover" *ngIf="cours.image">
-      <div class="p-4" [routerLink]="['/elearning', cours.id]" class="cursor-pointer">
-        <h3 class="text-lg font-semibold text-gray-800">{{ cours.titre }}</h3>
-        <p class="text-sm text-gray-600 mt-2">{{ cours.description }}</p>
-        <div class="flex items-center justify-between mt-4">
-          <span class="text-xs text-gray-400">{{ cours.modules?.length || 0 }} module(s)</span>
-          <span class="px-2 py-1 text-xs rounded-full" [ngClass]="cours.statut === 'actif' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'">{{ cours.statut }}</span>
+  <div *ngIf="!loading && coursList.length === 0" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-12 text-center text-slate-500">
+    Aucun cours disponible pour le moment.
+  </div>
+
+  <div *ngIf="!loading" class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+    <div *ngFor="let cours of coursList" class="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
+      <div class="h-36 overflow-hidden bg-slate-100">
+        <img [src]="'/orientation/parcours/' + cours.image" alt="{{ cours.titre }}" class="h-full w-full object-cover transition duration-300 group-hover:scale-105" *ngIf="cours.image">
+      </div>
+      <div class="p-5">
+        <div class="flex items-center justify-between">
+          <span class="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-700">Cours</span>
+          <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.2em]" [ngClass]="cours.statut === 'actif' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'">{{ cours.statut }}</span>
+        </div>
+        <h3 class="mt-4 text-lg font-semibold text-slate-900">{{ cours.titre }}</h3>
+        <p class="mt-2 text-sm leading-6 text-slate-600">{{ cours.description }}</p>
+        <div class="mt-4 flex items-center justify-between text-sm text-slate-500">
+          <span>{{ cours.modules?.length || 0 }} module(s)</span>
+          <span class="font-medium text-slate-700">Ouvrir</span>
         </div>
       </div>
-      <div class="px-4 pb-4 flex gap-2">
-        <a [routerLink]="['/elearning', cours.id]" class="text-sm text-blue-600 hover:underline">Voir le cours</a>
-        <a [routerLink]="['/elearning', cours.id, 'chat']" class="text-sm text-blue-600 hover:underline">Chat</a>
+      <div class="flex gap-2 border-t border-slate-100 px-5 py-4">
+        <a [routerLink]="['/elearning', cours.id]" class="flex-1 rounded-xl bg-slate-900 px-3 py-2 text-center text-sm font-semibold text-white transition hover:bg-slate-700">Voir le cours</a>
+        <a [routerLink]="['/elearning', cours.id, 'chat']" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Chat</a>
       </div>
     </div>
   </div>

@@ -1,0 +1,125 @@
+<div class="space-y-8">
+  <div class="flex flex-col gap-y-4 lg:flex-row lg:items-center lg:justify-between">
+    <app-header-title title="GED - Gestion électronique des documents" subtitle="Préparez votre nomenclature, importez des PDF/TIFF et retrouvez vos documents rapidement."></app-header-title>
+    <app-custom-button text="Commencer" color="primary"></app-custom-button>
+  </div>
+
+  <div class="grid gap-6 lg:grid-cols-3">
+    <section class="card">
+      <h2 class="text-xl font-semibold text-gray-900 mb-3">Étape 1 - Préparation</h2>
+      <p class="text-sm text-gray-600 mb-4">Définissez la nomenclature et les métadonnées qui seront associées à vos documents.</p>
+      <ul class="space-y-3 text-sm text-gray-700">
+        <li>• Choisir un type de document</li>
+        <li>• Ajouter une référence de dossier ou élève</li>
+        <li>• Préciser la catégorie et le parcours</li>
+        <li>• Sauvegarder une règle de nommage claire</li>
+      </ul>
+      <div class="mt-6 rounded-2xl bg-slate-50 p-4 border border-slate-200">
+        <p class="text-xs uppercase tracking-[0.2em] text-slate-500 mb-2">Exemple de nomenclature</p>
+        <p class="font-semibold text-slate-900">{{ exampleNomenclature }}</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="text-xl font-semibold text-gray-900 mb-3">Étape 2 - Upload</h2>
+      <p class="text-sm text-gray-600 mb-4">Importez un PDF ou TIFF et associez-le immédiatement aux bonnes métadonnées.</p>
+      <app-custom-file-picker inputID="ged-file" (onFileChanged)="onFileChanged($event)"></app-custom-file-picker>
+      <div class="mt-4 rounded-2xl bg-slate-50 p-4 border border-slate-200">
+        <p class="text-sm text-slate-500">Fichier sélectionné</p>
+        <p class="font-medium text-slate-900">{{ selectedFileName }}</p>
+        <p class="text-sm text-slate-500">Type : {{ selectedFileType }}</p>
+      </div>
+      <app-custom-button class="mt-4" text="Ajouter le document" color="primary" (click)="addDocument()" [disabled]="!selectedFile"></app-custom-button>
+    </section>
+
+    <section class="card">
+      <h2 class="text-xl font-semibold text-gray-900 mb-3">Étape 3 - Recherche</h2>
+      <p class="text-sm text-gray-600 mb-4">Retrouvez vos documents par titre, référence, type ou statut.</p>
+      <div class="space-y-3">
+        <label class="block text-sm font-medium text-gray-700">Rechercher</label>
+        <input [(ngModel)]="searchQuery" type="text" placeholder="Rechercher un document..." class="form-input w-full" />
+      </div>
+      <div class="mt-6 rounded-2xl bg-slate-50 p-4 border border-slate-200">
+        <p class="text-sm text-slate-500 mb-2">Astuce</p>
+        <p class="text-sm text-slate-700">Utilisez des mots-clés précis comme "facture", "contrat" ou "2026" pour réduire les résultats.</p>
+      </div>
+    </section>
+  </div>
+
+  <div class="grid gap-6 lg:grid-cols-2">
+    <section class="card">
+      <h2 class="text-xl font-semibold text-gray-900 mb-4">Règle de nommage</h2>
+      <div class="grid gap-3">
+        <div class="space-y-1">
+          <label class="form-label">Type</label>
+          <input [(ngModel)]="nommageType" (ngModelChange)="generateNomenclature()" class="form-input w-full" />
+        </div>
+        <div class="space-y-1">
+          <label class="form-label">Date</label>
+          <input [(ngModel)]="nommageDate" (ngModelChange)="generateNomenclature()" class="form-input w-full" type="text" />
+        </div>
+        <div class="space-y-1">
+          <label class="form-label">Catégorie</label>
+          <input [(ngModel)]="metadata.categorie" (ngModelChange)="generateNomenclature()" class="form-input w-full" />
+        </div>
+        <div class="space-y-1">
+          <label class="form-label">Référence</label>
+          <input [(ngModel)]="metadata.reference" (ngModelChange)="generateNomenclature()" class="form-input w-full" />
+        </div>
+      </div>
+      <div class="mt-6 rounded-2xl bg-slate-50 p-4 border border-slate-200">
+        <p class="text-xs uppercase tracking-[0.2em] text-slate-500 mb-2">Nomenclature générée</p>
+        <p class="font-semibold text-slate-900">{{ exampleNomenclature }}</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="text-xl font-semibold text-gray-900 mb-4">Informations document</h2>
+      <div class="grid gap-3">
+        <div class="space-y-1">
+          <label class="form-label">Titre</label>
+          <input [(ngModel)]="metadata.titre" class="form-input w-full" />
+        </div>
+        <div class="space-y-1">
+          <label class="form-label">Élève / dossier</label>
+          <input [(ngModel)]="metadata.eleve" class="form-input w-full" />
+        </div>
+        <div class="space-y-1">
+          <label class="form-label">Parcours</label>
+          <input [(ngModel)]="metadata.parcours" class="form-input w-full" />
+        </div>
+        <div class="space-y-1">
+          <label class="form-label">Tags</label>
+          <input [(ngModel)]="metadata.tags" class="form-input w-full" placeholder="facture, dossier, contrat" />
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <section class="card overflow-hidden">
+    <h2 class="text-xl font-semibold text-gray-900 mb-4">Documents récents</h2>
+    <div *ngIf="filteredDocuments.length === 0" class="text-center py-10 text-gray-500">Aucun document trouvé</div>
+    <div *ngIf="filteredDocuments.length > 0" class="overflow-x-auto">
+      <table class="min-w-full border-separate border-spacing-y-3">
+        <thead>
+          <tr>
+            <th class="text-left text-xs font-semibold uppercase tracking-wider text-slate-500 px-4 py-3">Titre</th>
+            <th class="text-left text-xs font-semibold uppercase tracking-wider text-slate-500 px-4 py-3">Type</th>
+            <th class="text-left text-xs font-semibold uppercase tracking-wider text-slate-500 px-4 py-3">Date</th>
+            <th class="text-left text-xs font-semibold uppercase tracking-wider text-slate-500 px-4 py-3">Statut</th>
+            <th class="text-left text-xs font-semibold uppercase tracking-wider text-slate-500 px-4 py-3">Nommage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let document of filteredDocuments" class="bg-white rounded-3xl shadow-sm hover:shadow-md transition">
+            <td class="px-4 py-4 text-sm text-slate-700">{{ document.titre }}</td>
+            <td class="px-4 py-4 text-sm text-slate-700">{{ document.type }}</td>
+            <td class="px-4 py-4 text-sm text-slate-700">{{ document.date }}</td>
+            <td class="px-4 py-4 text-sm text-slate-700">{{ document.statut }}</td>
+            <td class="px-4 py-4 text-sm text-slate-700 break-all">{{ document.nommage }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

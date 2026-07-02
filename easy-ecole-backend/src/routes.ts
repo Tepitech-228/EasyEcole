@@ -12,6 +12,7 @@ import RhRoutes from "./modules/rh/RhRoutes";
 import CommunicationRoutes from "./modules/communication/CommunicationRoutes";
 import ScolariteRoutes from "./modules/scolarite/ScolariteRoutes";
 import ComptabiliteRoutes from "./modules/comptabilite/ComptabiliteRoutes";
+import GedRoutes from "./modules/ged/GedRoutes";
 const router = express.Router();
 
 router
@@ -30,6 +31,7 @@ router
     .use('/rh', RhRoutes)
     .use('/communication', CommunicationRoutes)
     .use('/scolarite', ScolariteRoutes)
+    .use('/ged', GedRoutes)
     .use('/comptabilite', ComptabiliteRoutes)
 
     // Not found

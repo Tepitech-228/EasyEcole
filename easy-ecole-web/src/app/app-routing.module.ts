@@ -108,6 +108,13 @@ const routes: Routes = [
         canLoad: [AuthGuard]
       },
 
+      // Module "GED"
+      {
+        path: 'ged',
+        loadChildren: () => import('./features/modules/ged/ged.module').then(m => m.GedModule),
+        canLoad: [AuthGuard]
+      },
+
       // Module "Ressources Humaines"
       {
         path: 'rh',

@@ -51,7 +51,8 @@ export default class NoteEvaluationController {
     static async upsert(req: Request, res: Response): Promise<Response | null> {
         try {
             if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION &&
-                (req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT) {
+                (req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT &&
+                (req as any).utilisateurRole != RolesUtilisateur.ADMIN) {
                 return res.status(403).json({ success: false, message: "Accès refusé" });
             }
 
@@ -105,7 +106,8 @@ export default class NoteEvaluationController {
     static async bulkUpsert(req: Request, res: Response): Promise<Response | null> {
         try {
             if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION &&
-                (req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT) {
+                (req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT &&
+                (req as any).utilisateurRole != RolesUtilisateur.ADMIN) {
                 return res.status(403).json({ success: false, message: "Accès refusé" });
             }
 

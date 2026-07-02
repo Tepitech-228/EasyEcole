@@ -80,11 +80,15 @@ export class BaseLayoutComponent extends BaseComponentClass implements OnInit {
   onSidebarEnter(): void {
     if (this.sidebarCollapsed) {
       this.hoverExpanded = true
+      this.sidebarState.setCollapsed(false)
     }
   }
 
   onSidebarLeave(): void {
-    this.hoverExpanded = false
+    if (this.sidebarCollapsed) {
+      this.hoverExpanded = false
+      this.sidebarState.setCollapsed(true)
+    }
   }
 
   openModal() {

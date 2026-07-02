@@ -1,0 +1,46 @@
+:host {
+  display: block;
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+.form-input {
+  background: #f8fafc;
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
+  padding: 0.85rem 1rem;
+  width: 100%;
+  color: #0f172a;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.card table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 0.75rem;
+}
+
+.card table th,
+.card table td {
+  white-space: normal;
+}
+
+.card table tbody tr {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card table tbody tr:hover {
+  transform: translateY(-1px);
+}

@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { combineLatest } from 'rxjs';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { AnneeAcademique } from 'src/app/data/modules/inscription/models/AnneeAcademique.model';
 import { Bordereau } from 'src/app/data/modules/inscription/models/Bordereau.model';
@@ -48,6 +49,7 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
 
   niveauxFiltres: NiveauEtude[] = []
   parcoursFiltres: Parcours[] = []
+  dataLoaded: boolean = false
 
   readonly BORDEREAUX_PATH: string = environment.MEDIAS_PATH.INSCRIPTION.BORDEREAUX
 
@@ -63,62 +65,87 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   }
 
   ngOnInit(): void {
-    this.loadAnnees()
-    this.loadNiveaux()
-    this.loadParcours()
-    this.loadSessions()
+    // Charger toutes les données en parallèle avec combineLatest
+    combineLatest([
+      this.anneeAcademiqueService.getAll(),
+      this.niveauEtudeService.getAll(),
+      this.parcoursService.getAll(),
+      this.sessionService.getAll()
+    ]).subscribe({
+      next: ([annees, niveaux, parcours, sessions]) => {
+        console.log('Data loaded - Annees:', annees.length, 'Niveaux:', niveaux.length, 'Parcours:', parcours.length, 'Sessions:', sessions.length)
+        this.annees = annees
+        this.niveaux = niveaux
+        this.parcoursList = parcours
+        this.sessions = sessions
+        this.dataLoaded = true
+      },
+      error: (err) => {
+        console.error('Erreur chargement données:', err)
+        this.dataLoaded = true
+      }
+    })
+
     this.getBordereauxEnAttente()
-  }
-
-  loadAnnees(): void {
-    this.anneeAcademiqueService.getAll().subscribe({
-      next: (res) => { this.annees = res },
-      error: (err) => console.log(err)
-    })
-  }
-
-  loadNiveaux(): void {
-    this.niveauEtudeService.getAll().subscribe({
-      next: (res) => { this.niveaux = res },
-      error: (err) => console.log(err)
-    })
-  }
-
-  loadParcours(): void {
-    this.parcoursService.getAll().subscribe({
-      next: (res) => { this.parcoursList = res },
-      error: (err) => console.log(err)
-    })
-  }
-
-  loadSessions(): void {
-    this.sessionService.getAll().subscribe({
-      next: (res) => { this.sessions = res },
-      error: (err) => console.log(err)
-    })
   }
 
   onAnneeChange(): void {
     this.selectedNiveauId = ''
     this.selectedParcoursId = ''
     this.niveauxFiltres = []
+    this.parcoursFiltres = []
 
     if (this.selectedAnneeId) {
-      const sessionIds = this.sessions
-        .filter(s => s.anneeAcademiqueId === this.selectedAnneeId)
-        .map(s => s.niveauEtudeId)
-      this.niveauxFiltres = this.niveaux.filter(n => sessionIds.includes(n.id))
+      // Récupérer tous les niveaux associés à l'année sélectionnée via les sessions
+      const niveauIds = new Set<string>()
+      
+      // Log pour debug
+      console.log('Sessions loaded:', this.sessions.length)
+      console.log('Selected annee:', this.selectedAnneeId)
+      
+      this.sessions
+        .filter(s => s.anneeAcademiqueId && String(s.anneeAcademiqueId) === String(this.selectedAnneeId))
+        .forEach(s => {
+          if (s.niveauEtudeId) {
+            niveauIds.add(String(s.niveauEtudeId))
+            console.log('Found niveau:', s.niveauEtudeId)
+          }
+        })
+      
+      console.log('Niveaux found:', Array.from(niveauIds))
+      
+      // Si aucun niveau trouvé via sessions, afficher tous les niveaux
+      if (niveauIds.size === 0) {
+        console.log('No niveaux found, showing all')
+        this.niveauxFiltres = this.niveaux
+      } else {
+        this.niveauxFiltres = this.niveaux.filter(n => niveauIds.has(String(n.id!)))
+      }
     }
     this.getBordereauxEnAttente()
   }
 
   onNiveauChange(): void {
     this.selectedParcoursId = ''
+    this.parcoursFiltres = []
 
     if (this.selectedNiveauId) {
-      this.parcoursFiltres = this.parcoursList.filter(p => p.niveauEtudeId === this.selectedNiveauId)
-    } else {
-      this.parcoursFiltres = []
+      console.log('Filtering parcours for niveau:', this.selectedNiveauId)
+      console.log('Parcours list:', this.parcoursList)
+      
+      this.parcoursFiltres = this.parcoursList.filter(p => {
+        const match = String(p.niveauEtudeId) === String(this.selectedNiveauId)
+        console.log(`Parcours ${p.titre}: niveauEtudeId=${p.niveauEtudeId}, match=${match}`)
+        return match
+      })
+      
+      console.log('Parcours filtered:', this.parcoursFiltres)
+      
+      // Si aucun parcours trouvé, afficher tous
+      if (this.parcoursFiltres.length === 0) {
+        console.log('No parcours found, showing all')
+        this.parcoursFiltres = this.parcoursList
+      }
     }
     this.getBordereauxEnAttente()
   }

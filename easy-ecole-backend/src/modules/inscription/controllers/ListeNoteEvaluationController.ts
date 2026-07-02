@@ -96,7 +96,7 @@ export default class ListeNoteEvaluationController {
 
     static async createListeNoteEvaluation(req: Request, res: Response): Promise<Response | null> {
 
-        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT) {
+        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT && (req as any).utilisateurRole != RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false })
         }
 
@@ -129,7 +129,7 @@ export default class ListeNoteEvaluationController {
 
     static async updateListeNoteEvaluation(req: Request, res: Response): Promise<Response | null> {
         let options: FindOptions<InferAttributes<ListeNoteEvaluation>> = {}
-        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT) {
+        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT && (req as any).utilisateurRole != RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false })
         }
         else {
@@ -163,7 +163,7 @@ export default class ListeNoteEvaluationController {
 
     static async deleteListeNoteEvaluation(req: Request, res: Response): Promise<Response | null> {
         let options: FindOptions<InferAttributes<ListeNoteEvaluation>> = {}
-        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT) {
+        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT && (req as any).utilisateurRole != RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false })
         }
         else {

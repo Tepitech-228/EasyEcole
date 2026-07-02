@@ -1,22 +1,38 @@
-<app-header-title title="Évaluations"></app-header-title>
+<div class="evaluation-shell flex justify-between items-start mb-8">
+  <app-header-title title="Évaluations" subtitle="Gérer et suivre les évaluations des employés"></app-header-title>
+  <app-custom-button link="/rh/evaluations/nouvelle" text="Nouvelle évaluation"></app-custom-button>
+</div>
 
-<div class="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
-  <table class="min-w-full divide-y divide-gray-200">
-    <thead class="bg-gray-50">
-      <tr>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employé</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Évaluateur</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Note globale</th>
-        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-      </tr>
-    </thead>
-    <tbody class="bg-white divide-y divide-gray-200">
-      <tr class="hover:bg-gray-50">
-        <td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500">
-          Aucune évaluation trouvée
-        </td>
-      </tr>
-    </tbody>
-  </table>
+<div class="evaluation-card bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  <div class="px-6 py-5 border-b border-gray-200 flex items-center justify-between">
+    <div>
+      <h3 class="text-lg font-semibold text-gray-900">Liste des évaluations</h3>
+      <p class="text-sm text-gray-500">Consultez les évaluations enregistrées et leurs résultats.</p>
+    </div>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="min-w-full">
+      <thead class="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+        <tr>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Employé</th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Évaluateur</th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Date</th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Note globale</th>
+          <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td colspan="5" class="px-6 py-14 text-center">
+            <div class="evaluation-empty-state flex flex-col items-center justify-center text-gray-500">
+              <span class="material-symbols-outlined text-4xl text-gray-300 mb-2">inventory_2</span>
+              <p class="text-sm font-medium">Aucune évaluation trouvée</p>
+              <p class="text-xs text-gray-400 mt-1">Les évaluations apparaîtront ici dès qu’elles seront créées.</p>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>

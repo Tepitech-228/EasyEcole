@@ -1,56 +1,64 @@
-<div class="p-6">
-  <app-header-title title="Suivi de progression" subtitle="Consultez votre avancement dans l'apprentissage"></app-header-title>
+<div class="p-6 space-y-6">
+  <div class="rounded-3xl border border-slate-200 bg-gradient-to-r from-violet-900 via-slate-800 to-slate-900 p-6 text-white shadow-sm">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <p class="text-sm uppercase tracking-[0.3em] text-slate-300">Suivi académique</p>
+        <h2 class="mt-2 text-2xl font-semibold">Mon parcours e-learning</h2>
+        <p class="mt-2 max-w-2xl text-sm text-slate-300">Visualisez votre progression de manière claire, avec un aperçu rapide de vos cours, évaluations et réussites.</p>
+      </div>
+    </div>
+  </div>
 
-  <div *ngIf="loading" class="text-center py-12 text-gray-500">Chargement...</div>
+  <div *ngIf="loading" class="rounded-2xl border border-slate-200 bg-white py-16 text-center text-slate-500 shadow-sm">Chargement de votre progression...</div>
 
-  <div *ngIf="data && !loading" class="mt-6">
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-      <div class="bg-white rounded-lg shadow-md p-5 text-center">
+  <div *ngIf="data && !loading" class="space-y-6">
+    <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div class="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
         <div class="text-3xl font-bold text-blue-600">{{ data.totalCours }}</div>
-        <div class="text-sm text-gray-500 mt-1">Cours</div>
+        <div class="mt-1 text-sm text-slate-500">Cours</div>
       </div>
-      <div class="bg-white rounded-lg shadow-md p-5 text-center">
-        <div class="text-3xl font-bold text-green-600">{{ data.totalModules }}</div>
-        <div class="text-sm text-gray-500 mt-1">Modules</div>
+      <div class="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+        <div class="text-3xl font-bold text-emerald-600">{{ data.totalModules }}</div>
+        <div class="mt-1 text-sm text-slate-500">Modules</div>
       </div>
-      <div class="bg-white rounded-lg shadow-md p-5 text-center">
-        <div class="text-3xl font-bold text-purple-600">{{ data.totalQuiz }}</div>
-        <div class="text-sm text-gray-500 mt-1">Quiz</div>
+      <div class="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+        <div class="text-3xl font-bold text-violet-600">{{ data.totalQuiz }}</div>
+        <div class="mt-1 text-sm text-slate-500">Quiz</div>
       </div>
-      <div class="bg-white rounded-lg shadow-md p-5 text-center">
-        <div class="text-3xl font-bold text-orange-600">{{ data.totalDevoirs }}</div>
-        <div class="text-sm text-gray-500 mt-1">Devoirs</div>
+      <div class="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+        <div class="text-3xl font-bold text-amber-600">{{ data.totalDevoirs }}</div>
+        <div class="mt-1 text-sm text-slate-500">Devoirs</div>
       </div>
     </div>
 
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-      <div class="bg-white rounded-lg shadow-md p-5 text-center">
+    <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div class="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
         <div class="text-2xl font-bold text-blue-600">{{ data.quizFaits }}</div>
-        <div class="text-sm text-gray-500 mt-1">Quiz faits</div>
+        <div class="mt-1 text-sm text-slate-500">Quiz faits</div>
       </div>
-      <div class="bg-white rounded-lg shadow-md p-5 text-center">
-        <div class="text-2xl font-bold text-green-600">{{ data.devoirsRemis }}</div>
-        <div class="text-sm text-gray-500 mt-1">Devoirs remis</div>
+      <div class="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+        <div class="text-2xl font-bold text-emerald-600">{{ data.devoirsRemis }}</div>
+        <div class="mt-1 text-sm text-slate-500">Devoirs remis</div>
       </div>
-      <div class="bg-white rounded-lg shadow-md p-5 text-center">
-        <div class="text-2xl font-bold text-purple-600">{{ data.certifications }}</div>
-        <div class="text-sm text-gray-500 mt-1">Certifications</div>
+      <div class="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+        <div class="text-2xl font-bold text-violet-600">{{ data.certifications }}</div>
+        <div class="mt-1 text-sm text-slate-500">Certifications</div>
       </div>
-      <div class="bg-white rounded-lg shadow-md p-5 text-center">
+      <div class="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
         <div class="text-2xl font-bold" [ngClass]="getScoreColor(data.moyenneQuiz)">{{ data.moyenneQuiz }}/10</div>
-        <div class="text-sm text-gray-500 mt-1">Moyenne quiz</div>
+        <div class="mt-1 text-sm text-slate-500">Moyenne quiz</div>
       </div>
     </div>
 
-    <div class="bg-white rounded-lg shadow-md p-6">
-      <h3 class="text-lg font-semibold text-gray-800 mb-4">Quiz récents</h3>
-      <div *ngIf="data.quizRecents?.length === 0" class="text-gray-500 text-sm">Aucun quiz effectué.</div>
-      <div *ngFor="let r of data.quizRecents" class="flex items-center justify-between border-b border-gray-100 py-3 last:border-0">
+    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h3 class="text-lg font-semibold text-slate-900">Activités récentes</h3>
+      <div *ngIf="data.quizRecents?.length === 0" class="mt-4 text-sm text-slate-500">Aucune activité récente pour le moment.</div>
+      <div *ngFor="let r of data.quizRecents" class="mt-4 flex items-center justify-between border-b border-slate-100 py-3 last:border-0">
         <div>
-          <span class="font-medium text-gray-700">{{ r.quiz?.titre || 'Quiz' }}</span>
-          <span class="text-xs text-gray-400 ml-2">{{ r.date | date:'dd/MM/yyyy' }}</span>
+          <span class="font-medium text-slate-700">{{ r.quiz?.titre || 'Quiz' }}</span>
+          <span class="ml-2 text-xs text-slate-400">{{ r.date | date:'dd/MM/yyyy' }}</span>
         </div>
-        <span class="font-bold" [ngClass]="(r.score / r.total * 100) >= 70 ? 'text-green-600' : (r.score / r.total * 100) >= 40 ? 'text-yellow-600' : 'text-red-600'">{{ r.score }}/{{ r.total }}</span>
+        <span class="font-semibold" [ngClass]="(r.score / r.total * 100) >= 70 ? 'text-emerald-600' : (r.score / r.total * 100) >= 40 ? 'text-amber-600' : 'text-red-600'">{{ r.score }}/{{ r.total }}</span>
       </div>
     </div>
   </div>

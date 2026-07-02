@@ -1,9 +1,13 @@
 #menu {
-    height: 46px;
-    border-radius: 8px;
+    min-height: 44px;
+    border-radius: 10px;
     position: relative;
+    margin: 0 0 0.5rem;
+    border: 1px solid transparent;
+    background: rgba(255, 255, 255, 0.03);
+    transition: all 0.2s ease;
     
-    $color: rgba($color: #fff, $alpha: 0.75);
+    $color: rgba($color: #fff, $alpha: 0.78);
     #icon {
         background-color: $color !important;
     }
@@ -15,9 +19,12 @@
 
 .active #menu,
 #menu:hover {
-    $color: rgba($color: #fff, $alpha: 0.65);
-    $iconColor: #2f59ad;
-    background-color: #040B2B;
+    $color: rgba($color: #fff, $alpha: 0.95);
+    $iconColor: #8dd4ff;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
+    border-color: rgba(255, 255, 255, 0.16);
+    box-shadow: 0 8px 18px rgba(2, 8, 23, 0.18);
+    transform: translateX(2px);
 
     #icon {
         background-color: $iconColor !important;
@@ -26,6 +33,24 @@
     #text {
         color: $color !important;
     }
+}
+
+.menu-icon-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    margin-right: 10px;
+    flex-shrink: 0;
+    transition: background 0.2s ease;
+}
+
+.active .menu-icon-wrap,
+#menu:hover .menu-icon-wrap {
+    background: rgba(141, 212, 255, 0.16);
 }
 
 .collapsed-tooltip {

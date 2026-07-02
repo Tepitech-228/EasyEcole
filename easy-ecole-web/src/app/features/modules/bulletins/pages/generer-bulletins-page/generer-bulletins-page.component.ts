@@ -34,7 +34,7 @@ export class GenererBulletinsPageComponent extends BaseComponentClass implements
   }
 
   ngOnInit() {
-    if (!this.rolesValue.isInstitution) {
+    if (!this.rolesValue.isInstitution && !this.rolesValue.isAdmin) {
       this.router.navigate(['/bulletins']);
       return;
     }

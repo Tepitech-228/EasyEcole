@@ -1,35 +1,39 @@
-<div class="p-6">
-  <div class="flex items-center justify-between mb-6">
-    <app-header-title title="Devoirs" subtitle="Liste des devoirs et exercices à rendre"></app-header-title>
-    <app-custom-button *ngIf="canManage()" text="Nouveau devoir" color="primary" (click)="openCreateModal()"></app-custom-button>
+<div class="p-6 space-y-6">
+  <div class="rounded-3xl border border-slate-200 bg-gradient-to-r from-slate-900 via-slate-800 to-blue-900 p-6 text-white shadow-sm">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <p class="text-sm uppercase tracking-[0.3em] text-slate-300">Travaux académiques</p>
+        <h2 class="mt-2 text-2xl font-semibold">Devoirs à rendre</h2>
+        <p class="mt-2 max-w-2xl text-sm text-slate-300">Suivez les échéances, les consignes et les corrections depuis un tableau de bord clair et pédagogique.</p>
+      </div>
+      <app-custom-button *ngIf="canManage()" text="Nouveau devoir" color="primary" (click)="openCreateModal()"></app-custom-button>
+    </div>
   </div>
 
-  <div *ngIf="loading" class="text-center py-12 text-gray-500">Chargement...</div>
+  <div *ngIf="loading" class="rounded-2xl border border-slate-200 bg-white py-16 text-center text-slate-500 shadow-sm">Chargement des devoirs...</div>
 
-  <div *ngIf="!loading && devoirs.length === 0" class="text-center py-12 text-gray-500">
-    Aucun devoir pour le moment.
-  </div>
+  <div *ngIf="!loading && devoirs.length === 0" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-16 text-center text-slate-500">Aucun devoir pour le moment.</div>
 
-  <div class="mt-6 space-y-4">
-    <div *ngFor="let devoir of devoirs" class="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition-shadow cursor-pointer" (click)="voirDevoir(devoir.id)">
-      <div class="flex items-start justify-between">
+  <div class="space-y-4">
+    <div *ngFor="let devoir of devoirs" class="cursor-pointer rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md" (click)="voirDevoir(devoir.id)">
+      <div class="flex items-start justify-between gap-4">
         <div class="flex-1">
-          <div class="flex items-center gap-2 mb-1">
-            <h3 class="text-lg font-semibold text-gray-800">{{ devoir.titre }}</h3>
+          <div class="flex flex-wrap items-center gap-2">
+            <h3 class="text-lg font-semibold text-slate-900">{{ devoir.titre }}</h3>
             <app-custom-badge [text]="devoir.statut" [color]="getStatutColor(devoir.statut)"></app-custom-badge>
           </div>
-          <p class="text-sm text-gray-600 mb-2">{{ devoir.description }}</p>
-          <div class="flex items-center gap-4 text-xs text-gray-400">
-            <span *ngIf="devoir.cours?.titre">{{ devoir.cours.titre }}</span>
-            <span>Date limite: {{ devoir.dateLimite | date:'dd/MM/yyyy' }}</span>
-            <span *ngIf="devoir.soumission?.note !== null && devoir.soumission?.note !== undefined" class="font-semibold text-green-600">Note: {{ devoir.soumission.note }}/20</span>
+          <p class="mt-2 text-sm leading-6 text-slate-600">{{ devoir.description }}</p>
+          <div class="mt-4 flex flex-wrap gap-3 text-sm text-slate-500">
+            <span *ngIf="devoir.cours?.titre" class="rounded-full bg-slate-100 px-2.5 py-1">{{ devoir.cours.titre }}</span>
+            <span class="rounded-full bg-slate-100 px-2.5 py-1">Échéance : {{ devoir.dateLimite | date:'dd/MM/yyyy' }}</span>
+            <span *ngIf="devoir.soumission?.note !== null && devoir.soumission?.note !== undefined" class="rounded-full bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700">Note : {{ devoir.soumission.note }}/20</span>
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <button *ngIf="canManage()" (click)="deleteDevoir(devoir.id, $event)" class="text-red-500 hover:text-red-700 p-1" title="Supprimer">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          <button *ngIf="canManage()" (click)="deleteDevoir(devoir.id, $event)" class="rounded-full p-2 text-red-500 transition hover:bg-red-50" title="Supprimer">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
           </button>
-          <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+          <svg class="h-5 w-5 flex-shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
         </div>
       </div>
     </div>
