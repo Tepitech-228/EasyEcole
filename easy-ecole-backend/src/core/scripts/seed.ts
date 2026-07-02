@@ -14,10 +14,20 @@ async function seed() {
     require('../../modules/auth/models/_associations');
     require('../../modules/orientation/models/_associations');
     require('../../modules/inscription/models/_associations');
+    require('../../modules/inscription/models/UniteEnseignement');
+    require('../../modules/inscription/models/Mcc');
+    require('../../modules/inscription/models/RegleEvaluation');
+    require('../../modules/inscription/models/SessionExamen');
+    require('../../modules/inscription/models/Absence');
+    require('../../modules/inscription/models/Equivalence');
+    require('../../modules/inscription/models/Dispense');
     require('../../modules/stage/models/_associations');
     require('../../modules/stock/models/_associations');
     require('../../modules/immobilisation/models/_associations');
     require('../../modules/bulletins/models/_associations');
+    require('../../modules/bulletins/models/EchelleNote');
+    require('../../modules/bulletins/models/AuditNote');
+    require('../../modules/bulletins/models/JuryMembre');
     require('../../modules/scolarite/models/_associations');
     require('../../modules/scolarite/models/SanctionDiscipline');
     require('../../modules/scolarite/models/RegistreAcademique');
@@ -111,6 +121,14 @@ async function seed() {
     const InsTypeNote = M('InsTypeNoteEvaluation');
     const InsListeNote = M('InsListeNoteEvaluation');
     const InsNoteEval = M('InsNoteEvaluation');
+    const InsUE = M('InsUniteEnseignement');
+    const InsMcc = M('InsMcc');
+    const InsSession = M('InsSessionExamen');
+    const InsAbsence = M('InsAbsence');
+    const InsEquiv = M('InsEquivalence');
+    const InsDisp = M('InsDispense');
+    const EchelleNote = M('EchelleNote');
+    const JuryMembre = M('JuryMembre');
 
     const Bulletin = M('Bulletin');
     const LigneBulletin = M('LigneBulletin');
@@ -492,6 +510,95 @@ async function seed() {
         await ImmMaint.create({ type: 'preventive', description: `Maintenance annuelle PC ${j}`, dateMaintenance: new Date(2025, 5, 1), cout: 25000, immobilisationId: immo.id });
     }
     console.log('  ✓ Immobilisations');
+
+    // ════════════════════════════════════════════════════
+    //  ÉCHELLES DE NOTES & RÈGLES
+    // ════════════════════════════════════════════════════
+    console.log('\n── ÉCHELLES DE NOTES ──');
+
+    const echelles = [
+        { libelle: 'Excellent', noteMin: 18, noteMax: 20, mention: 'Très Bien', ordre: 1 },
+        { libelle: 'Très Bien', noteMin: 16, noteMax: 17.99, mention: 'Très Bien', ordre: 2 },
+        { libelle: 'Bien', noteMin: 14, noteMax: 15.99, mention: 'Bien', ordre: 3 },
+        { libelle: 'Assez Bien', noteMin: 12, noteMax: 13.99, mention: 'Assez Bien', ordre: 4 },
+        { libelle: 'Passable', noteMin: 10, noteMax: 11.99, mention: 'Passable', ordre: 5 },
+        { libelle: 'Insuffisant', noteMin: 8, noteMax: 9.99, mention: 'Insuffisant', ordre: 6 },
+        { libelle: 'Faible', noteMin: 6, noteMax: 7.99, mention: 'Faible', ordre: 7 },
+        { libelle: 'Très Faible', noteMin: 0, noteMax: 5.99, mention: 'Très Faible', ordre: 8 },
+    ];
+    for (const e of echelles) {
+        await EchelleNote.create(e);
+    }
+    console.log('  ✓ Échelles de notes (0-20, 8 niveaux)');
+
+    const RegleEval = M('InsRegleEvaluation');
+    await RegleEval.create({ type: 'compensation', valeur: 'true', description: 'Compensation autorisée entre EC d\'une même UE', actif: true });
+    await RegleEval.create({ type: 'seuil_eliminatoire', valeur: '7', description: 'Note éliminatoire en-dessous de 7/20', actif: true });
+    await RegleEval.create({ type: 'note_minimale', valeur: '10', description: 'Note minimale de validation d\'une UE', actif: true });
+    await RegleEval.create({ type: 'validation_credit', valeur: '60', description: 'Crédits ECTS minimum par année', actif: true });
+    await RegleEval.create({ type: 'regle_passage', valeur: 'moyenne>=10', description: 'Moyenne générale ≥ 10 pour passer', actif: true });
+    console.log('  ✓ Règles d\'évaluation LMD (5 règles)');
+
+    // ════════════════════════════════════════════════════
+    //  UNITÉS D'ENSEIGNEMENT (UE) — LMD
+    // ════════════════════════════════════════════════════
+    console.log('\n── UNITÉS D\'ENSEIGNEMENT ──');
+
+    const ueMapping: Record<number, { code: string; libelle: string; semestre: string; creditEcts: number }[]> = {
+        [parcIns1.id]: [
+            { code: 'UE1-INFO', libelle: 'Fondamentaux Informatique', semestre: 'semestre1', creditEcts: 12 },
+            { code: 'UE2-INFO', libelle: 'Mathématiques et Algorithmique', semestre: 'semestre1', creditEcts: 10 },
+            { code: 'UE3-INFO', libelle: 'Langues et Communication', semestre: 'semestre1', creditEcts: 8 },
+        ],
+        [parcIns2.id]: [
+            { code: 'UE1-GEST', libelle: 'Comptabilité Fondamentale', semestre: 'semestre1', creditEcts: 12 },
+            { code: 'UE2-GEST', libelle: 'Économie et Gestion', semestre: 'semestre1', creditEcts: 10 },
+            { code: 'UE3-GEST', libelle: 'Langues et Communication', semestre: 'semestre1', creditEcts: 8 },
+        ],
+    };
+    for (const [parcId, ues] of Object.entries(ueMapping)) {
+        for (const ue of ues) {
+            await InsUE.create({ code: ue.code, libelle: ue.libelle, semestre: ue.semestre, parcoursId: +parcId, creditEcts: ue.creditEcts, objectifs: ue.libelle });
+        }
+    }
+    console.log('  ✓ Unités d\'Enseignement (6 UEs)');
+
+    // ════════════════════════════════════════════════════
+    //  MCC (Matrice des Coefficients)
+    // ════════════════════════════════════════════════════
+    console.log('\n── MCC ──');
+    const allUEs = await InsUE.findAll();
+    for (const ue of allUEs) {
+        const parcCours = await InsCours.findAll({ where: { parcoursId: ue.parcoursId }, limit: 2 });
+        for (const cours of parcCours) {
+            await InsMcc.create({ ueId: ue.id, coursId: cours.id, coefficient: 1, creditEcts: ue.creditEcts ?? 0 / Math.max(parcCours.length, 1) });
+        }
+    }
+    console.log('  ✓ Lignes MCC (UE ↔ Cours)');
+
+    // ════════════════════════════════════════════════════
+    //  SESSIONS D'EXAMEN
+    // ════════════════════════════════════════════════════
+    console.log('\n── SESSIONS D\'EXAMEN ──');
+    await InsSession.create({ libelle: 'Session normale S1 2024-2025', type: 'normale', classeId: cls1.id, anneeAcademiqueId: an1.id, semestre: 'semestre1', dateDebut: new Date('2025-06-15'), dateFin: new Date('2025-06-30'), statut: 'cloturee', observations: 'Session normale du semestre 1' });
+    await InsSession.create({ libelle: 'Session rattrapage S1 2024-2025', type: 'rattrapage', classeId: cls1.id, anneeAcademiqueId: an1.id, semestre: 'semestre1', dateDebut: new Date('2025-07-15'), dateFin: new Date('2025-07-25'), statut: 'terminee', observations: 'Rattrapage pour les étudiants en échec' });
+    console.log('  ✓ Sessions d\'examen (normale + rattrapage)');
+
+    // ════════════════════════════════════════════════════
+    //  ABSENCES
+    // ════════════════════════════════════════════════════
+    console.log('\n── ABSENCES ──');
+    const notesWithZero = await InsNoteEval.findAll({ where: { note: 0 }, limit: 3 });
+    for (const n of notesWithZero) {
+        await InsAbsence.create({ noteEvaluationId: n.id, type: 'justifiee', motif: 'Médical (certificat fourni)', justifieLe: new Date(), justifieParId: admin.id });
+    }
+    if (notesWithZero.length === 0) {
+        const someNotes = await InsNoteEval.findAll({ limit: 2 });
+        for (const n of someNotes) {
+            await InsAbsence.create({ noteEvaluationId: n.id, type: 'non_justifiee', motif: null });
+        }
+    }
+    console.log('  ✓ Absences');
 
     // ════════════════════════════════════════════════════
     //  NOTES / EVALUATIONS
@@ -980,6 +1087,30 @@ async function seed() {
     // ════════════════════════════════════════════════════
     console.log('\n── REPORTING ──');
     console.log('  ⚡ Lancer après: npm run db:sync-reporting');
+
+    // ════════════════════════════════════════════════════
+    //  ÉQUIVALENCES & DISPENSES
+    // ════════════════════════════════════════════════════
+    console.log('\n── ÉQUIVALENCES & DISPENSES ──');
+    const cursusList = await InsCur.findAll({ limit: 2 });
+    for (let ci = 0; ci < cursusList.length; ci++) {
+        const cur = cursusList[ci];
+        await InsEquiv.create({ cursusApprenantId: cur.id, coursSource: 'MATH101 - Université Félix Houphouët-Boigny', coursDestinationId: cours2.id, institutionOrigine: 'Université Félix Houphouët-Boigny', creditEcts: 4, validePar: admin.id, dateValidation: new Date(), documentJustificatif: 'releve_ufhb.pdf' });
+        await InsDisp.create({ cursusApprenantId: cur.id, ueId: allUEs[0]?.id ?? 1, motif: 'Étudiant déjà certifié dans cette UE (diplôme obtenu)', validePar: admin.id, dateValidation: new Date(), statut: 'validee' });
+    }
+    console.log('  ✓ Équivalences et dispenses');
+
+    // ════════════════════════════════════════════════════
+    //  JURY
+    // ════════════════════════════════════════════════════
+    console.log('\n── JURY ──');
+    const delibs = await Deliberation.findAll({ limit: 1 });
+    for (const d of delibs) {
+        await JuryMembre.create({ deliberationId: d.id, utilisateurId: admin.id, role: 'president', presence: true });
+        await JuryMembre.create({ deliberationId: d.id, utilisateurId: uEns1.id, role: 'membre', presence: true });
+        await JuryMembre.create({ deliberationId: d.id, utilisateurId: uEns2.id, role: 'secretaire', presence: true });
+    }
+    console.log('  ✓ Membres du jury');
 
     console.log('\n═══════════════════════════════════════════');
     console.log('  SEED TERMINÉ — UST');

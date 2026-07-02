@@ -28,16 +28,16 @@
         </thead>
         <tbody class="divide-y divide-gray-50">
           <tr *ngFor="let e of echelles; trackBy: trackByFn" class="hover:bg-gray-50/50 transition-colors">
-            <td class="px-5 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ e.nom }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ e.libelle }}</td>
             <td class="px-5 py-4 whitespace-nowrap text-center text-sm text-gray-700">{{ e.noteMin }}</td>
             <td class="px-5 py-4 whitespace-nowrap text-center text-sm text-gray-700">{{ e.noteMax }}</td>
             <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ e.mention }}</td>
             <td class="px-5 py-4 whitespace-nowrap text-center">
               <button (click)="basculerStatut(e.id)"
                       class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border-0 cursor-pointer"
-                      [ngClass]="e.actif ? 'bg-green-50 text-green-700 ring-1 ring-green-200' : 'bg-gray-50 text-gray-400 ring-1 ring-gray-200'">
-                <span class="w-1.5 h-1.5 rounded-full mr-1.5" [ngClass]="e.actif ? 'bg-green-500' : 'bg-gray-300'"></span>
-                {{ e.actif ? 'Actif' : 'Inactif' }}
+                      [ngClass]="e.estActive ? 'bg-green-50 text-green-700 ring-1 ring-green-200' : 'bg-gray-50 text-gray-400 ring-1 ring-gray-200'">
+                <span class="w-1.5 h-1.5 rounded-full mr-1.5" [ngClass]="e.estActive ? 'bg-green-500' : 'bg-gray-300'"></span>
+                {{ e.estActive ? 'Actif' : 'Inactif' }}
               </button>
             </td>
             <td class="px-5 py-4 whitespace-nowrap text-right">

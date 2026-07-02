@@ -6,13 +6,13 @@
 
   <div class="mt-8 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
-      <!-- Nom -->
+      <!-- Libellé -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1.5">Nom de l'échelle</label>
-        <input type="text" formControlName="nom"
+        <input type="text" formControlName="libelle"
                class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600 placeholder:text-gray-400"
                placeholder="Ex: Très bien">
-        <p *ngIf="submitted && form.get('nom')?.errors?.['required']" class="mt-1 text-xs text-blue-600">Ce champ est requis</p>
+        <p *ngIf="submitted && form.get('libelle')?.errors?.['required']" class="mt-1 text-xs text-blue-600">Ce champ est requis</p>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -41,11 +41,19 @@
         <p *ngIf="submitted && form.get('mention')?.errors?.['required']" class="mt-1 text-xs text-blue-600">Ce champ est requis</p>
       </div>
 
+      <!-- Ordre -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Ordre d'affichage</label>
+        <input type="number" formControlName="ordre"
+               class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600 placeholder:text-gray-400"
+               placeholder="0">
+      </div>
+
       <!-- Actif -->
       <div class="flex items-center gap-3">
-        <input type="checkbox" formControlName="actif" id="actif"
+        <input type="checkbox" formControlName="estActive" id="estActive"
                class="h-4 w-4 rounded border-gray-300 text-blue-700 focus:ring-blue-600">
-        <label for="actif" class="text-sm font-medium text-gray-700">Barème actif</label>
+        <label for="estActive" class="text-sm font-medium text-gray-700">Barème actif</label>
       </div>
 
       <!-- Actions -->

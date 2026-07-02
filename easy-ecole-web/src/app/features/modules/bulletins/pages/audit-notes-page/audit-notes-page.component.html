@@ -1,0 +1,36 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <app-header-title title="Audit des notes" subtitle="Historique des modifications de notes"></app-header-title>
+
+  <div class="mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-100">
+        <thead>
+          <tr class="bg-gray-50/50">
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Champ</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ancienne valeur</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nouvelle valeur</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Modifié par</th>
+            <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngFor="let item of items; trackBy: trackByFn" class="hover:bg-gray-50/50 transition-colors">
+            <td class="px-5 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ item.champModifie }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ item.ancienneValeur }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ item.nouvelleValeur }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ item.modifieParUtilisateur?.nom || item.modifiePar }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-right text-sm text-gray-500">{{ item.dateModification | date:'short' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div *ngIf="loading" class="px-5 py-8 text-center">
+      <div class="inline-block h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
+      <p class="mt-2 text-sm text-gray-500">Chargement...</p>
+    </div>
+    <div *ngIf="!loading && items.length === 0" class="px-5 py-12 text-center">
+      <svg class="mx-auto h-12 w-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      <p class="mt-4 text-sm text-gray-500">Aucun audit trouvé</p>
+    </div>
+  </div>
+</div>
