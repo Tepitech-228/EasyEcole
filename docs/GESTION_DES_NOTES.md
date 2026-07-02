@@ -17,8 +17,9 @@
 9. [Reporting et statistiques](#9-reporting-et-statistiques)
 10. [Sécurité et rôles](#10-sécurité-et-rôles)
 11. [Interface utilisateur](#11-interface-utilisateur)
-12. [Améliorations proposées](#12-améliorations-proposées)
-13. [Annexes](#13-annexes)
+12. [Nouvelles fonctionnalités implémentées](#12-nouvelles-fonctionnalités-implémentées-v2)
+13. [Feuille de route](#13-feuille-de-route-à-venir)
+14. [Annexes](#14-annexes)
 
 ---
 
@@ -914,138 +915,199 @@ L'enseignant ne peut :
 
 ---
 
-## 12. Améliorations proposées
+## 12. Nouvelles fonctionnalités implémentées (v2+)
 
-### 12.1 Audit trail des modifications de notes
+### 12.1 Structure LMD — Unités d'Enseignement (UE)
 
-**Problème** : Aucune traçabilité des modifications de notes. Impossible de savoir qui a modifié quoi et quand.
+**Table** : `ins_unites_enseignement`
+**API** : `/api/v1/inscription/unites-enseignement`
 
-**Solution** : Créer une table `grade_audit_logs` :
+Regroupe les matières (EC) en Unités d'Enseignement avec crédits ECTS. Permet la compensation entre EC d'une même UE.
 
-```sql
-CREATE TABLE ins_audit_notes (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  noteEvaluationId INT UNSIGNED NOT NULL,
-  ancienneNote FLOAT,
-  nouvelleNote FLOAT,
-  modifiePar INT UNSIGNED NOT NULL,
-  motif TEXT,
-  createdAt DATETIME NOT NULL,
-  INDEX idx_note (noteEvaluationId),
-  INDEX idx_modifie_par (modifiePar)
-);
-```
+### 12.2 Maquette de Contrôle des Connaissances (MCC)
 
-**Déclenchement** : À chaque `upsert` ou `bulk-upsert` de `NoteEvaluation`, si la note existait déjà et a changé, créer une entrée d'audit.
+**Table** : `ins_mcc`
+**API** : `/api/v1/inscription/mcc`
 
-### 12.2 Échelles de notes persistées
+Définit pour chaque UE :
+- Les EC (cours) qui la composent avec leurs coefficients
+- Les notes éliminatoires (seuil en dessous duquel l'UE est refusée)
+- La session concernée (session1 ou session2)
 
-**Problème** : Les échelles de notes sont gérées côté frontend uniquement (hardcodées dans `EchellesPageComponent`). Le backend n'a pas de table d'échelles.
+### 12.3 Règles d'évaluation paramétrables
 
-**Solution** : Créer une table `ins_echelles_notes` dans le backend, avec CRUD complet :
+**Table** : `ins_regles_evaluation`
+**API** : `/api/v1/inscription/regles-evaluation`
 
-```sql
-CREATE TABLE ins_echelles_notes (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  libelle VARCHAR(100) NOT NULL,
-  noteMin FLOAT NOT NULL,
-  noteMax FLOAT NOT NULL,
-  mention VARCHAR(50) NOT NULL,
-  actif BOOLEAN DEFAULT true,
-  ordre INT UNSIGNED DEFAULT 0,
-  createdAt DATETIME,
-  updatedAt DATETIME,
-  deletedAt DATETIME
-);
-```
+Types de règles disponibles :
+- `compensation` : active/désactive la compensation entre EC d'une UE
+- `seuil_eliminatoire` : note minimale éliminatoire (ex: 5/20)
+- `note_minimale` : note plancher générale
+- `validation_credit` : règle de validation des crédits
+- `regle_passage` : condition de passage en année supérieure
 
-### 12.3 Workflow d'appel / contestation
+### 12.4 Sessions d'examens
+
+**Table** : `ins_sessions_examens`
+**API** : `/api/v1/inscription/sessions-examens`
+
+Gère les sessions d'examens avec :
+- Type : `normale` ou `rattrapage`
+- Dates de début et fin
+- Statut : planifiée, en cours, terminée, clôturée
+
+### 12.5 Gestion des absences aux épreuves
+
+**Table** : `ins_absences`
+**API** : `/api/v1/inscription/absences`
+
+Permet de déclarer pour chaque note :
+- `present` : l'étudiant était présent
+- `justifie` : absence justifiée (avec motif + justificatif)
+- `injustifie` : absence injustifiée (note = 0 automatiquement)
+
+### 12.6 Audit trail des notes
+
+**Table** : `ins_audit_notes`
+**API** : `/api/v1/inscription/audit-notes`
+
+✅ **Implémentée** — Traçabilité complète de toutes les modifications de notes :
+- Enregistre automatiquement l'ancienne et la nouvelle valeur à chaque upsert
+- Stocke l'utilisateur qui a fait la modification
+- Horodatage précis
+- Consultation par note : `GET /api/v1/inscription/audit-notes/by-note/:noteEvaluationId`
+
+### 12.7 Échelles de notes persistées
+
+**Table** : `ins_echelles_notes`
+**API** : `/api/v1/inscription/echelles-notes`
+
+✅ **Implémentée** — Remplace les échelles hardcodées du frontend :
+- CRUD complet des barèmes de notation
+- Note min, note max, libellé, mention
+- Ordre d'affichage configurable
+- Activation/désactivation par échelle
+
+### 12.8 Composition du jury de délibération
+
+**Table** : `ins_jury_membres`
+**API** : `/api/v1/inscription/jury-membres`
+
+Permet de définir la composition du jury pour chaque délibération :
+- Rôles : président, secrétaire, membre, invité
+- Suivi de présence
+- Lié aux utilisateurs du système
+
+### 12.9 Équivalences et transfert de crédits
+
+**Table** : `ins_equivalences`
+**API** : `/api/v1/inscription/equivalences`
+
+Gère les équivalences académiques :
+- Source : cours et institution d'origine
+- Destination : cours local avec crédits ECTS
+- Validation par un responsable
+- Document justificatif
+
+### 12.10 Dispenses d'UE
+
+**Table** : `ins_dispenses`
+**API** : `/api/v1/inscription/dispenses`
+
+Permet de dispenser un étudiant d'une UE ou d'un cours :
+- Workflow : demande → validée/refusée
+- Motif obligatoire
+- Validation par l'institution
+
+### 12.11 Compensation automatique UE/EC
+
+**Service** : `CalculCompensationService.ts`
+**API** : `GET /api/v1/inscription/bulletins/:id/compensation`
+
+Calcule pour un bulletin donné :
+- La moyenne de chaque UE avec compensation
+- La validation individuelle de chaque EC
+- La détection des notes éliminatoires
+- Le total des crédits ECTS validés
+
+---
+
+## 13. Feuille de route (à venir)
+
+### 13.1 Workflow d'appel / contestation
 
 **Problème** : Pas de processus pour qu'un étudiant conteste une note.
 
 **Solution** : Étendre le module Scolarité avec un workflow de réclamation dédié aux notes :
-
 1. L'étudiant soumet une réclamation sur une note spécifique (`NoteEvaluationId`)
 2. L'enseignant reçoit une notification et peut répondre
 3. Si non résolu, escalade à l'institution
 4. Toute modification suite à réclamation est tracée dans l'audit log
 
-### 12.4 Notifications à la publication
+### 13.2 Notifications à la publication
 
-**Problème** : Les étudiants ne sont pas notifiés quand leurs bulletins sont publiés.
-
-**Solution** : Utiliser Nodemailer (déjà présent dans le projet) pour envoyer un email automatique :
+Utiliser Nodemailer (déjà présent) pour envoyer un email automatique :
 - À la publication d'un bulletin
 - À la clôture d'une délibération
 - Avec lien vers le relevé de notes
 
-### 12.5 Relevé de notes officiel PDF
+### 13.3 Relevé de notes officiel PDF
 
-**Problème** : Pas de génération de relevé de notes officiel format PDF (bulletin papier).
-
-**Solution** : Utiliser PDFKit (déjà dans les dépendances) pour générer un PDF format A4 :
+Utiliser PDFKit (déjà dans les dépendances) pour générer un PDF format A4 :
 - En-tête de l'établissement
-- Tableau des notes par matière
-- Moyenne générale, mention, rang
+- Tableau des notes par matière/UE
+- Moyenne générale, mention, rang, crédits ECTS
 - Cachet et signatures
 
-**Endpoint** : `GET /api/v1/inscription/bulletins/:id/pdf`
+**Endpoint** : `GET /api/v1/inscription/bulletins/:id/releve-pdf`
 
-### 12.6 Bulk edit des notes
+### 13.4 Dashboard de statistiques avancées
 
-**Problème** : La saisie individuelle est fastidieuse pour les grandes classes.
+Ajouter un dashboard avec :
+- Distribution des notes (histogramme, quartiles, écart-type)
+- Comparaison entre promotions
+- Taux de réussite par UE
+- Tableau de bord décisionnel pour la direction
 
-**Solution** : Ajouter un endpoint de mise à jour groupée avec formule :
-```
-PUT /api/v1/inscription/notesEvaluation/bulk-adjust
-Body: {
-  listeNoteEvaluationId: 1,
-  operation: "add" | "multiply" | "replace",
-  valeur: 0.5,
-  filtre: { noteMin: 0, noteMax: 20 }
-}
-```
+### 13.5 Validation backend des notes (0-20)
 
-### 12.7 Validation backend des notes
-
-**Problème** : Actuellement, les notes ne sont pas validées côté backend (0-20).
-
-**Solution** : Ajouter un validateur Joi/Zod dans le middleware :
+Ajouter un validateur Joi/Zod dans le middleware :
 ```typescript
 note: Joi.number().min(0).max(20).required()
 ```
 
-### 12.8 Dashboard de notes
-
-**Problème** : Pas de vue synthétique avec graphiques pour l'institution.
-
-**Solution** : Ajouter un dashboard avec :
-- Répartition des mentions (camembert)
-- Évolution des moyennes (courbes)
-- Comparaison classe/matière (barres)
-- Taux de réussite par semestre
-
 ---
 
-## 13. Annexes
+## 14. Annexes
 
-### 13.1 Arborescence des fichiers Backend
+### 14.1 Arborescence des fichiers Backend
 
 ```
 easy-ecole-backend/src/modules/
 ├── bulletins/
 │   ├── controllers/
 │   │   ├── BulletinController.ts
-│   │   └── DeliberationController.ts
+│   │   ├── DeliberationController.ts
+│   │   ├── AuditNoteController.ts
+│   │   ├── EchelleNoteController.ts
+│   │   └── JuryMembreController.ts
 │   ├── models/
 │   │   ├── Bulletin.ts
 │   │   ├── LigneBulletin.ts
 │   │   ├── Deliberation.ts
 │   │   ├── ResultatDeliberation.ts
+│   │   ├── AuditNote.ts
+│   │   ├── EchelleNote.ts
+│   │   ├── JuryMembre.ts
 │   │   └── _associations.ts
 │   ├── routers/
 │   │   ├── BulletinRouter.ts
-│   │   └── DeliberationRouter.ts
+│   │   ├── DeliberationRouter.ts
+│   │   ├── AuditNoteRouter.ts
+│   │   ├── EchelleNoteRouter.ts
+│   │   └── JuryMembreRouter.ts
+│   ├── services/
+│   │   └── CalculCompensationService.ts
 │   └── validators/
 │       └── BulletinValidator.ts
 │
@@ -1053,18 +1115,41 @@ easy-ecole-backend/src/modules/
     ├── controllers/
     │   ├── NoteEvaluationController.ts
     │   ├── ListeNoteEvaluationController.ts
-    │   └── TypeNoteEvaluationController.ts
+    │   ├── TypeNoteEvaluationController.ts
+    │   ├── UniteEnseignementController.ts
+    │   ├── MccController.ts
+    │   ├── RegleEvaluationController.ts
+    │   ├── SessionExamenController.ts
+    │   ├── AbsenceController.ts
+    │   ├── EquivalenceController.ts
+    │   └── DispenseController.ts
     ├── models/
     │   ├── NoteEvaluation.ts
     │   ├── ListeNoteEvaluation.ts
-    │   └── TypeNoteEvaluation.ts
+    │   ├── TypeNoteEvaluation.ts
+    │   ├── UniteEnseignement.ts
+    │   ├── Mcc.ts
+    │   ├── RegleEvaluation.ts
+    │   ├── SessionExamen.ts
+    │   ├── Absence.ts
+    │   ├── Equivalence.ts
+    │   ├── Dispense.ts
+    │   └── _associations.ts
     └── routers/
         ├── NoteEvaluationRouter.ts
         ├── ListeNoteEvaluationRouter.ts
-        └── TypeNoteEvaluationRouter.ts
+        ├── TypeNoteEvaluationRouter.ts
+        ├── UniteEnseignementRouter.ts
+        ├── MccRouter.ts
+        ├── RegleEvaluationRouter.ts
+        ├── SessionExamenRouter.ts
+        ├── AbsenceRouter.ts
+        ├── EquivalenceRouter.ts
+        ├── DispenseRouter.ts
+        └── InscriptionRoutes.ts
 ```
 
-### 13.2 Arborescence des fichiers Frontend
+### 14.2 Arborescence des fichiers Frontend
 
 ```
 easy-ecole-web/src/app/
@@ -1119,7 +1204,7 @@ easy-ecole-web/src/app/
             └── rapport-notes-page/
 ```
 
-### 13.3 Commandes utiles
+### 14.3 Commandes utiles
 
 ```bash
 # Lancer le backend
@@ -1138,7 +1223,7 @@ npm run db:sync-reporting
 npm run db:sync
 ```
 
-### 13.4 Dépendances clés
+### 14.4 Dépendances clés
 
 | Technologie | Version | Usage |
 |-------------|---------|-------|

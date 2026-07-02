@@ -4,6 +4,22 @@ import { NoteEvaluation } from "../models/NoteEvaluation";
 import { CoursParticipant } from "../models/CoursParticipant";
 import { ListeNoteEvaluation } from "../models/ListeNoteEvaluation";
 import { Enseignant } from "../../auth/models/Enseignant";
+import { AuditNote } from "../../bulletins/models/AuditNote";
+
+async function creerAudit(noteEvaluationId: number, ancienneNote: number | null, nouvelleNote: number | null, modifiePar: number, motif?: string) {
+    if (ancienneNote === nouvelleNote) return;
+    try {
+        await AuditNote.create({
+            noteEvaluationId,
+            ancienneNote,
+            nouvelleNote,
+            modifiePar,
+            motif: motif || null
+        });
+    } catch (error) {
+        console.error("Erreur création audit:", error);
+    }
+}
 
 export default class NoteEvaluationController {
 
@@ -87,8 +103,10 @@ export default class NoteEvaluationController {
             });
 
             if (existing) {
+                const ancienneNote = existing.note;
                 existing.note = note !== undefined ? note as any : existing.note;
                 await existing.save();
+                await creerAudit(existing.id, ancienneNote, existing.note, (req as any).utilisateurId, req.body.motif);
                 return res.status(200).json(existing);
             } else {
                 const newNote = new NoteEvaluation();
@@ -133,8 +151,10 @@ export default class NoteEvaluationController {
                 });
 
                 if (existing) {
+                    const ancienneNote = existing.note;
                     existing.note = note !== undefined ? note as any : existing.note;
                     await existing.save();
+                    await creerAudit(existing.id, ancienneNote, existing.note, (req as any).utilisateurId);
                     results.push(existing);
                 } else {
                     const newNote = new NoteEvaluation();

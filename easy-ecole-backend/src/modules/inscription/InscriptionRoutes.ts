@@ -1,4 +1,4 @@
-require("./models/_associations")
+﻿require("./models/_associations")
 import express from "express";
 import SessionRouter from "./routers/SessionRouter"
 import CoursRouter from "./routers/CoursRouter"
@@ -39,6 +39,16 @@ import BordereauController from "./controllers/BordereauController";
 import BordereauRouter from "./routers/BordereauRouter";
 import DossierEtudiantRouter from "./routers/DossierEtudiantRouter";
 import PreInscriptionRouter from "./routers/PreInscriptionRouter";
+import UniteEnseignementRouter from "./routers/UniteEnseignementRouter";
+import MccRouter from "./routers/MccRouter";
+import RegleEvaluationRouter from "./routers/RegleEvaluationRouter";
+import SessionExamenRouter from "./routers/SessionExamenRouter";
+import AbsenceRouter from "./routers/AbsenceRouter";
+import EquivalenceRouter from "./routers/EquivalenceRouter";
+import DispenseRouter from "./routers/DispenseRouter";
+import AuditNoteRouter from "../bulletins/routers/AuditNoteRouter";
+import EchelleNoteRouter from "../bulletins/routers/EchelleNoteRouter";
+import JuryMembreRouter from "../bulletins/routers/JuryMembreRouter";
 
 const router = express.Router();
 
@@ -83,5 +93,15 @@ router
     .use('/bordereaux', [Authenticate], BordereauRouter)
     .use('/dossiers', [Authenticate], DossierEtudiantRouter)
     .use('/pre-inscriptions', [Authenticate], PreInscriptionRouter)
+    .use('/unites-enseignement', [Authenticate], UniteEnseignementRouter)
+    .use('/mcc', [Authenticate], MccRouter)
+    .use('/regles-evaluation', [Authenticate], RegleEvaluationRouter)
+    .use('/sessions-examens', [Authenticate], SessionExamenRouter)
+    .use('/absences', [Authenticate], AbsenceRouter)
+    .use('/equivalences', [Authenticate], EquivalenceRouter)
+    .use('/dispenses', [Authenticate], DispenseRouter)
+    .use('/audit-notes', [Authenticate], AuditNoteRouter)
+    .use('/echelles-notes', [Authenticate], EchelleNoteRouter)
+    .use('/jury-membres', [Authenticate], JuryMembreRouter)
 
 export default router;

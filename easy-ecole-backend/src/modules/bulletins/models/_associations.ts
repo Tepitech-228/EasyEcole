@@ -9,6 +9,10 @@ import { Parcours } from '../../inscription/models/Parcours';
 import { NiveauEtude } from '../../inscription/models/NiveauEtude';
 import { Utilisateur } from '../../auth/models/Utilisateur';
 import { Cours } from '../../inscription/models/Cours';
+import { NoteEvaluation } from '../../inscription/models/NoteEvaluation';
+import { AuditNote } from './AuditNote';
+import { EchelleNote } from './EchelleNote';
+import { JuryMembre } from './JuryMembre';
 
 export function initBulletinAssociations() {
   Bulletin.hasMany(LigneBulletin, {
@@ -71,5 +75,45 @@ export function initBulletinAssociations() {
   ResultatDeliberation.belongsTo(CursusApprenant, {
     foreignKey: 'cursusApprenantId',
     as: 'cursusApprenant'
+  });
+
+  // AuditNote - NoteEvaluation
+  NoteEvaluation.hasMany(AuditNote, {
+    foreignKey: 'noteEvaluationId',
+    as: 'audits'
+  });
+  AuditNote.belongsTo(NoteEvaluation, {
+    foreignKey: 'noteEvaluationId',
+    as: 'noteEvaluation'
+  });
+
+  // AuditNote - Utilisateur (modifiePar)
+  Utilisateur.hasMany(AuditNote, {
+    foreignKey: 'modifiePar',
+    as: 'auditsNotes'
+  });
+  AuditNote.belongsTo(Utilisateur, {
+    foreignKey: 'modifiePar',
+    as: 'modifieParUtilisateur'
+  });
+
+  // Deliberation - JuryMembre
+  Deliberation.hasMany(JuryMembre, {
+    foreignKey: 'deliberationId',
+    as: 'juryMembres'
+  });
+  JuryMembre.belongsTo(Deliberation, {
+    foreignKey: 'deliberationId',
+    as: 'deliberation'
+  });
+
+  // JuryMembre - Utilisateur
+  Utilisateur.hasMany(JuryMembre, {
+    foreignKey: 'utilisateurId',
+    as: 'juryMembres'
+  });
+  JuryMembre.belongsTo(Utilisateur, {
+    foreignKey: 'utilisateurId',
+    as: 'utilisateur'
   });
 }
