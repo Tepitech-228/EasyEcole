@@ -1,0 +1,64 @@
+<div class="ged-page">
+  <div class="header-row">
+    <div>
+      <h1>Sessions GED</h1>
+      <p>Créer et gérer des sessions d'archivage avec documents groupés, champs personnalisés et contributeurs.</p>
+    </div>
+    <app-custom-button
+      [text]="creating ? 'Annuler' : 'Nouvelle session'"
+      [outlined]="true"
+      (click)="toggleCreate()"
+    ></app-custom-button>
+  </div>
+
+  <section *ngIf="creating" class="create-card">
+    <form [formGroup]="sessionForm" (ngSubmit)="createSession()">
+      <div class="field-grid">
+        <label>
+          Titre
+          <input type="text" formControlName="title" maxlength="128" />
+        </label>
+        <label>
+          Description
+          <textarea formControlName="description" rows="2"></textarea>
+        </label>
+        <label>
+          Champs personnalisés
+          <input
+            type="text"
+            formControlName="fields"
+            placeholder="Ex: provenance, type, numero, service"
+          />
+        </label>
+        <label>
+          Contributeurs (IDs séparés par des virgules)
+          <input
+            type="text"
+            formControlName="participantIds"
+            placeholder="12, 23, 45"
+          />
+        </label>
+      </div>
+      <app-custom-button type="submit" text="Créer la session" color="primary"></app-custom-button>
+    </form>
+  </section>
+
+  <section class="list-card">
+    <div *ngIf="loading" class="list-empty">Chargement des sessions...</div>
+    <div *ngIf="!loading && sessions.length === 0" class="list-empty">
+      Aucune session trouvée.
+    </div>
+
+    <div class="session-grid" *ngIf="!loading && sessions.length > 0">
+      <div *ngFor="let session of sessions" class="session-card" (click)="goToSession(session.id)">
+        <h2>{{ session.nom }}</h2>
+        <p>{{ session.description }}</p>
+        <div class="metadata-row">
+          <span>ID: {{ session.id }}</span>
+          <span>{{ session.documents?.length || 0 }} document(s)</span>
+          <span>{{ session.participantIds?.length || 0 }} contributeur(s)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

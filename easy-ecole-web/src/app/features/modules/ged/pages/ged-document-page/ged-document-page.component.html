@@ -1,0 +1,27 @@
+<div class="card ged-card ged-detail-card">
+  <app-header-title title="Détails du document" subtitle="Visualisation et actions"></app-header-title>
+
+  <div *ngIf="loading" class="field-helper">Chargement...</div>
+  <div *ngIf="!loading && !doc" class="field-helper">Document introuvable</div>
+
+  <div *ngIf="doc" class="detail-content">
+    <div class="detail-header">
+      <div>
+        <div class="document-title">{{ doc.titre }}</div>
+        <div class="document-meta">{{ doc.nommage || doc.reference }}</div>
+      </div>
+    </div>
+
+    <div class="detail-properties">
+      <div><span>Type :</span> {{ doc.type || 'PDF' }}</div>
+      <div><span>Statut :</span> {{ doc.statut }}</div>
+      <div><span>Taille :</span> {{ doc.taille }}</div>
+      <div><span>Dossier :</span> {{ doc.folderId || 'Aucun' }}</div>
+    </div>
+
+    <div class="ged-form-actions">
+      <app-custom-button (click)="download()" text="Télécharger"></app-custom-button>
+      <app-custom-button (click)="exportPdf()" text="Exporter PDF" color="secondary"></app-custom-button>
+    </div>
+  </div>
+</div>

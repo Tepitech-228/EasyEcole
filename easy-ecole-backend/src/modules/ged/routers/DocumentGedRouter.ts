@@ -40,6 +40,7 @@ router
     .get('/', [Authenticate], DocumentGedController.getAll)
     .post('/', [Authenticate, AuthInstitution, upload.single('fichier')], DocumentGedController.upload)
     .get('/download/:id', [Authenticate], DocumentGedController.download)
+    .get('/:id/pdf', [Authenticate], DocumentGedController.exportPdf)
     .delete('/:id', [Authenticate, AuthInstitution], DocumentGedController.delete)
 
 export default router;

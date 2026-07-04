@@ -1,0 +1,74 @@
+<div class="ged-page">
+  <div class="header-row">
+    <div>
+      <h1>Session d'archivage</h1>
+      <p>Gérez le lot de documents, les contributeurs et les champs personnalisés.</p>
+    </div>
+    <div class="share-actions" *ngIf="session">
+      <app-custom-button [text]="'Partager'" color="primary" (click)="copyShareLink()"></app-custom-button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="status-banner">Chargement...</div>
+  <div *ngIf="!loading && !session" class="status-banner">Session introuvable.</div>
+
+  <main *ngIf="session" class="session-detail-grid">
+    <section class="summary-card">
+      <h2>{{ session.nom }}</h2>
+      <p class="session-description">{{ session.description || 'Pas de description' }}</p>
+      <div class="session-meta">
+        <div><strong>Statut :</strong> {{ session.status }}</div>
+        <div><strong>Champs :</strong> {{ session.fields?.join(', ') || 'Aucun' }}</div>
+        <div><strong>Contributeurs :</strong> {{ session.participantIds?.length || 0 }}</div>
+        <div><strong>Créé par :</strong> {{ session.creator?.nom }} {{ session.creator?.prenoms }}</div>
+        <div><strong>Documents :</strong> {{ session.documents?.length || 0 }}</div>
+      </div>
+      <div class="session-share">
+        <label>URL de partage</label>
+        <div class="share-link">{{ getShareLink() }}</div>
+      </div>
+    </section>
+
+    <section class="upload-card">
+      <h3>Ajouter des PDF</h3>
+      <p>Batch upload vers cette session. Ajoutez des métadonnées personnalisées en JSON.</p>
+
+      <div class="ged-field">
+        <label for="batch-files">Fichiers</label>
+        <input id="batch-files" type="file" accept="application/pdf,image/tiff" multiple (change)="onFilesSelected($event)" />
+        <div class="field-helper">
+          {{ uploadFiles.length }} fichier(s) sélectionné(s)
+        </div>
+      </div>
+
+      <div class="ged-field">
+        <label for="batch-folder">Dossier</label>
+        <select id="batch-folder" [(ngModel)]="selectedFolderId" class="form-input">
+          <option [ngValue]="undefined">-- Aucune --</option>
+          <option *ngFor="let f of folders" [ngValue]="f.id">{{ f.nom }}</option>
+        </select>
+      </div>
+
+      <div class="ged-grid">
+        <div class="ged-field">
+          <label for="archivedUntil">Archivage jusqu'au</label>
+          <input id="archivedUntil" type="date" [(ngModel)]="archivedUntil" class="form-input" />
+        </div>
+        <div class="ged-field toggle-field">
+          <label>
+            <input type="checkbox" [(ngModel)]="isArchived" /> Archivé
+          </label>
+        </div>
+      </div>
+
+      <div class="ged-field">
+        <label for="batch-metadata">Métadonnées JSON</label>
+        <textarea id="batch-metadata" rows="4" [(ngModel)]="batchMetadata" class="form-input" placeholder='{"titre":"Nom du document","reference":"REF-123","categorie":"Contrat"}'></textarea>
+      </div>
+
+      <div class="ged-form-actions">
+        <button class="primary-button" (click)="uploadBatch()" [disabled]="uploadFiles.length === 0">Envoyer vers la session</button>
+      </div>
+    </section>
+  </main>
+</div>

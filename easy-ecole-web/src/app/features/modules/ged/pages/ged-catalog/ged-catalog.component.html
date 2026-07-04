@@ -1,0 +1,29 @@
+<div class="card ged-card">
+  <app-header-title title="Catalogue GED" subtitle="Recherchez et téléchargez les documents"></app-header-title>
+
+  <div class="ged-toolbar">
+    <input [(ngModel)]="search" class="form-input" placeholder="Recherche..." />
+    <select [(ngModel)]="selectedFolderId" class="form-input">
+      <option [ngValue]="undefined">Tous les dossiers</option>
+      <option *ngFor="let f of folders" [value]="f.id">{{ f.nom }}</option>
+    </select>
+  </div>
+
+  <div class="ged-list-container">
+    <div *ngIf="loading" class="field-helper">Chargement...</div>
+    <div *ngIf="!loading && documents.length === 0" class="field-helper">Aucun document</div>
+
+    <ul *ngIf="filteredDocuments.length > 0" class="document-list">
+      <li *ngFor="let d of filteredDocuments" class="document-item">
+        <div>
+          <div class="document-title">{{ d.titre }}</div>
+          <div class="document-meta">{{ d.nommage || d.reference }}</div>
+        </div>
+        <div class="document-actions">
+          <button (click)="download(d)" class="action-button download">Télécharger</button>
+          <button (click)="exportPdf(d)" class="action-button export">Exporter PDF</button>
+        </div>
+      </li>
+    </ul>
+  </div>
+</div>

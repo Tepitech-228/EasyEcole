@@ -4,43 +4,223 @@
 
 .card {
   background: #ffffff;
-  border: 1px solid #e5e7eb;
+  border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: 1.5rem;
-  padding: 1.5rem;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+  padding: 1.75rem;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
 }
 
 .form-input {
   background: #f8fafc;
   border: 1px solid #d1d5db;
-  border-radius: 0.75rem;
-  padding: 0.85rem 1rem;
+  border-radius: 0.85rem;
+  padding: 0.95rem 1rem;
   width: 100%;
   color: #0f172a;
 }
 
+.field-label,
 .form-label {
   display: block;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 600;
+  color: #334155;
+  margin-bottom: 0.5rem;
+}
+
+.ged-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.ged-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.ged-tabs ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.ged-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.75rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: #f8fafc;
+  color: #334155;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.ged-tab.active,
+.ged-tab:hover {
+  border-color: rgba(99, 102, 241, 0.18);
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.ged-toolbar {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-bottom: 1.5rem;
+}
+
+.ged-list-container {
+  min-height: 220px;
+}
+
+.document-list,
+.folder-list {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.document-item,
+.folder-item {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  background: #f8fafc;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.document-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.document-meta {
+  color: #64748b;
+  font-size: 0.92rem;
+}
+
+.document-actions,
+.ged-form-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.action-button {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  color: #334155;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.action-button.download {
+  background: rgba(99, 102, 241, 0.12);
+  color: #4338ca;
+}
+
+.action-button.export {
+  background: rgba(148, 163, 184, 0.14);
+  color: #0f172a;
+}
+
+.action-button:hover {
+  background: rgba(148, 163, 184, 0.22);
+}
+
+.field-note,
+.field-helper {
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.ged-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.ged-field,
+.ged-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ged-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.folder-remove {
+  color: #dc2626;
+  font-weight: 600;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.folder-remove:hover {
+  text-decoration: underline;
+}
+
+.ged-field-row {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+}
+
+.ged-detail-card {
+  padding: 1.75rem;
+}
+
+.detail-content {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.detail-properties {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: #f8fafc;
+}
+
+.detail-properties div {
+  display: flex;
+  gap: 0.5rem;
   color: #334155;
 }
 
-.card table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0 0.75rem;
-}
-
-.card table th,
-.card table td {
-  white-space: normal;
-}
-
-.card table tbody tr {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.card table tbody tr:hover {
-  transform: translateY(-1px);
+.detail-properties span {
+  font-weight: 700;
+  color: #0f172a;
 }

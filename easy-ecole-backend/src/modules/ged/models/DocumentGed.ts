@@ -16,6 +16,14 @@ export class DocumentGed extends Model<InferAttributes<DocumentGed>, InferCreati
   declare statut: CreationOptional<string>
   declare fichier: string
   declare taille: CreationOptional<string>
+  declare dureeConservation: CreationOptional<string>
+  declare archivedUntil: CreationOptional<Date>
+  declare isArchived: CreationOptional<boolean>
+
+  declare folderId: CreationOptional<number>
+  declare sessionId: CreationOptional<number>
+  declare metadata: CreationOptional<object>
+  // folder?: NonAttribute<Folder> // forward ref in associations file
 
   declare uploaderId: ForeignKey<Utilisateur['id']>
   declare uploader?: NonAttribute<Utilisateur>
@@ -25,6 +33,7 @@ export class DocumentGed extends Model<InferAttributes<DocumentGed>, InferCreati
 
   declare static associations: {
     uploader: Association<DocumentGed, Utilisateur>
+    session: Association<DocumentGed, any>
   }
 }
 
@@ -75,6 +84,31 @@ DocumentGed.init({
   fichier: {
     type: new DataTypes.STRING,
     allowNull: false
+  },
+  dureeConservation: {
+    type: new DataTypes.STRING,
+    allowNull: true
+  },
+  archivedUntil: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  isArchived: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  folderId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
+  },
+  sessionId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
+  },
+  metadata: {
+    type: DataTypes.JSON,
+    allowNull: true
   },
   taille: {
     type: new DataTypes.STRING,

@@ -1,6 +1,7 @@
-import { Component, Input, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, ContentChildren, QueryList } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { SidebarStateService } from 'src/app/features/layout/services/sidebar-state.service';
+import { NavMenuItemComponent } from 'src/app/features/layout/components/nav-menu-item/nav-menu-item.component';
 
 @Component({
   selector: 'app-nav-menu-group',
@@ -14,10 +15,26 @@ export class NavMenuGroupComponent implements OnInit, OnDestroy {
   @Input() icon?: string
   @Input() startExpanded: boolean = true
   @Input() isSubGroup: boolean = false
+  @Input() searchQuery: string = ''
+
+  @ContentChildren(NavMenuItemComponent, { descendants: true }) menuItems!: QueryList<NavMenuItemComponent>
 
   collapsed: boolean = false
   expanded: boolean = true
   private sub!: Subscription
+
+  get visible(): boolean {
+    if (!this.searchQuery) return true
+    if (this.title?.toLowerCase().includes(this.searchQuery.toLowerCase())) return true
+    return this.menuItems?.some(item =>
+      item.text?.toLowerCase().includes(this.searchQuery.toLowerCase())
+    ) ?? false
+  }
+
+  get isExpanded(): boolean {
+    if (this.searchQuery) return true
+    return this.expanded
+  }
 
   constructor(private sidebarState: SidebarStateService) { }
 
