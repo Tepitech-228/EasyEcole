@@ -1,0 +1,149 @@
+E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:859
+    return new TSError(diagnosticText, diagnosticCodes, diagnostics);
+           ^
+TSError: ⨯ Unable to compile TypeScript:
+src/modules/ged/controllers/DocumentGedController.ts(67,21): error TS2322: Type 'number | null' is not assignable to type '(number & { [CreationAttributeBrand]?: true | undefined; }) | undefined'.
+  Type 'null' is not assignable to type '(number & { [CreationAttributeBrand]?: true | undefined; }) | undefined'.
+
+    at createTSError (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:859:12)
+    at reportTSError (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:863:19)
+    at getOutput (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1077:36)
+    at Object.compile (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1433:41)
+    at Module.m._compile (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1617:30)
+    at node:internal/modules/cjs/loader:1913:10
+    at Object.require.extensions.<computed> [as .ts] (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Module.require (node:internal/modules/cjs/loader:1527:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (E:\EASYECOLE\easy-ecole-backend\src\modules\ged\routers\DocumentGedRouter.ts:5:1)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Module.m._compile (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1618:23)
+    at node:internal/modules/cjs/loader:1913:10 {
+  diagnosticCodes: [ 2322 ]
+}
+E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:859
+    return new TSError(diagnosticText, diagnosticCodes, diagnostics);
+           ^
+TSError: ⨯ Unable to compile TypeScript:
+src/modules/inscription/controllers/RattrapageController.ts(279,42): error TS2339: Property 'libelle' does not exist on type 'Cours'.
+src/modules/inscription/controllers/RattrapageController.ts(294,57): error TS2339: Property 'libelle' does not exist on type 'Cours'.
+
+    at createTSError (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:859:12)
+    at reportTSError (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:863:19)
+    at getOutput (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1077:36)
+    at Object.compile (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1433:41)
+    at Module.m._compile (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1617:30)
+    at node:internal/modules/cjs/loader:1913:10
+    at Object.require.extensions.<computed> [as .ts] (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Module.require (node:internal/modules/cjs/loader:1527:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (E:\EASYECOLE\easy-ecole-backend\src\modules\inscription\routers\RattrapageRouter.ts:2:1)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Module.m._compile (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1618:23)
+    at node:internal/modules/cjs/loader:1913:10 {
+  diagnosticCodes: [ 2339, 2339 ]
+}
+E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:859
+    return new TSError(diagnosticText, diagnosticCodes, diagnostics);
+           ^
+TSError: ⨯ Unable to compile TypeScript:
+src/modules/inscription/controllers/RattrapageController.ts(279,42): error TS2339: Property 'libelle' does not exist on type 'Cours'.
+src/modules/inscription/controllers/RattrapageController.ts(294,57): error TS2339: Property 'libelle' does not exist on type 'Cours'.
+
+    at createTSError (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:859:12)
+    at reportTSError (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:863:19)
+    at getOutput (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1077:36)
+    at Object.compile (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1433:41)
+    at Module.m._compile (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1617:30)
+    at node:internal/modules/cjs/loader:1913:10
+    at Object.require.extensions.<computed> [as .ts] (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Module.require (node:internal/modules/cjs/loader:1527:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (E:\EASYECOLE\easy-ecole-backend\src\modules\inscription\routers\RattrapageRouter.ts:2:1)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Module.m._compile (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1618:23)
+    at node:internal/modules/cjs/loader:1913:10 {
+  diagnosticCodes: [ 2339, 2339 ]
+}
+E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:859
+    return new TSError(diagnosticText, diagnosticCodes, diagnostics);
+           ^
+TSError: ⨯ Unable to compile TypeScript:
+src/modules/inscription/controllers/RattrapageController.ts(279,42): error TS2339: Property 'libelle' does not exist on type 'Cours'.
+src/modules/inscription/controllers/RattrapageController.ts(294,57): error TS2339: Property 'libelle' does not exist on type 'Cours'.
+
+    at createTSError (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:859:12)
+    at reportTSError (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:863:19)
+    at getOutput (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1077:36)
+    at Object.compile (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1433:41)
+    at Module.m._compile (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1617:30)
+    at node:internal/modules/cjs/loader:1913:10
+    at Object.require.extensions.<computed> [as .ts] (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Module.require (node:internal/modules/cjs/loader:1527:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (E:\EASYECOLE\easy-ecole-backend\src\modules\inscription\routers\RattrapageRouter.ts:2:1)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Module.m._compile (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1618:23)
+    at node:internal/modules/cjs/loader:1913:10 {
+  diagnosticCodes: [ 2339, 2339 ]
+}
+E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:859
+    return new TSError(diagnosticText, diagnosticCodes, diagnostics);
+           ^
+TSError: ⨯ Unable to compile TypeScript:
+src/modules/inscription/controllers/RattrapageController.ts(294,57): error TS2339: Property 'libelle' does not exist on type 'Cours'.
+
+    at createTSError (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:859:12)
+    at reportTSError (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:863:19)
+    at getOutput (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1077:36)
+    at Object.compile (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1433:41)
+    at Module.m._compile (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1617:30)
+    at node:internal/modules/cjs/loader:1913:10
+    at Object.require.extensions.<computed> [as .ts] (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Module.require (node:internal/modules/cjs/loader:1527:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (E:\EASYECOLE\easy-ecole-backend\src\modules\inscription\routers\RattrapageRouter.ts:2:1)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Module.m._compile (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1618:23)
+    at node:internal/modules/cjs/loader:1913:10 {
+  diagnosticCodes: [ 2339 ]
+}
+E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:859
+    return new TSError(diagnosticText, diagnosticCodes, diagnostics);
+           ^
+TSError: ⨯ Unable to compile TypeScript:
+src/modules/ged/controllers/DocumentGedController.ts(67,21): error TS2322: Type 'number | null' is not assignable to type '(number & { [CreationAttributeBrand]?: true | undefined; }) | undefined'.
+  Type 'null' is not assignable to type '(number & { [CreationAttributeBrand]?: true | undefined; }) | undefined'.
+
+    at createTSError (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:859:12)
+    at reportTSError (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:863:19)
+    at getOutput (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1077:36)
+    at Object.compile (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1433:41)
+    at Module.m._compile (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1617:30)
+    at node:internal/modules/cjs/loader:1913:10
+    at Object.require.extensions.<computed> [as .ts] (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Module.require (node:internal/modules/cjs/loader:1527:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (E:\EASYECOLE\easy-ecole-backend\src\modules\ged\routers\DocumentGedRouter.ts:5:1)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Module.m._compile (E:\EASYECOLE\easy-ecole-backend\node_modules\ts-node\src\index.ts:1618:23)
+    at node:internal/modules/cjs/loader:1913:10 {
+  diagnosticCodes: [ 2322 ]
+}
