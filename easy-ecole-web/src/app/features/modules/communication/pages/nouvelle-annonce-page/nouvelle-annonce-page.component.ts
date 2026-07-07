@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+import { CommunicationService } from 'src/app/data/modules/communication/services/communication.service';
 
 @Component({
   selector: 'app-nouvelle-annonce-page',
@@ -8,11 +9,17 @@ import { BaseComponentClass } from 'src/app/core/base-component-class';
   styleUrls: ['./nouvelle-annonce-page.component.scss']
 })
 export class NouvelleAnnoncePageComponent extends BaseComponentClass implements OnInit {
-  nouvelleAnnonce: any = { titre: '', contenu: '' };
+  nouvelleAnnonce: any = { titre: '', contenu: '', cible: 'tous' };
   submitted = false;
   error = false;
+  cibles = [
+    { value: 'tous', label: 'Tout le monde' },
+    { value: 'apprenants', label: 'Apprenants' },
+    { value: 'enseignants', label: 'Enseignants' },
+    { value: 'personnel', label: 'Personnel' },
+  ];
 
-  constructor(private router: Router) {
+  constructor(private router: Router, private communicationService: CommunicationService) {
     super();
   }
 
@@ -24,18 +31,20 @@ export class NouvelleAnnoncePageComponent extends BaseComponentClass implements 
       this.error = true;
       return;
     }
-    const stored = localStorage.getItem('communication_annonces');
-    const annonces = stored ? JSON.parse(stored) : [];
-    const maxId = annonces.length > 0 ? Math.max(...annonces.map((a: any) => a.id)) : 0;
-    annonces.unshift({
-      id: maxId + 1,
+
+    this.communicationService.create({
       titre: this.nouvelleAnnonce.titre,
       contenu: this.nouvelleAnnonce.contenu,
-      auteur: 'Moi',
-      date: new Date()
+      cible: this.nouvelleAnnonce.cible,
+      statut: 'publiee'
+    }).subscribe({
+      next: () => {
+        this.submitted = true;
+        setTimeout(() => this.router.navigate(['/communication/annonces']), 1500);
+      },
+      error: () => {
+        this.error = true;
+      }
     });
-    localStorage.setItem('communication_annonces', JSON.stringify(annonces));
-    this.submitted = true;
-    setTimeout(() => this.router.navigate(['/communication/annonces']), 1500);
   }
 }

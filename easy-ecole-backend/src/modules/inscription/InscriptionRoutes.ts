@@ -46,9 +46,14 @@ import SessionExamenRouter from "./routers/SessionExamenRouter";
 import AbsenceRouter from "./routers/AbsenceRouter";
 import EquivalenceRouter from "./routers/EquivalenceRouter";
 import DispenseRouter from "./routers/DispenseRouter";
+import RattrapageRouter from "./routers/RattrapageRouter";
 import AuditNoteRouter from "../bulletins/routers/AuditNoteRouter";
 import EchelleNoteRouter from "../bulletins/routers/EchelleNoteRouter";
 import JuryMembreRouter from "../bulletins/routers/JuryMembreRouter";
+import PublicationNoteRouter from "./routers/PublicationNoteRouter";
+import FraisParcoursRouter from "./routers/FraisParcoursRouter";
+import ReductionFraisRouter from "./routers/ReductionFraisRouter";
+import PenaliteRetardRouter from "./routers/PenaliteRetardRouter";
 
 const router = express.Router();
 
@@ -100,8 +105,13 @@ router
     .use('/absences', [Authenticate], AbsenceRouter)
     .use('/equivalences', [Authenticate], EquivalenceRouter)
     .use('/dispenses', [Authenticate], DispenseRouter)
+    .use('/rattrapages', [Authenticate], RattrapageRouter)
     .use('/audit-notes', [Authenticate], AuditNoteRouter)
     .use('/echelles-notes', [Authenticate], EchelleNoteRouter)
     .use('/jury-membres', [Authenticate], JuryMembreRouter)
+    .use('/publications-notes', [Authenticate], PublicationNoteRouter)
+    .use('/frais-parcours', [Authenticate], FraisParcoursRouter)
+    .use('/reductions-frais', [Authenticate], ReductionFraisRouter)
+    .use('/penalites-retard', [Authenticate], PenaliteRetardRouter)
 
 export default router;

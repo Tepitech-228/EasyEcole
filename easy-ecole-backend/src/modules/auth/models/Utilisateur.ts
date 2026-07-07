@@ -9,7 +9,7 @@ import { Enseignant } from "./Enseignant";
 import { ComiteOrientation } from "./ComiteOrientation";
 
 export class Utilisateur extends Model<InferAttributes<Utilisateur>, InferCreationAttributes<Utilisateur>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare nom: string
   declare prenoms: string
   declare identifiant: string

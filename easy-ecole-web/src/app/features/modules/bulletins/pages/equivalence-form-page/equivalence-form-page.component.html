@@ -1,0 +1,44 @@
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <app-header-title
+    [title]="isEditMode ? 'Modifier l\'équivalence' : 'Nouvelle équivalence'"
+    [subtitle]="isEditMode ? 'Modifiez les paramètres de l\'équivalence' : 'Créez une nouvelle équivalence de notes'">
+  </app-header-title>
+
+  <div class="mt-8 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Libellé</label>
+        <input type="text" formControlName="libelle"
+               class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600 placeholder:text-gray-400"
+               placeholder="Ex: Équivalence Bac->Licence">
+        <p *ngIf="submitted && form.get('libelle')?.errors?.['required']" class="mt-1 text-xs text-blue-600">Ce champ est requis</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">Note source</label>
+          <input type="number" step="0.01" formControlName="noteSource"
+                 class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600 placeholder:text-gray-400">
+          <p *ngIf="submitted && form.get('noteSource')?.errors?.['required']" class="mt-1 text-xs text-blue-600">Ce champ est requis</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">Note cible</label>
+          <input type="number" step="0.01" formControlName="noteCible"
+                 class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600 placeholder:text-gray-400">
+          <p *ngIf="submitted && form.get('noteCible')?.errors?.['required']" class="mt-1 text-xs text-blue-600">Ce champ est requis</p>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+        <button type="button" (click)="annuler()"
+                class="px-4 py-2.5 text-sm font-semibold text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors border-0 cursor-pointer">
+          Annuler
+        </button>
+        <button type="submit"
+                class="px-6 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm border-0 cursor-pointer">
+          {{ isEditMode ? 'Enregistrer' : 'Créer' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

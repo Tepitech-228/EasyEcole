@@ -17,6 +17,7 @@ import RhPeriodePaieRouter from "./routers/RhPeriodePaieRouter"
 import RhBulletinPaieRouter from "./routers/RhBulletinPaieRouter"
 import RhLigneBulletinRouter from "./routers/RhLigneBulletinRouter"
 import RhPrestationEnseignantRouter from "./routers/RhPrestationEnseignantRouter"
+import RhContratEnseignantRouter from "./routers/RhContratEnseignantRouter"
 import Authenticate from "../../core/middlewares/Authenticate";
 
 const router = express.Router();
@@ -39,5 +40,6 @@ router
     .use('/bulletins-paie', [Authenticate], RhBulletinPaieRouter)
     .use('/lignes-bulletin', [Authenticate], RhLigneBulletinRouter)
     .use('/prestations-enseignant', [Authenticate], RhPrestationEnseignantRouter)
+    .use('/contrats-enseignant', [Authenticate], RhContratEnseignantRouter)
 
 export default router;

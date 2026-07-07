@@ -1,0 +1,73 @@
+<div class="p-6">
+  <div class="mb-8 flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+    <a routerLink="/comptabilite/dashboard" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50">Dashboard</a>
+    <a routerLink="/comptabilite/plan-comptable" class="px-5 py-2.5 rounded-lg text-sm font-medium bg-white text-primary shadow-sm">Plan comptable</a>
+    <a routerLink="/comptabilite/balance" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50">Balance</a>
+    <a routerLink="/comptabilite/grand-livre" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50">Grand livre</a>
+    <a routerLink="/comptabilite/ecritures" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50">Écritures</a>
+  </div>
+
+  <app-header-title title="Plan comptable OHADA" subtitle="Plan de comptes de l'école"></app-header-title>
+
+  <!-- Search bar -->
+  <div class="mb-6">
+    <div class="relative max-w-md">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 -960 960 960"><path d="M796-121 533-384q-30 26-69.5 41T380-328q-101 0-170.5-69.5T140-568q0-101 69.5-170.5T380-808q101 0 170.5 69.5T620-568q0 44-15 83.5T564-415l263 263-31 31ZM380-408q68 0 114-46.5T540-568q0-68-46-114t-114-46q-68 0-114 46t-46 114q0 67 46 113.5T380-408Z"/></svg>
+      <input type="text" [(ngModel)]="searchQuery" (input)="filter()" placeholder="Rechercher par numéro ou libellé..." class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary">
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="space-y-4 animate-pulse">
+    <div *ngFor="let i of [1,2,3]" class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div class="h-12 bg-gray-100"></div>
+    </div>
+  </div>
+
+  <div *ngIf="!loading" class="space-y-4">
+    <div *ngFor="let classe of getClasses()" class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <button (click)="toggleClasse(classe)" class="w-full px-6 py-3.5 flex items-center justify-between hover:bg-gray-50 transition-colors">
+        <div class="flex items-center gap-3">
+          <svg [ngClass]="expandedClasses.has(classe) ? 'rotate-90' : ''" class="w-4 h-4 text-gray-400 transition-transform" fill="currentColor" viewBox="0 -960 960 960"><path d="M400-280v-400l200 200-200 200Z"/></svg>
+          <span class="font-semibold text-gray-900">Classe {{ classe }}</span>
+          <span class="text-sm text-gray-500">— {{ classesLibelles[classe] }}</span>
+        </div>
+        <span class="px-2.5 py-0.5 rounded-full text-xs font-medium" [ngClass]="classeColors[classe] || classeColors['8']">{{ getClasseCount(classe) }} compte{{ getClasseCount(classe) > 1 ? 's' : '' }}</span>
+      </button>
+
+      <div *ngIf="expandedClasses.has(classe)" class="border-t border-gray-100">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Numéro</th>
+              <th class="px-6 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Libellé</th>
+              <th class="px-6 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Nature</th>
+              <th class="px-6 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Catégorie</th>
+              <th class="px-6 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase">Solde</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <tr *ngFor="let c of getComptesByClasse(classe)" class="hover:bg-gray-50">
+              <td class="px-6 py-3 font-mono font-semibold text-gray-900">{{ c.numero }}</td>
+              <td class="px-6 py-3 text-gray-700">{{ c.libelle }}</td>
+              <td class="px-6 py-3">
+                <span class="px-2 py-0.5 rounded text-xs font-medium"
+                  [ngClass]="c.nature === 'Débit' ? 'bg-blue-100 text-blue-700' : c.nature === 'Crédit' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'">
+                  {{ c.nature }}
+                </span>
+              </td>
+              <td class="px-6 py-3 text-gray-600">{{ c.categorie }}</td>
+              <td class="px-6 py-3 text-right font-semibold"
+                [ngClass]="getSolde(c) >= 0 ? 'text-emerald-600' : 'text-red-600'">
+                {{ formatMontant(getSolde(c)) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div *ngIf="filteredComptes.length === 0" class="bg-white rounded-xl border border-gray-200 p-8 text-center">
+      <p class="text-gray-500 text-sm">Aucun compte trouvé</p>
+    </div>
+  </div>
+</div>

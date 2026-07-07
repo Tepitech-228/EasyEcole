@@ -124,48 +124,50 @@ export default class PaiementInscriptionController {
         return null
     }
 
-    static async createMobileMoneyPaiementInscription(req: Request, res: Response): Promise<Response | null> {
-        let options: FindOptions<InferAttributes<DemandeInscription>> = {}
-        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
-            options = { where: { matricule: req.body.matriculeInscription } }
-            // req.body.type = TypesPaiement.ESPECE
-        }
-        else {
-            return res.status(403).json({ success: false })
-        }
+    static async createMobileMoneyPaiementInscription(req: Request, res: Response): Promise<Response> {
+        try {
+            const { matriculeInscription, montant, description } = req.body;
 
-        let demandeInscription: DemandeInscription | null = await DemandeInscription.findOne(options);
-        if (demandeInscription != null) {
-            await MobileMoneyCinetpay.getInstance().enregistrerPaiement(req.body.montant)
-                .then((data) => {
-                    return res.status(200).json(data)
-                })
-                .catch((error) => {
-                    return res.status(500).json({ success: false, error: error })
-                })
+            if (!matriculeInscription || !montant) {
+                return res.status(400).json({ success: false, message: "matriculeInscription et montant requis" });
+            }
 
-            // let paiementInscription: PaiementInscription = new PaiementInscription();
-            // paiementInscription.numero = IDGenerator.getInstance().generateNumeroPaiement()
-            // paiementInscription.matriculeInscription = req.body.matriculeInscription
-            // paiementInscription.montant = req.body.montant
-            // paiementInscription.description = req.body.description
-            // paiementInscription.datePaiement = req.body.datePaiement ?? new Date()
-            // paiementInscription.type = req.body.type ?? TypesPaiement.ESPECE
-            // paiementInscription.utilisateurId = (req as any).utilisateurId
+            const demande = await DemandeInscription.findOne({ where: { matricule: matriculeInscription } });
+            if (!demande) {
+                return res.status(404).json({ success: false, message: "Inscription non trouvée" });
+            }
 
-            // await paiementInscription.save()
-            //     .then(async (paiementInscription) => {
-            //         return res.status(201).send(paiementInscription);
-            //     })
-            //     .catch((error) => {
-            //         return res.status(400).json({ success: false, error: error });
-            //     });
+            // Créer le paiement
+            const paiementInscription = new PaiementInscription();
+            paiementInscription.matriculeInscription = matriculeInscription;
+            paiementInscription.montant = montant;
+            paiementInscription.type = 'en_ligne';
+            paiementInscription.description = description || 'Paiement mobile money';
+            paiementInscription.utilisateurId = (req as any).utilisateurId;
+            await paiementInscription.save();
+
+            // Créer l'écriture comptable
+            try {
+                await creerEcritureComptable({
+                    req,
+                    journalCode: 'VEN',
+                    compteDebitNumero: '512',
+                    compteCreditNumero: '702',
+                    montant: paiementInscription.montant,
+                    libelle: description || `Paiement mobile money #${paiementInscription.numero}`,
+                    reference: paiementInscription.numero,
+                    moduleSource: 'inscription',
+                    referenceModuleId: String(paiementInscription.id)
+                });
+            } catch (err) {
+                console.error("Erreur création écriture comptable:", err);
+            }
+
+            return res.status(201).json({ success: true, paiement: paiementInscription });
+        } catch (error) {
+            console.error("Erreur paiement mobile money:", error);
+            return res.status(500).json({ success: false, message: "Erreur lors du paiement mobile" });
         }
-        else {
-            return res.status(404).json({ matriculeNotExists: true });
-        }
-
-        return null
     }
 
     static async updatePaiementInscription(req: Request, res: Response): Promise<Response | null> {

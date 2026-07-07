@@ -1,3 +1,4 @@
+// @ts-ignore - ioredis est optionnel, installé via npm si besoin
 import Redis from 'ioredis'
 
 export class RedisClient {

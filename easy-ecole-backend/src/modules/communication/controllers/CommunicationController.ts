@@ -1,17 +1,29 @@
 import { Request, Response } from "express";
-import { CountOptions, FindOptions, InferAttributes } from "sequelize";
+import { CountOptions, FindOptions, InferAttributes, Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Communication } from "../models/Communication";
+import { Utilisateur } from "../../auth/models/Utilisateur";
 
 export default class CommunicationController {
 
     constructor() { }
 
     static async getAllCommunications(req: Request, res: Response): Promise<Response> {
-        let options: FindOptions<InferAttributes<Communication>> = {}
+        let options: FindOptions<InferAttributes<Communication>> = {
+            include: [{ model: Utilisateur, as: 'utilisateur', attributes: ['id', 'nom', 'prenoms'] }],
+            order: [['datePublication', 'DESC']]
+        }
 
-        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT || (req as any).utilisateurRole == RolesUtilisateur.ENSEIGNANT) {
-            options = { where: { statut: 'publiee' } }
+        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
+            options.where = {
+                statut: 'publiee',
+                cible: { [Op.in]: ['tous', 'apprenants'] }
+            }
+        } else if ((req as any).utilisateurRole == RolesUtilisateur.ENSEIGNANT) {
+            options.where = {
+                statut: 'publiee',
+                cible: { [Op.in]: ['tous', 'enseignants'] }
+            }
         }
 
         try {
@@ -25,8 +37,10 @@ export default class CommunicationController {
     }
 
     static async getCommunication(req: Request, res: Response): Promise<Response> {
-        let options: FindOptions<InferAttributes<Communication>> = {}
-        options = { where: { id: req.params.id } }
+        let options: FindOptions<InferAttributes<Communication>> = {
+            where: { id: req.params.id },
+            include: [{ model: Utilisateur, as: 'utilisateur', attributes: ['id', 'nom', 'prenoms'] }]
+        }
 
         try {
             const communication: Communication | null = await Communication.findOne(options);
@@ -41,18 +55,23 @@ export default class CommunicationController {
     }
 
     static async createCommunication(req: Request, res: Response): Promise<Response | null> {
-        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION) {
+        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole != RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false })
         }
 
         let communication: Communication = new Communication();
         communication.titre = req.body.titre
         communication.contenu = req.body.contenu
-        communication.statut = req.body.statut || 'brouillon'
+        communication.statut = req.body.statut || 'publiee'
+        communication.cible = req.body.cible || 'tous'
+        communication.utilisateurId = (req as any).utilisateurId
 
         await communication.save()
             .then(async (communication) => {
-                return res.status(201).send(communication);
+                const created = await Communication.findByPk(communication.id, {
+                    include: [{ model: Utilisateur, as: 'utilisateur', attributes: ['id', 'nom', 'prenoms'] }]
+                })
+                return res.status(201).send(created);
             })
             .catch((error) => {
                 return res.status(400).json({ success: false, error: error });
@@ -62,7 +81,7 @@ export default class CommunicationController {
     }
 
     static async updateCommunication(req: Request, res: Response): Promise<Response | null> {
-        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION) {
+        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole != RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false })
         }
 
@@ -71,10 +90,14 @@ export default class CommunicationController {
             await communication.update({
                 titre: req.body.titre,
                 contenu: req.body.contenu,
-                statut: req.body.statut
+                statut: req.body.statut,
+                cible: req.body.cible
             })
                 .then(async (communication) => {
-                    return res.status(200).send(communication);
+                    const updated = await Communication.findByPk(communication.id, {
+                        include: [{ model: Utilisateur, as: 'utilisateur', attributes: ['id', 'nom', 'prenoms'] }]
+                    })
+                    return res.status(200).send(updated);
                 })
                 .catch((error) => {
                     return res.status(400).json({ success: false, error: error });
@@ -87,7 +110,7 @@ export default class CommunicationController {
     }
 
     static async deleteCommunication(req: Request, res: Response): Promise<Response | null> {
-        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION) {
+        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole != RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false })
         }
 

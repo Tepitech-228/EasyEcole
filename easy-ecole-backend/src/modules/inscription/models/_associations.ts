@@ -33,6 +33,9 @@ import { TypeNoteEvaluation } from "./TypeNoteEvaluation";
 import { Pointage } from "./Pointage";
 import { ListeNoteEvaluation } from "./ListeNoteEvaluation";
 import { NoteEvaluation } from "./NoteEvaluation";
+import { FraisParcours } from "./FraisParcours";
+import { ReductionFrais } from "./ReductionFrais";
+import { PenaliteRetard } from "./PenaliteRetard";
 import { PreInscription } from "./PreInscription";
 import { Quitus } from "./Quitus";
 import { DossierEtudiant } from "./DossierEtudiant";
@@ -131,6 +134,26 @@ ReponseInscription.belongsTo(Utilisateur, { foreignKey: 'utilisateurId', as: 'ut
 // FraisInscription - Session
 Session.hasMany(FraisInscription, { foreignKey: 'sessionId', as: 'fraisInscription' })
 FraisInscription.belongsTo(Session, { foreignKey: 'sessionId', as: 'session' })
+
+// FraisParcours - Parcours
+Parcours.hasMany(FraisParcours, { foreignKey: 'parcoursId', as: 'fraisParcours' })
+FraisParcours.belongsTo(Parcours, { as: 'parcours', foreignKey: 'parcoursId' })
+
+// FraisParcours - NiveauEtude
+NiveauEtude.hasMany(FraisParcours, { foreignKey: 'niveauEtudeId', as: 'fraisParcours' })
+FraisParcours.belongsTo(NiveauEtude, { as: 'niveauEtude', foreignKey: 'niveauEtudeId' })
+
+// FraisParcours - AnneeAcademique
+AnneeAcademique.hasMany(FraisParcours, { foreignKey: 'anneeAcademiqueId', as: 'fraisParcours' })
+FraisParcours.belongsTo(AnneeAcademique, { as: 'anneeAcademique', foreignKey: 'anneeAcademiqueId' })
+
+// ReductionFrais - FraisParcours
+FraisParcours.hasMany(ReductionFrais, { foreignKey: 'fraisParcoursId', as: 'reductions' })
+ReductionFrais.belongsTo(FraisParcours, { as: 'fraisParcours', foreignKey: 'fraisParcoursId' })
+
+// PenaliteRetard - FraisParcours
+FraisParcours.hasMany(PenaliteRetard, { foreignKey: 'fraisParcoursId', as: 'penalites' })
+PenaliteRetard.belongsTo(FraisParcours, { as: 'fraisParcours', foreignKey: 'fraisParcoursId' })
 
 // DossierInscription - Session
 Session.hasMany(DossierInscription, { foreignKey: 'sessionId', as: 'dossiersInscription' })
@@ -369,6 +392,28 @@ Dispense.belongsTo(UniteEnseignement, { as: 'uniteEnseignement', foreignKey: 'ue
 // Dispense - Utilisateur (validePar)
 Utilisateur.hasMany(Dispense, { foreignKey: 'validePar', as: 'dispensesValidees' })
 Dispense.belongsTo(Utilisateur, { as: 'valideParUtilisateur', foreignKey: 'validePar' })
+
+// RattrapageInscription
+import { RattrapageInscription } from "./RattrapageInscription";
+
+CoursParticipant.hasMany(RattrapageInscription, { foreignKey: 'coursParticipantId', as: 'rattrapagesInscription' })
+RattrapageInscription.belongsTo(CoursParticipant, { as: 'coursParticipant', foreignKey: 'coursParticipantId' })
+
+Cours.hasMany(RattrapageInscription, { foreignKey: 'coursId', as: 'rattrapagesInscription' })
+RattrapageInscription.belongsTo(Cours, { as: 'cours', foreignKey: 'coursId' })
+
+SessionExamen.hasMany(RattrapageInscription, { foreignKey: 'sessionExamenId', as: 'rattrapagesInscription' })
+RattrapageInscription.belongsTo(SessionExamen, { as: 'sessionExamen', foreignKey: 'sessionExamenId' })
+
+import { PublicationNote } from "./PublicationNote";
+
+// PublicationNote - ListeNoteEvaluation
+ListeNoteEvaluation.hasMany(PublicationNote, { foreignKey: 'listeNoteEvaluationId', as: 'publicationsNotes' })
+PublicationNote.belongsTo(ListeNoteEvaluation, { as: 'listeNoteEvaluation', foreignKey: 'listeNoteEvaluationId' })
+
+// PublicationNote - Utilisateur (publiePar)
+Utilisateur.hasMany(PublicationNote, { foreignKey: 'publiePar', as: 'publicationsNotes' })
+PublicationNote.belongsTo(Utilisateur, { as: 'publieParUtilisateur', foreignKey: 'publiePar' })
 
 // Bulletin associations
 initBulletinAssociations();

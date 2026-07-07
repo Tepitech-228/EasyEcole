@@ -12,10 +12,10 @@ export default (req: Request, res: Response, next: Function) => {
 
     try {
         const decoded = jwt.verify(accessToken, JWT_SECRET) as unknown as EncodePayload
-        ;(req as any).utilisateurId = decoded.id;
-        ;(req as any).utilisateurIdentifiant = decoded.identifiant;
-        ;(req as any).utilisateurEmail = decoded.email;
-        ;(req as any).utilisateurRole = decoded.role;
+        req.utilisateurId = decoded.id;
+        req.utilisateurIdentifiant = decoded.identifiant;
+        req.utilisateurEmail = decoded.email;
+        req.utilisateurRole = decoded.role;
 
         return next()
     } catch (error: any) {

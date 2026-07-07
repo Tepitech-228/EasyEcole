@@ -15,6 +15,7 @@ import { PaiePageComponent } from './pages/paie-page/paie-page.component';
 import { BulletinDetailsPageComponent } from './pages/bulletin-details-page/bulletin-details-page.component';
 import { ParametresPaiePageComponent } from './pages/parametres-paie-page/parametres-paie-page.component';
 import { PrestationsPageComponent } from './pages/prestations-page/prestations-page.component';
+import { ListeContratsPageComponent } from './pages/liste-contrats-page/liste-contrats-page.component';
 
 const routes: Routes = [
   {
@@ -120,6 +121,11 @@ const routes: Routes = [
   {
     path: 'prestations',
     component: PrestationsPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'contrats-enseignant',
+    component: ListeContratsPageComponent,
     pathMatch: 'full'
   },
 ];

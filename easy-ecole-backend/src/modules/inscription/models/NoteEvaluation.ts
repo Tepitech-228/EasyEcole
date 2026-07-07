@@ -5,8 +5,9 @@ import { ListeNoteEvaluation } from "./ListeNoteEvaluation";
 import { CoursParticipant } from "./CoursParticipant";
 
 export class NoteEvaluation extends Model<InferAttributes<NoteEvaluation>, InferCreationAttributes<NoteEvaluation>> {
-  declare id: CreationOptional<string>
-  declare note: CreationOptional<Number>
+  declare id: CreationOptional<number>
+  declare note: CreationOptional<number | null>
+  declare statut: CreationOptional<string>
 
   declare listeNoteEvaluationId: ForeignKey<ListeNoteEvaluation['id']>
   declare listeNoteEvaluation?: NonAttribute<ListeNoteEvaluation>
@@ -31,6 +32,11 @@ NoteEvaluation.init({
   note: {
     type: DataTypes.FLOAT,
     allowNull: true
+  },
+  statut: {
+    type: DataTypes.ENUM('brouillon', 'publie'),
+    defaultValue: 'brouillon',
+    allowNull: false
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

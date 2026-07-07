@@ -1,6 +1,7 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes } from "sequelize";
+import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../CommunicationModule";
+import { Utilisateur } from "../../auth/models/Utilisateur";
 
 export class Communication extends Model<InferAttributes<Communication>, InferCreationAttributes<Communication>> {
   declare id: CreationOptional<string>
@@ -8,9 +9,17 @@ export class Communication extends Model<InferAttributes<Communication>, InferCr
   declare contenu: string
   declare datePublication: CreationOptional<Date>
   declare statut: string
+  declare cible: CreationOptional<string>
+  declare utilisateurId: ForeignKey<Utilisateur['id']>
+
+  declare utilisateur?: NonAttribute<Utilisateur>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
+
+  declare static associations: {
+    utilisateur: Association<Communication, Utilisateur>
+  };
 }
 
 Communication.init({
@@ -35,6 +44,11 @@ Communication.init({
   statut: {
     type: DataTypes.ENUM('brouillon', 'publiee'),
     defaultValue: 'brouillon',
+    allowNull: false
+  },
+  cible: {
+    type: DataTypes.ENUM('tous', 'apprenants', 'enseignants', 'personnel'),
+    defaultValue: 'tous',
     allowNull: false
   },
   createdAt: DataTypes.DATE,

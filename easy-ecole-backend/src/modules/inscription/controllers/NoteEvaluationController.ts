@@ -5,6 +5,7 @@ import { CoursParticipant } from "../models/CoursParticipant";
 import { ListeNoteEvaluation } from "../models/ListeNoteEvaluation";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { AuditNote } from "../../bulletins/models/AuditNote";
+import { validateNoteValue, validateBulkNotesInput, ValidationError } from "../../../core/validators/noteValidators";
 
 async function creerAudit(noteEvaluationId: number, ancienneNote: number | null, nouvelleNote: number | null, modifiePar: number, motif?: string) {
     if (ancienneNote === nouvelleNote) return;
@@ -41,7 +42,8 @@ export default class NoteEvaluationController {
 
             return res.status(200).json(notes);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error("Erreur getAll:", error);
+            return res.status(500).json({ success: false, message: "Erreur lors de la récupération des notes" });
         }
     }
 
@@ -60,19 +62,32 @@ export default class NoteEvaluationController {
 
             return res.status(200).json(note);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error("Erreur getOne:", error);
+            return res.status(500).json({ success: false, message: "Erreur lors de la récupération de la note" });
         }
     }
 
-    static async upsert(req: Request, res: Response): Promise<Response | null> {
+    static async upsert(req: Request, res: Response): Promise<Response> {
         try {
-            if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION &&
-                (req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT &&
-                (req as any).utilisateurRole != RolesUtilisateur.ADMIN) {
+            if (req.utilisateurRole! != RolesUtilisateur.INSTITUTION &&
+                req.utilisateurRole! != RolesUtilisateur.ENSEIGNANT &&
+                req.utilisateurRole! != RolesUtilisateur.ADMIN) {
                 return res.status(403).json({ success: false, message: "Accès refusé" });
             }
 
             const { listeNoteEvaluationId, coursParticipantId, note } = req.body;
+
+            try {
+                const noteValidee = validateNoteValue(note);
+                if (note !== undefined && note !== null && noteValidee === null) {
+                    return res.status(400).json({ success: false, message: "Note invalide" });
+                }
+            } catch (e) {
+                if (e instanceof ValidationError) {
+                    return res.status(400).json({ success: false, message: e.message });
+                }
+                throw e;
+            }
 
             if (!listeNoteEvaluationId || !coursParticipantId) {
                 return res.status(400).json({ success: false, message: "listeNoteEvaluationId et coursParticipantId requis" });
@@ -88,8 +103,8 @@ export default class NoteEvaluationController {
                 return res.status(404).json({ success: false, message: "Participant non trouvé" });
             }
 
-            if ((req as any).utilisateurRole == RolesUtilisateur.ENSEIGNANT) {
-                const enseignant = await Enseignant.findOne({ where: { utilisateurId: (req as any).utilisateurId } });
+            if (req.utilisateurRole! == RolesUtilisateur.ENSEIGNANT) {
+                const enseignant = await Enseignant.findOne({ where: { utilisateurId: req.utilisateurId! } });
                 const coursParticipant = await CoursParticipant.findByPk(coursParticipantId, {
                     include: [{ association: CoursParticipant.associations.cours }]
                 });
@@ -102,30 +117,35 @@ export default class NoteEvaluationController {
                 where: { listeNoteEvaluationId, coursParticipantId }
             });
 
+            if (existing && existing.statut === 'publie') {
+                return res.status(400).json({ success: false, message: "Impossible de modifier une note publiée" });
+            }
+
             if (existing) {
                 const ancienneNote = existing.note;
-                existing.note = note !== undefined ? note as any : existing.note;
+                existing.note = note !== undefined ? note : existing.note;
                 await existing.save();
-                await creerAudit(existing.id, ancienneNote, existing.note, (req as any).utilisateurId, req.body.motif);
+                await creerAudit(existing.id as number, ancienneNote, existing.note, req.utilisateurId!, req.body.motif);
                 return res.status(200).json(existing);
             } else {
                 const newNote = new NoteEvaluation();
                 newNote.listeNoteEvaluationId = listeNoteEvaluationId;
                 newNote.coursParticipantId = coursParticipantId;
-                newNote.note = note !== undefined ? note as any : null;
+                newNote.note = note !== undefined ? note : null;
                 await newNote.save();
                 return res.status(201).json(newNote);
             }
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error("Erreur upsert:", error);
+            return res.status(500).json({ success: false, message: "Erreur lors de la sauvegarde de la note" });
         }
     }
 
-    static async bulkUpsert(req: Request, res: Response): Promise<Response | null> {
+    static async bulkUpsert(req: Request, res: Response): Promise<Response> {
         try {
-            if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION &&
-                (req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT &&
-                (req as any).utilisateurRole != RolesUtilisateur.ADMIN) {
+            if (req.utilisateurRole! != RolesUtilisateur.INSTITUTION &&
+                req.utilisateurRole! != RolesUtilisateur.ENSEIGNANT &&
+                req.utilisateurRole! != RolesUtilisateur.ADMIN) {
                 return res.status(403).json({ success: false, message: "Accès refusé" });
             }
 
@@ -140,42 +160,44 @@ export default class NoteEvaluationController {
                 return res.status(404).json({ success: false, message: "Évaluation non trouvée" });
             }
 
-            const results: any[] = [];
+            // Vérifier si l'évaluation a déjà des notes publiées
+            const existingPublished = await NoteEvaluation.count({
+                where: { listeNoteEvaluationId, statut: 'publie' }
+            });
+            if (existingPublished > 0) {
+                return res.status(400).json({ success: false, message: "Impossible de modifier des notes déjà publiées. Annulez la publication d'abord." });
+            }
 
-            for (const item of notes) {
-                const { coursParticipantId, note } = item;
-                if (!coursParticipantId) continue;
+            const records = notes
+                .filter((item: any) => item.coursParticipantId)
+                .map((item: any) => ({
+                    listeNoteEvaluationId,
+                    coursParticipantId: item.coursParticipantId,
+                    note: item.note !== undefined ? item.note : null
+                }));
 
-                const existing = await NoteEvaluation.findOne({
-                    where: { listeNoteEvaluationId, coursParticipantId }
-                });
+            const result = await NoteEvaluation.bulkCreate(records, {
+                updateOnDuplicate: ["note", "updatedAt"]
+            });
 
-                if (existing) {
-                    const ancienneNote = existing.note;
-                    existing.note = note !== undefined ? note as any : existing.note;
-                    await existing.save();
-                    await creerAudit(existing.id, ancienneNote, existing.note, (req as any).utilisateurId);
-                    results.push(existing);
-                } else {
-                    const newNote = new NoteEvaluation();
-                    newNote.listeNoteEvaluationId = listeNoteEvaluationId;
-                    newNote.coursParticipantId = coursParticipantId;
-                    newNote.note = note !== undefined ? note as any : null;
-                    await newNote.save();
-                    results.push(newNote);
+            for (const record of records) {
+                const created = result.find(r => r.coursParticipantId === record.coursParticipantId);
+                if (created) {
+                    await creerAudit(created.id!, null, record.note, req.utilisateurId!);
                 }
             }
 
-            return res.status(200).json({ success: true, count: results.length, data: results });
+            return res.status(200).json({ success: true, count: result.length, data: result });
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error("Erreur bulkUpsert:", error);
+            return res.status(500).json({ success: false, message: "Erreur lors de la sauvegarde des notes" });
         }
     }
 
-    static async delete(req: Request, res: Response): Promise<Response | null> {
+    static async delete(req: Request, res: Response): Promise<Response> {
         try {
-            if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION &&
-                (req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT) {
+            if (req.utilisateurRole! != RolesUtilisateur.INSTITUTION &&
+                req.utilisateurRole! != RolesUtilisateur.ENSEIGNANT) {
                 return res.status(403).json({ success: false, message: "Accès refusé" });
             }
 
@@ -187,7 +209,8 @@ export default class NoteEvaluationController {
             await note.destroy();
             return res.status(200).json({ success: true, message: "Note supprimée" });
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error("Erreur delete:", error);
+            return res.status(500).json({ success: false, message: "Erreur lors de la suppression de la note" });
         }
     }
 }

@@ -17,6 +17,7 @@ import { PaiePageComponent } from './pages/paie-page/paie-page.component';
 import { BulletinDetailsPageComponent } from './pages/bulletin-details-page/bulletin-details-page.component';
 import { ParametresPaiePageComponent } from './pages/parametres-paie-page/parametres-paie-page.component';
 import { PrestationsPageComponent } from './pages/prestations-page/prestations-page.component';
+import { ListeContratsPageComponent } from './pages/liste-contrats-page/liste-contrats-page.component';
 
 @NgModule({
   declarations: [
@@ -35,6 +36,7 @@ import { PrestationsPageComponent } from './pages/prestations-page/prestations-p
     BulletinDetailsPageComponent,
     ParametresPaiePageComponent,
     PrestationsPageComponent,
+    ListeContratsPageComponent,
   ],
   imports: [
     CommonModule,

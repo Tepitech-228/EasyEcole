@@ -1,18 +1,17 @@
 import { Request, Response } from "express";
-import { CountOptions, FindOptions, InferAttributes, Op } from "sequelize";
+import { CountOptions, FindOptions, InferAttributes } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { Cours } from "../models/Cours";
 import { Parcours } from "../models/Parcours";
 import { ListeNoteEvaluation } from "../models/ListeNoteEvaluation";
-import { Presence } from "../models/Presence";
 import { NoteEvaluation } from "../models/NoteEvaluation";
 import { CoursParticipant } from "../models/CoursParticipant";
 import { CursusApprenant } from "../models/CursusApprenant";
 import { DemandeInscription } from "../models/DemandeInscription";
-import { Utilisateur } from "../../auth/models/Utilisateur";
 import * as ExcelJS from "exceljs";
 import * as fs from "fs";
+import { validateEvaluationInput, ValidationError } from "../../../core/validators/noteValidators";
 
 export default class ListeNoteEvaluationController {
 
@@ -21,8 +20,8 @@ export default class ListeNoteEvaluationController {
     static async getAllListesNoteEvaluation(req: Request, res: Response): Promise<Response> {
         let options: FindOptions<InferAttributes<ListeNoteEvaluation>> = {}
 
-        if ((req as any).utilisateurRole == RolesUtilisateur.ENSEIGNANT) {
-            const enseignant = await Enseignant.findOne({ where: { utilisateurId: (req as any).utilisateurId } })
+        if (req.utilisateurRole! == RolesUtilisateur.ENSEIGNANT) {
+            const enseignant = await Enseignant.findOne({ where: { utilisateurId: req.utilisateurId! } })
             if (enseignant) {
                 options = {
                     include: [
@@ -61,7 +60,8 @@ export default class ListeNoteEvaluationController {
 
             return res.status(200).send(listesNoteEvaluation);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error("Erreur récupération listes évaluation:", error);
+            return res.status(500).json({ success: false, message: "Erreur lors de la récupération des listes" });
         }
     }
 
@@ -90,14 +90,24 @@ export default class ListeNoteEvaluationController {
 
             return res.status(200).send(listeNoteEvaluation);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error("Erreur récupération évaluation:", error);
+            return res.status(500).json({ success: false, message: "Erreur lors de la récupération de l'évaluation" });
         }
     }
 
-    static async createListeNoteEvaluation(req: Request, res: Response): Promise<Response | null> {
+    static async createListeNoteEvaluation(req: Request, res: Response): Promise<Response> {
 
-        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT && (req as any).utilisateurRole != RolesUtilisateur.ADMIN) {
+        if (req.utilisateurRole! != RolesUtilisateur.INSTITUTION && req.utilisateurRole! != RolesUtilisateur.ENSEIGNANT && req.utilisateurRole! != RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false })
+        }
+
+        try {
+            validateEvaluationInput(req.body);
+        } catch (e) {
+            if (e instanceof ValidationError) {
+                return res.status(400).json({ success: false, message: e.message });
+            }
+            throw e;
         }
 
         let existing: ListeNoteEvaluation | null = await ListeNoteEvaluation.findOne({ where: { typeNoteEvaluationId: req.body.typeNoteEvaluationId, coursId: req.body.coursId, anneeAcademiqueId: req.body.anneeAcademiqueId } });
@@ -105,7 +115,8 @@ export default class ListeNoteEvaluationController {
         if (existing != null) {
             return res.status(400).json({ success: false, alreadyExists: true });
         }
-        else {
+
+        try {
             let listeNoteEvaluation: ListeNoteEvaluation = new ListeNoteEvaluation();
             listeNoteEvaluation.date = req.body.date
             listeNoteEvaluation.heureDebut = req.body.heureDebut
@@ -115,21 +126,17 @@ export default class ListeNoteEvaluationController {
             listeNoteEvaluation.poidsTypeNoteEvaluation = req.body.poidsTypeNoteEvaluation
             listeNoteEvaluation.coursId = req.body.coursId
 
-            await listeNoteEvaluation.save()
-                .then((listeNoteEvaluation) => {
-                    return res.status(201).send(listeNoteEvaluation);
-                })
-                .catch((error) => {
-                    return res.status(400).json({ success: false, error: error });
-                });
+            await listeNoteEvaluation.save();
+            return res.status(201).send(listeNoteEvaluation);
+        } catch (error) {
+            console.error("Erreur création évaluation:", error);
+            return res.status(400).json({ success: false, message: "Erreur lors de la création" });
         }
-
-        return null
     }
 
-    static async updateListeNoteEvaluation(req: Request, res: Response): Promise<Response | null> {
+    static async updateListeNoteEvaluation(req: Request, res: Response): Promise<Response> {
         let options: FindOptions<InferAttributes<ListeNoteEvaluation>> = {}
-        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT && (req as any).utilisateurRole != RolesUtilisateur.ADMIN) {
+        if (req.utilisateurRole! != RolesUtilisateur.INSTITUTION && req.utilisateurRole! != RolesUtilisateur.ENSEIGNANT && req.utilisateurRole! != RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false })
         }
         else {
@@ -138,32 +145,30 @@ export default class ListeNoteEvaluationController {
 
         let listeNoteEvaluation: ListeNoteEvaluation | null = await ListeNoteEvaluation.findOne(options);
         if (listeNoteEvaluation != null) {
-            await listeNoteEvaluation.update({
-                date: req.body.date,
-                heureDebut: req.body.heureDebut,
-                heureFin: req.body.heureFin,
-                commentaire: req.body.commentaire,
-                typeNoteEvaluationId: req.body.typeNoteEvaluationId,
-                poidsTypeNoteEvaluation: req.body.poidsTypeNoteEvaluation,
-                coursId: req.body.coursId,
-            })
-                .then(async (listeNoteEvaluation) => {
-                    return res.status(200).send(listeNoteEvaluation);
-                })
-                .catch((error) => {
-                    return res.status(400).json({ success: false, error: error });
+            try {
+                await listeNoteEvaluation.update({
+                    date: req.body.date,
+                    heureDebut: req.body.heureDebut,
+                    heureFin: req.body.heureFin,
+                    commentaire: req.body.commentaire,
+                    typeNoteEvaluationId: req.body.typeNoteEvaluationId,
+                    poidsTypeNoteEvaluation: req.body.poidsTypeNoteEvaluation,
+                    coursId: req.body.coursId,
                 });
+                return res.status(200).send(listeNoteEvaluation);
+            } catch (error) {
+                console.error("Erreur mise à jour évaluation:", error);
+                return res.status(400).json({ success: false, message: "Erreur lors de la mise à jour" });
+            }
         }
         else {
             return res.status(404).json({ success: false, message: "ListeNoteEvaluation non trouvée" });
         }
-
-        return null
     }
 
-    static async deleteListeNoteEvaluation(req: Request, res: Response): Promise<Response | null> {
+    static async deleteListeNoteEvaluation(req: Request, res: Response): Promise<Response> {
         let options: FindOptions<InferAttributes<ListeNoteEvaluation>> = {}
-        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT && (req as any).utilisateurRole != RolesUtilisateur.ADMIN) {
+        if (req.utilisateurRole! != RolesUtilisateur.INSTITUTION && req.utilisateurRole! != RolesUtilisateur.ENSEIGNANT && req.utilisateurRole! != RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false })
         }
         else {
@@ -172,40 +177,36 @@ export default class ListeNoteEvaluationController {
 
         let listeNoteEvaluation: ListeNoteEvaluation | null = await ListeNoteEvaluation.findOne({ where: { id: req.params.id } });
         if (listeNoteEvaluation) {
-            await listeNoteEvaluation.destroy()
-                .then(() => {
-                    return res.status(200).json({ success: true, message: "ListeNoteEvaluation supprimée" });
-                })
-                .catch((error) => {
-                    return res.status(500).json({ success: false, error: error });
-                });
+            try {
+                await listeNoteEvaluation.destroy();
+                return res.status(200).json({ success: true, message: "ListeNoteEvaluation supprimée" });
+            } catch (error) {
+                console.error("Erreur suppression évaluation:", error);
+                return res.status(500).json({ success: false, message: "Erreur lors de la suppression" });
+            }
         }
         else {
             return res.status(404).json({ success: false, message: "ListeNoteEvaluation non trouvée" });
         }
-
-        return null
     }
 
-    static async getCount(req: Request, res: Response): Promise<Response | null> {
+    static async getCount(req: Request, res: Response): Promise<Response> {
         let options: CountOptions<InferAttributes<ListeNoteEvaluation>> = {}
 
-        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT) {
+        if (req.utilisateurRole! != RolesUtilisateur.INSTITUTION && req.utilisateurRole! != RolesUtilisateur.ENSEIGNANT) {
             return res.status(403).json({ success: false })
         }
 
-        await ListeNoteEvaluation.count(options)
-            .then((value) => {
-                return res.status(200).json({ success: true, count: value });
-            })
-            .catch((error) => {
-                return res.status(500).json({ success: false, error: error });
-            });
-
-        return null
+        try {
+            const value = await ListeNoteEvaluation.count(options);
+            return res.status(200).json({ success: true, count: value });
+        } catch (error) {
+            console.error("Erreur comptage évaluations:", error);
+            return res.status(500).json({ success: false, message: "Erreur lors du comptage" });
+        }
     }
 
-    static async exportPv(req: Request, res: Response): Promise<Response | null> {
+    static async exportPv(req: Request, res: Response): Promise<Response> {
         try {
             const evaluation = await ListeNoteEvaluation.findOne({
                 where: { id: req.params.id },
@@ -369,13 +370,14 @@ export default class ListeNoteEvaluationController {
 
             await workbook.xlsx.write(res)
             res.end()
-            return null
+            return res
         } catch (error) {
-            return res.status(500).json({ success: false, error: error })
+            console.error("Erreur export PV:", error);
+            return res.status(500).json({ success: false, message: "Erreur lors de l'export du PV" })
         }
     }
 
-    static async importPv(req: Request, res: Response): Promise<Response | null> {
+    static async importPv(req: Request, res: Response): Promise<Response> {
         try {
             if (!req.file) {
                 return res.status(400).json({ success: false, message: "Aucun fichier fourni" })
@@ -486,7 +488,8 @@ export default class ListeNoteEvaluationController {
             if (req.file?.path) {
                 fs.unlink(req.file.path, () => {})
             }
-            return res.status(500).json({ success: false, error: error })
+            console.error("Erreur import PV:", error);
+            return res.status(500).json({ success: false, message: "Erreur lors de l'import du PV" })
         }
     }
 }

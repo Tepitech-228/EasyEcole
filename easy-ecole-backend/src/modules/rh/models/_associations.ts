@@ -15,6 +15,7 @@ import { RhPeriodePaie } from "./RhPeriodePaie";
 import { RhBulletinPaie } from "./RhBulletinPaie";
 import { RhLigneBulletin } from "./RhLigneBulletin";
 import { RhPrestationEnseignant } from "./RhPrestationEnseignant";
+import { RhContratEnseignant } from "./RhContratEnseignant";
 
 // Departement - Poste
 RhDepartement.hasMany(RhPoste, { foreignKey: 'departementId', as: 'postes' })
@@ -83,3 +84,7 @@ RhLigneBulletin.belongsTo(RhRubriquePaie, { as: 'rubrique', foreignKey: 'rubriqu
 // Employe - PrestationEnseignant
 RhEmploye.hasMany(RhPrestationEnseignant, { foreignKey: 'enseignantId', as: 'prestationsEnseignant' })
 RhPrestationEnseignant.belongsTo(RhEmploye, { as: 'enseignant', foreignKey: 'enseignantId' })
+
+// Employe - ContratEnseignant
+RhEmploye.hasMany(RhContratEnseignant, { foreignKey: 'employeId', as: 'contratsEnseignant' })
+RhContratEnseignant.belongsTo(RhEmploye, { as: 'employe', foreignKey: 'employeId' })

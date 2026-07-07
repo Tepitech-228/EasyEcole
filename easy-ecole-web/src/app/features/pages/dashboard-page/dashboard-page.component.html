@@ -5,61 +5,218 @@
     Une demande d'inscription est déjà en cours pour cette session
 </app-custom-alert>
 
-<div class="mb-8" *ngIf="rolesValue.isAdmin">
-  <div class="text-gray-700 text-lg font-semibold mb-4">Bienvenue, {{ utilisateur?.prenoms || 'Admin' }}</div>
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-    <div class="bg-white rounded-lg border border-gray-200 p-4 flex items-center gap-4">
-      <div class="p-3 rounded-full bg-blue-100">
-        <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 -960 960 960"><path d="M160-80q-33 0-56.5-23.5T80-160v-440q0-33 23.5-56.5T160-680h200v-120q0-33 23.5-56.5T440-880h80q33 0 56.5 23.5T600-800v120h200q33 0 56.5 23.5T880-600v440q0 33-23.5 56.5T800-80H160Zm320-280q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35ZM240-160h480v-36q0-17-9.5-31.5T696-244q-45-23-93.5-34.5T480-290q-54 0-102.5 11.5T284-244q-17 9-26.5 23.5T248-189v29Z"/></svg>
-      </div>
-      <div>
-        <div class="text-2xl font-bold text-gray-900">{{ totalUtilisateurs }}</div>
-        <div class="text-sm text-gray-500">Utilisateurs</div>
-      </div>
+<!-- Admin Dashboard -->
+<div class="dashboard" *ngIf="rolesValue.isAdmin">
+
+  <!-- Welcome Header -->
+  <div class="dashboard-header">
+    <div>
+      <h1 class="dashboard-title">Tableau de bord</h1>
+      <p class="dashboard-subtitle">Année {{ currentYear }} &middot; Aperçu général de l'établissement</p>
     </div>
-    <div class="bg-white rounded-lg border border-gray-200 p-4 flex items-center gap-4">
-      <div class="p-3 rounded-full bg-green-100">
-        <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 -960 960 960"><path d="M160-80q-33 0-56.5-23.5T80-160v-440q0-33 23.5-56.5T160-680h200v-120q0-33 23.5-56.5T440-880h80q33 0 56.5 23.5T600-800v120h200q33 0 56.5 23.5T880-600v440q0 33-23.5 56.5T800-80H160Z"/></svg>
-      </div>
-      <div>
-        <div class="text-2xl font-bold text-gray-900">{{ totalSessions }}</div>
-        <div class="text-sm text-gray-500">Sessions</div>
-      </div>
-    </div>
-    <div class="bg-white rounded-lg border border-gray-200 p-4 flex items-center gap-4">
-      <div class="p-3 rounded-full bg-purple-100">
-        <svg class="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 -960 960 960"><path d="M480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Z"/></svg>
-      </div>
-      <div>
-        <div class="text-2xl font-bold text-gray-900">{{ totalApprenants }}</div>
-        <div class="text-sm text-gray-500">Apprenants</div>
-      </div>
-    </div>
-    <div class="bg-white rounded-lg border border-gray-200 p-4 flex items-center gap-4">
-      <div class="p-3 rounded-full bg-yellow-100">
-        <svg class="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 -960 960 960"><path d="M480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Z"/></svg>
-      </div>
-      <div>
-        <div class="text-2xl font-bold text-gray-900">{{ totalEnseignants }}</div>
-        <div class="text-sm text-gray-500">Enseignants</div>
-      </div>
+    <div class="dashboard-header-date">
+      <span class="text-sm text-gray-500">{{ utilisateur?.prenoms || 'Admin' }}</span>
     </div>
   </div>
-  <div class="bg-white rounded-lg border border-gray-200 p-4">
-    <div class="text-gray-700 font-medium mb-3">Accès rapide</div>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <a routerLink="/inscription/sessions" class="px-3 py-2 bg-blue-50 text-blue-700 rounded text-sm hover:bg-blue-100 transition">Sessions</a>
-      <a routerLink="/inscription/demandes" class="px-3 py-2 bg-green-50 text-green-700 rounded text-sm hover:bg-green-100 transition">Demandes</a>
-      <a routerLink="/inscription/paiements" class="px-3 py-2 bg-purple-50 text-purple-700 rounded text-sm hover:bg-purple-100 transition">Paiements</a>
-      <a routerLink="/cours/cours" class="px-3 py-2 bg-orange-50 text-orange-700 rounded text-sm hover:bg-orange-100 transition">Cours</a>
-      <a routerLink="/bulletins" class="px-3 py-2 bg-pink-50 text-pink-700 rounded text-sm hover:bg-pink-100 transition">Bulletins</a>
-      <a routerLink="/stages/offres" class="px-3 py-2 bg-teal-50 text-teal-700 rounded text-sm hover:bg-teal-100 transition">Stages</a>
-      <a routerLink="/stocks/articles" class="px-3 py-2 bg-indigo-50 text-indigo-700 rounded text-sm hover:bg-indigo-100 transition">Stocks</a>
-      <a routerLink="/immobilisations" class="px-3 py-2 bg-red-50 text-red-700 rounded text-sm hover:bg-red-100 transition">Immobilisations</a>
-    </div>
+
+  <!-- Loading State -->
+    <div *ngIf="loading" class="flex justify-center py-16">
+    <div class="w-9 h-9 border-4 border-gray-200 border-t-blue-500 rounded-full" style="animation: dashSpin 0.8s linear infinite"></div>
   </div>
+
+  <ng-container *ngIf="!loading">
+
+    <!-- Stat Cards -->
+    <div class="stats-grid">
+      <div class="stat-card stat-card--blue">
+        <div class="stat-card-icon">
+          <svg fill="currentColor" viewBox="0 -960 960 960"><path d="M480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Z"/></svg>
+        </div>
+        <div class="stat-card-body">
+          <div class="stat-card-value">{{ totalApprenants }}</div>
+          <div class="stat-card-label">Apprenants</div>
+          <div class="stat-card-trend stat-card-trend--up">Total enregistrés</div>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--green">
+        <div class="stat-card-icon">
+          <svg fill="currentColor" viewBox="0 -960 960 960"><path d="M480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Z"/></svg>
+        </div>
+        <div class="stat-card-body">
+          <div class="stat-card-value">{{ totalEnseignants }}</div>
+          <div class="stat-card-label">Enseignants</div>
+          <div class="stat-card-trend stat-card-trend--up">Total enregistrés</div>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--orange">
+        <div class="stat-card-icon">
+          <svg fill="currentColor" viewBox="0 -960 960 960"><path d="M160-80q-33 0-56.5-23.5T80-160v-440q0-33 23.5-56.5T160-680h200v-120q0-33 23.5-56.5T440-880h80q33 0 56.5 23.5T600-800v120h200q33 0 56.5 23.5T880-600v440q0 33-23.5 56.5T800-80H160Z"/></svg>
+        </div>
+        <div class="stat-card-body">
+          <div class="stat-card-value">{{ demandesEnAttente }}</div>
+          <div class="stat-card-label">Demandes en attente</div>
+          <div class="stat-card-trend stat-card-trend--warning">En cours de traitement</div>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--purple">
+        <div class="stat-card-icon">
+          <svg fill="currentColor" viewBox="0 -960 960 960"><path d="M200-80q-33 0-56.5-23.5T120-160v-560q0-33 23.5-56.5T200-800h40v-80h80v80h320v-80h80v80h40q33 0 56.5 23.5T840-720v560q0 33-23.5 56.5T760-80H200Zm0-80h560v-400H200v400Z"/></svg>
+        </div>
+        <div class="stat-card-body">
+          <div class="stat-card-value">{{ sessionsOuvertes }}</div>
+          <div class="stat-card-label">Sessions ouvertes</div>
+          <div class="stat-card-trend stat-card-trend--up">{{ totalSessions }} au total</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="charts-row">
+      <!-- Monthly Bar Chart -->
+      <div class="chart-card chart-card--wide">
+        <div class="chart-card-header">
+          <h3 class="chart-card-title">Demandes d'inscription {{ currentYear }}</h3>
+          <span class="chart-card-subtitle">Évolution mensuelle</span>
+        </div>
+        <div class="bar-chart">
+          <div class="bar-chart-bars">
+            <div *ngFor="let item of monthlyData" class="bar-column">
+              <div class="bar-value">{{ item.count || '' }}</div>
+              <div class="bar-track">
+                <div class="bar-fill" [style.height.%]="(item.count / maxMonthlyCount) * 100" [style.animation-delay.ms]="monthlyData.indexOf(item) * 50"></div>
+              </div>
+              <div class="bar-label mt-1.5">{{ item.month }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Stats Ring -->
+      <div class="chart-card chart-card--narrow">
+        <div class="chart-card-header">
+          <h3 class="chart-card-title">Répartition</h3>
+          <span class="chart-card-subtitle">Personnel & étudiants</span>
+        </div>
+        <div class="ring-chart">
+          <div class="ring-container">
+            <svg class="w-full h-full" style="transform:rotate(-90deg)" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="52" fill="none" stroke="#f3f4f6" stroke-width="12"/>
+              <circle cx="60" cy="60" r="52" fill="none" stroke="#3b82f6" stroke-width="12"
+                stroke-dasharray="326.7" stroke-dashoffset="0"
+                transform="rotate(-90 60 60)" class="ring-segment ring-segment--blue"/>
+              <circle cx="60" cy="60" r="52" fill="none" stroke="#10b981" stroke-width="12"
+                stroke-dasharray="326.7" stroke-dashoffset="0"
+                transform="rotate(-90 60 60)" class="ring-segment ring-segment--green"/>
+            </svg>
+            <div class="ring-center">
+              <div class="ring-center-value">{{ totalApprenants + totalEnseignants }}</div>
+              <div class="ring-center-label">Total</div>
+            </div>
+          </div>
+          <div class="ring-legend">
+            <div class="ring-legend-item">
+              <span class="ring-legend-dot ring-legend-dot--blue"></span>
+              <span>Apprenants ({{ totalApprenants }})</span>
+            </div>
+            <div class="ring-legend-item">
+              <span class="ring-legend-dot ring-legend-dot--green"></span>
+              <span>Enseignants ({{ totalEnseignants }})</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Row -->
+    <div class="bottom-row">
+      <!-- Recent Demandes -->
+      <div class="chart-card chart-card--wide">
+        <div class="chart-card-header">
+          <h3 class="chart-card-title">Demandes récentes</h3>
+          <a routerLink="/inscription/demandes" class="chart-card-action">Voir tout</a>
+        </div>
+        <div class="recent-list" *ngIf="recentDemandes.length > 0; else noDemandes">
+          <div class="recent-item" *ngFor="let demande of recentDemandes">
+            <div class="recent-item-avatar">
+              <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 -960 960 960"><path d="M480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Z"/></svg>
+            </div>
+            <div class="recent-item-body">
+              <div class="recent-item-name">{{ demande.utilisateur?.nom || 'N/A' }} {{ demande.utilisateur?.prenoms || '' }}</div>
+              <div class="recent-item-meta">
+                <span>{{ demande.dateDemande | date: 'dd MMM yyyy' }}</span>
+                <span class="mx-1 text-gray-300">&middot;</span>
+                <span>{{ demande.matricule || 'Sans matricule' }}</span>
+              </div>
+            </div>
+            <div class="recent-item-status">
+              <span class="status-badge" [ngClass]="{
+                'status-badge--pending': !demande.preInscription,
+                'status-badge--success': demande.preInscription?.statut === 'valide',
+                'status-badge--warning': demande.preInscription?.statut === 'en_attente',
+                'status-badge--danger': demande.preInscription?.statut === 'rejete'
+              }">
+                {{ !demande.preInscription ? 'Nouvelle' : (demande.preInscription.statut === 'valide' ? 'Validée' : demande.preInscription.statut === 'rejete' ? 'Rejetée' : 'En attente') }}
+              </span>
+            </div>
+          </div>
+        </div>
+        <ng-template #noDemandes>
+          <div class="empty-state">
+            <svg class="w-10 h-10 text-gray-300 mb-2" fill="currentColor" viewBox="0 -960 960 960"><path d="M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z"/></svg>
+            <p class="text-sm text-gray-400">Aucune demande d'inscription</p>
+          </div>
+        </ng-template>
+      </div>
+
+      <!-- Quick Links -->
+      <div class="chart-card chart-card--narrow">
+        <div class="chart-card-header">
+          <h3 class="chart-card-title">Accès rapide</h3>
+        </div>
+        <div class="quick-links">
+          <a routerLink="/inscription/sessions" class="quick-link quick-link--blue">
+            <svg fill="currentColor" viewBox="0 -960 960 960"><path d="M200-80q-33 0-56.5-23.5T120-160v-560q0-33 23.5-56.5T200-800h40v-80h80v80h320v-80h80v80h40q33 0 56.5 23.5T840-720v560q0 33-23.5 56.5T760-80H200Zm0-80h560v-400H200v400Z"/></svg>
+            <span>Sessions</span>
+          </a>
+          <a routerLink="/inscription/demandes" class="quick-link quick-link--green">
+            <svg fill="currentColor" viewBox="0 -960 960 960"><path d="M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z"/></svg>
+            <span>Demandes</span>
+          </a>
+          <a routerLink="/inscription/paiements" class="quick-link quick-link--purple">
+            <svg fill="currentColor" viewBox="0 -960 960 960"><path d="M440-920v-80h80v80h-80Zm0 880v-80h80v80h-80ZM560-40H400v-80h160v80ZM400-840v-80h-80v80h80Zm440 440h80v160h-80v-160Zm0-280h80v240h-80v-240ZM40-400v-160h80v160H40Zm0 240v-80h80v80H40Zm880 80q-33 0-56.5-23.5T840-160v-480q0-33 23.5-56.5T920-720q33 0 56.5 23.5T1000-640v480q0 33-23.5 56.5T920-80ZM40-80q-33 0-56.5-23.5T-40-160v-480q0-33 23.5-56.5T40-720q33 0 56.5 23.5T120-640v480q0 33-23.5 56.5T40-80Z"/></svg>
+            <span>Paiements</span>
+          </a>
+          <a routerLink="/bulletins" class="quick-link quick-link--pink">
+            <svg fill="currentColor" viewBox="0 -960 960 960"><path d="M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z"/></svg>
+            <span>Bulletins</span>
+          </a>
+          <a routerLink="/cours/cours" class="quick-link quick-link--orange">
+            <svg fill="currentColor" viewBox="0 -960 960 960"><path d="M480-120 200-272v-240L40-600l440-240 440 240v320h-80v-276l-80 44v240L480-120Zm0-332 274-148-274-148-274 148 274 148Zm0 212 200-108v-151L480-360 280-499v151l200 108Zm0-212Zm0 132Zm0 0Z"/></svg>
+            <span>Cours</span>
+          </a>
+          <a routerLink="/stages/offres" class="quick-link quick-link--teal">
+            <svg fill="currentColor" viewBox="0 -960 960 960"><path d="M480-120 200-272v-240L40-600l440-240 440 240v320h-80v-276l-80 44v240L480-120Zm0-332 274-148-274-148-274 148 274 148Zm0 212 200-108v-151L480-360 280-499v151l200 108Zm0-212Zm0 132Zm0 0Z"/></svg>
+            <span>Stages</span>
+          </a>
+          <a routerLink="/stocks/articles" class="quick-link quick-link--indigo">
+            <svg fill="currentColor" viewBox="0 -960 960 960"><path d="M160-80q-33 0-56.5-23.5T80-160v-440q0-33 23.5-56.5T160-680h200v-120q0-33 23.5-56.5T440-880h80q33 0 56.5 23.5T600-800v120h200q33 0 56.5 23.5T880-600v440q0 33-23.5 56.5T800-80H160Zm320-280q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35ZM240-160h480v-36q0-17-9.5-31.5T696-244q-45-23-93.5-34.5T480-290q-54 0-102.5 11.5T284-244q-17 9-26.5 23.5T248-189v29Z"/></svg>
+            <span>Stocks</span>
+          </a>
+          <a routerLink="/immobilisations" class="quick-link quick-link--red">
+            <svg fill="currentColor" viewBox="0 -960 960 960"><path d="M160-80q-33 0-56.5-23.5T80-160v-440q0-33 23.5-56.5T160-680h200v-120q0-33 23.5-56.5T440-880h80q33 0 56.5 23.5T600-800v120h200q33 0 56.5 23.5T880-600v440q0 33-23.5 56.5T800-80H160Z"/></svg>
+            <span>Immobilisations</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </ng-container>
 </div>
 
+<!-- Apprenant View (unchanged) -->
 <div *ngIf="rolesValue.isApprenant && sessions.length != 0" class="mb-8">
 	<div class="relative w-full h-56">
 		<div *ngFor="let session of sessions; index as i" [ngClass]="i != currentSession ? ' opacity-0 bg-blue-50' : 'opacity-100 bg-blue-100'" class="absolute inset-0 transition-all ease-in-out duration-1000 mb-4 rounded-lg px-6 py-6">
@@ -67,11 +224,6 @@
 				<div class="flex flex-col justify-between h-full gap-y-8">
 					<div>
 						<div class="text-gray-700 font-semibold mb-2 text-lg">Nouvelle session d'inscription</div>
-						<!-- <div class="mb-2" [ngSwitch]="getEtatSession(session.dateDebut, session.dateFin)">
-							<app-custom-badge *ngSwitchCase="etatsSession.A_VENIR" color="blue" text="A venir"></app-custom-badge>
-							<app-custom-badge *ngSwitchCase="etatsSession.OUVERTE" color="green" text="Ouverte"></app-custom-badge>
-							<app-custom-badge *ngSwitchCase="etatsSession.CLOTUREE" color="red" text="Clôturée"></app-custom-badge>
-						</div> -->
 						<div class="mb-2">
 							<div class="flex items-center">
 								<img class="opacity-80" width="20" src="assets/icons/clock-outline.svg" alt="icon">
@@ -86,7 +238,6 @@
 						</div>
 					</div>
 					<div>
-						<!-- <div class="text-gray-600 text-sm mb-2">Pour s'inscrire, veuillez cliquer sur le button ci-dessous et suivre les instructions.</div> -->
 						<app-custom-button (click)="showNouvelleDemandeModal = true" text="Inscrivez-vous" color="primary"></app-custom-button>
 					</div>
 				</div>
@@ -98,14 +249,53 @@
 	</div>
 </div>
 
+<!-- Recent Announcements for Students -->
+<div class="mb-8" *ngIf="rolesValue.isApprenant && annoncesRecentes.length > 0">
+  <div class="text-gray-700 text-md font-medium mb-4">Dernières annonces</div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div *ngFor="let annonce of annoncesRecentes" class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+      <div class="flex items-start gap-2 mb-2">
+        <svg class="w-5 h-5 text-blue-600 mt-0.5 shrink-0" fill="currentColor" viewBox="0 -960 960 960"><path d="M480-120 200-272v-240L40-600l440-240 440 240v320h-80v-276l-80 44v240L480-120Zm0-332 274-148-274-148-274 148 274 148Zm0 212 200-108v-151L480-360 280-499v151l200 108Z"/></svg>
+        <div>
+          <div class="text-sm font-semibold text-gray-900">{{ annonce.titre }}</div>
+          <div class="text-xs text-gray-500 mt-0.5">{{ annonce.datePublication | date:'dd MMM yyyy' }}</div>
+        </div>
+      </div>
+      <p class="text-xs text-gray-600 line-clamp-3">{{ annonce.contenu }}</p>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Published Notes for Students -->
+<div class="mb-8" *ngIf="rolesValue.isApprenant && !loadingNotes && notesRecentes.length > 0">
+  <div class="flex items-center justify-between mb-4">
+    <div class="text-gray-700 text-md font-medium">Mes dernières notes</div>
+    <a routerLink="/cours/mes-notes" class="text-xs text-blue-600 hover:underline">Voir tout</a>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div *ngFor="let note of notesRecentes" class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+      <div class="flex items-start justify-between mb-2">
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-semibold text-gray-900 truncate">{{ note.listeNoteEvaluation?.cours?.intitule || 'Matière' }}</div>
+          <div class="text-xs text-gray-500">{{ note.listeNoteEvaluation?.typeNoteEvaluation?.libelle || 'Évaluation' }}</div>
+        </div>
+        <div class="text-xl font-bold ml-2" [ngClass]="note.note >= 10 ? 'text-emerald-600' : 'text-orange-600'">
+          {{ note.note != null ? (note.note + '/20') : '-' }}
+        </div>
+      </div>
+      <div class="text-xs text-gray-400">
+        <span *ngIf="note.listeNoteEvaluation?.publicationsNotes?.[0]?.datePublication">
+          Publiée le {{ note.listeNoteEvaluation.publicationsNotes[0].datePublication | date:'dd MMM yyyy' }}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="mb-8" *ngIf="utilisateur && rolesValue.isApprenant">
     <div class="text-gray-700 text-md font-medium mb-6">Vos informations</div>
 	<div class="grid grid-cols-2 gap-16">
 		<div class="mb-8 bg-yellow-100 px-8 py-6 rounded-lg">
-			<!-- <svg class="w-7 h-7 text-gray-500 dark:text-gray-400 mb-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-				<path d="M18 5h-.7c.229-.467.349-.98.351-1.5a3.5 3.5 0 0 0-3.5-3.5c-1.717 0-3.215 1.2-4.331 2.481C8.4.842 6.949 0 5.5 0A3.5 3.5 0 0 0 2 3.5c.003.52.123 1.033.351 1.5H2a2 2 0 0 0-2 2v3a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1V7a2 2 0 0 0-2-2ZM8.058 5H5.5a1.5 1.5 0 0 1 0-3c.9 0 2 .754 3.092 2.122-.219.337-.392.635-.534.878Zm6.1 0h-3.742c.933-1.368 2.371-3 3.739-3a1.5 1.5 0 0 1 0 3h.003ZM11 13H9v7h2v-7Zm-4 0H2v5a2 2 0 0 0 2 2h3v-7Zm6 0v7h3a2 2 0 0 0 2-2v-5h-5Z"/>
-			</svg> -->
-			
 			<svg class="w-9 h-9 text-gray-400 dark:text-gray-400 mb-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor"  height="24" viewBox="0 -960 960 960" width="24">
 				<path d="M160-80q-33 0-56.5-23.5T80-160v-440q0-33 23.5-56.5T160-680h200v-120q0-33 23.5-56.5T440-880h80q33 0 56.5 23.5T600-800v120h200q33 0 56.5 23.5T880-600v440q0 33-23.5 56.5T800-80H160Zm80-160h240v-18q0-17-9.5-31.5T444-312q-20-9-40.5-13.5T360-330q-23 0-43.5 4.5T276-312q-17 8-26.5 22.5T240-258v18Zm320-60h160v-60H560v60Zm-200-60q25 0 42.5-17.5T420-420q0-25-17.5-42.5T360-480q-25 0-42.5 17.5T300-420q0 25 17.5 42.5T360-360Zm200-60h160v-60H560v60ZM440-600h80v-200h-80v200Z"/>
 			</svg>

@@ -4,6 +4,9 @@ import { Suggestion } from "./Suggestion";
 import { ReponseSuggestion } from "./ReponseSuggestion";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 
+Utilisateur.hasMany(Communication, { foreignKey: 'utilisateurId', as: 'communications' })
+Communication.belongsTo(Utilisateur, { foreignKey: 'utilisateurId', as: 'utilisateur' })
+
 Suggestion.hasMany(ReponseSuggestion, { foreignKey: 'suggestionId', as: 'reponsesSuggestion' })
 ReponseSuggestion.belongsTo(Suggestion, { foreignKey: 'suggestionId', as: 'suggestion' })
 

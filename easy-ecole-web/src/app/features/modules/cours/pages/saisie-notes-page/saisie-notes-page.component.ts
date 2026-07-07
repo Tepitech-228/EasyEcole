@@ -1,5 +1,7 @@
+import { HttpClient } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { environment } from 'src/environments/environment';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { CoursParticipant } from 'src/app/data/modules/inscription/models/CoursParticipant.model';
 import { ListeNoteEvaluation } from 'src/app/data/modules/inscription/models/ListeNoteEvaluation.model';
@@ -24,6 +26,12 @@ export class SaisieNotesPageComponent extends BaseComponentClass implements OnIn
   success: boolean = false
   error: boolean = false
 
+  publishing: boolean = false
+  publishSuccess: boolean = false
+  publishError: boolean = false
+  publishMessage: string = ''
+  showPublishModal: boolean = false
+
   exportingPv: boolean = false
   importingPv: boolean = false
   showImportModal: boolean = false
@@ -34,6 +42,7 @@ export class SaisieNotesPageComponent extends BaseComponentClass implements OnIn
   constructor(
     private route: ActivatedRoute,
     private router: Router,
+    private http: HttpClient,
     private listeNoteEvaluationService: ListeNoteEvaluationService,
     private coursService: CoursService,
     private pvEvaluationService: PvEvaluationService) {
@@ -88,24 +97,24 @@ export class SaisieNotesPageComponent extends BaseComponentClass implements OnIn
 
   save(): void {
     if (!this.evaluation) return
+    if (this.isPublished()) {
+      this.error = true
+      return
+    }
     this.saving = true
     this.error = false
     this.success = false
 
-    const notesToSave: NoteEvaluation[] = this.participants.map(p => {
-      const existing = this.notesMap[p.id!]
-      const val = this.notesInput[p.id!]
-      const note = new NoteEvaluation()
-      if (existing?.id) note.id = existing.id
-      note.listeNoteEvaluationId = this.evaluation!.id
-      note.coursParticipantId = p.id
-      note.note = val ?? undefined
-      return note
-    })
+    const notes = this.participants.map(p => ({
+      coursParticipantId: p.id,
+      note: this.notesInput[p.id!] ?? null
+    }))
 
-    this.listeNoteEvaluationService.update({
-      ...this.evaluation,
-      notesEvaluation: notesToSave
+    const url = `${environment.API_MODULES.INSCRIPTION}/notesEvaluation/bulk-upsert`
+
+    this.http.post(url, {
+      listeNoteEvaluationId: this.evaluation.id,
+      notes
     }).subscribe({
       next: () => {
         this.saving = false
@@ -113,12 +122,58 @@ export class SaisieNotesPageComponent extends BaseComponentClass implements OnIn
         setTimeout(() => this.success = false, 3000)
       },
       error: (err) => {
-        console.log(err)
+        console.error(err)
         this.saving = false
         this.error = true
         setTimeout(() => this.error = false, 3000)
       }
     })
+  }
+
+  isInvalidNote(value: number | null): boolean {
+    if (value === null || value === undefined) return false
+    return value < 0 || value > 20 || (value * 2) % 1 !== 0
+  }
+
+  openPublishModal(): void {
+    this.showPublishModal = true
+    this.publishMessage = ''
+    this.publishSuccess = false
+    this.publishError = false
+  }
+
+  closePublishModal(): void {
+    this.showPublishModal = false
+    this.publishMessage = ''
+  }
+
+  publishNotes(): void {
+    if (!this.evaluation?.id) return
+    this.publishing = true
+    this.publishError = false
+    this.publishSuccess = false
+
+    const url = `${environment.API_MODULES.INSCRIPTION}/publications-notes/${this.evaluation.id}/publier`
+
+    this.http.post(url, { message: this.publishMessage || undefined }).subscribe({
+      next: () => {
+        this.publishing = false
+        this.publishSuccess = true
+        this.showPublishModal = false
+        this.loadEvaluation(String(this.evaluation!.id))
+        setTimeout(() => this.publishSuccess = false, 5000)
+      },
+      error: (err) => {
+        console.error(err)
+        this.publishing = false
+        this.publishError = true
+      }
+    })
+  }
+
+  isPublished(): boolean {
+    if (!this.evaluation?.notesEvaluation?.length) return false
+    return this.evaluation.notesEvaluation.some(n => n.statut === 'publie')
   }
 
   exportPv(): void {

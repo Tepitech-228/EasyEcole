@@ -201,6 +201,70 @@ export class DocumentPDFGenerator {
         return filename;
     }
 
+    static generateGedSummary(document: {
+        id: number | string;
+        titre: string;
+        reference?: string | null;
+        eleve?: string | null;
+        parcours?: string | null;
+        categorie?: string | null;
+        tags?: string | null;
+        nommage?: string | null;
+        type?: string | null;
+        statut?: string | null;
+        taille?: string | null;
+        dureeConservation?: string | null;
+        archivedUntil?: Date | null;
+        isArchived?: boolean | null;
+    }, outputDir: string): Promise<string> {
+        const dir = path.resolve(outputDir);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+
+        const filename = `ged_document_${document.id}_${Date.now()}.pdf`;
+        const filePath = path.join(dir, filename);
+
+        const doc = new PDFDocument({
+            size: 'A4',
+            margin: 50
+        });
+
+        const stream = fs.createWriteStream(filePath);
+        doc.pipe(stream);
+
+        doc.fontSize(22).text('ESA - École Supérieure', { align: 'center' });
+        doc.moveDown(0.5);
+        doc.fontSize(16).text('Fiche de document GED', { align: 'center' });
+        doc.moveDown(1.5);
+
+        doc.fontSize(11).text(`Titre : ${document.titre}`);
+        if (document.reference) doc.text(`Référence : ${document.reference}`);
+        if (document.nommage) doc.text(`Nommage : ${document.nommage}`);
+        if (document.eleve) doc.text(`Élève : ${document.eleve}`);
+        if (document.parcours) doc.text(`Parcours : ${document.parcours}`);
+        if (document.categorie) doc.text(`Catégorie : ${document.categorie}`);
+        if (document.tags) doc.text(`Tags : ${document.tags}`);
+        doc.text(`Type : ${document.type || 'PDF'}`);
+        doc.text(`Statut : ${document.statut || 'Disponible'}`);
+        if (document.taille) doc.text(`Taille : ${document.taille}`);
+        if (document.dureeConservation) doc.text(`Durée conservation : ${document.dureeConservation}`);
+        if (document.archivedUntil) doc.text(`Archivage jusqu'au : ${new Date(document.archivedUntil).toLocaleDateString('fr-FR')}`);
+        doc.text(`Archivé : ${document.isArchived ? 'Oui' : 'Non'}`);
+
+        doc.moveDown(1.5);
+        doc.fontSize(11).text('Ce document a été exporté depuis le module GED de la plateforme Easy Ecole.', { align: 'left' });
+        doc.moveDown(3);
+        doc.fontSize(10).text('Fait à Kinshasa, le ' + new Date().toLocaleDateString('fr-FR'), { align: 'right' });
+
+        doc.end();
+
+        return new Promise((resolve, reject) => {
+            stream.on('finish', () => resolve(filename));
+            stream.on('error', reject);
+        });
+    }
+
     static generateQuitus(paiementId: string | number, code: string, etudiantNom: string, matricule: string, montant: number, datePaiement: Date, outputDir: string): string {
         const dir = path.resolve(outputDir);
         if (!fs.existsSync(dir)) {

@@ -149,6 +149,13 @@ const routes: Routes = [
         loadChildren: () => import('./features/modules/elearning/elearning.module').then(m => m.ElearningModule),
         canLoad: [AuthGuard]
       },
+
+      // Module "Comptabilite"
+      {
+        path: 'comptabilite',
+        loadChildren: () => import('./features/modules/comptabilite/comptabilite.module').then(m => m.ComptabiliteModule),
+        canLoad: [AuthGuard]
+      },
     ]
   },
 

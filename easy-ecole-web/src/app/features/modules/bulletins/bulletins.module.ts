@@ -28,6 +28,9 @@ import { DispenseFormPageComponent } from './pages/dispense-form-page/dispense-f
 import { AuditNotesPageComponent } from './pages/audit-notes-page/audit-notes-page.component';
 import { JuryMembresPageComponent } from './pages/jury-membres-page/jury-membres-page.component';
 import { JuryMembreFormPageComponent } from './pages/jury-membre-form-page/jury-membre-form-page.component';
+import { ListeRattrapagesPageComponent } from './pages/liste-rattrapages-page/liste-rattrapages-page.component';
+import { RattrapageFormPageComponent } from './pages/rattrapage-form-page/rattrapage-form-page.component';
+import { DetailRattrapagePageComponent } from './pages/detail-rattrapage-page/detail-rattrapage-page.component';
 import { SignaturePadComponent } from './components/signature-pad/signature-pad.component';
 import { FormsModule } from '@angular/forms';
 
@@ -59,6 +62,9 @@ import { FormsModule } from '@angular/forms';
     AuditNotesPageComponent,
     JuryMembresPageComponent,
     JuryMembreFormPageComponent,
+    ListeRattrapagesPageComponent,
+    RattrapageFormPageComponent,
+    DetailRattrapagePageComponent,
   ],
   imports: [
     CommonModule,

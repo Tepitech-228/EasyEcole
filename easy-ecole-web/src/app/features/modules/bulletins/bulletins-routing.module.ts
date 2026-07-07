@@ -25,6 +25,9 @@ import { DispenseFormPageComponent } from './pages/dispense-form-page/dispense-f
 import { AuditNotesPageComponent } from './pages/audit-notes-page/audit-notes-page.component';
 import { JuryMembresPageComponent } from './pages/jury-membres-page/jury-membres-page.component';
 import { JuryMembreFormPageComponent } from './pages/jury-membre-form-page/jury-membre-form-page.component';
+import { ListeRattrapagesPageComponent } from './pages/liste-rattrapages-page/liste-rattrapages-page.component';
+import { RattrapageFormPageComponent } from './pages/rattrapage-form-page/rattrapage-form-page.component';
+import { DetailRattrapagePageComponent } from './pages/detail-rattrapage-page/detail-rattrapage-page.component';
 
 const routes: Routes = [
   { path: '', component: ListeBulletinsPageComponent },
@@ -59,6 +62,9 @@ const routes: Routes = [
   { path: 'jury', component: JuryMembresPageComponent },
   { path: 'jury/nouveau', component: JuryMembreFormPageComponent },
   { path: 'jury/:id', component: JuryMembreFormPageComponent },
+  { path: 'rattrapages', component: ListeRattrapagesPageComponent },
+  { path: 'rattrapages/nouveau', component: RattrapageFormPageComponent },
+  { path: 'rattrapages/:id', component: DetailRattrapagePageComponent },
   { path: ':id', component: DetailBulletinPageComponent },
 ];
 

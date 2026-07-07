@@ -61,7 +61,7 @@ export class CalculCompensationService {
             let ueEliminee = false;
 
             for (const mcc of mccs) {
-                const ligne = lignes.find(l => l.coursId === Number(mcc.coursId));
+                const ligne = lignes.find(l => String(l.coursId) === String(mcc.coursId));
                 const moyenne = ligne ? ligne.moyenne : null;
                 const estValide = moyenne !== null && moyenne >= 10;
 

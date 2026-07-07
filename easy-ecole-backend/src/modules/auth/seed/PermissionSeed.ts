@@ -124,6 +124,10 @@ const ALL_PERMISSIONS: Array<{ key: string; libelle: string; module: string; typ
     { key: 'action.evaluation.bulletin.modifier', libelle: 'Modifier un bulletin', module: 'Évaluations', type: 'action', parentKey: 'menu.evaluations.bulletins' },
     { key: 'action.evaluation.bulletin.publier', libelle: 'Publier un bulletin', module: 'Évaluations', type: 'action', parentKey: 'menu.evaluations.bulletins' },
     { key: 'action.evaluation.bulletin.supprimer', libelle: 'Supprimer un bulletin', module: 'Évaluations', type: 'action', parentKey: 'menu.evaluations.bulletins' },
+    { key: 'menu.evaluations.rattrapages', libelle: 'Rattrapages', module: 'Évaluations', type: 'menu', parentKey: 'menu.evaluations' },
+    { key: 'action.evaluation.rattrapage.assigner', libelle: 'Assigner automatiquement', module: 'Évaluations', type: 'action', parentKey: 'menu.evaluations.rattrapages' },
+    { key: 'action.evaluation.rattrapage.notifier', libelle: 'Notifier les étudiants', module: 'Évaluations', type: 'action', parentKey: 'menu.evaluations.rattrapages' },
+    { key: 'action.evaluation.rattrapage.saisir-notes', libelle: 'Saisir les notes', module: 'Évaluations', type: 'action', parentKey: 'menu.evaluations.rattrapages' },
 
     // ============ SCOLARITÉ ============
     { key: 'menu.scolarite', libelle: 'Scolarité', module: 'Scolarité', type: 'menu' },

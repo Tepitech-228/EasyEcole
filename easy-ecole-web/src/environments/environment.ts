@@ -21,6 +21,8 @@ export const environment = {
     STAGES: apiUrl + '/stages',
     SCOLARITE: apiUrl + '/scolarite',
     ELEARNING: apiUrl + '/elearning',
+    COMMUNICATION: apiUrl + '/communication',
+    RH: apiUrl + '/rh',
   },
   MEDIAS_PATH: {
     AUTH: {

@@ -13,13 +13,13 @@ export default class AuthController {
 
     constructor() { }
 
-    static getEmailConfirmationToken(id: string, email: string): string {
+    static getEmailConfirmationToken(id: number | string, email: string): string {
         return jwt.sign(
             {
                 // Will expire in 60 * 60 seconds (1 hour)
                 exp: Math.floor(Date.now() / 1000) + (60 * 60),
                 data: {
-                    id: id,
+                    id: String(id),
                     email: email
                 }
             },

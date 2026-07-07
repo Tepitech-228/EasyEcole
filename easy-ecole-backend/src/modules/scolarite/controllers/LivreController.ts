@@ -135,7 +135,7 @@ export default class LivreController {
 
                 for (const admin of admins) {
                     await Notification.create({
-                        utilisateurId: parseInt(admin.id),
+                        utilisateurId: admin.id as number,
                         type: 'bibliotheque',
                         message: `${utilisateur?.prenoms} ${utilisateur?.nom} a consulté le livre "${livre.titre}"`
                     });

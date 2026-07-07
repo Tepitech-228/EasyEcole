@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Op } from "sequelize";
+import { Op, Transaction } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { Bulletin } from "../models/Bulletin";
 import { LigneBulletin } from "../models/LigneBulletin";
@@ -208,7 +208,7 @@ export default class BulletinController {
     }
   }
 
-  private async calculerRangs(classeId: number, semestre: string, anneeAcademiqueId: number, t?: any) {
+  private async calculerRangs(classeId: number, semestre: string, anneeAcademiqueId: number, t?: Transaction) {
     const bulletins = await Bulletin.findAll({
       where: { classeId, semestre, anneeAcademiqueId, statut: 'brouillon' },
       order: [['moyenneGenerale', 'DESC']],
@@ -272,7 +272,7 @@ export default class BulletinController {
   // GET /bulletins/:id
   async getOne(req: Request, res: Response) {
     try {
-      const bulletin = await Bulletin.findByPk(req.params.id, {
+      const bulletin = await Bulletin.findByPk(Number(req.params.id), {
         include: [
           { association: Bulletin.associations.utilisateur },
           { association: Bulletin.associations.classe },
@@ -296,7 +296,7 @@ export default class BulletinController {
   // PUT /bulletins/:id
   async update(req: Request, res: Response) {
     try {
-      const bulletin = await Bulletin.findByPk(req.params.id);
+      const bulletin = await Bulletin.findByPk(Number(req.params.id));
       if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvé' });
 
       if (bulletin.statut === 'publie') {
@@ -318,7 +318,7 @@ export default class BulletinController {
   // PUT /bulletins/:id/publier
   async publier(req: Request, res: Response) {
     try {
-      const bulletin = await Bulletin.findByPk(req.params.id);
+      const bulletin = await Bulletin.findByPk(Number(req.params.id));
       if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvé' });
       if (bulletin.statut === 'publie') return res.status(400).json({ message: 'Déjà publié' });
 
@@ -336,7 +336,7 @@ export default class BulletinController {
   // PUT /bulletins/:id/signer-enseignant
   async signerEnseignant(req: Request, res: Response) {
     try {
-      const bulletin = await Bulletin.findByPk(req.params.id);
+      const bulletin = await Bulletin.findByPk(Number(req.params.id));
       if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvé' });
 
       const { signature } = req.body;
@@ -357,7 +357,7 @@ export default class BulletinController {
   // PUT /bulletins/:id/signer-chef
   async signerChef(req: Request, res: Response) {
     try {
-      const bulletin = await Bulletin.findByPk(req.params.id);
+      const bulletin = await Bulletin.findByPk(Number(req.params.id));
       if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvé' });
 
       const { signature } = req.body;
@@ -378,7 +378,7 @@ export default class BulletinController {
   // DELETE /bulletins/:id
   async delete(req: Request, res: Response) {
     try {
-      const bulletin = await Bulletin.findByPk(req.params.id);
+      const bulletin = await Bulletin.findByPk(Number(req.params.id));
       if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvé' });
 
       await bulletin.destroy();
@@ -412,7 +412,7 @@ export default class BulletinController {
         if (!grouped[key]) {
           grouped[key] = {
             classeId: b.classeId,
-            classe: (b as any).classe?.libelle || '',
+            classe: b.classe?.libelle || '',
             effectif: 0,
             sommeMoyennes: 0,
             moyenneMin: Infinity,
@@ -431,7 +431,7 @@ export default class BulletinController {
           if (b.moyenneGenerale >= 10) g.admis++;
           if (b.moyenneGenerale > g.meilleureMoyenne) {
             g.meilleureMoyenne = b.moyenneGenerale;
-            g.meilleurEleve = ((b as any).utilisateur?.nom || '') + ' ' + ((b as any).utilisateur?.prenoms || '');
+            g.meilleurEleve = (b.utilisateur?.nom || '') + ' ' + (b.utilisateur?.prenoms || '');
           }
         }
       }
@@ -456,7 +456,7 @@ export default class BulletinController {
   // GET /bulletins/mon-releve
   async monReleve(req: Request, res: Response) {
     try {
-      const utilisateurId = (req as any).utilisateurId;
+      const utilisateurId = req.utilisateurId!;
       if (!utilisateurId) return res.status(401).json({ message: 'Non authentifié' });
 
       const bulletin = await Bulletin.findOne({

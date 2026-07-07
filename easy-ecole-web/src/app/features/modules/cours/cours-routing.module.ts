@@ -20,6 +20,7 @@ import { DetailsPresencePageComponent } from './pages/details-presence-page/deta
 import { ScanPresencePageComponent } from './pages/scan-presence-page/scan-presence-page.component';
 import { DetailsCahierDeTextePageComponent } from './pages/details-cahier-de-texte-page/details-cahier-de-texte-page.component';
 import { MesPresencesPageComponent } from './pages/mes-presences-page/mes-presences-page.component';
+import { MesNotesPageComponent } from './pages/mes-notes-page/mes-notes-page.component';
 
 const routes: Routes = [
   {
@@ -158,6 +159,13 @@ const routes: Routes = [
         pathMatch: 'full'
       },
     ],
+  },
+
+  // Mes notes (étudiant)
+  {
+    path: 'mes-notes',
+    component: MesNotesPageComponent,
+    pathMatch: 'full'
   },
 
   // Notes d'évaluation

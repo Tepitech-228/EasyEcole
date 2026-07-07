@@ -65,7 +65,7 @@ export async function creerEcritureComptable(params: CreerEcritureParams): Promi
     reference,
     moduleSource,
     referenceModuleId,
-    utilisateurSaisieId: (req as any).utilisateurId,
+    utilisateurSaisieId: req.utilisateurId!,
     validee: false
   }, { transaction });
 

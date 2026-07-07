@@ -5,6 +5,7 @@ import { Cours } from "./Cours";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { TypeNoteEvaluation } from "./TypeNoteEvaluation";
 import { NoteEvaluation } from "./NoteEvaluation";
+import { PublicationNote } from "./PublicationNote";
 import { AnneeAcademique } from "./AnneeAcademique";
 
 export class ListeNoteEvaluation extends Model<InferAttributes<ListeNoteEvaluation>, InferCreationAttributes<ListeNoteEvaluation>> {
@@ -35,7 +36,8 @@ export class ListeNoteEvaluation extends Model<InferAttributes<ListeNoteEvaluati
     enseignant: Association<ListeNoteEvaluation, Enseignant>,
     typeNoteEvaluation: Association<ListeNoteEvaluation, TypeNoteEvaluation>,
     anneeAcademique: Association<ListeNoteEvaluation, AnneeAcademique>,
-    notesEvaluation: Association<ListeNoteEvaluation, NoteEvaluation>
+    notesEvaluation: Association<ListeNoteEvaluation, NoteEvaluation>,
+    publicationsNotes: Association<ListeNoteEvaluation, PublicationNote>
   };
 }
 

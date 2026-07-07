@@ -1,4 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { interval, Subscription } from 'rxjs';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { AuthService } from 'src/app/data/modules/auth/services/auth.service';
 import { PanierParcoursChoisiService } from 'src/app/data/modules/orientation/services/panier-parcours-choisi.service';
@@ -14,12 +16,15 @@ import { environment } from 'src/environments/environment';
 export class BaseLayoutComponent extends BaseComponentClass implements OnInit {
 
   showMenu: boolean = false
+  searchQuery: string = ''
   sidebarCollapsed: boolean = false
   hoverExpanded: boolean = false
   panierCount: number = 0
   showPanierModal: boolean = false
   showProfileDropdown: boolean = false
   showNotifDropdown: boolean = false
+  enseignantNotif: { coursLibelle?: string; salle?: string; heureDebut?: string; heureFin?: string } | null = null
+  private notifSub: Subscription | null = null
 
   readonly PROFILES_PATH: string = environment.MEDIAS_PATH.AUTH.PROFILES
 
@@ -27,7 +32,8 @@ export class BaseLayoutComponent extends BaseComponentClass implements OnInit {
     private panierParcoursChoisiService: PanierParcoursChoisiService,
     private authService: AuthService,
     private sidebarState: SidebarStateService,
-    private permissionState: PermissionStateService) {
+    private permissionState: PermissionStateService,
+    private http: HttpClient) {
     super()
     if(this.rolesValue.isApprenant) {
       this.getPanierCount()
@@ -38,6 +44,25 @@ export class BaseLayoutComponent extends BaseComponentClass implements OnInit {
 
   ngOnInit(): void {
     this.permissionState.loadPermissions()
+    this.startEnseignantPolling()
+  }
+
+  ngOnDestroy(): void {
+    this.notifSub?.unsubscribe()
+  }
+
+  private startEnseignantPolling(): void {
+    if (!this.rolesValue.isEnseignant && !this.rolesValue.isInstitution && !this.rolesValue.isAdmin) return;
+    this.notifSub = interval(60000).subscribe(() => {
+      this.http.get(`${environment.API_URL}/inscription/rattrapages/enseignant/prochain-cours`).subscribe({
+        next: (res: any) => {
+          if (res?.prochainCours) {
+            this.enseignantNotif = res.prochainCours;
+            setTimeout(() => this.enseignantNotif = null, 30000);
+          }
+        }
+      });
+    });
   }
 
   hasPermission(key: string): boolean {

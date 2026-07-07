@@ -13,13 +13,13 @@ import { MonCursusPageComponent } from './pages/mon-cursus-page/mon-cursus-page.
 import { NouveauParcoursPageComponent } from './pages/nouveau-parcours-page/nouveau-parcours-page.component';
 import { PaiementsPageComponent } from './pages/paiements-page/paiements-page.component';
 import { BordereauxPageComponent } from './pages/bordereaux-page/bordereaux-page.component';
-import { ComptabilitePageComponent } from './pages/comptabilite-page/comptabilite-page.component';
 import { ValidationBordereauxPageComponent } from './pages/validation-bordereaux-page/validation-bordereaux-page.component';
 import { MonDossierPageComponent } from './pages/mon-dossier-page/mon-dossier-page.component';
 import { GestionEcheancesPageComponent } from './pages/gestion-echeances-page/gestion-echeances-page.component';
 import { ComiteOrientationPageComponent } from './pages/comite-orientation-page/comite-orientation-page.component';
 import { ComiteDetailsPageComponent } from './pages/comite-details-page/comite-details-page.component';
 import { ListeDossiersPageComponent } from './pages/liste-dossiers-page/liste-dossiers-page.component';
+import { ListeFraisParcoursPageComponent } from './pages/liste-frais-parcours-page/liste-frais-parcours-page.component';
 
 const routes: Routes = [
   {
@@ -60,6 +60,12 @@ const routes: Routes = [
         pathMatch: 'full'
       },
     ]
+  },
+
+  {
+    path: 'frais-parcours',
+    component: ListeFraisParcoursPageComponent,
+    pathMatch: 'full'
   },
 
   {
@@ -117,12 +123,6 @@ const routes: Routes = [
   {
     path: 'bordereaux',
     component: BordereauxPageComponent,
-    pathMatch: 'full'
-  },
-
-  {
-    path: 'comptabilite',
-    component: ComptabilitePageComponent,
     pathMatch: 'full'
   },
 

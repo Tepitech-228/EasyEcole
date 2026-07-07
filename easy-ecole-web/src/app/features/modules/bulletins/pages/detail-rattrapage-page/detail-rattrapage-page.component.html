@@ -1,0 +1,87 @@
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <app-header-title title="Détail rattrapage" subtitle="Consultez et modifiez une inscription rattrapage"></app-header-title>
+
+  <div *ngIf="loading" class="mt-8 flex justify-center">
+    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
+  </div>
+
+  <div *ngIf="rattrapage && !loading" class="mt-8 space-y-6">
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Étudiant</p>
+          <p class="text-sm font-semibold text-gray-900 mt-1">{{ rattrapage.coursParticipant?.utilisateur?.prenoms }} {{ rattrapage.coursParticipant?.utilisateur?.nom }}</p>
+        </div>
+        <div>
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Matière</p>
+          <p class="text-sm font-semibold text-gray-900 mt-1">{{ rattrapage.cours?.libelle || rattrapage.cours?.code || '—' }}</p>
+        </div>
+        <div>
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Session</p>
+          <p class="text-sm font-semibold text-gray-900 mt-1">{{ rattrapage.sessionExamen?.libelle || '—' }}</p>
+        </div>
+        <div>
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</p>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1"
+                [ngClass]="{
+                  'bg-amber-50 text-amber-700 ring-1 ring-amber-200': rattrapage.statut === 'inscrit',
+                  'bg-blue-50 text-blue-700 ring-1 ring-blue-200': rattrapage.statut === 'convoque',
+                  'bg-green-50 text-green-700 ring-1 ring-green-200': rattrapage.statut === 'present',
+                  'bg-red-50 text-red-700 ring-1 ring-red-200': rattrapage.statut === 'absent',
+                  'bg-purple-50 text-purple-700 ring-1 ring-purple-200': rattrapage.statut === 'valide'
+                }">{{ rattrapage.statut }}</span>
+        </div>
+        <div>
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Note rattrapage</p>
+          <p class="text-sm font-semibold text-gray-900 mt-1">{{ rattrapage.noteRattrapage != null ? rattrapage.noteRattrapage : 'Non saisie' }}</p>
+        </div>
+        <div>
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Notification</p>
+          <span *ngIf="rattrapage.notificationEnvoyee" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 bg-green-50 text-green-700 ring-1 ring-green-200">Envoyée</span>
+          <span *ngIf="!rattrapage.notificationEnvoyee" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 bg-gray-50 text-gray-500 ring-1 ring-gray-200">Non envoyée</span>
+        </div>
+      </div>
+
+      <div class="mt-6 border-t border-gray-100 pt-6">
+        <h4 class="text-sm font-semibold text-gray-900 mb-4">Modifier</h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Statut</label>
+            <select [(ngModel)]="rattrapage.statut" (change)="update()" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm">
+              <option value="inscrit">Inscrit</option>
+              <option value="convoque">Convoqué</option>
+              <option value="present">Présent</option>
+              <option value="absent">Absent</option>
+              <option value="valide">Validé</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Note rattrapage</label>
+            <input type="number" step="0.01" [(ngModel)]="rattrapage.noteRattrapage" (change)="update()" placeholder="0-20" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Salle</label>
+            <input type="text" [(ngModel)]="rattrapage.salle" (change)="update()" placeholder="Salle" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between">
+      <button (click)="retour()" class="inline-flex items-center px-4 py-2.5 text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+        Retour
+      </button>
+      <div class="flex items-center gap-2">
+        <button (click)="notifier()" *ngIf="!rattrapage.notificationEnvoyee" class="inline-flex items-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          Notifier
+        </button>
+        <button (click)="supprimer()" class="inline-flex items-center px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          Supprimer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

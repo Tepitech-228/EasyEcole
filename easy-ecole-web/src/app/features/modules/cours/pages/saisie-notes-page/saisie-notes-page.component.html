@@ -4,6 +4,9 @@
 <app-custom-alert [show]="success" title="Succès" color="green">
     Notes enregistrées avec succès
 </app-custom-alert>
+<div *ngIf="publishSuccess" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+    Notes publiées avec succès ! Les étudiants ont été notifiés par email.
+</div>
 
 <app-return-back></app-return-back>
 
@@ -56,7 +59,11 @@
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     <input type="number" [(ngModel)]="notesInput[p.id!]" min="0" max="20" step="0.5"
                         placeholder="Note"
+                        [class.ring-red-500]="notesInput[p.id!] !== null && notesInput[p.id!] !== undefined && isInvalidNote(notesInput[p.id!])"
                         class="w-24 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="notesInput[p.id!] !== null && notesInput[p.id!] !== undefined && isInvalidNote(notesInput[p.id!])" class="text-xs text-red-500 mt-1">
+                        La note doit être comprise entre 0 et 20 (pas de 0.5)
+                    </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                     <span *ngIf="notesInput[p.id!] !== null && notesInput[p.id!] !== undefined" class="text-green-600 font-medium">Noté</span>
@@ -66,8 +73,15 @@
         </tbody>
     </table>
 
-    <div class="px-6 py-4 flex justify-end">
-        <app-custom-button (click)="save()" [disabled]="saving" [text]="saving ? 'Enregistrement...' : 'Enregistrer les notes'">
+    <div class="px-6 py-4 flex justify-end items-center">
+        <button *ngIf="!isPublished() && participants.length > 0" 
+                (click)="openPublishModal()" 
+                [disabled]="publishing"
+                class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded ml-2">
+            <span *ngIf="publishing">Publication en cours...</span>
+            <span *ngIf="!publishing">Publier les notes</span>
+        </button>
+        <app-custom-button (click)="save()" [disabled]="saving || isPublished()" [text]="saving ? 'Enregistrement...' : 'Enregistrer les notes'">
         </app-custom-button>
     </div>
 </div>
@@ -149,3 +163,34 @@
         </div>
     </div>
 </app-custom-modal>
+
+<!-- Modal Publication -->
+<div *ngIf="showPublishModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+        <h3 class="text-lg font-bold mb-4">Publier les notes</h3>
+        <p class="mb-4 text-gray-600">Cette action va publier les notes pour tous les étudiants et leur envoyer une notification par email. Les notes ne pourront plus être modifiées après publication.</p>
+        
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Message facultatif</label>
+            <textarea [(ngModel)]="publishMessage" rows="3" 
+                      class="w-full border border-gray-300 rounded px-3 py-2"
+                      placeholder="Un message à accompagner la publication..."></textarea>
+        </div>
+
+        <div *ngIf="publishError" class="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded mb-3 text-sm">
+            Erreur lors de la publication. Veuillez réessayer.
+        </div>
+
+        <div class="flex justify-end space-x-3">
+            <button (click)="closePublishModal()" 
+                    class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-4 rounded">
+                Annuler
+            </button>
+            <button (click)="publishNotes()" [disabled]="publishing"
+                    class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded">
+                <span *ngIf="publishing">Publication...</span>
+                <span *ngIf="!publishing">Confirmer la publication</span>
+            </button>
+        </div>
+    </div>
+</div>

@@ -17,6 +17,7 @@ import { MobileMoneyCinetpay } from './core/helpers/MobileMoneyCinetpay'
 import { setupChatSocket } from './modules/elearning/socket/chatSocket'
 import { PermissionSeed } from './modules/auth/seed/PermissionSeed'
 import { RoleSeed } from './modules/auth/seed/RoleSeed'
+import { errorHandler } from './core/middlewares/ErrorHandler'
 
 // Tests
 
@@ -78,6 +79,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 
 const API_BASE_URL = "/api/v1"
 app.use(API_BASE_URL, router)
+
+app.use(errorHandler)
 
 /** HTTPS setup (fallback HTTP if no SSL) */
 let server: http.Server | https.Server

@@ -153,7 +153,7 @@ export default class SessionGedController {
           fichier: finalFilename,
           taille: `${(file.size / 1024).toFixed(1)} Ko`,
           uploaderId: (req as any).utilisateurId,
-          folderId: folderId || null,
+          folderId: folderId || undefined,
           sessionId,
           metadata: metadata || null,
           dureeConservation: metadata?.dureeConservation || null,
