@@ -1,0 +1,114 @@
+<div class="flex justify-between items-start gap-x-8 mb-8">
+    <app-header-title title="Planning du personnel" subtitle="Gérer les plannings des employés"></app-header-title>
+    <button (click)="openNouveau()"
+        class="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors border-0 cursor-pointer">
+        + Nouveau planning
+    </button>
+</div>
+
+<div *ngIf="loading" class="flex justify-center py-20">
+    <svg class="animate-spin h-8 w-8 text-indigo-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+</div>
+
+<div *ngIf="!loading" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Employé</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Jour</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Tâche</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Horaire</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Période</th>
+                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            <tr *ngFor="let p of plannings" class="hover:bg-gray-50">
+                <td class="px-6 py-4 text-sm text-gray-900">{{ getEmployeName(p.employe) }}</td>
+                <td class="px-6 py-4 text-sm text-gray-700">{{ p.jourSemaine }}</td>
+                <td class="px-6 py-4 text-sm text-gray-700">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                        [style.background]="(p.couleur || '#3b82f6') + '20'"
+                        [style.color]="p.couleur || '#3b82f6'">
+                        {{ p.tache }}
+                    </span>
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-700">{{ p.heureDebut?.toString()?.slice(0,5) }} - {{ p.heureFin?.toString()?.slice(0,5) }}</td>
+                <td class="px-6 py-4 text-sm text-gray-500">{{ p.dateDebut ? (p.dateDebut | date:'dd/MM/yyyy') : '—' }} - {{ p.dateFin ? (p.dateFin | date:'dd/MM/yyyy') : '—' }}</td>
+                <td class="px-6 py-4 text-right">
+                    <button (click)="openEdition(p)"
+                        class="text-indigo-600 hover:text-indigo-800 text-xs font-medium mr-3 bg-transparent border-0 cursor-pointer">Modifier</button>
+                    <button (click)="supprimer(p.id!)"
+                        class="text-red-600 hover:text-red-800 text-xs font-medium bg-transparent border-0 cursor-pointer">Supprimer</button>
+                </td>
+            </tr>
+            <tr *ngIf="plannings.length === 0">
+                <td colspan="6" class="px-6 py-12 text-center text-gray-400 text-sm">Aucun planning défini</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<app-custom-modal *ngIf="showModal" [title]="editMode ? 'Modifier le planning' : 'Nouveau planning'"
+    [subtitle]="editMode ? 'Modifier les horaires de cette tâche' : 'Ajouter une nouvelle entrée au planning'"
+    (onCloseModal)="closeModal()" [center]="true" [showModal]="showModal">
+    <form [formGroup]="form">
+        <div class="grid grid-cols-2 gap-x-6 gap-y-6 mb-8">
+            <div class="col-span-full">
+                <label class="mb-2 block text-sm leading-6 text-gray-600">Employé</label>
+                <select formControlName="employeId"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option [value]="null">Sélectionner un employé</option>
+                    <option *ngFor="let e of employes" [value]="e.id">{{ getEmployeName(e) }}</option>
+                </select>
+            </div>
+            <div>
+                <label class="mb-2 block text-sm leading-6 text-gray-600">Jour</label>
+                <select formControlName="jourSemaine"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option [value]="null">Sélectionner</option>
+                    <option *ngFor="let j of joursSemaineList" [value]="j.value">{{ j.label }}</option>
+                </select>
+            </div>
+            <div>
+                <label class="mb-2 block text-sm leading-6 text-gray-600">Tâche</label>
+                <input type="text" formControlName="tache" placeholder="Ex: Accueil, Sécurité..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div>
+                <label class="mb-2 block text-sm leading-6 text-gray-600">Heure début</label>
+                <input type="time" formControlName="heureDebut"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div>
+                <label class="mb-2 block text-sm leading-6 text-gray-600">Heure fin</label>
+                <input type="time" formControlName="heureFin"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div>
+                <label class="mb-2 block text-sm leading-6 text-gray-600">Date début</label>
+                <input type="date" formControlName="dateDebut"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div>
+                <label class="mb-2 block text-sm leading-6 text-gray-600">Date fin</label>
+                <input type="date" formControlName="dateFin"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-full">
+                <label class="mb-2 block text-sm leading-6 text-gray-600">Couleur</label>
+                <input type="color" formControlName="couleur"
+                    class="block w-12 h-10 rounded-md border-0 shadow-sm ring-1 ring-inset ring-gray-300">
+            </div>
+            <div class="col-span-full">
+                <label class="mb-2 block text-sm leading-6 text-gray-600">Description (facultative)</label>
+                <textarea rows="3" formControlName="description" placeholder="Description..."
+                    class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
+            </div>
+        </div>
+    </form>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="closeModal()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+        <app-custom-button (click)="save()" [text]="editMode ? 'Modifier' : 'Enregistrer'"></app-custom-button>
+    </div>
+</app-custom-modal>

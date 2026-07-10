@@ -141,7 +141,7 @@ export default class PaiementInscriptionController {
             const paiementInscription = new PaiementInscription();
             paiementInscription.matriculeInscription = matriculeInscription;
             paiementInscription.montant = montant;
-            paiementInscription.type = 'en_ligne';
+            paiementInscription.type = TypesPaiement.EN_LIGNE;
             paiementInscription.description = description || 'Paiement mobile money';
             paiementInscription.utilisateurId = (req as any).utilisateurId;
             await paiementInscription.save();

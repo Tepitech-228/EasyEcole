@@ -18,6 +18,7 @@ import { BulletinDetailsPageComponent } from './pages/bulletin-details-page/bull
 import { ParametresPaiePageComponent } from './pages/parametres-paie-page/parametres-paie-page.component';
 import { PrestationsPageComponent } from './pages/prestations-page/prestations-page.component';
 import { ListeContratsPageComponent } from './pages/liste-contrats-page/liste-contrats-page.component';
+import { PlanningPersonnelPageComponent } from './pages/planning-personnel-page/planning-personnel-page.component';
 
 @NgModule({
   declarations: [
@@ -37,6 +38,7 @@ import { ListeContratsPageComponent } from './pages/liste-contrats-page/liste-co
     ParametresPaiePageComponent,
     PrestationsPageComponent,
     ListeContratsPageComponent,
+    PlanningPersonnelPageComponent,
   ],
   imports: [
     CommonModule,

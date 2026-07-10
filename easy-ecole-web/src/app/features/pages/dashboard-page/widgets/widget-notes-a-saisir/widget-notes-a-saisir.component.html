@@ -1,0 +1,24 @@
+<app-dashboard-widget
+  title="Notes à saisir"
+  icon="✍️"
+  [loading]="loading"
+  [empty]="!loading && evaluations.length === 0"
+  emptyMessage="Toutes les notes sont saisies"
+  link="/cours/listes-evaluation">
+
+  <div class="eval-list">
+    <div class="eval-item" *ngFor="let eval of evaluations">
+      <div class="eval-info">
+        <div class="eval-cours">{{ eval.cours?.intitule || 'Cours' }}</div>
+        <div class="eval-meta">
+          <span class="eval-type">{{ eval.typeNoteEvaluation?.libelle || 'Évaluation' }}</span>
+          <span class="eval-sep">&middot;</span>
+          <span class="eval-count">{{ eval.$nbNotes || '0' }} notes</span>
+        </div>
+      </div>
+      <span class="eval-statut" [class.statut-brouillon]="eval.statut === 'brouillon'" [class.statut-cours]="eval.statut === 'en_cours'">
+        {{ eval.statut === 'brouillon' ? 'Brouillon' : 'En cours' }}
+      </span>
+    </div>
+  </div>
+</app-dashboard-widget>

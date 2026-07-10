@@ -1,0 +1,132 @@
+<div class="flex h-[calc(100vh-4rem)] overflow-hidden bg-slate-50">
+  <!-- Sidebar -->
+  <div class="flex-shrink-0 border-r border-slate-200 bg-white transition-all duration-300 overflow-hidden" [ngClass]="sidebarOuverte ? 'w-80' : 'w-0'">
+    <div *ngIf="sidebarOuverte" class="flex h-full flex-col">
+      <div class="flex items-center justify-between border-b border-slate-200 p-4">
+        <h2 class="truncate text-sm font-semibold text-slate-900">{{ cours?.titre }}</h2>
+      </div>
+
+      <div *ngIf="cours" class="border-b border-slate-100 px-4 py-3">
+        <div class="flex items-center justify-between text-xs text-slate-500">
+          <span>Progression</span>
+          <span>{{ cours.progressionTaux || 0 }}%</span>
+        </div>
+        <div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
+          <div class="h-full rounded-full bg-emerald-500 transition-all duration-500" [style.width.%]="cours.progressionTaux || 0"></div>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-3 space-y-1">
+        <div *ngFor="let module of modulesOrdonnes; let mi = index" class="rounded-xl transition-colors" [ngClass]="estDisponible(module) ? 'hover:bg-slate-50' : 'opacity-40'">
+          <button (click)="estDisponible(module) && ouvrirModule(module)" class="flex w-full items-center gap-3 px-3 py-2.5 text-left" [ngClass]="moduleActif?.id === module.id ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700'">
+            <span class="flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold" [ngClass]="moduleActif?.id === module.id ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500'">{{ mi + 1 }}</span>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium truncate">{{ module.titre }}</p>
+              <p *ngIf="!estDisponible(module)" class="text-xs text-slate-400 mt-0.5">Disponible le {{ module.dateDisponible | date:'dd/MM/yyyy' }}</p>
+            </div>
+            <span *ngIf="estDisponible(module)" class="text-xs font-medium" [ngClass]="progressionModule(module) === 100 ? 'text-emerald-600' : 'text-slate-400'">{{ progressionModule(module) }}%</span>
+          </button>
+
+          <div *ngIf="moduleActif?.id === module.id && estDisponible(module)" class="ml-3 space-y-0.5 border-l-2 border-indigo-200 pl-2">
+            <button *ngFor="let support of module.supports" (click)="ouvrirSupport(support)" class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs transition-colors" [ngClass]="supportActif?.id === support.id ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'">
+              <span class="flex-shrink-0 text-base">
+                <span *ngIf="supportTermine(support.id)">✓</span>
+                <span *ngIf="!supportTermine(support.id)">○</span>
+              </span>
+              <span class="truncate">{{ support.fichierOriginal || 'Support' }}</span>
+              <span class="flex-shrink-0 text-[10px] uppercase opacity-60">{{ support.type }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div *ngIf="cours?.quiz?.length" class="mt-4 border-t border-slate-200 pt-3">
+          <p class="px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Quiz disponibles</p>
+          <div *ngFor="let q of cours.quiz" class="mt-1">
+            <button (click)="lancerQuiz(q)" class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50">
+              <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-100 text-xs font-bold text-amber-700">Q</span>
+              <div class="flex-1 min-w-0">
+                <p class="truncate font-medium">{{ q.titre }}</p>
+                <p *ngIf="q.reponse" class="text-xs text-emerald-600">Score: {{ q.reponse.score }}/{{ q.reponse.total }}</p>
+                <p *ngIf="!q.reponse" class="text-xs text-slate-400">Non commencé</p>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="flex flex-1 flex-col overflow-hidden">
+    <div class="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-2">
+      <div class="flex items-center gap-2">
+        <button (click)="sidebarOuverte = !sidebarOuverte" class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100">
+          <span class="text-lg">{{ sidebarOuverte ? '◀' : '▶' }}</span>
+        </button>
+        <a [routerLink]="['/elearning', cours?.id]" class="text-xs text-slate-400 hover:text-slate-600 transition-colors">← Retour au cours</a>
+      </div>
+      <div class="flex items-center gap-2 text-xs text-slate-400">
+        <span *ngIf="cours">{{ cours?.modules?.length || 0 }} modules</span>
+        <span *ngIf="cours?.quiz?.length">· {{ cours.quiz.length }} quiz</span>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="flex flex-1 items-center justify-center">
+      <div class="flex items-center gap-3 text-slate-500">
+        <div class="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-indigo-600"></div>
+        <span>Chargement du cours...</span>
+      </div>
+    </div>
+
+    <div *ngIf="!loading && !supportActif && !moduleActif" class="flex flex-1 flex-col items-center justify-center gap-4 text-slate-400">
+      <span class="text-5xl">📖</span>
+      <p class="text-lg font-medium">Sélectionnez un module dans la barre latérale</p>
+      <p class="text-sm">Choisissez une leçon pour commencer votre apprentissage</p>
+    </div>
+
+    <div *ngIf="!loading && supportActif" class="flex flex-1 flex-col overflow-hidden">
+      <div class="flex-1 overflow-y-auto">
+        <div class="mx-auto max-w-4xl p-6">
+          <!-- Video player -->
+          <div *ngIf="typeMedia(supportActif) === 'video'" class="overflow-hidden rounded-2xl bg-black shadow-lg">
+            <video controls class="w-full aspect-video" [src]="'/elearning/videos/' + (supportActif.fichierCompresse || supportActif.fichierOriginal)" (ended)="marquerTermine(supportActif)">
+              Votre navigateur ne supporte pas la lecture vidéo.
+            </video>
+          </div>
+
+          <!-- PDF embed -->
+          <div *ngIf="typeMedia(supportActif) === 'pdf'" class="overflow-hidden rounded-2xl bg-white shadow-lg">
+            <iframe [src]="pdfUrl" class="w-full h-[70vh] border-0"></iframe>
+          </div>
+
+          <!-- Document download -->
+          <div *ngIf="typeMedia(supportActif) === 'document'" class="flex flex-col items-center justify-center rounded-2xl bg-white p-16 shadow-lg">
+            <span class="text-6xl text-slate-300">📄</span>
+            <p class="mt-4 text-lg font-medium text-slate-700">{{ supportActif.fichierOriginal }}</p>
+            <p class="mt-1 text-sm text-slate-400">Type: {{ supportActif.type }} · Taille: {{ supportActif.taille || '—' }}</p>
+            <div class="mt-6 flex gap-3">
+              <a [href]="'/elearning/videos/' + (supportActif.fichierCompresse || supportActif.fichierOriginal)" target="_blank" class="rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700">Télécharger</a>
+              <button (click)="marquerTermine(supportActif)" class="rounded-xl border border-slate-200 px-6 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Marquer comme terminé</button>
+            </div>
+          </div>
+
+          <!-- Support info & actions -->
+          <div class="mt-4 flex items-center justify-between rounded-xl bg-white p-4 shadow-sm">
+            <div>
+              <p class="text-sm font-medium text-slate-700">{{ supportActif.fichierOriginal }}</p>
+              <p class="text-xs text-slate-400">{{ supportActif.type }} · {{ supportActif.dureeVideo || '—' }}</p>
+            </div>
+            <div class="flex gap-2">
+              <button (click)="supportPrecedent()" class="rounded-lg px-3 py-1.5 text-xs font-medium text-slate-500 transition hover:bg-slate-100">← Précédent</button>
+              <button (click)="marquerTermine(supportActif)" class="rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100">
+                <span *ngIf="supportTermine(supportActif.id)">✓ Terminé</span>
+                <span *ngIf="!supportTermine(supportActif.id)">Marquer terminé</span>
+              </button>
+              <button (click)="supportSuivant()" class="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-indigo-700">Suivant →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -10,6 +10,8 @@ router
     .get('/planning', SeanceController.getPlanning)
     .get('/statistics/count', [], SeanceController.getCount)
     .post('/check-conflits', [], SeanceController.checkConflits)
+    .post('/publier', [], SeanceController.publierEmploiDuTemps)
+    .get('/rappel-salle', SeanceController.getRappelSalle)
     .get('/:id', SeanceController.getSeance)
     .put('/:id', [], SeanceController.updateSeance)
     .delete('/:id', [], SeanceController.deleteSeance)

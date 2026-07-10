@@ -73,6 +73,10 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
   }
 
   private loadDashboardData(): void {
+    if (!this.rolesValue.isAdmin) {
+      this.loading = false
+      return
+    }
     forkJoin({
       apprenants: this.apprenantService.getCount().pipe(catchError(() => of({ count: 0 }))),
       enseignants: this.enseignantService.getCount().pipe(catchError(() => of({ count: 0 }))),

@@ -491,4 +491,105 @@ P1 ──→ P2 ──→ P3 ──→ P4 ──→ P5
 
 ---
 
+## Phase 9 — Planification & Notification EDT (Ajoutée le 10/07/2026)
+
+### Objectif
+Permettre à l'administration de publier l'emploi du temps et de notifier automatiquement
+les enseignants, étudiants et personnel.
+
+### Fonctionnalités implémentées
+
+#### 1. Publication de l'emploi du temps avec notifications
+- **Bouton "Publier l'EDT"** sur la page `/cours/emplois-du-temps` (visible pour admin/institution)
+- Envoie une notification in-app à :
+  - **Enseignants** : notification listant leurs séances
+  - **Étudiants** : notification basée sur leur filière/niveau via `CursusApprenant` → `Classe` → `Cours` → `Seance`
+- Endpoint : `POST /api/v1/inscription/seances/publier`
+
+#### 2. Relance salle 10min avant la fin du cours
+- **Système de rappel automatique** pour tous les rôles (enseignants ET étudiants)
+- Détecte le cours en cours et calcule s'il reste ≤10min avant la fin
+- Si oui, cherche le prochain cours de la journée pour la même personne
+- Affiche une notification toast : "Changement de salle imminent ! {cours} se termine dans Xmin → Salle XXX"
+- Endpoint : `GET /api/v1/inscription/seances/rappel-salle`
+- Polling côté frontend toutes les 60 secondes
+
+#### 3. Planning du personnel (non enseignant)
+- **Modèle `RhPlanningPersonnel`** (table `rh_planning_personnel`) avec :
+  - `employeId` (FK → `RhEmploye`), `jourSemaine`, `heureDebut`, `heureFin`, `tache`, `couleur`, `dateDebut`, `dateFin`
+- CRUD complet : controller + router sous `/api/v1/rh/planning-personnel`
+- **Page frontend** `/rh/planning-personnel` avec tableau + formulaire de création/édition/suppression
+- **Planning hebdomadaire** `/pointage/planning` connecté à la BDD (vue d'ensemble)
+
+#### 4. Distribution des notifications
+- **NotificationService** frontend connecté au backend
+- **Badge de notifications non lues** dans le header (mise à jour toutes les 2min)
+- **Dropdown notifications** dans le header avec les 10 dernières
+- **Page notifications** `/communication/notifications` connectée à l'API (plus de mock)
+
+### Backend
+
+#### Nouveau modèle `RhPlanningPersonnel`
+| Champ | Type | Description |
+|---|---|---|
+| `id` | INT PK | Auto-increment |
+| `employeId` | FK | → RhEmploye |
+| `jourSemaine` | ENUM | LUNDI-SAMEDI |
+| `heureDebut` | TIME | Début de la tâche |
+| `heureFin` | TIME | Fin de la tâche |
+| `tache` | STRING | Description de la tâche |
+| `couleur` | STRING | Code hexa pour affichage |
+| `dateDebut` | DATE | Début de validité |
+| `dateFin` | DATE | Fin de validité |
+
+#### Helper `NotificationHelper`
+- `envoyerNotification(utilisateurId, type, message, envoyerEmail?)` — notification individuelle
+- `envoyerNotificationMultiples(utilisateurIds, type, titre, message, envoyerEmail?)` — notification groupée
+
+#### Nouveaux endpoints
+| Endpoint | Méthode | Description |
+|---|---|---|
+| `POST /inscription/seances/publier` | POST | Publie l'EDT et notifie enseignants + étudiants |
+| `GET /inscription/seances/rappel-salle` | GET | Rappel salle 10min avant fin du cours |
+| `GET/POST/PUT/DELETE /rh/planning-personnel` | CRUD | Gestion planning personnel |
+| `GET /rh/planning-personnel/personnel` | GET | Planning du personnel connecté |
+
+### Frontend
+
+| Page | Route | Description |
+|---|---|---|
+| Emplois du temps | `/cours/emplois-du-temps` | Bouton "Publier l'EDT" ajouté |
+| Notifications | `/communication/notifications` | Connectée à l'API backend |
+| Planning personnel | `/rh/planning-personnel` | CRUD planning du personnel |
+| Planning hebdo | `/pointage/planning` | Vue d'ensemble connectée BDD |
+
+### Architecture des notifications
+
+```
+Admin publie EDT
+  ↓
+POST /seances/publier
+  ↓
+NotificationHelper.envoyerNotificationMultiples()
+  ├── Enseignants (par enseignantId → utilisateurId)
+  └── Étudiants (par cours → classe → cursusApprenant → utilisateurId)
+  ↓
+Frontend polling GET /notifications (toutes les 2min)
+  ↓
+Badge non lues + Dropdown + Page notifications
+```
+
+```
+Polling GET /seances/rappel-salle (toutes les 60s)
+  ↓
+Détection cours en cours + ≤10min restantes
+  ↓
+Recherche prochain cours dans la journée
+  ↓
+Toast notification : "Changement de salle imminent !"
+```
+
+---
+
 > Document créé le 06/07/2026 — EasyEcole Project
+> Dernière mise à jour : 10/07/2026 — Ajout Phase 9 : Planification & Notification EDT

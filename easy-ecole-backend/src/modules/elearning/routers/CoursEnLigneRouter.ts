@@ -57,6 +57,7 @@ router
  *       200:
  *         description: Cours en ligne trouvé
  */
+    .get('/:id/player', [Authenticate], CoursEnLigneController.getPlayer)
     .get('/:id', [Authenticate], CoursEnLigneController.get)
 
 /**

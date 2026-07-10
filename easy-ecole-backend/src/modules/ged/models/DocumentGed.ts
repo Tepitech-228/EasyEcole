@@ -107,7 +107,7 @@ DocumentGed.init({
     allowNull: true
   },
   metadata: {
-    type: DataTypes.JSON,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   taille: {

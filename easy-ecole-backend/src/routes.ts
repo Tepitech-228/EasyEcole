@@ -13,6 +13,7 @@ import CommunicationRoutes from "./modules/communication/CommunicationRoutes";
 import ScolariteRoutes from "./modules/scolarite/ScolariteRoutes";
 import ComptabiliteRoutes from "./modules/comptabilite/ComptabiliteRoutes";
 import GedRoutes from "./modules/ged/GedRoutes";
+import SseRouter from "./modules/elearning/routers/SseRouter";
 const router = express.Router();
 
 router
@@ -26,6 +27,7 @@ router
     .use('/stocks', StockRoutes)
     .use('/immobilisations', ImmobilisationRoutes)
     .use('/elearning', ElearningRoutes)
+    .use('/events', SseRouter)
     .use('/reporting', ReportingRoutes)
     .use('/achats', AchatsRoutes)
     .use('/rh', RhRoutes)

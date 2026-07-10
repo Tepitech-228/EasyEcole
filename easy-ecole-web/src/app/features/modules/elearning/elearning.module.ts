@@ -16,6 +16,7 @@ import { ProgressionPageComponent } from './pages/progression-page/progression-p
 import { CertificatsPageComponent } from './pages/certificats-page/certificats-page.component';
 import { DevoirsPageComponent } from './pages/devoirs-page/devoirs-page.component';
 import { DevoirDetailPageComponent } from './pages/devoir-detail-page/devoir-detail-page.component';
+import { CoursPlayerPageComponent } from './pages/cours-player-page/cours-player-page.component';
 import { ChatWindowComponent } from './components/chat-window/chat-window.component';
 import { SupportCardComponent } from './components/support-card/support-card.component';
 
@@ -33,6 +34,7 @@ import { SupportCardComponent } from './components/support-card/support-card.com
     CertificatsPageComponent,
     DevoirsPageComponent,
     DevoirDetailPageComponent,
+    CoursPlayerPageComponent,
     ChatWindowComponent,
     SupportCardComponent
   ],

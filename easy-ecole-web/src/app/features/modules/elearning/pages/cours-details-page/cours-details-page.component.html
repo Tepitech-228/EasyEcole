@@ -1,39 +1,100 @@
-<div class="p-6">
+<div class="p-6 space-y-6">
   <app-return-back></app-return-back>
 
   <div *ngIf="loading" class="flex justify-center py-12">
-    <div class="spinner-border text-primary" role="status">
-      <span class="sr-only">Chargement...</span>
-    </div>
+    <div class="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-indigo-600"></div>
   </div>
 
-  <div *ngIf="!loading && cours" class="mt-4">
-    <div class="bg-white rounded-lg shadow-md p-6">
-      <img [src]="'/orientation/parcours/' + cours.image" alt="{{ cours.titre }}" class="w-full h-48 object-cover rounded-lg mb-4" *ngIf="cours.image">
-      <h1 class="text-2xl font-bold text-gray-800">{{ cours.titre }}</h1>
-      <p class="text-gray-600 mt-2">{{ cours.description }}</p>
-    </div>
-
-    <div class="mt-6" *ngFor="let module of cours.modules">
-      <div class="bg-white rounded-lg shadow-md p-4 mb-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <h2 class="text-lg font-semibold text-gray-800">{{ module.titre }}</h2>
-            <p class="text-sm text-gray-500">{{ module.description }}</p>
+  <div *ngIf="!loading && cours" class="space-y-6">
+    <!-- Hero -->
+    <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <div *ngIf="cours.image" class="h-48 overflow-hidden bg-gradient-to-br from-indigo-100 to-blue-50">
+        <img [src]="'/orientation/parcours/' + cours.image" alt="{{ cours.titre }}" class="h-full w-full object-cover">
+      </div>
+      <div class="p-6">
+        <div class="flex items-start justify-between">
+          <div class="flex-1">
+            <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-blue-700">{{ cours.statut }}</span>
+            <h1 class="mt-3 text-2xl font-bold text-slate-900">{{ cours.titre }}</h1>
+            <p class="mt-2 text-slate-600 leading-relaxed">{{ cours.description }}</p>
           </div>
-          <span class="text-xs text-gray-400">Ordre {{ module.ordre }}</span>
         </div>
 
-        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3" *ngIf="module.supports?.length > 0">
-          <app-support-card *ngFor="let support of module.supports" [support]="support"></app-support-card>
+        <!-- Stats row -->
+        <div class="mt-6 grid grid-cols-3 gap-4 border-t border-slate-100 pt-6">
+          <div class="text-center">
+            <div class="text-2xl font-bold text-slate-900">{{ modulesOrdonnes.length }}</div>
+            <div class="text-xs text-slate-500">Modules</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-slate-900">{{ supportsTotal }}</div>
+            <div class="text-xs text-slate-500">Supports</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-slate-900">{{ quizTermines }}/{{ cours.quiz?.length || 0 }}</div>
+            <div class="text-xs text-slate-500">Quiz</div>
+          </div>
         </div>
-        <p *ngIf="!module.supports?.length" class="text-sm text-gray-400 mt-2">Aucun support pour ce module.</p>
+
+        <!-- Progression -->
+        <div *ngIf="cours.progressionTaux !== undefined" class="mt-4">
+          <div class="flex items-center justify-between text-sm text-slate-500">
+            <span>Progression globale</span>
+            <span class="font-semibold text-slate-700">{{ cours.progressionTaux }}%</span>
+          </div>
+          <div class="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
+            <div class="h-full rounded-full bg-emerald-500 transition-all duration-500" [style.width.%]="cours.progressionTaux"></div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="mt-6 flex gap-3">
+          <a [routerLink]="['/elearning', cours.id, 'player']" class="flex-1 rounded-xl bg-indigo-600 px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-indigo-700">Lancer le cours</a>
+          <a [routerLink]="['/elearning', cours.id, 'chat']" class="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Chat</a>
+          <a [routerLink]="['/elearning', cours.id, 'upload']" *ngIf="isInstitution || isEnseignant" class="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">+ Support</a>
+        </div>
       </div>
     </div>
 
-    <div class="flex gap-4 mt-6">
-      <a [routerLink]="['/elearning', cours.id, 'chat']" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Accéder au chat</a>
-      <a [routerLink]="['/elearning', cours.id, 'upload']" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Ajouter un support</a>
+    <!-- Modules -->
+    <div class="space-y-4">
+      <h3 class="text-lg font-semibold text-slate-900">Modules du cours</h3>
+      <div *ngFor="let module of modulesOrdonnes; let mi = index" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+        <div class="p-5">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-3">
+              <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-sm font-bold text-indigo-700">{{ mi + 1 }}</span>
+              <div>
+                <h4 class="font-semibold text-slate-900">{{ module.titre }}</h4>
+                <p class="text-sm text-slate-500">{{ module.description }}</p>
+              </div>
+            </div>
+            <span class="text-xs text-slate-400" *ngIf="module.dateDisponible">📅 {{ module.dateDisponible | date:'dd/MM/yyyy' }}</span>
+          </div>
+
+          <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2" *ngIf="module.supports?.length > 0">
+            <app-support-card *ngFor="let support of module.supports" [support]="support"></app-support-card>
+          </div>
+          <p *ngIf="!module.supports?.length" class="mt-2 text-xs text-slate-400">Aucun support pour ce module.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quiz list -->
+    <div *ngIf="cours.quiz?.length" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h3 class="text-lg font-semibold text-slate-900 mb-4">Quiz</h3>
+      <div *ngFor="let q of cours.quiz" class="flex items-center justify-between border-b border-slate-100 py-3 last:border-0">
+        <div class="flex items-center gap-3">
+          <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-sm font-bold text-amber-700">Q</span>
+          <div>
+            <p class="font-medium text-slate-700">{{ q.titre }}</p>
+            <p class="text-xs text-slate-400">{{ q.reponse ? 'Score: ' + q.reponse.score + '/' + q.reponse.total : 'Non commencé' }}</p>
+          </div>
+        </div>
+        <a [routerLink]="['/elearning/quiz', q.id]" class="rounded-lg bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-700 transition hover:bg-amber-100">
+          {{ q.reponse ? 'Revoir' : 'Commencer' }}
+        </a>
+      </div>
     </div>
   </div>
 </div>

@@ -39,75 +39,110 @@
                     <app-nav-menu-item *ngIf="rolesValue.isApprenant || rolesValue.isAdmin" (click)="closeMenu()" icon="dashboard-outline" text="Tableau de bord" link="/"></app-nav-menu-item>
                 </app-nav-menu-group>
 
-                <!-- GROUPE 1: Scolarité & Formation -->
-                <app-nav-menu-group [searchQuery]="searchQuery" title="Scolarité & Formation" icon="school" class="nav-group-title" *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin">
-                    <app-nav-menu-group [searchQuery]="searchQuery" title="Inscription" [isSubGroup]="true" *ngIf="!rolesValue.isEnseignant" [startExpanded]="true">
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.inscription.sessions')" (click)="closeMenu()" icon="cycle" text="Sessions" link="/inscription/sessions"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.inscription.parcours')" (click)="closeMenu()" icon="school" text="Parcours" link="/inscription/parcours"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.inscription.frais-parcours')" (click)="closeMenu()" icon="payments" text="Frais par parcours" link="/inscription/frais-parcours"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.inscription.demandes')" (click)="closeMenu()" icon="receipt_long" text="Demandes" link="/inscription/demandes"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.inscription.cursus')" (click)="closeMenu()" icon="event_list" text="Mon cursus" link="/inscription/cursus"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.inscription.mon-dossier')" (click)="closeMenu()" icon="folder" text="Mon dossier" link="/inscription/mon-dossier"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.inscription.dossiers-etudiants')" (click)="closeMenu()" icon="folder_special" text="Dossiers étudiants" link="/inscription/dossiers"></app-nav-menu-item>
+                <!-- PÔLE 1: Pôle Pédagogique -->
+                <app-nav-menu-group [searchQuery]="searchQuery" title="Pôle Pédagogique" icon="school" class="nav-group-title" *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin">
+
+                    <!-- Phase 1 — Admission & Inscription -->
+                    <app-nav-menu-group [searchQuery]="searchQuery" title="Phase 1 — Admission &amp; Inscription" [isSubGroup]="true" class="phase-title" [startExpanded]="true">
+                        <app-nav-menu-group [searchQuery]="searchQuery" title="Inscription" [isSubGroup]="true" *ngIf="!rolesValue.isEnseignant" [startExpanded]="true">
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.inscription.sessions')" (click)="closeMenu()" icon="cycle" text="Sessions" link="/inscription/sessions"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.inscription.parcours')" (click)="closeMenu()" icon="school" text="Parcours" link="/inscription/parcours"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.inscription.frais-parcours')" (click)="closeMenu()" icon="payments" text="Frais par parcours" link="/inscription/frais-parcours"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.inscription.demandes')" (click)="closeMenu()" icon="receipt_long" text="Demandes" link="/inscription/demandes"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.inscription.cursus')" (click)="closeMenu()" icon="event_list" text="Mon cursus" link="/inscription/cursus"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.inscription.mon-dossier')" (click)="closeMenu()" icon="folder" text="Mon dossier" link="/inscription/mon-dossier"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.inscription.dossiers-etudiants')" (click)="closeMenu()" icon="folder_special" text="Dossiers étudiants" link="/inscription/dossiers"></app-nav-menu-item>
+                        </app-nav-menu-group>
+                        <app-nav-menu-group [searchQuery]="searchQuery" title="Orientation" [isSubGroup]="true" *ngIf="!rolesValue.isEnseignant" [startExpanded]="true">
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.orientation.parcours')" (click)="closeMenu()" icon="route" text="Parcours" link="/orientation/parcours"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.orientation.demandes')" (click)="closeMenu()" icon="receipt_long" text="Demandes" link="/orientation/demandes"></app-nav-menu-item>
+                        </app-nav-menu-group>
+                        <app-nav-menu-group [searchQuery]="searchQuery" title="Comité orientation" [isSubGroup]="true" *ngIf="rolesValue.isComiteOrientation || rolesValue.isAdmin" [startExpanded]="true">
+                            <app-nav-menu-item *ngIf="hasPermission('menu.comite-orientation.preinscriptions')" (click)="closeMenu()" icon="how_to_reg" text="Préinscriptions" link="/inscription/comite-orientation"></app-nav-menu-item>
+                        </app-nav-menu-group>
+                        <app-nav-menu-group [searchQuery]="searchQuery" title="Bordereaux" [isSubGroup]="true" [startExpanded]="true">
+                            <app-nav-menu-item *ngIf="(rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.finances.bordereaux')" (click)="closeMenu()" icon="receipt_long" text="Mes bordereaux" link="/inscription/bordereaux"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isCabinetComptable || rolesValue.isAdmin) && hasPermission('menu.finances.validation-bordereaux')" (click)="closeMenu()" icon="task_alt" text="Valid. bordereaux" link="/inscription/validation-bordereaux"></app-nav-menu-item>
+                        </app-nav-menu-group>
                     </app-nav-menu-group>
-                    <app-nav-menu-group [searchQuery]="searchQuery" title="Orientation" [isSubGroup]="true" *ngIf="!rolesValue.isEnseignant" [startExpanded]="true">
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.orientation.parcours')" (click)="closeMenu()" icon="route" text="Parcours" link="/orientation/parcours"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.orientation.demandes')" (click)="closeMenu()" icon="receipt_long" text="Demandes" link="/orientation/demandes"></app-nav-menu-item>
+
+                    <!-- Phase 2 — Formation -->
+                    <app-nav-menu-group [searchQuery]="searchQuery" title="Phase 2 — Formation" [isSubGroup]="true" class="phase-title" [startExpanded]="true">
+                        <app-nav-menu-group [searchQuery]="searchQuery" title="Cours" [isSubGroup]="true" [startExpanded]="true">
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.cours.enseignants')" (click)="closeMenu()" icon="cycle" text="Enseignants" link="/cours/enseignants"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="hasPermission('menu.cours.liste')" (click)="closeMenu()" icon="book" text="Cours" link="/cours/cours"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.cours.presences')" (click)="closeMenu()" icon="checklist" text="Présences" link="/cours/presences"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.cours.mes-presences')" (click)="closeMenu()" icon="fact_check" text="Mes présences" link="/cours/mes-presences"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="hasPermission('menu.cours.cahiers-de-texte')" (click)="closeMenu()" icon="note_stack" text="Cahiers de texte" link="/cours/cahiers-de-texte"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="hasPermission('menu.cours.emplois-du-temps')" (click)="closeMenu()" icon="event_note" text="Emplois du temps" link="/cours/emplois-du-temps"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="hasPermission('menu.cours.notes')" (click)="closeMenu()" icon="lab_profile" text="Notes" link="/cours/notes"></app-nav-menu-item>
+                        </app-nav-menu-group>
+                        <app-nav-menu-group [searchQuery]="searchQuery" title="E-Learning" [isSubGroup]="true" [startExpanded]="true">
+                            <app-nav-menu-item *ngIf="hasPermission('menu.elearning.mes-cours')" (click)="closeMenu()" icon="school" text="Mes cours" link="/elearning"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="hasPermission('menu.elearning.quiz')" (click)="closeMenu()" icon="quiz" text="Quiz" link="/elearning/quiz"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.elearning.progression')" (click)="closeMenu()" icon="trending_up" text="Progression" link="/elearning/progression"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.elearning.certificats')" (click)="closeMenu()" icon="verified" text="Certificats" link="/elearning/certificats"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="hasPermission('menu.elearning.devoirs')" (click)="closeMenu()" icon="assignment" text="Devoirs" link="/elearning/devoirs"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.elearning.gestion')" (click)="closeMenu()" icon="manage_search" text="Gestion" link="/elearning/admin/gestion"></app-nav-menu-item>
+                        </app-nav-menu-group>
+                        <app-nav-menu-group [searchQuery]="searchQuery" title="Scolarité" [isSubGroup]="true" [startExpanded]="true">
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.scolarite.demandes-docs')" (click)="closeMenu()" icon="description" text="Demandes docs" link="/scolarite/demandes-documents"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.scolarite.traiter-demandes')" (click)="closeMenu()" icon="fact_check" text="Traiter demandes" link="/scolarite/traiter-demandes"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.scolarite.registres')" (click)="closeMenu()" icon="menu_book" text="Registres" link="/scolarite/registres"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.scolarite.calendrier')" (click)="closeMenu()" icon="calendar_month" text="Calendrier" link="/scolarite/calendrier"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.scolarite.bibliotheque')" (click)="closeMenu()" icon="library_books" text="Bibliothèque" link="/scolarite/bibliotheque"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.scolarite.bibliotheque.gestion')" (click)="closeMenu()" icon="manage_search" text="Gestion bibliothèque" link="/scolarite/gestion-bibliotheque"></app-nav-menu-item>
+                        </app-nav-menu-group>
                     </app-nav-menu-group>
-                    <app-nav-menu-group [searchQuery]="searchQuery" title="Cours" [isSubGroup]="true" [startExpanded]="true">
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.cours.enseignants')" (click)="closeMenu()" icon="cycle" text="Enseignants" link="/cours/enseignants"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="hasPermission('menu.cours.liste')" (click)="closeMenu()" icon="book" text="Cours" link="/cours/cours"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.cours.presences')" (click)="closeMenu()" icon="checklist" text="Présences" link="/cours/presences"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.cours.mes-presences')" (click)="closeMenu()" icon="fact_check" text="Mes présences" link="/cours/mes-presences"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="hasPermission('menu.cours.cahiers-de-texte')" (click)="closeMenu()" icon="note_stack" text="Cahiers de texte" link="/cours/cahiers-de-texte"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="hasPermission('menu.cours.emplois-du-temps')" (click)="closeMenu()" icon="event_note" text="Emplois du temps" link="/cours/emplois-du-temps"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="hasPermission('menu.cours.notes')" (click)="closeMenu()" icon="lab_profile" text="Notes" link="/cours/notes"></app-nav-menu-item>
-                    </app-nav-menu-group>
-                    <app-nav-menu-group [searchQuery]="searchQuery" title="Évaluations" [isSubGroup]="true" [startExpanded]="true">
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.evaluations.bulletins')" (click)="closeMenu()" icon="badge" text="Bulletins" link="/bulletins"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.evaluations.deliberations')" (click)="closeMenu()" icon="how_to_vote" text="Délibérations" link="/bulletins/deliberations"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.evaluations.ues')" (click)="closeMenu()" icon="account_tree" text="UEs" link="/bulletins/ues"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.evaluations.mcc')" (click)="closeMenu()" icon="table_chart" text="MCC" link="/bulletins/mcc"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isAdmin) && hasPermission('menu.evaluations.sessions')" (click)="closeMenu()" icon="event" text="Sessions" link="/bulletins/sessions"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isAdmin) && hasPermission('menu.evaluations.rattrapages')" (click)="closeMenu()" icon="autorenew" text="Rattrapages" link="/bulletins/rattrapages"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isAdmin) && hasPermission('menu.evaluations.absences')" (click)="closeMenu()" icon="block" text="Absences" link="/bulletins/absences"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.evaluations.echelles')" (click)="closeMenu()" icon="straighten" text="Échelles" link="/bulletins/echelles"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.evaluations.jury')" (click)="closeMenu()" icon="groups" text="Jury" link="/bulletins/jury"></app-nav-menu-item>
+
+                    <!-- Phase 3 — Évaluation &amp; Suivi -->
+                    <app-nav-menu-group [searchQuery]="searchQuery" title="Phase 3 — Évaluation &amp; Suivi" [isSubGroup]="true" class="phase-title" [startExpanded]="true">
+                        <app-nav-menu-group [searchQuery]="searchQuery" title="Évaluations" [isSubGroup]="true" [startExpanded]="true">
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.evaluations.bulletins')" (click)="closeMenu()" icon="badge" text="Bulletins" link="/bulletins"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.evaluations.deliberations')" (click)="closeMenu()" icon="how_to_vote" text="Délibérations" link="/bulletins/deliberations"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.evaluations.ues')" (click)="closeMenu()" icon="account_tree" text="UEs" link="/bulletins/ues"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.evaluations.mcc')" (click)="closeMenu()" icon="table_chart" text="MCC" link="/bulletins/mcc"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isAdmin) && hasPermission('menu.evaluations.sessions')" (click)="closeMenu()" icon="event" text="Sessions" link="/bulletins/sessions"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isAdmin) && hasPermission('menu.evaluations.rattrapages')" (click)="closeMenu()" icon="autorenew" text="Rattrapages" link="/bulletins/rattrapages"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isAdmin) && hasPermission('menu.evaluations.absences')" (click)="closeMenu()" icon="block" text="Absences" link="/bulletins/absences"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.evaluations.echelles')" (click)="closeMenu()" icon="straighten" text="Échelles" link="/bulletins/echelles"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.evaluations.jury')" (click)="closeMenu()" icon="groups" text="Jury" link="/bulletins/jury"></app-nav-menu-item>
 <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isAdmin" (click)="closeMenu()" icon="swap_horiz" text="Équivalences" link="/bulletins/equivalences"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isAdmin" (click)="closeMenu()" icon="file_copy" text="Dispenses" link="/bulletins/dispenses"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.evaluations.audit')" (click)="closeMenu()" icon="history" text="Audit notes" link="/bulletins/audit-notes"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isAdmin) && hasPermission('menu.evaluations.moyennes')" (click)="closeMenu()" icon="calculate" text="Moyennes" link="/bulletins/moyennes"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.evaluations.mon-releve')" (click)="closeMenu()" icon="receipt_long" text="Mon relevé" link="/bulletins/mon-releve"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isAdmin" (click)="closeMenu()" icon="file_copy" text="Dispenses" link="/bulletins/dispenses"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.evaluations.audit')" (click)="closeMenu()" icon="history" text="Audit notes" link="/bulletins/audit-notes"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isAdmin) && hasPermission('menu.evaluations.moyennes')" (click)="closeMenu()" icon="calculate" text="Moyennes" link="/bulletins/moyennes"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.evaluations.mon-releve')" (click)="closeMenu()" icon="receipt_long" text="Mon relevé" link="/bulletins/mon-releve"></app-nav-menu-item>
+                        </app-nav-menu-group>
+                        <app-nav-menu-group [searchQuery]="searchQuery" title="Suivi" [isSubGroup]="true" [startExpanded]="true">
+                            <app-nav-menu-item *ngIf="(rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.scolarite.reclamations')" (click)="closeMenu()" icon="feedback" text="Réclamations" link="/scolarite/mes-reclamations"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.scolarite.traiter-reclamations')" (click)="closeMenu()" icon="gavel" text="Traiter réclam." link="/scolarite/traiter-reclamations"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.scolarite.discipline')" (click)="closeMenu()" icon="block" text="Discipline" link="/scolarite/discipline"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isAdmin) && hasPermission('menu.scolarite.conseils')" (click)="closeMenu()" icon="groups" text="Conseils classe" link="/scolarite/conseils"></app-nav-menu-item>
+                        </app-nav-menu-group>
                     </app-nav-menu-group>
-                    <app-nav-menu-group [searchQuery]="searchQuery" title="Scolarité" [isSubGroup]="true" [startExpanded]="true">
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.scolarite.demandes-docs')" (click)="closeMenu()" icon="description" text="Demandes docs" link="/scolarite/demandes-documents"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.scolarite.traiter-demandes')" (click)="closeMenu()" icon="fact_check" text="Traiter demandes" link="/scolarite/traiter-demandes"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.scolarite.reclamations')" (click)="closeMenu()" icon="feedback" text="Réclamations" link="/scolarite/mes-reclamations"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.scolarite.traiter-reclamations')" (click)="closeMenu()" icon="gavel" text="Traiter réclam." link="/scolarite/traiter-reclamations"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.scolarite.registres')" (click)="closeMenu()" icon="menu_book" text="Registres" link="/scolarite/registres"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.scolarite.calendrier')" (click)="closeMenu()" icon="calendar_month" text="Calendrier" link="/scolarite/calendrier"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.scolarite.discipline')" (click)="closeMenu()" icon="block" text="Discipline" link="/scolarite/discipline"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isAdmin) && hasPermission('menu.scolarite.conseils')" (click)="closeMenu()" icon="groups" text="Conseils classe" link="/scolarite/conseils"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.scolarite.bibliotheque')" (click)="closeMenu()" icon="library_books" text="Bibliothèque" link="/scolarite/bibliotheque"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.scolarite.bibliotheque.gestion')" (click)="closeMenu()" icon="manage_search" text="Gestion bibliothèque" link="/scolarite/gestion-bibliotheque"></app-nav-menu-item>
+
+                    <!-- Phase 4 — Vie Étudiante -->
+                    <app-nav-menu-group [searchQuery]="searchQuery" title="Phase 4 — Vie Étudiante" [isSubGroup]="true" class="phase-title" [startExpanded]="true">
+                        <app-nav-menu-item *ngIf="hasPermission('menu.communication.annonces')" (click)="closeMenu()" icon="campaign" text="Annonces" link="/communication/annonces"></app-nav-menu-item>
+                        <app-nav-menu-item *ngIf="hasPermission('menu.communication.vie-estudiantine')" (click)="closeMenu()" icon="diversity_3" text="Vie estudiantine" link="/communication"></app-nav-menu-item>
+                        <app-nav-menu-item *ngIf="(rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.communication.suggestions')" (click)="closeMenu()" icon="lightbulb" text="Suggestions" link="/communication/suggestions"></app-nav-menu-item>
                     </app-nav-menu-group>
-                    <app-nav-menu-group [searchQuery]="searchQuery" title="E-Learning" [isSubGroup]="true" [startExpanded]="true">
-                        <app-nav-menu-item *ngIf="hasPermission('menu.elearning.mes-cours')" (click)="closeMenu()" icon="school" text="Mes cours" link="/elearning"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="hasPermission('menu.elearning.quiz')" (click)="closeMenu()" icon="quiz" text="Quiz" link="/elearning/quiz"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.elearning.progression')" (click)="closeMenu()" icon="trending_up" text="Progression" link="/elearning/progression"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.elearning.certificats')" (click)="closeMenu()" icon="verified" text="Certificats" link="/elearning/certificats"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="hasPermission('menu.elearning.devoirs')" (click)="closeMenu()" icon="assignment" text="Devoirs" link="/elearning/devoirs"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.elearning.gestion')" (click)="closeMenu()" icon="manage_search" text="Gestion" link="/elearning/admin/gestion"></app-nav-menu-item>
+
+                    <!-- Phase 5 — Insertion Professionnelle -->
+                    <app-nav-menu-group [searchQuery]="searchQuery" title="Phase 5 — Insertion Professionnelle" [isSubGroup]="true" class="phase-title" [startExpanded]="true">
+                        <app-nav-menu-group [searchQuery]="searchQuery" title="Stages" [isSubGroup]="true" *ngIf="rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isAdmin" [startExpanded]="true">
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.stages.offres')" (click)="closeMenu()" icon="work" text="Offres" link="/stages/offres"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.stages.demandes-stage')" (click)="closeMenu()" icon="receipt_long" text="Demandes" link="/stages/demandes"></app-nav-menu-item>
+                            <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.stages.entreprises')" (click)="closeMenu()" icon="business" text="Entreprises" link="/stages/entreprises"></app-nav-menu-item>
+                        </app-nav-menu-group>
                     </app-nav-menu-group>
                 </app-nav-menu-group>
 
-                <!-- GROUPE 2: Finances & Opérations -->
-                <app-nav-menu-group [searchQuery]="searchQuery" title="Finances & Opérations" icon="paid" class="nav-group-title" *ngIf="rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isCaissierBanque || rolesValue.isCabinetComptable || rolesValue.isAdmin || rolesValue.isRessourcesHumaines || rolesValue.isEnseignant">
+                <!-- PÔLE 2: Pôle Financier -->
+                <app-nav-menu-group [searchQuery]="searchQuery" title="Pôle Financier" icon="paid" class="nav-group-title" *ngIf="rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isCaissierBanque || rolesValue.isCabinetComptable || rolesValue.isAdmin || rolesValue.isRessourcesHumaines || rolesValue.isEnseignant">
                     <app-nav-menu-group [searchQuery]="searchQuery" title="Finance" [isSubGroup]="true" [startExpanded]="true">
                         <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isCaissierBanque || rolesValue.isAdmin) && hasPermission('menu.finances.paiements')" (click)="closeMenu()" icon="paid" text="Paiements" link="/inscription/paiements"></app-nav-menu-item>
                         <app-nav-menu-item *ngIf="(rolesValue.isCabinetComptable || rolesValue.isAdmin) && hasPermission('menu.finances.comptabilite')" (click)="closeMenu()" icon="account_balance" text="Comptabilité" link="/comptabilite/dashboard"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.finances.bordereaux')" (click)="closeMenu()" icon="receipt_long" text="Mes bordereaux" link="/inscription/bordereaux"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isCabinetComptable || rolesValue.isAdmin) && hasPermission('menu.finances.validation-bordereaux')" (click)="closeMenu()" icon="task_alt" text="Valid. bordereaux" link="/inscription/validation-bordereaux"></app-nav-menu-item>
                     </app-nav-menu-group>
                     <app-nav-menu-group [searchQuery]="searchQuery" title="Achats" [isSubGroup]="true" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" [startExpanded]="true">
                         <app-nav-menu-item *ngIf="hasPermission('menu.achats.demandes')" (click)="closeMenu()" icon="receipt_long" text="Demandes" link="/achats/demandes"></app-nav-menu-item>
@@ -115,11 +150,6 @@
                         <app-nav-menu-item *ngIf="hasPermission('menu.achats.factures')" (click)="closeMenu()" icon="receipt" text="Factures" link="/achats/factures"></app-nav-menu-item>
                         <app-nav-menu-item *ngIf="hasPermission('menu.achats.fournisseurs')" (click)="closeMenu()" icon="local_shipping" text="Fournisseurs" link="/achats/fournisseurs"></app-nav-menu-item>
                         <app-nav-menu-item *ngIf="hasPermission('menu.achats.budgets')" (click)="closeMenu()" icon="account_balance" text="Budgets" link="/achats/budgets"></app-nav-menu-item>
-                    </app-nav-menu-group>
-                    <app-nav-menu-group [searchQuery]="searchQuery" title="Stages" [isSubGroup]="true" *ngIf="rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isAdmin" [startExpanded]="true">
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.stages.offres')" (click)="closeMenu()" icon="work" text="Offres" link="/stages/offres"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.stages.demandes-stage')" (click)="closeMenu()" icon="receipt_long" text="Demandes" link="/stages/demandes"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.stages.entreprises')" (click)="closeMenu()" icon="business" text="Entreprises" link="/stages/entreprises"></app-nav-menu-item>
                     </app-nav-menu-group>
                     <app-nav-menu-group [searchQuery]="searchQuery" title="Stocks" [isSubGroup]="true" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin || rolesValue.isCaissierBanque" [startExpanded]="true">
                         <app-nav-menu-item *ngIf="hasPermission('menu.stocks.articles')" (click)="closeMenu()" icon="inventory_2" text="Articles" link="/stocks/articles"></app-nav-menu-item>
@@ -132,13 +162,18 @@
                         <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.immobilisations.categories')" (click)="closeMenu()" icon="category" text="Catégories" link="/immobilisations/categories"></app-nav-menu-item>
                         <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.immobilisations.maintenance')" (click)="closeMenu()" icon="build" text="Maintenance" link="/immobilisations/maintenances"></app-nav-menu-item>
                     </app-nav-menu-group>
-                    <app-nav-menu-group [searchQuery]="searchQuery" title="Ressources Humaines" [isSubGroup]="true" *ngIf="rolesValue.isRessourcesHumaines || rolesValue.isAdmin" [startExpanded]="true">
+                </app-nav-menu-group>
+
+                <!-- PÔLE 3: Pôle Ressources Humaines -->
+                <app-nav-menu-group [searchQuery]="searchQuery" title="Pôle Ressources Humaines" icon="badge" class="nav-group-title" *ngIf="rolesValue.isRessourcesHumaines || rolesValue.isAdmin || rolesValue.isInstitution || rolesValue.isEnseignant">
+                    <app-nav-menu-group [searchQuery]="searchQuery" title="RH" [isSubGroup]="true" *ngIf="rolesValue.isRessourcesHumaines || rolesValue.isAdmin" [startExpanded]="true">
                         <app-nav-menu-item *ngIf="hasPermission('menu.rh.employes')" (click)="closeMenu()" icon="badge" text="Employés" link="/rh/employes"></app-nav-menu-item>
                         <app-nav-menu-item *ngIf="hasPermission('menu.rh.offres-emploi')" (click)="closeMenu()" icon="work" text="Offres d'emploi" link="/rh/offres-emploi"></app-nav-menu-item>
                         <app-nav-menu-item *ngIf="hasPermission('menu.rh.candidatures')" (click)="closeMenu()" icon="receipt_long" text="Candidatures" link="/rh/candidatures"></app-nav-menu-item>
                         <app-nav-menu-item *ngIf="hasPermission('menu.rh.paie')" (click)="closeMenu()" icon="paid" text="Paie" link="/rh/paie"></app-nav-menu-item>
                         <app-nav-menu-item *ngIf="hasPermission('menu.rh.prestations')" (click)="closeMenu()" icon="cycle" text="Prestations" link="/rh/prestations"></app-nav-menu-item>
                         <app-nav-menu-item icon="file-text" text="Contrats" link="/rh/contrats-enseignant" *ngIf="rolesValue.isRessourcesHumaines || rolesValue.isAdmin"></app-nav-menu-item>
+                        <app-nav-menu-item icon="calendar_view_week" text="Planning personnel" link="/rh/planning-personnel" *ngIf="rolesValue.isRessourcesHumaines || rolesValue.isAdmin || rolesValue.isInstitution"></app-nav-menu-item>
                     </app-nav-menu-group>
                     <app-nav-menu-group [searchQuery]="searchQuery" title="Pointage" [isSubGroup]="true" *ngIf="(rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isAdmin)" [startExpanded]="true">
                         <app-nav-menu-item *ngIf="hasPermission('menu.pointage.terminal')" (click)="closeMenu()" icon="touch_app" text="Terminal" link="/pointage"></app-nav-menu-item>
@@ -150,13 +185,10 @@
                     </app-nav-menu-group>
                 </app-nav-menu-group>
 
-                <!-- GROUPE 3: Communication & Support -->
-                <app-nav-menu-group [searchQuery]="searchQuery" title="Communication & Support" icon="campaign" class="nav-group-title" *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin">
-                    <app-nav-menu-group [searchQuery]="searchQuery" title="Communication" [isSubGroup]="true" *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin" [startExpanded]="true">
-                        <app-nav-menu-item *ngIf="hasPermission('menu.communication.vie-estudiantine')" (click)="closeMenu()" icon="diversity_3" text="Vie estudiantine" link="/communication"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="(rolesValue.isApprenant || rolesValue.isAdmin) && hasPermission('menu.communication.suggestions')" (click)="closeMenu()" icon="lightbulb" text="Suggestions" link="/communication/suggestions"></app-nav-menu-item>
+                <!-- PÔLE 4: Pôle Communication & Collaboration -->
+                <app-nav-menu-group [searchQuery]="searchQuery" title="Pôle Communication &amp; Collaboration" icon="campaign" class="nav-group-title" *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isApprenant || rolesValue.isAdmin">
+                    <app-nav-menu-group [searchQuery]="searchQuery" title="Communication" [isSubGroup]="true" [startExpanded]="true">
                         <app-nav-menu-item *ngIf="hasPermission('menu.communication.messagerie')" (click)="closeMenu()" icon="mail" text="Messagerie" link="/communication/messagerie"></app-nav-menu-item>
-                        <app-nav-menu-item *ngIf="hasPermission('menu.communication.annonces')" (click)="closeMenu()" icon="campaign" text="Annonces" link="/communication/annonces"></app-nav-menu-item>
                         <app-nav-menu-item *ngIf="hasPermission('menu.communication.discussions')" (click)="closeMenu()" icon="forum" text="Discussions" link="/communication/discussions"></app-nav-menu-item>
                     </app-nav-menu-group>
                     <app-nav-menu-group [searchQuery]="searchQuery" title="Reporting" [isSubGroup]="true" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" [startExpanded]="true">
@@ -168,8 +200,8 @@
                     </app-nav-menu-group>
                 </app-nav-menu-group>
 
-                <!-- GROUPE 4: Archivages Numériques -->
-                <app-nav-menu-group [searchQuery]="searchQuery" title="Archivages Numériques" icon="folder_open" class="nav-group-title" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" [startExpanded]="true">
+                <!-- PÔLE 5: Pôle Archivages Numériques -->
+                <app-nav-menu-group [searchQuery]="searchQuery" title="Pôle Archivages Numériques" icon="folder_open" class="nav-group-title" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" [startExpanded]="true">
                     <app-nav-menu-group [searchQuery]="searchQuery" title="Documents" [isSubGroup]="true" [startExpanded]="true">
                         <app-nav-menu-item (click)="closeMenu()" icon="inventory_2" text="Catalogue" link="/ged/catalog"></app-nav-menu-item>
                         <app-nav-menu-item (click)="closeMenu()" icon="folder" text="Dossiers" link="/ged/folders"></app-nav-menu-item>
@@ -184,8 +216,8 @@
                     </app-nav-menu-group>
                 </app-nav-menu-group>
 
-                <!-- GROUPE 5: Administration & Comptes -->
-                <app-nav-menu-group [searchQuery]="searchQuery" title="Administration & Comptes" icon="manage_accounts" class="nav-group-title">
+                <!-- PÔLE 6: Pôle Administration & Système -->
+                <app-nav-menu-group [searchQuery]="searchQuery" title="Pôle Administration &amp; Système" icon="manage_accounts" class="nav-group-title">
                     <app-nav-menu-group [searchQuery]="searchQuery" title="Administration" [isSubGroup]="true" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" [startExpanded]="true">
                         <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.administration.utilisateurs')" (click)="closeMenu()" icon="people" text="Utilisateurs" link="/administration/utilisateurs"></app-nav-menu-item>
                         <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.administration.roles')" (click)="closeMenu()" icon="manage_accounts" text="Rôles" link="/parametres/roles"></app-nav-menu-item>
@@ -194,9 +226,6 @@
                         <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.administration.cartes')" (click)="closeMenu()" icon="credit_card" text="Cartes" link="/administration/cartes"></app-nav-menu-item>
                         <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.administration.journal-audit')" (click)="closeMenu()" icon="fact_check" text="Journal audit" link="/administration/audit-logs"></app-nav-menu-item>
                         <app-nav-menu-item *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && hasPermission('menu.administration.configuration')" (click)="closeMenu()" icon="tune" text="Configuration" link="/administration/configuration"></app-nav-menu-item>
-                    </app-nav-menu-group>
-                    <app-nav-menu-group [searchQuery]="searchQuery" title="Comité orientation" [isSubGroup]="true" *ngIf="rolesValue.isComiteOrientation || rolesValue.isAdmin" [startExpanded]="true">
-                        <app-nav-menu-item *ngIf="hasPermission('menu.comite-orientation.preinscriptions')" (click)="closeMenu()" icon="how_to_reg" text="Préinscriptions" link="/inscription/comite-orientation"></app-nav-menu-item>
                     </app-nav-menu-group>
                     <app-nav-menu-group [searchQuery]="searchQuery" title="Paramètres" [isSubGroup]="true" [startExpanded]="true">
                         <app-nav-menu-item *ngIf="hasPermission('menu.parametres.mon-profil')" (click)="closeMenu()" icon="badge" text="Mon profil" link="/parametres/profil"></app-nav-menu-item>
@@ -254,18 +283,45 @@
                                     <div style="font-size: .65rem;" class="text-white font-regular">{{ panierCount }}</div>
                                 </div>
                             </div>
-                            <div class="relative ml-3">
-                                <div class="flex items-center gap-x-4">
-                                    <button type="button" (click)="showNotifDropdown = !showNotifDropdown"
-                                        class="rounded-full p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
-                                        <span class="sr-only">View notifications</span>
-                                        <img src="assets/icons/notifications.svg" alt="notif">
-                                    </button>
+                            <div class="relative">
+                                <button type="button" (click)="showNotifDropdown = !showNotifDropdown"
+                                    class="rounded-full p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
+                                    <span class="sr-only">View notifications</span>
+                                    <img src="assets/icons/notifications.svg" alt="notif">
+                                </button>
+                                <div *ngIf="nonLuesCount > 0" class="absolute top-0 right-0 z-10 origin-top-right h-4 w-4 rounded-full bg-red-600 p-0 shadow-lg ring-1 ring-white focus:outline-none flex justify-center items-center">
+                                    <div style="font-size: .65rem;" class="text-white font-regular">{{ nonLuesCount > 99 ? '99+' : nonLuesCount }}</div>
                                 </div>
-                                <div [ngClass]="showNotifDropdown ? '' : 'hidden'" class="absolute right-0 z-10 mt-4 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                                    <div class="h-24 flex justify-center items-center">
-                                        <div class="text-xs text-gray-600 font-regular">Aucune notification</div>
+                                <div [ngClass]="showNotifDropdown ? '' : 'hidden'" class="absolute right-0 z-10 mt-4 w-72 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                                    <div class="flex items-center justify-between px-4 py-2 border-b border-gray-100">
+                                      <span class="text-xs font-semibold text-gray-700">Notifications</span>
+                                      <button (click)="toggleSound(); $event.stopPropagation()" class="p-1 rounded hover:bg-gray-100" [title]="soundEnabled ? 'Désactiver le son' : 'Activer le son'">
+                                        <svg *ngIf="soundEnabled" class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 -960 960 960">
+                                          <path d="M560-131v-82q90-26 145-100t55-168q0-94-55-168T560-749v-82q124 28 202 125.5T840-481q0 127-78 224.5T560-131ZM120-360v-240h160l200-200v640L280-360H120Zm440 40v-322q47 22 73.5 66t26.5 96q0 51-26.5 94.5T560-320Z"/>
+                                        </svg>
+                                        <svg *ngIf="!soundEnabled" class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 -960 960 960">
+                                          <path d="M792-56 671-177q-25 16-53 27.5T560-131v-82q14-5 27.5-10t25.5-12L480-368v208L280-360H120v-240h128L56-792l56-56 736 736-56 56Zm-8-232-58-58q17-31 25.5-65t8.5-70q0-94-55-168T560-749v-82q124 28 202 125.5T840-481q0 53-14.5 102T784-288ZM650-422l-90-90v-130q47 22 73.5 66t26.5 96q0 15-2.5 29.5T650-422ZM480-592 376-696l104-104v208Z"/>
+                                        </svg>
+                                      </button>
                                     </div>
+                                    <div class="max-h-64 overflow-y-auto">
+                                        <div *ngFor="let n of notifications.slice(0, 10)" (click)="marquerLu(n.id); showNotifDropdown = false;"
+                                            class="px-4 py-2 text-xs text-gray-700 hover:bg-indigo-50 border-b border-gray-100 cursor-pointer"
+                                            [class.font-semibold]="!n.lu" [class.text-gray-400]="n.lu">
+                                            <div class="flex items-start gap-2">
+                                                <span class="inline-block w-1.5 h-1.5 rounded-full mt-1 shrink-0"
+                                                    [class.bg-indigo-600]="!n.lu" [class.bg-gray-300]="n.lu"></span>
+                                                <span>{{ n.message }}</span>
+                                            </div>
+                                        </div>
+                                        <div *ngIf="notifications.length === 0" class="h-20 flex justify-center items-center">
+                                            <div class="text-xs text-gray-500 font-regular">Aucune notification</div>
+                                        </div>
+                                    </div>
+                                    <a routerLink="/communication/notifications" (click)="showNotifDropdown = false"
+                                        class="block px-4 py-2 text-xs text-center text-indigo-600 hover:bg-indigo-50 font-medium border-t border-gray-100">
+                                        Voir toutes les notifications
+                                    </a>
                                 </div>
                             </div>
                             <div class="relative ml-3">
@@ -318,13 +374,24 @@
 
 <app-panier-parcours [showPanierModal]="showPanierModal" (onCloseModal)="closeModal()"></app-panier-parcours>
 
-<div *ngIf="enseignantNotif" class="fixed bottom-6 right-6 z-50 max-w-sm bg-emerald-600 text-white rounded-2xl shadow-xl px-5 py-4">
+<div *ngIf="rappelSalleNotif" class="fixed bottom-6 right-6 z-50 max-w-sm bg-emerald-600 text-white rounded-2xl shadow-xl px-5 py-4">
   <div class="flex items-start gap-3">
     <svg class="w-5 h-5 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-    <div>
-      <p class="text-sm font-semibold">Cours dans 10 minutes !</p>
-      <p class="text-xs mt-1 opacity-90">{{ enseignantNotif.coursLibelle }} — Salle {{ enseignantNotif.salle }}</p>
-      <p class="text-xs opacity-75">{{ enseignantNotif.heureDebut }} - {{ enseignantNotif.heureFin }}</p>
+    <div class="flex-1">
+      <p class="text-sm font-semibold">Changement de salle imminent !</p>
+      <p class="text-xs mt-1 opacity-90">
+        <span class="font-medium">{{ rappelSalleNotif.currentCours }}</span> se termine dans <span class="font-medium">{{ rappelSalleNotif.minutesRestantes }}min</span>
+      </p>
+      <p class="text-xs mt-1 opacity-90">
+        Salle actuelle : <span class="font-medium">{{ rappelSalleNotif.currentSalle }}</span>
+      </p>
+      <p *ngIf="rappelSalleNotif.nextCours" class="text-xs mt-1 opacity-95 bg-emerald-700 rounded-lg px-2 py-1">
+        Prochain cours : <span class="font-medium">{{ rappelSalleNotif.nextCours }}</span>
+        <ng-container *ngIf="rappelSalleNotif.nextSalle"> → Salle <span class="font-medium">{{ rappelSalleNotif.nextSalle }}</span></ng-container>
+      </p>
+      <p *ngIf="!rappelSalleNotif.nextCours" class="text-xs mt-1 opacity-75">
+        C'est votre dernier cours de la journée.
+      </p>
     </div>
   </div>
 </div>

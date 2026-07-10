@@ -3,6 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { MesCoursPageComponent } from './pages/mes-cours-page/mes-cours-page.component';
 import { CoursDetailsPageComponent } from './pages/cours-details-page/cours-details-page.component';
+import { CoursPlayerPageComponent } from './pages/cours-player-page/cours-player-page.component';
 import { ChatPageComponent } from './pages/chat-page/chat-page.component';
 import { UploadSupportPageComponent } from './pages/upload-support-page/upload-support-page.component';
 import { GestionElearningPageComponent } from './pages/gestion-elearning-page/gestion-elearning-page.component';
@@ -58,6 +59,11 @@ const routes: Routes = [
   {
     path: 'admin/gestion',
     component: GestionElearningPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: ':id/player',
+    component: CoursPlayerPageComponent,
     pathMatch: 'full'
   },
   {

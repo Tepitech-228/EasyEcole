@@ -70,7 +70,7 @@ FraisParcours.init({
     allowNull: true
   },
   autresFrais: {
-    type: DataTypes.JSON,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   createdAt: DataTypes.DATE,

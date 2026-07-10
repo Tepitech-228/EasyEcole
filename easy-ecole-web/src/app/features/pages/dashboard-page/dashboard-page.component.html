@@ -8,7 +8,6 @@
 <!-- Admin Dashboard -->
 <div class="dashboard" *ngIf="rolesValue.isAdmin">
 
-  <!-- Welcome Header -->
   <div class="dashboard-header">
     <div>
       <h1 class="dashboard-title">Tableau de bord</h1>
@@ -19,14 +18,12 @@
     </div>
   </div>
 
-  <!-- Loading State -->
     <div *ngIf="loading" class="flex justify-center py-16">
     <div class="w-9 h-9 border-4 border-gray-200 border-t-blue-500 rounded-full" style="animation: dashSpin 0.8s linear infinite"></div>
   </div>
 
   <ng-container *ngIf="!loading">
 
-    <!-- Stat Cards -->
     <div class="stats-grid">
       <div class="stat-card stat-card--blue">
         <div class="stat-card-icon">
@@ -73,9 +70,7 @@
       </div>
     </div>
 
-    <!-- Charts Row -->
     <div class="charts-row">
-      <!-- Monthly Bar Chart -->
       <div class="chart-card chart-card--wide">
         <div class="chart-card-header">
           <h3 class="chart-card-title">Demandes d'inscription {{ currentYear }}</h3>
@@ -94,7 +89,6 @@
         </div>
       </div>
 
-      <!-- Quick Stats Ring -->
       <div class="chart-card chart-card--narrow">
         <div class="chart-card-header">
           <h3 class="chart-card-title">Répartition</h3>
@@ -130,9 +124,7 @@
       </div>
     </div>
 
-    <!-- Bottom Row -->
     <div class="bottom-row">
-      <!-- Recent Demandes -->
       <div class="chart-card chart-card--wide">
         <div class="chart-card-header">
           <h3 class="chart-card-title">Demandes récentes</h3>
@@ -171,7 +163,6 @@
         </ng-template>
       </div>
 
-      <!-- Quick Links -->
       <div class="chart-card chart-card--narrow">
         <div class="chart-card-header">
           <h3 class="chart-card-title">Accès rapide</h3>
@@ -202,7 +193,7 @@
             <span>Stages</span>
           </a>
           <a routerLink="/stocks/articles" class="quick-link quick-link--indigo">
-            <svg fill="currentColor" viewBox="0 -960 960 960"><path d="M160-80q-33 0-56.5-23.5T80-160v-440q0-33 23.5-56.5T160-680h200v-120q0-33 23.5-56.5T440-880h80q33 0 56.5 23.5T600-800v120h200q33 0 56.5 23.5T880-600v440q0 33-23.5 56.5T800-80H160Zm320-280q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35ZM240-160h480v-36q0-17-9.5-31.5T696-244q-45-23-93.5-34.5T480-290q-54 0-102.5 11.5T284-244q-17 9-26.5 23.5T248-189v29Z"/></svg>
+            <svg fill="currentColor" viewBox="0 -960 960 960"><path d="M160-80q-33 0-56.5-23.5T80-160v-440q0-33 23.5-56.5T160-680h200v-120q0-33 23.5-56.5T440-880h80q33 0 56.5 23.5T600-800v120h200q33 0 56.5 23.5T880-600v440q0 33-23.5 56.5T800-80H160Z"/></svg>
             <span>Stocks</span>
           </a>
           <a routerLink="/immobilisations" class="quick-link quick-link--red">
@@ -216,135 +207,179 @@
   </ng-container>
 </div>
 
-<!-- Apprenant View (unchanged) -->
-<div *ngIf="rolesValue.isApprenant && sessions.length != 0" class="mb-8">
-	<div class="relative w-full h-56">
-		<div *ngFor="let session of sessions; index as i" [ngClass]="i != currentSession ? ' opacity-0 bg-blue-50' : 'opacity-100 bg-blue-100'" class="absolute inset-0 transition-all ease-in-out duration-1000 mb-4 rounded-lg px-6 py-6">
-			<div class="flex gap-x-10">
-				<div class="flex flex-col justify-between h-full gap-y-8">
-					<div>
-						<div class="text-gray-700 font-semibold mb-2 text-lg">Nouvelle session d'inscription</div>
-						<div class="mb-2">
-							<div class="flex items-center">
-								<img class="opacity-80" width="20" src="assets/icons/clock-outline.svg" alt="icon">
-								<div class="px-2 text-sm text-gray-500 font-medium">{{ session.dateDebut | date: 'dd MMMM YYYY' }} - {{ session.dateFin | date: 'dd MMMM YYYY' }}</div>
-							</div>
-						</div>
-						<div>
-							<div *ngIf="session.niveauEtude" class="flex items-center">
-								<img class="opacity-80" width="20" src="assets/icons/student.svg" alt="icon">
-								<div class="px-2 text-sm text-gray-500 font-medium">{{ session.niveauEtude.libelle }}</div>
-							</div>
-						</div>
-					</div>
-					<div>
-						<app-custom-button (click)="showNouvelleDemandeModal = true" text="Inscrivez-vous" color="primary"></app-custom-button>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-	<div *ngIf="sessions.length > 1" class="flex justify-center gap-x-3">
-		<button *ngFor="let session of sessions; index as i" [ngClass]="i != currentSession ? 'opacity-50' : ''" (click)="currentSession = i" type="button" class="w-2.5 h-2.5 rounded-full bg-primary"></button>
-	</div>
+<!-- Enseignant Dashboard -->
+<div class="dashboard" *ngIf="rolesValue.isEnseignant">
+  <div class="dashboard-header">
+    <div>
+      <h1 class="dashboard-title">Bonjour {{ utilisateur?.prenoms || 'Professeur' }}</h1>
+      <p class="dashboard-subtitle">{{ currentYear }} &middot; Aperçu de votre journée</p>
+    </div>
+  </div>
+
+  <div class="widget-grid-2cols">
+    <app-widget-prochain-cours></app-widget-prochain-cours>
+    <app-widget-notes-a-saisir></app-widget-notes-a-saisir>
+  </div>
+
+  <div class="widget-grid-1col" style="margin-top: 1rem;">
+    <app-widget-agenda></app-widget-agenda>
+  </div>
 </div>
 
-<!-- Recent Announcements for Students -->
-<div class="mb-8" *ngIf="rolesValue.isApprenant && annoncesRecentes.length > 0">
-  <div class="text-gray-700 text-md font-medium mb-4">Dernières annonces</div>
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-    <div *ngFor="let annonce of annoncesRecentes" class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
-      <div class="flex items-start gap-2 mb-2">
-        <svg class="w-5 h-5 text-blue-600 mt-0.5 shrink-0" fill="currentColor" viewBox="0 -960 960 960"><path d="M480-120 200-272v-240L40-600l440-240 440 240v320h-80v-276l-80 44v240L480-120Zm0-332 274-148-274-148-274 148 274 148Zm0 212 200-108v-151L480-360 280-499v151l200 108Z"/></svg>
-        <div>
-          <div class="text-sm font-semibold text-gray-900">{{ annonce.titre }}</div>
-          <div class="text-xs text-gray-500 mt-0.5">{{ annonce.datePublication | date:'dd MMM yyyy' }}</div>
+<!-- Apprenant Dashboard (enhanced) -->
+<div class="dashboard" *ngIf="rolesValue.isApprenant">
+  <div class="dashboard-header">
+    <div>
+      <h1 class="dashboard-title">Bonjour {{ utilisateur?.prenoms || 'Étudiant' }}</h1>
+      <p class="dashboard-subtitle">{{ currentYear }} &middot; Vue d'ensemble de votre scolarité</p>
+    </div>
+  </div>
+
+  <div class="widget-grid-2cols" style="margin-bottom: 1.5rem;">
+    <app-widget-agenda></app-widget-agenda>
+    <app-widget-documents></app-widget-documents>
+  </div>
+
+  <!-- Session Carousel (existing, limited to apprenant) -->
+  <div *ngIf="sessions.length != 0" class="mb-8">
+    <div class="relative w-full h-56">
+      <div *ngFor="let session of sessions; index as i" [ngClass]="i != currentSession ? ' opacity-0 bg-blue-50' : 'opacity-100 bg-blue-100'" class="absolute inset-0 transition-all ease-in-out duration-1000 mb-4 rounded-lg px-6 py-6">
+        <div class="flex gap-x-10">
+          <div class="flex flex-col justify-between h-full gap-y-8">
+            <div>
+              <div class="text-gray-700 font-semibold mb-2 text-lg">Nouvelle session d'inscription</div>
+              <div class="mb-2">
+                <div class="flex items-center">
+                  <img class="opacity-80" width="20" src="assets/icons/clock-outline.svg" alt="icon">
+                  <div class="px-2 text-sm text-gray-500 font-medium">{{ session.dateDebut | date: 'dd MMMM YYYY' }} - {{ session.dateFin | date: 'dd MMMM YYYY' }}</div>
+                </div>
+              </div>
+              <div>
+                <div *ngIf="session.niveauEtude" class="flex items-center">
+                  <img class="opacity-80" width="20" src="assets/icons/student.svg" alt="icon">
+                  <div class="px-2 text-sm text-gray-500 font-medium">{{ session.niveauEtude.libelle }}</div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <app-custom-button (click)="showNouvelleDemandeModal = true" text="Inscrivez-vous" color="primary"></app-custom-button>
+            </div>
+          </div>
         </div>
       </div>
-      <p class="text-xs text-gray-600 line-clamp-3">{{ annonce.contenu }}</p>
+    </div>
+    <div *ngIf="sessions.length > 1" class="flex justify-center gap-x-3">
+      <button *ngFor="let session of sessions; index as i" [ngClass]="i != currentSession ? 'opacity-50' : ''" (click)="currentSession = i" type="button" class="w-2.5 h-2.5 rounded-full bg-primary"></button>
+    </div>
+  </div>
+
+  <!-- Recent Announcements -->
+  <div class="mb-8" *ngIf="annoncesRecentes.length > 0">
+    <div class="widget-section-title">Dernières annonces</div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div *ngFor="let annonce of annoncesRecentes" class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+        <div class="flex items-start gap-2 mb-2">
+          <svg class="w-5 h-5 text-blue-600 mt-0.5 shrink-0" fill="currentColor" viewBox="0 -960 960 960"><path d="M480-120 200-272v-240L40-600l440-240 440 240v320h-80v-276l-80 44v240L480-120Zm0-332 274-148-274-148-274 148 274 148Zm0 212 200-108v-151L480-360 280-499v151l200 108Z"/></svg>
+          <div>
+            <div class="text-sm font-semibold text-gray-900">{{ annonce.titre }}</div>
+            <div class="text-xs text-gray-500 mt-0.5">{{ annonce.datePublication | date:'dd MMM yyyy' }}</div>
+          </div>
+        </div>
+        <p class="text-xs text-gray-600 line-clamp-3">{{ annonce.contenu }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Published Notes -->
+  <div class="mb-8" *ngIf="!loadingNotes && notesRecentes.length > 0">
+    <div class="widget-section-title">Mes dernières notes</div>
+    <app-widget-notes-recentes></app-widget-notes-recentes>
+  </div>
+
+  <!-- User Info -->
+  <div class="mb-8" *ngIf="utilisateur">
+    <div class="widget-section-title">Vos informations</div>
+    <div class="grid grid-cols-2 gap-16">
+      <div class="mb-8 bg-yellow-100 px-8 py-6 rounded-lg">
+        <svg class="w-9 h-9 text-gray-400 dark:text-gray-400 mb-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" height="24" viewBox="0 -960 960 960" width="24">
+          <path d="M160-80q-33 0-56.5-23.5T80-160v-440q0-33 23.5-56.5T160-680h200v-120q0-33 23.5-56.5T440-880h80q33 0 56.5 23.5T600-800v120h200q33 0 56.5 23.5T880-600v440q0 33-23.5 56.5T800-80H160Zm80-160h240v-18q0-17-9.5-31.5T444-312q-20-9-40.5-13.5T360-330q-23 0-43.5 4.5T276-312q-17 8-26.5 22.5T240-258v18Zm320-60h160v-60H560v60Zm-200-60q25 0 42.5-17.5T420-420q0-25-17.5-42.5T360-480q-25 0-42.5 17.5T300-420q0 25 17.5 42.5T360-360Zm200-60h160v-60H560v60ZM440-600h80v-200h-80v200Z"/>
+        </svg>
+        <div class="flex justify-between">
+          <div class="flex-grow">
+            <div class="grid grid-cols-6 gap-y-8 mt-4">
+              <div class="col-span-3">
+                <label class="mb-2 block text-sm leading-6 text-gray-600">Nom</label>
+                <div class="block w-full text-gray-900 font-medium">{{ utilisateur.nom }}</div>
+              </div>
+              <div class="col-span-3">
+                <label class="mb-2 block text-sm leading-6 text-gray-600">Prénoms</label>
+                <div class="block w-full text-gray-900 font-medium">{{ utilisateur.prenoms }}</div>
+              </div>
+              <div class="col-span-3">
+                <label class="mb-2 block text-sm leading-6 text-gray-600">Date de naissance</label>
+                <div *ngIf="utilisateur.apprenant?.dateNaissance" class="block w-full text-gray-900 font-medium">{{ utilisateur.apprenant?.dateNaissance | date: 'dd/MM/YYYY' }}</div>
+                <div *ngIf="!utilisateur.apprenant?.dateNaissance" class="block w-full text-gray-600 font-italic">N/A</div>
+              </div>
+              <div class="col-span-3">
+                <label class="mb-2 block text-sm leading-6 text-gray-600">Lieu de naissance</label>
+                <div *ngIf="utilisateur.apprenant?.lieuNaissance" class="block w-full text-gray-900 font-medium">{{ utilisateur.apprenant?.lieuNaissance }}</div>
+                <div *ngIf="!utilisateur.apprenant?.lieuNaissance" class="block w-full text-gray-600 font-italic">N/A</div>
+              </div>
+            </div>
+          </div>
+          <div class="flex-none flex items-center">
+            <div>
+              <img class="h-36 w-36 rounded-md object-cover object-center border-2 border-gray-300"
+                [src]="utilisateur.apprenant?.photo ? PHOTOS_PATH + utilisateur.apprenant?.photo : 'assets/images/blank-profile-picture.png'" alt="profile">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="mb-8 bg-red-100 rounded-lg px-8 py-8 flex justify-center items-center" *ngIf="!utilisateur.apprenant?.qrCode">
+        <p class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap">Vous n'êtes inscrit dans aucune filière</p>
+      </div>
+      <div class="mb-8 bg-white rounded-lg px-8 py-6 border border-gray-200 flex flex-col items-center" *ngIf="utilisateur.apprenant?.qrCode">
+        <div class="text-gray-700 text-sm font-medium mb-4">Ma carte étudiante</div>
+        <img [src]="QR_CODES_PATH + utilisateur.apprenant?.qrCode" class="h-32 w-32 object-contain mb-3">
+        <div class="text-xs text-gray-500 mb-2">{{ utilisateur.nom }} {{ utilisateur.prenoms }}</div>
+        <app-custom-button text="Voir ma carte" link="/administration/cartes"></app-custom-button>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- Recent Published Notes for Students -->
-<div class="mb-8" *ngIf="rolesValue.isApprenant && !loadingNotes && notesRecentes.length > 0">
-  <div class="flex items-center justify-between mb-4">
-    <div class="text-gray-700 text-md font-medium">Mes dernières notes</div>
-    <a routerLink="/cours/mes-notes" class="text-xs text-blue-600 hover:underline">Voir tout</a>
-  </div>
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-    <div *ngFor="let note of notesRecentes" class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
-      <div class="flex items-start justify-between mb-2">
-        <div class="flex-1 min-w-0">
-          <div class="text-sm font-semibold text-gray-900 truncate">{{ note.listeNoteEvaluation?.cours?.intitule || 'Matière' }}</div>
-          <div class="text-xs text-gray-500">{{ note.listeNoteEvaluation?.typeNoteEvaluation?.libelle || 'Évaluation' }}</div>
-        </div>
-        <div class="text-xl font-bold ml-2" [ngClass]="note.note >= 10 ? 'text-emerald-600' : 'text-orange-600'">
-          {{ note.note != null ? (note.note + '/20') : '-' }}
-        </div>
-      </div>
-      <div class="text-xs text-gray-400">
-        <span *ngIf="note.listeNoteEvaluation?.publicationsNotes?.[0]?.datePublication">
-          Publiée le {{ note.listeNoteEvaluation.publicationsNotes[0].datePublication | date:'dd MMM yyyy' }}
-        </span>
-      </div>
+<!-- RH Dashboard -->
+<div class="dashboard" *ngIf="rolesValue.isRessourcesHumaines">
+  <div class="dashboard-header">
+    <div>
+      <h1 class="dashboard-title">Bonjour {{ utilisateur?.prenoms || 'RH' }}</h1>
+      <p class="dashboard-subtitle">{{ currentYear }} &middot; Planning et gestion du personnel</p>
     </div>
+  </div>
+
+  <div class="widget-grid-2cols">
+    <app-widget-planning-personnel></app-widget-planning-personnel>
+    <app-widget-agenda></app-widget-agenda>
   </div>
 </div>
 
-<div class="mb-8" *ngIf="utilisateur && rolesValue.isApprenant">
-    <div class="text-gray-700 text-md font-medium mb-6">Vos informations</div>
-	<div class="grid grid-cols-2 gap-16">
-		<div class="mb-8 bg-yellow-100 px-8 py-6 rounded-lg">
-			<svg class="w-9 h-9 text-gray-400 dark:text-gray-400 mb-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor"  height="24" viewBox="0 -960 960 960" width="24">
-				<path d="M160-80q-33 0-56.5-23.5T80-160v-440q0-33 23.5-56.5T160-680h200v-120q0-33 23.5-56.5T440-880h80q33 0 56.5 23.5T600-800v120h200q33 0 56.5 23.5T880-600v440q0 33-23.5 56.5T800-80H160Zm80-160h240v-18q0-17-9.5-31.5T444-312q-20-9-40.5-13.5T360-330q-23 0-43.5 4.5T276-312q-17 8-26.5 22.5T240-258v18Zm320-60h160v-60H560v60Zm-200-60q25 0 42.5-17.5T420-420q0-25-17.5-42.5T360-480q-25 0-42.5 17.5T300-420q0 25 17.5 42.5T360-360Zm200-60h160v-60H560v60ZM440-600h80v-200h-80v200Z"/>
-			</svg>
-			<div class="flex justify-between ">
-				<div class="flex-grow">
-					<div class="grid grid-cols-6 gap-y-8 mt-4">
-						<div class="col-span-3">
-							<label class="mb-2 block text-sm leading-6 text-gray-600">Nom</label>
-							<div class="block w-full text-gray-900 font-medium">{{ utilisateur.nom }}</div>
-						</div>
-						<div class="col-span-3">
-							<label class="mb-2 block text-sm leading-6 text-gray-600">Prénoms</label>
-							<div class="block w-full text-gray-900 font-medium">{{ utilisateur.prenoms }}</div>
-						</div>
-						<div class="col-span-3">
-							<label class="mb-2 block text-sm leading-6 text-gray-600">Date de naissance</label>
-							<div *ngIf="utilisateur.apprenant?.dateNaissance" class="block w-full text-gray-900 font-medium">{{ utilisateur.apprenant?.dateNaissance | date: 'dd/MM/YYYY' }}</div>
-							<div *ngIf="!utilisateur.apprenant?.dateNaissance" class="block w-full text-gray-600 font-italic">N/A</div>
-						</div>
-						<div class="col-span-3">
-							<label class="mb-2 block text-sm leading-6 text-gray-600">Lieu de naissance</label>
-							<div *ngIf="utilisateur.apprenant?.lieuNaissance" class="block w-full text-gray-900 font-medium">{{ utilisateur.apprenant?.lieuNaissance }}</div>
-							<div *ngIf="!utilisateur.apprenant?.lieuNaissance" class="block w-full text-gray-600 font-italic">N/A</div>
-						</div>
-					</div>
-				</div>
-				<div class="flex-none flex items-center">
-					<div>
-						<img class="h-36 w-36 rounded-md object-cover object-center border-2 border-gray-300"
-							[src]="utilisateur.apprenant?.photo ? PHOTOS_PATH + utilisateur.apprenant?.photo : 'assets/images/blank-profile-picture.png'" alt="profile">
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="mb-8 bg-red-100 rounded-lg px-8 py-8 flex justify-center items-center" *ngIf="!utilisateur.apprenant?.qrCode">
-			<p class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap">Vous n'êtes inscrit dans aucune filière</p>
-		</div>
-		<div class="mb-8 bg-white rounded-lg px-8 py-6 border border-gray-200 flex flex-col items-center" *ngIf="utilisateur.apprenant?.qrCode">
-			<div class="text-gray-700 text-sm font-medium mb-4">Ma carte étudiante</div>
-			<img [src]="QR_CODES_PATH + utilisateur.apprenant?.qrCode" class="h-32 w-32 object-contain mb-3">
-			<div class="text-xs text-gray-500 mb-2">{{ utilisateur.nom }} {{ utilisateur.prenoms }}</div>
-			<app-custom-button text="Voir ma carte" link="/administration/cartes"></app-custom-button>
-		</div>
-	</div>
+<!-- Default Dashboard for other roles (Caissier, Comptable, Comite, Institution) -->
+<div class="dashboard" *ngIf="!rolesValue.isAdmin && !rolesValue.isEnseignant && !rolesValue.isApprenant && !rolesValue.isRessourcesHumaines">
+  <div class="dashboard-header">
+    <div>
+      <h1 class="dashboard-title">Bonjour {{ utilisateur?.prenoms || 'Utilisateur' }}</h1>
+      <p class="dashboard-subtitle">{{ currentYear }} &middot; Tableau de bord</p>
+    </div>
+  </div>
+
+  <div class="widget-grid-1col">
+    <app-widget-agenda></app-widget-agenda>
+  </div>
 </div>
 
 <!-- Modals -->
 <app-custom-modal title="Nouvelle demande" subtitle="Faire une nouvelle demande d'inscription pour cette session" (onCloseModal)="showNouvelleDemandeModal = false" [center]="true" [showModal]="showNouvelleDemandeModal">
-	<div class="flex items-center justify-between py-3">
+  <div class="flex items-center justify-between py-3">
         <app-custom-button (click)="showNouvelleDemandeModal = false" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
         <app-custom-button (click)="faireDemandeInscription()" text="Confirmer"></app-custom-button>
     </div>

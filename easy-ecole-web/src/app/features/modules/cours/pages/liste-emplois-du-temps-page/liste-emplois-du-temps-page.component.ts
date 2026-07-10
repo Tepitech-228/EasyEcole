@@ -17,6 +17,7 @@ import { EnseignantService } from 'src/app/data/modules/auth/services/enseignant
 import { ClasseService } from 'src/app/data/modules/inscription/services/classe.service';
 import { Classe } from 'src/app/data/modules/inscription/models/Classe.model';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+import { NotificationService } from 'src/app/data/modules/elearning/services/notification.service';
 
 const COULEURS_PALETTE = [
   '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
@@ -62,6 +63,10 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
   conflitModeCreation: boolean = false
   forceSave: boolean = false
 
+  publierLoading: boolean = false
+  showPublierSuccess: boolean = false
+  publierMessage: string = ''
+
   joursSemaineList = [
     { value: JoursSemaine.LUNDI, label: 'Lundi' },
     { value: JoursSemaine.MARDI, label: 'Mardi' },
@@ -104,6 +109,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
     private coursService: CoursService,
     private enseignantService: EnseignantService,
     private classeService: ClasseService,
+    private notificationService: NotificationService,
   ) {
     super()
     this.calendarOptions = {
@@ -536,6 +542,25 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
         }
       })
     }
+  }
+
+  publierEmploiDuTemps(): void {
+    this.publierLoading = true;
+    this.showPublierSuccess = false;
+    this.notificationService.publierEmploiDuTemps().subscribe({
+      next: (res) => {
+        this.publierLoading = false;
+        this.showPublierSuccess = true;
+        this.publierMessage = `Emploi du temps publié ! ${res.enseignantsNotifies} enseignant(s) et ${res.etudiantsNotifies} étudiant(s) notifié(s).`;
+        setTimeout(() => this.showPublierSuccess = false, 5000);
+      },
+      error: (err) => {
+        this.publierLoading = false;
+        this.showPublierSuccess = true;
+        this.publierMessage = 'Erreur lors de la publication.';
+        setTimeout(() => this.showPublierSuccess = false, 5000);
+      }
+    });
   }
 
   // Modals

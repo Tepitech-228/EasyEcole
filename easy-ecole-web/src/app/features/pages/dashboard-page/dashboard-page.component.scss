@@ -371,6 +371,29 @@
 .quick-link--red     { background: #fef2f2; color: #dc2626; }
 .quick-link--red:hover     { background: #fee2e2; }
 
+.widget-section-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 1rem;
+}
+
+.widget-grid-2cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.widget-grid-1col {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 1024px) {
+  .widget-grid-2cols { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 1024px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .charts-row,

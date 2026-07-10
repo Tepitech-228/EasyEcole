@@ -7,13 +7,16 @@ import { PanierParcoursChoisiService } from 'src/app/data/modules/orientation/se
 import { SidebarStateService } from 'src/app/features/layout/services/sidebar-state.service';
 import { PermissionStateService } from 'src/app/core/services/permission-state.service';
 import { environment } from 'src/environments/environment';
+import { NotificationService } from 'src/app/data/modules/elearning/services/notification.service';
+import { SseService } from 'src/app/data/services/sse.service';
+import { NotificationSoundService } from 'src/app/data/services/notification-sound.service';
 
 @Component({
   selector: 'app-base-layout',
   templateUrl: './base-layout.component.html',
   styleUrls: ['./base-layout.component.scss']
 })
-export class BaseLayoutComponent extends BaseComponentClass implements OnInit {
+export class BaseLayoutComponent extends BaseComponentClass implements OnInit, OnDestroy {
 
   showMenu: boolean = false
   searchQuery: string = ''
@@ -23,18 +26,28 @@ export class BaseLayoutComponent extends BaseComponentClass implements OnInit {
   showPanierModal: boolean = false
   showProfileDropdown: boolean = false
   showNotifDropdown: boolean = false
-  enseignantNotif: { coursLibelle?: string; salle?: string; heureDebut?: string; heureFin?: string } | null = null
+  rappelSalleNotif: { currentCours?: string; currentSalle?: string; nextCours?: string | null; nextSalle?: string | null; minutesRestantes?: number } | null = null
+  nonLuesCount: number = 0
+  notifications: any[] = []
   private notifSub: Subscription | null = null
+  private rappelSub: Subscription | null = null
+  private notifCountSub: Subscription | null = null
 
   readonly PROFILES_PATH: string = environment.MEDIAS_PATH.AUTH.PROFILES
+
+  soundEnabled: boolean = true
 
   constructor(
     private panierParcoursChoisiService: PanierParcoursChoisiService,
     private authService: AuthService,
     private sidebarState: SidebarStateService,
     private permissionState: PermissionStateService,
+    private notificationService: NotificationService,
+    private sseService: SseService,
+    private soundService: NotificationSoundService,
     private http: HttpClient) {
     super()
+    this.soundEnabled = this.soundService.isEnabled
     if(this.rolesValue.isApprenant) {
       this.getPanierCount()
     }
@@ -44,25 +57,60 @@ export class BaseLayoutComponent extends BaseComponentClass implements OnInit {
 
   ngOnInit(): void {
     this.permissionState.loadPermissions()
-    this.startEnseignantPolling()
+    this.startPolling()
+    this.subscribeToSse()
   }
 
   ngOnDestroy(): void {
     this.notifSub?.unsubscribe()
+    this.rappelSub?.unsubscribe()
+    this.notifCountSub?.unsubscribe()
   }
 
-  private startEnseignantPolling(): void {
-    if (!this.rolesValue.isEnseignant && !this.rolesValue.isInstitution && !this.rolesValue.isAdmin) return;
-    this.notifSub = interval(60000).subscribe(() => {
-      this.http.get(`${environment.API_URL}/inscription/rattrapages/enseignant/prochain-cours`).subscribe({
+  private subscribeToSse(): void {
+    this.notifSub = this.sseService.notifications$.subscribe(notif => {
+      this.notifications.unshift(notif)
+      if (!notif.lu) {
+        this.nonLuesCount++
+        this.soundService.play(notif.type)
+      }
+    })
+  }
+
+  private startPolling(): void {
+    if (!this.rolesValue.isEnseignant && !this.rolesValue.isApprenant && !this.rolesValue.isInstitution && !this.rolesValue.isAdmin) return;
+
+    this.rappelSub = interval(60000).subscribe(() => {
+      this.notificationService.getRappelSalle().subscribe({
         next: (res: any) => {
-          if (res?.prochainCours) {
-            this.enseignantNotif = res.prochainCours;
-            setTimeout(() => this.enseignantNotif = null, 30000);
+          if (res?.rappel) {
+            this.rappelSalleNotif = res.rappel;
+            this.soundService.play('rappel_salle')
+            setTimeout(() => this.rappelSalleNotif = null, 35000);
           }
         }
       });
     });
+
+    this.notificationService.getAll().subscribe({
+      next: (data) => {
+        this.notifications = data;
+        this.nonLuesCount = data.filter(n => !n.lu).length;
+      }
+    });
+  }
+
+  marquerLu(id: number): void {
+    this.notificationService.marquerLu(id).subscribe();
+    const notif = this.notifications.find(n => n.id === id);
+    if (notif) {
+      notif.lu = true;
+      this.nonLuesCount = Math.max(0, this.nonLuesCount - 1);
+    }
+  }
+
+  toggleSound(): void {
+    this.soundEnabled = this.soundService.toggle()
   }
 
   hasPermission(key: string): boolean {

@@ -54,6 +54,7 @@ import PublicationNoteRouter from "./routers/PublicationNoteRouter";
 import FraisParcoursRouter from "./routers/FraisParcoursRouter";
 import ReductionFraisRouter from "./routers/ReductionFraisRouter";
 import PenaliteRetardRouter from "./routers/PenaliteRetardRouter";
+import DashboardController from "./controllers/DashboardController";
 
 const router = express.Router();
 
@@ -113,5 +114,6 @@ router
     .use('/frais-parcours', [Authenticate], FraisParcoursRouter)
     .use('/reductions-frais', [Authenticate], ReductionFraisRouter)
     .use('/penalites-retard', [Authenticate], PenaliteRetardRouter)
+    .get('/dashboard', [Authenticate], DashboardController.getDashboard)
 
 export default router;

@@ -10,6 +10,7 @@ export class ModuleElearning extends Model<InferAttributes<ModuleElearning>, Inf
   declare titre: string
   declare description: CreationOptional<string>
   declare ordre: CreationOptional<number>
+  declare dateDisponible: CreationOptional<Date>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -44,6 +45,10 @@ ModuleElearning.init({
   ordre: {
     type: DataTypes.INTEGER,
     defaultValue: 0
+  },
+  dateDisponible: {
+    type: DataTypes.DATEONLY,
+    allowNull: true
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

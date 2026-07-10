@@ -66,11 +66,11 @@ SessionGed.init({
     defaultValue: 'active'
   },
   fields: {
-    type: DataTypes.JSON,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   participantIds: {
-    type: DataTypes.JSON,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   createdBy: {

@@ -8,9 +8,15 @@
       </div>
       <div class="rounded-2xl bg-white/10 px-4 py-3 backdrop-blur">
         <p class="text-xs uppercase tracking-[0.2em] text-slate-300">Parcours actif</p>
-        <p class="mt-1 text-lg font-semibold">{{ coursList.length || 0 }} cours disponibles</p>
+        <p class="mt-1 text-lg font-semibold">{{ coursList.length }} cours · {{ totalModules }} modules</p>
       </div>
     </div>
+  </div>
+
+  <!-- Search bar -->
+  <div *ngIf="!loading && coursList.length" class="relative">
+    <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="filterCours()" placeholder="Rechercher un cours par titre ou description..." class="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm shadow-sm transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100">
+    <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
   </div>
 
   <div *ngIf="loading" class="flex justify-center rounded-2xl border border-slate-200 bg-white py-16 shadow-sm">
@@ -20,13 +26,17 @@
     </div>
   </div>
 
-  <div *ngIf="!loading && coursList.length === 0" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-12 text-center text-slate-500">
+  <div *ngIf="!loading && filteredList.length === 0 && !searchQuery" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-12 text-center text-slate-500">
     Aucun cours disponible pour le moment.
   </div>
 
+  <div *ngIf="!loading && filteredList.length === 0 && searchQuery" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-12 text-center text-slate-500">
+    Aucun cours ne correspond à votre recherche « {{ searchQuery }} ».
+  </div>
+
   <div *ngIf="!loading" class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-    <div *ngFor="let cours of coursList" class="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
-      <div class="h-36 overflow-hidden bg-slate-100">
+    <div *ngFor="let cours of filteredList" class="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
+      <div class="h-36 overflow-hidden bg-gradient-to-br from-indigo-100 to-blue-50">
         <img [src]="'/orientation/parcours/' + cours.image" alt="{{ cours.titre }}" class="h-full w-full object-cover transition duration-300 group-hover:scale-105" *ngIf="cours.image">
       </div>
       <div class="p-5">
@@ -35,7 +45,19 @@
           <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.2em]" [ngClass]="cours.statut === 'actif' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'">{{ cours.statut }}</span>
         </div>
         <h3 class="mt-4 text-lg font-semibold text-slate-900">{{ cours.titre }}</h3>
-        <p class="mt-2 text-sm leading-6 text-slate-600">{{ cours.description }}</p>
+        <p class="mt-2 text-sm leading-6 text-slate-600 line-clamp-2">{{ cours.description }}</p>
+
+        <!-- Progress bar (apprenant) -->
+        <div *ngIf="cours.progression" class="mt-4">
+          <div class="flex items-center justify-between text-xs text-slate-500">
+            <span>Progression</span>
+            <span>{{ cours.progression.termine }}/{{ cours.progression.total }} · {{ cours.progression.taux }}%</span>
+          </div>
+          <div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
+            <div class="h-full rounded-full bg-emerald-500 transition-all duration-500" [style.width.%]="cours.progression.taux"></div>
+          </div>
+        </div>
+
         <div class="mt-4 flex items-center justify-between text-sm text-slate-500">
           <span>{{ cours.modules?.length || 0 }} module(s)</span>
           <span class="font-medium text-slate-700">Ouvrir</span>
@@ -43,6 +65,7 @@
       </div>
       <div class="flex gap-2 border-t border-slate-100 px-5 py-4">
         <a [routerLink]="['/elearning', cours.id]" class="flex-1 rounded-xl bg-slate-900 px-3 py-2 text-center text-sm font-semibold text-white transition hover:bg-slate-700">Voir le cours</a>
+        <a [routerLink]="['/elearning', cours.id, 'player']" class="rounded-xl bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white transition hover:bg-indigo-700">Lecture</a>
         <a [routerLink]="['/elearning', cours.id, 'chat']" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Chat</a>
       </div>
     </div>

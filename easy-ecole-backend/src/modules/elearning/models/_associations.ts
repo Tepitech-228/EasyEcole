@@ -12,6 +12,7 @@ import { SoumissionDevoir } from "./SoumissionDevoir";
 import { Quiz } from "./Quiz";
 import { ReponseQuiz } from "./ReponseQuiz";
 import { Certificat } from "./Certificat";
+import { ProgressionApprenant } from "./ProgressionApprenant";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 
 CoursEnLigne.hasMany(ModuleElearning, { foreignKey: 'coursId', as: 'modules' })
@@ -57,3 +58,8 @@ CoursEnLigne.hasMany(Certificat, { foreignKey: 'coursId', as: 'certificats' })
 Certificat.belongsTo(CoursEnLigne, { as: 'cours', foreignKey: 'coursId' })
 Utilisateur.hasMany(Certificat, { foreignKey: 'apprenantId', as: 'certificats' })
 Certificat.belongsTo(Utilisateur, { as: 'apprenant', foreignKey: 'apprenantId' })
+
+Support.hasMany(ProgressionApprenant, { foreignKey: 'supportId', as: 'progressions' })
+ProgressionApprenant.belongsTo(Support, { as: 'support', foreignKey: 'supportId' })
+Utilisateur.hasMany(ProgressionApprenant, { foreignKey: 'apprenantId', as: 'progressionsElearning' })
+ProgressionApprenant.belongsTo(Utilisateur, { as: 'apprenant', foreignKey: 'apprenantId' })

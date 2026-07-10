@@ -12,13 +12,12 @@ import { ProgressInterceptorService } from './core/interceptors/progress-interce
 import { LayoutModule } from './features/layout/layout.module';
 import { QuillModule } from 'ngx-quill';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DashboardPageComponent } from './features/pages/dashboard-page/dashboard-page.component';
 import { NotFoundPageComponent } from './features/pages/not-found-page/not-found-page.component';
+import { DashboardPageModule } from './features/pages/dashboard-page/dashboard-page.module';
 
 @NgModule({
   declarations: [
     AppComponent,
-    DashboardPageComponent,
     NotFoundPageComponent
   ],
   imports: [
@@ -28,6 +27,7 @@ import { NotFoundPageComponent } from './features/pages/not-found-page/not-found
     // Modules
     SharedModule,
     LayoutModule,
+    DashboardPageModule,
     QuillModule.forRoot(),
     BrowserAnimationsModule,
   ],

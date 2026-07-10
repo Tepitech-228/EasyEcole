@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CountOptions, FindOptions, InferAttributes, Op } from "sequelize";
+import { CountOptions, FindOptions, InferAttributes, Op, literal } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { JoursSemaine } from "../../../core/enums/JoursSemaine";
 import { Seance } from "../models/Seance";
@@ -7,6 +7,8 @@ import { Cours } from "../models/Cours";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { SalleDeClasse } from "../models/SalleDeClasse";
 import { CursusApprenant } from "../models/CursusApprenant";
+import { Utilisateur } from "../../auth/models/Utilisateur";
+import { NotificationHelper } from "../../../core/helpers/NotificationHelper";
 
 export default class SeanceController {
 
@@ -393,5 +395,180 @@ export default class SeanceController {
             });
 
         return null
+    }
+
+    static async publierEmploiDuTemps(req: Request, res: Response): Promise<Response> {
+        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
+            return res.status(403).json({ success: false, message: "Réservé à l'institution" });
+        }
+
+        try {
+            const seances = await Seance.findAll({
+                include: [
+                    { association: Seance.associations.cours },
+                    { association: Seance.associations.enseignant, include: [Enseignant.associations.utilisateur] }
+                ]
+            });
+
+            const enseignantsNotifies = new Set<number>();
+            const enseignantsNotifications: { id: number; nom: string; nbSeances: number }[] = [];
+            const etudiantsNotifications: { id: number; nom: string; nbSeances: number }[] = [];
+
+            for (const seance of seances) {
+                const enseignant = (seance as any).enseignant;
+                if (enseignant?.utilisateur?.id && !enseignantsNotifies.has(enseignant.utilisateur.id)) {
+                    enseignantsNotifies.add(enseignant.utilisateur.id);
+                    enseignantsNotifications.push({
+                        id: enseignant.utilisateur.id,
+                        nom: `${enseignant.utilisateur.prenoms} ${enseignant.utilisateur.nom}`,
+                        nbSeances: 1
+                    });
+                }
+
+                const cours = (seance as any).cours;
+                if (cours?.classeId) {
+                    const cursusList = await CursusApprenant.findAll({
+                        where: { classeId: cours.classeId },
+                        include: [{ association: CursusApprenant.associations.utilisateur }]
+                    });
+                    for (const cursus of cursusList) {
+                        const user = (cursus as any).utilisateur;
+                        if (user?.id) {
+                            const existing = etudiantsNotifications.find(e => e.id === user.id);
+                            if (existing) {
+                                existing.nbSeances++;
+                            } else {
+                                etudiantsNotifications.push({
+                                    id: user.id,
+                                    nom: `${user.prenoms} ${user.nom}`,
+                                    nbSeances: 1
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+
+            const enseignantIds = enseignantsNotifications.map(e => e.id);
+            const etudiantIds = etudiantsNotifications.map(e => e.id);
+
+            if (enseignantIds.length > 0) {
+                await NotificationHelper.envoyerNotificationMultiples(
+                    enseignantIds,
+                    'edt_publie',
+                    'Emploi du temps publié',
+                    `Votre emploi du temps a été mis à jour. ${enseignantsNotifications.length > 0 ? `Vous avez ${enseignantsNotifications.find(e => enseignantIds.includes(e.id))?.nbSeances || 0} séance(s).` : ''}`,
+                    false
+                );
+            }
+
+            if (etudiantIds.length > 0) {
+                await NotificationHelper.envoyerNotificationMultiples(
+                    etudiantIds,
+                    'edt_publie',
+                    'Emploi du temps publié',
+                    `Votre emploi du temps a été mis à jour. Consultez-le dans la rubrique Cours.`,
+                    false
+                );
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: 'Emploi du temps publié avec succès',
+                enseignantsNotifies: enseignantIds.length,
+                etudiantsNotifies: etudiantIds.length
+            });
+        } catch (error) {
+            return res.status(500).json({ success: false, error });
+        }
+    }
+
+    static async getRappelSalle(req: Request, res: Response): Promise<Response> {
+        try {
+            const role = (req as any).utilisateurRole;
+            const utilisateurId = (req as any).utilisateurId;
+            const now = new Date();
+            const currentTime = now.toTimeString().slice(0, 5);
+            const dayNames = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
+            const today = dayNames[now.getDay()];
+
+            let seances: Seance[] = [];
+
+            if (role === RolesUtilisateur.ENSEIGNANT) {
+                const enseignant = await Enseignant.findOne({ where: { utilisateurId } });
+                if (!enseignant) return res.json({ rappel: null });
+                seances = await Seance.findAll({
+                    where: {
+                        enseignantId: enseignant.id as any,
+                        jourSemaine: today as any,
+                        dateDebut: { [Op.lte]: now },
+                        dateFin: { [Op.gte]: now }
+                    },
+                    include: [
+                        { association: Seance.associations.cours },
+                        { association: Seance.associations.enseignant, include: [Enseignant.associations.utilisateur] },
+                        Seance.associations.salleDeClasse
+                    ],
+                    order: [['heureDebut', 'ASC']]
+                });
+            } else if (role === RolesUtilisateur.APPRENANT) {
+                const cursus = await CursusApprenant.findAll({
+                    where: { utilisateurId },
+                    include: [{ association: 'demandeInscription', include: [{ association: 'cours' }] }]
+                });
+                const coursIds = cursus.flatMap(c =>
+                    (c as any).demandeInscription?.cours?.map((dc: any) => dc.id) ?? []
+                );
+                if (coursIds.length === 0) return res.json({ rappel: null });
+                seances = await Seance.findAll({
+                    where: {
+                        coursId: { [Op.in]: coursIds },
+                        jourSemaine: today as any,
+                        dateDebut: { [Op.lte]: now },
+                        dateFin: { [Op.gte]: now }
+                    },
+                    include: [
+                        { association: Seance.associations.cours },
+                        { association: Seance.associations.enseignant, include: [Enseignant.associations.utilisateur] },
+                        Seance.associations.salleDeClasse
+                    ],
+                    order: [['heureDebut', 'ASC']]
+                });
+            }
+
+            const currentSeance = seances.find(s => {
+                const debut = s.heureDebut.toString().slice(0, 5);
+                const fin = s.heureFin.toString().slice(0, 5);
+                return currentTime >= debut && currentTime <= fin;
+            });
+
+            if (!currentSeance) return res.json({ rappel: null });
+
+            const currentFin = currentSeance.heureFin.toString().slice(0, 5);
+            const [h, m] = currentFin.split(':').map(Number);
+            const finDate = new Date(now);
+            finDate.setHours(h, m, 0, 0);
+            const diffMs = finDate.getTime() - now.getTime();
+            const diffMin = Math.round(diffMs / 60000);
+
+            if (diffMin > 10 || diffMin < 0) return res.json({ rappel: null });
+
+            const currentIndex = seances.indexOf(currentSeance);
+            const nextSeance = currentIndex < seances.length - 1 ? seances[currentIndex + 1] : null;
+
+            return res.json({
+                rappel: {
+                    currentCours: (currentSeance as any).cours?.intitule || currentSeance.titre,
+                    currentSalle: currentSeance.salle,
+                    currentFin: currentSeance.heureFin,
+                    nextCours: nextSeance ? ((nextSeance as any).cours?.intitule || nextSeance.titre) : null,
+                    nextSalle: nextSeance?.salle || null,
+                    nextHeureDebut: nextSeance?.heureDebut || null,
+                    minutesRestantes: diffMin
+                }
+            });
+        } catch (error) {
+            return res.status(500).json({ success: false, error });
+        }
     }
 }

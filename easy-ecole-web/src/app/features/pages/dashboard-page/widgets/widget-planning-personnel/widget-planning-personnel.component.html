@@ -1,0 +1,20 @@
+<app-dashboard-widget
+  title="Planning du jour"
+  icon="📋"
+  [loading]="loading"
+  [empty]="!loading && entries.length === 0"
+  emptyMessage="Aucune tâche planifiée aujourd'hui"
+  link="/rh/planning-personnel">
+
+  <div class="planning-list">
+    <div class="planning-item" *ngFor="let entry of entries">
+      <div class="planning-time">{{ entry.heureDebut }} - {{ entry.heureFin }}</div>
+      <div class="planning-body">
+        <div class="planning-tache">{{ entry.tache }}</div>
+        <div class="planning-employe" *ngIf="entry.employe">
+          {{ entry.employe.prenoms }} {{ entry.employe.nom }}
+        </div>
+      </div>
+    </div>
+  </div>
+</app-dashboard-widget>
