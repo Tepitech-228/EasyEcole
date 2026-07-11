@@ -5,7 +5,8 @@ import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-upload-support-page',
-  templateUrl: './upload-support-page.component.html'
+  templateUrl: './upload-support-page.component.html',
+  styleUrls: ['./upload-support-page.component.scss']
 })
 export class UploadSupportPageComponent implements OnInit {
   coursId: string | null = null;

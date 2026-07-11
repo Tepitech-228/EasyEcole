@@ -4,7 +4,8 @@ import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-gestion-elearning-page',
-  templateUrl: './gestion-elearning-page.component.html'
+  templateUrl: './gestion-elearning-page.component.html',
+  styleUrls: ['./gestion-elearning-page.component.scss']
 })
 export class GestionElearningPageComponent implements OnInit {
   coursList: any[] = [];
