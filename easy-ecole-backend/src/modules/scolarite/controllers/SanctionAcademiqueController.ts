@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Op } from "sequelize";
+import { Sequelize } from "sequelize";
 import { SanctionAcademique } from "../models/SanctionAcademique";
 
 export default class SanctionAcademiqueController {
@@ -92,12 +92,7 @@ export default class SanctionAcademiqueController {
     static async getActives(req: Request, res: Response): Promise<Response> {
         try {
             const items: SanctionAcademique[] = await SanctionAcademique.findAll({
-                where: {
-                    [Op.or]: [
-                        { dateFin: { [Op.is]: null } },
-                        { dateFin: { [Op.gt]: new Date() } }
-                    ]
-                }
+                where: Sequelize.literal('(dateFin IS NULL OR dateFin > NOW())')
             });
             return res.status(200).send(items);
         } catch (error) {
