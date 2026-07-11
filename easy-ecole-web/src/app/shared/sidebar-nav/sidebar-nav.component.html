@@ -1,0 +1,87 @@
+<ng-container *ngIf="!loading">
+  <nav class="sidebar" aria-label="Navigation principale">
+
+    <!-- Bandeau du pôle actif -->
+    <button
+      class="active-pole-btn"
+      (click)="toggleMosaic()"
+      [attr.aria-expanded]="mosaicOpen">
+      <i class="ti {{ activePole?.icon }}" aria-hidden="true"></i>
+      <span>{{ activePole?.label || '' }}</span>
+      <i
+        class="ti ti-chevron-down switch-chev"
+        [class.open]="mosaicOpen"
+        aria-hidden="true"></i>
+    </button>
+
+    <!-- Mosaïque des pôles (dépliable) -->
+    <div class="mosaic-wrap" [class.expanded]="mosaicOpen">
+      <div class="mosaic">
+        <div
+          class="tile"
+          *ngFor="let pole of poles"
+          [class.active]="pole.label === activePoleLabel"
+          (click)="selectPole(pole.label)">
+          <i class="ti {{ pole.icon }}" aria-hidden="true"></i>
+          <span>{{ pole.label }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Niveau 2 : phases + accordéon de groupes (inchangé) -->
+    <div class="pole-content" *ngIf="activePole">
+      <div
+        *ngFor="let group of activeGroups"
+        class="group-wrapper"
+        [style.display]="groupVisible(group) ? '' : 'none'">
+
+        <ng-container *ngIf="group.label !== 'Déconnexion'; else logoutHeader">
+        <button class="group-header" (click)="toggleGroup(group.label)">
+          <div class="group-title-wrap">
+            <div *ngIf="group.icon" class="group-header-icon" [style.-webkit-mask-image]="'url(assets/icons/' + group.icon + '.svg)'"></div>
+            <span class="group-title">{{ group.label }}</span>
+          </div>
+            <svg
+              class="group-chevron"
+              [ngClass]="isGroupOpen(group.label) ? 'rotated' : ''"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </ng-container>
+
+        <ng-template #logoutHeader>
+          <div class="group-header group-header--no-chevron">
+            <span class="group-title">{{ group.label }}</span>
+          </div>
+        </ng-template>
+
+        <div class="group-items" [ngClass]="isGroupOpen(group.label) ? 'open' : 'closed'">
+          <a *ngFor="let item of group.items"
+            class="nav-item"
+            [style.display]="itemVisible(item) ? '' : 'none'"
+            [routerLink]="item.route"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{exact: item.route === '/'}"
+            (click)="onItemClick()">
+            <div class="nav-item-inner">
+              <div class="active-indicator"></div>
+              <div class="item-icon-wrap">
+                <div class="item-icon" [style.-webkit-mask-image]="'url(assets/icons/' + item.icon + '.svg)'"></div>
+              </div>
+              <span class="item-label">{{ item.label }}</span>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </nav>
+
+</ng-container>
+
+<div *ngIf="loading" class="loading-indicator">
+  <div class="spinner"></div>
+</div>

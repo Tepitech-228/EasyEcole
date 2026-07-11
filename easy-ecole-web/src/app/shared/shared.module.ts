@@ -29,6 +29,7 @@ import { CahierDeTexteCardComponent } from './components/cahier-de-texte-card/ca
 import { LoadingSpinnerComponent } from './components/loading-spinner/loading-spinner.component';
 import { ToastContainerComponent } from './components/toast-container/toast-container.component';
 import { HasPermissionDirective } from '../core/directives/has-permission.directive';
+import { SidebarNavComponent } from './sidebar-nav/sidebar-nav.component';
 
 @NgModule({
   declarations: [
@@ -51,6 +52,7 @@ import { HasPermissionDirective } from '../core/directives/has-permission.direct
     CahierDeTexteCardComponent,
     LoadingSpinnerComponent,
     ToastContainerComponent,
+    SidebarNavComponent,
 
     // Pipes
     SafeUrlPipe,
@@ -104,6 +106,7 @@ import { HasPermissionDirective } from '../core/directives/has-permission.direct
     CahierDeTexteCardComponent,
     LoadingSpinnerComponent,
     ToastContainerComponent,
+    SidebarNavComponent,
 
     // Pipes
     SafeUrlPipe,

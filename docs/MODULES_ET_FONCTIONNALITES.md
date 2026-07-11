@@ -267,9 +267,9 @@ Les fonctionnalités "Cours" partagent les mêmes contrôleurs backend que le mo
 
 - [x] Architecture backend et base de données
 - [x] Module Auth (authentification multi-rôles)
-- [x] Module Orientation (parcours, débouchés, demandes)
-- [x] Module Inscription (sessions, demandes, paiements, cursus)
-- [x] Module Cours (chapitres, ressources, présences, notes)
+- [] Module Orientation (parcours, débouchés, demandes)
+- [] Module Inscription (sessions, demandes, paiements, cursus)
+- [] Module Cours (chapitres, ressources, présences, notes)
 - [ ] Déploiement production
 - [ ] Interface administrateur
 - [ ] Module de communication (messages/appels)

@@ -14,6 +14,7 @@ import ScolariteRoutes from "./modules/scolarite/ScolariteRoutes";
 import ComptabiliteRoutes from "./modules/comptabilite/ComptabiliteRoutes";
 import GedRoutes from "./modules/ged/GedRoutes";
 import SseRouter from "./modules/elearning/routers/SseRouter";
+import MenuRoutes from "./modules/menu/MenuRoutes";
 const router = express.Router();
 
 router
@@ -35,6 +36,7 @@ router
     .use('/scolarite', ScolariteRoutes)
     .use('/ged', GedRoutes)
     .use('/comptabilite', ComptabiliteRoutes)
+    .use('/menu', MenuRoutes)
 
     // Not found
     .use('*', (req: Request, res: Response) => {
