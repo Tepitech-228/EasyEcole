@@ -14,6 +14,7 @@ import { DisciplinePageComponent } from './pages/discipline-page/discipline-page
 import { ConseilsPageComponent } from './pages/conseils-page/conseils-page.component';
 import { BibliothequePageComponent } from './pages/bibliotheque-page/bibliotheque-page.component';
 import { GestionBibliothequePageComponent } from './pages/gestion-bibliotheque-page/gestion-bibliotheque-page.component';
+import { MonComptePageComponent } from './pages/mon-compte-page/mon-compte-page.component';
 
 @NgModule({
   declarations: [
@@ -26,7 +27,8 @@ import { GestionBibliothequePageComponent } from './pages/gestion-bibliotheque-p
     DisciplinePageComponent,
     ConseilsPageComponent,
     BibliothequePageComponent,
-    GestionBibliothequePageComponent
+    GestionBibliothequePageComponent,
+    MonComptePageComponent
   ],
   imports: [
     CommonModule,

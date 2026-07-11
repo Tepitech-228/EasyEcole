@@ -6,7 +6,8 @@
     "start": "set NODE_OPTIONS=--openssl-legacy-provider && ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "build:temp": "set NODE_OPTIONS=--openssl-legacy-provider && ng build --output-path=dist-temp3"
   },
   "private": true,
   "dependencies": {

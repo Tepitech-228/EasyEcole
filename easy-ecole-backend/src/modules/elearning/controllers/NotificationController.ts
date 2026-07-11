@@ -6,11 +6,26 @@ export default class NotificationController {
 
     static async getAll(req: Request, res: Response): Promise<Response> {
         try {
+            const where: any = { utilisateurId: (req as any).utilisateurId };
+            if (req.query.lu === 'false') {
+                where.lu = false;
+            }
             const notifications = await Notification.findAll({
-                where: { utilisateurId: (req as any).utilisateurId },
+                where,
                 order: [['date', 'DESC']]
             });
             return res.status(200).send(notifications);
+        } catch (error) {
+            return res.status(500).json({ success: false, error: error });
+        }
+    }
+
+    static async getCount(req: Request, res: Response): Promise<Response> {
+        try {
+            const count = await Notification.count({
+                where: { utilisateurId: (req as any).utilisateurId, lu: false }
+            });
+            return res.status(200).json({ count });
         } catch (error) {
             return res.status(500).json({ success: false, error: error });
         }
@@ -21,6 +36,18 @@ export default class NotificationController {
             await Notification.update(
                 { lu: true },
                 { where: { id: req.params.id, utilisateurId: (req as any).utilisateurId } }
+            );
+            return res.status(200).json({ success: true });
+        } catch (error) {
+            return res.status(500).json({ success: false, error: error });
+        }
+    }
+
+    static async marquerToutesLues(req: Request, res: Response): Promise<Response> {
+        try {
+            await Notification.update(
+                { lu: true },
+                { where: { utilisateurId: (req as any).utilisateurId, lu: false } }
             );
             return res.status(200).json({ success: true });
         } catch (error) {

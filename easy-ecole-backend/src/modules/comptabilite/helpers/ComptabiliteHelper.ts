@@ -19,6 +19,55 @@ export interface CreerEcritureParams {
   transaction?: Transaction;
 }
 
+export interface CreerEcritureAutoParams {
+  journalCode: string;
+  compteDebit: string;
+  compteCredit: string;
+  montant: number;
+  libelle: string;
+  moduleSource?: string;
+  referenceModuleId?: string;
+  transaction?: Transaction;
+}
+
+export async function creerEcritureAutomatique(options: CreerEcritureAutoParams): Promise<EcritureComptable> {
+  const { journalCode, compteDebit, compteCredit, montant, libelle, moduleSource, referenceModuleId, transaction } = options;
+
+  const journal = await JournalComptable.findOne({ where: { code: journalCode }, transaction });
+  if (!journal) {
+    throw new Error(`Journal comptable introuvable pour le code ${journalCode}`);
+  }
+
+  const compteDebitRecord = await Compte.findOne({ where: { numero: compteDebit }, transaction });
+  if (!compteDebitRecord) {
+    throw new Error(`Compte débit introuvable pour le numéro ${compteDebit}`);
+  }
+
+  const compteCreditRecord = await Compte.findOne({ where: { numero: compteCredit }, transaction });
+  if (!compteCreditRecord) {
+    throw new Error(`Compte crédit introuvable pour le numéro ${compteCredit}`);
+  }
+
+  const count = await EcritureComptable.count({ where: { journalId: journal.id }, transaction });
+  const numeroEcriture = `${journal.code}${String(count + 1).padStart(5, '0')}`;
+
+  const ecriture = await EcritureComptable.create({
+    journalId: journal.id,
+    numeroEcriture,
+    dateEcriture: new Date(),
+    dateComptable: new Date(),
+    compteDebitId: compteDebitRecord.id,
+    compteCreditId: compteCreditRecord.id,
+    montant,
+    libelle,
+    moduleSource,
+    referenceModuleId,
+    validee: false
+  }, { transaction });
+
+  return ecriture;
+}
+
 export async function creerEcritureComptable(params: CreerEcritureParams): Promise<EcritureComptable> {
   const {
     req,

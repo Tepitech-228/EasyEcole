@@ -15,6 +15,7 @@ import ComptabiliteRoutes from "./modules/comptabilite/ComptabiliteRoutes";
 import GedRoutes from "./modules/ged/GedRoutes";
 import SseRouter from "./modules/elearning/routers/SseRouter";
 import MenuRoutes from "./modules/menu/MenuRoutes";
+import PublicationNoteRouter from "./modules/inscription/routers/PublicationNoteRouter";
 const router = express.Router();
 
 router
@@ -24,6 +25,7 @@ router
     .use('/auth', AuthRoutes)
     .use('/orientation', OrientationRoutes)
     .use('/inscription', InscriptionRoutes)
+    .use('/publications-notes', PublicationNoteRouter)
     .use('/stages', StageRoutes)
     .use('/stocks', StockRoutes)
     .use('/immobilisations', ImmobilisationRoutes)

@@ -18,45 +18,9 @@ const router = express.Router()
  */
 router
     .get('/', [Authenticate], NotificationController.getAll)
-
-/**
- * @openapi
- * /elearning/notifications:
- *   post:
- *     tags: [Notifications]
- *     summary: Envoie une notification
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *     responses:
- *       201:
- *         description: Notification envoyée
- */
-    .post('/', [Authenticate], NotificationController.envoyerNotification)
-
-/**
- * @openapi
- * /elearning/notifications/{id}/lu:
- *   put:
- *     tags: [Notifications]
- *     summary: Marque une notification comme lue
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Notification marquée comme lue
- */
+    .get('/count', [Authenticate], NotificationController.getCount)
+    .put('/lire-toutes', [Authenticate], NotificationController.marquerToutesLues)
     .put('/:id/lu', [Authenticate], NotificationController.marquerLu)
+    .post('/', [Authenticate], NotificationController.envoyerNotification)
 
 export default router

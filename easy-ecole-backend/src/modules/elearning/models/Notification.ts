@@ -6,7 +6,9 @@ export class Notification extends Model<InferAttributes<Notification>, InferCrea
   declare id: CreationOptional<string>
   declare utilisateurId: number
   declare type: string
+  declare titre: CreationOptional<string | null>
   declare message: string
+  declare lien: CreationOptional<string | null>
   declare lu: CreationOptional<boolean>
   declare date: CreationOptional<Date>
 
@@ -28,9 +30,17 @@ Notification.init({
     type: new DataTypes.STRING,
     allowNull: false
   },
+  titre: {
+    type: new DataTypes.STRING,
+    allowNull: true
+  },
   message: {
     type: DataTypes.TEXT,
     allowNull: false
+  },
+  lien: {
+    type: new DataTypes.STRING,
+    allowNull: true
   },
   lu: {
     type: DataTypes.BOOLEAN,

@@ -24,7 +24,8 @@ async function seed() {
     require('../../modules/stage/models/_associations');
     require('../../modules/stock/models/_associations');
     require('../../modules/immobilisation/models/_associations');
-    require('../../modules/bulletins/models/_associations');
+    const { initBulletinAssociations } = require('../../modules/bulletins/models/_associations');
+    initBulletinAssociations();
     require('../../modules/bulletins/models/EchelleNote');
     require('../../modules/bulletins/models/AuditNote');
     require('../../modules/bulletins/models/JuryMembre');
@@ -41,6 +42,11 @@ async function seed() {
     require('../../modules/elearning/models/_associations');
     require('../../modules/elearning/models/Notification');
     require('../../modules/reporting/models/_associations');
+    require('../../modules/rh/seed');
+    require('../../modules/scolarite/seed');
+    require('../../modules/communication/seed');
+    require('../../modules/bulletins/seed');
+    require('../../modules/ged/seed');
 
     const M = (name: string) => sequelize.model(name);
 

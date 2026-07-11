@@ -1,6 +1,10 @@
 import { DatabaseConnection } from "../../core/helpers/DatabaseConnection";
 import { Compte } from "./models/Compte";
 import { JournalComptable } from "./models/JournalComptable";
+import { FraisParcours } from "./models/FraisParcours";
+import { Parcours } from "../inscription/models/Parcours";
+import { NiveauEtude } from "../inscription/models/NiveauEtude";
+import { AnneeAcademique } from "../inscription/models/AnneeAcademique";
 
 export async function seedComptabilite(): Promise<void> {
   const db = DatabaseConnection.getInstance();
@@ -69,8 +73,41 @@ export async function seedComptabilite(): Promise<void> {
       { numero: "702200", libelle: "Frais de scolarité", classe: "7", nature: "Crédit", categorie: "Revenus", actif: true, sousClasse: "702" },
       { numero: "702300", libelle: "Frais de dossier", classe: "7", nature: "Crédit", categorie: "Revenus", actif: true, sousClasse: "702" },
       { numero: "702400", libelle: "Frais de documents (relevés, diplômes)", classe: "7", nature: "Crédit", categorie: "Revenus", actif: true, sousClasse: "702" },
+
+      // === Comptes manquants — Classe 4 ===
+      { numero: "447100", libelle: "IRPP (Impôt sur le Revenu des Personnes Physiques)", classe: "4", nature: "Crédit", categorie: "Dettes", actif: true, sousClasse: "447" },
+      // === Comptes manquants — Classe 6 ===
+      { numero: "646000", libelle: "Cotisations sociales", classe: "6", nature: "Débit", categorie: "Charges", actif: true, sousClasse: "646" },
     ]);
     console.log("Plan comptable OHADA universitaire créé");
+  }
+
+  // === FRAIS PARCOURS ===
+  const fraisParcoursCount = await FraisParcours.count();
+  if (fraisParcoursCount === 0) {
+    const parcours = await Parcours.findAll({ limit: 3 });
+    const niveaux = await NiveauEtude.findAll({ limit: 3 });
+    const annees = await AnneeAcademique.findAll({ limit: 1 });
+
+    if (parcours.length > 0 && niveaux.length > 0 && annees.length > 0) {
+      await FraisParcours.bulkCreate([
+        {
+          parcoursId: parcours[0].id,
+          niveauEtudeId: niveaux[0].id,
+          anneeAcademiqueId: annees[0].id,
+          montantInscription: 50000,
+          montantScolarite: 500000,
+          nbMensualites: 10,
+          fraisBibliotheque: 25000,
+          fraisAssurance: 15000,
+          fraisLogement: null,
+          autresFrais: null
+        }
+      ]);
+      console.log("Frais parcours de démonstration créés");
+    } else {
+      console.log("Données de référence (parcours, niveaux, années) manquantes pour les frais parcours");
+    }
   }
 }
 

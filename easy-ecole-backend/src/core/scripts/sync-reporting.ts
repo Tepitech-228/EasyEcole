@@ -17,7 +17,8 @@ async function syncReporting() {
     require('../../modules/stage/models/_associations');
     require('../../modules/stock/models/_associations');
     require('../../modules/immobilisation/models/_associations');
-    require('../../modules/bulletins/models/_associations');
+    const { initBulletinAssociations } = require('../../modules/bulletins/models/_associations');
+    initBulletinAssociations();
     require('../../modules/scolarite/models/_associations');
     require('../../modules/rh/models/_associations');
     require('../../modules/achats/models/_associations');

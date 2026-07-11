@@ -8,20 +8,26 @@ export class NotificationHelper {
     static async envoyerNotification(
         utilisateurId: number,
         type: string,
+        titre: string,
         message: string,
+        lien?: string,
         envoyerEmail: boolean = false
-    ): Promise<void> {
+    ): Promise<Notification> {
         try {
             const notification = await Notification.create({
                 utilisateurId,
                 type,
-                message
+                titre,
+                message,
+                lien
             });
 
             SseService.sendToUser(utilisateurId, 'notification', {
                 id: notification.id,
                 type,
+                titre,
                 message,
+                lien,
                 date: notification.date,
                 lu: false
             });
@@ -37,8 +43,11 @@ export class NotificationHelper {
                     });
                 }
             }
+
+            return notification;
         } catch (error) {
             console.error(`[NotificationHelper] Erreur envoi notification à ${utilisateurId}:`, error);
+            throw error;
         }
     }
 
@@ -52,7 +61,9 @@ export class NotificationHelper {
         const payloads = utilisateurIds.map(id => ({
             utilisateurId: id,
             type,
-            message: `${titre}: ${message}`
+            titre,
+            message: `${titre}: ${message}`,
+            lien: undefined as string | undefined
         }));
         try {
             const notifications = await Notification.bulkCreate(payloads as any);
@@ -63,7 +74,9 @@ export class NotificationHelper {
                 SseService.sendToUser(userId, 'notification', {
                     id: n.id,
                     type,
+                    titre,
                     message: n.message,
+                    lien: undefined,
                     date: n.date,
                     lu: false
                 });
