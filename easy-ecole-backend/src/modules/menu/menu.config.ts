@@ -89,7 +89,12 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                     { label: 'Mon releve', route: '/bulletins/mon-releve', icon: 'receipt_long', permissionKey: 'menu.evaluations.mon-releve', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
                     { label: 'Reclamations', route: '/scolarite/mes-reclamations', icon: 'feedback', permissionKey: 'menu.scolarite.reclamations', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
                     { label: 'Traiter reclam.', route: '/scolarite/traiter-reclamations', icon: 'gavel', permissionKey: 'menu.scolarite.traiter-reclamations', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Demandes VAE', route: '/scolarite/demandes-vae', icon: 'verified', permissionKey: 'menu.scolarite.demandes-vae', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Decisions passage', route: '/scolarite/decisions-passage', icon: 'how_to_vote', permissionKey: 'menu.scolarite.decisions-passage', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Reorientation', route: '/scolarite/reorientation', icon: 'swap_horiz', permissionKey: 'menu.scolarite.reorientation', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Diplomes', route: '/scolarite/diplomes', icon: 'workspace_premium', permissionKey: 'menu.scolarite.diplomes', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Discipline', route: '/scolarite/discipline', icon: 'block', permissionKey: 'menu.scolarite.discipline', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Sanctions academiques', route: '/scolarite/sanctions-academiques', icon: 'gavel', permissionKey: 'menu.scolarite.sanctions-academiques', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Conseils classe', route: '/scolarite/conseils', icon: 'groups', permissionKey: 'menu.scolarite.conseils', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
                 ]
             },
@@ -120,6 +125,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                 label: 'Finance',
                 items: [
                     { label: 'Paiements', route: '/inscription/paiements', icon: 'paid', permissionKey: 'menu.finances.paiements', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.APPRENANT, RolesUtilisateur.CAISSIER_BANQUE, RolesUtilisateur.ADMIN] },
+                    { label: 'Echeances', route: '/inscription/echeances', icon: 'event', permissionKey: 'menu.finances.echeances', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
                     { label: 'Comptabilite', route: '/comptabilite/dashboard', icon: 'account_balance', permissionKey: 'menu.finances.comptabilite', allowedRoles: [RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN] },
                 ]
             },
@@ -128,7 +134,9 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                 allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN],
                 items: [
                     { label: 'Demandes achat', route: '/achats/demandes', icon: 'receipt_long', permissionKey: 'menu.achats.demandes' },
+                    { label: 'Validations', route: '/achats/validations', icon: 'task_alt', permissionKey: 'menu.achats.validations' },
                     { label: 'Commandes', route: '/achats/commandes', icon: 'shopping_cart', permissionKey: 'menu.achats.commandes' },
+                    { label: 'Receptions', route: '/achats/receptions', icon: 'inventory_2', permissionKey: 'menu.achats.receptions' },
                     { label: 'Factures', route: '/achats/factures', icon: 'receipt', permissionKey: 'menu.achats.factures' },
                     { label: 'Fournisseurs', route: '/achats/fournisseurs', icon: 'local_shipping', permissionKey: 'menu.achats.fournisseurs' },
                     { label: 'Budgets', route: '/achats/budgets', icon: 'account_balance', permissionKey: 'menu.achats.budgets' },
