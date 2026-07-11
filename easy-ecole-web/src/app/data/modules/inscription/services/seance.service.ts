@@ -43,4 +43,8 @@ export class SeanceService {
   checkConflits(data: any): Observable<ConflitSeance[]> {
     return this.httpClient.post<ConflitSeance[]>(`${this.SERVICE_URL}/check-conflits`, data)
   }
+
+  getTeacherDashboard(): Observable<any> {
+    return this.httpClient.get(`${this.SERVICE_URL}/tableau-de-bord`)
+  }
 }

@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core';
+﻿import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 import { DemandesDocumentsPageComponent } from './pages/demandes-documents-page/demandes-documents-page.component';
@@ -12,6 +12,11 @@ import { ConseilsPageComponent } from './pages/conseils-page/conseils-page.compo
 import { BibliothequePageComponent } from './pages/bibliotheque-page/bibliotheque-page.component';
 import { GestionBibliothequePageComponent } from './pages/gestion-bibliotheque-page/gestion-bibliotheque-page.component';
 import { MonComptePageComponent } from './pages/mon-compte-page/mon-compte-page.component';
+import { DecisionsPassagePageComponent } from './pages/decisions-passage-page/decisions-passage-page.component';
+import { ReorientationPageComponent } from './pages/reorientation-page/reorientation-page.component';
+import { SanctionsPageComponent } from './pages/sanctions-page/sanctions-page.component';
+import { DiplomesPageComponent } from './pages/diplomes-page/diplomes-page.component';
+import { DemandesVAEPageComponent } from './pages/demandes-vae-page/demandes-vae-page.component';
 
 const routes: Routes = [
   {
@@ -67,6 +72,31 @@ const routes: Routes = [
   {
     path: 'mon-compte',
     component: MonComptePageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'decisions-passage',
+    component: DecisionsPassagePageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'reorientation',
+    component: ReorientationPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'sanctions-academiques',
+    component: SanctionsPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'diplomes',
+    component: DiplomesPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'demandes-vae',
+    component: DemandesVAEPageComponent,
     pathMatch: 'full'
   },
   {

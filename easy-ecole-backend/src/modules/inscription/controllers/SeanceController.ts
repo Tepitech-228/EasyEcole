@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CountOptions, FindOptions, InferAttributes, Op, literal } from "sequelize";
+import { CountOptions, FindOptions, InferAttributes, Op, literal, fn, col } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { JoursSemaine } from "../../../core/enums/JoursSemaine";
 import { Seance } from "../models/Seance";
@@ -9,6 +9,11 @@ import { SalleDeClasse } from "../models/SalleDeClasse";
 import { CursusApprenant } from "../models/CursusApprenant";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { NotificationHelper } from "../../../core/helpers/NotificationHelper";
+import { ListeNoteEvaluation } from "../models/ListeNoteEvaluation";
+import { NoteEvaluation } from "../models/NoteEvaluation";
+import { CoursParticipant } from "../models/CoursParticipant";
+import { PresenceCoursParticipant } from "../models/PresenceCoursParticipant";
+import { Presence } from "../models/Presence";
 
 export default class SeanceController {
 
@@ -566,6 +571,130 @@ export default class SeanceController {
                     nextHeureDebut: nextSeance?.heureDebut || null,
                     minutesRestantes: diffMin
                 }
+            });
+        } catch (error) {
+            return res.status(500).json({ success: false, error });
+        }
+    }
+
+    static async getTeacherDashboard(req: Request, res: Response): Promise<Response> {
+        try {
+            const utilisateurId = (req as any).utilisateurId;
+            const enseignant = await Enseignant.findOne({ where: { utilisateurId } });
+            if (!enseignant) {
+                return res.status(403).json({ success: false, message: "Enseignant non trouvé" });
+            }
+
+            const enseignantId = enseignant.id as any;
+
+            const nbCoursAssignes = await Cours.count({ where: { enseignantId } });
+
+            const now = new Date();
+            const dayOfWeek = now.getDay();
+            const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+            const weekStart = new Date(now);
+            weekStart.setDate(now.getDate() + mondayOffset);
+            weekStart.setHours(0, 0, 0, 0);
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 6);
+            weekEnd.setHours(23, 59, 59, 999);
+
+            const seancesASemaine = await Seance.findAll({
+                where: {
+                    enseignantId,
+                    dateDebut: { [Op.lte]: weekEnd },
+                    dateFin: { [Op.gte]: weekStart }
+                },
+                include: [
+                    { association: Seance.associations.cours },
+                    Seance.associations.salleDeClasse
+                ],
+                order: [['jourSemaine', 'ASC'], ['heureDebut', 'ASC']]
+            });
+
+            const coursIds = await Cours.findAll({
+                where: { enseignantId },
+                attributes: ['id']
+            }).then(c => c.map(c => c.id));
+
+            const evaluationsSansNotes: any[] = [];
+            if (coursIds.length > 0) {
+                const listes = await ListeNoteEvaluation.findAll({
+                    where: { coursId: { [Op.in]: coursIds } },
+                    include: [
+                        { association: ListeNoteEvaluation.associations.cours },
+                        {
+                            association: ListeNoteEvaluation.associations.notesEvaluation,
+                            required: false,
+                            where: { note: null }
+                        }
+                    ]
+                });
+                for (const liste of listes) {
+                    if ((liste as any).notesEvaluation && (liste as any).notesEvaluation.length > 0) {
+                        evaluationsSansNotes.push(liste);
+                    }
+                }
+            }
+
+            const listeIds = await ListeNoteEvaluation.findAll({
+                where: { coursId: { [Op.in]: coursIds } },
+                attributes: ['id']
+            }).then(l => l.map(l => l.id));
+
+            const dernieresNotesSaisies = await NoteEvaluation.findAll({
+                where: {
+                    note: { [Op.ne]: null },
+                    listeNoteEvaluationId: { [Op.in]: listeIds }
+                },
+                include: [
+                    { association: NoteEvaluation.associations.listeNoteEvaluation, include: [{ association: ListeNoteEvaluation.associations.cours }] },
+                    { association: NoteEvaluation.associations.coursParticipant }
+                ],
+                order: [['createdAt', 'DESC']],
+                limit: 5
+            });
+
+            const tauxAbsenteisme: any[] = [];
+            for (const coursId of coursIds) {
+                const cours = await Cours.findByPk(coursId, { attributes: ['id', 'intitule', 'code'] });
+                if (!cours) continue;
+
+                const coursParticipantIds = await CoursParticipant.findAll({
+                    where: { coursId },
+                    attributes: ['id']
+                }).then(cp => cp.map(c => c.id));
+
+                if (coursParticipantIds.length === 0) continue;
+
+                const totalPresences = await PresenceCoursParticipant.count({
+                    where: { coursParticipantId: { [Op.in]: coursParticipantIds } }
+                });
+
+                const absences = await PresenceCoursParticipant.count({
+                    where: {
+                        coursParticipantId: { [Op.in]: coursParticipantIds },
+                        etatDePresence: { [Op.in]: ['absent', 'absence_justifiee'] }
+                    }
+                });
+
+                const taux = totalPresences > 0 ? Math.round((absences / totalPresences) * 100 * 100) / 100 : 0;
+                tauxAbsenteisme.push({
+                    coursId: cours.id,
+                    coursCode: (cours as any).code,
+                    coursIntitule: (cours as any).intitule,
+                    totalPresences,
+                    absences,
+                    taux
+                });
+            }
+
+            return res.status(200).json({
+                nbCoursAssignes,
+                seancesASemaine,
+                evaluationsSansNotes: evaluationsSansNotes.length,
+                dernieresNotesSaisies,
+                tauxAbsenteisme
             });
         } catch (error) {
             return res.status(500).json({ success: false, error });

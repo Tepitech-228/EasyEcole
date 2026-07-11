@@ -12,6 +12,14 @@ export class MonComptePageComponent extends BaseComponentClass implements OnInit
   loading: boolean = false;
   errorMessage: string = '';
 
+  get nbPaiementsEffectues(): number {
+    return this.transactions.filter(t => t.statut === 'paye' && t.type === 'debit').length;
+  }
+
+  get nbImpayes(): number {
+    return this.transactions.filter(t => t.statut === 'impaye').length;
+  }
+
   ngOnInit() {
     this.chargerSolde();
     this.chargerTransactions();

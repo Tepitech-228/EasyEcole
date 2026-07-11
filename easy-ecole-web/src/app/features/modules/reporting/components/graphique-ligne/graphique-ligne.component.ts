@@ -2,7 +2,8 @@ import { Component, Input, AfterViewInit, ElementRef, ViewChild } from '@angular
 
 @Component({
   selector: 'app-graphique-ligne',
-  template: `<canvas #canvas></canvas>`
+  templateUrl: './graphique-ligne.component.html',
+  styleUrls: ['./graphique-ligne.component.scss']
 })
 export class GraphiqueLigneComponent implements AfterViewInit {
   @ViewChild('canvas') canvas!: ElementRef<HTMLCanvasElement>;

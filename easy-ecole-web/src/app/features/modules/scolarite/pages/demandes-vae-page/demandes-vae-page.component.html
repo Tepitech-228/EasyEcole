@@ -1,0 +1,98 @@
+<div class="page-container">
+  <app-header-title title="VAE / VAP / Équivalences" subtitle="Gestion des demandes de validation des acquis"></app-header-title>
+
+  <app-custom-alert *ngIf="errorMessage" [show]="true" [title]="errorMessage" type="danger" [inline]="true"></app-custom-alert>
+  <app-custom-alert *ngIf="successMessage" [show]="true" [title]="successMessage" type="success" [inline]="true"></app-custom-alert>
+
+  <div class="card mb-6">
+    <div class="card-header">
+      <h2 class="card-title">Soumettre une demande VAE</h2>
+      <p class="card-subtitle">Formulaire de demande de validation des acquis</p>
+    </div>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Utilisateur ID</label>
+          <input type="number" [(ngModel)]="newItem.utilisateurId" class="form-input" placeholder="ID utilisateur">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Type</label>
+          <select [(ngModel)]="newItem.type" class="form-select">
+            <option value="vae">VAE</option>
+            <option value="vap">VAP</option>
+            <option value="equivalence">Équivalence</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Parcours cible ID</label>
+          <input type="number" [(ngModel)]="newItem.parcoursCibleId" class="form-input" placeholder="ID parcours cible">
+        </div>
+      </div>
+      <div class="form-actions">
+        <app-custom-button (click)="createItem()" text="Soumettre" color="primary" [disabled]="!newItem.utilisateurId || !newItem.type || adding"></app-custom-button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header border-b">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 class="card-title">Demandes VAE</h2>
+          <p class="card-subtitle">Liste des demandes de validation des acquis</p>
+        </div>
+        <div class="flex gap-4 items-center">
+          <input type="text" [(ngModel)]="searchQuery" (keyup)="filtrer()" placeholder="Rechercher par type..." class="form-input-sm">
+        </div>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <div *ngIf="loading" class="loading-shimmer">
+        <div *ngFor="let _ of [1,2,3,4,5]" class="shimmer-row"></div>
+      </div>
+      <div *ngIf="!loading && _items.length > 0" class="overflow-x-auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Utilisateur</th>
+              <th>Type</th>
+              <th>Parcours cible</th>
+              <th>Statut</th>
+              <th class="text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of paginatedItems; index as index">
+              <td>{{ (currentPage - 1) * pageSize + index + 1 }}</td>
+              <td>{{ s.utilisateurId }}</td>
+              <td>{{ s.type }}</td>
+              <td>{{ s.parcoursCibleId }}</td>
+              <td><app-custom-badge [text]="s.statut" [color]="getStatutColor(s.statut || 'soumise')"></app-custom-badge></td>
+              <td class="text-center">
+                <div class="flex gap-1" *ngIf="s.statut === 'soumise' && (rolesValue.isInstitution || rolesValue.isAdmin)">
+                  <app-custom-button (click)="traiter(s, 'instruction')" text="Instruire" color="orange" size="sm"></app-custom-button>
+                  <app-custom-button (click)="traiter(s, 'acceptee')" text="Accepter" color="green" size="sm"></app-custom-button>
+                  <app-custom-button (click)="traiter(s, 'rejetee')" text="Rejeter" color="red" size="sm"></app-custom-button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="!loading && _items.length === 0" class="empty-state">
+        <img class="h-40" src="assets/images/selection-pana.svg" alt="no data">
+        <p class="text-gray-500">Aucune demande trouvée</p>
+      </div>
+    </div>
+    <div class="card-footer" *ngIf="_items.length > pageSize">
+      <div class="flex justify-between items-center">
+        <span class="text-sm text-gray-600">{{ _items.length }} demande(s) - Page {{ currentPage }}/{{ totalPages }}</span>
+        <div class="flex gap-2">
+          <app-custom-button (click)="prevPage()" text="Précédent" color="gray" [outlined]="true" [disabled]="currentPage === 1"></app-custom-button>
+          <app-custom-button (click)="nextPage()" text="Suivant" color="gray" [outlined]="true" [disabled]="currentPage === totalPages"></app-custom-button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

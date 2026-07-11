@@ -2,7 +2,8 @@ import { Component, Input, AfterViewInit, ElementRef, ViewChild } from '@angular
 
 @Component({
   selector: 'app-graphique-barre',
-  template: `<canvas #canvas></canvas>`
+  templateUrl: './graphique-barre.component.html',
+  styleUrls: ['./graphique-barre.component.scss']
 })
 export class GraphiqueBarreComponent implements AfterViewInit {
   @ViewChild('canvas') canvas!: ElementRef<HTMLCanvasElement>;

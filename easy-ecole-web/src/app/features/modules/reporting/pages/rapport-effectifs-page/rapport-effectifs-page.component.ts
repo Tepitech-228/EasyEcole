@@ -3,44 +3,8 @@ import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-rapport-effectifs-page',
-  template: `
-    <div class="p-6">
-      <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">Rapport Effectifs</h1>
-        <app-export-pdf-button title="Effectifs"></app-export-pdf-button>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <app-stat-card label="Total Inscrits" [value]="summary.totalInscrits" colorClass="text-blue-600"></app-stat-card>
-        <app-stat-card label="Total Actifs" [value]="summary.totalActifs" colorClass="text-green-600"></app-stat-card>
-        <app-stat-card label="Hommes" [value]="summary.totalHommes" colorClass="text-indigo-600"></app-stat-card>
-        <app-stat-card label="Femmes" [value]="summary.totalFemmes" colorClass="text-pink-600"></app-stat-card>
-      </div>
-
-      <div class="bg-white rounded-lg shadow overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Période</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Inscrits</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actifs</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hommes</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Femmes</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr *ngFor="let row of rows" class="hover:bg-gray-50">
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ row.periode }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ row.nbInscrits }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ row.nbActifs }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ row.nbHommes }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ row.nbFemmes }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `
+  templateUrl: './rapport-effectifs-page.component.html',
+  styleUrls: ['./rapport-effectifs-page.component.scss']
 })
 export class RapportEffectifsPageComponent implements OnInit {
   rows: any[] = [];

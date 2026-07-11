@@ -10,8 +10,8 @@ export class EvenementCalendrierService {
 
   constructor(private httpClient: HttpClient) { }
 
-  getAll(): Observable<EvenementCalendrier[]> {
-    return this.httpClient.get<EvenementCalendrier[]>(`${this.SERVICE_URL}/`)
+  getAll(params?: any): Observable<EvenementCalendrier[]> {
+    return this.httpClient.get<EvenementCalendrier[]>(`${this.SERVICE_URL}/`, { params })
   }
 
   get(id: string): Observable<EvenementCalendrier> {
@@ -28,5 +28,13 @@ export class EvenementCalendrierService {
 
   delete(id: string): Observable<any> {
     return this.httpClient.delete(`${this.SERVICE_URL}/${id}`)
+  }
+
+  approuver(id: string): Observable<EvenementCalendrier> {
+    return this.httpClient.put<EvenementCalendrier>(`${this.SERVICE_URL}/${id}/approuver`, {})
+  }
+
+  publierCalendrier(ids?: number[]): Observable<any> {
+    return this.httpClient.post(`${this.SERVICE_URL}/publier-calendrier`, { ids })
   }
 }

@@ -21,8 +21,14 @@ import { ScanPresencePageComponent } from './pages/scan-presence-page/scan-prese
 import { DetailsCahierDeTextePageComponent } from './pages/details-cahier-de-texte-page/details-cahier-de-texte-page.component';
 import { MesPresencesPageComponent } from './pages/mes-presences-page/mes-presences-page.component';
 import { MesNotesPageComponent } from './pages/mes-notes-page/mes-notes-page.component';
+import { TableauDeBordEnseignantPageComponent } from './pages/tableau-de-bord-enseignant-page/tableau-de-bord-enseignant-page.component';
 
 const routes: Routes = [
+  {
+    path: 'tableau-de-bord',
+    component: TableauDeBordEnseignantPageComponent,
+    pathMatch: 'full'
+  },
   {
     // Cours
     path: 'cours',

@@ -18,7 +18,7 @@
       </span>
       <div>
         <p class="stat-label">Transactions payées</p>
-        <p class="stat-value text-2xl font-bold">{{ transactions.filter(t => t.statut === 'paye' && t.type === 'debit').length }}</p>
+        <p class="stat-value text-2xl font-bold">{{ nbPaiementsEffectues }}</p>
       </div>
     </div>
 
@@ -28,7 +28,7 @@
       </span>
       <div>
         <p class="stat-label">Impayés</p>
-        <p class="stat-value text-2xl font-bold">{{ transactions.filter(t => t.statut === 'impaye').length }}</p>
+        <p class="stat-value text-2xl font-bold">{{ nbImpayes }}</p>
       </div>
     </div>
   </div>

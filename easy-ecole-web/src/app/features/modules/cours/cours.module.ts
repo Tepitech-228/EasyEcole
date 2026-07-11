@@ -30,6 +30,7 @@ import { ScanPresencePageComponent } from './pages/scan-presence-page/scan-prese
 import { MesPresencesPageComponent } from './pages/mes-presences-page/mes-presences-page.component';
 import { MesNotesPageComponent } from './pages/mes-notes-page/mes-notes-page.component';
 import { SignatureModalComponent } from './components/signature-modal/signature-modal.component';
+import { TableauDeBordEnseignantPageComponent } from './pages/tableau-de-bord-enseignant-page/tableau-de-bord-enseignant-page.component';
 
 @NgModule({
   declarations: [
@@ -57,7 +58,8 @@ import { SignatureModalComponent } from './components/signature-modal/signature-
     ScanPresencePageComponent,
     MesPresencesPageComponent,
     MesNotesPageComponent,
-    SignatureModalComponent
+    SignatureModalComponent,
+    TableauDeBordEnseignantPageComponent
   ],
   imports: [
     CommonModule,

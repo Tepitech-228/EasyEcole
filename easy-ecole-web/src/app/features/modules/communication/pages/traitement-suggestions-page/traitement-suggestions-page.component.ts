@@ -4,59 +4,8 @@ import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-traitement-suggestions-page',
-  template: `
-    <div class="p-6 space-y-6">
-      <div class="rounded-3xl border border-slate-200 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-900 p-6 text-white shadow-sm">
-        <div>
-          <p class="text-sm uppercase tracking-[0.3em] text-slate-300">Suivi des retours</p>
-          <h2 class="mt-2 text-2xl font-semibold">Gestion des suggestions</h2>
-          <p class="mt-2 max-w-2xl text-sm text-slate-300">Centralisez les retours et répondez aux demandes de façon claire et rapide.</p>
-        </div>
-      </div>
-
-      <div class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="border-b border-slate-100 px-5 py-4">
-          <h3 class="text-lg font-semibold text-slate-900">Toutes les suggestions</h3>
-        </div>
-        <div *ngFor="let suggestion of suggestions" class="border-b border-slate-100 p-5 transition hover:bg-slate-50">
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div class="min-w-0 flex-1">
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="text-sm font-semibold text-slate-800">{{ suggestion.type }}</span>
-                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600">#{{ suggestion.utilisateurId }}</span>
-              </div>
-              <p class="mt-2 text-sm leading-7 text-slate-600">{{ suggestion.message }}</p>
-              <span class="mt-2 inline-flex text-xs text-slate-500">{{ suggestion.date | date:'short' }}</span>
-
-              <div *ngIf="suggestion.statut !== 'fermee'" class="mt-4 space-y-2">
-                <textarea [(ngModel)]="reponses[suggestion.id]" rows="2" placeholder="Votre réponse..."
-                  class="w-full rounded-2xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"></textarea>
-                <div class="flex flex-wrap gap-2">
-                  <button (click)="repondre(suggestion)" class="rounded-2xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700">
-                    Répondre
-                  </button>
-                  <button (click)="fermer(suggestion)" class="rounded-2xl bg-slate-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">
-                    Fermer
-                  </button>
-                </div>
-              </div>
-            </div>
-            <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium"
-              [ngClass]="{
-                'bg-amber-100 text-amber-800': suggestion.statut === 'ouverte',
-                'bg-emerald-100 text-emerald-800': suggestion.statut === 'traitee',
-                'bg-slate-100 text-slate-700': suggestion.statut === 'fermee'
-              }">
-              {{ suggestion.statut }}
-            </span>
-          </div>
-        </div>
-        <div *ngIf="suggestions.length === 0" class="p-8 text-center text-slate-500">
-          Aucune suggestion à traiter.
-        </div>
-      </div>
-    </div>
-  `
+  templateUrl: './traitement-suggestions-page.component.html',
+  styleUrls: ['./traitement-suggestions-page.component.scss']
 })
 export class TraitementSuggestionsPageComponent implements OnInit {
   suggestions: any[] = [];

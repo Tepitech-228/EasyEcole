@@ -1,0 +1,137 @@
+<div class="page-container">
+  <app-header-title title="Sanctions académiques" subtitle="Suivi des sanctions académiques"></app-header-title>
+
+  <app-custom-alert *ngIf="errorMessage" [show]="true" [title]="errorMessage" type="danger" [inline]="true"></app-custom-alert>
+  <app-custom-alert *ngIf="successMessage" [show]="true" [title]="successMessage" type="success" [inline]="true"></app-custom-alert>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-icon text-blue-600 bg-blue-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ items.length }}</p>
+        <p class="stat-label">Total sanctions</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon text-red-600 bg-red-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ actives.length }}</p>
+        <p class="stat-label">Actives</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-6" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin">
+    <div class="card-header">
+      <h2 class="card-title">Ajouter une sanction</h2>
+      <p class="card-subtitle">Enregistrer une sanction académique</p>
+    </div>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Cursus Apprenant ID</label>
+          <input type="number" [(ngModel)]="newItem.cursusApprenantId" class="form-input" placeholder="ID du cursus">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Type</label>
+          <select [(ngModel)]="newItem.type" class="form-select">
+            <option value="avertissement">Avertissement</option>
+            <option value="suspension">Suspension</option>
+            <option value="exclusion">Exclusion</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date début</label>
+          <input type="date" [(ngModel)]="newItem.dateDebut" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date fin</label>
+          <input type="date" [(ngModel)]="newItem.dateFin" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Motif</label>
+          <textarea [(ngModel)]="newItem.motif" rows="2" class="form-textarea" placeholder="Motif de la sanction"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Décidé par (ID)</label>
+          <input type="number" [(ngModel)]="newItem.decidePar" class="form-input" placeholder="ID utilisateur">
+        </div>
+      </div>
+      <div class="form-actions">
+        <app-custom-button (click)="createItem()" text="Ajouter" color="primary" [disabled]="!newItem.cursusApprenantId || !newItem.type || adding"></app-custom-button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header border-b">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 class="card-title">Sanctions académiques</h2>
+          <p class="card-subtitle">Liste des sanctions enregistrées</p>
+        </div>
+        <div class="flex gap-4 items-center">
+          <input type="text" [(ngModel)]="searchQuery" (keyup)="filtrer()" placeholder="Rechercher..." class="form-input-sm">
+          <select [(ngModel)]="filterType" (change)="filtrer()" class="form-select-sm">
+            <option value="undefined">Tous les types</option>
+            <option value="avertissement">Avertissement</option>
+            <option value="suspension">Suspension</option>
+            <option value="exclusion">Exclusion</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <div *ngIf="loading" class="loading-shimmer">
+        <div *ngFor="let _ of [1,2,3,4,5]" class="shimmer-row"></div>
+      </div>
+      <div *ngIf="!loading && _items.length > 0" class="overflow-x-auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Cursus</th>
+              <th>Type</th>
+              <th>Date début</th>
+              <th>Date fin</th>
+              <th>Motif</th>
+              <th class="text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of paginatedItems; index as index" [class.bg-red-50]="isActive(s)">
+              <td>{{ (currentPage - 1) * pageSize + index + 1 }}</td>
+              <td>{{ s.cursusApprenantId }}</td>
+              <td><app-custom-badge [text]="s.type" [color]="getTypeColor(s.type)"></app-custom-badge></td>
+              <td>{{ s.dateDebut | date:'dd/MM/yyyy' }}</td>
+              <td>{{ s.dateFin ? (s.dateFin | date:'dd/MM/yyyy') : '-' }}</td>
+              <td class="max-w-xs truncate">{{ s.motif }}</td>
+              <td class="text-center">
+                <button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="deleteItem(s)" class="btn-icon text-red-500 hover:text-red-700" title="Supprimer">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="!loading && _items.length === 0" class="empty-state">
+        <img class="h-40" src="assets/images/selection-pana.svg" alt="no data">
+        <p class="text-gray-500">Aucune sanction trouvée</p>
+      </div>
+    </div>
+    <div class="card-footer" *ngIf="_items.length > pageSize">
+      <div class="flex justify-between items-center">
+        <span class="text-sm text-gray-600">{{ _items.length }} sanction(s) - Page {{ currentPage }}/{{ totalPages }}</span>
+        <div class="flex gap-2">
+          <app-custom-button (click)="prevPage()" text="Précédent" color="gray" [outlined]="true" [disabled]="currentPage === 1"></app-custom-button>
+          <app-custom-button (click)="nextPage()" text="Suivant" color="gray" [outlined]="true" [disabled]="currentPage === totalPages"></app-custom-button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

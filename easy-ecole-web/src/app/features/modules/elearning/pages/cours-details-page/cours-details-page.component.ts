@@ -7,7 +7,8 @@ import { BaseComponentClass } from 'src/app/core/base-component-class';
 
 @Component({
   selector: 'app-cours-details-page',
-  templateUrl: './cours-details-page.component.html'
+  templateUrl: './cours-details-page.component.html',
+  styleUrls: ['./cours-details-page.component.scss']
 })
 export class CoursDetailsPageComponent extends BaseComponentClass implements OnInit {
   cours: any = null;

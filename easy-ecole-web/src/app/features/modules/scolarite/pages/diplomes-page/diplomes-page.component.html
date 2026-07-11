@@ -1,0 +1,122 @@
+<div class="page-container">
+  <app-header-title title="Diplômes" subtitle="Gestion des diplômes"></app-header-title>
+
+  <app-custom-alert *ngIf="errorMessage" [show]="true" [title]="errorMessage" type="danger" [inline]="true"></app-custom-alert>
+  <app-custom-alert *ngIf="successMessage" [show]="true" [title]="successMessage" type="success" [inline]="true"></app-custom-alert>
+
+  <div class="card mb-6" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin">
+    <div class="card-header">
+      <h2 class="card-title">Ajouter un diplôme</h2>
+      <p class="card-subtitle">Enregistrer un nouveau diplôme</p>
+    </div>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Cursus Apprenant ID</label>
+          <input type="number" [(ngModel)]="newItem.cursusApprenantId" class="form-input" placeholder="ID du cursus">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Parcours ID</label>
+          <input type="number" [(ngModel)]="newItem.parcoursId" class="form-input" placeholder="ID parcours">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Niveau d'étude ID</label>
+          <input type="number" [(ngModel)]="newItem.niveauEtudeId" class="form-input" placeholder="ID niveau étude">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Année d'obtention</label>
+          <input type="number" [(ngModel)]="newItem.anneeObtention" class="form-input" placeholder="Ex: 2025">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mention</label>
+          <select [(ngModel)]="newItem.mention" class="form-select">
+            <option value="passable">Passable</option>
+            <option value="assez_bien">Assez bien</option>
+            <option value="bien">Bien</option>
+            <option value="tres_bien">Très bien</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Numéro diplôme</label>
+          <div class="flex gap-2 items-center">
+            <input type="text" [(ngModel)]="newItem.numeroDiplome" class="form-input flex-1" placeholder="Générer automatiquement">
+            <app-custom-button (click)="genererNumero()" text="Générer" color="gray" size="sm"></app-custom-button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date délivrance</label>
+          <input type="date" [(ngModel)]="newItem.dateDelivrance" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fichier PDF (URL)</label>
+          <input type="text" [(ngModel)]="newItem.fichierPDF" class="form-input" placeholder="URL du fichier PDF">
+        </div>
+      </div>
+      <div class="form-actions">
+        <app-custom-button (click)="createItem()" text="Ajouter" color="primary" [disabled]="!newItem.cursusApprenantId || !newItem.numeroDiplome || adding"></app-custom-button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header border-b">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 class="card-title">Diplômes</h2>
+          <p class="card-subtitle">Liste des diplômes</p>
+        </div>
+        <div class="flex gap-4 items-center">
+          <input type="text" [(ngModel)]="searchQuery" (keyup)="filtrer()" placeholder="Rechercher par numéro..." class="form-input-sm">
+        </div>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <div *ngIf="loading" class="loading-shimmer">
+        <div *ngFor="let _ of [1,2,3,4,5]" class="shimmer-row"></div>
+      </div>
+      <div *ngIf="!loading && _items.length > 0" class="overflow-x-auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>N° Diplôme</th>
+              <th>Cursus</th>
+              <th>Année</th>
+              <th>Mention</th>
+              <th>Date délivrance</th>
+              <th class="text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of paginatedItems; index as index">
+              <td>{{ (currentPage - 1) * pageSize + index + 1 }}</td>
+              <td class="font-medium">{{ s.numeroDiplome }}</td>
+              <td>{{ s.cursusApprenantId }}</td>
+              <td>{{ s.anneeObtention }}</td>
+              <td><app-custom-badge [text]="s.mention" [color]="getMentionColor(s.mention)"></app-custom-badge></td>
+              <td>{{ s.dateDelivrance | date:'dd/MM/yyyy' }}</td>
+              <td class="text-center">
+                <button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="deleteItem(s)" class="btn-icon text-red-500 hover:text-red-700" title="Supprimer">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="!loading && _items.length === 0" class="empty-state">
+        <img class="h-40" src="assets/images/selection-pana.svg" alt="no data">
+        <p class="text-gray-500">Aucun diplôme trouvé</p>
+      </div>
+    </div>
+    <div class="card-footer" *ngIf="_items.length > pageSize">
+      <div class="flex justify-between items-center">
+        <span class="text-sm text-gray-600">{{ _items.length }} diplôme(s) - Page {{ currentPage }}/{{ totalPages }}</span>
+        <div class="flex gap-2">
+          <app-custom-button (click)="prevPage()" text="Précédent" color="gray" [outlined]="true" [disabled]="currentPage === 1"></app-custom-button>
+          <app-custom-button (click)="nextPage()" text="Suivant" color="gray" [outlined]="true" [disabled]="currentPage === totalPages"></app-custom-button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

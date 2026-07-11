@@ -18,7 +18,7 @@
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
       </span>
       <div>
-        <p class="stat-value">{{ getTypeCount('Examen') }}</p>
+        <p class="stat-value">{{ getTypeCount('examen') }}</p>
         <p class="stat-label">Examens</p>
       </div>
     </div>
@@ -27,18 +27,53 @@
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
       </span>
       <div>
-        <p class="stat-value">{{ getTypeCount('Rentrée') }}</p>
-        <p class="stat-label">Rentrées</p>
+        <p class="stat-value">{{ getTypeCount('vacance') }}</p>
+        <p class="stat-label">Vacances</p>
       </div>
     </div>
     <div class="stat-card">
-      <span class="stat-icon text-blue-600 bg-blue-100">
+      <span class="stat-icon text-sky-600 bg-sky-100">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
       </span>
       <div>
-        <p class="stat-value">{{ getTypeCount('Vacances') }}</p>
-        <p class="stat-label">Vacances</p>
+        <p class="stat-value">{{ getTypeCount('sportif') + getTypeCount('culturel') }}</p>
+        <p class="stat-label">Activités</p>
       </div>
+    </div>
+  </div>
+
+  <!-- FullCalendar -->
+  <div class="card mb-6">
+    <div class="card-header border-b">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center gap-3">
+          <button (click)="prevDate()" class="px-3 py-1 text-sm border rounded-lg hover:bg-gray-50">&larr;</button>
+          <button (click)="nextDate()" class="px-3 py-1 text-sm border rounded-lg hover:bg-gray-50">&rarr;</button>
+          <div class="flex rounded-lg border overflow-hidden">
+            <button (click)="changeView('dayGridMonth')" [class.bg-indigo-600]="calendarView==='dayGridMonth'" [class.text-white]="calendarView==='dayGridMonth'" class="px-3 py-1 text-sm border-r">Mois</button>
+            <button (click)="changeView('timeGridWeek')" [class.bg-indigo-600]="calendarView==='timeGridWeek'" [class.text-white]="calendarView==='timeGridWeek'" class="px-3 py-1 text-sm border-r">Semaine</button>
+            <button (click)="changeView('listMonth')" [class.bg-indigo-600]="calendarView==='listMonth'" [class.text-white]="calendarView==='listMonth'" class="px-3 py-1 text-sm">Liste</button>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <select [(ngModel)]="filterType" (change)="filtrer()" class="form-select-sm">
+            <option value="">Tous les types</option>
+            <option *ngFor="let t of typeList" [value]="t">{{ t }}</option>
+          </select>
+          <select *ngIf="classeList.length > 0" [(ngModel)]="filterClasse" (change)="filtrer()" class="form-select-sm">
+            <option value="">Toutes les classes</option>
+            <option *ngFor="let c of classeList" [value]="c.id">{{ c.libelle }}</option>
+          </select>
+          <button *ngIf="filterType || filterClasse" (click)="reinitialiserFiltres()" class="text-sm text-gray-500 hover:text-gray-700">Réinitialiser</button>
+          <button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="publierCalendrier()" [disabled]="publishing" class="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors border-0 cursor-pointer">
+            <svg *ngIf="publishing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+            Publier le calendrier
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="card-body p-4">
+      <full-calendar #calendar [options]="calendarOptions" [deepChangeDetection]="true"></full-calendar>
     </div>
   </div>
 
@@ -61,11 +96,14 @@
           <label class="form-label">Type</label>
           <select [(ngModel)]="newEvent.type" class="form-select">
             <option value="" disabled>Sélectionner un type</option>
-            <option value="Examen">Examen</option>
-            <option value="Vacances">Vacances</option>
-            <option value="Rentrée">Rentrée</option>
-            <option value="Conseil">Conseil</option>
-            <option value="Fin">Fin</option>
+            <option value="cours">Cours</option>
+            <option value="examen">Examen</option>
+            <option value="vacance">Vacances</option>
+            <option value="sportif">Sportif</option>
+            <option value="culturel">Culturel</option>
+            <option value="reunion">Réunion</option>
+            <option value="administratif">Administratif</option>
+            <option value="ferie">Férié</option>
           </select>
         </div>
         <div class="form-group">
@@ -86,13 +124,6 @@
           <h2 class="card-title">Événements</h2>
           <p class="card-subtitle">Tous les événements du calendrier académique</p>
         </div>
-        <div class="flex gap-4 items-center">
-          <select [(ngModel)]="filterType" (change)="filtrer()" class="form-select-sm">
-            <option value="undefined">Tous les types</option>
-            <option *ngFor="let t of typeList" [value]="t">{{ t }}</option>
-          </select>
-          <app-custom-button *ngIf="filterType !== 'undefined'" (click)="reinitialiserFiltres()" text="Réinitialiser" color="gray" [outlined]="true"></app-custom-button>
-        </div>
       </div>
     </div>
     <div class="card-body">
@@ -106,18 +137,15 @@
         <p class="text-gray-500">Aucun événement trouvé</p>
       </div>
       <div *ngIf="!loading && _evenements.length > 0" class="events-grid">
-        <div *ngFor="let ev of _evenements" class="event-card"
-          [class.border-red-500]="ev.type === 'Examen'"
-          [class.border-blue-500]="ev.type === 'Vacances'"
-          [class.border-green-500]="ev.type === 'Rentrée'"
-          [class.border-orange-500]="ev.type === 'Conseil'"
-          [class.border-gray-500]="ev.type === 'Fin'">
+        <div *ngFor="let ev of _evenements" class="event-card" [style.border-left-color]="getColor(ev.type)">
           <div class="event-card-header">
             <h3 class="event-card-title">{{ ev.titre }}</h3>
             <app-custom-badge [text]="ev.type" [color]="getColor(ev.type)"></app-custom-badge>
           </div>
           <p class="event-card-date">{{ ev.date | date:'EEEE d MMMM yyyy' }}</p>
           <p class="event-card-desc">{{ ev.description }}</p>
+          <p *ngIf="ev.classe?.libelle" class="text-xs text-gray-400 mt-1">Classe: {{ ev.classe?.libelle }}</p>
+          <p *ngIf="ev.statutEvenement" class="text-xs text-gray-400">Statut: {{ ev.statutEvenement }}</p>
           <button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="deleteEvent(ev)"
             class="event-card-delete" title="Supprimer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

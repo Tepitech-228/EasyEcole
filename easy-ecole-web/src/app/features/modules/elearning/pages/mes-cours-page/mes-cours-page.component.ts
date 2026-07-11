@@ -5,7 +5,8 @@ import { BaseComponentClass } from 'src/app/core/base-component-class';
 
 @Component({
   selector: 'app-mes-cours-page',
-  templateUrl: './mes-cours-page.component.html'
+  templateUrl: './mes-cours-page.component.html',
+  styleUrls: ['./mes-cours-page.component.scss']
 })
 export class MesCoursPageComponent extends BaseComponentClass implements OnInit {
   coursList: any[] = [];
