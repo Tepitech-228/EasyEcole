@@ -17,6 +17,10 @@ export const environment = {
     SCOLARITE: apiUrl + '/scolarite',
     ELEARNING: apiUrl + '/elearning',
     COMMUNICATION: apiUrl + '/communication',
+    RH: apiUrl + '/rh',
+    ACHATS: apiUrl + '/achats',
+    REPORTING: apiUrl + '/reporting',
+    GED: apiUrl + '/ged',
   },
   MEDIAS_PATH: {
     AUTH: {
