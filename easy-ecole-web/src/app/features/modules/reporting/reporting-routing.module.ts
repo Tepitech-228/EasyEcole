@@ -13,7 +13,7 @@ import { RapportAchatsPageComponent } from './pages/rapport-achats-page/rapport-
 
 const routes: Routes = [
   {
-    path: 'reporting',
+    path: '',
     children: [
       {
         path: '',

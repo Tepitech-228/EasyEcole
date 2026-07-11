@@ -7,9 +7,7 @@
     </button>
 </div>
 
-<div *ngIf="loading" class="flex justify-center py-20">
-    <svg class="animate-spin h-8 w-8 text-indigo-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
-</div>
+<app-loading-spinner *ngIf="loading"></app-loading-spinner>
 
 <div *ngIf="!loading" class="grid grid-cols-1 md:grid-cols-7 gap-4">
     <div *ngFor="let jour of jours" class="bg-white rounded-lg shadow border border-gray-100 p-4 min-h-[200px]">

@@ -170,10 +170,7 @@
         </tbody>
       </table>
     </div>
-    <div *ngIf="loading" class="px-5 py-8 text-center">
-      <div class="inline-block h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
-      <p class="mt-2 text-sm text-gray-500">Chargement...</p>
-    </div>
+    <app-loading-spinner *ngIf="loading"></app-loading-spinner>
     <div *ngIf="!loading && deliberations.length === 0" class="px-5 py-12 text-center">
       <svg class="mx-auto h-12 w-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
       <p class="mt-4 text-sm text-gray-500">Aucune délibération trouvée</p>

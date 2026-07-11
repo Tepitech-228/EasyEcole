@@ -179,18 +179,15 @@
                     <div class="grid grid-cols-6 gap-x-4 gap-y-4">
                         <div class="col-span-3">
                             <span class="mb-1 block text-xs text-gray-400">Titre</span>
-                            <input type="text" [(ngModel)]="frais.titre" [ngModelOptions]="{standalone: true}" placeholder="Ex: Frais d'inscription"
-                                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                            <app-form-input inputType="text" [(ngModel)]="frais.titre" [ngModelOptions]="{standalone: true}" placeholder="Ex: Frais d'inscription"></app-form-input>
                         </div>
                         <div class="col-span-3">
                             <span class="mb-1 block text-xs text-gray-400">Montant (FCFA)</span>
-                            <input type="number" min="0" [(ngModel)]="frais.montant" [ngModelOptions]="{standalone: true}" placeholder="Ex: 50000"
-                                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                            <app-form-input inputType="number" [(ngModel)]="frais.montant" [ngModelOptions]="{standalone: true}" placeholder="Ex: 50000"></app-form-input>
                         </div>
                         <div class="col-span-6">
                             <span class="mb-1 block text-xs text-gray-400">Description (facultative)</span>
-                            <input type="text" [(ngModel)]="frais.description" [ngModelOptions]="{standalone: true}" placeholder="Description du frais"
-                                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                            <app-form-input inputType="text" [(ngModel)]="frais.description" [ngModelOptions]="{standalone: true}" placeholder="Description du frais"></app-form-input>
                         </div>
                         <div class="col-span-6">
                             <span class="mb-1 block text-xs text-gray-400">Appliquer à chaque cours ?</span>
@@ -232,18 +229,15 @@
                     <div class="grid grid-cols-6 gap-x-4 gap-y-4">
                         <div class="col-span-3">
                             <span class="mb-1 block text-xs text-gray-400">Titre</span>
-                            <input type="text" [(ngModel)]="dossier.titre" [ngModelOptions]="{standalone: true}" placeholder="Ex: Relevé de notes"
-                                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                            <app-form-input inputType="text" [(ngModel)]="dossier.titre" [ngModelOptions]="{standalone: true}" placeholder="Ex: Relevé de notes"></app-form-input>
                         </div>
                         <div class="col-span-3">
                             <span class="mb-1 block text-xs text-gray-400">Taille max. (Ko)</span>
-                            <input type="number" min="0" [(ngModel)]="dossier.tailleMax" [ngModelOptions]="{standalone: true}" placeholder="Ex: 2048"
-                                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                            <app-form-input inputType="number" [(ngModel)]="dossier.tailleMax" [ngModelOptions]="{standalone: true}" placeholder="Ex: 2048"></app-form-input>
                         </div>
                         <div class="col-span-6">
                             <span class="mb-1 block text-xs text-gray-400">Description (facultative)</span>
-                            <input type="text" [(ngModel)]="dossier.description" [ngModelOptions]="{standalone: true}" placeholder="Description du dossier"
-                                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                            <app-form-input inputType="text" [(ngModel)]="dossier.description" [ngModelOptions]="{standalone: true}" placeholder="Description du dossier"></app-form-input>
                         </div>
                     </div>
                 </div>

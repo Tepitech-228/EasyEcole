@@ -3,13 +3,7 @@
     <app-header-title title="Cartes étudiantes" subtitle="Générer et imprimer les cartes étudiantes"></app-header-title>
   </div>
 
-  <!-- Loading -->
-  <div *ngIf="loading" class="flex justify-center py-20">
-    <div class="flex flex-col items-center gap-3">
-      <div class="animate-spin h-8 w-8 rounded-full border-2 border-[#1565C0] border-t-transparent"></div>
-      <span class="text-gray-400 text-sm">Chargement des étudiants...</span>
-    </div>
-  </div>
+  <app-loading-spinner *ngIf="loading"></app-loading-spinner>
 
   <!-- Empty -->
   <div *ngIf="!loading && apprenants.length == 0"

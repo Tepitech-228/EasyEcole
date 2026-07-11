@@ -21,7 +21,6 @@ import { AjoutPrerequisComponent } from './components/ajout-prerequis/ajout-prer
 import { DetailsSectionComponent } from './components/details-section/details-section.component';
 import { CustomWizardComponent } from './components/custom-wizard/custom-wizard.component';
 import { SafeUrlPipe } from './pipes/safe-url.pipe';
-import { CustomPdfViewerComponent } from './components/custom-pdf-viewer/custom-pdf-viewer.component';
 import { CoursCardComponent } from './components/cours-card/cours-card.component';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { ListePresenceCardComponent } from './components/liste-presence-card/liste-presence-card.component';
@@ -46,7 +45,6 @@ import { SidebarNavComponent } from './sidebar-nav/sidebar-nav.component';
     AjoutPrerequisComponent,
     DetailsSectionComponent,
     CustomWizardComponent,
-    CustomPdfViewerComponent,
     CoursCardComponent,
     ListePresenceCardComponent,
     CahierDeTexteCardComponent,
@@ -100,7 +98,6 @@ import { SidebarNavComponent } from './sidebar-nav/sidebar-nav.component';
     AjoutPrerequisComponent,
     DetailsSectionComponent,
     CustomWizardComponent,
-    CustomPdfViewerComponent,
     CoursCardComponent,
     ListePresenceCardComponent,
     CahierDeTexteCardComponent,

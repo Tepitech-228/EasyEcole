@@ -54,10 +54,7 @@
         </tbody>
       </table>
     </div>
-    <div *ngIf="loading" class="px-5 py-8 text-center">
-      <div class="inline-block h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
-      <p class="mt-2 text-sm text-gray-500">Chargement...</p>
-    </div>
+    <app-loading-spinner *ngIf="loading"></app-loading-spinner>
     <div *ngIf="!loading && items.length === 0" class="px-5 py-12 text-center">
       <svg class="mx-auto h-12 w-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/></svg>
       <p class="mt-4 text-sm text-gray-500">Aucun membre du jury trouvé</p>

@@ -2,7 +2,8 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { environment } from 'src/environments/environment';
-import { io, Socket } from 'socket.io-client';
+import { SocketService } from 'src/app/core/services/socket.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-discussions-page',
@@ -22,15 +23,15 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
   creating = false;
   currentUserName = '';
   currentUserId: number | null = null;
-  socket: Socket | null = null;
   typingUsers: string[] = [];
+  private socketSubscriptions: Subscription[] = [];
   members: any[] = [
     { id: 1, name: 'Moi', role: 'Admin', online: true },
     { id: 2, name: 'Prof. Martin', role: 'Enseignant', online: true },
     { id: 3, name: 'A. Demba', role: 'Étudiant', online: false }
   ];
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private socketService: SocketService) {
     super();
   }
 
@@ -42,9 +43,10 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
   }
 
   ngOnDestroy(): void {
-    if (this.selectedSalon && this.socket) {
-      this.socket.emit('leave:salon', this.selectedSalon.id);
-      this.socket.disconnect();
+    this.socketSubscriptions.forEach(s => s.unsubscribe());
+    if (this.selectedSalon) {
+      this.socketService.leaveSalon(this.selectedSalon.id);
+      this.socketService.disconnect();
     }
   }
 
@@ -73,9 +75,9 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
   }
 
   selectSalon(salon: any): void {
-    if (this.socket && this.selectedSalon) {
-      this.socket.emit('leave:salon', this.selectedSalon.id);
-      this.socket.disconnect();
+    if (this.selectedSalon) {
+      this.socketService.leaveSalon(this.selectedSalon.id);
+      this.socketService.disconnect();
     }
 
     this.selectedSalon = salon;
@@ -92,14 +94,20 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
       return;
     }
 
-    this.socket = io(environment.API_URL);
-    this.socket.emit('join:salon', this.selectedSalon.id);
-    this.socket.on('new:message', (message: any) => {
-      this.messages = [...this.messages, this.enrichMessage(message)];
-    });
-    this.socket.on('typing', (data: any) => {
-      this.handleTypingEvent(data);
-    });
+    this.socketSubscriptions.forEach(s => s.unsubscribe());
+    this.socketSubscriptions = [];
+    this.socketService.connect();
+    this.socketService.joinSalon(this.selectedSalon.id);
+    this.socketSubscriptions.push(
+      this.socketService.onNewMessage().subscribe((message: any) => {
+        this.messages = [...this.messages, this.enrichMessage(message)];
+      })
+    );
+    this.socketSubscriptions.push(
+      this.socketService.onTyping().subscribe((data: any) => {
+        this.handleTypingEvent(data);
+      })
+    );
   }
 
   loadMessages(salonId: number): void {
@@ -156,28 +164,21 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
       return;
     }
 
-    const payload = {
-      salonId: this.selectedSalon.id,
-      message: this.messageText.trim(),
-      utilisateurId: this.currentUserId || 1
-    };
-
-    if (this.socket) {
-      this.socket.emit('send:message', payload);
-    }
+    this.socketService.sendMessage(
+      this.selectedSalon.id,
+      this.messageText.trim(),
+      this.currentUserId || 1
+    );
 
     this.messageText = '';
   }
 
   notifyTyping(): void {
-    if (!this.selectedSalon || !this.socket) {
+    if (!this.selectedSalon) {
       return;
     }
 
-    this.socket.emit('typing', {
-      salonId: this.selectedSalon.id,
-      utilisateurId: this.currentUserId || 1
-    });
+    this.socketService.notifyTyping(this.selectedSalon.id, this.currentUserId || 1);
   }
 
   loadSalonMembers(salon: any): void {

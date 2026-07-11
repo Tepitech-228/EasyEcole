@@ -49,19 +49,26 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
             {
                 label: 'Formation',
                 items: [
+                    // ── Cours & Enseignants ──
                     { label: 'Enseignants', route: '/cours/enseignants', icon: 'cycle', permissionKey: 'menu.cours.enseignants', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Cours', route: '/cours/cours', icon: 'book', permissionKey: 'menu.cours.liste' },
-                    { label: 'Presences', route: '/cours/presences', icon: 'checklist', permissionKey: 'menu.cours.presences', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
-                    { label: 'Mes presences', route: '/cours/mes-presences', icon: 'fact_check', permissionKey: 'menu.cours.mes-presences', allowedRoles: [RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
                     { label: 'Cahiers de texte', route: '/cours/cahiers-de-texte', icon: 'note_stack', permissionKey: 'menu.cours.cahiers-de-texte' },
                     { label: 'Emplois du temps', route: '/cours/emplois-du-temps', icon: 'event_note', permissionKey: 'menu.cours.emplois-du-temps' },
+
+                    // ── Présences & Notes ──
+                    { label: 'Presences', route: '/cours/presences', icon: 'checklist', permissionKey: 'menu.cours.presences', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
+                    { label: 'Mes presences', route: '/cours/mes-presences', icon: 'fact_check', permissionKey: 'menu.cours.mes-presences', allowedRoles: [RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
                     { label: 'Notes', route: '/cours/notes', icon: 'lab_profile', permissionKey: 'menu.cours.notes' },
+
+                    // ── E-learning ──
                     { label: 'Mes cours', route: '/elearning', icon: 'school', permissionKey: 'menu.elearning.mes-cours' },
                     { label: 'Quiz', route: '/elearning/quiz', icon: 'quiz', permissionKey: 'menu.elearning.quiz' },
                     { label: 'Progression', route: '/elearning/progression', icon: 'trending_up', permissionKey: 'menu.elearning.progression', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
                     { label: 'Certificats', route: '/elearning/certificats', icon: 'verified', permissionKey: 'menu.elearning.certificats', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
                     { label: 'Devoirs', route: '/elearning/devoirs', icon: 'assignment', permissionKey: 'menu.elearning.devoirs' },
                     { label: 'Gestion elearning', route: '/elearning/admin/gestion', icon: 'manage_search', permissionKey: 'menu.elearning.gestion', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+
+                    // ── Scolarité ──
                     { label: 'Demandes docs', route: '/scolarite/demandes-documents', icon: 'description', permissionKey: 'menu.scolarite.demandes-docs', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
                     { label: 'Traiter demandes', route: '/scolarite/traiter-demandes', icon: 'fact_check', permissionKey: 'menu.scolarite.traiter-demandes', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Registres', route: '/scolarite/registres', icon: 'menu_book', permissionKey: 'menu.scolarite.registres', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
@@ -73,29 +80,38 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
             {
                 label: 'Evaluation & Suivi',
                 items: [
+                    // ── Notes & Bulletins ──
                     { label: 'Bulletins', route: '/bulletins', icon: 'badge', permissionKey: 'menu.evaluations.bulletins', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
-                    { label: 'Deliberations', route: '/bulletins/deliberations', icon: 'how_to_vote', permissionKey: 'menu.evaluations.deliberations', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
-                    { label: 'UEs', route: '/bulletins/ues', icon: 'account_tree', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
-                    { label: 'MCC', route: '/bulletins/mcc', icon: 'table_chart', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
-                    { label: 'Sessions examens', route: '/bulletins/sessions', icon: 'event', permissionKey: 'menu.evaluations.sessions', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
-                    { label: 'Rattrapages', route: '/bulletins/rattrapages', icon: 'autorenew', permissionKey: 'menu.evaluations.rattrapages', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
-                    { label: 'Absences', route: '/bulletins/absences', icon: 'block', permissionKey: 'menu.evaluations.absences', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
-                    { label: 'Echelles', route: '/bulletins/echelles', icon: 'straighten', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
-                    { label: 'Jury', route: '/bulletins/jury', icon: 'groups', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
-                    { label: 'Equivalences', route: '/bulletins/equivalences', icon: 'swap_horiz', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
-                    { label: 'Dispenses', route: '/bulletins/dispenses', icon: 'file_copy', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
-                    { label: 'Audit notes', route: '/bulletins/audit-notes', icon: 'history', permissionKey: 'menu.evaluations.audit', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Moyennes', route: '/bulletins/moyennes', icon: 'calculate', permissionKey: 'menu.evaluations.moyennes', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
                     { label: 'Mon releve', route: '/bulletins/mon-releve', icon: 'receipt_long', permissionKey: 'menu.evaluations.mon-releve', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
-                    { label: 'Reclamations', route: '/scolarite/mes-reclamations', icon: 'feedback', permissionKey: 'menu.scolarite.reclamations', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
-                    { label: 'Traiter reclam.', route: '/scolarite/traiter-reclamations', icon: 'gavel', permissionKey: 'menu.scolarite.traiter-reclamations', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
-                    { label: 'Demandes VAE', route: '/scolarite/demandes-vae', icon: 'verified', permissionKey: 'menu.scolarite.demandes-vae', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
-                    { label: 'Decisions passage', route: '/scolarite/decisions-passage', icon: 'how_to_vote', permissionKey: 'menu.scolarite.decisions-passage', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
-                    { label: 'Reorientation', route: '/scolarite/reorientation', icon: 'swap_horiz', permissionKey: 'menu.scolarite.reorientation', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
-                    { label: 'Diplomes', route: '/scolarite/diplomes', icon: 'workspace_premium', permissionKey: 'menu.scolarite.diplomes', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Audit notes', route: '/bulletins/audit-notes', icon: 'history', permissionKey: 'menu.evaluations.audit', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'UEs', route: '/bulletins/ues', icon: 'account_tree', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'MCC', route: '/bulletins/mcc', icon: 'table_chart', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Echelles', route: '/bulletins/echelles', icon: 'straighten', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+
+                    // ── Examens & Jurys ──
+                    { label: 'Sessions examens', route: '/bulletins/sessions', icon: 'event', permissionKey: 'menu.evaluations.sessions', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
+                    { label: 'Deliberations', route: '/bulletins/deliberations', icon: 'how_to_vote', permissionKey: 'menu.evaluations.deliberations', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Jury', route: '/bulletins/jury', icon: 'groups', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Rattrapages', route: '/bulletins/rattrapages', icon: 'autorenew', permissionKey: 'menu.evaluations.rattrapages', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
+
+                    // ── Suivi individuel ──
+                    { label: 'Absences', route: '/bulletins/absences', icon: 'block', permissionKey: 'menu.evaluations.absences', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
+                    { label: 'Equivalences', route: '/bulletins/equivalences', icon: 'swap_horiz', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
+                    { label: 'Dispenses', route: '/bulletins/dispenses', icon: 'file_copy', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
                     { label: 'Discipline', route: '/scolarite/discipline', icon: 'block', permissionKey: 'menu.scolarite.discipline', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Sanctions academiques', route: '/scolarite/sanctions-academiques', icon: 'gavel', permissionKey: 'menu.scolarite.sanctions-academiques', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Conseils classe', route: '/scolarite/conseils', icon: 'groups', permissionKey: 'menu.scolarite.conseils', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
+
+                    // ── Parcours & Diplomes ──
+                    { label: 'Diplomes', route: '/scolarite/diplomes', icon: 'workspace_premium', permissionKey: 'menu.scolarite.diplomes', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Demandes VAE', route: '/scolarite/demandes-vae', icon: 'verified', permissionKey: 'menu.scolarite.demandes-vae', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Decisions passage', route: '/scolarite/decisions-passage', icon: 'how_to_vote', permissionKey: 'menu.scolarite.decisions-passage', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Reorientation', route: '/scolarite/reorientation', icon: 'swap_horiz', permissionKey: 'menu.scolarite.reorientation', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+
+                    // ── Reclamations ──
+                    { label: 'Reclamations', route: '/scolarite/mes-reclamations', icon: 'feedback', permissionKey: 'menu.scolarite.reclamations', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
+                    { label: 'Traiter reclam.', route: '/scolarite/traiter-reclamations', icon: 'gavel', permissionKey: 'menu.scolarite.traiter-reclamations', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                 ]
             },
             {
@@ -236,7 +252,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                 label: 'Traitement',
                 items: [
                     { label: 'Televerser', route: '/ged/upload', icon: 'upload_file' },
-                    { label: 'Saisie', route: '/ged/saisie', icon: 'edit_note' },
+
                 ]
             },
             {

@@ -1,0 +1,18 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.typing-indicator {
+  @apply text-xs text-gray-400 italic px-4 py-1;
+}
+
+.member-list {
+  @apply w-48 border-l border-gray-200 bg-gray-50 p-3 overflow-y-auto;
+}
+
+@media (max-width: 767px) {
+  .member-list {
+    @apply hidden;
+  }
+}

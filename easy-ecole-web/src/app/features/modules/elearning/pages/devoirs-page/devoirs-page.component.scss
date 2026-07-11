@@ -1,0 +1,9 @@
+:host { @apply block p-6 space-y-6; }
+
+.devoir-card {
+  @apply cursor-pointer rounded-3xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md;
+}
+
+.statut-badge {
+  @apply rounded-full bg-gray-100 px-2.5 py-1 text-xs;
+}

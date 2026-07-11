@@ -16,11 +16,7 @@
       class="block w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600">
   </div>
 
-  <!-- Loading -->
-  <div *ngIf="loading" class="text-center py-20">
-    <div class="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-3"></div>
-    <p class="text-sm text-gray-400">Chargement de la bibliothèque...</p>
-  </div>
+  <app-loading-spinner *ngIf="loading"></app-loading-spinner>
 
   <!-- Books grid -->
   <div *ngIf="!loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

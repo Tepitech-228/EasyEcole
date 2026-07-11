@@ -17,7 +17,7 @@
         <vg-volume></vg-volume>
         <vg-fullscreen></vg-fullscreen>
     </vg-controls>
-    <video #media [vgMedia]="$any(media)" id="singleVideo" preload="auto">
+    <video #media [vgMedia]="$any(media)" id="singleVideo" preload="auto" (ended)="onVideoEnded()">
         <source [src]="src">
     </video>
 </vg-player>

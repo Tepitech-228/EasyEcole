@@ -1,0 +1,21 @@
+:host {
+  @apply block;
+}
+
+.detail-panel {
+  @apply bg-white rounded-lg shadow-md p-6;
+}
+
+.sticky-sidebar {
+  @apply sticky top-6;
+}
+
+.submission-item {
+  @apply border border-gray-200 rounded-lg p-4 transition-colors hover:border-gray-300;
+}
+
+@media (max-width: 1023px) {
+  .sticky-sidebar {
+    @apply static;
+  }
+}

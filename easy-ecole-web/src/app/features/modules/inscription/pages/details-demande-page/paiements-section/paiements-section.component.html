@@ -185,11 +185,11 @@
 <app-custom-modal title="Enregistrer un paiement" subtitle="Saisir le montant du paiement effectué en espèces" (onCloseModal)="closePaiementModal()" [center]="true" [showModal]="showPaiementModal">
     <div class="mb-4">
         <span class="mb-2 block text-sm text-gray-400">Montant (FCFA)</span>
-        <input type="number" [(ngModel)]="paiementMontant" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="Montant du paiement">
+        <app-form-input inputType="number" [(ngModel)]="paiementMontant" placeholder="Montant du paiement"></app-form-input>
     </div>
     <div class="mb-4">
         <span class="mb-2 block text-sm text-gray-400">Description</span>
-        <input type="text" [(ngModel)]="paiementDescription" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="Description du paiement">
+        <app-form-input inputType="text" [(ngModel)]="paiementDescription" placeholder="Description du paiement"></app-form-input>
     </div>
     <app-form-message *ngIf="paiementError" text="Veuillez saisir un montant valide"></app-form-message>
     <div class="py-3 flex justify-between items-center">

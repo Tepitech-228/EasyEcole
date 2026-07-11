@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, Output, EventEmitter } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 
 @Component({
@@ -9,10 +9,15 @@ import { DomSanitizer } from '@angular/platform-browser';
 export class VideoPlayerComponent implements OnInit {
 
   @Input() src!: string
+  @Output() ended = new EventEmitter<void>()
 
   constructor(private sanitizer: DomSanitizer) { }
 
   ngOnInit(): void {
+  }
+
+  onVideoEnded(): void {
+    this.ended.emit();
   }
 
   isYoutubeVideo(src: string): boolean {

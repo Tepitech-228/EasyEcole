@@ -1,0 +1,11 @@
+:host { @apply block p-6 space-y-6; }
+
+.card-gradient {
+  @apply rounded-3xl border border-gray-200 bg-gradient-to-r from-green-800 via-gray-800 to-gray-900 p-6 text-white shadow-sm;
+}
+
+@media print {
+  :host .card-gradient { @apply bg-white text-black border-gray-300; }
+  :host app-custom-button, :host button { display: none; }
+  :host .grid > div { break-inside: avoid; }
+}

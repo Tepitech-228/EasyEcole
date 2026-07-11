@@ -71,12 +71,7 @@
       </div>
     </div>
 
-    <div *ngIf="loading" class="flex flex-1 items-center justify-center">
-      <div class="flex items-center gap-3 text-slate-500">
-        <div class="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-indigo-600"></div>
-        <span>Chargement du cours...</span>
-      </div>
-    </div>
+    <app-loading-spinner *ngIf="loading"></app-loading-spinner>
 
     <div *ngIf="!loading && !supportActif && !moduleActif" class="flex flex-1 flex-col items-center justify-center gap-4 text-slate-400">
       <span class="text-5xl">📖</span>
@@ -89,9 +84,7 @@
         <div class="mx-auto max-w-4xl p-6">
           <!-- Video player -->
           <div *ngIf="typeMedia(supportActif) === 'video'" class="overflow-hidden rounded-2xl bg-black shadow-lg">
-            <video controls class="w-full aspect-video" [src]="'/elearning/videos/' + (supportActif.fichierCompresse || supportActif.fichierOriginal)" (ended)="marquerTermine(supportActif)">
-              Votre navigateur ne supporte pas la lecture vidéo.
-            </video>
+            <app-video-player [src]="'/elearning/videos/' + (supportActif.fichierCompresse || supportActif.fichierOriginal)" (ended)="marquerTermine(supportActif)"></app-video-player>
           </div>
 
           <!-- PDF embed -->

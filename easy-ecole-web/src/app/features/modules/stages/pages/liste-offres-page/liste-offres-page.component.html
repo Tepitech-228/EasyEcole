@@ -140,10 +140,7 @@
         </tbody>
       </table>
     </div>
-    <div *ngIf="loading" class="px-5 py-8 text-center">
-      <div class="inline-block h-6 w-6 animate-spin rounded-full border-2 border-red-600 border-t-transparent"></div>
-      <p class="mt-2 text-sm text-gray-500">Chargement...</p>
-    </div>
+    <app-loading-spinner *ngIf="loading"></app-loading-spinner>
     <div *ngIf="!loading && offresFiltrees.length === 0" class="px-5 py-12 text-center">
       <svg class="mx-auto h-12 w-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
       <p class="mt-4 text-sm text-gray-500">Aucune offre de stage trouvée</p>

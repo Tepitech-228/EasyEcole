@@ -78,10 +78,7 @@
   </div>
 
   <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-    <div *ngIf="loading" class="px-5 py-12 text-center">
-      <div class="inline-block h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
-      <p class="mt-2 text-sm text-gray-500">Chargement...</p>
-    </div>
+    <app-loading-spinner *ngIf="loading"></app-loading-spinner>
     <ng-container *ngIf="!loading">
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-100">

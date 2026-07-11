@@ -1,9 +1,7 @@
 <div class="p-6 space-y-6">
   <app-return-back></app-return-back>
 
-  <div *ngIf="loading" class="flex justify-center py-12">
-    <div class="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-indigo-600"></div>
-  </div>
+  <app-loading-spinner *ngIf="loading"></app-loading-spinner>
 
   <div *ngIf="!loading && cours" class="space-y-6">
     <!-- Hero -->
