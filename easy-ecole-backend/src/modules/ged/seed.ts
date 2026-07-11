@@ -7,7 +7,7 @@ export async function seedGed(): Promise<void> {
 
   const folderCount = await Folder.count();
   if (folderCount === 0) {
-    const admin = await db.sequelize.model('AutUtilisateur').findOne({ where: { identifiant: 'admin' } });
+    const admin = await db.sequelize.model('AutUtilisateur').findOne({ where: { identifiant: 'admin' } }) as { id: number } | null;
     const adminId = admin?.id ?? 1;
     await Folder.bulkCreate([
       { nom: "Documents administratifs", description: "Registres, procès-verbaux et documents officiels", createdBy: adminId },

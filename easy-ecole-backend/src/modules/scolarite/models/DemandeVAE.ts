@@ -29,7 +29,7 @@ DemandeVAE.init({
     allowNull: false
   },
   justificatifs: {
-    type: DataTypes.JSON,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   statut: {

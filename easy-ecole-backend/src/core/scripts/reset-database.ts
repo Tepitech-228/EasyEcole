@@ -37,8 +37,10 @@ async function resetDatabase() {
     require('../../modules/stage/models/_associations');
     require('../../modules/stock/models/_associations');
     require('../../modules/immobilisation/models/_associations');
-    const { initBulletinAssociations } = require('../../modules/bulletins/models/_associations');
-    initBulletinAssociations();
+    require('../../modules/bulletins/models/_associations');
+    require('../../modules/bulletins/models/EchelleNote');
+    require('../../modules/bulletins/models/AuditNote');
+    require('../../modules/bulletins/models/JuryMembre');
     require('../../modules/scolarite/models/_associations');
     require('../../modules/scolarite/models/SanctionDiscipline');
     require('../../modules/scolarite/models/RegistreAcademique');
