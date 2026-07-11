@@ -63,7 +63,7 @@ FraisParcours.belongsTo(Parcours, {
   foreignKey: 'parcoursId'
 })
 Parcours.hasMany(FraisParcours, {
-  as: 'fraisParcours',
+  as: 'fraisParcoursParcours',
   foreignKey: 'parcoursId'
 })
 
@@ -72,7 +72,7 @@ FraisParcours.belongsTo(NiveauEtude, {
   foreignKey: 'niveauEtudeId'
 })
 NiveauEtude.hasMany(FraisParcours, {
-  as: 'fraisParcours',
+  as: 'fraisParcoursNiveau',
   foreignKey: 'niveauEtudeId'
 })
 
@@ -81,7 +81,7 @@ FraisParcours.belongsTo(AnneeAcademique, {
   foreignKey: 'anneeAcademiqueId'
 })
 AnneeAcademique.hasMany(FraisParcours, {
-  as: 'fraisParcours',
+  as: 'fraisParcoursAnnee',
   foreignKey: 'anneeAcademiqueId'
 })
 
@@ -100,7 +100,7 @@ LigneFraisEtudiant.belongsTo(ReductionFrais, {
   foreignKey: 'reductionId'
 })
 ReductionFrais.hasMany(LigneFraisEtudiant, {
-  as: 'lignesFrais',
+  as: 'lignesFraisReduction',
   foreignKey: 'reductionId'
 })
 
