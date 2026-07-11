@@ -91,10 +91,10 @@ export default class SanctionAcademiqueController {
 
     static async getActives(req: Request, res: Response): Promise<Response> {
         try {
-            const items = await SanctionAcademique.findAll({
+            const items: SanctionAcademique[] = await SanctionAcademique.findAll({
                 where: {
                     [Op.or]: [
-                        { dateFin: null },
+                        { dateFin: { [Op.is]: null } },
                         { dateFin: { [Op.gt]: new Date() } }
                     ]
                 }
