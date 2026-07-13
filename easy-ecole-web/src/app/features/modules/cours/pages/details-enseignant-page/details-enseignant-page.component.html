@@ -1,0 +1,194 @@
+<app-return-back></app-return-back>
+
+<ng-container *ngIf="enseignant">
+    <div *ngIf="rolesValue.isInstitution"
+        class="flex md:flex-row flex-col gap-y-6 justify-between md:items-start md-items-end w-full border-0 py-4 mb-8">
+        <div class="flex items-center gap-x-4">
+            <img class="object-cover w-16 h-16 rounded-full border-2 border-gray-300"
+                [src]="enseignant.utilisateur!.apprenant?.photo ? PHOTOS_PATH + enseignant.utilisateur!.apprenant?.photo : 'assets/images/blank-profile-picture.png'"
+                alt="">
+            <div class="flex flex-col justify-evenly h-16">
+                <h2 class="text-md font-semibold text-gray-800 dark:text-white">{{
+                    enseignant.utilisateur!.nom + ' ' + enseignant.utilisateur!.prenoms }}
+                </h2>
+                <p class="text-sm font-normal text-gray-600 dark:text-gray-400">{{
+                    enseignant!.utilisateur!.email }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="w-full mb-8">
+        <app-details-section text="Informations personnelles"></app-details-section>
+    </div>
+
+    <div class="w-full mb-8">
+        <app-details-section text="Cours">
+            <div *ngIf="rolesValue.isInstitution" class="relative">
+                <div>
+                    <button (click)="openAssignerCoursModal()"
+                        class="p-1 rounded focus:ring-1 focus:ring-gray-300">
+                        <img src="assets/icons/add.svg" alt="add">
+                    </button>
+                </div>
+            </div>
+        </app-details-section>
+        <div *ngIf="enseignant.cours!.length == 0" class="text-sm text-gray-400 text-center py-8">Aucun cours</div>
+        <div *ngIf="enseignant.cours!.length != 0" class="overflow-x-auto">
+            <div class="py-2 inline-block min-w-full">
+                <div class="overflow-hidden">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-100 border-b">
+                            <tr>
+                                <!-- <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        #
+                                    </div>
+                                </th> -->
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Code
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Libellé
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Crédit / Coefficient
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Année / Classe
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Semestre
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-center">
+                                    <div class="px-2">
+                                        Est obligatoire
+                                    </div>
+                                </th>
+                                <th *ngIf="rolesValue.isInstitution" scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
+                                    <div class="px-2">
+                                        Action
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let cours of enseignant.cours!; index as index"
+                                class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                <!-- <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div
+                                        class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        {{ index + 1 }}
+                                    </div>
+                                </td> -->
+                                <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ cours.code }}</div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ cours.intitule }}</div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ cours.credit ?? '---' }}</div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        <span>{{cours.classe?.libelle}}</span>
+                                    </div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div [ngSwitch]="cours.semestre" class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        <span *ngSwitchCase="semestresParcours.SEMESTRE1">1</span>
+                                        <span *ngSwitchCase="semestresParcours.SEMESTRE2">2</span>
+                                        <span *ngSwitchCase="semestresParcours.SEMESTRE3">3</span>
+                                        <span *ngSwitchCase="semestresParcours.SEMESTRE4">4</span>
+                                        <span *ngSwitchCase="semestresParcours.SEMESTRE5">5</span>
+                                        <span *ngSwitchCase="semestresParcours.SEMESTRE6">6</span>
+                                    </div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div
+                                        class="block flex justify-center gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        <div class="flex items-center gap-x-3">
+                                            <input type="checkbox" disabled [checked]="cours.estObligatoire" class="h-4 w-4 border-gray-600 text-indigo-600 focus:ring-indigo-600">
+                                        </div>
+                                    </div>
+                                </td>
+                                <td *ngIf="rolesValue.isInstitution" class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div
+                                        class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        <!-- <app-custom-button (click)="openEditerCoursModal(cours)" text="Editer" color="blue"></app-custom-button> -->
+                                        <app-custom-button (click)="revoquerAssignationCours(cours)" text="Révoquer" color="red"></app-custom-button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</ng-container>
+
+<!-- Modals -->
+<app-custom-modal title="Assigner un cours" subtitle="Désigner l'actuel enseignant comme le chargé de ce cours" (onCloseModal)="showAssignerCoursModal = false" [center]="true" [showModal]="showAssignerCoursModal">
+    <form [formGroup]="assignerCoursForm">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="col-span-full">
+                <label for="cours" class="mb-2 block text-sm leading-6 text-gray-600">Cours</label>
+                <ng-select
+                    [items]="cours"
+                    bindValue="id"
+                    bindLabel="intitule"
+                    [loading]="coursLoading"
+                    [searchFn]="customCoursSearchFn"
+                    formControlName="cours"
+                    placeholder="Sélectionner un cours"
+                    (change)="onCoursChange($event)"
+                    class="block w-full rounded-md text-gray-900 placeholder:text-gray-400 sm:text-sm sm:leading-6">
+                    <ng-template ng-option-tmp let-item="item">
+                        {{ item.intitule }} <br />
+                        <small>{{ item.code }}</small>
+                    </ng-template>
+                </ng-select>
+                
+                <div *ngIf="chargeDuCoursActuel" class="mt-6">
+                    <p class="text-red-600 text-sm">Ce cours a été déjà assigné à l'enseignant <b>{{ chargeDuCoursActuel.utilisateur?.nom + ' ' + chargeDuCoursActuel.utilisateur?.prenoms }}</b></p>
+                </div>
+            </div>
+            <!-- <div class="col-span-full">
+                <label for="enseignant" class="mb-2 block text-sm leading-6 text-gray-600">Enseignant</label>
+                <ng-select *ngIf="assignerCoursForm.get('choisirParmiLesCours')!.value"
+                    [items]="cours" bindLabel="intitule"
+                    [loading]="coursLoading"
+                    [searchFn]="customCoursSearchFn"
+                    formControlName="enseignant"
+                    class="block w-full rounded-md text-gray-900 placeholder:text-gray-400 sm:text-sm sm:leading-6">
+                    <ng-template ng-option-tmp let-item="item">
+                        {{ item.intitule }} <br />
+                        <small>{{ item.code }}</small>
+                    </ng-template>
+                </ng-select>
+            </div> -->
+        </div>
+    </form>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="closeAssignerCoursModal()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+        <app-custom-button (click)="assignerCours()" text="Enregistrer" [disabled]="!(chargeDuCoursActuel == undefined && assignerCoursForm.value.cours != null)"></app-custom-button>
+    </div>
+</app-custom-modal>

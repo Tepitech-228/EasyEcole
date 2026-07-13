@@ -1,0 +1,38 @@
+<div class="flex justify-between items-start gap-x-8 mb-8">
+    <app-header-title title="Demandes d'achat" subtitle="Gérer les demandes d'achat"></app-header-title>
+    <div class="flex justify-end items-center">
+        <app-custom-button text="Nouvelle demande" link="/achats/demandes/nouveau"></app-custom-button>
+    </div>
+</div>
+
+<div class="flex flex-col">
+    <div class="overflow-x-auto">
+        <div class="py-2 inline-block min-w-full">
+            <div class="overflow-hidden">
+                <table class="min-w-full">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">#</th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Description</th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Statut</th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Date</th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngIf="demandes.length==0" class="bg-white p-0 border-b">
+                            <td class="text-sm text-center py-4 text-gray-600" colspan="5">Aucune demande</td>
+                        </tr>
+                        <tr *ngFor="let d of demandes; index as i" class="bg-white hover:bg-gray-100 p-0 border-b">
+                            <td class="px-2 py-4 text-sm text-gray-600">{{ i + 1 }}</td>
+                            <td class="px-2 py-4 text-sm text-gray-600">{{ d.description }}</td>
+                            <td class="px-2 py-4 text-sm"><span class="px-2 py-1 rounded text-xs font-semibold" [class.bg-yellow-100]="d.statut==='brouillon'" [class.bg-blue-100]="d.statut==='soumise'" [class.bg-green-100]="d.statut==='validee'" [class.bg-red-100]="d.statut==='rejetee'">{{ d.statut }}</span></td>
+                            <td class="px-2 py-4 text-sm text-gray-600">{{ d.dateSoumission | date }}</td>
+                            <td class="px-2 py-4 text-right"><app-custom-button [link]="'/achats/demandes/' + d.id" text="Détails"></app-custom-button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

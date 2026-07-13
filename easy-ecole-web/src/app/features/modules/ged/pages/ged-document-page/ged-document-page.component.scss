@@ -1,0 +1,102 @@
+.card {
+  padding: 1.75rem;
+  border-radius: 1.5rem;
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+}
+
+.form-input {
+  background: #f8fafc;
+  border: 1px solid #d1d5db;
+  border-radius: 0.85rem;
+  padding: 0.95rem 1rem;
+  width: 100%;
+  color: #0f172a;
+}
+
+.field-label,
+.form-label {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 0.5rem;
+}
+
+.field-helper {
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.detail-content {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.document-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.document-meta {
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.detail-properties {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: #f8fafc;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.detail-properties div {
+  display: flex;
+  gap: 0.5rem;
+  color: #334155;
+}
+
+.detail-properties span {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.ged-form-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.action-button {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  color: #334155;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.action-button.download {
+  background: rgba(99, 102, 241, 0.12);
+  color: #4338ca;
+}
+
+.action-button.export {
+  background: rgba(148, 163, 184, 0.14);
+  color: #0f172a;
+}
+
+.action-button:hover {
+  background: rgba(148, 163, 184, 0.22);
+}

@@ -1,0 +1,30 @@
+<div class="card ged-card">
+  <app-header-title title="Nomenclature" subtitle="Définissez des règles de nommage pour vos documents"></app-header-title>
+
+  <div class="ged-form">
+    <div class="ged-grid">
+      <div class="ged-field">
+        <label class="field-label">Type</label>
+        <input [(ngModel)]="nommageType" class="form-input w-full" />
+      </div>
+      <div class="ged-field">
+        <label class="field-label">Date</label>
+        <input [(ngModel)]="nommageDate" class="form-input w-full" />
+      </div>
+      <div class="ged-field">
+        <label class="field-label">Catégorie</label>
+        <input [(ngModel)]="categorie" class="form-input w-full" />
+      </div>
+      <div class="ged-field">
+        <label class="field-label">Référence</label>
+        <input [(ngModel)]="reference" class="form-input w-full" />
+      </div>
+    </div>
+
+    <div class="ged-form-actions">
+      <app-custom-button (click)="generate()" text="Générer"></app-custom-button>
+    </div>
+
+    <div *ngIf="example" class="field-helper">Exemple : <strong>{{ example }}</strong></div>
+  </div>
+</div>

@@ -1,0 +1,161 @@
+<div class="h-screen flex overflow-hidden bg-gray-50">
+
+  <aside class="w-72 bg-white border-r border-gray-200 flex flex-col shrink-0">
+    <div class="px-4 py-4 border-b border-gray-100">
+      <div class="flex items-center gap-2 mb-1">
+        <span class="material-icons text-blue-600 text-sm">edit_note</span>
+        <h1 class="text-sm font-bold text-gray-800">Saisie</h1>
+      </div>
+      <p class="text-xs text-gray-400">{{ documents.length }} en attente</p>
+    </div>
+
+    <div class="flex-1 overflow-y-auto">
+      <div *ngIf="loading" class="p-4 space-y-3">
+        <div *ngFor="let _ of [1,2,3,4]" class="animate-pulse flex items-center gap-3 p-2 rounded-lg">
+          <div class="w-8 h-8 bg-gray-100 rounded-lg"></div>
+          <div class="flex-1 space-y-1">
+            <div class="h-3 bg-gray-100 rounded w-3/4"></div>
+            <div class="h-2 bg-gray-50 rounded w-1/2"></div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="!loading && documents.length === 0" class="p-6 text-center">
+        <span class="material-icons text-3xl text-gray-200 mb-2">inbox</span>
+        <p class="text-xs text-gray-400">Aucun document</p>
+        <a routerLink="/ged/upload" class="text-xs text-blue-600 font-medium mt-2 inline-block">Téléverser</a>
+      </div>
+
+      <button *ngFor="let doc of documents; let i = index"
+        (click)="showDocument(i)"
+        class="w-full text-left px-4 py-3 border-b border-gray-50 transition-all hover:bg-blue-50 flex items-start gap-3"
+        [class.bg-blue-50]="i === currentIndex"
+        [class.border-l-2]="i === currentIndex"
+        [class.border-blue-500]="i === currentIndex"
+      >
+        <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 mt-0.5"
+          [class.bg-blue-100]="i === currentIndex"
+        >
+          <span class="material-icons text-gray-500 text-sm" [class.text-blue-600]="i === currentIndex">picture_as_pdf</span>
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-medium text-gray-800 truncate">{{ doc.titre }}</p>
+          <p class="text-xs text-gray-400 truncate mt-0.5">{{ doc.reference || doc.nommage || '—' }}</p>
+        </div>
+      </button>
+    </div>
+
+    <div class="px-4 py-3 border-t border-gray-100">
+      <a routerLink="/ged/catalog" class="flex items-center gap-2 text-xs text-gray-400 hover:text-blue-600 transition-colors">
+        <span class="material-icons text-sm">archive</span>
+        Voir les archivés
+      </a>
+    </div>
+  </aside>
+
+  <main class="flex-1 flex flex-col min-w-0">
+
+    <div *ngIf="!current" class="flex-1 flex items-center justify-center">
+      <div class="text-center">
+        <span class="material-icons text-5xl text-gray-200 mb-3">description</span>
+        <p class="text-sm text-gray-400">Sélectionnez un document</p>
+      </div>
+    </div>
+
+    <ng-container *ngIf="current">
+      <div class="border-b border-gray-200 bg-white px-5 py-2.5 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-4">
+          <button (click)="prev()" [disabled]="currentIndex === 0" class="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors">
+            <span class="material-icons text-gray-500 text-sm">chevron_left</span>
+          </button>
+          <span class="text-sm text-gray-500 font-medium">{{ currentIndex + 1 }} / {{ total }}</span>
+          <button (click)="next()" [disabled]="currentIndex >= total - 1" class="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors">
+            <span class="material-icons text-gray-500 text-sm">chevron_right</span>
+          </button>
+          <span class="text-xs text-gray-300">|</span>
+          <div class="w-32 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div class="h-full bg-blue-500 rounded-full transition-all" [style.width.%]="progress"></div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span *ngIf="successMessage" class="text-xs text-emerald-600 font-medium animate-pulse">{{ successMessage }}</span>
+          <button (click)="save()" [disabled]="saving" class="px-3 py-1.5 border border-gray-200 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors">Enregistrer</button>
+          <button (click)="archive()" [disabled]="saving" class="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-all shadow-sm">Archiver</button>
+        </div>
+      </div>
+
+      <div class="flex-1 flex min-h-0">
+        <div class="flex-1 bg-gray-100 p-4">
+          <ng-container *ngIf="pdfPreviewUrl; else noPreview">
+            <embed [src]="pdfPreviewUrl" type="application/pdf" class="w-full h-full rounded-xl shadow-sm" />
+          </ng-container>
+          <ng-template #noPreview>
+            <div class="flex items-center justify-center h-full text-gray-400 text-sm">Aperçu non disponible</div>
+          </ng-template>
+        </div>
+
+        <div class="w-80 bg-white border-l border-gray-200 overflow-y-auto p-5 space-y-4 shrink-0">
+          <div *ngIf="error" class="bg-red-50 border-l-4 border-red-400 text-red-700 text-xs rounded-lg px-3 py-2">{{ error }}</div>
+
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Titre</label>
+            <input [value]="titre" (input)="titre = $any($event.target).value" class="w-full border-0 border-b border-gray-100 px-0 py-1 text-sm text-gray-800 focus:border-blue-500 focus:ring-0 outline-none bg-transparent" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Référence</label>
+              <input [value]="reference" (input)="reference = $any($event.target).value" class="w-full border-0 border-b border-gray-100 px-0 py-1 text-sm text-gray-800 focus:border-blue-500 focus:ring-0 outline-none bg-transparent" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Dossier</label>
+              <select [value]="selectedFolderId" (change)="selectedFolderId = $any($event.target).value ? +$any($event.target).value : undefined" class="w-full border-0 border-b border-gray-100 px-0 py-1 text-sm text-gray-800 focus:border-blue-500 focus:ring-0 outline-none bg-transparent">
+                <option value="">—</option>
+                <option *ngFor="let f of folders" [value]="f.id">{{ f.nom }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Élève</label>
+              <input [value]="eleve" (input)="eleve = $any($event.target).value" class="w-full border-0 border-b border-gray-100 px-0 py-1 text-sm text-gray-800 focus:border-blue-500 focus:ring-0 outline-none bg-transparent" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Parcours</label>
+              <input [value]="parcours" (input)="parcours = $any($event.target).value" class="w-full border-0 border-b border-gray-100 px-0 py-1 text-sm text-gray-800 focus:border-blue-500 focus:ring-0 outline-none bg-transparent" />
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Catégorie</label>
+              <input [value]="categorie" (input)="categorie = $any($event.target).value" class="w-full border-0 border-b border-gray-100 px-0 py-1 text-sm text-gray-800 focus:border-blue-500 focus:ring-0 outline-none bg-transparent" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Nommage</label>
+              <input [value]="nommage" (input)="nommage = $any($event.target).value" class="w-full border-0 border-b border-gray-100 px-0 py-1 text-sm text-gray-800 focus:border-blue-500 focus:ring-0 outline-none bg-transparent" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Tags</label>
+            <input [value]="tags" (input)="tags = $any($event.target).value" class="w-full border-0 border-b border-gray-100 px-0 py-1 text-sm text-gray-800 focus:border-blue-500 focus:ring-0 outline-none bg-transparent" placeholder="Contrat, Relevé..." />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Conservation</label>
+              <input [value]="dureeConservation" (input)="dureeConservation = $any($event.target).value" class="w-full border-0 border-b border-gray-100 px-0 py-1 text-sm text-gray-800 focus:border-blue-500 focus:ring-0 outline-none bg-transparent" placeholder="10 ans" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Archivé jusqu'au</label>
+              <input [value]="archivedUntil" (change)="archivedUntil = $any($event.target).value" type="date" class="w-full border-0 border-b border-gray-100 px-0 py-1 text-sm text-gray-800 focus:border-blue-500 focus:ring-0 outline-none bg-transparent" />
+            </div>
+          </div>
+          <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer pt-1">
+            <input type="checkbox" [checked]="isArchived" (change)="isArchived = $any($event.target).checked" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+            <span class="text-xs font-medium text-gray-500">Archivé</span>
+          </label>
+        </div>
+      </div>
+    </ng-container>
+
+  </main>
+
+</div>

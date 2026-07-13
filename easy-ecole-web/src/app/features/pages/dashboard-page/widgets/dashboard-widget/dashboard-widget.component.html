@@ -1,0 +1,27 @@
+<div class="widget-card">
+  <div class="widget-header" *ngIf="title">
+    <div class="widget-header-left">
+      <span class="widget-icon" *ngIf="icon">{{ icon }}</span>
+      <h3 class="widget-title">{{ title }}</h3>
+    </div>
+    <a class="widget-action" *ngIf="link" [routerLink]="link">Voir tout</a>
+  </div>
+
+  <div class="widget-body">
+    <div class="widget-loading" *ngIf="loading">
+      <div class="spinner"></div>
+      <span class="loading-text">Chargement...</span>
+    </div>
+
+    <div class="widget-empty" *ngIf="!loading && empty">
+      <svg class="empty-icon" fill="currentColor" viewBox="0 -960 960 960">
+        <path d="M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520Z"/>
+      </svg>
+      <p class="empty-text">{{ emptyMessage }}</p>
+    </div>
+
+    <div class="widget-content" *ngIf="!loading && !empty">
+      <ng-content></ng-content>
+    </div>
+  </div>
+</div>

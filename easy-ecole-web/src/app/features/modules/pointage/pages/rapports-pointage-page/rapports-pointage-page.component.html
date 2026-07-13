@@ -1,0 +1,78 @@
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Rapports de pointage" subtitle="Statistiques et rapports de présence"></app-header-title>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+    <div class="bg-white rounded-lg shadow border border-gray-100 p-4 text-center">
+        <div class="text-2xl font-bold text-indigo-600">{{ summary.employesActifs }}</div>
+        <div class="text-xs text-gray-500 mt-1">Employés actifs</div>
+    </div>
+    <div class="bg-white rounded-lg shadow border border-gray-100 p-4 text-center">
+        <div class="text-2xl font-bold text-green-600">{{ summary.presentsAujourdhui }}</div>
+        <div class="text-xs text-gray-500 mt-1">Présents aujourd'hui</div>
+    </div>
+    <div class="bg-white rounded-lg shadow border border-gray-100 p-4 text-center">
+        <div class="text-2xl font-bold text-red-600">{{ summary.absentsAujourdhui }}</div>
+        <div class="text-xs text-gray-500 mt-1">Absents aujourd'hui</div>
+    </div>
+    <div class="bg-white rounded-lg shadow border border-gray-100 p-4 text-center">
+        <div class="text-2xl font-bold text-orange-600">{{ summary.enRetardAujourdhui }}</div>
+        <div class="text-xs text-gray-500 mt-1">En retard aujourd'hui</div>
+    </div>
+    <div class="bg-white rounded-lg shadow border border-gray-100 p-4 text-center">
+        <div class="text-2xl font-bold text-blue-600">{{ summary.tauxPresence }}%</div>
+        <div class="text-xs text-gray-500 mt-1">Taux de présence</div>
+    </div>
+</div>
+
+<div class="bg-white rounded-lg shadow border border-gray-100 p-6 mb-6">
+    <h3 class="text-base font-semibold text-gray-900 mb-4">Détail par employé</h3>
+
+    <div *ngIf="entries.length == 0" class="text-center py-4 text-gray-500">Aucune donnée disponible</div>
+
+    <div *ngIf="entries.length > 0" class="flex flex-col">
+        <div class="overflow-x-auto">
+            <div class="py-2 inline-block min-w-full">
+                <div class="overflow-hidden">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-100 border-b">
+                            <tr>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Employé</div></th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Heures</div></th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Présences</div></th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Absences</div></th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Retards</div></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let entry of entries"
+                                class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ entry.employe }}</div>
+                                </td>
+                                <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ entry.totalHeures }}h</div>
+                                </td>
+                                <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        <app-custom-badge color="green" [text]="entry.totalPresences + ''"></app-custom-badge>
+                                    </div>
+                                </td>
+                                <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        <app-custom-badge color="red" [text]="entry.totalAbsences + ''"></app-custom-badge>
+                                    </div>
+                                </td>
+                                <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        <app-custom-badge color="orange" [text]="entry.totalRetards + ''"></app-custom-badge>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

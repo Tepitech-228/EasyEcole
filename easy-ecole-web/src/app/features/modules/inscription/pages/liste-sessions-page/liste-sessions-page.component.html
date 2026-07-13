@@ -1,0 +1,251 @@
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Sessions" subtitle="Retrouver la liste de vos sessions"></app-header-title>
+    <div class="flex justify-end items-center">
+        <app-custom-button (click)="openNouvelleSessionModal()" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" text="Nouvelle session"></app-custom-button>
+    </div>
+</div>
+
+<div class="flex flex-col">
+    <div class="overflow-x-auto">
+        <div class="py-2 inline-block min-w-full">
+            <div class="overflow-hidden">
+                <table class="min-w-full">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    #
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    Date de début
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    Date de fin
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    Etat
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-center">
+                                <div class="px-2">
+                                    Niveau d'étude
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-center">
+                                <div class="px-2">
+                                    Année académique
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
+                                <div class="px-2">
+                                    Action
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngIf="sessions.length == 0"
+                            class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                colspan="5">Aucune session</td>
+                        </tr>
+                        <tr *ngFor="let session of sessions; index as index"
+                            class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                            <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div
+                                    class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    {{ index + 1 }}
+                                </div>
+                            </td>
+                            <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ session.dateDebut | date: 'dd MMMM YYYY' }}</div>
+                            </td>
+                            <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ session.dateFin | date: 'dd MMMM YYYY' }}</div>
+                            </td>
+                            
+                            <td class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2"
+                                [ngSwitch]="getEtatSession(session.dateDebut, session.dateFin)">
+                                <app-custom-badge *ngSwitchCase="etatsSession.A_VENIR" color="blue" text="A venir"></app-custom-badge>
+                                <app-custom-badge *ngSwitchCase="etatsSession.OUVERTE" color="green" text="Ouverte"></app-custom-badge>
+                                <app-custom-badge *ngSwitchCase="etatsSession.CLOTUREE" color="red" text="Clôturée"></app-custom-badge>
+                            </td>
+
+                            <td
+                                class="bg-transparent text-center text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ session.niveauEtude ? session.niveauEtude.libelle : '---' }}</div>
+                            </td>
+                            <td
+                                class="bg-transparent text-center text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ session.anneeAcademique ? session.anneeAcademique.libelle : '---' }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div
+                                    class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    <app-custom-button [link]="'/inscription/sessions/' + session.id" text="Details"></app-custom-button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- // Modals -->
+<app-custom-modal title="Nouvelle session" subtitle="Ajouter une nouvelle session à votre catalogue" (onCloseModal)="showNouvelleSessionModal = false" [center]="true" [showModal]="showNouvelleSessionModal">
+    <form [formGroup]="sessionForm">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Date de début</span>
+                <input type="date" id="dateDebut" [min]="TODAY_DATE" formControlName="dateDebut" placeholder="Saisir la date de début ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+
+                <div class="mb-8"
+                    *ngIf="sessionForm.get('dateDebut')!.invalid && (sessionForm.get('dateDebut')!.dirty || sessionForm.get('dateDebut')!.touched)">
+                    <app-form-message *ngIf="sessionForm.get('dateDebut')!.errors?.['required']"
+                        text="Veuillez saisir la date de début"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Date de fin</span>
+                <input type="date" id="dateFin" formControlName="dateFin" placeholder="Saisir la date de fin ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+
+                <div class="mb-8"
+                    *ngIf="sessionForm.get('dateFin')!.invalid && (sessionForm.get('dateFin')!.dirty || sessionForm.get('dateFin')!.touched)">
+                    <app-form-message *ngIf="sessionForm.get('dateFin')!.errors?.['required']"
+                        text="Veuillez saisir la date de fin"></app-form-message>
+                </div>
+            </div>
+            <div class="md:col-span-3 col-span-full">
+                <label for="niveauEtude" class="mb-2 block text-sm text-gray-400">Niveau d'étude</label>
+                <select id="niveauEtude" formControlName="niveauEtude"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option *ngFor="let niveau of niveauxEtude" [value]="niveau.id">{{ niveau.libelle }}</option>
+                </select>
+                <div *ngIf="sessionForm.get('niveauEtude')!.invalid && (sessionForm.get('niveauEtude')!.dirty || sessionForm.get('niveauEtude')!.touched)">
+                    <app-form-message *ngIf="sessionForm.get('niveauEtude')!.errors?.['required']"
+                        text="Veuillez saisir le niveau d'étude"></app-form-message>
+                </div>
+            </div>
+            <div class="md:col-span-3 col-span-full">
+                <label for="anneeAcademique" class="mb-2 block text-sm text-gray-400">Année académique</label>
+                <select id="anneeAcademique" formControlName="anneeAcademique"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option *ngFor="let anneeAcademique of anneesAcademiques" [value]="anneeAcademique.id">{{ anneeAcademique.libelle }}</option>
+                </select>
+                <div *ngIf="sessionForm.get('anneeAcademique')!.invalid && (sessionForm.get('anneeAcademique')!.dirty || sessionForm.get('anneeAcademique')!.touched)">
+                    <app-form-message *ngIf="sessionForm.get('anneeAcademique')!.errors?.['required']"
+                        text="Veuillez saisir le niveau d'étude"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Description (facultative)</span>
+                <textarea rows="5" id="description" formControlName="description"
+                    placeholder="Saisir la description ici..."
+                    class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
+            </div>
+
+            <!-- Frais d'inscription -->
+            <div class="col-span-full border-t border-gray-200 pt-6 mt-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-base font-semibold text-gray-700">Frais d'inscription</h3>
+                    <button type="button" (click)="ajouterNouveauFrais()"
+                        class="flex items-center gap-x-1 text-sm font-medium text-primary-600 hover:text-primary-500">
+                        <img src="assets/icons/add.svg" alt="add" class="w-4 h-4">
+                        Ajouter un frais
+                    </button>
+                </div>
+                <div *ngIf="nouveauxFrais.length == 0" class="text-sm text-gray-400 text-center py-4">Aucun frais ajouté</div>
+                <div *ngFor="let frais of nouveauxFrais; index as i" class="border border-gray-200 rounded-md p-4 mb-3">
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="text-sm font-medium text-gray-600">Frais #{{ i + 1 }}</span>
+                        <button type="button" (click)="supprimerNouveauFrais(i)" class="text-red-500 hover:text-red-700">
+                            <img src="assets/icons/delete.svg" alt="supprimer" class="w-4 h-4">
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-6 gap-x-4 gap-y-4">
+                        <div class="col-span-3">
+                            <span class="mb-1 block text-xs text-gray-400">Titre</span>
+                            <app-form-input inputType="text" [(ngModel)]="frais.titre" [ngModelOptions]="{standalone: true}" placeholder="Ex: Frais d'inscription"></app-form-input>
+                        </div>
+                        <div class="col-span-3">
+                            <span class="mb-1 block text-xs text-gray-400">Montant (FCFA)</span>
+                            <app-form-input inputType="number" [(ngModel)]="frais.montant" [ngModelOptions]="{standalone: true}" placeholder="Ex: 50000"></app-form-input>
+                        </div>
+                        <div class="col-span-6">
+                            <span class="mb-1 block text-xs text-gray-400">Description (facultative)</span>
+                            <app-form-input inputType="text" [(ngModel)]="frais.description" [ngModelOptions]="{standalone: true}" placeholder="Description du frais"></app-form-input>
+                        </div>
+                        <div class="col-span-6">
+                            <span class="mb-1 block text-xs text-gray-400">Appliquer à chaque cours ?</span>
+                            <div class="flex items-center gap-x-4">
+                                <label class="flex items-center gap-x-2 text-sm text-gray-600">
+                                    <input type="radio" name="fraisDesCours-{{i}}" [value]="true" [(ngModel)]="frais.fraisDesCours" [ngModelOptions]="{standalone: true}"
+                                        class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                                    Oui
+                                </label>
+                                <label class="flex items-center gap-x-2 text-sm text-gray-600">
+                                    <input type="radio" name="fraisDesCours-{{i}}" [value]="false" [(ngModel)]="frais.fraisDesCours" [ngModelOptions]="{standalone: true}"
+                                        class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                                    Non
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dossiers à fournir -->
+            <div class="col-span-full border-t border-gray-200 pt-6 mt-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-base font-semibold text-gray-700">Dossiers à fournir</h3>
+                    <button type="button" (click)="ajouterNouveauDossier()"
+                        class="flex items-center gap-x-1 text-sm font-medium text-primary-600 hover:text-primary-500">
+                        <img src="assets/icons/add.svg" alt="add" class="w-4 h-4">
+                        Ajouter un dossier
+                    </button>
+                </div>
+                <div *ngIf="nouveauxDossiers.length == 0" class="text-sm text-gray-400 text-center py-4">Aucun dossier ajouté</div>
+                <div *ngFor="let dossier of nouveauxDossiers; index as i" class="border border-gray-200 rounded-md p-4 mb-3">
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="text-sm font-medium text-gray-600">Dossier #{{ i + 1 }}</span>
+                        <button type="button" (click)="supprimerNouveauDossier(i)" class="text-red-500 hover:text-red-700">
+                            <img src="assets/icons/delete.svg" alt="supprimer" class="w-4 h-4">
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-6 gap-x-4 gap-y-4">
+                        <div class="col-span-3">
+                            <span class="mb-1 block text-xs text-gray-400">Titre</span>
+                            <app-form-input inputType="text" [(ngModel)]="dossier.titre" [ngModelOptions]="{standalone: true}" placeholder="Ex: Relevé de notes"></app-form-input>
+                        </div>
+                        <div class="col-span-3">
+                            <span class="mb-1 block text-xs text-gray-400">Taille max. (Ko)</span>
+                            <app-form-input inputType="number" [(ngModel)]="dossier.tailleMax" [ngModelOptions]="{standalone: true}" placeholder="Ex: 2048"></app-form-input>
+                        </div>
+                        <div class="col-span-6">
+                            <span class="mb-1 block text-xs text-gray-400">Description (facultative)</span>
+                            <app-form-input inputType="text" [(ngModel)]="dossier.description" [ngModelOptions]="{standalone: true}" placeholder="Description du dossier"></app-form-input>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="closeNouvelleSessionModal()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+        <app-custom-button (click)="ajouterSession()" text="Enregistrer"></app-custom-button>
+    </div>
+</app-custom-modal>

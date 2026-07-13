@@ -1,0 +1,199 @@
+<ng-container *ngIf="demande">
+    <div class="mb-8">
+        <div class="overflow-x-auto">
+            <div class="py-2 inline-block min-w-full">
+                <div class="overflow-hidden">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-100 border-b">
+                            <tr>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        #
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Numéro
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Date de paiement
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Type
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
+                                    <div class="px-2">
+                                        Montant
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngIf="demande.paiementsInscription?.length == 0"
+                                class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                                <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                    colspan="5">Aucun paiement effectué</td>
+                            </tr>
+                            <tr *ngFor="let paiement of demande.paiementsInscription; index as index"
+                                class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div
+                                        class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        {{ index + 1 }}
+                                    </div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ paiement.numero }}</div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ paiement.datePaiement! | date: 'dd/MM/YYYY' }} à {{ paiement.datePaiement! | date:
+                                        'HH:mm' }}</div>
+                                </td>
+                                <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2"
+                                    [ngSwitch]="paiement.type">
+                                    <app-custom-badge *ngSwitchCase="typesPaiement.EN_LIGNE" color="green" text="En ligne"></app-custom-badge>
+                                    <app-custom-badge *ngSwitchDefault text="En espèces"></app-custom-badge>
+                                </td>
+                                <td
+                                    class="bg-transparent text-right text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ paiement.montant | currency:'XAF' }}</div>
+                                </td>
+                            </tr>
+                            <tr
+                                class="bg-white font-bold hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div
+                                        class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    </div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">Total</div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6"></div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6"></div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-right text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ getFraisPayes() | currency:'XAF' }}</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="flex flex-col items-center mt-4 mb-8">
+        <div class="flex gap-x-12">
+            <app-custom-button (click)="getFichePaiement()" text="Bordereau de paiement" color="indigo"></app-custom-button>
+            <app-custom-button *ngIf="rolesValue.isApprenant && fraisTotal > 0" [disabled]="getFraisPayes() >= fraisTotal" (click)="paiementMobileMoney()" text="Payer par Mobile Money" color="gray" [outlined]="true"></app-custom-button>
+            <app-custom-button *ngIf="rolesValue.isInstitution && demande.sessionId" [link]="'/inscription/sessions/' + demande.sessionId" text="Gérer les frais" color="gray" [outlined]="true"></app-custom-button>
+            <app-custom-button *ngIf="rolesValue.isInstitution" (click)="showPaiementModal = true" text="Enregistrer un paiement" color="gray" [outlined]="true"></app-custom-button>
+            <app-custom-button text="Paiements" link="/inscription/paiements"></app-custom-button>
+        </div>
+    </div>
+    
+    <div class="mb-8">
+        <div class="overflow-x-auto">
+            <div class="py-2 inline-block min-w-full">
+                <div class="overflow-hidden">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-100 border-b">
+                            <tr>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        #
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Titre
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
+                                    <div class="px-2">
+                                        Montant
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngIf="fraisAPayer.length == 0"
+                                class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                                <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                    colspan="5">Aucun frais à payer</td>
+                            </tr>
+                            <tr *ngFor="let frais of fraisAPayer; index as index"
+                                class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div
+                                        class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        {{ index + 1 }}
+                                    </div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ frais.titre }}</div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-right text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ frais.montant | currency:'XAF' }}</div>
+                                </td>
+                            </tr>
+                            <tr
+                                class="bg-white font-bold hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div
+                                        class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    </div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">Total</div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-right text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ fraisTotal | currency:'XAF' }}</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</ng-container>
+
+<app-custom-modal title="Enregistrer un paiement" subtitle="Saisir le montant du paiement effectué en espèces" (onCloseModal)="closePaiementModal()" [center]="true" [showModal]="showPaiementModal">
+    <div class="mb-4">
+        <span class="mb-2 block text-sm text-gray-400">Montant (FCFA)</span>
+        <app-form-input inputType="number" [(ngModel)]="paiementMontant" placeholder="Montant du paiement"></app-form-input>
+    </div>
+    <div class="mb-4">
+        <span class="mb-2 block text-sm text-gray-400">Description</span>
+        <app-form-input inputType="text" [(ngModel)]="paiementDescription" placeholder="Description du paiement"></app-form-input>
+    </div>
+    <app-form-message *ngIf="paiementError" text="Veuillez saisir un montant valide"></app-form-message>
+    <div class="py-3 flex justify-between items-center">
+        <app-custom-button (click)="closePaiementModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+        <app-custom-button (click)="enregistrerPaiement()" text="Enregistrer"></app-custom-button>
+    </div>
+</app-custom-modal>

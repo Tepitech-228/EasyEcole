@@ -1,0 +1,33 @@
+<div class="p-6 space-y-6">
+  <div class="rounded-3xl border border-slate-200 bg-gradient-to-r from-slate-900 via-slate-800 to-blue-900 p-6 text-white shadow-sm">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <p class="text-sm uppercase tracking-[0.3em] text-slate-300">Messagerie interne</p>
+        <h2 class="mt-2 text-2xl font-semibold">Messagerie</h2>
+        <p class="mt-2 max-w-2xl text-sm text-slate-300">Centralisez vos échanges avec les enseignants, les étudiants et l’administration.</p>
+      </div>
+      <app-custom-button text="Nouveau message" link="/communication/messagerie/nouveau"></app-custom-button>
+    </div>
+  </div>
+
+  <div class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+    <div *ngFor="let msg of messages" class="flex cursor-pointer items-start gap-3 border-b border-slate-100 p-4 transition hover:bg-slate-50" [routerLink]="['/communication/messagerie', msg.id]" (click)="marquerCommeLu(msg.id)">
+      <div class="mt-1.5">
+        <span class="block h-2.5 w-2.5 rounded-full" [class.bg-blue-600]="!msg.lu" [class.bg-slate-300]="msg.lu"></span>
+      </div>
+      <div class="min-w-0 flex-1">
+        <div class="flex items-center justify-between gap-3">
+          <span class="truncate text-sm font-medium text-slate-800" [class.font-semibold]="!msg.lu">{{ msg.expediteur }}</span>
+          <span class="shrink-0 text-xs text-slate-400">{{ msg.date | date:'dd/MM/yyyy' }}</span>
+        </div>
+        <p class="mt-1 truncate text-sm" [class.font-semibold]="!msg.lu" [class.text-slate-900]="!msg.lu" [class.text-slate-500]="msg.lu">{{ msg.sujet }}</p>
+      </div>
+      <button (click)="supprimerMessage(msg.id, $event)" class="shrink-0 rounded-full p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600" title="Supprimer">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+      </button>
+    </div>
+    <div *ngIf="messages.length === 0" class="p-10 text-center text-slate-500">
+      Aucun message dans votre boîte de réception.
+    </div>
+  </div>
+</div>

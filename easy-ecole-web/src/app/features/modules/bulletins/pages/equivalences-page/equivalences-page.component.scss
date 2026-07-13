@@ -1,0 +1,41 @@
+:host {
+  display: block;
+}
+
+.table-container {
+  background: white;
+  border-radius: 1rem;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.empty-state {
+  padding: 3rem 1.25rem;
+  text-align: center;
+
+  svg {
+    margin: 0 auto;
+    width: 3rem;
+    height: 3rem;
+    color: #e2e8f0;
+  }
+
+  p {
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    color: #64748b;
+  }
+
+  a {
+    margin-top: 0.5rem;
+    display: inline-block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #1d4ed8;
+
+    &:hover {
+      color: #1e40af;
+    }
+  }
+}

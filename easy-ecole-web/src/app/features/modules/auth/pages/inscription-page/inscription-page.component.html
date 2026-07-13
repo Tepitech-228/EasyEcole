@@ -1,0 +1,73 @@
+<app-custom-alert [show]="error || emptyError" title="Erreur">
+    {{ emptyError ? 'Veuillez renseigner tous les champs' : '' }}
+    {{ error ? 'Une erreur est survenue lors de l\'inscription' : '' }}
+</app-custom-alert>
+
+<app-auth-layout title="Inscription" subtitle="Veuillez renseigner vos informations" [showBottom]="true"
+    bottomText="Avez-vous déjà un compte?" bottomLinkText="Connectez-vous" bottomLink="../connexion">
+    <form [formGroup]="inscriptionForm">
+        <div class="grid grid-cols-2 gap-x-4 gap-y-10">
+            <div class="block xl:col-span-1 lg:col-span-full md:col-span-1 col-span-full">
+                <label class="text-sm leading-6 text-gray-900">Nom</label>
+                <div>
+                    <input formControlName="nom" type="text"
+                        class="mt-1 w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                        placeholder="DOE">
+                    <app-form-message *ngIf="nomPrenomsAlreadyUsed" text="Nom et prénoms déjà existants"></app-form-message>
+                </div>
+            </div>
+            <div class="block xl:col-span-1 lg:col-span-full md:col-span-1 col-span-full">
+                <label class="text-sm leading-6 text-gray-900">Prénoms</label>
+                <div>
+                    <input formControlName="prenoms" type="text"
+                        class="mt-1 w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                        placeholder="John">
+                    <app-form-message *ngIf="nomPrenomsAlreadyUsed" text="Nom et prénoms déjà existants"></app-form-message>
+                </div>
+            </div>
+            <div class="block col-span-full">
+                <label class="text-sm leading-6 text-gray-900">Email</label>
+                <div>
+                    <input formControlName="email" type="email"
+                        class="mt-1 w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                        placeholder="example@gmail.com">
+                    <app-form-message *ngIf="emailAlreadyUsed" text="Email déjà utilisé"></app-form-message>
+                    <app-form-message *ngIf="inscriptionForm.get('email')!.errors?.['email']" text="Adresse mail non valide"></app-form-message>
+                </div>
+            </div>
+            <div class="block col-span-full">
+                <label class="text-sm leading-6 text-gray-900">Nom d'utilisateur</label>
+                <div>
+                    <input formControlName="identifiant" type="text"
+                        class="mt-1 w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                        placeholder="john">
+                    <app-form-message *ngIf="identifiantAlreadyUsed"
+                        text="Nom d'utilisateur non disponible"></app-form-message>
+                </div>
+            </div>
+            <div class="block col-span-full">
+                <label class="text-sm leading-6 text-gray-900">Mot de passe</label>
+                <div>
+                    <input formControlName="password" type="password"
+                        class="mt-1 w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                        placeholder="********">
+                    <app-form-message *ngIf="passwordError"
+                        text="Mot de passe trop court"></app-form-message>
+                </div>
+            </div>
+            <div class="block col-span-full">
+                <label class="text-sm leading-6 text-gray-900">Confirmer le mot de passe</label>
+                <div>
+                    <input formControlName="confirmPassword" type="password"
+                        class="mt-1 w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                        placeholder="********">
+                    <app-form-message *ngIf="confirmError"
+                        text="Les mots de passe ne correspondent pas"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-full w-full">
+                <app-custom-button class="w-full" (click)="inscription()" type="submit" text="S'inscrire" [fullWidth]="true" [disabled]="disableButton"></app-custom-button>
+            </div>
+        </div>
+    </form>
+</app-auth-layout>

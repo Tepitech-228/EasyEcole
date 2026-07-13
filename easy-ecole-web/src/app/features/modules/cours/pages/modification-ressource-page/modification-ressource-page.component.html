@@ -1,0 +1,136 @@
+<app-custom-alert [show]="error || alreadyExists" title="Erreur">
+    {{ error ? 'Une erreur est survenue lors de la création' : '' }}
+    {{ alreadyExists ? 'Cette ressource existe déjà.\nVeuillez changer le titre' : '' }}
+</app-custom-alert>
+
+<app-return-back [tripleBack]="true"></app-return-back>
+
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Modifier cette ressource" subtitle="Veuillez renseigner les nouvelles informations de cette ressource"></app-header-title>
+    <!-- <div class="flex justify-end items-center">
+    </div> -->
+</div>
+
+<div class="w-full mb-8">
+    <form [formGroup]="modificationRessourceForm" id="modificationRessourceForm">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="col-span-full">
+                <label for="titre" class="mb-2 block text-sm leading-6 text-gray-600">Titre</label>
+                <input type="text" id="titre" formControlName="titre" placeholder="Saisir le titre ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <app-form-message *ngIf="alreadyExists"
+                    text="Titre déjà utilisé"></app-form-message>
+                <div *ngIf="modificationRessourceForm.get('titre')!.invalid && (modificationRessourceForm.get('titre')!.dirty || modificationRessourceForm.get('titre')!.touched)">
+                    <app-form-message *ngIf="modificationRessourceForm.get('titre')!.errors?.['required']"
+                        text="Veuillez saisir le titre"></app-form-message>
+                </div>
+            </div>
+            <!-- <div class="col-span-full">
+                <label for="" class="mb-2 block text-sm leading-6 text-gray-600">Image bannière (facultative)</label>
+                <app-custom-file-picker inputID="image" (onFileChanged)="onImageChange($event)"></app-custom-file-picker>
+            </div> -->
+            <div class="col-span-full">
+                <label for="" class="mb-2 block text-sm leading-6 text-gray-600">Description</label>
+                <quill-editor formControlName="description" [placeholder]="'Description du ressource...'" [modules]="modules"
+                    [styles]="{height: '400px', fontSize: '0.875rem', lineHeight: '1.25rem'}" [preserveWhitespace]="true" (onFocus)="focus($event)"
+                    (onBlur)="blur($event)"></quill-editor>
+            </div>
+            <div class="col-span-full">
+                <div class="flex items-center justify-between">
+                    <label for="" class="mb-2 block text-sm leading-6 text-gray-600">Fichiers de la ressource</label>
+                    <button (click)="this.showFichierRessourceModal = true" class="p-1 rounded focus:ring-1 focus:ring-gray-300">
+                        <img src="assets/icons/add.svg" alt="add">
+                    </button>
+                </div>
+                <div *ngIf="fichiersRessource.length == 0" class="text-sm text-gray-400 text-center py-8">Aucun fichier</div>
+                <div *ngIf="fichiersRessource.length != 0" class="overflow-x-auto">
+                    <div class="py-2 inline-block min-w-full">
+                        <div class="overflow-hidden">
+                            <table class="min-w-full">
+                                <tbody>
+                                    <tr *ngFor="let fichierRessource of fichiersRessource; index as index"
+                                        class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                        <td
+                                            class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <!-- <div
+                                                class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                <img width="30" src="assets/icons/file.svg" alt="file-icon">
+                                            </div> -->
+                                            <div [ngClass]="getFichierRessourceIcone(fichierRessource.fichier.name ?? fichierRessource.fichier)" class="file-icon"></div>
+                                        </td>
+                                        <td
+                                        class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ fichierRessource.titre ?? fichierRessource.fichier }}</div>
+                                        </td>
+                                        <td
+                                            class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ fichierRessource.description ?? '---' }}</div>
+                                        </td>
+                                        <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <div
+                                                class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                <app-custom-button (click)="retirerFichierRessource(index)" text="Supprimer" color="red"></app-custom-button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full flex justify-end items-center pb-12">
+            <app-custom-button (click)="modifierRessource()" [disabled]="disableButton" text="Enregistrer"></app-custom-button>
+        </div>
+    </form>
+</div>
+
+<!-- // Modals -->
+<app-ajout-fichier-ressource [showFichierRessourceModal]="showFichierRessourceModal" (onAdd)="ajouterFichierRessource($event)" (onClose)="showFichierRessourceModal = false"></app-ajout-fichier-ressource>
+
+<app-custom-modal *ngIf="showProgressInfoModal && fichiersRessourceProgressInfos.length != 0" title="Création des fichiers" subtitle="" (onCloseModal)="closeProgressInfoModal()" [center]="true" [showModal]="showProgressInfoModal">
+    <div class="w-full">
+        <app-custom-alert color="green" [inline]="true" [show]="true">Ressource créée avec succès. Veuillez patienter...</app-custom-alert>
+    </div>
+    <div *ngIf="fichiersRessource.length != 0" class="overflow-x-auto">
+        <div class="py-2 inline-block min-w-full">
+            <div class="overflow-hidden">
+                <table class="min-w-full">
+                    <tbody>
+                        <tr *ngFor="let fichierRessource of fichiersRessource; index as index"
+                            class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                            <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <!-- <div
+                                    class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    <img width="30" src="assets/icons/file.svg" alt="file-icon">
+                                </div> -->
+                                <div [ngClass]="getFichierRessourceIcone(fichierRessource.fichier.name ?? fichierRessource.fichier)" class="file-icon"></div>
+                            </td>
+                            <td
+                            class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ fichierRessource.titre ?? fichierRessource.fichier }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div *ngIf="fichiersRessourceProgressInfos"
+                                    class="block flex justify-end items-center gap-x-8 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    <div *ngIf="!fichiersRessourceProgressInfos[index].error" class='h-1.5 rounded w-24 bg-green-100 overflow-hidden'>
+                                        <div [ngStyle]="{width: fichiersRessourceProgressInfos[index].value + '%'}" class='h-full bg-green-500 left-right'></div>
+                                    </div>
+                                    <div *ngIf="!fichiersRessourceProgressInfos[index].error">
+                                        {{ fichiersRessourceProgressInfos[index].value }}%
+                                    </div>
+                                    <div class="text-red-500 text-sm italic" *ngIf="fichiersRessourceProgressInfos[index].error">
+                                        Erreur
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</app-custom-modal>

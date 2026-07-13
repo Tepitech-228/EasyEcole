@@ -1,0 +1,32 @@
+<app-dashboard-widget
+  title="Mon agenda"
+  icon="📅"
+  [loading]="loading"
+  [empty]="!loading && events.length === 0"
+  emptyMessage="Aucune séance aujourd'hui"
+  link="/cours/emplois-du-temps">
+
+  <div class="agenda-list" *ngIf="events.length > 0">
+    <div class="agenda-item" *ngFor="let event of events">
+      <div class="agenda-time">
+        <span class="time-start">{{ event.heureDebut | date:'HH:mm' }}</span>
+        <span class="time-sep">-</span>
+        <span class="time-end">{{ event.heureFin | date:'HH:mm' }}</span>
+      </div>
+      <div class="agenda-dot"></div>
+      <div class="agenda-body">
+        <div class="agenda-title">{{ event.titre || event.cours?.intitule || 'Séance' }}</div>
+        <div class="agenda-meta">
+          <span class="meta-salle" *ngIf="event.salle">
+            <svg class="meta-icon" fill="currentColor" viewBox="0 -960 960 960"><path d="M160-80v-80h640v80H160Zm80-160q-33 0-56.5-23.5T160-320v-480q0-33 23.5-56.5T240-880h480q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-320H240Z"/></svg>
+            {{ event.salle }}
+          </span>
+          <span class="meta-prof" *ngIf="event.enseignant">
+            <svg class="meta-icon" fill="currentColor" viewBox="0 -960 960 960"><path d="M480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47Z"/></svg>
+            {{ event.enseignant.utilisateur?.prenoms }} {{ event.enseignant.utilisateur?.nom }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</app-dashboard-widget>

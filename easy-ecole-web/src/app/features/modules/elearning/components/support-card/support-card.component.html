@@ -1,0 +1,15 @@
+<div class="flex items-center gap-3 bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors cursor-pointer">
+  <span class="text-2xl">{{ getIcon() }}</span>
+  <div class="flex-1 min-w-0">
+    <p class="text-sm font-medium text-gray-700 truncate">{{ support.fichierOriginal }}</p>
+    <div class="flex gap-2 text-xs text-gray-400 mt-1">
+      <span>{{ support.type }}</span>
+      <span *ngIf="support.taille">{{ support.taille }}</span>
+      <span *ngIf="support.dureeVideo">{{ support.dureeVideo }}</span>
+    </div>
+  </div>
+  <div class="flex gap-2">
+    <a *ngIf="support.fichierOriginal" [href]="'/elearning/videos/' + support.fichierOriginal" target="_blank" class="text-blue-600 text-xs hover:underline">Voir</a>
+    <a *ngIf="support.fichierCompresse" [href]="'/elearning/videos/compressed/' + support.fichierCompresse" target="_blank" class="text-green-600 text-xs hover:underline">HD</a>
+  </div>
+</div>

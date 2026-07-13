@@ -1,0 +1,35 @@
+<div class="p-6 max-w-lg mx-auto">
+  <app-return-back></app-return-back>
+  <app-header-title title="Uploader un support"></app-header-title>
+
+  <div class="bg-white rounded-lg shadow-md p-6 mt-4">
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-gray-700">Module</label>
+      <select [(ngModel)]="selectedModuleId" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+        <option value="">Sélectionnez un module</option>
+        <option *ngFor="let m of modules" [value]="m.id">{{ m.titre }}</option>
+      </select>
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-gray-700">Type de support</label>
+      <select [(ngModel)]="supportType" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+        <option value="document">Document</option>
+        <option value="video">Vidéo</option>
+        <option value="pdf">PDF</option>
+      </select>
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-gray-700">Fichier</label>
+      <input type="file" (change)="onFileSelected($event)" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+    </div>
+
+    <app-custom-alert *ngIf="successMessage" [message]="successMessage" [type]="'success'"></app-custom-alert>
+    <app-custom-alert *ngIf="errorMessage" [message]="errorMessage" [type]="'danger'"></app-custom-alert>
+
+    <button (click)="upload()" [disabled]="uploading || !selectedFile || !selectedModuleId" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50">
+      {{ uploading ? 'Upload en cours...' : 'Uploader' }}
+    </button>
+  </div>
+</div>

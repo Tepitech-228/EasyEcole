@@ -1,0 +1,22 @@
+<app-return-back></app-return-back>
+
+<div class="ged-page-header">
+  <app-header-title title="Gestion électronique des documents" subtitle="Archivage, upload et consultation"></app-header-title>
+  <div class="ged-actions">
+    <app-custom-button [routerLink]="['/ged/upload']" text="Uploader"></app-custom-button>
+    <app-custom-button [routerLink]="['/ged/catalog']" text="Catalogue" [outlined]="true"></app-custom-button>
+    <app-custom-button [routerLink]="['/ged/sessions']" text="Sessions" [outlined]="true"></app-custom-button>
+  </div>
+</div>
+
+<nav class="ged-tabs" aria-label="Navigation GED">
+  <ul>
+    <li><a routerLink="/ged/catalog" routerLinkActive="active" class="ged-tab">Catalogue</a></li>
+    <li><a routerLink="/ged/upload" routerLinkActive="active" class="ged-tab">Uploader</a></li>
+    <li><a routerLink="/ged/nomenclature" routerLinkActive="active" class="ged-tab">Nomenclature</a></li>
+    <li><a routerLink="/ged/folders" routerLinkActive="active" class="ged-tab">Dossiers</a></li>
+    <li><a routerLink="/ged/sessions" routerLinkActive="active" class="ged-tab">Sessions</a></li>
+  </ul>
+</nav>
+
+<router-outlet></router-outlet>

@@ -1,0 +1,196 @@
+<main [ngClass]="[showMenu ? 'showMenu' : 'hideMenu', sidebarCollapsed && !hoverExpanded ? 'collapsed' : '', hoverExpanded ? 'hover-expand' : '']" class="flex justify-end">
+    <div id="left" (mouseenter)="onSidebarEnter()" (mouseleave)="onSidebarLeave()" class="fixed z-50 left-0 top-0 h-screen bg-primary shadow-md overflow-x-hidden">
+        <div class="flex flex-col h-full justify-between overflow-x-hidden overflow-y-auto gap-y-6">
+            <div class="flex flex-col gap-y-4">
+                <div class="mb-2 px-3 pt-5 flex items-center justify-between" style="border-color: #696969 !important;">
+                    <img id="sidebar-logo" class="h-8 px-3" src="assets/logos/logo2.svg" alt="">
+                    <img id="sidebar-logo-small" class="h-8 mx-auto" src="assets/logos/logo-icon.svg" alt="">
+                    <div class="flex items-center gap-x-1">
+                        <button type="button" (click)="toggleSidebar()" class="sidebar-toggle-btn hidden lg:flex" title="Réduire/Étendre le menu">
+                            <svg class="h-4 w-4 text-white opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
+                            </svg>
+                        </button>
+                        <button *ngIf="showMenu" type="button" (click)="closeMenu()" 
+                            class="lg:hidden rounded-md p-1 inline-flex items-center justify-center text-gray-400 hover:text-gray-500">
+                            <span class="sr-only">Close menu</span>
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search -->
+                <div class="sidebar-search" [ngClass]="searchQuery ? 'has-text' : ''">
+                    <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <input type="text" [(ngModel)]="searchQuery" placeholder="Rechercher..." class="search-input" >
+                    <button *ngIf="searchQuery" type="button" class="search-clear" (click)="searchQuery = ''">
+                        <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Dashboard -->
+                <app-nav-menu-group [searchQuery]="searchQuery" [showTitle]="false">
+                    <app-nav-menu-item *ngIf="rolesValue.isApprenant || rolesValue.isAdmin" (click)="closeMenu()" icon="dashboard-outline" text="Tableau de bord" link="/"></app-nav-menu-item>
+                </app-nav-menu-group>
+
+                <app-sidebar-nav [searchQuery]="searchQuery" [closeMenu]="closeMenu.bind(this)"></app-sidebar-nav>
+            </div>
+
+            <div class="mb-2 flex flex-col justify-end px-3">
+                <hr class="border-t border-white/10 mb-2">
+                <app-nav-menu-item (click)="logout()" icon="logout" text="Se déconnecter"></app-nav-menu-item>
+            </div>
+        </div>
+    </div>
+
+    <div *ngIf="showMenu" (click)="closeMenu()" class="lg:hidden fixed flex z-40 inset-0 bg-primary opacity-10 shadow-md">
+    </div>
+
+    <div id="right" class="w-full h-screen">
+        <nav class="bg-white shadow-sm border-b border-gray-200">
+            <div class="lg:px-8 md:px-6 px-4">
+                <div class="flex h-14 items-center justify-between">
+                    <div class="flex items-center gap-x-2">
+                        <button type="button" (click)="openMenu()"
+                            class="lg:hidden rounded-md inline-flex items-center justify-center text-gray-600 hover:text-gray-500">
+                            <span class="sr-only">Open menu</span>
+                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 -960 960 960">
+                                <path d="M105.869-219.086v-79.784h748.827v79.784H105.869Zm0-221.305v-79.218h748.827v79.218H105.869Zm0-220.739v-79.784h748.827v79.784H105.869Z"/>
+                            </svg>
+                        </button>
+                        <button type="button" (click)="toggleSidebar()" class="hidden lg:flex sidebar-toggle-btn ml-0" title="Réduire/Étendre le menu">
+                            <svg class="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="flex items-center justify-end">
+                        <div class="ml-4 flex items-center gap-x-4 md:ml-6">
+                            <div class="relative">
+                                <button *ngIf="rolesValue.isApprenant || rolesValue.isAdmin" type="button" (click)="openModal()"
+                                    class="rounded-full p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
+                                    <span class="sr-only">View cart</span>
+                                    <img src="assets/icons/cart-sharp.svg" alt="notif">
+                                </button>
+                                <div *ngIf="panierCount > 0" class="absolute top-0 right-0 z-10 origin-top-right h-4 w-4 rounded-full bg-red-600 p-0 shadow-lg ring-1 ring-white focus:outline-none flex justify-center items-center">
+                                    <div style="font-size: .65rem;" class="text-white font-regular">{{ panierCount }}</div>
+                                </div>
+                            </div>
+                            <div class="relative">
+                                <button type="button" (click)="showNotifDropdown = !showNotifDropdown"
+                                    class="rounded-full p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
+                                    <span class="sr-only">View notifications</span>
+                                    <img src="assets/icons/notifications.svg" alt="notif">
+                                </button>
+                                <div *ngIf="nonLuesCount > 0" class="absolute top-0 right-0 z-10 origin-top-right h-4 w-4 rounded-full bg-red-600 p-0 shadow-lg ring-1 ring-white focus:outline-none flex justify-center items-center">
+                                    <div style="font-size: .65rem;" class="text-white font-regular">{{ nonLuesCount > 99 ? '99+' : nonLuesCount }}</div>
+                                </div>
+                                <div [ngClass]="showNotifDropdown ? '' : 'hidden'" class="absolute right-0 z-10 mt-4 w-72 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                                    <div class="flex items-center justify-between px-4 py-2 border-b border-gray-100">
+                                      <span class="text-xs font-semibold text-gray-700">Notifications</span>
+                                      <button (click)="toggleSound(); $event.stopPropagation()" class="p-1 rounded hover:bg-gray-100" [title]="soundEnabled ? 'Désactiver le son' : 'Activer le son'">
+                                        <svg *ngIf="soundEnabled" class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 -960 960 960">
+                                          <path d="M560-131v-82q90-26 145-100t55-168q0-94-55-168T560-749v-82q124 28 202 125.5T840-481q0 127-78 224.5T560-131ZM120-360v-240h160l200-200v640L280-360H120Zm440 40v-322q47 22 73.5 66t26.5 96q0 51-26.5 94.5T560-320Z"/>
+                                        </svg>
+                                        <svg *ngIf="!soundEnabled" class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 -960 960 960">
+                                          <path d="M792-56 671-177q-25 16-53 27.5T560-131v-82q14-5 27.5-10t25.5-12L480-368v208L280-360H120v-240h128L56-792l56-56 736 736-56 56Zm-8-232-58-58q17-31 25.5-65t8.5-70q0-94-55-168T560-749v-82q124 28 202 125.5T840-481q0 53-14.5 102T784-288ZM650-422l-90-90v-130q47 22 73.5 66t26.5 96q0 15-2.5 29.5T650-422ZM480-592 376-696l104-104v208Z"/>
+                                        </svg>
+                                      </button>
+                                    </div>
+                                    <div class="max-h-64 overflow-y-auto">
+                                        <div *ngFor="let n of notifications.slice(0, 10)" (click)="marquerLu(n.id); showNotifDropdown = false;"
+                                            class="px-4 py-2 text-xs text-gray-700 hover:bg-indigo-50 border-b border-gray-100 cursor-pointer"
+                                            [class.font-semibold]="!n.lu" [class.text-gray-400]="n.lu">
+                                            <div class="flex items-start gap-2">
+                                                <span class="inline-block w-1.5 h-1.5 rounded-full mt-1 shrink-0"
+                                                    [class.bg-indigo-600]="!n.lu" [class.bg-gray-300]="n.lu"></span>
+                                                <span>{{ n.message }}</span>
+                                            </div>
+                                        </div>
+                                        <div *ngIf="notifications.length === 0" class="h-20 flex justify-center items-center">
+                                            <div class="text-xs text-gray-500 font-regular">Aucune notification</div>
+                                        </div>
+                                    </div>
+                                    <a routerLink="/communication/notifications" (click)="showNotifDropdown = false"
+                                        class="block px-4 py-2 text-xs text-center text-indigo-600 hover:bg-indigo-50 font-medium border-t border-gray-100">
+                                        Voir toutes les notifications
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="relative ml-3">
+                                <div class="flex items-center gap-x-4">
+                                    <button type="button" (click)="showProfileDropdown = !showProfileDropdown"
+                                        class="flex max-w-xs items-center rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
+                                        id="user-menu-button" aria-expanded="false" aria-haspopup="true">
+                                        <span class="sr-only">Open user menu</span>
+                                        <img class="h-8 w-8 rounded-full" [src]="'assets/images/blank-profile-picture.png'" alt="">
+                                    </button>
+                                </div>
+                                <div [ngClass]="showProfileDropdown ? '' : 'hidden'" class="absolute right-0 z-10 mt-4 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                                    <a routerLink="/parametres/profil" class="block px-4 py-2 text-sm text-gray-500 font-regular hover:text-indigo-500 hover:bg-indigo-100">
+                                        <div class="flex items-center gap-x-4">
+                                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M3.8077 19.2C3.30257 19.2 2.875 19.025 2.525 18.675C2.175 18.325 2 17.8974 2 17.3923V7.0077C2 6.50257 2.175 6.075 2.525 5.725C2.875 5.375 3.30257 5.2 3.8077 5.2H9V3.49998C9 3.08461 9.14615 2.73077 9.43845 2.43845C9.73077 2.14615 10.0846 2 10.5 2H12.5C12.9153 2 13.2692 2.14615 13.5615 2.43845C13.8538 2.73077 14 3.08461 14 3.49998V5.2H19.1923C19.6974 5.2 20.125 5.375 20.475 5.725C20.825 6.075 21 6.50257 21 7.0077V17.3923C21 17.8974 20.825 18.325 20.475 18.675C20.125 19.025 19.6974 19.2 19.1923 19.2H3.8077ZM3.8077 17.7H19.1923C19.282 17.7 19.3557 17.6711 19.4134 17.6134C19.4711 17.5557 19.5 17.482 19.5 17.3923V7.0077C19.5 6.91795 19.4711 6.84423 19.4134 6.78653C19.3557 6.72883 19.282 6.69998 19.1923 6.69998H14V7.08463C14 7.49359 13.8522 7.84583 13.5567 8.14133C13.2612 8.43683 12.9089 8.58458 12.5 8.58458H10.5C10.091 8.58458 9.73877 8.43683 9.44327 8.14133C9.14776 7.84583 9 7.49359 9 7.08463V6.69998H3.8077C3.71795 6.69998 3.64423 6.72883 3.58653 6.78653C3.52883 6.84423 3.49998 6.91795 3.49998 7.0077V17.3923C3.49998 17.482 3.52883 17.5557 3.58653 17.6134C3.64423 17.6711 3.71795 17.7 3.8077 17.7ZM5.65383 15.4115H11.3461V15.1154C11.3461 14.8577 11.275 14.6208 11.1327 14.4048C10.9904 14.1888 10.7936 14.0205 10.5423 13.9C10.2154 13.7564 9.88427 13.6487 9.549 13.5769C9.21375 13.5051 8.86407 13.4692 8.49997 13.4692C8.13587 13.4692 7.7862 13.5051 7.45095 13.5769C7.11568 13.6487 6.78459 13.7564 6.45768 13.9C6.20639 14.0205 6.0096 14.1888 5.8673 14.4048C5.72498 14.6208 5.65383 14.8577 5.65383 15.1154V15.4115ZM13.5 13.8923H17.5V12.7H13.5V13.8923ZM8.49997 12.7C8.87176 12.7 9.18907 12.5686 9.4519 12.3058C9.71472 12.0429 9.84613 11.7256 9.84613 11.3538C9.84613 10.982 9.71472 10.6647 9.4519 10.4019C9.18907 10.1391 8.87176 10.0077 8.49997 10.0077C8.12819 10.0077 7.81088 10.1391 7.54805 10.4019C7.28523 10.6647 7.15382 10.982 7.15382 11.3538C7.15382 11.7256 7.28523 12.0429 7.54805 12.3058C7.81088 12.5686 8.12819 12.7 8.49997 12.7Z" fill="currentColor"/>
+                                            </svg>
+                                            <span>Mon profil</span>
+                                        </div>
+                                    </a>
+                                    <a routerLink="/parametres/compte" class="block px-4 py-2 text-sm text-gray-500 font-regular hover:text-indigo-500 hover:bg-indigo-100">
+                                        <div class="flex items-center gap-x-4">
+                                            <svg class="h-5 w-5" viewBox="0 -960 960 960" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M240.924-268.307q51-37.846 111.115-59.769Q412.154-349.999 480-349.999t127.961 21.923q60.115 21.923 111.115 59.769 37.308-41 59.116-94.923Q800-417.154 800-480q0-133-93.5-226.5T480-800q-133 0-226.5 93.5T160-480q0 62.846 21.808 116.77 21.808 53.923 59.116 94.923Zm239.088-181.694q-54.781 0-92.396-37.603-37.615-37.604-37.615-92.384 0-54.781 37.603-92.396 37.604-37.615 92.384-37.615 54.781 0 92.396 37.603 37.615 37.604 37.615 92.384 0 54.781-37.603 92.396-37.604 37.615-92.384 37.615Zm-.012 350q-79.154 0-148.499-29.77-69.346-29.769-120.654-81.076-51.307-51.308-81.076-120.654-29.77-69.345-29.77-148.499t29.77-148.499q29.769-69.346 81.076-120.654 51.308-51.307 120.654-81.076 69.345-29.77 148.499-29.77t148.499 29.77q69.346 29.769 120.654 81.076 51.307 51.308 81.076 120.654 29.77 69.345 29.77 148.499t-29.77 148.499q-29.769 69.346-81.076 120.654-51.308 51.307-120.654 81.076-69.345 29.77-148.499 29.77ZM480-160q54.154 0 104.423-17.423 50.27-17.423 89.27-48.731-39-30.154-88.116-47Q536.462-290.001 480-290.001q-56.462 0-105.77 16.654-49.308 16.654-87.923 47.193 39 31.308 89.27 48.731Q425.846-160 480-160Zm0-349.999q29.846 0 49.924-20.077 20.077-20.078 20.077-49.924t-20.077-49.924Q509.846-650.001 480-650.001t-49.924 20.077Q409.999-609.846 409.999-580t20.077 49.924q20.078 20.077 49.924 20.077ZM480-580Zm0 355Z" fill="currentColor"/>
+                                            </svg>
+                                            <span>Mon compte</span>
+                                        </div>
+                                    </a>
+                                    <a role="button" (click)="logout()" class="block px-4 py-2 text-sm text-red-700 font-regular hover:text-white hover:bg-red-600">
+                                        <div class="flex items-center gap-x-4">
+                                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M15 12H2M2 12L5.5 9M2 12L5.5 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <path d="M9.00201 7C9.01401 4.825 9.11101 3.647 9.87901 2.879C10.758 2 12.172 2 15 2H16C18.829 2 20.243 2 21.122 2.879C22 3.757 22 5.172 22 8V16C22 18.828 22 20.243 21.122 21.121C20.353 21.89 19.175 21.986 17 21.998M9.00201 17C9.01401 19.175 9.11101 20.353 9.87901 21.121C10.52 21.763 11.447 21.936 13 21.983" stroke="currentColor" stroke-width="1.5"/>
+                                            </svg>
+                                            <span>Se déconnecter</span>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <div class="w-full lg:px-8 px-6 py-10 bg-white">
+            <router-outlet></router-outlet>
+        </div>
+    </div>
+</main>
+
+<app-panier-parcours [showPanierModal]="showPanierModal" (onCloseModal)="closeModal()"></app-panier-parcours>
+
+<div *ngIf="rappelSalleNotif" class="fixed bottom-6 right-6 z-50 max-w-sm bg-emerald-600 text-white rounded-2xl shadow-xl px-5 py-4">
+  <div class="flex items-start gap-3">
+    <svg class="w-5 h-5 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+    <div class="flex-1">
+      <p class="text-sm font-semibold">Changement de salle imminent !</p>
+      <p class="text-xs mt-1 opacity-90">
+        <span class="font-medium">{{ rappelSalleNotif.currentCours }}</span> se termine dans <span class="font-medium">{{ rappelSalleNotif.minutesRestantes }}min</span>
+      </p>
+      <p class="text-xs mt-1 opacity-90">
+        Salle actuelle : <span class="font-medium">{{ rappelSalleNotif.currentSalle }}</span>
+      </p>
+      <p *ngIf="rappelSalleNotif.nextCours" class="text-xs mt-1 opacity-95 bg-emerald-700 rounded-lg px-2 py-1">
+        Prochain cours : <span class="font-medium">{{ rappelSalleNotif.nextCours }}</span>
+        <ng-container *ngIf="rappelSalleNotif.nextSalle"> → Salle <span class="font-medium">{{ rappelSalleNotif.nextSalle }}</span></ng-container>
+      </p>
+      <p *ngIf="!rappelSalleNotif.nextCours" class="text-xs mt-1 opacity-75">
+        C'est votre dernier cours de la journée.
+      </p>
+    </div>
+  </div>
+</div>

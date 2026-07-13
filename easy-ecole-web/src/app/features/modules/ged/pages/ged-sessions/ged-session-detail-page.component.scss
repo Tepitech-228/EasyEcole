@@ -1,0 +1,99 @@
+.ged-page {
+  display: grid;
+  gap: 1.25rem;
+  padding: 1.5rem;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.header-row h1 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.session-detail-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: 1fr 1.2fr;
+}
+
+.summary-card,
+.upload-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05);
+  padding: 1.5rem;
+}
+
+.session-description {
+  margin: 0.75rem 0 1rem;
+  color: rgba(31, 41, 55, 0.7);
+}
+
+.session-meta {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  color: rgba(31, 41, 55, 0.75);
+}
+
+.share-link {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  word-break: break-all;
+}
+
+.ged-field {
+  margin-bottom: 1rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.ged-field label {
+  font-weight: 600;
+}
+
+.ged-field input,
+.ged-field select,
+.ged-field textarea {
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
+  padding: 0.85rem 1rem;
+  width: 100%;
+}
+
+.ged-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.toggle-field {
+  align-self: center;
+}
+
+.form-input {
+  width: 100%;
+}
+
+.upload-card button,
+.share-actions app-custom-button {
+  margin-top: 0.5rem;
+}
+
+.status-banner {
+  padding: 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  color: rgba(31, 41, 55, 0.85);
+}

@@ -1,0 +1,54 @@
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Gestion des absences" subtitle="Consultez et gérez les absences du personnel"></app-header-title>
+</div>
+
+<div *ngIf="absences.length == 0" class="text-center py-8 text-gray-500">Aucune absence trouvée</div>
+
+<div *ngIf="absences.length > 0" class="flex flex-col">
+    <div class="overflow-x-auto">
+        <div class="py-2 inline-block min-w-full">
+            <div class="overflow-hidden">
+                <table class="min-w-full">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">#</div></th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Employé</div></th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Date</div></th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Type</div></th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Justification</div></th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Statut</div></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let absence of absences; index as index"
+                            class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ index + 1 }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ absence.employe }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ absence.date | date: 'dd MMMM YYYY' }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ absence.type }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ absence.motif || '---' }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    <app-custom-badge *ngIf="absence.statut === 'Justifiée'" color="green" [text]="absence.statut"></app-custom-badge>
+                                    <app-custom-badge *ngIf="absence.statut === 'Approuvée'" color="blue" [text]="absence.statut"></app-custom-badge>
+                                    <app-custom-badge *ngIf="absence.statut === 'En attente'" color="orange" [text]="absence.statut"></app-custom-badge>
+                                    <app-custom-badge *ngIf="absence.statut === 'Non justifiée'" color="red" [text]="absence.statut"></app-custom-badge>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

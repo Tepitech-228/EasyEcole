@@ -1,0 +1,17 @@
+.chapitre-icon {
+    width: 5em !important;
+    height: 5em !important;
+}
+
+.chapitre-card {
+    .chapitre-options-btn {
+        display: none;
+        cursor: pointer;
+    }
+}
+
+.chapitre-card:hover {
+    .chapitre-options-btn {
+        display: flex;
+    }
+}

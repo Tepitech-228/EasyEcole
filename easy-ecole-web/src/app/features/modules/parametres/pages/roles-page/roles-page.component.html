@@ -1,0 +1,217 @@
+<div class="flex justify-between items-start mb-8">
+  <app-header-title title="Profils (Rôles)" subtitle="Gérer les profils et leurs permissions"></app-header-title>
+  <app-custom-button text="Nouveau rôle" (onClick)="openCreateModal()"></app-custom-button>
+</div>
+
+<div class="grid grid-cols-3 gap-6">
+  <div class="col-span-1">
+    <div class="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
+      <div class="p-4 border-b border-gray-100">
+        <h3 class="text-sm font-medium text-gray-700">Profils</h3>
+      </div>
+      <ul class="divide-y divide-gray-100">
+        <li *ngFor="let role of roles" 
+            (click)="selectRole(role)"
+            class="px-4 py-3 cursor-pointer hover:bg-gray-50 transition flex justify-between items-center"
+            [class.bg-indigo-50]="selectedRole?.id == role.id">
+          <div>
+            <p class="text-sm font-medium text-gray-900">{{ role.nom }}</p>
+            <p class="text-xs text-gray-500">{{ role.description }}</p>
+          </div>
+          <button (click)="openDeleteModal(role); $event.stopPropagation()" class="text-gray-400 hover:text-red-500">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-span-2">
+    <div class="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
+      <div *ngIf="selectedRole; else noRole">
+        <div class="border-b border-gray-200">
+          <div class="flex">
+            <div class="p-4 flex-1">
+              <div class="flex justify-between items-center">
+                <div>
+                  <h3 class="text-lg font-medium text-gray-900">{{ selectedRole.nom }}</h3>
+                  <p class="text-sm text-gray-500">{{ selectedRole.description }}</p>
+                </div>
+                <button (click)="openEditModal(selectedRole)" class="text-sm text-indigo-600 hover:text-indigo-800">
+                  Modifier
+                </button>
+              </div>
+            </div>
+          </div>
+          <nav class="flex space-x-4 px-4">
+            <button (click)="activeTab = 'permissions'" 
+                    class="pb-3 px-1 text-sm font-medium border-b-2 transition"
+                    [class.border-indigo-500]="activeTab === 'permissions'"
+                    [class.text-indigo-600]="activeTab === 'permissions'"
+                    [class.border-transparent]="activeTab !== 'permissions'"
+                    [class.text-gray-500]="activeTab !== 'permissions'">
+              Permissions
+            </button>
+            <button (click)="activeTab = 'users'" 
+                    class="pb-3 px-1 text-sm font-medium border-b-2 transition"
+                    [class.border-indigo-500]="activeTab === 'users'"
+                    [class.text-indigo-600]="activeTab === 'users'"
+                    [class.border-transparent]="activeTab !== 'users'"
+                    [class.text-gray-500]="activeTab !== 'users'">
+              Utilisateurs ({{ roleUsers.length }})
+            </button>
+          </nav>
+        </div>
+
+        <div *ngIf="activeTab === 'permissions'">
+          <div class="overflow-y-auto max-h-[500px]">
+            <div *ngFor="let module of getObjectKeys(allPermissions)" class="border-b border-gray-100 last:border-b-0">
+              <div class="flex items-center justify-between px-6 py-3 bg-gray-50">
+                <span class="text-sm font-medium text-gray-700">{{ module }}</span>
+                <label class="flex items-center space-x-2 cursor-pointer">
+                  <input type="checkbox" 
+                         [checked]="isModuleFullyChecked(module)"
+                         [indeterminate]="isModulePartiallyChecked(module)"
+                         (change)="toggleModule(module, $any($event.target).checked)"
+                         class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                  <span class="text-xs text-gray-500">Tout</span>
+                </label>
+              </div>
+              <div *ngFor="let perm of allPermissions[module]" class="flex items-center px-6 py-2 hover:bg-gray-50">
+                <label class="flex items-center space-x-3 cursor-pointer w-full">
+                  <input type="checkbox" 
+                         [checked]="hasPermission(perm.id)"
+                         (change)="togglePermission(perm.id, $any($event.target).checked)"
+                         class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                  <span class="text-sm text-gray-700">{{ perm.libelle }}</span>
+                  <span class="text-xs text-gray-400 ml-auto">{{ perm.key }}</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="p-4 border-t border-gray-200 flex justify-end">
+            <app-custom-button text="Enregistrer les permissions" [disabled]="saving" (onClick)="savePermissions()"></app-custom-button>
+          </div>
+        </div>
+
+        <div *ngIf="activeTab === 'users'" class="p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h4 class="text-sm font-medium text-gray-700">Utilisateurs assignés</h4>
+            <app-custom-button text="Assigner un utilisateur" (onClick)="openAssignUserModal()"></app-custom-button>
+          </div>
+
+          <div *ngIf="roleUsers.length === 0" class="text-center text-sm text-gray-500 py-8">
+            Aucun utilisateur assigné à ce rôle
+          </div>
+
+          <div *ngFor="let ru of roleUsers" class="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
+            <div>
+              <p class="text-sm font-medium text-gray-900">{{ ru.utilisateur?.nom }} {{ ru.utilisateur?.prenom }}</p>
+              <p class="text-xs text-gray-500">{{ ru.utilisateur?.email }}</p>
+            </div>
+            <div class="flex items-center space-x-2">
+              <button (click)="appliquerPermissions(ru.utilisateurId)" 
+                      class="text-xs text-indigo-600 hover:text-indigo-800">
+                Appliquer perm.
+              </button>
+              <button (click)="removeUser(ru.utilisateurId)" 
+                      class="text-xs text-red-600 hover:text-red-800">
+                Retirer
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noRole>
+        <div class="p-12 text-center text-sm text-gray-500">
+          Sélectionnez un profil pour gérer ses permissions et utilisateurs
+        </div>
+      </ng-template>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showCreateModal" class="fixed inset-0 z-50 overflow-y-auto">
+  <div class="flex items-center justify-center min-h-screen px-4">
+    <div class="fixed inset-0 bg-black bg-opacity-30" (click)="closeCreateModal()"></div>
+    <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+      <h3 class="text-lg font-medium text-gray-900 mb-4">Nouveau profil</h3>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+          <input [(ngModel)]="editForm.nom" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <textarea [(ngModel)]="editForm.description" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="flex justify-end space-x-3 mt-6">
+        <button (click)="closeCreateModal()" class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">Annuler</button>
+        <app-custom-button text="Créer" [disabled]="saving" (onClick)="createRole()"></app-custom-button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showEditModal" class="fixed inset-0 z-50 overflow-y-auto">
+  <div class="flex items-center justify-center min-h-screen px-4">
+    <div class="fixed inset-0 bg-black bg-opacity-30" (click)="closeEditModal()"></div>
+    <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+      <h3 class="text-lg font-medium text-gray-900 mb-4">Modifier le profil</h3>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+          <input [(ngModel)]="editForm.nom" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <textarea [(ngModel)]="editForm.description" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="flex justify-end space-x-3 mt-6">
+        <button (click)="closeEditModal()" class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">Annuler</button>
+        <app-custom-button text="Enregistrer" [disabled]="saving" (onClick)="updateRole()"></app-custom-button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showDeleteModal" class="fixed inset-0 z-50 overflow-y-auto">
+  <div class="flex items-center justify-center min-h-screen px-4">
+    <div class="fixed inset-0 bg-black bg-opacity-30" (click)="closeDeleteModal()"></div>
+    <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+      <h3 class="text-lg font-medium text-gray-900 mb-2">Confirmer la suppression</h3>
+      <p class="text-sm text-gray-600">Voulez-vous vraiment supprimer le profil <strong>{{ selectedRole?.nom }}</strong> ?</p>
+      <div class="flex justify-end space-x-3 mt-6">
+        <button (click)="closeDeleteModal()" class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">Annuler</button>
+        <app-custom-button text="Supprimer" [disabled]="saving" (onClick)="deleteRole()"></app-custom-button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showAssignUserModal" class="fixed inset-0 z-50 overflow-y-auto">
+  <div class="flex items-center justify-center min-h-screen px-4">
+    <div class="fixed inset-0 bg-black bg-opacity-30" (click)="closeAssignUserModal()"></div>
+    <div class="relative bg-white rounded-lg shadow-xl max-w-lg w-full p-6">
+      <h3 class="text-lg font-medium text-gray-900 mb-4">Assigner un utilisateur</h3>
+      <div *ngIf="usersWithoutRole.length === 0" class="text-center text-sm text-gray-500 py-4">
+        Tous les utilisateurs sont déjà assignés à ce rôle
+      </div>
+      <div *ngFor="let user of usersWithoutRole" class="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
+        <div>
+          <p class="text-sm font-medium text-gray-900">{{ user.nom }} {{ user.prenoms }}</p>
+          <p class="text-xs text-gray-500">{{ user.email }}</p>
+        </div>
+        <button (click)="assignUser(user)" class="text-xs px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100">
+          Assigner
+        </button>
+      </div>
+      <div class="flex justify-end mt-6">
+        <button (click)="closeAssignUserModal()" class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">Fermer</button>
+      </div>
+    </div>
+  </div>
+</div>

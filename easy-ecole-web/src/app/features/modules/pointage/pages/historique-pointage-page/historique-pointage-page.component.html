@@ -1,0 +1,57 @@
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Historique des pointages" subtitle="Consultez l'historique de vos pointages"></app-header-title>
+</div>
+
+<div *ngIf="loading" class="text-center py-8 text-gray-500">Chargement...</div>
+
+<div *ngIf="!loading && pointages.length == 0" class="text-center py-8 text-gray-500">Aucun pointage trouvé</div>
+
+<div *ngIf="!loading && pointages.length > 0" class="flex flex-col">
+    <div class="overflow-x-auto">
+        <div class="py-2 inline-block min-w-full">
+            <div class="overflow-hidden">
+                <table class="min-w-full">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">#</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Date</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Arrivée</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Départ</div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let pointage of pointages; index as index"
+                            class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ index + 1 }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ pointage.date | date: 'dd MMMM YYYY' }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    <app-custom-badge *ngIf="pointage.heureArrivee" color="green" [text]="pointage.heureArrivee"></app-custom-badge>
+                                    <span *ngIf="!pointage.heureArrivee">---</span>
+                                </div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    <app-custom-badge *ngIf="pointage.heureDepart" color="orange" [text]="pointage.heureDepart"></app-custom-badge>
+                                    <span *ngIf="!pointage.heureDepart">---</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

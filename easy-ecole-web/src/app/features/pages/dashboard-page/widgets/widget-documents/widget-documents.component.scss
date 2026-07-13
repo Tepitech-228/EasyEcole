@@ -1,0 +1,42 @@
+.doc-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.doc-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 0;
+  border-bottom: 1px solid #f9fafb;
+}
+
+.doc-item:last-child {
+  border-bottom: none;
+}
+
+.doc-type {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+.doc-date {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-top: 0.125rem;
+}
+
+.doc-statut {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.badge-success { background: #d1fae5; color: #065f46; }
+.badge-warning { background: #fef3c7; color: #92400e; }
+.badge-danger  { background: #fee2e2; color: #991b1b; }
+.badge-info    { background: #dbeafe; color: #1e40af; }
+.badge-default { background: #f3f4f6; color: #6b7280; }

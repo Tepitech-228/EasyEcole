@@ -1,0 +1,542 @@
+<app-custom-alert [show]="error || alreadyExists" title="Erreur">
+    {{ error ? 'Une erreur est survenue lors de l\'opération' : '' }}
+    {{ alreadyExists ? 'Ce frais d\'inscripton existe déjà.\nVeuillez changer le titre' : '' }}
+</app-custom-alert>
+
+<app-return-back></app-return-back>
+
+<ng-container *ngIf="session">
+    <div class="flex md:flex-row flex-col items-start justify-between mb-8">
+        <app-header-title title="Session d'inscription">
+            <div class="mt-2 md:mb-0 mb-8 flex md:flex-row flex-wrap gap-x-4 gap-y-2">
+                <div *ngIf="session.niveauEtude" class="flex items-center text-secondary">
+                    <img src="assets/icons/student.svg" alt="icon">
+                    <div class="px-2 text-sm">{{ session.niveauEtude.libelle }}</div>
+                </div>
+                <div class="flex items-center text-secondary">
+                    <img class="opacity-80" width="20" src="assets/icons/clock-outline.svg" alt="icon">
+                    <div class="px-2 text-sm text-gray-500 font-medium">{{ session.dateDebut | date: 'dd MMMM YYYY' }} -
+                        {{ session.dateFin | date: 'dd MMMM YYYY' }}</div>
+                </div>
+                <div class="flex items-center text-secondary">
+                    <img class="opacity-80" width="20" src="assets/icons/clock-outline.svg" alt="icon">
+                    <div class="px-2 text-sm text-gray-500 font-medium">{{ session.anneeAcademique ? session.anneeAcademique.libelle : '---' }}</div>
+                </div>
+            </div>
+        </app-header-title>
+        <div *ngIf="rolesValue.isInstitution" class="w-full md:w-32 flex justify-end items-center gap-x-4">
+            <button *ngIf="getEtatSession(session.dateDebut, session.dateFin) != etatsSession.CLOTUREE"
+                class="flex items-center justify-center gap-x-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium leading-6 text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600">
+                <img src="assets/icons/pencil.svg" alt="cart">
+                Modifier
+            </button>
+            <!-- <button
+                class="flex w-full items-center justify-center gap-x-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium leading-6 text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
+                <img src="assets/icons/trash.svg" alt="cart">
+                Supprimer
+            </button> -->
+        </div>
+    </div>
+
+    <div class="w-full mb-8">
+        <app-details-section text="Demandes"></app-details-section>
+        <div class="overflow-x-auto">
+            <div class="py-2 inline-block min-w-full">
+                <div class="overflow-hidden">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-100 border-b">
+                            <tr>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        #
+                                    </div>
+                                </th>
+                                <th *ngIf="rolesValue.isInstitution" scope="col"
+                                    class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Apprenant
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Etat de traitement
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Faite le
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
+                                    <div class="px-2">
+                                        Action
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngIf="session.demandesInscription?.length==0"
+                                class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                                <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                    colspan="5">Aucune demande</td>
+                            </tr>
+                            <tr *ngFor="let demande of session.demandesInscription; index as index"
+                                class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div
+                                        class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        {{ index + 1 }}
+                                    </div>
+                                </td>
+                                <td *ngIf="rolesValue.isInstitution"
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div
+                                        class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        <div class="flex items-center gap-x-2">
+                                            <img class="object-cover w-8 h-8 rounded-full border-2 border-gray-300"
+                                                [src]="demande.utilisateur!.apprenant?.photo ? PHOTOS_PATH + demande.utilisateur!.apprenant?.photo : 'assets/images/blank-profile-picture.png'"
+                                                alt="">
+                                            <div class="pr-8">
+                                                <h2 class="text-sm font-medium text-gray-800 dark:text-white ">{{
+                                                    demande.utilisateur!.nom + ' ' + demande.utilisateur!.prenoms }}
+                                                </h2>
+                                                <p class="text-xs font-normal text-gray-600 dark:text-gray-400">{{
+                                                    demande.utilisateur!.email }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2"
+                                    [ngSwitch]="demande.dateValidation == undefined">
+                                    <app-custom-badge *ngSwitchCase="false" color="green" text="Validée"></app-custom-badge>
+                                    <app-custom-badge *ngSwitchDefault text="En cours"></app-custom-badge>
+                                </td>
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div
+                                        class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        {{ demande.dateDemande! | date: 'dd/MM/YYYY' }} à {{ demande.dateDemande! | date:
+                                        'HH:mm' }}</div>
+                                </td>
+                                <td *ngIf="rolesValue.isInstitution"
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div
+                                        class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        <span>
+                                            <app-custom-button [link]="'/inscription/demandes/' + demande.id"
+                                                [text]="demande.reponseInscription == undefined ? 'Traiter' : 'Details'"></app-custom-button>
+                                        </span>
+                                    </div>
+                                </td>
+                                <td *ngIf="rolesValue.isApprenant"
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div
+                                        class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        <span>
+                                            <app-custom-button [link]="'/inscription/demandes/' + demande.id"
+                                                text="Détails"></app-custom-button>
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="w-full mb-8">
+        <app-details-section text="Frais">
+            <div *ngIf="rolesValue.isInstitution" class="relative">
+                <div>
+                    <button (click)="showNouveauFraisModal = true"
+                        class="p-1 rounded focus:ring-1 focus:ring-gray-300">
+                        <img src="assets/icons/add.svg" alt="add">
+                    </button>
+                </div>
+            </div>
+        </app-details-section>
+        <div *ngIf="session.fraisInscription!.length == 0" class="text-sm text-gray-400 text-center py-8">Aucun frais</div>
+        <div *ngIf="session.fraisInscription!.length != 0" class="overflow-x-auto">
+            <div class="py-2 inline-block min-w-full">
+                <div class="overflow-hidden">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-100 border-b">
+                            <tr>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        #
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Titre
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
+                                    <div class="px-2">
+                                        Montant
+                                    </div>
+                                </th>
+                                <!-- <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-center">
+                                    <div class="px-2">
+                                        Frais des cours
+                                    </div>
+                                </th> -->
+                                <th *ngIf="rolesValue.isInstitution" scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
+                                    <div class="px-2">
+                                        Action
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let frais of session.fraisInscription!; index as index"
+                                class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div
+                                        class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        {{ index + 1 }}
+                                    </div>
+                                </td>
+                                <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ frais.titre }}</div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-right text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ frais.montant | currency:'XAF' }}</div>
+                                </td>
+                                <!-- <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div
+                                        class="block flex justify-center gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        <div class="flex items-center gap-x-3">
+                                            <input type="checkbox" disabled [checked]="frais.fraisDesCours" class="h-4 w-4 border-gray-600 text-indigo-600 focus:ring-indigo-600">
+                                        </div>
+                                    </div>
+                                </td> -->
+                                <td *ngIf="rolesValue.isInstitution" class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div
+                                        class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        <app-custom-button (click)="openEditerFraisModal(frais)" text="Editer" color="blue"></app-custom-button>
+                                        <app-custom-button (click)="openSupprimerFraisModal(frais)" text="Supprimer" color="red"></app-custom-button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="w-full mb-8">
+        <app-details-section text="Dossiers à fournir">
+            <div *ngIf="rolesValue.isInstitution" class="relative">
+                <div>
+                    <button (click)="showNouveauDossierModal = true"
+                        class="p-1 rounded focus:ring-1 focus:ring-gray-300">
+                        <img src="assets/icons/add.svg" alt="add">
+                    </button>
+                </div>
+            </div>
+        </app-details-section>
+        <div *ngIf="session.dossiersInscription!.length == 0" class="text-sm text-gray-400 text-center py-8">Aucun dossier</div>
+        <div *ngIf="session.dossiersInscription!.length != 0" class="overflow-x-auto">
+            <div class="py-2 inline-block min-w-full">
+                <div class="overflow-hidden">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-100 border-b">
+                            <tr>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        #
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Titre
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
+                                    <div class="px-2">
+                                        Taille maximum (en Ko)
+                                    </div>
+                                </th>
+                                <th *ngIf="rolesValue.isInstitution" scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
+                                    <div class="px-2">
+                                        Action
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let dossier of session.dossiersInscription!; index as index"
+                                class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div
+                                        class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        {{ index + 1 }}
+                                    </div>
+                                </td>
+                                <td
+                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ dossier.titre }}</div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-right text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ dossier.tailleMax ?  dossier.tailleMax + ' Ko' : 'Aucune limite' }}</div>
+                                </td>
+                                <td *ngIf="rolesValue.isInstitution" class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div
+                                        class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        <app-custom-button (click)="openEditerDossierModal(dossier)" text="Editer" color="blue"></app-custom-button>
+                                        <app-custom-button (click)="openSupprimerDossierModal(dossier)" text="Supprimer" color="red"></app-custom-button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</ng-container>
+
+<!-- Modals -->
+<app-custom-modal title="Nouveau frais d'inscription" subtitle="Ajouter un nouveau frais pour cette session d'inscription" (onCloseModal)="closeNouveauFraisModal()" [center]="true" [showModal]="showNouveauFraisModal">
+    <form [formGroup]="fraisForm" class="">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Titre</span>
+                <input type="text" id="titre" formControlName="titre" placeholder="Saisir le titre ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+    
+                <div
+                    *ngIf="fraisForm.get('titre')!.invalid && (fraisForm.get('titre')!.dirty || fraisForm.get('titre')!.touched)">
+                    <app-form-message *ngIf="fraisForm.get('titre')!.errors?.['required']"
+                        text="Veuillez saisir le titre"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Montant</span>
+                <input type="number" min="0" id="montant" formControlName="montant" placeholder="Saisir le montant ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+    
+                <div
+                    *ngIf="fraisForm.get('montant')!.invalid && (fraisForm.get('montant')!.dirty || fraisForm.get('montant')!.touched)">
+                    <app-form-message *ngIf="fraisForm.get('montant')!.errors?.['required']"
+                        text="Veuillez entrer le montant"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Ce frais doit-il être appliqué à chaque cours suivant leur coefficient ?</span>
+                <div class="flex items-center py-1 gap-x-4">
+                    <div class="flex items-center gap-x-3">
+                        <input id="oui" formControlName="fraisDesCours" type="radio" [value]="true"
+                            class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                        <label for="oui" class="block text-sm font-regular leading-6 text-gray-700">Oui</label>
+                    </div>
+                    <div class="flex items-center gap-x-3">
+                        <input id="non" formControlName="fraisDesCours" type="radio" [value]="false"
+                            class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                        <label for="non" class="block text-sm font-regular leading-6 text-gray-700">Non</label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Description (facultative)</span>
+                <textarea rows="5" id="description" formControlName="description"
+                    placeholder="Saisir la description ici..."
+                    class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
+            </div>
+        </div>
+    </form>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="closeNouveauFraisModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+        <app-custom-button (click)="ajouterFrais()" text="Enregistrer"></app-custom-button>
+    </div>
+</app-custom-modal>
+
+<app-custom-modal *ngIf="selectedFrais" title="Editer" subtitle="Mettre à jour les informations de ce frais d'inscription" (onCloseModal)="closeEditerFraisModal()" [center]="true" [showModal]="showEditerFraisModal">
+    <form [formGroup]="fraisForm" class="">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Titre</span>
+                <input type="text" id="titre" formControlName="titre" placeholder="Saisir le titre ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+    
+                <div
+                    *ngIf="fraisForm.get('titre')!.invalid && (fraisForm.get('titre')!.dirty || fraisForm.get('titre')!.touched)">
+                    <app-form-message *ngIf="fraisForm.get('titre')!.errors?.['required']"
+                        text="Veuillez saisir le titre"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Montant</span>
+                <input type="number" min="0" id="montant" formControlName="montant" placeholder="Saisir le montant ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+    
+                <div
+                    *ngIf="fraisForm.get('montant')!.invalid && (fraisForm.get('montant')!.dirty || fraisForm.get('montant')!.touched)">
+                    <app-form-message *ngIf="fraisForm.get('montant')!.errors?.['required']"
+                        text="Veuillez entrer le montant"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Ce frais doit-il être appliqué à chaque cours suivant leur coefficient ?</span>
+                <div class="flex items-center py-1 gap-x-4">
+                    <div class="flex items-center gap-x-3">
+                        <input id="oui" formControlName="fraisDesCours" type="radio" [value]="true"
+                            class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                        <label for="oui" class="block text-sm font-regular leading-6 text-gray-700">Oui</label>
+                    </div>
+                    <div class="flex items-center gap-x-3">
+                        <input id="non" formControlName="fraisDesCours" type="radio" [value]="false"
+                            class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                        <label for="non" class="block text-sm font-regular leading-6 text-gray-700">Non</label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Description (facultative)</span>
+                <textarea rows="5" id="description" formControlName="description"
+                    placeholder="Saisir la description ici..."
+                    class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
+            </div>
+        </div>
+    </form>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="closeEditerFraisModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+        <app-custom-button (click)="modifierFrais()" text="Modifier"></app-custom-button>
+    </div>
+</app-custom-modal>
+
+<app-custom-modal *ngIf="selectedFrais" title="Supprimer" subtitle="Déplacer ce frais d'inscription dans la corbeille. Voulez-vous continuer ?" (onCloseModal)="closeSupprimerFraisModal()" [center]="true" [showModal]="showSupprimerFraisModal">
+    <div class="flex items-center justify-between py-30">
+        <app-custom-button (click)="closeSupprimerFraisModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+        <app-custom-button (click)="supprimerFrais()" text="Supprimer" color="red"></app-custom-button>
+    </div>
+</app-custom-modal>
+
+<app-custom-modal title="Nouveau dossier d'inscription" subtitle="Ajouter un nouveau dossier pour cette session d'inscription" (onCloseModal)="closeNouveauDossierModal()" [center]="true" [showModal]="showNouveauDossierModal">
+    <form [formGroup]="dossierForm" class="">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Titre</span>
+                <input type="text" id="titre" formControlName="titre" placeholder="Saisir le titre ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+    
+                <div
+                    *ngIf="dossierForm.get('titre')!.invalid && (dossierForm.get('titre')!.dirty || dossierForm.get('titre')!.touched)">
+                    <app-form-message *ngIf="dossierForm.get('titre')!.errors?.['required']"
+                        text="Veuillez saisir le titre"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Taille max. (en kilo octets)</span>
+                <input type="number" min="0" id="tailleMax" formControlName="tailleMax" placeholder="Saisir le tailleMax ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Description (facultative)</span>
+                <textarea rows="5" id="description" formControlName="description"
+                    placeholder="Saisir la description ici..."
+                    class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
+            </div>
+        </div>
+    </form>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="closeNouveauDossierModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+        <app-custom-button (click)="ajouterDossier()" text="Enregistrer"></app-custom-button>
+    </div>
+</app-custom-modal>
+
+<app-custom-modal *ngIf="selectedDossier" title="Editer" subtitle="Mettre à jour les informations de ce dossier d'inscription" (onCloseModal)="closeEditerDossierModal()" [center]="true" [showModal]="showEditerDossierModal">
+    <form [formGroup]="dossierForm" class="">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Titre</span>
+                <input type="text" id="titre" formControlName="titre" placeholder="Saisir le titre ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+    
+                <div
+                    *ngIf="dossierForm.get('titre')!.invalid && (dossierForm.get('titre')!.dirty || dossierForm.get('titre')!.touched)">
+                    <app-form-message *ngIf="dossierForm.get('titre')!.errors?.['required']"
+                        text="Veuillez saisir le titre"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Taille max. (en kilo octets)</span>
+                <input type="number" min="0" id="tailleMax" formControlName="tailleMax" placeholder="Saisir le tailleMax ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Description (facultative)</span>
+                <textarea rows="5" id="description" formControlName="description"
+                    placeholder="Saisir la description ici..."
+                    class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
+            </div>
+        </div>
+    </form>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="closeEditerDossierModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+        <app-custom-button (click)="modifierDossier()" text="Modifier"></app-custom-button>
+    </div>
+</app-custom-modal>
+
+<app-custom-modal *ngIf="selectedDossier" title="Supprimer" subtitle="Déplacer ce dossier d'inscription dans la corbeille. Voulez-vous continuer ?" (onCloseModal)="closeSupprimerDossierModal()" [center]="true" [showModal]="showSupprimerDossierModal">
+    <div class="flex items-center justify-between py-30">
+        <app-custom-button (click)="closeSupprimerDossierModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+        <app-custom-button (click)="supprimerDossier()" text="Supprimer" color="red"></app-custom-button>
+    </div>
+</app-custom-modal>
+
+<!-- <app-custom-modal *ngIf="session" title="Editer" subtitle="Mettre à jour les informations de cette session" (onCloseModal)="showEditerSessionModal = false" [center]="true" [showModal]="showEditerSessionModal">
+    <form [formGroup]="sessionForm">
+        <div class="mb-6">
+            <span class="mb-2 block text-sm text-gray-400">Titre</span>
+            <input type="text" id="titre" formControlName="titre" placeholder="Saisir le titre ici..."
+                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+
+            <div class="mb-8"
+                *ngIf="sessionForm.get('titre')!.invalid && (sessionForm.get('titre')!.dirty || sessionForm.get('titre')!.touched)">
+                <app-form-message *ngIf="sessionForm.get('titre')!.errors?.['required']"
+                    text="Veuillez saisir le titre"></app-form-message>
+            </div>
+        </div>
+        <div class="mb-6">
+            <span class="mb-2 block text-sm text-gray-600">Niveau d'étude</span>
+            <select id="niveauEtude" formControlName="niveauEtude"
+                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <option *ngFor="let niveau of niveauxEtude" [value]="niveau.id">{{ niveau.libelle }}</option>
+            </select>
+            <div *ngIf="sessionForm.get('niveauEtude')!.invalid && (sessionForm.get('niveauEtude')!.dirty || sessionForm.get('niveauEtude')!.touched)">
+                <app-form-message *ngIf="sessionForm.get('niveauEtude')!.errors?.['required']"
+                    text="Veuillez saisir le niveau d'étude"></app-form-message>
+            </div>
+        </div>
+        <div class="mb-6">
+            <span class="mb-2 block text-sm text-gray-400">Description (facultative)</span>
+            <textarea rows="5" id="description" formControlName="description"
+                placeholder="Saisir la description ici..."
+                class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
+        </div>
+    </form>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="showEditerSessionModal = false" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+        <app-custom-button text="Modifier"></app-custom-button>
+    </div>
+</app-custom-modal>
+
+<app-custom-modal *ngIf="session" title="Supprimer" subtitle="Déplacer cette session dans la corbeille. Voulez-vous continuer ?" (onCloseModal)="showSupprimerSessionModal = false" [center]="true" [showModal]="showSupprimerSessionModal">
+    <div class="flex items-center justify-between py-30">
+        <app-custom-button (click)="showSupprimerSessionModal = false" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+        <app-custom-button text="Supprimer" color="red"></app-custom-button>
+    </div>
+</app-custom-modal> -->

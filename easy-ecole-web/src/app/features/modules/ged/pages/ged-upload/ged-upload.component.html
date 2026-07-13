@@ -1,0 +1,124 @@
+<div class="card ged-card ged-upload-page">
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">GED — Import & archivage</h1>
+      <p class="page-subtitle">Chargez un document PDF et archivez-le immédiatement, ou ajoutez des métadonnées pour un classement professionnel.</p>
+    </div>
+  </header>
+
+  <div class="ged-upload-grid">
+    <section class="preview-panel">
+      <div class="panel-header">
+        <div>
+          <p class="panel-eyebrow">Aperçu</p>
+          <h2 class="panel-title">Prévisualisation du fichier</h2>
+          <p class="panel-subtitle">Un aperçu PDF est généré automatiquement après sélection.</p>
+        </div>
+      </div>
+
+      <div class="preview-frame">
+        <ng-container *ngIf="pdfPreviewUrl; else emptyPreview">
+          <embed [src]="pdfPreviewUrl" type="application/pdf" class="preview-embed" />
+        </ng-container>
+        <ng-template #emptyPreview>
+          <div class="preview-empty">
+            <img src="assets/icons/document.svg" alt="Aperçu" class="preview-icon" />
+            <div class="preview-empty-title">Aucun PDF chargé</div>
+            <div class="preview-empty-text">Choisissez un PDF pour afficher son aperçu.</div>
+          </div>
+        </ng-template>
+      </div>
+    </section>
+
+    <section class="metadata-panel">
+      <div class="panel-header">
+        <div>
+          <p class="panel-eyebrow">Métadonnées</p>
+          <h2 class="panel-title">Informations du document</h2>
+          <p class="panel-subtitle">Tous les champs sont facultatifs. Vous pouvez charger et archiver immédiatement sans saisie.</p>
+        </div>
+      </div>
+
+      <form class="ged-form" (ngSubmit)="upload()">
+        <div class="info-card">
+          <strong>Upload rapide</strong>
+          <p>Chargez votre document puis cliquez sur « Envoyer » pour l’archiver directement. Les métadonnées peuvent être ajoutées ultérieurement.</p>
+        </div>
+
+        <div class="ged-field">
+          <label class="field-label" for="ged-upload-file">Fichier PDF</label>
+          <input id="ged-upload-file" type="file" accept="application/pdf" class="form-input" (change)="onFileChanged($event)" />
+          <div class="field-helper">Fichier sélectionné : <strong>{{ selectedFileName }}</strong></div>
+        </div>
+
+        <div class="ged-field">
+          <label class="field-label" for="titre">Titre</label>
+          <input id="titre" [value]="titre" (input)="titre = $any($event.target).value" class="form-input" placeholder="Titre du document" />
+        </div>
+
+        <div class="ged-grid">
+          <div class="ged-field">
+            <label class="field-label" for="reference">Référence</label>
+            <input id="reference" [value]="reference" (input)="reference = $any($event.target).value" class="form-input" placeholder="Référence interne" />
+          </div>
+          <div class="ged-field">
+            <label class="field-label" for="sessionId">Session</label>
+            <select id="sessionId" [value]="selectedSessionId" (change)="selectedSessionId = $any($event.target).value ? +$any($event.target).value : undefined" class="form-input">
+              <option value="">-- Aucune --</option>
+              <option *ngFor="let session of sessions" [value]="session.id">{{ session.nom }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="ged-grid">
+          <div class="ged-field">
+            <label class="field-label" for="eleve">Élève</label>
+            <input id="eleve" [value]="eleve" (input)="eleve = $any($event.target).value" class="form-input" placeholder="Nom de l'élève" />
+          </div>
+          <div class="ged-field">
+            <label class="field-label" for="parcours">Parcours</label>
+            <input id="parcours" [value]="parcours" (input)="parcours = $any($event.target).value" class="form-input" placeholder="Parcours / programme" />
+          </div>
+        </div>
+
+        <div class="ged-grid">
+          <div class="ged-field">
+            <label class="field-label" for="categorie">Catégorie</label>
+            <input id="categorie" [value]="categorie" (input)="categorie = $any($event.target).value" class="form-input" placeholder="Catégorie" />
+          </div>
+          <div class="ged-field">
+            <label class="field-label" for="nommage">Nommage</label>
+            <input id="nommage" [value]="nommage" (input)="nommage = $any($event.target).value" class="form-input" placeholder="Nommage du fichier" />
+          </div>
+        </div>
+
+        <div class="ged-field">
+          <label class="field-label" for="tags">Tags</label>
+          <input id="tags" [value]="tags" (input)="tags = $any($event.target).value" class="form-input" placeholder="ex: Réunion, Contrat, Examen" />
+        </div>
+
+        <div class="ged-grid">
+          <div class="ged-field">
+            <label class="field-label" for="dureeConservation">Durée de conservation</label>
+            <input id="dureeConservation" [value]="dureeConservation" (input)="dureeConservation = $any($event.target).value" class="form-input" placeholder="ex: 10 ans" />
+          </div>
+          <div class="ged-field">
+            <label class="field-label" for="archivedUntil">Archivage jusqu'au</label>
+            <input id="archivedUntil" [value]="archivedUntil" (change)="archivedUntil = $any($event.target).value" type="date" class="form-input" />
+          </div>
+        </div>
+
+        <div class="field-toggle">
+          <label class="toggle-label">
+            <input type="checkbox" [checked]="isArchived" (change)="isArchived = $any($event.target).checked" />
+            Document archivé
+          </label>
+        </div>
+
+        <div class="ged-form-actions">
+          <button type="submit" class="primary-button" [disabled]="!selectedFile">Envoyer</button>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>

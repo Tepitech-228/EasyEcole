@@ -1,0 +1,51 @@
+<app-custom-alert [show]="error || alreadyExists" title="Erreur">
+    {{ error ? 'Une erreur est survenue' : '' }}
+    {{ alreadyExists ? 'Cette entreprise existe déjà.' : '' }}
+</app-custom-alert>
+
+<app-return-back></app-return-back>
+
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Ajouter une entreprise" subtitle="Veuillez renseigner les informations ci-dessous"></app-header-title>
+</div>
+
+<div class="w-full mb-8">
+    <form [formGroup]="form" id="form">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="md:col-span-3 col-span-full">
+                <label for="nom" class="mb-2 block text-sm leading-6 text-gray-600">Nom</label>
+                <input type="text" id="nom" formControlName="nom" placeholder="Saisir le nom..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <div *ngIf="form.get('nom')!.invalid && (form.get('nom')!.dirty || form.get('nom')!.touched)">
+                    <app-form-message *ngIf="form.get('nom')!.errors?.['required']" text="Veuillez saisir le nom"></app-form-message>
+                </div>
+            </div>
+            <div class="md:col-span-3 col-span-full">
+                <label for="email" class="mb-2 block text-sm leading-6 text-gray-600">Email</label>
+                <input type="email" id="email" formControlName="email" placeholder="Saisir l'email..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="md:col-span-3 col-span-full">
+                <label for="telephone" class="mb-2 block text-sm leading-6 text-gray-600">Téléphone</label>
+                <input type="text" id="telephone" formControlName="telephone" placeholder="Saisir le téléphone..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="md:col-span-3 col-span-full">
+                <label for="siteWeb" class="mb-2 block text-sm leading-6 text-gray-600">Site web</label>
+                <input type="url" id="siteWeb" formControlName="siteWeb" placeholder="Saisir le site web..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-full">
+                <label for="adresse" class="mb-2 block text-sm leading-6 text-gray-600">Adresse</label>
+                <textarea rows="3" id="adresse" formControlName="adresse" placeholder="Saisir l'adresse..." class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
+            </div>
+            <div class="col-span-full">
+                <label for="description" class="mb-2 block text-sm leading-6 text-gray-600">Description</label>
+                <textarea rows="5" id="description" formControlName="description" placeholder="Saisir la description..." class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
+            </div>
+        </div>
+        <div class="w-full flex justify-end items-center pb-12">
+            <app-custom-button (click)="create()" [disabled]="disableButton" text="Enregistrer"></app-custom-button>
+        </div>
+    </form>
+</div>

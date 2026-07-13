@@ -1,0 +1,153 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <app-header-title title="Rattrapages" subtitle="Gérez les sessions de rattrapage et les inscriptions"></app-header-title>
+
+  <div class="mt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <select (change)="onSessionChange($any($event.target).value)" class="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white">
+        <option value="">Toutes les sessions</option>
+        <option *ngFor="let s of sessions" [value]="s.id">{{ s.libelle }} — {{ s.classe?.libelle }}</option>
+      </select>
+      <span class="text-sm text-gray-500">{{ inscriptions.length }} inscription(s)</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button (click)="openAssignModal()" class="inline-flex items-center px-4 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+        Assigner auto
+      </button>
+      <button (click)="notifierNonEnvoyes()" *ngIf="inscriptions.length" class="inline-flex items-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        Notifier
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="stats" class="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3">
+      <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">Total</p>
+      <p class="text-2xl font-bold text-gray-900 mt-1">{{ stats.total }}</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3">
+      <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">Inscrits</p>
+      <p class="text-2xl font-bold text-amber-600 mt-1">{{ stats.inscrits }}</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3">
+      <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">Convoqués</p>
+      <p class="text-2xl font-bold text-blue-600 mt-1">{{ stats.convoques }}</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3">
+      <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">Présents</p>
+      <p class="text-2xl font-bold text-green-600 mt-1">{{ stats.presents }}</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3">
+      <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">Absents</p>
+      <p class="text-2xl font-bold text-red-600 mt-1">{{ stats.absents }}</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3">
+      <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">Notés</p>
+      <p class="text-2xl font-bold text-purple-600 mt-1">{{ stats.avecNote }}</p>
+    </div>
+  </div>
+
+  <div class="mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-100">
+        <thead>
+          <tr class="bg-gray-50/50">
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Étudiant</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Matière</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Session</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Statut</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Note</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Notifié</th>
+            <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngFor="let item of inscriptions; trackBy: trackByFn" class="hover:bg-gray-50/50 transition-colors">
+            <td class="px-5 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+              {{ item.coursParticipant?.utilisateur?.prenoms }} {{ item.coursParticipant?.utilisateur?.nom }}
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ item.cours?.libelle || item.cours?.code || '—' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-center text-sm text-gray-700">{{ item.sessionExamen?.libelle || '—' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-center">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                    [ngClass]="{
+                      'bg-amber-50 text-amber-700 ring-1 ring-amber-200': item.statut === 'inscrit',
+                      'bg-blue-50 text-blue-700 ring-1 ring-blue-200': item.statut === 'convoque',
+                      'bg-green-50 text-green-700 ring-1 ring-green-200': item.statut === 'present',
+                      'bg-red-50 text-red-700 ring-1 ring-red-200': item.statut === 'absent',
+                      'bg-purple-50 text-purple-700 ring-1 ring-purple-200': item.statut === 'valide'
+                    }">
+                {{ item.statut }}
+              </span>
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap text-center text-sm text-gray-700">
+              {{ item.noteRattrapage != null ? item.noteRattrapage : '—' }}
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap text-center">
+              <span *ngIf="item.notificationEnvoyee" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 ring-1 ring-green-200">Oui</span>
+              <span *ngIf="!item.notificationEnvoyee" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-50 text-gray-500 ring-1 ring-gray-200">Non</span>
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap text-right">
+              <div class="flex items-center justify-end gap-2">
+                <a [routerLink]="['/bulletins/rattrapages', item.id]"
+                   class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                  Détail
+                </a>
+                <button (click)="supprimer(item.id)"
+                        class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border-0 cursor-pointer">
+                  Supprimer
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div *ngIf="inscriptions.length === 0" class="px-5 py-12 text-center">
+      <svg class="mx-auto h-12 w-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      <p class="mt-4 text-sm text-gray-500">Aucune inscription rattrapage trouvée</p>
+      <p class="text-sm text-gray-400">Utilisez "Assigner auto" pour inscrire les étudiants en échec</p>
+    </div>
+  </div>
+
+  <div *ngIf="showAssignModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30" (click)="showAssignModal = false">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-lg mx-4" (click)="$event.stopPropagation()">
+      <h3 class="text-lg font-semibold text-gray-900">Assignation automatique</h3>
+      <p class="text-sm text-gray-500 mt-1">Inscrit les étudiants avec moyenne &lt; 10 aux rattrapages</p>
+      <div class="mt-6 space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Session de rattrapage</label>
+          <select [(ngModel)]="assignForm.sessionExamenId" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm">
+            <option [value]="null">Sélectionner...</option>
+            <option *ngFor="let s of sessions" [value]="s.id">{{ s.libelle }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Classe</label>
+          <input type="number" [(ngModel)]="assignForm.classeId" placeholder="ID de la classe" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Semestre</label>
+          <select [(ngModel)]="assignForm.semestre" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm">
+            <option value="">Sélectionner...</option>
+            <option value="semestre1">Semestre 1</option>
+            <option value="semestre2">Semestre 2</option>
+            <option value="semestre3">Semestre 3</option>
+            <option value="semestre4">Semestre 4</option>
+            <option value="semestre5">Semestre 5</option>
+            <option value="semestre6">Semestre 6</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Année académique</label>
+          <input type="number" [(ngModel)]="assignForm.anneeAcademiqueId" placeholder="ID année académique" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm">
+        </div>
+      </div>
+      <div class="mt-6 flex items-center justify-end gap-3">
+        <button (click)="showAssignModal = false" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 font-medium">Annuler</button>
+        <button (click)="submitAssign()" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-xl transition-colors">Assigner</button>
+      </div>
+    </div>
+  </div>
+</div>

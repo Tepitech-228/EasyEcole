@@ -1,0 +1,85 @@
+<app-custom-alert [show]="error" title="Erreur">
+    Une erreur est survenue lors de la création
+</app-custom-alert>
+<app-custom-alert [show]="alreadyExists" title="Évaluation existante">
+    Une évaluation avec ce cours et ce type existe déjà
+</app-custom-alert>
+
+<app-return-back></app-return-back>
+
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Nouvelle évaluation" subtitle="Veuillez renseigner les informations ci-dessous pour créer une nouvelle évaluation"></app-header-title>
+    <div class="flex justify-end items-center">
+    </div>
+</div>
+
+<div class="w-full mb-8">
+    <form [formGroup]="evaluationForm" id="evaluationForm">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="md:col-span-4 col-span-full">
+                <label for="coursId" class="mb-2 block text-sm leading-6 text-gray-600">Cours</label>
+                <select id="coursId" formControlName="coursId"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option value="" disabled>Sélectionner un cours</option>
+                    <option *ngFor="let c of cours" [value]="c.id">{{ c.code }} — {{ c.intitule }}</option>
+                </select>
+                <div *ngIf="evaluationForm.get('coursId')!.invalid && (evaluationForm.get('coursId')!.dirty || evaluationForm.get('coursId')!.touched)">
+                    <app-form-message *ngIf="evaluationForm.get('coursId')!.errors?.['required']"
+                        text="Veuillez sélectionner un cours"></app-form-message>
+                </div>
+            </div>
+            <div class="md:col-span-4 col-span-full">
+                <label for="typeNoteEvaluationId" class="mb-2 block text-sm leading-6 text-gray-600">Type d'évaluation</label>
+                <select id="typeNoteEvaluationId" formControlName="typeNoteEvaluationId"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option value="" disabled>Sélectionner un type</option>
+                    <option *ngFor="let t of typesNote" [value]="t.id">{{ t.libelle }}</option>
+                </select>
+                <div *ngIf="evaluationForm.get('typeNoteEvaluationId')!.invalid && (evaluationForm.get('typeNoteEvaluationId')!.dirty || evaluationForm.get('typeNoteEvaluationId')!.touched)">
+                    <app-form-message *ngIf="evaluationForm.get('typeNoteEvaluationId')!.errors?.['required']"
+                        text="Veuillez sélectionner un type"></app-form-message>
+                </div>
+            </div>
+            <div class="md:col-span-4 col-span-full">
+                <label for="date" class="mb-2 block text-sm leading-6 text-gray-600">Date</label>
+                <input type="date" id="date" formControlName="date"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <div *ngIf="evaluationForm.get('date')!.invalid && (evaluationForm.get('date')!.dirty || evaluationForm.get('date')!.touched)">
+                    <app-form-message *ngIf="evaluationForm.get('date')!.errors?.['required']"
+                        text="Veuillez saisir la date"></app-form-message>
+                </div>
+            </div>
+            <div class="md:col-span-4 col-span-full">
+                <label for="heureDebut" class="mb-2 block text-sm leading-6 text-gray-600">Heure de début</label>
+                <input type="time" id="heureDebut" formControlName="heureDebut"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <div *ngIf="evaluationForm.get('heureDebut')!.invalid && (evaluationForm.get('heureDebut')!.dirty || evaluationForm.get('heureDebut')!.touched)">
+                    <app-form-message *ngIf="evaluationForm.get('heureDebut')!.errors?.['required']"
+                        text="Veuillez saisir l'heure de début"></app-form-message>
+                </div>
+            </div>
+            <div class="md:col-span-4 col-span-full">
+                <label for="heureFin" class="mb-2 block text-sm leading-6 text-gray-600">Heure de fin</label>
+                <input type="time" id="heureFin" formControlName="heureFin"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <div *ngIf="evaluationForm.get('heureFin')!.invalid && (evaluationForm.get('heureFin')!.dirty || evaluationForm.get('heureFin')!.touched)">
+                    <app-form-message *ngIf="evaluationForm.get('heureFin')!.errors?.['required']"
+                        text="Veuillez saisir l'heure de fin"></app-form-message>
+                </div>
+            </div>
+            <div class="md:col-span-4 col-span-full">
+                <label for="poidsTypeNoteEvaluation" class="mb-2 block text-sm leading-6 text-gray-600">Poids (%)</label>
+                <input type="number" id="poidsTypeNoteEvaluation" formControlName="poidsTypeNoteEvaluation" placeholder="Ex: 20"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <div *ngIf="evaluationForm.get('poidsTypeNoteEvaluation')!.invalid && (evaluationForm.get('poidsTypeNoteEvaluation')!.dirty || evaluationForm.get('poidsTypeNoteEvaluation')!.touched)">
+                    <app-form-message *ngIf="evaluationForm.get('poidsTypeNoteEvaluation')!.errors?.['required']"
+                        text="Veuillez saisir le poids"></app-form-message>
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full flex justify-end items-center pb-12">
+            <app-custom-button (click)="create()" text="Créer l'évaluation"></app-custom-button>
+        </div>
+    </form>
+</div>

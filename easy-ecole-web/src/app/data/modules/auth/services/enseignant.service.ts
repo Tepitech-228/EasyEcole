@@ -1,0 +1,42 @@
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { environment } from 'src/environments/environment';
+import { Enseignant } from '../models/Enseignant.model';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class EnseignantService {
+
+  private readonly SERVICE_URL: string = `${environment.API_MODULES.AUTH}/enseignants`
+
+  constructor(private httpClient: HttpClient) { }
+
+  getAll(): Observable<Enseignant[]> {
+    return this.httpClient.get<Enseignant[]>(`${this.SERVICE_URL}`)
+  }
+
+  get(id?: string): Observable<Enseignant> {
+    return this.httpClient.get<Enseignant>(`${this.SERVICE_URL}/${id}`)
+  }
+
+  update(enseignant: Enseignant): Observable<Enseignant> {
+    return this.httpClient.put<Enseignant>(`${this.SERVICE_URL}/`, enseignant)
+  }
+
+  getCount(): Observable<{ success: boolean, count: number }> {
+    return this.httpClient.get<{ success: boolean, count: number }>(`${this.SERVICE_URL}/statistics/count`)
+  }
+
+  updatePhoto(photo: File): Observable<Enseignant> {
+    let formData: FormData = new FormData()
+      formData.append('photo', photo, photo.name)
+
+    return this.httpClient.put<Enseignant>(`${this.SERVICE_URL}/photo`, formData)
+  }
+
+  generateQrCodes(enseignantId?: string): Observable<any> {
+    return this.httpClient.post(`${this.SERVICE_URL}/qr-codes/generate`, { enseignantId })
+  }
+}

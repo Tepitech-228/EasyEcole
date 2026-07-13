@@ -1,0 +1,149 @@
+<app-custom-alert [show]="identifiantsUpdateError" title="Erreur">
+    Une erreur est survenue lors de la mise à jour de vos informations
+</app-custom-alert>
+
+<app-custom-alert [show]="identifiantsUpdateSuccess" title="Succès" color="green">
+    Informations mises à jour avec succès
+</app-custom-alert>
+
+<app-custom-alert [show]="passwordWrongError" title="Mot de passe incorrect">
+    Veuillez taper votre actuel mot de passe
+</app-custom-alert>
+
+<app-custom-alert [show]="identifiantsUpdateError" title="Erreur">
+    Une erreur est survenue lors de la mise à jour de votre mot de passe
+</app-custom-alert>
+
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Mon compte" subtitle="Retrouver les paramètres relatifs à votre compte utilisateur"></app-header-title>
+</div>
+
+<app-parametres-section title="Photo de profil" subtitle="Votre photo de profil">
+</app-parametres-section>
+
+<app-parametres-section title="Identifiants" subtitle="Les informations de votre compte telles que votre identifiant de connexion, votre mail, etc.">
+    <form [formGroup]="identifiantsForm">
+        <div class="grid grid-cols-1 gap-10">
+            <div class="block">
+                <label class="mb-2 block text-sm leading-6 text-gray-600">Email</label>
+                <div>
+                    <input type="email" readonly formControlName="email"
+                        class="mt-1 w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                        value="example@gmail.com">
+                </div>
+            </div>
+            <div class="block">
+                <label class="mb-2 block text-sm leading-6 text-gray-600">Nom d'utilisateur</label>
+                <div>
+                    <input type="text" readonly formControlName="identifiant"
+                        class="mt-1 w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                        value="john">
+                </div>
+            </div>
+            <div class="block">
+                <label class="mb-2 block text-sm leading-6 text-gray-600">Nom</label>
+                <div>
+                    <input type="text"
+                        class="mt-1 w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                        value="DOE" formControlName="nom">
+                    
+                    <div *ngIf="identifiantsForm.get('nom')!.invalid && (identifiantsForm.get('nom')!.dirty || identifiantsForm.get('nom')!.touched)">
+                        <app-form-message *ngIf="identifiantsForm.get('nom')!.errors?.['required']"
+                            text="Veuillez saisir votre nom"></app-form-message>
+                    </div>
+                    <app-form-message *ngIf="nomPrenomsAlreadyUsed" text="Nom et prénoms déjà existants"></app-form-message>
+                </div>
+            </div>
+            <div class="block">
+                <label class="mb-2 block text-sm leading-6 text-gray-600">Prénoms</label>
+                <div>
+                    <input type="text"
+                        class="mt-1 w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                        value="John" formControlName="prenoms">
+                    
+                    <div *ngIf="identifiantsForm.get('prenoms')!.invalid && (identifiantsForm.get('prenoms')!.dirty || identifiantsForm.get('prenoms')!.touched)">
+                        <app-form-message *ngIf="identifiantsForm.get('prenoms')!.errors?.['required']"
+                            text="Veuillez saisir vos prénoms"></app-form-message>
+                    </div>
+                    <app-form-message *ngIf="nomPrenomsAlreadyUsed" text="Nom et prénoms déjà existants"></app-form-message>
+                </div>
+            </div>
+            <div class="block">
+                <label class="mb-2 block text-sm leading-6 text-gray-600">Contact</label>
+                <div>
+                    <input type="text"
+                        class="mt-1 w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                        value="John" formControlName="contact">
+                </div>
+            </div>
+            <div class="w-full">
+                <app-custom-button (click)="modifierIdentifiants()" class="w-full" type="submit" text="Mettre à jour" [fullWidth]="true" [disabled]="disableButton || !utilisateur || (identifiantsForm.get('nom')!.value == utilisateur.nom && identifiantsForm.get('prenoms')!.value == utilisateur.prenoms && identifiantsForm.get('contact')!.value == utilisateur.contact)"></app-custom-button>
+            </div>
+        </div>
+    </form>
+</app-parametres-section>
+
+<app-parametres-section title="Mot de passe" subtitle="Mettre à jour votre mot de passe">
+    <form [formGroup]="passwordForm">
+        <div class="grid grid-cols-1 gap-10">
+            <div class="block">
+                <label class="mb-2 block text-sm leading-6 text-gray-600">Ancien mot de passe</label>
+                <div>
+                    <input type="password" formControlName="oldPassword"
+                        class="mt-1 w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="passwordForm.get('oldPassword')!.invalid && (passwordForm.get('oldPassword')!.dirty || passwordForm.get('oldPassword')!.touched)">
+                        <app-form-message *ngIf="passwordForm.get('oldPassword')!.errors?.['required']"
+                            text="Veuillez saisir votre ancien mot de passe"></app-form-message>
+                        <app-form-message *ngIf="passwordForm.get('oldPassword')!.errors?.['minLength']"
+                            text="Le mot de passe doit contenir au moins 8 caractères"></app-form-message>
+                    </div>
+                </div>
+            </div>
+            <div class="block">
+                <label class="mb-2 block text-sm leading-6 text-gray-600">Nouveau mot de passe</label>
+                <div>
+                    <input type="password" formControlName="password"
+                        class="mt-1 w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="passwordForm.get('password')!.invalid && (passwordForm.get('password')!.dirty || passwordForm.get('password')!.touched)">
+                        <app-form-message *ngIf="passwordForm.get('password')!.errors?.['required']"
+                            text="Veuillez saisir votre nouveau mot de passe"></app-form-message>
+                        <app-form-message *ngIf="passwordForm.get('password')!.errors?.['minLength']"
+                            text="Le mot de passe doit contenir au moins 8 caractères"></app-form-message>
+                    </div>
+                </div>
+            </div>
+            <div class="block">
+                <label class="mb-2 block text-sm leading-6 text-gray-600">Confirmer le nouveau mot de passe</label>
+                <div>
+                    <input type="password" formControlName="confirmPassword"
+                        class="mt-1 w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="passwordForm.get('confirmPassword')!.invalid && (passwordForm.get('confirmPassword')!.dirty || passwordForm.get('confirmPassword')!.touched)">
+                        <app-form-message *ngIf="passwordForm.get('confirmPassword')!.errors?.['required']"
+                            text="Confirmer votre nouveau mot de passe"></app-form-message>
+                        
+                        <app-form-message *ngIf="!passwordForm.get('confirmPassword')!.errors?.['required'] && passwordForm.get('password')!.value != passwordForm.get('confirmPassword')!.value"
+                            text="Les deux mots de passe ne correspondent pas"></app-form-message>
+                        <app-form-message *ngIf="passwordForm.get('confirmPassword')!.errors?.['minLength']"
+                            text="Le mot de passe doit contenir au moins 8 caractères"></app-form-message>
+                    </div>
+                </div>
+            </div>
+            <div class="w-full">
+                <app-custom-button (click)="modifierMotDePasse()" class="w-full" type="submit" text="Changer le mot de passe" [fullWidth]="true" [disabled]="disableButton || passwordForm.invalid"></app-custom-button>
+            </div>
+        </div>
+    </form>
+</app-parametres-section>
+
+<app-parametres-section title="Désactiver votre compte" subtitle="Veuillez à jour votre mot de passe">
+    <form>
+        <div class="grid grid-cols-1 gap-10">
+            <div class="w-full">
+                <app-custom-button class="w-full" type="submit" text="Désactiver" color="red" [fullWidth]="true" [disabled]="disableButton"></app-custom-button>
+            </div>
+        </div>
+    </form>
+</app-parametres-section>
+
+<!-- Modals  -->
+

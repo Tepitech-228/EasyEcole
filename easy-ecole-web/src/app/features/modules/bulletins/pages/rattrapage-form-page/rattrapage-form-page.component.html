@@ -1,0 +1,53 @@
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <app-header-title title="Nouvelle inscription rattrapage" subtitle="Ajoutez une inscription manuelle au rattrapage"></app-header-title>
+
+  <div class="mt-8 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Session de rattrapage</label>
+        <select [(ngModel)]="rattrapage.sessionExamenId" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm">
+          <option [value]="null">Sélectionner...</option>
+          <option *ngFor="let s of sessions" [value]="s.id">{{ s.libelle }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">ID CoursParticipant</label>
+        <input type="number" [(ngModel)]="rattrapage.coursParticipantId" placeholder="Entrez l'ID" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">ID Cours</label>
+        <input type="number" [(ngModel)]="rattrapage.coursId" placeholder="Entrez l'ID" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Statut</label>
+        <select [(ngModel)]="rattrapage.statut" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm">
+          <option value="inscrit">Inscrit</option>
+          <option value="convoque">Convoqué</option>
+          <option value="present">Présent</option>
+          <option value="absent">Absent</option>
+          <option value="valide">Validé</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Salle</label>
+        <input type="text" [(ngModel)]="rattrapage.salle" placeholder="Salle" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Date</label>
+        <input type="date" [(ngModel)]="rattrapage.dateRattrapage" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Heure début</label>
+        <input type="time" [(ngModel)]="rattrapage.heureDebut" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Heure fin</label>
+        <input type="time" [(ngModel)]="rattrapage.heureFin" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm">
+      </div>
+    </div>
+    <div class="mt-8 flex items-center justify-end gap-3">
+      <a routerLink="/bulletins/rattrapages" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 font-medium">Annuler</a>
+      <button (click)="save()" class="px-6 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm">Créer</button>
+    </div>
+  </div>
+</div>

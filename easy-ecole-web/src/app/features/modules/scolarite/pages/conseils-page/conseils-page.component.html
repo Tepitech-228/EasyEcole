@@ -1,0 +1,171 @@
+<div class="page-container">
+  <app-header-title title="Conseils de classe" subtitle="Gérer les réunions et décisions des conseils de classe"></app-header-title>
+
+  <app-custom-alert *ngIf="errorMessage" [show]="true" [title]="errorMessage" type="danger" [inline]="true"></app-custom-alert>
+  <app-custom-alert *ngIf="successMessage" [show]="true" [title]="successMessage" type="success" [inline]="true"></app-custom-alert>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-icon text-blue-600 bg-blue-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ conseils.length }}</p>
+        <p class="stat-label">Total conseils</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon text-green-600 bg-green-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ getStatutCount('Terminé') }}</p>
+        <p class="stat-label">Terminés</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon text-blue-600 bg-blue-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ getStatutCount('Planifié') }}</p>
+        <p class="stat-label">Planifiés</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon text-orange-600 bg-orange-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ getStatutCount('À venir') }}</p>
+        <p class="stat-label">À venir</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-6" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin">
+    <div class="card-header">
+      <h2 class="card-title">Nouveau conseil de classe</h2>
+      <p class="card-subtitle">Planifier un conseil de classe</p>
+    </div>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Classe</label>
+          <input type="text" [(ngModel)]="newConseil.classe" class="form-input" placeholder="Ex: 6ème A">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input type="datetime-local" [(ngModel)]="newConseil.date" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Trimestre</label>
+          <select [(ngModel)]="newConseil.trimestre" class="form-select">
+            <option [value]="1">1er Trimestre</option>
+            <option [value]="2">2ème Trimestre</option>
+            <option [value]="3">3ème Trimestre</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Président</label>
+          <input type="text" [(ngModel)]="newConseil.president" class="form-input" placeholder="Nom du président">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Statut</label>
+          <select [(ngModel)]="newConseil.statut" class="form-select">
+            <option value="Planifié">Planifié</option>
+            <option value="À venir">À venir</option>
+            <option value="Terminé">Terminé</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <app-custom-button (click)="createConseil()" text="Ajouter" color="primary"
+          [disabled]="!newConseil.classe || !newConseil.date || addingConseil"></app-custom-button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header border-b">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 class="card-title">Conseils de classe</h2>
+          <p class="card-subtitle">Liste des conseils et leurs décisions</p>
+        </div>
+        <div class="flex gap-4 items-center">
+          <select [(ngModel)]="filterStatut" (change)="filtrer()" class="form-select-sm">
+            <option value="undefined">Tous les statuts</option>
+            <option value="Terminé">Terminé</option>
+            <option value="Planifié">Planifié</option>
+            <option value="À venir">À venir</option>
+          </select>
+          <select [(ngModel)]="filterTrimestre" (change)="filtrer()" class="form-select-sm">
+            <option value="undefined">Tous les trimestres</option>
+            <option value="1">1er trimestre</option>
+            <option value="2">2ème trimestre</option>
+            <option value="3">3ème trimestre</option>
+          </select>
+          <app-custom-button *ngIf="filterStatut !== 'undefined' || filterTrimestre !== 'undefined'"
+            (click)="reinitialiserFiltres()" text="Réinitialiser" color="gray" [outlined]="true"></app-custom-button>
+        </div>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <div *ngIf="loading" class="loading-shimmer">
+        <div *ngFor="let _ of [1,2,3]" class="shimmer-card"></div>
+      </div>
+      <div *ngIf="!loading && _conseils.length === 0" class="empty-state">
+        <img class="h-40" src="assets/images/selection-pana.svg" alt="no data">
+        <p class="text-gray-500">Aucun conseil de classe trouvé</p>
+        <app-custom-button text="Réinitialiser les filtres" (click)="reinitialiserFiltres()"></app-custom-button>
+      </div>
+      <div *ngIf="!loading && _conseils.length > 0" class="conseils-list">
+        <div *ngFor="let c of _conseils" class="conseil-card">
+          <div (click)="toggleExpand(c.id)" class="conseil-card-header">
+            <div class="conseil-card-info">
+              <div class="flex items-center gap-3">
+                <h3 class="conseil-card-class">{{ c.classe }}</h3>
+                <app-custom-badge [text]="c.statut" [color]="getStatutColor(c.statut)"></app-custom-badge>
+              </div>
+              <div class="conseil-card-meta">
+                <span>{{ c.date | date:'EEEE d MMMM yyyy' }}</span>
+                <span>{{ c.trimestre }}er Trimestre</span>
+                <span>Président: {{ c.president }}</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="deleteConseil(c); $event.stopPropagation()"
+                class="btn-icon text-red-500 hover:text-red-700" title="Supprimer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+              </button>
+              <svg class="w-5 h-5 text-gray-400 transition-transform duration-200"
+                [class.rotate-180]="expandedId === c.id" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </div>
+          </div>
+          <div *ngIf="expandedId === c.id" class="conseil-card-body">
+            <div *ngIf="c.decisions && c.decisions.length > 0; else noDecisions">
+              <h4 class="decisions-title">Décisions et observations</h4>
+              <div class="decisions-list">
+                <div *ngFor="let d of c.decisions" class="decision-item">
+                  <div class="decision-dot"></div>
+                  <div>
+                    <span class="decision-theme">{{ d.theme }}</span>
+                    <p class="decision-desc">{{ d.description }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <ng-template #noDecisions>
+              <p class="text-sm text-gray-400 italic">Aucune décision enregistrée pour le moment.</p>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,67 @@
+<div class="resource-card flex flex-col gap-y-2 hover:bg-gray-50 py-4 px-4 rounded">
+    <div class="flex gap-x-6 mb-2">
+        <div>
+            <div [ngClass]="'bg-' + getColor() + '-500'" class="rounded flex justify-center items-center text-white resource-icon">
+                <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
+                    <path *ngIf="ressource.type == typesRessource.NORMALE" fill="currentColor" d="M252.309-100.001q-30.308 0-51.308-21t-21-51.308v-615.382q0-30.308 21-51.308t51.308-21h317.692l209.998 209.998v477.692q0 30.308-21 51.308t-51.308 21H252.309Zm287.692-520V-800H252.309q-4.616 0-8.463 3.846-3.846 3.847-3.846 8.463v615.382q0 4.616 3.846 8.463 3.847 3.846 8.463 3.846h455.382q4.616 0 8.463-3.846 3.846-3.847 3.846-8.463v-447.692H540.001ZM240-800v179.999V-800v640V-800Z"/>
+                    <path *ngIf="ressource.type == typesRessource.TRAVAIL_A_RENDRE" fill="currentColor" d="M367.693-850.001v-59.998h224.614v59.998H367.693Zm82.308 442.308h59.998v-224.614h-59.998v224.614ZM480-100.001q-70.154 0-131.999-26.77-61.846-26.769-108.154-73.076-46.307-46.308-73.076-108.154-26.77-61.845-26.77-131.999t26.77-131.999q26.769-61.846 73.076-108.154 46.308-46.307 108.154-73.076 61.845-26.77 131.999-26.77 60.077 0 115.731 20.385 55.653 20.385 103.345 58.385l49.846-49.846 42.153 42.153-49.846 49.846q38 47.692 58.385 103.345Q819.999-500.077 819.999-440q0 70.154-26.77 131.999-26.769 61.846-73.076 108.154-46.308 46.307-108.154 73.076-61.845 26.77-131.999 26.77ZM480-160q116 0 198-82t82-198q0-116-82-198t-198-82q-116 0-198 82t-82 198q0 116 82 198t198 82Zm0-280Z"/>
+                    <path *ngIf="ressource.type == typesRessource.TEST" fill="currentColor" d="M549.999-369.231q14.692 0 25.654-10.962 10.961-10.961 10.961-25.653 0-14.693-10.961-25.654-10.962-10.961-25.654-10.961T524.346-431.5q-10.962 10.961-10.962 25.654 0 14.692 10.962 25.653 10.961 10.962 25.653 10.962Zm-23.845-120.308h47.691q.769-27.076 6.962-40.192 6.192-13.115 29.346-35.5 27.692-26.538 37.692-44.846 10-18.307 10-42.538 0-42.692-30.154-70.423t-77.692-27.731q-37.153 0-65.345 20.5-28.193 20.5-40.962 55.038l43.23 18.154q10.154-24.231 26.039-36.346 15.884-12.116 37.038-12.116 26.308 0 43.231 15.231 16.924 15.231 16.924 40.154 0 15.154-8.577 28.424-8.577 13.269-29.731 32.654-29.154 25.538-37.423 42.999-8.269 17.462-8.269 56.538ZM322.308-260.001q-30.308 0-51.307-21-21-21-21-51.308v-455.382q0-30.308 21-51.308 20.999-21 51.307-21h455.383q30.307 0 51.307 21 21 21 21 51.308v455.382q0 30.308-21 51.308t-51.307 21H322.308Zm0-59.999h455.383q4.615 0 8.462-3.846 3.846-3.847 3.846-8.463v-455.382q0-4.616-3.846-8.463-3.847-3.846-8.462-3.846H322.308q-4.616 0-8.462 3.846-3.847 3.847-3.847 8.463v455.382q0 4.616 3.847 8.463 3.846 3.846 8.462 3.846ZM182.309-120.003q-30.307 0-51.307-21-21-21-21-51.307v-515.381h59.999v515.381q0 4.616 3.846 8.462 3.847 3.847 8.462 3.847h515.382v59.998H182.309ZM309.999-800v480-480Z"/>
+                </svg>
+            </div>
+        </div>
+        <div class="w-full px-4 pt-4 flex justify-start items-center">
+            <div class="text-gray-600 w-full">
+                <div class="text-md text-gray-700 font-semibold mb-4">{{ressource.titre}}</div>
+                <div *ngIf="ressource.description" class="text-gray-500 px-6 mb-4">
+                    <div class="ql-container ql-snow" [style.border]="'none'">
+                        <div class="w-full ql-editor p-0 text-base" [innerHTML]="getContenu()"></div>
+                    </div>
+                </div>
+                <hr class="bg-gray-200 my-5">
+                <div class="flex flex-col w-full">
+                    <div *ngFor="let fichierRessource of this.ressource.fichiersRessource" class="flex gap-x-2 justify-between items-center">
+                        <div class="flex items-center">
+                            <!-- <img width="20" src="assets/icons/pdf_icon.png" alt="pdf-icon"> -->
+                            <div class="text-lg" [ngClass]="getFichierRessourceIcone(fichierRessource)" class="file-icon"></div>
+                            <div class="text-gray-500 text-base ml-4 mr-6">{{ fichierRessource.titre ?? fichierRessource?.fichier! }}</div>
+                        </div>
+                        <button (click)="downloadFichierRessource(fichierRessource)" class="p-1 hover:bg-blue-100 rounded-md text-center text-gray-400">
+                            <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
+                                <path fill="currentColor" d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div *ngIf="rolesValue.isEnseignant" class="resource-options-btn flex justify-end items-center gap-x-8">
+        <button [routerLink]="'./ressources/' + ressource.id + '/modification'"class="px-4 py-2 bg-gray-50 hover:bg-blue-200 border border-blue-200 rounded-md text-center">
+            <div class="flex gap-x-2 items-center justify-center text-blue-500 text-sm">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
+                    <path fill="currentColor" d="M200-200h50.461l409.463-409.463-50.461-50.461L200-250.461V-200Zm-59.999 59.999v-135.383l527.616-527.384q9.073-8.241 20.036-12.736 10.963-4.495 22.993-4.495 12.029 0 23.307 4.27 11.277 4.269 19.969 13.576l48.846 49.461q9.308 8.692 13.269 20.004 3.962 11.311 3.962 22.622 0 12.065-4.121 23.028-4.12 10.964-13.11 20.037l-527.384 527H140.001Zm620.384-570.153-50.231-50.231 50.231 50.231Zm-126.134 75.903-24.788-25.673 50.461 50.461-25.673-24.788Z"/>
+                </svg>
+                <div>Modifier</div>
+            </div>
+        </button>
+        <button (click)="openSupprimerRessourceModal()" class="px-4 py-2 bg-gray-50 hover:bg-red-200 border border-red-200 rounded-md text-center">
+            <div class="flex gap-x-2 items-center justify-center text-red-500 text-sm">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
+                    <path fill="currentColor" d="M292.309-140.001q-29.923 0-51.115-21.193-21.193-21.192-21.193-51.115V-720h-40v-59.999H360v-35.384h240v35.384h179.999V-720h-40v507.691q0 30.308-21 51.308t-51.308 21H292.309ZM680-720H280v507.691q0 5.385 3.462 8.847 3.462 3.462 8.847 3.462h375.382q4.616 0 8.463-3.846 3.846-3.847 3.846-8.463V-720ZM376.155-280h59.999v-360h-59.999v360Zm147.691 0h59.999v-360h-59.999v360ZM280-720v520-520Z"/>
+                </svg>
+                <div>Supprimer</div>
+            </div>
+        </button>
+    </div>
+</div>
+
+<!-- Modals -->
+<app-custom-modal title="Supprimer" subtitles="Déplacer cette ressource dans la corbeille" (onCloseModal)="closeSupprimerRessourceModal()" [center]="true" [showModal]="showSupprimerRessourceModal">
+    <div class="text-gray-500 mb-8">
+        Êtes-vous de vouloir supprimer la ressource <b>{{ ressource.titre }}</b> de ce chapitre ?
+    </div>
+    <div class="flex items-center justify-between py-30">
+        <app-custom-button (click)="closeSupprimerRessourceModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+        <app-custom-button (click)="supprimerRessource()" text="Supprimer" color="red"></app-custom-button>
+    </div>
+</app-custom-modal>

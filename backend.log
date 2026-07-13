@@ -1,0 +1,414 @@
+
+> easy-ecole-orientation-backend@1.0.0 dev
+> nodemon src/app.ts
+
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: ts,json[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+Listening on http://localhost:3000
+Database connected successfully
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 18.819 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 4.469 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 3.574 ms - -[0m
+Database: all data synchronized
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 2.198 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 2.665 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 3.368 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 2.867 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 2.833 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 3.684 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 2.798 ms - -[0m
+[32m[nodemon] restarting due to changes...[39m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 5.061 ms - -[0m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+Listening on http://localhost:3000
+Database connected successfully
+[0mGET /api/v1/inscription/anneesAcademiques [36m304[0m 75.132 ms - -[0m
+[0mGET /api/v1/inscription/classes [36m304[0m 70.127 ms - -[0m
+[0mGET /api/v1/inscription/bulletins/moyennes [36m304[0m 76.067 ms - -[0m
+[0mGET /api/v1/inscription/audit-notes [36m304[0m 25.487 ms - -[0m
+[0mGET /api/v1/inscription/unites-enseignement [36m304[0m 18.017 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 3.670 ms - -[0m
+[0mGET /api/v1/inscription/mcc [36m304[0m 19.272 ms - -[0m
+[0mGET /api/v1/inscription/echelles-notes [36m304[0m 9.499 ms - -[0m
+[0mGET /api/v1/inscription/sessions-examens [36m304[0m 19.320 ms - -[0m
+[0mGET /api/v1/inscription/classes [36m304[0m 39.553 ms - -[0m
+[0mGET /api/v1/inscription/anneesAcademiques [36m304[0m 41.584 ms - -[0m
+[0mGET /api/v1/inscription/deliberations?page=1&limit=50 [36m304[0m 81.580 ms - -[0m
+[0mGET /api/v1/inscription/jury-membres [36m304[0m 14.714 ms - -[0m
+[0mGET /api/v1/inscription/rattrapages/sessions [36m304[0m 13.260 ms - -[0m
+[0mGET /api/v1/inscription/rattrapages [36m304[0m 37.457 ms - -[0m
+[0mGET /api/v1/inscription/rattrapages/stats [36m304[0m 21.761 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 2.727 ms - -[0m
+[0mGET /api/v1/inscription/absences [36m304[0m 11.179 ms - -[0m
+[0mGET /api/v1/inscription/equivalences [36m304[0m 19.303 ms - -[0m
+[0mGET /api/v1/inscription/dispenses [36m304[0m 16.971 ms - -[0m
+Database: all data synchronized
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 2.353 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 3.091 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 2.942 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 2.241 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 6.268 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 6.094 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 2.544 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 1.540 ms - -[0m
+[0mGET /api/v1/inscription/niveauxEtude [36m304[0m 39.549 ms - -[0m
+[0mGET /api/v1/inscription/parcours [36m304[0m 43.336 ms - -[0m
+[0mGET /api/v1/inscription/parcours [36m304[0m 16.716 ms - -[0m
+[0mGET /api/v1/inscription/niveauxEtude [36m304[0m 20.503 ms - -[0m
+[0mGET /api/v1/inscription/frais-parcours [36m304[0m 30.414 ms - -[0m
+[0mGET /api/v1/inscription/anneesAcademiques [36m304[0m 33.642 ms - -[0m
+[0mGET /api/v1/inscription/demandesInscription [36m304[0m 24.320 ms - -[0m
+[0mGET /api/v1/inscription/sessions [36m304[0m 30.320 ms - -[0m
+[0mGET /auth/apprenants/photos/etudiant1.jpg [33m404[0m 5.428 ms - 175[0m
+[0mGET /api/v1/inscription/cursusApprenant [36m304[0m 8.228 ms - -[0m
+[0mGET /api/v1/inscription/anneesAcademiques [36m304[0m 6.362 ms - -[0m
+[0mGET /api/v1/inscription/niveauxEtude [36m304[0m 14.104 ms - -[0m
+[0mGET /api/v1/inscription/parcours [36m304[0m 17.944 ms - -[0m
+[0mGET /api/v1/inscription/sessions [36m304[0m 30.112 ms - -[0m
+[0mGET /api/v1/inscription/dossiers [36m304[0m 40.476 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 1.942 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 1.649 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 2.169 ms - -[0m
+[0mGET /api/v1/inscription/absences [36m304[0m 18.958 ms - -[0m
+[0mGET /api/v1/inscription/equivalences [36m304[0m 14.366 ms - -[0m
+[0mGET /api/v1/inscription/dispenses [36m304[0m 13.705 ms - -[0m
+[0mGET /api/v1/scolarite/discipline/ [36m304[0m 6.021 ms - -[0m
+[0mGET /api/v1/scolarite/sanctions/ [36m304[0m 9.068 ms - -[0m
+[0mGET /api/v1/scolarite/sanctions/actives [36m304[0m 10.954 ms - -[0m
+[0mGET /api/v1/scolarite/conseils/ [36m304[0m 9.893 ms - -[0m
+[0mGET /api/v1/scolarite/diplomes/ [36m304[0m 7.246 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 2.273 ms - -[0m
+[0mGET /api/v1/scolarite/demandes-vae/ [36m304[0m 6.414 ms - -[0m
+[0mGET /api/v1/scolarite/reclamations/ [36m304[0m 5.832 ms - -[0m
+[0mGET /api/v1/scolarite/reclamations/ [36m304[0m 5.806 ms - -[0m
+[0mGET /api/v1/scolarite/reorientations/ [36m304[0m 5.263 ms - -[0m
+[0mGET /api/v1/scolarite/decisions-passage/ [36m304[0m 5.256 ms - -[0m
+[0mGET /api/v1/scolarite/demandes-vae/ [36m304[0m 4.045 ms - -[0m
+[0mGET /api/v1/scolarite/diplomes/ [36m304[0m 3.865 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 2.054 ms - -[0m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+Listening on http://localhost:3000
+Database connected successfully
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 19.033 ms - -[0m
+Database: all data synchronized
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+Listening on http://localhost:3000
+Database connected successfully
+Database: all data synchronized
+[0mGET /api/v1/inscription/dashboard [33m400[0m 23.103 ms - 54[0m
+[0mGET /api/v1/health [33m404[0m 3.246 ms - 52[0m
+[0mGET /api/v1/menu [36m304[0m 84.188 ms - -[0m
+[0mGET /api/v1/events?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJhZG1pbkB1c3QuY2kiLCJpZGVudGlmaWFudCI6ImFkbWluIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzgzODUzMjY4fQ.n-mqlNUB_2jzDpP9BWWle2On5oNUV_Pfep3LQ0YwQ4E [33m400[0m 2.755 ms - 54[0m
+[0mGET /api/v1/auth/permissions/mes-permissions [36m304[0m 2606.305 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 2614.209 ms - -[0m
+[0mGET /api/v1/inscription/dashboard [32m200[0m 162.647 ms - 293[0m
+[0mGET /api/v1/inscription/sessions [36m304[0m 167.789 ms - -[0m
+[0mGET /api/v1/auth/utilisateurs/moi [32m200[0m 176.015 ms - 187[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 20.869 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 10.281 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 7.415 ms - -[0m
+[0mGET /api/v1/inscription/sessions [36m304[0m 30.619 ms - -[0m
+[0mGET /api/v1/inscription/niveauxEtude [36m304[0m 13.271 ms - -[0m
+[0mGET /api/v1/inscription/parcours [36m304[0m 15.431 ms - -[0m
+[0mGET /api/v1/inscription/parcours [36m304[0m 5.443 ms - -[0m
+[0mGET /api/v1/inscription/niveauxEtude [36m304[0m 6.629 ms - -[0m
+[0mGET /api/v1/inscription/frais-parcours [36m304[0m 14.236 ms - -[0m
+[0mGET /api/v1/inscription/anneesAcademiques [36m304[0m 12.450 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 3.055 ms - -[0m
+[0mGET /api/v1/inscription/cursusApprenant [36m304[0m 4.181 ms - -[0m
+[0mGET /api/v1/inscription/anneesAcademiques [36m304[0m 12.502 ms - -[0m
+[0mGET /api/v1/inscription/niveauxEtude [36m304[0m 18.873 ms - -[0m
+[0mGET /api/v1/inscription/parcours [36m304[0m 22.958 ms - -[0m
+[0mGET /api/v1/inscription/sessions [36m304[0m 23.811 ms - -[0m
+[0mGET /api/v1/inscription/dossiers [36m304[0m 73.941 ms - -[0m
+[0mGET /api/v1/orientation/demandesOrientation [36m304[0m 10.955 ms - -[0m
+[0mGET /api/v1/orientation/niveauxEtude [36m304[0m 11.811 ms - -[0m
+[0mGET /api/v1/orientation/categories [36m304[0m 13.641 ms - -[0m
+[0mGET /api/v1/orientation/parcours [36m304[0m 21.015 ms - -[0m
+[0mGET /api/v1/auth/enseignants [36m304[0m 8.292 ms - -[0m
+[0mGET /api/v1/inscription/niveauxEtude [36m304[0m 9.453 ms - -[0m
+[0mGET /api/v1/inscription/parcours [36m304[0m 17.440 ms - -[0m
+[0mGET /api/v1/inscription/classes [36m304[0m 19.873 ms - -[0m
+[0mGET /api/v1/inscription/cours [36m304[0m 23.518 ms - -[0m
+[0mGET /api/v1/inscription/niveauxEtude [36m304[0m 9.142 ms - -[0m
+[0mGET /api/v1/inscription/classes [36m304[0m 14.273 ms - -[0m
+[0mGET /api/v1/inscription/parcours [36m304[0m 12.294 ms - -[0m
+[0mGET /api/v1/inscription/cahiersDeTexte [36m304[0m 17.780 ms - -[0m
+[0mGET /api/v1/inscription/niveauxEtude [36m304[0m 20.302 ms - -[0m
+[0mGET /api/v1/inscription/parcours [36m304[0m 21.950 ms - -[0m
+[0mGET /api/v1/inscription/classes [36m304[0m 24.885 ms - -[0m
+[0mGET /api/v1/inscription/listesPresences [36m304[0m 9.661 ms - -[0m
+[0mGET /api/v1/inscription/niveauxEtude [36m304[0m 5.871 ms - -[0m
+[0mGET /api/v1/inscription/parcours [36m304[0m 7.217 ms - -[0m
+[0mGET /api/v1/inscription/classes [36m304[0m 9.529 ms - -[0m
+[0mGET /api/v1/inscription/listesNoteEvaluation [36m304[0m 11.561 ms - -[0m
+[0mGET /api/v1/elearning/cours [33m400[0m 0.830 ms - 54[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 2.349 ms - -[0m
+[0mGET /api/v1/elearning/quiz [36m304[0m 7.223 ms - -[0m
+[0mGET /api/v1/elearning/progression [36m304[0m 243.239 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 4.900 ms - -[0m
+[0mGET /api/v1/elearning/certificats [36m304[0m 7.531 ms - -[0m
+[0mGET /api/v1/elearning/progression [36m304[0m 26.948 ms - -[0m
+[0mGET /api/v1/elearning/devoirs [36m304[0m 9.956 ms - -[0m
+[0mGET /api/v1/elearning/cours [32m200[0m 10.612 ms - 2[0m
+[0mGET /api/v1/elearning/cours [33m400[0m 1.156 ms - 54[0m
+[0mGET /api/v1/scolarite/demandesDocument/ [36m304[0m 15.688 ms - -[0m
+[0mGET /api/v1/scolarite/typesDocument/ [36m304[0m 18.009 ms - -[0m
+[0mGET /api/v1/scolarite/demandesDocument/ [36m304[0m 4.619 ms - -[0m
+[0mGET /api/v1/scolarite/registres/ [36m304[0m 5.357 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 6.475 ms - -[0m
+[0mGET /api/v1/scolarite/calendrier/ [36m304[0m 11.981 ms - -[0m
+[0mGET /api/v1/scolarite/bibliotheque [36m304[0m 18.464 ms - -[0m
+[0mGET /api/v1/scolarite/bibliotheque [36m304[0m 7.933 ms - -[0m
+[0mGET /api/v1/inscription/anneesAcademiques [36m304[0m 3.967 ms - -[0m
+[0mGET /api/v1/inscription/classes [36m304[0m 21.109 ms - -[0m
+[0mGET /api/v1/inscription/bulletins?classeId=&semestre=&anneeAcademiqueId=&statut= [36m304[0m 42.781 ms - -[0m
+[0mGET /api/v1/inscription/anneesAcademiques [36m304[0m 4.373 ms - -[0m
+[0mGET /api/v1/inscription/classes [36m304[0m 5.654 ms - -[0m
+[0mGET /api/v1/inscription/bulletins/moyennes [36m304[0m 5.601 ms - -[0m
+[0mGET /api/v1/inscription/audit-notes [36m304[0m 16.378 ms - -[0m
+[0mGET /api/v1/inscription/bulletins/mon-releve [33m403[0m 4.494 ms - 17[0m
+[0mGET /api/v1/inscription/dashboard [36m304[0m 19.600 ms - -[0m
+[0mGET /api/v1/inscription/sessions [36m304[0m 14.787 ms - -[0m
+[0mGET /api/v1/auth/utilisateurs/moi [36m304[0m 17.043 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 1.749 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 2.572 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 11.129 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 1.070 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 4.719 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 9.842 ms - -[0m
+[0mGET /api/v1/communication/communications [32m200[0m 10.228 ms - 2[0m
+[0mGET /api/v1/communication/communications [33m400[0m 0.488 ms - 54[0m
+[0mGET /api/v1/communication/actualites [33m400[0m 0.641 ms - 54[0m
+[0mGET /api/v1/communication/suggestions [33m400[0m 0.880 ms - 54[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 2.281 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 2.045 ms - -[0m
+[0mGET /api/v1/inscription/dashboard [36m304[0m 27.868 ms - -[0m
+[0mGET /api/v1/inscription/sessions [36m304[0m 28.887 ms - -[0m
+[0mGET /api/v1/auth/utilisateurs/moi [36m304[0m 9.147 ms - -[0m
+[0mPOST /api/v1/auth/login [32m200[0m 652.483 ms - 229[0m
+[0mGET /api/v1/auth/permissions/mes-permissions [36m304[0m 11.408 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 13.803 ms - -[0m
+[0mGET /api/v1/menu [36m304[0m 5.290 ms - -[0m
+[0mGET /api/v1/events?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJhZG1pbkB1c3QuY2kiLCJpZGVudGlmaWFudCI6ImFkbWluIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzgzOTA1MjEwfQ.eJP8_qnaua7UJnGclhAZhqXiNcECCD6IFxrg1m5BfjQ [33m400[0m 5.740 ms - 54[0m
+[0mGET /api/v1/inscription/dashboard [36m304[0m 21.535 ms - -[0m
+[0mGET /api/v1/inscription/sessions [36m304[0m 29.446 ms - -[0m
+[0mGET /api/v1/auth/utilisateurs/moi [36m304[0m 31.558 ms - -[0m
+[0mPOST /api/v1/auth/login [32m200[0m 120.562 ms - 262[0m
+[0mGET /api/v1/events?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTEsImVtYWlsIjoiYW1pbmF0YS50cmFvcmVAZXR1LnVzdC5jaSIsImlkZW50aWZpYW50IjoiZXR1ZGlhbnQxIiwicm9sZSI6ImFwcHJlbmFudCIsImlhdCI6MTc4MzkwNTIzNH0.SUS6Kg0rnXlhCiFzGQuJq1OGScPlRChzYHIrTHFAIUs [33m400[0m 1.754 ms - 54[0m
+[0mGET /api/v1/orientation/panierParcoursChoisis/statistics/count [36m304[0m 16.772 ms - -[0m
+[0mGET /api/v1/auth/permissions/mes-permissions [32m200[0m 255.450 ms - 37[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 291.005 ms - -[0m
+[0mGET /api/v1/inscription/sessions [36m304[0m 338.201 ms - -[0m
+[0mGET /api/v1/auth/utilisateurs/moi [32m200[0m 112.414 ms - 430[0m
+[0mGET /api/v1/menu [32m200[0m 376.866 ms - 2[0m
+[0mGET /api/v1/inscription/dashboard [32m200[0m 383.336 ms - 75[0m
+[0mGET /api/v1/inscription/seances/planning?semaineDebut=2026-07-13&semaineFin=2026-07-13 [31m500[0m 2.806 ms - 28[0m
+[0mGET /api/v1/scolarite/demandesDocument/ [36m304[0m 22.612 ms - -[0m
+[0mGET /api/v1/inscription/publications-notes/mes-notes [33m404[0m 29.778 ms - 71[0m
+[0mGET /api/v1/orientation/panierParcoursChoisis/statistics/count [36m304[0m 16.356 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 300.341 ms - -[0m
+[0mGET /api/v1/menu [36m304[0m 316.477 ms - -[0m
+[0mGET /api/v1/inscription/sessions [36m304[0m 22.913 ms - -[0m
+[0mGET /api/v1/auth/utilisateurs/moi [36m304[0m 30.301 ms - -[0m
+[0mGET /api/v1/inscription/dashboard [36m304[0m 37.525 ms - -[0m
+[0mGET /api/v1/inscription/seances/planning?semaineDebut=2026-07-13&semaineFin=2026-07-13 [31m500[0m 1.396 ms - 28[0m
+[0mGET /api/v1/scolarite/demandesDocument/ [36m304[0m 17.349 ms - -[0m
+[0mGET /api/v1/inscription/publications-notes/mes-notes [33m404[0m 23.473 ms - 71[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 4.217 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 10.681 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 15.219 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 5.446 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 9.668 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 11.072 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 6.186 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 10.113 ms - -[0m
+[0mPOST /api/v1/auth/login [33m404[0m 5.726 ms - 37[0m
+[0mGET /api/v1/elearning/notifications [33m400[0m 2.105 ms - 54[0m
+[0mPOST /api/v1/auth/login [32m200[0m 106.824 ms - 254[0m
+[0mGET /api/v1/auth/permissions/mes-permissions [36m304[0m 3.636 ms - -[0m
+[0mGET /api/v1/elearning/notifications [32m200[0m 5.502 ms - 2[0m
+[0mGET /api/v1/menu [32m200[0m 19.643 ms - 412[0m
+[0mGET /api/v1/inscription/sessions [36m304[0m 30.843 ms - -[0m
+[0mGET /api/v1/auth/utilisateurs/moi [32m200[0m 19.919 ms - 193[0m
+[0mGET /api/v1/inscription/dashboard [32m200[0m 37.067 ms - 96[0m
+[0mGET /api/v1/events?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MywiZW1haWwiOiJ5dmVzLmtvbmFuQHVzdC5jaSIsImlkZW50aWZpYW50IjoicHJvZi1tYXRocyIsInJvbGUiOiJlbnNlaWduYW50IiwiaWF0IjoxNzgzOTA1NDQ1fQ.9--T8AW5UZPAjE8hngxzic4E-ZPOuKZ9ZoGJm8lkmXQ [33m400[0m 17.606 ms - 54[0m
+[0mGET /api/v1/inscription/seances/planning?semaineDebut=2026-07-13&semaineFin=2026-07-13 [31m500[0m 1.764 ms - 28[0m
+[0mGET /api/v1/inscription/seances/planning?semaineDebut=2026-07-13&semaineFin=2026-07-13 [31m500[0m 1.019 ms - 28[0m
+[0mGET /api/v1/inscription/listesNoteEvaluation [36m304[0m 52.820 ms - -[0m
+[0mGET /api/v1/inscription/equivalences [36m304[0m 12.607 ms - -[0m
+[0mGET /api/v1/inscription/dispenses [36m304[0m 9.126 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 6.308 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 9.449 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 307.141 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 9.769 ms - -[0m
+[0mGET /api/v1/inscription/equivalences [36m304[0m 9.895 ms - -[0m
+[0mGET /api/v1/inscription/dispenses [36m304[0m 16.735 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 25.502 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 35.014 ms - -[0m
+[0mGET /api/v1/elearning/notifications [33m400[0m 0.767 ms - 54[0m
+[0mPOST /api/v1/auth/login [32m200[0m 89.709 ms - 264[0m
+[0mGET /api/v1/auth/permissions/mes-permissions [36m304[0m 4.337 ms - -[0m
+[0mGET /api/v1/events?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6OSwiZW1haWwiOiJsYXVyZW50LmtvdWFzc2lAdXN0LmNpIiwiaWRlbnRpZmlhbnQiOiJjb21pdGUxIiwicm9sZSI6ImNvbWl0ZV9vcmllbnRhdGlvbiIsImlhdCI6MTc4MzkwNTU5OX0.5wtdksrbpv0yud1H7LJIp9iJlY4pw776w7h4pEFvvgg [33m400[0m 5.594 ms - 54[0m
+[0mGET /api/v1/inscription/dashboard [32m200[0m 33.022 ms - 193[0m
+[0mGET /api/v1/menu [32m200[0m 35.490 ms - 2[0m
+[0mGET /api/v1/inscription/sessions [36m304[0m 24.201 ms - -[0m
+[0mGET /api/v1/auth/utilisateurs/moi [32m200[0m 26.061 ms - 200[0m
+[0mGET /api/v1/elearning/notifications [32m200[0m 6.524 ms - 2[0m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+Listening on http://localhost:3000
+Database connected successfully
+[0mPOST /api/v1/auth/login [32m200[0m 303.136 ms - 259[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 18.399 ms - -[0m
+[0mGET /api/v1/events?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJpbnN0aXR1dGlvbkB1c3QuY2kiLCJpZGVudGlmaWFudCI6Imluc3RpdHV0aW9uIiwicm9sZSI6Imluc3RpdHV0aW9uIiwiaWF0IjoxNzgzOTA1NzI3fQ.Hr4A294LOspBDDagsUzxwkGwVA26baok4Yw0PIqDXvY [33m400[0m 7.175 ms - 54[0m
+[0mGET /api/v1/auth/permissions/mes-permissions [36m304[0m 31.127 ms - -[0m
+[0mGET /api/v1/inscription/dashboard [31m500[0m 182.424 ms - 897[0m
+[0mGET /api/v1/menu [32m200[0m 223.293 ms - 7571[0m
+[0mGET /api/v1/inscription/sessions [36m304[0m 201.014 ms - -[0m
+[0mGET /api/v1/auth/utilisateurs/moi [32m200[0m 222.971 ms - 406[0m
+[0mGET /api/v1/menu [33m401[0m 0.994 ms - 43[0m
+[0mPOST /api/v1/auth/login [33m404[0m 2.181 ms - 37[0m
+[0mGET /api/v1/inscription/sessions [36m304[0m 8.839 ms - -[0m
+[0mGET /api/v1/inscription/niveauxEtude [36m304[0m 5.358 ms - -[0m
+[0mGET /api/v1/inscription/parcours [36m304[0m 7.749 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 2.342 ms - -[0m
+[0mGET /api/v1/inscription/sessions [36m304[0m 5.097 ms - -[0m
+[0mGET /api/v1/inscription/demandesInscription [36m304[0m 22.455 ms - -[0m
+[0mGET /auth/apprenants/photos/etudiant1.jpg [33m404[0m 2.494 ms - 175[0m
+[0mGET /api/v1/inscription/niveauxEtude [36m304[0m 7.781 ms - -[0m
+[0mGET /api/v1/inscription/parcours [36m304[0m 11.646 ms - -[0m
+[0mGET /api/v1/inscription/anneesAcademiques [36m304[0m 22.044 ms - -[0m
+[0mGET /api/v1/inscription/sessions [36m304[0m 26.756 ms - -[0m
+[0mGET /api/v1/inscription/dossiers [36m304[0m 26.495 ms - -[0m
+[0mPOST /api/v1/auth/login [32m200[0m 87.748 ms - 262[0m
+[0mGET /api/v1/orientation/demandesOrientation [36m304[0m 5.453 ms - -[0m
+[0mGET /api/v1/menu [33m401[0m 0.846 ms - 47[0m
+[0mGET /api/v1/orientation/niveauxEtude [36m304[0m 10.293 ms - -[0m
+[0mGET /api/v1/orientation/parcours [36m304[0m 15.630 ms - -[0m
+[0mGET /api/v1/orientation/categories [36m304[0m 16.229 ms - -[0m
+[0mPOST /api/v1/auth/login [32m200[0m 73.036 ms - 262[0m
+[0mGET /api/v1/menu [32m200[0m 7.718 ms - 3290[0m
+[0mGET /api/v1/auth/enseignants [36m304[0m 5.615 ms - -[0m
+[0mGET /api/v1/inscription/niveauxEtude [36m304[0m 5.418 ms - -[0m
+[0mGET /api/v1/inscription/parcours [36m304[0m 6.418 ms - -[0m
+[0mGET /api/v1/inscription/cours [36m304[0m 17.617 ms - -[0m
+[0mGET /api/v1/inscription/classes [36m304[0m 56.645 ms - -[0m
+[0mGET /api/v1/inscription/cours [36m304[0m 19.122 ms - -[0m
+[0mGET /api/v1/auth/enseignants [36m304[0m 21.468 ms - -[0m
+[0mGET /api/v1/inscription/classes [36m304[0m 23.752 ms - -[0m
+[0mGET /api/v1/inscription/seances/planning?semaineDebut=2026-07-13&semaineFin=2026-07-19 [31m500[0m 3.880 ms - 28[0m
+[0mGET /api/v1/inscription/niveauxEtude [36m304[0m 7.217 ms - -[0m
+[0mGET /api/v1/inscription/classes [36m304[0m 8.918 ms - -[0m
+[0mGET /api/v1/inscription/parcours [36m304[0m 9.847 ms - -[0m
+[0mGET /api/v1/inscription/listesPresences [36m304[0m 13.320 ms - -[0m
+[0mGET /api/v1/inscription/niveauxEtude [36m304[0m 6.731 ms - -[0m
+[0mGET /api/v1/inscription/classes [36m304[0m 8.289 ms - -[0m
+[0mGET /api/v1/inscription/parcours [36m304[0m 9.779 ms - -[0m
+[0mGET /api/v1/inscription/listesNoteEvaluation [36m304[0m 18.361 ms - -[0m
+Database: all data synchronized
+[0mGET /api/v1/scolarite/demandesDocument/ [36m304[0m 5.874 ms - -[0m
+[0mGET /api/v1/scolarite/typesDocument/ [36m304[0m 6.752 ms - -[0m
+[0mGET /api/v1/scolarite/demandesDocument/ [36m304[0m 4.225 ms - -[0m
+[0mGET /api/v1/scolarite/registres/ [36m304[0m 3.374 ms - -[0m
+[0mGET /api/v1/scolarite/calendrier/ [36m304[0m 5.009 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 2.964 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 1.956 ms - -[0m
+[0mGET /api/v1/communication/communications [32m200[0m 4.073 ms - 2[0m
+[0mGET /api/v1/communication/communications [33m400[0m 2.966 ms - 54[0m
+[0mGET /api/v1/communication/actualites [33m400[0m 0.842 ms - 54[0m
+[0mGET /api/v1/elearning/notifications [33m400[0m 0.943 ms - 54[0m
+[0mPOST /api/v1/auth/login [32m200[0m 67.007 ms - 254[0m
+[0mGET /api/v1/menu [32m200[0m 6.402 ms - 2556[0m
+[0mPOST /api/v1/auth/login [32m200[0m 63.872 ms - 262[0m
+[0mGET /api/v1/orientation/panierParcoursChoisis/statistics/count [36m304[0m 4.039 ms - -[0m
+[0mGET /api/v1/auth/permissions/mes-permissions [36m304[0m 5.568 ms - -[0m
+[0mGET /api/v1/elearning/notifications [32m200[0m 7.794 ms - 2[0m
+[0mGET /api/v1/events?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTEsImVtYWlsIjoiYW1pbmF0YS50cmFvcmVAZXR1LnVzdC5jaSIsImlkZW50aWZpYW50IjoiZXR1ZGlhbnQxIiwicm9sZSI6ImFwcHJlbmFudCIsImlhdCI6MTc4MzkwNTg0M30.biywUmTOwjDx57rQsUmCTsKdqyrLtGcd2C5CzwcsA1M [33m400[0m 10.144 ms - 54[0m
+[0mGET /api/v1/inscription/sessions [36m304[0m 23.928 ms - -[0m
+[0mGET /api/v1/menu [32m200[0m 57.481 ms - 3290[0m
+[0mGET /api/v1/inscription/dashboard [32m200[0m 33.999 ms - 75[0m
+[0mGET /api/v1/auth/utilisateurs/moi [32m200[0m 36.376 ms - 430[0m
+[0mGET /api/v1/inscription/seances/planning?semaineDebut=2026-07-13&semaineFin=2026-07-13 [31m500[0m 1.583 ms - 28[0m
+[0mGET /api/v1/scolarite/demandesDocument/ [36m304[0m 7.925 ms - -[0m
+[0mGET /api/v1/inscription/publications-notes/mes-notes [33m404[0m 54.529 ms - 71[0m
+[0mGET /api/v1/inscription/cursusApprenant [36m304[0m 6.818 ms - -[0m
+[0mGET /api/v1/inscription/dossiers/mon-dossier [33m404[0m 19.680 ms - 59[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 4.812 ms - -[0m
+[0mGET /api/v1/inscription/bulletins/mon-releve [33m404[0m 37.808 ms - 44[0m
+[0mGET /api/v1/stages/offres [32m200[0m 5.685 ms - 2[0m
+[0mGET /api/v1/stages/demandes [32m200[0m 8.797 ms - 2[0m
+[0mGET /api/v1/stages/offres [36m304[0m 9.068 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 2.865 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 2.447 ms - -[0m
+[0mGET /api/v1/auth/utilisateurs [33m400[0m 2.338 ms - 54[0m
+[0mGET /api/v1/elearning/chat/salons [33m400[0m 3.488 ms - 54[0m
+[0mGET /api/v1/auth/apprenants/undefined [32m200[0m 10.172 ms - 338[0m
+[0mGET /auth/apprenants/photos/etudiant1.jpg [33m404[0m 0.502 ms - 175[0m
+[0mGET /api/v1/auth/utilisateurs/ [33m403[0m 2.802 ms - 17[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 2.967 ms - -[0m
+[0mGET /api/v1/inscription/sessions [36m304[0m 11.306 ms - -[0m
+[0mGET /api/v1/auth/utilisateurs/moi [36m304[0m 13.137 ms - -[0m
+[0mGET /api/v1/inscription/dashboard [36m304[0m 24.387 ms - -[0m
+[0mGET /api/v1/inscription/seances/planning?semaineDebut=2026-07-13&semaineFin=2026-07-13 [31m500[0m 1.497 ms - 28[0m
+[0mGET /api/v1/scolarite/demandesDocument/ [36m304[0m 7.496 ms - -[0m
+[0mGET /api/v1/inscription/publications-notes/mes-notes [33m404[0m 8.613 ms - 71[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 6.354 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 314.230 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 10.279 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 11.494 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 289.619 ms - -[0m
+[0mGET /api/v1/auth/apprenants/undefined [36m304[0m 8.378 ms - -[0m
+[0mGET /auth/apprenants/photos/etudiant1.jpg [33m404[0m 0.476 ms - 175[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 3.399 ms - -[0m
+[0mGET /api/v1/auth/utilisateurs/moi [36m304[0m 32.838 ms - -[0m
+[0mGET /api/v1/inscription/dashboard [36m304[0m 47.969 ms - -[0m
+[0mGET /api/v1/inscription/sessions [36m304[0m 46.107 ms - -[0m
+[0mGET /api/v1/inscription/seances/planning?semaineDebut=2026-07-13&semaineFin=2026-07-13 [31m500[0m 1.628 ms - 28[0m
+[0mGET /api/v1/scolarite/demandesDocument/ [36m304[0m 6.798 ms - -[0m
+[0mGET /api/v1/inscription/publications-notes/mes-notes [33m404[0m 7.684 ms - 71[0m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m

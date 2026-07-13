@@ -1,0 +1,43 @@
+:host {
+  display: block;
+}
+
+.form-card {
+  background: white;
+  border-radius: 1rem;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  padding: 1.5rem;
+
+  @media (min-width: 640px) {
+    padding: 2rem;
+  }
+}
+
+.form-input {
+  display: block;
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 0;
+  background: #f8fafc;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  color: #0f172a;
+  box-shadow: 0 1px 2px inset rgba(0, 0, 0, 0.02), 0 0 0 1px inset #e2e8f0;
+  transition: box-shadow 0.15s;
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #2563eb;
+  }
+
+  &::placeholder {
+    color: #94a3b8;
+  }
+}
+
+.error-text {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #2563eb;
+}

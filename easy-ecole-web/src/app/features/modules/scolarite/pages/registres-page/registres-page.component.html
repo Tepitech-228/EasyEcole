@@ -1,0 +1,121 @@
+<div class="page-container">
+  <app-header-title title="Registres académiques" subtitle="Consulter l'historique académique des étudiants"></app-header-title>
+
+  <app-custom-alert *ngIf="errorMessage" [show]="true" [title]="errorMessage" type="danger" [inline]="true"></app-custom-alert>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-icon text-blue-600 bg-blue-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ registres.length }}</p>
+        <p class="stat-label">Étudiants</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon text-green-600 bg-green-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ getDecisionCount('Admis') }}</p>
+        <p class="stat-label">Admis</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon text-red-600 bg-red-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ getDecisionCount('Redouble') }}</p>
+        <p class="stat-label">Redoublants</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon text-purple-600 bg-purple-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ classes.length }}</p>
+        <p class="stat-label">Classes</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header border-b">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 class="card-title">Registres</h2>
+          <p class="card-subtitle">Liste des résultats académiques</p>
+        </div>
+        <div class="flex gap-4 items-center">
+          <input type="text" [(ngModel)]="searchQuery" (keyup)="filtrer()" placeholder="Rechercher un étudiant..."
+            class="form-input-sm">
+          <select [(ngModel)]="filterClasse" (change)="filtrer()" class="form-select-sm">
+            <option value="undefined">Toutes les classes</option>
+            <option *ngFor="let c of classes" [value]="c">{{ c }}</option>
+          </select>
+          <select [(ngModel)]="filterDecision" (change)="filtrer()" class="form-select-sm">
+            <option value="undefined">Toutes les décisions</option>
+            <option value="Admis">Admis</option>
+            <option value="Redouble">Redouble</option>
+          </select>
+          <app-custom-button *ngIf="searchQuery || filterClasse !== 'undefined' || filterDecision !== 'undefined'"
+            (click)="reinitialiserFiltres()" text="Réinitialiser" color="gray" [outlined]="true"></app-custom-button>
+        </div>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <div *ngIf="loading" class="loading-shimmer">
+        <div *ngFor="let _ of [1,2,3,4,5]" class="shimmer-row"></div>
+      </div>
+      <div *ngIf="!loading && _registres.length > 0" class="overflow-x-auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Étudiant</th>
+              <th>Matricule</th>
+              <th>Classe</th>
+              <th class="text-center">Moyenne</th>
+              <th class="text-center">Rang</th>
+              <th class="text-center">Décision</th>
+              <th>Année</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of paginatedRegistres; index as index">
+              <td>{{ (currentPage - 1) * pageSize + index + 1 }}</td>
+              <td class="font-medium">{{ r.etudiant }}</td>
+              <td>{{ r.matricule }}</td>
+              <td>{{ r.classe }}</td>
+              <td class="text-center">
+                <span [class.text-green-600]="r.moyenne >= 10" [class.text-red-600]="r.moyenne < 10" class="font-semibold">{{ r.moyenne }}</span>
+              </td>
+              <td class="text-center">{{ r.rang }}</td>
+              <td class="text-center">
+                <app-custom-badge [text]="r.decision" [color]="r.decision === 'Admis' ? 'green' : 'red'"></app-custom-badge>
+              </td>
+              <td>{{ r.anneeScolaire }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="!loading && _registres.length === 0" class="empty-state">
+        <img class="h-40" src="assets/images/selection-pana.svg" alt="no data">
+        <p class="text-gray-500">Aucun registre trouvé</p>
+        <app-custom-button text="Réinitialiser les filtres" (click)="reinitialiserFiltres()"></app-custom-button>
+      </div>
+    </div>
+    <div class="card-footer" *ngIf="_registres.length > pageSize">
+      <div class="flex justify-between items-center">
+        <span class="text-sm text-gray-600">{{ _registres.length }} enregistrement(s) - Page {{ currentPage }}/{{ totalPages }}</span>
+        <div class="flex gap-2">
+          <app-custom-button (click)="prevPage()" text="Précédent" color="gray" [outlined]="true" [disabled]="currentPage === 1"></app-custom-button>
+          <app-custom-button (click)="nextPage()" text="Suivant" color="gray" [outlined]="true" [disabled]="currentPage === totalPages"></app-custom-button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

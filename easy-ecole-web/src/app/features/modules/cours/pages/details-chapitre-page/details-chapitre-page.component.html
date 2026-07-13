@@ -1,0 +1,99 @@
+<app-return-back [doubleBack]="true"></app-return-back>
+
+<ng-container *ngIf="chapitre && chapitre.cours">
+    <div class="flex md:flex-row flex-col items-start justify-between mb-8">
+        <app-header-title title="{{chapitre.titre}}">
+            <div class="mt-2 md:mb-0 mb-8 flex md:flex-row flex-wrap gap-x-4 gap-y-2">
+                <div class="flex items-center text-secondary">
+                    <img src="assets/icons/student.svg" alt="icon">
+                    <div class="px-2 text-sm">{{ chapitre.cours.code }} - {{ chapitre.cours.intitule }}</div>
+                </div>
+                <div *ngIf="chapitre.cours.parcours?.niveauEtude" class="flex items-center text-secondary">
+                    <img src="assets/icons/student.svg" alt="icon">
+                    <div class="px-2 text-sm">{{ chapitre.cours.parcours?.niveauEtude?.libelle ?? '---' }}</div>
+                </div>
+                <div class="flex items-center text-secondary">
+                    <img src="assets/icons/category-light.svg" alt="icon">
+                    <div class="px-2 text-sm">{{ chapitre.cours.classe ? chapitre.cours.classe.libelle : '---' }}</div>
+                </div>
+            </div>
+        </app-header-title>
+        <div class="flex justify-end items-center gap-x-4">
+            <app-custom-button *ngIf="rolesValue.isEnseignant" text="Nouvelle ressource" (click)="openNouvelleRessourceModal()"></app-custom-button>
+        </div>
+    </div>
+
+    <div class="w-full flex justify-between items-center mb-8">
+        <div class="grid grid-cols-4 w-full gap-x-2 gap-y-4">
+            <div class="block xl:col-span-3 lg:col-span-3 md:col-span-3 col-span-full">
+                <div class="flex gap-y-12 flex-col">
+                    <div *ngIf="chapitre.ressources!.length == 0" class="w-full py-24 flex flex-col gap-y-8 items-center justify-center">
+                        <img class="h-56" src="assets/images/selection-pana.svg" alt="no resource">
+                        <div class="text-sm text-gray-500">Aucune ressource disponible</div>
+                    </div>
+                    <app-ressource-card *ngFor="let ressource of chapitre.ressources!" [ressource]="ressource" [rolesValue]="rolesValue"></app-ressource-card>
+                </div>
+            </div>
+            <div class="block xl:col-span-1 lg:col-span-1 md:col-span-1 col-span-full">
+                <div class="w-full h-full border-l-2 border-gray-500">
+                    <div class="pl-10">
+                        <div class="flex flex-col gap-y-4">
+                            <div class="font-semibold text-md text-gray-600 mb-2">Sommaire</div>
+                            <div *ngFor="let chapitre of chapitre.ressources!" class="flex items-center">
+                                <!-- <div class="w-4 h-4 bg-white border border-gray-400 rounded-full"></div> -->
+                                <div class="text-sm text-gray-500">{{chapitre.titre}}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</ng-container>
+
+<!-- Modals -->
+<app-custom-modal title="Type de ressource" subtitle="Spécifier le type de la nouvelle ressource" (onCloseModal)="showNouvelleRessourceModal = false" [center]="true" [showModal]="showNouvelleRessourceModal">
+    <div class="w-full flex justify-between items-center mb-8">
+        <div class="px-8 pt-12 pb-10 grid 2xl:grid-cols-3 xl:grid-cols-3 lg:grid-cols-3 md:grid-cols-3 grid-cols-3 w-full gap-x-12 gap-y-4">
+            <div [routerLink]="'./ressources/new'" [queryParams]="{ type: typesRessource.NORMALE}" class="ressource-type-card px-2 py-4 rounded-md flex flex-col justify-center items-center hover:bg-gray-50">
+                <div [ngClass]="'bg-blue-500'" class="w-24 h-24 rounded flex justify-center items-center text-white resource-icon mb-4">
+                    <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
+                        <path fill="currentColor" d="M252.309-100.001q-30.308 0-51.308-21t-21-51.308v-615.382q0-30.308 21-51.308t51.308-21h317.692l209.998 209.998v477.692q0 30.308-21 51.308t-51.308 21H252.309Zm287.692-520V-800H252.309q-4.616 0-8.463 3.846-3.846 3.847-3.846 8.463v615.382q0 4.616 3.846 8.463 3.847 3.846 8.463 3.846h455.382q4.616 0 8.463-3.846 3.846-3.847 3.846-8.463v-447.692H540.001ZM240-800v179.999V-800v640V-800Z"/>
+                    </svg>
+                </div>
+
+                <div class="text-center text-gray-600">
+                    <div class="font-semibold text-gray-700">Normale</div>
+                    <div class="text-sm text-gray-600">Lorem ipsum dolor sit amet consectetur adipisicing elit</div>
+                </div>
+            </div>
+
+            <div [routerLink]="'./ressources/new'" [queryParams]="{ type: typesRessource.TRAVAIL_A_RENDRE}" class="ressource-type-card px-2 py-4 rounded-md flex flex-col justify-center items-center hover:bg-gray-50">
+                <div [ngClass]="'bg-green-500'" class="w-24 h-24 rounded flex justify-center items-center text-white resource-icon mb-4">
+                    <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
+                        <path fill="currentColor" d="M367.693-850.001v-59.998h224.614v59.998H367.693Zm82.308 442.308h59.998v-224.614h-59.998v224.614ZM480-100.001q-70.154 0-131.999-26.77-61.846-26.769-108.154-73.076-46.307-46.308-73.076-108.154-26.77-61.845-26.77-131.999t26.77-131.999q26.769-61.846 73.076-108.154 46.308-46.307 108.154-73.076 61.845-26.77 131.999-26.77 60.077 0 115.731 20.385 55.653 20.385 103.345 58.385l49.846-49.846 42.153 42.153-49.846 49.846q38 47.692 58.385 103.345Q819.999-500.077 819.999-440q0 70.154-26.77 131.999-26.769 61.846-73.076 108.154-46.308 46.307-108.154 73.076-61.845 26.77-131.999 26.77ZM480-160q116 0 198-82t82-198q0-116-82-198t-198-82q-116 0-198 82t-82 198q0 116 82 198t198 82Zm0-280Z"/>
+                    </svg>
+                </div>
+
+                <div class="text-center text-gray-600">
+                    <div class="font-semibold text-gray-700">Travail à rendre</div>
+                    <div class="text-sm text-gray-600">Lorem ipsum dolor sit amet consectetur adipisicing elit</div>
+                </div>
+            </div>
+            <div [routerLink]="'./ressources/new'" [queryParams]="{ type: typesRessource.TEST}" class="ressource-type-card px-2 py-4 rounded-md flex flex-col justify-center items-center hover:bg-gray-50">
+                <div [ngClass]="'bg-red-500'" class="w-24 h-24 rounded flex justify-center items-center text-white resource-icon mb-4">
+                    <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
+                        <path fill="currentColor" d="M549.999-369.231q14.692 0 25.654-10.962 10.961-10.961 10.961-25.653 0-14.693-10.961-25.654-10.962-10.961-25.654-10.961T524.346-431.5q-10.962 10.961-10.962 25.654 0 14.692 10.962 25.653 10.961 10.962 25.653 10.962Zm-23.845-120.308h47.691q.769-27.076 6.962-40.192 6.192-13.115 29.346-35.5 27.692-26.538 37.692-44.846 10-18.307 10-42.538 0-42.692-30.154-70.423t-77.692-27.731q-37.153 0-65.345 20.5-28.193 20.5-40.962 55.038l43.23 18.154q10.154-24.231 26.039-36.346 15.884-12.116 37.038-12.116 26.308 0 43.231 15.231 16.924 15.231 16.924 40.154 0 15.154-8.577 28.424-8.577 13.269-29.731 32.654-29.154 25.538-37.423 42.999-8.269 17.462-8.269 56.538ZM322.308-260.001q-30.308 0-51.307-21-21-21-21-51.308v-455.382q0-30.308 21-51.308 20.999-21 51.307-21h455.383q30.307 0 51.307 21 21 21 21 51.308v455.382q0 30.308-21 51.308t-51.307 21H322.308Zm0-59.999h455.383q4.615 0 8.462-3.846 3.846-3.847 3.846-8.463v-455.382q0-4.616-3.846-8.463-3.847-3.846-8.462-3.846H322.308q-4.616 0-8.462 3.846-3.847 3.847-3.847 8.463v455.382q0 4.616 3.847 8.463 3.846 3.846 8.462 3.846ZM182.309-120.003q-30.307 0-51.307-21-21-21-21-51.307v-515.381h59.999v515.381q0 4.616 3.846 8.462 3.847 3.847 8.462 3.847h515.382v59.998H182.309ZM309.999-800v480-480Z"/>
+                    </svg>
+                </div>
+
+                <div class="text-center">
+                    <div class="font-semibold text-gray-700">Test</div>
+                    <div class="text-sm text-gray-600">Lorem ipsum dolor sit amet consectetur adipisicing elit</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</app-custom-modal>

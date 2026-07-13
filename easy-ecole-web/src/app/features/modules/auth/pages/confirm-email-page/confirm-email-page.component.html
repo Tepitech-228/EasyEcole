@@ -1,0 +1,18 @@
+<app-auth-layout title="Confirmation email" subtitle="Vérification de votre adresse email" [showBottom]="false"
+    bottomText="" bottomLinkText="" bottomLink="">
+    <div class="text-center py-8">
+        <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+        <div *ngIf="success">
+            <div class="text-green-600 text-5xl mb-4">✓</div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Email confirmé !</h3>
+            <p class="text-sm text-gray-500">Votre adresse email a été vérifiée avec succès.</p>
+            <p class="text-sm text-gray-400 mt-2">Redirection vers la connexion...</p>
+        </div>
+        <div *ngIf="error && !loading">
+            <div class="text-red-600 text-5xl mb-4">✕</div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Échec de confirmation</h3>
+            <p class="text-sm text-gray-500">Le lien de confirmation est invalide ou a expiré.</p>
+            <a routerLink="/auth/connexion" class="mt-4 inline-block text-indigo-600 hover:text-indigo-500">Retour à la connexion</a>
+        </div>
+    </div>
+</app-auth-layout>

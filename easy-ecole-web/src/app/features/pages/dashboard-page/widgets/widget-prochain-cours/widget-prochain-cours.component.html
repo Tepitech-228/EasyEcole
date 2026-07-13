@@ -1,0 +1,27 @@
+<app-dashboard-widget
+  title="Prochain cours"
+  icon="⏰"
+  [loading]="loading"
+  [empty]="!loading && !nextEvent"
+  emptyMessage="Aucun cours à venir aujourd'hui">
+
+  <div class="next-course" *ngIf="nextEvent">
+    <div class="next-countdown" *ngIf="minutesAvant > 0">
+      <span class="countdown-value">{{ minutesAvant }}</span>
+      <span class="countdown-label">min</span>
+    </div>
+    <div class="next-countdown next-now" *ngIf="minutesAvant === 0">
+      <span class="countdown-value">Maintenant</span>
+    </div>
+    <div class="next-info">
+      <div class="next-title">{{ nextEvent.titre || nextEvent.cours?.intitule || 'Cours' }}</div>
+      <div class="next-meta">
+        <span class="next-time">🕐 {{ heureDebut }}</span>
+        <span class="next-salle" *ngIf="nextEvent.salle">📍 {{ nextEvent.salle }}</span>
+        <span class="next-prof" *ngIf="nextEvent.enseignant">
+          👨‍🏫 {{ nextEvent.enseignant.utilisateur?.prenoms }} {{ nextEvent.enseignant.utilisateur?.nom }}
+        </span>
+      </div>
+    </div>
+  </div>
+</app-dashboard-widget>

@@ -1,0 +1,23 @@
+<app-dashboard-widget
+  title="Mes dernières notes"
+  icon="📝"
+  [loading]="loading"
+  [empty]="!loading && notes.length === 0"
+  emptyMessage="Aucune note publiée"
+  link="/cours/mes-notes">
+
+  <div class="notes-list">
+    <div class="note-item" *ngFor="let note of notes">
+      <div class="note-info">
+        <div class="note-cours">{{ note.listeNoteEvaluation?.cours?.intitule || 'Matière' }}</div>
+        <div class="note-type">{{ note.listeNoteEvaluation?.typeNoteEvaluation?.libelle || 'Évaluation' }}</div>
+        <div class="note-date" *ngIf="note.listeNoteEvaluation?.publicationsNotes?.[0]?.datePublication">
+          {{ note.listeNoteEvaluation.publicationsNotes[0].datePublication | date:'dd MMM yyyy' }}
+        </div>
+      </div>
+      <div class="note-grade" [class.grade-pass]="note.note >= 10" [class.grade-fail]="note.note < 10">
+        {{ note.note != null ? (note.note + '/20') : '-' }}
+      </div>
+    </div>
+  </div>
+</app-dashboard-widget>

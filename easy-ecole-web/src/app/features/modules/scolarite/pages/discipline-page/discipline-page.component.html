@@ -1,0 +1,174 @@
+<div class="page-container">
+  <app-header-title title="Discipline" subtitle="Suivi des sanctions disciplinaires"></app-header-title>
+
+  <app-custom-alert *ngIf="errorMessage" [show]="true" [title]="errorMessage" type="danger" [inline]="true"></app-custom-alert>
+  <app-custom-alert *ngIf="successMessage" [show]="true" [title]="successMessage" type="success" [inline]="true"></app-custom-alert>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-icon text-blue-600 bg-blue-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ sanctions.length }}</p>
+        <p class="stat-label">Total sanctions</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon text-orange-600 bg-orange-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ getStatutCount('En cours') }}</p>
+        <p class="stat-label">En cours</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon text-green-600 bg-green-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ getStatutCount('Exécutée') }}</p>
+        <p class="stat-label">Exécutées</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon text-purple-600 bg-purple-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ sanctionTypes.length }}</p>
+        <p class="stat-label">Types</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-6" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin">
+    <div class="card-header">
+      <h2 class="card-title">Ajouter une sanction</h2>
+      <p class="card-subtitle">Enregistrer une nouvelle sanction disciplinaire</p>
+    </div>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Étudiant</label>
+          <input type="text" [(ngModel)]="newSanction.etudiant" class="form-input" placeholder="Nom de l'étudiant">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Matricule</label>
+          <input type="text" [(ngModel)]="newSanction.matricule" class="form-input" placeholder="Matricule">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Classe</label>
+          <input type="text" [(ngModel)]="newSanction.classe" class="form-input" placeholder="Classe">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input type="date" [(ngModel)]="newSanction.date" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Motif</label>
+          <textarea [(ngModel)]="newSanction.motif" rows="2" class="form-textarea" placeholder="Motif de la sanction"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sanction</label>
+          <input type="text" [(ngModel)]="newSanction.sanction" class="form-input" placeholder="Type de sanction">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Statut</label>
+          <select [(ngModel)]="newSanction.statut" class="form-select">
+            <option value="En cours">En cours</option>
+            <option value="Exécutée">Exécutée</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <app-custom-button (click)="createSanction()" text="Ajouter" color="primary" [disabled]="!newSanction.etudiant || !newSanction.sanction || addingSanction"></app-custom-button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header border-b">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 class="card-title">Sanctions disciplinaires</h2>
+          <p class="card-subtitle">Liste des sanctions enregistrées</p>
+        </div>
+        <div class="flex gap-4 items-center">
+          <input type="text" [(ngModel)]="searchQuery" (keyup)="filtrer()" placeholder="Rechercher un étudiant..."
+            class="form-input-sm">
+          <select [(ngModel)]="filterStatut" (change)="filtrer()" class="form-select-sm">
+            <option value="undefined">Tous les statuts</option>
+            <option value="Exécutée">Exécutée</option>
+            <option value="En cours">En cours</option>
+          </select>
+          <select [(ngModel)]="filterSanction" (change)="filtrer()" class="form-select-sm">
+            <option value="undefined">Tous les types</option>
+            <option *ngFor="let s of sanctionTypes" [value]="s">{{ s }}</option>
+          </select>
+          <app-custom-button *ngIf="searchQuery || filterStatut !== 'undefined' || filterSanction !== 'undefined'"
+            (click)="reinitialiserFiltres()" text="Réinitialiser" color="gray" [outlined]="true"></app-custom-button>
+        </div>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <div *ngIf="loading" class="loading-shimmer">
+        <div *ngFor="let _ of [1,2,3,4,5]" class="shimmer-row"></div>
+      </div>
+      <div *ngIf="!loading && _sanctions.length > 0" class="overflow-x-auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Étudiant</th>
+              <th>Matricule</th>
+              <th>Classe</th>
+              <th>Date</th>
+              <th>Motif</th>
+              <th>Sanction</th>
+              <th class="text-center">Statut</th>
+              <th class="text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of paginatedSanctions; index as index">
+              <td>{{ (currentPage - 1) * pageSize + index + 1 }}</td>
+              <td class="font-medium">{{ s.etudiant }}</td>
+              <td>{{ s.matricule }}</td>
+              <td>{{ s.classe }}</td>
+              <td>{{ s.date | date:'dd/MM/yyyy' }}</td>
+              <td class="max-w-xs truncate">{{ s.motif }}</td>
+              <td>{{ s.sanction }}</td>
+              <td class="text-center">
+                <app-custom-badge [text]="s.statut" [color]="getStatutColor(s.statut)"></app-custom-badge>
+              </td>
+              <td class="text-center">
+                <button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="deleteSanction(s)"
+                  class="btn-icon text-red-500 hover:text-red-700" title="Supprimer">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="!loading && _sanctions.length === 0" class="empty-state">
+        <img class="h-40" src="assets/images/selection-pana.svg" alt="no data">
+        <p class="text-gray-500">Aucun enregistrement disciplinaire trouvé</p>
+        <app-custom-button text="Réinitialiser les filtres" (click)="reinitialiserFiltres()"></app-custom-button>
+      </div>
+    </div>
+    <div class="card-footer" *ngIf="_sanctions.length > pageSize">
+      <div class="flex justify-between items-center">
+        <span class="text-sm text-gray-600">{{ _sanctions.length }} sanction(s) - Page {{ currentPage }}/{{ totalPages }}</span>
+        <div class="flex gap-2">
+          <app-custom-button (click)="prevPage()" text="Précédent" color="gray" [outlined]="true" [disabled]="currentPage === 1"></app-custom-button>
+          <app-custom-button (click)="nextPage()" text="Suivant" color="gray" [outlined]="true" [disabled]="currentPage === totalPages"></app-custom-button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

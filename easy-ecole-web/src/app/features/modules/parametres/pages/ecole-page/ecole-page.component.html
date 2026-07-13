@@ -1,0 +1,56 @@
+<app-custom-alert [show]="success" title="Succès" color="green">Paramètres de l'école enregistrés</app-custom-alert>
+
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="École" subtitle="Paramètres généraux de l'établissement"></app-header-title>
+</div>
+
+<div class="bg-white rounded-lg shadow border border-gray-100 p-8">
+    <form [formGroup]="ecoleForm">
+        <app-parametres-section title="Informations générales" subtitle="Nom, contact et localisation de l'établissement">
+            <div class="grid grid-cols-1 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Nom de l'établissement</label>
+                    <input type="text" formControlName="nom" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Acronyme / Sigle</label>
+                        <input type="text" formControlName="acronym" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Devise monétaire</label>
+                        <input type="text" formControlName="devise" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Email</label>
+                        <input type="email" formControlName="email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Téléphone</label>
+                        <input type="text" formControlName="telephone" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Adresse</label>
+                    <input type="text" formControlName="adresse" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Ville</label>
+                        <input type="text" formControlName="ville" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Pays</label>
+                        <input type="text" formControlName="pays" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    </div>
+                </div>
+            </div>
+        </app-parametres-section>
+
+        <div class="flex justify-end mt-6">
+            <app-custom-button (click)="save()" [text]="saving ? 'Enregistrement...' : 'Enregistrer'" [disabled]="saving || ecoleForm.invalid"></app-custom-button>
+        </div>
+    </form>
+</div>

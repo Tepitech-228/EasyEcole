@@ -1,0 +1,95 @@
+<app-custom-modal [center]="true" [showModal]="showModal">
+    <div>
+        <div class="px-4 mt-3 mb-8 sm:mt-0">
+            <div class="flex w-full justify-between items-center mb-2">
+                <div class="block w-full h-full border-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                    <div class="flex items-center gap-x-2">
+                        <img class="object-cover w-8 h-8 rounded-full"
+                            src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=880&q=80"
+                            alt="">
+                        <div>
+                            <h2 class="text-sm font-medium text-gray-800 dark:text-white ">{{
+                                demande!.utilisateur!.identifiant }}
+                            </h2>
+                            <p class="text-xs font-normal text-gray-600 dark:text-gray-400">{{
+                                demande!.utilisateur!.email }}</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- <div>
+                    <div class="mb-2 text-base font-semibold leading-6 text-gray-700" id="modal-title">
+                        Panier
+                    </div>
+                    <div class="text-sm text-gray-500">
+                        Consulter la liste des parcours choisis pour la demande d'orientation
+                    </div>
+                </div> -->
+                <button (click)="closeModal()" type="button"
+                    class="bg-white rounded-md p-2 inline-flex items-center justify-center text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+                    <span class="sr-only">Close menu</span>
+                    <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="flex items-center gap-x-10">
+                <div class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0"
+                    [ngSwitch]="tauxDeTraitement(demande!.parcoursChoisis!) / demande!.parcoursChoisis!.length">
+                    <div *ngSwitchCase="1" style="width: fit-content;"
+                        class="border-0 m-0 px-3 py-1.5 text-xs font-medium text-green-600 bg-green-200 rounded-full">
+                        Terminé</div>
+                    <div *ngSwitchDefault style="width: fit-content;"
+                        class="border-0 m-0 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-200 rounded-full">
+                        En cours</div>
+                </div>
+                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-xs text-gray-600 bg-transparent">
+                    Faite le {{ demande!.dateDemande! | date: 'dd/MM/YYYY' }} à {{ demande!.dateDemande! | date:
+                    'HH:mm' }}</div>
+            </div>
+        </div>
+        <div class="px-4 mb-8">
+            <div class="flex justify-between items-center">
+                <!-- <app-header-title title="{{ parcours.titre }}">
+                    <div class="mt-2 flex gap-x-4">
+                        <div class="flex items-center text-secondary">
+                            <img src="assets/icons/category-light.svg" alt="icon">
+                            <div class="px-2 text-sm">{{ parcours.categorie?.libelle }}</div>
+                        </div>
+                        <div class="flex items-center text-secondary">
+                            <img src="assets/icons/student.svg" alt="icon">
+                            <div class="px-2 text-sm">{{ parcours.niveauEtude?.libelle }}</div>
+                        </div>
+                        <div class="flex items-center text-secondary">
+                            <img src="assets/icons/clock-outline.svg" alt="icon">
+                            <div class="px-2 text-sm">{{ getDuree() }}</div>
+                        </div>
+                    </div>
+                </app-header-title> -->
+
+                <div>Génie Informatique</div>
+
+                <div class="flex gap-x-8">
+                    <button type="button"
+                        class="bg-white rounded-md p-2 inline-flex items-center justify-center text-gray-500 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+                        <span class="sr-only">Left</span>
+                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+                            viewBox="0 -960 960 960" stroke="currentColor" aria-hidden="true">
+                            <path d="M640-80 240-480l400-400 71 71-329 329 329 329-71 71Z" />
+                        </svg>
+                    </button>
+
+                    <button type="button"
+                        class="bg-white rounded-md p-2 inline-flex items-center justify-center text-gray-500 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+                        <span class="sr-only">Right</span>
+                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+                            viewBox="0 -960 960 960" stroke="currentColor" aria-hidden="true">
+                            <path d="m321-80-71-71 329-329-329-329 71-71 400 400L321-80Z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</app-custom-modal>

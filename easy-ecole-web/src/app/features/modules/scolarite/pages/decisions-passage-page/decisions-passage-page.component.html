@@ -1,0 +1,147 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Décisions de passage</h1>
+      <p class="mt-1 text-sm text-gray-500">Gestion des décisions de passage en année supérieure</p>
+    </div>
+  </div>
+
+  <div *ngIf="errorMessage" class="mb-4 px-4 py-3 rounded-lg bg-red-50 text-red-700 text-sm ring-1 ring-red-200">{{ errorMessage }}</div>
+  <div *ngIf="successMessage" class="mb-4 px-4 py-3 rounded-lg bg-green-50 text-green-700 text-sm ring-1 ring-green-200">{{ successMessage }}</div>
+
+  <!-- Add decision form -->
+  <div *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
+    <h2 class="text-base font-semibold text-gray-900 mb-1">Ajouter une décision</h2>
+    <p class="text-xs text-gray-500 mb-4">Enregistrer une nouvelle décision de passage</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Cursus Apprenant ID</label>
+        <input type="number" [(ngModel)]="newItem.cursusApprenantId" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="ID du cursus">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Année Académique ID</label>
+        <input type="number" [(ngModel)]="newItem.anneeAcademiqueId" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="ID année académique">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Moyenne Générale</label>
+        <input type="number" step="0.01" [(ngModel)]="newItem.moyenneGenerale" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Moyenne">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Crédits Acquis</label>
+        <input type="number" [(ngModel)]="newItem.creditsAcquis" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Crédits acquis">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Crédits Requis</label>
+        <input type="number" [(ngModel)]="newItem.creditsRequis" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Crédits requis">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Décision</label>
+        <select [(ngModel)]="newItem.decision" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
+          <option value="admis">Admis</option>
+          <option value="rattrapage">Rattrapage</option>
+          <option value="redoublement">Redoublement</option>
+          <option value="exclusion">Exclusion</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Date décision</label>
+        <input type="date" [(ngModel)]="newItem.dateDecision" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Validé par (ID)</label>
+        <input type="number" [(ngModel)]="newItem.validePar" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="ID utilisateur">
+      </div>
+    </div>
+    <div class="mt-4">
+      <button (click)="createItem()" [disabled]="!newItem.cursusApprenantId || !newItem.decision || adding"
+              class="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50">
+        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+        Ajouter
+      </button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="px-5 py-3 border-b border-gray-50 flex items-center justify-between flex-wrap gap-2">
+      <span class="text-sm font-semibold text-gray-900">Liste des décisions</span>
+      <div class="flex items-center gap-2">
+        <input type="number" [(ngModel)]="filterAnnee" (keyup)="filtrerParAnnee()" placeholder="Filtrer par année ID..." class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent w-40">
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="px-5 py-8 text-center">
+      <div class="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
+    </div>
+
+    <div *ngIf="!loading && _items.length > 0" class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-50">
+        <thead>
+          <tr class="bg-gray-50/50">
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">#</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Cursus</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Année</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Moyenne</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Crédits</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Décision</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngFor="let s of paginatedItems; index as index" class="hover:bg-gray-50/50 transition-colors">
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-500">{{ (currentPage - 1) * pageSize + index + 1 }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{{ s.cursusApprenantId }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ s.anneeAcademiqueId }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-center text-sm font-bold" [ngClass]="{'text-green-700': s.moyenneGenerale >= 14, 'text-amber-700': s.moyenneGenerale >= 10 && s.moyenneGenerale < 14, 'text-blue-700': s.moyenneGenerale < 10}">
+              {{ s.moyenneGenerale || '-' }}
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap text-center text-sm" [ngClass]="s.creditsAcquis >= s.creditsRequis ? 'text-green-700' : 'text-amber-700'">
+              {{ s.creditsAcquis || 0 }}/{{ s.creditsRequis || 0 }}
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                    [ngClass]="{
+                      'bg-green-50 text-green-700 ring-1 ring-green-200': s.decision === 'admis',
+                      'bg-orange-50 text-orange-700 ring-1 ring-orange-200': s.decision === 'rattrapage',
+                      'bg-red-50 text-red-700 ring-1 ring-red-200': s.decision === 'redoublement' || s.decision === 'exclusion',
+                      'bg-blue-50 text-blue-700 ring-1 ring-blue-200': !['admis','rattrapage','redoublement','exclusion'].includes(s.decision)
+                    }">
+                {{ s.decision === 'admis' ? 'Admis' : s.decision === 'rattrapage' ? 'Rattrapage' : s.decision === 'redoublement' ? 'Redoublement' : s.decision === 'exclusion' ? 'Exclusion' : s.decision }}
+              </span>
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-500">{{ s.dateDecision | date:'dd/MM/yyyy' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-center">
+              <button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="deleteItem(s)"
+                      class="inline-flex items-center px-2 py-1 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                Supprimer
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!loading && _items.length === 0" class="px-5 py-12 text-center">
+      <svg class="mx-auto h-12 w-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <p class="mt-4 text-sm text-gray-500">Aucune décision trouvée</p>
+    </div>
+
+    <div *ngIf="_items.length > pageSize" class="px-5 py-3 border-t border-gray-50 flex items-center justify-between">
+      <span class="text-xs text-gray-500">{{ _items.length }} décision(s) — Page {{ currentPage }}/{{ totalPages }}</span>
+      <div class="flex gap-2">
+        <button (click)="prevPage()" [disabled]="currentPage === 1"
+                class="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
+                [ngClass]="currentPage === 1 ? 'bg-gray-50 text-gray-300 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'">
+          Précédent
+        </button>
+        <button (click)="nextPage()" [disabled]="currentPage === totalPages"
+                class="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
+                [ngClass]="currentPage === totalPages ? 'bg-gray-50 text-gray-300 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'">
+          Suivant
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

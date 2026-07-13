@@ -1,0 +1,59 @@
+<div class="p-6 space-y-6">
+  <div class="rounded-3xl border border-slate-200 bg-gradient-to-r from-slate-900 via-slate-800 to-fuchsia-900 p-6 text-white shadow-sm">
+    <div>
+      <p class="text-sm uppercase tracking-[0.3em] text-slate-300">Administration des messages</p>
+      <h2 class="mt-2 text-2xl font-semibold">Gestion des communications</h2>
+      <p class="mt-2 max-w-2xl text-sm text-slate-300">Préparez et publiez les communications institutionnelles depuis un espace unique.</p>
+    </div>
+  </div>
+
+  <div class="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h3 class="text-lg font-semibold text-slate-900">Nouvelle communication</h3>
+      <div class="mt-5 space-y-4">
+        <div>
+          <label class="mb-1 block text-sm font-medium text-slate-700">Titre</label>
+          <input [(ngModel)]="newComm.titre" class="w-full rounded-2xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+        </div>
+        <div>
+          <label class="mb-1 block text-sm font-medium text-slate-700">Contenu</label>
+          <textarea [(ngModel)]="newComm.contenu" rows="4" class="w-full rounded-2xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"></textarea>
+        </div>
+        <div>
+          <label class="mb-1 block text-sm font-medium text-slate-700">Statut</label>
+          <select [(ngModel)]="newComm.statut" class="w-full rounded-2xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+            <option value="brouillon">Brouillon</option>
+            <option value="publiee">Publiée</option>
+          </select>
+        </div>
+        <button (click)="createCommunication()" class="rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700">
+          Créer
+        </button>
+      </div>
+    </div>
+
+    <div class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <div class="border-b border-slate-100 px-5 py-4">
+        <h3 class="text-lg font-semibold text-slate-900">Communications</h3>
+      </div>
+      <div *ngFor="let comm of communications" class="border-b border-slate-100 p-5 transition hover:bg-slate-50">
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div class="min-w-0 flex-1">
+            <h4 class="font-semibold text-slate-900">{{ comm.titre }}</h4>
+            <p class="mt-1 text-sm leading-7 text-slate-600">{{ comm.contenu }}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="rounded-full px-2.5 py-1 text-xs font-medium"
+              [ngClass]="{'bg-amber-100 text-amber-800': comm.statut === 'brouillon', 'bg-emerald-100 text-emerald-800': comm.statut === 'publiee'}">
+              {{ comm.statut }}
+            </span>
+            <button (click)="deleteCommunication(comm.id)" class="text-sm font-semibold text-red-600 transition hover:text-red-700">Supprimer</button>
+          </div>
+        </div>
+      </div>
+      <div *ngIf="communications.length === 0" class="p-8 text-center text-slate-500">
+        Aucune communication enregistrée.
+      </div>
+    </div>
+  </div>
+</div>

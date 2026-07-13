@@ -1,0 +1,8 @@
+- Generating browser application bundles (phase: setup)...
+√ Browser application bundle generation complete.
+
+Warning: D:\EasyEcole\easy-ecole-web\node_modules\socket.io-parser\build\esm-debug\index.js depends on 'debug'. CommonJS or AMD dependencies can cause optimization bailouts.
+For more info see: https://angular.io/guide/build#configuring-commonjs-dependencies
+
+
+√ Browser application bundle generation complete.

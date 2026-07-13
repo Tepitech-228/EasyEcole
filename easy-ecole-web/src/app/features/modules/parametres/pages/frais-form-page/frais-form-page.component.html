@@ -1,0 +1,43 @@
+<app-custom-alert [show]="success" title="Succès" color="green">Frais enregistré</app-custom-alert>
+
+<div class="flex justify-between items-start mb-8">
+    <app-header-title [title]="isEdit ? 'Modifier le frais' : 'Nouveau frais'" subtitle="Définir un type de frais"></app-header-title>
+</div>
+
+<div class="bg-white rounded-lg shadow border border-gray-100 p-8">
+    <form [formGroup]="form">
+        <div class="grid grid-cols-1 gap-6 max-w-lg">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Nom</label>
+                <input type="text" formControlName="nom" placeholder="Ex: Frais de scolarité" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Montant (FCFA)</label>
+                <input type="number" formControlName="montant" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Périodicité</label>
+                <select formControlName="periodicite" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    <option value="Unique">Unique</option>
+                    <option value="Journalier">Journalier</option>
+                    <option value="Mensuel">Mensuel</option>
+                    <option value="Trimestriel">Trimestriel</option>
+                    <option value="Semestriel">Semestriel</option>
+                    <option value="Annuel">Annuel</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Description</label>
+                <textarea formControlName="description" rows="2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></textarea>
+            </div>
+            <div class="flex items-center gap-2">
+                <input type="checkbox" formControlName="actif" id="actif" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                <label for="actif" class="text-sm text-gray-700">Frais actif</label>
+            </div>
+        </div>
+        <div class="flex justify-end gap-4 mt-6">
+            <a routerLink="../" class="px-4 py-2 text-sm text-gray-700 hover:text-gray-900">Annuler</a>
+            <app-custom-button (click)="save()" [text]="saving ? 'Enregistrement...' : 'Enregistrer'" [disabled]="saving || form.invalid"></app-custom-button>
+        </div>
+    </form>
+</div>

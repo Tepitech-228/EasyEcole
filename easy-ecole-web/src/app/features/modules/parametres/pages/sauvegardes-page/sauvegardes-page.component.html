@@ -1,0 +1,61 @@
+<app-custom-alert [show]="success" title="Succès" color="green">Sauvegarde lancée avec succès</app-custom-alert>
+
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Sauvegardes" subtitle="Gérer les sauvegardes de la base de données"></app-header-title>
+    <app-custom-button (click)="lancerSauvegarde()" [text]="saving ? 'Sauvegarde en cours...' : 'Lancer une sauvegarde'" [disabled]="saving"></app-custom-button>
+</div>
+
+<div class="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Taille</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            <tr *ngFor="let s of sauvegardes" class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ s.nom }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ s.date }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ s.taille }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ s.type }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <app-custom-badge text="{{ s.statut }}" color="green"></app-custom-badge>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                    <button class="text-indigo-600 hover:text-indigo-900">Restaurer</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-8 bg-white rounded-lg shadow border border-gray-100 p-8">
+    <app-parametres-section title="Planification" subtitle="Configurer les sauvegardes automatiques">
+        <div class="grid grid-cols-1 gap-6 max-w-lg">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Fréquence</label>
+                <select class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    <option value="daily">Quotidienne</option>
+                    <option value="weekly">Hebdomadaire</option>
+                    <option value="monthly">Mensuelle</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Heure d'exécution</label>
+                <input type="time" value="02:00" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Rétention (jours)</label>
+                <input type="number" value="30" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+            </div>
+            <div class="flex justify-end">
+                <app-custom-button text="Enregistrer"></app-custom-button>
+            </div>
+        </div>
+    </app-parametres-section>
+</div>

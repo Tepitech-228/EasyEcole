@@ -1,0 +1,21 @@
+<div class="card ged-card">
+  <app-header-title title="Dossiers GED" subtitle="Créer et gérer les dossiers d'archivage (admin)"></app-header-title>
+
+  <div class="ged-form">
+    <p class="field-note">La gestion des dossiers est réservée aux administrateurs.</p>
+
+    <div class="ged-field-row">
+      <input [(ngModel)]="newName" class="form-input w-full" placeholder="Nom du dossier" />
+      <app-custom-button (click)="create()" text="Créer"></app-custom-button>
+    </div>
+
+    <div class="folder-list">
+      <ul>
+        <li *ngFor="let f of folders" class="folder-item">
+          <span>{{ f.nom }}</span>
+          <button (click)="remove(f.id)" class="folder-remove">Supprimer</button>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

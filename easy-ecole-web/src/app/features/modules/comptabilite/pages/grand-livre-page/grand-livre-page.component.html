@@ -1,0 +1,86 @@
+<div class="p-6">
+  <div class="mb-8 flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+    <a routerLink="/comptabilite/dashboard" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50">Dashboard</a>
+    <a routerLink="/comptabilite/plan-comptable" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50">Plan comptable</a>
+    <a routerLink="/comptabilite/balance" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50">Balance</a>
+    <a routerLink="/comptabilite/grand-livre" class="px-5 py-2.5 rounded-lg text-sm font-medium bg-white text-primary shadow-sm">Grand livre</a>
+    <a routerLink="/comptabilite/ecritures" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50">Écritures</a>
+  </div>
+
+  <app-header-title title="Grand livre" subtitle="Détail des mouvements par compte"></app-header-title>
+
+  <div *ngIf="loading" class="animate-pulse">
+    <div class="bg-white rounded-2xl border border-gray-200 p-6 h-16 mb-6"></div>
+  </div>
+
+  <div *ngIf="!loading">
+    <!-- Compte selector -->
+    <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm mb-6">
+      <label class="block text-sm font-medium text-gray-700 mb-2">Sélectionner un compte</label>
+      <select [(ngModel)]="selectedCompteId" (change)="onCompteChange()" class="w-full md:w-96 border border-gray-300 rounded-xl px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary">
+        <option value="">-- Choisir un compte --</option>
+        <option *ngFor="let c of filteredComptes" [value]="c.id">{{ c.numero }} — {{ c.libelle }}</option>
+      </select>
+    </div>
+
+    <!-- Compte info card -->
+    <div *ngIf="selectedCompte && grandLivre" class="bg-gradient-to-r from-gray-50 to-white rounded-2xl border border-gray-200 p-6 shadow-sm mb-6">
+      <div class="flex items-start justify-between mb-4">
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900">{{ selectedCompte.numero }} — {{ selectedCompte.libelle }}</h3>
+          <p class="text-sm text-gray-500">{{ selectedCompte.categorie }} · {{ selectedCompte.nature }}</p>
+        </div>
+        <span class="px-3 py-1 rounded-full text-sm font-semibold"
+          [ngClass]="solde >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'">
+          Solde : {{ formatMontant(solde) }}
+        </span>
+      </div>
+      <div class="flex gap-8 text-sm">
+        <div><span class="text-gray-500">Total Débits :</span> <span class="font-semibold text-blue-700">{{ formatMontant(soldeDebit) }}</span></div>
+        <div><span class="text-gray-500">Total Crédits :</span> <span class="font-semibold text-red-700">{{ formatMontant(soldeCredit) }}</span></div>
+      </div>
+    </div>
+
+    <div *ngIf="loadingLivre" class="text-center py-8 text-sm text-gray-500">Chargement...</div>
+
+    <!-- Movements table -->
+    <div *ngIf="grandLivre?.mouvements?.length > 0" class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Date</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">N° Écriture</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Libellé</th>
+            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Débit</th>
+            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Crédit</th>
+            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Cumul</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <tr *ngFor="let mvt of grandLivre.mouvements" class="hover:bg-gray-50">
+            <td class="px-6 py-3 text-gray-600">{{ mvt.dateEcriture | date:'dd/MM/yyyy' }}</td>
+            <td class="px-6 py-3 font-mono text-gray-900 font-semibold">{{ mvt.numeroEcriture }}</td>
+            <td class="px-6 py-3 text-gray-700">{{ mvt.libelle }}</td>
+            <td class="px-6 py-3 text-right font-medium" [ngClass]="mvt.typeEcriture === 'D' ? 'text-blue-600' : 'text-gray-400'">
+              {{ mvt.typeEcriture === 'D' ? formatMontant(mvt.montant) : '—' }}
+            </td>
+            <td class="px-6 py-3 text-right font-medium" [ngClass]="mvt.typeEcriture === 'C' ? 'text-red-600' : 'text-gray-400'">
+              {{ mvt.typeEcriture === 'C' ? formatMontant(mvt.montant) : '—' }}
+            </td>
+            <td class="px-6 py-3 text-right font-semibold text-gray-900">{{ formatMontant(mvt.cumul || 0) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="selectedCompte && !grandLivre && !loadingLivre" class="bg-white rounded-2xl border border-dashed border-gray-300 p-10 text-center">
+      <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="currentColor" viewBox="0 -960 960 960"><path d="M480-120 200-272v-240L40-600l440-240 440 240v320h-80v-276l-80 44v240L480-120Zm0-332 274-148-274-148-274 148 274 148Zm0 212 200-108v-151L480-360 280-499v151l200 108Z"/></svg>
+      <p class="text-gray-500 text-sm">Aucun mouvement pour ce compte</p>
+    </div>
+
+    <div *ngIf="!selectedCompte && !loading" class="bg-white rounded-2xl border border-dashed border-gray-300 p-10 text-center">
+      <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="currentColor" viewBox="0 -960 960 960"><path d="M240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520h200L520-800v200Z"/></svg>
+      <p class="text-gray-500 text-sm">Sélectionnez un compte pour afficher son grand livre</p>
+    </div>
+  </div>
+</div>

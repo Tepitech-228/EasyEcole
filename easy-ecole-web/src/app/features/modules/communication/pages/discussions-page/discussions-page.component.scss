@@ -1,0 +1,19 @@
+:host {
+  display: block;
+}
+
+button {
+  cursor: pointer;
+}
+
+textarea, input {
+  resize: none;
+}
+
+:host ::ng-deep .message-bubble {
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+:host ::ng-deep .member-chip {
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.08), rgba(15, 23, 42, 0.03));
+}

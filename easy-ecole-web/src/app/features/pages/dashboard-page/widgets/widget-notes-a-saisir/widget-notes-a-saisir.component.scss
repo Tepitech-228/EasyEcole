@@ -1,0 +1,51 @@
+.eval-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.eval-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 0;
+  border-bottom: 1px solid #f9fafb;
+}
+
+.eval-item:last-child {
+  border-bottom: none;
+}
+
+.eval-cours {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+.eval-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.125rem;
+}
+
+.eval-sep { color: #d1d5db; }
+
+.eval-statut {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.statut-brouillon {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.statut-cours {
+  background: #dbeafe;
+  color: #1e40af;
+}

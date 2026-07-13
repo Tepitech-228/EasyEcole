@@ -1,0 +1,86 @@
+<app-custom-modal title="Ajouter un prérequis" subtitle="" (onCloseModal)="closeModal()" [center]="true" [showModal]="showPrerequisModal">
+    <div class="mb-6">
+        <span class="mb-2 block text-sm text-gray-400">Niveau d'étude</span>
+        <select [(ngModel)]="selectedNiveauEtude"
+            class="block w-full rounded-md border-0 py-1.5 text-gray-600 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:max-w-xs sm:text-sm sm:leading-6">
+            <option *ngFor="let niveau of niveauxEtude" [value]="niveau.id">{{ niveau.libelle }}</option>
+        </select>
+        <app-form-message *ngIf="error && selectedNiveauEtude == undefined" text="Veuillez choisir un niveau d'étude"></app-form-message>
+    </div>
+
+    <div class="mb-6">
+        <div class="mb-2 flex justify-between items-center">
+            <span class="block text-sm text-gray-400">Notes</span>
+            <button (click)="addRow()" class="p-1 rounded focus:ring-1 focus:ring-gray-300">
+                <img src="assets/icons/add.svg" alt="add">
+            </button>
+        </div>
+        <div class="w-full">
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th scope="col" *ngFor="let col of columnsSchema"
+                                class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                {{ col.label }}
+                            </th>
+                            <th class="text-sm font-medium text-gray-900 px-2 py-4 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngIf="dataSource.length == 0"
+                            class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                colspan="5">Aucune note requise</td>
+                        </tr>
+                        <tr [ngClass]="dataSource.length == 0 ? 'hidden' : ''" *ngFor="let row of dataSource"
+                            class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                            <td *ngFor="let col of columnsSchema"
+                                class="text-sm text-gray-600 font-regular p-0 whitespace-nowrap">
+                                <input *ngIf="col.type == 'number'" [(ngModel)]="row[col.key]" type="number"
+                                    [ngClass]="row[col.key] == null ? 'ring-1 ring-red-200' : ''"
+                                    class="block w-full h-full border-0 m-0 px-2 py-4 focus:ring-0 hover:bg-gray-100 text-gray-600 placeholder:text-gray-400 focus:bg-white sm:text-sm sm:leading-6"
+                                    [value]="row[col.key]" [min]="0" step=0.01 oninput="validity.valid||(value='');" />
+
+                                <select [(ngModel)]="row[col.key]" *ngIf="col.type == 'list'"
+                                    [ngSwitch]="col.key"
+                                    class="block min-w-full h-full border-0 m-0 px-2 py-4 focus:ring-0 hover:bg-gray-100 text-gray-600 placeholder:text-gray-400 focus:bg-white sm:text-sm sm:leading-6"
+                                    [value]="row[col.key]">
+                                    <ng-container *ngSwitchCase="columnsSchema[0].key">
+                                        <option *ngFor="let mat of matieres" [value]="mat.id">{{ mat.libelle }}
+                                        </option>
+                                    </ng-container>
+                                    <ng-container *ngSwitchCase="columnsSchema[1].key">
+                                        <option default [value]="periodesEvaluation.EXAM">Examen</option>
+                                        <option [value]="periodesEvaluation.TRIM1">1er Trimestre</option>
+                                        <option [value]="periodesEvaluation.TRIM2">2e Trimestre</option>
+                                        <option [value]="periodesEvaluation.TRIM3">3e Trimestre</option>
+                                        <option [value]="periodesEvaluation.SEM1">1er Semestre</option>
+                                        <option [value]="periodesEvaluation.SEM2">3e Semestre</option>
+                                    </ng-container>
+                                    <ng-container *ngSwitchCase="columnsSchema[2].key">
+                                        <option default [value]="typesEvaluation.MOY">Moyenne</option>
+                                        <option [value]="typesEvaluation.DST">Devoir sur table</option>
+                                        <option [value]="typesEvaluation.COMPO">Composition</option>
+                                    </ng-container>
+                                </select>
+                            </td>
+                            <td class="text-sm text-center text-gray-600 font-regular p-0 whitespace-nowrap">
+                                <button (click)="removeRow(row['id'])"
+                                    class="p-1 rounded focus:ring-1 focus:ring-gray-300">
+                                    <img src="assets/icons/remove.svg" alt="add">
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <app-form-message *ngIf="error && dataSource.length == 0" text="Veuillez ajouter au moins une matière"></app-form-message>
+            <app-form-message *ngIf="noteVideError" text="Veuillez saisir toutes les notes"></app-form-message>
+        </div>
+    </div>
+    <div class="py-3 flex items-center justify-between">
+        <app-custom-button (click)="closeModal()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+        <app-custom-button (click)="ajouterPrerequis()" text="Enregistrer"></app-custom-button>
+    </div>
+</app-custom-modal>

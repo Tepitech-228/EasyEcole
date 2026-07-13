@@ -1,0 +1,4 @@
+<button [routerLink]="link" [disabled]="disabled" [ngClass]="[fullWidth ? 'w-full' : '', outlined ? 'text-' + color + '-600 ring-1 ring-inset ring-' + color + '-400 hover:bg-' + color + '-100' : 'text-white bg-' + color + '-600 hover:bg-' + color + '-500', disabled ? 'opacity-50 ' : 'opacity-100'  ]" style="min-width: 100px;"
+    class="block text-center rounded px-4 py-1.5 text-sm font-medium leading-7 shadow-sm">
+    {{ text }}
+</button>

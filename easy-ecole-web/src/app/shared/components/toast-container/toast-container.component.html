@@ -1,0 +1,20 @@
+<div class="fixed bottom-6 right-6 z-[100] flex flex-col gap-y-3">
+  <div *ngFor="let toast of toasts"
+    [ngClass]="toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'"
+    class="flex items-center gap-x-3 rounded-lg px-5 py-3 text-white shadow-lg animate-slide-in-right min-w-[320px] max-w-[420px]">
+    <ng-container [ngSwitch]="toast.type">
+      <svg *ngSwitchCase="'success'" class="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+      </svg>
+      <svg *ngSwitchCase="'error'" class="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </ng-container>
+    <span class="text-sm font-medium flex-1">{{ toast.message }}</span>
+    <button (click)="remove(toast.id)" class="text-white/80 hover:text-white flex-shrink-0">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  </div>
+</div>

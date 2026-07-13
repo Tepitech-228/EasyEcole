@@ -1,0 +1,20 @@
+<app-dashboard-widget
+  title="Mes documents"
+  icon="📄"
+  [loading]="loading"
+  [empty]="!loading && demandes.length === 0"
+  emptyMessage="Aucune demande de document"
+  link="/scolarite/demandes">
+
+  <div class="doc-list">
+    <div class="doc-item" *ngFor="let demande of demandes">
+      <div class="doc-info">
+        <div class="doc-type">{{ demande.typeDocument?.libelle || 'Document' }}</div>
+        <div class="doc-date">{{ demande.date | date:'dd MMM yyyy' }}</div>
+      </div>
+      <span class="doc-statut" [ngClass]="getStatutClass(demande.statut)">
+        {{ getStatutLabel(demande.statut) }}
+      </span>
+    </div>
+  </div>
+</app-dashboard-widget>

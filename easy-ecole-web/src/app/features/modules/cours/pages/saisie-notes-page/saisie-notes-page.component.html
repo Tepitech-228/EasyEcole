@@ -1,0 +1,217 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+  <!-- Header -->
+  <div class="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-700 to-blue-800 text-white px-6 py-8 sm:px-10 sm:py-10 -mx-4 sm:-mx-6 lg:-mx-8 mb-8">
+    <div class="absolute inset-0 opacity-10">
+      <div class="absolute -top-20 -right-20 w-80 h-80 bg-white rounded-full blur-3xl"></div>
+      <div class="absolute -bottom-20 -left-20 w-60 h-60 bg-indigo-300 rounded-full blur-3xl"></div>
+    </div>
+    <div class="relative">
+      <button (click)="retour()" class="inline-flex items-center text-sm text-indigo-100 hover:text-white mb-4 transition-colors bg-transparent border-0 cursor-pointer">
+        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        Retour
+      </button>
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">
+            Saisie des notes — {{ evaluation?.cours?.code || '' }}
+          </h1>
+          <p class="mt-1 text-indigo-100/80 text-sm">
+            {{ evaluation ? (evaluation.typeNoteEvaluation?.libelle || '') + ' — ' + (evaluation.date | date:'dd MMMM yyyy') : '' }}
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button (click)="exportPv()" [disabled]="exportingPv || loading"
+                  class="inline-flex items-center px-4 py-2.5 text-sm font-semibold text-white bg-white/20 hover:bg-white/30 rounded-lg transition-colors disabled:opacity-50">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            {{ exportingPv ? 'Génération...' : 'Générer PV' }}
+          </button>
+          <button (click)="openImportModal()" [disabled]="loading"
+                  class="inline-flex items-center px-4 py-2.5 text-sm font-semibold text-white bg-white/20 hover:bg-white/30 rounded-lg transition-colors disabled:opacity-50">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            Importer PV
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alerts -->
+  <div *ngIf="error" class="mb-4 px-4 py-3 rounded-lg bg-red-50 text-red-700 text-sm ring-1 ring-red-200">Une erreur est survenue lors de l'enregistrement</div>
+  <div *ngIf="success" class="mb-4 px-4 py-3 rounded-lg bg-green-50 text-green-700 text-sm ring-1 ring-green-200">Notes enregistrées avec succès</div>
+  <div *ngIf="publishSuccess" class="mb-4 px-4 py-3 rounded-lg bg-green-50 text-green-700 text-sm ring-1 ring-green-200">Notes publiées avec succès ! Les étudiants ont été notifiés par email.</div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="flex justify-center py-24">
+    <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>
+  </div>
+
+  <!-- Empty state -->
+  <div *ngIf="!loading && participants.length === 0" class="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-16 text-center">
+    <svg class="mx-auto h-12 w-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+    <p class="mt-4 text-sm text-gray-500">Aucun étudiant inscrit à ce cours</p>
+  </div>
+
+  <!-- Notes table -->
+  <div *ngIf="!loading && participants.length > 0" class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-50">
+        <thead>
+          <tr class="bg-gray-50/50">
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">#</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Étudiant</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Note /20</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Statut</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngFor="let p of participants; index as i" class="hover:bg-gray-50/50 transition-colors">
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-500">{{ i + 1 }}</td>
+            <td class="px-5 py-4 whitespace-nowrap">
+              <div class="flex items-center gap-3">
+                <div class="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-100 to-blue-50 flex items-center justify-center text-xs font-bold text-indigo-700 uppercase">
+                  {{ ((p.utilisateur?.nom || '')?.[0] || '') + ((p.utilisateur?.prenoms || '')?.[0] || '') }}
+                </div>
+                <span class="text-sm font-medium text-gray-900">{{ p.utilisateur?.nom }} {{ p.utilisateur?.prenoms }}</span>
+              </div>
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap">
+              <div class="w-28">
+                <input type="number" [(ngModel)]="notesInput[p.id!]" min="0" max="20" step="0.5" placeholder="Note"
+                       [class.ring-red-400]="notesInput[p.id!] !== null && notesInput[p.id!] !== undefined && isInvalidNote(notesInput[p.id!])"
+                       class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white placeholder:text-gray-300">
+                <div *ngIf="notesInput[p.id!] !== null && notesInput[p.id!] !== undefined && isInvalidNote(notesInput[p.id!])" class="text-xs text-red-500 mt-1">
+                  doit être entre 0 et 20
+                </div>
+              </div>
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap">
+              <span *ngIf="notesInput[p.id!] !== null && notesInput[p.id!] !== undefined"
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700">
+                Noté
+              </span>
+              <span *ngIf="notesInput[p.id!] === null || notesInput[p.id!] === undefined"
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                En attente
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Actions -->
+    <div class="px-6 py-4 border-t border-gray-50 flex items-center justify-end gap-3">
+      <button (click)="save()" [disabled]="saving || isPublished()"
+              class="px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+        <svg class="w-4 h-4 mr-1.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+        {{ saving ? 'Enregistrement...' : 'Enregistrer les notes' }}
+      </button>
+      <button *ngIf="!isPublished() && participants.length > 0" (click)="openPublishModal()" [disabled]="publishing"
+              class="px-4 py-2.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+        <svg class="w-4 h-4 mr-1.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        {{ publishing ? 'Publication...' : 'Publier les notes' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Import Modal -->
+  <div *ngIf="showImportModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 w-full max-w-lg mx-4 overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-50">
+        <h2 class="text-lg font-semibold text-gray-900">Importer un PV rempli</h2>
+        <button (click)="closeImportModal()" class="p-1 rounded-lg hover:bg-gray-50 transition-colors bg-transparent border-0 cursor-pointer">
+          <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div *ngIf="!importResult" class="p-6">
+        <p class="text-sm text-gray-600 mb-4">Sélectionnez le fichier Excel (.xlsx) du PV que vous avez rempli avec les notes.</p>
+        <div class="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center hover:border-indigo-300 transition-colors cursor-pointer" (click)="fileInput.click()">
+          <input type="file" accept=".xlsx,.xls" (change)="onFileSelected($event)" class="hidden" #fileInput>
+          <div *ngIf="!selectedFile" class="flex flex-col items-center gap-2">
+            <svg class="h-10 w-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <span class="text-sm text-indigo-600 font-medium">Cliquez pour sélectionner un fichier</span>
+            <span class="text-xs text-gray-400">.xlsx ou .xls</span>
+          </div>
+          <div *ngIf="selectedFile" class="flex flex-col items-center gap-2">
+            <svg class="h-8 w-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span class="text-sm font-medium text-gray-700">{{ selectedFile.name }}</span>
+            <span class="text-xs text-gray-400">{{ (selectedFile.size / 1024).toFixed(1) }} Ko</span>
+            <span class="text-xs text-indigo-600">Cliquer pour changer</span>
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-3 mt-6">
+          <button (click)="closeImportModal()" class="px-4 py-2.5 text-sm font-semibold text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">Annuler</button>
+          <button (click)="importPv()" [disabled]="!selectedFile || importingPv"
+                  class="px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50">
+            {{ importingPv ? 'Import...' : 'Importer les notes' }}
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="importResult" class="p-6">
+        <div class="flex flex-col items-center gap-3 mb-6">
+          <div [ngClass]="importResult.importedCount > 0 ? 'text-green-500' : 'text-red-500'">
+            <svg class="h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path *ngIf="importResult.importedCount > 0" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              <path *ngIf="importResult.importedCount === 0" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+            </svg>
+          </div>
+          <div class="text-center">
+            <div class="text-lg font-semibold text-gray-900">Import terminé</div>
+            <div class="text-sm text-gray-500">{{ importResult.importedCount }} note(s) importée(s)</div>
+            <div *ngIf="importResult.errorCount > 0" class="text-sm text-red-500">{{ importResult.errorCount }} erreur(s)</div>
+          </div>
+        </div>
+        <div *ngIf="importResult.errors?.length" class="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+          <p class="text-xs font-medium text-red-700 mb-1">Détails des erreurs :</p>
+          <ul class="text-xs text-red-600 space-y-0.5 list-disc list-inside">
+            <li *ngFor="let err of importResult.errors">{{ err }}</li>
+          </ul>
+        </div>
+        <div *ngIf="importResult.details?.length" class="max-h-40 overflow-y-auto border border-gray-100 rounded-lg mb-4">
+          <table class="min-w-full text-xs">
+            <thead class="bg-gray-50"><tr><th class="px-3 py-1.5 text-left font-medium text-gray-500">Étudiant</th><th class="px-3 py-1.5 text-center font-medium text-gray-500">Note</th><th class="px-3 py-1.5 text-center font-medium text-gray-500">Statut</th></tr></thead>
+            <tbody class="divide-y divide-gray-100">
+              <tr *ngFor="let d of importResult.details">
+                <td class="px-3 py-1.5 text-gray-700">{{ d.nom || d.matricule }}</td>
+                <td class="px-3 py-1.5 text-center text-gray-700">{{ d.note !== null ? d.note + '/20' : '-' }}</td>
+                <td class="px-3 py-1.5 text-center"><span [ngClass]="{'text-green-600': d.status === '✓ Importée', 'text-gray-400': d.status.includes('Ignoré'), 'text-red-500': d.status.includes('invalide') || d.status.includes('trouvé')}" class="font-medium">{{ d.status }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="flex justify-end">
+          <button (click)="closeImportModal()" class="px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors">Terminé</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Publish Modal -->
+  <div *ngIf="showPublishModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 w-full max-w-lg mx-4 overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-50">
+        <h2 class="text-lg font-semibold text-gray-900">Publier les notes</h2>
+        <button (click)="closePublishModal()" class="p-1 rounded-lg hover:bg-gray-50 transition-colors bg-transparent border-0 cursor-pointer">
+          <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="p-6">
+        <p class="text-sm text-gray-600 mb-4">Cette action va publier les notes pour tous les étudiants et leur envoyer une notification par email. Les notes ne pourront plus être modifiées après publication.</p>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Message facultatif</label>
+          <textarea [(ngModel)]="publishMessage" rows="3" placeholder="Un message à accompagner la publication..." class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white resize-none"></textarea>
+        </div>
+        <div *ngIf="publishError" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 text-sm mb-3">Erreur lors de la publication. Veuillez réessayer.</div>
+        <div class="flex justify-end gap-3">
+          <button (click)="closePublishModal()" class="px-4 py-2.5 text-sm font-semibold text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">Annuler</button>
+          <button (click)="publishNotes()" [disabled]="publishing" class="px-4 py-2.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors disabled:opacity-50">
+            {{ publishing ? 'Publication...' : 'Confirmer la publication' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

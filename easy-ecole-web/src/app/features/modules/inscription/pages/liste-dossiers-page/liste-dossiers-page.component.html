@@ -1,0 +1,146 @@
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Dossiers étudiants" subtitle="Consulter la liste des dossiers académiques des étudiants"></app-header-title>
+</div>
+
+<div *ngIf="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+    Une erreur est survenue lors du chargement
+</div>
+
+<!-- Filtres par année / niveau / parcours -->
+<div class="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+    <div class="flex items-center gap-x-2 mb-3">
+        <span class="material-symbols-outlined text-gray-500">folder</span>
+        <span class="text-sm font-medium text-gray-700">Filtrer par dossier</span>
+        <button *ngIf="selectedAnneeId || selectedNiveauId || selectedParcoursId" (click)="effriterFiltres()"
+            class="ml-auto text-xs text-indigo-600 hover:text-indigo-800 underline">Effacer les filtres</button>
+    </div>
+
+    <!-- Fil d'Ariane -->
+    <div *ngIf="selectedAnneeId" class="flex items-center gap-x-2 mb-4 text-sm text-gray-600 bg-gray-50 rounded px-3 py-2">
+        <span class="material-symbols-outlined text-base text-yellow-600">folder</span>
+        <span class="font-medium">{{ getAnneeLibelle(selectedAnneeId) }}</span>
+        <span class="material-symbols-outlined text-base text-gray-400">chevron_right</span>
+        <ng-container *ngIf="selectedNiveauId">
+            <span class="material-symbols-outlined text-base text-blue-600">folder</span>
+            <span class="font-medium">{{ getNiveauLibelle(selectedNiveauId) }}</span>
+            <span class="material-symbols-outlined text-base text-gray-400">chevron_right</span>
+        </ng-container>
+        <ng-container *ngIf="selectedParcoursId">
+            <span class="material-symbols-outlined text-base text-green-600">folder</span>
+            <span class="font-medium">{{ getParcoursTitre(selectedParcoursId) }}</span>
+        </ng-container>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-x-6 gap-y-4">
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1.5">
+                <span class="material-symbols-outlined text-sm align-text-bottom mr-1">calendar_month</span>
+                Année académique
+            </label>
+            <select [(ngModel)]="selectedAnneeId" (change)="onAnneeChange()"
+                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <option value="">Toutes les années</option>
+                <option *ngFor="let a of annees" [value]="a.id">{{ a.libelle }}</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1.5">
+                <span class="material-symbols-outlined text-sm align-text-bottom mr-1">school</span>
+                Niveau d'étude
+            </label>
+            <select [(ngModel)]="selectedNiveauId" (change)="onNiveauChange()"
+                [disabled]="!selectedAnneeId"
+                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 disabled:opacity-50 disabled:cursor-not-allowed">
+                <option value="">Tous les niveaux</option>
+                <option *ngFor="let n of niveauxFiltres" [value]="n.id">{{ n.libelle }}</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1.5">
+                <span class="material-symbols-outlined text-sm align-text-bottom mr-1">route</span>
+                Parcours
+            </label>
+            <select [(ngModel)]="selectedParcoursId" (change)="onParcoursChange()"
+                [disabled]="!selectedNiveauId"
+                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 disabled:opacity-50 disabled:cursor-not-allowed">
+                <option value="">Tous les parcours</option>
+                <option *ngFor="let p of parcoursFiltres" [value]="p.id">{{ p.titre }}</option>
+            </select>
+        </div>
+        <div class="flex items-end">
+            <span class="text-xs text-gray-400">
+                {{ dossiers.length }} dossier(s) trouvé(s)
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Tableau des dossiers -->
+<div class="mb-8">
+    <div class="overflow-x-auto">
+        <div class="py-2 inline-block min-w-full">
+            <div class="overflow-hidden">
+                <table class="min-w-full">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">#</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Photo</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Matricule</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Nom & Prénoms</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Statut</div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">Date création</div>
+                            </th>
+
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngIf="dossiers.length == 0"
+                            class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
+                                colspan="6">Aucun dossier trouvé</td>
+                        </tr>
+                        <tr *ngFor="let dossier of dossiers; index as index"
+                            class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ index + 1 }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    <img [src]="getPhotoUrl(dossier)" class="w-10 h-10 rounded-full object-cover border border-gray-200"
+                                        onerror="this.src='assets/images/blank-profile-picture.png'">
+                                </div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6 font-mono text-xs">{{ dossier.matricule }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    {{ dossier.utilisateur?.nom }} {{ dossier.utilisateur?.prenoms }}
+                                </div>
+                            </td>
+                            <td class="bg-transparent text-sm font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 bg-transparent sm:text-sm sm:leading-6">
+                                    <app-custom-badge [color]="getStatutBadgeColor(dossier.statut)" [text]="dossier.statut || ''"></app-custom-badge>
+                                </div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ dossier.dateCreation | date: 'dd/MM/YYYY' }}</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

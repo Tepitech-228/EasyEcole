@@ -1,0 +1,59 @@
+D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:859
+    return new TSError(diagnosticText, diagnosticCodes, diagnostics);
+           ^
+TSError: ⨯ Unable to compile TypeScript:
+src/modules/inscription/controllers/DashboardController.ts(244,29): error TS2551: Property 'modePaiement' does not exist on type 'PaiementInscription'. Did you mean 'datePaiement'?
+src/modules/inscription/controllers/DashboardController.ts(245,31): error TS2339: Property 'statut' does not exist on type 'PaiementInscription'.
+src/modules/inscription/controllers/DashboardController.ts(298,31): error TS2339: Property 'statut' does not exist on type 'DemandeInscription'.
+
+    at createTSError (D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:859:12)
+    at reportTSError (D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:863:19)
+    at getOutput (D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:1077:36)
+    at Object.compile (D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:1433:41)
+    at Module.m._compile (D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:1617:30)
+    at node:internal/modules/cjs/loader:2002:10
+    at Object.require.extensions.<computed> [as .ts] (D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader:1594:32)
+    at Module._load (node:internal/modules/cjs/loader:1396:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.require (node:internal/modules/cjs/loader:1617:12)
+    at require (node:internal/modules/helpers:153:16)
+    at Object.<anonymous> (D:\EasyEcole\easy-ecole-backend\src\modules\inscription\InscriptionRoutes.ts:60:1)
+    at Module._compile (node:internal/modules/cjs/loader:1871:14)
+    at Module.m._compile (D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:1618:23)
+    at node:internal/modules/cjs/loader:2002:10 {
+  diagnosticCodes: [ 2551, 2339, 2339 ]
+}
+Error: listen EADDRINUSE: address already in use ::1:3000
+    at Server.setupListenHandle [as _listen2] (node:net:2009:16)
+    at listenInCluster (node:net:2066:12)
+    at GetAddrInfoReqWrap.callback (node:net:2275:7)
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:134:8) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::1',
+  port: 3000
+}
+Error: listen EADDRINUSE: address already in use ::1:3000
+    at Server.setupListenHandle [as _listen2] (node:net:2009:16)
+    at listenInCluster (node:net:2066:12)
+    at GetAddrInfoReqWrap.callback (node:net:2275:7)
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:134:8) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::1',
+  port: 3000
+}
+Error: listen EADDRINUSE: address already in use ::1:3000
+    at Server.setupListenHandle [as _listen2] (node:net:2009:16)
+    at listenInCluster (node:net:2066:12)
+    at GetAddrInfoReqWrap.callback (node:net:2275:7)
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:134:8) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::1',
+  port: 3000
+}
