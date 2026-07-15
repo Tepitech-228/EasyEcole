@@ -9,114 +9,113 @@ import { GedService } from 'src/app/data/modules/ged/services/ged.service';
 })
 export class GedUploadComponent implements OnInit, OnDestroy {
   selectedFile?: File;
-  selectedFileName: string = 'Aucun fichier sélectionné';
+  selectedFileName = '';
+  selectedFileSize = '';
   folders: any[] = [];
   sessions: any[] = [];
   selectedFolderId?: number;
   selectedSessionId?: number;
-  pdfPreviewUrl?: SafeResourceUrl | null = null;
+  uploading = false;
 
-  titre: string = '';
-  reference: string = '';
-  eleve: string = '';
-  parcours: string = '';
-  categorie: string = '';
-  tags: string = '';
-  nommage: string = '';
-  dureeConservation: string = '';
+  titre = '';
+  reference = '';
+  categorie = '';
+  dureeConservation = '';
   archivedUntil?: string;
-  isArchived: boolean = false;
+  isArchived = false;
 
-  private objectUrl?: string;
+  ocrData: { nbPages: number; auteur: string | null; motsCles: string[] } | null = null;
 
-  constructor(private gedService: GedService, private sanitizer: DomSanitizer) {}
+  constructor(private gedService: GedService) {}
 
   ngOnInit(): void {
-    this.gedService.getFolders().subscribe({ next: (f) => this.folders = f });
-    this.gedService.getSessions().subscribe({ next: (sessions) => this.sessions = sessions });
+    this.gedService.getFolders().subscribe({ next: f => this.folders = f });
+    this.gedService.getSessions().subscribe({ next: s => this.sessions = s });
   }
 
-  ngOnDestroy(): void {
-    this.clearPreviewUrl();
+  ngOnDestroy(): void {}
+
+  onFileSelected(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file) this.setFile(file);
   }
 
-  onFileChanged(event: File | null | Event) {
-    let file: File | null = null;
+  onFileDropped(event: DragEvent) {
+    event.preventDefault();
+    const file = event.dataTransfer?.files?.[0];
+    if (file) this.setFile(file);
+  }
 
-    if (event instanceof File) {
-      file = event;
-    } else if (event && typeof (event as any).target?.files !== 'undefined') {
-      file = (event as any).target.files[0] ?? null;
-    }
-
-    if (!file) {
-      this.clearSelection();
+  private setFile(file: File) {
+    if (file.type !== 'application/pdf') {
+      alert('Seuls les fichiers PDF sont acceptés');
       return;
     }
-
-    this.clearPreviewUrl();
     this.selectedFile = file;
     this.selectedFileName = file.name;
-    this.titre = file.name;
-
-    if (file.type === 'application/pdf') {
-      this.objectUrl = URL.createObjectURL(file);
-      this.pdfPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.objectUrl);
-    } else {
-      this.pdfPreviewUrl = null;
-    }
+    this.selectedFileSize = this.formatSize(file.size);
+    this.titre = file.name.replace(/\.pdf$/i, '');
+    this.simulateOcr();
   }
 
-  upload() {
-    if (!this.selectedFile) return;
-    const fd = new FormData();
-    fd.append('fichier', this.selectedFile);
-    fd.append('titre', this.titre || this.selectedFile.name);
-    fd.append('reference', this.reference || '');
-    fd.append('eleve', this.eleve || '');
-    fd.append('parcours', this.parcours || '');
-    fd.append('categorie', this.categorie || '');
-    fd.append('tags', this.tags || '');
-    fd.append('nommage', this.nommage || '');
-    fd.append('dureeConservation', this.dureeConservation || '');
-    if (this.archivedUntil) {
-      fd.append('archivedUntil', this.archivedUntil);
-    }
-    fd.append('isArchived', String(this.isArchived));
-    if (this.selectedFolderId) fd.append('folderId', String(this.selectedFolderId));
-    if (this.selectedSessionId) fd.append('sessionId', String(this.selectedSessionId));
-
-    this.gedService.upload(fd).subscribe({
-      next: () => {
-        window.alert('Upload OK');
-        this.clearSelection();
-      },
-      error: (e) => window.alert('Erreur upload: ' + (e.error?.message || e.statusText))
-    });
-  }
-
-  private clearSelection() {
+  removeFile() {
     this.selectedFile = undefined;
-    this.selectedFileName = 'Aucun fichier sélectionné';
-    this.clearPreviewUrl();
+    this.selectedFileName = '';
+    this.selectedFileSize = '';
+    this.ocrData = null;
     this.titre = '';
     this.reference = '';
-    this.eleve = '';
-    this.parcours = '';
     this.categorie = '';
-    this.tags = '';
-    this.nommage = '';
     this.dureeConservation = '';
     this.archivedUntil = undefined;
     this.isArchived = false;
     this.selectedFolderId = undefined;
+    this.selectedSessionId = undefined;
   }
 
-  private clearPreviewUrl() {
-    if (this.objectUrl) {
-      URL.revokeObjectURL(this.objectUrl);
-      this.objectUrl = undefined;
-    }
-    this.pdfPreviewUrl = null;
+  private simulateOcr() {
+    this.ocrData = {
+      nbPages: Math.floor(Math.random() * 20) + 1,
+      auteur: null,
+      motsCles: []
+    };
+  }
+
+  upload() {
+    if (!this.selectedFile) return;
+    this.uploading = true;
+
+    const fd = new FormData();
+    fd.append('fichier', this.selectedFile);
+    fd.append('titre', this.titre || this.selectedFile.name);
+    if (this.reference) fd.append('reference', this.reference);
+    if (this.categorie) fd.append('categorie', this.categorie);
+    if (this.selectedFolderId) fd.append('folderId', String(this.selectedFolderId));
+    if (this.selectedSessionId) fd.append('sessionId', String(this.selectedSessionId));
+    if (this.dureeConservation) fd.append('dureeConservation', this.dureeConservation);
+    if (this.archivedUntil) fd.append('archivedUntil', this.archivedUntil);
+    fd.append('isArchived', String(this.isArchived));
+
+    this.gedService.upload(fd).subscribe({
+      next: () => {
+        alert('Document uploadé avec succès');
+        this.removeFile();
+        this.uploading = false;
+      },
+      error: (e) => {
+        alert('Erreur: ' + (e.error?.message || e.statusText));
+        this.uploading = false;
+      }
+    });
+  }
+
+  get keywordCount(): number {
+    return this.ocrData?.motsCles?.length || 0;
+  }
+
+  private formatSize(bytes: number): string {
+    if (bytes > 1048576) return (bytes / 1048576).toFixed(1) + ' Mo';
+    if (bytes > 1024) return (bytes / 1024).toFixed(1) + ' Ko';
+    return bytes + ' o';
   }
 }

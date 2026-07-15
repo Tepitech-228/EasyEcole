@@ -1,69 +1,77 @@
-<div class="p-6 space-y-6">
-  <div class="rounded-3xl border border-slate-200 bg-gradient-to-r from-slate-900 via-slate-800 to-blue-900 p-6 text-white shadow-sm">
-    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+<div class="devoirs-page">
+  <div class="card card--hero">
+    <div class="devoirs-page__header">
       <div>
-        <p class="text-sm uppercase tracking-[0.3em] text-slate-300">Travaux académiques</p>
-        <h2 class="mt-2 text-2xl font-semibold">Devoirs à rendre</h2>
-        <p class="mt-2 max-w-2xl text-sm text-slate-300">Suivez les échéances, les consignes et les corrections depuis un tableau de bord clair et pédagogique.</p>
+        <p class="devoirs-page__subtitle">Travaux académiques</p>
+        <h2 class="devoirs-page__title">Devoirs à rendre</h2>
+        <p class="devoirs-page__desc">Suivez les échéances, les consignes et les corrections depuis un tableau de bord clair et pédagogique.</p>
       </div>
-      <app-custom-button *ngIf="canManage()" text="Nouveau devoir" color="primary" (click)="openCreateModal()"></app-custom-button>
+      <button *ngIf="canManage()" (click)="openCreateModal()" class="btn btn--primary">Nouveau devoir</button>
     </div>
   </div>
 
-  <div *ngIf="loading" class="rounded-2xl border border-slate-200 bg-white py-16 text-center text-slate-500 shadow-sm">Chargement des devoirs...</div>
+  <div *ngIf="loading" class="spinner-wrapper">
+    <div class="spinner"></div>
+  </div>
 
-  <div *ngIf="!loading && devoirs.length === 0" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-16 text-center text-slate-500">Aucun devoir pour le moment.</div>
+  <div *ngIf="!loading && devoirs.length === 0" class="empty-state">Aucun devoir pour le moment.</div>
 
-  <div class="space-y-4">
-    <div *ngFor="let devoir of devoirs" class="cursor-pointer rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md" (click)="voirDevoir(devoir.id)">
-      <div class="flex items-start justify-between gap-4">
-        <div class="flex-1">
-          <div class="flex flex-wrap items-center gap-2">
-            <h3 class="text-lg font-semibold text-slate-900">{{ devoir.titre }}</h3>
-            <app-custom-badge [text]="devoir.statut" [color]="getStatutColor(devoir.statut)"></app-custom-badge>
+  <div class="devoirs-page__list">
+    <div *ngFor="let devoir of devoirs" class="card devoir-card" (click)="voirDevoir(devoir.id)">
+      <div class="devoir-card__inner">
+        <div class="devoir-card__body">
+          <div class="devoir-card__top">
+            <h3 class="devoir-card__title">{{ devoir.titre }}</h3>
+            <span class="badge" [ngClass]="devoir.statut === 'noté' ? 'badge--success' : devoir.statut === 'soumis' ? 'badge--info' : 'badge--warning'">{{ devoir.statut }}</span>
           </div>
-          <p class="mt-2 text-sm leading-6 text-slate-600">{{ devoir.description }}</p>
-          <div class="mt-4 flex flex-wrap gap-3 text-sm text-slate-500">
-            <span *ngIf="devoir.cours?.titre" class="rounded-full bg-slate-100 px-2.5 py-1">{{ devoir.cours.titre }}</span>
-            <span class="rounded-full bg-slate-100 px-2.5 py-1">Échéance : {{ devoir.dateLimite | date:'dd/MM/yyyy' }}</span>
-            <span *ngIf="devoir.soumission?.note !== null && devoir.soumission?.note !== undefined" class="rounded-full bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700">Note : {{ devoir.soumission.note }}/20</span>
+          <p class="devoir-card__desc">{{ devoir.description }}</p>
+          <div class="devoir-card__meta">
+            <span *ngIf="devoir.cours?.titre" class="devoir-card__tag">{{ devoir.cours.titre }}</span>
+            <span class="devoir-card__tag">Échéance : {{ devoir.dateLimite | date:'dd/MM/yyyy' }}</span>
+            <span *ngIf="devoir.soumission?.note !== null && devoir.soumission?.note !== undefined" class="devoir-card__tag devoir-card__tag--score">Note : {{ devoir.soumission.note }}/20</span>
           </div>
         </div>
-        <div class="flex items-center gap-2">
-          <button *ngIf="canManage()" (click)="deleteDevoir(devoir.id, $event)" class="rounded-full p-2 text-red-500 transition hover:bg-red-50" title="Supprimer">
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        <div class="devoir-card__side">
+          <button *ngIf="canManage()" (click)="deleteDevoir(devoir.id, $event)" class="devoir-card__delete" title="Supprimer">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
           </button>
-          <svg class="h-5 w-5 flex-shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+          <svg class="devoir-card__chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<app-custom-modal title="Nouveau devoir" [showModal]="showCreateModal" (onCloseModal)="showCreateModal = false">
-  <div class="space-y-4 p-4">
-    <div>
-      <label class="block text-sm font-medium text-gray-700 mb-1">Titre</label>
-      <input [(ngModel)]="createForm.titre" type="text" class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+<div *ngIf="showCreateModal" class="modal-overlay" (click)="showCreateModal = false">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal__header">
+      <h3 class="modal__title">Nouveau devoir</h3>
+      <button (click)="showCreateModal = false" class="modal__close">&times;</button>
     </div>
-    <div>
-      <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-      <textarea [(ngModel)]="createForm.description" rows="3" class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
-    </div>
-    <div>
-      <label class="block text-sm font-medium text-gray-700 mb-1">Cours</label>
-      <select [(ngModel)]="createForm.coursId" class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
-        <option value="">Sélectionnez un cours</option>
-        <option *ngFor="let c of coursList" [value]="c.id">{{ c.titre }}</option>
-      </select>
-    </div>
-    <div>
-      <label class="block text-sm font-medium text-gray-700 mb-1">Date limite</label>
-      <input [(ngModel)]="createForm.dateLimite" type="date" class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
-    </div>
-    <div class="flex gap-3 pt-2">
-      <app-custom-button text="Créer" color="primary" (click)="createDevoir()"></app-custom-button>
-      <app-custom-button text="Annuler" color="primary" [outlined]="true" (click)="showCreateModal = false"></app-custom-button>
+    <div class="modal__body">
+      <div class="form-group">
+        <label class="form-label">Titre</label>
+        <input [(ngModel)]="createForm.titre" type="text" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea [(ngModel)]="createForm.description" rows="3" class="form-textarea"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cours</label>
+        <select [(ngModel)]="createForm.coursId" class="form-select">
+          <option value="">Sélectionnez un cours</option>
+          <option *ngFor="let c of coursList" [value]="c.id">{{ c.titre }}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date limite</label>
+        <input [(ngModel)]="createForm.dateLimite" type="date" class="form-input">
+      </div>
+      <div class="modal__actions">
+        <button (click)="createDevoir()" class="btn btn--primary">Créer</button>
+        <button (click)="showCreateModal = false" class="btn btn--outline">Annuler</button>
+      </div>
     </div>
   </div>
-</app-custom-modal>
+</div>

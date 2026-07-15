@@ -17,6 +17,7 @@ export class Utilisateur extends Model<InferAttributes<Utilisateur>, InferCreati
   declare motDePasse: string
   declare role: RolesUtilisateur
   declare contact: string
+  declare tokenVersion: CreationOptional<number>
   declare photoDeProfil: CreationOptional<string>
   declare dateVerificationEmail: CreationOptional<Date>
   declare readonly createdAt: CreationOptional<Date>
@@ -75,6 +76,10 @@ Utilisateur.init({
   contact: {
     type: new DataTypes.STRING,
     allowNull: true
+  },
+  tokenVersion: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
   },
   photoDeProfil: {
     type: new DataTypes.STRING,

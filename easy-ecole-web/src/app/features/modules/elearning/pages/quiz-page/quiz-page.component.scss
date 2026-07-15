@@ -1,13 +1,241 @@
-:host { @apply block p-6 space-y-6; }
-
-.quiz-card {
-  @apply rounded-3xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md;
+:host {
+  display: block;
+  background: #f5f6fa;
+  min-height: 100%;
 }
 
-.quiz-meta {
-  @apply rounded-full bg-gray-100 px-2.5 py-1 text-xs;
+.quiz-page {
+  padding: 2rem;
 }
 
-.action-btn {
-  @apply flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition;
+.quiz-page__header {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.quiz-page__subtitle {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  color: #5e6f8d;
+  margin: 0 0 0.25rem;
+}
+
+.quiz-page__title {
+  font-family: Sora, system-ui, sans-serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 0.5rem;
+}
+
+.quiz-page__desc {
+  font-size: 0.875rem;
+  color: #5e6f8d;
+  max-width: 40rem;
+  margin: 0;
+}
+
+.quiz-page__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .quiz-page__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .quiz-page__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.spinner-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 4rem 0;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #3b5bff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.empty-state {
+  background: #f8fafc;
+  border: 1px dashed #e2e8f0;
+  border-radius: 1rem;
+  padding: 4rem 2rem;
+  text-align: center;
+  color: #5e6f8d;
+  font-size: 0.875rem;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 1.25rem;
+  transition: box-shadow 0.2s;
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+.quiz-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.quiz-card__label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  color: #9aa4c2;
+  margin: 0 0 0.25rem;
+}
+
+.quiz-card__title {
+  font-family: Sora, system-ui, sans-serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.125rem 0.625rem;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.badge--info {
+  background: #eef2ff;
+  color: #3b5bff;
+}
+
+.quiz-card__desc {
+  margin: 0.75rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #5e6f8d;
+}
+
+.quiz-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.quiz-card__tag {
+  display: inline-block;
+  background: #f1f5f9;
+  padding: 0.25rem 0.625rem;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  color: #5e6f8d;
+}
+
+.quiz-card__score {
+  margin-top: 1rem;
+}
+
+.alert {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.alert--success {
+  background: #ecfdf5;
+  color: #10b981;
+}
+
+.alert--warning {
+  background: #fffbeb;
+  color: #f59e0b;
+}
+
+.alert--danger {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.quiz-card__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  flex: 1;
+}
+
+.btn--primary {
+  background: #3b5bff;
+  color: #fff;
+  border: none;
+}
+
+.btn--primary:hover {
+  opacity: 0.9;
+}
+
+.btn--outline {
+  background: #fff;
+  border: 1px solid #d1d5db;
+  color: #5e6f8d;
+}
+
+.btn--outline:hover {
+  background: #f9fafb;
+}
+
+.btn--outline-danger {
+  border-color: #fecaca;
+  color: #ef4444;
+}
+
+.btn--outline-danger:hover {
+  background: #fef2f2;
 }

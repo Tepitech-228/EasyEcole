@@ -1,22 +1,21 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { QuizService } from 'src/app/data/modules/elearning/services/quiz.service';
+import { JwtTokenService } from 'src/app/core/services/jwt-token.service';
+import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 
 @Component({
   selector: 'app-quiz-page',
   templateUrl: './quiz-page.component.html',
   styleUrls: ['./quiz-page.component.scss']
 })
-export class QuizPageComponent extends BaseComponentClass implements OnInit {
+export class QuizPageComponent implements OnInit {
   quizList: any[] = [];
   loading = true;
   showCreateModal = false;
   createForm: any = { titre: '', description: '', tempsLimite: 30, coursId: '', questions: [] };
 
-  constructor(private router: Router, private quizService: QuizService) {
-    super();
-  }
+  constructor(private router: Router, private quizService: QuizService, private jwtTokenService: JwtTokenService) { }
 
   ngOnInit(): void {
     this.loadQuiz();
@@ -50,5 +49,12 @@ export class QuizPageComponent extends BaseComponentClass implements OnInit {
     return 'danger';
   }
 
-  canManage(): boolean { return this.rolesValue.isInstitution || this.rolesValue.isAdmin || this.rolesValue.isEnseignant; }
+  canManage(): boolean {
+    const token = localStorage.getItem(LocalStorageService.AUTH_TOKEN);
+    if (!token) return false;
+    this.jwtTokenService.setToken(token);
+    const decoded: any = this.jwtTokenService.getDecodeToken();
+    const role = decoded?.role;
+    return role === 'institution' || role === 'admin' || role === 'enseignant';
+  }
 }

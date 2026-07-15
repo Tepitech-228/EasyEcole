@@ -1,67 +1,101 @@
-<div class="p-6 space-y-6">
-  <div class="rounded-3xl border border-slate-200 bg-gradient-to-r from-slate-900 via-slate-800 to-blue-900 p-6 text-white shadow-sm">
-    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-      <div>
-        <p class="text-sm uppercase tracking-[0.3em] text-slate-300">Espace pédagogique</p>
-        <h2 class="mt-2 text-2xl font-semibold">Mes cours en ligne</h2>
-        <p class="mt-2 max-w-2xl text-sm text-slate-300">Consultez vos supports de cours, vos modules et les échanges pédagogiques depuis une interface claire et universitaire.</p>
+<div class="dashboard-page">
+  <!-- Stats row -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon blue">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
       </div>
-      <div class="rounded-2xl bg-white/10 px-4 py-3 backdrop-blur">
-        <p class="text-xs uppercase tracking-[0.2em] text-slate-300">Parcours actif</p>
-        <p class="mt-1 text-lg font-semibold">{{ coursList.length }} cours · {{ totalModules }} modules</p>
+      <div class="stat-info">
+        <span class="stat-value">{{ coursList.length }}</span>
+        <span class="stat-label">Cours</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ totalModules }}</span>
+        <span class="stat-label">Modules</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon purple">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ totalQuiz }}</span>
+        <span class="stat-label">Quiz</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orange">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ totalCertificats }}</span>
+        <span class="stat-label">Certificats</span>
       </div>
     </div>
   </div>
 
-  <!-- Search bar -->
-  <div *ngIf="!loading && coursList.length" class="relative">
-    <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="filterCours()" placeholder="Rechercher un cours par titre ou description..." class="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm shadow-sm transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100">
-    <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+  <!-- Search -->
+  <div class="search-bar">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#9aa4c2" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="filterCours()" placeholder="Rechercher un cours par titre ou description..." />
   </div>
 
-  <app-loading-spinner *ngIf="loading"></app-loading-spinner>
-
-  <div *ngIf="!loading && filteredList.length === 0 && !searchQuery" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-12 text-center text-slate-500">
-    Aucun cours disponible pour le moment.
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
   </div>
 
-  <div *ngIf="!loading && filteredList.length === 0 && searchQuery" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-12 text-center text-slate-500">
-    Aucun cours ne correspond à votre recherche « {{ searchQuery }} ».
+  <!-- Empty -->
+  <div class="empty-state" *ngIf="!loading && filteredList.length === 0 && !searchQuery">
+    <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#d7d9e6" stroke-width="1.5"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+    <p>Aucun cours disponible pour le moment</p>
   </div>
 
-  <div *ngIf="!loading" class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-    <div *ngFor="let cours of filteredList" class="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
-      <div class="h-36 overflow-hidden bg-gradient-to-br from-indigo-100 to-blue-50">
-        <img [src]="'/orientation/parcours/' + cours.image" alt="{{ cours.titre }}" class="h-full w-full object-cover transition duration-300 group-hover:scale-105" *ngIf="cours.image">
-      </div>
-      <div class="p-5">
-        <div class="flex items-center justify-between">
-          <span class="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-700">Cours</span>
-          <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.2em]" [ngClass]="cours.statut === 'actif' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'">{{ cours.statut }}</span>
+  <!-- Search empty -->
+  <div class="empty-state" *ngIf="!loading && filteredList.length === 0 && searchQuery">
+    <p>Aucun cours ne correspond à « {{ searchQuery }} »</p>
+  </div>
+
+  <!-- Course grid -->
+  <div class="cours-grid" *ngIf="!loading && filteredList.length > 0">
+    <div class="cours-card" *ngFor="let cours of filteredList">
+      <div class="card-image" [style.background]="cours.image ? '' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'">
+        <img *ngIf="cours.image" [src]="'/orientation/parcours/' + cours.image" alt="" />
+        <div class="card-badges">
+          <span class="badge badge-cours">Cours</span>
+          <span class="badge" [class.badge-active]="cours.statut === 'actif'" [class.badge-inactive]="cours.statut !== 'actif'">{{ cours.statut }}</span>
+          <span class="badge badge-format" [class.badge-video]="cours.format === 'video'" [class.badge-pdf]="cours.format === 'pdf'" [class.badge-mixte]="cours.format === 'mixte'">{{ cours.format }}</span>
         </div>
-        <h3 class="mt-4 text-lg font-semibold text-slate-900">{{ cours.titre }}</h3>
-        <p class="mt-2 text-sm leading-6 text-slate-600 line-clamp-2">{{ cours.description }}</p>
+      </div>
+      <div class="card-body">
+        <h3>{{ cours.titre }}</h3>
+        <p>{{ cours.description }}</p>
 
-        <!-- Progress bar (apprenant) -->
-        <div *ngIf="cours.progression" class="mt-4">
-          <div class="flex items-center justify-between text-xs text-slate-500">
+        <!-- Progress -->
+        <div class="progress-section" *ngIf="cours.progression">
+          <div class="progress-head">
             <span>Progression</span>
             <span>{{ cours.progression.termine }}/{{ cours.progression.total }} · {{ cours.progression.taux }}%</span>
           </div>
-          <div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
-            <div class="h-full rounded-full bg-emerald-500 transition-all duration-500" [style.width.%]="cours.progression.taux"></div>
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="cours.progression.taux"></div>
           </div>
         </div>
 
-        <div class="mt-4 flex items-center justify-between text-sm text-slate-500">
+        <div class="card-meta">
           <span>{{ cours.modules?.length || 0 }} module(s)</span>
-          <span class="font-medium text-slate-700">Ouvrir</span>
+          <span *ngIf="cours.enseignant" class="meta-prof">{{ cours.enseignant.prenoms }} {{ cours.enseignant.nom }}</span>
         </div>
       </div>
-      <div class="flex gap-2 border-t border-slate-100 px-5 py-4">
-        <a [routerLink]="['/elearning', cours.id]" class="flex-1 rounded-xl bg-slate-900 px-3 py-2 text-center text-sm font-semibold text-white transition hover:bg-slate-700">Voir le cours</a>
-        <a [routerLink]="['/elearning', cours.id, 'player']" class="rounded-xl bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white transition hover:bg-indigo-700">Lecture</a>
-        <a [routerLink]="['/elearning', cours.id, 'chat']" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Chat</a>
+      <div class="card-actions">
+        <a [routerLink]="['/elearning', cours.id]" class="btn-primary">Voir le cours</a>
+        <a [routerLink]="['/elearning', cours.id, 'player']" class="btn-accent">Lecture</a>
+        <a [routerLink]="['/elearning', cours.id, 'chat']" class="btn-outline-sm">Chat</a>
       </div>
     </div>
   </div>

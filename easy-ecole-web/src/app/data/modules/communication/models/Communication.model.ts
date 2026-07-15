@@ -8,6 +8,8 @@ export class Communication {
   declare utilisateurId?: string
   declare utilisateur?: { id: string; nom: string; prenoms: string }
 
+  _expanded?: boolean
+
   declare readonly createdAt?: Date
   declare readonly updatedAt?: Date
 }

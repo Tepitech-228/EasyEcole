@@ -1,74 +1,127 @@
-<div class="ged-page">
-  <div class="header-row">
-    <div>
-      <h1>Session d'archivage</h1>
-      <p>Gérez le lot de documents, les contributeurs et les champs personnalisés.</p>
-    </div>
-    <div class="share-actions" *ngIf="session">
-      <app-custom-button [text]="'Partager'" color="primary" (click)="copyShareLink()"></app-custom-button>
-    </div>
+<div class="detail-page">
+  <div class="page-head">
+    <a class="back-link" routerLink="/ged/sessions">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      Retour aux sessions
+    </a>
   </div>
 
-  <div *ngIf="loading" class="status-banner">Chargement...</div>
-  <div *ngIf="!loading && !session" class="status-banner">Session introuvable.</div>
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Chargement de la session...</p>
+  </div>
+  <div class="empty-state" *ngIf="!loading && !session">
+    <p>Session introuvable.</p>
+  </div>
 
-  <main *ngIf="session" class="session-detail-grid">
-    <section class="summary-card">
-      <h2>{{ session.nom }}</h2>
-      <p class="session-description">{{ session.description || 'Pas de description' }}</p>
-      <div class="session-meta">
-        <div><strong>Statut :</strong> {{ session.status }}</div>
-        <div><strong>Champs :</strong> {{ session.fields?.join(', ') || 'Aucun' }}</div>
-        <div><strong>Contributeurs :</strong> {{ session.participantIds?.length || 0 }}</div>
-        <div><strong>Créé par :</strong> {{ session.creator?.nom }} {{ session.creator?.prenoms }}</div>
-        <div><strong>Documents :</strong> {{ session.documents?.length || 0 }}</div>
-      </div>
-      <div class="session-share">
-        <label>URL de partage</label>
-        <div class="share-link">{{ getShareLink() }}</div>
-      </div>
-    </section>
-
-    <section class="upload-card">
-      <h3>Ajouter des PDF</h3>
-      <p>Batch upload vers cette session. Ajoutez des métadonnées personnalisées en JSON.</p>
-
-      <div class="ged-field">
-        <label for="batch-files">Fichiers</label>
-        <input id="batch-files" type="file" accept="application/pdf,image/tiff" multiple (change)="onFilesSelected($event)" />
-        <div class="field-helper">
-          {{ uploadFiles.length }} fichier(s) sélectionné(s)
+  <div class="detail-grid" *ngIf="!loading && session">
+    <div class="left-col">
+      <section class="card summary-card">
+        <div class="summary-head">
+          <h2>{{ session.nom }}</h2>
+          <button class="btn-icon" title="Partager" (click)="copyShareLink()">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          </button>
         </div>
-      </div>
+        <p class="desc">{{ session.description || 'Pas de description' }}</p>
 
-      <div class="ged-field">
-        <label for="batch-folder">Dossier</label>
-        <select id="batch-folder" [(ngModel)]="selectedFolderId" class="form-input">
-          <option [ngValue]="undefined">-- Aucune --</option>
-          <option *ngFor="let f of folders" [ngValue]="f.id">{{ f.nom }}</option>
-        </select>
-      </div>
-
-      <div class="ged-grid">
-        <div class="ged-field">
-          <label for="archivedUntil">Archivage jusqu'au</label>
-          <input id="archivedUntil" type="date" [(ngModel)]="archivedUntil" class="form-input" />
+        <div class="meta-grid">
+          <div class="meta-item">
+            <span class="label">Statut</span>
+            <span class="value"><span class="badge" [class.active]="session.status === 'active'">{{ session.status }}</span></span>
+          </div>
+          <div class="meta-item">
+            <span class="label">Documents</span>
+            <span class="value">{{ session.documents?.length || 0 }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="label">Contributeurs</span>
+            <span class="value">{{ session.participantIds?.length || 0 }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="label">CrÃ©Ã© par</span>
+            <span class="value">{{ session.creator?.nom }} {{ session.creator?.prenoms }}</span>
+          </div>
+          <div class="meta-item" *ngIf="session.fields?.length">
+            <span class="label">Champs</span>
+            <span class="value tags">{{ session.fields?.join(', ') }}</span>
+          </div>
         </div>
-        <div class="ged-field toggle-field">
-          <label>
-            <input type="checkbox" [(ngModel)]="isArchived" /> Archivé
-          </label>
+
+        <div class="share-section">
+          <label>Lien de partage</label>
+          <div class="share-link-row">
+            <input type="text" [value]="getShareLink()" readonly />
+            <button class="btn-primary small" (click)="copyShareLink()">Copier</button>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div class="ged-field">
-        <label for="batch-metadata">Métadonnées JSON</label>
-        <textarea id="batch-metadata" rows="4" [(ngModel)]="batchMetadata" class="form-input" placeholder='{"titre":"Nom du document","reference":"REF-123","categorie":"Contrat"}'></textarea>
-      </div>
+      <section class="card upload-card">
+        <h3>Ajouter des documents</h3>
+        <p>Import batch vers cette session</p>
 
-      <div class="ged-form-actions">
-        <button class="primary-button" (click)="uploadBatch()" [disabled]="uploadFiles.length === 0">Envoyer vers la session</button>
-      </div>
-    </section>
-  </main>
+        <div class="dropzone" (dragover)="$event.preventDefault()" (drop)="onDrop($event)">
+          <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#9aa4c2" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <p>Glissez-dÃ©posez vos fichiers ici ou</p>
+          <button class="btn-outline small" (click)="fileInput.click()">Parcourir</button>
+          <input #fileInput type="file" accept="application/pdf,image/tiff" multiple (change)="onFilesSelected($event)" hidden />
+          <p class="file-count" *ngIf="uploadFiles.length > 0">{{ uploadFiles.length }} fichier(s) sÃ©lectionnÃ©(s)</p>
+        </div>
+
+        <div class="form-row">
+          <div class="form-field">
+            <label>Dossier</label>
+            <select [(ngModel)]="selectedFolderId">
+              <option [ngValue]="undefined">-- Aucun --</option>
+              <option *ngFor="let f of folders" [ngValue]="f.id">{{ f.nom }}</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Archiver jusqu'au</label>
+            <input type="date" [(ngModel)]="archivedUntil" />
+          </div>
+          <div class="form-field checkbox-field">
+            <label>
+              <input type="checkbox" [(ngModel)]="isArchived" />
+              <span>ArchivÃ©</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label>MÃ©tadonnÃ©es JSON (optionnel)</label>
+          <textarea rows="3" [(ngModel)]="batchMetadata" placeholder='{"titre":"Doc","reference":"REF-123","categorie":"Contrat"}'></textarea>
+        </div>
+
+        <button class="btn-primary" (click)="uploadBatch()" [disabled]="uploadFiles.length === 0">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Envoyer vers la session
+        </button>
+      </section>
+    </div>
+
+    <div class="right-col">
+      <section class="card docs-card">
+        <h3>Documents ({{ session.documents?.length || 0 }})</h3>
+        <div class="docs-list">
+          <div class="doc-item" *ngFor="let doc of session.documents">
+            <div class="doc-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3b5bff" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div class="doc-info">
+              <span class="doc-title">{{ doc.titre || doc.reference || 'Sans titre' }}</span>
+              <span class="doc-ref">{{ doc.reference || '' }}</span>
+            </div>
+            <a class="btn-icon" [href]="getDownloadUrl(doc)" target="_blank" title="TÃ©lÃ©charger">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </a>
+          </div>
+          <div class="empty-docs" *ngIf="!session.documents || session.documents.length === 0">
+            <p>Aucun document dans cette session</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
 </div>

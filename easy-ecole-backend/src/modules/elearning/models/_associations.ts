@@ -63,3 +63,15 @@ Support.hasMany(ProgressionApprenant, { foreignKey: 'supportId', as: 'progressio
 ProgressionApprenant.belongsTo(Support, { as: 'support', foreignKey: 'supportId' })
 Utilisateur.hasMany(ProgressionApprenant, { foreignKey: 'apprenantId', as: 'progressionsElearning' })
 ProgressionApprenant.belongsTo(Utilisateur, { as: 'apprenant', foreignKey: 'apprenantId' })
+
+// CoursEnLigne -> Enseignant (Utilisateur)
+CoursEnLigne.belongsTo(Utilisateur, { as: 'enseignant', foreignKey: 'enseignantId' })
+Utilisateur.hasMany(CoursEnLigne, { foreignKey: 'enseignantId', as: 'coursEnLigne' })
+
+// Salon createdBy (sans FK constraint car type mismatch avec la base existante)
+Salon.belongsTo(Utilisateur, { as: 'createdBy', foreignKey: 'createdById', constraints: false })
+Utilisateur.hasMany(Salon, { foreignKey: 'createdById', as: 'salonsCrees' })
+
+// ParticipantSalon -> Utilisateur
+ParticipantSalon.belongsTo(Utilisateur, { as: 'utilisateur', foreignKey: 'utilisateurId', constraints: false })
+Utilisateur.hasMany(ParticipantSalon, { foreignKey: 'utilisateurId', as: 'participationsSalons' })

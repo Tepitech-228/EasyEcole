@@ -1,80 +1,94 @@
-<div class="p-6 space-y-6">
-  <div class="rounded-3xl border border-slate-200 bg-gradient-to-r from-emerald-900 via-slate-800 to-slate-900 p-6 text-white shadow-sm">
-    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+<div class="certificats-page">
+  <div class="card card--hero">
+    <div class="certificats-page__header">
       <div>
-        <p class="text-sm uppercase tracking-[0.3em] text-slate-300">Récompenses académiques</p>
-        <h2 class="mt-2 text-2xl font-semibold">Certificats obtenus</h2>
-        <p class="mt-2 max-w-2xl text-sm text-slate-300">Consultez vos attestations et vos acquis de formation dans un espace dédié et professionnel.</p>
+        <p class="certificats-page__subtitle">Récompenses académiques</p>
+        <h2 class="certificats-page__title">Certificats obtenus</h2>
+        <p class="certificats-page__desc">Consultez vos attestations et vos acquis de formation dans un espace dédié et professionnel.</p>
       </div>
-      <app-custom-button *ngIf="canManage()" text="Nouveau certificat" color="primary" (click)="openCreate()"></app-custom-button>
+      <button *ngIf="canManage()" (click)="openCreate()" class="btn btn--primary">Nouveau certificat</button>
     </div>
   </div>
 
-  <div *ngIf="loading" class="rounded-2xl border border-slate-200 bg-white py-16 text-center text-slate-500 shadow-sm">Chargement des certificats...</div>
+  <div *ngIf="loading" class="spinner-wrapper">
+    <div class="spinner"></div>
+  </div>
 
-  <div *ngIf="!loading && certificats.length === 0" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-16 text-center text-slate-500">Aucun certificat disponible.</div>
+  <div *ngIf="!loading && certificats.length === 0" class="empty-state">Aucun certificat disponible.</div>
 
-  <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-    <div *ngFor="let cert of certificats" class="cursor-pointer overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md" (click)="openDetail(cert)">
-      <div class="bg-gradient-to-r from-emerald-600 to-teal-600 p-5 text-white">
-        <div class="flex items-center justify-between">
-          <div class="rounded-full bg-white/20 p-2">
-            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.84 3.422"></path></svg>
-          </div>
-          <span class="rounded-full bg-white/20 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.2em]">Certifié</span>
+  <div class="certificats-page__grid">
+    <div *ngFor="let cert of certificats" class="card cert-card" (click)="openDetail(cert)">
+      <div class="cert-card__header">
+        <div class="cert-card__icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.84 3.422"/></svg>
         </div>
-        <h3 class="mt-4 text-lg font-semibold">{{ cert.titre }}</h3>
-        <p class="mt-1 text-sm text-emerald-50">{{ cert.cours?.titre || '—' }}</p>
+        <span class="badge badge--certified">Certifié</span>
       </div>
-      <div class="p-5">
-        <div class="flex items-center justify-between text-sm text-slate-500">
+      <h3 class="cert-card__title">{{ cert.titre }}</h3>
+      <p class="cert-card__cours">{{ cert.cours?.titre || '—' }}</p>
+      <div class="cert-card__footer">
+        <div class="cert-card__meta">
           <span>Obtenu le {{ cert.dateObtention | date:'dd/MM/yyyy' }}</span>
-          <span class="font-mono text-xs text-slate-400">{{ cert.code }}</span>
+          <span class="cert-card__code">{{ cert.code }}</span>
         </div>
-        <div class="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
-          <span class="text-sm text-slate-600">{{ cert.apprenant?.nom }} {{ cert.apprenant?.prenoms }}</span>
-          <button *ngIf="canManage()" (click)="deleteCertificat(cert.id); $event.stopPropagation()" class="text-sm font-semibold text-red-600 transition hover:text-red-700">Supprimer</button>
+        <div class="cert-card__actions">
+          <span class="cert-card__apprenant">{{ cert.apprenant?.nom }} {{ cert.apprenant?.prenoms }}</span>
+          <button *ngIf="canManage()" (click)="deleteCertificat(cert.id); $event.stopPropagation()" class="btn btn--text btn--text-danger">Supprimer</button>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<app-custom-modal title="Détail du certificat" [showModal]="showDetailModal" (onCloseModal)="showDetailModal = false">
-  <div class="p-6 text-center" *ngIf="selectedCert">
-    <div class="text-6xl mb-4">🎓</div>
-    <h2 class="text-2xl font-bold text-gray-800 mb-2">{{ selectedCert.titre }}</h2>
-    <p class="text-gray-600 mb-4">{{ selectedCert.description }}</p>
-    <div class="border-t border-gray-200 pt-4 space-y-2 text-sm text-left">
-      <div class="flex justify-between"><span class="text-gray-500">Code</span><span class="font-mono font-bold">{{ selectedCert.code }}</span></div>
-      <div class="flex justify-between"><span class="text-gray-500">Cours</span><span>{{ selectedCert.cours?.titre || '—' }}</span></div>
-      <div class="flex justify-between"><span class="text-gray-500">Apprenant</span><span>{{ selectedCert.apprenant?.nom }} {{ selectedCert.apprenant?.prenoms }}</span></div>
-      <div class="flex justify-between"><span class="text-gray-500">Date</span><span>{{ selectedCert.dateObtention | date:'dd/MM/yyyy' }}</span></div>
+<div *ngIf="showDetailModal" class="modal-overlay" (click)="showDetailModal = false">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal__header">
+      <h3 class="modal__title">Détail du certificat</h3>
+      <button (click)="showDetailModal = false" class="modal__close">&times;</button>
+    </div>
+    <div class="modal__body" *ngIf="selectedCert">
+      <div class="cert-detail">
+        <div class="cert-detail__icon">🎓</div>
+        <h2 class="cert-detail__title">{{ selectedCert.titre }}</h2>
+        <p class="cert-detail__desc">{{ selectedCert.description }}</p>
+        <div class="cert-detail__info">
+          <div class="cert-detail__row"><span class="cert-detail__label">Code</span><span class="cert-detail__value">{{ selectedCert.code }}</span></div>
+          <div class="cert-detail__row"><span class="cert-detail__label">Cours</span><span class="cert-detail__value">{{ selectedCert.cours?.titre || '—' }}</span></div>
+          <div class="cert-detail__row"><span class="cert-detail__label">Apprenant</span><span class="cert-detail__value">{{ selectedCert.apprenant?.nom }} {{ selectedCert.apprenant?.prenoms }}</span></div>
+          <div class="cert-detail__row"><span class="cert-detail__label">Date</span><span class="cert-detail__value">{{ selectedCert.dateObtention | date:'dd/MM/yyyy' }}</span></div>
+        </div>
+      </div>
     </div>
   </div>
-</app-custom-modal>
+</div>
 
-<app-custom-modal title="Nouveau certificat" [showModal]="showCreateModal" (onCloseModal)="showCreateModal = false">
-  <div class="space-y-4 p-4">
-    <div>
-      <label class="block text-sm font-medium text-gray-700 mb-1">Titre</label>
-      <input [(ngModel)]="createForm.titre" type="text" class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+<div *ngIf="showCreateModal" class="modal-overlay" (click)="showCreateModal = false">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal__header">
+      <h3 class="modal__title">Nouveau certificat</h3>
+      <button (click)="showCreateModal = false" class="modal__close">&times;</button>
     </div>
-    <div>
-      <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-      <textarea [(ngModel)]="createForm.description" rows="3" class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
-    </div>
-    <div>
-      <label class="block text-sm font-medium text-gray-700 mb-1">Cours ID</label>
-      <input [(ngModel)]="createForm.coursId" type="text" class="w-full border border-gray-300 rounded-md p-2">
-    </div>
-    <div>
-      <label class="block text-sm font-medium text-gray-700 mb-1">Apprenant ID</label>
-      <input [(ngModel)]="createForm.apprenantId" type="text" class="w-full border border-gray-300 rounded-md p-2">
-    </div>
-    <div class="flex gap-3 pt-2">
-      <app-custom-button text="Créer" color="primary" (click)="createCertificat()"></app-custom-button>
-      <app-custom-button text="Annuler" color="primary" [outlined]="true" (click)="showCreateModal = false"></app-custom-button>
+    <div class="modal__body">
+      <div class="form-group">
+        <label class="form-label">Titre</label>
+        <input [(ngModel)]="createForm.titre" type="text" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea [(ngModel)]="createForm.description" rows="3" class="form-textarea"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cours ID</label>
+        <input [(ngModel)]="createForm.coursId" type="text" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Apprenant ID</label>
+        <input [(ngModel)]="createForm.apprenantId" type="text" class="form-input">
+      </div>
+      <div class="modal__actions">
+        <button (click)="createCertificat()" class="btn btn--primary">Créer</button>
+        <button (click)="showCreateModal = false" class="btn btn--outline">Annuler</button>
+      </div>
     </div>
   </div>
-</app-custom-modal>
+</div>

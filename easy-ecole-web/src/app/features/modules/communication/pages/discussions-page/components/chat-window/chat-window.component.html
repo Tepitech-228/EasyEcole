@@ -1,0 +1,74 @@
+<div class="thread-pane">
+  <!-- Thread Head -->
+  <div class="thread-head">
+    <div class="thread-avatar" [style.background]="salon.icone ? 'linear-gradient(135deg, #3B5BFF, #8956E0)' : '#1f3577'">
+      <span>{{ salon.icone || (salon.titre || '?').charAt(0).toUpperCase() }}</span>
+      <span class="presence" *ngIf="salon.type === 'discussion'"></span>
+    </div>
+    <div class="thread-info">
+      <div class="thread-name">{{ salon.titre || 'Discussion' }}</div>
+      <div class="thread-sub" *ngIf="salon.type !== 'discussion'">👥 {{ members.length }} membre{{ members.length > 1 ? 's' : '' }}</div>
+      <div class="thread-sub" *ngIf="salon.type === 'discussion'">En ligne</div>
+    </div>
+    <div class="icon-btn" title="Rechercher">🔍</div>
+    <div class="icon-btn" title="Informations" (click)="toggleInfoPanel.emit()">👥</div>
+    <div class="icon-btn" title="Plus d'options">⋯</div>
+  </div>
+
+  <!-- Messages -->
+  <div class="messages" #messagesContainer>
+    <div class="load-more" *ngIf="hasMoreMessages && !loadingMessages" (click)="loadMoreMessages.emit()">
+      Voir les messages précédents
+    </div>
+    <div class="loading-spinner" *ngIf="loadingMessages">Chargement...</div>
+
+    <ng-container *ngFor="let msg of messages; let i = index">
+      <div class="day-sep" *ngIf="showDaySeparator(i)">
+        {{ formatDate(msg.date) }}
+      </div>
+      <app-chat-message-bubble
+        [message]="msg"
+        [isOwn]="msg.utilisateurId === currentUserId"
+        [authorName]="msg.authorName || ''"
+        [currentUserId]="currentUserId"
+        (delete)="deleteMessage.emit($event)"
+        (edit)="editMessage.emit($event)">
+      </app-chat-message-bubble>
+    </ng-container>
+
+    <div class="typing-indicator" *ngIf="typingUsers.length > 0">
+      {{ typingUsers.join(', ') }} {{ typingUsers.length > 1 ? 'écrivent' : 'écrit' }}...
+    </div>
+  </div>
+
+  <!-- Sticker Picker -->
+  <app-sticker-picker
+    *ngIf="showStickerPicker"
+    (selectSticker)="sendSticker.emit($event)"
+    (close)="toggleStickerPicker.emit()">
+  </app-sticker-picker>
+
+  <!-- Composer -->
+  <app-chat-input
+    (sendMessage)="sendMessage.emit($event)"
+    (sendMediaMessage)="sendMediaMessage.emit($event)"
+    (notifyTyping)="notifyTyping.emit()"
+    (openStickers)="toggleStickerPicker.emit()">
+  </app-chat-input>
+
+  <app-group-info-panel
+    *ngIf="showInfoPanel && salon"
+    [salon]="salon"
+    [members]="members"
+    [currentUserId]="currentUserId"
+    [estAdmin]="estAdmin"
+    [allUsers]="availableUsers"
+    (close)="toggleInfoPanel.emit()"
+    (promote)="promoteMember.emit($event)"
+    (demote)="demoteMember.emit($event)"
+    (removeMember)="removeMember.emit($event)"
+    (addMember)="addMember.emit($event)"
+    (generateInvite)="generateInvite.emit()"
+    (leaveGroup)="leaveGroup.emit()">
+  </app-group-info-panel>
+</div>

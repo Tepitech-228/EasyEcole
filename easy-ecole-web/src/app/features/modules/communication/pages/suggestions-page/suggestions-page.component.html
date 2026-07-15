@@ -1,5 +1,5 @@
 <div class="p-6 space-y-6">
-  <div class="rounded-3xl border border-slate-200 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-900 p-6 text-white shadow-sm">
+  <div class="rounded-3xl border border-slate-200 bg-gradient-to-r from-slate-900 via-slate-800 to-blue-900 p-6 text-white shadow-sm">
     <div>
       <p class="text-sm uppercase tracking-[0.3em] text-slate-300">Retour d'expérience</p>
       <h2 class="mt-2 text-2xl font-semibold">Suggestions</h2>
@@ -8,53 +8,106 @@
   </div>
 
   <div class="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="form-card">
       <h3 class="text-lg font-semibold text-slate-900">Soumettre une suggestion</h3>
       <p class="mt-1 text-sm text-slate-500">Votre message sera traité par l'équipe de gestion.</p>
+
+      <div *ngIf="successMessage" class="alert-success mt-4">
+        <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        {{ successMessage }}
+      </div>
+
       <div class="mt-5 space-y-4">
         <div>
           <label class="mb-1 block text-sm font-medium text-slate-700">Type</label>
-          <select [(ngModel)]="newSuggestion.type" class="w-full rounded-2xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+          <select [(ngModel)]="newSuggestion.type" class="w-full rounded-2xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">
             <option value="etudiant">Étudiant</option>
             <option value="enseignant">Enseignant</option>
           </select>
         </div>
         <div>
           <label class="mb-1 block text-sm font-medium text-slate-700">Message</label>
-          <textarea [(ngModel)]="newSuggestion.message" rows="4" class="w-full rounded-2xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"></textarea>
+          <textarea [(ngModel)]="newSuggestion.message" rows="4" class="w-full rounded-2xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"></textarea>
         </div>
-        <button (click)="submitSuggestion()" class="rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700">
-          Envoyer
+        <button (click)="submitSuggestion()" [disabled]="submitting || !newSuggestion.message.trim()" class="submit-btn">
+          <span *ngIf="submitting" class="inline-flex items-center gap-2">
+            <svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+            Envoi en cours...
+          </span>
+          <span *ngIf="!submitting">Envoyer</span>
         </button>
       </div>
     </div>
 
-    <div class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-      <div class="border-b border-slate-100 px-5 py-4">
+    <div class="list-card">
+      <div class="list-header">
         <h3 class="text-lg font-semibold text-slate-900">Mes suggestions</h3>
       </div>
-      <div *ngFor="let suggestion of suggestions" class="border-b border-slate-100 p-5 transition hover:bg-slate-50">
-        <div class="flex items-start justify-between gap-3">
-          <div class="min-w-0 flex-1">
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="text-sm font-semibold text-slate-800">{{ suggestion.type }}</span>
-              <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600">{{ suggestion.date | date:'short' }}</span>
+
+      <ng-container *ngIf="!loading; else listLoading">
+        <ng-container *ngIf="suggestions.length > 0; else listEmpty">
+          <div *ngFor="let suggestion of suggestions" class="suggestion-item">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="text-sm font-semibold text-slate-800 capitalize">{{ suggestion.type }}</span>
+                  <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-500">
+                    <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    {{ suggestion.date | date:'short' }}
+                  </span>
+                </div>
+                <div class="suggestion-content mt-2 text-sm leading-7 text-slate-600" [class.expanded]="suggestion._expanded">
+                  {{ suggestion.message }}
+                </div>
+                <button *ngIf="suggestion.message && suggestion.message.length > 200" (click)="suggestion._expanded = !suggestion._expanded" class="read-more-btn">
+                  {{ suggestion._expanded ? 'Réduire' : 'Lire la suite' }}
+                </button>
+              </div>
+              <span class="status-badge shrink-0"
+                [ngClass]="{
+                  'bg-amber-50 text-amber-700 border border-amber-200': suggestion.statut === 'ouverte',
+                  'bg-emerald-50 text-emerald-700 border border-emerald-200': suggestion.statut === 'traitee',
+                  'bg-slate-100 text-slate-600 border border-slate-200': suggestion.statut === 'fermee'
+                }">
+                <span class="h-1.5 w-1.5 rounded-full"
+                  [ngClass]="{
+                    'bg-amber-500': suggestion.statut === 'ouverte',
+                    'bg-emerald-500': suggestion.statut === 'traitee',
+                    'bg-slate-400': suggestion.statut === 'fermee'
+                  }"></span>
+                {{ suggestion.statut }}
+              </span>
             </div>
-            <p class="mt-2 text-sm leading-7 text-slate-600">{{ suggestion.message }}</p>
           </div>
-          <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium"
-            [ngClass]="{
-              'bg-amber-100 text-amber-800': suggestion.statut === 'ouverte',
-              'bg-emerald-100 text-emerald-800': suggestion.statut === 'traitee',
-              'bg-slate-100 text-slate-700': suggestion.statut === 'fermee'
-            }">
-            {{ suggestion.statut }}
-          </span>
-        </div>
-      </div>
-      <div *ngIf="suggestions.length === 0" class="p-8 text-center text-slate-500">
-        Aucune suggestion enregistrée pour le moment.
-      </div>
+        </ng-container>
+      </ng-container>
     </div>
   </div>
 </div>
+
+<ng-template #listLoading>
+  <div class="space-y-0">
+    <div *ngFor="let _ of [1,2,3]" class="suggestion-item">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex-1">
+          <div class="flex items-center gap-2">
+            <div class="skeleton" style="height:18px;width:80px"></div>
+            <div class="skeleton" style="height:18px;width:100px;border-radius:20px"></div>
+          </div>
+          <div class="mt-3 skeleton" style="height:14px;width:90%"></div>
+          <div class="mt-2 skeleton" style="height:14px;width:60%"></div>
+        </div>
+        <div class="skeleton shrink-0" style="height:24px;width:70px;border-radius:20px"></div>
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #listEmpty>
+  <div class="empty-state">
+    <svg class="mx-auto h-12 w-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+    </svg>
+    <p class="mt-3 text-sm text-slate-500">Aucune suggestion enregistrée pour le moment.</p>
+  </div>
+</ng-template>

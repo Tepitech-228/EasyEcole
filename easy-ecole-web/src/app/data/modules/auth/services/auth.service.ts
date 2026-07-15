@@ -66,7 +66,15 @@ export class AuthService {
   }
 
   logout(): void {
-    this.localStorageService.remove(LocalStorageService.AUTH_TOKEN);
-    this.router.navigateByUrl("/auth/connexion");
+    this.httpClient.post(`${this.SERVICE_URL}/logout`, {}).subscribe({
+      complete: () => {
+        this.localStorageService.remove(LocalStorageService.AUTH_TOKEN);
+        this.router.navigateByUrl("/auth/connexion");
+      },
+      error: () => {
+        this.localStorageService.remove(LocalStorageService.AUTH_TOKEN);
+        this.router.navigateByUrl("/auth/connexion");
+      }
+    });
   }
 }

@@ -1,34 +1,35 @@
-<div class="p-6 max-w-lg mx-auto">
-  <app-return-back></app-return-back>
-  <app-header-title title="Uploader un support"></app-header-title>
+<div class="upload-page">
+  <a routerLink=".." class="upload-page__back">&larr; Retour</a>
 
-  <div class="bg-white rounded-lg shadow-md p-6 mt-4">
-    <div class="mb-4">
-      <label class="block text-sm font-medium text-gray-700">Module</label>
-      <select [(ngModel)]="selectedModuleId" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+  <div class="upload-page__card">
+    <h2 class="upload-page__title">Uploader un support</h2>
+
+    <div class="form-group">
+      <label class="form-label">Module</label>
+      <select [(ngModel)]="selectedModuleId" class="form-select">
         <option value="">Sélectionnez un module</option>
         <option *ngFor="let m of modules" [value]="m.id">{{ m.titre }}</option>
       </select>
     </div>
 
-    <div class="mb-4">
-      <label class="block text-sm font-medium text-gray-700">Type de support</label>
-      <select [(ngModel)]="supportType" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+    <div class="form-group">
+      <label class="form-label">Type de support</label>
+      <select [(ngModel)]="supportType" class="form-select">
         <option value="document">Document</option>
         <option value="video">Vidéo</option>
         <option value="pdf">PDF</option>
       </select>
     </div>
 
-    <div class="mb-4">
-      <label class="block text-sm font-medium text-gray-700">Fichier</label>
-      <input type="file" (change)="onFileSelected($event)" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+    <div class="form-group">
+      <label class="form-label">Fichier</label>
+      <input type="file" (change)="onFileSelected($event)" class="form-input">
     </div>
 
-    <app-custom-alert *ngIf="successMessage" [message]="successMessage" [type]="'success'"></app-custom-alert>
-    <app-custom-alert *ngIf="errorMessage" [message]="errorMessage" [type]="'danger'"></app-custom-alert>
+    <div *ngIf="successMessage" class="alert alert--success">{{ successMessage }}</div>
+    <div *ngIf="errorMessage" class="alert alert--danger">{{ errorMessage }}</div>
 
-    <button (click)="upload()" [disabled]="uploading || !selectedFile || !selectedModuleId" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50">
+    <button (click)="upload()" [disabled]="uploading || !selectedFile || !selectedModuleId" class="btn btn--primary btn--full">
       {{ uploading ? 'Upload en cours...' : 'Uploader' }}
     </button>
   </div>

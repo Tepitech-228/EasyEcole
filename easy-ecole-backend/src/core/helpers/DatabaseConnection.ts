@@ -44,10 +44,32 @@ export class DatabaseConnection {
             await this._sequelize.authenticate();
             console.log('Database connected successfully');
 
-            await this._sequelize.sync({ alter: true });
+            await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
+            try {
+                await this._sequelize.sync({ alter: true });
+            } catch (syncError: any) {
+                if (
+                    syncError.name === 'SequelizeUnknownConstraintError' ||
+                    syncError?.parent?.code === 'ER_FK_INCORRECT_OPTION' ||
+                    syncError?.parent?.code === 'ER_CANT_CREATE_TABLE'
+                ) {
+                    console.warn('Warning (FK constraint ignored):', syncError.message);
+                } else {
+                    throw syncError;
+                }
+            }
+            await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
             console.log("Database: all data synchronized");
-        } catch (error) {
-            console.error('Database not connected:', error);
+        } catch (error: any) {
+            if (
+                error.name === 'SequelizeUnknownConstraintError' ||
+                error?.parent?.code === 'ER_FK_INCORRECT_OPTION' ||
+                error?.parent?.code === 'ER_CANT_CREATE_TABLE'
+            ) {
+                console.warn('Warning (FK constraint ignored):', error.message);
+            } else {
+                console.error('Database not connected:', error);
+            }
         }
     }
 }

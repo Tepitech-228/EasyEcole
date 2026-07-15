@@ -1,0 +1,38 @@
+<div class="overlay" (click)="close.emit()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-head">
+      <div>
+        <h3>Nouveau message</h3>
+        <p>Envoyer un message privé à un membre de l'établissement.</p>
+      </div>
+      <button class="close-x" (click)="close.emit()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Destinataire</label>
+        <input type="text" [(ngModel)]="searchQuery" (input)="selectedUser = null" placeholder="Rechercher un étudiant, un professeur, un service..." />
+        <div class="suggest-list" *ngIf="!selectedUser && filteredUsers.length > 0">
+          <div class="suggest-item" *ngFor="let user of filteredUsers" (click)="selectUser(user)">
+            <div class="suggest-avatar">{{ (user.prenoms || user.nom || '?').charAt(0) }}</div>
+            <div class="suggest-info">
+              <div class="suggest-name">{{ user.prenoms || '' }} {{ user.nom || '' }}</div>
+              <div class="suggest-role">{{ user.email || user.identifiant || 'Membre' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Sujet <span class="hint">(optionnel)</span></label>
+        <input type="text" [(ngModel)]="sujet" placeholder="Ex : Question sur le TP3" />
+      </div>
+      <div class="field">
+        <label>Message</label>
+        <textarea [(ngModel)]="message" placeholder="Écris ton message..." rows="4"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" (click)="close.emit()">Annuler</button>
+      <button class="btn btn-primary" (click)="onSend()" [disabled]="!selectedUser || !message.trim()">Envoyer</button>
+    </div>
+  </div>
+</div>

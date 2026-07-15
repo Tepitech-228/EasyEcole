@@ -1,49 +1,167 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
-
-interface Utilisateur {
-  id: string
-  nom: string
-  prenoms: string
-  email: string
-  identifiant: string
-  role: string
-  contact: string
-  statut: string
-  dateCreation: string
-}
+import { UtilisateurService } from 'src/app/data/modules/auth/services/utilisateur.service';
+import { ToastService } from 'src/app/core/services/toast.service';
+import { RolesUtilisateur } from 'src/app/data/enums/RolesUtilisateur';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-utilisateurs-page',
   templateUrl: './utilisateurs-page.component.html',
   styleUrls: ['./utilisateurs-page.component.scss']
 })
-export class UtilisateursPageComponent extends BaseComponentClass {
-  utilisateurs: Utilisateur[] = [
-    { id: '1', nom: 'Admin', prenoms: 'Super', email: 'admin@easyecole.com', identifiant: 'admin', role: 'Administrateur', contact: '691234567', statut: 'Actif', dateCreation: '2025-01-15' },
-    { id: '2', nom: 'Dupont', prenoms: 'Jean', email: 'jean.dupont@ecole.com', identifiant: 'jdupont', role: 'Enseignant', contact: '692345678', statut: 'Actif', dateCreation: '2025-02-01' },
-    { id: '3', nom: 'Kamga', prenoms: 'Marie', email: 'marie.k@ecole.com', identifiant: 'mkamga', role: 'Institution', contact: '693456789', statut: 'Actif', dateCreation: '2025-01-20' },
-    { id: '4', nom: 'Tchinda', prenoms: 'Paul', email: 'paul.t@ecole.com', identifiant: 'ptchinda', role: 'Apprenant', contact: '694567890', statut: 'Actif', dateCreation: '2025-09-01' },
-    { id: '5', nom: 'Nkwi', prenoms: 'Alice', email: 'alice.n@ecole.com', identifiant: 'ankwi', role: 'Apprenant', contact: '695678901', statut: 'Inactif', dateCreation: '2025-09-01' },
-  ]
+export class UtilisateursPageComponent extends BaseComponentClass implements OnInit {
+  RolesUtilisateur = RolesUtilisateur
+  utilisateurs: any[] = []
   loading: boolean = false
   searchTerm: string = ''
   roleFilter: string = ''
 
-  constructor() { super() }
+  showModal: boolean = false
+  editingUser: any = null
+  formData: any = {}
+  saving: boolean = false
 
-  get filteredUtilisateurs(): Utilisateur[] {
+  showDeleteModal: boolean = false
+  deletingUser: any = null
+
+  roleKeys = Object.keys(RolesUtilisateur).filter(k => isNaN(Number(k)))
+  roleLabels: { [key: string]: string } = {
+    [RolesUtilisateur.ADMIN]: 'Administrateur',
+    [RolesUtilisateur.APPRENANT]: 'Apprenant',
+    [RolesUtilisateur.INSTITUTION]: 'Institution',
+    [RolesUtilisateur.ENSEIGNANT]: 'Enseignant',
+    [RolesUtilisateur.CAISSIER_BANQUE]: 'Caissier Banque',
+    [RolesUtilisateur.RESSOURCES_HUMAINES]: 'Ressources Humaines',
+    [RolesUtilisateur.CABINET_COMPTABLE]: 'Cabinet Comptable',
+    [RolesUtilisateur.COMITE_ORIENTATION]: "Comité d'Orientation",
+  }
+
+  constructor(
+    private utilisateurService: UtilisateurService,
+    private toastService: ToastService,
+    private router: Router,
+  ) { super() }
+
+  ngOnInit(): void {
+    this.loadUtilisateurs()
+  }
+
+  loadUtilisateurs(): void {
+    this.loading = true
+    this.utilisateurService.getAll().subscribe({
+      next: (res) => {
+        this.utilisateurs = Array.isArray(res) ? res : []
+        this.loading = false
+      },
+      error: () => {
+        this.loading = false
+        this.toastService.error('Erreur lors du chargement des utilisateurs')
+      }
+    })
+  }
+
+  get filteredUtilisateurs(): any[] {
     return this.utilisateurs.filter(u => {
-      const matchSearch = !this.searchTerm || 
-        u.nom.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        u.prenoms.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        u.email.toLowerCase().includes(this.searchTerm.toLowerCase())
+      const matchSearch = !this.searchTerm ||
+        (u.nom || '').toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        (u.prenoms || '').toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        (u.email || '').toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        (u.identifiant || '').toLowerCase().includes(this.searchTerm.toLowerCase())
       const matchRole = !this.roleFilter || u.role === this.roleFilter
       return matchSearch && matchRole
     })
   }
 
-  getActionColor(statut: string): string {
+  getRoleLabel(role: string): string {
+    return this.roleLabels[role] || role
+  }
+
+  getStatut(user: any): string {
+    return user.dateVerificationEmail ? 'Actif' : 'Inactif'
+  }
+
+  getStatutColor(statut: string): string {
     return statut === 'Actif' ? 'green' : 'red'
+  }
+
+  openAddModal(): void {
+    this.editingUser = null
+    this.formData = { nom: '', prenoms: '', email: '', identifiant: '', motDePasse: '', role: RolesUtilisateur.APPRENANT, contact: '' }
+    this.showModal = true
+  }
+
+  openEditModal(user: any): void {
+    this.editingUser = user
+    this.formData = {
+      nom: user.nom || '',
+      prenoms: user.prenoms || '',
+      email: user.email || '',
+      identifiant: user.identifiant || '',
+      contact: user.contact || '',
+      role: user.role || RolesUtilisateur.APPRENANT,
+    }
+    this.showModal = true
+  }
+
+  closeModal(): void {
+    this.showModal = false
+    this.editingUser = null
+    this.formData = {}
+  }
+
+  saveUser(): void {
+    if (!this.formData.nom || !this.formData.prenoms || !this.formData.email) {
+      this.toastService.error('Nom, prénoms et email sont requis')
+      return
+    }
+    this.saving = true
+    const obs = this.editingUser
+      ? this.utilisateurService.adminUpdate(this.editingUser.id, this.formData)
+      : this.utilisateurService.adminCreate(this.formData)
+
+    obs.subscribe({
+      next: () => {
+        this.saving = false
+        this.closeModal()
+        this.loadUtilisateurs()
+        this.toastService.success(this.editingUser ? 'Utilisateur modifié' : 'Utilisateur créé')
+      },
+      error: (err) => {
+        this.saving = false
+        this.toastService.error(err.error?.message || 'Erreur lors de l\'enregistrement')
+      }
+    })
+  }
+
+  confirmDelete(user: any): void {
+    this.deletingUser = user
+    this.showDeleteModal = true
+  }
+
+  closeDeleteModal(): void {
+    this.showDeleteModal = false
+    this.deletingUser = null
+  }
+
+  deleteUser(): void {
+    if (!this.deletingUser) return
+    this.saving = true
+    this.utilisateurService.delete(this.deletingUser.id).subscribe({
+      next: () => {
+        this.saving = false
+        this.closeDeleteModal()
+        this.loadUtilisateurs()
+        this.toastService.success('Utilisateur supprimé')
+      },
+      error: () => {
+        this.saving = false
+        this.toastService.error('Erreur lors de la suppression')
+      }
+    })
+  }
+
+  openPermissions(user: any): void {
+    this.router.navigate(['/parametres/permissions'])
   }
 }

@@ -1,13 +1,14 @@
 import { Component, OnInit } from '@angular/core';
-import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { CertificatService } from 'src/app/data/modules/elearning/services/certificat.service';
+import { JwtTokenService } from 'src/app/core/services/jwt-token.service';
+import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 
 @Component({
   selector: 'app-certificats-page',
   templateUrl: './certificats-page.component.html',
   styleUrls: ['./certificats-page.component.scss']
 })
-export class CertificatsPageComponent extends BaseComponentClass implements OnInit {
+export class CertificatsPageComponent implements OnInit {
   certificats: any[] = [];
   loading = true;
   showCreateModal = false;
@@ -15,9 +16,7 @@ export class CertificatsPageComponent extends BaseComponentClass implements OnIn
   selectedCert: any = null;
   showDetailModal = false;
 
-  constructor(private certificatService: CertificatService) {
-    super();
-  }
+  constructor(private certificatService: CertificatService, private jwtTokenService: JwtTokenService) { }
 
   ngOnInit(): void {
     this.loadCertificats();
@@ -52,5 +51,12 @@ export class CertificatsPageComponent extends BaseComponentClass implements OnIn
     }
   }
 
-  canManage(): boolean { return this.rolesValue.isInstitution || this.rolesValue.isAdmin; }
+  canManage(): boolean {
+    const token = localStorage.getItem(LocalStorageService.AUTH_TOKEN);
+    if (!token) return false;
+    this.jwtTokenService.setToken(token);
+    const decoded: any = this.jwtTokenService.getDecodeToken();
+    const role = decoded?.role;
+    return role === 'institution' || role === 'admin' || role === 'enseignant';
+  }
 }

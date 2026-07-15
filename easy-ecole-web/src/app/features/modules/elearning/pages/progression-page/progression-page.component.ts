@@ -1,5 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { ProgressionService } from 'src/app/data/modules/elearning/services/progression.service';
 
 @Component({
@@ -7,13 +6,11 @@ import { ProgressionService } from 'src/app/data/modules/elearning/services/prog
   templateUrl: './progression-page.component.html',
   styleUrls: ['./progression-page.component.scss']
 })
-export class ProgressionPageComponent extends BaseComponentClass implements OnInit {
+export class ProgressionPageComponent implements OnInit {
   data: any = null;
   loading = true;
 
-  constructor(private progressionService: ProgressionService) {
-    super();
-  }
+  constructor(private progressionService: ProgressionService) { }
 
   ngOnInit(): void {
     this.progressionService.getProgression().subscribe({

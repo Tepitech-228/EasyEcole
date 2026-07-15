@@ -12,24 +12,32 @@ export class GedCatalogComponent implements OnInit {
   search = '';
   folders: any[] = [];
   selectedFolderId?: number;
+  selectedStatut = '';
+  private searchTimeout: any;
 
   constructor(private gedService: GedService) {}
 
   ngOnInit(): void {
     this.load();
-    this.loadFolders();
+    this.gedService.getFolders().subscribe({ next: f => this.folders = f });
   }
 
   load() {
     this.loading = true;
-    this.gedService.getAll().subscribe({
+    const params: any = {};
+    if (this.selectedFolderId) params.folderId = this.selectedFolderId;
+    if (this.selectedStatut) params.statut = this.selectedStatut;
+    if (this.search) params.q = this.search;
+
+    this.gedService.getAll(params).subscribe({
       next: (res) => { this.documents = res; this.loading = false; },
       error: () => { this.loading = false; }
     });
   }
 
-  loadFolders() {
-    this.gedService.getFolders().subscribe({ next: f => this.folders = f });
+  onSearch() {
+    clearTimeout(this.searchTimeout);
+    this.searchTimeout = setTimeout(() => this.load(), 400);
   }
 
   download(doc: GedDocument) {
@@ -37,7 +45,6 @@ export class GedCatalogComponent implements OnInit {
   }
 
   exportPdf(doc: GedDocument) {
-    this.loading = true;
     this.gedService.generatePdf(doc.id).subscribe({
       next: (blob) => {
         const link = document.createElement('a');
@@ -48,20 +55,34 @@ export class GedCatalogComponent implements OnInit {
         link.click();
         link.remove();
         window.URL.revokeObjectURL(url);
-        this.loading = false;
-      },
-      error: () => {
-        this.loading = false;
       }
     });
   }
 
+  deleteDoc(doc: GedDocument) {
+    if (!confirm(`Supprimer "${doc.titre}" ?`)) return;
+    this.gedService.delete(doc.id).subscribe({ next: () => this.load() });
+  }
+
   get filteredDocuments(): GedDocument[] {
-    const q = (this.search || '').toLowerCase();
-    return this.documents.filter(d => {
-      if (this.selectedFolderId && (d as any).folderId !== this.selectedFolderId) return false;
-      if (!q) return true;
-      return (d.titre || '').toLowerCase().includes(q) || (d.nommage || '').toLowerCase().includes(q) || (d.reference || '').toLowerCase().includes(q);
-    });
+    return this.documents;
+  }
+
+  get archivedCount(): number {
+    return this.documents.filter(d => d.statut === 'archive').length;
+  }
+
+  getNbPages(): number {
+    return this.documents.reduce((s, d) => s + (d.nbPages || 0), 0);
+  }
+
+  getTailleTotale(): string {
+    const totalKo = this.documents.reduce((s, d) => {
+      const v = parseFloat((d.taille || '0').replace(/,/, '.').replace(/[^0-9.]/g, ''));
+      return s + (isNaN(v) ? 0 : v);
+    }, 0);
+    if (totalKo > 1024 * 1024) return (totalKo / 1024 / 1024).toFixed(1) + ' Go';
+    if (totalKo > 1024) return (totalKo / 1024).toFixed(1) + ' Mo';
+    return totalKo.toFixed(0) + ' Ko';
   }
 }

@@ -12,6 +12,7 @@ export class NouvelleAnnoncePageComponent extends BaseComponentClass implements 
   nouvelleAnnonce: any = { titre: '', contenu: '', cible: 'tous' };
   submitted = false;
   error = false;
+  submitting = false;
   cibles = [
     { value: 'tous', label: 'Tout le monde' },
     { value: 'apprenants', label: 'Apprenants' },
@@ -27,11 +28,13 @@ export class NouvelleAnnoncePageComponent extends BaseComponentClass implements 
 
   creerAnnonce(): void {
     this.error = false;
+    this.submitted = false;
     if (!this.nouvelleAnnonce.titre || !this.nouvelleAnnonce.contenu) {
       this.error = true;
       return;
     }
 
+    this.submitting = true;
     this.communicationService.create({
       titre: this.nouvelleAnnonce.titre,
       contenu: this.nouvelleAnnonce.contenu,
@@ -40,10 +43,12 @@ export class NouvelleAnnoncePageComponent extends BaseComponentClass implements 
     }).subscribe({
       next: () => {
         this.submitted = true;
+        this.submitting = false;
         setTimeout(() => this.router.navigate(['/communication/annonces']), 1500);
       },
       error: () => {
         this.error = true;
+        this.submitting = false;
       }
     });
   }

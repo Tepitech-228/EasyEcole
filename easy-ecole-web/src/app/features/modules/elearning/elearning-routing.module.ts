@@ -2,6 +2,8 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 import { MesCoursPageComponent } from './pages/mes-cours-page/mes-cours-page.component';
+import { CoursVideosPageComponent } from './pages/cours-videos-page/cours-videos-page.component';
+import { CoursPdfsPageComponent } from './pages/cours-pdfs-page/cours-pdfs-page.component';
 import { CoursDetailsPageComponent } from './pages/cours-details-page/cours-details-page.component';
 import { CoursPlayerPageComponent } from './pages/cours-player-page/cours-player-page.component';
 import { ChatPageComponent } from './pages/chat-page/chat-page.component';
@@ -16,71 +18,22 @@ import { DevoirsPageComponent } from './pages/devoirs-page/devoirs-page.componen
 import { DevoirDetailPageComponent } from './pages/devoir-detail-page/devoir-detail-page.component';
 
 const routes: Routes = [
-  {
-    path: '',
-    component: MesCoursPageComponent,
-    pathMatch: 'full'
-  },
-  {
-    path: 'quiz/nouveau',
-    component: QuizFormPageComponent,
-    pathMatch: 'full'
-  },
-  {
-    path: 'quiz/:id',
-    component: QuizDoPageComponent,
-    pathMatch: 'full'
-  },
-  {
-    path: 'quiz',
-    component: QuizPageComponent,
-    pathMatch: 'full'
-  },
-  {
-    path: 'progression',
-    component: ProgressionPageComponent,
-    pathMatch: 'full'
-  },
-  {
-    path: 'certificats',
-    component: CertificatsPageComponent,
-    pathMatch: 'full'
-  },
-  {
-    path: 'devoirs/:id',
-    component: DevoirDetailPageComponent,
-    pathMatch: 'full'
-  },
-  {
-    path: 'devoirs',
-    component: DevoirsPageComponent,
-    pathMatch: 'full'
-  },
-  {
-    path: 'admin/gestion',
-    component: GestionElearningPageComponent,
-    pathMatch: 'full'
-  },
-  {
-    path: ':id/player',
-    component: CoursPlayerPageComponent,
-    pathMatch: 'full'
-  },
-  {
-    path: ':id/chat',
-    component: ChatPageComponent,
-    pathMatch: 'full'
-  },
-  {
-    path: ':id/upload',
-    component: UploadSupportPageComponent,
-    pathMatch: 'full'
-  },
-  {
-    path: ':id',
-    component: CoursDetailsPageComponent,
-    pathMatch: 'full'
-  }
+  { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+  { path: 'dashboard', component: MesCoursPageComponent },
+  { path: 'videos', component: CoursVideosPageComponent },
+  { path: 'pdfs', component: CoursPdfsPageComponent },
+  { path: 'quiz/nouveau', component: QuizFormPageComponent },
+  { path: 'quiz/:id', component: QuizDoPageComponent },
+  { path: 'quiz', component: QuizPageComponent },
+  { path: 'progression', component: ProgressionPageComponent },
+  { path: 'certificats', component: CertificatsPageComponent },
+  { path: 'devoirs/:id', component: DevoirDetailPageComponent },
+  { path: 'devoirs', component: DevoirsPageComponent },
+  { path: 'admin/gestion', component: GestionElearningPageComponent },
+  { path: ':id/player', component: CoursPlayerPageComponent },
+  { path: ':id/chat', component: ChatPageComponent },
+  { path: ':id/upload', component: UploadSupportPageComponent },
+  { path: ':id', component: CoursDetailsPageComponent }
 ];
 
 @NgModule({

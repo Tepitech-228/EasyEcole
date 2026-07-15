@@ -16,4 +16,8 @@ export class GedNomenclatureComponent {
     const parts = [this.nommageType, this.nommageDate, this.categorie || 'DOCUMENT', this.reference || 'REF'];
     this.example = parts.join('-').toUpperCase();
   }
+
+  copy() {
+    navigator.clipboard.writeText(this.example);
+  }
 }

@@ -1,0 +1,127 @@
+.msg-row {
+  display: flex;
+  gap: 10px;
+  max-width: 70%;
+  &.me {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+  }
+}
+
+.msg-avatar {
+  flex-shrink: 0;
+  .mini-av {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: #8956E0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+  }
+}
+
+.msg-content {
+  min-width: 0;
+}
+
+.sender-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: #3B5BFF;
+  margin-bottom: 3px;
+}
+
+.bubble {
+  background: #fff;
+  border: 1px solid #E6E8F0;
+  padding: 11px 14px;
+  border-radius: 16px 16px 16px 4px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  position: relative;
+  &.bubble-own {
+    background: #3B5BFF;
+    color: #fff;
+    border: none;
+    border-radius: 16px 16px 4px 16px;
+  }
+  &.bubble-other {
+    background: #fff;
+    color: #1B2140;
+  }
+}
+
+.sticker-emoji {
+  font-size: 42px;
+  display: block;
+  text-align: center;
+}
+
+.media-container {
+  .media-img, .media-video {
+    max-width: 240px;
+    border-radius: 10px;
+    display: block;
+  }
+  .media-caption {
+    margin-top: 4px;
+    font-size: 13px;
+  }
+}
+
+.file-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  .file-icon { font-size: 20px; }
+  .file-info {
+    .file-name { font-weight: 600; font-size: 13px; display: block; }
+    .file-link { font-size: 12px; color: #3B5BFF; text-decoration: none; }
+  }
+}
+
+.msg-text {
+  word-wrap: break-word;
+}
+
+.msg-meta {
+  font-size: 10.5px;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bubble-own .msg-meta {
+  color: rgba(255,255,255,.7);
+  justify-content: flex-end;
+}
+
+.bubble-other .msg-meta {
+  color: #6E7391;
+}
+
+.read-status {
+  font-size: 10px;
+}
+
+.bubble-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+  justify-content: flex-end;
+}
+
+.bubble-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  opacity: .6;
+  &:hover { opacity: 1; }
+}

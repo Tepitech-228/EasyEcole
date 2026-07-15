@@ -1,0 +1,7 @@
+Listening on http://localhost:3000
+Database connected successfully
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 22.630 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 26.802 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 14.657 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 16.642 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 490.489 ms - -[0m

@@ -1,0 +1,50 @@
+Database not connected: Error: 
+    at Query.run (D:\EasyEcole\easy-ecole-backend\node_modules\sequelize\src\dialects\mysql\query.js:46:25)
+    at D:\EasyEcole\easy-ecole-backend\node_modules\sequelize\src\sequelize.js:650:28
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at ELearningSalon.sync (D:\EasyEcole\easy-ecole-backend\node_modules\sequelize\src\model.js:1408:11)
+    at Sequelize.sync (D:\EasyEcole\easy-ecole-backend\node_modules\sequelize\src\sequelize.js:825:9)
+    at DatabaseConnection.init (D:\EasyEcole\easy-ecole-backend\src\core\helpers\/DatabaseConnection.ts:47:13)
+    at Server.<anonymous> (D:\EasyEcole\easy-ecole-backend\src\/app.ts:113:5) {
+  name: 'SequelizeDatabaseError',
+  parent: Error: Ne peut créer la table `easyecole`.`elearning_salons` (Errcode: 150 "Foreign key constraint is incorrectly formed")
+      at Packet.asError (D:\EasyEcole\easy-ecole-backend\node_modules\mysql2\lib\packets\packet.js:791:17)
+      at Query.execute (D:\EasyEcole\easy-ecole-backend\node_modules\mysql2\lib\commands\command.js:29:26)
+      at Connection.handlePacket (D:\EasyEcole\easy-ecole-backend\node_modules\mysql2\lib\base\connection.js:552:34)
+      at PacketParser.onPacket (D:\EasyEcole\easy-ecole-backend\node_modules\mysql2\lib\base\connection.js:102:12)
+      at PacketParser.executeStart (D:\EasyEcole\easy-ecole-backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+      at Socket.<anonymous> (D:\EasyEcole\easy-ecole-backend\node_modules\mysql2\lib\base\connection.js:109:25)
+      at Socket.emit (node:events:509:28)
+      at addChunk (node:internal/streams/readable:563:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:514:3)
+      at Socket.Readable.push (node:internal/streams/readable:394:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    code: 'ER_CANT_CREATE_TABLE',
+    errno: 1005,
+    sqlState: 'HY000',
+    sqlMessage: 'Ne peut créer la table `easyecole`.`elearning_salons` (Errcode: 150 "Foreign key constraint is incorrectly formed")',
+    sql: 'ALTER TABLE `elearning_salons` ADD FOREIGN KEY (`createdById`) REFERENCES `aut_utilisateurs` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;',
+    parameters: undefined
+  },
+  original: Error: Ne peut créer la table `easyecole`.`elearning_salons` (Errcode: 150 "Foreign key constraint is incorrectly formed")
+      at Packet.asError (D:\EasyEcole\easy-ecole-backend\node_modules\mysql2\lib\packets\packet.js:791:17)
+      at Query.execute (D:\EasyEcole\easy-ecole-backend\node_modules\mysql2\lib\commands\command.js:29:26)
+      at Connection.handlePacket (D:\EasyEcole\easy-ecole-backend\node_modules\mysql2\lib\base\connection.js:552:34)
+      at PacketParser.onPacket (D:\EasyEcole\easy-ecole-backend\node_modules\mysql2\lib\base\connection.js:102:12)
+      at PacketParser.executeStart (D:\EasyEcole\easy-ecole-backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+      at Socket.<anonymous> (D:\EasyEcole\easy-ecole-backend\node_modules\mysql2\lib\base\connection.js:109:25)
+      at Socket.emit (node:events:509:28)
+      at addChunk (node:internal/streams/readable:563:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:514:3)
+      at Socket.Readable.push (node:internal/streams/readable:394:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    code: 'ER_CANT_CREATE_TABLE',
+    errno: 1005,
+    sqlState: 'HY000',
+    sqlMessage: 'Ne peut créer la table `easyecole`.`elearning_salons` (Errcode: 150 "Foreign key constraint is incorrectly formed")',
+    sql: 'ALTER TABLE `elearning_salons` ADD FOREIGN KEY (`createdById`) REFERENCES `aut_utilisateurs` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;',
+    parameters: undefined
+  },
+  sql: 'ALTER TABLE `elearning_salons` ADD FOREIGN KEY (`createdById`) REFERENCES `aut_utilisateurs` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;',
+  parameters: {}
+}

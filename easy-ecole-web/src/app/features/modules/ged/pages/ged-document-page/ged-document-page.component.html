@@ -1,27 +1,110 @@
-<div class="card ged-card ged-detail-card">
-  <app-header-title title="Détails du document" subtitle="Visualisation et actions"></app-header-title>
+<div class="doc-page">
+  <div *ngIf="loading" class="loading-state">Chargement...</div>
+  <div *ngIf="!loading && !doc" class="empty-state">Document introuvable</div>
 
-  <div *ngIf="loading" class="field-helper">Chargement...</div>
-  <div *ngIf="!loading && !doc" class="field-helper">Document introuvable</div>
-
-  <div *ngIf="doc" class="detail-content">
-    <div class="detail-header">
-      <div>
-        <div class="document-title">{{ doc.titre }}</div>
-        <div class="document-meta">{{ doc.nommage || doc.reference }}</div>
+  <ng-container *ngIf="doc">
+    <!-- Header -->
+    <div class="doc-header">
+      <div class="doc-header-left">
+        <a routerLink="/ged/catalog" class="back-link">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+          Retour au catalogue
+        </a>
+        <h1>{{ doc.titre }}</h1>
+        <p class="doc-ref" *ngIf="doc.reference || doc.nommage">{{ doc.reference || doc.nommage }}</p>
+      </div>
+      <div class="doc-header-actions">
+        <button class="btn-primary" (click)="download()">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Télécharger
+        </button>
+        <button class="btn-outline" (click)="exportPdf()">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Exporter PDF
+        </button>
+        <button class="btn-danger" (click)="deleteDoc()">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Supprimer
+        </button>
       </div>
     </div>
 
-    <div class="detail-properties">
-      <div><span>Type :</span> {{ doc.type || 'PDF' }}</div>
-      <div><span>Statut :</span> {{ doc.statut }}</div>
-      <div><span>Taille :</span> {{ doc.taille }}</div>
-      <div><span>Dossier :</span> {{ doc.folderId || 'Aucun' }}</div>
-    </div>
+    <!-- Content -->
+    <div class="doc-content">
+      <!-- Preview -->
+      <div class="doc-preview">
+        <iframe [src]="previewUrl" class="preview-iframe" *ngIf="previewUrl"></iframe>
+        <div class="preview-placeholder" *ngIf="!previewUrl">
+          <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#d7d9e6" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <p>Aperçu non disponible</p>
+        </div>
+      </div>
 
-    <div class="ged-form-actions">
-      <app-custom-button (click)="download()" text="Télécharger"></app-custom-button>
-      <app-custom-button (click)="exportPdf()" text="Exporter PDF" color="secondary"></app-custom-button>
+      <!-- Metadata sidebar -->
+      <div class="doc-meta">
+        <div class="meta-section">
+          <h3>Informations</h3>
+          <div class="meta-grid">
+            <div class="meta-item">
+              <span class="meta-label">Type</span>
+              <span class="meta-value">{{ doc.type || 'PDF' }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Statut</span>
+              <span class="badge-statut" [class.disponible]="doc.statut === 'Disponible'" [class.attente]="doc.statut === 'en_attente'" [class.archive]="doc.statut === 'archive'">{{ doc.statut }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Taille</span>
+              <span class="meta-value">{{ doc.taille }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Pages</span>
+              <span class="meta-value">{{ doc.nbPages || '-' }}</span>
+            </div>
+            <div class="meta-item" *ngIf="doc.auteur">
+              <span class="meta-label">Auteur</span>
+              <span class="meta-value">{{ doc.auteur }}</span>
+            </div>
+            <div class="meta-item" *ngIf="doc.dateDocument">
+              <span class="meta-label">Date document</span>
+              <span class="meta-value">{{ doc.dateDocument | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="meta-item" *ngIf="doc.uploader">
+              <span class="meta-label">Uploadé par</span>
+              <span class="meta-value">{{ doc.uploader.prenoms }} {{ doc.uploader.nom }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Créé le</span>
+              <span class="meta-value">{{ doc.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="meta-section" *ngIf="doc.tags">
+          <h3>Tags</h3>
+          <div class="tags-list">
+            <span class="tag" *ngFor="let t of getTags(doc)">{{ t }}</span>
+          </div>
+        </div>
+
+        <div class="meta-section">
+          <h3>Conservation</h3>
+          <div class="meta-grid">
+            <div class="meta-item" *ngIf="doc.dureeConservation">
+              <span class="meta-label">Durée</span>
+              <span class="meta-value">{{ doc.dureeConservation }}</span>
+            </div>
+            <div class="meta-item" *ngIf="doc.archivedUntil">
+              <span class="meta-label">Archivé jusqu'au</span>
+              <span class="meta-value">{{ doc.archivedUntil | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Statut</span>
+              <span class="meta-value">{{ doc.isArchived ? 'Archivé' : 'Actif' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
+  </ng-container>
 </div>

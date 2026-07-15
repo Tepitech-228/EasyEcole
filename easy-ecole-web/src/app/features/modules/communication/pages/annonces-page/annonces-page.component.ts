@@ -10,15 +10,17 @@ import { Communication } from 'src/app/data/modules/communication/models/Communi
 })
 export class AnnoncesPageComponent extends BaseComponentClass implements OnInit {
   annonces: Communication[] = [];
+  loading: boolean = true;
 
   constructor(private communicationService: CommunicationService) {
     super();
   }
 
   ngOnInit(): void {
+    this.loading = true;
     this.communicationService.getAll().subscribe({
-      next: (data) => this.annonces = data,
-      error: (err) => console.log(err)
+      next: (data) => { this.annonces = data; this.loading = false; },
+      error: (err) => { console.log(err); this.loading = false; }
     });
   }
 

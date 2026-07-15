@@ -7,6 +7,7 @@ import { Quiz } from "../models/Quiz";
 import { ReponseQuiz } from "../models/ReponseQuiz";
 import { ProgressionApprenant } from "../models/ProgressionApprenant";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
+import { Utilisateur } from "../../auth/models/Utilisateur";
 
 export default class CoursEnLigneController {
 
@@ -14,12 +15,23 @@ export default class CoursEnLigneController {
         try {
             const userId = (req as any).utilisateurId;
             const role = (req as any).utilisateurRole;
+            const formatFilter = req.query.format as string | undefined;
+
+            const whereClause: any = {};
+            if (formatFilter && ['video', 'pdf', 'mixte'].includes(formatFilter)) {
+                whereClause.format = formatFilter;
+            }
 
             const cours = await CoursEnLigne.findAll({
+                where: whereClause,
                 include: [{
                     model: ModuleElearning,
                     as: 'modules',
                     attributes: ['id']
+                }, {
+                    model: Utilisateur,
+                    as: 'enseignant',
+                    attributes: ['id', 'nom', 'prenoms']
                 }],
                 order: [['createdAt', 'DESC']]
             });
@@ -67,7 +79,11 @@ export default class CoursEnLigneController {
                     model: ModuleElearning,
                     as: 'modules',
                     include: [ModuleElearning.associations.supports]
-                }, CoursEnLigne.associations.salons]
+                }, CoursEnLigne.associations.salons, {
+                    model: Utilisateur,
+                    as: 'enseignant',
+                    attributes: ['id', 'nom', 'prenoms']
+                }]
             });
 
             if (!cours)
@@ -133,6 +149,10 @@ export default class CoursEnLigneController {
                     model: ModuleElearning,
                     as: 'modules',
                     include: [ModuleElearning.associations.supports]
+                }, {
+                    model: Utilisateur,
+                    as: 'enseignant',
+                    attributes: ['id', 'nom', 'prenoms']
                 }]
             });
 
@@ -196,7 +216,9 @@ export default class CoursEnLigneController {
             const cours = await CoursEnLigne.create({
                 titre: req.body.titre,
                 description: req.body.description,
-                statut: req.body.statut || 'actif'
+                statut: req.body.statut || 'actif',
+                enseignantId: req.body.enseignantId || null,
+                format: req.body.format || 'mixte'
             });
             return res.status(201).send(cours);
         } catch (error) {

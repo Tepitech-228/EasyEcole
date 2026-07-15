@@ -1,0 +1,93 @@
+<div class="info-panel-overlay" (click)="close.emit()">
+  <div class="info-panel" (click)="$event.stopPropagation()">
+    <div class="panel-header">
+      <button class="close-btn" (click)="close.emit()">
+        <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      </button>
+      <h3>Infos du groupe</h3>
+    </div>
+
+    <div class="panel-body">
+      <div class="group-photo-section">
+        <div class="group-photo">
+          <span class="group-photo-letter">{{ displayName.charAt(0).toUpperCase() }}</span>
+        </div>
+        <h2 class="group-name">{{ displayName }}</h2>
+        <p class="group-desc">{{ description }}</p>
+        <p class="group-meta">{{ memberCount }} membre{{ memberCount > 1 ? 's' : '' }}</p>
+      </div>
+
+      <div class="members-section">
+        <h4>Membres</h4>
+        <div class="members-list">
+          <div *ngFor="let member of members" class="member-item">
+            <div class="member-avatar">
+              <span>{{ (member.name || '?').charAt(0) }}</span>
+            </div>
+            <div class="member-info">
+              <span class="member-name">{{ member.name }}</span>
+              <span class="member-role">{{ member.role }}</span>
+            </div>
+            <div class="member-status">
+              <span class="status-dot" [class.online]="member.online" [class.offline]="!member.online"></span>
+            </div>
+            <div *ngIf="estAdmin && member.id !== currentUserId" class="member-actions">
+              <button *ngIf="!isAdmin(member)" class="action-btn promote" (click)="promote.emit(member.id)" title="Promouvoir admin">
+                <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2z"/></svg>
+              </button>
+              <button *ngIf="isAdmin(member)" class="action-btn demote" (click)="demote.emit(member.id)" title="Rétrograder">
+                <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2z"/></svg>
+              </button>
+              <button class="action-btn remove" (click)="removeMember.emit(member.id)" title="Retirer">
+                <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="add-member-section" *ngIf="estAdmin">
+        <h4>Ajouter des membres</h4>
+        <div class="flex items-center gap-2 mb-2">
+          <select #memberSelect class="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">
+            <option value="" disabled selected>Sélectionner un membre...</option>
+            <option *ngFor="let user of allNonMembers" [value]="user.id">{{ user.prenoms || '' }} {{ user.nom || '' }} ({{ user.email || user.identifiant || '' }})</option>
+          </select>
+          <button (click)="onAddMember(Number(memberSelect.value))" [disabled]="!memberSelect.value" class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">
+            Ajouter
+          </button>
+        </div>
+        <div class="text-xs text-slate-400 text-center">— ou —</div>
+        <div class="search-field mt-2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input type="text" [(ngModel)]="memberSearch" placeholder="Rechercher un utilisateur...">
+        </div>
+        <div class="suggest-list" *ngIf="memberSearch.length >= 2 && filteredUsers.length > 0">
+          <div class="suggest-item" *ngFor="let user of filteredUsers" (click)="onAddMember(user.id)">
+            <div class="suggest-avatar">
+              <span>{{ (user.prenoms || user.nom || '?').charAt(0).toUpperCase() }}</span>
+            </div>
+            <div class="suggest-info">
+              <span class="suggest-name">{{ user.prenoms }} {{ user.nom }}</span>
+              <span class="suggest-email">{{ user.email }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="no-results" *ngIf="memberSearch.length >= 2 && filteredUsers.length === 0">
+          Aucun utilisateur trouvé
+        </div>
+      </div>
+
+      <div class="panel-actions">
+        <button class="panel-action-btn invite-btn" (click)="generateInvite.emit()">
+          <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h9v-2H4V8l8 5 8-5v5h2V6c0-1.1-.9-2-2-2zm-8 7L4 6h16l-8 5zm7 4v3h3v2h-3v3h-2v-3h-3v-2h3v-3h2z"/></svg>
+          Inviter des membres
+        </button>
+        <button class="panel-action-btn leave-btn" (click)="leaveGroup.emit()">
+          <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
+          Quitter le groupe
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

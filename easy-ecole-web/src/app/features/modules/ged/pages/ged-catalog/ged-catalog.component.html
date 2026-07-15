@@ -1,29 +1,101 @@
-<div class="card ged-card">
-  <app-header-title title="Catalogue GED" subtitle="Recherchez et téléchargez les documents"></app-header-title>
-
-  <div class="ged-toolbar">
-    <input [(ngModel)]="search" class="form-input" placeholder="Recherche..." />
-    <select [(ngModel)]="selectedFolderId" class="form-input">
+<div class="catalog-page">
+  <!-- Filtres -->
+  <div class="filters-bar">
+    <div class="search-field">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" [(ngModel)]="search" (ngModelChange)="onSearch()" placeholder="Rechercher dans les documents (titre, contenu, auteur, tags...)" />
+    </div>
+    <select class="filter-select" [(ngModel)]="selectedFolderId" (change)="load()">
       <option [ngValue]="undefined">Tous les dossiers</option>
-      <option *ngFor="let f of folders" [value]="f.id">{{ f.nom }}</option>
+      <option *ngFor="let f of folders" [ngValue]="f.id">{{ f.nom }}</option>
+    </select>
+    <select class="filter-select" [(ngModel)]="selectedStatut" (change)="load()">
+      <option value="">Tous les statuts</option>
+      <option value="Disponible">Disponible</option>
+      <option value="en_attente">En attente</option>
+      <option value="archive">Archivé</option>
     </select>
   </div>
 
-  <div class="ged-list-container">
-    <div *ngIf="loading" class="field-helper">Chargement...</div>
-    <div *ngIf="!loading && documents.length === 0" class="field-helper">Aucun document</div>
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <span class="stat-value">{{ documents.length }}</span>
+      <span class="stat-label">Documents</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value">{{ getNbPages() }}</span>
+      <span class="stat-label">Pages totales</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value">{{ getTailleTotale() }}</span>
+      <span class="stat-label">Taille totale</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value">{{ archivedCount }}</span>
+      <span class="stat-label">Archivés</span>
+    </div>
+  </div>
 
-    <ul *ngIf="filteredDocuments.length > 0" class="document-list">
-      <li *ngFor="let d of filteredDocuments" class="document-item">
-        <div>
-          <div class="document-title">{{ d.titre }}</div>
-          <div class="document-meta">{{ d.nommage || d.reference }}</div>
-        </div>
-        <div class="document-actions">
-          <button (click)="download(d)" class="action-button download">Télécharger</button>
-          <button (click)="exportPdf(d)" class="action-button export">Exporter PDF</button>
-        </div>
-      </li>
-    </ul>
+  <!-- Table -->
+  <div class="table-container">
+    <div *ngIf="loading" class="loading-state">Chargement...</div>
+    <div *ngIf="!loading && filteredDocuments.length === 0" class="empty-state">
+      <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#6e7391" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <p>Aucun document trouvé</p>
+    </div>
+
+    <table class="ged-table" *ngIf="filteredDocuments.length > 0">
+      <thead>
+        <tr>
+          <th>Titre</th>
+          <th>Type</th>
+          <th>Auteur</th>
+          <th>Pages</th>
+          <th>Taille</th>
+          <th>Statut</th>
+          <th>Conservation</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let d of filteredDocuments">
+          <td class="cell-title">
+            <a [routerLink]="['/ged/document', d.id]" class="doc-link">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              {{ d.titre }}
+            </a>
+            <span class="cell-tags" *ngIf="d.tags">— {{ d.tags }}</span>
+          </td>
+          <td><span class="badge-type">{{ d.type || 'PDF' }}</span></td>
+          <td>{{ d.auteur || d.uploader?.prenoms + ' ' + d.uploader?.nom || '-' }}</td>
+          <td>{{ d.nbPages || '-' }}</td>
+          <td>{{ d.taille }}</td>
+          <td>
+            <span class="badge-statut" [class.disponible]="d.statut === 'Disponible'" [class.attente]="d.statut === 'en_attente'" [class.archive]="d.statut === 'archive'">
+              {{ d.statut }}
+            </span>
+          </td>
+          <td class="cell-conservation">
+            <span *ngIf="d.isArchived">Archivé</span>
+            <span *ngIf="!d.isArchived && d.dureeConservation">{{ d.dureeConservation }}</span>
+            <span *ngIf="!d.isArchived && !d.dureeConservation">-</span>
+          </td>
+          <td class="cell-date">{{ d.createdAt | date:'dd/MM/yyyy' }}</td>
+          <td class="cell-actions">
+            <button class="action-btn" title="Télécharger" (click)="download(d)">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </button>
+            <button class="action-btn" title="Exporter PDF" (click)="exportPdf(d)">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </button>
+            <button class="action-btn danger" title="Supprimer" (click)="deleteDoc(d)">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </div>

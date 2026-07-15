@@ -39,12 +39,12 @@ export default class AuthController {
             if (bcrypt.compareSync(req.body.motDePasse, utilisateur.motDePasse)) {
                 const token = jwt.sign(
                     {
+                        exp: Math.floor(Date.now() / 1000) + (10 * 60 * 60),
                         id: utilisateur.id,
-                        // nom: utilisateur.nom,
-                        // prenoms: utilisateur.prenoms,
                         email: utilisateur.email,
                         identifiant: utilisateur.identifiant,
                         role: utilisateur.role,
+                        tokenVersion: utilisateur.tokenVersion,
                     },
                     JWT_SECRET
                 );
@@ -349,5 +349,14 @@ export default class AuthController {
         return res.status(200).json({ success: true, message: "Mot de passe réinitialisé" })
     }
 
+    static async logout(req: Request, res: Response): Promise<Response> {
+        try {
+            const utilisateurId = (req as any).utilisateurId;
+            await Utilisateur.increment('tokenVersion', { where: { id: utilisateurId } });
+            return res.status(200).json({ success: true, message: "Déconnexion réussie" });
+        } catch (error) {
+            return res.status(500).json({ success: false, error });
+        }
+    }
 
 }

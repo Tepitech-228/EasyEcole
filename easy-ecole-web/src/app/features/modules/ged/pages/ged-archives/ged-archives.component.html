@@ -1,0 +1,48 @@
+<div class="archives-page">
+  <div class="page-head">
+    <h2>Archives</h2>
+    <p>{{ documents.length }} document{{ documents.length > 1 ? 's' : '' }} archivé{{ documents.length > 1 ? 's' : '' }} · {{ tailleTotale }}</p>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">Chargement...</div>
+  <div *ngIf="!loading && documents.length === 0" class="empty-state">
+    <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#6e7391" stroke-width="1.5"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+    <p>Aucun document archivé</p>
+  </div>
+
+  <div class="table-container" *ngIf="documents.length > 0">
+    <table class="ged-table">
+      <thead>
+        <tr>
+          <th>Titre</th>
+          <th>Type</th>
+          <th>Taille</th>
+          <th>Pages</th>
+          <th>Conservation</th>
+          <th>Archivé le</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let d of documents">
+          <td class="cell-title">
+            <a [routerLink]="['/ged/document', d.id]" class="doc-link">{{ d.titre }}</a>
+          </td>
+          <td>{{ d.type || 'PDF' }}</td>
+          <td>{{ d.taille }}</td>
+          <td>{{ d.nbPages || '-' }}</td>
+          <td>{{ d.dureeConservation || '-' }}</td>
+          <td>{{ d.archivedUntil | date:'dd/MM/yyyy' || '-' }}</td>
+          <td class="cell-actions">
+            <button class="action-btn" title="Télécharger" (click)="download(d)">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </button>
+            <button class="action-btn restore" title="Restaurer" (click)="restaurer(d)">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

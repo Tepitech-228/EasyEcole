@@ -9,14 +9,16 @@ import { environment } from 'src/environments/environment';
 })
 export class GestionElearningPageComponent implements OnInit {
   coursList: any[] = [];
+  enseignants: any[] = [];
   loading = false;
   showCreateForm = false;
-  newCours = { titre: '', description: '' };
+  newCours = { titre: '', description: '', format: 'mixte', enseignantId: null };
 
   constructor(private http: HttpClient) { }
 
   ngOnInit(): void {
     this.loadCours();
+    this.loadEnseignants();
   }
 
   loadCours(): void {
@@ -30,6 +32,13 @@ export class GestionElearningPageComponent implements OnInit {
     });
   }
 
+  loadEnseignants(): void {
+    this.http.get(`${environment.API_URL}/auth/enseignants`).subscribe({
+      next: (data: any) => { this.enseignants = data; },
+      error: () => {}
+    });
+  }
+
   toggleCreateForm(): void {
     this.showCreateForm = !this.showCreateForm;
   }
@@ -38,7 +47,7 @@ export class GestionElearningPageComponent implements OnInit {
     this.http.post(`${environment.API_URL}/elearning/cours`, this.newCours).subscribe({
       next: () => {
         this.showCreateForm = false;
-        this.newCours = { titre: '', description: '' };
+        this.newCours = { titre: '', description: '', format: 'mixte', enseignantId: null };
         this.loadCours();
       },
       error: (err) => console.error(err)

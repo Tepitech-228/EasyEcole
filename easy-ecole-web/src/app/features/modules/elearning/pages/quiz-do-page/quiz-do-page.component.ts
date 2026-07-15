@@ -1,6 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { QuizService } from 'src/app/data/modules/elearning/services/quiz.service';
 
 @Component({
@@ -8,7 +7,7 @@ import { QuizService } from 'src/app/data/modules/elearning/services/quiz.servic
   templateUrl: './quiz-do-page.component.html',
   styleUrls: ['./quiz-do-page.component.scss']
 })
-export class QuizDoPageComponent extends BaseComponentClass implements OnInit, OnDestroy {
+export class QuizDoPageComponent implements OnInit, OnDestroy {
   quiz: any = null;
   loading = true;
   questions: any[] = [];
@@ -24,9 +23,7 @@ export class QuizDoPageComponent extends BaseComponentClass implements OnInit, O
     private route: ActivatedRoute,
     private router: Router,
     private quizService: QuizService
-  ) {
-    super();
-  }
+  ) { }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');

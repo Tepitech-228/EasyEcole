@@ -1,0 +1,20 @@
+<div class="composer">
+  <div *ngIf="selectedFile" class="file-preview">
+    <img *ngIf="previewUrl" [src]="previewUrl" class="preview-image" />
+    <div *ngIf="!previewUrl" class="file-info-inline">📎 {{ selectedFile.name }}</div>
+    <button class="file-clear" (click)="clearFile()">✕</button>
+  </div>
+  <div class="composer-row">
+    <button class="composer-btn attach-btn" (click)="fileInput.click()">📎</button>
+    <input #fileInput type="file" hidden (change)="onFileSelected($event)" accept="image/*,video/*,.pdf,.doc,.docx" />
+    <button class="composer-btn sticker-btn" (click)="openStickers.emit()">😊</button>
+    <input
+      class="composer-input"
+      [(ngModel)]="messageText"
+      (input)="onTyping()"
+      (keydown)="onKeydown($event)"
+      placeholder="Écrire un message..."
+    />
+    <button class="send-btn" (click)="onSend()" [disabled]="!messageText.trim() && !selectedFile">➤</button>
+  </div>
+</div>

@@ -9,6 +9,7 @@ import { TypeNoteEvaluation } from 'src/app/data/modules/inscription/models/Type
 import { CoursService } from 'src/app/data/modules/inscription/services/cours.service';
 import { ListeNoteEvaluationService } from 'src/app/data/modules/inscription/services/liste-note-evaluation.service';
 import { TypeNoteEvaluationService } from 'src/app/data/modules/inscription/services/type-note-evaluation.service';
+import { AnneeAcademiqueService } from 'src/app/data/modules/inscription/services/annee-academique.service';
 
 @Component({
   selector: 'app-nouvelle-evaluation-page',
@@ -21,6 +22,7 @@ export class NouvelleEvaluationPageComponent extends BaseComponentClass implemen
   alreadyExists: boolean = false
   cours: Cours[] = []
   typesNote: TypeNoteEvaluation[] = []
+  anneesAcademiques: any[] = []
 
   evaluationForm: FormGroup = new FormGroup({
     coursId: new FormControl(null, [Validators.required]),
@@ -29,13 +31,15 @@ export class NouvelleEvaluationPageComponent extends BaseComponentClass implemen
     heureDebut: new FormControl(null, [Validators.required]),
     heureFin: new FormControl(null, [Validators.required]),
     poidsTypeNoteEvaluation: new FormControl(null, [Validators.required]),
+    anneeAcademiqueId: new FormControl(null, [Validators.required]),
   })
 
   constructor(
     private router: Router,
     private coursService: CoursService,
     private typeNoteEvaluationService: TypeNoteEvaluationService,
-    private listeNoteEvaluationService: ListeNoteEvaluationService) {
+    private listeNoteEvaluationService: ListeNoteEvaluationService,
+    private anneeAcademiqueService: AnneeAcademiqueService) {
     super()
     if (!this.rolesValue.isInstitution && !this.rolesValue.isEnseignant && !this.rolesValue.isAdmin) {
       this.router.navigate(['/cours/notes'])
@@ -45,6 +49,7 @@ export class NouvelleEvaluationPageComponent extends BaseComponentClass implemen
   ngOnInit(): void {
     this.coursService.getAll().subscribe({ next: (res) => { this.cours = res }, error: (err) => { console.log(err) } })
     this.typeNoteEvaluationService.getAll().subscribe({ next: (res) => { this.typesNote = res }, error: (err) => { console.log(err) } })
+    this.anneeAcademiqueService.getAll().subscribe({ next: (res) => { this.anneesAcademiques = res }, error: (err) => { console.log(err) } })
   }
 
   create(): void {
@@ -57,6 +62,7 @@ export class NouvelleEvaluationPageComponent extends BaseComponentClass implemen
       liste.heureDebut = this.evaluationForm.get('heureDebut')!.value
       liste.heureFin = this.evaluationForm.get('heureFin')!.value
       liste.poidsTypeNoteEvaluation = this.evaluationForm.get('poidsTypeNoteEvaluation')!.value
+      liste.anneeAcademiqueId = this.evaluationForm.get('anneeAcademiqueId')!.value
 
       this.listeNoteEvaluationService.create(liste).subscribe({
         next: (res) => {

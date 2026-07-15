@@ -2,23 +2,23 @@ import { Request, Response } from "express";
 import { CountOptions, FindOptions, InferAttributes, Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Utilisateur } from "../models/Utilisateur";
+import * as bcrypt from 'bcrypt';
 
 export default class UtilisateurController {
 
     constructor() { }
 
     static async getAllUtilisateurs(req: Request, res: Response): Promise<Response> {
-
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
             return res.status(403).json({ success: false })
         }
 
-        let options: FindOptions<InferAttributes<Utilisateur>> = { attributes: ['nom', 'prenoms', 'identifiant', 'email', 'contact', 'photoDeProfil'] }
+        let options: FindOptions<InferAttributes<Utilisateur>> = {
+            attributes: ['id', 'nom', 'prenoms', 'identifiant', 'email', 'role', 'contact', 'photoDeProfil', 'createdAt']
+        }
 
         try {
-            let utilisateurs: Utilisateur[];
-            utilisateurs = await Utilisateur.findAll(options);
-
+            const utilisateurs = await Utilisateur.findAll(options);
             return res.status(200).send(utilisateurs);
         } catch (error) {
             return res.status(500).json({ success: false, error: error });
@@ -46,11 +46,6 @@ export default class UtilisateurController {
     }
 
     static async updateUtilisateur(req: Request, res: Response): Promise<Response | null> {
-
-        if ((req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
-            return res.status(403).json({ success: false })
-        }
-
         let options: FindOptions<InferAttributes<Utilisateur>> = { where: { id: (req as any).utilisateurId } }
 
         let utilisateur: Utilisateur | null = await Utilisateur.findOne(options);
@@ -68,9 +63,9 @@ export default class UtilisateurController {
                 nom: req.body.nom,
                 prenoms: req.body.prenoms,
                 contact: req.body.contact,
-            },)
+            })
                 .then(async (utilisateur) => {
-                    return res.status(200).json({ success: false });
+                    return res.status(200).json({ success: true });
                 })
                 .catch((error) => {
                     return res.status(400).json({ success: false, error: error });
@@ -83,13 +78,68 @@ export default class UtilisateurController {
         }
     }
 
-    static async deleteUtilisateur(req: Request, res: Response): Promise<Response | null> {
-        let options: FindOptions<InferAttributes<Utilisateur>> = {}
-        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
-            return res.status(403).json({ success: false })
+    static async adminUpdateUtilisateur(req: Request, res: Response): Promise<Response> {
+        try {
+            const role = (req as any).utilisateurRole;
+            if (role !== RolesUtilisateur.ADMIN && role !== RolesUtilisateur.INSTITUTION) {
+                return res.status(403).json({ success: false, message: "Réservé à l'administration" });
+            }
+
+            const utilisateur = await Utilisateur.findByPk(req.params.id);
+            if (!utilisateur) {
+                return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
+            }
+
+            const updateData: any = {};
+            if (req.body.nom !== undefined) updateData.nom = req.body.nom;
+            if (req.body.prenoms !== undefined) updateData.prenoms = req.body.prenoms;
+            if (req.body.email !== undefined) updateData.email = req.body.email;
+            if (req.body.identifiant !== undefined) updateData.identifiant = req.body.identifiant;
+            if (req.body.contact !== undefined) updateData.contact = req.body.contact;
+            if (req.body.role !== undefined) updateData.role = req.body.role;
+            if (req.body.motDePasse) updateData.motDePasse = bcrypt.hashSync(req.body.motDePasse, 10);
+
+            await utilisateur.update(updateData);
+            return res.status(200).json({ success: true, message: "Utilisateur mis à jour" });
+        } catch (error) {
+            return res.status(500).json({ success: false, error });
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
-            options = { where: { id: req.params.id } }
+    }
+
+    static async adminCreateUtilisateur(req: Request, res: Response): Promise<Response> {
+        try {
+            const role = (req as any).utilisateurRole;
+            if (role !== RolesUtilisateur.ADMIN && role !== RolesUtilisateur.INSTITUTION) {
+                return res.status(403).json({ success: false, message: "Réservé à l'administration" });
+            }
+
+            const existe = await Utilisateur.findOne({
+                where: { [Op.or]: [{ email: req.body.email }, { identifiant: req.body.identifiant }] }
+            });
+            if (existe) {
+                return res.status(400).json({ success: false, message: "Email ou identifiant déjà utilisé" });
+            }
+
+            const utilisateur = await Utilisateur.create({
+                nom: req.body.nom,
+                prenoms: req.body.prenoms,
+                email: req.body.email,
+                identifiant: req.body.identifiant,
+                motDePasse: bcrypt.hashSync(req.body.motDePasse || 'password123', 10),
+                role: req.body.role || RolesUtilisateur.APPRENANT,
+                contact: req.body.contact || null,
+            });
+
+            return res.status(201).json({ success: true, utilisateur });
+        } catch (error) {
+            return res.status(500).json({ success: false, error });
+        }
+    }
+
+    static async deleteUtilisateur(req: Request, res: Response): Promise<Response | null> {
+        const role = (req as any).utilisateurRole;
+        if (role !== RolesUtilisateur.ADMIN && role !== RolesUtilisateur.INSTITUTION) {
+            return res.status(403).json({ success: false, message: "Réservé à l'administration" });
         }
 
         let utilisateur: Utilisateur | null = await Utilisateur.findOne({ where: { id: req.params.id } });

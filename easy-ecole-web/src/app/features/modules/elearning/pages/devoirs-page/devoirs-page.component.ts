@@ -1,15 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { DevoirService } from 'src/app/data/modules/elearning/services/devoir.service';
 import { CoursEnLigneService } from 'src/app/data/modules/elearning/services/cours-en-ligne.service';
+import { JwtTokenService } from 'src/app/core/services/jwt-token.service';
+import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 
 @Component({
   selector: 'app-devoirs-page',
   templateUrl: './devoirs-page.component.html',
   styleUrls: ['./devoirs-page.component.scss']
 })
-export class DevoirsPageComponent extends BaseComponentClass implements OnInit {
+export class DevoirsPageComponent implements OnInit {
   devoirs: any[] = [];
   coursList: any[] = [];
   loading = true;
@@ -19,10 +20,9 @@ export class DevoirsPageComponent extends BaseComponentClass implements OnInit {
   constructor(
     private router: Router,
     private devoirService: DevoirService,
-    private coursService: CoursEnLigneService
-  ) {
-    super();
-  }
+    private coursService: CoursEnLigneService,
+    private jwtTokenService: JwtTokenService
+  ) { }
 
   ngOnInit(): void {
     this.loadDevoirs();
@@ -80,5 +80,12 @@ export class DevoirsPageComponent extends BaseComponentClass implements OnInit {
     }
   }
 
-  canManage(): boolean { return this.rolesValue.isInstitution || this.rolesValue.isAdmin || this.rolesValue.isEnseignant; }
+  canManage(): boolean {
+    const token = localStorage.getItem(LocalStorageService.AUTH_TOKEN);
+    if (!token) return false;
+    this.jwtTokenService.setToken(token);
+    const decoded: any = this.jwtTokenService.getDecodeToken();
+    const role = decoded?.role;
+    return role === 'institution' || role === 'admin' || role === 'enseignant';
+  }
 }

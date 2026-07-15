@@ -85,7 +85,7 @@ export class GedSaisieComponent implements OnInit, OnDestroy {
     }
   }
 
-  private showDocument(index: number): void {
+  showDocument(index: number): void {
     this.currentIndex = index;
     this.revokePreview();
     this.error = '';

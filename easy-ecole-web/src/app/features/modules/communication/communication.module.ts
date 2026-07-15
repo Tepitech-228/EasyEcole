@@ -8,13 +8,18 @@ import { SuggestionsPageComponent } from './pages/suggestions-page/suggestions-p
 import { TraitementSuggestionsPageComponent } from './pages/traitement-suggestions-page/traitement-suggestions-page.component';
 import { VieEstudiantinePageComponent } from './pages/vie-estudiantine-page/vie-estudiantine-page.component';
 import { GestionCommunicationsPageComponent } from './pages/gestion-communications-page/gestion-communications-page.component';
-import { MessageriePageComponent } from './pages/messagerie-page/messagerie-page.component';
-import { NouveauMessagePageComponent } from './pages/nouveau-message-page/nouveau-message-page.component';
-import { MessageDetailPageComponent } from './pages/message-detail-page/message-detail-page.component';
 import { AnnoncesPageComponent } from './pages/annonces-page/annonces-page.component';
 import { NouvelleAnnoncePageComponent } from './pages/nouvelle-annonce-page/nouvelle-annonce-page.component';
 import { NotificationsPageComponent } from './pages/notifications-page/notifications-page.component';
 import { DiscussionsPageComponent } from './pages/discussions-page/discussions-page.component';
+import { ChatConversationItemComponent } from './pages/discussions-page/components/chat-conversation-item/chat-conversation-item.component';
+import { ChatWindowComponent } from './pages/discussions-page/components/chat-window/chat-window.component';
+import { ChatMessageBubbleComponent } from './pages/discussions-page/components/chat-message-bubble/chat-message-bubble.component';
+import { ChatInputComponent } from './pages/discussions-page/components/chat-input/chat-input.component';
+import { GroupInfoPanelComponent } from './pages/discussions-page/components/group-info-panel/group-info-panel.component';
+import { CreateGroupModalComponent } from './pages/discussions-page/components/create-group-modal/create-group-modal.component';
+import { NewMessageModalComponent } from './pages/discussions-page/components/new-message-modal/new-message-modal.component';
+import { StickerPickerComponent } from './pages/discussions-page/components/sticker-picker/sticker-picker.component';
 
 @NgModule({
   declarations: [
@@ -22,13 +27,18 @@ import { DiscussionsPageComponent } from './pages/discussions-page/discussions-p
     TraitementSuggestionsPageComponent,
     VieEstudiantinePageComponent,
     GestionCommunicationsPageComponent,
-    MessageriePageComponent,
-    NouveauMessagePageComponent,
-    MessageDetailPageComponent,
     AnnoncesPageComponent,
     NouvelleAnnoncePageComponent,
     NotificationsPageComponent,
-    DiscussionsPageComponent
+    DiscussionsPageComponent,
+    ChatConversationItemComponent,
+    ChatWindowComponent,
+    ChatMessageBubbleComponent,
+    ChatInputComponent,
+    GroupInfoPanelComponent,
+    CreateGroupModalComponent,
+    StickerPickerComponent,
+    NewMessageModalComponent
   ],
   imports: [
     CommonModule,

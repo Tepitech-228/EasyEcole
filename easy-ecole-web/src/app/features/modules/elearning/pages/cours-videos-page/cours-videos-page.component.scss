@@ -1,0 +1,232 @@
+.dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+
+  .page-title {
+    font-family: 'Sora', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+  }
+  .page-subtitle {
+    font-size: 0.85rem;
+    color: #5e6f8d;
+    margin: 0.2rem 0 0;
+  }
+}
+
+.header-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 1rem;
+  border-radius: 99px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &.video {
+    background: rgba(59,91,255,0.1);
+    color: #3b5bff;
+  }
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: #fff;
+  border-radius: 0.85rem;
+  padding: 0.65rem 1rem;
+  border: 1px solid #e2e8f0;
+  svg { flex-shrink: 0; }
+  input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 0.88rem;
+    color: #0f172a;
+    background: transparent;
+    &::placeholder { color: #9aa4c2; }
+  }
+}
+
+.loading-state {
+  display: flex;
+  justify-content: center;
+  padding: 3rem 1rem;
+}
+
+.spinner {
+  width: 32px; height: 32px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #3b5bff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem 1rem;
+  background: #fff;
+  border-radius: 1rem;
+  border: 1px dashed #d1d5db;
+  p { color: #9aa4c2; font-size: 0.9rem; margin: 0; }
+}
+
+.cours-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.cours-card {
+  background: #fff;
+  border-radius: 1rem;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  transition: box-shadow 0.2s, border-color 0.2s;
+  &:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 8px 24px rgba(15,23,42,0.06);
+  }
+}
+
+.card-image {
+  position: relative;
+  height: 140px;
+  overflow: hidden;
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
+
+.card-badges {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  display: flex;
+  gap: 0.4rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 99px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: rgba(255,255,255,0.85);
+  color: #3b5bff;
+  backdrop-filter: blur(4px);
+
+  &.badge-active { background: rgba(16,185,129,0.15); color: #059669; }
+  &.badge-inactive { background: rgba(100,116,139,0.15); color: #64748b; }
+  &.badge-video { background: rgba(59,91,255,0.15); color: #3b5bff; }
+}
+
+.card-body {
+  padding: 1rem 1.25rem 0.75rem;
+  h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 0 0 0.25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  p {
+    font-size: 0.82rem;
+    color: #5e6f8d;
+    margin: 0 0 0.75rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+.progress-section {
+  margin-bottom: 0.65rem;
+}
+
+.progress-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: #7c8caa;
+  margin-bottom: 0.35rem;
+}
+
+.progress-bar {
+  height: 5px;
+  border-radius: 99px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: #10b981;
+  transition: width 0.5s;
+}
+
+.card-meta {
+  font-size: 0.78rem;
+  color: #7c8caa;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.meta-prof {
+  font-weight: 600;
+  color: #3b5bff;
+}
+
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem 1rem;
+  border-top: 1px solid #f1f5f9;
+
+  .btn-primary {
+    flex: 1;
+    text-align: center;
+    padding: 0.45rem 0.75rem;
+    border-radius: 0.65rem;
+    background: #131f45;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-decoration: none;
+    transition: background 0.2s;
+    &:hover { background: #1c2e5e; }
+  }
+
+  .btn-accent {
+    text-align: center;
+    padding: 0.45rem 0.75rem;
+    border-radius: 0.65rem;
+    background: #3b5bff;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-decoration: none;
+    transition: background 0.2s;
+    &:hover { background: #2a45d6; }
+  }
+}

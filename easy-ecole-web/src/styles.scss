@@ -112,3 +112,17 @@ body {
     border-radius: 6px;
 
 }
+
+@media print {
+  app-sidebar, .sidebar, app-header, .header, .topbar,
+  nav, .nav, .btn, button, .conv-pane, .thread-head,
+  app-chat-sidebar, app-create-group-modal, app-new-message-modal,
+  .overlay, .modal, .icon-btn, .search-box, .tabs, .new-msg-btn,
+  app-footer, footer {
+    display: none !important;
+  }
+  body, .main-content, .page, .thread-pane, .messages {
+    background: white !important;
+    color: black !important;
+  }
+}

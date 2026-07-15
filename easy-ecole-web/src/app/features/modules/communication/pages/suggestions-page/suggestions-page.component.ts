@@ -10,6 +10,9 @@ import { environment } from 'src/environments/environment';
 export class SuggestionsPageComponent implements OnInit {
   suggestions: any[] = [];
   newSuggestion: any = { type: 'etudiant', message: '' };
+  loading: boolean = true;
+  submitting: boolean = false;
+  successMessage: string = '';
 
   constructor(private http: HttpClient) {}
 
@@ -18,15 +21,28 @@ export class SuggestionsPageComponent implements OnInit {
   }
 
   loadSuggestions() {
-    this.http.get(`${environment.API_URL}/communication/suggestions`).subscribe((data: any) => {
-      this.suggestions = data;
+    this.loading = true;
+    this.http.get(`${environment.API_URL}/communication/suggestions`).subscribe({
+      next: (data: any) => {
+        this.suggestions = data;
+        this.loading = false;
+      },
+      error: () => { this.loading = false; }
     });
   }
 
   submitSuggestion() {
-    this.http.post(`${environment.API_URL}/communication/suggestions`, this.newSuggestion).subscribe(() => {
-      this.newSuggestion = { type: 'etudiant', message: '' };
-      this.loadSuggestions();
+    if (this.submitting || !this.newSuggestion.message.trim()) return;
+    this.submitting = true;
+    this.successMessage = '';
+    this.http.post(`${environment.API_URL}/communication/suggestions`, this.newSuggestion).subscribe({
+      next: () => {
+        this.newSuggestion = { type: 'etudiant', message: '' };
+        this.successMessage = 'Votre suggestion a été envoyée avec succès.';
+        this.submitting = false;
+        this.loadSuggestions();
+      },
+      error: () => { this.submitting = false; }
     });
   }
 }

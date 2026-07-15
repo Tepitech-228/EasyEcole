@@ -1,0 +1,80 @@
+<div class="overlay" (click)="close.emit()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-head">
+      <div>
+        <h3>Créer un salon de discussion</h3>
+        <p>Un espace de discussion pour une classe, un club ou un projet.</p>
+      </div>
+      <button class="close-x" (click)="close.emit()">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- Icon Picker -->
+      <div class="field">
+        <label>Icône du salon</label>
+        <div class="avatar-picker">
+          <div class="avatar-opt" *ngFor="let icon of icons" [class.selected]="selectedIcon === icon" [style.background]="'linear-gradient(135deg, #3B5BFF, #8956E0)'" (click)="selectIcon(icon)">{{ icon }}</div>
+          <div class="avatar-opt add-more" (click)="selectIcon('＋')">＋</div>
+        </div>
+      </div>
+      <!-- Name -->
+      <div class="field">
+        <label>Nom du salon</label>
+        <input type="text" [(ngModel)]="groupName" placeholder="Ex: LIC1-A · Algorithmique" />
+      </div>
+      <!-- Description -->
+      <div class="field">
+        <label>Description <span class="hint">(optionnel)</span></label>
+        <textarea [(ngModel)]="groupDescription" placeholder="Description du salon..."></textarea>
+      </div>
+      <!-- Type -->
+      <div class="field">
+        <label>Type de salon</label>
+        <div class="type-grid">
+          <div class="type-opt" [class.selected]="groupType === 'groupe'" (click)="groupType = 'groupe'"><div class="emoji">📘</div><div class="label">Cours</div></div>
+          <div class="type-opt" [class.selected]="groupType === 'club'" (click)="groupType = 'club'"><div class="emoji">🎭</div><div class="label">Club</div></div>
+          <div class="type-opt" [class.selected]="groupType === 'projet'" (click)="groupType = 'projet'"><div class="emoji">🛠️</div><div class="label">Projet</div></div>
+          <div class="type-opt" [class.selected]="groupType === 'annonce'" (click)="groupType = 'annonce'"><div class="emoji">📣</div><div class="label">Annonces</div></div>
+        </div>
+      </div>
+      <!-- Members -->
+      <div class="field">
+        <label>Membres <span class="hint">{{ selectedUserIds.size }} sélectionné{{ selectedUserIds.size > 1 ? 's' : '' }}</span></label>
+        <input type="text" [(ngModel)]="userSearch" placeholder="Rechercher un étudiant, un enseignant..." />
+        <div class="chips" *ngIf="selectedUserIds.size > 0">
+          <div class="chip" *ngFor="let user of getSelectedUsers()">
+            {{ user.prenoms || '' }} {{ user.nom || '' }}
+            <div class="chip-x" (click)="removeUser(normalizeId(user.id))">✕</div>
+          </div>
+        </div>
+        <div class="suggest-list" *ngIf="filteredUsers.length > 0">
+          <div class="suggest-item" *ngFor="let user of filteredUsers" (click)="toggleUser(user.id)">
+            <div class="suggest-avatar">{{ (user.prenoms || user.nom || '?').charAt(0) }}</div>
+            <div class="suggest-info">
+              <div class="suggest-name">{{ user.prenoms || '' }} {{ user.nom || '' }}</div>
+              <div class="suggest-role">{{ user.email || user.identifiant || 'Membre' }}</div>
+            </div>
+            <div class="suggest-check" [class.checked]="isSelected(user.id)">✓</div>
+          </div>
+        </div>
+      </div>
+      <!-- Visibility -->
+      <div class="field">
+        <label>Visibilité</label>
+        <div class="visibility-row">
+          <div class="vis-opt" [class.selected]="visibility === 'prive'" (click)="visibility = 'prive'">
+            <div class="vis-top">🔒 Privé</div>
+            <div class="vis-desc">Uniquement sur invitation</div>
+          </div>
+          <div class="vis-opt" [class.selected]="visibility === 'public'" (click)="visibility = 'public'">
+            <div class="vis-top">🌐 Ouvert</div>
+            <div class="vis-desc">Tous les membres peuvent rejoindre</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" (click)="close.emit()">Annuler</button>
+      <button class="btn btn-primary" (click)="onCreate()" [disabled]="!groupName.trim()">Créer le salon</button>
+    </div>
+  </div>
+</div>

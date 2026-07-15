@@ -125,6 +125,7 @@ export default class ListeNoteEvaluationController {
             listeNoteEvaluation.typeNoteEvaluationId = req.body.typeNoteEvaluationId
             listeNoteEvaluation.poidsTypeNoteEvaluation = req.body.poidsTypeNoteEvaluation
             listeNoteEvaluation.coursId = req.body.coursId
+            listeNoteEvaluation.anneeAcademiqueId = req.body.anneeAcademiqueId
 
             await listeNoteEvaluation.save();
             return res.status(201).send(listeNoteEvaluation);

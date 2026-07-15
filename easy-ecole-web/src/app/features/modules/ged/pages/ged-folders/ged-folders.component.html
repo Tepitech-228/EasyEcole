@@ -1,21 +1,37 @@
-<div class="card ged-card">
-  <app-header-title title="Dossiers GED" subtitle="Créer et gérer les dossiers d'archivage (admin)"></app-header-title>
+<div class="folders-page">
+  <div class="page-head">
+    <h2>Dossiers</h2>
+    <p>Organisez vos documents dans des dossiers thématiques</p>
+  </div>
 
-  <div class="ged-form">
-    <p class="field-note">La gestion des dossiers est réservée aux administrateurs.</p>
+  <div class="create-card">
+    <div class="create-input">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      <input type="text" [(ngModel)]="newName" (keyup.enter)="create()" placeholder="Nom du nouveau dossier..." />
+    </div>
+    <button class="btn-primary" (click)="create()" [disabled]="!newName.trim()">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Créer
+    </button>
+  </div>
 
-    <div class="ged-field-row">
-      <input [(ngModel)]="newName" class="form-input w-full" placeholder="Nom du dossier" />
-      <app-custom-button (click)="create()" text="Créer"></app-custom-button>
+  <div class="folders-grid">
+    <div class="folder-card" *ngFor="let f of folders">
+      <div class="folder-icon">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#3b5bff" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <div class="folder-info">
+        <span class="folder-name">{{ f.nom }}</span>
+        <span class="folder-desc">{{ f.description || 'Aucune description' }}</span>
+      </div>
+      <button class="btn-icon danger" title="Supprimer" (click)="remove(f.id)">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
     </div>
 
-    <div class="folder-list">
-      <ul>
-        <li *ngFor="let f of folders" class="folder-item">
-          <span>{{ f.nom }}</span>
-          <button (click)="remove(f.id)" class="folder-remove">Supprimer</button>
-        </li>
-      </ul>
+    <div class="empty-state" *ngIf="folders.length === 0">
+      <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#d7d9e6" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      <p>Aucun dossier pour le moment</p>
     </div>
   </div>
 </div>

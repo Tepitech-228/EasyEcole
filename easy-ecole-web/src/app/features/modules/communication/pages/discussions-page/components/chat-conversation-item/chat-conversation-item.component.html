@@ -1,0 +1,15 @@
+<div class="conv-item" [class.active]="isSelected" [class.unread]="salon.nonLues > 0" (click)="select.emit(salon)">
+  <div class="avatar" [style.background]="avatarBg">
+    <span>{{ avatarLetter }}</span>
+    <span class="presence" *ngIf="isOnline"></span>
+  </div>
+  <div class="conv-main">
+    <div class="conv-top">
+      <span class="conv-name">{{ displayName }}</span>
+      <span class="conv-time">{{ lastMessageTime }}</span>
+    </div>
+    <div class="conv-preview">{{ lastMessagePreview }}</div>
+    <div class="member-count" *ngIf="salon.type !== 'discussion'">👥 {{ memberCountText }}</div>
+  </div>
+  <div class="unread-dot" *ngIf="salon.nonLues > 0"></div>
+</div>

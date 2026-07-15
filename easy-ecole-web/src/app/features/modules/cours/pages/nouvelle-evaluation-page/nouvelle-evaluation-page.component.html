@@ -76,6 +76,18 @@
                         text="Veuillez saisir le poids"></app-form-message>
                 </div>
             </div>
+            <div class="md:col-span-4 col-span-full">
+                <label for="anneeAcademiqueId" class="mb-2 block text-sm leading-6 text-gray-600">Année académique</label>
+                <select id="anneeAcademiqueId" formControlName="anneeAcademiqueId"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option value="" disabled>Sélectionner une année</option>
+                    <option *ngFor="let a of anneesAcademiques" [value]="a.id">{{ a.libelle || a.code || a.id }}</option>
+                </select>
+                <div *ngIf="evaluationForm.get('anneeAcademiqueId')!.invalid && (evaluationForm.get('anneeAcademiqueId')!.dirty || evaluationForm.get('anneeAcademiqueId')!.touched)">
+                    <app-form-message *ngIf="evaluationForm.get('anneeAcademiqueId')!.errors?.['required']"
+                        text="Veuillez sélectionner une année académique"></app-form-message>
+                </div>
+            </div>
         </div>
 
         <div class="w-full flex justify-end items-center pb-12">

@@ -19,6 +19,14 @@ export interface GedDocument {
   date?: string;
   folderId?: number;
   uploaderId?: string;
+  uploader?: { id: string; nom: string; prenoms: string };
+  metadata?: any;
+  dureeConservation?: string;
+  archivedUntil?: string;
+  isArchived?: boolean;
+  nbPages?: number;
+  auteur?: string;
+  dateDocument?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -44,28 +52,44 @@ export interface GedSession {
   providedIn: 'root'
 })
 export class GedService {
-  private readonly SERVICE_URL: string = `${environment.API_MODULES.SCOLARITE}`.replace('/scolarite', '/ged/documents');
-  private readonly SESSION_URL: string = `${environment.API_MODULES.SCOLARITE}`.replace('/scolarite', '/ged/sessions');
+  private readonly BASE = `${environment.API_MODULES.GED || (environment.API_MODULES as any).SCOLARITE?.replace?.('/scolarite', '/ged') || environment.apiUrl + '/ged'}`;
+  private readonly SERVICE_URL: string = `${this.BASE}/documents`;
+  private readonly FOLDER_URL: string = `${this.BASE}/folders`;
+  private readonly SESSION_URL: string = `${this.BASE}/sessions`;
 
   constructor(private httpClient: HttpClient) { }
 
-  getAll(): Observable<GedDocument[]> {
-    return this.httpClient.get<GedDocument[]>(`${this.SERVICE_URL}`);
+  getAll(params?: { statut?: string; folderId?: number; q?: string }): Observable<GedDocument[]> {
+    let url = `${this.SERVICE_URL}`;
+    if (params) {
+      const qs = new URLSearchParams();
+      if (params.statut) qs.set('statut', params.statut);
+      if (params.folderId) qs.set('folderId', String(params.folderId));
+      if (params.q) qs.set('q', params.q);
+      const qStr = qs.toString();
+      if (qStr) url += '?' + qStr;
+    }
+    return this.httpClient.get<GedDocument[]>(url);
+  }
+
+  get(id: string): Observable<GedDocument> {
+    return this.httpClient.get<GedDocument>(`${this.SERVICE_URL}/${id}`);
+  }
+
+  update(id: string, formData: FormData): Observable<GedDocument> {
+    return this.httpClient.put<GedDocument>(`${this.SERVICE_URL}/${id}`, formData);
   }
 
   getFolders(): Observable<any[]> {
-    const url = `${environment.API_MODULES.SCOLARITE}`.replace('/scolarite', '/ged/folders');
-    return this.httpClient.get<any[]>(url);
+    return this.httpClient.get<any[]>(this.FOLDER_URL);
   }
 
   createFolder(payload: { nom: string, description?: string }): Observable<any> {
-    const url = `${environment.API_MODULES.SCOLARITE}`.replace('/scolarite', '/ged/folders');
-    return this.httpClient.post<any>(url, payload);
+    return this.httpClient.post<any>(this.FOLDER_URL, payload);
   }
 
   deleteFolder(id: string): Observable<any> {
-    const url = `${environment.API_MODULES.SCOLARITE}`.replace('/scolarite', '/ged/folders');
-    return this.httpClient.delete<any>(`${url}/${id}`);
+    return this.httpClient.delete<any>(`${this.FOLDER_URL}/${id}`);
   }
 
   upload(formData: FormData): Observable<GedDocument> {
@@ -77,7 +101,7 @@ export class GedService {
   }
 
   generatePdf(id: string): Observable<Blob> {
-    return this.httpClient.get(`${this.SERVICE_URL}/${id}/pdf`, { responseType: 'blob' as 'json' }) as Observable<Blob>;
+    return this.httpClient.get(`${this.SERVICE_URL}/${id}/pdf`, { responseType: 'blob' }) as Observable<Blob>;
   }
 
   getDownloadUrl(id: string): string {
@@ -104,12 +128,8 @@ export class GedService {
     const formData = new FormData();
     files.forEach((file) => formData.append('fichiers', file, file.name));
     formData.append('sessionId', sessionId);
-    if (folderId) {
-      formData.append('folderId', String(folderId));
-    }
-    if (archivedUntil) {
-      formData.append('archivedUntil', archivedUntil);
-    }
+    if (folderId) formData.append('folderId', String(folderId));
+    if (archivedUntil) formData.append('archivedUntil', archivedUntil);
     formData.append('isArchived', String(isArchived));
     formData.append('metadata', JSON.stringify(metadata || {}));
     return this.httpClient.post<GedDocument[]>(`${this.SESSION_URL}/batch-upload`, formData);

@@ -1,0 +1,117 @@
+.thread-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: #fbfbfe;
+  position: relative;
+}
+
+.thread-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 22px;
+  border-bottom: 1px solid #E6E8F0;
+  background: #fff;
+}
+
+.thread-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  font-family: 'Sora', sans-serif;
+  position: relative;
+  flex-shrink: 0;
+  .presence {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #1FAE6B;
+    border: 2px solid #fff;
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+  }
+}
+
+.thread-info {
+  flex: 1;
+  .thread-name {
+    font-weight: 700;
+    font-size: 14.5px;
+    font-family: 'Sora', sans-serif;
+  }
+  .thread-sub {
+    font-size: 12px;
+    color: #6E7391;
+  }
+}
+
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid #E6E8F0;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6E7391;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .12s;
+  &:hover { background: #F5F6FA; }
+}
+
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.load-more {
+  align-self: center;
+  font-size: 12px;
+  color: #3B5BFF;
+  cursor: pointer;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: #EAEDFF;
+  font-weight: 600;
+}
+
+.loading-spinner {
+  align-self: center;
+  font-size: 12px;
+  color: #6E7391;
+}
+
+.day-sep {
+  align-self: center;
+  font-size: 11.5px;
+  color: #6E7391;
+  background: #fff;
+  border: 1px solid #E6E8F0;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.typing-indicator {
+  align-self: flex-start;
+  font-size: 12px;
+  color: #6E7391;
+  font-style: italic;
+}
+
+::-webkit-scrollbar { width: 7px; }
+::-webkit-scrollbar-thumb { background: #d7d9e6; border-radius: 10px; }

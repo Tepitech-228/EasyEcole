@@ -1,0 +1,18 @@
+Listening on http://localhost:3000
+Database connected successfully
+Database: all data synchronized
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 33.017 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 18.340 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 11.998 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 12.508 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 24.090 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 15.995 ms - -[0m
+[0mGET /api/v1/inscription/cours [36m304[0m 59.481 ms - -[0m
+[0mGET /api/v1/auth/permissions/mes-permissions [36m304[0m 85.493 ms - -[0m
+[0mGET /api/v1/menu [36m304[0m 87.420 ms - -[0m
+[0mGET /api/v1/inscription/typesNoteEvaluation [36m304[0m 85.303 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 104.069 ms - -[0m
+[0mGET /api/v1/events?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3ODM5Nzk0MDYsImlkIjozLCJlbWFpbCI6Inl2ZXMua29uYW5AdXN0LmNpIiwiaWRlbnRpZmlhbnQiOiJwcm9mLW1hdGhzIiwicm9sZSI6ImVuc2VpZ25hbnQiLCJ0b2tlblZlcnNpb24iOjAsImlhdCI6MTc4Mzk0MzQwNn0.JmiM0yLTJE8tZcD8fBjMlh0UKVMp2zQUQwkw6Z7pdnM [33m400[0m 21.366 ms - 54[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 14.625 ms - -[0m
+[0mGET /api/v1/inscription/seances/rappel-salle [36m304[0m 17.661 ms - -[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 10.472 ms - -[0m

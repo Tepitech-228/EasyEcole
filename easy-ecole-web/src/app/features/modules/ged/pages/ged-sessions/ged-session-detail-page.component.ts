@@ -1,6 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { GedService, GedDocument, GedSession } from 'src/app/data/modules/ged/services/ged.service';
 
 @Component({
@@ -8,7 +7,7 @@ import { GedService, GedDocument, GedSession } from 'src/app/data/modules/ged/se
   templateUrl: './ged-session-detail-page.component.html',
   styleUrls: ['./ged-session-detail-page.component.scss']
 })
-export class GedSessionDetailPageComponent implements OnInit, OnDestroy {
+export class GedSessionDetailPageComponent implements OnInit {
   session?: GedSession;
   loading = false;
   uploadFiles: File[] = [];
@@ -17,14 +16,10 @@ export class GedSessionDetailPageComponent implements OnInit, OnDestroy {
   isArchived = false;
   batchMetadata = '';
   folders: any[] = [];
-  previewUrl?: SafeResourceUrl | null = null;
-  selectedPreviewFile?: File;
-  private objectUrl?: string;
 
   constructor(
     private readonly route: ActivatedRoute,
-    private readonly gedService: GedService,
-    private readonly sanitizer: DomSanitizer
+    readonly gedService: GedService
   ) {}
 
   ngOnInit(): void {
@@ -32,22 +27,13 @@ export class GedSessionDetailPageComponent implements OnInit, OnDestroy {
     this.gedService.getFolders().subscribe({ next: (f) => this.folders = f });
   }
 
-  ngOnDestroy(): void {
-    this.clearPreviewUrl();
-  }
-
-  private async loadSession(): Promise<void> {
+  loadSession(): void {
     this.loading = true;
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) return;
     this.gedService.getSession(id).subscribe({
-      next: (session) => {
-        this.session = session;
-        this.loading = false;
-      },
-      error: () => {
-        this.loading = false;
-      }
+      next: (session) => { this.session = session; this.loading = false; },
+      error: () => { this.loading = false; }
     });
   }
 
@@ -55,29 +41,17 @@ export class GedSessionDetailPageComponent implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     if (!input.files) return;
     this.uploadFiles = Array.from(input.files);
-    this.setPreviewFile(this.uploadFiles[0]);
   }
 
-  private setPreviewFile(file?: File): void {
-    if (!file) {
-      this.clearPreviewUrl();
-      return;
-    }
-
-    this.clearPreviewUrl();
-    this.selectedPreviewFile = file;
-    if (file.type === 'application/pdf') {
-      this.objectUrl = URL.createObjectURL(file);
-      this.previewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.objectUrl);
-    } else {
-      this.previewUrl = null;
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    if (event.dataTransfer?.files) {
+      this.uploadFiles = Array.from(event.dataTransfer.files);
     }
   }
 
-  async uploadBatch(): Promise<void> {
-    if (!this.session || this.uploadFiles.length === 0) {
-      return;
-    }
+  uploadBatch(): void {
+    if (!this.session || this.uploadFiles.length === 0) return;
 
     let metadata: Record<string, string> = {};
     try {
@@ -114,6 +88,10 @@ export class GedSessionDetailPageComponent implements OnInit, OnDestroy {
     return `${window.location.origin}/ged/sessions/${this.session?.id}`;
   }
 
+  getDownloadUrl(doc: GedDocument): string {
+    return this.gedService.getDownloadUrl(doc.id);
+  }
+
   copyShareLink(): void {
     const link = this.getShareLink();
     navigator.clipboard.writeText(link).then(() => {
@@ -121,17 +99,5 @@ export class GedSessionDetailPageComponent implements OnInit, OnDestroy {
     }).catch(() => {
       window.alert('Impossible de copier le lien');
     });
-  }
-
-  downloadDocument(doc: GedDocument): void {
-    window.open(this.gedService.getDownloadUrl(String(doc.id)), '_blank');
-  }
-
-  private clearPreviewUrl(): void {
-    if (this.objectUrl) {
-      URL.revokeObjectURL(this.objectUrl);
-      this.objectUrl = undefined;
-    }
-    this.previewUrl = null;
   }
 }

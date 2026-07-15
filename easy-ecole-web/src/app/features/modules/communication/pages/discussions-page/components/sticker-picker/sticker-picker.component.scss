@@ -1,0 +1,35 @@
+.sticker-picker {
+  background: #ffffff;
+  border-top: 1px solid #e9edef;
+  padding: 8px;
+}
+
+.sticker-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.sticker-item {
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.sticker-item:hover {
+  background: #f0f2f5;
+}
+
+.sticker-emoji {
+  font-size: 28px;
+  line-height: 1;
+}

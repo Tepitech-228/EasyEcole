@@ -23,6 +23,7 @@ export const environment = {
     ELEARNING: apiUrl + '/elearning',
     COMMUNICATION: apiUrl + '/communication',
     RH: apiUrl + '/rh',
+    GED: apiUrl + '/ged',
   },
   MEDIAS_PATH: {
     AUTH: {

@@ -5,6 +5,8 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ElearningRoutingModule } from './elearning-routing.module';
 import { SharedModule } from 'src/app/shared/shared.module';
 import { MesCoursPageComponent } from './pages/mes-cours-page/mes-cours-page.component';
+import { CoursVideosPageComponent } from './pages/cours-videos-page/cours-videos-page.component';
+import { CoursPdfsPageComponent } from './pages/cours-pdfs-page/cours-pdfs-page.component';
 import { CoursDetailsPageComponent } from './pages/cours-details-page/cours-details-page.component';
 import { ChatPageComponent } from './pages/chat-page/chat-page.component';
 import { UploadSupportPageComponent } from './pages/upload-support-page/upload-support-page.component';
@@ -23,6 +25,8 @@ import { SupportCardComponent } from './components/support-card/support-card.com
 @NgModule({
   declarations: [
     MesCoursPageComponent,
+    CoursVideosPageComponent,
+    CoursPdfsPageComponent,
     CoursDetailsPageComponent,
     ChatPageComponent,
     UploadSupportPageComponent,

@@ -1,4 +1,4 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey } from "sequelize";
+import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../ElearningModule";
 import { Salon } from "./Salon";
@@ -8,9 +8,18 @@ export class ParticipantSalon extends Model<InferAttributes<ParticipantSalon>, I
   declare salonId: ForeignKey<Salon['id']>
   declare utilisateurId: number
   declare dateAjout: CreationOptional<Date>
+  declare role: CreationOptional<string>
+  declare dateDerniereLecture: CreationOptional<Date | null>
+  declare estPresent: CreationOptional<boolean>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
+
+  declare salon?: NonAttribute<Salon>
+
+  declare static associations: {
+    salon: Association<ParticipantSalon, Salon>
+  };
 }
 
 ParticipantSalon.init({
@@ -30,6 +39,18 @@ ParticipantSalon.init({
   dateAjout: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
+  },
+  role: {
+    type: new DataTypes.STRING,
+    defaultValue: 'membre'
+  },
+  dateDerniereLecture: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  estPresent: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

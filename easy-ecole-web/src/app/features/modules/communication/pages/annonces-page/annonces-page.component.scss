@@ -1,0 +1,115 @@
+:host {
+  display: block;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+.skeleton-card {
+  border-radius: 24px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  padding: 20px;
+}
+
+.skeleton-line {
+  height: 14px;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.skeleton-line-sm {
+  width: 40%;
+}
+
+.skeleton-line-lg {
+  width: 90%;
+}
+
+.annonce-card {
+  border-radius: 24px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  padding: 20px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px -8px rgba(0, 0, 0, 0.08);
+    border-color: #cbd5e1;
+  }
+}
+
+.annonce-content {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: all 0.3s ease;
+
+  &.expanded {
+    -webkit-line-clamp: unset;
+  }
+}
+
+.read-more-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #2563eb;
+  cursor: pointer;
+  transition: color 0.15s;
+
+  &:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+  }
+}
+
+.empty-state {
+  border-radius: 24px;
+  border: 2px dashed #e2e8f0;
+  background: #f8fafc;
+  padding: 48px 24px;
+  text-align: center;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #cbd5e1;
+    background: #f1f5f9;
+  }
+}
+
+.delete-btn {
+  border-radius: 50%;
+  padding: 8px;
+  color: #94a3b8;
+  transition: all 0.15s;
+  background: none;
+  border: none;
+  cursor: pointer;
+
+  &:hover {
+    background: #fef2f2;
+    color: #dc2626;
+  }
+
+  svg {
+    display: block;
+    width: 16px;
+    height: 16px;
+  }
+}

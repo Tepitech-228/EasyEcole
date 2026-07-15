@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { GedService, GedDocument } from 'src/app/data/modules/ged/services/ged.service';
 
 @Component({
@@ -10,8 +11,14 @@ import { GedService, GedDocument } from 'src/app/data/modules/ged/services/ged.s
 export class GedDocumentPageComponent implements OnInit {
   doc?: GedDocument;
   loading = false;
+  previewUrl?: SafeResourceUrl;
 
-  constructor(private route: ActivatedRoute, private gedService: GedService) {}
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private gedService: GedService,
+    private sanitizer: DomSanitizer
+  ) {}
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -20,10 +27,20 @@ export class GedDocumentPageComponent implements OnInit {
 
   load(id: string) {
     this.loading = true;
-    this.gedService.getAll().subscribe({
-      next: (docs) => { this.doc = docs.find(d => d.id === id); this.loading = false; },
+    this.gedService.get(id).subscribe({
+      next: (doc) => {
+        this.doc = doc;
+        this.loading = false;
+        this.loadPreview();
+      },
       error: () => this.loading = false
     });
+  }
+
+  private loadPreview() {
+    if (!this.doc) return;
+    const url = this.gedService.getDownloadUrl(this.doc.id);
+    this.previewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
 
   download() {
@@ -33,22 +50,26 @@ export class GedDocumentPageComponent implements OnInit {
 
   exportPdf() {
     if (!this.doc) return;
-    this.loading = true;
     this.gedService.generatePdf(this.doc.id).subscribe({
       next: (blob) => {
-        const link = document.createElement('a');
         const url = window.URL.createObjectURL(blob);
-        link.href = url;
-        link.download = `${this.doc?.titre.replace(/\s+/g, '_')}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${this.doc!.titre.replace(/\s+/g, '_')}.pdf`;
+        a.click();
         window.URL.revokeObjectURL(url);
-        this.loading = false;
-      },
-      error: () => {
-        this.loading = false;
       }
     });
+  }
+
+  deleteDoc() {
+    if (!this.doc || !confirm(`Supprimer "${this.doc.titre}" ?`)) return;
+    this.gedService.delete(this.doc.id).subscribe({
+      next: () => this.router.navigate(['/ged/catalog'])
+    });
+  }
+
+  getTags(doc: GedDocument): string[] {
+    return (doc.tags || '').split(',').map(s => s.trim()).filter(s => s.length > 0);
   }
 }

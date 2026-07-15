@@ -4,6 +4,7 @@ import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../ElearningModule";
 import { CoursEnLigne } from "./CoursEnLigne";
 import { Message } from "./Message";
 import { ParticipantSalon } from "./ParticipantSalon";
+import { Utilisateur } from "../../auth/models/Utilisateur";
 
 export class Salon extends Model<InferAttributes<Salon>, InferCreationAttributes<Salon>> {
   declare id: CreationOptional<string>
@@ -11,6 +12,14 @@ export class Salon extends Model<InferAttributes<Salon>, InferCreationAttributes
   declare titre: string
   declare type: CreationOptional<string>
   declare dateCreation: CreationOptional<Date>
+  declare codeInvitation: CreationOptional<string>
+  declare createdById: ForeignKey<Utilisateur['id']> | null
+  declare photo: CreationOptional<string | null>
+  declare icone: CreationOptional<string | null>
+  declare description: CreationOptional<string | null>
+  declare estPrive: CreationOptional<boolean>
+  declare dernierMessage: CreationOptional<string | null>
+  declare dateDernierMessage: CreationOptional<Date | null>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -18,11 +27,13 @@ export class Salon extends Model<InferAttributes<Salon>, InferCreationAttributes
   declare cours?: NonAttribute<CoursEnLigne>
   declare messages?: NonAttribute<Message[]>
   declare participants?: NonAttribute<ParticipantSalon[]>
+  declare createdBy?: NonAttribute<Utilisateur>
 
   declare static associations: {
     cours: Association<Salon, CoursEnLigne>
     messages: Association<Salon, Message>
     participants: Association<Salon, ParticipantSalon>
+    createdBy: Association<Salon, Utilisateur>
   };
 }
 
@@ -42,11 +53,44 @@ Salon.init({
   },
   type: {
     type: new DataTypes.STRING,
-    defaultValue: 'cours'
+    defaultValue: 'groupe'
   },
   dateCreation: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
+  },
+  codeInvitation: {
+    type: new DataTypes.STRING,
+    unique: true,
+    allowNull: true
+  },
+  createdById: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
+  },
+  photo: {
+    type: new DataTypes.STRING,
+    allowNull: true
+  },
+  icone: {
+    type: new DataTypes.STRING,
+    allowNull: true
+  },
+  description: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  estPrive: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
+  },
+  dernierMessage: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  dateDernierMessage: {
+    type: DataTypes.DATE,
+    allowNull: true
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

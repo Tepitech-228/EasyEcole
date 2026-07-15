@@ -25,6 +25,18 @@ export class UtilisateurService {
     return this.httpClient.put<Utilisateur>(`${this.SERVICE_URL}/`, utilisateur)
   }
 
+  adminCreate(data: any): Observable<any> {
+    return this.httpClient.post(`${this.SERVICE_URL}`, data)
+  }
+
+  adminUpdate(id: string, data: any): Observable<any> {
+    return this.httpClient.put(`${this.SERVICE_URL}/${id}`, data)
+  }
+
+  delete(id: string): Observable<any> {
+    return this.httpClient.delete(`${this.SERVICE_URL}/${id}`)
+  }
+
   getCount(): Observable<{ success: boolean, count: number }> {
     return this.httpClient.get<{ success: boolean, count: number }>(`${this.SERVICE_URL}/statistics/count`)
   }

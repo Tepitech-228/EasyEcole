@@ -60,14 +60,6 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                     { label: 'Mes presences', route: '/cours/mes-presences', icon: 'fact_check', permissionKey: 'menu.cours.mes-presences', allowedRoles: [RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
                     { label: 'Notes', route: '/cours/notes', icon: 'lab_profile', permissionKey: 'menu.cours.notes', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
 
-                    // ── E-learning ──
-                    { label: 'Mes cours', route: '/elearning', icon: 'school', permissionKey: 'menu.elearning.mes-cours', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
-                    { label: 'Quiz', route: '/elearning/quiz', icon: 'quiz', permissionKey: 'menu.elearning.quiz', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
-                    { label: 'Progression', route: '/elearning/progression', icon: 'trending_up', permissionKey: 'menu.elearning.progression', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
-                    { label: 'Certificats', route: '/elearning/certificats', icon: 'verified', permissionKey: 'menu.elearning.certificats', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
-                    { label: 'Devoirs', route: '/elearning/devoirs', icon: 'assignment', permissionKey: 'menu.elearning.devoirs', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
-                    { label: 'Gestion elearning', route: '/elearning/admin/gestion', icon: 'manage_search', permissionKey: 'menu.elearning.gestion', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
-
                     // ── Scolarité ──
                     { label: 'Demandes docs', route: '/scolarite/demandes-documents', icon: 'description', permissionKey: 'menu.scolarite.demandes-docs', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
                     { label: 'Traiter demandes', route: '/scolarite/traiter-demandes', icon: 'fact_check', permissionKey: 'menu.scolarite.traiter-demandes', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
@@ -219,7 +211,6 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
             {
                 label: 'Communication',
                 items: [
-                    { label: 'Messagerie', route: '/communication/messagerie', icon: 'mail', permissionKey: 'menu.communication.messagerie', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
                     { label: 'Discussions', route: '/communication/discussions', icon: 'forum', permissionKey: 'menu.communication.discussions', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
                 ]
             },
@@ -260,6 +251,32 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                 items: [
                     { label: 'Nomenclature', route: '/ged/nomenclature', icon: 'rule' },
                     { label: 'Sessions', route: '/ged/sessions', icon: 'assignment', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                ]
+            },
+        ]
+    },
+    {
+        label: 'E-Learning',
+        icon: 'school',
+        allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN],
+        groups: [
+            {
+                label: 'Formation',
+                items: [
+                    { label: 'Mes cours', route: '/elearning/dashboard', icon: 'school', permissionKey: 'menu.elearning.mes-cours', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
+                    { label: 'Cours vidéos', route: '/elearning/videos', icon: 'play_circle', permissionKey: 'menu.elearning.videos', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
+                    { label: 'Cours PDF', route: '/elearning/pdfs', icon: 'picture_as_pdf', permissionKey: 'menu.elearning.pdfs', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
+                    { label: 'Quiz', route: '/elearning/quiz', icon: 'quiz', permissionKey: 'menu.elearning.quiz', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
+                    { label: 'Progression', route: '/elearning/progression', icon: 'trending_up', permissionKey: 'menu.elearning.progression', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
+                    { label: 'Certificats', route: '/elearning/certificats', icon: 'verified', permissionKey: 'menu.elearning.certificats', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
+                    { label: 'Devoirs', route: '/elearning/devoirs', icon: 'assignment', permissionKey: 'menu.elearning.devoirs', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
+                ]
+            },
+            {
+                label: 'Administration',
+                allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN],
+                items: [
+                    { label: 'Gestion e-learning', route: '/elearning/admin/gestion', icon: 'manage_search', permissionKey: 'menu.elearning.gestion' },
                 ]
             },
         ]

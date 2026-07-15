@@ -216,5 +216,6 @@ router
      */
     .put('/reset', [Authenticate], AuthController.passwordReset)
     .post('/reset-password', AuthController.passwordResetWithToken)
+    .post('/logout', [Authenticate], AuthController.logout)
 
 export default router

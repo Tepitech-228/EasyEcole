@@ -11,6 +11,8 @@ export class CoursEnLigne extends Model<InferAttributes<CoursEnLigne>, InferCrea
   declare description: CreationOptional<string>
   declare image: CreationOptional<string>
   declare statut: CreationOptional<string>
+  declare enseignantId: CreationOptional<number>
+  declare format: CreationOptional<string>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -49,6 +51,15 @@ CoursEnLigne.init({
   statut: {
     type: new DataTypes.STRING,
     defaultValue: 'actif'
+  },
+  enseignantId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
+  },
+  format: {
+    type: new DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'mixte'
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

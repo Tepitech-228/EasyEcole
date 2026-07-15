@@ -7,100 +7,20 @@ import CheckPermission from "../../../core/middlewares/CheckPermission";
 
 const router = express.Router()
 
-/**
- * @openapi
- * /auth/utilisateurs:
- *   get:
- *     tags: [Utilisateurs]
- *     summary: Liste tous les utilisateurs
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Liste des utilisateurs
- *       401:
- *         description: Non autorisé
- */
+/** GET /auth/utilisateurs — Liste tous les utilisateurs (admin/institution) */
 router
     .get('/', [Authenticate], UtilisateurController.getAllUtilisateurs)
-    /**
-     * @openapi
-     * /auth/utilisateurs/{id}:
-     *   get:
-     *     tags: [Utilisateurs]
-     *     summary: Obtenir un utilisateur par ID
-     *     parameters:
-     *       - in: path
-     *         name: id
-     *         required: true
-     *         schema:
-     *           type: string
-     *     responses:
-     *       200:
-     *         description: Utilisateur trouvé
-     *       404:
-     *         description: Utilisateur non trouvé
-     */
-    .get('/:id', UtilisateurController.getUtilisateur)
-    /**
-     * @openapi
-     * /auth/utilisateurs:
-     *   put:
-     *     tags: [Utilisateurs]
-     *     summary: Mettre à jour un utilisateur
-     *     requestBody:
-     *       required: true
-     *       content:
-     *         application/json:
-     *           schema:
-     *             type: object
-     *             properties:
-     *               id:
-     *                 type: string
-     *               nom:
-     *                 type: string
-     *               prenom:
-     *                 type: string
-     *     responses:
-     *       200:
-     *         description: Utilisateur mis à jour
-     */
-    .put('/', UtilisateurController.updateUtilisateur)
-    /**
-     * @openapi
-     * /auth/utilisateurs/{id}:
-     *   delete:
-     *     tags: [Utilisateurs]
-     *     summary: Supprimer un utilisateur
-     *     security:
-     *       - bearerAuth: []
-     *     parameters:
-     *       - in: path
-     *         name: id
-     *         required: true
-     *         schema:
-     *           type: string
-     *     responses:
-     *       200:
-     *         description: Utilisateur supprimé
-     *       401:
-     *         description: Non autorisé
-     */
-    .delete('/:id', [AuthInstitution, CheckPermission('action.administration.utilisateur.supprimer')], UtilisateurController.deleteUtilisateur)
-    /**
-     * @openapi
-     * /auth/utilisateurs/statistics/count:
-     *   get:
-     *     tags: [Utilisateurs]
-     *     summary: Nombre total d'utilisateurs
-     *     security:
-     *       - bearerAuth: []
-     *     responses:
-     *       200:
-     *         description: Statistiques
-     *       401:
-     *         description: Non autorisé
-     */
-    .get('/statistics/count', [AuthInstitution], UtilisateurController.getCount)
+    /** POST /auth/utilisateurs — Créer un utilisateur (admin/institution) */
+    .post('/', [Authenticate], UtilisateurController.adminCreateUtilisateur)
+    /** GET /auth/utilisateurs/:id — Obtenir un utilisateur par ID */
+    .get('/:id', [Authenticate], UtilisateurController.getUtilisateur)
+    /** PUT /auth/utilisateurs/:id — Modifier un utilisateur (admin/institution) */
+    .put('/:id', [Authenticate], UtilisateurController.adminUpdateUtilisateur)
+    /** PUT /auth/utilisateurs — Modifier son propre profil */
+    .put('/', [Authenticate], UtilisateurController.updateUtilisateur)
+    /** DELETE /auth/utilisateurs/:id — Supprimer un utilisateur (admin/institution) */
+    .delete('/:id', [Authenticate], UtilisateurController.deleteUtilisateur)
+    /** GET /auth/utilisateurs/statistics/count */
+    .get('/statistics/count', [Authenticate], UtilisateurController.getCount)
 
 export default router

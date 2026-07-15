@@ -1,0 +1,41 @@
+<div class="msg-row" [class.me]="isOwn">
+  <div class="msg-avatar" *ngIf="!isOwn && isGroup">
+    <div class="mini-av">{{ (authorName || '?').charAt(0) }}</div>
+  </div>
+  <div class="msg-content">
+    <div class="sender-name" *ngIf="!isOwn && isGroup">{{ authorName }}</div>
+    <div class="bubble" [class.bubble-own]="isOwn" [class.bubble-other]="!isOwn">
+      <!-- Sticker -->
+      <div *ngIf="isSticker" class="sticker-emoji">{{ message.message }}</div>
+      <!-- Image -->
+      <div *ngIf="isImage && hasPieceJointe" class="media-container">
+        <img [src]="pieceJointeUrl" alt="Image" class="media-img" />
+        <div *ngIf="message.message" class="media-caption">{{ message.message }}</div>
+      </div>
+      <!-- Video -->
+      <div *ngIf="isVideo && hasPieceJointe" class="media-container">
+        <video [src]="pieceJointeUrl" controls class="media-video"></video>
+        <div *ngIf="message.message" class="media-caption">{{ message.message }}</div>
+      </div>
+      <!-- File -->
+      <div *ngIf="isFile && hasPieceJointe" class="file-container">
+        <div class="file-icon">📎</div>
+        <div class="file-info">
+          <span class="file-name">Fichier</span>
+          <a [href]="pieceJointeUrl" target="_blank" class="file-link">Ouvrir</a>
+        </div>
+      </div>
+      <!-- Text -->
+      <div *ngIf="isText" class="msg-text">{{ message.message }}</div>
+      <div class="msg-meta">
+        <span>{{ messageTime }}</span>
+        <span *ngIf="isOwn && message.lu" class="read-status">✓✓</span>
+        <span *ngIf="isOwn && !message.lu" class="read-status">✓</span>
+      </div>
+    </div>
+    <div class="bubble-actions" *ngIf="isOwn">
+      <button class="bubble-action-btn" (click)="onEdit()">✏️</button>
+      <button class="bubble-action-btn" (click)="onDelete()">🗑️</button>
+    </div>
+  </div>
+</div>

@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { QuizService } from 'src/app/data/modules/elearning/services/quiz.service';
 
 @Component({
@@ -9,7 +8,7 @@ import { QuizService } from 'src/app/data/modules/elearning/services/quiz.servic
   templateUrl: './quiz-form-page.component.html',
   styleUrls: ['./quiz-form-page.component.scss']
 })
-export class QuizFormPageComponent extends BaseComponentClass implements OnInit {
+export class QuizFormPageComponent implements OnInit {
   quizForm: FormGroup;
   submitted = false;
   coursList: any[] = [];
@@ -22,7 +21,6 @@ export class QuizFormPageComponent extends BaseComponentClass implements OnInit 
     private route: ActivatedRoute,
     private quizService: QuizService
   ) {
-    super();
     this.quizForm = this.fb.group({
       titre: ['', Validators.required],
       description: ['', Validators.required],

@@ -422,4 +422,72 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
   get demandesRecentes(): any[] {
     return this.dashboardData.demandesRecentes || [];
   }
+
+  // ─── Unified Banner Config ───────────────────────────
+  get bannerConfig(): { title: string; subtitle: string; avatar: boolean } {
+    const { isAdmin, isInstitution, isEnseignant, isApprenant, isRessourcesHumaines, isCaissierBanque, isCabinetComptable, isComiteOrientation } = this.rolesValue;
+    const prenoms = this.utilisateur?.prenoms || '';
+    const year = this.currentYear;
+
+    if (isAdmin) return {
+      title: `Bonjour ${prenoms || 'Admin'}`,
+      subtitle: `${year} · Aperçu général de l'établissement`,
+      avatar: false
+    };
+    if (isInstitution) return {
+      title: `Bonjour ${prenoms || 'Directeur'}`,
+      subtitle: `${year} · Pilotage de l'établissement`,
+      avatar: false
+    };
+    if (isEnseignant) return {
+      title: `Bonjour ${prenoms || 'Professeur'}`,
+      subtitle: `${year} · Aperçu de votre journée`,
+      avatar: false
+    };
+    if (isApprenant) return {
+      title: `Bonjour ${prenoms || 'Étudiant'}`,
+      subtitle: `${year} · Vue d'ensemble de votre scolarité`,
+      avatar: true
+    };
+    if (isRessourcesHumaines) return {
+      title: `Bonjour ${prenoms || 'RH'}`,
+      subtitle: `${year} · Gestion du personnel`,
+      avatar: false
+    };
+    if (isCaissierBanque) return {
+      title: `Bonjour ${prenoms || 'Caissier'}`,
+      subtitle: `${year} · Caisse et encaissements`,
+      avatar: false
+    };
+    if (isCabinetComptable) return {
+      title: `Bonjour ${prenoms || 'Comptable'}`,
+      subtitle: `${year} · Finance et comptabilité`,
+      avatar: false
+    };
+    if (isComiteOrientation) return {
+      title: `Bonjour ${prenoms || 'Orientation'}`,
+      subtitle: `${year} · Suivi des inscriptions`,
+      avatar: false
+    };
+    return {
+      title: `Bonjour ${prenoms || 'Utilisateur'}`,
+      subtitle: `${year}`,
+      avatar: false
+    };
+  }
+
+  // ─── Banner Background CSS ──────────────────────────
+  get bannerBackground(): string {
+    const { isAdmin, isInstitution, isEnseignant, isApprenant, isRessourcesHumaines, isCaissierBanque, isCabinetComptable, isComiteOrientation } = this.rolesValue;
+
+    if (isAdmin)       return 'linear-gradient(135deg, #2563eb, #1d4ed8, #3730a3)';
+    if (isInstitution) return 'linear-gradient(135deg, #7c3aed, #6d28d9, #581c87)';
+    if (isEnseignant)  return 'linear-gradient(135deg, #059669, #047857, #0f766e)';
+    if (isApprenant)   return 'linear-gradient(135deg, #f59e0b, #ea580c, #be123c)';
+    if (isRessourcesHumaines) return 'linear-gradient(135deg, #db2777, #be185d, #9d174d)';
+    if (isCaissierBanque)     return 'linear-gradient(135deg, #16a34a, #15803d, #065f46)';
+    if (isCabinetComptable)   return 'linear-gradient(135deg, #0891b2, #0e7490, #1e40af)';
+    if (isComiteOrientation)  return 'linear-gradient(135deg, #4f46e5, #4338ca, #1e40af)';
+    return 'linear-gradient(135deg, #374151, #111827)';
+  }
 }

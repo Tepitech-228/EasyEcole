@@ -31,6 +31,11 @@ export class DocumentGed extends Model<InferAttributes<DocumentGed>, InferCreati
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
 
+  declare nbPages: CreationOptional<number>
+  declare auteur: CreationOptional<string>
+  declare dateDocument: CreationOptional<Date>
+  declare contenuTexte: CreationOptional<string>
+
   declare static associations: {
     uploader: Association<DocumentGed, Utilisateur>
     session: Association<DocumentGed, any>
@@ -117,6 +122,22 @@ DocumentGed.init({
   uploaderId: {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false
+  },
+  nbPages: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  auteur: {
+    type: new DataTypes.STRING,
+    allowNull: true
+  },
+  dateDocument: {
+    type: DataTypes.DATEONLY,
+    allowNull: true
+  },
+  contenuTexte: {
+    type: DataTypes.TEXT('long'),
+    allowNull: true
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

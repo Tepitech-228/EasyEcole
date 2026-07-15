@@ -1,59 +1,59 @@
-<div class="p-6">
-  <app-header-title title="{{ isEdit ? 'Modifier le quiz' : 'Créer un nouveau quiz' }}"></app-header-title>
+<div class="quiz-form-page">
+  <h2 class="quiz-form-page__title">{{ isEdit ? 'Modifier le quiz' : 'Créer un nouveau quiz' }}</h2>
 
-  <div class="bg-white rounded-lg shadow-md p-6 mt-6 max-w-3xl">
+  <div class="card">
     <form [formGroup]="quizForm" (ngSubmit)="onSubmit()">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Titre du quiz</label>
-          <input formControlName="titre" type="text" class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="Ex: Algèbre - Chapitre 1">
-          <app-custom-alert *ngIf="submitted && quizForm.get('titre')?.invalid" [show]="true" title="Le titre est requis" color="red" [inline]="true"></app-custom-alert>
+      <div class="quiz-form-page__row">
+        <div class="form-group">
+          <label class="form-label">Titre du quiz</label>
+          <input formControlName="titre" type="text" class="form-input" placeholder="Ex: Algèbre - Chapitre 1">
+          <div *ngIf="submitted && quizForm.get('titre')?.invalid" class="alert alert--danger">Le titre est requis</div>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Temps limite (minutes)</label>
-          <input formControlName="tempsLimite" type="number" min="1" class="w-32 border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+        <div class="form-group">
+          <label class="form-label">Temps limite (minutes)</label>
+          <input formControlName="tempsLimite" type="number" min="1" class="form-input form-input--short">
         </div>
       </div>
 
-      <div class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-        <textarea formControlName="description" rows="3" class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="Décrivez le contenu du quiz"></textarea>
-        <app-custom-alert *ngIf="submitted && quizForm.get('description')?.invalid" [show]="true" title="La description est requise" color="red" [inline]="true"></app-custom-alert>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea formControlName="description" rows="3" class="form-textarea" placeholder="Décrivez le contenu du quiz"></textarea>
+        <div *ngIf="submitted && quizForm.get('description')?.invalid" class="alert alert--danger">La description est requise</div>
       </div>
 
-      <div class="border-t pt-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold text-gray-800">Questions</h3>
-          <app-custom-button text="Ajouter une question" color="primary" (click)="addQuestion()"></app-custom-button>
+      <div class="quiz-form-page__section">
+        <div class="quiz-form-page__section-header">
+          <h3 class="quiz-form-page__section-title">Questions</h3>
+          <button type="button" (click)="addQuestion()" class="btn btn--primary">Ajouter une question</button>
         </div>
 
         <div formArrayName="questions">
-          <div *ngFor="let question of questions.controls; let i = index" [formGroupName]="i" class="border border-gray-200 rounded-lg p-4 mb-4">
-            <div class="flex items-center justify-between mb-3">
-              <h4 class="font-medium text-gray-700">Question {{ i + 1 }}</h4>
-              <button *ngIf="questions.length > 1" type="button" (click)="removeQuestion(i)" class="text-red-500 hover:text-red-700 text-sm">Supprimer</button>
+          <div *ngFor="let question of questions.controls; let i = index" [formGroupName]="i" class="question-card">
+            <div class="question-card__header">
+              <h4 class="question-card__title">Question {{ i + 1 }}</h4>
+              <button *ngIf="questions.length > 1" type="button" (click)="removeQuestion(i)" class="btn btn--outline btn--outline-danger">Supprimer</button>
             </div>
-            <div class="mb-3">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Texte de la question</label>
-              <input formControlName="texte" type="text" class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="Ex: Quelle est la solution de 2x+5=13 ?">
+            <div class="form-group">
+              <label class="form-label">Texte de la question</label>
+              <input formControlName="texte" type="text" class="form-input" placeholder="Ex: Quelle est la solution de 2x+5=13 ?">
             </div>
-            <div class="mb-3">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Options (séparées par des virgules)</label>
-              <input formControlName="options" type="text" class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="Ex: x=2, x=4, x=6, x=8">
+            <div class="form-group">
+              <label class="form-label">Options (séparées par des virgules)</label>
+              <input formControlName="options" type="text" class="form-input" placeholder="Ex: x=2, x=4, x=6, x=8">
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Bonne réponse (index 0-3)</label>
-              <input formControlName="reponseCorrecte" type="number" min="0" max="3" class="w-20 border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            <div class="form-group">
+              <label class="form-label">Bonne réponse (index 0-3)</label>
+              <input formControlName="reponseCorrecte" type="number" min="0" max="3" class="form-input form-input--short">
             </div>
           </div>
         </div>
 
-        <app-custom-alert *ngIf="submitted && questions.invalid" [show]="true" title="Ajoutez au moins une question valide" color="red"></app-custom-alert>
+        <div *ngIf="submitted && questions.invalid" class="alert alert--danger">Ajoutez au moins une question valide</div>
       </div>
 
-      <div class="flex gap-3 mt-6">
-        <app-custom-button text="{{ isEdit ? 'Enregistrer' : 'Créer le quiz' }}" color="primary" type="submit"></app-custom-button>
-        <app-custom-button text="Annuler" color="primary" [outlined]="true" (click)="cancel()"></app-custom-button>
+      <div class="quiz-form-page__actions">
+        <button type="submit" class="btn btn--primary">{{ isEdit ? 'Enregistrer' : 'Créer le quiz' }}</button>
+        <button type="button" (click)="cancel()" class="btn btn--outline">Annuler</button>
       </div>
     </form>
   </div>

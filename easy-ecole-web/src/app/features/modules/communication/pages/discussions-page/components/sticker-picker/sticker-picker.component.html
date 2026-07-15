@@ -1,0 +1,12 @@
+<div class="sticker-picker">
+  <div class="sticker-grid">
+    <button
+      *ngFor="let sticker of stickers"
+      class="sticker-item"
+      (click)="onSelect(sticker)"
+      title="{{ sticker }}"
+    >
+      <span class="sticker-emoji">{{ sticker }}</span>
+    </button>
+  </div>
+</div>
