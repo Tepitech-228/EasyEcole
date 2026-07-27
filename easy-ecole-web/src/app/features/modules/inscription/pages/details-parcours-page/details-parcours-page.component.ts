@@ -1,8 +1,9 @@
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpClient } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Parcours } from 'src/app/data/modules/inscription/models/Parcours.model';
 import { ParcoursService } from 'src/app/data/modules/inscription/services/parcours.service';
+import { environment } from 'src/environments/environment';
 import { PeriodesEvaluation } from 'src/app/data/enums/PeriodesEvaluation';
 import { TypesEvaluation } from 'src/app/data/enums/TypesEvaluation';
 import { NiveauEtude } from 'src/app/data/modules/inscription/models/NiveauEtude.model';
@@ -11,7 +12,6 @@ import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { COLUMNS_SCHEMA, PrerequisParcoursType } from 'src/app/data/types/PrerequisParcoursType';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { Cours } from 'src/app/data/modules/inscription/models/Cours.model';
-import { AnneesParcours } from 'src/app/data/enums/AnneesParcours';
 import { SemestresParcours } from 'src/app/data/enums/SemestresParcours';
 import { CoursService } from 'src/app/data/modules/inscription/services/cours.service';
 import { Classe } from 'src/app/data/modules/inscription/models/Classe.model';
@@ -48,18 +48,22 @@ export class DetailsParcoursPageComponent extends BaseComponentClass implements 
     code: new FormControl(null, [Validators.required]),
     intitule: new FormControl(null, [Validators.required]),
     credit: new FormControl(null, []),
+    creditEcts: new FormControl(null, []),
+    objectifs: new FormControl(null, []),
     description: new FormControl(null, []),
     estObligatoire: new FormControl(false, [Validators.required]),
     classe: new FormControl(null, [Validators.required]),
     semestre: new FormControl(null, [Validators.required]),
+    volumeHoraire: new FormControl(null, []),
+    coefficient: new FormControl(null, []),
   })
-  readonly anneesParcours = AnneesParcours
   readonly semestresParcours = SemestresParcours
 
   constructor(
     private parcoursService: ParcoursService,
     private coursService: CoursService,
     private classeService: ClasseService,
+    private httpClient: HttpClient,
     private activatedRoute: ActivatedRoute,
     private router: Router) {
     super()
@@ -168,6 +172,10 @@ export class DetailsParcoursPageComponent extends BaseComponentClass implements 
       cours.classeId = this.coursForm.get('classe')!.value
       cours.semestre = this.coursForm.get('semestre')!.value
       cours.parcoursId = this.parcours.id
+      cours.creditEcts = this.coursForm.get('creditEcts')!.value
+      cours.objectifs = this.coursForm.get('objectifs')!.value
+      cours.volumeHoraire = this.coursForm.get('volumeHoraire')!.value
+      cours.coefficient = this.coursForm.get('coefficient')!.value
 
       this.coursService.create(cours).subscribe({
         next: (res) => {
@@ -204,6 +212,10 @@ export class DetailsParcoursPageComponent extends BaseComponentClass implements 
       cours.classeId = this.coursForm.get('classe')!.value
       cours.semestre = this.coursForm.get('semestre')!.value
       cours.parcoursId = this.parcours.id
+      cours.creditEcts = this.coursForm.get('creditEcts')!.value
+      cours.objectifs = this.coursForm.get('objectifs')!.value
+      cours.volumeHoraire = this.coursForm.get('volumeHoraire')!.value
+      cours.coefficient = this.coursForm.get('coefficient')!.value
 
       this.coursService.update(cours).subscribe({
         next: (res) => {
@@ -245,7 +257,18 @@ export class DetailsParcoursPageComponent extends BaseComponentClass implements 
     }
   }
 
-  // Modals
+  get ueListeGroupesParSemestre(): { semestre: string, cours: Cours[] }[] {
+    const map = new Map<string, Cours[]>();
+    for (const c of this.parcours?.cours || []) {
+      const sem = c.semestre || 'non-defini';
+      if (!map.has(sem)) map.set(sem, []);
+      map.get(sem)!.push(c);
+    }
+    return Array.from(map.entries())
+      .map(([semestre, cours]) => ({ semestre, cours }))
+      .sort((a, b) => a.semestre.localeCompare(b.semestre));
+  }
+
   closeNouveauCoursModal(): void {
     this.showNouveauCoursModal = false
     this.coursForm.reset()
@@ -262,6 +285,10 @@ export class DetailsParcoursPageComponent extends BaseComponentClass implements 
     this.coursForm.get('estObligatoire')!.setValue(this.selectedCours?.estObligatoire)
     this.coursForm.get('classe')!.setValue(this.selectedCours?.classe?.id)
     this.coursForm.get('semestre')!.setValue(this.selectedCours?.semestre)
+    this.coursForm.get('creditEcts')!.setValue(this.selectedCours?.creditEcts)
+    this.coursForm.get('objectifs')!.setValue(this.selectedCours?.objectifs)
+    this.coursForm.get('volumeHoraire')!.setValue(this.selectedCours?.volumeHoraire)
+    this.coursForm.get('coefficient')!.setValue(this.selectedCours?.coefficient)
 
     this.showEditerCoursModal = true
   }

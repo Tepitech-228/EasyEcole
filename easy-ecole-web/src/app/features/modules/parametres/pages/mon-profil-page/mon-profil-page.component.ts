@@ -305,9 +305,11 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
         pereVivant: new FormControl(this.apprenant?.informationsParents?.pereVivant ?? false, [Validators.required]),
         nomPrenomsPere: new FormControl(this.apprenant?.informationsParents?.nomPrenomsPere ?? null, [Validators.required]),
         professionPere: new FormControl(this.apprenant?.informationsParents?.professionPere ?? null, [Validators.required]),
+        emailPere: new FormControl(this.apprenant?.informationsParents?.emailPere ?? null, [Validators.email]),
         mereVivante: new FormControl(this.apprenant?.informationsParents?.mereVivante ?? false, [Validators.required]),
         nomPrenomsMere: new FormControl(this.apprenant?.informationsParents?.nomPrenomsMere ?? null, [Validators.required]),
         professionMere: new FormControl(this.apprenant?.informationsParents?.professionMere ?? null, [Validators.required]),
+        emailMere: new FormControl(this.apprenant?.informationsParents?.emailMere ?? null, [Validators.email]),
       }),
       personnePrevenir: new FormGroup({
         nom: new FormControl(this.apprenant?.personnePrevenir?.nom ?? null, [Validators.required]),

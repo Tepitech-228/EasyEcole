@@ -15,8 +15,7 @@
       <table class="min-w-full divide-y divide-gray-100">
         <thead>
           <tr class="bg-gray-50/50">
-            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">UE</th>
-            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Cours</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">UE (Cours)</th>
             <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Coefficient</th>
             <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Crédits ECTS</th>
             <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
@@ -24,8 +23,7 @@
         </thead>
         <tbody class="divide-y divide-gray-50">
           <tr *ngFor="let item of items; trackBy: trackByFn" class="hover:bg-gray-50/50 transition-colors">
-            <td class="px-5 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ item.ueId }}</td>
-            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ item.coursId }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ item.coursId }}</td>
             <td class="px-5 py-4 whitespace-nowrap text-center text-sm text-gray-700">{{ item.coefficient }}</td>
             <td class="px-5 py-4 whitespace-nowrap text-center text-sm text-gray-700">{{ item.creditEcts }}</td>
             <td class="px-5 py-4 whitespace-nowrap text-right">

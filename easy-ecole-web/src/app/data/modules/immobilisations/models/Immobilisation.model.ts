@@ -11,6 +11,7 @@ export class Immobilisation {
     declare etat?: string
     declare dateMiseEnService?: Date
     declare valeurAcquisition?: number
+    declare amortissementCumule?: number
     declare responsableNom?: string
     declare readonly createdAt?: Date
     declare readonly updatedAt?: Date

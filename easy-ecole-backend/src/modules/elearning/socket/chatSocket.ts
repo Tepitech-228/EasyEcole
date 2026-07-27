@@ -1,8 +1,25 @@
 import { Server as SocketIOServer, Socket } from "socket.io";
+import jwt from 'jsonwebtoken';
 import { Message } from "../models/Message";
 import { ParticipantSalon } from "../models/ParticipantSalon";
+import { JWT_SECRET } from "../../../core/config/jwt";
 
 export const setupChatSocket = (io: SocketIOServer): void => {
+
+    io.use((socket, next) => {
+        const token = socket.handshake.auth?.token || socket.handshake.query?.token
+        if (!token) {
+            return next(new Error('Authentication required'))
+        }
+        try {
+            const decoded = jwt.verify(token as string, JWT_SECRET) as any
+            ;(socket as any).utilisateurId = decoded.id
+            ;(socket as any).utilisateurRole = decoded.role
+            next()
+        } catch {
+            next(new Error('Invalid token'))
+        }
+    })
 
     io.on('connection', (socket: Socket) => {
         console.log(`Utilisateur connecté au chat: ${socket.id}`);
@@ -34,10 +51,10 @@ export const setupChatSocket = (io: SocketIOServer): void => {
 
                 const { Salon } = require('../models/Salon');
                 await Salon.update({
-                    dernierMessage: data.typeMessage === 'image' ? '📷 Photo' 
-                        : data.typeMessage === 'video' ? '📹 Vidéo'
-                        : data.typeMessage === 'sticker' ? '🎨 Sticker'
-                        : data.typeMessage === 'fichier' ? '📎 Fichier'
+                    dernierMessage: data.typeMessage === 'image' ? 'Photo' 
+                        : data.typeMessage === 'video' ? 'Video'
+                        : data.typeMessage === 'sticker' ? 'Sticker'
+                        : data.typeMessage === 'fichier' ? 'Fichier'
                         : data.message,
                     dateDernierMessage: new Date()
                 }, { where: { id: data.salonId } });

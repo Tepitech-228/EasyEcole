@@ -6,6 +6,7 @@ import { Injectable } from '@angular/core';
 export class LocalStorageService {
 
   static readonly AUTH_TOKEN: string = '_token'
+  static readonly USER_DATA: string = '_user'
 
   constructor() { }
 

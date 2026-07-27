@@ -1,4 +1,3 @@
-import { AnneesParcours } from "src/app/data/enums/AnneesParcours";
 import { SemestresParcours } from "src/app/data/enums/SemestresParcours";
 import { Enseignant } from "../../auth/models/Enseignant.model";
 import { ChapitreCours } from "./ChapitreCours.model";
@@ -12,6 +11,8 @@ export class Cours {
   declare code?: string
   declare intitule?: string
   declare credit?: number
+  declare creditEcts?: number
+  declare objectifs?: string
   declare estObligatoire?: boolean
   declare description?: string
   declare semestre?: SemestresParcours
@@ -26,6 +27,9 @@ export class Cours {
   declare enseignant?: Enseignant
 
   declare listesPresences?: ListePresence[]
+
+  declare volumeHoraire?: number
+  declare coefficient?: number
 
   declare readonly createdAt?: Date
   declare readonly updatedAt?: Date

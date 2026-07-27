@@ -216,6 +216,8 @@ export class DocumentPDFGenerator {
         dureeConservation?: string | null;
         archivedUntil?: Date | null;
         isArchived?: boolean | null;
+        confidentialityLevel?: string | null;
+        lifecycleStatus?: string | null;
     }, outputDir: string): Promise<string> {
         const dir = path.resolve(outputDir);
         if (!fs.existsSync(dir)) {
@@ -232,6 +234,26 @@ export class DocumentPDFGenerator {
 
         const stream = fs.createWriteStream(filePath);
         doc.pipe(stream);
+
+        const sensitiveLevels = ['confidentiel', 'restreint'];
+        const isSensitive = document.confidentialityLevel ? sensitiveLevels.includes(document.confidentialityLevel) : false;
+
+        if (isSensitive) {
+            let watermarkCount = 0;
+            const drawWatermark = () => {
+                if (watermarkCount > 20) return;
+                const x = 50 + (watermarkCount % 5) * 120;
+                const y = 50 + Math.floor(watermarkCount / 5) * 160;
+                doc.save();
+                doc.fontSize(24).fillColor('#cccccc').opacity(0.3);
+                doc.translate(x + 60, y + 80).rotate(-35);
+                doc.text('CONFIDENTIEL', { align: 'center' });
+                doc.restore();
+                watermarkCount++;
+                if (watermarkCount < 20) drawWatermark();
+            };
+            drawWatermark();
+        }
 
         doc.fontSize(22).text('ESA - École Supérieure', { align: 'center' });
         doc.moveDown(0.5);
@@ -251,6 +273,8 @@ export class DocumentPDFGenerator {
         if (document.dureeConservation) doc.text(`Durée conservation : ${document.dureeConservation}`);
         if (document.archivedUntil) doc.text(`Archivage jusqu'au : ${new Date(document.archivedUntil).toLocaleDateString('fr-FR')}`);
         doc.text(`Archivé : ${document.isArchived ? 'Oui' : 'Non'}`);
+        if (document.confidentialityLevel) doc.text(`Confidentialité : ${document.confidentialityLevel}`);
+        if (document.lifecycleStatus) doc.text(`Cycle de vie : ${document.lifecycleStatus}`);
 
         doc.moveDown(1.5);
         doc.fontSize(11).text('Ce document a été exporté depuis le module GED de la plateforme Easy Ecole.', { align: 'left' });

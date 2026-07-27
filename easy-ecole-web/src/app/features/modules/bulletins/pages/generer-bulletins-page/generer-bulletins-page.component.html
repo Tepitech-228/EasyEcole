@@ -39,6 +39,10 @@
             <option value="">Sélectionner...</option>
             <option value="semestre1">Semestre 1</option>
             <option value="semestre2">Semestre 2</option>
+            <option value="semestre3">Semestre 3</option>
+            <option value="semestre4">Semestre 4</option>
+            <option value="semestre5">Semestre 5</option>
+            <option value="semestre6">Semestre 6</option>
           </select>
         </div>
         <div>
@@ -88,7 +92,7 @@
         </div>
         <div>
           <h3 class="text-sm font-semibold text-emerald-900">Génération réussie</h3>
-          <p class="text-xs text-emerald-700">{{ getReussi() }} bulletin(s) créé(s) pour la classe {{ getClasseLibelle() }} ({{ getAnneeLibelle() }} - {{ semestre === 'semestre1' ? 'Semestre 1' : 'Semestre 2' }})</p>
+          <p class="text-xs text-emerald-700">{{ getReussi() }} bulletin(s) créé(s) pour la classe {{ getClasseLibelle() }} ({{ getAnneeLibelle() }} - {{ semestre === 'semestre1' ? 'Semestre 1' : semestre === 'semestre2' ? 'Semestre 2' : semestre === 'semestre3' ? 'Semestre 3' : semestre === 'semestre4' ? 'Semestre 4' : semestre === 'semestre5' ? 'Semestre 5' : 'Semestre 6' }})</p>
         </div>
       </div>
     </div>

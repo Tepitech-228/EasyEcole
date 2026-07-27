@@ -12,29 +12,72 @@ import { ImmobilisationService } from 'src/app/data/modules/immobilisations/serv
 export class ListeImmobilisationsPageComponent extends BaseComponentClass implements OnInit {
 
     immobilisations: Immobilisation[] = []
+    loading = false
+    searchTerm = ''
+    filterEtat = ''
 
     constructor(
         private router: Router,
         private immobilisationService: ImmobilisationService) {
         super()
-        this.getImmobilisations()
     }
 
     ngOnInit(): void {
+        this.loadImmobilisations()
     }
 
-    private getImmobilisations(): void {
+    loadImmobilisations(): void {
+        this.loading = true
         this.immobilisationService.getAll()
-            .subscribe(
-                {
-                    next: (res) => {
-                        this.immobilisations = res
-                    },
-                    error: (err) => {
-                        console.log(err)
-                    },
-                }
+            .subscribe({
+                next: (res) => {
+                    this.immobilisations = res
+                    this.loading = false
+                },
+                error: () => this.loading = false
+            })
+    }
+
+    get totalValeur(): number {
+        return this.immobilisations.reduce((s, i) => s + (i.valeurAcquisition || 0), 0)
+    }
+
+    get actifsCount(): number {
+        return this.immobilisations.filter(i => i.etat === 'en_service' || i.etat === 'actif').length
+    }
+
+    get enMaintenanceCount(): number {
+        return this.immobilisations.filter(i => i.etat === 'maintenance' || i.etat === 'en_maintenance').length
+    }
+
+    get filteredImmobilisations(): Immobilisation[] {
+        const term = this.searchTerm.trim().toLowerCase()
+        let list = this.immobilisations
+
+        if (term) {
+            list = list.filter((i: Immobilisation) =>
+                (i.nom || '').toLowerCase().includes(term) ||
+                (i.reference || '').toLowerCase().includes(term)
             )
+        }
+
+        if (this.filterEtat) {
+            list = list.filter((i: Immobilisation) => i.etat === this.filterEtat)
+        }
+
+        return list
+    }
+
+    etatBadge(etat: string): string {
+        const map: Record<string, string> = {
+            'en_service': 'bg-green-100 text-green-700',
+            'actif': 'bg-green-100 text-green-700',
+            'maintenance': 'bg-yellow-100 text-yellow-700',
+            'en_maintenance': 'bg-yellow-100 text-yellow-700',
+            'hors_service': 'bg-red-100 text-red-700',
+            'reforme': 'bg-gray-100 text-gray-700'
+        }
+        return map[etat] || 'bg-gray-100 text-gray-700'
     }
 
 }

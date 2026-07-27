@@ -43,7 +43,7 @@ export class DashboardComptablePageComponent extends BaseComponentClass implemen
           .filter(c => c.classe === '6')
           .reduce((s, c) => s + (c as any).solde || 0, 0);
       },
-      error: () => this.error = true
+      error: () => { this.error = true; this.loading = false; }
     });
 
     this.service.getAllEcritures({ validee: true }).subscribe({

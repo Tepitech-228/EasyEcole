@@ -1,0 +1,884 @@
+
+> easy-ecole-orientation-backend@1.0.0 dev
+> nodemon src/app.ts
+
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: ts,json[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+Listening on http://localhost:3000
+Database connected successfully
+Warning (FK constraint ignored): Trop de clefs sont définies. Maximum de 64 clefs alloué
+Database: all data synchronized
+[RappelSalleCron] Cron de rappel démarré (chaque minute, fenêtre H-10min)
+[0mGET /api/v1/docgen/types [32m200[0m 320.531 ms - 41409[0m
+[0mDELETE /api/v1/docgen/types/21 [32m200[0m 149.834 ms - 16[0m
+[0mGET /api/v1/docgen/types [32m200[0m 27.148 ms - 41117[0m
+[0mGET /api/v1/docgen/types [36m304[0m 38.408 ms - -[0m
+[0mGET /api/v1/docgen/templates [32m200[0m 77.142 ms - 2[0m
+[0mGET /api/v1/docgen/templates?typeId=45 [32m200[0m 4.539 ms - 2[0m
+[0mGET /api/v1/docgen/types [36m304[0m 21.202 ms - -[0m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+Error: listen EADDRINUSE: address already in use ::1:3000
+    at Server.setupListenHandle [as _listen2] (node:net:2009:16)
+    at listenInCluster (node:net:2066:12)
+    at GetAddrInfoReqWrap.callback (node:net:2275:7)
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:134:8) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::1',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+Listening on http://localhost:3000
+Database connected successfully
+Warning (FK constraint ignored): Trop de clefs sont définies. Maximum de 64 clefs alloué
+Database: all data synchronized
+[RappelSalleCron] Cron de rappel démarré (chaque minute, fenêtre H-10min)
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+Listening on http://localhost:3000
+Database connected successfully
+Warning (FK constraint ignored): Trop de clefs sont définies. Maximum de 64 clefs alloué
+Database: all data synchronized
+[RappelSalleCron] Cron de rappel démarré (chaque minute, fenêtre H-10min)
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+Listening on http://localhost:3000
+Database connected successfully
+Warning (FK constraint ignored): Trop de clefs sont définies. Maximum de 64 clefs alloué
+Database: all data synchronized
+[RappelSalleCron] Cron de rappel démarré (chaque minute, fenêtre H-10min)
+[2026-07-23T19:45:08.655Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:22:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.656Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:23:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.656Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:24:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.656Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:25:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.656Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:26:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.656Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:27:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.657Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:28:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.657Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:29:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.657Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:30:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.657Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:31:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.657Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:32:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.657Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:33:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.657Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:34:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.657Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:35:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.658Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:36:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.658Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:37:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.658Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:38:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.658Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:39:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.658Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:40:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.658Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:41:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.658Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:42:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.659Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:43:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.659Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:44:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.659Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:45:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.659Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:46:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.659Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:47:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.659Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:48:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.659Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:49:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.659Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:50:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.659Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:51:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.659Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:52:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.659Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:53:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.660Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:54:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.660Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:55:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.660Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:56:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.660Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:57:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.660Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:58:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.660Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 18:59:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.660Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:00:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.660Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:01:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.660Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:02:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.660Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:03:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.660Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:04:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.660Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:05:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.661Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:06:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.661Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:07:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.661Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:08:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.661Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:09:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.661Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:10:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.661Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:11:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.661Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:12:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.661Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:13:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.661Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:14:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.661Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:15:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.661Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:16:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.661Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:17:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.661Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:18:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.662Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:19:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.662Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:20:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.662Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:21:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.662Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:22:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.662Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:23:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.662Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:24:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.662Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:25:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.662Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:26:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.662Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:27:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.662Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:28:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.662Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:29:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.662Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:30:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.663Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:31:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.664Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:32:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.664Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:33:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.664Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:34:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.664Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:35:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.664Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:36:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.664Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:37:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.664Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:38:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.664Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:39:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.665Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:40:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.665Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:41:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.665Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:42:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.665Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:43:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.665Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:44:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-23T19:45:08.665Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 19:45:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[0mGET /api/v1/docgen/types [36m304[0m 614.814 ms - -[0m
+[0mGET /api/v1/docgen/types [36m304[0m 273.108 ms - -[0m
+[0mGET /api/v1/docgen/templates [36m304[0m 251.246 ms - -[0m
+[0mGET /api/v1/docgen/templates?typeId=108 [32m200[0m 157.019 ms - 2[0m
+[0mGET /api/v1/elearning/notifications [36m304[0m 121.868 ms - -[0m
+[0mGET /api/v1/elearning/notifications [33m401[0m 28.350 ms - 41[0m
+[0mGET /api/v1/docgen/templates?typeId=41 [33m401[0m 6.934 ms - 41[0m
+[0mGET /api/v1/docgen/cachets [33m401[0m 5.415 ms - 41[0m
+[0mGET /api/v1/docgen/types [33m401[0m 8.115 ms - 41[0m
+[0mGET /api/v1/docgen/signatures/pending/enseignant [33m401[0m 14.420 ms - 41[0m
+[0mGET /api/v1/docgen/signatures/pending/direction [33m401[0m 12.507 ms - 41[0m
+[0mGET /api/v1/inscription/sessions [33m401[0m 8.753 ms - 41[0m
+[0mGET /api/v1/inscription/dashboard [33m401[0m 31.937 ms - 41[0m
+[0mGET /api/v1/auth/utilisateurs/moi [33m401[0m 33.031 ms - 41[0m
+[0mGET /api/v1/inscription/anneesAcademiques [33m401[0m 10.843 ms - 41[0m
+[0mGET /api/v1/inscription/niveauxEtude [33m401[0m 13.808 ms - 41[0m
+[0mGET /api/v1/inscription/sessions?page=1&limit=20 [33m401[0m 12.936 ms - 41[0m
+[0mGET /api/v1/auth/permissions/mes-permissions [33m401[0m 16.606 ms - 41[0m
+[0mGET /api/v1/menu [33m401[0m 18.238 ms - 41[0m
+[0mGET /api/v1/inscription/dashboard [33m401[0m 33.708 ms - 41[0m
+[0mGET /api/v1/inscription/sessions [33m401[0m 21.229 ms - 41[0m
+[0mGET /api/v1/auth/utilisateurs/moi [33m401[0m 20.330 ms - 41[0m
+[0mGET /api/v1/inscription/seances/planning?semaineDebut=2026-07-23&semaineFin=2026-07-23 [33m401[0m 3.600 ms - 41[0m
+[0mGET /api/v1/inscription/cours [33m401[0m 10.438 ms - 41[0m
+[0mGET /api/v1/inscription/classes [33m401[0m 9.520 ms - 41[0m
+[0mGET /api/v1/auth/enseignants [33m401[0m 11.746 ms - 41[0m
+[0mGET /api/v1/inscription/seances/planning?semaineDebut=2026-07-20&semaineFin=2026-07-26 [33m401[0m 2.815 ms - 41[0m
+[0mGET /api/v1/inscription/dashboard [33m401[0m 9.919 ms - 41[0m
+[0mGET /api/v1/inscription/sessions [33m401[0m 4.224 ms - 41[0m
+[0mGET /api/v1/auth/utilisateurs/moi [33m401[0m 7.580 ms - 41[0m
+[0mGET /api/v1/inscription/seances/planning?semaineDebut=2026-07-23&semaineFin=2026-07-23 [33m401[0m 7.256 ms - 41[0m
+[0mGET /api/v1/inscription/dashboard [33m401[0m 4.367 ms - 41[0m
+[0mGET /api/v1/inscription/sessions [33m401[0m 7.439 ms - 41[0m
+[0mGET /api/v1/auth/utilisateurs/moi [33m401[0m 9.030 ms - 41[0m
+[0mGET /api/v1/inscription/seances/planning?semaineDebut=2026-07-23&semaineFin=2026-07-23 [33m401[0m 2.645 ms - 41[0m
+[0mGET /api/v1/elearning/notifications [33m401[0m 4.346 ms - 41[0m
+[0mPOST /api/v1/auth/logout [33m401[0m 622.944 ms - 41[0m
+[2026-07-24T04:14:48.920Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 23:55:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:48.943Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 23:56:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:48.946Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 23:57:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:48.946Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 23:58:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:48.946Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Thu Jul 23 2026 23:59:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:48.946Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:00:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:48.946Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:01:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:48.946Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:02:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:48.946Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:03:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:48.946Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:04:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:48.946Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:05:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:48.946Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:06:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:48.947Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:07:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:48.947Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:08:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:48.947Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:09:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:48.947Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:10:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:48.947Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:11:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:48.947Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:12:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:48.947Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:13:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:48.947Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:14:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:48.947Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:15:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:48.947Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:16:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:48.947Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:17:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:48.947Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:18:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.000Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:19:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.000Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:20:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.000Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:21:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.000Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:22:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.001Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:23:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.001Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:24:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.001Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:25:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.001Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:26:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.001Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:27:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.001Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:28:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.001Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:29:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.001Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:30:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.001Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:31:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.001Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:32:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.001Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:33:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.001Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:34:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.001Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:35:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.003Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:36:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.003Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:37:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.003Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:38:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.003Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:39:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.003Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:40:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.003Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:41:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.003Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:42:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.003Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:43:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.004Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:44:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.004Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:45:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.004Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:46:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.004Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:47:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.004Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:48:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.004Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:49:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.004Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:50:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.004Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:51:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.004Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:52:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.004Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:53:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.005Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:54:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.005Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:55:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.005Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:56:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.005Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:57:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.005Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:58:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.005Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 00:59:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.005Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:00:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.006Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:01:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.006Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:02:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.006Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:03:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.006Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:04:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.006Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:05:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.006Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:06:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.006Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:07:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.006Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:08:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.006Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:09:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.007Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:10:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.007Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:11:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.007Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:12:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.007Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:13:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.007Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:14:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.007Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:15:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.008Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:16:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.008Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:17:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.008Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:18:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.008Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:19:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.009Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:20:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.009Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:21:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.009Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:22:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.009Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:23:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.010Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:24:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.010Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:25:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.010Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:26:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.010Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:27:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.010Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:28:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.010Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:29:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.011Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:30:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.011Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:31:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.011Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:32:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.011Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:33:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.012Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:34:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.012Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:35:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.012Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:36:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.012Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:37:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.012Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:38:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.041Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:39:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.041Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:40:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.041Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:41:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.041Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:42:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.041Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:43:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.041Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:44:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.041Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:45:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.042Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:46:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.042Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:47:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.042Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:48:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.042Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:49:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.042Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:50:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.042Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:51:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.042Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:52:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.042Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:53:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.042Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:54:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.042Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:55:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.042Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:56:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.042Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:57:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.043Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:58:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.043Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 01:59:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.043Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:00:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.043Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:01:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.044Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:02:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.044Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:03:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.044Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:04:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.045Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:05:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.045Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:06:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.045Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:07:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.045Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:08:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.045Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:09:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.045Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:10:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.045Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:11:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.045Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:12:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.045Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:13:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.045Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:14:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.045Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:15:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.046Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:16:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.046Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:17:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.046Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:18:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.046Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:19:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.046Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:20:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.046Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:21:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.046Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:22:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.046Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:23:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.046Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:24:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.046Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:25:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.046Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:26:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.047Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:27:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.047Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:28:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.047Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:29:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.047Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:30:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.047Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:31:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.047Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:32:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.047Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:33:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.047Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:34:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.047Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:35:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.047Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:36:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.048Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:37:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.049Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:38:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.049Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:39:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.049Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:40:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.049Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:41:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.049Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:42:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.049Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:43:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.049Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:44:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.049Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:45:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.049Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:46:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.050Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:47:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.050Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:48:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.050Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:49:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.050Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:50:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.050Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:51:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.050Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:52:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.050Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:53:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.050Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:54:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.050Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:55:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.050Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:56:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.050Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:57:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.050Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:58:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.050Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 02:59:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.051Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:00:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.051Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:01:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.051Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:02:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.051Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:03:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.051Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:04:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.051Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:05:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.051Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:06:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.051Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:07:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.051Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:08:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.051Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:09:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.051Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:10:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.051Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:11:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.051Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:12:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.051Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:13:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.051Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:14:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.052Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:15:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.052Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:16:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.052Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:17:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.052Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:18:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.052Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:19:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.052Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:20:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.052Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:21:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.052Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:22:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.052Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:23:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.052Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:24:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.052Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:25:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.052Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:26:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.052Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:27:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.052Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:28:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.052Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:29:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.052Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:30:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.053Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:31:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.053Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:32:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.053Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:33:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.053Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:34:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.053Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:35:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.053Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:36:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.053Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:37:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.053Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:38:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.053Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:39:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.053Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:40:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.053Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:41:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.053Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:42:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.054Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:43:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.054Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:44:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.054Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:45:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.054Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:46:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.054Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:47:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.054Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:48:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.054Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:49:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.054Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:50:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.054Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:51:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.054Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:52:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.054Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:53:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.055Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:54:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.055Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:55:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.055Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:56:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.055Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:57:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.055Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:58:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.055Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 03:59:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.055Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 04:00:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.055Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 04:01:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.055Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 04:02:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.055Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 04:03:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.056Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 04:04:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.056Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 04:05:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.056Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 04:06:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.056Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 04:07:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.161Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 04:08:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.161Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 04:09:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.161Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 04:10:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.161Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 04:11:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.161Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 04:12:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.161Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 04:13:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-07-24T04:14:49.161Z] [PID: 33440] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Fri Jul 24 2026 04:14:00 GMT+0000 (heure moyenne de Greenwich)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+Listening on http://localhost:3000
+Database connected successfully
+Warning (FK constraint ignored): Trop de clefs sont définies. Maximum de 64 clefs alloué
+Database: all data synchronized
+[RappelSalleCron] Cron de rappel démarré (chaque minute, fenêtre H-10min)
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+Error: listen EADDRINUSE: address already in use ::1:3000
+    at Server.setupListenHandle [as _listen2] (node:net:2009:16)
+    at listenInCluster (node:net:2066:12)
+    at GetAddrInfoReqWrap.callback (node:net:2275:7)
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:134:8) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::1',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+Error: listen EADDRINUSE: address already in use ::1:3000
+    at Server.setupListenHandle [as _listen2] (node:net:2009:16)
+    at listenInCluster (node:net:2066:12)
+    at GetAddrInfoReqWrap.callback (node:net:2275:7)
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:134:8) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::1',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:859
+    return new TSError(diagnosticText, diagnosticCodes, diagnostics);
+           ^
+TSError: ⨯ Unable to compile TypeScript:
+src/modules/inscription/controllers/SalleDeClasseController.ts(85,13): error TS2322: Type 'string | null' is not assignable to type 'string & { [CreationAttributeBrand]?: true | undefined; }'.
+  Type 'null' is not assignable to type 'string & { [CreationAttributeBrand]?: true | undefined; }'.
+    Type 'null' is not assignable to type 'string'.
+src/modules/inscription/controllers/SalleDeClasseController.ts(117,17): error TS2322: Type 'string | null' is not assignable to type '(string & { [CreationAttributeBrand]?: true | undefined; }) | Fn | Col | Literal | undefined'.
+  Type 'null' is not assignable to type '(string & { [CreationAttributeBrand]?: true | undefined; }) | Fn | Col | Literal | undefined'.
+
+    at createTSError (D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:859:12)
+    at reportTSError (D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:863:19)
+    at getOutput (D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:1077:36)
+    at Object.compile (D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:1433:41)
+    at Module.m._compile (D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:1617:30)
+    at node:internal/modules/cjs/loader:2002:10
+    at Object.require.extensions.<computed> [as .ts] (D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader:1594:32)
+    at Module._load (node:internal/modules/cjs/loader:1396:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19) {
+  diagnosticCodes: [ 2322, 2322 ]
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:859
+    return new TSError(diagnosticText, diagnosticCodes, diagnostics);
+           ^
+TSError: ⨯ Unable to compile TypeScript:
+src/modules/inscription/controllers/SalleDeClasseController.ts(85,13): error TS2322: Type 'string | null' is not assignable to type 'string & { [CreationAttributeBrand]?: true | undefined; }'.
+  Type 'null' is not assignable to type 'string & { [CreationAttributeBrand]?: true | undefined; }'.
+    Type 'null' is not assignable to type 'string'.
+src/modules/inscription/controllers/SalleDeClasseController.ts(117,17): error TS2322: Type 'string | null' is not assignable to type '(string & { [CreationAttributeBrand]?: true | undefined; }) | Fn | Col | Literal | undefined'.
+  Type 'null' is not assignable to type '(string & { [CreationAttributeBrand]?: true | undefined; }) | Fn | Col | Literal | undefined'.
+
+    at createTSError (D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:859:12)
+    at reportTSError (D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:863:19)
+    at getOutput (D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:1077:36)
+    at Object.compile (D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:1433:41)
+    at Module.m._compile (D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:1617:30)
+    at node:internal/modules/cjs/loader:2002:10
+    at Object.require.extensions.<computed> [as .ts] (D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader:1594:32)
+    at Module._load (node:internal/modules/cjs/loader:1396:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19) {
+  diagnosticCodes: [ 2322, 2322 ]
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+Error: listen EADDRINUSE: address already in use ::1:3000
+    at Server.setupListenHandle [as _listen2] (node:net:2009:16)
+    at listenInCluster (node:net:2066:12)
+    at GetAddrInfoReqWrap.callback (node:net:2275:7)
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:134:8) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::1',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:859
+    return new TSError(diagnosticText, diagnosticCodes, diagnostics);
+           ^
+TSError: ⨯ Unable to compile TypeScript:
+src/modules/inscription/controllers/DemandeInscriptionController.ts(511,17): error TS2322: Type 'Date' is not assignable to type 'string'.
+
+    at createTSError (D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:859:12)
+    at reportTSError (D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:863:19)
+    at getOutput (D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:1077:36)
+    at Object.compile (D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:1433:41)
+    at Module.m._compile (D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:1617:30)
+    at node:internal/modules/cjs/loader:2002:10
+    at Object.require.extensions.<computed> [as .ts] (D:\EasyEcole\easy-ecole-backend\node_modules\ts-node\src\index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader:1594:32)
+    at Module._load (node:internal/modules/cjs/loader:1396:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19) {
+  diagnosticCodes: [ 2322 ]
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+Error: listen EADDRINUSE: address already in use ::1:3000
+    at Server.setupListenHandle [as _listen2] (node:net:2009:16)
+    at listenInCluster (node:net:2066:12)
+    at GetAddrInfoReqWrap.callback (node:net:2275:7)
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:134:8) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::1',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+Error: listen EADDRINUSE: address already in use ::1:3000
+    at Server.setupListenHandle [as _listen2] (node:net:2009:16)
+    at listenInCluster (node:net:2066:12)
+    at GetAddrInfoReqWrap.callback (node:net:2275:7)
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:134:8) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::1',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+Error: listen EADDRINUSE: address already in use ::1:3000
+    at Server.setupListenHandle [as _listen2] (node:net:2009:16)
+    at listenInCluster (node:net:2066:12)
+    at GetAddrInfoReqWrap.callback (node:net:2275:7)
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:134:8) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::1',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+Error: listen EADDRINUSE: address already in use ::1:3000
+    at Server.setupListenHandle [as _listen2] (node:net:2009:16)
+    at listenInCluster (node:net:2066:12)
+    at GetAddrInfoReqWrap.callback (node:net:2275:7)
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:134:8) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::1',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+Error: listen EADDRINUSE: address already in use ::1:3000
+    at Server.setupListenHandle [as _listen2] (node:net:2009:16)
+    at listenInCluster (node:net:2066:12)
+    at GetAddrInfoReqWrap.callback (node:net:2275:7)
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:134:8) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::1',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m

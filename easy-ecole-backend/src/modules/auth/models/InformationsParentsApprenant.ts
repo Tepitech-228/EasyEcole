@@ -9,9 +9,11 @@ export class InformationsParentsApprenant extends Model<InferAttributes<Informat
   declare pereVivant: CreationOptional<boolean>
   declare nomPrenomsPere: string
   declare professionPere: string
+  declare emailPere: CreationOptional<string>
   declare mereVivante: CreationOptional<boolean>
   declare nomPrenomsMere: string
   declare professionMere: string
+  declare emailMere: CreationOptional<string>
   declare apprenantId: ForeignKey<Apprenant['id']>
   declare apprenant?: NonAttribute<Apprenant>
   
@@ -38,6 +40,10 @@ InformationsParentsApprenant.init({
     type: new DataTypes.STRING,
     allowNull: false
   },
+  emailPere: {
+    type: new DataTypes.STRING,
+    allowNull: true
+  },
   mereVivante: {
     type: DataTypes.BOOLEAN,
     defaultValue: true,
@@ -46,6 +52,10 @@ InformationsParentsApprenant.init({
   nomPrenomsMere: {
     type: new DataTypes.STRING,
     allowNull: false
+  },
+  emailMere: {
+    type: new DataTypes.STRING,
+    allowNull: true
   },
   professionMere: {
     type: new DataTypes.STRING,

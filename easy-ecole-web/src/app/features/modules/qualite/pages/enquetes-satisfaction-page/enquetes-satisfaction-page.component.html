@@ -1,0 +1,64 @@
+<app-header-title title="Enquêtes de satisfaction" subtitle="Gestion des enquêtes ISO 21001"></app-header-title>
+
+<div class="flex justify-between mb-4">
+  <div></div>
+  <app-custom-button text="Nouvelle enquête" (click)="ouvrirFormulaire()"></app-custom-button>
+</div>
+
+<app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+<div *ngIf="!loading && items.length === 0" class="text-center py-8 text-gray-400">Aucune enquête</div>
+
+<div class="grid gap-3" *ngIf="!loading && items.length > 0">
+  <div *ngFor="let item of items" class="bg-white rounded-lg shadow p-4">
+    <div class="flex justify-between items-start">
+      <div>
+        <h3 class="font-semibold">{{ item.titre }}</h3>
+        <p class="text-xs text-gray-500">{{ item.cible }} — {{ item.dateDebut | date:'shortDate' }} au {{ item.dateFin | date:'shortDate' }}</p>
+        <p class="text-xs text-gray-400 mt-1">{{ item.description }}</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="px-2 py-1 rounded text-xs"
+          [class.bg-gray-100]="item.statut==='brouillon'" [class.text-gray-600]="item.statut==='brouillon'"
+          [class.bg-green-100]="item.statut==='active'" [class.text-green-700]="item.statut==='active'"
+          [class.bg-red-100]="item.statut==='cloturee'" [class.text-red-700]="item.statut==='cloturee'">{{ item.statut }}</span>
+        <button (click)="voirStats(item.id)" class="text-blue-500 hover:text-blue-700 text-xs" title="Voir statistiques">📊</button>
+        <button (click)="ouvrirFormulaire(item)" class="text-blue-500 hover:text-blue-700 text-xs">✎</button>
+        <button (click)="supprimer(item.id)" class="text-red-500 hover:text-red-700 text-xs">✕</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-custom-modal [showModal]="showForm" (onCloseModal)="fermerFormulaire()">
+  <h3 class="text-lg font-semibold mb-4">{{ editingId ? 'Modifier' : 'Nouvelle' }} enquête</h3>
+  <div class="grid gap-3">
+    <input [(ngModel)]="formData.titre" placeholder="Titre" class="form-input">
+    <textarea [(ngModel)]="formData.description" placeholder="Description" class="form-input" rows="2"></textarea>
+    <select [(ngModel)]="formData.cible" class="form-input">
+      <option value="tous">Tous</option><option value="apprenants">Apprenants</option>
+      <option value="parents">Parents</option><option value="personnel">Personnel</option><option value="enseignants">Enseignants</option>
+    </select>
+    <div class="flex gap-3">
+      <div class="flex-1"><label class="text-xs text-gray-500">Début</label><input type="date" [(ngModel)]="formData.dateDebut" class="form-input"></div>
+      <div class="flex-1"><label class="text-xs text-gray-500">Fin</label><input type="date" [(ngModel)]="formData.dateFin" class="form-input"></div>
+    </div>
+    <textarea [(ngModel)]="formData.questions" placeholder="Questions (JSON)" class="form-input font-mono text-xs" rows="4"></textarea>
+    <select [(ngModel)]="formData.statut" class="form-input">
+      <option value="brouillon">Brouillon</option><option value="active">Active</option><option value="cloturee">Clôturée</option>
+    </select>
+    <div class="flex gap-2 justify-end mt-2">
+      <app-custom-button text="Annuler" [outlined]="true" (click)="fermerFormulaire()"></app-custom-button>
+      <app-custom-button text="Enregistrer" (click)="sauvegarder()"></app-custom-button>
+    </div>
+  </div>
+</app-custom-modal>
+
+<app-custom-modal [showModal]="!!stats" (onCloseModal)="fermerFormulaire()">
+  <h3 class="text-lg font-semibold mb-2">Statistiques</h3>
+  <div class="text-sm space-y-2" *ngIf="stats">
+    <p><strong>Total réponses :</strong> {{ stats.total }}</p>
+    <p><strong>Titre :</strong> {{ stats.enquete?.titre }}</p>
+    <p><strong>Statut :</strong> {{ stats.enquete?.statut }}</p>
+  </div>
+</app-custom-modal>

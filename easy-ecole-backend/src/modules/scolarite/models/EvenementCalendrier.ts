@@ -1,11 +1,11 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../ScolariteModule";
 import { Classe } from "../../inscription/models/Classe";
 import { Parcours } from "../../inscription/models/Parcours";
 
 export class EvenementCalendrier extends Model<InferAttributes<EvenementCalendrier>, InferCreationAttributes<EvenementCalendrier>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare titre: string
   declare date: Date
   declare description: string

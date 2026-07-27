@@ -1,10 +1,10 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 
 export class Pointage extends Model<InferAttributes<Pointage>, InferCreationAttributes<Pointage>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare date: Date
   declare heureArrivee: Date
   declare heureDepart: CreationOptional<Date | null>

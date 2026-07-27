@@ -56,6 +56,10 @@ export class SaisieNotesPageComponent extends BaseComponentClass implements OnIn
   }
 
   ngOnInit(): void {
+    if (this.rolesValue.isApprenant) {
+      this.router.navigate(['/cours/mes-notes'])
+      return
+    }
     const id = this.route.snapshot.paramMap.get('id')
     if (id) {
       this.loadEvaluation(id)

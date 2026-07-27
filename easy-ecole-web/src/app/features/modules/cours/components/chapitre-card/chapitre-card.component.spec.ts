@@ -1,6 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { RouterTestingModule } from '@angular/router/testing';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 
 import { ChapitreCardComponent } from './chapitre-card.component';
+import { ChapitreCours } from 'src/app/data/modules/inscription/models/ChapitreCours.model';
 
 describe('ChapitreCardComponent', () => {
   let component: ChapitreCardComponent;
@@ -8,7 +12,9 @@ describe('ChapitreCardComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ChapitreCardComponent ]
+      declarations: [ ChapitreCardComponent ],
+      imports: [ HttpClientTestingModule, RouterTestingModule ],
+      schemas: [NO_ERRORS_SCHEMA]
     })
     .compileComponents();
   });
@@ -16,6 +22,8 @@ describe('ChapitreCardComponent', () => {
   beforeEach(() => {
     fixture = TestBed.createComponent(ChapitreCardComponent);
     component = fixture.componentInstance;
+    component.chapitre = new ChapitreCours();
+    component.rolesValue = { isApprenant: false, isInstitution: false, isEnseignant: false, isCaissierBanque: false, isRessourcesHumaines: false, isCabinetComptable: false, isComiteOrientation: false, isAdmin: false, isParent: false };
     fixture.detectChanges();
   });
 

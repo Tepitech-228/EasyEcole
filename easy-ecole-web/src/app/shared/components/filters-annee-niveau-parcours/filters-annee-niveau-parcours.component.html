@@ -1,0 +1,91 @@
+<div class="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+  <div class="flex items-center gap-x-2 mb-4">
+    <span class="material-symbols-outlined text-gray-500">folder_open</span>
+    <span class="text-sm font-medium text-gray-700">Filtrer par dossier</span>
+    <button *ngIf="hasActiveFilters" (click)="effacerFiltres()"
+      class="ml-auto inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 text-red-700 hover:text-red-900 text-xs font-semibold rounded-lg border border-red-300 hover:border-red-400 transition-all duration-200 shadow-sm hover:shadow-md">
+      <span class="material-symbols-outlined text-sm">close</span>
+      Effacer les filtres
+    </button>
+  </div>
+
+  <div *ngIf="hasActiveFilters" class="flex items-center gap-x-2 mb-4 text-sm text-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg px-4 py-3 border border-blue-100">
+    <span class="material-symbols-outlined text-lg text-blue-600">home</span>
+    <span class="font-semibold text-gray-900">{{ getAnneeLibelle(selectedAnneeId) }}</span>
+    <ng-container *ngIf="selectedNiveauId">
+      <span class="text-gray-400">→</span>
+      <span class="material-symbols-outlined text-lg text-indigo-600">school</span>
+      <span class="font-semibold text-gray-900">{{ getNiveauLibelle(selectedNiveauId) }}</span>
+    </ng-container>
+    <ng-container *ngIf="selectedParcoursId">
+      <span class="text-gray-400">→</span>
+      <span class="material-symbols-outlined text-lg text-green-600">route</span>
+      <span class="font-semibold text-gray-900">{{ getParcoursTitre(selectedParcoursId) }}</span>
+    </ng-container>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-x-4 gap-y-3">
+    <div>
+      <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">
+        <span class="material-symbols-outlined text-sm align-text-bottom mr-1">calendar_month</span>
+        Année académique
+      </label>
+      <select [(ngModel)]="selectedAnneeId" (change)="onAnneeChange()"
+        [disabled]="loading"
+        class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed">
+        <option value="">-- Toutes les années --</option>
+        <option *ngFor="let a of annees" [value]="a.id">{{ a.libelle }}</option>
+      </select>
+      <p *ngIf="loading" class="text-xs text-gray-500 mt-1">
+        <span class="material-symbols-outlined text-xs align-middle mr-1">schedule</span>
+        Chargement des données...
+      </p>
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">
+        <span class="material-symbols-outlined text-sm align-text-bottom mr-1">school</span>
+        Niveau d'étude
+      </label>
+      <select [(ngModel)]="selectedNiveauId" (change)="onNiveauChange()"
+        [disabled]="!selectedAnneeId || loading"
+        class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed">
+        <option value="">-- Tous les niveaux --</option>
+        <option *ngFor="let n of niveauxFiltres" [value]="n.id">{{ n.libelle }} (ID: {{n.id}})</option>
+      </select>
+      <p *ngIf="!loading" class="text-xs text-gray-500 mt-1">
+        <span class="material-symbols-outlined text-xs align-middle mr-1">schedule</span>
+        Chargement des données...
+      </p>
+      <p *ngIf="selectedAnneeId && niveauxFiltres.length === 0 && !loading" class="text-xs text-blue-600 mt-1 font-medium">
+        <span class="material-symbols-outlined text-xs align-middle mr-1">info</span>
+        Tous les niveaux disponibles
+      </p>
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">
+        <span class="material-symbols-outlined text-sm align-text-bottom mr-1">route</span>
+        Filière
+      </label>
+      <select [(ngModel)]="selectedParcoursId" (change)="onParcoursChange()"
+        [disabled]="!selectedNiveauId || loading"
+        class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed">
+        <option value="">-- Toutes les filières --</option>
+        <option *ngFor="let p of parcoursFiltres" [value]="p.id">{{ p.titre }} (Niveau: {{p.niveauEtudeId}})</option>
+      </select>
+      <p *ngIf="selectedNiveauId && parcoursFiltres.length === 0 && !loading" class="text-xs text-orange-500 mt-1 font-medium">
+        <span class="material-symbols-outlined text-xs align-middle mr-1">warning</span>
+        Aucune filière trouvée - Affichage de toutes les filières
+      </p>
+    </div>
+
+    <div *ngIf="showResultCount" class="flex items-end">
+      <div class="w-full bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-md p-2.5 text-center">
+        <p class="text-xs text-gray-600 font-semibold">RÉSULTATS</p>
+        <p class="text-lg font-bold text-indigo-600">{{ resultCount }}</p>
+        <p class="text-xs text-gray-500">{{ resultLabel }}</p>
+      </div>
+    </div>
+  </div>
+</div>

@@ -13,8 +13,8 @@ export class SessionService {
 
   constructor(private httpClient: HttpClient) { }
 
-  getAll(): Observable<Session[]> {
-    return this.httpClient.get<Session[]>(`${this.SERVICE_URL}`)
+  getAll(params?: any): Observable<Session[]> {
+    return this.httpClient.get<Session[]>(`${this.SERVICE_URL}`, { params })
   }
 
   get(id: string): Observable<Session> {

@@ -1,10 +1,10 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../ScolariteModule";
 import { ConseilClasse } from "./ConseilClasse";
 
 export class DecisionConseil extends Model<InferAttributes<DecisionConseil>, InferCreationAttributes<DecisionConseil>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare conseilClasseId: ForeignKey<ConseilClasse['id']>
   declare theme: string
   declare description: string

@@ -2,24 +2,32 @@
     <app-header-title title="Détails de la demande" subtitle="Consulter les informations de la demande d'achat"></app-header-title>
 </div>
 
-<div class="bg-white rounded-lg shadow p-6">
-    <div class="grid grid-cols-2 gap-4 mb-6">
-        <div>
-            <label class="text-xs font-medium text-gray-500">Description</label>
-            <p class="text-sm text-gray-800 mt-1">---</p>
+<app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+<div *ngIf="!loading && demande" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-semibold text-gray-900">Demande #{{ demande.id }}</h2>
+        <span class="px-3 py-1 rounded-full text-xs font-medium" [ngClass]="getStatutBadge(demande.statut)">{{ demande.statut }}</span>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-gray-50 rounded-lg p-4">
+            <span class="block text-xs font-medium text-gray-500 uppercase mb-1">Demandeur</span>
+            <span class="block text-sm font-medium text-gray-900">{{ demande.demandeur }}</span>
         </div>
-        <div>
-            <label class="text-xs font-medium text-gray-500">Statut</label>
-            <p class="text-sm text-gray-800 mt-1">---</p>
+        <div class="bg-gray-50 rounded-lg p-4">
+            <span class="block text-xs font-medium text-gray-500 uppercase mb-1">Date de soumission</span>
+            <span class="block text-sm font-medium text-gray-900">{{ demande.dateSoumission | date:'dd/MM/yyyy' }}</span>
         </div>
-        <div>
-            <label class="text-xs font-medium text-gray-500">Soumis par</label>
-            <p class="text-sm text-gray-800 mt-1">---</p>
+        <div class="bg-gray-50 rounded-lg p-4">
+            <span class="block text-xs font-medium text-gray-500 uppercase mb-1">Montant estimé</span>
+            <span class="block text-sm font-medium text-gray-900">{{ demande.montantEstime | currency:'XAF':'symbol':'1.0-0' }}</span>
         </div>
-        <div>
-            <label class="text-xs font-medium text-gray-500">Date de soumission</label>
-            <p class="text-sm text-gray-800 mt-1">---</p>
-        </div>
+    </div>
+
+    <div class="mb-6">
+        <span class="block text-xs font-medium text-gray-500 uppercase mb-1">Description</span>
+        <p class="text-sm text-gray-900 mt-1">{{ demande.description }}</p>
     </div>
 
     <h3 class="text-md font-semibold text-gray-800 mb-3">Lignes de demande</h3>
@@ -34,11 +42,20 @@
             </tr>
         </thead>
         <tbody>
-            <tr><td colspan="5" class="text-center py-4 text-sm text-gray-500">Aucune ligne</td></tr>
+            <tr *ngFor="let l of demande.lignes" class="border-b">
+                <td class="px-2 py-3 text-sm text-gray-900">{{ l.designation }}</td>
+                <td class="px-2 py-3 text-sm text-gray-700">{{ l.quantite }}</td>
+                <td class="px-2 py-3 text-sm text-gray-700">{{ l.prixEstime | currency:'XAF':'symbol':'1.0-0' }}</td>
+                <td class="px-2 py-3 text-sm text-gray-700">{{ l.unite }}</td>
+                <td class="px-2 py-3 text-sm text-right font-medium text-gray-900">{{ l.total | currency:'XAF':'symbol':'1.0-0' }}</td>
+            </tr>
+            <tr *ngIf="!demande.lignes?.length">
+                <td colspan="5" class="text-center py-4 text-sm text-gray-500">Aucune ligne</td>
+            </tr>
         </tbody>
     </table>
 
     <div class="flex justify-end gap-x-3">
-        <app-custom-button text="Retour" link="/achats/demandes"></app-custom-button>
+        <app-custom-button text="Retour" link="/achats/demandes" color="gray" [outlined]="true"></app-custom-button>
     </div>
 </div>

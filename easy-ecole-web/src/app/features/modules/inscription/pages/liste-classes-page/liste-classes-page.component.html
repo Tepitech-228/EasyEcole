@@ -1,0 +1,105 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <app-header-title
+    title="Classes"
+    subtitle="Gérez les classes et leur affectation aux parcours">
+  </app-header-title>
+
+  <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total classes</p>
+          <p class="mt-1 text-2xl font-bold text-gray-900">{{ totalClasses }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 4H4a2 2 0 00-2 2v4m0 0v8a2 2 0 002 2h16a2 2 0 002-2v-4m0 0V6a2 2 0 00-2-2h-4m-4 0v4m0 0h4m-4 0H8"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+    <div class="flex justify-between items-center">
+      <div class="flex gap-4">
+        <select [(ngModel)]="selectedNiveauEtudeId" (change)="filtrer()"
+          class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+          <option value="">Tous les niveaux</option>
+          <option *ngFor="let ne of niveauEtudes" [value]="ne.id">{{ ne.libelle }}</option>
+        </select>
+        <select [(ngModel)]="selectedParcoursId" (change)="filtrer()"
+          class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+          <option value="">Tous les parcours</option>
+          <option *ngFor="let p of parcoursList" [value]="p.id">{{ p.titre }}</option>
+        </select>
+      </div>
+      <app-custom-button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="ouvrirFormulaire()" text="Nouvelle classe" color="primary"></app-custom-button>
+    </div>
+  </div>
+
+  <div *ngIf="showForm" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ editingId ? 'Modifier' : 'Nouvelle' }} classe</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Libellé *</label>
+        <input [(ngModel)]="formData.libelle" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="6ème A, Terminale S..." />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Niveau d'étude</label>
+        <select [(ngModel)]="formData.niveauEtudeId" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+          <option value="">Sélectionner</option>
+          <option *ngFor="let ne of niveauEtudes" [value]="ne.id">{{ ne.libelle }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Parcours</label>
+        <select [(ngModel)]="formData.parcoursId" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+          <option value="">Aucun</option>
+          <option *ngFor="let p of parcoursList" [value]="p.id">{{ p.titre }}</option>
+        </select>
+      </div>
+    </div>
+    <div class="mt-4">
+      <label class="block text-xs font-medium text-gray-500 mb-1">Description</label>
+      <textarea [(ngModel)]="formData.description" rows="2" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="Description..."></textarea>
+    </div>
+    <div class="flex justify-end gap-3 mt-4">
+      <app-custom-button (click)="fermerFormulaire()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+      <app-custom-button (click)="sauvegarder()" [text]="editingId ? 'Modifier' : 'Créer'" color="primary"></app-custom-button>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-100">
+        <thead>
+          <tr class="bg-gray-50/50">
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Libellé</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Niveau</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Parcours</th>
+            <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngFor="let c of filteredClasses" class="hover:bg-gray-50/50 transition-colors">
+            <td class="px-5 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ c.libelle }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.description || '-' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ c.niveauEtude?.libelle || getNiveauEtudeLibelle(c.niveauEtudeId) }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ c.parcours?.titre || getParcoursTitre(c.parcoursId) || '-' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-right">
+              <div class="flex items-center justify-end gap-2">
+                <app-custom-button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="editerClasse(c)" text="Modifier" color="blue" [outlined]="true"></app-custom-button>
+                <app-custom-button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="supprimer(c.id)" text="Supprimer" color="primary" [outlined]="true"></app-custom-button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+    <div *ngIf="!loading && filteredClasses.length === 0" class="px-5 py-12 text-center">
+      <svg class="mx-auto h-12 w-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 4H4a2 2 0 00-2 2v4m0 0v8a2 2 0 002 2h16a2 2 0 002-2v-4m0 0V6a2 2 0 00-2-2h-4m-4 0v4m0 0h4m-4 0H8"/></svg>
+      <p class="mt-4 text-sm text-gray-500">Aucune classe</p>
+    </div>
+  </div>
+</div>

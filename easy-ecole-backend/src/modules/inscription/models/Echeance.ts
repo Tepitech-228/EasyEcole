@@ -1,10 +1,10 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { DossierEtudiant } from "./DossierEtudiant";
 
 export class Echeance extends Model<InferAttributes<Echeance>, InferCreationAttributes<Echeance>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare dossierEtudiantId: CreationOptional<ForeignKey<DossierEtudiant['id']>>
   declare type: 'inscription' | 'scolarite'
   declare numeroEcheance: number

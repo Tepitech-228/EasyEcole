@@ -11,6 +11,8 @@ export class RhRubriquePaie extends Model<InferAttributes<RhRubriquePaie>, Infer
   declare modeCalcul: CreationOptional<string>
   declare valeur: CreationOptional<number>
   declare imposable: CreationOptional<boolean>
+  declare posteId: CreationOptional<number>
+  declare categorieId: CreationOptional<number>
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
 
@@ -53,6 +55,8 @@ RhRubriquePaie.init({
     type: DataTypes.BOOLEAN,
     defaultValue: false
   },
+  posteId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
+  categorieId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
 }, {

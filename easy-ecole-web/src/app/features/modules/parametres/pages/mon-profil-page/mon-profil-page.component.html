@@ -24,7 +24,7 @@
             <div class="flex flex-col gap-y-5">
                 <div *ngIf="apprenant.dateNaissance" class="flex gap-x-5">
                     <app-custom-button (click)="!file ? choisirFichier() : modifierPhotoProfil()" [text]="!file ? 'Changer' : 'Enregistrer'" [outlined]="!file ? true : false"></app-custom-button>
-                    <app-custom-button *ngIf="file" (click)="supprimerFichier()" text="Annuler" color="red" [outlined]="true"></app-custom-button>
+                    <app-custom-button *ngIf="file" (click)="supprimerFichier()" text="Annuler" color="primary" [outlined]="true"></app-custom-button>
                 </div>
                 <p *ngIf="!apprenant.dateNaissance" class="text-xs leading-5 text-red-600">Veuillez renseigner vos informations <br> avant d'ajouter une photo</p>
                 <p class="text-xs leading-5 text-gray-600">Images: PNG, JPG, JEPG</p>
@@ -252,6 +252,11 @@
                             <app-form-message *ngIf="profilForm.get('informationsParents.professionPere')!.errors?.['required']"
                                 text="Veuillez préciser la profession de votre père"></app-form-message>
                         </div>
+                        <div class="form-floating">
+                          <input type="email" class="form-control" id="emailPere" formControlName="emailPere" placeholder="Email du père">
+                          <label for="emailPere">Email du père</label>
+                          <small class="text-muted">Cet email servira de identifiant de connexion pour l'espace parents</small>
+                        </div>
                     </div>
                 </div>
                 <div class="col-span-3">
@@ -275,6 +280,11 @@
                         <div *ngIf="profilForm.get('informationsParents.professionMere')!.invalid && (profilForm.get('informationsParents.professionMere')!.dirty || profilForm.get('informationsParents.professionMere')!.touched)">
                             <app-form-message *ngIf="profilForm.get('informationsParents.professionMere')!.errors?.['required']"
                                 text="Veuillez préciser la profession de votre mère"></app-form-message>
+                        </div>
+                        <div class="form-floating">
+                          <input type="email" class="form-control" id="emailMere" formControlName="emailMere" placeholder="Email de la mère">
+                          <label for="emailMere">Email de la mère</label>
+                          <small class="text-muted">Cet email servira de identifiant de connexion pour l'espace parents</small>
                         </div>
                     </div>
                 </div>
@@ -450,7 +460,7 @@
             <div class="flex flex-col gap-y-5">
                 <div *ngIf="enseignant.dateNaissance" class="flex gap-x-5">
                     <app-custom-button (click)="!file ? choisirFichier() : modifierPhotoProfilEnseignant()" [text]="!file ? 'Changer' : 'Enregistrer'" [outlined]="!file ? true : false"></app-custom-button>
-                    <app-custom-button *ngIf="file" (click)="supprimerFichier()" text="Annuler" color="red" [outlined]="true"></app-custom-button>
+                    <app-custom-button *ngIf="file" (click)="supprimerFichier()" text="Annuler" color="primary" [outlined]="true"></app-custom-button>
                 </div>
                 <p *ngIf="!enseignant.dateNaissance" class="text-xs leading-5 text-red-600">Veuillez renseigner vos informations <br> avant d'ajouter une photo</p>
                 <p class="text-xs leading-5 text-gray-600">Images: PNG, JPG, JEPG</p>

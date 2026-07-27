@@ -17,6 +17,10 @@ export class DossierEtudiantService {
     return this.httpClient.get<DossierEtudiant[]>(`${this.SERVICE_URL}`, { params })
   }
 
+  getAllPaginated(params?: any): Observable<{ data: DossierEtudiant[], pagination: { page: number, limit: number, total: number, totalPages: number } }> {
+    return this.httpClient.get<{ data: DossierEtudiant[], pagination: { page: number, limit: number, total: number, totalPages: number } }>(`${this.SERVICE_URL}`, { params })
+  }
+
   get(id: string): Observable<DossierEtudiant> {
     return this.httpClient.get<DossierEtudiant>(`${this.SERVICE_URL}/${id}`)
   }
@@ -27,6 +31,10 @@ export class DossierEtudiantService {
 
   generer(dossier: any): Observable<DossierEtudiant> {
     return this.httpClient.post<DossierEtudiant>(`${this.SERVICE_URL}/generer`, dossier)
+  }
+
+  getComplet(id: string): Observable<any> {
+    return this.httpClient.get(`${this.SERVICE_URL}/${id}/complet`)
   }
 
   getStatut(matricule: string): Observable<any> {

@@ -1,8 +1,11 @@
 import { Op } from "sequelize";
 import { Bulletin } from "../models/Bulletin";
 import { LigneBulletin } from "../models/LigneBulletin";
-import { UniteEnseignement } from "../../inscription/models/UniteEnseignement";
 import { Mcc } from "../../inscription/models/Mcc";
+import { Cours } from "../../inscription/models/Cours";
+import { CoursParticipant } from "../../inscription/models/CoursParticipant";
+import { RegleEvaluation } from "../../inscription/models/RegleEvaluation";
+import { CalculMoyenneUeService } from "./CalculMoyenneUeService";
 
 export interface SuggestionDecision {
   decision: string
@@ -14,14 +17,31 @@ export interface SuggestionDecision {
 
 export class MoteurCalculService {
 
+  static async getRegles(parcoursId: number, semestre: string): Promise<Map<string, string>> {
+    const regles = await RegleEvaluation.findAll({
+      where: { parcoursId, semestre, actif: true }
+    });
+    const map = new Map<string, string>();
+    for (const r of regles) {
+      map.set(r.type, r.valeur);
+    }
+    return map;
+  }
+
   static async suggererDecision(
     cursusApprenantId: number,
     classeId: number,
     parcoursId: number,
     semestre: string,
     anneeAcademiqueId: number,
-    bulletinId: number
+    bulletinId: number,
+    session: string = 'session1'
   ): Promise<SuggestionDecision> {
+    const regles = await MoteurCalculService.getRegles(parcoursId, semestre);
+    const noteMinimale = parseFloat(regles.get('note_minimale') || '10');
+    const seuilEliminatoire = parseFloat(regles.get('seuil_eliminatoire') || '7');
+    const compensationActive = regles.get('compensation') === 'true';
+
     const bulletin = await Bulletin.findByPk(bulletinId, {
       include: [{ association: Bulletin.associations.lignesBulletins }]
     });
@@ -30,67 +50,88 @@ export class MoteurCalculService {
       return { decision: 'ajourne', motif: 'Bulletin introuvable', ueEliminees: [], creditsValides: 0, totalCredits: 0 };
     }
 
-    const ues = await UniteEnseignement.findAll({
+    const coursParticipants = await CoursParticipant.findAll({
+      where: { cursusApprenantId },
+      attributes: ['coursId']
+    });
+    const coursInscritsIds = new Set(coursParticipants.map(cp => String(cp.coursId)));
+
+    const ues = await Cours.findAll({
       where: { parcoursId, semestre },
       include: [{
         model: Mcc,
         as: 'mccs',
-        where: { session: 'session1' },
-        required: false
+        where: { session },
+        required: false,
+        include: [{
+          model: Cours,
+          as: 'cours'
+        }]
       }]
     });
 
     const lignes = bulletin.lignesBulletins || [];
-    let sommeMoyennesPonderees = 0;
-    let sommeCoefficients = 0;
-    let totalCredits = 0;
-    let creditsValides = 0;
     const ueEliminees: SuggestionDecision['ueEliminees'] = [];
+    const ueMoyennes = CalculMoyenneUeService.calculerMoyennesUe(ues, lignes, coursInscritsIds, noteMinimale, seuilEliminatoire);
 
-    for (const ue of ues) {
-      const mccs = (ue as any).mccs || [];
-      let sommeUe = 0;
-      let sommeCoefUe = 0;
-
-      for (const mcc of mccs) {
-        const ligne = lignes.find((l: any) => String(l.coursId) === String(mcc.coursId));
-        const moyenne = ligne ? ligne.moyenne : null;
-        if (moyenne !== null) {
-          sommeUe += moyenne * mcc.coefficient;
-          sommeCoefUe += mcc.coefficient;
-          sommeMoyennesPonderees += moyenne * mcc.coefficient;
-          sommeCoefficients += mcc.coefficient;
-        }
-        if (mcc.estEliminatoire && mcc.seuilEliminatoire !== null && moyenne !== null && moyenne < mcc.seuilEliminatoire) {
-          ueEliminees.push({
-            ueCode: ue.code,
-            ueLibelle: ue.libelle,
-            moyenne,
-            seuil: mcc.seuilEliminatoire
-          });
+    for (const r of ueMoyennes) {
+      for (const d of r.details) {
+        if (d.mcc.estEliminatoire && d.moyenne !== null) {
+          const seuil = d.mcc.seuilEliminatoire !== null ? d.mcc.seuilEliminatoire : seuilEliminatoire;
+          if (d.moyenne < seuil) {
+            const ue = ues.find((u: any) => Number(u.id) === r.coursId);
+            ueEliminees.push({
+              ueCode: ue?.code || '',
+              ueLibelle: ue?.intitule || '',
+              moyenne: d.moyenne,
+              seuil
+            });
+          }
         }
       }
-
-      const moyenneUe = sommeCoefUe > 0 ? sommeUe / sommeCoefUe : 0;
-      const estValidee = moyenneUe >= 10 && !ueEliminees.some(e => e.ueCode === ue.code);
-      totalCredits += ue.creditEcts || 0;
-      if (estValidee) creditsValides += ue.creditEcts || 0;
     }
-
-    const moyenneGenerale = sommeCoefficients > 0 ? sommeMoyennesPonderees / sommeCoefficients : 0;
+    const ueResults: { ue: Cours; moyenneUe: number }[] = ueMoyennes
+      .map(r => ({ ue: ues.find((u: any) => Number(u.id) === r.coursId) as Cours, moyenneUe: r.moyenneUe }))
+      .filter(r => r.ue);
 
     if (ueEliminees.length > 0) {
-      return { decision: 'ajourne', motif: `UE éliminatoire(s) non validée(s)`, ueEliminees, creditsValides, totalCredits };
+      return { decision: 'ajourne', motif: `UE éliminatoire(s) non validée(s)`, ueEliminees, creditsValides: 0, totalCredits: 0 };
     }
-    if (moyenneGenerale >= 10 && creditsValides === totalCredits) {
-      return { decision: 'admis', motif: 'Moyenne générale >= 10 et tous les crédits validés', ueEliminees, creditsValides, totalCredits };
+
+    let sommeProduitECTS = 0;
+    let sommeECTS = 0;
+    for (const r of ueResults) {
+      sommeProduitECTS += r.moyenneUe * (r.ue.creditEcts || 0);
+      sommeECTS += r.ue.creditEcts || 0;
     }
-    if (moyenneGenerale >= 10 && creditsValides < totalCredits) {
-      return { decision: 'admis_avec_dette', motif: `Moyenne >= 10 mais ${totalCredits - creditsValides} crédits en dette`, ueEliminees, creditsValides, totalCredits };
+    const moyenneGenerale = sommeECTS > 0 ? sommeProduitECTS / sommeECTS : 0;
+
+    if (compensationActive && moyenneGenerale >= noteMinimale) {
+      const totalCredits = ueResults.reduce((s, r) => s + (r.ue.creditEcts || 0), 0);
+      return { decision: 'admis', motif: `Moyenne générale ${moyenneGenerale.toFixed(2)}/${noteMinimale}, compensation inter-UE appliquée`, ueEliminees, creditsValides: totalCredits, totalCredits };
     }
-    if (moyenneGenerale >= 8 && moyenneGenerale < 10) {
+
+    let creditsValides = 0;
+    let totalCredits = 0;
+    for (const r of ueResults) {
+      totalCredits += r.ue.creditEcts || 0;
+      if (r.moyenneUe >= noteMinimale) {
+        creditsValides += r.ue.creditEcts || 0;
+      }
+    }
+
+    if (creditsValides === totalCredits) {
+      return { decision: 'admis', motif: `Toutes les UE validées individuellement`, ueEliminees, creditsValides, totalCredits };
+    }
+
+    if (creditsValides > 0) {
+      return { decision: 'admis_avec_dette', motif: `Moyenne ${moyenneGenerale.toFixed(2)}/${noteMinimale}, ${totalCredits - creditsValides} crédits en dette`, ueEliminees, creditsValides, totalCredits };
+    }
+
+    if (moyenneGenerale >= 8) {
       return { decision: 'rattrapage', motif: `Moyenne ${moyenneGenerale.toFixed(2)}/20, session de rattrapage autorisée`, ueEliminees, creditsValides, totalCredits };
     }
+
     return { decision: 'ajourne', motif: `Moyenne ${moyenneGenerale.toFixed(2)}/20 insuffisante`, ueEliminees, creditsValides, totalCredits };
   }
 

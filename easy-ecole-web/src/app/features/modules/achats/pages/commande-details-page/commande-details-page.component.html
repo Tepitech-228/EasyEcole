@@ -2,23 +2,26 @@
     <app-header-title title="Détails de la commande" subtitle="Consulter les informations de la commande"></app-header-title>
 </div>
 
-<div class="bg-white rounded-lg shadow p-6">
-    <div class="grid grid-cols-2 gap-4 mb-6">
-        <div>
-            <label class="text-xs font-medium text-gray-500">Demande associée</label>
-            <p class="text-sm text-gray-800 mt-1">---</p>
+<app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+<div *ngIf="!loading && commande" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-semibold text-gray-900">Commande #{{ commande.id }}</h2>
+        <span class="px-3 py-1 rounded-full text-xs font-medium" [ngClass]="getStatutBadge(commande.statut)">{{ commande.statut }}</span>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-gray-50 rounded-lg p-4">
+            <span class="block text-xs font-medium text-gray-500 uppercase mb-1">Demande associée</span>
+            <span class="block text-sm font-medium text-gray-900">{{ commande.demandeId }}</span>
         </div>
-        <div>
-            <label class="text-xs font-medium text-gray-500">Fournisseur</label>
-            <p class="text-sm text-gray-800 mt-1">---</p>
+        <div class="bg-gray-50 rounded-lg p-4">
+            <span class="block text-xs font-medium text-gray-500 uppercase mb-1">Fournisseur</span>
+            <span class="block text-sm font-medium text-gray-900">{{ commande.fournisseur }}</span>
         </div>
-        <div>
-            <label class="text-xs font-medium text-gray-500">Date de commande</label>
-            <p class="text-sm text-gray-800 mt-1">---</p>
-        </div>
-        <div>
-            <label class="text-xs font-medium text-gray-500">Statut</label>
-            <p class="text-sm text-gray-800 mt-1">---</p>
+        <div class="bg-gray-50 rounded-lg p-4">
+            <span class="block text-xs font-medium text-gray-500 uppercase mb-1">Date de commande</span>
+            <span class="block text-sm font-medium text-gray-900">{{ commande.date | date:'dd/MM/yyyy' }}</span>
         </div>
     </div>
 
@@ -33,11 +36,19 @@
             </tr>
         </thead>
         <tbody>
-            <tr><td colspan="4" class="text-center py-4 text-sm text-gray-500">Aucune ligne</td></tr>
+            <tr *ngFor="let l of commande.lignes" class="border-b">
+                <td class="px-2 py-3 text-sm text-gray-900">{{ l.designation }}</td>
+                <td class="px-2 py-3 text-sm text-gray-700">{{ l.quantite }}</td>
+                <td class="px-2 py-3 text-sm text-gray-700">{{ l.prixUnitaire | currency:'XAF':'symbol':'1.0-0' }}</td>
+                <td class="px-2 py-3 text-sm text-right font-medium text-gray-900">{{ l.total | currency:'XAF':'symbol':'1.0-0' }}</td>
+            </tr>
+            <tr *ngIf="!commande.lignes?.length">
+                <td colspan="4" class="text-center py-4 text-sm text-gray-500">Aucune ligne</td>
+            </tr>
         </tbody>
     </table>
 
     <div class="flex justify-end gap-x-3">
-        <app-custom-button text="Retour" link="/achats/commandes"></app-custom-button>
+        <app-custom-button text="Retour" link="/achats/commandes" color="gray" [outlined]="true"></app-custom-button>
     </div>
 </div>

@@ -37,6 +37,7 @@ export class PlanningPersonnelPageComponent extends BaseComponentClass implement
     dateDebut: new FormControl(null, [Validators.required]),
     dateFin: new FormControl(null, [Validators.required]),
     description: new FormControl(null, []),
+    dateLimitePlanification: new FormControl(null, []),
   })
 
   constructor(

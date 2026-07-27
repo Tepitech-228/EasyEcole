@@ -7,4 +7,5 @@ export type RolesValueType = {
     isCabinetComptable: boolean
     isComiteOrientation: boolean
     isAdmin: boolean
+    isParent: boolean
 }

@@ -17,6 +17,15 @@ import { RhLigneBulletin } from "./RhLigneBulletin";
 import { RhPrestationEnseignant } from "./RhPrestationEnseignant";
 import { RhContratEnseignant } from "./RhContratEnseignant";
 import { RhPlanningPersonnel } from "./RhPlanningPersonnel";
+import { RhCategorieProfessionnelle } from "./RhCategorieProfessionnelle";
+import { RhGrilleSalariale } from "./RhGrilleSalariale";
+import { RhHeureSupplementaire } from "./RhHeureSupplementaire";
+import { RhPret } from "./RhPret";
+import { RhRemboursementPret } from "./RhRemboursementPret";
+import { RhPrestataire } from "./RhPrestataire";
+import { RhIndemnitePrestataire } from "./RhIndemnitePrestataire";
+import { RhDemandeConge } from "./RhDemandeConge";
+import { RhSoldeConge } from "./RhSoldeConge";
 
 // Departement - Poste
 RhDepartement.hasMany(RhPoste, { foreignKey: 'departementId', as: 'postes' })
@@ -93,3 +102,41 @@ RhContratEnseignant.belongsTo(RhEmploye, { as: 'employe', foreignKey: 'employeId
 // Employe - PlanningPersonnel
 RhEmploye.hasMany(RhPlanningPersonnel, { foreignKey: 'employeId', as: 'planningsPersonnel' })
 RhPlanningPersonnel.belongsTo(RhEmploye, { as: 'employe', foreignKey: 'employeId' })
+
+// CategorieProfessionnelle - GrilleSalariale
+RhCategorieProfessionnelle.hasMany(RhGrilleSalariale, { foreignKey: 'categorieId', as: 'grillesSalariales' })
+RhGrilleSalariale.belongsTo(RhCategorieProfessionnelle, { as: 'categorie', foreignKey: 'categorieId' })
+
+// RhRubriquePaie - Poste / Categorie
+RhRubriquePaie.belongsTo(RhPoste, { as: 'poste', foreignKey: 'posteId' })
+RhPoste.hasMany(RhRubriquePaie, { foreignKey: 'posteId', as: 'rubriquesPaie' })
+RhRubriquePaie.belongsTo(RhCategorieProfessionnelle, { as: 'categoriePro', foreignKey: 'categorieId' })
+RhCategorieProfessionnelle.hasMany(RhRubriquePaie, { foreignKey: 'categorieId', as: 'rubriquesPaie' })
+
+// Poste - GrilleSalariale
+RhPoste.hasMany(RhGrilleSalariale, { foreignKey: 'posteId', as: 'grillesSalariales' })
+RhGrilleSalariale.belongsTo(RhPoste, { as: 'poste', foreignKey: 'posteId' })
+
+// Employe - HeureSupplementaire
+RhEmploye.hasMany(RhHeureSupplementaire, { foreignKey: 'employeId', as: 'heuresSupplementaires' })
+RhHeureSupplementaire.belongsTo(RhEmploye, { as: 'employe', foreignKey: 'employeId' })
+
+// Employe - Pret
+RhEmploye.hasMany(RhPret, { foreignKey: 'employeId', as: 'prets' })
+RhPret.belongsTo(RhEmploye, { as: 'employe', foreignKey: 'employeId' })
+
+// Pret - RemboursementPret
+RhPret.hasMany(RhRemboursementPret, { foreignKey: 'pretId', as: 'remboursements' })
+RhRemboursementPret.belongsTo(RhPret, { as: 'pret', foreignKey: 'pretId' })
+
+// Prestataire - IndemnitePrestataire
+RhPrestataire.hasMany(RhIndemnitePrestataire, { foreignKey: 'prestataireId', as: 'indemnites' })
+RhIndemnitePrestataire.belongsTo(RhPrestataire, { as: 'prestataire', foreignKey: 'prestataireId' })
+
+// Employe - DemandeConge
+RhEmploye.hasMany(RhDemandeConge, { foreignKey: 'employeId', as: 'demandesConge' })
+RhDemandeConge.belongsTo(RhEmploye, { as: 'employe', foreignKey: 'employeId' })
+
+// Employe - SoldeConge
+RhEmploye.hasMany(RhSoldeConge, { foreignKey: 'employeId', as: 'soldesConge' })
+RhSoldeConge.belongsTo(RhEmploye, { as: 'employe', foreignKey: 'employeId' })

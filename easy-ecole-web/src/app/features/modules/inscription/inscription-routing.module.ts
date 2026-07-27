@@ -20,8 +20,19 @@ import { ComiteOrientationPageComponent } from './pages/comite-orientation-page/
 import { ComiteDetailsPageComponent } from './pages/comite-details-page/comite-details-page.component';
 import { ListeDossiersPageComponent } from './pages/liste-dossiers-page/liste-dossiers-page.component';
 import { ListeFraisParcoursPageComponent } from './pages/liste-frais-parcours-page/liste-frais-parcours-page.component';
+import { HierarchyPageComponent } from './pages/hierarchy/hierarchy-page.component';
+import { ListeEffectifsPageComponent } from './pages/liste-effectifs-page/liste-effectifs-page.component';
+import { SuiviUePageComponent } from './pages/suivi-ue-page/suivi-ue-page.component';
+import { ListeSallesDeClassePageComponent } from './pages/liste-salles-de-classe-page/liste-salles-de-classe-page.component';
+import { ListeClassesPageComponent } from './pages/liste-classes-page/liste-classes-page.component';
+import { OnboardingPageComponent } from './pages/onboarding-page/onboarding-page.component';
 
 const routes: Routes = [
+  {
+    path: 'onboarding',
+    component: OnboardingPageComponent,
+    pathMatch: 'full'
+  },
   {
     path: 'sessions',
     children: [
@@ -121,6 +132,12 @@ const routes: Routes = [
   },
 
   {
+    path: 'suivi-ue',
+    component: SuiviUePageComponent,
+    pathMatch: 'full'
+  },
+
+  {
     path: 'bordereaux',
     component: BordereauxPageComponent,
     pathMatch: 'full'
@@ -145,8 +162,32 @@ const routes: Routes = [
   },
 
   {
+    path: 'effectifs',
+    component: ListeEffectifsPageComponent,
+    pathMatch: 'full'
+  },
+
+  {
+    path: 'hierarchy',
+    component: HierarchyPageComponent,
+    pathMatch: 'full'
+  },
+
+  {
     path: 'echeances',
     component: GestionEcheancesPageComponent,
+    pathMatch: 'full'
+  },
+
+  {
+    path: 'salles-de-classe',
+    component: ListeSallesDeClassePageComponent,
+    pathMatch: 'full'
+  },
+
+  {
+    path: 'classes',
+    component: ListeClassesPageComponent,
     pathMatch: 'full'
   },
 

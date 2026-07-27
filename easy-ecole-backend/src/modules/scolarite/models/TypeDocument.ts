@@ -1,9 +1,9 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../ScolariteModule";
 
 export class TypeDocument extends Model<InferAttributes<TypeDocument>, InferCreationAttributes<TypeDocument>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare libelle: string
   declare frais: number
   declare format: CreationOptional<string>

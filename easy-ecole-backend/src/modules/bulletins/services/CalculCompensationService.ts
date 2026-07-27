@@ -1,7 +1,9 @@
 import { Mcc } from "../../inscription/models/Mcc";
-import { UniteEnseignement } from "../../inscription/models/UniteEnseignement";
+import { Cours } from "../../inscription/models/Cours";
 import { LigneBulletin } from "../models/LigneBulletin";
 import { Bulletin } from "../models/Bulletin";
+import { CoursParticipant } from "../../inscription/models/CoursParticipant";
+import { RegleEvaluation } from "../../inscription/models/RegleEvaluation";
 import { Op } from "sequelize";
 
 export interface ResultatCompensation {
@@ -12,6 +14,7 @@ export interface ResultatCompensation {
     moyenneUe: number
     estValidee: boolean
     estEliminee: boolean
+    compensee: boolean
     ecs: {
         coursId: number
         intitule: string
@@ -25,7 +28,18 @@ export interface ResultatCompensation {
 
 export class CalculCompensationService {
 
-    static async calculerCompensation(bulletinId: number): Promise<{
+    static async getRegles(parcoursId: number, semestre: string): Promise<Map<string, string>> {
+        const regles = await RegleEvaluation.findAll({
+            where: { parcoursId, semestre, actif: true }
+        });
+        const map = new Map<string, string>();
+        for (const r of regles) {
+            map.set(r.type, r.valeur);
+        }
+        return map;
+    }
+
+    static async calculerCompensation(bulletinId: number, session: string = 'session1'): Promise<{
         ues: ResultatCompensation[]
         moyenneGenerale: number
         creditsValides: number
@@ -36,22 +50,34 @@ export class CalculCompensationService {
         });
         if (!bulletin) throw new Error("Bulletin non trouvé");
 
-        const ues = await UniteEnseignement.findAll({
+        const regles = await CalculCompensationService.getRegles(Number(bulletin.parcoursId), bulletin.semestre);
+        const noteMinimale = parseFloat(regles.get('note_minimale') || '10');
+        const seuilEliminatoire = parseFloat(regles.get('seuil_eliminatoire') || '7');
+        const compensationActive = regles.get('compensation') === 'true';
+
+        const coursParticipants = await CoursParticipant.findAll({
+            where: { cursusApprenantId: bulletin.cursusApprenantId },
+            attributes: ['coursId']
+        });
+        const coursInscritsIds = new Set(coursParticipants.map(cp => String(cp.coursId)));
+
+        const ues = await Cours.findAll({
             where: { parcoursId: bulletin.parcoursId, semestre: bulletin.semestre },
             include: [{
                 model: Mcc,
                 as: 'mccs',
-                where: { session: 'session1' },
-                required: false
+                where: { session },
+                required: false,
+                include: [{
+                    model: Cours,
+                    as: 'cours'
+                }]
             }]
         });
 
         const lignes = bulletin.lignesBulletins || [];
-        const resultats: ResultatCompensation[] = [];
+        const ueEntries: { ue: Cours; moyenneUe: number; eliminee: boolean; ecs: ResultatCompensation['ecs'] }[] = [];
         let totalCredits = 0;
-        let creditsValides = 0;
-        let sommeCoefficients = 0;
-        let sommeMoyennesPonderees = 0;
 
         for (const ue of ues) {
             const mccs = (ue as any).mccs || [];
@@ -59,11 +85,17 @@ export class CalculCompensationService {
             let sommeNotesCoef = 0;
             let sommeCoef = 0;
             let ueEliminee = false;
+            let aDesCoursActifs = false;
 
             for (const mcc of mccs) {
+                const cours = (mcc as any).cours;
+                if (cours && !cours.estObligatoire && !coursInscritsIds.has(String(mcc.coursId))) {
+                    continue;
+                }
+                aDesCoursActifs = true;
                 const ligne = lignes.find(l => String(l.coursId) === String(mcc.coursId));
                 const moyenne = ligne ? ligne.moyenne : null;
-                const estValide = moyenne !== null && moyenne >= 10;
+                const estValide = moyenne !== null && moyenne >= noteMinimale;
 
                 ecs.push({
                     coursId: Number(mcc.coursId),
@@ -78,39 +110,55 @@ export class CalculCompensationService {
                 if (moyenne !== null) {
                     sommeNotesCoef += moyenne * mcc.coefficient;
                     sommeCoef += mcc.coefficient;
-                    sommeMoyennesPonderees += moyenne * mcc.coefficient;
-                    sommeCoefficients += mcc.coefficient;
                 }
 
-                // Vérification note éliminatoire
-                if (mcc.estEliminatoire && mcc.seuilEliminatoire !== null && moyenne !== null) {
-                    if (moyenne < mcc.seuilEliminatoire) {
-                        ueEliminee = true;
-                    }
+                const seuil = mcc.seuilEliminatoire !== null ? mcc.seuilEliminatoire : seuilEliminatoire;
+                if (mcc.estEliminatoire && moyenne !== null && moyenne < seuil) {
+                    ueEliminee = true;
                 }
             }
 
-            const moyenneUe = sommeCoef > 0 ? sommeNotesCoef / sommeCoef : 0;
-            const estValidee = !ueEliminee && moyenneUe >= 10;
-
-            if (estValidee) {
-                creditsValides += ue.creditEcts || 0;
+            if (aDesCoursActifs) {
+                const moyenneUe = sommeCoef > 0 ? sommeNotesCoef / sommeCoef : 0;
+                totalCredits += ue.creditEcts || ue.credit || 0;
+                ueEntries.push({ ue, moyenneUe, eliminee: ueEliminee, ecs });
             }
-            totalCredits += ue.creditEcts || 0;
-
-            resultats.push({
-                ueId: Number(ue.id),
-                ueCode: ue.code,
-                ueLibelle: ue.libelle,
-                creditEcts: ue.creditEcts || 0,
-                moyenneUe,
-                estValidee,
-                estEliminee: ueEliminee,
-                ecs
-            });
         }
 
-        const moyenneGenerale = sommeCoefficients > 0 ? sommeMoyennesPonderees / sommeCoefficients : 0;
+        let sommeProduitECTS = 0;
+        let sommeECTS = 0;
+        for (const e of ueEntries) {
+            sommeProduitECTS += e.moyenneUe * (e.ue.creditEcts || e.ue.credit || 0);
+            sommeECTS += e.ue.creditEcts || e.ue.credit || 0;
+        }
+        const moyenneGenerale = sommeECTS > 0 ? sommeProduitECTS / sommeECTS : 0;
+
+        const hasEliminee = ueEntries.some(e => e.eliminee);
+        const compensationAppliquee = compensationActive && !hasEliminee && moyenneGenerale >= noteMinimale;
+
+        let creditsValides = 0;
+        const resultats: ResultatCompensation[] = [];
+
+        for (const e of ueEntries) {
+            const compensee = compensationAppliquee && !e.eliminee && e.moyenneUe < noteMinimale;
+            const estValidee = e.eliminee ? false : (compensationAppliquee || e.moyenneUe >= noteMinimale);
+
+            if (estValidee) {
+                creditsValides += e.ue.creditEcts || 0;
+            }
+
+            resultats.push({
+                ueId: Number(e.ue.id),
+                ueCode: e.ue.code,
+                ueLibelle: e.ue.intitule,
+                creditEcts: e.ue.creditEcts || e.ue.credit || 0,
+                moyenneUe: e.moyenneUe,
+                estValidee,
+                estEliminee: e.eliminee,
+                compensee,
+                ecs: e.ecs
+            });
+        }
 
         return {
             ues: resultats,

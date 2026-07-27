@@ -1,4 +1,4 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { TypesEvaluation } from "../../../core/enums/TypesEvaluation";
 import { PeriodesEvaluation } from "../../../core/enums/PeriodesEvaluation";
@@ -8,7 +8,7 @@ import { NiveauEtude } from "./NiveauEtude";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 
 export class PrerequisParcours extends Model<InferAttributes<PrerequisParcours>, InferCreationAttributes<PrerequisParcours>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare noteRequise: number
   declare typeEvaluation: TypesEvaluation
   declare periodeEvaluation: PeriodesEvaluation

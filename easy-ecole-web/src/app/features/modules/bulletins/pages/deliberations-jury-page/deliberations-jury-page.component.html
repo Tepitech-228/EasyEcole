@@ -1,0 +1,244 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <app-header-title
+    title="Délibérations &amp; Jury"
+    subtitle="Gérez les sessions de délibération et les membres du jury">
+  </app-header-title>
+
+  <!-- Tabs -->
+  <div class="mt-6 border-b border-gray-200">
+    <nav class="flex gap-6">
+      <button (click)="setTab('deliberations')"
+              class="pb-3 text-sm font-semibold transition-colors border-b-2 -mb-px cursor-pointer"
+              [class.text-blue-600]="activeTab === 'deliberations'"
+              [class.border-blue-600]="activeTab === 'deliberations'"
+              [class.text-gray-500]="activeTab !== 'deliberations'"
+              [class.border-transparent]="activeTab !== 'deliberations'"
+              [class.hover:text-gray-700]="activeTab !== 'deliberations'">
+        Délibérations
+      </button>
+      <button (click)="setTab('jury')"
+              class="pb-3 text-sm font-semibold transition-colors border-b-2 -mb-px cursor-pointer"
+              [class.text-blue-600]="activeTab === 'jury'"
+              [class.border-blue-600]="activeTab === 'jury'"
+              [class.text-gray-500]="activeTab !== 'jury'"
+              [class.border-transparent]="activeTab !== 'jury'"
+              [class.hover:text-gray-700]="activeTab !== 'jury'">
+        Membres du jury
+      </button>
+    </nav>
+  </div>
+
+  <!-- Tab: Délibérations -->
+  <div *ngIf="activeTab === 'deliberations'">
+    <div class="mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+      <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total</p>
+        <p class="mt-1 text-2xl font-bold text-gray-900">{{ totalItems }}</p>
+      </div>
+      <div class="bg-white rounded-2xl border border-amber-100 p-5 shadow-sm">
+        <p class="text-xs font-medium text-amber-600 uppercase tracking-wider">Planifiées</p>
+        <p class="mt-1 text-2xl font-bold text-amber-700">{{ nbPlanifiees }}</p>
+      </div>
+      <div class="bg-white rounded-2xl border border-blue-100 p-5 shadow-sm">
+        <p class="text-xs font-medium text-blue-600 uppercase tracking-wider">En cours</p>
+        <p class="mt-1 text-2xl font-bold text-blue-700">{{ nbEnCours }}</p>
+      </div>
+      <div class="bg-white rounded-2xl border border-green-100 p-5 shadow-sm">
+        <p class="text-xs font-medium text-green-600 uppercase tracking-wider">Clôturées</p>
+        <p class="mt-1 text-2xl font-bold text-green-700">{{ nbCloturees }}</p>
+      </div>
+      <div class="bg-white rounded-2xl border border-purple-100 p-5 shadow-sm">
+        <p class="text-xs font-medium text-purple-600 uppercase tracking-wider">Publiées</p>
+        <p class="mt-1 text-2xl font-bold text-purple-700">{{ nbPubliees }}</p>
+      </div>
+      <div class="bg-white rounded-2xl border border-red-100 p-5 shadow-sm">
+        <p class="text-xs font-medium text-red-600 uppercase tracking-wider">Contestées</p>
+        <p class="mt-1 text-2xl font-bold text-red-700">{{ nbContestees }}</p>
+      </div>
+    </div>
+
+    <app-filters-annee-niveau-parcours
+      [annees]="annees"
+      [niveaux]="niveaux"
+      [parcoursList]="parcoursList"
+      [sessions]="sessions"
+      [loading]="!dataLoaded"
+      [showResultCount]="true"
+      [resultCount]="totalItems"
+      [resultLabel]="'délibération(s)'"
+      (filterChange)="onFilterChange($event)">
+    </app-filters-annee-niveau-parcours>
+
+    <div class="bg-white border border-gray-200 rounded-lg p-3 mb-4 flex items-center gap-4 flex-wrap">
+      <div class="flex items-center gap-2">
+        <label class="text-xs font-medium text-gray-500">Période</label>
+        <select [(ngModel)]="filterPeriode" (change)="chargerDeliberations()" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+          <option value="">Toutes périodes</option>
+          <option value="semestre1">Semestre 1</option>
+          <option value="semestre2">Semestre 2</option>
+          <option value="semestre3">Semestre 3</option>
+          <option value="semestre4">Semestre 4</option>
+          <option value="semestre5">Semestre 5</option>
+          <option value="semestre6">Semestre 6</option>
+        </select>
+      </div>
+      <div class="flex items-center gap-2">
+        <label class="text-xs font-medium text-gray-500">Statut</label>
+        <select [(ngModel)]="filterStatut" (change)="chargerDeliberations()" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+          <option value="">Tous statuts</option>
+          <option value="planifiee">Planifiée</option>
+          <option value="en_cours">En cours</option>
+          <option value="cloturee">Clôturée</option>
+          <option value="publiee">Publiée</option>
+          <option value="contestee">Contestée</option>
+        </select>
+      </div>
+      <button (click)="resetFiltres()" class="text-sm px-3 py-2 text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200">
+        Réinitialiser
+      </button>
+      <button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="ouvrirFormulaire()" class="ml-auto inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-sm">
+        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Planifier
+      </button>
+    </div>
+
+    <div *ngIf="showForm" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">Nouvelle délibération</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Libellé</label>
+          <input [(ngModel)]="formData.libelle" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Ex: Délibération S1 - 6ème A" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Classe</label>
+          <select [(ngModel)]="formData.classeId" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+            <option value="">Sélectionner</option>
+            <option *ngFor="let c of classes" [value]="c.id">{{ c.libelle }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Année scolaire</label>
+          <select [(ngModel)]="formData.anneeAcademiqueId" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+            <option value="">Sélectionner</option>
+            <option *ngFor="let a of annees" [value]="a.id">{{ a.libelle }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Période</label>
+          <select [(ngModel)]="formData.periode" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+            <option value="semestre1">Semestre 1</option>
+            <option value="semestre2">Semestre 2</option>
+            <option value="semestre3">Semestre 3</option>
+            <option value="semestre4">Semestre 4</option>
+            <option value="semestre5">Semestre 5</option>
+            <option value="semestre6">Semestre 6</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Session</label>
+          <select [(ngModel)]="formData.sessionType" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+            <option value="initiale">Initiale</option>
+            <option value="rattrapage">Rattrapage</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Date</label>
+          <input [(ngModel)]="formData.date" type="date" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 mt-4">
+        <button (click)="fermerFormulaire()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Annuler</button>
+        <button (click)="creerDeliberation()" class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">Créer</button>
+      </div>
+    </div>
+
+    <app-batch-toolbar
+      *ngIf="selectedIds.length > 0"
+      [selectedCount]="selectedIds.length"
+      [actions]="batchActions"
+      [loading]="batchLoading"
+      (action)="onBatchAction({ action: $event, ids: selectedIds })"
+      (deselectAll)="selectedIds = []">
+    </app-batch-toolbar>
+
+    <app-dossier-view
+      [nodes]="treeNodes"
+      [columns]="itemColumns"
+      [batchActions]="batchActions"
+      [loading]="loading"
+      [totalItems]="totalItems"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      [pageSize]="pageSize"
+      [renderItemActions]="true"
+      (selectionChange)="onSelectionChange($event)"
+      (batchAction)="onBatchAction($event)"
+      (pageChange)="onPageChange($event)"
+      (itemAction)="onItemAction($event)">
+    </app-dossier-view>
+  </div>
+
+  <!-- Tab: Jury -->
+  <div *ngIf="activeTab === 'jury'" class="mt-8">
+    <div class="flex items-center justify-between">
+      <p class="text-sm text-gray-500">{{ juryItems.length }} membre(s)</p>
+      <a routerLink="/bulletins/jury/nouveau"
+         class="inline-flex items-center px-4 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+        Nouveau membre
+      </a>
+    </div>
+
+    <div class="mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-100">
+          <thead>
+            <tr class="bg-gray-50/50">
+              <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Délibération</th>
+              <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Membre</th>
+              <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Rôle</th>
+              <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Présence</th>
+              <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+            <tr *ngFor="let item of juryItems; trackBy: trackByFn" class="hover:bg-gray-50/50 transition-colors">
+              <td class="px-5 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ item.deliberation?.libelle || 'Délibération #' + item.deliberationId }}</td>
+              <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ item.utilisateur?.nom || 'Utilisateur #' + item.utilisateurId }}</td>
+              <td class="px-5 py-4 whitespace-nowrap text-center">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" [ngClass]="getRoleClass(item.role)">
+                  {{ getRoleLabel(item.role) }}
+                </span>
+              </td>
+              <td class="px-5 py-4 whitespace-nowrap text-center">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                      [ngClass]="item.presence ? 'bg-green-50 text-green-700 ring-1 ring-green-200' : 'bg-red-50 text-red-700 ring-1 ring-red-200'">
+                  <span class="w-1.5 h-1.5 rounded-full mr-1.5" [ngClass]="item.presence ? 'bg-green-500' : 'bg-red-500'"></span>
+                  {{ item.presence ? 'Présent' : 'Absent' }}
+                </span>
+              </td>
+              <td class="px-5 py-4 whitespace-nowrap text-right">
+                <div class="flex items-center justify-end gap-2">
+                  <a [routerLink]="['/bulletins/jury', item.id]"
+                     class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                    Modifier
+                  </a>
+                  <button (click)="supprimerJury(item.id)"
+                          class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors border-0 cursor-pointer">
+                    Supprimer
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <app-loading-spinner *ngIf="juryLoading"></app-loading-spinner>
+      <div *ngIf="!juryLoading && juryItems.length === 0" class="px-5 py-12 text-center">
+        <svg class="mx-auto h-12 w-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/></svg>
+        <p class="mt-4 text-sm text-gray-500">Aucun membre du jury trouvé</p>
+        <a routerLink="/bulletins/jury/nouveau" class="mt-2 inline-block text-sm text-blue-600 hover:text-blue-700 font-medium">Ajouter un membre</a>
+      </div>
+    </div>
+  </div>
+</div>

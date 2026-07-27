@@ -1,31 +1,54 @@
 <app-header-title title="Candidatures"></app-header-title>
 
-<div class="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
-  <div class="p-4 border-b border-gray-100 flex items-center justify-between">
-    <p class="text-sm text-gray-500">Suivez les candidatures reçues pour chaque offre.</p>
-    <select class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+<div class="mb-6 flex items-center justify-between">
+  <div class="flex items-center gap-3">
+    <div class="relative">
+      <input type="text" placeholder="Rechercher une candidature..." class="w-64 rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm pl-10">
+      <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+    </div>
+    <select class="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
       <option value="">Tous les statuts</option>
       <option value="soumise">Soumise</option>
-      <option value="étudiée">Étudiée</option>
+      <option value="etudiee">Étudiée</option>
       <option value="retenue">Retenue</option>
-      <option value="rejetée">Rejetée</option>
+      <option value="rejetee">Rejetée</option>
     </select>
   </div>
+  <button class="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm">
+    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+    Nouvelle candidature
+  </button>
+</div>
+
+<app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+<div *ngIf="!loading" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
   <table class="min-w-full divide-y divide-gray-200">
     <thead class="bg-gray-50">
       <tr>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Candidat</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Offre</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
-        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Candidat</th>
+        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Offre</th>
+        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Date</th>
+        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Statut</th>
+        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Actions</th>
       </tr>
     </thead>
     <tbody class="bg-white divide-y divide-gray-200">
-      <tr class="hover:bg-gray-50">
-        <td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500">
-          Aucune candidature trouvée
+      <tr *ngFor="let c of candidatures" class="hover:bg-gray-50">
+        <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ c.candidat }}</td>
+        <td class="px-6 py-4 text-sm text-gray-700">{{ c.offre }}</td>
+        <td class="px-6 py-4 text-sm text-gray-700">{{ c.date | date:'dd/MM/yyyy' }}</td>
+        <td class="px-6 py-4">
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-medium" [ngClass]="getStatutBadge(c.statut)">{{ c.statut }}</span>
         </td>
+        <td class="px-6 py-4 text-right text-sm">
+          <button class="text-indigo-600 hover:text-indigo-900 font-medium mr-3">Détails</button>
+          <button class="text-emerald-600 hover:text-emerald-900 font-medium mr-3">Valider</button>
+          <button class="text-red-600 hover:text-red-900 font-medium">Rejeter</button>
+        </td>
+      </tr>
+      <tr *ngIf="candidatures.length === 0">
+        <td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500">Aucune candidature trouvée</td>
       </tr>
     </tbody>
   </table>

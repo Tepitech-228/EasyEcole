@@ -1,0 +1,5002 @@
+[
+  {
+    "code": "INF",
+    "ues": [
+      {
+        "code": "INF-L1-01",
+        "intitule": "Algorithmique et Structures de Données I",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L1-02",
+        "intitule": "Introduction à la Programmation (langage C)",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L1-03",
+        "intitule": "Mathématiques pour l'Informatique I (Algèbre)",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L1-04",
+        "intitule": "Architecture des Ordinateurs",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L1-05",
+        "intitule": "Anglais I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L1-06",
+        "intitule": "Méthodologie du Travail Universitaire",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L2-01",
+        "intitule": "Algorithmique et Structures de Données II",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L2-02",
+        "intitule": "Programmation Orientée Objet (Java)",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L2-03",
+        "intitule": "Mathématiques pour l'Informatique II (Analyse)",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L2-04",
+        "intitule": "Systèmes d'Exploitation I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L2-05",
+        "intitule": "Anglais II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L2-06",
+        "intitule": "Communication Écrite et Orale",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L3-01",
+        "intitule": "Bases de Données I (Modèle Relationnel)",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L3-02",
+        "intitule": "Programmation Web I (HTML/CSS/JS)",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L3-03",
+        "intitule": "Réseaux Informatiques I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L3-04",
+        "intitule": "Probabilités et Statistiques",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L3-05",
+        "intitule": "Anglais Technique I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L3-06",
+        "intitule": "Droit de l'Informatique et des Libertés",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L4-01",
+        "intitule": "Bases de Données II (SQL Avancé)",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L4-02",
+        "intitule": "Programmation Web II (PHP/Frameworks)",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L4-03",
+        "intitule": "Réseaux Informatiques II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L4-04",
+        "intitule": "Systèmes d'Exploitation II (Linux/Unix)",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L4-05",
+        "intitule": "Structures de Données Avancées",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L4-06",
+        "intitule": "Anglais Technique II",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L5-01",
+        "intitule": "Génie Logiciel et UML",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L5-02",
+        "intitule": "Programmation Orientée Objet Avancée (C++)",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L5-03",
+        "intitule": "Administration des Systèmes et Réseaux",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L5-04",
+        "intitule": "Sécurité Informatique I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L5-05",
+        "intitule": "Intelligence Artificielle - Introduction",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L5-06",
+        "intitule": "Entrepreneuriat et Création d'Entreprise",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L6-01",
+        "intitule": "Développement Mobile",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L6-02",
+        "intitule": "Cloud Computing - Introduction",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L6-03",
+        "intitule": "Gestion de Projets Informatiques",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L6-04",
+        "intitule": "Ateliers de Pré-professionnalisation",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-L6-05",
+        "intitule": "Stage et Mémoire de Fin de Licence",
+        "volume": 100,
+        "credits": 10,
+        "coef": 10,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "INF-M1-01",
+        "intitule": "Conception Orientée Objet Avancée",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "INF-M1-02",
+        "intitule": "Architecture des Systèmes Distribués",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "INF-M1-03",
+        "intitule": "Bases de Données Avancées (NoSQL/Big Data)",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "INF-M1-04",
+        "intitule": "Génie Logiciel Avancé (Méthodes Agiles)",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "INF-M1-05",
+        "intitule": "Anglais Scientifique",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "INF-M1-06",
+        "intitule": "Statistiques et Data Mining",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "INF-M2-01",
+        "intitule": "Intelligence Artificielle et Apprentissage Automatique",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "INF-M2-02",
+        "intitule": "Sécurité des Systèmes d'Information",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "INF-M2-03",
+        "intitule": "Développement d'Applications Mobiles Avancé",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "INF-M2-04",
+        "intitule": "Cloud Computing et Virtualisation",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "INF-M2-05",
+        "intitule": "Gestion de Projets Informatiques Avancée",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "INF-M2-06",
+        "intitule": "Séminaire de Recherche I",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "INF-M3-01",
+        "intitule": "Big Data et Data Science",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "INF-M3-02",
+        "intitule": "Architecture Orientée Services et Microservices",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "INF-M3-03",
+        "intitule": "Audit et Qualité Logicielle",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "INF-M3-04",
+        "intitule": "Réseaux et Sécurité Avancés",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "INF-M3-05",
+        "intitule": "Méthodologie de la Recherche",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "INF-M3-06",
+        "intitule": "Séminaire de Recherche II",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "INF-M4-01",
+        "intitule": "Stage Professionnel",
+        "volume": 100,
+        "credits": 10,
+        "coef": 10,
+        "semestre": 4,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "INF-M4-02",
+        "intitule": "Mémoire de Fin d'Études",
+        "volume": 200,
+        "credits": 20,
+        "coef": 20,
+        "semestre": 4,
+        "cycle": "MASTER"
+      }
+    ]
+  },
+  {
+    "code": "GCI",
+    "ues": [
+      {
+        "code": "GCI-L1-01",
+        "intitule": "Mathématiques pour l'Ingénieur I",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L1-02",
+        "intitule": "Physique Générale (Mécanique)",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L1-03",
+        "intitule": "Dessin Technique et DAO",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L1-04",
+        "intitule": "Matériaux de Construction I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L1-05",
+        "intitule": "Anglais I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L1-06",
+        "intitule": "Méthodologie du Travail Universitaire",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L2-01",
+        "intitule": "Mathématiques pour l'Ingénieur II",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L2-02",
+        "intitule": "Résistance des Matériaux I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L2-03",
+        "intitule": "Topographie I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L2-04",
+        "intitule": "Matériaux de Construction II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L2-05",
+        "intitule": "Anglais II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L2-06",
+        "intitule": "Informatique Appliquée au Génie Civil",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L3-01",
+        "intitule": "Mécanique des Sols I",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L3-02",
+        "intitule": "Résistance des Matériaux II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L3-03",
+        "intitule": "Béton Armé I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L3-04",
+        "intitule": "Topographie II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L3-05",
+        "intitule": "Hydraulique Générale",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L3-06",
+        "intitule": "Anglais Technique I",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L4-01",
+        "intitule": "Mécanique des Sols II",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L4-02",
+        "intitule": "Béton Armé II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L4-03",
+        "intitule": "Construction Métallique I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L4-04",
+        "intitule": "Hydraulique Urbaine",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L4-05",
+        "intitule": "Géotechnique Routière",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L4-06",
+        "intitule": "Anglais Technique II",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L5-01",
+        "intitule": "Ouvrages d'Art I",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L5-02",
+        "intitule": "Construction Métallique II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L5-03",
+        "intitule": "Organisation de Chantier",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L5-04",
+        "intitule": "Étude de Prix et Devis",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L5-05",
+        "intitule": "Bâtiment - Techniques de Construction",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L5-06",
+        "intitule": "Entrepreneuriat et Création d'Entreprise",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L6-01",
+        "intitule": "Ouvrages d'Art II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L6-02",
+        "intitule": "Gestion et Planification de Projets (Gantt/PERT)",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L6-03",
+        "intitule": "Réglementation et Sécurité des Chantiers",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L6-04",
+        "intitule": "Ateliers de Pré-professionnalisation",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-L6-05",
+        "intitule": "Stage et Mémoire de Fin de Licence",
+        "volume": 100,
+        "credits": 10,
+        "coef": 10,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GCI-M1-01",
+        "intitule": "Calcul des Structures Avancé",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GCI-M1-02",
+        "intitule": "Béton Précontraint",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GCI-M1-03",
+        "intitule": "Dynamique des Structures",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GCI-M1-04",
+        "intitule": "Géotechnique Avancée",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GCI-M1-05",
+        "intitule": "Anglais Scientifique",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GCI-M1-06",
+        "intitule": "Modélisation Numérique (Éléments Finis)",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GCI-M2-01",
+        "intitule": "Ouvrages d'Art Avancés",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GCI-M2-02",
+        "intitule": "Pathologie et Réhabilitation des Ouvrages",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GCI-M2-03",
+        "intitule": "Génie Parasismique",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GCI-M2-04",
+        "intitule": "Gestion de Projets de Construction",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GCI-M2-05",
+        "intitule": "Économie de la Construction",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GCI-M2-06",
+        "intitule": "Séminaire de Recherche I",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GCI-M3-01",
+        "intitule": "Grands Travaux et Infrastructures",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GCI-M3-02",
+        "intitule": "BIM (Building Information Modeling)",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GCI-M3-03",
+        "intitule": "Réglementation et Normes Internationales",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GCI-M3-04",
+        "intitule": "Environnement et Développement Durable",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GCI-M3-05",
+        "intitule": "Méthodologie de la Recherche",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GCI-M3-06",
+        "intitule": "Séminaire de Recherche II",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GCI-M4-01",
+        "intitule": "Stage Professionnel",
+        "volume": 100,
+        "credits": 10,
+        "coef": 10,
+        "semestre": 4,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GCI-M4-02",
+        "intitule": "Mémoire de Fin d'Études",
+        "volume": 200,
+        "credits": 20,
+        "coef": 20,
+        "semestre": 4,
+        "cycle": "MASTER"
+      }
+    ]
+  },
+  {
+    "code": "GEE",
+    "ues": [
+      {
+        "code": "GEE-L1-01",
+        "intitule": "Mathématiques pour l'Ingénieur I",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L1-02",
+        "intitule": "Physique Générale (Électricité)",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L1-03",
+        "intitule": "Électrocinétique",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L1-04",
+        "intitule": "Dessin Technique et DAO",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L1-05",
+        "intitule": "Anglais I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L1-06",
+        "intitule": "Méthodologie du Travail Universitaire",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L2-01",
+        "intitule": "Mathématiques pour l'Ingénieur II",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L2-02",
+        "intitule": "Électronique Analogique I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L2-03",
+        "intitule": "Électromagnétisme",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L2-04",
+        "intitule": "Informatique Appliquée",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L2-05",
+        "intitule": "Anglais II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L2-06",
+        "intitule": "Électrotechnique I",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L3-01",
+        "intitule": "Électronique Analogique II",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L3-02",
+        "intitule": "Électronique Numérique I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L3-03",
+        "intitule": "Électrotechnique II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L3-04",
+        "intitule": "Traitement du Signal I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L3-05",
+        "intitule": "Mesures Électriques",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L3-06",
+        "intitule": "Anglais Technique I",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L4-01",
+        "intitule": "Électronique Numérique II",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L4-02",
+        "intitule": "Machines Électriques",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L4-03",
+        "intitule": "Automatisme et Systèmes Logiques",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L4-04",
+        "intitule": "Traitement du Signal II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L4-05",
+        "intitule": "Systèmes Asservis I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L4-06",
+        "intitule": "Anglais Technique II",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L5-01",
+        "intitule": "Microprocesseurs et Microcontrôleurs",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L5-02",
+        "intitule": "Systèmes Asservis II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L5-03",
+        "intitule": "Énergies Renouvelables",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L5-04",
+        "intitule": "Réseaux Électriques",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L5-05",
+        "intitule": "Électronique de Puissance",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L5-06",
+        "intitule": "Entrepreneuriat et Création d'Entreprise",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L6-01",
+        "intitule": "Automatismes Industriels et API",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L6-02",
+        "intitule": "Systèmes Embarqués",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L6-03",
+        "intitule": "Instrumentation Industrielle",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L6-04",
+        "intitule": "Ateliers de Pré-professionnalisation",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-L6-05",
+        "intitule": "Stage et Mémoire de Fin de Licence",
+        "volume": 100,
+        "credits": 10,
+        "coef": 10,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GEE-M1-01",
+        "intitule": "Commande des Systèmes Électriques",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GEE-M1-02",
+        "intitule": "Électronique de Puissance Avancée",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GEE-M1-03",
+        "intitule": "Réseaux Électriques Intelligents (Smart Grids)",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GEE-M1-04",
+        "intitule": "Automatisme Avancé et Supervision",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GEE-M1-05",
+        "intitule": "Anglais Scientifique",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GEE-M1-06",
+        "intitule": "Modélisation et Simulation",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GEE-M2-01",
+        "intitule": "Énergies Renouvelables et Efficacité Énergétique",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GEE-M2-02",
+        "intitule": "Robotique Industrielle",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GEE-M2-03",
+        "intitule": "Systèmes Embarqués Avancés",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GEE-M2-04",
+        "intitule": "Maintenance Industrielle",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GEE-M2-05",
+        "intitule": "Gestion de Projets Techniques",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GEE-M2-06",
+        "intitule": "Séminaire de Recherche I",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GEE-M3-01",
+        "intitule": "Intelligence Artificielle Appliquée à l'Industrie",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GEE-M3-02",
+        "intitule": "Qualité et Fiabilité des Systèmes",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GEE-M3-03",
+        "intitule": "Normes et Sécurité Électrique",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GEE-M3-04",
+        "intitule": "Environnement et Développement Durable",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GEE-M3-05",
+        "intitule": "Méthodologie de la Recherche",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GEE-M3-06",
+        "intitule": "Séminaire de Recherche II",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GEE-M4-01",
+        "intitule": "Stage Professionnel",
+        "volume": 100,
+        "credits": 10,
+        "coef": 10,
+        "semestre": 4,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GEE-M4-02",
+        "intitule": "Mémoire de Fin d'Études",
+        "volume": 200,
+        "credits": 20,
+        "coef": 20,
+        "semestre": 4,
+        "cycle": "MASTER"
+      }
+    ]
+  },
+  {
+    "code": "GES",
+    "ues": [
+      {
+        "code": "GES-L1-01",
+        "intitule": "Introduction à la Gestion",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L1-02",
+        "intitule": "Microéconomie I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L1-03",
+        "intitule": "Comptabilité Générale I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L1-04",
+        "intitule": "Mathématiques pour la Gestion I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L1-05",
+        "intitule": "Anglais I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L1-06",
+        "intitule": "Méthodologie du Travail Universitaire",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L2-01",
+        "intitule": "Management des Organisations",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L2-02",
+        "intitule": "Microéconomie II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L2-03",
+        "intitule": "Comptabilité Générale II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L2-04",
+        "intitule": "Mathématiques pour la Gestion II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L2-05",
+        "intitule": "Anglais II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L2-06",
+        "intitule": "Informatique de Gestion",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L3-01",
+        "intitule": "Gestion des Ressources Humaines",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L3-02",
+        "intitule": "Macroéconomie I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L3-03",
+        "intitule": "Comptabilité Analytique",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L3-04",
+        "intitule": "Statistiques Appliquées à la Gestion",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L3-05",
+        "intitule": "Droit des Affaires I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L3-06",
+        "intitule": "Anglais Technique I",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L4-01",
+        "intitule": "Marketing Fondamental",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L4-02",
+        "intitule": "Macroéconomie II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L4-03",
+        "intitule": "Gestion Financière I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L4-04",
+        "intitule": "Fiscalité des Entreprises",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L4-05",
+        "intitule": "Droit des Affaires II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L4-06",
+        "intitule": "Anglais Technique II",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L5-01",
+        "intitule": "Management Stratégique",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L5-02",
+        "intitule": "Gestion Financière II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L5-03",
+        "intitule": "Contrôle de Gestion",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L5-04",
+        "intitule": "Gestion de la Production",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L5-05",
+        "intitule": "Techniques Quantitatives de Gestion",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L5-06",
+        "intitule": "Entrepreneuriat et Création d'Entreprise",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L6-01",
+        "intitule": "Gestion de Projets",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L6-02",
+        "intitule": "Système d'Information de Gestion",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L6-03",
+        "intitule": "Éthique et Responsabilité Sociétale des Entreprises",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L6-04",
+        "intitule": "Ateliers de Pré-professionnalisation",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-L6-05",
+        "intitule": "Stage et Mémoire de Fin de Licence",
+        "volume": 100,
+        "credits": 10,
+        "coef": 10,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "GES-M1-01",
+        "intitule": "Management Stratégique Avancé",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GES-M1-02",
+        "intitule": "Gestion Financière Avancée",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GES-M1-03",
+        "intitule": "Management de la Qualité",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GES-M1-04",
+        "intitule": "Négociation et Gestion des Conflits",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GES-M1-05",
+        "intitule": "Anglais des Affaires",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GES-M1-06",
+        "intitule": "Méthodes Quantitatives de Gestion",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GES-M2-01",
+        "intitule": "Management de l'Innovation",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GES-M2-02",
+        "intitule": "Gestion des Ressources Humaines Avancée",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GES-M2-03",
+        "intitule": "Audit et Contrôle Interne",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GES-M2-04",
+        "intitule": "Management Interculturel",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GES-M2-05",
+        "intitule": "Gestion de Projets Avancée",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GES-M2-06",
+        "intitule": "Séminaire de Recherche I",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GES-M3-01",
+        "intitule": "Gouvernance d'Entreprise",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GES-M3-02",
+        "intitule": "Business Intelligence et Aide à la Décision",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GES-M3-03",
+        "intitule": "Management du Changement",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GES-M3-04",
+        "intitule": "Développement Durable et RSE Avancée",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GES-M3-05",
+        "intitule": "Méthodologie de la Recherche",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GES-M3-06",
+        "intitule": "Séminaire de Recherche II",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GES-M4-01",
+        "intitule": "Stage Professionnel",
+        "volume": 100,
+        "credits": 10,
+        "coef": 10,
+        "semestre": 4,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "GES-M4-02",
+        "intitule": "Mémoire de Fin d'Études",
+        "volume": 200,
+        "credits": 20,
+        "coef": 20,
+        "semestre": 4,
+        "cycle": "MASTER"
+      }
+    ]
+  },
+  {
+    "code": "CPT",
+    "ues": [
+      {
+        "code": "CPT-L1-01",
+        "intitule": "Introduction à la Comptabilité",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L1-02",
+        "intitule": "Microéconomie I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L1-03",
+        "intitule": "Mathématiques Financières I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L1-04",
+        "intitule": "Droit Civil",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L1-05",
+        "intitule": "Anglais I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L1-06",
+        "intitule": "Méthodologie du Travail Universitaire",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L2-01",
+        "intitule": "Comptabilité Générale Approfondie",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L2-02",
+        "intitule": "Microéconomie II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L2-03",
+        "intitule": "Mathématiques Financières II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L2-04",
+        "intitule": "Droit des Sociétés",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L2-05",
+        "intitule": "Anglais II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L2-06",
+        "intitule": "Informatique de Gestion",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L3-01",
+        "intitule": "Comptabilité des Sociétés I",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L3-02",
+        "intitule": "Macroéconomie I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L3-03",
+        "intitule": "Statistiques Appliquées",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L3-04",
+        "intitule": "Droit Fiscal I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L3-05",
+        "intitule": "Analyse Financière I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L3-06",
+        "intitule": "Anglais Technique I",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L4-01",
+        "intitule": "Comptabilité des Sociétés II",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L4-02",
+        "intitule": "Macroéconomie II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L4-03",
+        "intitule": "Fiscalité d'Entreprise",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L4-04",
+        "intitule": "Droit Fiscal II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L4-05",
+        "intitule": "Analyse Financière II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L4-06",
+        "intitule": "Anglais Technique II",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L5-01",
+        "intitule": "Comptabilité Approfondie (Normes IFRS)",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L5-02",
+        "intitule": "Contrôle de Gestion I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L5-03",
+        "intitule": "Audit Comptable et Financier I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L5-04",
+        "intitule": "Trésorerie et Financement",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L5-05",
+        "intitule": "Gestion Budgétaire",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L5-06",
+        "intitule": "Entrepreneuriat et Création d'Entreprise",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L6-01",
+        "intitule": "Contrôle de Gestion II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L6-02",
+        "intitule": "Audit Comptable et Financier II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L6-03",
+        "intitule": "Fiscalité Approfondie",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L6-04",
+        "intitule": "Ateliers de Pré-professionnalisation",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-L6-05",
+        "intitule": "Stage et Mémoire de Fin de Licence",
+        "volume": 100,
+        "credits": 10,
+        "coef": 10,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "CPT-M1-01",
+        "intitule": "Normes Comptables Internationales (IFRS) Avancées",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "CPT-M1-02",
+        "intitule": "Audit Financier Avancé",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "CPT-M1-03",
+        "intitule": "Contrôle de Gestion Stratégique",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "CPT-M1-04",
+        "intitule": "Ingénierie Financière",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "CPT-M1-05",
+        "intitule": "Anglais des Affaires",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "CPT-M1-06",
+        "intitule": "Statistiques et Économétrie",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "CPT-M2-01",
+        "intitule": "Fiscalité Internationale",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "CPT-M2-02",
+        "intitule": "Audit Interne et Gestion des Risques",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "CPT-M2-03",
+        "intitule": "Consolidation des Comptes",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "CPT-M2-04",
+        "intitule": "Gestion de Trésorerie et Marchés Financiers",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "CPT-M2-05",
+        "intitule": "Système d'Information Comptable",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "CPT-M2-06",
+        "intitule": "Séminaire de Recherche I",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "CPT-M3-01",
+        "intitule": "Gouvernance et Éthique Financière",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "CPT-M3-02",
+        "intitule": "Diagnostic Financier des Entreprises",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "CPT-M3-03",
+        "intitule": "Normes d'Audit Internationales (ISA)",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "CPT-M3-04",
+        "intitule": "Analyse et Évaluation d'Entreprises",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "CPT-M3-05",
+        "intitule": "Méthodologie de la Recherche",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "CPT-M3-06",
+        "intitule": "Séminaire de Recherche II",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "CPT-M4-01",
+        "intitule": "Stage Professionnel",
+        "volume": 100,
+        "credits": 10,
+        "coef": 10,
+        "semestre": 4,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "CPT-M4-02",
+        "intitule": "Mémoire de Fin d'Études",
+        "volume": 200,
+        "credits": 20,
+        "coef": 20,
+        "semestre": 4,
+        "cycle": "MASTER"
+      }
+    ]
+  },
+  {
+    "code": "ECO",
+    "ues": [
+      {
+        "code": "ECO-L1-01",
+        "intitule": "Introduction à l'Économie",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L1-02",
+        "intitule": "Microéconomie I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L1-03",
+        "intitule": "Mathématiques pour l'Économie I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L1-04",
+        "intitule": "Institutions Économiques et Financières",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L1-05",
+        "intitule": "Anglais I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L1-06",
+        "intitule": "Méthodologie du Travail Universitaire",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L2-01",
+        "intitule": "Histoire des Faits Économiques",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L2-02",
+        "intitule": "Microéconomie II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L2-03",
+        "intitule": "Mathématiques pour l'Économie II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L2-04",
+        "intitule": "Comptabilité Nationale",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L2-05",
+        "intitule": "Anglais II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L2-06",
+        "intitule": "Informatique Appliquée",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L3-01",
+        "intitule": "Macroéconomie I",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L3-02",
+        "intitule": "Statistiques Descriptives",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L3-03",
+        "intitule": "Économie Monétaire I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L3-04",
+        "intitule": "Démographie Économique",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L3-05",
+        "intitule": "Droit Économique",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L3-06",
+        "intitule": "Anglais Technique I",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L4-01",
+        "intitule": "Macroéconomie II",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L4-02",
+        "intitule": "Statistiques Inférentielles",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L4-03",
+        "intitule": "Économie Monétaire II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L4-04",
+        "intitule": "Économie Internationale I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L4-05",
+        "intitule": "Économie du Développement I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L4-06",
+        "intitule": "Anglais Technique II",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L5-01",
+        "intitule": "Économétrie I",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L5-02",
+        "intitule": "Économie Internationale II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L5-03",
+        "intitule": "Économie du Développement II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L5-04",
+        "intitule": "Économie Publique",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L5-05",
+        "intitule": "Politiques Économiques",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L5-06",
+        "intitule": "Entrepreneuriat et Création d'Entreprise",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L6-01",
+        "intitule": "Économétrie II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L6-02",
+        "intitule": "Économie du Travail",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L6-03",
+        "intitule": "Évaluation de Projets de Développement",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L6-04",
+        "intitule": "Ateliers de Pré-professionnalisation",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-L6-05",
+        "intitule": "Stage et Mémoire de Fin de Licence",
+        "volume": 100,
+        "credits": 10,
+        "coef": 10,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "ECO-M1-01",
+        "intitule": "Théories du Développement Économique",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "ECO-M1-02",
+        "intitule": "Économétrie Appliquée",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "ECO-M1-03",
+        "intitule": "Économie Internationale Avancée",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "ECO-M1-04",
+        "intitule": "Politiques Publiques et Développement",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "ECO-M1-05",
+        "intitule": "Anglais Scientifique",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "ECO-M1-06",
+        "intitule": "Analyse de Données Économiques",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "ECO-M2-01",
+        "intitule": "Économie de l'Environnement et des Ressources Naturelles",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "ECO-M2-02",
+        "intitule": "Économie de l'Intégration Régionale",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "ECO-M2-03",
+        "intitule": "Finance du Développement",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "ECO-M2-04",
+        "intitule": "Évaluation d'Impact des Politiques Publiques",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "ECO-M2-05",
+        "intitule": "Gestion de Projets de Développement",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "ECO-M2-06",
+        "intitule": "Séminaire de Recherche I",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "ECO-M3-01",
+        "intitule": "Économie du Genre et du Développement Humain",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "ECO-M3-02",
+        "intitule": "Économie Rurale et Sécurité Alimentaire",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "ECO-M3-03",
+        "intitule": "Modélisation Macroéconomique",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "ECO-M3-04",
+        "intitule": "Développement Durable et Économie Verte",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "ECO-M3-05",
+        "intitule": "Méthodologie de la Recherche",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "ECO-M3-06",
+        "intitule": "Séminaire de Recherche II",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "ECO-M4-01",
+        "intitule": "Stage Professionnel",
+        "volume": 100,
+        "credits": 10,
+        "coef": 10,
+        "semestre": 4,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "ECO-M4-02",
+        "intitule": "Mémoire de Fin d'Études",
+        "volume": 200,
+        "credits": 20,
+        "coef": 20,
+        "semestre": 4,
+        "cycle": "MASTER"
+      }
+    ]
+  },
+  {
+    "code": "DRO",
+    "ues": [
+      {
+        "code": "DRO-L1-01",
+        "intitule": "Introduction Générale au Droit",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L1-02",
+        "intitule": "Droit Constitutionnel I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L1-03",
+        "intitule": "Histoire des Institutions",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L1-04",
+        "intitule": "Méthodologie Juridique",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L1-05",
+        "intitule": "Anglais I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L1-06",
+        "intitule": "Méthodologie du Travail Universitaire",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L2-01",
+        "intitule": "Droit Civil des Personnes et de la Famille",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L2-02",
+        "intitule": "Droit Constitutionnel II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L2-03",
+        "intitule": "Institutions Judiciaires",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L2-04",
+        "intitule": "Économie Générale",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L2-05",
+        "intitule": "Anglais II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L2-06",
+        "intitule": "Informatique Juridique",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L3-01",
+        "intitule": "Droit Civil des Obligations I",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L3-02",
+        "intitule": "Droit Administratif I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L3-03",
+        "intitule": "Droit des Sociétés I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L3-04",
+        "intitule": "Droit Pénal Général",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L3-05",
+        "intitule": "Anglais Juridique I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L3-06",
+        "intitule": "Relations Internationales",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L4-01",
+        "intitule": "Droit Civil des Obligations II",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L4-02",
+        "intitule": "Droit Administratif II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L4-03",
+        "intitule": "Droit des Sociétés II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L4-04",
+        "intitule": "Droit Pénal des Affaires",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L4-05",
+        "intitule": "Anglais Juridique II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L4-06",
+        "intitule": "Procédure Civile",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L5-01",
+        "intitule": "Droit Commercial Général",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L5-02",
+        "intitule": "Droit du Travail I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L5-03",
+        "intitule": "Droit Fiscal des Affaires",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L5-04",
+        "intitule": "Droit des Sûretés",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L5-05",
+        "intitule": "Droit de la Concurrence",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L5-06",
+        "intitule": "Entrepreneuriat et Création d'Entreprise",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L6-01",
+        "intitule": "Droit du Travail II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L6-02",
+        "intitule": "Droit des Contrats d'Affaires",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L6-03",
+        "intitule": "Droit OHADA",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L6-04",
+        "intitule": "Ateliers de Pré-professionnalisation",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-L6-05",
+        "intitule": "Stage et Mémoire de Fin de Licence",
+        "volume": 100,
+        "credits": 10,
+        "coef": 10,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "DRO-M1-01",
+        "intitule": "Droit des Sociétés Commerciales Approfondi",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "DRO-M1-02",
+        "intitule": "Droit OHADA Approfondi",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "DRO-M1-03",
+        "intitule": "Droit Bancaire et Financier",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "DRO-M1-04",
+        "intitule": "Droit de la Concurrence Approfondi",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "DRO-M1-05",
+        "intitule": "Anglais Juridique des Affaires",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "DRO-M1-06",
+        "intitule": "Rédaction des Actes Juridiques",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "DRO-M2-01",
+        "intitule": "Droit des Investissements et de l'Arbitrage",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "DRO-M2-02",
+        "intitule": "Droit Fiscal International",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "DRO-M2-03",
+        "intitule": "Droit de la Propriété Intellectuelle",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "DRO-M2-04",
+        "intitule": "Droit des Procédures Collectives",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "DRO-M2-05",
+        "intitule": "Contentieux des Affaires",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "DRO-M2-06",
+        "intitule": "Séminaire de Recherche I",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "DRO-M3-01",
+        "intitule": "Droit International des Affaires",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "DRO-M3-02",
+        "intitule": "Gouvernance d'Entreprise et Éthique des Affaires",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "DRO-M3-03",
+        "intitule": "Droit des Nouvelles Technologies",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "DRO-M3-04",
+        "intitule": "Droit des Marchés Publics",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "DRO-M3-05",
+        "intitule": "Méthodologie de la Recherche",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "DRO-M3-06",
+        "intitule": "Séminaire de Recherche II",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "DRO-M4-01",
+        "intitule": "Stage Professionnel",
+        "volume": 100,
+        "credits": 10,
+        "coef": 10,
+        "semestre": 4,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "DRO-M4-02",
+        "intitule": "Mémoire de Fin d'Études",
+        "volume": 200,
+        "credits": 20,
+        "coef": 20,
+        "semestre": 4,
+        "cycle": "MASTER"
+      }
+    ]
+  },
+  {
+    "code": "MKT",
+    "ues": [
+      {
+        "code": "MKT-L1-01",
+        "intitule": "Introduction au Marketing",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L1-02",
+        "intitule": "Microéconomie I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L1-03",
+        "intitule": "Mathématiques pour le Commerce",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L1-04",
+        "intitule": "Techniques d'Expression et de Communication",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L1-05",
+        "intitule": "Anglais I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L1-06",
+        "intitule": "Méthodologie du Travail Universitaire",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L2-01",
+        "intitule": "Comportement du Consommateur",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L2-02",
+        "intitule": "Microéconomie II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L2-03",
+        "intitule": "Comptabilité Générale",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L2-04",
+        "intitule": "Statistiques Descriptives",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L2-05",
+        "intitule": "Anglais II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L2-06",
+        "intitule": "Informatique de Gestion",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L3-01",
+        "intitule": "Marketing Stratégique I",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L3-02",
+        "intitule": "Macroéconomie I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L3-03",
+        "intitule": "Étude de Marché I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L3-04",
+        "intitule": "Droit Commercial",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L3-05",
+        "intitule": "Techniques de Vente",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L3-06",
+        "intitule": "Anglais Technique I",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L4-01",
+        "intitule": "Marketing Stratégique II",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L4-02",
+        "intitule": "Macroéconomie II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L4-03",
+        "intitule": "Étude de Marché II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L4-04",
+        "intitule": "Commerce International I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L4-05",
+        "intitule": "Techniques de Négociation Commerciale",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L4-06",
+        "intitule": "Anglais Technique II",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L5-01",
+        "intitule": "Marketing Digital I",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L5-02",
+        "intitule": "Commerce International II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L5-03",
+        "intitule": "Gestion de la Force de Vente",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L5-04",
+        "intitule": "Logistique et Transport International",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L5-05",
+        "intitule": "Communication Publicitaire",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L5-06",
+        "intitule": "Entrepreneuriat et Création d'Entreprise",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L6-01",
+        "intitule": "Marketing Digital II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L6-02",
+        "intitule": "Marketing International",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L6-03",
+        "intitule": "Droit du Commerce International",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L6-04",
+        "intitule": "Ateliers de Pré-professionnalisation",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-L6-05",
+        "intitule": "Stage et Mémoire de Fin de Licence",
+        "volume": 100,
+        "credits": 10,
+        "coef": 10,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "MKT-M1-01",
+        "intitule": "Stratégie Marketing Internationale",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "MKT-M1-02",
+        "intitule": "Comportement du Consommateur Avancé",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "MKT-M1-03",
+        "intitule": "Négociation Internationale",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "MKT-M1-04",
+        "intitule": "Logistique Internationale Avancée",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "MKT-M1-05",
+        "intitule": "Anglais des Affaires",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "MKT-M1-06",
+        "intitule": "Études de Marché Avancées",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "MKT-M2-01",
+        "intitule": "Marketing Digital et Réseaux Sociaux Avancé",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "MKT-M2-02",
+        "intitule": "Management des Exportations",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "MKT-M2-03",
+        "intitule": "Droit du Commerce International Avancé",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "MKT-M2-04",
+        "intitule": "Gestion de la Relation Client (CRM)",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "MKT-M2-05",
+        "intitule": "Gestion de Projets Marketing",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "MKT-M2-06",
+        "intitule": "Séminaire de Recherche I",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "MKT-M3-01",
+        "intitule": "Marketing de l'Innovation",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "MKT-M3-02",
+        "intitule": "Intelligence Économique et Veille Stratégique",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "MKT-M3-03",
+        "intitule": "Finance Internationale",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "MKT-M3-04",
+        "intitule": "Interculturalité et Management International",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "MKT-M3-05",
+        "intitule": "Méthodologie de la Recherche",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "MKT-M3-06",
+        "intitule": "Séminaire de Recherche II",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "MKT-M4-01",
+        "intitule": "Stage Professionnel",
+        "volume": 100,
+        "credits": 10,
+        "coef": 10,
+        "semestre": 4,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "MKT-M4-02",
+        "intitule": "Mémoire de Fin d'Études",
+        "volume": 200,
+        "credits": 20,
+        "coef": 20,
+        "semestre": 4,
+        "cycle": "MASTER"
+      }
+    ]
+  },
+  {
+    "code": "COM",
+    "ues": [
+      {
+        "code": "COM-L1-01",
+        "intitule": "Introduction aux Sciences de la Communication",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L1-02",
+        "intitule": "Histoire des Médias",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L1-03",
+        "intitule": "Techniques d'Expression Écrite",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L1-04",
+        "intitule": "Culture Générale",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L1-05",
+        "intitule": "Anglais I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L1-06",
+        "intitule": "Méthodologie du Travail Universitaire",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L2-01",
+        "intitule": "Théories de la Communication",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L2-02",
+        "intitule": "Sociologie des Médias",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L2-03",
+        "intitule": "Techniques d'Expression Orale",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L2-04",
+        "intitule": "Introduction au Journalisme",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L2-05",
+        "intitule": "Anglais II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L2-06",
+        "intitule": "Informatique Appliquée",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L3-01",
+        "intitule": "Genres Journalistiques I (Presse Écrite)",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L3-02",
+        "intitule": "Communication Institutionnelle",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L3-03",
+        "intitule": "Sémiologie de l'Image",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L3-04",
+        "intitule": "Droit de la Presse et de la Communication",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L3-05",
+        "intitule": "Techniques de Recherche d'Information",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L3-06",
+        "intitule": "Anglais Technique I",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L4-01",
+        "intitule": "Genres Journalistiques II (Radio)",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L4-02",
+        "intitule": "Communication Digitale I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L4-03",
+        "intitule": "Photojournalisme",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L4-04",
+        "intitule": "Éthique et Déontologie des Médias",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L4-05",
+        "intitule": "Techniques de Rédaction Web",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L4-06",
+        "intitule": "Anglais Technique II",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L5-01",
+        "intitule": "Genres Journalistiques III (Télévision)",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L5-02",
+        "intitule": "Communication Digitale II (Réseaux Sociaux)",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L5-03",
+        "intitule": "Production Audiovisuelle",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L5-04",
+        "intitule": "Relations Publiques",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L5-05",
+        "intitule": "Marketing des Médias",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L5-06",
+        "intitule": "Entrepreneuriat et Création d'Entreprise",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L6-01",
+        "intitule": "Journalisme d'Investigation",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L6-02",
+        "intitule": "Community Management",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L6-03",
+        "intitule": "Communication de Crise",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L6-04",
+        "intitule": "Ateliers de Pré-professionnalisation",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-L6-05",
+        "intitule": "Stage et Mémoire de Fin de Licence",
+        "volume": 100,
+        "credits": 10,
+        "coef": 10,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "COM-M1-01",
+        "intitule": "Stratégies de Communication d'Entreprise",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "COM-M1-02",
+        "intitule": "Communication de Crise Avancée",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "COM-M1-03",
+        "intitule": "Marketing Digital et Réseaux Sociaux",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "COM-M1-04",
+        "intitule": "Analyse des Médias et Opinion Publique",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "COM-M1-05",
+        "intitule": "Anglais Professionnel",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "COM-M1-06",
+        "intitule": "Méthodes d'Enquête en Communication",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "COM-M2-01",
+        "intitule": "Communication Institutionnelle et Publique Avancée",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "COM-M2-02",
+        "intitule": "Production de Contenus Multimédias",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "COM-M2-03",
+        "intitule": "Relations Presse et Influence",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "COM-M2-04",
+        "intitule": "Communication Interculturelle",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "COM-M2-05",
+        "intitule": "Gestion de Projets de Communication",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "COM-M2-06",
+        "intitule": "Séminaire de Recherche I",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "COM-M3-01",
+        "intitule": "Data Journalism et Nouveaux Médias",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "COM-M3-02",
+        "intitule": "Communication Politique",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "COM-M3-03",
+        "intitule": "Éthique et Régulation des Médias",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "COM-M3-04",
+        "intitule": "Intelligence Économique et Communication",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "COM-M3-05",
+        "intitule": "Méthodologie de la Recherche",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "COM-M3-06",
+        "intitule": "Séminaire de Recherche II",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "COM-M4-01",
+        "intitule": "Stage Professionnel",
+        "volume": 100,
+        "credits": 10,
+        "coef": 10,
+        "semestre": 4,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "COM-M4-02",
+        "intitule": "Mémoire de Fin d'Études",
+        "volume": 200,
+        "credits": 20,
+        "coef": 20,
+        "semestre": 4,
+        "cycle": "MASTER"
+      }
+    ]
+  },
+  {
+    "code": "EDU",
+    "ues": [
+      {
+        "code": "EDU-L1-01",
+        "intitule": "Introduction aux Sciences de l'Éducation",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L1-02",
+        "intitule": "Psychologie Générale",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L1-03",
+        "intitule": "Sociologie de l'Éducation I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L1-04",
+        "intitule": "Histoire de l'Éducation",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L1-05",
+        "intitule": "Anglais I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L1-06",
+        "intitule": "Méthodologie du Travail Universitaire",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 1,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L2-01",
+        "intitule": "Psychologie de l'Enfant et de l'Adolescent",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L2-02",
+        "intitule": "Sociologie de l'Éducation II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L2-03",
+        "intitule": "Philosophie de l'Éducation",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L2-04",
+        "intitule": "Introduction à la Pédagogie",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L2-05",
+        "intitule": "Anglais II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L2-06",
+        "intitule": "Informatique Appliquée à l'Éducation",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 2,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L3-01",
+        "intitule": "Didactique Générale",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L3-02",
+        "intitule": "Psychologie de l'Apprentissage",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L3-03",
+        "intitule": "Systèmes Éducatifs Comparés",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L3-04",
+        "intitule": "Méthodes et Techniques d'Enseignement I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L3-05",
+        "intitule": "Statistiques Appliquées à l'Éducation",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L3-06",
+        "intitule": "Anglais Technique I",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 3,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L4-01",
+        "intitule": "Didactique des Disciplines",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L4-02",
+        "intitule": "Évaluation des Apprentissages I",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L4-03",
+        "intitule": "Gestion de Classe",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L4-04",
+        "intitule": "Méthodes et Techniques d'Enseignement II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L4-05",
+        "intitule": "Éducation Inclusive",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L4-06",
+        "intitule": "Anglais Technique II",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 4,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L5-01",
+        "intitule": "Ingénierie de la Formation",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L5-02",
+        "intitule": "Évaluation des Apprentissages II",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L5-03",
+        "intitule": "Nouvelles Technologies Éducatives (TICE)",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L5-04",
+        "intitule": "Orientation Scolaire et Professionnelle",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L5-05",
+        "intitule": "Gestion des Établissements Scolaires",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L5-06",
+        "intitule": "Entrepreneuriat et Création d'Entreprise",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 5,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L6-01",
+        "intitule": "Politiques Éducatives",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L6-02",
+        "intitule": "Recherche en Éducation",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L6-03",
+        "intitule": "Éducation à la Citoyenneté",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L6-04",
+        "intitule": "Ateliers de Pré-professionnalisation",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-L6-05",
+        "intitule": "Stage et Mémoire de Fin de Licence",
+        "volume": 100,
+        "credits": 10,
+        "coef": 10,
+        "semestre": 6,
+        "cycle": "LICENCE"
+      },
+      {
+        "code": "EDU-M1-01",
+        "intitule": "Théories de l'Apprentissage Avancées",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "EDU-M1-02",
+        "intitule": "Ingénierie Pédagogique et Curriculaire",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "EDU-M1-03",
+        "intitule": "Évaluation des Systèmes Éducatifs",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "EDU-M1-04",
+        "intitule": "Management des Établissements Scolaires",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "EDU-M1-05",
+        "intitule": "Anglais Scientifique",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "EDU-M1-06",
+        "intitule": "Méthodes de Recherche en Éducation",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 1,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "EDU-M2-01",
+        "intitule": "Formation à Distance et E-Learning",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "EDU-M2-02",
+        "intitule": "Psychologie des Apprentissages Avancée",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "EDU-M2-03",
+        "intitule": "Éducation Inclusive et Diversité",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "EDU-M2-04",
+        "intitule": "Politiques et Réformes Éducatives",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "EDU-M2-05",
+        "intitule": "Gestion de Projets Éducatifs",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "EDU-M2-06",
+        "intitule": "Séminaire de Recherche I",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 2,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "EDU-M3-01",
+        "intitule": "Didactique Avancée et Innovation Pédagogique",
+        "volume": 60,
+        "credits": 6,
+        "coef": 6,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "EDU-M3-02",
+        "intitule": "Évaluation et Certification des Compétences",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "EDU-M3-03",
+        "intitule": "Sociologie de l'Éducation Avancée",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "EDU-M3-04",
+        "intitule": "Éducation et Développement Durable",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "EDU-M3-05",
+        "intitule": "Méthodologie de la Recherche",
+        "volume": 50,
+        "credits": 5,
+        "coef": 5,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "EDU-M3-06",
+        "intitule": "Séminaire de Recherche II",
+        "volume": 40,
+        "credits": 4,
+        "coef": 4,
+        "semestre": 3,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "EDU-M4-01",
+        "intitule": "Stage Professionnel",
+        "volume": 100,
+        "credits": 10,
+        "coef": 10,
+        "semestre": 4,
+        "cycle": "MASTER"
+      },
+      {
+        "code": "EDU-M4-02",
+        "intitule": "Mémoire de Fin d'Études",
+        "volume": 200,
+        "credits": 20,
+        "coef": 20,
+        "semestre": 4,
+        "cycle": "MASTER"
+      }
+    ]
+  }
+]

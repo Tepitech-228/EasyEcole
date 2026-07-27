@@ -25,10 +25,6 @@ export class PaiementInscriptionService {
     return this.httpClient.post<PaiementInscription>(`${this.SERVICE_URL}`, paiementInscription)
   }
 
-  createMobileMoney(paiementInscription: PaiementInscription): Observable<any> {
-    return this.httpClient.post<any>(`${this.SERVICE_URL}/cinetpay`, paiementInscription)
-  }
-
   update(paiementInscription: PaiementInscription): Observable<PaiementInscription> {
     return this.httpClient.put<PaiementInscription>(`${this.SERVICE_URL}/${paiementInscription.id!}`, paiementInscription)
   }

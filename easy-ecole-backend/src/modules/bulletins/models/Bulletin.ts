@@ -69,7 +69,7 @@ Bulletin.init({
     allowNull: false
   },
   semestre: {
-    type: DataTypes.ENUM('semestre1', 'semestre2'),
+    type: DataTypes.ENUM('semestre1', 'semestre2', 'semestre3', 'semestre4', 'semestre5', 'semestre6'),
     allowNull: false
   },
   cursusApprenantId: {

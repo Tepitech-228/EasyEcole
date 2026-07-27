@@ -11,6 +11,7 @@ import { Utilisateur } from "../../auth/models/Utilisateur";
 import { DocumentPDFGenerator } from "../../../core/helpers/DocumentPDFGenerator";
 import { IDGenerator } from "../../../core/helpers/IDGenerator";
 import { EmailSender } from "../../../core/helpers/EmailSender";
+import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
 
 export default class QuitusController {
 
@@ -117,6 +118,19 @@ export default class QuitusController {
 
         await quitus.save()
             .then(async (quitus) => {
+                ArchiveGedService.archiverDepuisFichier({
+                    fichierSource: `public/inscription/quitus/${filename}`,
+                    domaineCode: 'FIN',
+                    typeDocumentCode: 'bordereau',
+                    processusCode: 'BORDEREAU',
+                    processusLibelle: 'Bordereau de paiement',
+                    processusModule: 'finance',
+                    titre: `Quitus - ${code}`,
+                    dossierGed: 'Bordereaux de paiement',
+                    sourceType: 'genere_application',
+                    confidentialite: 'confidentiel',
+                }).catch(err => console.error("Erreur archivage quitus:", err))
+
                 // Création automatique du dossier étudiant
                 try {
                     const existingDossier = await DossierEtudiant.findOne({

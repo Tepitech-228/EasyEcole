@@ -1,0 +1,77 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <app-header-title title="Documents générés" subtitle="Liste des documents générés par le module"></app-header-title>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+    <div class="flex justify-between items-center flex-wrap gap-3">
+      <div class="flex gap-3">
+        <a routerLink="/docgen/generer" class="app-custom-button text-sm bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Générer</a>
+        <select [(ngModel)]="selectedTypeId" (change)="getDocuments()" class="block rounded-md border-0 py-1.5 text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 text-sm">
+          <option value="">Tous les types</option>
+          <option *ngFor="let t of types" [value]="t.id">{{ t.code }} — {{ t.libelle }}</option>
+        </select>
+        <select [(ngModel)]="selectedStatut" (change)="getDocuments()" class="block rounded-md border-0 py-1.5 text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 text-sm">
+          <option value="">Tous les statuts</option>
+          <option value="brouillon">Brouillon</option>
+          <option value="en_attente_enseignant">Attente enseignant</option>
+          <option value="en_attente_directeur">Attente directeur</option>
+          <option value="signé">Signé</option>
+        </select>
+        <input [(ngModel)]="search" (input)="filtrer()" type="text" placeholder="Rechercher référence..." class="block rounded-md border-0 py-1.5 text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 text-sm pl-3" />
+      </div>
+      <app-custom-button *ngIf="rolesValue.isAdmin" (click)="ouvrirGeneration()" text="Nouvelle génération" color="indigo"></app-custom-button>
+    </div>
+  </div>
+
+  <div *ngIf="showGenerateModal" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Générer un document</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Type de document *</label>
+        <select [(ngModel)]="generateData.typeCode" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+          <option value="">Sélectionner</option>
+          <option *ngFor="let t of types" [value]="t.code">{{ t.code }} — {{ t.libelle }}</option>
+        </select>
+      </div>
+      <div><label class="block text-xs font-medium text-gray-500 mb-1">Type source</label><input [(ngModel)]="generateData.sourceType" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="etudiant, classe..." /></div>
+      <div><label class="block text-xs font-medium text-gray-500 mb-1">ID source</label><input [(ngModel)]="generateData.sourceId" type="number" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" /></div>
+      <div><label class="block text-xs font-medium text-gray-500 mb-1">Métadonnées (JSON)</label><textarea [(ngModel)]="generateData.metadata" rows="3" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder='{"etudiantNom": "..."}'></textarea></div>
+    </div>
+    <div class="flex justify-end gap-3 mt-4">
+      <app-custom-button (click)="showGenerateModal = false" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+      <app-custom-button (click)="generer()" text="Générer" color="indigo"></app-custom-button>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-100">
+        <thead><tr class="bg-gray-50/50">
+          <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Référence</th>
+          <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Type</th>
+          <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Statut</th>
+          <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Source</th>
+          <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Version</th>
+          <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Créé le</th>
+          <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase">Actions</th>
+        </tr></thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngFor="let d of filteredDocuments" class="hover:bg-gray-50/50 transition-colors">
+            <td class="px-5 py-4 whitespace-nowrap text-sm font-mono font-medium text-gray-900">{{ d.reference || '—' }}</td>
+            <td class="px-5 py-4 text-sm text-gray-500">{{ d.type?.code || '—' }}</td>
+            <td class="px-5 py-4"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" [class]="getStatutBadge(d.statut)">{{ getStatutLabel(d.statut) }}</span></td>
+            <td class="px-5 py-4 text-sm text-gray-500">{{ d.sourceType || '—' }}<span *ngIf="d.sourceId"> #{{ d.sourceId }}</span></td>
+            <td class="px-5 py-4 text-sm text-gray-500">v{{ d.version || 1 }}</td>
+            <td class="px-5 py-4 text-sm text-gray-500">{{ d.createdAt | date:'dd/MM/yyyy' }}</td>
+            <td class="px-5 py-4 text-right">
+              <div class="flex justify-end gap-2">
+                <app-custom-button (click)="download(d)" text="Télécharger" color="blue" [outlined]="true"></app-custom-button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+    <div *ngIf="!loading && filteredDocuments.length === 0" class="px-5 py-12 text-center text-sm text-gray-500">Aucun document généré</div>
+  </div>
+</div>

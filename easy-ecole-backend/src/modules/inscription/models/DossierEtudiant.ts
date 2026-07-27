@@ -1,4 +1,4 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { Utilisateur } from "../../auth/models/Utilisateur";
@@ -6,11 +6,13 @@ import { Echeance } from "./Echeance";
 import { CoursParticipant } from "./CoursParticipant";
 
 export class DossierEtudiant extends Model<InferAttributes<DossierEtudiant>, InferCreationAttributes<DossierEtudiant>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare utilisateurId: ForeignKey<Utilisateur['id']>
   declare matricule: string
   declare codeQR: CreationOptional<string>
   declare photo: CreationOptional<string>
+  declare cartePath: CreationOptional<string>
+  declare carteGeneree: CreationOptional<boolean>
   declare statut: 'actif' | 'suspendu' | 'archive'
   declare dateCreation: CreationOptional<Date>
   declare fraisScolarite: number
@@ -49,6 +51,14 @@ DossierEtudiant.init({
   photo: {
     type: new DataTypes.STRING,
     allowNull: true
+  },
+  cartePath: {
+    type: new DataTypes.STRING,
+    allowNull: true
+  },
+  carteGeneree: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   },
   statut: {
     type: DataTypes.ENUM('actif', 'suspendu', 'archive'),

@@ -1,0 +1,123 @@
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
+
+    <div class="text-center mb-8">
+      <div class="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mb-4">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+      </div>
+      <h1 class="text-2xl font-bold text-gray-900">Bienvenue dans votre inscription</h1>
+      <p class="mt-2 text-sm text-gray-500">Suivez les étapes ci-dessous pour finaliser votre inscription</p>
+    </div>
+
+    <div *ngIf="loading" class="flex justify-center py-12">
+      <div class="w-8 h-8 border-4 border-amber-200 border-t-amber-500 rounded-full animate-spin"></div>
+    </div>
+
+    <ng-container *ngIf="!loading">
+      <div *ngIf="message" class="mb-6 px-4 py-3 rounded-xl text-sm font-medium"
+        [ngClass]="{
+          'bg-green-50 text-green-700 border border-green-200': messageType === 'success',
+          'bg-blue-50 text-blue-700 border border-blue-200': messageType === 'info',
+          'bg-amber-50 text-amber-700 border border-amber-200': messageType === 'warning',
+          'bg-red-50 text-red-700 border border-red-200': messageType === 'error'
+        }">
+        {{ message }}
+      </div>
+
+      <div class="mb-6">
+        <div class="flex justify-between text-sm text-gray-500 mb-2">
+          <span>Progression</span>
+          <span>{{ progression }}%</span>
+        </div>
+        <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+          <div class="h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full transition-all duration-500"
+            [style.width.%]="progression"></div>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <div *ngFor="let step of steps; let i = index"
+          class="flex items-center gap-4 p-4 rounded-xl transition-colors"
+          [ngClass]="{
+            'bg-green-50 border border-green-100': step.etat === 'fait',
+            'bg-amber-50 border border-amber-200 ring-2 ring-amber-200': step.etat === 'encours',
+            'bg-gray-50 border border-gray-100 opacity-60': step.etat === 'en_attente',
+            'bg-red-50 border border-red-200': step.etat === 'bloque'
+          }">
+
+          <!-- Numero / Icone -->
+          <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+            [ngClass]="{
+              'bg-green-500 text-white': step.etat === 'fait',
+              'bg-amber-500 text-white': step.etat === 'encours',
+              'bg-gray-200 text-gray-400': step.etat === 'en_attente',
+              'bg-primary-500 text-white': step.etat === 'bloque'
+            }">
+            <svg *ngIf="step.etat === 'fait'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span *ngIf="step.etat !== 'fait'">{{ step.numero }}</span>
+          </div>
+
+          <!-- Contenu -->
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold"
+              [ngClass]="{
+                'text-green-800': step.etat === 'fait',
+                'text-amber-800': step.etat === 'encours',
+                'text-gray-500': step.etat === 'en_attente',
+                'text-red-800': step.etat === 'bloque'
+              }">{{ step.label }}</p>
+            <p class="text-xs mt-0.5"
+              [ngClass]="{
+                'text-green-600': step.etat === 'fait',
+                'text-amber-600': step.etat === 'encours',
+                'text-gray-400': step.etat === 'en_attente',
+                'text-red-600': step.etat === 'bloque'
+              }">{{ step.description }}</p>
+          </div>
+
+          <!-- Action -->
+          <div *ngIf="step.etat === 'encours' && step.route" class="flex-shrink-0">
+            <button (click)="continuer(step)"
+              class="text-xs font-semibold px-4 py-2 rounded-lg border-0 cursor-pointer transition-colors"
+              [ngClass]="{
+                'bg-amber-500 text-white hover:bg-amber-600': step.numero === 2,
+                'bg-indigo-500 text-white hover:bg-indigo-600': step.numero !== 2
+              }">
+              <span *ngIf="step.numero === 2">Compléter</span>
+              <span *ngIf="step.numero !== 2">Continuer</span>
+            </button>
+          </div>
+
+          <div *ngIf="step.etat === 'encours' && !step.route && step.numero === 3" class="flex-shrink-0">
+            <button (click)="creerDemande()"
+              class="text-xs font-semibold px-4 py-2 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 border-0 cursor-pointer">
+              Créer
+            </button>
+          </div>
+
+          <div *ngIf="step.etat === 'encours' && !step.route && step.numero !== 3 && step.numero !== 2" class="flex-shrink-0">
+            <span class="text-xs text-gray-400 italic">En attente</span>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="estTermine" class="mt-8 text-center">
+        <div class="mx-auto w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
+          <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+          </svg>
+        </div>
+        <h2 class="text-lg font-bold text-gray-900">Inscription terminée !</h2>
+        <p class="mt-1 text-sm text-gray-500">Toutes les étapes sont complétées. Bienvenue !</p>
+        <button (click)="allerAuTableauDeBord()"
+          class="mt-4 text-sm font-semibold px-6 py-2.5 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 border-0 cursor-pointer">
+          Aller au tableau de bord
+        </button>
+      </div>
+    </ng-container>
+  </div>
+</div>

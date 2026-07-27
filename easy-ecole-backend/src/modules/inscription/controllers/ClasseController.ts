@@ -2,17 +2,24 @@ import { Request, Response } from "express";
 import { CountOptions, FindOptions, InferAttributes } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Classe } from "../models/Classe";
+import { AnneeAcademique } from "../models/AnneeAcademique";
+import { Parcours } from "../models/Parcours";
+import { NiveauEtude } from "../models/NiveauEtude";
+import { DossierStorageService } from "../services/DossierStorageService";
 
 export default class ClasseController {
 
     constructor() { }
 
     static async getAllClasses(req: Request, res: Response): Promise<Response> {
-        let options: FindOptions<InferAttributes<Classe>> = {}
+        let options: FindOptions<InferAttributes<Classe>> = {
+            include: [
+                { association: Classe.associations.niveauEtude },
+                { association: Classe.associations.parcours }
+            ]
+        }
         if(req.query.niveauEtudeId) {
-            options = {
-                where: {niveauEtudeId: req.query.niveauEtudeId as string}
-            }
+            options.where = { niveauEtudeId: req.query.niveauEtudeId as string }
         }
 
         try {
@@ -26,8 +33,13 @@ export default class ClasseController {
     }
 
     static async getClasse(req: Request, res: Response): Promise<Response> {
-        let options: FindOptions<InferAttributes<Classe>> = {}
-        options = { where: { id: req.params.id } }
+        let options: FindOptions<InferAttributes<Classe>> = {
+            where: { id: req.params.id },
+            include: [
+                { association: Classe.associations.niveauEtude },
+                { association: Classe.associations.parcours }
+            ]
+        }
 
         try {
             const classe: Classe | null = await Classe.findOne(options);
@@ -47,20 +59,45 @@ export default class ClasseController {
             return res.status(403).json({ success: false })
         }
 
-        let classe: Classe | null = await Classe.findOne({ where: { libelle: req.body.libelle } });
+        let existing: Classe | null = await Classe.findOne({ where: { libelle: req.body.libelle } });
 
-        if (classe != null) {
+        if (existing != null) {
             return res.status(400).json({ success: false, alreadyExists: true });
         }
         else {
             let classe: Classe = new Classe();
             classe.libelle = req.body.libelle
             classe.description = req.body.description
-            classe.niveauEtudeId = req.body.niveauEtudeId
+            classe.niveauEtudeId = req.body.niveauEtudeId || null
+            classe.parcoursId = req.body.parcoursId || null
 
             await classe.save()
-                .then((classe) => {
-                    return res.status(201).send(classe);
+                .then(async (classe) => {
+                    const reloaded = await Classe.findByPk(classe.id, {
+                        include: [
+                            { association: Classe.associations.niveauEtude },
+                            { association: Classe.associations.parcours }
+                        ]
+                    });
+
+                    // Créer le squelette dossier pour chaque année académique existante
+                    if (reloaded?.parcours && reloaded?.niveauEtude) {
+                        try {
+                            const annees = await AnneeAcademique.findAll();
+                            for (const annee of annees) {
+                                DossierStorageService.creerSqueletteClasse(
+                                    annee,
+                                    reloaded.parcours,
+                                    reloaded,
+                                    reloaded.niveauEtude,
+                                );
+                            }
+                        } catch (dirError) {
+                            console.error("Erreur création dossier classe:", dirError);
+                        }
+                    }
+
+                    return res.status(201).send(reloaded);
                 })
                 .catch((error) => {
                     return res.status(400).json({ success: false, error: error });
@@ -85,10 +122,17 @@ export default class ClasseController {
             await classe.update({
                 libelle: req.body.libelle,
                 description: req.body.description,
-                niveauEtudeId: req.body.niveauEtudeId,
+                niveauEtudeId: req.body.niveauEtudeId || null,
+                parcoursId: req.body.parcoursId || null,
             })
-                .then(async (classe) => {
-                    return res.status(200).send(classe);
+                .then(async () => {
+                    const reloaded = await Classe.findByPk(classe!.id, {
+                        include: [
+                            { association: Classe.associations.niveauEtude },
+                            { association: Classe.associations.parcours }
+                        ]
+                    });
+                    return res.status(200).send(reloaded);
                 })
                 .catch((error) => {
                     return res.status(400).json({ success: false, error: error });

@@ -1,10 +1,10 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, NonAttribute, Association, HasManyGetAssociationsMixin, HasManyCreateAssociationMixin } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, NonAttribute, Association, HasManyGetAssociationsMixin, HasManyCreateAssociationMixin } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../ScolariteModule";
 import { DecisionConseil } from "./DecisionConseil";
 
 export class ConseilClasse extends Model<InferAttributes<ConseilClasse>, InferCreationAttributes<ConseilClasse>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare classe: string
   declare date: Date
   declare trimestre: number

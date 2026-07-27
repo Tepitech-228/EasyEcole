@@ -37,10 +37,78 @@ const upload = multer({
 const router = express.Router();
 
 router
-  .get('/', [Authenticate], SessionGedController.list)
-  .get('/:id', [Authenticate], SessionGedController.get)
-  .post('/', [Authenticate, AuthInstitution], SessionGedController.create)
-  .put('/:id', [Authenticate, AuthInstitution], SessionGedController.update)
-  .post('/batch-upload', [Authenticate, AuthInstitution, upload.array('fichiers', 20)], SessionGedController.uploadBatch);
+      /**
+     * @openapi
+     * /:
+     *   get:
+     *     tags: [GED]
+     *     summary: GET /
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.get('/', [Authenticate], SessionGedController.list)
+      /**
+     * @openapi
+     * /:id:
+     *   get:
+     *     tags: [GED]
+     *     summary: GET /:id
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.get('/:id', [Authenticate], SessionGedController.get)
+      /**
+     * @openapi
+     * /:
+     *   post:
+     *     tags: [GED]
+     *     summary: POST /
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.post('/', [Authenticate, AuthInstitution], SessionGedController.create)
+      /**
+     * @openapi
+     * /:id:
+     *   put:
+     *     tags: [GED]
+     *     summary: PUT /:id
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.put('/:id', [Authenticate, AuthInstitution], SessionGedController.update)
+      /**
+     * @openapi
+     * /batch-upload:
+     *   post:
+     *     tags: [GED]
+     *     summary: POST /batch-upload
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.post('/batch-upload', [Authenticate, AuthInstitution, upload.array('fichiers', 20)], SessionGedController.uploadBatch)
+      /**
+     * @openapi
+     * /:id/share-link:
+     *   get:
+     *     tags: [GED]
+     *     summary: GET /:id/share-link
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.get('/:id/share-link', [Authenticate, AuthInstitution], SessionGedController.generateShareLink);
+
 
 export default router;

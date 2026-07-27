@@ -1,9 +1,9 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, NonAttribute } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, NonAttribute } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 
 export class NiveauEtude extends Model<InferAttributes<NiveauEtude>, InferCreationAttributes<NiveauEtude>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare libelle: string
   
   declare readonly createdAt: CreationOptional<Date>

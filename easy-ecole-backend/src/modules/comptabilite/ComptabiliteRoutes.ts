@@ -7,6 +7,9 @@ import FraisParcoursRouter from "./routers/FraisParcoursRouter"
 import LigneFraisEtudiantRouter from "./routers/LigneFraisEtudiantRouter"
 import ReductionFraisRouter from "./routers/ReductionFraisRouter"
 import PenaliteRetardRouter from "./routers/PenaliteRetardRouter"
+import CompteBancaireRouter from "./routers/CompteBancaireRouter"
+import ReleveBancaireRouter from "./routers/ReleveBancaireRouter"
+import RapprochementRouter from "./routers/RapprochementRouter"
 import Authenticate from "../../core/middlewares/Authenticate"
 
 const router = express.Router()
@@ -19,5 +22,8 @@ router
   .use('/lignes-frais', [Authenticate], LigneFraisEtudiantRouter)
   .use('/reductions', [Authenticate], ReductionFraisRouter)
   .use('/penalites', [Authenticate], PenaliteRetardRouter)
+  .use('/comptes-bancaires', [Authenticate], CompteBancaireRouter)
+  .use('/releves-bancaires', [Authenticate], ReleveBancaireRouter)
+  .use('/rapprochement', [Authenticate], RapprochementRouter)
 
 export default router

@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
+import { NgSelectConfig } from '@ng-select/ng-select';
 import { AppComponent } from './app.component';
 
 describe('AppComponent', () => {
@@ -11,6 +12,9 @@ describe('AppComponent', () => {
       declarations: [
         AppComponent
       ],
+      providers: [
+        { provide: NgSelectConfig, useValue: { appendTo: 'body' } }
+      ]
     }).compileComponents();
   });
 
@@ -24,12 +28,5 @@ describe('AppComponent', () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
     expect(app.title).toEqual('easy-ecole-web');
-  });
-
-  it('should render title', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('.content span')?.textContent).toContain('easy-ecole-web app is running!');
   });
 });

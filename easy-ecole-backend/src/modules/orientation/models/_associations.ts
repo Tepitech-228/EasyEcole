@@ -10,6 +10,7 @@ import { ReponseOrientation } from "./ReponseOrientation";
 import { MatierePrerequis } from "./MatierePrerequis";
 import { PanierParcoursChoisi } from "./PanierParcoursChoisi";
 import { Utilisateur } from "../../auth/models/Utilisateur";
+import { AnneeAcademique } from "../../inscription/models/AnneeAcademique";
 
 // Categorie - Parcours
 Categorie.hasMany(Parcours, { foreignKey: 'categorieId', as: 'parcours' })
@@ -58,6 +59,10 @@ DemandeOrientation.hasOne(ReponseOrientation, { foreignKey: 'demandeOrientationI
 // DemandeOrientation - Utilisateur
 Utilisateur.hasMany(DemandeOrientation, { foreignKey: 'utilisateurId', as: 'demandesOrientation' })
 DemandeOrientation.belongsTo(Utilisateur, { foreignKey: 'utilisateurId', as: 'utilisateur' })
+
+// DemandeOrientation - AnneeAcademique
+AnneeAcademique.hasMany(DemandeOrientation, { foreignKey: 'anneeAcademiqueId', as: 'demandesOrientation' })
+DemandeOrientation.belongsTo(AnneeAcademique, { foreignKey: 'anneeAcademiqueId', as: 'anneeAcademique' })
 
 // ReponseOrientation - Utilisateur
 Utilisateur.hasMany(ReponseOrientation, { foreignKey: 'utilisateurId', as: 'reponsesOrientation' })

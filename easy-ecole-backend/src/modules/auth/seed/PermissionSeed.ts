@@ -12,11 +12,13 @@ const ALL_PERMISSIONS: Array<{ key: string; libelle: string; module: string; typ
     { key: 'menu.inscription.cursus', libelle: 'Mon cursus', module: 'Inscription', type: 'menu', parentKey: 'menu.inscription' },
     { key: 'menu.inscription.mon-dossier', libelle: 'Mon dossier', module: 'Inscription', type: 'menu', parentKey: 'menu.inscription' },
     { key: 'menu.inscription.dossiers-etudiants', libelle: 'Dossiers étudiants', module: 'Inscription', type: 'menu', parentKey: 'menu.inscription' },
+    { key: 'menu.inscription.effectifs', libelle: 'Effectifs inscrits', module: 'Inscription', type: 'menu', parentKey: 'menu.inscription' },
     { key: 'menu.inscription.paiements', libelle: 'Paiements', module: 'Inscription', type: 'menu', parentKey: 'menu.inscription' },
     { key: 'menu.inscription.comptabilite', libelle: 'Comptabilité', module: 'Inscription', type: 'menu', parentKey: 'menu.inscription' },
     { key: 'menu.inscription.bordereaux', libelle: 'Mes bordereaux', module: 'Inscription', type: 'menu', parentKey: 'menu.inscription' },
     { key: 'menu.inscription.validation-bordereaux', libelle: 'Valid. bordereaux', module: 'Inscription', type: 'menu', parentKey: 'menu.inscription' },
     { key: 'menu.inscription.echeances', libelle: 'Échéances', module: 'Inscription', type: 'menu', parentKey: 'menu.inscription' },
+    { key: 'menu.inscription.salles', libelle: 'Salles de classe', module: 'Inscription', type: 'menu', parentKey: 'menu.inscription' },
     // Actions Inscription
     { key: 'action.inscription.session.creer', libelle: 'Créer une session', module: 'Inscription', type: 'action', parentKey: 'menu.inscription.sessions' },
     { key: 'action.inscription.session.modifier', libelle: 'Modifier une session', module: 'Inscription', type: 'action', parentKey: 'menu.inscription.sessions' },
@@ -177,15 +179,31 @@ const ALL_PERMISSIONS: Array<{ key: string; libelle: string; module: string; typ
     // ============ STOCKS ============
     { key: 'menu.stocks', libelle: 'Stocks', module: 'Stocks', type: 'menu' },
     { key: 'menu.stocks.articles', libelle: 'Articles', module: 'Stocks', type: 'menu', parentKey: 'menu.stocks' },
+    { key: 'menu.stocks.categories', libelle: 'Catégories', module: 'Stocks', type: 'menu', parentKey: 'menu.stocks' },
     { key: 'menu.stocks.mouvements', libelle: 'Mouvements', module: 'Stocks', type: 'menu', parentKey: 'menu.stocks' },
+    { key: 'menu.stocks.besoins', libelle: 'Besoins', module: 'Stocks', type: 'menu', parentKey: 'menu.stocks' },
+    { key: 'menu.stocks.demandes-prix', libelle: 'Demandes de prix', module: 'Stocks', type: 'menu', parentKey: 'menu.stocks' },
+    { key: 'menu.stocks.transferts', libelle: 'Transferts', module: 'Stocks', type: 'menu', parentKey: 'menu.stocks' },
+    { key: 'menu.stocks.corrections', libelle: 'Corrections', module: 'Stocks', type: 'menu', parentKey: 'menu.stocks' },
+    { key: 'menu.stocks.rebuts', libelle: 'Rebuts', module: 'Stocks', type: 'menu', parentKey: 'menu.stocks' },
+    { key: 'menu.stocks.inventaires', libelle: 'Inventaires', module: 'Stocks', type: 'menu', parentKey: 'menu.stocks' },
     { key: 'menu.stocks.fournisseurs-stock', libelle: 'Fournisseurs', module: 'Stocks', type: 'menu', parentKey: 'menu.stocks' },
+    { key: 'menu.stocks.reportings', libelle: 'Reportings', module: 'Stocks', type: 'menu', parentKey: 'menu.stocks' },
+    { key: 'menu.stocks.cycle-vie', libelle: 'Cycle de vie', module: 'Stocks', type: 'menu', parentKey: 'menu.stocks' },
 
     // ============ IMMOBILISATIONS ============
     { key: 'menu.immobilisations', libelle: 'Immobilisations', module: 'Immobilisations', type: 'menu' },
     { key: 'menu.immobilisations.liste', libelle: 'Immobilisations', module: 'Immobilisations', type: 'menu', parentKey: 'menu.immobilisations' },
     { key: 'menu.immobilisations.sites', libelle: 'Sites', module: 'Immobilisations', type: 'menu', parentKey: 'menu.immobilisations' },
     { key: 'menu.immobilisations.categories', libelle: 'Catégories', module: 'Immobilisations', type: 'menu', parentKey: 'menu.immobilisations' },
+    { key: 'menu.immobilisations.affectations', libelle: 'Affectations', module: 'Immobilisations', type: 'menu', parentKey: 'menu.immobilisations' },
+    { key: 'menu.immobilisations.assurances', libelle: 'Assurances', module: 'Immobilisations', type: 'menu', parentKey: 'menu.immobilisations' },
+    { key: 'menu.immobilisations.sorties-provisoires', libelle: 'Sorties provisoires', module: 'Immobilisations', type: 'menu', parentKey: 'menu.immobilisations' },
+    { key: 'menu.immobilisations.cessions', libelle: 'Cessions', module: 'Immobilisations', type: 'menu', parentKey: 'menu.immobilisations' },
+    { key: 'menu.immobilisations.rebuts', libelle: 'Mises au rebut', module: 'Immobilisations', type: 'menu', parentKey: 'menu.immobilisations' },
     { key: 'menu.immobilisations.maintenance', libelle: 'Maintenance', module: 'Immobilisations', type: 'menu', parentKey: 'menu.immobilisations' },
+    { key: 'menu.immobilisations.inventaires', libelle: 'Inventaires', module: 'Immobilisations', type: 'menu', parentKey: 'menu.immobilisations' },
+    { key: 'menu.immobilisations.reportings', libelle: 'Reportings', module: 'Immobilisations', type: 'menu', parentKey: 'menu.immobilisations' },
 
     // ============ STAGES ============
     { key: 'menu.stages', libelle: 'Stages', module: 'Stages', type: 'menu' },
@@ -198,8 +216,15 @@ const ALL_PERMISSIONS: Array<{ key: string; libelle: string; module: string; typ
     { key: 'menu.rh.employes', libelle: 'Employés', module: 'R.H', type: 'menu', parentKey: 'menu.rh' },
     { key: 'menu.rh.offres-emploi', libelle: 'Offres d\'emploi', module: 'R.H', type: 'menu', parentKey: 'menu.rh' },
     { key: 'menu.rh.candidatures', libelle: 'Candidatures', module: 'R.H', type: 'menu', parentKey: 'menu.rh' },
+    { key: 'menu.rh.categories-professionnelles', libelle: 'Catégories professionnelles', module: 'R.H', type: 'menu', parentKey: 'menu.rh' },
+    { key: 'menu.rh.grilles-salariales', libelle: 'Grilles salariales', module: 'R.H', type: 'menu', parentKey: 'menu.rh' },
     { key: 'menu.rh.paie', libelle: 'Paie', module: 'R.H', type: 'menu', parentKey: 'menu.rh' },
+    { key: 'menu.rh.heures-supplementaires', libelle: 'Heures supplémentaires', module: 'R.H', type: 'menu', parentKey: 'menu.rh' },
+    { key: 'menu.rh.prets', libelle: 'Prêts / Avances', module: 'R.H', type: 'menu', parentKey: 'menu.rh' },
     { key: 'menu.rh.prestations', libelle: 'Prestations', module: 'R.H', type: 'menu', parentKey: 'menu.rh' },
+    { key: 'menu.rh.formations', libelle: 'Formations', module: 'R.H', type: 'menu', parentKey: 'menu.rh' },
+    { key: 'menu.rh.evaluations', libelle: 'Évaluations', module: 'R.H', type: 'menu', parentKey: 'menu.rh' },
+    { key: 'menu.rh.reportings', libelle: 'Reportings RH', module: 'R.H', type: 'menu', parentKey: 'menu.rh' },
     { key: 'action.rh.employe.creer', libelle: 'Créer un employé', module: 'R.H', type: 'action', parentKey: 'menu.rh.employes' },
     { key: 'action.rh.employe.modifier', libelle: 'Modifier un employé', module: 'R.H', type: 'action', parentKey: 'menu.rh.employes' },
     { key: 'action.rh.paie.generer', libelle: 'Générer la paie', module: 'R.H', type: 'action', parentKey: 'menu.rh.paie' },
@@ -231,6 +256,16 @@ const ALL_PERMISSIONS: Array<{ key: string; libelle: string; module: string; typ
     { key: 'action.administration.enseignant.inscrire', libelle: 'Inscrire un enseignant', module: 'Administration', type: 'action', parentKey: 'menu.administration.utilisateurs' },
     { key: 'action.administration.enseignant.generer-qr', libelle: 'Générer QR code enseignant', module: 'Administration', type: 'action', parentKey: 'menu.administration.qr-codes' },
     { key: 'action.administration.enseignant.supprimer', libelle: 'Supprimer un enseignant', module: 'Administration', type: 'action', parentKey: 'menu.administration.utilisateurs' },
+
+    { key: 'menu.etablissements', libelle: 'Etablissements', module: 'Inscription', type: 'menu', parentKey: 'menu.inscription' },
+    { key: 'action.etablissement.creer', libelle: 'Creer un etablissement', module: 'Inscription', type: 'action', parentKey: 'menu.etablissements' },
+    { key: 'action.etablissement.modifier', libelle: 'Modifier un etablissement', module: 'Inscription', type: 'action', parentKey: 'menu.etablissements' },
+    { key: 'action.etablissement.supprimer', libelle: 'Supprimer un etablissement', module: 'Inscription', type: 'action', parentKey: 'menu.etablissements' },
+
+    { key: 'action.immobilisation.rebut.creer', libelle: 'Creer un rebut', module: 'Immobilisations', type: 'action', parentKey: 'menu.immobilisations.rebuts' },
+
+    { key: 'action.stocks.transfert.creer', libelle: 'Creer un transfert', module: 'Stocks', type: 'action', parentKey: 'menu.stocks' },
+    { key: 'action.stocks.transfert.annuler', libelle: 'Annuler un transfert', module: 'Stocks', type: 'action', parentKey: 'menu.stocks' },
 
     // ============ COMITÉ ORIENTATION ============
     { key: 'menu.comite-orientation', libelle: 'Comité orientation', module: 'Administration', type: 'menu' },

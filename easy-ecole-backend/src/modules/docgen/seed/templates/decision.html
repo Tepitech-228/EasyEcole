@@ -1,0 +1,40 @@
+<div style="max-width:800px;margin:0 auto;padding:40px;font-family:Arial,Helvetica,sans-serif;color:#1A1A1A;">
+
+  <table style="width:100%;border-bottom:2px solid #14213D;padding-bottom:16px;margin-bottom:30px;">
+    <tr>
+      <td style="vertical-align:middle;font-size:12px;font-weight:bold;color:#14213D;">
+        RÉPUBLIQUE DE CÔTE D'IVOIRE<br>
+        <span style="font-size:10px;font-weight:normal;">MINISTÈRE DE L'ENSEIGNEMENT SUPÉRIEUR</span><br>
+        <span style="font-size:10px;font-weight:normal;">{{etablissement.nom}}</span>
+      </td>
+      <td style="text-align:right;width:70px;">
+        <img src="{{etablissement.logo}}" alt="Logo" style="width:60px;height:60px;object-fit:contain;">
+      </td>
+    </tr>
+  </table>
+
+  <div style="text-align:center;margin:40px 0;font-size:14px;font-weight:bold;text-transform:uppercase;letter-spacing:2px;">
+    DÉCISION {{reference}}
+  </div>
+
+  <p style="font-size:12px;line-height:1.8;">{{considerants}}</p>
+
+  <div style="margin:30px 0;">
+    <p style="font-size:12px;font-weight:bold;text-transform:uppercase;">Décide :</p>
+    <p style="font-size:12px;line-height:1.8;">{{decision}}</p>
+  </div>
+
+  <table style="width:100%;margin-top:60px;font-size:12px;">
+    <tr>
+      <td style="width:50%;">Fait à Abidjan, le {{dateEdition}}</td>
+      <td style="width:50%;text-align:center;">
+        <div style="margin-bottom:50px;">Le Directeur</div>
+        <div style="font-weight:bold;">{{etablissement.nom}}</div>
+      </td>
+    </tr>
+  </table>
+
+  <div style="text-align:center;margin-top:10px;font-size:10px;color:#999;">
+    Document généré le {{dateGeneration}} — Réf: {{reference}}
+  </div>
+</div>

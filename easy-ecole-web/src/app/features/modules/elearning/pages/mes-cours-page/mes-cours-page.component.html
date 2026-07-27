@@ -1,101 +1,102 @@
-<div class="dashboard-page">
-  <!-- Stats row -->
-  <div class="stats-row">
-    <div class="stat-card">
-      <div class="stat-icon blue">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+  <app-header-title title="Mes cours" subtitle="Accédez à tous vos cours en ligne"></app-header-title>
+
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
       </div>
-      <div class="stat-info">
-        <span class="stat-value">{{ coursList.length }}</span>
-        <span class="stat-label">Cours</span>
+      <div>
+        <div class="text-2xl font-bold text-gray-900">{{ coursList.length }}</div>
+        <div class="text-xs text-gray-500">Cours</div>
       </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-icon green">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-green-600">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
       </div>
-      <div class="stat-info">
-        <span class="stat-value">{{ totalModules }}</span>
-        <span class="stat-label">Modules</span>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon purple">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      </div>
-      <div class="stat-info">
-        <span class="stat-value">{{ totalQuiz }}</span>
-        <span class="stat-label">Quiz</span>
+      <div>
+        <div class="text-2xl font-bold text-gray-900">{{ totalModules }}</div>
+        <div class="text-xs text-gray-500">Modules</div>
       </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-icon orange">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       </div>
-      <div class="stat-info">
-        <span class="stat-value">{{ totalCertificats }}</span>
-        <span class="stat-label">Certificats</span>
+      <div>
+        <div class="text-2xl font-bold text-gray-900">0</div>
+        <div class="text-xs text-gray-500">Quiz</div>
+      </div>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </div>
+      <div>
+        <div class="text-2xl font-bold text-gray-900">0</div>
+        <div class="text-xs text-gray-500">Certificats</div>
       </div>
     </div>
   </div>
 
-  <!-- Search -->
-  <div class="search-bar">
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#9aa4c2" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="filterCours()" placeholder="Rechercher un cours par titre ou description..." />
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-6">
+    <div class="flex items-center gap-3">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#9CA3AF" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="filterCours()" placeholder="Rechercher un cours par titre ou description..." class="flex-1 text-sm border-0 outline-none focus:ring-0" />
+    </div>
   </div>
 
-  <!-- Loading -->
-  <div class="loading-state" *ngIf="loading">
-    <div class="spinner"></div>
+  <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+  <div *ngIf="!loading && filteredList.length === 0 && !searchQuery" class="text-center py-16">
+    <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#D1D5DB" stroke-width="1.5" class="mx-auto mb-4"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+    <p class="text-sm text-gray-400">Aucun cours disponible pour le moment</p>
   </div>
 
-  <!-- Empty -->
-  <div class="empty-state" *ngIf="!loading && filteredList.length === 0 && !searchQuery">
-    <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#d7d9e6" stroke-width="1.5"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-    <p>Aucun cours disponible pour le moment</p>
+  <div *ngIf="!loading && filteredList.length === 0 && searchQuery" class="text-center py-16">
+    <p class="text-sm text-gray-400">Aucun cours ne correspond à « {{ searchQuery }} »</p>
   </div>
 
-  <!-- Search empty -->
-  <div class="empty-state" *ngIf="!loading && filteredList.length === 0 && searchQuery">
-    <p>Aucun cours ne correspond à « {{ searchQuery }} »</p>
-  </div>
-
-  <!-- Course grid -->
-  <div class="cours-grid" *ngIf="!loading && filteredList.length > 0">
-    <div class="cours-card" *ngFor="let cours of filteredList">
-      <div class="card-image" [style.background]="cours.image ? '' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'">
-        <img *ngIf="cours.image" [src]="'/orientation/parcours/' + cours.image" alt="" />
-        <div class="card-badges">
-          <span class="badge badge-cours">Cours</span>
-          <span class="badge" [class.badge-active]="cours.statut === 'actif'" [class.badge-inactive]="cours.statut !== 'actif'">{{ cours.statut }}</span>
-          <span class="badge badge-format" [class.badge-video]="cours.format === 'video'" [class.badge-pdf]="cours.format === 'pdf'" [class.badge-mixte]="cours.format === 'mixte'">{{ cours.format }}</span>
+  <div *ngIf="!loading && filteredList.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div *ngFor="let cours of filteredList" class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+      <div class="h-40 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center relative">
+        <img *ngIf="coursImage(cours)" [src]="coursImage(cours)" alt="" class="w-full h-full object-cover" />
+        <div class="absolute top-2 right-2 flex gap-1">
+          <span class="px-2 py-0.5 bg-white/90 rounded-full text-xs font-medium text-gray-700">Cours</span>
+          <span class="px-2 py-0.5 rounded-full text-xs font-medium text-white"
+            [class.bg-green-500]="cours.statut === 'actif'" [class.bg-gray-500]="cours.statut !== 'actif'">{{ cours.statut }}</span>
+          <span class="px-2 py-0.5 rounded-full text-xs font-medium text-white"
+            [class.bg-blue-500]="cours.format === 'video'" [class.bg-amber-500]="cours.format === 'pdf'" [class.bg-purple-500]="cours.format === 'mixte'">{{ cours.format }}</span>
         </div>
       </div>
-      <div class="card-body">
-        <h3>{{ cours.titre }}</h3>
-        <p>{{ cours.description }}</p>
+      <div class="p-4">
+        <h3 class="text-sm font-semibold text-gray-900 mb-1 line-clamp-1">{{ cours.titre }}</h3>
+        <p class="text-xs text-gray-500 mb-3 line-clamp-2">{{ cours.description }}</p>
 
-        <!-- Progress -->
-        <div class="progress-section" *ngIf="cours.progression">
-          <div class="progress-head">
+        <div *ngIf="cours.progression" class="mb-3">
+          <div class="flex justify-between text-xs text-gray-500 mb-1">
             <span>Progression</span>
             <span>{{ cours.progression.termine }}/{{ cours.progression.total }} · {{ cours.progression.taux }}%</span>
           </div>
-          <div class="progress-bar">
-            <div class="progress-fill" [style.width.%]="cours.progression.taux"></div>
+          <div class="w-full bg-gray-100 rounded-full h-1.5">
+            <div class="bg-indigo-600 h-1.5 rounded-full" [style.width.%]="cours.progression.taux"></div>
           </div>
         </div>
 
-        <div class="card-meta">
+        <div class="flex justify-between items-center text-xs text-gray-400 mb-3">
           <span>{{ cours.modules?.length || 0 }} module(s)</span>
-          <span *ngIf="cours.enseignant" class="meta-prof">{{ cours.enseignant.prenoms }} {{ cours.enseignant.nom }}</span>
+          <span *ngIf="cours.enseignant">{{ cours.enseignant.prenoms }} {{ cours.enseignant.nom }}</span>
         </div>
-      </div>
-      <div class="card-actions">
-        <a [routerLink]="['/elearning', cours.id]" class="btn-primary">Voir le cours</a>
-        <a [routerLink]="['/elearning', cours.id, 'player']" class="btn-accent">Lecture</a>
-        <a [routerLink]="['/elearning', cours.id, 'chat']" class="btn-outline-sm">Chat</a>
+
+        <div class="flex gap-2">
+          <a [routerLink]="['/elearning', cours.id]" class="flex-1 text-center px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors">Voir</a>
+          <a [routerLink]="['/elearning', cours.id, 'player']" class="flex-1 text-center px-3 py-1.5 border border-gray-200 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors">Lecture</a>
+          <a [routerLink]="['/elearning', cours.id, 'chat']" class="px-3 py-1.5 border border-gray-200 text-gray-500 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </a>
+        </div>
       </div>
     </div>
   </div>

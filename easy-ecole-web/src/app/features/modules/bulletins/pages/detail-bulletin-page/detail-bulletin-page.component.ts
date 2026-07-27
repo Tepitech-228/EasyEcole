@@ -94,7 +94,15 @@ export class DetailBulletinPageComponent extends BaseComponentClass implements O
   }
 
   getSemestre(s: string): string {
-    return s === 'semestre1' ? 'Semestre 1' : 'Semestre 2';
+    const map: Record<string, string> = {
+      'semestre1': 'Semestre 1',
+      'semestre2': 'Semestre 2',
+      'semestre3': 'Semestre 3',
+      'semestre4': 'Semestre 4',
+      'semestre5': 'Semestre 5',
+      'semestre6': 'Semestre 6'
+    };
+    return map[s] || s;
   }
 
   getNoteClass(v: number | null): string {

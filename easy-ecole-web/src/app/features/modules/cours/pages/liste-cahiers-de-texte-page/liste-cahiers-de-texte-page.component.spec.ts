@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { RouterTestingModule } from '@angular/router/testing';
 
 import { ListeCahiersDeTextePageComponent } from './liste-cahiers-de-texte-page.component';
 
@@ -8,7 +10,8 @@ describe('ListeCahiersDeTextePageComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ListeCahiersDeTextePageComponent ]
+      declarations: [ ListeCahiersDeTextePageComponent ],
+      imports: [ HttpClientTestingModule, RouterTestingModule ]
     })
     .compileComponents();
   });

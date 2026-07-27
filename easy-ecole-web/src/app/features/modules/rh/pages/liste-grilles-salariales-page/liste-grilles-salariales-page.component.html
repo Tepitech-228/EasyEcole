@@ -1,0 +1,100 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <app-header-title
+    title="Grilles salariales"
+    subtitle="Gérez les grilles salariales par catégorie professionnelle">
+  </app-header-title>
+
+  <div *ngIf="filterCategorieId" class="mb-4">
+    <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-red-50 text-red-700">
+      Filtre: {{ getCategorieNom(filterCategorieId) }}
+      <a [routerLink]="['/rh/grilles-salariales']" class="ml-2 text-red-500 hover:text-red-700">&times;</a>
+    </span>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+    <div class="flex justify-end">
+      <app-custom-button *ngIf="rolesValue.isRessourcesHumaines || rolesValue.isAdmin || rolesValue.isInstitution" (click)="ouvrirFormulaire()" text="Nouvelle grille" color="primary"></app-custom-button>
+    </div>
+  </div>
+
+  <div *ngIf="showForm" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Nouvelle grille salariale</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Code *</label>
+        <input [(ngModel)]="formData.code" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="GRL-001" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Nom *</label>
+        <input [(ngModel)]="formData.nom" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="Nom de la grille" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Catégorie</label>
+        <select [(ngModel)]="formData.categorieProfessionnelleId" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+          <option value="">Sélectionner</option>
+          <option *ngFor="let c of categories" [value]="c.id">{{ c.nom }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Échelon</label>
+        <input [(ngModel)]="formData.echelon" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="E1" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Salaire minimum</label>
+        <input [(ngModel)]="formData.salaireMinimum" type="number" step="0.01" min="0" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="0" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Salaire maximum</label>
+        <input [(ngModel)]="formData.salaireMaximum" type="number" step="0.01" min="0" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="0" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Prime ancienneté</label>
+        <input [(ngModel)]="formData.primeAnciennete" type="number" step="0.01" min="0" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="0" />
+      </div>
+    </div>
+    <div class="flex justify-end gap-3 mt-4">
+      <app-custom-button (click)="fermerFormulaire()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+      <app-custom-button (click)="creerGrille()" text="Créer" color="primary"></app-custom-button>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-100">
+        <thead>
+          <tr class="bg-gray-50/50">
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Code</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nom</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Catégorie</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Échelon</th>
+            <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Salaire min</th>
+            <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Salaire max</th>
+            <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Prime ancienneté</th>
+            <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngFor="let g of filteredGrilles; trackBy: trackByFn" class="hover:bg-gray-50/50 transition-colors">
+            <td class="px-5 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ g.code }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ g.nom }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-500">{{ getCategorieNom(g.categorieProfessionnelleId) }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-500">{{ g.echelon || '-' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-right text-sm text-gray-700">{{ g.salaireMinimum != null ? g.salaireMinimum + ' F' : '-' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-right text-sm text-gray-700">{{ g.salaireMaximum != null ? g.salaireMaximum + ' F' : '-' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-right text-sm text-gray-700">{{ g.primeAnciennete != null ? g.primeAnciennete + ' F' : '-' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-right">
+              <div class="flex items-center justify-end gap-2">
+                <app-custom-button *ngIf="rolesValue.isRessourcesHumaines || rolesValue.isAdmin || rolesValue.isInstitution" (click)="supprimer(g.id)" text="Supprimer" color="primary" [outlined]="true"></app-custom-button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+    <div *ngIf="!loading && filteredGrilles.length === 0" class="px-5 py-12 text-center">
+      <svg class="mx-auto h-12 w-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      <p class="mt-4 text-sm text-gray-500">Aucune grille salariale</p>
+    </div>
+  </div>
+</div>

@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { CommonModule } from '@angular/common';
+import { ReportingService } from 'src/app/data/modules/reporting/services/reporting.service';
 
 @Component({
   selector: 'app-rapport-stocks-page',
@@ -8,11 +9,13 @@ import { HttpClient } from '@angular/common/http';
 })
 export class RapportStocksPageComponent implements OnInit {
   rows: any[] = [];
+chartData: number[] = [];
+chartLabels: string[] = [];
 
-  constructor(private http: HttpClient) {}
+  constructor(private reporting: ReportingService) {}
 
   ngOnInit(): void {
-    this.http.get('/api/reporting/achats/stocks').subscribe({
+    this.reporting.getStocks().subscribe({
       next: (res: any) => this.rows = res
     });
   }

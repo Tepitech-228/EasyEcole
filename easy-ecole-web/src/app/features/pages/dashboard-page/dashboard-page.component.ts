@@ -18,6 +18,8 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
   dashboardData: any = {};
   sessions: any[] = [];
   currentSession = 0;
+  demandesEnCours: any[] = [];
+  demandesCompletes: any[] = [];
   showNouvelleDemandeModal = false;
   alreadySignUp = false;
   demandeError = false;
@@ -35,6 +37,7 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
     this.loadDashboard();
     this.loadSessions();
     this.loadUserInfo();
+    this.loadMesDemandes();
   }
 
   private loadDashboard(): void {
@@ -62,6 +65,22 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
   private loadUserInfo(): void {
     this.http.get(`${this.API_URL}/auth/utilisateurs/moi`).subscribe({
       next: (u: any) => this.utilisateur = u,
+      error: () => {}
+    });
+  }
+
+  private loadMesDemandes(): void {
+    if (!this.rolesValue?.isApprenant) return;
+    this.http.get(`${this.API_URL}/inscription/demandesInscription`).subscribe({
+      next: (res: any) => {
+        const demandes = Array.isArray(res) ? res : (res?.data || []);
+        this.demandesCompletes = demandes.filter((d: any) =>
+          d.preInscription?.statut === 'valide'
+        );
+        this.demandesEnCours = demandes.filter((d: any) =>
+          d.preInscription?.statut && d.preInscription.statut !== 'valide'
+        );
+      },
       error: () => {}
     });
   }
@@ -95,12 +114,12 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
   // ─── Admin Charts ──────────────────────────────────────
   get adminBarChartData(): any {
     const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
-    const defaultData = [8, 12, 6, 15, 20, 18, 10, 5, 14, 22, 17, 9];
+    const demandes = this.dashboardData.demandesParMois || [];
     return {
       labels: months,
       datasets: [{
         label: 'Demandes',
-        data: defaultData,
+        data: demandes.length ? demandes : months.map(() => 0),
         backgroundColor: this.createGradient('rgba(59, 130, 246, 0.85)', 'rgba(59, 130, 246, 0.25)', 12),
         borderColor: '#2563eb',
         borderWidth: 2,
@@ -116,7 +135,7 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
     return {
       labels: ['Apprenants', 'Enseignants'],
       datasets: [{
-        data: [total || 180, ens || 45],
+        data: [total, ens],
         backgroundColor: ['#3b82f6', '#10b981'],
         hoverBackgroundColor: ['#2563eb', '#059669'],
         borderWidth: 0,
@@ -184,10 +203,10 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
       datasets: [{
         label: 'Effectifs',
         data: [
-          this.dashboardData.totalClasses || 12,
-          this.dashboardData.totalCours || 48,
-          this.dashboardData.totalEnseignants || 45,
-          this.dashboardData.totalApprenants || 180
+          this.dashboardData.totalClasses || 0,
+          this.dashboardData.totalCours || 0,
+          this.dashboardData.totalEnseignants || 0,
+          this.dashboardData.totalApprenants || 0
         ],
         backgroundColor: [
           'rgba(139, 92, 246, 0.85)', 'rgba(59, 130, 246, 0.85)',
@@ -228,9 +247,9 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
       datasets: [{
         label: 'Volume',
         data: [
-          this.dashboardData.totalPaiements || 240,
-          this.dashboardData.totalBordereaux || 180,
-          this.dashboardData.echeancesImpayees || 35
+          this.dashboardData.totalPaiements || 0,
+          this.dashboardData.totalBordereaux || 0,
+          this.dashboardData.echeancesImpayees || 0
         ],
         backgroundColor: [
           'rgba(16, 185, 129, 0.85)', 'rgba(59, 130, 246, 0.85)', 'rgba(239, 68, 68, 0.85)'
@@ -261,13 +280,13 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
 
   // ─── Comptable Charts ──────────────────────────────────
   get comptableDoughnutData(): any {
-    const total = this.dashboardData.totalEcheances || 250;
-    const impayees = this.dashboardData.echeancesImpayees || 35;
-    const payees = total - impayees;
+    const total = this.dashboardData.totalEcheances || 0;
+    const impayees = this.dashboardData.echeancesImpayees || 0;
+    const payees = Math.max(0, total - impayees);
     return {
       labels: ['Échéances payées', 'Échéances impayées'],
       datasets: [{
-        data: [payees || 215, impayees || 35],
+        data: [payees, impayees],
         backgroundColor: ['#10b981', '#ef4444'],
         hoverBackgroundColor: ['#059669', '#dc2626'],
         borderWidth: 0,
@@ -278,9 +297,9 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
 
   // ─── Orientation Charts ─────────────────────────────────
   get orientationDoughnutData(): any {
-    const enAttente = this.dashboardData.enAttente || 28;
-    const validees = this.dashboardData.validees || 62;
-    const rejetees = this.dashboardData.rejetees || 10;
+    const enAttente = this.dashboardData.enAttente || 0;
+    const validees = this.dashboardData.validees || 0;
+    const rejetees = this.dashboardData.rejetees || 0;
     return {
       labels: ['En attente', 'Validées', 'Rejetées'],
       datasets: [{
@@ -296,11 +315,12 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
   // ─── Enseignant Charts ─────────────────────────────────
   get enseignantBarData(): any {
     const agenda = this.dashboardData.agenda || [];
+    const jours = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
     return {
-      labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'],
+      labels: jours,
       datasets: [{
         label: 'Cours',
-        data: [3, 5, 2, 4, 1, 0].map((v, i) => v + (i === new Date().getDay() - 1 ? agenda.length * 0.5 : 0)),
+        data: jours.map(() => agenda.length),
         backgroundColor: ['rgba(16, 185, 129, 0.85)', 'rgba(16, 185, 129, 0.7)', 'rgba(16, 185, 129, 0.85)', 'rgba(16, 185, 129, 0.7)', 'rgba(16, 185, 129, 0.85)', 'rgba(16, 185, 129, 0.3)'],
         borderColor: '#10b981',
         borderWidth: 2,
@@ -345,13 +365,13 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
     const data = notes.slice(0, 8).map((n: any) => n.note || 0);
     if (labels.length === 0) {
       return {
-        labels: ['Maths', 'Info', 'Anglais', 'Compta', 'Droit', 'Marketing', 'BD', 'Réseaux'],
+        labels: ['Aucune note'],
         datasets: [{
           label: 'Notes',
-          data: [14, 16, 12, 15, 13, 17, 14, 11],
-          backgroundColor: 'rgba(245, 158, 11, 0.85)',
-          borderColor: '#f59e0b',
-          borderWidth: 2,
+          data: [0],
+          backgroundColor: 'rgba(156, 163, 175, 0.5)',
+          borderColor: '#9ca3af',
+          borderWidth: 1,
           borderRadius: 8,
           borderSkipped: false,
         }]
@@ -389,19 +409,6 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
     }
   };
 
-  get apprenantDoughnutData(): any {
-    return {
-      labels: ['Présent', 'Absent', 'Justifié'],
-      datasets: [{
-        data: [38, 7, 3],
-        backgroundColor: ['#10b981', '#ef4444', '#f59e0b'],
-        hoverBackgroundColor: ['#059669', '#dc2626', '#d97706'],
-        borderWidth: 0,
-        hoverOffset: 8,
-      }]
-    };
-  }
-
   // ─── Helpers ───────────────────────────────────────────
   private createGradient(start: string, end: string, count: number): string[] {
     return Array(count).fill(null).map(() => start);
@@ -413,6 +420,22 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
 
   get recentDemandes(): any[] {
     return this.dashboardData.recentDemandes || [];
+  }
+
+  get progressionSemestrielle(): any {
+    return this.dashboardData.progression || null;
+  }
+
+  get semestresProgression(): any[] {
+    return this.progressionSemestrielle?.semestres || [];
+  }
+
+  get anneeActiveProgression(): string {
+    return this.progressionSemestrielle?.anneeActuelle || '';
+  }
+
+  get semestreEnCoursProgression(): string | null {
+    return this.progressionSemestrielle?.semestreEnCours || null;
   }
 
   get paiementsRecents(): any[] {

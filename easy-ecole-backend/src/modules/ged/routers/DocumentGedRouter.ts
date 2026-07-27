@@ -3,8 +3,10 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import DocumentGedController from "../controllers/DocumentGedController";
+import IntegrityController from "../controllers/IntegrityController";
 import Authenticate from "../../../core/middlewares/Authenticate";
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
+import { AuthConfidentiality } from "../../../core/middlewares/AuthConfidentiality";
 
 const UPLOAD_DIR = "public/ged";
 const fullPath = path.resolve(process.cwd(), UPLOAD_DIR);
@@ -31,18 +33,270 @@ const upload = multer({
             cb(new Error('Seuls les fichiers PDF et TIFF sont acceptés'));
         }
     },
-    limits: { fileSize: 50 * 1024 * 1024 }
+    limits: { fileSize: 3 * 1024 * 1024 * 1024 }
 });
 
 const router = express.Router();
 
 router
-    .get('/', [Authenticate], DocumentGedController.getAll)
-    .get('/:id', [Authenticate], DocumentGedController.get)
-    .post('/', [Authenticate, AuthInstitution, upload.single('fichier')], DocumentGedController.upload)
-    .put('/:id', [Authenticate, AuthInstitution, upload.single('fichier')], DocumentGedController.update)
-    .get('/download/:id', [Authenticate], DocumentGedController.download)
-    .get('/:id/pdf', [Authenticate], DocumentGedController.exportPdf)
-    .delete('/:id', [Authenticate, AuthInstitution], DocumentGedController.delete)
+    // Listing & search
+        /**
+     * @openapi
+     * /:
+     *   get:
+     *     tags: [GED]
+     *     summary: GET /
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.get('/', [Authenticate], DocumentGedController.getAll)
+
+    // CRUD
+        /**
+     * @openapi
+     * /:
+     *   post:
+     *     tags: [GED]
+     *     summary: POST /
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.post('/', [Authenticate, AuthInstitution, upload.single('fichier')], DocumentGedController.upload)
+        /**
+     * @openapi
+     * /batch-upload:
+     *   post:
+     *     tags: [GED]
+     *     summary: POST /batch-upload
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.post('/batch-upload', [Authenticate, AuthInstitution, upload.array('fichiers', 50)], DocumentGedController.uploadBatch)
+        /**
+     * @openapi
+     * /:id:
+     *   put:
+     *     tags: [GED]
+     *     summary: PUT /:id
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.put('/:id', [Authenticate, AuthInstitution, upload.single('fichier')], DocumentGedController.update)
+
+    // Detail & download (with confidentiality check)
+        /**
+     * @openapi
+     * /:id:
+     *   get:
+     *     tags: [GED]
+     *     summary: GET /:id
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.get('/:id', [Authenticate, AuthConfidentiality], DocumentGedController.get)
+        /**
+     * @openapi
+     * /download/:id:
+     *   get:
+     *     tags: [GED]
+     *     summary: GET /download/:id
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.get('/download/:id', [Authenticate, AuthConfidentiality], DocumentGedController.download)
+        /**
+     * @openapi
+     * /:id/pdf:
+     *   get:
+     *     tags: [GED]
+     *     summary: GET /:id/pdf
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.get('/:id/pdf', [Authenticate, AuthConfidentiality], DocumentGedController.exportPdf)
+
+    // Lifecycle
+        /**
+     * @openapi
+     * /:id/validate:
+     *   post:
+     *     tags: [GED]
+     *     summary: POST /:id/validate
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.post('/:id/validate', [Authenticate, AuthInstitution], DocumentGedController.validate)
+        /**
+     * @openapi
+     * /:id/new-version:
+     *   post:
+     *     tags: [GED]
+     *     summary: POST /:id/new-version
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.post('/:id/new-version', [Authenticate, AuthInstitution], DocumentGedController.newVersion)
+        /**
+     * @openapi
+     * /:id/restore:
+     *   post:
+     *     tags: [GED]
+     *     summary: POST /:id/restore
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.post('/:id/restore', [Authenticate], DocumentGedController.restore)
+
+    // Locking
+        /**
+     * @openapi
+     * /:id/lock:
+     *   post:
+     *     tags: [GED]
+     *     summary: POST /:id/lock
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.post('/:id/lock', [Authenticate, AuthInstitution], DocumentGedController.lock)
+        /**
+     * @openapi
+     * /:id/unlock:
+     *   post:
+     *     tags: [GED]
+     *     summary: POST /:id/unlock
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.post('/:id/unlock', [Authenticate, AuthInstitution], DocumentGedController.unlock)
+
+    // Deletion flow (replaces old DELETE)
+        /**
+     * @openapi
+     * /:id/mark-for-deletion:
+     *   put:
+     *     tags: [GED]
+     *     summary: PUT /:id/mark-for-deletion
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.put('/:id/mark-for-deletion', [Authenticate], DocumentGedController.markForDeletion)
+        /**
+     * @openapi
+     * /:id/confirm-deletion:
+     *   post:
+     *     tags: [GED]
+     *     summary: POST /:id/confirm-deletion
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.post('/:id/confirm-deletion', [Authenticate], DocumentGedController.confirmDeletion)
+
+    // Signature workflow
+        /**
+     * @openapi
+     * /:id/request-signature:
+     *   post:
+     *     tags: [GED]
+     *     summary: POST /:id/request-signature
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.post('/:id/request-signature', [Authenticate, AuthInstitution], DocumentGedController.requestSignature)
+        /**
+     * @openapi
+     * /:id/sign:
+     *   post:
+     *     tags: [GED]
+     *     summary: POST /:id/sign
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.post('/:id/sign', [Authenticate, AuthInstitution], DocumentGedController.sign)
+        /**
+     * @openapi
+     * /:id/reject-signature:
+     *   post:
+     *     tags: [GED]
+     *     summary: POST /:id/reject-signature
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.post('/:id/reject-signature', [Authenticate, AuthInstitution], DocumentGedController.rejectSignature)
+
+    // Verification (public)
+        /**
+     * @openapi
+     * /verify/:id:
+     *   get:
+     *     tags: [GED]
+     *     summary: GET /verify/:id
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.get('/verify/:id', [Authenticate], DocumentGedController.verifyDocument)
+
+    // Integrity
+        /**
+     * @openapi
+     * /:id/verify-integrity:
+     *   post:
+     *     tags: [GED]
+     *     summary: POST /:id/verify-integrity
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.post('/:id/verify-integrity', [Authenticate], IntegrityController.verifyDocument)
+
+    // Audit (with confidentiality check)
+        /**
+     * @openapi
+     * /:id/audit-trail:
+     *   get:
+     *     tags: [GED]
+     *     summary: GET /:id/audit-trail
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.get('/:id/audit-trail', [Authenticate, AuthConfidentiality], DocumentGedController.getAuditTrail)
 
 export default router;

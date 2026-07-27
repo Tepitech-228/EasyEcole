@@ -4,14 +4,14 @@
     <!-- Bandeau du pôle actif -->
     <button
       class="active-pole-btn"
+      [style.--pole-bg]="activePoleColorLight"
       (click)="toggleMosaic()"
       [attr.aria-expanded]="mosaicOpen">
-      <i class="ti {{ activePole?.icon }}" aria-hidden="true"></i>
+      <div class="pole-icon" [style.-webkit-mask-image]="'url(assets/icons/' + activePole?.icon + '.svg)'" [style.mask-image]="'url(assets/icons/' + activePole?.icon + '.svg)'"></div>
       <span>{{ activePole?.label || '' }}</span>
-      <i
-        class="ti ti-chevron-down switch-chev"
-        [class.open]="mosaicOpen"
-        aria-hidden="true"></i>
+      <svg class="switch-chev" [class.open]="mosaicOpen" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+      </svg>
     </button>
 
     <!-- Mosaïque des pôles (dépliable) -->
@@ -20,9 +20,14 @@
         <div
           class="tile"
           *ngFor="let pole of poles"
+          [style.background]="getPoleBg(pole.label)"
+          [style.border-color]="getPoleColor(pole.label)"
           [class.active]="pole.label === activePoleLabel"
           (click)="selectPole(pole.label)">
-          <i class="ti {{ pole.icon }}" aria-hidden="true"></i>
+          <div class="pole-icon-lg"
+               [style.-webkit-mask-image]="'url(assets/icons/' + pole.icon + '.svg)'"
+               [style.mask-image]="'url(assets/icons/' + pole.icon + '.svg)'"
+               [style.background-color]="getPoleColor(pole.label)"></div>
           <span>{{ pole.label }}</span>
         </div>
       </div>

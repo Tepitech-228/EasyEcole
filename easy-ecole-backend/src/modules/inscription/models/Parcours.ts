@@ -1,4 +1,4 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { NiveauEtude } from "./NiveauEtude";
 import { PrerequisParcours } from "./PrerequisParcours";
@@ -6,7 +6,7 @@ import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { Cours } from "./Cours";
 
 export class Parcours extends Model<InferAttributes<Parcours>, InferCreationAttributes<Parcours>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare titre: string
   declare description: CreationOptional<string>
   declare type: CreationOptional<string>

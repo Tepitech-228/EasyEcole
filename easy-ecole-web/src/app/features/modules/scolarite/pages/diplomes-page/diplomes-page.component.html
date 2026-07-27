@@ -12,16 +12,27 @@
     <div class="card-body">
       <div class="form-grid">
         <div class="form-group">
-          <label class="form-label">Cursus Apprenant ID</label>
-          <input type="number" [(ngModel)]="newItem.cursusApprenantId" class="form-input" placeholder="ID du cursus">
+          <label class="form-label">Étudiant</label>
+          <select [(ngModel)]="newItem.cursusApprenantId" class="form-select">
+            <option value="">-- Sélectionner un étudiant --</option>
+            <option *ngFor="let c of cursusList" [value]="c.id">
+              {{ c.utilisateur?.prenoms || '' }} {{ c.utilisateur?.nom || '' }} — {{ c.parcours?.titre || 'N/A' }}
+            </option>
+          </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Parcours ID</label>
-          <input type="number" [(ngModel)]="newItem.parcoursId" class="form-input" placeholder="ID parcours">
+          <label class="form-label">Filière</label>
+          <select [(ngModel)]="newItem.parcoursId" class="form-select">
+            <option value="">-- Sélectionner une filière --</option>
+            <option *ngFor="let p of parcoursList" [value]="p.id">{{ p.titre }}</option>
+          </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Niveau d'étude ID</label>
-          <input type="number" [(ngModel)]="newItem.niveauEtudeId" class="form-input" placeholder="ID niveau étude">
+          <label class="form-label">Niveau d'étude</label>
+          <select [(ngModel)]="newItem.niveauEtudeId" class="form-select">
+            <option value="">-- Sélectionner un niveau --</option>
+            <option *ngFor="let n of niveauList" [value]="n.id">{{ n.libelle }}</option>
+          </select>
         </div>
         <div class="form-group">
           <label class="form-label">Année d'obtention</label>

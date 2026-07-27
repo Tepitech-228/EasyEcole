@@ -2,6 +2,16 @@ import { Component, OnInit } from '@angular/core';
 import { DemandeDocument } from 'src/app/data/modules/scolarite/models/DemandeDocument.model';
 import { DemandeDocumentService } from 'src/app/data/modules/scolarite/services/demande-document.service';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+import { AnneeAcademiqueService } from 'src/app/data/modules/inscription/services/annee-academique.service';
+import { NiveauEtudeService } from 'src/app/data/modules/inscription/services/niveau-etude.service';
+import { ParcoursService } from 'src/app/data/modules/inscription/services/parcours.service';
+import { SessionService } from 'src/app/data/modules/inscription/services/session.service';
+import { AnneeAcademique } from 'src/app/data/modules/inscription/models/AnneeAcademique.model';
+import { NiveauEtude } from 'src/app/data/modules/inscription/models/NiveauEtude.model';
+import { Parcours } from 'src/app/data/modules/inscription/models/Parcours.model';
+import { Session } from 'src/app/data/modules/inscription/models/Session.model';
+import { DossierNode, BatchAction } from 'src/app/shared/components/dossier-view/dossier-view.component';
+import { combineLatest } from 'rxjs';
 
 @Component({
   selector: 'app-traiter-demandes-page',
@@ -9,45 +19,119 @@ import { BaseComponentClass } from 'src/app/core/base-component-class';
   styleUrls: ['./traiter-demandes-page.component.scss']
 })
 export class TraiterDemandesPageComponent extends BaseComponentClass implements OnInit {
+  // Data
   demandes: DemandeDocument[] = [];
-  _demandes: DemandeDocument[] = [];
-  searchQuery: string = '';
-  filterStatut: string = 'undefined';
   loading: boolean = false;
-  traiterLoading: boolean = false;
+  batchLoading: boolean = false;
   errorMessage: string = '';
   successMessage: string = '';
+
+  // Filter data
+  annees: AnneeAcademique[] = [];
+  niveaux: NiveauEtude[] = [];
+  parcoursList: Parcours[] = [];
+  sessions: Session[] = [];
+  dataLoaded: boolean = false;
+
+  // Filter values
+  selectedAnneeId: string = '';
+  selectedNiveauId: string = '';
+  selectedParcoursId: string = '';
+  filterStatut: string = '';
+  searchQuery: string = '';
+
+  // Pagination
+  currentPage: number = 1;
+  pageSize: number = 20;
+  totalItems: number = 0;
+  totalPages: number = 1;
+
+  // Batch
+  selectedIds: number[] = [];
   showRejetModal: boolean = false;
-  demandeToRejeter: DemandeDocument | null = null;
   motifRejet: string = '';
 
-  currentPage: number = 1;
-  pageSize: number = 10;
+  // Dossier tree nodes
+  treeNodes: DossierNode[] = [];
 
-  constructor(private demandeService: DemandeDocumentService) {
+  // Batch actions
+  batchActions: BatchAction[] = [
+    { label: 'Valider la sélection', color: 'green', action: 'valider', icon: 'check' },
+    { label: 'Rejeter la sélection', color: 'red', action: 'rejeter', icon: 'close' }
+  ];
+
+  // Columns for item display
+  itemColumns = [
+    { key: 'typeDocument', label: 'Type document' },
+    { key: 'statut', label: 'Statut' },
+    { key: 'date', label: 'Date' },
+    { key: 'fraisPayes', label: 'Frais' }
+  ];
+
+  constructor(
+    private demandeService: DemandeDocumentService,
+    private anneeAcademiqueService: AnneeAcademiqueService,
+    private niveauEtudeService: NiveauEtudeService,
+    private parcoursService: ParcoursService,
+    private sessionService: SessionService,
+  ) {
     super();
   }
 
-  ngOnInit() {
+  ngOnInit(): void {
+    // Load filter data
+    combineLatest([
+      this.anneeAcademiqueService.getAll(),
+      this.niveauEtudeService.getAll(),
+      this.parcoursService.getAll(),
+      this.sessionService.getAll()
+    ]).subscribe({
+      next: ([annees, niveaux, parcours, sessions]) => {
+        this.annees = annees;
+        this.niveaux = niveaux;
+        this.parcoursList = parcours;
+        this.sessions = sessions;
+        this.dataLoaded = true;
+      },
+      error: () => {
+        this.dataLoaded = true;
+      }
+    });
+
     this.loadDemandes();
   }
 
-  get paginatedDemandes(): DemandeDocument[] {
-    const start = (this.currentPage - 1) * this.pageSize;
-    return this._demandes.slice(start, start + this.pageSize);
+  onFilterChange(filters: { anneeId: string; niveauId: string; parcoursId: string }): void {
+    this.selectedAnneeId = filters.anneeId;
+    this.selectedNiveauId = filters.niveauId;
+    this.selectedParcoursId = filters.parcoursId;
+    this.currentPage = 1;
+    this.loadDemandes();
   }
 
-  get totalPages(): number {
-    return Math.ceil(this._demandes.length / this.pageSize) || 1;
-  }
-
-  loadDemandes() {
+  loadDemandes(): void {
     this.loading = true;
     this.errorMessage = '';
-    this.demandeService.getAll().subscribe({
-      next: (data) => {
-        this.demandes = data;
-        this._demandes = [...this.demandes];
+
+    const params: any = {
+      page: this.currentPage,
+      limit: this.pageSize,
+      orderBy: 'date',
+      orderDir: 'DESC'
+    };
+    if (this.filterStatut) params.statut = this.filterStatut;
+    if (this.selectedAnneeId) params.anneeAcademiqueId = this.selectedAnneeId;
+    if (this.selectedNiveauId) params.niveauEtudeId = this.selectedNiveauId;
+    if (this.selectedParcoursId) params.parcoursId = this.selectedParcoursId;
+    if (this.searchQuery.trim()) params.search = this.searchQuery.trim();
+
+    this.demandeService.getAll(params).subscribe({
+      next: (res: any) => {
+        this.demandes = res.data || res;
+        this.totalItems = res.pagination?.total || this.demandes.length;
+        this.totalPages = res.pagination?.totalPages || 1;
+        this.currentPage = res.pagination?.page || 1;
+        this.buildTreeNodes();
         this.loading = false;
       },
       error: () => {
@@ -57,58 +141,107 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
     });
   }
 
-  traiter(demande: DemandeDocument, statut: string) {
-    if (!demande.id) return;
-    this.traiterLoading = true;
+  private buildTreeNodes(): void {
+    // Group by annee -> niveau -> parcours -> etudiant -> items
+    const groups: any = {};
+
+    for (const d of this.demandes) {
+      const anneeKey = d.anneeAcademiqueId || 'sans-annee';
+      const niveauKey = d.niveauEtudeId || 'sans-niveau';
+      const parcoursKey = d.parcoursId || 'sans-parcours';
+      const etudiantKey = d.etudiantId;
+      const etudiantLabel = d.etudiant ? `${d.etudiant.nom || ''} ${d.etudiant.prenoms || ''}`.trim() || `#${d.etudiantId}` : `#${d.etudiantId}`;
+
+      if (!groups[anneeKey]) groups[anneeKey] = {};
+      if (!groups[anneeKey][niveauKey]) groups[anneeKey][niveauKey] = {};
+      if (!groups[anneeKey][niveauKey][parcoursKey]) groups[anneeKey][niveauKey][parcoursKey] = {};
+      if (!groups[anneeKey][niveauKey][parcoursKey][etudiantKey]) groups[anneeKey][niveauKey][parcoursKey][etudiantKey] = { label: etudiantLabel, items: [] };
+
+      groups[anneeKey][niveauKey][parcoursKey][etudiantKey].items.push(d);
+    }
+
+    // Build tree structure
+    this.treeNodes = Object.entries(groups).map(([anneeKey, niveaux]: [string, any]) => ({
+      type: 'annee' as const,
+      label: this.getAnneeLibelle(anneeKey),
+      id: anneeKey,
+      expanded: true,
+      children: Object.entries(niveaux).map(([niveauKey, parcours]: [string, any]) => ({
+        type: 'niveau' as const,
+        label: this.getNiveauLibelle(niveauKey),
+        id: niveauKey,
+        expanded: true,
+        children: Object.entries(parcours).map(([parcoursKey, etudiants]: [string, any]) => ({
+          type: 'parcours' as const,
+          label: this.getParcoursTitre(parcoursKey),
+          id: parcoursKey,
+          expanded: true,
+          children: Object.entries(etudiants).map(([etudiantKey, etudiant]: [string, any]) => ({
+            type: 'etudiant' as const,
+            label: etudiant.label,
+            id: etudiantKey,
+            expanded: true,
+            items: etudiant.items
+          }))
+        }))
+      }))
+    }));
+  }
+
+  onSelectionChange(event: { ids: number[] }): void {
+    this.selectedIds = event.ids;
+  }
+
+  onBatchAction(event: { action: string; ids: number[] }): void {
+    if (event.action === 'rejeter' && event.ids.length > 0) {
+      this.showRejetModal = true;
+    } else if (event.action === 'valider' && event.ids.length > 0) {
+      this.executeBatch('validee', event.ids);
+    }
+  }
+
+  confirmerRejetBatch(): void {
+    if (this.selectedIds.length > 0) {
+      this.executeBatch('rejetee', this.selectedIds);
+      this.showRejetModal = false;
+      this.motifRejet = '';
+    }
+  }
+
+  private executeBatch(statut: string, ids: number[]): void {
+    this.batchLoading = true;
     this.errorMessage = '';
     this.successMessage = '';
-    this.demandeService.updateStatus(demande.id, statut).subscribe({
-      next: () => {
-        this.successMessage = `Demande ${statut === 'validee' ? 'validée' : 'marquée comme délivrée'} avec succès`;
-        this.traiterLoading = false;
+    this.demandeService.batchUpdateStatus(ids, statut).subscribe({
+      next: (res) => {
+        this.successMessage = `${res.count || ids.length} demande(s) ${statut === 'validee' ? 'validée(s)' : 'rejetée(s)'} avec succès`;
+        this.selectedIds = [];
+        this.batchLoading = false;
         this.loadDemandes();
       },
       error: () => {
-        this.errorMessage = 'Erreur lors du traitement';
-        this.traiterLoading = false;
+        this.errorMessage = 'Erreur lors du traitement batch';
+        this.batchLoading = false;
       }
     });
   }
 
-  confirmRejet(demande: DemandeDocument) {
-    this.demandeToRejeter = demande;
-    this.motifRejet = '';
-    this.showRejetModal = true;
+  onItemAction(event: { item: any; action: string }): void {
+    if (event.action === 'valider') {
+      this.executeBatch('validee', [event.item.id]);
+    } else if (event.action === 'rejeter') {
+      this.selectedIds = [event.item.id];
+      this.showRejetModal = true;
+    }
   }
 
-  rejeter() {
-    if (!this.demandeToRejeter?.id) return;
-    this.traiterLoading = true;
-    this.demandeService.updateStatus(this.demandeToRejeter.id, 'rejetee').subscribe({
-      next: () => {
-        this.showRejetModal = false;
-        this.demandeToRejeter = null;
-        this.motifRejet = '';
-        this.successMessage = 'Demande rejetée';
-        this.traiterLoading = false;
-        this.loadDemandes();
-      },
-      error: () => {
-        this.errorMessage = 'Erreur lors du rejet';
-        this.traiterLoading = false;
-      }
-    });
+  onPageChange(page: number): void {
+    this.currentPage = page;
+    this.loadDemandes();
   }
 
-  filtrer(): void {
-    this.currentPage = 1;
-    this._demandes = this.demandes.filter(d => {
-      const matchSearch = !this.searchQuery ||
-        d.etudiant?.nom?.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        `${d.etudiantId}`.includes(this.searchQuery);
-      const matchStatut = this.filterStatut === 'undefined' || d.statut === this.filterStatut;
-      return matchSearch && matchStatut;
-    });
+  getStatutCount(statut: string): number {
+    return 0; // Would need a separate count endpoint or derive from totalItems
   }
 
   statutLabel(statut: string): string {
@@ -131,15 +264,19 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
     }
   }
 
-  getStatutCount(statut: string): number {
-    return this.demandes.filter(d => d.statut === statut).length;
+  // Helper methods for labels
+  private getAnneeLibelle(id: string): string {
+    if (id === 'sans-annee') return 'Sans année';
+    return this.annees.find(a => String(a.id) === String(id))?.libelle || `Année #${id}`;
   }
 
-  nextPage(): void {
-    if (this.currentPage < this.totalPages) this.currentPage++;
+  private getNiveauLibelle(id: string): string {
+    if (id === 'sans-niveau') return 'Sans niveau';
+    return this.niveaux.find(n => String(n.id) === String(id))?.libelle || `Niveau #${id}`;
   }
 
-  prevPage(): void {
-    if (this.currentPage > 1) this.currentPage--;
+  private getParcoursTitre(id: string): string {
+    if (id === 'sans-parcours') return 'Sans parcours';
+    return this.parcoursList.find(p => String(p.id) === String(id))?.titre || `Parcours #${id}`;
   }
 }

@@ -1,22 +1,21 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { CursusApprenant } from "./CursusApprenant";
-import { UniteEnseignement } from "./UniteEnseignement";
+import { Cours } from "./Cours";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 
 export class Dispense extends Model<InferAttributes<Dispense>, InferCreationAttributes<Dispense>> {
   declare id: CreationOptional<number>
   declare cursusApprenantId: ForeignKey<CursusApprenant['id']>
-  declare ueId: ForeignKey<UniteEnseignement['id'] | null>
-  declare coursId: ForeignKey<number | null>
+  declare coursId: ForeignKey<Cours['id'] | null>
   declare motif: string
   declare validePar: ForeignKey<Utilisateur['id']>
   declare dateValidation: CreationOptional<Date | null>
   declare statut: CreationOptional<string>
 
   declare cursusApprenant?: NonAttribute<CursusApprenant>
-  declare uniteEnseignement?: NonAttribute<UniteEnseignement>
+  declare cours?: NonAttribute<Cours>
   declare valideParUtilisateur?: NonAttribute<Utilisateur>
 
   declare readonly createdAt: CreationOptional<Date>
@@ -25,7 +24,7 @@ export class Dispense extends Model<InferAttributes<Dispense>, InferCreationAttr
 
   declare static associations: {
     cursusApprenant: Association<Dispense, CursusApprenant>
-    uniteEnseignement: Association<Dispense, UniteEnseignement>
+    cours: Association<Dispense, Cours>
     valideParUtilisateur: Association<Dispense, Utilisateur>
   }
 }
@@ -39,10 +38,6 @@ Dispense.init({
   cursusApprenantId: {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false
-  },
-  ueId: {
-    type: DataTypes.INTEGER.UNSIGNED,
-    allowNull: true
   },
   coursId: {
     type: DataTypes.INTEGER.UNSIGNED,

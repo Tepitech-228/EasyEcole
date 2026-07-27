@@ -7,7 +7,7 @@ import { LocalStorageService } from "./services/local-storage.service"
 export class BaseComponentClass {
     private jwtTokenService: JwtTokenService = new JwtTokenService()
     static utilisateur: Utilisateur = new Utilisateur()
-    rolesValue: RolesValueType = { isApprenant: false, isInstitution: false, isEnseignant: false, isCaissierBanque: false, isRessourcesHumaines: false, isCabinetComptable: false, isComiteOrientation: false, isAdmin: false }
+    rolesValue: RolesValueType = { isApprenant: false, isInstitution: false, isEnseignant: false, isCaissierBanque: false, isRessourcesHumaines: false, isCabinetComptable: false, isComiteOrientation: false, isAdmin: false, isParent: false }
 
     constructor() {
         if(BaseComponentClass.utilisateur.role == undefined) {
@@ -28,7 +28,7 @@ export class BaseComponentClass {
 
     private getRoles(): void {
         const role: RolesUtilisateur | undefined = BaseComponentClass.utilisateur.role
-        this.rolesValue = { isApprenant: false, isInstitution: false, isEnseignant: false, isCaissierBanque: false, isRessourcesHumaines: false, isCabinetComptable: false, isComiteOrientation: false, isAdmin: false }
+        this.rolesValue = { isApprenant: false, isInstitution: false, isEnseignant: false, isCaissierBanque: false, isRessourcesHumaines: false, isCabinetComptable: false, isComiteOrientation: false, isAdmin: false, isParent: false }
 
         switch (role) {
             case RolesUtilisateur.APPRENANT:
@@ -63,8 +63,12 @@ export class BaseComponentClass {
                 this.rolesValue.isAdmin = true
                 break;
 
+            case RolesUtilisateur.PARENT:
+                this.rolesValue.isParent = true
+                break;
+
             default:
-                this.rolesValue = { isApprenant: false, isInstitution: false, isEnseignant: false, isCaissierBanque: false, isRessourcesHumaines: false, isCabinetComptable: false, isComiteOrientation: false, isAdmin: false }
+                this.rolesValue = { isApprenant: false, isInstitution: false, isEnseignant: false, isCaissierBanque: false, isRessourcesHumaines: false, isCabinetComptable: false, isComiteOrientation: false, isAdmin: false, isParent: false }
                 break;
         }
     }

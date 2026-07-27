@@ -1,4 +1,4 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { Classe } from "./Classe";
 import { Cours } from "./Cours";
@@ -8,7 +8,7 @@ import { TypesRessource } from "../../../core/enums/TypesRessource";
 import { FichierRessource } from "./FichierRessource";
 
 export class Ressource extends Model<InferAttributes<Ressource>, InferCreationAttributes<Ressource>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare titre: string
   declare description: CreationOptional<string>
   declare type: CreationOptional<TypesRessource>

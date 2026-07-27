@@ -1,7 +1,9 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { VerificationModule } from './features/pages/verification-document-page/verification-document-page.module';
 import { BaseLayoutComponent } from './features/layout/layouts/base-layout/base-layout.component';
 import { AuthGuard } from './core/guards/auth.guard';
+import { InscriptionCompleteGuard } from './core/guards/inscription-complete.guard';
 import { NotFoundPageComponent } from './features/pages/not-found-page/not-found-page.component';
 import { DashboardPageComponent } from './features/pages/dashboard-page/dashboard-page.component';
 
@@ -12,6 +14,12 @@ const routes: Routes = [
   {
     path: 'auth',
     loadChildren: () => import('./features/modules/auth/auth.module').then(m => m.AuthModule),
+  },
+
+  // Public verification page
+  {
+    path: 'verification',
+    loadChildren: () => import('./features/pages/verification-document-page/verification-document-page.module').then(m => m.VerificationModule),
   },
 
   // Dashboard
@@ -49,14 +57,14 @@ const routes: Routes = [
       {
         path: 'cours',
         loadChildren: () => import('./features/modules/cours/cours.module').then(m => m.CoursModule),
-        canLoad: [AuthGuard]
+        canLoad: [AuthGuard, InscriptionCompleteGuard]
       },
 
       // Module "Bulletins"
       {
         path: 'bulletins',
         loadChildren: () => import('./features/modules/bulletins/bulletins.module').then(m => m.BulletinsModule),
-        canLoad: [AuthGuard]
+        canLoad: [AuthGuard, InscriptionCompleteGuard]
       },
 
       // Module "Parametres"
@@ -70,7 +78,7 @@ const routes: Routes = [
       {
         path: 'stages',
         loadChildren: () => import('./features/modules/stages/stages.module').then(m => m.StagesModule),
-        canLoad: [AuthGuard]
+        canLoad: [AuthGuard, InscriptionCompleteGuard]
       },
 
       // Module "Stocks"
@@ -81,9 +89,29 @@ const routes: Routes = [
       },
 
       // Module "Immobilisations"
+      // {
+      //   path: 'etablissements',
+      //   loadChildren: () => import('./features/modules/etablissement/etablissement.module').then(m => m.EtablissementModule),
+      //   canLoad: [AuthGuard]
+      // },
+
+      // Module "Qualité"
       {
-        path: 'immobilisations',
-        loadChildren: () => import('./features/modules/immobilisations/immobilisations.module').then(m => m.ImmobilisationsModule),
+        path: 'qualite',
+        loadChildren: () => import('./features/modules/qualite/qualite.module').then(m => m.QualiteModule),
+        canLoad: [AuthGuard]
+      },
+
+      // Module "Marche"
+      {
+        path: 'marche',
+        loadChildren: () => import('./features/modules/marche/marche.module').then(m => m.MarcheModule),
+        canLoad: [AuthGuard]
+      },
+
+      {
+        path: 'docgen',
+        loadChildren: () => import('./features/modules/docgen/docgen.module').then(m => m.DocgenModule),
         canLoad: [AuthGuard]
       },
 
@@ -105,7 +133,7 @@ const routes: Routes = [
       {
         path: 'pointage',
         loadChildren: () => import('./features/modules/pointage/pointage.module').then(m => m.PointageModule),
-        canLoad: [AuthGuard]
+        canLoad: [AuthGuard, InscriptionCompleteGuard]
       },
 
       // Module "GED"
@@ -147,13 +175,20 @@ const routes: Routes = [
       {
         path: 'elearning',
         loadChildren: () => import('./features/modules/elearning/elearning.module').then(m => m.ElearningModule),
-        canLoad: [AuthGuard]
+        canLoad: [AuthGuard, InscriptionCompleteGuard]
       },
 
       // Module "Comptabilite"
       {
         path: 'comptabilite',
         loadChildren: () => import('./features/modules/comptabilite/comptabilite.module').then(m => m.ComptabiliteModule),
+        canLoad: [AuthGuard]
+      },
+
+      // Module "Espace Parents"
+      {
+        path: 'parent',
+        loadChildren: () => import('./features/modules/parent/parent.module').then(m => m.ParentModule),
         canLoad: [AuthGuard]
       },
     ]

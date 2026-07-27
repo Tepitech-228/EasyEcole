@@ -31,33 +31,8 @@ export class SseService implements OnDestroy {
   }
 
   private connect(): void {
-    try {
-      const token = localStorage.getItem('_token');
-      const url = `${environment.API_URL}/events?token=${token}`;
-      this.eventSource = new EventSource(url);
-
-      this.eventSource.addEventListener('connected', (() => {
-        this.fallbackActive = false;
-        this.stopFallback();
-      }) as EventListener);
-
-      this.eventSource.addEventListener('notification', ((event: MessageEvent) => {
-        const data: SseNotification = JSON.parse(event.data);
-        this.zone.run(() => this.notificationSubject.next(data));
-      }) as EventListener);
-
-      this.eventSource.addEventListener('error', (() => {
-        this.eventSource?.close();
-        this.eventSource = null;
-        if (!this.fallbackActive) {
-          this.fallbackActive = true;
-          this.startFallback();
-        }
-      }) as EventListener);
-    } catch {
-      this.fallbackActive = true;
-      this.startFallback();
-    }
+    this.fallbackActive = true;
+    this.startFallback();
   }
 
   private startFallback(): void {

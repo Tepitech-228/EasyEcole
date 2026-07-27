@@ -1,6 +1,28 @@
 <app-return-back link="/rh/candidatures" text="Retour aux candidatures"></app-return-back>
 
-<div class="bg-white rounded-lg shadow border border-gray-100 p-6">
-  <h2 class="text-xl font-semibold text-gray-900 mb-4">Détails de la candidature</h2>
-  <p class="text-sm text-gray-500">Sélectionnez une candidature depuis la liste.</p>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-2">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold text-gray-900">Candidature #{{ candidatureId }}</h2>
+        <span class="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Soumise</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div><label class="block text-xs font-medium text-gray-500 uppercase mb-1">Candidat</label><p class="text-sm text-gray-900">Dupont Jean</p></div>
+        <div><label class="block text-xs font-medium text-gray-500 uppercase mb-1">Offre</label><p class="text-sm text-gray-900">Développeur Angular</p></div>
+        <div><label class="block text-xs font-medium text-gray-500 uppercase mb-1">Date dépôt</label><p class="text-sm text-gray-900">20/01/2026</p></div>
+        <div><label class="block text-xs font-medium text-gray-500 uppercase mb-1">Statut</label><p class="text-sm text-gray-900">Soumise</p></div>
+      </div>
+      <div class="mt-6 flex gap-3">
+        <app-custom-button text="Valider" color="emerald"></app-custom-button>
+        <app-custom-button text="Rejeter" color="primary"></app-custom-button>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">Documents</h3>
+      <p class="text-sm text-gray-500">CV et lettre de motivation à venir.</p>
+    </div>
+  </div>
 </div>

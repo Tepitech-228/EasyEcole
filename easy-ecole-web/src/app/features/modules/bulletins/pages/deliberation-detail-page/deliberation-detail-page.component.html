@@ -18,7 +18,7 @@
           </span>
         </div>
         <p class="mt-1 text-sm text-gray-500">
-          {{ deliberation.classe?.libelle || '-' }} — {{ deliberation.periode === 'semestre1' ? 'Semestre 1' : 'Semestre 2' }} — {{ deliberation.date | date:'dd/MM/yyyy' }}
+          {{ deliberation.classe?.libelle || '-' }} — {{ deliberation.periode === 'semestre1' ? 'Semestre 1' : deliberation.periode === 'semestre2' ? 'Semestre 2' : deliberation.periode === 'semestre3' ? 'Semestre 3' : deliberation.periode === 'semestre4' ? 'Semestre 4' : deliberation.periode === 'semestre5' ? 'Semestre 5' : 'Semestre 6' }} — {{ deliberation.date | date:'dd/MM/yyyy' }}
           <span *ngIf="deliberation.sessionType === 'rattrapage'" class="ml-2 text-xs font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded">Session rattrapage</span>
         </p>
       </div>
@@ -117,6 +117,7 @@
               <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Moy.</th>
               <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Mention</th>
               <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Rang</th>
+              <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Crédits</th>
               <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Décision</th>
               <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Assiduité</th>
               <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Finances</th>
@@ -150,9 +151,19 @@
               </td>
               <td class="px-5 py-4 whitespace-nowrap text-center text-sm text-gray-700">{{ r.rang }}</td>
               <td class="px-5 py-4 whitespace-nowrap text-center">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" [ngClass]="getDecisionClass(r.decision)">
-                  {{ getDecisionLabel(r.decision) }}
+                <span class="text-sm font-medium" [class.text-green-600]="r.creditsValides === r.totalCredits" [class.text-red-600]="r.decision === 'admis_avec_dette'">
+                  {{ r.creditsValides != null ? r.creditsValides : '-' }}/{{ r.totalCredits || '-' }}
                 </span>
+              </td>
+              <td class="px-5 py-4 whitespace-nowrap text-center">
+                <div class="flex flex-col items-center gap-1">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" [ngClass]="getDecisionClass(r.decision)">
+                    {{ getDecisionLabel(r.decision) }}
+                  </span>
+                  <span *ngIf="r.decision === 'admis_avec_dette'" class="text-xs text-red-500 font-medium">
+                    Dettes à reporter
+                  </span>
+                </div>
               </td>
               <td class="px-5 py-4 whitespace-nowrap text-center">
                 <span class="text-xs" [ngClass]="{

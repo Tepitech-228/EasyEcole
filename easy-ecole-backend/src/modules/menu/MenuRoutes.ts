@@ -51,7 +51,18 @@ function filterMenuByPermissions(
     }, []);
 }
 
-router.get('/', Authenticate, async (req: Request, res: Response) => {
+router    /**
+     * @openapi
+     * /:
+     *   get:
+     *     tags: [Menu]
+     *     summary: GET /
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Success
+     */
+.get('/', Authenticate, async (req: Request, res: Response) => {
     try {
         const userRole = req.utilisateurRole as RolesUtilisateur;
         const utilisateurId = req.utilisateurId;

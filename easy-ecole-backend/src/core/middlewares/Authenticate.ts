@@ -5,11 +5,18 @@ import { JWT_SECRET } from '../config/jwt'
 import { Utilisateur } from '../../modules/auth/models/Utilisateur'
 
 export default async (req: Request, res: Response, next: Function) => {
-    if (!req.headers['authorization']) {
+    if (req.method === 'OPTIONS') {
+        return next()
+    }
+    let accessToken: string | null = null;
+    if (req.headers['authorization']) {
+        accessToken = req.headers.authorization.split(' ')[1];
+    } else if (req.query.token) {
+        accessToken = req.query.token as string;
+    }
+    if (!accessToken) {
         return res.status(400).json({ success: false, message: 'No access token provided' })
     }
-
-    const accessToken = req.headers.authorization.split(' ')[1]
 
     try {
         const decoded = jwt.verify(accessToken, JWT_SECRET) as unknown as EncodePayload

@@ -13,4 +13,6 @@ export class CessionService {
     create(item: Cession): Observable<Cession> { return this.httpClient.post<Cession>(`${this.SERVICE_URL}`, item) }
     update(item: Cession): Observable<Cession> { return this.httpClient.put<Cession>(`${this.SERVICE_URL}/${item.id!}`, item) }
     delete(id: string): Observable<any> { return this.httpClient.delete(`${this.SERVICE_URL}/${id}`) }
+    approuver(id: string, data?: any): Observable<Cession> { return this.httpClient.patch<Cession>(`${this.SERVICE_URL}/${id}/approuver`, data || {}) }
+    refuser(id: string, motif?: string): Observable<Cession> { return this.httpClient.patch<Cession>(`${this.SERVICE_URL}/${id}/refuser`, { motif }) }
 }

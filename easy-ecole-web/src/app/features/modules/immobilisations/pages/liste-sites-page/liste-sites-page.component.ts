@@ -12,29 +12,41 @@ import { SiteService } from 'src/app/data/modules/immobilisations/services/site.
 export class ListeSitesPageComponent extends BaseComponentClass implements OnInit {
 
     sites: Site[] = []
+    loading = false
+    searchTerm = ''
 
     constructor(
         private router: Router,
         private siteService: SiteService) {
         super()
-        this.getSites()
     }
 
     ngOnInit(): void {
+        this.loadSites()
     }
 
-    private getSites(): void {
+    loadSites(): void {
+        this.loading = true
         this.siteService.getAll()
-            .subscribe(
-                {
-                    next: (res) => {
-                        this.sites = res
-                    },
-                    error: (err) => {
-                        console.log(err)
-                    },
-                }
-            )
+            .subscribe({
+                next: (res) => {
+                    this.sites = res
+                    this.loading = false
+                },
+                error: () => this.loading = false
+            })
+    }
+
+    get totalSites(): number {
+        return this.sites.length
+    }
+
+    getActiveSitesCount(): number {
+        return this.sites.filter(s => (s as any).actif !== false).length
+    }
+
+    getAvecImmobilisationsCount(): number {
+        return this.sites.filter(s => (s as any).immobilisations && (s as any).immobilisations.length > 0).length
     }
 
 }

@@ -1,0 +1,102 @@
+<div class="batch-upload-page">
+  <div class="page-head">
+    <h2>Import en lot — Archives papier</h2>
+    <p>Importer plusieurs PDF scannés avec des métadonnées communes</p>
+  </div>
+
+  <!-- Step 1: Common metadata -->
+  <div class="card">
+    <h3 class="card-title">Métadonnées communes (appliquées à tous les fichiers)</h3>
+    <div class="form-grid">
+      <div class="field">
+        <label>Année académique</label>
+        <select [(ngModel)]="selectedAnneeId">
+          <option [ngValue]="undefined">— Sélectionner —</option>
+          <option *ngFor="let a of annees" [ngValue]="a.id">{{ a.libelle }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Domaine</label>
+        <select [(ngModel)]="selectedDomainId" (change)="onDomainChange()">
+          <option [ngValue]="undefined">— Sélectionner —</option>
+          <option *ngFor="let d of domains" [ngValue]="d.id">{{ d.label }} ({{ d.code }})</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Type de document</label>
+        <select [(ngModel)]="selectedDocumentTypeId">
+          <option [ngValue]="undefined">— Sélectionner —</option>
+          <option *ngFor="let t of documentTypes" [ngValue]="t.id">{{ t.label }} ({{ t.shortCode }})</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Date du document (rétroactive)</label>
+        <input type="date" [(ngModel)]="selectedDateDocument" />
+        <span class="field-hint">Utiliser la date d'origine du document papier (ex: 2016-09-01)</span>
+      </div>
+      <div class="field">
+        <label>Source</label>
+        <select [(ngModel)]="selectedSourceType">
+          <option value="numerisation">Numérisation</option>
+          <option value="recu_externe">Reçu (externe)</option>
+          <option value="numerise_interne">Numérisé (interne)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Confidentialité</label>
+        <select [(ngModel)]="selectedConfidentiality">
+          <option value="public">Public</option>
+          <option value="interne">Interne</option>
+          <option value="restreint">Restreint</option>
+          <option value="confidentiel">Confidentiel</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: File selection -->
+  <div class="card">
+    <h3 class="card-title">Fichiers à importer</h3>
+    <div
+      class="dropzone"
+      (dragover)="$event.preventDefault()"
+      (drop)="onDrop($event)">
+      <div class="dropzone-content" *ngIf="files.length === 0">
+        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#3b5bff" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <h3>Déposez vos fichiers PDF ici</h3>
+        <p>ou cliquez pour sélectionner plusieurs fichiers</p>
+        <button type="button" class="btn-outline" (click)="openFilePicker()">Choisir des fichiers</button>
+      </div>
+    </div>
+
+    <input type="file" accept="application/pdf" multiple (change)="onFilesSelected($event)" class="file-input-hidden" #batchFileInput />
+
+    <div *ngIf="files.length > 0" class="file-list">
+      <div class="file-list-header">
+        <span>{{ files.length }} fichier(s) sélectionné(s)</span>
+        <button class="btn-add" (click)="openFilePicker()">+ Ajouter</button>
+      </div>
+      <div class="file-item" *ngFor="let f of files; let i = index">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#1fa06b" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <div class="file-info">
+          <strong>{{ f.name }}</strong>
+          <span class="file-size">{{ f.size }}</span>
+        </div>
+        <span class="file-status" [class.pending]="f.status === 'pending'" [class.done]="f.status === 'ocr_done'">
+          {{ f.status === 'pending' ? 'En attente' : f.status === 'ocr_done' ? 'OCR fait' : 'Erreur' }}
+        </span>
+        <button class="btn-remove" (click)="removeFile(i)">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload button -->
+  <div class="actions">
+    <button class="btn-primary btn-lg" (click)="upload()" [disabled]="files.length === 0 || uploading">
+      <svg *ngIf="uploading" class="spin" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31.4 10"/></svg>
+      {{ uploading ? 'Import en cours...' : 'Importer le lot (' + files.length + ' fichier(s))' }}
+    </button>
+  </div>
+</div>

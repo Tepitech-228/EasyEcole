@@ -1,0 +1,83 @@
+<div class="dossiers-page">
+  <div class="page-head">
+    <h2>Dossiers virtuels</h2>
+    <p>Retrouver tous les documents d'un etudiant ou d'un employe</p>
+  </div>
+
+  <div class="search-bar">
+    <div class="type-toggle">
+      <button
+        class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+        [class.bg-blue-600]="type === 'etudiant'"
+        [class.text-white]="type === 'etudiant'"
+        [class.bg-gray-100]="type !== 'etudiant'"
+        [class.text-gray-700]="type !== 'etudiant'"
+        (click)="type = 'etudiant'; searched = false; documents = [];">
+        Etudiant
+      </button>
+      <button
+        class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+        [class.bg-blue-600]="type === 'employe'"
+        [class.text-white]="type === 'employe'"
+        [class.bg-gray-100]="type !== 'employe'"
+        [class.text-gray-700]="type !== 'employe'"
+        (click)="type = 'employe'; searched = false; documents = [];">
+        Employe
+      </button>
+    </div>
+
+    <div class="search-inputs">
+      <input
+        type="text"
+        [(ngModel)]="entityId"
+        [placeholder]="typePlaceholder"
+        class="search-input"
+        (keyup.enter)="search()" />
+      <button class="btn-primary" (click)="search()">Rechercher</button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">Chargement...</div>
+
+  <div *ngIf="!loading && searched && documents.length === 0" class="empty-state">
+    <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#6e7391" stroke-width="1.5" class="mx-auto mb-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    <p>Aucun document trouve pour cet identifiant</p>
+  </div>
+
+  <div class="table-container" style="overflow-x: auto;" *ngIf="documents.length > 0">
+    <div class="result-header">
+      <span class="font-semibold text-gray-800">{{ documents.length }} document(s) trouve(s)</span>
+    </div>
+    <table class="ged-table" style="min-width: 700px;">
+      <thead>
+        <tr>
+          <th>Document</th>
+          <th>Reference</th>
+          <th>Type</th>
+          <th>Domaine</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let d of documents">
+          <td class="cell-title">
+            <span class="font-semibold text-gray-800">{{ d.titre }}</span>
+          </td>
+          <td class="font-mono text-xs text-gray-500">{{ d.reference || '-' }}</td>
+          <td>{{ d.documentType?.label || d.type || '-' }}</td>
+          <td>{{ d.domain?.label || '-' }}</td>
+          <td>{{ formatDate(d.createdAt) }}</td>
+          <td class="cell-actions">
+            <button class="action-btn" title="Voir fiche" (click)="navigateToDocument(d)">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+            <button class="action-btn" title="Telecharger" (click)="download(d)">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

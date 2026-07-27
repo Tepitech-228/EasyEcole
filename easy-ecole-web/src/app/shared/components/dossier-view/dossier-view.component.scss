@@ -1,0 +1,12 @@
+:host {
+  display: block;
+}
+
+::ng-deep .app-dossier-view .app-dossier-view {
+  border: none;
+  border-radius: 0;
+}
+
+::ng-deep .app-dossier-view .app-dossier-view .divide-y > div:last-child {
+  border-bottom: none;
+}

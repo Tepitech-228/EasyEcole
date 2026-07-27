@@ -39,6 +39,23 @@
         </div>
     </div>
 
+    <div *ngIf="stepMessage" class="mb-4 p-4 rounded-lg text-sm font-medium flex items-center justify-between"
+      [class.bg-green-50]="stepMessage.type === 'success'"
+      [class.text-green-800]="stepMessage.type === 'success'"
+      [class.border]="true"
+      [class.border-green-200]="stepMessage.type === 'success'"
+      [class.bg-blue-50]="stepMessage.type === 'info'"
+      [class.text-blue-800]="stepMessage.type === 'info'"
+      [class.border-blue-200]="stepMessage.type === 'info'"
+      [class.bg-yellow-50]="stepMessage.type === 'warning'"
+      [class.text-yellow-800]="stepMessage.type === 'warning'"
+      [class.border-yellow-200]="stepMessage.type === 'warning'">
+      <span>{{ stepMessage.text }}</span>
+      <button *ngIf="currentItemSection === 3 || currentItemSection === 5" (click)="verifierStatut()" class="ml-4 px-3 py-1 text-xs font-medium rounded bg-white border border-gray-300 hover:bg-gray-50 text-gray-700">
+        Vérifier
+      </button>
+    </div>
+
     <app-custom-wizard [items]="wizardItems" activeColor="bg-green-600" incompleteColor="bg-red-500"></app-custom-wizard>
 
     <ng-container>
@@ -49,27 +66,27 @@
 
         <!-- Section: Choix parcours -->
         <ng-container *ngIf="currentItemSection == 1">
-            <app-choix-parcours-section [parcours]="parcoursFinal" [demande]="demande" [rolesValue]="rolesValue" (nextStep)="initSteps()"></app-choix-parcours-section>
+            <app-choix-parcours-section [parcours]="parcoursFinal" [demande]="demande" [rolesValue]="rolesValue" (nextStep)="onStepComplete(1, 'Parcours finalisé. Vous pouvez maintenant uploader vos documents.')"></app-choix-parcours-section>
         </ng-container>
 
-        <!-- Section: Documents (déplacé avant préinscription) -->
+        <!-- Section: Documents -->
         <ng-container *ngIf="currentItemSection == 2">
-            <app-documents-section [demande]="demande" [rolesValue]="rolesValue" (nextStep)="getDemandeInscription()"></app-documents-section>
+            <app-documents-section [demande]="demande" [rolesValue]="rolesValue" (nextStep)="onStepComplete(2, 'Documents uploadés. Vous pouvez soumettre votre dossier au comité d\'orientation.')"></app-documents-section>
         </ng-container>
 
-        <!-- Section: Préinscription (déplacé après documents) -->
+        <!-- Section: Préinscription -->
         <ng-container *ngIf="currentItemSection == 3">
-            <app-pre-inscription-section [demande]="demande" [rolesValue]="rolesValue" (nextStep)="initSteps()" (refresh)="getDemandeInscription()"></app-pre-inscription-section>
+            <app-pre-inscription-section [demande]="demande" [rolesValue]="rolesValue" (nextStep)="onStepComplete(3, 'Dossier soumis au comité d\'orientation. En attente de validation.')" (refresh)="onStepComplete(3, 'Dossier soumis au comité d\'orientation. En attente de validation.')"></app-pre-inscription-section>
         </ng-container>
 
         <!-- Section: Cours -->
         <ng-container *ngIf="currentItemSection == 4">
-            <app-cours-section [demandeId]="demande!.id!" [parcours]="parcoursFinal" [coursChoisis]="demande!.coursChoisis" [rolesValue]="rolesValue" (nextStep)="getDemandeInscription()"></app-cours-section>
+            <app-cours-section [demandeId]="demande!.id!" [parcours]="parcoursFinal" [coursChoisis]="demande!.coursChoisis" [rolesValue]="rolesValue" (nextStep)="onStepComplete(4, 'Cours validés. Veuillez procéder au paiement des frais d\'inscription.')"></app-cours-section>
         </ng-container>
 
         <!-- Section: Paiements -->
         <ng-container *ngIf="currentItemSection == 5">
-            <app-paiements-section [demande]="demande" [coursChoisis]="demande!.coursChoisis" [rolesValue]="rolesValue"></app-paiements-section>
+            <app-paiements-section [demande]="demande" [coursChoisis]="demande!.coursChoisis" [rolesValue]="rolesValue" (nextStep)="onStepComplete(5, 'Paiement effectué. En attente de validation finale par l\'institution.')"></app-paiements-section>
         </ng-container>
 
         <!-- Section: Validation -->

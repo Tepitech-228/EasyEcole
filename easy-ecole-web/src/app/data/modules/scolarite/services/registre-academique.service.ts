@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
@@ -10,8 +10,20 @@ export class RegistreAcademiqueService {
 
   constructor(private httpClient: HttpClient) { }
 
-  getAll(): Observable<RegistreAcademique[]> {
-    return this.httpClient.get<RegistreAcademique[]>(`${this.SERVICE_URL}/`)
+  getAll(params?: any): Observable<any> {
+    let httpParams = new HttpParams()
+    if (params) {
+      Object.keys(params).forEach(key => {
+        if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
+          httpParams = httpParams.set(key, params[key])
+        }
+      })
+    }
+    return this.httpClient.get<any>(`${this.SERVICE_URL}/`, { params: httpParams })
+  }
+
+  batchStatut(ids: number[], decision: string): Observable<any> {
+    return this.httpClient.put(`${this.SERVICE_URL}/batch/statut`, { ids, decision })
   }
 
   get(id: string): Observable<RegistreAcademique> {

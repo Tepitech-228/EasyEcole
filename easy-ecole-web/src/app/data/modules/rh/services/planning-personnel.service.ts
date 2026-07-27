@@ -14,6 +14,7 @@ export interface PlanningPersonnel {
   dateDebut: string;
   dateFin: string;
   description?: string;
+  dateLimitePlanification?: string | null;
   employe?: any;
   createdAt?: Date;
   updatedAt?: Date;

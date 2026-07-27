@@ -1,4 +1,4 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { EtatsValidationParcours } from "../../../core/enums/EtatsValidationParcours";
 import { DemandeInscription } from "./DemandeInscription";
@@ -7,7 +7,7 @@ import { PrerequisParcoursChoisi } from "./PrerequisParcoursChoisi";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 
 export class ParcoursChoisi extends Model<InferAttributes<ParcoursChoisi>, InferCreationAttributes<ParcoursChoisi>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare etatDeValidation: EtatsValidationParcours
   declare choixFinal: CreationOptional<boolean>
   declare messageDeValidation: string

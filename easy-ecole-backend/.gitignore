@@ -9,3 +9,11 @@ lib/
 *.locked
 
 public
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Config files with secrets
+src/core/config/mail.json

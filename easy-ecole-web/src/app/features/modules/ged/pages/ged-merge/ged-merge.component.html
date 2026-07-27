@@ -1,0 +1,312 @@
+<div class="merge-page">
+  <!-- Left: Folder tree -->
+  <div class="tree-panel">
+    <div class="panel-header">
+      <h3>Arborescence</h3>
+      <button class="btn-icon-sm" (click)="loadFolders()" title="Rafraîchir">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      </button>
+    </div>
+    <div class="tree-content">
+      <div class="tree-root" (click)="goToRoot()" [class.selected]="!selectedFolder">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#3b5bff" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        <span>Racine</span>
+      </div>
+      <ng-container *ngFor="let f of allFolders">
+        <app-folder-tree-item
+          [folder]="f"
+          [selectedId]="selectedFolder?.id || 0"
+          (select)="selectFolder($event)"
+          (delete)="deleteFolder($event)">
+        </app-folder-tree-item>
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- Right: Main panel -->
+  <div class="main-panel">
+    <!-- Breadcrumb + actions -->
+    <div class="main-header">
+      <div class="breadcrumb" *ngIf="selectedFolder; else rootLabel">
+        <button class="breadcrumb-btn" (click)="goToRoot()">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        </button>
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#94a3b8" stroke-width="2" class="chev"><polyline points="9 18 15 12 9 6"/></svg>
+        <ng-container *ngFor="let f of currentPath; let last = last">
+          <button class="breadcrumb-btn" [class.active]="last" (click)="!last && selectFolder(f)">{{ f.nom }}</button>
+          <svg *ngIf="!last" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#94a3b8" stroke-width="2" class="chev"><polyline points="9 18 15 12 9 6"/></svg>
+        </ng-container>
+      </div>
+      <ng-template #rootLabel><div class="breadcrumb"><span class="breadcrumb-label">Tous les dossiers</span></div></ng-template>
+
+      <div class="header-actions">
+        <button class="btn-sm btn-outline" (click)="showCreateInput = !showCreateInput">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+          Dossier
+        </button>
+        <button class="btn-sm btn-primary" (click)="toggleUpload()">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload
+        </button>
+      </div>
+    </div>
+
+    <!-- Create folder inline -->
+    <div class="create-folder-bar" *ngIf="showCreateInput">
+      <input [(ngModel)]="newFolderName" placeholder="Nom du nouveau dossier..." (keyup.enter)="createFolder()" class="folder-input" />
+      <button class="btn-sm btn-primary" (click)="createFolder()" [disabled]="!newFolderName.trim()">Créer</button>
+      <button class="btn-sm btn-ghost" (click)="showCreateInput = false; newFolderName = ''">Annuler</button>
+    </div>
+
+    <!-- Upload dropzone + form -->
+    <div class="upload-section" *ngIf="showUploadForm">
+      <!-- Folder target -->
+      <div class="upload-folder-target">
+        <div class="target-label">Dossier de destination</div>
+        <div class="target-row" *ngIf="selectedFolder; else noFolder">
+          <span class="target-folder">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#3b5bff" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            {{ selectedFolder.nom }}
+          </span>
+          <button class="btn-xs btn-ghost" (click)="showCreateSubfolder = !showCreateSubfolder">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+            Sous-dossier
+          </button>
+          <button class="btn-xs btn-ghost" (click)="selectFolderInUpload()">Changer</button>
+        </div>
+        <ng-template #noFolder>
+          <div class="target-pick">
+            <span class="text-warning">Aucun dossier sélectionné</span>
+            <div class="target-actions">
+              <button class="btn-xs btn-primary" (click)="showFolderPicker = !showFolderPicker">Choisir un dossier</button>
+              <button class="btn-xs btn-outline" (click)="showCreateRoot = !showCreateRoot">Créer un dossier racine</button>
+            </div>
+          </div>
+        </ng-template>
+        <div class="target-create" *ngIf="showCreateSubfolder || showCreateRoot">
+          <input [(ngModel)]="newFolderName" placeholder="Nom du dossier..." (keyup.enter)="createFolderInline()" />
+          <button class="btn-xs btn-primary" (click)="createFolderInline()" [disabled]="!newFolderName.trim()">OK</button>
+          <button class="btn-xs btn-ghost" (click)="showCreateSubfolder = false; showCreateRoot = false; newFolderName = ''">Annuler</button>
+        </div>
+        <div class="target-picker" *ngIf="showFolderPicker && !selectedFolder">
+          <div class="picker-scroll">
+            <div class="picker-node" *ngFor="let f of allFolders" (click)="pickFolder(f)">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              {{ f.nom }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dropzone" [class.has-file]="selectedFiles.length > 0" (dragover)="$event.preventDefault()" (drop)="onFileDropped($event)">
+        <div class="dropzone-content" *ngIf="selectedFiles.length === 0">
+          <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#3b5bff" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <h4>Déposer des PDF ici</h4>
+          <p>ou <a (click)="fileInput.click()">parcourir</a></p>
+          <input #fileInput type="file" accept="application/pdf" multiple (change)="onFileSelected($event)" class="file-input-hidden" />
+        </div>
+        <div class="dropzone-preview" *ngIf="selectedFiles.length > 0">
+          <div class="preview-info">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#1fa06b" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <div><strong>{{ selectedFiles.length }} fichier(s) sélectionné(s)</strong></div>
+          </div>
+          <button class="btn-ghost" (click)="selectedFiles = []; resetForm()">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- File list -->
+      <div class="file-list" *ngIf="selectedFiles.length > 0">
+        <div class="file-item" *ngFor="let f of selectedFiles; let i = index">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#3b5bff" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span class="file-name">{{ f.name }}</span>
+          <span class="file-size">{{ formatSize(f.size) }}</span>
+          <button class="btn-ghost btn-xs" (click)="removeFile(i)">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Metadata form -->
+      <div class="form-grid">
+        <div class="field">
+          <label>Titre</label>
+          <input type="text" [(ngModel)]="titre" placeholder="Titre du document" />
+        </div>
+        <div class="field">
+          <label>Référence</label>
+          <input type="text" [(ngModel)]="reference" placeholder="Référence interne" />
+        </div>
+        <div class="field">
+          <label>Catégorie</label>
+          <input type="text" [(ngModel)]="categorie" placeholder="Bulletin, Contrat, PV..." />
+        </div>
+        <div class="field">
+          <label>Processus</label>
+          <select [(ngModel)]="selectedProcessusGenerateurId">
+            <option [ngValue]="undefined">— Sélectionner —</option>
+            <option *ngFor="let p of processusGenerateurs" [ngValue]="p.id">{{ p.code }} — {{ p.libelle }}</option>
+          </select>
+        </div>
+        <div class="field session-field">
+          <label>Session</label>
+          <div class="session-row">
+            <select [(ngModel)]="selectedSessionId">
+              <option [ngValue]="undefined">— Aucune —</option>
+              <option *ngFor="let s of sessions" [ngValue]="s.id">{{ s.nom }}</option>
+            </select>
+            <button class="btn-add-session" (click)="toggleNewSession()" title="Nouvelle session">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+          </div>
+          <div class="quick-session" *ngIf="showNewSession">
+            <input [(ngModel)]="newSessionNom" placeholder="Nom" />
+            <input [(ngModel)]="newSessionDescription" placeholder="Description" />
+            <button class="btn-sm btn-primary" (click)="createQuickSession()">OK</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Durée conservation</label>
+          <input type="text" [(ngModel)]="dureeConservation" placeholder="ex: 10 ans" />
+        </div>
+        <div class="field">
+          <label>Date document</label>
+          <input type="date" [(ngModel)]="dateDocument" />
+        </div>
+        <div class="field">
+          <label>Type source</label>
+          <select [(ngModel)]="sourceType">
+            <option value="numerise_interne">Numérisé interne</option>
+            <option value="recu_externe">Reçu externe</option>
+            <option value="genere_application">Généré app.</option>
+            <option value="document_sortant">Document sortant</option>
+          </select>
+        </div>
+        <div class="field" *ngIf="sourceType === 'recu_externe'">
+          <label>Émetteur externe</label>
+          <input type="text" [(ngModel)]="externalIssuer" />
+        </div>
+        <div class="field" *ngIf="sourceType === 'document_sortant'">
+          <label>Destinataire</label>
+          <input type="text" [(ngModel)]="destinataire" />
+        </div>
+      </div>
+
+      <div class="form-footer">
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="isArchived" /> Archiver immédiatement
+        </label>
+        <div class="form-actions">
+          <button class="btn-ghost" (click)="toggleUpload()">Annuler</button>
+          <button class="btn-primary" (click)="upload()" [disabled]="uploading || selectedFiles.length === 0">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            {{ uploading ? 'Upload...' : 'Uploader' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Nomenclature inline -->
+      <details class="nomenclature-details">
+        <summary class="nomenclature-summary">Générateur de nom de fichier</summary>
+        <div class="nomenclature-body">
+          <div class="nomenclature-grid">
+            <div class="field">
+              <label>Préfixe</label>
+              <input [(ngModel)]="nomenclaturePrefix" placeholder="ex: GED, CONTRAT" />
+            </div>
+            <div class="field">
+              <label>Catégorie</label>
+              <input [(ngModel)]="nomenclatureCategorie" placeholder="ex: ADMIN, RH" />
+            </div>
+            <div class="field">
+              <label>Référence</label>
+              <input [(ngModel)]="nomenclatureReference" placeholder="REF-001" />
+            </div>
+            <div class="field" style="justify-content:flex-end">
+              <button class="btn-sm btn-primary" (click)="generateNomenclature()" style="align-self:flex-end">
+                Générer
+              </button>
+            </div>
+          </div>
+          <div class="nomenclature-result" *ngIf="nomenclatureResult">
+            <span class="result-label">Aperçu</span>
+            <code>{{ nomenclatureResult }}</code>
+            <button class="btn-xs btn-ghost" (click)="titre = nomenclatureResult">Utiliser comme titre</button>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <!-- Documents listing -->
+    <div class="docs-section">
+      <div class="section-header">
+        <h3 *ngIf="selectedFolder">{{ selectedFolder.nom }} — {{ documents.length }} document{{ documents.length > 1 ? 's' : '' }}</h3>
+        <h3 *ngIf="!selectedFolder">Sélectionnez un dossier</h3>
+      </div>
+
+      <div class="table-wrap" *ngIf="selectedFolder && documents.length > 0; else emptyDocs">
+        <table class="doc-table">
+          <thead>
+            <tr><th>Titre</th><th>Réf.</th><th>Type</th><th>Taille</th><th>Date</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of documents" class="doc-row" (click)="navigateToDocument(d)">
+              <td>
+                <span class="doc-title">{{ d.titre }}</span>
+                <span class="doc-tags" *ngIf="d.tags">— {{ d.tags }}</span>
+              </td>
+              <td class="td-mono">{{ d.reference || '-' }}</td>
+              <td><span class="badge">{{ d.documentType?.shortCode || d.type || '-' }}</span></td>
+              <td>{{ d.taille || '-' }}</td>
+              <td class="td-mono">{{ d.createdAt | date:'shortDate' }}</td>
+              <td (click)="$event.stopPropagation()">
+                <button class="btn-icon-sm" title="Télécharger" (click)="downloadDoc(d)">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <ng-template #emptyDocs>
+        <div class="empty-state" *ngIf="selectedFolder">
+          <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#d7d9e6" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <p>Aucun document dans ce dossier</p>
+          <button class="btn-outline btn-sm" (click)="toggleUpload()">Uploader un fichier</button>
+        </div>
+        <div class="empty-state" *ngIf="!selectedFolder">
+          <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#d7d9e6" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          <p>Choisissez un dossier dans l'arborescence</p>
+        </div>
+      </ng-template>
+    </div>
+
+    <!-- Sessions list -->
+    <div class="sessions-section" *ngIf="sessions.length > 0">
+      <div class="section-header">
+        <h3>Sessions ({{ sessions.length }})</h3>
+        <button class="btn-sm btn-outline" (click)="toggleNewSession()">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nouvelle session
+        </button>
+      </div>
+      <div class="quick-session" *ngIf="showNewSession" style="margin:0 16px 12px">
+        <input [(ngModel)]="newSessionNom" placeholder="Nom" />
+        <input [(ngModel)]="newSessionDescription" placeholder="Description" />
+        <button class="btn-sm btn-primary" (click)="createQuickSession()">Créer</button>
+      </div>
+      <div class="sessions-grid">
+        <div class="session-card" *ngFor="let s of sessions" (click)="selectSession(s)">
+          <div class="session-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3b5bff" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="session-info">
+            <span class="session-name">{{ s.nom }}</span>
+            <span class="session-desc">{{ s.description || 'Aucune description' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

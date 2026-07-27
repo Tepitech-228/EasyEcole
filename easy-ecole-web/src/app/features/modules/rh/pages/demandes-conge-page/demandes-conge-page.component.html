@@ -1,0 +1,53 @@
+<app-header-title title="Demandes de congé" subtitle="Gestion des congés du personnel"></app-header-title>
+
+<div class="flex gap-4 mb-4">
+  <select [(ngModel)]="filtreStatut" class="form-input w-48">
+    <option value="">Tous les statuts</option>
+    <option value="soumise">Soumise</option><option value="validee_rh">Validée RH</option>
+    <option value="validee_superieur">Validée supérieur</option><option value="refusee">Refusée</option><option value="annulee">Annulée</option>
+  </select>
+  <app-custom-button text="Nouvelle demande" (click)="ouvrirFormulaire()"></app-custom-button>
+</div>
+
+<app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+<div *ngIf="!loading && items.length === 0" class="text-center py-8 text-gray-400">Aucune demande de congé</div>
+
+<div class="overflow-x-auto" *ngIf="!loading && filtered.length > 0">
+  <table class="w-full text-sm">
+    <thead><tr class="text-left border-b"><th>Employé</th><th>Type</th><th>Période</th><th>Durée</th><th>Statut</th><th>Actions</th></tr></thead>
+    <tbody>
+      <tr *ngFor="let item of filtered" class="border-b hover:bg-gray-50">
+        <td class="py-2">{{ item.employe?.prenom }} {{ item.employe?.nom }}</td>
+        <td>{{ getTypeConge(item.typeConge) }}</td>
+        <td>{{ item.dateDebut | date:'shortDate' }} → {{ item.dateFin | date:'shortDate' }}</td>
+        <td>{{ item.duree }}j</td>
+        <td><span class="px-2 py-1 rounded text-xs" [class]="getStatutColor(item.statut)">{{ item.statut }}</span></td>
+        <td class="flex gap-1">
+          <button *ngIf="item.statut==='soumise'" (click)="valider(item.id)" class="text-green-600 hover:text-green-800 text-xs">✓ Valider</button>
+          <button *ngIf="item.statut==='soumise'" (click)="refuser(item.id)" class="text-red-600 hover:text-red-800 text-xs">✕ Refuser</button>
+          <button (click)="ouvrirFormulaire(item)" class="text-blue-500 hover:text-blue-700 text-xs">✎</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<app-custom-modal [showModal]="showForm" (onCloseModal)="fermerFormulaire()">
+  <h3 class="text-lg font-semibold mb-4">{{ editingId ? 'Modifier' : 'Nouvelle' }} demande de congé</h3>
+  <div class="grid gap-3">
+    <select [(ngModel)]="formData.typeConge" class="form-input">
+      <option value="annuel">Annuel</option><option value="maladie">Maladie</option>
+      <option value="maternite">Maternité</option><option value="exceptionnel">Exceptionnel</option><option value="sans_solde">Sans solde</option>
+    </select>
+    <div class="flex gap-3">
+      <div class="flex-1"><label class="text-xs text-gray-500">Début</label><input type="date" [(ngModel)]="formData.dateDebut" class="form-input"></div>
+      <div class="flex-1"><label class="text-xs text-gray-500">Fin</label><input type="date" [(ngModel)]="formData.dateFin" class="form-input"></div>
+    </div>
+    <textarea [(ngModel)]="formData.motif" placeholder="Motif" class="form-input" rows="2"></textarea>
+    <div class="flex gap-2 justify-end mt-2">
+      <app-custom-button text="Annuler" [outlined]="true" (click)="fermerFormulaire()"></app-custom-button>
+      <app-custom-button text="Soumettre" (click)="sauvegarder()"></app-custom-button>
+    </div>
+  </div>
+</app-custom-modal>

@@ -1,0 +1,80 @@
+<div class="flex flex-col gap-6">
+  <div class="flex items-center justify-between flex-wrap gap-4">
+    <h1 class="text-2xl font-bold text-gray-900">Paiements</h1>
+    <div *ngIf="enfants.length > 1" class="flex items-center gap-2">
+      <label class="text-sm font-medium text-gray-600">Enfant :</label>
+      <select
+        class="px-3 py-2 border border-gray-200 rounded-xl bg-white text-sm text-gray-700 outline-none cursor-pointer"
+        [ngModel]="selectedEnfant"
+        (ngModelChange)="selectedEnfant = $event; onEnfantChange()">
+        <option *ngFor="let e of enfants" [ngValue]="e">{{ e.prenoms }} {{ e.nom }}</option>
+      </select>
+    </div>
+  </div>
+
+  <div *ngIf="selectedEnfant" class="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-700">
+    {{ selectedEnfant.prenoms }} {{ selectedEnfant.nom }}
+    <span *ngIf="selectedEnfant.classe"> — {{ selectedEnfant.classe }}</span>
+  </div>
+
+  <ng-container *ngIf="!loading; else loadingState">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-white border border-gray-200 rounded-xl p-5">
+        <span class="text-xs font-semibold text-gray-500 uppercase">Total dû</span>
+        <p class="text-3xl font-bold text-gray-800 mt-1">{{ soldeTotal | number }} FCFA</p>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-xl p-5">
+        <span class="text-xs font-semibold text-gray-500 uppercase">Total payé</span>
+        <p class="text-3xl font-bold text-green-600 mt-1">{{ totalPaye | number }} FCFA</p>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-xl p-5">
+        <span class="text-xs font-semibold text-gray-500 uppercase">Solde restant</span>
+        <p class="text-3xl font-bold mt-1"
+          [class.text-green-600]="soldeRestant <= 0"
+          [class.text-red-600]="soldeRestant > 0">
+          {{ soldeRestant | number }} FCFA
+        </p>
+      </div>
+    </div>
+
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div *ngIf="paiements.length === 0" class="py-12 text-center text-sm text-gray-400">
+        Aucun paiement enregistré
+      </div>
+      <table *ngIf="paiements.length > 0" class="w-full border-collapse">
+        <thead>
+          <tr class="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide bg-gray-50 border-b border-gray-200">
+            <th class="py-3.5 px-4">Libellé</th>
+            <th class="py-3.5 px-4">Montant</th>
+            <th class="py-3.5 px-4">Payé</th>
+            <th class="py-3.5 px-4">Date échéance</th>
+            <th class="py-3.5 px-4">Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of paiements" class="text-sm text-gray-700 border-b border-gray-100 hover:bg-gray-50">
+            <td class="py-3 px-4 font-medium text-gray-800">{{ p.libelle }}</td>
+            <td class="py-3 px-4">{{ p.montant | number }} FCFA</td>
+            <td class="py-3 px-4">{{ p.montantPaye | number }} FCFA</td>
+            <td class="py-3 px-4 text-xs text-gray-500">{{ p.dateEcheance }}</td>
+            <td class="py-3 px-4">
+              <span class="inline-block px-2.5 py-0.5 rounded-md text-xs font-semibold" [class]="getStatutClass(p.statut)">
+                {{ getStatutLabel(p.statut) }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
+  <ng-template #loadingState>
+    <div class="bg-white border border-gray-200 rounded-xl p-12 text-center text-sm text-gray-400">
+      <svg class="animate-spin h-5 w-5 text-blue-500 mx-auto mb-2" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+      </svg>
+      Chargement des paiements...
+    </div>
+  </ng-template>
+</div>

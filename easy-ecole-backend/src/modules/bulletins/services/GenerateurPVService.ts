@@ -6,16 +6,7 @@ import { ResultatDeliberation } from "../models/ResultatDeliberation";
 import { Classe } from "../../inscription/models/Classe";
 import { AnneeAcademique } from "../../inscription/models/AnneeAcademique";
 import { JuryMembre } from "../models/JuryMembre";
-
-const DECISION_LABELS: Record<string, string> = {
-  admis: 'Admis',
-  rattrapage: 'Rattrapage',
-  redouble: 'Redoublement',
-  admis_avec_dette: 'Admis avec dette',
-  ajourne: 'Ajourné',
-  exclu: 'Exclu',
-  derogation: 'Dérogation'
-};
+import { DECISION_LABELS, DecisionType } from "../enums/DecisionType";
 
 export class GenerateurPVService {
 
@@ -105,7 +96,7 @@ export class GenerateurPVService {
         `${r.nom || ''} ${r.prenoms || ''}`,
         r.matricule || '',
         r.moyenne != null ? r.moyenne.toFixed(2) : '-',
-        DECISION_LABELS[r.decision] || r.decision,
+        DECISION_LABELS[r.decision as DecisionType] || r.decision,
         r.mention || ''
       ];
       row.forEach((val, i) => {
@@ -121,7 +112,7 @@ export class GenerateurPVService {
     doc.fontSize(9).font('Helvetica');
     doc.text(`Effectif total : ${resultats.length}`);
     for (const [dec, count] of Object.entries(decisionsCount)) {
-      doc.text(`${DECISION_LABELS[dec] || dec} : ${count}`);
+      doc.text(`${DECISION_LABELS[dec as DecisionType] || dec} : ${count}`);
     }
     const nbAdmis = (decisionsCount['admis'] || 0) + (decisionsCount['admis_avec_dette'] || 0);
     const taux = resultats.length > 0 ? ((nbAdmis / resultats.length) * 100).toFixed(1) : '0.0';

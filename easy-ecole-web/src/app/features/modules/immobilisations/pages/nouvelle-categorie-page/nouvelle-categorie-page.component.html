@@ -1,47 +1,68 @@
-<app-custom-alert [show]="error" title="Erreur">
-    Une erreur est survenue lors de la création
-</app-custom-alert>
-
 <app-return-back></app-return-back>
 
-<div class="flex justify-between items-start mb-8">
+<div class="mb-8">
     <app-header-title title="Nouvelle catégorie" subtitle="Veuillez renseigner les informations ci-dessous pour ajouter une nouvelle catégorie"></app-header-title>
-    <div class="flex justify-end items-center">
-    </div>
 </div>
 
-<div class="w-full mb-8">
-    <form [formGroup]="categorieForm" id="categorieForm">
-        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
-            <div class="md:col-span-4 col-span-full">
-                <label for="nom" class="mb-2 block text-sm leading-6 text-gray-600">Nom</label>
-                <input type="text" id="nom" formControlName="nom" placeholder="Saisir le nom de la catégorie ici..."
-                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-                <div *ngIf="categorieForm.get('nom')!.invalid && (categorieForm.get('nom')!.dirty || categorieForm.get('nom')!.touched)">
-                    <app-form-message *ngIf="categorieForm.get('nom')!.errors?.['required']"
-                        text="Veuillez saisir le nom"></app-form-message>
-                </div>
-            </div>
-            <div class="col-span-full">
-                <label for="description" class="mb-2 block text-sm leading-6 text-gray-600">Description (facultative)</label>
-                <textarea rows="3" id="description" formControlName="description"
-                    placeholder="Saisir la description ici..."
-                    class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
-            </div>
-            <div class="md:col-span-4 col-span-full">
-                <label for="tauxAmortissement" class="mb-2 block text-sm leading-6 text-gray-600">Taux d'amortissement (%)</label>
-                <input type="number" id="tauxAmortissement" formControlName="tauxAmortissement" placeholder="Saisir le taux ici..."
-                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-            </div>
-            <div class="md:col-span-4 col-span-full">
-                <label for="dureeVie" class="mb-2 block text-sm leading-6 text-gray-600">Durée de vie (années)</label>
-                <input type="number" id="dureeVie" formControlName="dureeVie" placeholder="Saisir la durée ici..."
-                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-            </div>
-        </div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <form [formGroup]="categorieForm" id="categorieForm">
+                <div class="space-y-6">
+                    <div>
+                        <label for="nom" class="mb-2 block text-sm font-medium text-gray-700">Nom de la catégorie</label>
+                        <input type="text" id="nom" formControlName="nom" placeholder="Ex: Informatique, Bureautique..."
+                            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        <div *ngIf="categorieForm.get('nom')!.invalid && (categorieForm.get('nom')!.dirty || categorieForm.get('nom')!.touched)" class="mt-1 text-sm text-red-600">
+                            <span *ngIf="categorieForm.get('nom')!.errors?.['required']">Veuillez saisir le nom</span>
+                        </div>
+                    </div>
 
-        <div class="w-full flex justify-end items-center pb-12">
-            <app-custom-button (click)="create()" text="Enregistrer"></app-custom-button>
+                    <div>
+                        <label for="description" class="mb-2 block text-sm font-medium text-gray-700">Description <span class="text-gray-400 font-normal">(facultative)</span></label>
+                        <textarea rows="4" id="description" formControlName="description" placeholder="Décrivez brièvement cette catégorie..."
+                            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="tauxAmortissement" class="mb-2 block text-sm font-medium text-gray-700">Taux d'amortissement (%)</label>
+                            <input type="number" min="0" id="tauxAmortissement" formControlName="tauxAmortissement" placeholder="Ex: 20"
+                                class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <p class="mt-1 text-xs text-gray-500">Pourcentage annuel appliqué à la valeur d'acquisition.</p>
+                            <div *ngIf="categorieForm.get('tauxAmortissement')!.invalid && (categorieForm.get('tauxAmortissement')!.dirty || categorieForm.get('tauxAmortissement')!.touched)" class="mt-1 text-sm text-red-600">
+                                <span *ngIf="categorieForm.get('tauxAmortissement')!.errors?.['required']">Veuillez saisir le taux</span>
+                                <span *ngIf="categorieForm.get('tauxAmortissement')!.errors?.['min']">Le taux doit être positif</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="dureeVie" class="mb-2 block text-sm font-medium text-gray-700">Durée de vie (années)</label>
+                            <input type="number" min="1" id="dureeVie" formControlName="dureeVie" placeholder="Ex: 5"
+                                class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <p class="mt-1 text-xs text-gray-500">Durée estimée avant mise au rebut.</p>
+                            <div *ngIf="categorieForm.get('dureeVie')!.invalid && (categorieForm.get('dureeVie')!.dirty || categorieForm.get('dureeVie')!.touched)" class="mt-1 text-sm text-red-600">
+                                <span *ngIf="categorieForm.get('dureeVie')!.errors?.['required']">Veuillez saisir la durée</span>
+                                <span *ngIf="categorieForm.get('dureeVie')!.errors?.['min']">La durée doit être au moins 1 an</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex items-center justify-end gap-3">
+                    <app-custom-button type="button" (click)="create()" [text]="saving ? 'Enregistrement...' : 'Enregistrer'" [disabled]="saving"></app-custom-button>
+                </div>
+            </form>
         </div>
-    </form>
+    </div>
+
+    <div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 class="text-sm font-semibold text-gray-900 mb-3">Aide</h3>
+            <ul class="list-disc pl-5 text-sm text-gray-600 space-y-2">
+                <li>Le nom doit être unique.</li>
+                <li>Le taux d'amortissement est utilisé pour calculer la valeur résiduelle.</li>
+                <li>La durée de vie aide à planifier le renouvellement.</li>
+            </ul>
+        </div>
+    </div>
 </div>

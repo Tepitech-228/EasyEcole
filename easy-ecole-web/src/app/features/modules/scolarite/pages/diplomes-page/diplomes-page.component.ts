@@ -1,6 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { Diplome } from 'src/app/data/modules/scolarite/models/Diplome.model';
 import { DiplomeService } from 'src/app/data/modules/scolarite/services/diplome.service';
+import { CursusApprenantService } from 'src/app/data/modules/inscription/services/cursus-apprenant.service';
+import { ParcoursService } from 'src/app/data/modules/inscription/services/parcours.service';
+import { NiveauEtudeService } from 'src/app/data/modules/inscription/services/niveau-etude.service';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 
 @Component({
@@ -26,12 +29,45 @@ export class DiplomesPageComponent extends BaseComponentClass implements OnInit 
   currentPage: number = 1;
   pageSize: number = 15;
 
-  constructor(private service: DiplomeService) {
+  cursusList: any[] = [];
+  parcoursList: any[] = [];
+  niveauList: any[] = [];
+
+  constructor(
+    private service: DiplomeService,
+    private cursusService: CursusApprenantService,
+    private parcoursService: ParcoursService,
+    private niveauService: NiveauEtudeService,
+  ) {
     super();
   }
 
   ngOnInit(): void {
     this.loadItems();
+    this.loadCursus();
+    this.loadParcours();
+    this.loadNiveaux();
+  }
+
+  loadCursus(): void {
+    this.cursusService.getAllPaginated({ limit: 500 }).subscribe({
+      next: (res) => { this.cursusList = res.data; },
+      error: () => {}
+    });
+  }
+
+  loadParcours(): void {
+    this.parcoursService.getAll().subscribe({
+      next: (data) => { this.parcoursList = data; },
+      error: () => {}
+    });
+  }
+
+  loadNiveaux(): void {
+    this.niveauService.getAll().subscribe({
+      next: (data) => { this.niveauList = data; },
+      error: () => {}
+    });
   }
 
   get paginatedItems(): Diplome[] {

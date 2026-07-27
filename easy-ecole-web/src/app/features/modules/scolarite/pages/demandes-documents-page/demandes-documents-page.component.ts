@@ -57,8 +57,8 @@ export class DemandesDocumentsPageComponent extends BaseComponentClass implement
     this.loading = true;
     this.errorMessage = '';
     this.demandeService.getAll().subscribe({
-      next: (data) => {
-        this.demandes = data;
+      next: (data: any) => {
+        this.demandes = data.data || data;
         this._demandes = [...this.demandes];
         this.loading = false;
       },

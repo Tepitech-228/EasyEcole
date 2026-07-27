@@ -70,7 +70,7 @@ export default class MccController {
     static async getByUe(req: Request, res: Response): Promise<Response> {
         try {
             const data = await Mcc.findAll({
-                where: { ueId: req.params.ueId },
+                where: { coursId: req.params.ueId },
                 include: [{ all: true }]
             });
             return res.status(200).send(data);

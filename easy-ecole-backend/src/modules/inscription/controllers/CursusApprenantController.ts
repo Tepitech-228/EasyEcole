@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CountOptions, FindOptions, InferAttributes } from "sequelize";
+import { CountOptions, FindOptions, InferAttributes, Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { CursusApprenant } from "../models/CursusApprenant";
 import { Utilisateur } from "../../auth/models/Utilisateur";
@@ -12,19 +12,71 @@ export default class CursusApprenantController {
     constructor() { }
 
     static async getAllCursusApprenant(req: Request, res: Response): Promise<Response> {
-        let options: FindOptions<InferAttributes<CursusApprenant>> = {}
-        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
-            options = { where: { utilisateurId: (req as any).utilisateurId }, include: [{ association: CursusApprenant.associations.utilisateur, include: [Utilisateur.associations.apprenant] }, CursusApprenant.associations.parcours, CursusApprenant.associations.classe, CursusApprenant.associations.anneeAcademique, CursusApprenant.associations.niveauEtude], order: [['createdAt', 'DESC']] }
-        }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
-            options = { include: [{ association: CursusApprenant.associations.utilisateur, include: [Utilisateur.associations.apprenant] }, CursusApprenant.associations.parcours, CursusApprenant.associations.classe, CursusApprenant.associations.anneeAcademique, CursusApprenant.associations.niveauEtude], order: [['createdAt', 'DESC']] }
-        }
-
         try {
-            let cursusApprenant: CursusApprenant[];
-            cursusApprenant = await CursusApprenant.findAll(options);
+            const page = Math.max(1, parseInt(req.query.page as string) || 1);
+            const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+            const offset = (page - 1) * limit;
 
-            return res.status(200).send(cursusApprenant);
+            let where: any = {};
+            let apprenantWhere: any = {};
+
+            if ((req.query.anneeAcademiqueId as string)) {
+                where.anneeAcademiqueId = req.query.anneeAcademiqueId;
+            }
+            if ((req.query.niveauEtudeId as string)) {
+                where.niveauEtudeId = req.query.niveauEtudeId;
+            }
+            if ((req.query.parcoursId as string)) {
+                where.parcoursId = req.query.parcoursId;
+            }
+            if ((req.query.classeId as string)) {
+                where.classeId = req.query.classeId;
+            }
+            if ((req.query.search as string)) {
+                apprenantWhere = {
+                    [Op.or]: [
+                        { nom: { [Op.substring]: req.query.search } },
+                        { prenoms: { [Op.substring]: req.query.search } }
+                    ]
+                };
+            }
+
+            if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
+                where.utilisateurId = (req as any).utilisateurId;
+            }
+
+            const include: any[] = [
+                {
+                    association: CursusApprenant.associations.utilisateur,
+                    include: [
+                        { association: Utilisateur.associations.apprenant },
+                        { association: 'dossiersEtudiants' }
+                    ],
+                    where: Object.keys(apprenantWhere).length > 0 ? apprenantWhere : undefined,
+                    required: Object.keys(apprenantWhere).length > 0
+                },
+                CursusApprenant.associations.parcours,
+                CursusApprenant.associations.classe,
+                CursusApprenant.associations.anneeAcademique,
+                CursusApprenant.associations.niveauEtude,
+                CursusApprenant.associations.etablissement
+            ];
+
+            const { count, rows } = await CursusApprenant.findAndCountAll({
+                where,
+                include,
+                order: [['createdAt', 'DESC']],
+                limit,
+                offset,
+                distinct: true
+            });
+
+            const totalPages = Math.ceil(count / limit);
+
+            return res.status(200).json({
+                data: rows,
+                pagination: { page, limit, total: count, totalPages }
+            });
         } catch (error) {
             return res.status(500).json({ success: false, error: error });
         }
@@ -90,7 +142,7 @@ export default class CursusApprenantController {
 
         let cursusApprenant: CursusApprenant = new CursusApprenant();
         cursusApprenant.externe = req.body.externe
-        cursusApprenant.etablissement = req.body.etablissement
+        cursusApprenant.etablissementId = req.body.etablissementId
         cursusApprenant.intituleParcours = req.body.intituleParcours
         cursusApprenant.parcoursId = req.body.parcoursId
         cursusApprenant.classeId = req.body.classeId
@@ -123,7 +175,7 @@ export default class CursusApprenantController {
 
             await cursusApprenant.update({
                 externe: req.body.externe,
-                etablissement: req.body.etablissement,
+                etablissementId: req.body.etablissementId,
                 intituleParcours: req.body.intituleParcours,
                 parcoursId: req.body.parcoursId,
                 classeId: req.body.classeId,

@@ -1,6 +1,7 @@
 import express from "express"
 import multer from "multer";
 import * as fs from "fs"
+import * as path from "path"
 import { customAlphabet } from 'nanoid'
 
 import EnseignantController from "../controllers/EnseignantController"
@@ -20,8 +21,8 @@ const storage = multer.diskStorage({
     },
     filename: (req, file, callback) => {
         const nanoid = customAlphabet('1234567890abcdef', 50)
-        
-        callback(null, nanoid())
+        const ext = path.extname(file.originalname)
+        callback(null, nanoid() + ext)
     },
 })
 const upload = multer({ storage: storage })

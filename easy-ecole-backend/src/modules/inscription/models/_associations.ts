@@ -1,3 +1,4 @@
+﻿import { Etablissement } from "../../etablissement/models/Etablissement";
 import { Cours } from "./Cours";
 import { PrerequisParcours } from "./PrerequisParcours";
 import { NiveauEtude } from "./NiveauEtude";
@@ -18,6 +19,7 @@ import { DemandeInscriptionDossier } from "./DemandeInscriptionDossier";
 import { CursusApprenant } from "./CursusApprenant";
 import { AnneeAcademique } from "./AnneeAcademique";
 import { SalleDeClasse } from "./SalleDeClasse";
+import { Localisation } from "../../immobilisation/models/Localisation";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { ChapitreCours } from "./ChapitreCours";
 import { Ressource } from "./Ressource";
@@ -54,10 +56,16 @@ Cours.belongsTo(Classe, { as: 'classe', foreignKey: 'classeId' })
 // SalleDeClasse - Classe
 Classe.hasMany(SalleDeClasse, { foreignKey: 'classeId', as: 'sallesDeClasse' })
 SalleDeClasse.belongsTo(Classe, { as: 'classe', foreignKey: 'classeId' })
+SalleDeClasse.belongsTo(Localisation, { foreignKey: 'localisationId', as: 'localisation' })
+Localisation.hasMany(SalleDeClasse, { foreignKey: 'localisationId', as: 'sallesDeClasse' })
 
 // NiveauEtude - Classe
 NiveauEtude.hasMany(Classe, { foreignKey: 'niveauEtudeId', as: 'classes' })
 Classe.belongsTo(NiveauEtude, { as: 'niveauEtude', foreignKey: 'niveauEtudeId' })
+
+// Parcours - Classe
+Parcours.hasMany(Classe, { foreignKey: 'parcoursId', as: 'classes' })
+Classe.belongsTo(Parcours, { as: 'parcours', foreignKey: 'parcoursId' })
 
 // NiveauEtude - Parcours
 NiveauEtude.hasMany(Parcours, { foreignKey: 'niveauEtudeId', as: 'parcours' })
@@ -179,6 +187,10 @@ DemandeInscriptionDossier.belongsTo(DemandeInscription, { foreignKey: 'demandeId
 Utilisateur.hasMany(CursusApprenant, { foreignKey: 'utilisateurId', as: 'cursusApprenant' })
 CursusApprenant.belongsTo(Utilisateur, { foreignKey: 'utilisateurId', as: 'utilisateur' })
 
+// CursusApprenant - Etablissement
+CursusApprenant.belongsTo(Etablissement, { foreignKey: 'etablissementId', as: 'etablissement' })
+Etablissement.hasMany(CursusApprenant, { foreignKey: 'etablissementId', as: 'cursusApprenants' })
+
 // CursusApprenant - Parcours
 Parcours.hasMany(CursusApprenant, { foreignKey: 'parcoursId', as: 'cursusApprenant' })
 CursusApprenant.belongsTo(Parcours, { foreignKey: 'parcoursId', as: 'parcours' })
@@ -200,15 +212,15 @@ DemandeInscription.hasOne(CursusApprenant, { foreignKey: 'demandeInscriptionId',
 CursusApprenant.belongsTo(DemandeInscription, { foreignKey: 'demandeInscriptionId', as: 'demandeInscription' })
 
 // CoursParticipant - Cours
-Cours.hasOne(CoursParticipant, { foreignKey: 'coursId', as: 'coursParticipant' })
+Cours.hasMany(CoursParticipant, { foreignKey: 'coursId', as: 'coursParticipants' })
 CoursParticipant.belongsTo(Cours, { foreignKey: 'coursId', as: 'cours' })
 
 // CoursParticipant - Utilisateur
-Utilisateur.hasOne(CoursParticipant, { foreignKey: 'utilisateurId', as: 'coursParticipant' })
+Utilisateur.hasMany(CoursParticipant, { foreignKey: 'utilisateurId', as: 'coursParticipants' })
 CoursParticipant.belongsTo(Utilisateur, { foreignKey: 'utilisateurId', as: 'utilisateur' })
 
 // CoursParticipant - CursusApprenant
-CursusApprenant.hasOne(CoursParticipant, { foreignKey: 'cursusApprenantId', as: 'coursParticipant' })
+CursusApprenant.hasMany(CoursParticipant, { foreignKey: 'cursusApprenantId', as: 'coursParticipants' })
 CoursParticipant.belongsTo(CursusApprenant, { foreignKey: 'cursusApprenantId', as: 'cursusApprenant' })
 
 // Cours - Enseignant
@@ -323,7 +335,7 @@ Bordereau.belongsTo(Echeance, { foreignKey: 'echeanceId', as: 'echeance' })
 Utilisateur.hasMany(Bordereau, { foreignKey: 'utilisateurId', as: 'bordereaux' })
 Bordereau.belongsTo(Utilisateur, { foreignKey: 'utilisateurId', as: 'utilisateur' })
 
-// Bordereau - Utilisateur (validé par)
+// Bordereau - Utilisateur (validÃ© par)
 Utilisateur.hasMany(Bordereau, { foreignKey: 'valideParId', as: 'bordereauxValides' })
 Bordereau.belongsTo(Utilisateur, { foreignKey: 'valideParId', as: 'validePar' })
 
@@ -331,9 +343,9 @@ Bordereau.belongsTo(Utilisateur, { foreignKey: 'valideParId', as: 'validePar' })
 Bordereau.hasOne(Quitus, { foreignKey: 'bordereauId', as: 'quitus' })
 Quitus.belongsTo(Bordereau, { foreignKey: 'bordereauId', as: 'bordereau' })
 
-// ---- New LMD / Évaluation Avancée Associations ----
+// ---- New LMD / Ã‰valuation AvancÃ©e Associations ----
 
-import { UniteEnseignement } from "./UniteEnseignement";
+import { Ecue } from "./Ecue";
 import { Mcc } from "./Mcc";
 import { RegleEvaluation } from "./RegleEvaluation";
 import { SessionExamen } from "./SessionExamen";
@@ -341,17 +353,17 @@ import { Absence } from "./Absence";
 import { Equivalence } from "./Equivalence";
 import { Dispense } from "./Dispense";
 
-// UniteEnseignement - Parcours
-Parcours.hasMany(UniteEnseignement, { foreignKey: 'parcoursId', as: 'unitesEnseignement' })
-UniteEnseignement.belongsTo(Parcours, { as: 'parcours', foreignKey: 'parcoursId' })
-
-// Mcc - UniteEnseignement
-UniteEnseignement.hasMany(Mcc, { foreignKey: 'ueId', as: 'mccs' })
-Mcc.belongsTo(UniteEnseignement, { as: 'uniteEnseignement', foreignKey: 'ueId' })
-
 // Mcc - Cours
 Cours.hasMany(Mcc, { foreignKey: 'coursId', as: 'mccs' })
 Mcc.belongsTo(Cours, { as: 'cours', foreignKey: 'coursId' })
+
+// Ecue - Cours (ECUE appartient à une UE qui est un Cours)
+Cours.hasMany(Ecue, { foreignKey: 'coursId', as: 'ecues' })
+Ecue.belongsTo(Cours, { as: 'cours', foreignKey: 'coursId' })
+
+// Mcc - Ecue
+Ecue.hasMany(Mcc, { foreignKey: 'ecueId', as: 'mccs' })
+Mcc.belongsTo(Ecue, { as: 'ecue', foreignKey: 'ecueId' })
 
 // RegleEvaluation - Parcours
 Parcours.hasMany(RegleEvaluation, { foreignKey: 'parcoursId', as: 'reglesEvaluation' })
@@ -385,9 +397,9 @@ Equivalence.belongsTo(Utilisateur, { as: 'valideParUtilisateur', foreignKey: 'va
 CursusApprenant.hasMany(Dispense, { foreignKey: 'cursusApprenantId', as: 'dispenses' })
 Dispense.belongsTo(CursusApprenant, { as: 'cursusApprenant', foreignKey: 'cursusApprenantId' })
 
-// Dispense - UniteEnseignement
-UniteEnseignement.hasMany(Dispense, { foreignKey: 'ueId', as: 'dispenses' })
-Dispense.belongsTo(UniteEnseignement, { as: 'uniteEnseignement', foreignKey: 'ueId' })
+// Dispense - Cours
+Cours.hasMany(Dispense, { foreignKey: 'coursId', as: 'dispenses' })
+Dispense.belongsTo(Cours, { as: 'cours', foreignKey: 'coursId' })
 
 // Dispense - Utilisateur (validePar)
 Utilisateur.hasMany(Dispense, { foreignKey: 'validePar', as: 'dispensesValidees' })

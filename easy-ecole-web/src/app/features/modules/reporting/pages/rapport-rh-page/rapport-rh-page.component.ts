@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { CommonModule } from '@angular/common';
+import { ReportingService } from 'src/app/data/modules/reporting/services/reporting.service';
 
 @Component({
   selector: 'app-rapport-rh-page',
@@ -7,16 +8,18 @@ import { HttpClient } from '@angular/common/http';
   styleUrls: ['./rapport-rh-page.component.scss']
 })
 export class RapportRhPageComponent implements OnInit {
+  chartLabels: string[] = [];
+  chartData: number[] = [];
   effectifs: any[] = [];
   paie: any[] = [];
 
-  constructor(private http: HttpClient) {}
+  constructor(private reporting: ReportingService) {}
 
   ngOnInit(): void {
-    this.http.get('/api/reporting/rh/effectifs').subscribe({
+    this.reporting.getRhEffectifs().subscribe({
       next: (res: any) => this.effectifs = res
     });
-    this.http.get('/api/reporting/rh/paie').subscribe({
+    this.reporting.getRhPaie().subscribe({
       next: (res: any) => this.paie = res
     });
   }

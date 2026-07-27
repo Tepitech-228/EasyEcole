@@ -16,6 +16,7 @@ import { MaintenanceService } from 'src/app/data/modules/immobilisations/service
 export class NouvelleMaintenancePageComponent extends BaseComponentClass implements OnInit {
 
     error: boolean = false
+    saving = false
 
     immobilisations: Immobilisation[] = []
 
@@ -24,7 +25,7 @@ export class NouvelleMaintenancePageComponent extends BaseComponentClass impleme
         dateMaintenance: new FormControl(null, [Validators.required]),
         type: new FormControl(null, [Validators.required]),
         description: new FormControl(null, []),
-        cout: new FormControl(null, [Validators.required]),
+        cout: new FormControl(null, [Validators.required, Validators.min(0)]),
         prestataire: new FormControl(null, []),
     })
 
@@ -48,7 +49,8 @@ export class NouvelleMaintenancePageComponent extends BaseComponentClass impleme
     create(): void {
         this.maintenanceForm.markAllAsTouched()
         if (this.maintenanceForm.valid) {
-            let maintenance: Maintenance = new Maintenance()
+            this.saving = true
+            const maintenance: Maintenance = new Maintenance()
             maintenance.immobilisationId = this.maintenanceForm.get('immobilisationId')!.value
             maintenance.dateMaintenance = this.maintenanceForm.get('dateMaintenance')!.value
             maintenance.type = this.maintenanceForm.get('type')!.value
@@ -57,14 +59,14 @@ export class NouvelleMaintenancePageComponent extends BaseComponentClass impleme
             maintenance.prestataire = this.maintenanceForm.get('prestataire')!.value
 
             this.maintenanceService.create(maintenance).subscribe({
-                next: (res) => {
-                    this.router.navigate(['/immobilisations/maintenances'])
-                },
+                next: () => this.router.navigate(['/immobilisations/maintenances']),
                 error: (err: HttpErrorResponse) => {
                     console.log(err)
                     this.error = true
                     setTimeout(() => { this.error = false }, 3000)
-                }
+                    this.saving = false
+                },
+                complete: () => { this.saving = false }
             })
         }
     }

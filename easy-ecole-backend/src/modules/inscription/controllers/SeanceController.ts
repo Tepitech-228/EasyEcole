@@ -23,7 +23,7 @@ export default class SeanceController {
         return [
             Seance.associations.cours,
             { association: Seance.associations.enseignant, include: [Enseignant.associations.utilisateur] },
-            Seance.associations.salleDeClasse,
+            { association: Seance.associations.salleDeClasse, required: false },
         ];
     }
 
@@ -94,6 +94,10 @@ export default class SeanceController {
         const debut = new Date(semaineDebut);
         const fin = new Date(semaineFin);
 
+        if (isNaN(debut.getTime()) || isNaN(fin.getTime())) {
+            return res.status(400).json({ success: false, message: "Paramètres semaineDebut et semaineFin invalides" });
+        }
+
         try {
             let options: FindOptions<InferAttributes<Seance>> = {
                 include: this.baseIncludes(),
@@ -149,8 +153,13 @@ export default class SeanceController {
 
             for (const seance of seances) {
                 const targetDay = dayMap[seance.jourSemaine];
+                // Ignorer les séances dont le jour n'est pas reconnu
+                if (targetDay === undefined) continue;
+
                 const seanceDebut = new Date(seance.dateDebut);
                 const seanceFin = new Date(seance.dateFin);
+
+                if (isNaN(seanceDebut.getTime()) || isNaN(seanceFin.getTime())) continue;
 
                 let current = new Date(Math.max(debut.getTime(), seanceDebut.getTime()));
                 const end = new Date(Math.min(fin.getTime(), seanceFin.getTime()));
@@ -181,7 +190,8 @@ export default class SeanceController {
 
             return res.status(200).send(events);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('[Planning] Erreur lors de la récupération du planning:', error);
+            return res.status(500).json({ success: false, message: 'Erreur lors de la récupération du planning', error });
         }
     }
 
@@ -482,95 +492,6 @@ export default class SeanceController {
                 message: 'Emploi du temps publié avec succès',
                 enseignantsNotifies: enseignantIds.length,
                 etudiantsNotifies: etudiantIds.length
-            });
-        } catch (error) {
-            return res.status(500).json({ success: false, error });
-        }
-    }
-
-    static async getRappelSalle(req: Request, res: Response): Promise<Response> {
-        try {
-            const role = (req as any).utilisateurRole;
-            const utilisateurId = (req as any).utilisateurId;
-            const now = new Date();
-            const currentTime = now.toTimeString().slice(0, 5);
-            const dayNames = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
-            const today = dayNames[now.getDay()];
-
-            let seances: Seance[] = [];
-
-            if (role === RolesUtilisateur.ENSEIGNANT) {
-                const enseignant = await Enseignant.findOne({ where: { utilisateurId } });
-                if (!enseignant) return res.json({ rappel: null });
-                seances = await Seance.findAll({
-                    where: {
-                        enseignantId: enseignant.id as any,
-                        jourSemaine: today as any,
-                        dateDebut: { [Op.lte]: now },
-                        dateFin: { [Op.gte]: now }
-                    },
-                    include: [
-                        { association: Seance.associations.cours },
-                        { association: Seance.associations.enseignant, include: [Enseignant.associations.utilisateur] },
-                        Seance.associations.salleDeClasse
-                    ],
-                    order: [['heureDebut', 'ASC']]
-                });
-            } else if (role === RolesUtilisateur.APPRENANT) {
-                const cursus = await CursusApprenant.findAll({
-                    where: { utilisateurId },
-                    include: [{ association: 'demandeInscription', include: [{ association: 'cours' }] }]
-                });
-                const coursIds = cursus.flatMap(c =>
-                    (c as any).demandeInscription?.cours?.map((dc: any) => dc.id) ?? []
-                );
-                if (coursIds.length === 0) return res.json({ rappel: null });
-                seances = await Seance.findAll({
-                    where: {
-                        coursId: { [Op.in]: coursIds },
-                        jourSemaine: today as any,
-                        dateDebut: { [Op.lte]: now },
-                        dateFin: { [Op.gte]: now }
-                    },
-                    include: [
-                        { association: Seance.associations.cours },
-                        { association: Seance.associations.enseignant, include: [Enseignant.associations.utilisateur] },
-                        Seance.associations.salleDeClasse
-                    ],
-                    order: [['heureDebut', 'ASC']]
-                });
-            }
-
-            const currentSeance = seances.find(s => {
-                const debut = s.heureDebut.toString().slice(0, 5);
-                const fin = s.heureFin.toString().slice(0, 5);
-                return currentTime >= debut && currentTime <= fin;
-            });
-
-            if (!currentSeance) return res.json({ rappel: null });
-
-            const currentFin = currentSeance.heureFin.toString().slice(0, 5);
-            const [h, m] = currentFin.split(':').map(Number);
-            const finDate = new Date(now);
-            finDate.setHours(h, m, 0, 0);
-            const diffMs = finDate.getTime() - now.getTime();
-            const diffMin = Math.round(diffMs / 60000);
-
-            if (diffMin > 10 || diffMin < 0) return res.json({ rappel: null });
-
-            const currentIndex = seances.indexOf(currentSeance);
-            const nextSeance = currentIndex < seances.length - 1 ? seances[currentIndex + 1] : null;
-
-            return res.json({
-                rappel: {
-                    currentCours: (currentSeance as any).cours?.intitule || currentSeance.titre,
-                    currentSalle: currentSeance.salle,
-                    currentFin: currentSeance.heureFin,
-                    nextCours: nextSeance ? ((nextSeance as any).cours?.intitule || nextSeance.titre) : null,
-                    nextSalle: nextSeance?.salle || null,
-                    nextHeureDebut: nextSeance?.heureDebut || null,
-                    minutesRestantes: diffMin
-                }
             });
         } catch (error) {
             return res.status(500).json({ success: false, error });

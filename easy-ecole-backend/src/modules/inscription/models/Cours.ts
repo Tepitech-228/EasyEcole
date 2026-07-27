@@ -1,4 +1,4 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { Classe } from "./Classe";
 import { Parcours } from "./Parcours";
@@ -8,12 +8,15 @@ import { Enseignant } from "../../auth/models/Enseignant";
 import { ChapitreCours } from "./ChapitreCours";
 import { Seance } from "./Seance";
 import { DemandeInscription } from "./DemandeInscription";
+import { Ecue } from "./Ecue";
 
 export class Cours extends Model<InferAttributes<Cours>, InferCreationAttributes<Cours>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare code: string
   declare intitule: string
   declare credit: CreationOptional<number>
+  declare creditEcts: CreationOptional<number | null>
+  declare objectifs: CreationOptional<string | null>
   declare estObligatoire: CreationOptional<boolean>
   declare description: CreationOptional<string>
   declare semestre: CreationOptional<SemestresParcours>
@@ -23,9 +26,12 @@ export class Cours extends Model<InferAttributes<Cours>, InferCreationAttributes
   declare parcours?: NonAttribute<Parcours>
   declare enseignantId: ForeignKey<Enseignant['id'] | null>
   declare enseignant?: NonAttribute<Enseignant>
+  declare volumeHoraire: CreationOptional<number | null>
+  declare coefficient: CreationOptional<number | null>
   declare chapitresCours?: ChapitreCours[]
   declare seances?: Seance[]
   declare demandesInscription?: DemandeInscription[]
+  declare ecues?: Ecue[]
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -37,6 +43,7 @@ export class Cours extends Model<InferAttributes<Cours>, InferCreationAttributes
     chapitresCours: Association<Cours, ChapitreCours>
     seances: Association<Cours, Seance>,
     demandesInscription: Association<Cours, DemandeInscription>,
+    ecues: Association<Cours, Ecue>,
   };
 }
 
@@ -60,8 +67,24 @@ Cours.init({
     type: new DataTypes.STRING,
     allowNull: false
   },
+  classeId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: false
+  },
+  enseignantId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
+  },
   credit: {
     type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true,
+  },
+  creditEcts: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true,
+  },
+  objectifs: {
+    type: new DataTypes.TEXT,
     allowNull: true,
   },
   estObligatoire: {
@@ -77,6 +100,14 @@ Cours.init({
     type: DataTypes.ENUM,
     values: [SemestresParcours.SEMESTRE1, SemestresParcours.SEMESTRE2, SemestresParcours.SEMESTRE3, SemestresParcours.SEMESTRE4, SemestresParcours.SEMESTRE5, SemestresParcours.SEMESTRE6],
     allowNull: true
+  },
+  volumeHoraire: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true,
+  },
+  coefficient: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true,
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

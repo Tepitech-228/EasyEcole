@@ -13,4 +13,7 @@ export class ArticleService {
     create(item: Article): Observable<Article> { return this.httpClient.post<Article>(`${this.SERVICE_URL}`, item) }
     update(item: Article): Observable<Article> { return this.httpClient.put<Article>(`${this.SERVICE_URL}/${item.id!}`, item) }
     delete(id: string): Observable<any> { return this.httpClient.delete(`${this.SERVICE_URL}/${id}`) }
+    updateStatut(id: string, statut: string, motifFinVie?: string): Observable<Article> {
+        return this.httpClient.put<Article>(`${this.SERVICE_URL}/${id}/statut`, { statut, motifFinVie })
+    }
 }

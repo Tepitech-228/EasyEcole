@@ -5,12 +5,26 @@ import { RolesUtilisateur } from '../../../core/enums/RolesUtilisateur';
 export default class FolderController {
   static async list(req: Request, res: Response) {
     try {
-      const folders = await Folder.findAll({ order: [['nom', 'ASC']] });
-      return res.status(200).json(folders);
+      const where: any = {}
+      if (req.query.domainId) {
+        where.domainId = Number(req.query.domainId)
+      }
+      if (req.query.parentId !== undefined) {
+        const pid = Number(req.query.parentId)
+        where.parentId = pid === 0 ? null : pid
+      }
+
+      const folders = await Folder.findAll({
+        where,
+        order: [['nom', 'ASC']]
+      })
+
+      return res.status(200).json(folders)
     } catch (error) {
-      return res.status(500).json({ success: false, error });
+      return res.status(500).json({ success: false, error })
     }
   }
+
 
   static async create(req: Request, res: Response) {
     if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION &&

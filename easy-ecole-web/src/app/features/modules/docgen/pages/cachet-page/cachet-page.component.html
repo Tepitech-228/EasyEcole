@@ -1,0 +1,50 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <app-header-title title="Cachet de l'école" subtitle="Gérez le cachet officiel à apposer sur les documents"></app-header-title>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+    <div class="flex justify-between items-center">
+      <app-custom-button (click)="ouvrirFormulaire()" text="Nouveau cachet" color="indigo"></app-custom-button>
+    </div>
+  </div>
+
+  <div *ngIf="showForm" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ editingId ? 'Modifier' : 'Nouveau' }} cachet</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div><label class="block text-xs font-medium text-gray-500 mb-1">Libellé *</label><input [(ngModel)]="formData.libelle" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" /></div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Image</label>
+        <input type="file" accept="image/*" (change)="onFileSelected($event)" class="w-full text-sm" />
+        <img *ngIf="previewUrl" [src]="previewUrl" class="mt-2 h-20 object-contain" />
+      </div>
+      <div><label class="block text-xs font-medium text-gray-500 mb-1">Position X</label><input [(ngModel)]="formData.positionX" type="number" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" /></div>
+      <div><label class="block text-xs font-medium text-gray-500 mb-1">Position Y</label><input [(ngModel)]="formData.positionY" type="number" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" /></div>
+      <div><label class="block text-xs font-medium text-gray-500 mb-1">Largeur</label><input [(ngModel)]="formData.width" type="number" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" /></div>
+      <div><label class="block text-xs font-medium text-gray-500 mb-1">Hauteur</label><input [(ngModel)]="formData.height" type="number" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" /></div>
+    </div>
+    <div class="flex justify-end gap-3 mt-4">
+      <app-custom-button (click)="showForm = false" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+      <app-custom-button (click)="sauvegarder()" text="Enregistrer" color="indigo"></app-custom-button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div *ngFor="let c of cachets" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      <div class="flex items-start justify-between mb-3">
+        <div>
+          <h3 class="text-sm font-semibold text-gray-900">{{ c.libelle }}</h3>
+          <p class="text-xs text-gray-500 mt-0.5">{{ c.width }}x{{ c.height }}px @ ({{ c.positionX }}, {{ c.positionY }})</p>
+        </div>
+        <span *ngIf="c.isActive" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700">Actif</span>
+      </div>
+      <img *ngIf="getImageUrl(c)" [src]="getImageUrl(c)" class="h-24 object-contain mx-auto mb-3 border border-gray-100 rounded-lg p-2" />
+      <div class="flex gap-2">
+        <app-custom-button (click)="ouvrirFormulaire(c)" text="Modifier" color="blue" [outlined]="true"></app-custom-button>
+        <app-custom-button *ngIf="!c.isActive" (click)="setActive(c.id!)" text="Activer" color="green" [outlined]="true"></app-custom-button>
+        <app-custom-button (click)="supprimer(c.id)" text="Supprimer" color="indigo" [outlined]="true"></app-custom-button>
+      </div>
+    </div>
+  </div>
+
+  <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+  <div *ngIf="!loading && cachets.length === 0" class="text-center py-12 text-sm text-gray-500">Aucun cachet</div>
+</div>

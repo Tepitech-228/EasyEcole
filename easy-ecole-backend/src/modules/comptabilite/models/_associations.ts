@@ -10,6 +10,9 @@ import { Parcours } from "../../inscription/models/Parcours"
 import { NiveauEtude } from "../../inscription/models/NiveauEtude"
 import { AnneeAcademique } from "../../inscription/models/AnneeAcademique"
 import { Utilisateur } from "../../auth/models/Utilisateur"
+import { CompteBancaire } from "./CompteBancaire"
+import { ReleveBancaire } from "./ReleveBancaire"
+import { LigneReleveBancaire } from "./LigneReleveBancaire"
 
 // Associations EcritureComptable
 EcritureComptable.belongsTo(JournalComptable, {
@@ -122,3 +125,15 @@ Utilisateur.hasMany(ReductionFrais, {
   as: 'reductionsValidees',
   foreignKey: 'validePar'
 })
+
+// Associations CompteBancaire - ReleveBancaire
+CompteBancaire.hasMany(ReleveBancaire, { foreignKey: 'compteBancaireId', as: 'releves' })
+ReleveBancaire.belongsTo(CompteBancaire, { foreignKey: 'compteBancaireId', as: 'compteBancaire' })
+
+// Associations ReleveBancaire - LigneReleveBancaire
+ReleveBancaire.hasMany(LigneReleveBancaire, { foreignKey: 'releveBancaireId', as: 'lignes' })
+LigneReleveBancaire.belongsTo(ReleveBancaire, { foreignKey: 'releveBancaireId', as: 'releveBancaire' })
+
+// Associations LigneReleveBancaire - EcritureComptable
+LigneReleveBancaire.belongsTo(EcritureComptable, { foreignKey: 'ecritureComptableId', as: 'ecritureComptable' })
+EcritureComptable.hasMany(LigneReleveBancaire, { foreignKey: 'ecritureComptableId', as: 'lignesReleve' })

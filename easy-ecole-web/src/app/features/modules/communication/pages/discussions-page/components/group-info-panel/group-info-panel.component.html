@@ -53,7 +53,7 @@
             <option value="" disabled selected>Sélectionner un membre...</option>
             <option *ngFor="let user of allNonMembers" [value]="user.id">{{ user.prenoms || '' }} {{ user.nom || '' }} ({{ user.email || user.identifiant || '' }})</option>
           </select>
-          <button (click)="onAddMember(Number(memberSelect.value))" [disabled]="!memberSelect.value" class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">
+          <button (click)="onAddMember(+(memberSelect.value))" [disabled]="!memberSelect.value" class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">
             Ajouter
           </button>
         </div>

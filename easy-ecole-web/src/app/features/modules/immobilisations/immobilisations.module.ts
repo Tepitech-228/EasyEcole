@@ -13,6 +13,13 @@ import { ListeCategoriesPageComponent } from './pages/liste-categories-page/list
 import { ListeMaintenancesPageComponent } from './pages/liste-maintenances-page/liste-maintenances-page.component';
 import { NouvelleMaintenancePageComponent } from './pages/nouvelle-maintenance-page/nouvelle-maintenance-page.component';
 import { NouvelleCategoriePageComponent } from './pages/nouvelle-categorie-page/nouvelle-categorie-page.component';
+import { ListeAssurancesPageComponent } from './pages/liste-assurances-page/liste-assurances-page.component';
+import { ListeAffectationsPageComponent } from './pages/liste-affectations-page/liste-affectations-page.component';
+import { ListeSortiesProvisoiresPageComponent } from './pages/liste-sorties-provisoires-page/liste-sorties-provisoires-page.component';
+import { ListeInventairesImmoPageComponent } from './pages/liste-inventaires-immo-page/liste-inventaires-immo-page.component';
+import { ReportingImmoPageComponent } from './pages/reporting-immo-page/reporting-immo-page.component';
+import { ListeCessionsPageComponent } from './pages/liste-cessions-page/liste-cessions-page.component';
+import { ListeRebutsImmoPageComponent } from './pages/liste-rebuts-immo-page/liste-rebuts-immo-page.component';
 
 @NgModule({
     declarations: [
@@ -20,6 +27,9 @@ import { NouvelleCategoriePageComponent } from './pages/nouvelle-categorie-page/
         ListeSitesPageComponent, NouveauSitePageComponent,
         ListeCategoriesPageComponent, ListeMaintenancesPageComponent,
         NouvelleMaintenancePageComponent, NouvelleCategoriePageComponent,
+        ListeAssurancesPageComponent, ListeAffectationsPageComponent,
+        ListeSortiesProvisoiresPageComponent, ListeInventairesImmoPageComponent,
+        ReportingImmoPageComponent, ListeCessionsPageComponent, ListeRebutsImmoPageComponent,
     ],
     imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, ImmobilisationsRoutingModule, SharedModule]
 })

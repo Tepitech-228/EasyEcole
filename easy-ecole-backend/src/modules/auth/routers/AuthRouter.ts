@@ -1,12 +1,39 @@
 import express from "express"
 import multer from "multer";
+import * as path from "path"
 import * as fs from "fs"
 import { customAlphabet } from 'nanoid'
+import rateLimit from 'express-rate-limit'
 
 import AuthController from "../controllers/AuthController"
 import Authenticate from "../../../core/middlewares/Authenticate";
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
 import CheckPermission from "../../../core/middlewares/CheckPermission";
+
+const resendOtpLimiter = rateLimit({
+  windowMs: 30000,
+  max: 1,
+  keyGenerator: (req) => req.body?.email || 'unknown',
+  handler: (req, res) => {
+    res.status(429).json({ error: 'rate_limited', message: 'Attendez 30s avant de renvoyer' })
+  }
+})
+
+const loginLimiter = rateLimit({
+  windowMs: 60000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Trop de tentatives, réessayez dans 1 minute' }
+})
+
+const verifyOtpLimiter = rateLimit({
+  windowMs: 60000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Trop de tentatives de vérification, réessayez dans 1 minute' }
+})
 
 const router = express.Router()
 const storage = multer.diskStorage({
@@ -20,8 +47,8 @@ const storage = multer.diskStorage({
     },
     filename: (req, file, callback) => {
         const nanoid = customAlphabet('1234567890abcdef', 50)
-        
-        callback(null, nanoid())
+        const ext = path.extname(file.originalname)
+        callback(null, nanoid() + ext)
     },
 })
 const upload = multer({ storage: storage })
@@ -50,7 +77,7 @@ const upload = multer({ storage: storage })
  *         description: Identifiants invalides
  */
 router
-    .post('/login', AuthController.login)
+    .post('/login', [loginLimiter], AuthController.login)
     /**
      * @openapi
      * /auth/register:
@@ -217,5 +244,7 @@ router
     .put('/reset', [Authenticate], AuthController.passwordReset)
     .post('/reset-password', AuthController.passwordResetWithToken)
     .post('/logout', [Authenticate], AuthController.logout)
+    .post('/verify-otp', [verifyOtpLimiter], AuthController.verifyOtp)
+    .post('/resend-otp', [resendOtpLimiter], AuthController.resendOtp)
 
 export default router

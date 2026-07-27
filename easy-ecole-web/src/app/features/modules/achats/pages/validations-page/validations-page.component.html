@@ -1,20 +1,64 @@
-<div class="mb-8">
-    <app-header-title title="Validations" subtitle="Approuver ou rejeter les demandes d'achat"></app-header-title>
+<div class="flex justify-between items-start gap-x-8 mb-8">
+    <app-header-title title="Validations" subtitle="Valider ou rejeter les demandes"></app-header-title>
 </div>
 
-<div class="bg-white rounded-lg shadow p-6">
-    <table class="min-w-full">
-        <thead class="bg-gray-100 border-b">
-            <tr>
-                <th class="text-sm font-medium text-gray-900 px-2 py-4 text-left">#</th>
-                <th class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Description</th>
-                <th class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Soumis par</th>
-                <th class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Montant</th>
-                <th class="text-sm font-medium text-gray-900 px-2 py-4 text-right">Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr><td colspan="5" class="text-center py-4 text-sm text-gray-500">Aucune validation en attente</td></tr>
-        </tbody>
-    </table>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <p class="text-xs font-medium text-gray-500 uppercase">En attente</p>
+        <p class="text-xl font-bold text-yellow-600 mt-1">{{ enAttenteCount }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <p class="text-xs font-medium text-gray-500 uppercase">Validées</p>
+        <p class="text-xl font-bold text-green-600 mt-1">{{ valideesCount }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <p class="text-xs font-medium text-gray-500 uppercase">Rejetées</p>
+        <p class="text-xl font-bold text-red-600 mt-1">{{ rejeteesCount }}</p>
+    </div>
+</div>
+
+<div class="mb-6 flex items-center justify-between">
+    <div class="relative">
+        <input type="text" [(ngModel)]="searchTerm" placeholder="Rechercher une validation..." class="w-80 rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm pl-10">
+        <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+    </div>
+</div>
+
+<app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+<div *ngIf="!loading" class="flex flex-col">
+    <div class="overflow-x-auto">
+        <div class="py-2 inline-block min-w-full">
+            <div class="overflow-hidden">
+                <table class="min-w-full">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Demande</th>
+                            <th class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Description</th>
+                            <th class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Demandeur</th>
+                            <th class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Montant</th>
+                            <th class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Statut</th>
+                            <th class="text-sm font-medium text-gray-900 px-2 py-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngIf="validations.length==0" class="bg-white p-0 border-b">
+                            <td class="text-sm text-center py-4 text-gray-600" colspan="6">Aucune validation</td>
+                        </tr>
+                        <tr *ngFor="let v of validations" class="bg-white hover:bg-gray-100 p-0 border-b">
+                            <td class="px-2 py-4 text-sm text-gray-600">{{ v.demandeId }}</td>
+                            <td class="px-2 py-4 text-sm font-medium text-gray-900">{{ v.description }}</td>
+                            <td class="px-2 py-4 text-sm text-gray-600">{{ v.demandeur }}</td>
+                            <td class="px-2 py-4 text-sm text-gray-600">{{ v.montant | currency:'XAF':'symbol':'1.0-0' }}</td>
+                            <td class="px-2 py-4 text-sm"><span class="px-2 py-1 rounded text-xs font-semibold" [ngClass]="getStatutBadge(v.statut)">{{ v.statut }}</span></td>
+                            <td class="px-2 py-4 text-right">
+                                <button *ngIf="v.statut === 'en_attente'" (click)="valider(v.id)" class="text-emerald-600 hover:text-emerald-800 text-xs font-medium mr-2">Valider</button>
+                                <button *ngIf="v.statut === 'en_attente'" (click)="rejeter(v.id)" class="text-red-600 hover:text-red-800 text-xs font-medium">Rejeter</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>

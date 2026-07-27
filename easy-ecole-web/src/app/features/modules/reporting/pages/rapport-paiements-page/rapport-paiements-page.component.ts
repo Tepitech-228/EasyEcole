@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { CommonModule } from '@angular/common';
+import { ReportingService } from 'src/app/data/modules/reporting/services/reporting.service';
 
 @Component({
   selector: 'app-rapport-paiements-page',
@@ -18,16 +19,16 @@ export class RapportPaiementsPageComponent implements OnInit {
     return this.paiements.map(p => Number(p.montantTotal) || 0);
   }
 
-  constructor(private http: HttpClient) {}
+  constructor(private reporting: ReportingService) {}
 
   ngOnInit(): void {
-    this.http.get('/api/reporting/paiements').subscribe({
+    this.reporting.getPaiements().subscribe({
       next: (res: any) => this.paiements = res
     });
-    this.http.get('/api/reporting/paiements/factures').subscribe({
+    this.reporting.getPaiementsFactures().subscribe({
       next: (res: any) => this.factures = res
     });
-    this.http.get('/api/reporting/paiements/totaux').subscribe({
+    this.reporting.getPaiementsTotaux().subscribe({
       next: (res: any) => this.totaux = res
     });
   }

@@ -1,0 +1,54 @@
+<app-header-title title="Appels d'offres" subtitle="Gestion des appels d'offres (AO)"></app-header-title>
+
+<div class="flex justify-end mb-4">
+  <app-custom-button text="Nouvel appel d'offres" (click)="ouvrirFormulaire()"></app-custom-button>
+</div>
+
+<app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+<div *ngIf="!loading && items.length === 0" class="text-center py-8 text-gray-400">Aucun appel d'offres</div>
+
+<div class="overflow-x-auto" *ngIf="!loading && items.length > 0">
+  <table class="w-full text-sm">
+    <thead><tr class="text-left border-b"><th>Réf.</th><th>Objet</th><th>Planification</th><th>Lancement</th><th>Limite dépôt</th><th>Statut</th><th>Actions</th></tr></thead>
+    <tbody>
+      <tr *ngFor="let item of items" class="border-b hover:bg-gray-50">
+        <td class="py-2 font-mono text-xs">{{ item.reference }}</td>
+        <td class="max-w-xs truncate">{{ item.objet }}</td>
+        <td class="text-xs">{{ getPlanifLabel(item.planificationMarcheId) }}</td>
+        <td class="text-xs">{{ item.dateLancement | date:'shortDate' }}</td>
+        <td class="text-xs">{{ item.dateLimiteDepot | date:'shortDate' }}</td>
+        <td><span class="px-2 py-1 rounded text-xs" [class]="getStatutColor(item.statut)">{{ getStatutLabel(item.statut) }}</span></td>
+        <td class="flex gap-1">
+          <button *ngIf="item.statut==='lance'||item.statut==='depots'" (click)="lancer(item.id)" class="text-green-600 hover:text-green-800 text-xs" title="Lancer">🚀</button>
+          <button *ngIf="item.statut==='evaluating'" (click)="attribuer(item.id)" class="text-emerald-600 hover:text-emerald-800 text-xs" title="Attribuer">🏆</button>
+          <button (click)="ouvrirFormulaire(item)" class="text-blue-500 hover:text-blue-700 text-xs">✎</button>
+          <button (click)="supprimer(item.id)" class="text-red-500 hover:text-red-700 text-xs">🗑</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<app-custom-modal [showModal]="showForm" (onCloseModal)="fermerFormulaire()">
+  <h3 class="text-lg font-semibold mb-4">{{ editingId ? 'Modifier' : 'Nouvel' }} appel d'offres</h3>
+  <div class="grid gap-3">
+    <select [(ngModel)]="formData.planificationMarcheId" class="form-input">
+      <option value="">— Planification —</option>
+      <option *ngFor="let p of planifications" [value]="p.id">{{ p.libelle }}</option>
+    </select>
+    <input [(ngModel)]="formData.reference" placeholder="Référence" class="form-input">
+    <textarea [(ngModel)]="formData.objet" placeholder="Objet" class="form-input" rows="2"></textarea>
+    <div class="flex gap-3">
+      <div class="flex-1"><label class="text-xs text-gray-500">Lancement</label><input type="date" [(ngModel)]="formData.dateLancement" class="form-input"></div>
+      <div class="flex-1"><label class="text-xs text-gray-500">Limite dépôt</label><input type="date" [(ngModel)]="formData.dateLimiteDepot" class="form-input"></div>
+    </div>
+    <textarea [(ngModel)]="formData.critereEvaluation" placeholder="Critères d'évaluation" class="form-input" rows="2"></textarea>
+    <textarea [(ngModel)]="formData.modalitePaiement" placeholder="Modalités de paiement" class="form-input" rows="2"></textarea>
+    <textarea [(ngModel)]="formData.garantie" placeholder="Garantie" class="form-input" rows="2"></textarea>
+    <div class="flex gap-2 justify-end mt-2">
+      <app-custom-button text="Annuler" [outlined]="true" (click)="fermerFormulaire()"></app-custom-button>
+      <app-custom-button text="Enregistrer" (click)="sauvegarder()"></app-custom-button>
+    </div>
+  </div>
+</app-custom-modal>

@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { CommonModule } from '@angular/common';
+import { ReportingService } from 'src/app/data/modules/reporting/services/reporting.service';
 
 @Component({
   selector: 'app-rapport-budget-page',
@@ -8,15 +9,18 @@ import { HttpClient } from '@angular/common/http';
 })
 export class RapportBudgetPageComponent implements OnInit {
   rows: any[] = [];
+chartPrevu: number[] = [];
+chartReel: number[] = [];
+chartLabels: string[] = [];
   ecart: any = { totalPrevu: 0, totalReel: 0, ecartTotal: 0 };
 
-  constructor(private http: HttpClient) {}
+  constructor(private reporting: ReportingService) {}
 
   ngOnInit(): void {
-    this.http.get('/api/reporting/budget').subscribe({
+    this.reporting.getBudget().subscribe({
       next: (res: any) => this.rows = res
     });
-    this.http.get('/api/reporting/budget/ecart').subscribe({
+    this.reporting.getBudgetEcart().subscribe({
       next: (res: any) => this.ecart = res
     });
   }

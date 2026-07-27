@@ -19,7 +19,8 @@ import { DetteAcademique } from './DetteAcademique';
 export function initBulletinAssociations() {
   Bulletin.hasMany(LigneBulletin, {
     foreignKey: 'bulletinId',
-    as: 'lignesBulletins'
+    as: 'lignesBulletins',
+    onDelete: 'cascade'
   });
   LigneBulletin.belongsTo(Bulletin, {
     foreignKey: 'bulletinId',
@@ -58,7 +59,8 @@ export function initBulletinAssociations() {
 
   Deliberation.hasMany(ResultatDeliberation, {
     foreignKey: 'deliberationId',
-    as: 'resultats'
+    as: 'resultats',
+    onDelete: 'cascade'
   });
   ResultatDeliberation.belongsTo(Deliberation, {
     foreignKey: 'deliberationId',
@@ -82,7 +84,8 @@ export function initBulletinAssociations() {
   // AuditNote - NoteEvaluation
   NoteEvaluation.hasMany(AuditNote, {
     foreignKey: 'noteEvaluationId',
-    as: 'audits'
+    as: 'audits',
+    onDelete: 'cascade'
   });
   AuditNote.belongsTo(NoteEvaluation, {
     foreignKey: 'noteEvaluationId',
@@ -102,7 +105,8 @@ export function initBulletinAssociations() {
   // Deliberation - JuryMembre
   Deliberation.hasMany(JuryMembre, {
     foreignKey: 'deliberationId',
-    as: 'juryMembres'
+    as: 'juryMembres',
+    onDelete: 'cascade'
   });
   JuryMembre.belongsTo(Deliberation, {
     foreignKey: 'deliberationId',
@@ -122,7 +126,8 @@ export function initBulletinAssociations() {
   // HistoriqueDecision
   Deliberation.hasMany(HistoriqueDecision, {
     foreignKey: 'deliberationId',
-    as: 'historiqueDecisions'
+    as: 'historiqueDecisions',
+    onDelete: 'cascade'
   });
   HistoriqueDecision.belongsTo(Deliberation, {
     foreignKey: 'deliberationId',
@@ -130,10 +135,22 @@ export function initBulletinAssociations() {
   });
   ResultatDeliberation.hasMany(HistoriqueDecision, {
     foreignKey: 'resultatId',
-    as: 'historiqueDecisions'
+    as: 'historiqueDecisions',
+    onDelete: 'cascade'
   });
   HistoriqueDecision.belongsTo(ResultatDeliberation, {
     foreignKey: 'resultatId',
     as: 'resultat'
+  });
+
+  // DetteAcademique - CursusApprenant
+  CursusApprenant.hasMany(DetteAcademique, {
+    foreignKey: 'cursusApprenantId',
+    as: 'dettesAcademiques',
+    onDelete: 'cascade'
+  });
+  DetteAcademique.belongsTo(CursusApprenant, {
+    foreignKey: 'cursusApprenantId',
+    as: 'cursusApprenant'
   });
 }

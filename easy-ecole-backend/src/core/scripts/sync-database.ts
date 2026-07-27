@@ -35,7 +35,6 @@ async function syncDatabase() {
         require('../../modules/auth/models/_associations');
         require('../../modules/orientation/models/_associations');
         require('../../modules/inscription/models/_associations');
-        require('../../modules/inscription/models/UniteEnseignement');
         require('../../modules/inscription/models/Mcc');
         require('../../modules/inscription/models/RegleEvaluation');
         require('../../modules/inscription/models/SessionExamen');
@@ -62,6 +61,11 @@ async function syncDatabase() {
         require('../../modules/elearning/models/_associations');
         require('../../modules/elearning/models/Notification');
         require('../../modules/reporting/models/_associations');
+        require('../../modules/etablissement/models/Etablissement');
+        require('../../modules/immobilisation/models/RebutImmobilisation');
+
+        // GED v2 models (imported via _associations which pulls in all models)
+        require('../../modules/ged/models/_associations');
 
         await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
         try {
@@ -70,9 +74,10 @@ async function syncDatabase() {
             if (
                 syncError.name === 'SequelizeUnknownConstraintError' ||
                 syncError?.parent?.code === 'ER_FK_INCORRECT_OPTION' ||
-                syncError?.parent?.code === 'ER_CANT_CREATE_TABLE'
+                syncError?.parent?.code === 'ER_CANT_CREATE_TABLE' ||
+                syncError?.parent?.code === 'ER_TOO_MANY_KEYS'
             ) {
-                console.warn('Warning (FK constraint ignored):', syncError.message);
+                console.warn('Warning (sync issue ignored):', syncError.message);
             } else {
                 throw syncError;
             }
@@ -83,9 +88,10 @@ async function syncDatabase() {
         if (
             error.name === 'SequelizeUnknownConstraintError' ||
             error?.parent?.code === 'ER_FK_INCORRECT_OPTION' ||
-            error?.parent?.code === 'ER_CANT_CREATE_TABLE'
+            error?.parent?.code === 'ER_CANT_CREATE_TABLE' ||
+            error?.parent?.code === 'ER_TOO_MANY_KEYS'
         ) {
-            console.warn('Sync warning (FK constraint ignored):', error.message);
+            console.warn('Sync warning (sync issue ignored):', error.message);
         } else {
             console.error('Sync failed:', error);
             process.exit(1);

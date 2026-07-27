@@ -25,7 +25,18 @@ const storage = multer.diskStorage({
         callback(null, nanoid() + '_' + uniqueSuffix)
     },
 })
-const upload = multer({ storage: storage })
+const upload = multer({
+    storage,
+    fileFilter: (_req, file, cb) => {
+        const acceptedMimes = ['application/pdf'];
+        if (acceptedMimes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Seuls les fichiers PDF sont acceptés'));
+        }
+    },
+    limits: { fileSize: 3 * 1024 * 1024 * 1024 }
+})
 
 /**
  * @openapi
@@ -84,7 +95,7 @@ router
  *       200:
  *         description: Fichier téléchargé
  */
-    .put('/', [Authenticate, upload.fields([{name: 'fichier', maxCount: 1}])], DossierInscriptionController.uploadDossierInscription)
+    .put('/', [Authenticate, upload.array('fichiers', 50)], DossierInscriptionController.uploadDossierInscription)
 
 /**
  * @openapi

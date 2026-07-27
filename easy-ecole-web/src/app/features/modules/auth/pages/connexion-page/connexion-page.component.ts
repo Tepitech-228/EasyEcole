@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 import { Utilisateur } from 'src/app/data/modules/auth/models/Utilisateur.model';
 import { AuthService } from 'src/app/data/modules/auth/services/auth.service';
@@ -20,7 +21,11 @@ export class ConnexionPageComponent implements OnInit {
     password: new FormControl(null, [Validators.required, Validators.minLength(8)]),
   })
 
-  constructor(private authService: AuthService, private localStorageService: LocalStorageService) { }
+  constructor(
+    private authService: AuthService,
+    private localStorageService: LocalStorageService,
+    private router: Router
+  ) { }
 
   ngOnInit(): void {
   }
@@ -30,7 +35,6 @@ export class ConnexionPageComponent implements OnInit {
 
     let identifiant: string = this.connexionForm.get('usernameOrEmail')?.value
     let password: string = this.connexionForm.get('password')?.value
-    console.log(identifiant, password)
 
     if (identifiant == null || password == null || identifiant.length == 0 || password.length == 0) {
       this.emptyError = true
@@ -51,9 +55,14 @@ export class ConnexionPageComponent implements OnInit {
           {
             next: (res) => {
               this.disableButton = false
-              this.localStorageService.set(LocalStorageService.AUTH_TOKEN, res.token)
-
-              location.reload()
+              if (res.otpRequired) {
+                this.router.navigate(['/auth/otp'], {
+                  queryParams: { email: res.email, maskedEmail: res.maskedEmail, mode: 'connexion' }
+                })
+              } else {
+                this.localStorageService.set(LocalStorageService.AUTH_TOKEN, res.token)
+                location.reload()
+              }
             },
             error: (err) => {
               this.disableButton = false

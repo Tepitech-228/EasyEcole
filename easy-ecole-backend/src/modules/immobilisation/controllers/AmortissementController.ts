@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
+import { Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Amortissement } from "../models/Amortissement";
+import { Immobilisation } from "../models/Immobilisation";
+import { AmortissementService } from "../services/AmortissementService";
 
 export default class AmortissementController {
     static async getAll(req: Request, res: Response): Promise<Response> {
@@ -54,5 +57,36 @@ export default class AmortissementController {
             await item.destroy();
             return res.status(200).json({ success: true, message: "Supprimé" });
         } catch (error) { return res.status(500).json({ success: false, error: error }); }
+    }
+    static async generer(req: Request, res: Response): Promise<Response> {
+        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT || (req as any).utilisateurRole == RolesUtilisateur.ENSEIGNANT) {
+            return res.status(403).json({ success: false });
+        }
+        try {
+            const items = await AmortissementService.genererPourImmobilisation(Number(req.params.immobilisationId));
+            return res.status(200).send(items);
+        } catch (error: any) {
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    }
+    static async genererAll(req: Request, res: Response): Promise<Response> {
+        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT || (req as any).utilisateurRole == RolesUtilisateur.ENSEIGNANT) {
+            return res.status(403).json({ success: false });
+        }
+        try {
+            const immobilisations = await Immobilisation.findAll({ where: { categorieId: { [Op.ne]: null } } });
+            const results: any[] = [];
+            for (const immo of immobilisations) {
+                try {
+                    const items = await AmortissementService.genererPourImmobilisation(Number(immo.id));
+                    results.push({ immobilisationId: immo.id, success: true, amortissements: items });
+                } catch (e: any) {
+                    results.push({ immobilisationId: immo.id, success: false, error: e.message });
+                }
+            }
+            return res.status(200).send(results);
+        } catch (error: any) {
+            return res.status(500).json({ success: false, error: error.message });
+        }
     }
 }

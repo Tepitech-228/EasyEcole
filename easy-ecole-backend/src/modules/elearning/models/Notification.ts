@@ -23,7 +23,7 @@ Notification.init({
     primaryKey: true
   },
   utilisateurId: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false
   },
   type: {

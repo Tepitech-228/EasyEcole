@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from 'src/environments/environment';
 import { DemandeInscription } from '../models/DemandeInscription.model';
@@ -15,8 +15,16 @@ export class DemandeInscriptionService {
 
   constructor(private httpClient: HttpClient) { }
 
-  getAll(): Observable<DemandeInscription[]> {
-    return this.httpClient.get<DemandeInscription[]>(`${this.SERVICE_URL}`)
+  getAll(params?: any): Observable<{ data: DemandeInscription[], pagination: any }> {
+    let httpParams = new HttpParams();
+    if (params) {
+      Object.keys(params).forEach(key => {
+        if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
+          httpParams = httpParams.set(key, String(params[key]));
+        }
+      });
+    }
+    return this.httpClient.get<{ data: DemandeInscription[], pagination: any }>(`${this.SERVICE_URL}`, { params: httpParams });
   }
 
   get(id: string): Observable<DemandeInscription> {
@@ -44,5 +52,9 @@ export class DemandeInscriptionService {
       dateValidation: new Date(),
       cursusApprenant: cursusApprenant
     })
+  }
+
+  batchUpdateStatus(ids: number[], action: 'valider' | 'rejeter', commentaire?: string): Observable<{ success: boolean; count: number }> {
+    return this.httpClient.put<{ success: boolean; count: number }>(`${this.SERVICE_URL}/batch/statut`, { ids, action, commentaire });
   }
 }

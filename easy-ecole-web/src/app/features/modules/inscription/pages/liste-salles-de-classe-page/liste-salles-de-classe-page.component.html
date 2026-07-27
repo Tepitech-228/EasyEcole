@@ -1,0 +1,93 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <app-header-title
+    title="Salles de classe"
+    subtitle="Gérez les salles de classe et leur affectation aux classes">
+  </app-header-title>
+
+  <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total salles</p>
+          <p class="mt-1 text-2xl font-bold text-gray-900">{{ totalSalles }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-4 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+    <div class="flex justify-between items-center">
+      <div class="flex gap-4">
+        <select [(ngModel)]="selectedClasseId" (change)="getSalles()"
+          class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+          <option value="undefined">Toutes les classes</option>
+          <option *ngFor="let c of classes" [value]="c.id">{{ c.libelle }}</option>
+        </select>
+      </div>
+      <div class="flex gap-2">
+        <a routerLink="/inscription/classes" class="inline-flex items-center px-4 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors">Gérer les classes</a>
+        <app-custom-button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="ouvrirFormulaire()" text="Nouvelle salle" color="primary"></app-custom-button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="showForm" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Nouvelle salle de classe</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Libellé *</label>
+        <input [(ngModel)]="formData.libelle" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="Amphi A, Salle 101..." />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Classe</label>
+        <select [(ngModel)]="formData.classeId" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+          <option value="">Sélectionner</option>
+          <option *ngFor="let c of classes" [value]="c.id">{{ c.libelle }}</option>
+        </select>
+      </div>
+    </div>
+    <div class="mt-4">
+      <label class="block text-xs font-medium text-gray-500 mb-1">Description</label>
+      <textarea [(ngModel)]="formData.description" rows="2" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="Description..."></textarea>
+    </div>
+    <div class="flex justify-end gap-3 mt-4">
+      <app-custom-button (click)="fermerFormulaire()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+      <app-custom-button (click)="creerSalle()" text="Créer" color="primary"></app-custom-button>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-100">
+        <thead>
+          <tr class="bg-gray-50/50">
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Libellé</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Classe</th>
+            <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngFor="let s of salles; trackBy: trackByFn" class="hover:bg-gray-50/50 transition-colors">
+            <td class="px-5 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ s.libelle }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-500">{{ s.description || '-' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ getClasseLibelle(s.classeId) }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-right">
+              <div class="flex items-center justify-end gap-2">
+                <app-custom-button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="supprimer(s.id)" text="Supprimer" color="primary" [outlined]="true"></app-custom-button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+    <div *ngIf="!loading && salles.length === 0" class="px-5 py-12 text-center">
+      <svg class="mx-auto h-12 w-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-4 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+      <p class="mt-4 text-sm text-gray-500">Aucune salle de classe</p>
+    </div>
+  </div>
+</div>

@@ -1,4 +1,4 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../ScolariteModule";
 import { CursusApprenant } from "../../inscription/models/CursusApprenant";
@@ -6,7 +6,7 @@ import { AnneeAcademique } from "../../inscription/models/AnneeAcademique";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 
 export class DecisionPassage extends Model<InferAttributes<DecisionPassage>, InferCreationAttributes<DecisionPassage>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare cursusApprenantId: ForeignKey<CursusApprenant['id']>
   declare cursusApprenant?: NonAttribute<CursusApprenant>
   declare anneeAcademiqueId: ForeignKey<AnneeAcademique['id']>

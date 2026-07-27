@@ -4,27 +4,39 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { GedRoutingModule } from './ged-routing.module';
 import { SharedModule } from 'src/app/shared/shared.module';
-import { GedUploadComponent } from './pages/ged-upload/ged-upload.component';
-import { GedNomenclatureComponent } from './pages/ged-nomenclature/ged-nomenclature.component';
+import { GedCourrierComponent } from './pages/ged-courrier/ged-courrier.component';
+import { GedMergeComponent } from './pages/ged-merge/ged-merge.component';
 import { GedCatalogComponent } from './pages/ged-catalog/ged-catalog.component';
 import { GedDocumentPageComponent } from './pages/ged-document-page/ged-document-page.component';
 import { GedArchivesComponent } from './pages/ged-archives/ged-archives.component';
-import { GedFoldersComponent } from './pages/ged-folders/ged-folders.component';
-import { GedSessionsPageComponent } from './pages/ged-sessions/ged-sessions-page.component';
-import { GedSessionDetailPageComponent } from './pages/ged-sessions/ged-session-detail-page.component';
-import { GedSaisieComponent } from './pages/ged-saisie/ged-saisie.component';
+import { GedDisposalComponent } from './pages/ged-disposal/ged-disposal.component';
+import { GedSearchComponent } from './pages/ged-search/ged-search.component';
+import { GedConservationComponent } from './pages/ged-conservation/ged-conservation.component';
+import { GedDossiersVirtuelsComponent } from './pages/ged-dossiers-virtuels/ged-dossiers-virtuels.component';
+import { GedBatchUploadComponent } from './pages/ged-batch-upload/ged-batch-upload.component';
+import { PermissionsGedComponent } from './permissions/permissions-ged.component';
+import { ProcessusListComponent } from './processus/processus-list.component';
+import { ProcessusFormComponent } from './processus/processus-form.component';
+import { StorageConfigComponent } from './storage-config/storage-config.component';
+import { FolderTreeItemComponent } from './components/folder-tree-item/folder-tree-item.component';
 
 @NgModule({
   declarations: [
-    GedUploadComponent,
-    GedNomenclatureComponent,
+    GedCourrierComponent,
+    GedMergeComponent,
     GedCatalogComponent,
     GedDocumentPageComponent,
     GedArchivesComponent,
-    GedFoldersComponent,
-    GedSessionsPageComponent,
-    GedSessionDetailPageComponent,
-    GedSaisieComponent
+    GedDisposalComponent,
+    GedSearchComponent,
+    GedConservationComponent,
+    GedDossiersVirtuelsComponent,
+    GedBatchUploadComponent,
+    PermissionsGedComponent,
+    ProcessusListComponent,
+    ProcessusFormComponent,
+    StorageConfigComponent,
+    FolderTreeItemComponent
   ],
   imports: [
     CommonModule,

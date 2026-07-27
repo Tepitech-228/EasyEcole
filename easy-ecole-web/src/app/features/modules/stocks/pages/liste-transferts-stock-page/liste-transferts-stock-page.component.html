@@ -1,0 +1,121 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <app-header-title
+    title="Transferts de stock"
+    subtitle="Gérez les transferts d'articles entre sites">
+  </app-header-title>
+
+  <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total transferts</p>
+          <p class="mt-1 text-2xl font-bold text-gray-900">{{ totalTransferts }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+        </div>
+      </div>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">En attente</p>
+          <p class="mt-1 text-2xl font-bold text-amber-700">{{ nbEnAttente }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+      </div>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Validés</p>
+          <p class="mt-1 text-2xl font-bold text-green-700">{{ nbValides }}</p>
+        </div>
+        <div class="h-10 w-10 rounded-xl bg-green-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+    <div class="flex justify-end">
+      <app-custom-button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin || rolesValue.isCaissierBanque" (click)="ouvrirFormulaire()" text="Nouveau transfert" color="primary"></app-custom-button>
+    </div>
+  </div>
+
+  <div *ngIf="showForm" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Nouveau transfert</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Article *</label>
+        <select [(ngModel)]="formData.articleId" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+          <option value="">Sélectionner</option>
+          <option *ngFor="let a of articles" [value]="a.id">{{ a.nom }} ({{ a.reference }})</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Site source</label>
+        <input [(ngModel)]="formData.sourceStockId" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="Site source" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Site destination</label>
+        <input [(ngModel)]="formData.destinationStockId" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="Site destination" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Quantité *</label>
+        <input [(ngModel)]="formData.quantite" type="number" min="1" step="1" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Motif</label>
+        <input [(ngModel)]="formData.motif" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="Motif du transfert" />
+      </div>
+    </div>
+    <div class="flex justify-end gap-3 mt-4">
+      <app-custom-button (click)="fermerFormulaire()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+      <app-custom-button (click)="creerTransfert()" text="Créer" color="primary"></app-custom-button>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-100">
+        <thead>
+          <tr class="bg-gray-50/50">
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Article</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Source</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Destination</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Qté</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Statut</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Motif</th>
+            <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngFor="let t of transferts; trackBy: trackByFn" class="hover:bg-gray-50/50 transition-colors">
+            <td class="px-5 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ getArticleName(t.articleId) }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-500">{{ t.sourceStockId || '-' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-500">{{ t.destinationStockId || '-' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-center text-sm font-bold text-gray-900">{{ t.quantite }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-center">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" [ngClass]="getStatutClass(t.statut)">{{ getStatutLabel(t.statut) }}</span>
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-500 max-w-[200px] truncate">{{ t.motif || '-' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-right">
+              <div class="flex items-center justify-end gap-2">
+                <app-custom-button *ngIf="t.statut !== 'annule' && (rolesValue.isInstitution || rolesValue.isAdmin)" (click)="annuler(t.id)" text="Annuler" color="primary" [outlined]="true"></app-custom-button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+    <div *ngIf="!loading && transferts.length === 0" class="px-5 py-12 text-center">
+      <svg class="mx-auto h-12 w-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+      <p class="mt-4 text-sm text-gray-500">Aucun transfert de stock</p>
+    </div>
+  </div>
+</div>

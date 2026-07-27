@@ -1,8 +1,8 @@
 <div class="flex mb-8">
-    <a [routerLink]="tripleBack ? '../../..' : doubleBack ? '../..' : '../'">
+    <a (click)="goBack()">
         <div class="flex items-center gap-x-3">
             <img src="assets/icons/return.svg" alt="return">
-            <div class="text-sm text-blue-500">Retour</div>
+            <div class="text-sm text-blue-500">{{ text || 'Retour' }}</div>
         </div>
     </a>
 </div>

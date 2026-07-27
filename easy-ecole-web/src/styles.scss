@@ -126,3 +126,119 @@ body {
     color: black !important;
   }
 }
+
+/* =============================================
+   TABLE STYLES — Bleu uniforme, lignes alternées
+   ============================================= */
+
+/* Conteneur responsive : scroll horizontal si besoin */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Table de base */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+/* En-tête : fond bleu, texte blanc */
+table thead,
+table.table thead,
+table.mat-table thead {
+  background-color: #1F3C75 !important;
+  color: #ffffff !important;
+}
+
+table thead th,
+table.table thead th,
+table.mat-table thead th,
+table thead td,
+table.table thead td,
+table.mat-table thead td {
+  background-color: #1F3C75 !important;
+  color: #ffffff !important;
+  font-weight: 600;
+  padding: 12px 16px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 2px solid #132549;
+}
+
+/* Lignes du corps */
+table tbody td,
+table.table tbody td,
+table.mat-table tbody td {
+  padding: 10px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: middle;
+}
+
+/* Lignes alternées (striped) */
+table tbody tr:nth-child(even),
+table.table tbody tr:nth-child(even),
+table.mat-table tbody tr:nth-child(even) {
+  background-color: #f8faff;
+}
+
+table tbody tr:hover,
+table.table tbody tr:hover,
+table.mat-table tbody tr:hover {
+  background-color: #eef2ff;
+  transition: background-color 0.15s ease;
+}
+
+/* Bordure extérieure des tables */
+table.mat-table,
+table.table-bordered {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Responsive : carte pour mobile */
+@media screen and (max-width: 768px) {
+  .table-responsive table,
+  .table-responsive table thead,
+  .table-responsive table tbody,
+  .table-responsive table th,
+  .table-responsive table td,
+  .table-responsive table tr {
+    display: block;
+  }
+
+  .table-responsive table thead {
+    display: none; /* Masquer les en-têtes */
+  }
+
+  .table-responsive table tbody tr {
+    margin-bottom: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 8px;
+    background: #fff;
+  }
+
+  .table-responsive table tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 12px;
+    border-bottom: 1px solid #f3f4f6;
+    text-align: right;
+  }
+
+  .table-responsive table tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #1F3C75;
+    text-align: left;
+  }
+
+  .table-responsive table tbody td:last-child {
+    border-bottom: none;
+  }
+}

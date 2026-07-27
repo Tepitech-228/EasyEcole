@@ -63,7 +63,7 @@
                                     <td class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2"
                                         [ngSwitch]="parcoursChoisi.etatDeValidation">
                                         <app-custom-badge *ngSwitchCase="etatsValidationParcours.VALIDE" color="green" text="Validé"></app-custom-badge>
-                                        <app-custom-badge *ngSwitchCase="etatsValidationParcours.REJETE" color="red" text="Rejeté"></app-custom-badge>
+                                        <app-custom-badge *ngSwitchCase="etatsValidationParcours.REJETE" color="primary" text="Rejeté"></app-custom-badge>
                                     </td>
                                     <td class="w-12 text-sm text-center py-6 text-gray-600 font-regular whitespace-nowrap">
                                         <input type="radio" [(ngModel)]="choixParcoursFinal" name="choixParcoursFinal" [value]="parcoursChoisi.id" [disabled]="(rolesValue.isInstitution || parcoursChoisi.etatDeValidation == etatsValidationParcours.REJETE) || parcours != undefined">
@@ -161,7 +161,7 @@
                                     [ngSwitch]="getEtatCoursChoisi(c.id!)">
                                     <app-custom-badge *ngSwitchCase="etatsCoursChoisi.ENCOURS" color="blue" text="En cours"></app-custom-badge>
                                     <app-custom-badge *ngSwitchCase="etatsCoursChoisi.VALIDE" color="green" text="Validé"></app-custom-badge>
-                                    <app-custom-badge *ngSwitchCase="etatsCoursChoisi.REJETE" color="red" text="Rejeté"></app-custom-badge>
+                                    <app-custom-badge *ngSwitchCase="etatsCoursChoisi.REJETE" color="primary" text="Rejeté"></app-custom-badge>
                                 </td>
                             </tr>
                         </tbody>

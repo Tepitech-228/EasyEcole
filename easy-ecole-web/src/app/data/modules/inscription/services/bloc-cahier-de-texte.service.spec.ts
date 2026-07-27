@@ -1,3 +1,4 @@
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { BlocCahierDeTexteService } from './bloc-cahier-de-texte.service';
@@ -6,7 +7,7 @@ describe('BlocCahierDeTexteService', () => {
   let service: BlocCahierDeTexteService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({ imports: [HttpClientTestingModule] });
     service = TestBed.inject(BlocCahierDeTexteService);
   });
 

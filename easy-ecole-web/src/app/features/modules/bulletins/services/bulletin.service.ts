@@ -9,8 +9,8 @@ export class BulletinService {
 
   constructor(private http: HttpClient) {}
 
-  getAll(params?: any): Observable<any[]> {
-    return this.http.get<any[]>(this.apiUrl, { params });
+  getAll(params?: any): Observable<any> {
+    return this.http.get<any>(this.apiUrl, { params });
   }
 
   getOne(id: number): Observable<any> {

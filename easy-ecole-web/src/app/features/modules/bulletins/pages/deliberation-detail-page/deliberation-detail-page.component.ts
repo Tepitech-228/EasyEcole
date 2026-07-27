@@ -64,6 +64,10 @@ export class DeliberationDetailPageComponent extends BaseComponentClass implemen
     this.deliberationService.mettreAJourDecision(this.deliberation.id, resultatId, decision).subscribe({
       next: () => {
         this.charger(this.deliberation.id);
+      },
+      error: (err) => {
+        console.error('Erreur mise à jour décision:', err);
+        alert(err.error?.message || 'Erreur lors de la mise à jour de la décision');
       }
     });
   }

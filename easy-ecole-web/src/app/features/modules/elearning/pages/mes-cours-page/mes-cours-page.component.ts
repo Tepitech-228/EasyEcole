@@ -1,19 +1,20 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
+import { BaseComponentClass } from 'src/app/core/base-component-class';
 
 @Component({
   selector: 'app-mes-cours-page',
   templateUrl: './mes-cours-page.component.html',
   styleUrls: ['./mes-cours-page.component.scss']
 })
-export class MesCoursPageComponent implements OnInit {
+export class MesCoursPageComponent extends BaseComponentClass implements OnInit {
   coursList: any[] = [];
   filteredList: any[] = [];
   loading = false;
   searchQuery = '';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { super(); }
 
   ngOnInit(): void {
     this.loading = true;
@@ -35,11 +36,7 @@ export class MesCoursPageComponent implements OnInit {
     return this.filteredList.reduce((sum, c) => sum + (c.modules?.length || 0), 0);
   }
 
-  get totalQuiz(): number {
-    return 0;
-  }
-
-  get totalCertificats(): number {
-    return 0;
+  coursImage(cours: any): string {
+    return cours.image ? `/elearning/cours/${cours.image}` : '';
   }
 }

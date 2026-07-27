@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpEvent } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
@@ -22,7 +22,7 @@ export class DossierInscriptionService {
     return this.httpClient.post<DossierInscription>(`${this.SERVICE_URL}`, dossierInscription)
   }
 
-  upload(demandeInscriptionDossier: DemandeInscriptionDossier, fichier: File): Observable<DemandeInscriptionDossier> {
+  upload(demandeInscriptionDossier: DemandeInscriptionDossier, fichier: File): Observable<HttpEvent<DemandeInscriptionDossier>> {
     let formData: FormData = new FormData()
     if (demandeInscriptionDossier.dossierId) {
       formData.append('dossierId', demandeInscriptionDossier.dossierId)
@@ -31,10 +31,26 @@ export class DossierInscriptionService {
       formData.append('demandeId', demandeInscriptionDossier.demandeId)
     }
     if (fichier) {
-      formData.append('fichier', fichier, fichier.name)
+      formData.append('fichiers', fichier, fichier.name)
     }
 
-    return this.httpClient.put<DemandeInscriptionDossier>(`${this.SERVICE_URL}`, formData)
+    return this.httpClient.put<DemandeInscriptionDossier>(`${this.SERVICE_URL}`, formData, {
+      reportProgress: true,
+      observe: 'events'
+    })
+  }
+
+  uploadMultiple(demandeId: string, dossierId: string, fichiers: File[]): Observable<HttpEvent<any>> {
+    let formData: FormData = new FormData()
+    formData.append('dossierId', dossierId)
+    formData.append('demandeId', demandeId)
+    for (let f of fichiers) {
+      formData.append('fichiers', f, f.name)
+    }
+    return this.httpClient.put<any>(`${this.SERVICE_URL}`, formData, {
+      reportProgress: true,
+      observe: 'events'
+    })
   }
 
   update(dossierInscription: DossierInscription): Observable<DossierInscription> {

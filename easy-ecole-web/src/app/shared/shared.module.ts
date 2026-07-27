@@ -29,6 +29,9 @@ import { LoadingSpinnerComponent } from './components/loading-spinner/loading-sp
 import { ToastContainerComponent } from './components/toast-container/toast-container.component';
 import { HasPermissionDirective } from '../core/directives/has-permission.directive';
 import { SidebarNavComponent } from './sidebar-nav/sidebar-nav.component';
+import { DossierViewComponent } from './components/dossier-view/dossier-view.component';
+import { FiltersAnneeNiveauParcoursComponent } from './components/filters-annee-niveau-parcours/filters-annee-niveau-parcours.component';
+import { BatchToolbarComponent } from './components/batch-toolbar/batch-toolbar.component';
 
 @NgModule({
   declarations: [
@@ -51,6 +54,9 @@ import { SidebarNavComponent } from './sidebar-nav/sidebar-nav.component';
     LoadingSpinnerComponent,
     ToastContainerComponent,
     SidebarNavComponent,
+    DossierViewComponent,
+    FiltersAnneeNiveauParcoursComponent,
+    BatchToolbarComponent,
 
     // Pipes
     SafeUrlPipe,
@@ -63,7 +69,6 @@ import { SidebarNavComponent } from './sidebar-nav/sidebar-nav.component';
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    HttpClientModule,
     RouterModule,
     VgCoreModule,
     VgControlsModule,
@@ -76,7 +81,6 @@ import { SidebarNavComponent } from './sidebar-nav/sidebar-nav.component';
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    HttpClientModule,
     RouterModule,
     VgCoreModule,
     VgControlsModule,
@@ -104,6 +108,9 @@ import { SidebarNavComponent } from './sidebar-nav/sidebar-nav.component';
     LoadingSpinnerComponent,
     ToastContainerComponent,
     SidebarNavComponent,
+    DossierViewComponent,
+    FiltersAnneeNiveauParcoursComponent,
+    BatchToolbarComponent,
 
     // Pipes
     SafeUrlPipe,

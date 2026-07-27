@@ -14,7 +14,7 @@
         <div class="flex flex-col" *ngIf="coursChoisis && coursChoisis.length != 0">
             <div *ngIf="rolesValue.isInstitution" class="flex items-center justify-end py-1 gap-x-2 mb-4">
                 <app-custom-button (click)="updateAllCoursChoisi(etatsCoursChoisi.VALIDE)" [outlined]="true" text="Tout valider" color="green"></app-custom-button>
-                <app-custom-button (click)="updateAllCoursChoisi(etatsCoursChoisi.REJETE)" [outlined]="true" text="Tout rejeter" color="red"></app-custom-button>
+                <app-custom-button (click)="updateAllCoursChoisi(etatsCoursChoisi.REJETE)" [outlined]="true" text="Tout rejeter" color="primary"></app-custom-button>
             </div>
 
             <div class="mb-8">
@@ -78,12 +78,12 @@
                                             [ngSwitch]="getEtatCoursChoisi(c.id!)">
                                             <app-custom-badge *ngSwitchCase="etatsCoursChoisi.ENCOURS" color="blue" text="En cours"></app-custom-badge>
                                             <app-custom-badge *ngSwitchCase="etatsCoursChoisi.VALIDE" color="green" text="Validé"></app-custom-badge>
-                                            <app-custom-badge *ngSwitchCase="etatsCoursChoisi.REJETE" color="red" text="Rejeté"></app-custom-badge>
+                                            <app-custom-badge *ngSwitchCase="etatsCoursChoisi.REJETE" color="primary" text="Rejeté"></app-custom-badge>
                                         </td>
                                         <td *ngIf="rolesValue.isInstitution" class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                             <div class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
                                                 <app-custom-button *ngIf="getEtatCoursChoisi(c.id!) != etatsCoursChoisi.VALIDE" (click)="updateCoursChoisi(c.id!, etatsCoursChoisi.VALIDE)" text="Valider" color="green"></app-custom-button>
-                                                <app-custom-button *ngIf="getEtatCoursChoisi(c.id!) != etatsCoursChoisi.REJETE" (click)="updateCoursChoisi(c.id!, etatsCoursChoisi.REJETE)" text="Rejeter" color="red"></app-custom-button>
+                                                <app-custom-button *ngIf="getEtatCoursChoisi(c.id!) != etatsCoursChoisi.REJETE" (click)="updateCoursChoisi(c.id!, etatsCoursChoisi.REJETE)" text="Rejeter" color="primary"></app-custom-button>
                                             </div>
                                         </td>
                                     </tr>

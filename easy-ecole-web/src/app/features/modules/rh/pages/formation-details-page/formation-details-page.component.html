@@ -1,6 +1,29 @@
 <app-return-back link="/rh/formations" text="Retour aux formations"></app-return-back>
 
-<div class="bg-white rounded-lg shadow border border-gray-100 p-6">
-  <h2 class="text-xl font-semibold text-gray-900 mb-4">Détails de la formation</h2>
-  <p class="text-sm text-gray-500">Sélectionnez une formation depuis la liste.</p>
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h2 class="text-xl font-semibold text-gray-900">Angular Avancé</h2>
+      <p class="text-sm text-gray-500">Formation interne - Janvier 2026</p>
+    </div>
+    <span class="px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">Interne</span>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="p-4 bg-gray-50 rounded-lg">
+      <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Formateur</label>
+      <p class="text-sm font-medium text-gray-900">Jean Dupont</p>
+    </div>
+    <div class="p-4 bg-gray-50 rounded-lg">
+      <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Date début</label>
+      <p class="text-sm font-medium text-gray-900">01/02/2026</p>
+    </div>
+    <div class="p-4 bg-gray-50 rounded-lg">
+      <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Date fin</label>
+      <p class="text-sm font-medium text-gray-900">15/02/2026</p>
+    </div>
+  </div>
+  <div class="mt-6 flex gap-3">
+    <app-custom-button text="Modifier" color="primary"></app-custom-button>
+    <app-custom-button text="Participants" color="gray" [outlined]="true"></app-custom-button>
+  </div>
 </div>

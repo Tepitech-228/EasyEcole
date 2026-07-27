@@ -1,4 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { RouterTestingModule } from '@angular/router/testing';
+import { ActivatedRoute } from '@angular/router';
 
 import { DetailsChapitrePageComponent } from './details-chapitre-page.component';
 
@@ -8,7 +11,11 @@ describe('DetailsChapitrePageComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ DetailsChapitrePageComponent ]
+      declarations: [ DetailsChapitrePageComponent ],
+      imports: [ HttpClientTestingModule, RouterTestingModule ],
+      providers: [
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'test' } } } }
+      ]
     })
     .compileComponents();
   });

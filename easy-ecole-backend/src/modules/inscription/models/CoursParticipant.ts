@@ -1,4 +1,4 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { Cours } from "./Cours";
@@ -6,7 +6,7 @@ import { Utilisateur } from "../../auth/models/Utilisateur";
 import { CursusApprenant } from "./CursusApprenant";
 
 export class CoursParticipant extends Model<InferAttributes<CoursParticipant>, InferCreationAttributes<CoursParticipant>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   
   declare utilisateurId: ForeignKey<Utilisateur['id']>
   declare coursId: ForeignKey<Cours['id']>

@@ -1,3 +1,4 @@
+import '../../core/types/express'
 import { Request, Response } from 'express'
 
 export function mockRequest(data?: Partial<Request>): Request {

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { RhBulletinPaie } from "../models/RhBulletinPaie";
 import { RhLigneBulletin } from "../models/RhLigneBulletin";
 import { creerEcritureComptable } from "../../comptabilite/helpers/ComptabiliteHelper";
+import { RhGedBridge } from "../services/RhGedBridge";
 
 export default class RhBulletinPaieController {
 
@@ -37,8 +38,13 @@ export default class RhBulletinPaieController {
 
   static async verser(req: Request, res: Response): Promise<Response> {
     try {
-      const data = await RhBulletinPaie.findByPk(req.params.id);
+      const data = await RhBulletinPaie.findByPk(req.params.id, {
+        include: [RhBulletinPaie.associations.employe]
+      });
       if (!data) return res.status(404).json({ success: false, message: "Bulletin non trouvé" });
+      if (data.statut !== 'validé') {
+        return res.status(400).json({ success: false, message: "Le bulletin doit d'abord être validé" });
+      }
       await data.update({ statut: 'versé' });
       if (data.netAPayer && Number(data.netAPayer) > 0) {
         await creerEcritureComptable({
@@ -53,6 +59,8 @@ export default class RhBulletinPaieController {
           referenceModuleId: String(data.id)
         })
       }
+      RhGedBridge.verserBulletinPaie(data, (req as any).utilisateurId)
+        .catch(err => console.error('Erreur archivage bulletin GED:', err));
       return res.status(200).send(data);
     } catch (error) {
       return res.status(500).json({ success: false, error });

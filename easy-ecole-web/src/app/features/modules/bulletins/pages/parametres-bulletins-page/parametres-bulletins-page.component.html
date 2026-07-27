@@ -7,6 +7,40 @@
   <app-custom-alert *ngIf="saved" type="success" message="Paramètres enregistrés avec succès"></app-custom-alert>
 
   <div class="mt-8 space-y-8">
+    <!-- Règles d'évaluation -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
+      <h2 class="text-lg font-semibold text-gray-900 mb-6">Règles d'évaluation</h2>
+      <form [formGroup]="form" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">Note minimale de validation</label>
+            <input type="number" formControlName="noteMinimale"
+                   class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">Seuil éliminatoire</label>
+            <input type="number" formControlName="seuilEliminatoire"
+                   class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600">
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">Crédits minimum par année</label>
+            <input type="number" formControlName="creditsMinAnnee"
+                   class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600">
+          </div>
+          <div class="flex items-center justify-between">
+            <label class="text-sm font-medium text-gray-700">Compensation activée</label>
+            <input type="checkbox" formControlName="compensationActive"
+                    class="h-4 w-4 rounded border-gray-300 text-blue-700 focus:ring-blue-600">
+          </div>
+        </div>
+        <div class="flex items-center gap-4 pt-2">
+          <a routerLink="/bulletins/parametres-notation" class="text-sm font-medium text-blue-700 hover:text-blue-800 underline">Paramètres de notation</a>
+        </div>
+      </form>
+    </div>
+
     <!-- En-tête -->
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
       <h2 class="text-lg font-semibold text-gray-900 mb-6">En-tête du bulletin</h2>

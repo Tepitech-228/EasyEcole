@@ -102,7 +102,43 @@ router
      *       200:
      *         description: Détails du dossier
      */
+    .get('/:id/complet', DossierEtudiantController.getDossierComplet)
     .get('/:id', DossierEtudiantController.getDossier)
+    /**
+     * @openapi
+     * /inscription/dossiers/{id}/carte:
+     *   get:
+     *     tags: [Dossiers Étudiants]
+     *     summary: Télécharge la carte étudiante PDF
+     *     security: [{ bearerAuth: [] }]
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema: { type: integer }
+     *     responses:
+     *       200:
+     *         description: Fichier PDF de la carte étudiante
+     *         content:
+     *           application/pdf:
+     *             schema:
+     *               type: string
+     *               format: binary
+     *   post:
+     *     tags: [Dossiers Étudiants]
+     *     summary: Régénère la carte étudiante avec QR code
+     *     security: [{ bearerAuth: [] }]
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema: { type: integer }
+     *     responses:
+     *       200:
+     *         description: Carte régénérée
+     */
+    .get('/:id/carte', DossierEtudiantController.telechargerCarte)
+    .post('/:id/regenerer-carte', [AuthInstitution, CheckPermission('action.inscription.dossier.modifier-statut')], DossierEtudiantController.regenererCarte)
     /**
      * @openapi
      * /inscription/dossiers/{id}:

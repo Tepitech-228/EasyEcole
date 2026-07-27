@@ -1,9 +1,9 @@
 {
     "development": {
-        "host": "smtp.hostinger.com",
-        "username": "easy.ecole@technologybusiness-tb.com",
-        "password": "Easyec@le1",
-        "port": 465
+        "host": null,
+        "username": null,
+        "password": null,
+        "port": null
     },
     "test": {
         "host": null,

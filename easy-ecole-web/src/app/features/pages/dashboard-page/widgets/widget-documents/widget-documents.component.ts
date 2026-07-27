@@ -15,8 +15,9 @@ export class WidgetDocumentsComponent implements OnInit {
 
   ngOnInit(): void {
     this.demandeDocumentService.getAll().subscribe({
-      next: (data) => {
-        this.demandes = (data || []).slice(0, 5)
+      next: (data: any) => {
+        const items: any[] = data.data || data || []
+        this.demandes = items.slice(0, 5)
         this.loading = false
       },
       error: () => this.loading = false

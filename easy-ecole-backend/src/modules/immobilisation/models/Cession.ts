@@ -8,8 +8,12 @@ export class Cession extends Model<InferAttributes<Cession>, InferCreationAttrib
   declare immobilisationId: ForeignKey<Immobilisation['id']>
   declare dateCession: string
   declare motif: string
+  declare typeOperation: CreationOptional<string>
   declare prixCession: CreationOptional<number>
   declare destinataire: CreationOptional<string>
+  declare approuvePar: CreationOptional<string>
+  declare dateApprobation: CreationOptional<Date>
+  declare motifRefus: CreationOptional<string>
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
 }
@@ -19,8 +23,12 @@ Cession.init({
   immobilisationId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false },
   dateCession: { type: DataTypes.DATE, allowNull: false },
   motif: { type: DataTypes.TEXT, allowNull: false },
+  typeOperation: { type: DataTypes.ENUM('cession', 'rebut'), defaultValue: 'cession' },
   prixCession: { type: DataTypes.DECIMAL(12, 2), allowNull: true },
   destinataire: { type: new DataTypes.STRING, allowNull: true },
+  approuvePar: { type: new DataTypes.STRING, allowNull: true },
+  dateApprobation: { type: DataTypes.DATE, allowNull: true },
+  motifRefus: { type: DataTypes.TEXT, allowNull: true },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
 }, {

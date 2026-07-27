@@ -14,12 +14,13 @@ import { CategorieImmobilisationService } from 'src/app/data/modules/immobilisat
 export class NouvelleCategoriePageComponent extends BaseComponentClass implements OnInit {
 
     error: boolean = false
+    saving = false
 
     categorieForm: FormGroup = new FormGroup({
         nom: new FormControl(null, [Validators.required]),
         description: new FormControl(null, []),
-        tauxAmortissement: new FormControl(null, []),
-        dureeVie: new FormControl(null, []),
+        tauxAmortissement: new FormControl(null, [Validators.required, Validators.min(0)]),
+        dureeVie: new FormControl(null, [Validators.required, Validators.min(1)]),
     })
 
     constructor(
@@ -37,21 +38,22 @@ export class NouvelleCategoriePageComponent extends BaseComponentClass implement
     create(): void {
         this.categorieForm.markAllAsTouched()
         if (this.categorieForm.valid) {
-            let categorie: CategorieImmobilisation = new CategorieImmobilisation()
+            this.saving = true
+            const categorie: CategorieImmobilisation = new CategorieImmobilisation()
             categorie.nom = this.categorieForm.get('nom')!.value
             categorie.description = this.categorieForm.get('description')!.value
             categorie.tauxAmortissement = this.categorieForm.get('tauxAmortissement')!.value
             categorie.dureeVie = this.categorieForm.get('dureeVie')!.value
 
             this.categorieImmobilisationService.create(categorie).subscribe({
-                next: (res) => {
-                    this.router.navigate(['/immobilisations/categories'])
-                },
+                next: () => this.router.navigate(['/immobilisations/categories']),
                 error: (err: HttpErrorResponse) => {
                     console.log(err)
                     this.error = true
                     setTimeout(() => { this.error = false }, 3000)
-                }
+                    this.saving = false
+                },
+                complete: () => { this.saving = false }
             })
         }
     }

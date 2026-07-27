@@ -1,4 +1,4 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { Cours } from "./Cours";
@@ -7,7 +7,7 @@ import { Presence } from "./Presence";
 import { BlocCahierDeTexte } from "./BlocCahierDeTexte";
 
 export class CahierDeTexte extends Model<InferAttributes<CahierDeTexte>, InferCreationAttributes<CahierDeTexte>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare titre: string
   declare description: CreationOptional<string>
   declare coursId: ForeignKey<Cours['id']>

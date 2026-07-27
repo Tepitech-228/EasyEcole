@@ -1,18 +1,31 @@
-import { Request, Response } from "express";
+﻿import { Request, Response } from "express";
 import { Op, Transaction } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { Bulletin } from "../models/Bulletin";
 import { LigneBulletin } from "../models/LigneBulletin";
-import { ListeNoteEvaluation } from "../../inscription/models/ListeNoteEvaluation";
-import { Cours } from "../../inscription/models/Cours";
-import { CoursParticipant } from "../../inscription/models/CoursParticipant";
 import { CursusApprenant } from "../../inscription/models/CursusApprenant";
+import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
+import { GenerationBulletinService } from "../services/GenerationBulletinService";
+import { EchelleNote } from "../models/EchelleNote";
+import { logger } from "../../../core/helpers/Logger";
 
-function calculerMention(moyenne: number): string {
-  if (moyenne >= 16) return 'Très Bien';
-  if (moyenne >= 14) return 'Bien';
-  if (moyenne >= 12) return 'Assez Bien';
-  if (moyenne >= 10) return 'Passable';
+let echellesCache: { noteMin: number; mention: string }[] | null = null;
+async function getEchelles(): Promise<{ noteMin: number; mention: string }[]> {
+  if (echellesCache) return echellesCache;
+  const echelles = await EchelleNote.findAll({
+    where: { estActive: true },
+    order: [['noteMin', 'DESC']],
+    attributes: ['noteMin', 'mention'],
+    raw: true
+  });
+  echellesCache = echelles;
+  return echelles;
+}
+
+function calculerMention(moyenne: number, echelles: { noteMin: number; mention: string }[]): string {
+  for (const e of echelles) {
+    if (moyenne >= e.noteMin) return e.mention;
+  }
   return 'Insuffisant';
 }
 
@@ -31,167 +44,25 @@ export default class BulletinController {
         return res.status(400).json({ message: 'classeId, semestre, anneeAcademiqueId requis' });
       }
 
-      const cursusList = await CursusApprenant.findAll({
-        where: { classeId, anneeAcademiqueId },
-        include: [{ association: CursusApprenant.associations.utilisateur }]
-      });
+      const resultats = await GenerationBulletinService.generer(
+        classeId, semestre, anneeAcademiqueId, t
+      );
 
-      if (!cursusList.length) {
-        await t.rollback();
-        return res.status(404).json({ message: 'Aucun apprenant trouvé dans cette classe' });
-      }
-
-      const coursList = await Cours.findAll({
-        where: { classeId, semestre }
-      });
-
-      if (!coursList.length) {
-        await t.rollback();
-        return res.status(404).json({ message: 'Aucun cours trouvé pour ce semestre' });
-      }
-
-      const bulletinsCrees: number[] = [];
-
-      for (const cursus of cursusList) {
-        const existant = await Bulletin.findOne({
-          where: { cursusApprenantId: cursus.id, semestre, anneeAcademiqueId }
+      if (!resultats.length) {
+        const cursusCount = await CursusApprenant.count({
+          where: { classeId, anneeAcademiqueId }
         });
-        if (existant) continue;
-
-        const lignesBulletin: Array<{
-          coursId: string;
-          moyenneCC: number | null;
-          noteDevoir: number | null;
-          noteExamen: number | null;
-          moyenne: number;
-          coefficient: number | null;
-        }> = [];
-
-        for (const cours of coursList) {
-          const coursParticipant = await CoursParticipant.findOne({
-            where: { coursId: cours.id, cursusApprenantId: cursus.id }
-          });
-
-          if (!coursParticipant) continue;
-
-          const listesEval = await ListeNoteEvaluation.findAll({
-            where: { coursId: cours.id, anneeAcademiqueId },
-            include: [
-              { association: ListeNoteEvaluation.associations.typeNoteEvaluation },
-              {
-                association: ListeNoteEvaluation.associations.notesEvaluation,
-                where: { coursParticipantId: coursParticipant.id },
-                required: false
-              }
-            ]
-          });
-
-          let notesPonderees: { note: number; poids: number }[] = [];
-          let noteDevoir: number | null = null;
-          let poidsDevoir: number | null = null;
-          let noteExamen: number | null = null;
-          let poidsExamen: number | null = null;
-
-          for (const evalList of listesEval) {
-            if (evalList.notesEvaluation?.length) {
-              const note = Number(evalList.notesEvaluation[0].note);
-              if (note == null) continue;
-
-              const poids = Number(evalList.poidsTypeNoteEvaluation) || 0;
-              const categorie = (evalList as any).typeNoteEvaluation?.categorie;
-
-              if (categorie === 'devoir') {
-                noteDevoir = note;
-                poidsDevoir = poids;
-              } else if (categorie === 'examen') {
-                noteExamen = note;
-                poidsExamen = poids;
-              } else if (poids > 0) {
-                notesPonderees.push({ note, poids });
-              }
-            }
-          }
-
-          let sommePonderee = 0;
-          let sommePoids = 0;
-
-          for (const np of notesPonderees) {
-            sommePonderee += np.note * np.poids;
-            sommePoids += np.poids;
-          }
-          if (noteDevoir != null && poidsDevoir != null) {
-            sommePonderee += noteDevoir * poidsDevoir;
-            sommePoids += poidsDevoir;
-          }
-          if (noteExamen != null && poidsExamen != null) {
-            sommePonderee += noteExamen * poidsExamen;
-            sommePoids += poidsExamen;
-          }
-
-          const moyenne = sommePoids > 0
-            ? Math.round((sommePonderee / sommePoids) * 100) / 100
-            : 0;
-          const moyenneCC = notesPonderees.length
-            ? Math.round((notesPonderees.reduce((a, n) => a + n.note * n.poids, 0) / notesPonderees.reduce((a, n) => a + n.poids, 0)) * 100) / 100
-            : null;
-
-          lignesBulletin.push({
-            coursId: cours.id,
-            moyenneCC,
-            noteDevoir,
-            noteExamen,
-            moyenne,
-            coefficient: cours.credit ?? null
-          });
+        if (!cursusCount) {
+          await t.rollback();
+          return res.status(404).json({ message: 'Aucun apprenant trouvÃ© dans cette classe' });
         }
-
-        let sommeNotesCoef = 0;
-        let sommeCoefs = 0;
-        let creditsValides = 0;
-        for (const l of lignesBulletin) {
-          if (l.coefficient) {
-            sommeNotesCoef += l.moyenne * l.coefficient;
-            sommeCoefs += l.coefficient;
-            if (l.moyenne >= 10) {
-              creditsValides += l.coefficient;
-            }
-          }
-        }
-        const moyenneGenerale = sommeCoefs > 0
-          ? Math.round((sommeNotesCoef / sommeCoefs) * 100) / 100
-          : null;
-
-        const bulletin = await Bulletin.create({
-          anneeAcademiqueId,
-          semestre,
-          cursusApprenantId: cursus.id,
-          utilisateurId: cursus.utilisateurId,
-          classeId,
-          parcoursId: cursus.parcoursId,
-          niveauEtudeId: cursus.niveauEtudeId,
-          moyenneGenerale,
-          totalCredits: sommeCoefs,
-          creditsValides,
-          statut: 'brouillon',
-          dateGeneration: new Date(),
-        }, { transaction: t });
-
-        for (const l of lignesBulletin) {
-          await LigneBulletin.create({
-            bulletinId: bulletin.id,
-            coursId: l.coursId,
-            moyenneCC: l.moyenneCC,
-            noteDevoir: l.noteDevoir,
-            noteExamen: l.noteExamen,
-            moyenne: l.moyenne,
-            coefficient: l.coefficient,
-          }, { transaction: t });
-        }
-
-        bulletinsCrees.push(bulletin.id);
       }
 
-      await this.calculerRangs(classeId, semestre, anneeAcademiqueId, t);
+      const bulletinsCrees = resultats.map(r => Number(r.bulletin.id));
+
+      if (bulletinsCrees.length) {
+        await this.calculerRangs(classeId, semestre, anneeAcademiqueId, t);
+      }
 
       await t.commit();
 
@@ -203,24 +74,27 @@ export default class BulletinController {
       return res.status(201).json(bulletins);
     } catch (error) {
       await t.rollback();
-      console.error('Erreur génération bulletins:', error);
-      return res.status(500).json({ message: 'Erreur lors de la génération' });
+      logger.error('Erreur gÃ©nÃ©ration bulletins:', error);
+      return res.status(500).json({ message: 'Erreur lors de la gÃ©nÃ©ration' });
     }
   }
 
   private async calculerRangs(classeId: number, semestre: string, anneeAcademiqueId: number, t?: Transaction) {
-    const bulletins = await Bulletin.findAll({
-      where: { classeId, semestre, anneeAcademiqueId, statut: 'brouillon' },
-      order: [['moyenneGenerale', 'DESC']],
-      transaction: t
-    });
+    const [bulletins, echelles] = await Promise.all([
+      Bulletin.findAll({
+        where: { classeId, semestre, anneeAcademiqueId, statut: 'brouillon' },
+        order: [['moyenneGenerale', 'DESC']],
+        transaction: t
+      }),
+      getEchelles()
+    ]);
     const effectif = bulletins.length;
     for (let i = 0; i < bulletins.length; i++) {
       await bulletins[i].update({
         rang: i + 1,
         effectifClasse: effectif,
         mention: bulletins[i].moyenneGenerale != null
-          ? calculerMention(bulletins[i].moyenneGenerale!)
+          ? calculerMention(bulletins[i].moyenneGenerale!, echelles)
           : null
       }, { transaction: t });
     }
@@ -264,8 +138,8 @@ export default class BulletinController {
         }
       });
     } catch (error) {
-      console.error('Erreur liste bulletins:', error);
-      return res.status(500).json({ message: 'Erreur lors de la récupération' });
+      logger.error('Erreur liste bulletins:', error);
+      return res.status(500).json({ message: 'Erreur lors de la rÃ©cupÃ©ration' });
     }
   }
 
@@ -285,11 +159,11 @@ export default class BulletinController {
           }
         ]
       });
-      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvé' });
+      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvÃ©' });
       return res.json(bulletin);
     } catch (error) {
-      console.error('Erreur détail bulletin:', error);
-      return res.status(500).json({ message: 'Erreur lors de la récupération' });
+      logger.error('Erreur dÃ©tail bulletin:', error);
+      return res.status(500).json({ message: 'Erreur lors de la rÃ©cupÃ©ration' });
     }
   }
 
@@ -297,10 +171,10 @@ export default class BulletinController {
   async update(req: Request, res: Response) {
     try {
       const bulletin = await Bulletin.findByPk(Number(req.params.id));
-      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvé' });
+      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvÃ©' });
 
       if (bulletin.statut === 'publie') {
-        return res.status(400).json({ message: 'Impossible de modifier un bulletin publié' });
+        return res.status(400).json({ message: 'Impossible de modifier un bulletin publiÃ©' });
       }
 
       const { appreciation } = req.body;
@@ -310,8 +184,8 @@ export default class BulletinController {
 
       return res.json(bulletin);
     } catch (error) {
-      console.error('Erreur mise à jour bulletin:', error);
-      return res.status(500).json({ message: 'Erreur lors de la mise à jour' });
+      logger.error('Erreur mise Ã  jour bulletin:', error);
+      return res.status(500).json({ message: 'Erreur lors de la mise Ã  jour' });
     }
   }
 
@@ -319,16 +193,29 @@ export default class BulletinController {
   async publier(req: Request, res: Response) {
     try {
       const bulletin = await Bulletin.findByPk(Number(req.params.id));
-      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvé' });
-      if (bulletin.statut === 'publie') return res.status(400).json({ message: 'Déjà publié' });
+      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvÃ©' });
+      if (bulletin.statut === 'publie') return res.status(400).json({ message: 'DÃ©jÃ  publiÃ©' });
 
       await bulletin.update({
         statut: 'publie',
         datePublication: new Date()
       });
+
+      await ArchiveGedService.archiverBulletin({
+        id: Number(bulletin.id),
+        anneeAcademiqueId: Number(bulletin.anneeAcademiqueId),
+        parcoursId: Number(bulletin.parcoursId),
+        niveauEtudeId: Number(bulletin.niveauEtudeId),
+        classeId: Number(bulletin.classeId),
+        semestre: bulletin.semestre,
+        cursusApprenantId: bulletin.cursusApprenantId ? Number(bulletin.cursusApprenantId) : undefined,
+        mention: bulletin.mention,
+        moyenneGenerale: bulletin.moyenneGenerale
+      });
+
       return res.json(bulletin);
     } catch (error) {
-      console.error('Erreur publication bulletin:', error);
+      logger.error('Erreur publication bulletin:', error);
       return res.status(500).json({ message: 'Erreur lors de la publication' });
     }
   }
@@ -337,7 +224,7 @@ export default class BulletinController {
   async signerEnseignant(req: Request, res: Response) {
     try {
       const bulletin = await Bulletin.findByPk(Number(req.params.id));
-      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvé' });
+      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvÃ©' });
 
       const { signature } = req.body;
       if (!signature) return res.status(400).json({ message: 'Signature requise' });
@@ -349,7 +236,7 @@ export default class BulletinController {
 
       return res.json(bulletin);
     } catch (error) {
-      console.error('Erreur signature enseignant:', error);
+      logger.error('Erreur signature enseignant:', error);
       return res.status(500).json({ message: 'Erreur lors de la signature' });
     }
   }
@@ -358,7 +245,7 @@ export default class BulletinController {
   async signerChef(req: Request, res: Response) {
     try {
       const bulletin = await Bulletin.findByPk(Number(req.params.id));
-      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvé' });
+      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvÃ©' });
 
       const { signature } = req.body;
       if (!signature) return res.status(400).json({ message: 'Signature requise' });
@@ -370,7 +257,7 @@ export default class BulletinController {
 
       return res.json(bulletin);
     } catch (error) {
-      console.error('Erreur signature chef:', error);
+      logger.error('Erreur signature chef:', error);
       return res.status(500).json({ message: 'Erreur lors de la signature' });
     }
   }
@@ -379,12 +266,12 @@ export default class BulletinController {
   async delete(req: Request, res: Response) {
     try {
       const bulletin = await Bulletin.findByPk(Number(req.params.id));
-      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvé' });
+      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvÃ©' });
 
       await bulletin.destroy();
       return res.status(204).end();
     } catch (error) {
-      console.error('Erreur suppression bulletin:', error);
+      logger.error('Erreur suppression bulletin:', error);
       return res.status(500).json({ message: 'Erreur lors de la suppression' });
     }
   }
@@ -448,7 +335,7 @@ export default class BulletinController {
 
       return res.json(resultats);
     } catch (error) {
-      console.error('Erreur moyennes:', error);
+      logger.error('Erreur moyennes:', error);
       return res.status(500).json({ message: 'Erreur lors du calcul des moyennes' });
     }
   }
@@ -457,7 +344,7 @@ export default class BulletinController {
   async monReleve(req: Request, res: Response) {
     try {
       const utilisateurId = req.utilisateurId!;
-      if (!utilisateurId) return res.status(401).json({ message: 'Non authentifié' });
+      if (!utilisateurId) return res.status(401).json({ message: 'Non authentifiÃ©' });
 
       const bulletin = await Bulletin.findOne({
         where: { utilisateurId, statut: 'publie' },
@@ -471,11 +358,12 @@ export default class BulletinController {
         ],
         order: [['datePublication', 'DESC']]
       });
-      if (!bulletin) return res.status(404).json({ message: 'Aucun bulletin publié trouvé' });
+      if (!bulletin) return res.status(404).json({ message: 'Aucun bulletin publiÃ© trouvÃ©' });
       return res.json(bulletin);
     } catch (error) {
-      console.error('Erreur relevé:', error);
-      return res.status(500).json({ message: 'Erreur lors de la récupération' });
+      logger.error('Erreur relevÃ©:', error);
+      return res.status(500).json({ message: 'Erreur lors de la rÃ©cupÃ©ration' });
     }
   }
 }
+

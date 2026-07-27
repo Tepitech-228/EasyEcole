@@ -41,6 +41,12 @@ export class NotificationSoundService {
       if (this.audioCtx.state === 'suspended') {
         this.audioCtx.resume();
       }
+
+      if (type === 'rappel_salle') {
+        this.playRappelSalle();
+        return;
+      }
+
       const config = SOUND_MAP[type] || SOUND_MAP['default'];
       const osc = this.audioCtx.createOscillator();
       const gain = this.audioCtx.createGain();
@@ -52,5 +58,25 @@ export class NotificationSoundService {
       osc.start();
       osc.stop(this.audioCtx.currentTime + config.duration / 1000);
     } catch {}
+  }
+
+  private playRappelSalle(): void {
+    const ctx = this.audioCtx!;
+    const notes = [
+      { freq: 440, start: 0, dur: 0.7 },
+      { freq: 880, start: 0.7, dur: 0.6 },
+      { freq: 440, start: 1.3, dur: 0.7 },
+    ];
+    for (const note of notes) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.value = note.freq;
+      gain.gain.setValueAtTime(0.3, ctx.currentTime + note.start);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + note.start + note.dur);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(ctx.currentTime + note.start);
+      osc.stop(ctx.currentTime + note.start + note.dur);
+    }
   }
 }

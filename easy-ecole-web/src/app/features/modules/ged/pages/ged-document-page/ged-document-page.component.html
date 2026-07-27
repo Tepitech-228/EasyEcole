@@ -1,106 +1,349 @@
-<div class="doc-page">
-  <div *ngIf="loading" class="loading-state">Chargement...</div>
-  <div *ngIf="!loading && !doc" class="empty-state">Document introuvable</div>
+<div class="max-w-7xl mx-auto px-4 py-6">
+  <div *ngIf="loading" class="flex items-center justify-center py-20">
+    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+    <span class="ml-3 text-gray-500">Chargement du document...</span>
+  </div>
 
-  <ng-container *ngIf="doc">
-    <!-- Header -->
-    <div class="doc-header">
-      <div class="doc-header-left">
-        <a routerLink="/ged/catalog" class="back-link">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
-          Retour au catalogue
-        </a>
-        <h1>{{ doc.titre }}</h1>
-        <p class="doc-ref" *ngIf="doc.reference || doc.nommage">{{ doc.reference || doc.nommage }}</p>
-      </div>
-      <div class="doc-header-actions">
-        <button class="btn-primary" (click)="download()">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Télécharger
-        </button>
-        <button class="btn-outline" (click)="exportPdf()">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          Exporter PDF
-        </button>
-        <button class="btn-danger" (click)="deleteDoc()">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-          Supprimer
-        </button>
+  <div *ngIf="!loading && !doc" class="text-center py-20 text-gray-400">
+    <p class="text-lg">Document introuvable</p>
+  </div>
+
+  <ng-container *ngIf="doc && !loading">
+    <div class="flex items-center gap-2 text-sm text-gray-500 mb-4">
+      <a routerLink="/ged/catalog" class="hover:text-primary flex items-center gap-1">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+        Retour au catalogue
+      </a>
+      <span>/</span>
+      <span class="text-gray-700 font-medium truncate">{{ doc.titre }}</span>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+        <div class="flex-1 min-w-0">
+          <h1 class="text-2xl font-bold text-gray-900 mb-1">{{ doc.titre }}</h1>
+          <p class="font-mono text-sm text-gray-500" *ngIf="doc.reference || doc.nommage">{{ doc.reference || doc.nommage }}</p>
+          <div class="mt-2 flex flex-wrap gap-2">
+            <span *ngIf="doc.lifecycleStatus" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+              [class.bg-green-100]="doc.lifecycleStatus === 'courant'"
+              [class.text-green-800]="doc.lifecycleStatus === 'courant'"
+              [class.bg-yellow-100]="doc.lifecycleStatus === 'a_detruire'"
+              [class.text-yellow-800]="doc.lifecycleStatus === 'a_detruire'"
+              [class.bg-red-100]="doc.lifecycleStatus === 'definitif'"
+              [class.text-red-800]="doc.lifecycleStatus === 'definitif'"
+              [class.bg-blue-100]="doc.lifecycleStatus === 'archive'"
+              [class.text-blue-800]="doc.lifecycleStatus === 'archive'">
+              {{ doc.lifecycleStatus }}
+            </span>
+            <span *ngIf="doc.deletedAt" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Supprimé</span>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button class="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors" (click)="download()" [disabled]="!canDownload()" [title]="!canDownload() ? 'Téléchargement restreint aux administrateurs (document chiffré)' : ''">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Télécharger
+          </button>
+          <button class="inline-flex items-center gap-1.5 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors" (click)="exportPdf()">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Exporter PDF
+          </button>
+          <button *ngIf="doc.lifecycleStatus === 'courant'" class="inline-flex items-center gap-1.5 px-4 py-2 border border-green-300 text-green-700 rounded-lg text-sm font-medium hover:bg-green-50 transition-colors" (click)="validate()">
+            Valider
+          </button>
+          <button *ngIf="doc.lifecycleStatus !== 'definitif' && doc.lifecycleStatus !== 'verrouille'" class="inline-flex items-center gap-1.5 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors" (click)="lock()">
+            Verrouiller
+          </button>
+          <button *ngIf="doc.lifecycleStatus === 'verrouille'" class="inline-flex items-center gap-1.5 px-4 py-2 border border-yellow-300 text-yellow-700 rounded-lg text-sm font-medium hover:bg-yellow-50 transition-colors" (click)="unlock()">
+            Déverrouiller
+          </button>
+          <button class="inline-flex items-center gap-1.5 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors" (click)="showNewVersionForm = !showNewVersionForm">
+            Nouvelle version
+          </button>
+          <button *ngIf="isAdmin && doc.lifecycleStatus !== 'definitif'" class="inline-flex items-center gap-1.5 px-4 py-2 border border-red-300 text-red-700 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors" (click)="showMarkDeleteForm = !showMarkDeleteForm">
+            Marquer à détruire
+          </button>
+          <button *ngIf="isAdmin && doc.lifecycleStatus === 'a_detruire'" class="inline-flex items-center gap-1.5 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors" (click)="showConfirmDeleteForm = !showConfirmDeleteForm">
+            Confirmer destruction
+          </button>
+          <button *ngIf="doc.deletedAt" class="inline-flex items-center gap-1.5 px-4 py-2 border border-blue-300 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors" (click)="restore()">
+            Restaurer
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Content -->
-    <div class="doc-content">
-      <!-- Preview -->
-      <div class="doc-preview">
-        <iframe [src]="previewUrl" class="preview-iframe" *ngIf="previewUrl"></iframe>
-        <div class="preview-placeholder" *ngIf="!previewUrl">
-          <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#d7d9e6" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          <p>Aperçu non disponible</p>
+    <div *ngIf="showNewVersionForm" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">Nouvelle version</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Type de version</label>
+          <select [(ngModel)]="newVersionType" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-sm">
+            <option value="mineur">Mineur</option>
+            <option value="majeur">Majeur</option>
+          </select>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Commentaire</label>
+          <textarea [(ngModel)]="newVersionComment" rows="3" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-sm" placeholder="Décrivez les modifications..."></textarea>
+        </div>
+      </div>
+      <div class="flex gap-2 justify-end">
+        <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors" (click)="showNewVersionForm = false; newVersionComment = ''">Annuler</button>
+        <button class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors" (click)="newVersion()" [disabled]="!newVersionComment.trim()">Créer la version</button>
+      </div>
+    </div>
+
+    <div *ngIf="showMarkDeleteForm" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">Marquer à détruire</h3>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Motif</label>
+        <textarea [(ngModel)]="markDeleteReason" rows="3" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-sm" placeholder="Raison de la mise à destruction..."></textarea>
+      </div>
+      <div class="flex gap-2 justify-end">
+        <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors" (click)="showMarkDeleteForm = false; markDeleteReason = ''">Annuler</button>
+        <button class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors" (click)="markForDeletion()" [disabled]="!markDeleteReason.trim()">Confirmer</button>
+      </div>
+    </div>
+
+    <div *ngIf="showConfirmDeleteForm" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">Confirmer la destruction</h3>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Raison de la destruction</label>
+        <textarea [(ngModel)]="confirmDeleteReason" rows="3" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-sm" placeholder="Justification..."></textarea>
+      </div>
+      <div class="flex gap-2 justify-end">
+        <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors" (click)="showConfirmDeleteForm = false; confirmDeleteReason = ''">Annuler</button>
+        <button class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors" (click)="confirmDeletion()" [disabled]="!confirmDeleteReason.trim()">Détruire</button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div class="lg:col-span-4 xl:col-span-3 space-y-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Informations</h3>
+          <div class="space-y-3">
+            <div class="flex justify-between text-sm" *ngIf="doc.processusGenerateur">
+              <span class="text-gray-500">Processus</span>
+              <span class="text-gray-900 font-medium">{{ doc.processusGenerateur.code }} — {{ doc.processusGenerateur.libelle }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Stockage</span>
+              <span class="text-gray-900 font-medium">{{ doc.storageLocation || 'local' }}</span>
+            </div>
+            <div class="flex justify-between text-sm items-center">
+              <span class="text-gray-500">Chiffrement</span>
+              <span *ngIf="doc.isEncrypted" class="inline-flex items-center gap-1 text-green-600">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Activé
+              </span>
+              <span *ngIf="!doc.isEncrypted" class="inline-flex items-center gap-1 text-gray-400">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Désactivé
+              </span>
+            </div>
+            <div class="flex justify-between text-sm" *ngIf="doc.uploader">
+              <span class="text-gray-500">Uploadé par</span>
+              <span class="text-gray-900 font-medium">{{ doc.uploader.prenoms }} {{ doc.uploader.nom }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Domaine</span>
+              <span class="text-gray-900 font-medium">{{ doc.domain?.label || '-' }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Référence</span>
+              <span class="text-gray-900 font-mono text-xs">{{ doc.reference || doc.nommage || '-' }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Classement</span>
+              <span class="text-gray-900 font-medium">{{ doc.categorie || '-' }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Taille</span>
+              <span class="text-gray-900 font-medium">{{ doc.taille || '-' }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Pages</span>
+              <span class="text-gray-900 font-medium">{{ doc.nbPages || '-' }}</span>
+            </div>
+            <div class="flex justify-between text-sm" *ngIf="doc.auteur">
+              <span class="text-gray-500">Auteur</span>
+              <span class="text-gray-900 font-medium">{{ doc.auteur }}</span>
+            </div>
+            <div class="flex justify-between text-sm" *ngIf="doc.dateDocument">
+              <span class="text-gray-500">Date document</span>
+              <span class="text-gray-900 font-medium">{{ doc.dateDocument | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="flex justify-between text-sm" *ngIf="doc.uploader">
+              <span class="text-gray-500">Uploadé par</span>
+              <span class="text-gray-900 font-medium">{{ doc.uploader.prenoms }} {{ doc.uploader.nom }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Créé le</span>
+              <span class="text-gray-900 font-medium">{{ doc.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6" *ngIf="doc.anneeAcademiqueId || doc.parcoursId || doc.niveauEtudeId || doc.semestre || doc.classeId">
+          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Contexte académique</h3>
+          <div class="space-y-3">
+            <div class="flex justify-between text-sm" *ngIf="doc.anneeAcademiqueId">
+              <span class="text-gray-500">Année académique</span>
+              <span class="text-gray-900 font-medium">#{{ doc.anneeAcademiqueId }}</span>
+            </div>
+            <div class="flex justify-between text-sm" *ngIf="doc.parcoursId">
+              <span class="text-gray-500">Parcours</span>
+              <span class="text-gray-900 font-medium">#{{ doc.parcoursId }}</span>
+            </div>
+            <div class="flex justify-between text-sm" *ngIf="doc.niveauEtudeId">
+              <span class="text-gray-500">Niveau</span>
+              <span class="text-gray-900 font-medium">#{{ doc.niveauEtudeId }}</span>
+            </div>
+            <div class="flex justify-between text-sm" *ngIf="doc.semestre">
+              <span class="text-gray-500">Semestre</span>
+              <span class="text-gray-900 font-medium">{{ getSemestreLabel(doc.semestre) }}</span>
+            </div>
+            <div class="flex justify-between text-sm" *ngIf="doc.classeId">
+              <span class="text-gray-500">Classe</span>
+              <span class="text-gray-900 font-medium">#{{ doc.classeId }}</span>
+            </div>
+            <div class="flex justify-between text-sm" *ngIf="doc.sourceType">
+              <span class="text-gray-500">Source</span>
+              <span class="text-gray-900 font-medium">{{ getSourceLabel(doc.sourceType) }}</span>
+            </div>
+            <div class="flex justify-between text-sm" *ngIf="doc.classificationPath">
+              <span class="text-gray-500">Chemin classement</span>
+              <span class="text-gray-900 font-mono text-xs">{{ doc.classificationPath }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Confidentialité & Cycle de vie</h3>
+          <div class="space-y-3">
+            <div class="flex justify-between text-sm items-center">
+              <span class="text-gray-500">Confidentialité</span>
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                [class.bg-gray-100]="!doc.confidentialityLevel || doc.confidentialityLevel === 'public'"
+                [class.text-gray-800]="!doc.confidentialityLevel || doc.confidentialityLevel === 'public'"
+                [class.bg-yellow-100]="doc.confidentialityLevel === 'interne'"
+                [class.text-yellow-800]="doc.confidentialityLevel === 'interne'"
+                [class.bg-orange-100]="doc.confidentialityLevel === 'confidentiel'"
+                [class.text-orange-800]="doc.confidentialityLevel === 'confidentiel'"
+                [class.bg-red-100]="doc.confidentialityLevel === 'secret'"
+                [class.text-red-800]="doc.confidentialityLevel === 'secret'">
+                {{ doc.confidentialityLevel || 'Public' }}
+              </span>
+            </div>
+            <div class="flex justify-between text-sm items-center">
+              <span class="text-gray-500">Cycle de vie</span>
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                [class.bg-green-100]="doc.lifecycleStatus === 'courant'"
+                [class.text-green-800]="doc.lifecycleStatus === 'courant'"
+                [class.bg-yellow-100]="doc.lifecycleStatus === 'a_detruire'"
+                [class.text-yellow-800]="doc.lifecycleStatus === 'a_detruire'"
+                [class.bg-red-100]="doc.lifecycleStatus === 'definitif'"
+                [class.text-red-800]="doc.lifecycleStatus === 'definitif'"
+                [class.bg-blue-100]="doc.lifecycleStatus === 'archive'"
+                [class.text-blue-800]="doc.lifecycleStatus === 'archive'">
+                {{ doc.lifecycleStatus || '-' }}
+              </span>
+            </div>
+            <div class="flex justify-between text-sm" *ngIf="doc.duaEndDate">
+              <span class="text-gray-500">DUA</span>
+              <span class="text-gray-900 font-medium">{{ doc.duaEndDate | date:'dd/MM/yyyy' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6" *ngIf="doc.integrityHash">
+          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Empreinte & Intégrité</h3>
+          <p class="font-mono text-xs text-gray-600 break-all mb-3">{{ doc.integrityHash }}</p>
+          <button class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-blue-300 text-blue-700 rounded-lg text-xs font-medium hover:bg-blue-50 transition-colors" (click)="verifyIntegrity()">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Vérifier l'intégrité
+          </button>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Conservation</h3>
+          <div class="space-y-3">
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Fin DUA</span>
+              <span class="text-gray-900 font-medium">{{ (doc.duaEndDate | date:'dd/MM/yyyy') || '-' }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Durée</span>
+              <span class="text-gray-900 font-medium">{{ doc.dureeConservation || '-' }}</span>
+            </div>
+            <div class="flex justify-between text-sm items-center">
+              <span class="text-gray-500">Statut</span>
+              <span *ngIf="!doc.duaEndDate" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Permanent</span>
+              <span *ngIf="doc.duaEndDate" class="text-gray-900 font-medium">{{ doc.isArchived ? 'Archivé' : 'Actif' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6" *ngIf="doc.tags">
+          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Tags</h3>
+          <div class="flex flex-wrap gap-1.5">
+            <span *ngFor="let t of getTags(doc)" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">{{ t }}</span>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <button class="flex items-center justify-between w-full text-left" (click)="getAuditTrail()">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Piste d'audit</h3>
+            <svg [class.rotate-180]="showAudit" class="w-4 h-4 text-gray-400 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
         </div>
       </div>
 
-      <!-- Metadata sidebar -->
-      <div class="doc-meta">
-        <div class="meta-section">
-          <h3>Informations</h3>
-          <div class="meta-grid">
-            <div class="meta-item">
-              <span class="meta-label">Type</span>
-              <span class="meta-value">{{ doc.type || 'PDF' }}</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Statut</span>
-              <span class="badge-statut" [class.disponible]="doc.statut === 'Disponible'" [class.attente]="doc.statut === 'en_attente'" [class.archive]="doc.statut === 'archive'">{{ doc.statut }}</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Taille</span>
-              <span class="meta-value">{{ doc.taille }}</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Pages</span>
-              <span class="meta-value">{{ doc.nbPages || '-' }}</span>
-            </div>
-            <div class="meta-item" *ngIf="doc.auteur">
-              <span class="meta-label">Auteur</span>
-              <span class="meta-value">{{ doc.auteur }}</span>
-            </div>
-            <div class="meta-item" *ngIf="doc.dateDocument">
-              <span class="meta-label">Date document</span>
-              <span class="meta-value">{{ doc.dateDocument | date:'dd/MM/yyyy' }}</span>
-            </div>
-            <div class="meta-item" *ngIf="doc.uploader">
-              <span class="meta-label">Uploadé par</span>
-              <span class="meta-value">{{ doc.uploader.prenoms }} {{ doc.uploader.nom }}</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Créé le</span>
-              <span class="meta-value">{{ doc.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+      <div class="lg:col-span-8 xl:col-span-9">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <iframe *ngIf="previewUrl" [src]="previewUrl" class="w-full border-0" style="height: calc(100vh - 140px)"></iframe>
+          <div *ngIf="!previewUrl" class="flex flex-col items-center justify-center py-20 text-gray-400">
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <p class="mt-2">Aperçu non disponible</p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6" *ngIf="doc.versions && doc.versions.length > 0">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">Historique des versions</h3>
+          <div class="space-y-3">
+            <div *ngFor="let v of doc.versions" class="flex items-center justify-between p-3 rounded-lg border border-gray-100"
+              [class.bg-primary-50]="v.id === doc?.versions?.[doc.versions.length - 1]?.id">
+              <div class="flex items-center gap-3">
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                  [class.bg-blue-100]="getVersionType(v) === 'mineur'"
+                  [class.text-blue-800]="getVersionType(v) === 'mineur'"
+                  [class.bg-purple-100]="getVersionType(v) === 'majeur'"
+                  [class.text-purple-800]="getVersionType(v) === 'majeur'">
+                  {{ getVersionType(v) === 'majeur' ? 'Majeure' : 'Mineure' }}
+                </span>
+                <div>
+                  <p class="text-sm font-medium text-gray-900">{{ v.versionComment }}</p>
+                  <p class="text-xs text-gray-500">{{ v.createdAt | date:'dd/MM/yyyy HH:mm' }} par {{ v.uploader?.prenoms }} {{ v.uploader?.nom }}</p>
+                </div>
+              </div>
+              <span *ngIf="v.id === doc.versions?.[doc.versions.length - 1]?.id" class="text-xs font-medium text-primary">Courante</span>
             </div>
           </div>
         </div>
 
-        <div class="meta-section" *ngIf="doc.tags">
-          <h3>Tags</h3>
-          <div class="tags-list">
-            <span class="tag" *ngFor="let t of getTags(doc)">{{ t }}</span>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6" *ngIf="showAudit">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">Piste d'audit</h3>
+            <button class="text-sm text-primary hover:underline" (click)="showAudit = false">Masquer</button>
           </div>
-        </div>
-
-        <div class="meta-section">
-          <h3>Conservation</h3>
-          <div class="meta-grid">
-            <div class="meta-item" *ngIf="doc.dureeConservation">
-              <span class="meta-label">Durée</span>
-              <span class="meta-value">{{ doc.dureeConservation }}</span>
-            </div>
-            <div class="meta-item" *ngIf="doc.archivedUntil">
-              <span class="meta-label">Archivé jusqu'au</span>
-              <span class="meta-value">{{ doc.archivedUntil | date:'dd/MM/yyyy' }}</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Statut</span>
-              <span class="meta-value">{{ doc.isArchived ? 'Archivé' : 'Actif' }}</span>
+          <div *ngIf="auditLogs.length === 0" class="text-gray-400 text-sm">Aucune trace d'audit</div>
+          <div class="space-y-2" *ngIf="auditLogs.length > 0">
+            <div *ngFor="let log of auditLogs" class="flex items-start gap-3 p-2 text-sm">
+              <div class="w-2 h-2 rounded-full bg-primary-300 mt-1.5 flex-shrink-0"></div>
+              <div>
+                <p class="text-gray-700">{{ log.action }}</p>
+                <p class="text-xs text-gray-400">{{ log.createdAt | date:'dd/MM/yyyy HH:mm' }} — {{ log.utilisateur?.prenoms }} {{ log.utilisateur?.nom }}</p>
+              </div>
             </div>
           </div>
         </div>

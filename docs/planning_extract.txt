@@ -1,0 +1,91 @@
+
+PLANNING DE PRISE EN CHARGE DES INTÉGRATIONS ET TESTS
+Volet Scolarité — Plateforme Easy École
+Version 1.0 — Document de planification
+Juillet 2026
+
+Introduction
+Le présent document dresse le planning de prise en charge des développements, intégrations et tests restant à réaliser côté Scolarité pour la plateforme Easy École, sur la base du périmètre suivant :
+Réclamation des notes et émission de demandes de documents académiques (frais le cas échéant, validation, délivrance électronique par courriel et plateforme).
+Délivrance des documents administratifs — modules complets.
+Couplage à l'inscription et mise en place des pages e-learning.
+Cinq points d'amélioration identifiés : salons de discussion enseignants, alertes enseignants avant cours, alertes étudiants en situation irrégulière, contrôle parental, et annonces groupées institutionnelles.
+
+Le planning est structuré en 8 phases, pour une durée totale estimée à 121 jours ouvrés (soit environ 23 semaines). Cette estimation suppose une équipe de développement stable et des validations métier réalisées dans les délais impartis à chaque phase.
+Planning détaillé
+Durée totale estimée : 121 jours ouvrés (~23 semaines).
+
+Hypothèses et points de vigilance
+.
+Points de vigilance
+Le contrôle parental soulève des questions de protection des données personnelles des mineurs à valider avec la direction juridique de l'ESA avant développement.
+Les alertes en temps réel (10 minutes avant cours, notifications de paiement) nécessitent une infrastructure de notification fiable (push, SMS ou e-mail) à confirmer avec le service informatique.
+
+PHASE | ACTIVITÉ (Détail) | DURÉE (jours) | LIVRABLES
+PHASE 0 Cadrage complémentaire
+(5 j) | Atelier de cadrage détaillé avec le service scolarité sur les items restants (réclamations, documents, e-learning, améliorations). | 2 | Compte-rendu d'atelier
+PHASE 0 Cadrage complémentaire
+(5 j) | Rédaction des spécifications fonctionnelles détaillées (SFD) par fonctionnalité restante. | 2 | Document SFD validé
+PHASE 0 Cadrage complémentaire
+(5 j) | Validation et priorisation finale avec le comité de pilotage ESA. | 1 | SFD signé / backlog priorisé
+PHASE 1 Réclamations & documents académiques
+(17 j) | Développement du formulaire de réclamation de notes (soumission étudiant, pièces jointes, statuts). | 4 | Module réclamation fonctionnel
+PHASE 1 Réclamations & documents académiques
+(17 j) | Développement du workflow de validation de la réclamation (scolarité → enseignant → réponse). | 3 | Circuit de validation opérationnel
+PHASE 1 Réclamations & documents académiques
+(17 j) | Développement de la demande de document académique (relevé, attestation…) avec calcul des frais. | 4 | Module de demande + grille tarifaire intégrée
+PHASE 1 Réclamations & documents académiques
+(17 j) | Génération automatique du document (PDF) et délivrance électronique (courriel + plateforme). | 4 | Génération PDF + envoi automatisé
+PHASE 1 Réclamations & documents académiques
+(17 j) | Tests unitaires des deux modules (réclamation + document académique). | 2 | Rapport de tests unitaires
+PHASE 2 Documents administratifs & couplage inscription
+(15 j) | Cartographie exhaustive des documents administratifs à couvrir et de leurs modèles. | 2 | Liste des modèles de documents validée
+PHASE 2 Documents administratifs & couplage inscription
+(15 j) | Développement des générateurs de documents (modules complets). | 6 | Générateurs de documents opérationnels
+PHASE 2 Documents administratifs & couplage inscription
+(15 j) | Couplage avec le module d'inscription (déclenchement automatique selon le statut de l'étudiant). | 4 | Interface inscription ↔ documents couplée
+PHASE 2 Documents administratifs & couplage inscription
+(15 j) | Tests d'intégration inscription / documents administratifs. | 3 | Rapport de tests d'intégration
+PHASE 3 Plateforme E-learning
+(15 j) | Mise en place des pages e-learning (arborescence des cours, dépôt et organisation des supports). | 6 | Pages e-learning en ligne
+PHASE 3 Plateforme E-learning
+(15 j) | Intégration de la compression vidéo pour les zones à connexion limitée. | 3 | Pipeline de compression fonctionnel
+PHASE 3 Plateforme E-learning
+(15 j) | Couplage inscription e-learning (mêmes processus de pré-inscription/inscription qu'en présentiel). | 3 | Parcours e-learning couplé à l'inscription
+PHASE 3 Plateforme E-learning
+(15 j) | Intégration du chat pour les annonces d'évaluation et d'examen. | 3 | Module de chat intégré
+PHASE 4 Points d'amélioration
+(27 j) | Salons de discussion dédiés par TD, créés et gérés par l'enseignant. | 5 | Module salons de discussion (TD)
+PHASE 4 Points d'amélioration
+(27 j) | Système d'alerte automatique aux enseignants 10 min avant le cours (salle + contenu à traiter). | 5 | Moteur de notification enseignants
+PHASE 4 Points d'amélioration
+(27 j) | Alerte des étudiants en situation irrégulière (frais) 10 j avant échéance, via bandeau sur l'interface principale. | 3 | Bandeau d'alerte scolarité
+PHASE 4 Points d'amélioration
+(27 j) | Notification automatique dès validation du bordereau de paiement des frais. | 3 | Notification de confirmation de paiement
+PHASE 4 Points d'amélioration
+(27 j) | Portail contrôle parental : comptes parents, alertes de présence/absence, publication des notes, relevés transmis directement. | 8 | Portail parent opérationnel
+PHASE 4 Points d'amélioration
+(27 j) | Module d'annonces groupées institutionnelles diffusables depuis la plateforme. | 3 | Module annonces groupées
+PHASE 5 Tests d'intégration globale
+(12 j) | Rédaction des scénarios de tests bout-en-bout couvrant tous les modules livrés. | 3 | Cahier de tests bout-en-bout
+PHASE 5 Tests d'intégration globale
+(12 j) | Exécution des tests d'intégration sur l'ensemble des modules scolarité. | 5 | Rapport de tests d'intégration
+PHASE 5 Tests d'intégration globale
+(12 j) | Correction des anomalies bloquantes et majeures identifiées. | 4 | Anomalies bloquantes corrigées
+PHASE 6 Recette utilisateur (UAT)
+(10 j) | Formation des utilisateurs clés (scolarité, enseignants pilotes, parents pilotes). | 2 | Support de formation + sessions réalisées
+PHASE 6 Recette utilisateur (UAT)
+(10 j) | Recette fonctionnelle avec les utilisateurs métier sur environnement de préproduction. | 5 | PV de recette
+PHASE 6 Recette utilisateur (UAT)
+(10 j) | Corrections suite aux retours de recette. | 3 | Anomalies de recette corrigées
+PHASE 7 Déploiement
+(20j) | Préparation de l'environnement de production. | 2 | Environnement prod prêt
+PHASE 7 Déploiement
+(20j) | Migration / bascule des données existantes. | 2 | Données migrées et vérifiées
+PHASE 7 Déploiement
+(20j) | Mise en production. | 1 | Plateforme en production
+PHASE 7 Déploiement
+(20j) | Accompagnement post-développement | 14 | Suivi régulier
+PHASE 7 Déploiement
+(20j) | Réception définitive   | 1 | Rapport projet 
+

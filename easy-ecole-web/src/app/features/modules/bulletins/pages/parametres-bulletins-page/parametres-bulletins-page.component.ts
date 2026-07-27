@@ -27,6 +27,10 @@ export class ParametresBulletinsPageComponent extends BaseComponentClass impleme
       afficherSignature: [true],
       formatPapier: ['A4'],
       orientation: ['portrait'],
+      noteMinimale: [10],
+      seuilEliminatoire: [7],
+      creditsMinAnnee: [60],
+      compensationActive: [false],
     });
   }
 
@@ -52,6 +56,10 @@ export class ParametresBulletinsPageComponent extends BaseComponentClass impleme
       afficherSignature: true,
       formatPapier: 'A4',
       orientation: 'portrait',
+      noteMinimale: 10,
+      seuilEliminatoire: 7,
+      creditsMinAnnee: 60,
+      compensationActive: false,
     });
   }
 }

@@ -1,0 +1,85 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <app-header-title
+    title="Catégories professionnelles"
+    subtitle="Gérez les catégories professionnelles et les salaires de base">
+  </app-header-title>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+    <div class="flex justify-end">
+      <app-custom-button *ngIf="rolesValue.isRessourcesHumaines || rolesValue.isAdmin || rolesValue.isInstitution" (click)="ouvrirFormulaire()" text="Nouvelle catégorie" color="primary"></app-custom-button>
+    </div>
+  </div>
+
+  <div *ngIf="showForm" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Nouvelle catégorie professionnelle</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Code *</label>
+        <input [(ngModel)]="formData.code" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="CAT-001" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Nom *</label>
+        <input [(ngModel)]="formData.nom" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="Nom de la catégorie" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Salaire de base</label>
+        <input [(ngModel)]="formData.salaireBase" type="number" step="0.01" min="0" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="0" />
+      </div>
+    </div>
+    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Description</label>
+        <textarea [(ngModel)]="formData.description" rows="2" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="Description..."></textarea>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Avantages</label>
+        <textarea [(ngModel)]="formData.avantages" rows="2" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="Avantages..."></textarea>
+      </div>
+    </div>
+    <div class="flex justify-end gap-3 mt-4">
+      <app-custom-button (click)="fermerFormulaire()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+      <app-custom-button (click)="creerCategorie()" text="Créer" color="primary"></app-custom-button>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-100">
+        <thead>
+          <tr class="bg-gray-50/50">
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Code</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nom</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
+            <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Salaire de base</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Avantages</th>
+            <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngFor="let c of categories; trackBy: trackByFn" class="hover:bg-gray-50/50 transition-colors">
+            <td class="px-5 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ c.code }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ c.nom }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-500 max-w-[200px] truncate">{{ c.description || '-' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-right text-sm text-gray-700">{{ c.salaireBase != null ? c.salaireBase + ' F' : '-' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-500 max-w-[200px] truncate">{{ c.avantages || '-' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-right">
+              <div class="flex items-center justify-end gap-2">
+                <a [routerLink]="['/rh/grilles-salariales']" [queryParams]="{categorieId: c.id}"
+                   class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                  Grilles
+                  <svg class="w-3.5 h-3.5 ml-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </a>
+                <app-custom-button *ngIf="rolesValue.isRessourcesHumaines || rolesValue.isAdmin || rolesValue.isInstitution" (click)="supprimer(c.id)" text="Supprimer" color="primary" [outlined]="true"></app-custom-button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+    <div *ngIf="!loading && categories.length === 0" class="px-5 py-12 text-center">
+      <svg class="mx-auto h-12 w-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+      <p class="mt-4 text-sm text-gray-500">Aucune catégorie professionnelle</p>
+    </div>
+  </div>
+</div>

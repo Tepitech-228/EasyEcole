@@ -14,6 +14,7 @@ export class Immobilisation extends Model<InferAttributes<Immobilisation>, Infer
   declare codeQR: CreationOptional<string>
   declare categorieId: ForeignKey<CategorieImmobilisation['id'] | null>
   declare localisationId: ForeignKey<Localisation['id'] | null>
+  declare salleDeClasseId: CreationOptional<number | null>
   declare departementId: ForeignKey<Departement['id'] | null>
   declare siteId: ForeignKey<Site['id'] | null>
   declare etat: CreationOptional<string>
@@ -32,6 +33,7 @@ Immobilisation.init({
   codeQR: { type: DataTypes.TEXT, allowNull: true },
   categorieId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
   localisationId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
+  salleDeClasseId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
   departementId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
   siteId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
   etat: { type: DataTypes.ENUM('neuf', 'bon', 'moyen', 'mauvais', 'reforme'), defaultValue: 'bon' },

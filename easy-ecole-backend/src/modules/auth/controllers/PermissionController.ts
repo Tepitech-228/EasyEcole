@@ -1,8 +1,10 @@
 import { Request, Response } from "express";
 import { Permission } from "../models/Permission";
 import { UserPermission } from "../models/UserPermission";
+import { UserRole } from "../models/UserRole";
+import { Role } from "../models/Role";
 import { Utilisateur } from "../../auth/models/Utilisateur";
-import { Op } from "sequelize";
+import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 
 export default class PermissionController {
 
@@ -145,29 +147,68 @@ export default class PermissionController {
     static async mesPermissions(req: Request, res: Response): Promise<Response> {
         try {
             const utilisateurId = (req as any).utilisateurId;
+            const role = (req as any).utilisateurRole as RolesUtilisateur;
 
-            const role = (req as any).utilisateurRole;
-            if (role === 'admin') {
+            if (role === RolesUtilisateur.ADMIN) {
                 const allPermissions = await Permission.findAll({ attributes: ['key'] });
                 const keys = allPermissions.map(p => p.key);
                 return res.status(200).send({ permissions: keys, configured: true });
             }
 
-            const totalConfigs = await UserPermission.count({ where: { utilisateurId } });
-            const configured = totalConfigs > 0;
+            const userPermissionKeys = new Set<string>();
 
-            if (!configured) {
-                return res.status(200).send({ permissions: [], configured: false });
+            const userRoles = await UserRole.findAll({ where: { utilisateurId } });
+            if (userRoles.length > 0) {
+                const roleIds = userRoles.map(ur => ur.roleId);
+                const roles = await Role.findAll({
+                    where: { id: roleIds },
+                    include: [{ model: Permission, as: 'permissions', attributes: ['key'] }]
+                });
+                for (const r of roles) {
+                    const perms = (r as any).permissions || [];
+                    for (const p of perms) {
+                        userPermissionKeys.add(p.key);
+                    }
+                }
+            } else {
+                const roleNameMap: Record<string, string> = {
+                    [RolesUtilisateur.INSTITUTION]: 'Directeur',
+                    [RolesUtilisateur.ENSEIGNANT]: 'Enseignant',
+                    [RolesUtilisateur.APPRENANT]: 'Apprenant',
+                    [RolesUtilisateur.CAISSIER_BANQUE]: 'Comptable',
+                    [RolesUtilisateur.CABINET_COMPTABLE]: 'Comptable',
+                    [RolesUtilisateur.COMITE_ORIENTATION]: 'Parent',
+                };
+                const roleName = roleNameMap[role];
+                if (roleName) {
+                    const fallbackRole = await Role.findOne({
+                        where: { nom: roleName },
+                        include: [{ model: Permission, as: 'permissions', attributes: ['key'] }]
+                    });
+                    if (fallbackRole) {
+                        const perms = (fallbackRole as any).permissions || [];
+                        for (const p of perms) {
+                            userPermissionKeys.add(p.key);
+                        }
+                    }
+                }
             }
 
             const userPermissions = await UserPermission.findAll({
                 where: { utilisateurId, estActif: true },
                 include: [{ model: Permission, as: 'permission', attributes: ['key'] }]
             });
+            for (const up of userPermissions) {
+                const perm = (up as any).permission;
+                if (perm?.key) {
+                    userPermissionKeys.add(perm.key);
+                }
+            }
 
-            const keys = userPermissions.map(up => (up as any).permission?.key).filter(Boolean);
+            const keys = Array.from(userPermissionKeys);
+            const configured = keys.length > 0;
 
-            return res.status(200).send({ permissions: keys, configured: true });
+            return res.status(200).send({ permissions: keys, configured });
         } catch (error) {
             return res.status(500).json({ success: false, error });
         }

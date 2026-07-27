@@ -1,3 +1,4 @@
+import { ParentEnfant } from "../../parent/models/ParentEnfant";
 import { AdresseApprenant } from "./AdresseApprenant";
 import { AdresseCaissierBanque } from "./AdresseCaissierBanque";
 import { AdresseEnseignant } from "./AdresseEnseignant";
@@ -90,3 +91,11 @@ Permission.belongsToMany(Role, { through: RolePermission, as: 'roles', foreignKe
 // Role - Utilisateur (via UserRole)
 Role.belongsToMany(Utilisateur, { through: UserRole, as: 'utilisateurs', foreignKey: 'roleId' })
 Utilisateur.belongsToMany(Role, { through: UserRole, as: 'roles', foreignKey: 'utilisateurId' })
+
+// ParentEnfant - Utilisateur (parent)
+ParentEnfant.belongsTo(Utilisateur, { as: 'parentUtilisateur', foreignKey: 'parentUtilisateurId' })
+Utilisateur.hasMany(ParentEnfant, { as: 'parentEnfants', foreignKey: 'parentUtilisateurId' })
+
+// ParentEnfant - Apprenant
+ParentEnfant.belongsTo(Apprenant, { as: 'apprenant', foreignKey: 'apprenantId' })
+Apprenant.hasMany(ParentEnfant, { as: 'parents', foreignKey: 'apprenantId' })

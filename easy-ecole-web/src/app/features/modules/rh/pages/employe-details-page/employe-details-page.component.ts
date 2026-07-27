@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 
 @Component({
@@ -7,9 +8,11 @@ import { BaseComponentClass } from 'src/app/core/base-component-class';
   styleUrls: ['./employe-details-page.component.scss']
 })
 export class EmployeDetailsPageComponent extends BaseComponentClass implements OnInit {
+  employeId: string | null = null;
 
-  constructor() { super() }
+  constructor(private route: ActivatedRoute) { super() }
 
   ngOnInit(): void {
+    this.employeId = this.route.snapshot.paramMap.get('id');
   }
 }

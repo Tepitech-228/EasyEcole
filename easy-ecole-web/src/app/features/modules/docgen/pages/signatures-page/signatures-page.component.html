@@ -1,0 +1,56 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <app-header-title title="Signature - Enseignant" subtitle="Signez les documents en masse par classe"></app-header-title>
+
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+    <!-- Classes list -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      <h3 class="text-sm font-semibold text-gray-900 mb-3">Classes</h3>
+      <div class="space-y-2">
+        <div *ngFor="let g of groupes" 
+             class="flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-colors"
+             [class.bg-blue-50]="selectedClasse === g.classe"
+             [class.hover:bg-gray-50]="selectedClasse !== g.classe"
+             (click)="selectClasse(g.classe)">
+          <span class="text-sm font-medium text-gray-700">{{ g.classe }}</span>
+          <span class="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold bg-amber-50 text-amber-700">{{ g.count }}</span>
+        </div>
+        <div *ngIf="groupes.length === 0" class="text-sm text-gray-400 text-center py-4">Aucun document en attente</div>
+      </div>
+    </div>
+
+    <!-- Documents -->
+    <div class="lg:col-span-3">
+      <div *ngIf="selectedClasse">
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
+          <div class="flex justify-between items-center">
+            <h3 class="text-base font-semibold text-gray-900">Classe : {{ selectedClasse }}</h3>
+            <app-custom-button (click)="toutSigner()" [text]="'Tout signer (' + pendingCount + ')'" color="indigo"></app-custom-button>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <table class="min-w-full divide-y divide-gray-100">
+            <thead><tr class="bg-gray-50/50">
+              <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Référence</th>
+              <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Type</th>
+              <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Statut</th>
+              <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Créé le</th>
+            </tr></thead>
+            <tbody class="divide-y divide-gray-50">
+              <tr *ngFor="let d of documents" class="hover:bg-gray-50/50">
+                <td class="px-5 py-4 text-sm font-mono">{{ d.reference || '—' }}</td>
+                <td class="px-5 py-4 text-sm text-gray-500">{{ d.type?.code || '—' }}</td>
+                <td class="px-5 py-4"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" [class.bg-amber-50]="d.statut === 'en_attente_enseignant'" [class.text-amber-700]="d.statut === 'en_attente_enseignant'">En attente</span></td>
+                <td class="px-5 py-4 text-sm text-gray-500">{{ d.createdAt | date:'dd/MM/yyyy' }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+        </div>
+      </div>
+      <div *ngIf="!selectedClasse" class="flex items-center justify-center h-64 bg-white rounded-2xl border border-gray-100 shadow-sm">
+        <p class="text-sm text-gray-400">Sélectionnez une classe pour voir les documents en attente</p>
+      </div>
+    </div>
+  </div>
+</div>

@@ -37,23 +37,6 @@ router
     .post('/', PaiementInscriptionController.createPaiementInscription)
 /**
  * @openapi
- * /inscription/paiementsInscription/cinetpay:
- *   post:
- *     tags: [Paiements]
- *     summary: Crée un paiement mobile money via CinetPay
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *     responses:
- *       201:
- *         description: Paiement mobile money initié
- */
-    .post('/cinetpay', PaiementInscriptionController.createMobileMoneyPaiementInscription)
-/**
- * @openapi
  * /inscription/paiementsInscription/{id}:
  *   get:
  *     tags: [Paiements]

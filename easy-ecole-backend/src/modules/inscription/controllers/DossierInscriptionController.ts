@@ -1,9 +1,11 @@
 import { Request, Response } from "express";
-import { unlinkSync } from "fs";
+import * as fs from "fs";
+import * as path from "path";
 import { CountOptions, FindOptions, InferAttributes } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { DossierInscription } from "../models/DossierInscription";
 import { DemandeInscriptionDossier } from "../models/DemandeInscriptionDossier";
+import { DemandeInscription } from "../models/DemandeInscription";
 
 export default class DossierInscriptionController {
 
@@ -71,58 +73,32 @@ export default class DossierInscriptionController {
     }
 
     static async uploadDossierInscription(req: Request, res: Response): Promise<Response | null> {
-        let options: FindOptions<InferAttributes<DemandeInscriptionDossier>> = {}
-        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
-            options = { where: { dossierId: req.body.dossierId, demandeId: req.body.demandeId } }
-        }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
-            options = { where: { dossierId: req.body.dossierId, demandeId: req.body.demandeId } }
+        let fichiers: Express.Multer.File[] = (req as any).files || [];
+        if (fichiers.length === 0) {
+            return res.status(400).json({ success: false, message: 'Aucun fichier fourni' });
         }
 
-
-        let files: any = req.files
-        if (files && files['fichier']) {
-            let fichier: Express.Multer.File | undefined = (files['fichier'])[0] as Express.Multer.File | undefined
-
-            if (fichier) {
-                let demandeInscriptionDossier: DemandeInscriptionDossier | null = await DemandeInscriptionDossier.findOne(options);
-                if (demandeInscriptionDossier == null) {
-                    let demandeInscriptionDossier: DemandeInscriptionDossier = new DemandeInscriptionDossier()
-                    demandeInscriptionDossier.nomFichier = fichier.filename
-                    demandeInscriptionDossier.dossierId = req.body.dossierId
-                    demandeInscriptionDossier.demandeId = req.body.demandeId
-
-                    await demandeInscriptionDossier.save()
-                        .then(async (demandeInscriptionDossier) => {
-                            return res.status(201).send(demandeInscriptionDossier);
-                        })
-                        .catch((error) => {
-                            return res.status(400).json({ success: false, error: error });
-                        });
-                }
-                else {
-                    //TODO:: remove old file
-                    await demandeInscriptionDossier.update({
-                        nomFichier: fichier.filename,
-                    })
-                        .then(async (demandeInscriptionDossier) => {
-                            // unlinkSync
-                            return res.status(200).send(demandeInscriptionDossier);
-                        })
-                        .catch((error) => {
-                            return res.status(400).json({ success: false, error: error });
-                        });
-                }
-            }
-            else {
-                return res.status(400).json({ success: false });
-            }
-        }
-        else {
-            return res.status(400).json({ success: false });
+        for (const fichier of fichiers) {
+            await DemandeInscriptionDossier.create({
+                nomFichier: fichier.filename,
+                dossierId: req.body.dossierId,
+                demandeId: req.body.demandeId,
+            });
         }
 
-        return null
+        const demande = await DemandeInscription.findByPk(req.body.demandeId, {
+            include: [
+                { association: DemandeInscription.associations.cours },
+                { association: DemandeInscription.associations.coursChoisis },
+                { association: DemandeInscription.associations.session },
+                { association: DemandeInscription.associations.etapeInscription },
+                { association: DemandeInscription.associations.dossiersDemande },
+                { association: DemandeInscription.associations.paiementsInscription },
+                { association: DemandeInscription.associations.reponseInscription },
+            ]
+        });
+
+        return res.status(201).json(demande);
     }
 
     static async updateDossierInscription(req: Request, res: Response): Promise<Response | null> {

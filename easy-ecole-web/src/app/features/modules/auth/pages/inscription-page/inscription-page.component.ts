@@ -83,7 +83,13 @@ export class InscriptionPageComponent implements OnInit {
             {
               next: (res) => {
                 this.disableButton = false
-                this.router.navigateByUrl("/auth/connexion")
+                if (res.otpRequired) {
+                  this.router.navigate(['/auth/otp'], {
+                    queryParams: { email: res.email, maskedEmail: res.maskedEmail, mode: 'inscription' }
+                  })
+                } else {
+                  this.router.navigateByUrl("/auth/connexion")
+                }
               },
               error: (err: HttpErrorResponse) => {
                 console.log(err.error)

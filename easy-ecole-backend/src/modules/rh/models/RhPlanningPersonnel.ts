@@ -15,6 +15,7 @@ export class RhPlanningPersonnel extends Model<InferAttributes<RhPlanningPersonn
   declare dateDebut: Date
   declare dateFin: Date
   declare description: CreationOptional<string>
+  declare dateLimitePlanification: string | null
 
   declare employe?: NonAttribute<RhEmploye>
 
@@ -64,6 +65,10 @@ RhPlanningPersonnel.init({
   },
   description: {
     type: DataTypes.TEXT,
+    allowNull: true
+  },
+  dateLimitePlanification: {
+    type: DataTypes.DATEONLY,
     allowNull: true
   },
   createdAt: DataTypes.DATE,

@@ -1,4 +1,4 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../ScolariteModule";
 import { CursusApprenant } from "../../inscription/models/CursusApprenant";
@@ -6,7 +6,7 @@ import { Parcours } from "../../inscription/models/Parcours";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 
 export class DemandeReorientation extends Model<InferAttributes<DemandeReorientation>, InferCreationAttributes<DemandeReorientation>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare cursusApprenantId: ForeignKey<CursusApprenant['id']>
   declare cursusApprenant?: NonAttribute<CursusApprenant>
   declare parcoursActuelId: ForeignKey<Parcours['id']>

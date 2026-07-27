@@ -84,7 +84,7 @@
                                         <app-custom-button (click)="openEditerEcheanceModal(echeance)" text="Modifier"></app-custom-button>
                                     </span>
                                     <span>
-                                        <app-custom-button (click)="openSupprimerEcheanceModal(echeance)" text="Supprimer" color="red"></app-custom-button>
+                                        <app-custom-button (click)="openSupprimerEcheanceModal(echeance)" text="Supprimer" color="primary"></app-custom-button>
                                     </span>
                                 </div>
                             </td>
@@ -187,7 +187,7 @@
 <app-custom-modal *ngIf="selectedEcheance" title="Supprimer" subtitle="Supprimer cette échéance. Voulez-vous continuer ?" (onCloseModal)="closeSupprimerEcheanceModal()" [center]="true" [showModal]="showSupprimerEcheanceModal">
     <div class="flex items-center justify-between py-30">
         <app-custom-button (click)="closeSupprimerEcheanceModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
-        <app-custom-button (click)="deleteEcheance()" text="Supprimer" color="red"></app-custom-button>
+        <app-custom-button (click)="deleteEcheance()" text="Supprimer" color="primary"></app-custom-button>
     </div>
 </app-custom-modal>
 

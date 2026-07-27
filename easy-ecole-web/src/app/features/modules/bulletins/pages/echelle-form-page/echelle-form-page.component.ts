@@ -39,7 +39,7 @@ export class EchelleFormPageComponent extends BaseComponentClass implements OnIn
       this.echelleId = Number(id);
       this.service.getOne(this.echelleId).subscribe({
         next: (res) => this.form.patchValue(res),
-        error: () => this.router.navigate(['/bulletins/echelles'])
+        error: () => this.router.navigate(['/bulletins/parametres-notation'])
       });
     }
   }
@@ -53,12 +53,12 @@ export class EchelleFormPageComponent extends BaseComponentClass implements OnIn
       : this.service.create(this.form.value);
 
     obs.subscribe({
-      next: () => this.router.navigate(['/bulletins/echelles']),
+      next: () => this.router.navigate(['/bulletins/parametres-notation']),
       error: () => {}
     });
   }
 
   annuler(): void {
-    this.router.navigate(['/bulletins/echelles']);
+    this.router.navigate(['/bulletins/parametres-notation']);
   }
 }

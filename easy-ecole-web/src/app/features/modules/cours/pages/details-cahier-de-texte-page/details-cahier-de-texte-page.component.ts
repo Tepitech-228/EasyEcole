@@ -16,6 +16,7 @@ import 'quill-emoji/dist/quill-emoji.js'
 import Quill from 'quill'
 import ImageResize from 'quill-image-resize-module'
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { sanitizeHtml } from 'src/app/shared/utils/sanitize-html.util';
 
 @Component({
   selector: 'app-details-cahier-de-texte-page',
@@ -143,7 +144,7 @@ export class DetailsCahierDeTextePageComponent extends BaseComponentClass implem
 
   getContenu(contenu?: string): SafeHtml | null {
     if (contenu) {
-      return this.sanitizer.bypassSecurityTrustHtml(contenu)
+      return this.sanitizer.bypassSecurityTrustHtml(sanitizeHtml(contenu))
     }
 
     return null

@@ -65,6 +65,14 @@ export class AuthService {
     return this.httpClient.post(`${this.SERVICE_URL}/reset-password`, { token, motDePasse })
   }
 
+  verifyOtp(email: string, code: string): Observable<any> {
+    return this.httpClient.post(`${this.SERVICE_URL}/verify-otp`, { email, code })
+  }
+
+  resendOtp(email: string): Observable<any> {
+    return this.httpClient.post(`${this.SERVICE_URL}/resend-otp`, { email })
+  }
+
   logout(): void {
     this.httpClient.post(`${this.SERVICE_URL}/logout`, {}).subscribe({
       complete: () => {

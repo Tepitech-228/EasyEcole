@@ -37,6 +37,8 @@ export class UploadSupportPageComponent implements OnInit {
     if (!this.selectedFile || !this.selectedModuleId) return;
 
     this.uploading = true;
+    this.successMessage = '';
+    this.errorMessage = '';
     const formData = new FormData();
     formData.append('fichier', this.selectedFile);
     formData.append('moduleId', this.selectedModuleId);
@@ -54,4 +56,3 @@ export class UploadSupportPageComponent implements OnInit {
     });
   }
 }
-

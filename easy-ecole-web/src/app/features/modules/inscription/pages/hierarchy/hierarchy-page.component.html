@@ -1,0 +1,74 @@
+<div class="hierarchy-page">
+  <div class="page-head">
+    <h2>Arbre pédagogique</h2>
+    <p>Parcours → Niveau → Semestre → UE → Cours</p>
+  </div>
+
+  <div class="hierarchy-layout">
+    <!-- Tree sidebar -->
+    <div class="tree-panel">
+      <div *ngIf="loading" class="loading-state">Chargement...</div>
+      <div *ngIf="!loading && tree.length === 0" class="empty-state">Aucune donnée</div>
+      <ng-container *ngIf="!loading && tree.length > 0">
+        <ng-template #recursiveTree let-nodes="nodes" let-level="level">
+          <div *ngFor="let node of nodes" class="tree-node">
+            <div class="node-row" [class.selected]="selectedNode?.id === node.id" (click)="select(node)">
+              <span class="toggle" (click)="$event.stopPropagation(); toggle(node)">
+                <svg *ngIf="node.children?.length" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" [class.rotated]="node.expanded"><polyline points="9 18 15 12 9 6"/></svg>
+                <svg *ngIf="!node.children?.length" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/></svg>
+              </span>
+              <span class="icon">{{ getTypeIcon(node.type) }}</span>
+              <span class="label">{{ node.label }}</span>
+              <span class="type-badge" *ngIf="node.type === 'cours' && node.data?.credit">Crédits: {{ node.data.credit }}</span>
+            </div>
+            <div *ngIf="node.expanded && node.children?.length" class="children">
+              <ng-container *ngTemplateOutlet="recursiveTree; context: { nodes: node.children, level: level + 1 }"></ng-container>
+            </div>
+          </div>
+        </ng-template>
+        <ng-container *ngTemplateOutlet="recursiveTree; context: { nodes: tree, level: 0 }"></ng-container>
+      </ng-container>
+    </div>
+
+    <!-- Detail panel -->
+    <div class="detail-panel" *ngIf="selectedNode">
+      <div class="detail-head">
+        <h3>{{ selectedNode.label }}</h3>
+        <p class="text-xs text-gray-400 capitalize">{{ selectedNode.type }}</p>
+      </div>
+
+      <div class="detail-body p-4" *ngIf="selectedNode.type === 'cours' || selectedNode.type === 'ue'">
+        <div class="grid grid-cols-2 gap-4 text-sm" *ngIf="coursData">
+          <div>
+            <span class="text-gray-500">Code</span>
+            <p class="font-medium">{{ coursData.code || '-' }}</p>
+          </div>
+          <div>
+            <span class="text-gray-500">Intitulé</span>
+            <p class="font-medium">{{ coursData.intitule || '-' }}</p>
+          </div>
+          <div>
+            <span class="text-gray-500">Crédits</span>
+            <p class="font-medium">{{ coursData.credit ?? '-' }}</p>
+          </div>
+          <div>
+            <span class="text-gray-500">Volume horaire</span>
+            <p class="font-medium">{{ coursData.volumeHoraire ?? '-' }}</p>
+          </div>
+          <div>
+            <span class="text-gray-500">Coefficient</span>
+            <p class="font-medium">{{ coursData.coefficient ?? '-' }}</p>
+          </div>
+          <div>
+            <span class="text-gray-500">Obligatoire</span>
+            <p class="font-medium">{{ coursData.estObligatoire ? 'Oui' : 'Non' }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-placeholder" *ngIf="!selectedNode">
+      <p class="text-sm text-gray-400">Sélectionnez un noeud pour voir les détails</p>
+    </div>
+  </div>
+</div>

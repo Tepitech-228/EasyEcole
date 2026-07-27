@@ -17,6 +17,7 @@ import { PanierParcoursChoisiService } from 'src/app/data/modules/orientation/se
 import { PanierParcoursChoisi } from 'src/app/data/modules/orientation/models/PanierParcoursChoisi.model';
 import { environment } from 'src/environments/environment';
 import { COLUMNS_SCHEMA, PrerequisParcoursType } from 'src/app/data/types/PrerequisParcoursType';
+import { sanitizeHtml } from 'src/app/shared/utils/sanitize-html.util';
 
 @Component({
   selector: 'app-details-parcours-page',
@@ -62,7 +63,7 @@ export class DetailsParcoursPageComponent extends BaseComponentClass implements 
 
   getContenu(): SafeHtml | null {
     if (this.parcours && this.parcours.contenu) {
-      return this.sanitizer.bypassSecurityTrustHtml(this.parcours.contenu)
+      return this.sanitizer.bypassSecurityTrustHtml(sanitizeHtml(this.parcours.contenu))
     }
 
     return null

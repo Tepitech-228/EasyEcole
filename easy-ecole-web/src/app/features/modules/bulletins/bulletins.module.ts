@@ -7,15 +7,12 @@ import { ListeBulletinsPageComponent } from './pages/liste-bulletins-page/liste-
 import { GenererBulletinsPageComponent } from './pages/generer-bulletins-page/generer-bulletins-page.component';
 import { DetailBulletinPageComponent } from './pages/detail-bulletin-page/detail-bulletin-page.component';
 import { MonRelevePageComponent } from './pages/mon-releve-page/mon-releve-page.component';
-import { EchellesPageComponent } from './pages/echelles-page/echelles-page.component';
 import { EchelleFormPageComponent } from './pages/echelle-form-page/echelle-form-page.component';
-import { DeliberationsPageComponent } from './pages/deliberations-page/deliberations-page.component';
+import { ParametresNotationPageComponent } from './pages/parametres-notation-page/parametres-notation-page.component';
+import { DeliberationsJuryPageComponent } from './pages/deliberations-jury-page/deliberations-jury-page.component';
 import { DeliberationDetailPageComponent } from './pages/deliberation-detail-page/deliberation-detail-page.component';
 import { ParametresBulletinsPageComponent } from './pages/parametres-bulletins-page/parametres-bulletins-page.component';
 import { MoyennesPageComponent } from './pages/moyennes-page/moyennes-page.component';
-import { UesPageComponent } from './pages/ues-page/ues-page.component';
-import { UeFormPageComponent } from './pages/ue-form-page/ue-form-page.component';
-import { MccPageComponent } from './pages/mcc-page/mcc-page.component';
 import { MccFormPageComponent } from './pages/mcc-form-page/mcc-form-page.component';
 import { SessionsExamenPageComponent } from './pages/sessions-examen-page/sessions-examen-page.component';
 import { SessionExamenFormPageComponent } from './pages/session-examen-form-page/session-examen-form-page.component';
@@ -26,7 +23,6 @@ import { EquivalenceFormPageComponent } from './pages/equivalence-form-page/equi
 import { DispensesPageComponent } from './pages/dispenses-page/dispenses-page.component';
 import { DispenseFormPageComponent } from './pages/dispense-form-page/dispense-form-page.component';
 import { AuditNotesPageComponent } from './pages/audit-notes-page/audit-notes-page.component';
-import { JuryMembresPageComponent } from './pages/jury-membres-page/jury-membres-page.component';
 import { JuryMembreFormPageComponent } from './pages/jury-membre-form-page/jury-membre-form-page.component';
 import { ListeRattrapagesPageComponent } from './pages/liste-rattrapages-page/liste-rattrapages-page.component';
 import { RattrapageFormPageComponent } from './pages/rattrapage-form-page/rattrapage-form-page.component';
@@ -44,15 +40,12 @@ import { FormsModule } from '@angular/forms';
     GenererBulletinsPageComponent,
     DetailBulletinPageComponent,
     MonRelevePageComponent,
-    EchellesPageComponent,
+    ParametresNotationPageComponent,
     EchelleFormPageComponent,
-    DeliberationsPageComponent,
+    DeliberationsJuryPageComponent,
     DeliberationDetailPageComponent,
     ParametresBulletinsPageComponent,
     MoyennesPageComponent,
-    UesPageComponent,
-    UeFormPageComponent,
-    MccPageComponent,
     MccFormPageComponent,
     SessionsExamenPageComponent,
     SessionExamenFormPageComponent,
@@ -63,7 +56,6 @@ import { FormsModule } from '@angular/forms';
     DispensesPageComponent,
     DispenseFormPageComponent,
     AuditNotesPageComponent,
-    JuryMembresPageComponent,
     JuryMembreFormPageComponent,
     ListeRattrapagesPageComponent,
     RattrapageFormPageComponent,

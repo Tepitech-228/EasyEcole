@@ -1,58 +1,61 @@
-<div class="detail-page">
-  <a class="back-link" routerLink="/elearning/dashboard">
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+  <a routerLink="/elearning/dashboard" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-indigo-600 mb-4 transition-colors">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
     Retour aux cours
   </a>
 
-  <div class="loading-state" *ngIf="loading">
-    <div class="spinner"></div>
-  </div>
+  <app-loading-spinner *ngIf="loading"></app-loading-spinner>
 
   <div *ngIf="!loading && cours">
-    <div class="hero-card">
-      <div class="hero-image" *ngIf="cours.image">
-        <img [src]="'/orientation/parcours/' + cours.image" alt="" />
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-6">
+      <div *ngIf="cours.image" class="h-48 bg-gray-100 overflow-hidden">
+        <img [src]="'/elearning/cours/' + cours.image" alt="" class="w-full h-full object-cover" />
       </div>
-      <div class="hero-body">
-        <span class="hero-badge">{{ cours.statut }}</span>
-        <h1>{{ cours.titre }}</h1>
-        <p>{{ cours.description }}</p>
+      <div class="p-6">
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mb-3"
+          [class.bg-green-50]="cours.statut === 'actif'" [class.text-green-700]="cours.statut === 'actif'"
+          [class.bg-gray-100]="cours.statut !== 'actif'" [class.text-gray-600]="cours.statut !== 'actif'">
+          {{ cours.statut }}
+        </span>
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ cours.titre }}</h1>
+        <p class="text-sm text-gray-600 mb-4">{{ cours.description }}</p>
 
-        <div class="hero-stats">
-          <div class="hero-stat">
-            <span class="hero-stat-value">{{ modulesOrdonnes.length }}</span>
-            <span class="hero-stat-label">Modules</span>
+        <div class="flex gap-6 mb-4">
+          <div class="text-center">
+            <div class="text-2xl font-bold text-indigo-600">{{ modulesOrdonnes.length }}</div>
+            <div class="text-xs text-gray-500">Modules</div>
           </div>
-          <div class="hero-stat">
-            <span class="hero-stat-value">{{ supportsTotal }}</span>
-            <span class="hero-stat-label">Supports</span>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-indigo-600">{{ supportsTotal }}</div>
+            <div class="text-xs text-gray-500">Supports</div>
           </div>
-          <div class="hero-stat">
-            <span class="hero-stat-value">{{ quizTermines }}/{{ cours.quiz?.length || 0 }}</span>
-            <span class="hero-stat-label">Quiz</span>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-indigo-600">{{ quizTermines }}/{{ cours.quiz?.length || 0 }}</div>
+            <div class="text-xs text-gray-500">Quiz</div>
           </div>
         </div>
 
-        <div class="progress-row" *ngIf="cours.progressionTaux !== undefined">
-          <div class="progress-head">
+        <div *ngIf="cours.progressionTaux !== undefined" class="mb-4">
+          <div class="flex justify-between text-xs text-gray-500 mb-1">
             <span>Progression globale</span>
             <span>{{ cours.progressionTaux }}%</span>
           </div>
-          <div class="progress-bar">
-            <div class="progress-fill" [style.width.%]="cours.progressionTaux"></div>
+          <div class="w-full bg-gray-100 rounded-full h-2">
+            <div class="bg-indigo-600 h-2 rounded-full transition-all" [style.width.%]="cours.progressionTaux"></div>
           </div>
         </div>
 
-        <div class="hero-actions">
-          <a [routerLink]="['/elearning', cours.id, 'player']" class="btn-primary">
+        <div class="flex gap-3 flex-wrap">
+          <a [routerLink]="['/elearning', cours.id, 'player']" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             Lancer le cours
           </a>
-          <a [routerLink]="['/elearning', cours.id, 'chat']" class="btn-outline">
+          <a [routerLink]="['/elearning', cours.id, 'chat']" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             Chat
           </a>
-          <a [routerLink]="['/elearning', cours.id, 'upload']" *ngIf="isInstitution || isEnseignant" class="btn-outline">
+          <a *ngIf="rolesValue.isAdmin || rolesValue.isEnseignant" [routerLink]="['/elearning', cours.id, 'upload']" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             + Support
           </a>
@@ -60,52 +63,51 @@
       </div>
     </div>
 
-    <!-- Modules -->
-    <div class="section-head">
-      <h2>Modules du cours</h2>
-    </div>
-
-    <div class="modules-list">
-      <div class="module-card" *ngFor="let module of modulesOrdonnes; let mi = index">
-        <div class="module-header">
-          <div class="module-number">{{ mi + 1 }}</div>
-          <div class="module-info">
-            <h3>{{ module.titre }}</h3>
-            <p>{{ module.description }}</p>
-          </div>
-          <span class="module-date" *ngIf="module.dateDisponible">{{ module.dateDisponible | date:'dd/MM/yyyy' }}</span>
-        </div>
-
-        <div class="supports-list" *ngIf="module.supports?.length > 0">
-          <div class="support-item" *ngFor="let support of module.supports">
-            <div class="support-icon">
-              <svg *ngIf="support.type === 'video'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3b5bff" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              <svg *ngIf="support.type === 'pdf'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3b5bff" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-              <svg *ngIf="support.type !== 'video' && support.type !== 'pdf'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3b5bff" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+    <div class="mb-6">
+      <h2 class="text-lg font-bold text-gray-900 mb-4">Modules du cours</h2>
+      <div class="space-y-4">
+        <div *ngFor="let module of modulesOrdonnes; let mi = index" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div class="flex items-start gap-4 mb-3">
+            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-sm">{{ mi + 1 }}</div>
+            <div class="flex-1 min-w-0">
+              <h3 class="text-sm font-semibold text-gray-900">{{ module.titre }}</h3>
+              <p class="text-xs text-gray-500 mt-0.5">{{ module.description }}</p>
             </div>
-            <div class="support-info">
-              <span class="support-name">{{ support.fichierOriginal || support.fichier }}</span>
-              <span class="support-meta">{{ support.type }} · {{ support.dureeVideo || support.taille || '' }}</span>
+            <span *ngIf="module.dateDisponible" class="text-xs text-gray-400 whitespace-nowrap">{{ module.dateDisponible | date:'dd/MM/yyyy' }}</span>
+          </div>
+
+          <div *ngIf="module.supports?.length > 0" class="space-y-2 ml-14">
+            <div *ngFor="let support of module.supports" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
+              <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center">
+                <svg *ngIf="support.type === 'video'" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#4F46E5" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <svg *ngIf="support.type === 'pdf'" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#4F46E5" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                <svg *ngIf="support.type !== 'video' && support.type !== 'pdf'" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#4F46E5" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <span class="text-sm text-gray-700 block truncate">{{ support.fichierOriginal || support.fichier }}</span>
+                <span class="text-xs text-gray-400">{{ support.type }} · {{ support.dureeVideo || support.taille || '' }}</span>
+              </div>
             </div>
           </div>
+          <p *ngIf="!module.supports?.length" class="text-xs text-gray-400 ml-14">Aucun support pour ce module.</p>
         </div>
-        <p class="no-supports" *ngIf="!module.supports?.length">Aucun support pour ce module.</p>
       </div>
     </div>
 
-    <!-- Quiz -->
-    <div class="quiz-section" *ngIf="cours.quiz?.length">
-      <div class="section-head">
-        <h2>Quiz</h2>
-      </div>
-      <div class="quiz-list">
-        <div class="quiz-item" *ngFor="let q of cours.quiz">
-          <div class="quiz-icon">Q</div>
-          <div class="quiz-info">
-            <span class="quiz-title">{{ q.titre }}</span>
-            <span class="quiz-status">{{ q.reponse ? 'Score: ' + q.reponse.score + '/' + q.reponse.total : 'Non commencé' }}</span>
+    <div *ngIf="cours.quiz?.length" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      <h2 class="text-lg font-bold text-gray-900 mb-4">Quiz</h2>
+      <div class="space-y-3">
+        <div *ngFor="let q of cours.quiz" class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-600 font-bold text-xs">Q</div>
+            <div>
+              <span class="text-sm font-medium text-gray-900 block">{{ q.titre }}</span>
+              <span class="text-xs text-gray-500">{{ q.reponse ? 'Score: ' + q.reponse.score + '/' + q.reponse.total : 'Non commencé' }}</span>
+            </div>
           </div>
-          <a [routerLink]="['/elearning/quiz', q.id]" class="btn-outline-sm">{{ q.reponse ? 'Revoir' : 'Commencer' }}</a>
+          <a [routerLink]="['/elearning/quiz', q.id]" class="text-xs font-medium text-indigo-600 hover:text-indigo-800">
+            {{ q.reponse ? 'Revoir' : 'Commencer' }}
+          </a>
         </div>
       </div>
     </div>

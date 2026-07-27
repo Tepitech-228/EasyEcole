@@ -1,0 +1,42 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <app-header-title [title]="(isNew ? 'Nouveau' : 'Modifier') + ' template'" subtitle="Éditer le modèle HTML du document"></app-header-title>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Libellé *</label>
+        <input [(ngModel)]="template.libelle" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="Ex: Relevé de notes - Semestre 1" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Type de document</label>
+        <select [(ngModel)]="template.typeId" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+          <option value="">Sélectionner</option>
+          <option *ngFor="let t of types" [value]="t.id">{{ t.code }} — {{ t.libelle }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-xs font-medium text-gray-500 mb-1">Variables disponibles</label>
+      <div class="text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-2 font-mono">
+        Utilisez <span class="text-blue-600" ngNonBindable>{{variable}}</span> pour les valeurs simples et <span class="text-green-600" ngNonBindable>{{#each liste}}{{/each}}</span> pour les boucles.
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-xs font-medium text-gray-500 mb-1">Contenu HTML *</label>
+      <textarea [(ngModel)]="template.contenu" rows="20" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 font-mono focus:ring-2 focus:ring-red-500/20 focus:border-red-500" [placeholder]="'<html><body><h1> {{ titre }} </h1>...< /body></html>'"></textarea>
+    </div>
+
+    <div class="flex justify-end gap-3">
+      <app-custom-button (click)="preview()" text="Prévisualiser" color="blue" [outlined]="true"></app-custom-button>
+      <app-custom-button (click)="annuler()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+      <app-custom-button (click)="sauvegarder()" [text]="isNew ? 'Créer' : 'Enregistrer'" color="indigo"></app-custom-button>
+    </div>
+  </div>
+
+  <div *ngIf="previewHtml" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+    <h3 class="text-sm font-semibold text-gray-900 mb-3">Prévisualisation</h3>
+    <div class="border border-gray-200 rounded-lg p-4 bg-white" [innerHTML]="previewHtml"></div>
+  </div>
+</div>

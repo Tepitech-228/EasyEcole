@@ -9,6 +9,7 @@ import { Session } from "../models/Session";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { EmailSender } from "../../../core/helpers/EmailSender";
 import { DocumentPDFGenerator } from "../../../core/helpers/DocumentPDFGenerator";
+import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
 
 export default class PreInscriptionController {
 
@@ -53,7 +54,7 @@ export default class PreInscriptionController {
             await preInscription.update({ statut: EtatPreInscription.EN_ATTENTE, commentaire: null as any, dateTraitement: null as any, traiteParId: null as any })
         } else {
             preInscription = await PreInscription.create({
-                demandeInscriptionId: demandeId,
+                demandeInscriptionId: Number(demandeId),
                 statut: EtatPreInscription.EN_ATTENTE
             })
         }
@@ -136,7 +137,7 @@ export default class PreInscriptionController {
             })
         } else {
             preInscription = await PreInscription.create({
-                demandeInscriptionId: demandeId,
+                demandeInscriptionId: Number(demandeId),
                 statut: EtatPreInscription.VALIDE,
                 commentaire: commentaire,
                 dateTraitement: new Date(),
@@ -162,6 +163,20 @@ export default class PreInscriptionController {
             )
 
             await preInscription.update({ autorisationPDF: filename })
+
+            ArchiveGedService.archiverDepuisFichier({
+                fichierSource: `public/inscription/autorisations/${filename}`,
+                domaineCode: 'SCOL',
+                typeDocumentCode: 'fiche_inscription',
+                processusCode: 'INSCRIPTION',
+                processusLibelle: 'Inscription',
+                processusModule: 'inscription',
+                titre: `Autorisation provisoire - ${demandeId}`,
+                dossierGed: 'Inscriptions',
+                sousDossierGed: "Dossiers d'inscription",
+                sourceType: 'genere_application',
+                confidentialite: 'confidentiel',
+            }).catch(err => console.error("Erreur archivage autorisation:", err))
         } catch (err) {
             console.error("Erreur génération autorisation provisoire PDF:", err)
         }
@@ -207,7 +222,7 @@ export default class PreInscriptionController {
             })
         } else {
             preInscription = await PreInscription.create({
-                demandeInscriptionId: demandeId,
+                demandeInscriptionId: Number(demandeId),
                 statut: EtatPreInscription.REJETE,
                 commentaire: commentaire,
                 dateTraitement: new Date(),
@@ -278,14 +293,20 @@ export default class PreInscriptionController {
             return
         }
 
-        const filePath = path.resolve(process.cwd(), 'public/inscription/autorisations', preInscription.autorisationPDF)
+        // Le fichier peut être dans l'ancien emplacement (public/inscription/autorisations/)
+        // ou dans le nouvel emplacement (public/dossiers/.../) après validation du bordereau
+        let filePath = path.resolve(process.cwd(), preInscription.autorisationPDF)
+        if (!fs.existsSync(filePath)) {
+            filePath = path.resolve(process.cwd(), 'public/inscription/autorisations', preInscription.autorisationPDF)
+        }
         if (!fs.existsSync(filePath)) {
             res.status(404).json({ success: false, message: "Fichier introuvable sur le serveur" })
             return
         }
 
+        const nomFichier = path.basename(preInscription.autorisationPDF)
         res.setHeader('Content-Type', 'application/pdf')
-        res.setHeader('Content-Disposition', `inline; filename="${preInscription.autorisationPDF}"`)
+        res.setHeader('Content-Disposition', `inline; filename="${nomFichier}"`)
 
         const stream = fs.createReadStream(filePath)
         stream.on('error', () => {

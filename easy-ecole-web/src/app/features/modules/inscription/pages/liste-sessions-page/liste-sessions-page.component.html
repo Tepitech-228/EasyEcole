@@ -5,101 +5,32 @@
     </div>
 </div>
 
-<div class="flex flex-col">
-    <div class="overflow-x-auto">
-        <div class="py-2 inline-block min-w-full">
-            <div class="overflow-hidden">
-                <table class="min-w-full">
-                    <thead class="bg-gray-100 border-b">
-                        <tr>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                <div class="px-2">
-                                    #
-                                </div>
-                            </th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                <div class="px-2">
-                                    Date de début
-                                </div>
-                            </th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                <div class="px-2">
-                                    Date de fin
-                                </div>
-                            </th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                <div class="px-2">
-                                    Etat
-                                </div>
-                            </th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-center">
-                                <div class="px-2">
-                                    Niveau d'étude
-                                </div>
-                            </th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-center">
-                                <div class="px-2">
-                                    Année académique
-                                </div>
-                            </th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
-                                <div class="px-2">
-                                    Action
-                                </div>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngIf="sessions.length == 0"
-                            class="bg-white p-0 border-b transition duration-300 ease-in-out">
-                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
-                                colspan="5">Aucune session</td>
-                        </tr>
-                        <tr *ngFor="let session of sessions; index as index"
-                            class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
-                            <td
-                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div
-                                    class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
-                                    {{ index + 1 }}
-                                </div>
-                            </td>
-                            <td
-                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ session.dateDebut | date: 'dd MMMM YYYY' }}</div>
-                            </td>
-                            <td
-                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ session.dateFin | date: 'dd MMMM YYYY' }}</div>
-                            </td>
-                            
-                            <td class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2"
-                                [ngSwitch]="getEtatSession(session.dateDebut, session.dateFin)">
-                                <app-custom-badge *ngSwitchCase="etatsSession.A_VENIR" color="blue" text="A venir"></app-custom-badge>
-                                <app-custom-badge *ngSwitchCase="etatsSession.OUVERTE" color="green" text="Ouverte"></app-custom-badge>
-                                <app-custom-badge *ngSwitchCase="etatsSession.CLOTUREE" color="red" text="Clôturée"></app-custom-badge>
-                            </td>
+<div class="flex flex-col gap-y-4">
+    <app-filters-annee-niveau-parcours
+        [annees]="annees"
+        [niveaux]="niveaux"
+        [parcoursList]="[]"
+        [sessions]="sessions"
+        [loading]="!dataLoaded"
+        [showResultCount]="true"
+        [resultCount]="totalItems"
+        [resultLabel]="'session(s)'"
+        (filterChange)="onFilterChange($event)">
+    </app-filters-annee-niveau-parcours>
 
-                            <td
-                                class="bg-transparent text-center text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ session.niveauEtude ? session.niveauEtude.libelle : '---' }}</div>
-                            </td>
-                            <td
-                                class="bg-transparent text-center text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ session.anneeAcademique ? session.anneeAcademique.libelle : '---' }}</div>
-                            </td>
-                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div
-                                    class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
-                                    <app-custom-button [link]="'/inscription/sessions/' + session.id" text="Details"></app-custom-button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+    <app-dossier-view
+        [nodes]="treeNodes"
+        [columns]="itemColumns"
+        [batchActions]="itemActions"
+        [loading]="false"
+        [renderItemActions]="true"
+        [totalItems]="totalItems"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        [pageSize]="pageSize"
+        (pageChange)="onPageChange($event)"
+        (itemAction)="onItemAction($event)">
+    </app-dossier-view>
 </div>
 
 
@@ -133,7 +64,7 @@
                 <label for="niveauEtude" class="mb-2 block text-sm text-gray-400">Niveau d'étude</label>
                 <select id="niveauEtude" formControlName="niveauEtude"
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-                    <option *ngFor="let niveau of niveauxEtude" [value]="niveau.id">{{ niveau.libelle }}</option>
+                    <option *ngFor="let niveau of niveaux" [value]="niveau.id">{{ niveau.libelle }}</option>
                 </select>
                 <div *ngIf="sessionForm.get('niveauEtude')!.invalid && (sessionForm.get('niveauEtude')!.dirty || sessionForm.get('niveauEtude')!.touched)">
                     <app-form-message *ngIf="sessionForm.get('niveauEtude')!.errors?.['required']"
@@ -144,7 +75,7 @@
                 <label for="anneeAcademique" class="mb-2 block text-sm text-gray-400">Année académique</label>
                 <select id="anneeAcademique" formControlName="anneeAcademique"
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-                    <option *ngFor="let anneeAcademique of anneesAcademiques" [value]="anneeAcademique.id">{{ anneeAcademique.libelle }}</option>
+                    <option *ngFor="let anneeAcademique of annees" [value]="anneeAcademique.id">{{ anneeAcademique.libelle }}</option>
                 </select>
                 <div *ngIf="sessionForm.get('anneeAcademique')!.invalid && (sessionForm.get('anneeAcademique')!.dirty || sessionForm.get('anneeAcademique')!.touched)">
                     <app-form-message *ngIf="sessionForm.get('anneeAcademique')!.errors?.['required']"

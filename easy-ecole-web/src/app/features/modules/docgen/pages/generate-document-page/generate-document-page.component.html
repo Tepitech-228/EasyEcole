@@ -1,0 +1,96 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <app-header-title title="Génération de document" subtitle="Générez un document officiel à partir d'un modèle"></app-header-title>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
+    <form [formGroup]="form" (ngSubmit)="generate()">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Type de document *</label>
+          <select formControlName="typeCode" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+            <option value="">Sélectionner un type</option>
+            <option *ngFor="let t of types" [value]="t.code">{{ t.code }} — {{ t.libelle }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Étudiant (ID)</label>
+          <input formControlName="etudiantId" type="number" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="ID utilisateur" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Classe (ID)</label>
+          <input formControlName="classeId" type="number" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="ID classe" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Année académique (ID)</label>
+          <input formControlName="anneeAcademiqueId" type="number" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="ID année" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Semestre</label>
+          <select formControlName="semestre" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+            <option value="">Tous</option>
+            <option value="S1">S1</option>
+            <option value="S2">S2</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Inscription (cursus ID)</label>
+          <input formControlName="cursusApprenantId" type="number" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="ID CursusApprenant" />
+        </div>
+      </div>
+
+      <details class="border border-gray-100 rounded-lg p-3 text-sm">
+        <summary class="cursor-pointer text-gray-600 font-medium text-xs uppercase tracking-wide">Options avancées</summary>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Type source</label>
+            <input formControlName="sourceType" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="etudiant, classe..." />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">ID source</label>
+            <input formControlName="sourceId" type="number" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Métadonnées (JSON)</label>
+            <textarea formControlName="metadata" rows="2" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder='{"info": "..."}'></textarea>
+          </div>
+        </div>
+      </details>
+
+      <div class="flex justify-end gap-3 mt-4">
+        <app-custom-button type="button" (click)="result = null; error = null; form.reset()" text="Réinitialiser" color="gray" [outlined]="true"></app-custom-button>
+        <app-custom-button type="submit" [disabled]="generating" text="{{ generating ? 'Génération...' : 'Générer' }}" color="indigo"></app-custom-button>
+      </div>
+    </form>
+  </div>
+
+  <div *ngIf="error" class="bg-red-50 border border-red-100 rounded-2xl p-4 mb-6 text-sm text-red-700">
+    {{ error }}
+  </div>
+
+  <div *ngIf="result?.data" class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100">
+      <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Résultat</h3>
+    </div>
+    <div class="p-5">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="h-10 w-10 rounded-full bg-green-50 flex items-center justify-center text-green-600">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <div>
+          <p class="text-sm font-medium text-gray-900">Génération réussie</p>
+          <p class="text-xs text-gray-500">{{ result.data.length }} document(s) généré(s)</p>
+        </div>
+      </div>
+      <div class="space-y-3">
+        <div *ngFor="let doc of result.data" class="flex items-center justify-between p-3 rounded-lg border border-gray-100">
+          <div>
+            <p class="text-sm font-medium text-gray-900">{{ doc.reference }}</p>
+            <p class="text-xs text-gray-500">Généré le {{ doc.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+          <div class="flex gap-2">
+            <app-custom-button (click)="download(doc)" text="Télécharger" color="blue" [outlined]="true"></app-custom-button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -8,8 +8,14 @@ const apiUrl: string = apiBaseUrl + "api/v1"
 
 export const environment = {
   production: false,
-  API_URL: apiUrl,
+
+  /** URL de base de l'API (utilisée par l'HttpInterceptor pour préfixer toutes les requêtes) */
   apiUrl: apiUrl,
+
+  /** Alias conservé pour rétrocompatibilité */
+  API_URL: apiUrl,
+
+  /** Configuration des endpoints par module */
   API_MODULES: {
     AUTH: apiUrl + '/auth',
     ORIENTATION: apiUrl + '/orientation',
@@ -27,21 +33,21 @@ export const environment = {
   },
   MEDIAS_PATH: {
     AUTH: {
-      PROFILES: apiUrl + "/auth/profiles/",
+      PROFILES: apiBaseUrl + "auth/profiles/",
       PHOTOS: apiBaseUrl + "auth/apprenants/photos/",
-      PHOTOS_ENSEIGNANTS: apiBaseUrl + "auth/apprenants/photos/",
+      PHOTOS_ENSEIGNANTS: apiBaseUrl + "auth/enseignants/photos/",
     },
     ORIENTATION: {
-      PARCOURS: apiBaseUrl + "orientation/parcours/",
-      DEBOUCHES: apiBaseUrl + "orientation/debouches/",
+      PARCOURS: apiUrl + "/orientation/parcours/",
+      DEBOUCHES: apiUrl + "/orientation/debouches/",
     },
     INSCRIPTION: {
-      DOSSIERS: apiBaseUrl + "inscription/dossiers/",
-      BORDEREAUX: apiBaseUrl + "inscription/bordereaux/"
+      DOSSIERS: apiUrl + "/inscription/dossiers/",
+      BORDEREAUX: apiUrl + "/inscription/bordereaux/"
     }
   },
-  QR_CODES_PATH: apiBaseUrl + "auth/apprenants/qr-codes/",
-  QR_CODES_ENSEIGNANTS_PATH: apiBaseUrl + "auth/enseignants/qr-codes/"
+  QR_CODES_PATH: apiUrl + "/auth/apprenants/qr-codes/",
+  QR_CODES_ENSEIGNANTS_PATH: apiUrl + "/auth/enseignants/qr-codes/"
 };
 
 /*

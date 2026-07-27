@@ -1,0 +1,52 @@
+<app-header-title title="Audits" subtitle="Planification et suivi des audits qualité"></app-header-title>
+
+<div class="flex justify-between mb-4">
+  <div></div>
+  <app-custom-button text="Nouvel audit" (click)="ouvrirFormulaire()"></app-custom-button>
+</div>
+
+<app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+<div *ngIf="!loading && items.length === 0" class="text-center py-8 text-gray-400">Aucun audit planifié</div>
+
+<div class="overflow-x-auto" *ngIf="!loading && items.length > 0">
+  <table class="w-full text-sm">
+    <thead><tr class="text-left border-b"><th>Titre</th><th>Type</th><th>Processus</th><th>Date</th><th>Statut</th><th>Actions</th></tr></thead>
+    <tbody>
+      <tr *ngFor="let item of items" class="border-b hover:bg-gray-50">
+        <td class="py-2 font-medium">{{ item.titre }}</td>
+        <td><app-custom-badge [text]="item.type" [color]="item.type==='interne'?'blue':'purple'"></app-custom-badge></td>
+        <td class="text-gray-500">{{ item.processus }}</td>
+        <td>{{ item.datePlanifiee | date:'shortDate' }}</td>
+        <td><span class="px-2 py-1 rounded text-xs" [class]="getStatutColor(item.statut)">{{ item.statut }}</span></td>
+        <td class="flex gap-2">
+          <button (click)="ouvrirFormulaire(item)" class="text-blue-500 hover:text-blue-700">✎</button>
+          <button (click)="supprimer(item.id)" class="text-red-500 hover:text-red-700">✕</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<app-custom-modal [showModal]="showForm" (onCloseModal)="fermerFormulaire()">
+  <h3 class="text-lg font-semibold mb-4">{{ editingId ? 'Modifier' : 'Nouvel' }} audit</h3>
+  <div class="grid gap-3">
+    <select [(ngModel)]="formData.type" class="form-input">
+      <option value="interne">Interne</option><option value="externe">Externe</option>
+    </select>
+    <input [(ngModel)]="formData.titre" placeholder="Titre" class="form-input">
+    <input [(ngModel)]="formData.processus" placeholder="Processus" class="form-input">
+    <label class="text-xs text-gray-500">Date planifiée</label>
+    <input type="date" [(ngModel)]="formData.datePlanifiee" class="form-input">
+    <textarea [(ngModel)]="formData.equipe" placeholder="Équipe d'audit" class="form-input" rows="2"></textarea>
+    <input [(ngModel)]="formData.referentiel" placeholder="Référentiel" class="form-input">
+    <select [(ngModel)]="formData.statut" class="form-input">
+      <option value="planifie">Planifié</option><option value="en_cours">En cours</option>
+      <option value="termine">Terminé</option><option value="cloture">Clôturé</option>
+    </select>
+    <div class="flex gap-2 justify-end mt-2">
+      <app-custom-button text="Annuler" [outlined]="true" (click)="fermerFormulaire()"></app-custom-button>
+      <app-custom-button text="Enregistrer" (click)="sauvegarder()"></app-custom-button>
+    </div>
+  </div>
+</app-custom-modal>

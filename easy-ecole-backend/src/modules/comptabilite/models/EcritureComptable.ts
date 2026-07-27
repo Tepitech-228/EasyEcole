@@ -3,6 +3,7 @@ import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../ComptabiliteModule";
 import { Compte } from "./Compte";
 import { JournalComptable } from "./JournalComptable";
+import type { LigneReleveBancaire } from "./LigneReleveBancaire";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 
 /**
@@ -27,6 +28,8 @@ export class EcritureComptable extends Model<InferAttributes<EcritureComptable>,
   declare utilisateurValidationId: CreationOptional<ForeignKey<Utilisateur['id']>>
   declare dateValidation: CreationOptional<Date | null>
   declare observations: CreationOptional<string>
+  declare lettre: CreationOptional<string | null>
+  declare dateLettrage: CreationOptional<Date | null>
 
   declare journal?: NonAttribute<JournalComptable>
   declare compteDebit?: NonAttribute<Compte>
@@ -43,6 +46,7 @@ export class EcritureComptable extends Model<InferAttributes<EcritureComptable>,
     compteCredit: Association<EcritureComptable, Compte>
     utilisateurSaisie: Association<EcritureComptable, Utilisateur>
     utilisateurValidation: Association<EcritureComptable, Utilisateur>
+    lignesReleve: Association<EcritureComptable, LigneReleveBancaire>
   };
 }
 
@@ -122,6 +126,15 @@ EcritureComptable.init({
   observations: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  lettre: {
+    type: new DataTypes.STRING(10),
+    allowNull: true
+  },
+  dateLettrage: {
+    type: DataTypes.DATEONLY,
+    allowNull: true,
+    defaultValue: null
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE

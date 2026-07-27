@@ -223,7 +223,7 @@
                                     <div
                                         class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
                                         <app-custom-button (click)="openEditerFraisModal(frais)" text="Editer" color="blue"></app-custom-button>
-                                        <app-custom-button (click)="openSupprimerFraisModal(frais)" text="Supprimer" color="red"></app-custom-button>
+                                        <app-custom-button (click)="openSupprimerFraisModal(frais)" text="Supprimer" color="primary"></app-custom-button>
                                     </div>
                                 </td>
                             </tr>
@@ -296,7 +296,7 @@
                                     <div
                                         class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
                                         <app-custom-button (click)="openEditerDossierModal(dossier)" text="Editer" color="blue"></app-custom-button>
-                                        <app-custom-button (click)="openSupprimerDossierModal(dossier)" text="Supprimer" color="red"></app-custom-button>
+                                        <app-custom-button (click)="openSupprimerDossierModal(dossier)" text="Supprimer" color="primary"></app-custom-button>
                                     </div>
                                 </td>
                             </tr>
@@ -420,7 +420,7 @@
 <app-custom-modal *ngIf="selectedFrais" title="Supprimer" subtitle="Déplacer ce frais d'inscription dans la corbeille. Voulez-vous continuer ?" (onCloseModal)="closeSupprimerFraisModal()" [center]="true" [showModal]="showSupprimerFraisModal">
     <div class="flex items-center justify-between py-30">
         <app-custom-button (click)="closeSupprimerFraisModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
-        <app-custom-button (click)="supprimerFrais()" text="Supprimer" color="red"></app-custom-button>
+        <app-custom-button (click)="supprimerFrais()" text="Supprimer" color="primary"></app-custom-button>
     </div>
 </app-custom-modal>
 
@@ -493,7 +493,7 @@
 <app-custom-modal *ngIf="selectedDossier" title="Supprimer" subtitle="Déplacer ce dossier d'inscription dans la corbeille. Voulez-vous continuer ?" (onCloseModal)="closeSupprimerDossierModal()" [center]="true" [showModal]="showSupprimerDossierModal">
     <div class="flex items-center justify-between py-30">
         <app-custom-button (click)="closeSupprimerDossierModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
-        <app-custom-button (click)="supprimerDossier()" text="Supprimer" color="red"></app-custom-button>
+        <app-custom-button (click)="supprimerDossier()" text="Supprimer" color="primary"></app-custom-button>
     </div>
 </app-custom-modal>
 
@@ -537,6 +537,6 @@
 <app-custom-modal *ngIf="session" title="Supprimer" subtitle="Déplacer cette session dans la corbeille. Voulez-vous continuer ?" (onCloseModal)="showSupprimerSessionModal = false" [center]="true" [showModal]="showSupprimerSessionModal">
     <div class="flex items-center justify-between py-30">
         <app-custom-button (click)="showSupprimerSessionModal = false" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
-        <app-custom-button text="Supprimer" color="red"></app-custom-button>
+        <app-custom-button text="Supprimer" color="primary"></app-custom-button>
     </div>
 </app-custom-modal> -->

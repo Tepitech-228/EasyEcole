@@ -1,0 +1,132 @@
+<div class="flex justify-between items-start gap-x-8 mb-8">
+    <app-header-title title="Assurances" subtitle="Retrouver la liste de vos assurances"></app-header-title>
+    <app-custom-button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin"
+                       (click)="toggleForm()"
+                       [text]="showForm ? 'Annuler' : 'Nouvelle assurance'">
+    </app-custom-button>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <p class="text-xs font-medium text-gray-500 uppercase">Total assurances</p>
+        <p class="text-xl font-bold text-gray-900 mt-1">{{ totalAssurances }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <p class="text-xs font-medium text-gray-500 uppercase">Primes totales</p>
+        <p class="text-xl font-bold text-indigo-600 mt-1">{{ totalPrimes | currency:'XAF':'symbol':'1.0-0' }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <p class="text-xs font-medium text-gray-500 uppercase">Assurances actives</p>
+        <p class="text-xl font-bold text-green-600 mt-1">{{ activesCount }}</p>
+    </div>
+</div>
+
+<div *ngIf="showForm" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Nouvelle assurance</h3>
+    <form [formGroup]="form" (ngSubmit)="submit()" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Immobilisation</label>
+            <select formControlName="immobilisationId" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                <option value="">Sélectionner</option>
+                <option *ngFor="let immo of immobilisations" [value]="immo.id">{{ immo.nom || immo.reference }}</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Compagnie</label>
+            <input type="text" formControlName="compagnie" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Police</label>
+            <input type="text" formControlName="police" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Prime</label>
+            <input type="number" formControlName="prime" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Couverture</label>
+            <input type="text" formControlName="couverture" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Date début</label>
+            <input type="date" formControlName="dateDebut" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Date fin</label>
+            <input type="date" formControlName="dateFin" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Statut</label>
+            <select formControlName="statut" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                <option *ngFor="let s of statuts" [value]="s">{{ s }}</option>
+            </select>
+        </div>
+        <div class="md:col-span-3 flex justify-end">
+            <app-custom-button type="submit" text="Enregistrer" color="primary"></app-custom-button>
+        </div>
+    </form>
+</div>
+
+<div class="flex flex-col">
+    <div class="overflow-x-auto">
+        <div class="py-2 inline-block min-w-full">
+            <div class="overflow-hidden">
+                <table class="min-w-full">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">#</th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Immobilisation</th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Compagnie</th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Police</th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">Prime</th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Couverture</th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Début</th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Fin</th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Statut</th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngIf="assurances.length == 0" class="bg-white p-0 border-b transition duration-300 ease-in-out">
+                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap" colspan="10">Aucune assurance</td>
+                        </tr>
+                        <tr *ngFor="let a of assurances; index as index" class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ index + 1 }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ immobilisationNom(a.immobilisationId) }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ a.compagnie }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ a.police }}</div>
+                            </td>
+                            <td class="bg-transparent text-right text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ a.prime | currency:'XAF' }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ a.couverture || '---' }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ a.dateDebut | date:'dd/MM/yyyy' }}</div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ a.dateFin | date:'dd/MM/yyyy' }}</div>
+                            </td>
+                            <td class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <span class="px-2.5 py-0.5 rounded-full text-xs font-medium" [ngClass]="statutBadge(a.statut || '')">{{ a.statut }}</span>
+                            </td>
+                            <td class="bg-transparent text-right text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                    <app-custom-button (click)="supprimer(a.id)" text="Supprimer" color="primary" size="small"></app-custom-button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

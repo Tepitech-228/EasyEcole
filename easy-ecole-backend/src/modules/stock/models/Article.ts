@@ -14,9 +14,15 @@ export class Article extends Model<InferAttributes<Article>, InferCreationAttrib
   declare categorie?: NonAttribute<CategorieArticle>
   declare siteId: ForeignKey<Site['id'] | null>
   declare site?: NonAttribute<Site>
+  declare salleDeClasseId: CreationOptional<number | null>
   declare stockActuel: CreationOptional<number>
   declare stockMinimum: CreationOptional<number>
   declare prixUnitaire: CreationOptional<number>
+  declare statut: CreationOptional<string>
+  declare dateMiseEnService: CreationOptional<string>
+  declare dureeVieEstimee: CreationOptional<number>
+  declare dateFinVie: CreationOptional<string>
+  declare motifFinVie: CreationOptional<string>
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
 
@@ -34,10 +40,17 @@ Article.init({
   nom: { type: new DataTypes.STRING, allowNull: false },
   reference: { type: new DataTypes.STRING, allowNull: false, unique: true },
   description: { type: DataTypes.TEXT, allowNull: true },
+  categorieId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
   siteId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
+  salleDeClasseId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
   stockActuel: { type: DataTypes.INTEGER, defaultValue: 0 },
   stockMinimum: { type: DataTypes.INTEGER, defaultValue: 5 },
   prixUnitaire: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
+  statut: { type: DataTypes.ENUM('actif', 'obsolete', 'reforme', 'en_rupture'), defaultValue: 'actif' },
+  dateMiseEnService: { type: DataTypes.DATE, allowNull: true },
+  dureeVieEstimee: { type: DataTypes.INTEGER, allowNull: true },
+  dateFinVie: { type: DataTypes.DATE, allowNull: true },
+  motifFinVie: { type: DataTypes.TEXT, allowNull: true },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
 }, {

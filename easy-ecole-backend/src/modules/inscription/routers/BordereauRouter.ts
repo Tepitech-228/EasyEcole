@@ -42,6 +42,7 @@ router
      *         description: Liste des bordereaux
      */
     .get('/', BordereauController.getAllBordereaux)
+    .put('/batch/statut', [], BordereauController.batchStatut)
     /**
      * @openapi
      * /inscription/bordereaux/{id}:

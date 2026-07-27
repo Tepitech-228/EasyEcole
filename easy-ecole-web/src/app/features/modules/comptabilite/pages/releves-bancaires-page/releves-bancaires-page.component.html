@@ -1,0 +1,64 @@
+<app-header-title title="Relevés bancaires" subtitle="Import et consultation des relevés"></app-header-title>
+
+<div class="flex justify-end mb-4">
+  <app-custom-button text="Nouveau relevé" (click)="ouvrirFormulaire()"></app-custom-button>
+</div>
+
+<app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+<div *ngIf="!loading && items.length === 0" class="text-center py-8 text-gray-400">Aucun relevé bancaire</div>
+
+<div class="overflow-x-auto" *ngIf="!loading && items.length > 0">
+  <table class="w-full text-sm">
+    <thead><tr class="text-left border-b"><th>Compte</th><th>Date relevé</th><th>Solde initial</th><th>Solde final</th><th>Lignes</th><th>Actions</th></tr></thead>
+    <tbody>
+      <tr *ngFor="let item of items" class="border-b hover:bg-gray-50">
+        <td class="py-2">{{ getCompteLabel(item.compteBancaireId) }}</td>
+        <td>{{ item.dateReleve | date:'shortDate' }}</td>
+        <td>{{ item.soldeInitial | number }}</td>
+        <td>{{ item.soldeFinal | number }}</td>
+        <td><span class="text-xs text-gray-500">{{ item.lignes?.length || 0 }} lignes</span></td>
+        <td class="flex gap-1">
+          <button (click)="voirLignes(item)" class="text-indigo-500 hover:text-indigo-700 text-xs">👁</button>
+          <button (click)="ouvrirFormulaire(item)" class="text-blue-500 hover:text-blue-700 text-xs">✎</button>
+          <button (click)="supprimer(item.id)" class="text-red-500 hover:text-red-700 text-xs">🗑</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<app-custom-modal *ngIf="selectedReleve" [showModal]="!!selectedReleve" (onCloseModal)="fermerLignes()">
+  <h3 class="text-lg font-semibold mb-4">Lignes du relevé du {{ selectedReleve.dateReleve | date:'shortDate' }}</h3>
+  <div class="overflow-x-auto max-h-96">
+    <table class="w-full text-sm" *ngIf="selectedReleve.lignes?.length">
+      <thead><tr class="text-left border-b"><th>Date</th><th>Libellé</th><th>Débit</th><th>Crédit</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let l of selectedReleve.lignes" class="border-b hover:bg-gray-50">
+          <td class="py-1">{{ l.dateOperation | date:'shortDate' }}</td>
+          <td>{{ l.libelle }}</td>
+          <td class="text-red-600">{{ l.debit | number }}</td>
+          <td class="text-green-600">{{ l.credit | number }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div *ngIf="!selectedReleve.lignes?.length" class="text-center py-4 text-gray-400">Aucune ligne</div>
+  </div>
+</app-custom-modal>
+
+<app-custom-modal [showModal]="showForm" (onCloseModal)="fermerFormulaire()">
+  <h3 class="text-lg font-semibold mb-4">{{ editingId ? 'Modifier' : 'Nouveau' }} relevé bancaire</h3>
+  <div class="grid gap-3">
+    <select [(ngModel)]="formData.compteBancaireId" class="form-input">
+      <option value="">— Sélectionner un compte —</option>
+      <option *ngFor="let c of comptes" [value]="c.id">{{ c.libelle }} - {{ c.banque }}</option>
+    </select>
+    <input type="date" [(ngModel)]="formData.dateReleve" placeholder="Date du relevé" class="form-input">
+    <input type="number" [(ngModel)]="formData.soldeInitial" placeholder="Solde initial" class="form-input">
+    <input type="number" [(ngModel)]="formData.soldeFinal" placeholder="Solde final" class="form-input">
+    <div class="flex gap-2 justify-end mt-2">
+      <app-custom-button text="Annuler" [outlined]="true" (click)="fermerFormulaire()"></app-custom-button>
+      <app-custom-button text="Enregistrer" (click)="sauvegarder()"></app-custom-button>
+    </div>
+  </div>
+</app-custom-modal>

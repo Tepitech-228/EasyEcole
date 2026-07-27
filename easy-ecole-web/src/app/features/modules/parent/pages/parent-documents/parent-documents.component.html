@@ -1,0 +1,65 @@
+<div class="flex flex-col gap-6">
+  <div class="flex items-center justify-between flex-wrap gap-4">
+    <h1 class="text-2xl font-bold text-gray-900">Documents</h1>
+    <div *ngIf="enfants.length > 1" class="flex items-center gap-2">
+      <label class="text-sm font-medium text-gray-600">Enfant :</label>
+      <select
+        class="px-3 py-2 border border-gray-200 rounded-xl bg-white text-sm text-gray-700 outline-none cursor-pointer"
+        [ngModel]="selectedEnfant"
+        (ngModelChange)="selectedEnfant = $event; onEnfantChange()">
+        <option *ngFor="let e of enfants" [ngValue]="e">{{ e.prenoms }} {{ e.nom }}</option>
+      </select>
+    </div>
+  </div>
+
+  <div *ngIf="selectedEnfant" class="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-700">
+    {{ selectedEnfant.prenoms }} {{ selectedEnfant.nom }}
+    <span *ngIf="selectedEnfant.classe"> — {{ selectedEnfant.classe }}</span>
+  </div>
+
+  <ng-container *ngIf="!loading; else loadingState">
+    <div *ngIf="documents.length === 0" class="bg-white border border-gray-200 rounded-xl py-12 text-center text-sm text-gray-400">
+      Aucun document disponible
+    </div>
+
+    <div *ngIf="documents.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div *ngFor="let doc of documents" class="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-3 hover:shadow-sm transition-shadow">
+        <div class="flex items-start gap-3">
+          <div class="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#4f46e5" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-gray-800 truncate">{{ doc.titre }}</p>
+            <p class="text-xs text-gray-400">{{ doc.date }}</p>
+            <span class="inline-block mt-1 px-2 py-0.5 rounded-md text-xs font-medium bg-indigo-50 text-indigo-600">
+              {{ doc.type }}
+            </span>
+          </div>
+        </div>
+        <button
+          class="w-full flex items-center justify-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-all"
+          (click)="download(doc)">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Télécharger
+        </button>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-template #loadingState>
+    <div class="bg-white border border-gray-200 rounded-xl p-12 text-center text-sm text-gray-400">
+      <svg class="animate-spin h-5 w-5 text-blue-500 mx-auto mb-2" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+      </svg>
+      Chargement des documents...
+    </div>
+  </ng-template>
+</div>

@@ -19,6 +19,7 @@ const router = express.Router()
  */
 router
     .get('/', DemandeInscriptionController.getAllDemandesInscription)
+    .put('/batch/statut', [], DemandeInscriptionController.batchStatut)
 
 /**
  * @openapi

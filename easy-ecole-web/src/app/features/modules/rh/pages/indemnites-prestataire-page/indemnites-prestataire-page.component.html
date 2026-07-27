@@ -1,0 +1,142 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <app-header-title
+    title="Indemnités prestataires"
+    subtitle="Gérez les indemnités des stagiaires, consultants et prestataires">
+  </app-header-title>
+
+  <div *ngIf="prestataireIdFilter && selectedPrestataire" class="mb-4">
+    <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-red-50 text-red-700">
+      Prestataire: {{ selectedPrestataire.nom }} {{ selectedPrestataire.prenom }} ({{ selectedPrestataire.type }})
+      <a [routerLink]="['/rh/indemnites-prestataires']" class="ml-2 text-red-500 hover:text-red-700">&times;</a>
+    </span>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+    <div class="flex justify-end">
+      <app-custom-button *ngIf="rolesValue.isRessourcesHumaines || rolesValue.isAdmin || rolesValue.isInstitution" (click)="ouvrirFormulaire()" text="Nouvelle indemnité" color="primary"></app-custom-button>
+    </div>
+  </div>
+
+  <div *ngIf="showForm" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Nouvelle indemnité</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div *ngIf="!prestataireIdFilter">
+        <label class="block text-xs font-medium text-gray-500 mb-1">Prestataire *</label>
+        <select [(ngModel)]="formData.prestataireId" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+          <option value="">Sélectionner</option>
+          <option *ngFor="let p of prestataires" [value]="p.id">{{ p.nom }} {{ p.prenom }} - {{ p.type }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Type indemnité *</label>
+        <select [(ngModel)]="formData.typeIndemnite" (change)="onTypeIndemniteChange()" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+          <option value="">Sélectionner</option>
+          <option value="journalier">Journalier</option>
+          <option value="forfait">Forfait</option>
+          <option value="frais_deplacement">Frais de déplacement</option>
+          <option value="hebergement">Hébergement</option>
+          <option value="autre">Autre</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Libellé *</label>
+        <input [(ngModel)]="formData.libelle" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="Libellé" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Montant</label>
+        <input [value]="montantCalcule" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-700" readonly />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Devise</label>
+        <input [(ngModel)]="formData.devise" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="FCFA" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Nombre de jours</label>
+        <input [(ngModel)]="formData.nombreJours" (input)="onTypeIndemniteChange()" type="number" min="1" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="1" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Date début</label>
+        <input [(ngModel)]="formData.dateDebut" type="date" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Date fin</label>
+        <input [(ngModel)]="formData.dateFin" type="date" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Statut</label>
+        <select [(ngModel)]="formData.statut" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+          <option value="En attente">En attente</option>
+          <option value="Payé">Payé</option>
+          <option value="Annulé">Annulé</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Date de paiement</label>
+        <input [(ngModel)]="formData.datePaiement" type="date" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Mode de paiement</label>
+        <select [(ngModel)]="formData.modePaiement" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+          <option value="">Sélectionner</option>
+          <option value="Virement bancaire">Virement bancaire</option>
+          <option value="Chèque">Chèque</option>
+          <option value="Espèces">Espèces</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Validé par</label>
+        <input [(ngModel)]="formData.validePar" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="Nom du validateur" />
+      </div>
+      <div class="lg:col-span-3">
+        <label class="block text-xs font-medium text-gray-500 mb-1">Description</label>
+        <textarea [(ngModel)]="formData.description" rows="2" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="Description..."></textarea>
+      </div>
+    </div>
+    <div class="flex justify-end gap-3 mt-4">
+      <app-custom-button (click)="fermerFormulaire()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+      <app-custom-button (click)="creerIndemnite()" text="Créer" color="primary"></app-custom-button>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-100">
+        <thead>
+          <tr class="bg-gray-50/50">
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Prestataire</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Libellé</th>
+            <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Montant</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Jours</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Statut</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date paiement</th>
+            <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngFor="let i of filteredIndemnites; trackBy: trackByFn" class="hover:bg-gray-50/50 transition-colors">
+            <td class="px-5 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ getPrestataireNom(i.prestataireId) }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-500">{{ i.typeIndemnite || '-' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ i.libelle || '-' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-right text-sm text-gray-700 font-medium">{{ i.montant != null ? i.montant + ' ' + (i.devise || 'FCFA') : '-' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-center text-sm text-gray-500">{{ i.nombreJours || '-' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-center">
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-medium" [ngClass]="getStatutClass(i.statut)">{{ i.statut || '-' }}</span>
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-500">{{ i.datePaiement || '-' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-right">
+              <div class="flex items-center justify-end gap-2">
+                <app-custom-button *ngIf="rolesValue.isRessourcesHumaines || rolesValue.isAdmin || rolesValue.isInstitution" (click)="supprimer(i.id)" text="Supprimer" color="primary" [outlined]="true"></app-custom-button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+    <div *ngIf="!loading && filteredIndemnites.length === 0" class="px-5 py-12 text-center">
+      <svg class="mx-auto h-12 w-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <p class="mt-4 text-sm text-gray-500">Aucune indemnité enregistrée</p>
+    </div>
+  </div>
+</div>

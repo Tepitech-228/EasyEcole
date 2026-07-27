@@ -1,0 +1,150 @@
+.dossiers-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.page-head h2 {
+  font-family: 'Sora', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #131f45;
+  margin: 0 0 4px;
+}
+
+.page-head p {
+  font-size: 13px;
+  color: #8696a0;
+  margin: 0;
+}
+
+.search-bar {
+  background: #fff;
+  border: 1px solid #e6e8f0;
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.type-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.search-inputs {
+  display: flex;
+  gap: 8px;
+}
+
+.search-input {
+  flex: 1;
+  border: 1px solid #e6e8f0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: #3b5bff;
+}
+
+.btn-primary {
+  background: #3b5bff;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-primary:hover {
+  background: #2a4ae0;
+}
+
+.table-container {
+  background: #fff;
+  border: 1px solid #e6e8f0;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.result-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e6e8f0;
+  font-size: 13px;
+}
+
+.ged-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ged-table th {
+  text-align: left;
+  padding: 14px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #8696a0;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  background: #f5f6fa;
+  border-bottom: 1px solid #e6e8f0;
+}
+
+.ged-table td {
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #1b2140;
+  border-bottom: 1px solid #f0f1f5;
+}
+
+.ged-table tbody tr:hover {
+  background: #f8f9ff;
+}
+
+.cell-title {
+  max-width: 260px;
+}
+
+.cell-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.action-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #e6e8f0;
+  border-radius: 8px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6e7391;
+  cursor: pointer;
+  transition: all 0.12s;
+  text-decoration: none;
+}
+
+.action-btn:hover {
+  background: #f5f6fa;
+  color: #3b5bff;
+  border-color: #3b5bff;
+}
+
+.loading-state,
+.empty-state {
+  padding: 60px 20px;
+  text-align: center;
+  color: #8696a0;
+}
+
+.empty-state svg {
+  margin-bottom: 12px;
+}

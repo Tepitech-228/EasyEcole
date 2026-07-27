@@ -3,6 +3,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ChapitreCours } from 'src/app/data/modules/inscription/models/ChapitreCours.model';
 import { ChapitreCoursService } from 'src/app/data/modules/inscription/services/chapitre-cours.service';
 import { RolesValueType } from 'src/app/data/types/RolesValueType';
+import { sanitizeHtml } from 'src/app/shared/utils/sanitize-html.util';
 
 @Component({
   selector: 'app-chapitre-card',
@@ -27,7 +28,7 @@ export class ChapitreCardComponent implements OnInit {
 
   getContenu(): SafeHtml | null {
     if (this.chapitre.description) {
-      return this.sanitizer.bypassSecurityTrustHtml(this.chapitre.description)
+      return this.sanitizer.bypassSecurityTrustHtml(sanitizeHtml(this.chapitre.description))
     }
 
     return null

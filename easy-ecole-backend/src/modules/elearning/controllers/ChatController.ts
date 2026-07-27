@@ -100,13 +100,16 @@ export default class ChatController {
             });
             const participants = req.body.participants || [];
             for (const pid of participants) {
-                if (Number(pid) !== Number(utilisateurId)) {
-                    await ParticipantSalon.create({
-                        salonId: salon.id,
-                        utilisateurId: pid,
-                        role: 'membre'
-                    });
+                const participantId = Number(pid);
+                if (!participantId) {
+                    return res.status(400).json({ success: false, message: `Participant invalide : ${pid}` });
                 }
+                if (participantId === Number(utilisateurId)) continue;
+                await ParticipantSalon.create({
+                    salonId: salon.id,
+                    utilisateurId: participantId,
+                    role: 'membre'
+                });
             }
             const created = await Salon.findByPk(salon.id, {
                 include: [

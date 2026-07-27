@@ -13,4 +13,7 @@ export class AmortissementService {
     create(item: Amortissement): Observable<Amortissement> { return this.httpClient.post<Amortissement>(`${this.SERVICE_URL}`, item) }
     update(item: Amortissement): Observable<Amortissement> { return this.httpClient.put<Amortissement>(`${this.SERVICE_URL}/${item.id!}`, item) }
     delete(id: string): Observable<any> { return this.httpClient.delete(`${this.SERVICE_URL}/${id}`) }
+    genererPourImmobilisation(immobilisationId: string): Observable<any> {
+        return this.httpClient.post(`${this.SERVICE_URL}/generer/${immobilisationId}`, {})
+    }
 }

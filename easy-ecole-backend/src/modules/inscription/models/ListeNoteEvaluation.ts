@@ -1,4 +1,4 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { Cours } from "./Cours";
@@ -9,7 +9,7 @@ import { PublicationNote } from "./PublicationNote";
 import { AnneeAcademique } from "./AnneeAcademique";
 
 export class ListeNoteEvaluation extends Model<InferAttributes<ListeNoteEvaluation>, InferCreationAttributes<ListeNoteEvaluation>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare date: Date
   declare heureDebut: Date
   declare heureFin: Date

@@ -11,19 +11,20 @@ import ProgressionRouter from "./routers/ProgressionRouter"
 import CertificatRouter from "./routers/CertificatRouter"
 import ProgressionApprenantRouter from "./routers/ProgressionApprenantRouter"
 import Authenticate from "../../core/middlewares/Authenticate"
+import { InscriptionComplete } from "../../core/middlewares/InscriptionComplete"
 
 const router = express.Router()
 
 router
-    .use('/cours', [Authenticate], CoursEnLigneRouter)
-    .use('/modules', [Authenticate], ModuleRouter)
-    .use('/supports', [Authenticate], SupportRouter)
-    .use('/chat', [Authenticate], ChatRouter)
-    .use('/notifications', [Authenticate], NotificationRouter)
-    .use('/devoirs', [Authenticate], DevoirRouter)
-    .use('/quiz', [Authenticate], QuizRouter)
-    .use('/progression', [Authenticate], ProgressionRouter)
-    .use('/progression-apprenant', [Authenticate], ProgressionApprenantRouter)
-    .use('/certificats', [Authenticate], CertificatRouter)
+    .use('/cours', [Authenticate, InscriptionComplete], CoursEnLigneRouter)
+    .use('/modules', [Authenticate, InscriptionComplete], ModuleRouter)
+    .use('/supports', [Authenticate, InscriptionComplete], SupportRouter)
+    .use('/chat', [Authenticate, InscriptionComplete], ChatRouter)
+    .use('/notifications', [Authenticate, InscriptionComplete], NotificationRouter)
+    .use('/devoirs', [Authenticate, InscriptionComplete], DevoirRouter)
+    .use('/quiz', [Authenticate, InscriptionComplete], QuizRouter)
+    .use('/progression', [Authenticate, InscriptionComplete], ProgressionRouter)
+    .use('/progression-apprenant', [Authenticate, InscriptionComplete], ProgressionApprenantRouter)
+    .use('/certificats', [Authenticate, InscriptionComplete], CertificatRouter)
 
 export default router

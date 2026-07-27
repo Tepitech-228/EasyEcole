@@ -8,6 +8,10 @@ export interface DemandeDocument {
   statut: string;
   date: Date;
   fraisPayes: boolean;
+  parcoursId?: string | number;
+  niveauEtudeId?: string | number;
+  classeId?: string | number;
+  anneeAcademiqueId?: string | number;
   etudiant?: any;
   typeDocument?: TypeDocument;
   documentDelivre?: DocumentDelivre;

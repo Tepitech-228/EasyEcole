@@ -11,28 +11,42 @@ import { CategorieImmobilisationService } from 'src/app/data/modules/immobilisat
 export class ListeCategoriesPageComponent extends BaseComponentClass implements OnInit {
 
     categories: CategorieImmobilisation[] = []
+    loading = false
+    searchTerm = ''
 
     constructor(
         private categorieImmobilisationService: CategorieImmobilisationService) {
         super()
-        this.getCategories()
     }
 
     ngOnInit(): void {
+        this.loadCategories()
     }
 
-    private getCategories(): void {
+    loadCategories(): void {
+        this.loading = true
         this.categorieImmobilisationService.getAll()
-            .subscribe(
-                {
-                    next: (res) => {
-                        this.categories = res
-                    },
-                    error: (err) => {
-                        console.log(err)
-                    },
-                }
-            )
+            .subscribe({
+                next: (res) => {
+                    this.categories = res
+                    this.loading = false
+                },
+                error: () => this.loading = false
+            })
+    }
+
+    get totalCategories(): number {
+        return this.categories.length
+    }
+
+    getHasAmortissementCount(): number {
+        return this.categories.filter(c => c.tauxAmortissement && c.tauxAmortissement > 0).length
+    }
+
+    getAvgDureeVie(): number {
+        if (!this.categories.length) return 0
+        const sum = this.categories.reduce((s, c) => s + (c.dureeVie || 0), 0)
+        return Math.round(sum / this.categories.length)
     }
 
 }

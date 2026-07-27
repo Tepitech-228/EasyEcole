@@ -14,7 +14,7 @@ async function seed() {
     require('../../modules/auth/models/_associations');
     require('../../modules/orientation/models/_associations');
     require('../../modules/inscription/models/_associations');
-    require('../../modules/inscription/models/UniteEnseignement');
+
     require('../../modules/inscription/models/Mcc');
     require('../../modules/inscription/models/RegleEvaluation');
     require('../../modules/inscription/models/SessionExamen');
@@ -46,6 +46,23 @@ async function seed() {
     require('../../modules/communication/seed');
     require('../../modules/bulletins/seed');
     require('../../modules/ged/seed');
+
+    try {
+        await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
+        await sequelize.sync({ force: true });
+        await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
+    } catch (syncError: any) {
+        if (
+            syncError.name === 'SequelizeUnknownConstraintError' ||
+            syncError?.parent?.code === 'ER_FK_INCORRECT_OPTION' ||
+            syncError?.parent?.code === 'ER_CANT_CREATE_TABLE' ||
+            syncError?.parent?.code === 'ER_TOO_MANY_KEYS'
+        ) {
+            console.warn('Warning (FK constraint ignored):', syncError.message);
+        } else {
+            throw syncError;
+        }
+    }
 
     const M = (name: string) => sequelize.model(name);
 
@@ -126,7 +143,6 @@ async function seed() {
     const InsTypeNote = M('InsTypeNoteEvaluation');
     const InsListeNote = M('InsListeNoteEvaluation');
     const InsNoteEval = M('InsNoteEvaluation');
-    const InsUE = M('InsUniteEnseignement');
     const InsMcc = M('InsMcc');
     const InsSession = M('InsSessionExamen');
     const InsAbsence = M('InsAbsence');
@@ -222,80 +238,81 @@ async function seed() {
     // ════════════════════════════════════════════════════
     console.log('\n── UTILISATEURS ──');
 
-    const admin = await AutU.create({ nom: 'Admin', prenoms: 'Système', identifiant: 'admin', email: 'admin@ust.ci', motDePasse: hash, role: 'admin', contact: '+2250100000000', dateVerificationEmail: new Date() });
-    console.log('  ✓ Admin');
+    const admin = await AutU.create({ nom: 'TETE', prenoms: 'Ekue Patrice', identifiant: 'admin', email: 'tepitechbuild@gmail.com', motDePasse: hash, role: 'admin', contact: '+22890000000' });
+    console.log('  ✓ Admin — TETE Ekue Patrice (OTP)');
 
-    const uInst = await AutU.create({ nom: 'Koffi', prenoms: 'Philippe', identifiant: 'institution', email: 'institution@ust.ci', motDePasse: hash, role: 'institution', contact: '+2250101000001', dateVerificationEmail: new Date() });
-    const adrInst = await AutAdrI.create({ pays: 'Côte d\'Ivoire', ville: 'Abidjan', quartier: 'Cocody Angré', boitePostale: 'BP 1500 Abidjan', prorietaireBoitePostale: 'UST', telMobile: '+2250101000001' });
+    const uInst = await AutU.create({ nom: 'Kodjo', prenoms: 'Mensah', identifiant: 'institution', email: 'direction@easyecole.tg', motDePasse: hash, role: 'institution', contact: '+2280101000001', dateVerificationEmail: new Date() });
+    const adrInst = await AutAdrI.create({ pays: 'Côte d\'Ivoire', ville: 'Abidjan', quartier: 'Cocody Angré', boitePostale: 'BP 1500 Abidjan', prorietaireBoitePostale: 'UST', telMobile: '+2280101000001' });
     await AutI.create({ dateNaissance: new Date('1970-05-20'), lieuNaissance: 'Abidjan', fonction: 'Recteur', adresseId: adrInst.id, utilisateurId: uInst.id });
-    console.log('  ✓ Institution — UST');
+    console.log('  ✓ Institution — Kodjo Mensah');
 
-    const uEns1 = await AutU.create({ nom: 'Konan', prenoms: 'Yves', identifiant: 'prof-maths', email: 'yves.konan@ust.ci', motDePasse: hash, role: 'enseignant', contact: '+2250102000001', dateVerificationEmail: new Date() });
-    const adrEns1 = await AutAdrE.create({ pays: 'Côte d\'Ivoire', ville: 'Abidjan', quartier: 'Cocody', boitePostale: 'BP 101', prorietaireBoitePostale: 'Yves Konan', telMobile: '+2250102000001' });
+    const uEns1 = await AutU.create({ nom: 'Kossi', prenoms: 'Yawo', identifiant: 'prof-maths', email: 'prof.maths@easyecole.tg', motDePasse: hash, role: 'enseignant', contact: '+2280102000001' });
+    const adrEns1 = await AutAdrE.create({ pays: 'Côte d\'Ivoire', ville: 'Abidjan', quartier: 'Cocody', boitePostale: 'BP 101', prorietaireBoitePostale: 'Yawo Kossi', telMobile: '+2280102000001' });
     const ens1 = await AutE.create({ dateNaissance: new Date('1982-03-10'), lieuNaissance: 'Abidjan', fonction: 'Professeur de Mathématiques', adresseId: adrEns1.id, utilisateurId: uEns1.id });
-    console.log('  ✓ Enseignant — Yves Konan (Maths)');
+    console.log('  ✓ Enseignant — Yawo Kossi (Maths / OTP)');
 
-    const uEns2 = await AutU.create({ nom: 'N\'Dri', prenoms: 'Aline', identifiant: 'prof-info', email: 'aline.ndri@ust.ci', motDePasse: hash, role: 'enseignant', contact: '+2250102000002', dateVerificationEmail: new Date() });
-    const adrEns2 = await AutAdrE.create({ pays: 'Côte d\'Ivoire', ville: 'Abidjan', quartier: 'Marcory', boitePostale: 'BP 102', prorietaireBoitePostale: 'Aline N\'Dri', telMobile: '+2250102000002' });
+    const uEns2 = await AutU.create({ nom: 'Kossi', prenoms: 'Maria', identifiant: 'prof-info', email: 'prof.maria@easyecole.tg', motDePasse: hash, role: 'enseignant', contact: '+2280102000002', dateVerificationEmail: new Date() });
+    const adrEns2 = await AutAdrE.create({ pays: 'Côte d\'Ivoire', ville: 'Abidjan', quartier: 'Marcory', boitePostale: 'BP 102', prorietaireBoitePostale: 'Maria Kossi', telMobile: '+2280102000002' });
     const ens2 = await AutE.create({ dateNaissance: new Date('1985-07-22'), lieuNaissance: 'Bouaké', fonction: 'Professeur d\'Informatique', adresseId: adrEns2.id, utilisateurId: uEns2.id });
-    console.log('  ✓ Enseignant — Aline N\'Dri (Info)');
+    console.log('  ✓ Enseignant — Maria Kossi (Info)');
 
-    const uEns3 = await AutU.create({ nom: 'Touré', prenoms: 'Moussa', identifiant: 'prof-gestion', email: 'moussa.toure@ust.ci', motDePasse: hash, role: 'enseignant', contact: '+2250102000003', dateVerificationEmail: new Date() });
-    const adrEns3 = await AutAdrE.create({ pays: 'Côte d\'Ivoire', ville: 'Abidjan', quartier: 'Plateau', boitePostale: 'BP 103', prorietaireBoitePostale: 'Moussa Touré', telMobile: '+2250102000003' });
+    const uEns3 = await AutU.create({ nom: 'Yawo', prenoms: 'Jean', identifiant: 'prof-gestion', email: 'prof.jean@easyecole.tg', motDePasse: hash, role: 'enseignant', contact: '+2280102000003', dateVerificationEmail: new Date() });
+    const adrEns3 = await AutAdrE.create({ pays: 'Côte d\'Ivoire', ville: 'Abidjan', quartier: 'Plateau', boitePostale: 'BP 103', prorietaireBoitePostale: 'Jean Yawo', telMobile: '+2280102000003' });
     const ens3 = await AutE.create({ dateNaissance: new Date('1980-11-15'), lieuNaissance: 'Odienné', fonction: 'Professeur de Gestion', adresseId: adrEns3.id, utilisateurId: uEns3.id });
-    console.log('  ✓ Enseignant — Moussa Touré (Gestion)');
+    console.log('  ✓ Enseignant — Jean Yawo (Gestion)');
 
-    const uEns4 = await AutU.create({ nom: 'Bamba', prenoms: 'Fatou', identifiant: 'prof-droit', email: 'fatou.bamba@ust.ci', motDePasse: hash, role: 'enseignant', contact: '+2250102000004', dateVerificationEmail: new Date() });
-    const adrEns4 = await AutAdrE.create({ pays: 'Côte d\'Ivoire', ville: 'Abidjan', quartier: 'Yopougon', boitePostale: 'BP 104', prorietaireBoitePostale: 'Fatou Bamba', telMobile: '+2250102000004' });
+    const uEns4 = await AutU.create({ nom: 'Edem', prenoms: 'Ama', identifiant: 'prof-droit', email: 'prof.ama@easyecole.tg', motDePasse: hash, role: 'enseignant', contact: '+2280102000004', dateVerificationEmail: new Date() });
+    const adrEns4 = await AutAdrE.create({ pays: 'Côte d\'Ivoire', ville: 'Abidjan', quartier: 'Yopougon', boitePostale: 'BP 104', prorietaireBoitePostale: 'Ama Edem', telMobile: '+2280102000004' });
     const ens4 = await AutE.create({ dateNaissance: new Date('1988-09-05'), lieuNaissance: 'Man', fonction: 'Professeur de Droit', adresseId: adrEns4.id, utilisateurId: uEns4.id });
-    console.log('  ✓ Enseignant — Fatou Bamba (Droit)');
+    console.log('  ✓ Enseignant — Ama Edem (Droit)');
 
     const bq = await AutB.create({ nom: 'Société Générale Côte d\'Ivoire' });
     console.log('  ✓ Banque');
 
-    const uCai1 = await AutU.create({ nom: 'Koné', prenoms: 'Mariam', identifiant: 'caissier1', email: 'mariam.kone@ust.ci', motDePasse: hash, role: 'caissier_banque', contact: '+2250103000001', dateVerificationEmail: new Date() });
-    const adrCai1 = await AutAdrC.create({ pays: 'Côte d\'Ivoire', ville: 'Abidjan', quartier: 'Cocody', boitePostale: 'BP 105', prorietaireBoitePostale: 'Mariam Koné', telMobile: '+2250103000001' });
+    const uCai1 = await AutU.create({ nom: 'Atsu', prenoms: 'Koffi', identifiant: 'caissier1', email: 'caissier.atsu@easyecole.tg', motDePasse: hash, role: 'caissier_banque', contact: '+2280103000001', dateVerificationEmail: new Date() });
+    const adrCai1 = await AutAdrC.create({ pays: 'Côte d\'Ivoire', ville: 'Abidjan', quartier: 'Cocody', boitePostale: 'BP 105', prorietaireBoitePostale: 'Koffi Atsu', telMobile: '+2280103000001' });
     await AutC.create({ dateNaissance: new Date('1992-06-18'), lieuNaissance: 'Abidjan', fonction: 'Caissière Principale', adresseId: adrCai1.id, utilisateurId: uCai1.id, banqueId: bq.id });
-    console.log('  ✓ Caissier — Mariam Koné');
+    console.log('  ✓ Caissier — Koffi Atsu');
 
-    const uCai2 = await AutU.create({ nom: 'Diaby', prenoms: 'Ibrahim', identifiant: 'caissier2', email: 'ibrahim.diaby@ust.ci', motDePasse: hash, role: 'caissier_banque', contact: '+2250103000002', dateVerificationEmail: new Date() });
-    const adrCai2 = await AutAdrC.create({ pays: 'Côte d\'Ivoire', ville: 'Abidjan', quartier: 'Adjamé', boitePostale: 'BP 106', prorietaireBoitePostale: 'Ibrahim Diaby', telMobile: '+2250103000002' });
+    const uCai2 = await AutU.create({ nom: 'Komlan', prenoms: 'Ami', identifiant: 'caissier2', email: 'caissier.ami@easyecole.tg', motDePasse: hash, role: 'caissier_banque', contact: '+2280103000002', dateVerificationEmail: new Date() });
+    const adrCai2 = await AutAdrC.create({ pays: 'Côte d\'Ivoire', ville: 'Abidjan', quartier: 'Adjamé', boitePostale: 'BP 106', prorietaireBoitePostale: 'Ami Komlan', telMobile: '+2280103000002' });
     await AutC.create({ dateNaissance: new Date('1990-01-25'), lieuNaissance: 'Korhogo', fonction: 'Caissier', adresseId: adrCai2.id, utilisateurId: uCai2.id, banqueId: bq.id });
-    console.log('  ✓ Caissier — Ibrahim Diaby');
+    console.log('  ✓ Caissier — Ami Komlan');
 
-    const uCom1 = await AutU.create({ nom: 'Kouassi', prenoms: 'Laurent', identifiant: 'comite1', email: 'laurent.kouassi@ust.ci', motDePasse: hash, role: 'comite_orientation', contact: '+2250104000001', dateVerificationEmail: new Date() });
+    const uCom1 = await AutU.create({ nom: 'Mensah', prenoms: 'Yao', identifiant: 'comite1', email: 'comite.yao@easyecole.tg', motDePasse: hash, role: 'comite_orientation', contact: '+2280104000001', dateVerificationEmail: new Date() });
     await AutCO.create({ fonction: 'Président du Comité', utilisateurId: uCom1.id });
-    console.log('  ✓ Comité orientation — Laurent Kouassi');
+    console.log('  ✓ Comité orientation — Yao Mensah');
 
-    const uCom2 = await AutU.create({ nom: 'Soro', prenoms: 'Nathalie', identifiant: 'comite2', email: 'nathalie.soro@ust.ci', motDePasse: hash, role: 'comite_orientation', contact: '+2250104000002', dateVerificationEmail: new Date() });
+    const uCom2 = await AutU.create({ nom: 'Kokou', prenoms: 'Adjo', identifiant: 'comite2', email: 'comite.adjo@easyecole.tg', motDePasse: hash, role: 'comite_orientation', contact: '+2280104000002', dateVerificationEmail: new Date() });
     await AutCO.create({ fonction: 'Membre du Comité', utilisateurId: uCom2.id });
-    console.log('  ✓ Comité orientation — Nathalie Soro');
+    console.log('  ✓ Comité orientation — Adjo Kokou');
 
-    const uCab = await AutU.create({ nom: 'Coulibaly', prenoms: 'Mamadou', identifiant: 'comptable1', email: 'mamadou.coulibaly@ust.ci', motDePasse: hash, role: 'cabinet_comptable', contact: '+2250106000001', dateVerificationEmail: new Date() });
+    const uCab = await AutU.create({ nom: 'Amavi', prenoms: 'Kossiwa', identifiant: 'comptable1', email: 'comptable.kossiwa@easyecole.tg', motDePasse: hash, role: 'cabinet_comptable', contact: '+2280106000001', dateVerificationEmail: new Date() });
     console.log('  ✓ Cabinet comptable — Mamadou Coulibaly');
 
-    interface AppSeed { nom: string; prenoms: string; identifiant: string; email: string; dateNais: Date; lieuNais: string; bp: string; tel: string; quartier: string; ville: string; pere: string; mere: string; professionPere: string; professionMere: string; nomPrevenir: string; telPrevenir: string; }
+    interface AppSeed { nom: string; prenoms: string; identifiant: string; email: string; dateNais: Date; lieuNais: string; bp: string; tel: string; quartier: string; ville: string; pere: string; mere: string; professionPere: string; professionMere: string; nomPrevenir: string; telPrevenir: string; otp: boolean; }
     const apprenants: AppSeed[] = [
-        { nom: 'Traoré', prenoms: 'Aminata', identifiant: 'etudiant1', email: 'aminata.traore@etu.ust.ci', dateNais: new Date('2002-05-10'), lieuNais: 'Abidjan', bp: 'BP 1001', tel: '+2250501000001', quartier: 'Cocody Angré', ville: 'Abidjan', pere: 'Drissa Traoré', mere: 'Maimouna Koné', professionPere: 'Fonctionnaire', professionMere: 'Commerçante', nomPrevenir: 'Drissa Traoré', telPrevenir: '+2250701000001' },
-        { nom: 'Kouamé', prenoms: 'Jean', identifiant: 'etudiant2', email: 'jean.kouame@etu.ust.ci', dateNais: new Date('2001-08-22'), lieuNais: 'Bouaké', bp: 'BP 1002', tel: '+2250502000002', quartier: 'Belle-ville', ville: 'Bouaké', pere: 'Paul Kouamé', mere: 'Marie N\'Dri', professionPere: 'Enseignant', professionMere: 'Ménagère', nomPrevenir: 'Paul Kouamé', telPrevenir: '+2250702000002' },
-        { nom: 'Bamba', prenoms: 'Mariam', identifiant: 'etudiant3', email: 'mariam.bamba@etu.ust.ci', dateNais: new Date('2003-01-15'), lieuNais: 'Abidjan', bp: 'BP 1003', tel: '+2250503000003', quartier: 'Yopougon', ville: 'Abidjan', pere: 'Moussa Bamba', mere: 'Fatou Diarra', professionPere: 'Entrepreneur', professionMere: 'Infirmière', nomPrevenir: 'Fatou Diarra', telPrevenir: '+2250703000003' },
-        { nom: 'Soro', prenoms: 'Léon', identifiant: 'etudiant4', email: 'leon.soro@etu.ust.ci', dateNais: new Date('2002-11-30'), lieuNais: 'Korhogo', bp: 'BP 1004', tel: '+2250504000004', quartier: 'Konankro', ville: 'Korhogo', pere: 'Yacouba Soro', mere: 'Gnoumata Soro', professionPere: 'Agriculteur', professionMere: 'Ménagère', nomPrevenir: 'Yacouba Soro', telPrevenir: '+2250704000004' },
-        { nom: 'Yao', prenoms: 'Esther', identifiant: 'etudiant5', email: 'esther.yao@etu.ust.ci', dateNais: new Date('2003-04-05'), lieuNais: 'Daloa', bp: 'BP 1005', tel: '+2250505000005', quartier: 'Commerce', ville: 'Daloa', pere: 'Kouassi Yao', mere: 'Akissi Yao', professionPere: 'Commerçant', professionMere: 'Institutrice', nomPrevenir: 'Kouassi Yao', telPrevenir: '+2250705000005' },
-        { nom: 'Coulibaly', prenoms: 'Adama', identifiant: 'etudiant6', email: 'adama.coulibaly@etu.ust.ci', dateNais: new Date('2001-07-19'), lieuNais: 'Séguela', bp: 'BP 1006', tel: '+2250506000006', quartier: 'Centre', ville: 'Séguela', pere: 'Mamadou Coulibaly', mere: 'Hawa Touré', professionPere: 'Transporteur', professionMere: 'Coiffeuse', nomPrevenir: 'Mamadou Coulibaly', telPrevenir: '+2250706000006' },
-        { nom: 'Koffi', prenoms: 'Aya', identifiant: 'etudiant7', email: 'aya.koffi@etu.ust.ci', dateNais: new Date('2002-10-12'), lieuNais: 'Abidjan', bp: 'BP 1007', tel: '+2250507000007', quartier: 'Cocody', ville: 'Abidjan', pere: 'Bernard Koffi', mere: 'Thérèse Koffi', professionPere: 'Médecin', professionMere: 'Ménagère', nomPrevenir: 'Bernard Koffi', telPrevenir: '+2250707000007' },
-        { nom: 'Diomandé', prenoms: 'Yannick', identifiant: 'etudiant8', email: 'yannick.diomande@etu.ust.ci', dateNais: new Date('2003-03-18'), lieuNais: 'Man', bp: 'BP 1008', tel: '+2250508000008', quartier: 'Libreville', ville: 'Man', pere: 'Alphonse Diomandé', mere: 'Odette Diomandé', professionPere: 'Instituteur', professionMere: 'Ménagère', nomPrevenir: 'Alphonse Diomandé', telPrevenir: '+2250708000008' },
-        { nom: 'N\'Dri', prenoms: 'Grace', identifiant: 'etudiant9', email: 'grace.ndri@etu.ust.ci', dateNais: new Date('2002-06-25'), lieuNais: 'Abidjan', bp: 'BP 1009', tel: '+2250509000009', quartier: 'Marcory', ville: 'Abidjan', pere: 'Michel N\'Dri', mere: 'Emma N\'Dri', professionPere: 'Avocat', professionMere: 'Secrétaire', nomPrevenir: 'Michel N\'Dri', telPrevenir: '+2250709000009' },
-        { nom: 'Touré', prenoms: 'Moussa Junior', identifiant: 'etudiant10', email: 'moussa.junior@etu.ust.ci', dateNais: new Date('2001-12-01'), lieuNais: 'Odienné', bp: 'BP 1010', tel: '+2250510000010', quartier: 'Plateau', ville: 'Odienné', pere: 'Lamine Touré', mere: 'Kadiatou Touré', professionPere: 'Commerçant', professionMere: 'Ménagère', nomPrevenir: 'Lamine Touré', telPrevenir: '+2250710000010' },
-        { nom: 'Guei', prenoms: 'Sarah', identifiant: 'etudiant11', email: 'sarah.guei@etu.ust.ci', dateNais: new Date('2003-09-08'), lieuNais: 'Gagnoa', bp: 'BP 1011', tel: '+2250511000011', quartier: 'Centre Ville', ville: 'Gagnoa', pere: 'Joseph Guei', mere: 'Marie Guei', professionPere: 'Fonctionnaire', professionMere: 'Commerçante', nomPrevenir: 'Joseph Guei', telPrevenir: '+2250711000011' },
-        { nom: 'Kouadio', prenoms: 'Arnaud', identifiant: 'etudiant12', email: 'arnaud.kouadio@etu.ust.ci', dateNais: new Date('2002-02-14'), lieuNais: 'Yamoussoukro', bp: 'BP 1012', tel: '+2250512000012', quartier: 'Habitat', ville: 'Yamoussoukro', pere: 'Pierre Kouadio', mere: 'Louise Kouadio', professionPere: 'Ingénieur', professionMere: 'Enseignante', nomPrevenir: 'Pierre Kouadio', telPrevenir: '+2250712000012' },
-        { nom: 'Fofana', prenoms: 'Mariam', identifiant: 'etudiant13', email: 'mariam.fofana@etu.ust.ci', dateNais: new Date('2002-08-30'), lieuNais: 'Bouaké', bp: 'BP 1013', tel: '+2250513000013', quartier: 'Koko', ville: 'Bouaké', pere: 'Ousmane Fofana', mere: 'Aïssata Fofana', professionPere: 'Chef d\'entreprise', professionMere: 'Médecin', nomPrevenir: 'Ousmane Fofana', telPrevenir: '+2250713000013' },
-        { nom: 'Akéko', prenoms: 'Georges', identifiant: 'etudiant14', email: 'georges.akeko@etu.ust.ci', dateNais: new Date('2001-04-17'), lieuNais: 'Abengourou', bp: 'BP 1014', tel: '+2250514000014', quartier: 'Centre', ville: 'Abengourou', pere: 'Simon Akéko', mere: 'Odette Akéko', professionPere: 'Instituteur', professionMere: 'Ménagère', nomPrevenir: 'Simon Akéko', telPrevenir: '+2250714000014' },
-        { nom: 'Soumahoro', prenoms: 'Fatima', identifiant: 'etudiant15', email: 'fatima.soumahoro@etu.ust.ci', dateNais: new Date('2003-12-03'), lieuNais: 'Abidjan', bp: 'BP 1015', tel: '+2250515000015', quartier: 'Treichville', ville: 'Abidjan', pere: 'Mamadou Soumahoro', mere: 'Bintou Soumahoro', professionPere: 'Commerçant', professionMere: 'Coiffeuse', nomPrevenir: 'Mamadou Soumahoro', telPrevenir: '+2250715000015' },
+        { nom: 'Test', prenoms: 'OTP Etudiant', identifiant: 'etudiant-otp', email: 'tepitechcorp@gmail.com', dateNais: new Date('2002-01-01'), lieuNais: 'Lomé', bp: 'BP 2000', tel: '+22890000001', quartier: 'Centre', ville: 'Lomé', pere: 'Parent Test', mere: 'Mère Test', professionPere: 'Fonctionnaire', professionMere: 'Ménagère', nomPrevenir: 'Parent Test', telPrevenir: '+22890000002', otp: true },
+        { nom: 'Mensah', prenoms: 'Komlan', identifiant: 'etudiant1', email: 'mensah.komlan@etu.ust.ci', dateNais: new Date('2002-05-10'), lieuNais: 'Lomé', bp: 'BP 1001', tel: '+2280501000001', quartier: 'Cocody Angré', ville: 'Abidjan', pere: 'Komlan Mensah', mere: 'Afi Mensah', professionPere: 'Fonctionnaire', professionMere: 'Commerçante', nomPrevenir: 'Komlan Mensah', telPrevenir: '+2280701000001', otp: false },
+        { nom: 'Kodjo', prenoms: 'Yawo', identifiant: 'etudiant2', email: 'yawo.kodjo@etu.ust.ci', dateNais: new Date('2001-08-22'), lieuNais: 'Kara', bp: 'BP 1002', tel: '+2280502000002', quartier: 'Belle-ville', ville: 'Bouaké', pere: 'Yawo Kossi', mere: 'Adjo Kossi', professionPere: 'Enseignant', professionMere: 'Ménagère', nomPrevenir: 'Yawo Kossi', telPrevenir: '+2280702000002', otp: false },
+        { nom: 'Adjo', prenoms: 'Afi', identifiant: 'etudiant3', email: 'afi.adjo@etu.ust.ci', dateNais: new Date('2003-01-15'), lieuNais: 'Lomé', bp: 'BP 1003', tel: '+2280503000003', quartier: 'Yopougon', ville: 'Abidjan', pere: 'Koffi Adjo', mere: 'Essi Adjo', professionPere: 'Entrepreneur', professionMere: 'Infirmière', nomPrevenir: 'Essi Adjo', telPrevenir: '+2280703000003', otp: false },
+        { nom: 'Kodjo', prenoms: 'Edem', identifiant: 'etudiant4', email: 'edem.kodjo@etu.ust.ci', dateNais: new Date('2002-11-30'), lieuNais: 'Sokodé', bp: 'BP 1004', tel: '+2280504000004', quartier: 'Konankro', ville: 'Korhogo', pere: 'Edem Kodjo', mere: 'Ama Kodjo', professionPere: 'Agriculteur', professionMere: 'Ménagère', nomPrevenir: 'Edem Kodjo', telPrevenir: '+2280704000004', otp: false },
+        { nom: 'Koffi', prenoms: 'Ami', identifiant: 'etudiant5', email: 'ami.koffi@etu.ust.ci', dateNais: new Date('2003-04-05'), lieuNais: 'Atakpamé', bp: 'BP 1005', tel: '+2280505000005', quartier: 'Commerce', ville: 'Daloa', pere: 'Koffi Ami', mere: 'Adzo Ami', professionPere: 'Commerçant', professionMere: 'Institutrice', nomPrevenir: 'Koffi Ami', telPrevenir: '+2280705000005', otp: false },
+        { nom: 'Mawuli', prenoms: 'Kokou', identifiant: 'etudiant6', email: 'kokou.mawuli@etu.ust.ci', dateNais: new Date('2001-07-19'), lieuNais: 'Kpalimé', bp: 'BP 1006', tel: '+2280506000006', quartier: 'Centre', ville: 'Séguela', pere: 'Kokou Mawuli', mere: 'Afi Mawuli', professionPere: 'Transporteur', professionMere: 'Coiffeuse', nomPrevenir: 'Kokou Mawuli', telPrevenir: '+2280706000006', otp: false },
+        { nom: 'Atsu', prenoms: 'Yao', identifiant: 'etudiant7', email: 'yao.atsu@etu.ust.ci', dateNais: new Date('2002-10-12'), lieuNais: 'Lomé', bp: 'BP 1007', tel: '+2280507000007', quartier: 'Cocody', ville: 'Abidjan', pere: 'Yao Atsu', mere: 'Sena Atsu', professionPere: 'Médecin', professionMere: 'Ménagère', nomPrevenir: 'Yao Atsu', telPrevenir: '+2280707000007', otp: false },
+        { nom: 'Sena', prenoms: 'Amavi', identifiant: 'etudiant8', email: 'amavi.sena@etu.ust.ci', dateNais: new Date('2003-03-18'), lieuNais: 'Tsévié', bp: 'BP 1008', tel: '+2280508000008', quartier: 'Libreville', ville: 'Man', pere: 'Amavi Sena', mere: 'Kossiwa Sena', professionPere: 'Instituteur', professionMere: 'Ménagère', nomPrevenir: 'Amavi Sena', telPrevenir: '+2280708000008', otp: false },
+        { nom: 'Kossi', prenoms: 'Komlan', identifiant: 'etudiant9', email: 'kossi.komlan@etu.ust.ci', dateNais: new Date('2002-06-25'), lieuNais: 'Aného', bp: 'BP 1009', tel: '+2280509000009', quartier: 'Marcory', ville: 'Abidjan', pere: 'Komlan Mensah', mere: 'Adjo Mensah', professionPere: 'Avocat', professionMere: 'Secrétaire', nomPrevenir: 'Komlan Mensah', telPrevenir: '+2280709000009', otp: false },
+        { nom: 'Adzo', prenoms: 'Kossiwa', identifiant: 'etudiant10', email: 'kossiwa.adzo@etu.ust.ci', dateNais: new Date('2001-12-01'), lieuNais: 'Dapaong', bp: 'BP 1010', tel: '+2280510000010', quartier: 'Plateau', ville: 'Odienné', pere: 'Kossiwa Adzo', mere: 'Ama Adzo', professionPere: 'Commerçant', professionMere: 'Ménagère', nomPrevenir: 'Kossiwa Adzo', telPrevenir: '+2280710000010', otp: false },
+        { nom: 'Yawo', prenoms: 'Kodjo', identifiant: 'etudiant11', email: 'kodjo.yawo@etu.ust.ci', dateNais: new Date('2003-09-08'), lieuNais: 'Bassar', bp: 'BP 1011', tel: '+2280511000011', quartier: 'Centre Ville', ville: 'Gagnoa', pere: 'Kodjo Yawo', mere: 'Afi Yawo', professionPere: 'Fonctionnaire', professionMere: 'Commerçante', nomPrevenir: 'Kodjo Yawo', telPrevenir: '+2280711000011', otp: false },
+        { nom: 'Kokou', prenoms: 'Mawuli', identifiant: 'etudiant12', email: 'mawuli.kokou@etu.ust.ci', dateNais: new Date('2002-02-14'), lieuNais: 'Mango', bp: 'BP 1012', tel: '+2280512000012', quartier: 'Habitat', ville: 'Yamoussoukro', pere: 'Mawuli Kokou', mere: 'Essi Kokou', professionPere: 'Ingénieur', professionMere: 'Enseignante', nomPrevenir: 'Mawuli Kokou', telPrevenir: '+2280712000012', otp: false },
+        { nom: 'Atsu', prenoms: 'Kossi', identifiant: 'etudiant13', email: 'kossi.atsu@etu.ust.ci', dateNais: new Date('2002-08-30'), lieuNais: 'Lomé', bp: 'BP 1013', tel: '+2280513000013', quartier: 'Koko', ville: 'Bouaké', pere: 'Kossi Atsu', mere: 'Adjo Atsu', professionPere: 'Chef d\'entreprise', professionMere: 'Médecin', nomPrevenir: 'Kossi Atsu', telPrevenir: '+2280713000013', otp: false },
+        { nom: 'Edem', prenoms: 'Mensah', identifiant: 'etudiant14', email: 'mensah.edem@etu.ust.ci', dateNais: new Date('2001-04-17'), lieuNais: 'Lomé', bp: 'BP 1014', tel: '+2280514000014', quartier: 'Centre', ville: 'Abengourou', pere: 'Mensah Edem', mere: 'Ama Edem', professionPere: 'Instituteur', professionMere: 'Ménagère', nomPrevenir: 'Mensah Edem', telPrevenir: '+2280714000014', otp: false },
+        { nom: 'Komlan', prenoms: 'Yawo', identifiant: 'etudiant15', email: 'yawo.komlan@etu.ust.ci', dateNais: new Date('2003-12-03'), lieuNais: 'Kpalimé', bp: 'BP 1015', tel: '+2280515000015', quartier: 'Treichville', ville: 'Abidjan', pere: 'Yawo Komlan', mere: 'Afi Komlan', professionPere: 'Commerçant', professionMere: 'Coiffeuse', nomPrevenir: 'Yawo Komlan', telPrevenir: '+2280715000015', otp: false },
     ];
-    console.log('  ✓ 15 étudiants créés');
+    console.log('  ✓ 16 étudiants créés');
 
     for (const a of apprenants) {
-        const u = await AutU.create({ nom: a.nom, prenoms: a.prenoms, identifiant: a.identifiant, email: a.email, motDePasse: hash, role: 'apprenant', contact: a.tel, dateVerificationEmail: new Date() });
+        const u = await AutU.create({ nom: a.nom, prenoms: a.prenoms, identifiant: a.identifiant, email: a.email, motDePasse: hash, role: 'apprenant', contact: a.tel, ...(a.otp ? {} : { dateVerificationEmail: new Date() }) });
         const adr = await AutAdrA.create({ pays: 'Côte d\'Ivoire', ville: a.ville, quartier: a.quartier, boitePostale: a.bp, prorietaireBoitePostale: `${a.nom} ${a.prenoms}`, telMobile: a.tel });
         const ident = await AutIdA.create({ nationalite: 'Ivoirienne', ethnie: 'Akan', religion: 'Chrétienne', situationMatrimoniale: 'celibataire', etatPhysique: 'valide' });
         const infoP = await AutInfoP.create({ nomPrenomsPere: a.pere, professionPere: a.professionPere, nomPrenomsMere: a.mere, professionMere: a.professionMere });
@@ -432,7 +449,7 @@ async function seed() {
     const appUsers = await AutU.findAll({ where: { role: 'apprenant' }, order: [['id', 'ASC']] });
     const appIds = appUsers.map((u: any) => u.id);
 
-    const etuParcours = [parcIns1, parcIns1, parcIns2, parcIns2, parcIns3, parcIns3, parcIns4, parcIns4, parcIns1, parcIns2, parcIns3, parcIns4, parcIns1, parcIns2, parcIns3];
+    const etuParcours = [parcIns1, parcIns1, parcIns2, parcIns2, parcIns3, parcIns3, parcIns4, parcIns4, parcIns1, parcIns2, parcIns3, parcIns4, parcIns1, parcIns2, parcIns3, parcIns4];
     const etuCoursMap: Record<string, any[]> = { [parcIns1.id]: [cours1, cours2, cours6, cours7], [parcIns2.id]: [cours3, cours8], [parcIns3.id]: [cours4], [parcIns4.id]: [cours5, cours8] };
     for (const p of [parcIns1, parcIns2, parcIns3, parcIns4]) {
         if (!etuCoursMap[p.id]) etuCoursMap[p.id] = [cours1, cours2];
@@ -579,41 +596,17 @@ async function seed() {
     console.log('  ✓ Règles d\'évaluation LMD (5 règles)');
 
     // ════════════════════════════════════════════════════
-    //  UNITÉS D'ENSEIGNEMENT (UE) — LMD
-    // ════════════════════════════════════════════════════
-    console.log('\n── UNITÉS D\'ENSEIGNEMENT ──');
-
-    const ueMapping: Record<number, { code: string; libelle: string; semestre: string; creditEcts: number }[]> = {
-        [parcIns1.id]: [
-            { code: 'UE1-INFO', libelle: 'Fondamentaux Informatique', semestre: 'semestre1', creditEcts: 12 },
-            { code: 'UE2-INFO', libelle: 'Mathématiques et Algorithmique', semestre: 'semestre1', creditEcts: 10 },
-            { code: 'UE3-INFO', libelle: 'Langues et Communication', semestre: 'semestre1', creditEcts: 8 },
-        ],
-        [parcIns2.id]: [
-            { code: 'UE1-GEST', libelle: 'Comptabilité Fondamentale', semestre: 'semestre1', creditEcts: 12 },
-            { code: 'UE2-GEST', libelle: 'Économie et Gestion', semestre: 'semestre1', creditEcts: 10 },
-            { code: 'UE3-GEST', libelle: 'Langues et Communication', semestre: 'semestre1', creditEcts: 8 },
-        ],
-    };
-    for (const [parcId, ues] of Object.entries(ueMapping)) {
-        for (const ue of ues) {
-            await InsUE.create({ code: ue.code, libelle: ue.libelle, semestre: ue.semestre, parcoursId: +parcId, creditEcts: ue.creditEcts, objectifs: ue.libelle });
-        }
-    }
-    console.log('  ✓ Unités d\'Enseignement (6 UEs)');
-
-    // ════════════════════════════════════════════════════
     //  MCC (Matrice des Coefficients)
     // ════════════════════════════════════════════════════
     console.log('\n── MCC ──');
-    const allUEs = await InsUE.findAll();
-    for (const ue of allUEs) {
-        const parcCours = await InsCours.findAll({ where: { parcoursId: ue.parcoursId }, limit: 2 });
-        for (const cours of parcCours) {
-            await InsMcc.create({ ueId: ue.id, coursId: cours.id, coefficient: 1, creditEcts: ue.creditEcts ?? 0 / Math.max(parcCours.length, 1) });
-        }
+    const allCoursMcc = await InsCours.findAll();
+    for (const c of allCoursMcc) {
+        await InsMcc.findOrCreate({
+            where: { coursId: c.id, session: 'session1' },
+            defaults: { coursId: c.id, coefficient: 1, session: 'session1' }
+        });
     }
-    console.log('  ✓ Lignes MCC (UE ↔ Cours)');
+    console.log(`  ✓ ${allCoursMcc.length} lignes MCC`);
 
     // ════════════════════════════════════════════════════
     //  SESSIONS D'EXAMEN
@@ -1101,55 +1094,79 @@ async function seed() {
     console.log('  ✓ Suggestions');
 
     // ════════════════════════════════════════════════════
-    //  E-LEARNING
+    //  E-LEARNING (tables potentiellement absentes à cause de FK)
     // ════════════════════════════════════════════════════
     console.log('\n── E-LEARNING ──');
 
-    const elearnC1 = await ElearnCours.create({ coursId: String(cours1.id), titre: 'Algorithmique et Programmation', description: 'Cours en ligne d\'initiation à la programmation', statut: 'actif' });
-    const elearnC2 = await ElearnCours.create({ coursId: String(cours7.id), titre: 'Bases de données', description: 'Cours en ligne de SQL et conception BD', statut: 'actif' });
-    console.log('  ✓ Cours en ligne');
+    async function seedElearning() {
+        const elearnC1 = await ElearnCours.create({ coursId: String(cours1.id), titre: 'Algorithmique et Programmation', description: 'Cours en ligne d\'initiation à la programmation', statut: 'actif' });
+        const elearnC2 = await ElearnCours.create({ coursId: String(cours7.id), titre: 'Bases de données', description: 'Cours en ligne de SQL et conception BD', statut: 'actif' });
+        console.log('  ✓ Cours en ligne');
 
-    const mod1 = await ElearnModule.create({ coursId: elearnC1.id, titre: 'Introduction à Python', description: 'Variables, types et structures de contrôle', ordre: 1 });
-    const mod2 = await ElearnModule.create({ coursId: elearnC1.id, titre: 'Fonctions et modules', description: 'Définition de fonctions et import de modules', ordre: 2 });
-    const mod3 = await ElearnModule.create({ coursId: elearnC2.id, titre: 'SQL Fondamentaux', description: 'Requêtes SELECT, INSERT, UPDATE', ordre: 1 });
-    console.log('  ✓ Modules');
+        const mod1 = await ElearnModule.create({ coursId: elearnC1.id, titre: 'Introduction à Python', description: 'Variables, types et structures de contrôle', ordre: 1 });
+        const mod2 = await ElearnModule.create({ coursId: elearnC1.id, titre: 'Fonctions et modules', description: 'Définition de fonctions et import de modules', ordre: 2 });
+        const mod3 = await ElearnModule.create({ coursId: elearnC2.id, titre: 'SQL Fondamentaux', description: 'Requêtes SELECT, INSERT, UPDATE', ordre: 1 });
+        console.log('  ✓ Modules');
 
-    const sup1 = await ElearnSupport.create({ moduleId: mod1.id, type: 'PDF', fichierOriginal: 'python_intro.pdf', fichierCompresse: 'python_intro_comp.pdf', taille: '2.5 MB' });
-    const sup2 = await ElearnSupport.create({ moduleId: mod1.id, type: 'VIDEO', fichierOriginal: 'python_video.mp4', dureeVideo: '45:30', taille: '120 MB' });
-    const sup3 = await ElearnSupport.create({ moduleId: mod3.id, type: 'PDF', fichierOriginal: 'sql_fundamentals.pdf', taille: '1.8 MB' });
-    console.log('  ✓ Supports');
+        const sup1 = await ElearnSupport.create({ moduleId: mod1.id, type: 'PDF', fichierOriginal: 'python_intro.pdf', fichierCompresse: 'python_intro_comp.pdf', taille: '2.5 MB' });
+        const sup2 = await ElearnSupport.create({ moduleId: mod1.id, type: 'VIDEO', fichierOriginal: 'python_video.mp4', dureeVideo: '45:30', taille: '120 MB' });
+        const sup3 = await ElearnSupport.create({ moduleId: mod3.id, type: 'PDF', fichierOriginal: 'sql_fundamentals.pdf', taille: '1.8 MB' });
+        console.log('  ✓ Supports');
 
-    const sal1 = await ElearnSalon.create({ coursId: elearnC1.id, titre: 'Chat Programmation', type: 'cours' });
-    const sal2 = await ElearnSalon.create({ coursId: elearnC2.id, titre: 'Chat Base de données', type: 'cours' });
-    console.log('  ✓ Salons');
+        const sal1 = await ElearnSalon.create({ coursId: elearnC1.id, titre: 'Chat Programmation', type: 'cours' });
+        const sal2 = await ElearnSalon.create({ coursId: elearnC2.id, titre: 'Chat Base de données', type: 'cours' });
+        console.log('  ✓ Salons');
 
-    for (const u of etuUsers) {
-        await ElearnPart.create({ salonId: sal1.id, utilisateurId: u.id as any });
-        await ElearnPart.create({ salonId: sal2.id, utilisateurId: u.id as any });
+        try {
+            for (const u of etuUsers) {
+                await ElearnPart.create({ salonId: sal1.id, utilisateurId: u.id as any });
+                await ElearnPart.create({ salonId: sal2.id, utilisateurId: u.id as any });
+            }
+            console.log('  ✓ Participants salons');
+        } catch (partError: any) {
+            console.warn('  ⚠ Participants salons ignoré:', partError.message);
+        }
+
+        await ElearnMsg.create({ salonId: sal1.id, utilisateurId: etuUsers[0]?.id as any ?? admin.id, message: 'Bonjour à tous !', date: new Date(), lu: false });
+        await ElearnMsg.create({ salonId: sal1.id, utilisateurId: ens2.id as any, message: 'Bonjour ! Le cours commence cette semaine.', date: new Date(), lu: true });
+        await ElearnMsg.create({ salonId: sal1.id, utilisateurId: etuUsers[1]?.id as any ?? admin.id, message: 'Merci professeur !', date: new Date(), lu: false });
+        await ElearnMsg.create({ salonId: sal2.id, utilisateurId: ens2.id as any, message: 'Nouveau module SQL disponible.', date: new Date(), lu: false });
+        await ElearnMsg.create({ salonId: sal2.id, utilisateurId: etuUsers[0]?.id as any ?? admin.id, message: 'Super, merci !', date: new Date(), lu: false });
+        console.log('  ✓ Messages');
+
+        try {
+            for (const u of etuUsers.slice(0, 3)) {
+                await ElearnNotif.create({ utilisateurId: u.id as any, type: 'cours', message: 'Nouveau cours disponible : Algorithmique', lu: false, date: new Date() });
+            }
+            await ElearnNotif.create({ utilisateurId: admin.id as any, type: 'system', message: 'Mise à jour système effectuée', lu: true, date: new Date() });
+            console.log('  ✓ Notifications');
+        } catch (notifError: any) {
+            console.warn('  ⚠ Notifications ignorées:', notifError.message);
+        }
+
+        try {
+            for (const sup of [sup1, sup2, sup3]) {
+                await ElearnComment.create({ supportId: sup.id, utilisateurId: etuUsers[0]?.id as any ?? admin.id, message: 'Très bon support !', date: new Date() });
+            }
+            console.log('  ✓ Commentaires');
+        } catch (commError: any) {
+            console.warn('  ⚠ Commentaires ignorés:', commError.message);
+        }
+
+        try {
+            await ElearnMail.create({ supportId: sup1.id, emailEnvoye: 'etudiant1@etu.ust.ci', dateEnvoi: new Date() });
+            await ElearnMail.create({ supportId: sup3.id, emailEnvoye: 'etudiant2@etu.ust.ci', dateEnvoi: new Date() });
+            console.log('  ✓ Couplages mail');
+        } catch (mailError: any) {
+            console.warn('  ⚠ Couplages mail ignorés:', mailError.message);
+        }
     }
-    console.log('  ✓ Participants salons');
 
-    await ElearnMsg.create({ salonId: sal1.id, utilisateurId: etuUsers[0]?.id as any ?? admin.id, message: 'Bonjour à tous !', date: new Date(), lu: false });
-    await ElearnMsg.create({ salonId: sal1.id, utilisateurId: ens2.id as any, message: 'Bonjour ! Le cours commence cette semaine.', date: new Date(), lu: true });
-    await ElearnMsg.create({ salonId: sal1.id, utilisateurId: etuUsers[1]?.id as any ?? admin.id, message: 'Merci professeur !', date: new Date(), lu: false });
-    await ElearnMsg.create({ salonId: sal2.id, utilisateurId: ens2.id as any, message: 'Nouveau module SQL disponible.', date: new Date(), lu: false });
-    await ElearnMsg.create({ salonId: sal2.id, utilisateurId: etuUsers[0]?.id as any ?? admin.id, message: 'Super, merci !', date: new Date(), lu: false });
-    console.log('  ✓ Messages');
-
-    for (const u of etuUsers.slice(0, 3)) {
-        await ElearnNotif.create({ utilisateurId: u.id as any, type: 'cours', message: 'Nouveau cours disponible : Algorithmique', lu: false, date: new Date() });
+    try {
+        await seedElearning();
+    } catch (elearnError: any) {
+        console.warn('  ⚠ Section E-LEARNING ignorée:', elearnError.message);
     }
-    await ElearnNotif.create({ utilisateurId: admin.id as any, type: 'system', message: 'Mise à jour système effectuée', lu: true, date: new Date() });
-    console.log('  ✓ Notifications');
-
-    for (const sup of [sup1, sup2, sup3]) {
-        await ElearnComment.create({ supportId: sup.id, utilisateurId: etuUsers[0]?.id as any ?? admin.id, message: 'Très bon support !', date: new Date() });
-    }
-    console.log('  ✓ Commentaires');
-
-    await ElearnMail.create({ supportId: sup1.id, emailEnvoye: 'etudiant1@etu.ust.ci', dateEnvoi: new Date() });
-    await ElearnMail.create({ supportId: sup3.id, emailEnvoye: 'etudiant2@etu.ust.ci', dateEnvoi: new Date() });
-    console.log('  ✓ Couplages mail');
 
     // ════════════════════════════════════════════════════
     //  REPORTING
@@ -1165,7 +1182,8 @@ async function seed() {
     for (let ci = 0; ci < cursusList.length; ci++) {
         const cur = cursusList[ci];
         await InsEquiv.create({ cursusApprenantId: cur.id, coursSource: 'MATH101 - Université Félix Houphouët-Boigny', coursDestinationId: cours2.id, institutionOrigine: 'Université Félix Houphouët-Boigny', creditEcts: 4, validePar: admin.id, dateValidation: new Date(), documentJustificatif: 'releve_ufhb.pdf' });
-        await InsDisp.create({ cursusApprenantId: cur.id, ueId: allUEs[0]?.id ?? 1, motif: 'Étudiant déjà certifié dans cette UE (diplôme obtenu)', validePar: admin.id, dateValidation: new Date(), statut: 'validee' });
+        const [coursDisp] = await InsCours.findAll({ limit: 1 });
+        await InsDisp.create({ cursusApprenantId: cur.id, coursId: coursDisp?.id ?? 1, motif: 'Étudiant déjà certifié dans cette UE (diplôme obtenu)', validePar: admin.id, dateValidation: new Date(), statut: 'validee' });
     }
     console.log('  ✓ Équivalences et dispenses');
 
@@ -1180,6 +1198,28 @@ async function seed() {
         await JuryMembre.create({ deliberationId: d.id, utilisateurId: uEns2.id, role: 'secretaire', presence: true });
     }
     console.log('  ✓ Membres du jury');
+
+    // ════════════════════════════════════════════════════
+    //  CATALOGUE LMD COMPLET (10 filières)
+    // ════════════════════════════════════════════════════
+    console.log('\n── CATALOGUE LMD ──');
+    try {
+        const { seedCataloguePart1 } = require('./seed-catalogue-part1');
+        await seedCataloguePart1();
+        console.log('  ✓ Partie 1 : INF, GCI, GEE');
+    } catch (e: any) { console.warn('  ⚠ Partie 1 ignorée:', e.message); }
+
+    try {
+        const { seedCataloguePart2 } = require('./seed-catalogue-part2');
+        await seedCataloguePart2();
+        console.log('  ✓ Partie 2 : GES, CPT, ECO');
+    } catch (e: any) { console.warn('  ⚠ Partie 2 ignorée:', e.message); }
+
+    try {
+        const { seedCataloguePart3 } = require('./seed-catalogue-part3');
+        await seedCataloguePart3();
+        console.log('  ✓ Partie 3 : DRO, MKT, COM, EDU');
+    } catch (e: any) { console.warn('  ⚠ Partie 3 ignorée:', e.message); }
 
     console.log('\n═══════════════════════════════════════════');
     console.log('  SEED TERMINÉ — UST');

@@ -36,6 +36,7 @@ router
      *         description: Demande créée
      */
     .post('/', DemandeDocumentController.createDemandeDocument)
+    .put('/batch/statut', DemandeDocumentController.batchStatut)
     /**
      * @openapi
      * /scolarite/demandesDocument/{id}:

@@ -1,11 +1,11 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { PresenceCoursParticipant } from "./PresenceCoursParticipant";
 import { ListePresence } from "./ListePresence";
 
 export class Presence extends Model<InferAttributes<Presence>, InferCreationAttributes<Presence>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare date: Date
   declare heureDebut: Date
   declare heureFin: Date

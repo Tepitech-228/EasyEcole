@@ -1,10 +1,10 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { Session } from "./Session";
 
 export class EtapeInscription extends Model<InferAttributes<EtapeInscription>, InferCreationAttributes<EtapeInscription>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare libelle: string
   declare ordre: number
 

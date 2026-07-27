@@ -1,4 +1,4 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { DemandeInscription } from "./DemandeInscription";
@@ -20,13 +20,11 @@ DemandeInscriptionDossier.init({
   },
   demandeId: {
     type: DataTypes.INTEGER.UNSIGNED,
-    allowNull: false,
-    unique: 'demande-dossier'
+    allowNull: false
   },
   dossierId: {
     type: DataTypes.INTEGER.UNSIGNED,
-    allowNull: false,
-    unique: 'demande-dossier'
+    allowNull: false
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

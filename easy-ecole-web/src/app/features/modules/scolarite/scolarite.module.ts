@@ -11,14 +11,14 @@ import { MesReclamationsPageComponent } from './pages/mes-reclamations-page/mes-
 import { TraiterReclamationsPageComponent } from './pages/traiter-reclamations-page/traiter-reclamations-page.component';
 import { RegistresPageComponent } from './pages/registres-page/registres-page.component';
 import { CalendrierPageComponent } from './pages/calendrier-page/calendrier-page.component';
-import { DisciplinePageComponent } from './pages/discipline-page/discipline-page.component';
+import { SanctionsDisciplinePageComponent } from './pages/sanctions-discipline-page/sanctions-discipline-page.component';
 import { ConseilsPageComponent } from './pages/conseils-page/conseils-page.component';
 import { BibliothequePageComponent } from './pages/bibliotheque-page/bibliotheque-page.component';
 import { GestionBibliothequePageComponent } from './pages/gestion-bibliotheque-page/gestion-bibliotheque-page.component';
 import { MonComptePageComponent } from './pages/mon-compte-page/mon-compte-page.component';
 import { DecisionsPassagePageComponent } from './pages/decisions-passage-page/decisions-passage-page.component';
 import { ReorientationPageComponent } from './pages/reorientation-page/reorientation-page.component';
-import { SanctionsPageComponent } from './pages/sanctions-page/sanctions-page.component';
+
 import { DiplomesPageComponent } from './pages/diplomes-page/diplomes-page.component';
 import { DemandesVAEPageComponent } from './pages/demandes-vae-page/demandes-vae-page.component';
 
@@ -30,14 +30,13 @@ import { DemandesVAEPageComponent } from './pages/demandes-vae-page/demandes-vae
     TraiterReclamationsPageComponent,
     RegistresPageComponent,
     CalendrierPageComponent,
-    DisciplinePageComponent,
+    SanctionsDisciplinePageComponent,
     ConseilsPageComponent,
     BibliothequePageComponent,
     GestionBibliothequePageComponent,
     MonComptePageComponent,
     DecisionsPassagePageComponent,
     ReorientationPageComponent,
-    SanctionsPageComponent,
     DiplomesPageComponent,
     DemandesVAEPageComponent
   ],

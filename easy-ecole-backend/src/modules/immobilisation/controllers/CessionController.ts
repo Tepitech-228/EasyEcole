@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Cession } from "../models/Cession";
+import { Immobilisation } from "../models/Immobilisation";
+import { creerEcritureAutomatique } from "../../comptabilite/helpers/ComptabiliteHelper";
 
 export default class CessionController {
     static async getAll(req: Request, res: Response): Promise<Response> {
@@ -53,6 +55,53 @@ export default class CessionController {
             if (item == null) return res.status(404).json({ success: false, message: "Non trouvé" });
             await item.destroy();
             return res.status(200).json({ success: true, message: "Supprimé" });
+        } catch (error) { return res.status(500).json({ success: false, error: error }); }
+    }
+    static async approuver(req: Request, res: Response): Promise<Response | null> {
+        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT || (req as any).utilisateurRole == RolesUtilisateur.ENSEIGNANT || (req as any).utilisateurRole == RolesUtilisateur.CAISSIER_BANQUE) {
+            return res.status(403).json({ success: false });
+        }
+        try {
+            const cession = await Cession.findByPk(req.params.id);
+            if (cession == null) return res.status(404).json({ success: false, message: "Non trouvé" });
+
+            await cession.update({
+                approuvePar: req.body.approuvePar,
+                dateApprobation: new Date()
+            });
+
+            if (cession.typeOperation === 'cession') {
+                const immobilisation = await Immobilisation.findByPk(cession.immobilisationId);
+                if (immobilisation) {
+                    await creerEcritureAutomatique({
+                        journalCode: 'OD',
+                        compteDebit: '462',
+                        compteCredit: '281',
+                        montant: cession.prixCession,
+                        libelle: `Cession ${immobilisation.nom}`,
+                        moduleSource: 'immobilisation',
+                        referenceModuleId: cession.id
+                    });
+                }
+            }
+
+            return res.status(200).send(cession);
+        } catch (error) { return res.status(500).json({ success: false, error: error }); }
+    }
+    static async refuser(req: Request, res: Response): Promise<Response | null> {
+        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT || (req as any).utilisateurRole == RolesUtilisateur.ENSEIGNANT || (req as any).utilisateurRole == RolesUtilisateur.CAISSIER_BANQUE) {
+            return res.status(403).json({ success: false });
+        }
+        try {
+            const cession = await Cession.findByPk(req.params.id);
+            if (cession == null) return res.status(404).json({ success: false, message: "Non trouvé" });
+
+            await cession.update({
+                motifRefus: req.body.motif,
+                dateApprobation: new Date()
+            });
+
+            return res.status(200).send(cession);
         } catch (error) { return res.status(500).json({ success: false, error: error }); }
     }
 }

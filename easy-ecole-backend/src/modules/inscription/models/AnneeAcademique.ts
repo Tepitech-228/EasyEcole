@@ -1,10 +1,10 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, NonAttribute, ForeignKey, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, NonAttribute, ForeignKey, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { NiveauEtude } from "./NiveauEtude";
 
 export class AnneeAcademique extends Model<InferAttributes<AnneeAcademique>, InferCreationAttributes<AnneeAcademique>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare libelle: string
   declare description: CreationOptional<string>
   

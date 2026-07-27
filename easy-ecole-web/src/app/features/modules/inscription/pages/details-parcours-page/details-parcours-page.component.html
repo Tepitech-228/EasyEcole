@@ -98,7 +98,7 @@
         </div>
     </div>
     <div class="w-full mb-8">
-        <app-details-section text="Cours">
+        <app-details-section text="UE">
             <div *ngIf="rolesValue.isInstitution" class="relative">
                 <div>
                     <button (click)="showNouveauCoursModal = true"
@@ -108,121 +108,97 @@
                 </div>
             </div>
         </app-details-section>
-        <div *ngIf="parcours.cours!.length == 0" class="text-sm text-gray-400 text-center py-8">Aucun cours</div>
-        <div *ngIf="parcours.cours!.length != 0" class="overflow-x-auto">
-            <div class="py-2 inline-block min-w-full">
-                <div class="overflow-hidden">
-                    <table class="min-w-full">
-                        <thead class="bg-gray-100 border-b">
-                            <tr>
-                                <!-- <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                    <div class="px-2">
-                                        #
-                                    </div>
-                                </th> -->
-                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                    <div class="px-2">
-                                        Code
-                                    </div>
-                                </th>
-                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                    <div class="px-2">
-                                        Libellé
-                                    </div>
-                                </th>
-                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                    <div class="px-2">
-                                        Crédit / Coefficient
-                                    </div>
-                                </th>
-                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                    <div class="px-2">
-                                        Année / Classe
-                                    </div>
-                                </th>
-                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                    <div class="px-2">
-                                        Semestre
-                                    </div>
-                                </th>
-                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-center">
-                                    <div class="px-2">
-                                        Est obligatoire
-                                    </div>
-                                </th>
-                                <th *ngIf="rolesValue.isInstitution" scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
-                                    <div class="px-2">
-                                        Action
-                                    </div>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr *ngFor="let cours of parcours.cours!; index as index"
-                                class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
-                                <!-- <td
-                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                    <div
-                                        class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
-                                        {{ index + 1 }}
-                                    </div>
-                                </td> -->
-                                <td
-                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ cours.code }}</div>
-                                </td>
-                                <td
-                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ cours.intitule }}</div>
-                                </td>
-                                <td
-                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ cours.credit ?? '---' }}</div>
-                                </td>
-                                <td
-                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
-                                        <span>{{cours.classe?.libelle}}</span>
-                                    </div>
-                                </td>
-                                <td
-                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                    <div [ngSwitch]="cours.semestre" class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
-                                        <span *ngSwitchCase="semestresParcours.SEMESTRE1">1</span>
-                                        <span *ngSwitchCase="semestresParcours.SEMESTRE2">2</span>
-                                        <span *ngSwitchCase="semestresParcours.SEMESTRE3">3</span>
-                                        <span *ngSwitchCase="semestresParcours.SEMESTRE4">4</span>
-                                        <span *ngSwitchCase="semestresParcours.SEMESTRE5">5</span>
-                                        <span *ngSwitchCase="semestresParcours.SEMESTRE6">6</span>
-                                    </div>
-                                </td>
-                                <td
-                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                    <div
-                                        class="block flex justify-center gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
-                                        <div class="flex items-center gap-x-3">
-                                            <input type="checkbox" disabled [checked]="cours.estObligatoire" class="h-4 w-4 border-gray-600 text-indigo-600 focus:ring-indigo-600">
-                                        </div>
-                                    </div>
-                                </td>
-                                <td *ngIf="rolesValue.isInstitution" class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                    <div
-                                        class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
-                                        <app-custom-button (click)="openEditerCoursModal(cours)" text="Editer" color="blue"></app-custom-button>
-                                        <app-custom-button (click)="openSupprimerCoursModal(cours)" text="Supprimer" color="red"></app-custom-button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+        <div *ngIf="parcours.cours!.length == 0" class="text-sm text-gray-400 text-center py-8">Aucune UE</div>
+        <div *ngIf="parcours.cours!.length != 0" class="space-y-6">
+            <ng-container *ngFor="let group of ueListeGroupesParSemestre">
+                <div class="bg-gray-50 rounded-lg px-4 py-2 text-sm font-semibold text-gray-700 border">
+                    Semestre {{ group.semestre.replace('semestre', '') }} ({{ group.cours.length }} UE)
                 </div>
-            </div>
+                <div class="overflow-x-auto -mt-4">
+                    <div class="py-2 inline-block min-w-full">
+                        <div class="overflow-hidden">
+                            <table class="min-w-full">
+                                <thead class="bg-gray-100 border-b">
+                                    <tr>
+                                        <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                            <div class="px-2">Code</div>
+                                        </th>
+                                        <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                            <div class="px-2">Libellé</div>
+                                        </th>
+                                        <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                            <div class="px-2">Crédit</div>
+                                        </th>
+                                        <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                            <div class="px-2">Crédits ECTS</div>
+                                        </th>
+                                        <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                            <div class="px-2">Classe</div>
+                                        </th>
+                                        <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                            <div class="px-2">Volume</div>
+                                        </th>
+                                        <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                            <div class="px-2">Coef</div>
+                                        </th>
+                                        <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-center">
+                                            <div class="px-2">Oblig.</div>
+                                        </th>
+                                        <th *ngIf="rolesValue.isInstitution" scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
+                                            <div class="px-2">Action</div>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngFor="let cours of group.cours"
+                                        class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                        <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ cours.code }}</div>
+                                        </td>
+                                        <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ cours.intitule }}</div>
+                                        </td>
+                                        <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ cours.credit ?? '---' }}</div>
+                                        </td>
+                                        <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ cours.creditEcts ?? '---' }}</div>
+                                        </td>
+                                        <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{cours.classe?.libelle}}</div>
+                                        </td>
+                                        <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ cours.volumeHoraire ?? '---' }}</div>
+                                        </td>
+                                        <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ cours.coefficient ?? '---' }}</div>
+                                        </td>
+                                        <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <div class="block flex justify-center gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                <div class="flex items-center gap-x-3">
+                                                    <input type="checkbox" disabled [checked]="cours.estObligatoire" class="h-4 w-4 border-gray-600 text-indigo-600 focus:ring-indigo-600">
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td *ngIf="rolesValue.isInstitution" class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <div class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                                <app-custom-button (click)="openEditerCoursModal(cours)" text="Editer" color="blue"></app-custom-button>
+                                                <app-custom-button (click)="openSupprimerCoursModal(cours)" text="Supprimer" color="primary"></app-custom-button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </ng-container>
         </div>
     </div>
 </ng-container>
 
 <!-- // Modals -->
-<app-custom-modal title="Nouveau cours" subtitle="Ajouter un nouveau cours au catalogue des cours de ce parcours" (onCloseModal)="showNouveauCoursModal = false" [center]="true" [showModal]="showNouveauCoursModal">
+<app-custom-modal title="Nouvelle UE" subtitle="Ajouter une nouvelle UE au catalogue de ce parcours" (onCloseModal)="showNouveauCoursModal = false" [center]="true" [showModal]="showNouveauCoursModal">
     <form [formGroup]="coursForm" class="">
         <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
             <div class="col-span-full">
@@ -237,8 +213,8 @@
                 </div>
             </div>
             <div class="col-span-full">
-                <span class="mb-2 block text-sm text-gray-400">Intitutlé du cours</span>
-                <input type="text" id="intitule" formControlName="intitule" placeholder="Saisir le intitule ici..."
+                <span class="mb-2 block text-sm text-gray-400">Intitulé de l'UE</span>
+                <input type="text" id="intitule" formControlName="intitule" placeholder="Saisir l'intitulé ici..."
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
     
                 <div
@@ -248,7 +224,7 @@
                 </div>
             </div>
             <div class="col-span-3">
-                <span class="mb-2 block text-sm text-gray-400">Crédit / Coefficient</span>
+                <span class="mb-2 block text-sm text-gray-400">Crédit</span>
                 <input type="number" min="0" id="credit" formControlName="credit" placeholder="Saisir le crédit ici..."
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                 <div
@@ -305,6 +281,22 @@
                         text="Veuillez choisir le semestre"></app-form-message>
                 </div>
             </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Volume horaire</span>
+                <input type="number" min="0" id="volumeHoraire" formControlName="volumeHoraire" placeholder="Saisir le volume horaire..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Coefficient</span>
+                <input type="number" min="0" step="0.5" id="coefficient" formControlName="coefficient" placeholder="Saisir le coefficient..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Objectifs</span>
+                <textarea rows="3" id="objectifs" formControlName="objectifs"
+                    placeholder="Objectifs pédagogiques de cette UE..."
+                    class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
+            </div>
             <div class="col-span-full">
                 <span class="mb-2 block text-sm text-gray-400">Description (facultative)</span>
                 <textarea rows="5" id="description" formControlName="description"
@@ -319,7 +311,7 @@
     </div>
 </app-custom-modal>
 
-<app-custom-modal *ngIf="selectedCours" title="Editer" subtitle="Mettre à jour les informations de ce cours" (onCloseModal)="closeEditerCoursModal()" [center]="true" [showModal]="showEditerCoursModal">
+<app-custom-modal *ngIf="selectedCours" title="Editer" subtitle="Mettre à jour les informations de cette UE" (onCloseModal)="closeEditerCoursModal()" [center]="true" [showModal]="showEditerCoursModal">
     <form [formGroup]="coursForm" class="">
         <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
             <div class="col-span-full">
@@ -345,21 +337,21 @@
                 </div>
             </div>
             <div class="col-span-3">
-                <span class="mb-2 block text-sm text-gray-400">Crédit / Coefficient</span>
+                <span class="mb-2 block text-sm text-gray-400">Crédit</span>
                 <input type="number" min="0" id="credit" formControlName="credit" placeholder="Saisir le crédit ici..."
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-                <div
-                    *ngIf="coursForm.get('credit')!.invalid && (coursForm.get('credit')!.dirty || coursForm.get('credit')!.touched)">
-                    <app-form-message *ngIf="coursForm.get('credit')!.errors?.['required']"
-                        text="Veuillez saisir le crédit ou le coefficient de ce cours"></app-form-message>
-                </div>
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Crédits ECTS</span>
+                <input type="number" min="0" id="creditEcts" formControlName="creditEcts" placeholder="Saisir les crédits ECTS..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
             </div>
             <div class="col-span-3">
                 <!-- <div class="flex items-center gap-x-3">
                     <label for="estObligatoire" class="text-sm text-gray-400">Cours obligatoire</label>
                     <input id="estObligatoire" type="checkbox" formControlName="estObligatoire" readonly [checked]="true" class="h-4 w-4 border-gray-600 text-indigo-600 focus:ring-indigo-600">
                 </div> -->
-                <span class="mb-2 block text-sm text-gray-400">Ce cours est-il obligatoire ?</span>
+                <span class="mb-2 block text-sm text-gray-400">Cette UE est-elle obligatoire ?</span>
                 <div class="flex items-center py-1 gap-x-4">
                     <div class="flex items-center gap-x-3">
                         <input id="oui" formControlName="estObligatoire" type="radio" [value]="true"
@@ -401,6 +393,22 @@
                         text="Veuillez choisir le semestre"></app-form-message>
                 </div>
             </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Volume horaire</span>
+                <input type="number" min="0" id="volumeHoraire" formControlName="volumeHoraire" placeholder="Saisir le volume horaire..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Coefficient</span>
+                <input type="number" min="0" step="0.5" id="coefficient" formControlName="coefficient" placeholder="Saisir le coefficient..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Objectifs</span>
+                <textarea rows="3" id="objectifs" formControlName="objectifs"
+                    placeholder="Objectifs pédagogiques de cette UE..."
+                    class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
+            </div>
             <div class="col-span-full">
                 <span class="mb-2 block text-sm text-gray-400">Description (facultative)</span>
                 <textarea rows="5" id="description" formControlName="description"
@@ -415,9 +423,9 @@
     </div>
 </app-custom-modal>
 
-<app-custom-modal *ngIf="selectedCours" title="Supprimer" subtitle="Déplacer ce cours dans la corbeille. Voulez-vous continuer ?" (onCloseModal)="closeSupprimerCoursModal()" [center]="true" [showModal]="showSupprimerCoursModal">
+<app-custom-modal *ngIf="selectedCours" title="Supprimer" subtitle="Déplacer cette UE dans la corbeille. Voulez-vous continuer ?" (onCloseModal)="closeSupprimerCoursModal()" [center]="true" [showModal]="showSupprimerCoursModal">
     <div class="flex items-center justify-between py-30">
         <app-custom-button (click)="closeSupprimerCoursModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
-        <app-custom-button (click)="supprimerCours()" text="Supprimer" color="red"></app-custom-button>
+        <app-custom-button (click)="supprimerCours()" text="Supprimer" color="primary"></app-custom-button>
     </div>
 </app-custom-modal>

@@ -7,17 +7,61 @@ import { Apprenant } from "../../auth/models/Apprenant";
 import { FraisInscription } from "../models/FraisInscription";
 import { DossierInscription } from "../models/DossierInscription";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
+import { AnneeAcademique } from "../models/AnneeAcademique";
+import { DossierStorageService } from "../services/DossierStorageService";
 
 export default class SessionController {
 
     constructor() { }
 
     static async getAllSessions(req: Request, res: Response): Promise<Response> {
-        let options: FindOptions<InferAttributes<Session>> = {include: [Session.associations.niveauEtude, Session.associations.anneeAcademique]}
+        const where: any = {};
+
+        if (req.query.anneeAcademiqueId) {
+            where.anneeAcademiqueId = req.query.anneeAcademiqueId;
+        }
+        if (req.query.niveauEtudeId) {
+            where.niveauEtudeId = req.query.niveauEtudeId;
+        }
+
+        const hasPagination = req.query.page !== undefined || req.query.limit !== undefined;
+
+        if (hasPagination) {
+            const page: number = Math.max(1, parseInt(req.query.page as string) || 1);
+            const limit: number = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+            const offset: number = (page - 1) * limit;
+
+            try {
+                const { rows, count } = await Session.findAndCountAll({
+                    where,
+                    include: [Session.associations.niveauEtude, Session.associations.anneeAcademique],
+                    limit,
+                    offset,
+                    order: [['createdAt', 'DESC']],
+                    distinct: true,
+                });
+
+                return res.status(200).send({
+                    data: rows,
+                    pagination: {
+                        page,
+                        limit,
+                        total: count,
+                        totalPages: Math.ceil(count / limit),
+                    },
+                });
+            } catch (error) {
+                return res.status(500).json({ success: false, error: error });
+            }
+        }
 
         try {
             let sessions: Session[];
-            sessions = await Session.findAll(options);
+            sessions = await Session.findAll({
+                where,
+                include: [Session.associations.niveauEtude, Session.associations.anneeAcademique],
+                order: [['createdAt', 'DESC']],
+            });
 
             return res.status(200).send(sessions);
         } catch (error) {
@@ -93,6 +137,15 @@ export default class SessionController {
                     Session.associations.dossiersInscription,
                 ]
             });
+
+            // Créer le squelette de dossier pour l'année académique
+            if (session?.anneeAcademique) {
+                try {
+                    DossierStorageService.creerSqueletteAnnee(session.anneeAcademique);
+                } catch (dirError) {
+                    console.error("Erreur création dossier année:", dirError);
+                }
+            }
 
             return res.status(201).send(session);
         } catch (error) {

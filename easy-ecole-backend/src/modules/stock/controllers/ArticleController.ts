@@ -71,6 +71,23 @@ export default class ArticleController {
         }
     }
 
+    static async updateStatut(req: Request, res: Response): Promise<Response> {
+        const { id } = req.params
+        const { statut, motifFinVie } = req.body
+        const article = await Article.findByPk(id)
+        if (!article) return res.status(404).json({ success: false, message: 'Article non trouvé' })
+        article.statut = statut
+        if (statut === 'reforme' || statut === 'obsolete') {
+            article.motifFinVie = motifFinVie
+            article.dateFinVie = new Date().toISOString()
+        }
+        if (statut === 'actif' && !article.dateMiseEnService) {
+            article.dateMiseEnService = new Date().toISOString()
+        }
+        await article.save()
+        return res.status(200).send(article)
+    }
+
     static async delete(req: Request, res: Response): Promise<Response | null> {
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT || (req as any).utilisateurRole == RolesUtilisateur.ENSEIGNANT) {
             return res.status(403).json({ success: false });

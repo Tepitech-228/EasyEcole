@@ -1,0 +1,89 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <app-header-title
+    title="Heures supplémentaires"
+    subtitle="Gérez les heures supplémentaires des employés">
+  </app-header-title>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+    <div class="flex justify-end">
+      <app-custom-button *ngIf="rolesValue.isRessourcesHumaines || rolesValue.isAdmin || rolesValue.isInstitution" (click)="ouvrirFormulaire()" text="Nouvelle heure sup" color="primary"></app-custom-button>
+    </div>
+  </div>
+
+  <div *ngIf="showForm" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Nouvelle heure supplémentaire</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Employé *</label>
+        <select [(ngModel)]="formData.employeId" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+          <option value="">Sélectionner</option>
+          <option *ngFor="let e of employes" [value]="e.id">{{ e.nom }} {{ e.prenoms }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Date</label>
+        <input [(ngModel)]="formData.date" type="date" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Nombre d'heures *</label>
+        <input [(ngModel)]="formData.nombreHeures" (input)="formData.montant = montantCalcule" type="number" step="0.5" min="0" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="0" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Taux horaire *</label>
+        <input [(ngModel)]="formData.tauxHoraire" (input)="formData.montant = montantCalcule" type="number" step="0.01" min="0" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="0" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Montant (calculé)</label>
+        <input [value]="montantCalcule" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-700" readonly />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Motif</label>
+        <input [(ngModel)]="formData.motif" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="Motif..." />
+      </div>
+    </div>
+    <div class="flex justify-end gap-3 mt-4">
+      <app-custom-button (click)="fermerFormulaire()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+      <app-custom-button (click)="creerHeure()" text="Créer" color="primary"></app-custom-button>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-100">
+        <thead>
+          <tr class="bg-gray-50/50">
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Employé</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Heures</th>
+            <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Taux horaire</th>
+            <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Montant</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Statut</th>
+            <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngFor="let h of heures; trackBy: trackByFn" class="hover:bg-gray-50/50 transition-colors">
+            <td class="px-5 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ getEmployeNom(h.employeId) }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-500">{{ h.date || '-' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-center text-sm text-gray-700">{{ h.nombreHeures }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-right text-sm text-gray-700">{{ h.tauxHoraire != null ? h.tauxHoraire + ' F' : '-' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-right text-sm text-gray-700 font-medium">{{ h.montant != null ? h.montant + ' F' : '-' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-center">
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-medium" [ngClass]="getStatutClass(h.statut)">{{ h.statut || '-' }}</span>
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap text-right">
+              <div class="flex items-center justify-end gap-2">
+                <app-custom-button *ngIf="rolesValue.isRessourcesHumaines || rolesValue.isAdmin || rolesValue.isInstitution" (click)="supprimer(h.id)" text="Supprimer" color="primary" [outlined]="true"></app-custom-button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+    <div *ngIf="!loading && heures.length === 0" class="px-5 py-12 text-center">
+      <svg class="mx-auto h-12 w-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <p class="mt-4 text-sm text-gray-500">Aucune heure supplémentaire</p>
+    </div>
+  </div>
+</div>

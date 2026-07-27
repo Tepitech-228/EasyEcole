@@ -36,7 +36,7 @@
 
                 <!-- Dashboard -->
                 <app-nav-menu-group [searchQuery]="searchQuery" [showTitle]="false">
-                    <app-nav-menu-item *ngIf="rolesValue.isApprenant || rolesValue.isAdmin" (click)="closeMenu()" icon="dashboard-outline" text="Tableau de bord" link="/"></app-nav-menu-item>
+                    <app-nav-menu-item (click)="closeMenu()" icon="dashboard-outline" text="Tableau de bord" link="/"></app-nav-menu-item>
                 </app-nav-menu-group>
 
                 <app-sidebar-nav [searchQuery]="searchQuery" [closeMenu]="closeMenu.bind(this)"></app-sidebar-nav>
@@ -172,25 +172,3 @@
 </main>
 
 <app-panier-parcours [showPanierModal]="showPanierModal" (onCloseModal)="closeModal()"></app-panier-parcours>
-
-<div *ngIf="rappelSalleNotif" class="fixed bottom-6 right-6 z-50 max-w-sm bg-emerald-600 text-white rounded-2xl shadow-xl px-5 py-4">
-  <div class="flex items-start gap-3">
-    <svg class="w-5 h-5 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-    <div class="flex-1">
-      <p class="text-sm font-semibold">Changement de salle imminent !</p>
-      <p class="text-xs mt-1 opacity-90">
-        <span class="font-medium">{{ rappelSalleNotif.currentCours }}</span> se termine dans <span class="font-medium">{{ rappelSalleNotif.minutesRestantes }}min</span>
-      </p>
-      <p class="text-xs mt-1 opacity-90">
-        Salle actuelle : <span class="font-medium">{{ rappelSalleNotif.currentSalle }}</span>
-      </p>
-      <p *ngIf="rappelSalleNotif.nextCours" class="text-xs mt-1 opacity-95 bg-emerald-700 rounded-lg px-2 py-1">
-        Prochain cours : <span class="font-medium">{{ rappelSalleNotif.nextCours }}</span>
-        <ng-container *ngIf="rappelSalleNotif.nextSalle"> → Salle <span class="font-medium">{{ rappelSalleNotif.nextSalle }}</span></ng-container>
-      </p>
-      <p *ngIf="!rappelSalleNotif.nextCours" class="text-xs mt-1 opacity-75">
-        C'est votre dernier cours de la journée.
-      </p>
-    </div>
-  </div>
-</div>

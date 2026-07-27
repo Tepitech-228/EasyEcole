@@ -1,12 +1,12 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
-import { UniteEnseignement } from "./UniteEnseignement";
 import { Cours } from "./Cours";
+import { Ecue } from "./Ecue";
 
 export class Mcc extends Model<InferAttributes<Mcc>, InferCreationAttributes<Mcc>> {
   declare id: CreationOptional<number>
-  declare ueId: ForeignKey<UniteEnseignement['id']>
+  declare ecueId: ForeignKey<Ecue['id'] | null>
   declare coursId: ForeignKey<Cours['id']>
   declare coefficient: CreationOptional<number>
   declare session: CreationOptional<string>
@@ -14,7 +14,7 @@ export class Mcc extends Model<InferAttributes<Mcc>, InferCreationAttributes<Mcc
   declare seuilEliminatoire: CreationOptional<number | null>
   declare estObligatoire: CreationOptional<boolean>
 
-  declare uniteEnseignement?: NonAttribute<UniteEnseignement>
+  declare ecue?: NonAttribute<Ecue>
   declare cours?: NonAttribute<Cours>
 
   declare readonly createdAt: CreationOptional<Date>
@@ -22,7 +22,7 @@ export class Mcc extends Model<InferAttributes<Mcc>, InferCreationAttributes<Mcc
   declare readonly deletedAt: CreationOptional<Date | null>
 
   declare static associations: {
-    uniteEnseignement: Association<Mcc, UniteEnseignement>
+    ecue: Association<Mcc, Ecue>
     cours: Association<Mcc, Cours>
   }
 }
@@ -33,9 +33,9 @@ Mcc.init({
     autoIncrement: true,
     primaryKey: true
   },
-  ueId: {
+  ecueId: {
     type: DataTypes.INTEGER.UNSIGNED,
-    allowNull: false
+    allowNull: true
   },
   coursId: {
     type: DataTypes.INTEGER.UNSIGNED,
@@ -75,6 +75,6 @@ Mcc.init({
   tableName: MODULE_TABLE_PREFIX + 'mcc',
   timestamps: true,
   indexes: [
-    { unique: true, fields: ['ueId', 'coursId', 'session'] }
+    { unique: true, fields: ['coursId', 'ecueId', 'session'] }
   ]
 })

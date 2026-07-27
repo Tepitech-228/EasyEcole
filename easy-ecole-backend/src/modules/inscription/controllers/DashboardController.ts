@@ -19,6 +19,7 @@ import { Echeance } from "../models/Echeance";
 import { Bordereau } from "../models/Bordereau";
 import { Session } from "../models/Session";
 import { PaiementInscription } from "../models/PaiementInscription";
+import { SemestreProgressionService } from "../../../core/services/SemestreProgressionService";
 
 const DAYS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
@@ -153,12 +154,18 @@ class DashboardController {
 
         const cursus = await CursusApprenant.findOne({
             where: { utilisateurId },
-            include: [{ association: 'demandeInscription', include: [{ association: 'cours' }] }],
+            include: [
+                { association: 'demandeInscription', include: [{ association: 'cours' }] },
+                { association: CursusApprenant.associations.niveauEtude },
+                { association: CursusApprenant.associations.parcours }
+            ],
         });
 
         let agenda: any[] = [];
         let coursIds: number[] = [];
+        let progression = null;
         if (cursus) {
+            progression = await SemestreProgressionService.getProgression(Number(cursus.id));
             const coursData = (cursus as any).demandeInscription?.cours || [];
             coursIds = coursData.map((c: any) => c.id).filter(Boolean);
             if (coursIds.length > 0) {
@@ -184,13 +191,15 @@ class DashboardController {
 
         const moyenne = notesRecentes.length > 0
             ? (notesRecentes.reduce((sum: number, n: any) => sum + (n.note || 0), 0) / notesRecentes.length).toFixed(1)
-            : '14.5';
+            : null;
 
         const totalPresences = coursIds.length > 0 ? await CoursParticipant.count({
             include: [{ association: 'cours', where: { id: coursIds } }]
         }) : 0;
 
-        return { success: true, role: 'apprenant', data: { agenda, notesRecentes, moyenne, totalPresences } };
+        const totalCours = coursIds.length;
+
+        return { success: true, role: 'apprenant', data: { agenda, notesRecentes, moyenne, totalPresences, totalCours, progression } };
     }
 
     private static async getNotesRecentes(utilisateurId: number): Promise<any[]> {

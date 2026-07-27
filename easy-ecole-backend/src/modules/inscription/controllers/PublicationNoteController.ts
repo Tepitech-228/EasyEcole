@@ -79,7 +79,7 @@ export default class PublicationNoteController {
 
             // Créer l'enregistrement de publication
             const publication = await PublicationNote.create({
-                listeNoteEvaluationId: id,
+                listeNoteEvaluationId: Number(id),
                 datePublication: new Date(),
                 publiePar: req.utilisateurId!,
                 message: message || null,

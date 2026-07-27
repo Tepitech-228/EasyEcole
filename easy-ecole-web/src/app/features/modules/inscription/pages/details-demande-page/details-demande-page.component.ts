@@ -51,8 +51,13 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
   currentItemSection: number = 0
   wizardItems: WizardItemType[] = []
 
+  stepMessage: { text: string; type: 'success' | 'info' | 'warning' } | null = null
+
   classes: Classe[] = []
   anneesAcademiques: AnneeAcademique[] = []
+
+  private pollingTimer: any = null
+  private readonly POLL_INTERVAL = 15000
 
   validationDemandeInscriptionForm: FormGroup = new FormGroup({
     classe: new FormControl(null, [Validators.required]),
@@ -74,6 +79,24 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
   }
 
   ngOnInit(): void {
+  }
+
+  ngOnDestroy(): void {
+    this.stopPolling()
+  }
+
+  private startPolling(): void {
+    this.stopPolling()
+    this.pollingTimer = setInterval(() => {
+      this.getDemandeInscription()
+    }, this.POLL_INTERVAL)
+  }
+
+  private stopPolling(): void {
+    if (this.pollingTimer) {
+      clearInterval(this.pollingTimer)
+      this.pollingTimer = null
+    }
   }
 
   private getClasses(niveauEtudeId: string | undefined): void {
@@ -98,6 +121,11 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
         console.log(err)
       }
     })
+  }
+
+  verifierStatut(): void {
+    this.stepMessage = { text: 'Vérification du statut...', type: 'info' }
+    this.getDemandeInscription()
   }
 
   getDemandeInscription(): void {
@@ -131,59 +159,83 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
     ]
   }
 
+  onStepComplete(stepIndex: number, nextStepMessage: string): void {
+    this.stepMessage = { text: nextStepMessage, type: 'success' }
+    if (stepIndex < 6) {
+      this.currentItemSection = stepIndex + 1
+    }
+    setTimeout(() => {
+      this.stepMessage = null
+      this.getDemandeInscription()
+    }, 800)
+  }
+
   initSteps(): void {
     this.initWizardItems()
+    const demande = this.demande!
+    const parcoursChoisis = demande.parcoursChoisis || []
+    const session = demande.session
 
     // Check: informations personnelles (step 0)
-    if (this.demande!.utilisateur!.apprenant != null) {
+    if (demande.utilisateur?.apprenant != null) {
       this.wizardItems[0].condition = true
-      this.currentItemSection = 1
+      if (this.currentItemSection < 1) this.currentItemSection = 1
     }
 
     // Check: choix parcours (step 1)
-    if (this.demande!.parcoursChoisis!.length != 0) {
+    if (parcoursChoisis.length > 0) {
       this.wizardItems[1].condition = true
 
-      if (this.demande!.reponseInscription != null) {
-        // Institution flow: reponse requise + choixFinal avant de continuer
-        if (this.demande!.parcoursChoisis!.filter(element => element.choixFinal == true).length == 0) {
-          this.currentItemSection = 1
-        }
-        else {
-          this.parcoursFinal = this.demande!.parcoursChoisis!.filter(element => element.choixFinal == true)[0].parcours
+      if (demande.reponseInscription != null) {
+        const hasChoixFinal = parcoursChoisis.some(e => e.choixFinal == true)
+        if (!hasChoixFinal) {
+          this.stepMessage = { text: 'Parcours soumis — en attente de votre choix final.', type: 'info' }
+          if (this.currentItemSection < 1) this.currentItemSection = 1
+        } else {
+          this.parcoursFinal = parcoursChoisis.find(e => e.choixFinal == true)!.parcours
           this.currentItemSection = 2
           this.wizardItems[2].isBlocked = false
         }
-      }
-      else {
-        // Student flow: use first parcours as default final, proceed to documents
-        this.parcoursFinal = this.demande!.parcoursChoisis![0].parcours
+      } else {
+        // Student flow
+        this.parcoursFinal = parcoursChoisis[0].parcours
         this.currentItemSection = 2
         this.wizardItems[2].isBlocked = false
       }
+    } else {
+      if (this.currentItemSection === 0 && demande.utilisateur?.apprenant != null) {
+        this.stepMessage = { text: 'Informations enregistrées. Choisissez vos parcours.', type: 'success' }
+      }
     }
 
-    // Check: documents (step 2) - moved before préinscription
-    if (this.currentItemSection >= 2 && this.demande!.session) {
-      const dossiersRequis = this.demande!.session!.dossiersInscription || []
-      const dossiersUploades = this.demande!.dossiersDemande || []
-      if (dossiersRequis.length == 0 || dossiersUploades.length != 0) {
-        this.wizardItems[2].condition = true
-        this.wizardItems[2].incomplete = dossiersRequis.length > 0 && dossiersUploades.length != dossiersRequis.length
-        if (!this.wizardItems[2].incomplete) {
-          this.currentItemSection = 3
-          this.wizardItems[3].isBlocked = false
+    // Check: documents (step 2)
+    if (this.currentItemSection >= 2) {
+      if (session) {
+        const dossiersRequis = session.dossiersInscription || []
+        const dossiersUploades = demande.dossiersDemande || []
+        if (dossiersRequis.length === 0 || dossiersUploades.length > 0) {
+          this.wizardItems[2].condition = true
+          this.wizardItems[2].incomplete = dossiersRequis.length > 0 && dossiersUploades.length !== dossiersRequis.length
+          if (!this.wizardItems[2].incomplete) {
+            this.currentItemSection = 3
+            this.wizardItems[3].isBlocked = false
+          }
         }
       }
     }
 
-    // Check: préinscription (step 3) - moved after documents
-    if (this.demande!.preInscription != null) {
+    // Check: préinscription (step 3)
+    if (demande.preInscription != null) {
       this.wizardItems[3].condition = true
-      if (this.demande!.preInscription!.statut == EtatPreInscription.VALIDE) {
-        this.currentItemSection = 4
+      const statut = demande.preInscription.statut
 
+      if (statut === EtatPreInscription.VALIDE) {
+        if (this.currentItemSection <= 3) {
+          this.stepMessage = { text: 'Pré-inscription validée ! Choisissez vos cours.', type: 'success' }
+        }
+        this.currentItemSection = 4
         this.wizardItems[4].isBlocked = false
+
         if (this.checkCours()) {
           this.currentItemSection = 5
           this.wizardItems[4].condition = true
@@ -192,14 +244,31 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
             this.currentItemSection = 6
             this.wizardItems[5].condition = true
 
-            if (this.demande!.dateValidation != undefined) {
+            if (demande.dateValidation != null) {
               this.wizardItems[6].condition = true
+              this.stepMessage = { text: '✅ Inscription validée !', type: 'success' }
+              this.stopPolling()
             }
           }
         }
+      } else if (statut === EtatPreInscription.REJETE) {
+        this.stepMessage = { text: 'Pré-inscription rejetée. Veuillez contacter l\'administration.', type: 'warning' }
+        this.currentItemSection = 3
       } else {
+        this.stepMessage = { text: 'Dossier soumis — en attente de validation par le comité d\'orientation.', type: 'info' }
         this.currentItemSection = 3
       }
+    }
+
+    this.autoPoll()
+  }
+
+  private autoPoll(): void {
+    const pending = [3, 5].includes(this.currentItemSection)
+    if (pending) {
+      this.startPolling()
+    } else {
+      this.stopPolling()
     }
   }
 

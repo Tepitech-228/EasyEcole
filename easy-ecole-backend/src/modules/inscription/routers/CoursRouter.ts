@@ -3,6 +3,7 @@ import express from "express"
 import CoursController from "../controllers/CoursController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
 import CheckPermission from "../../../core/middlewares/CheckPermission";
+import { InscriptionComplete } from "../../../core/middlewares/InscriptionComplete";
 
 const router = express.Router()
 
@@ -53,7 +54,21 @@ router
  *       200:
  *         description: Liste des présences
  */
-    .get('/mes-presences', [], CoursController.getMesPresences)
+    .get('/mes-presences', [InscriptionComplete], CoursController.getMesPresences)
+
+/**
+ * @openapi
+ * /inscription/cours/arbre-pedagogique:
+ *   get:
+ *     tags: [Cours]
+ *     summary: Retourne l'arbre pédagogique complet
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Arbre pédagogique
+ */
+    .get('/arbre-pedagogique', [], CoursController.getArbrePedagogique)
 
 /**
  * @openapi
@@ -93,7 +108,7 @@ router
  *       200:
  *         description: Participants du cours
  */
-    .get('/:id/participants', CoursController.getCoursParticipants)
+    .get('/:id/participants', [InscriptionComplete], CoursController.getCoursParticipants)
 
 /**
  * @openapi

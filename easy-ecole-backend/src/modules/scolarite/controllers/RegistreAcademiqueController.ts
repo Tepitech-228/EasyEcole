@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { FindOptions, InferAttributes } from "sequelize";
+import { FindOptions, InferAttributes, Op } from "sequelize";
 import { RegistreAcademique } from "../models/RegistreAcademique";
 
 export default class RegistreAcademiqueController {
@@ -8,8 +8,61 @@ export default class RegistreAcademiqueController {
 
     static async getAll(req: Request, res: Response): Promise<Response> {
         try {
-            const registres = await RegistreAcademique.findAll();
-            return res.status(200).send(registres);
+            const page = Math.max(1, parseInt(req.query.page as string) || 1);
+            const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+            const offset = (page - 1) * limit;
+
+            const { anneeScolaire, classe, decision, search } = req.query;
+
+            const where: any = {};
+
+            if (anneeScolaire) where.anneeScolaire = anneeScolaire;
+            if (classe) where.classe = classe;
+            if (decision) where.decision = decision;
+            if (search) {
+                where[Op.or] = [
+                    { etudiant: { [Op.substring]: search } },
+                    { matricule: { [Op.substring]: search } }
+                ];
+            }
+
+            const { count, rows } = await RegistreAcademique.findAndCountAll({
+                where,
+                offset,
+                limit,
+                order: [['anneeScolaire', 'DESC'], ['classe', 'ASC'], ['etudiant', 'ASC']]
+            });
+
+            return res.status(200).json({
+                data: rows,
+                pagination: {
+                    page,
+                    limit,
+                    total: count,
+                    totalPages: Math.ceil(count / limit)
+                }
+            });
+        } catch (error) {
+            return res.status(500).json({ success: false, error: error });
+        }
+    }
+
+    static async batchStatut(req: Request, res: Response): Promise<Response> {
+        try {
+            const { ids, decision } = req.body;
+            if (!ids || !Array.isArray(ids) || ids.length === 0) {
+                return res.status(400).json({ success: false, message: "IDs requis" });
+            }
+            if (!decision) {
+                return res.status(400).json({ success: false, message: "Décision requise" });
+            }
+
+            const [count] = await RegistreAcademique.update(
+                { decision },
+                { where: { id: ids } }
+            );
+
+            return res.status(200).json({ success: true, count });
         } catch (error) {
             return res.status(500).json({ success: false, error: error });
         }

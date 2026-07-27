@@ -17,6 +17,10 @@ export class CursusApprenantService {
     return this.httpClient.get<CursusApprenant[]>(`${this.SERVICE_URL}`)
   }
 
+  getAllPaginated(params?: any): Observable<{ data: CursusApprenant[], pagination: { page: number, limit: number, total: number, totalPages: number } }> {
+    return this.httpClient.get<{ data: CursusApprenant[], pagination: { page: number, limit: number, total: number, totalPages: number } }>(`${this.SERVICE_URL}`, { params })
+  }
+
   get(id: string): Observable<CursusApprenant> {
     return this.httpClient.get<CursusApprenant>(`${this.SERVICE_URL}/${id}`)
   }

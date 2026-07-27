@@ -1,0 +1,43 @@
+<app-header-title title="Comptes bancaires" subtitle="Gestion des comptes bancaires de l'établissement"></app-header-title>
+
+<div class="flex justify-end mb-4">
+  <app-custom-button text="Nouveau compte" (click)="ouvrirFormulaire()"></app-custom-button>
+</div>
+
+<app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+<div *ngIf="!loading && items.length === 0" class="text-center py-8 text-gray-400">Aucun compte bancaire</div>
+
+<div class="overflow-x-auto" *ngIf="!loading && items.length > 0">
+  <table class="w-full text-sm">
+    <thead><tr class="text-left border-b"><th>Libellé</th><th>Banque</th><th>IBAN</th><th>Solde ouverture</th><th>Devise</th><th>Actions</th></tr></thead>
+    <tbody>
+      <tr *ngFor="let item of items" class="border-b hover:bg-gray-50">
+        <td class="py-2 font-medium">{{ item.libelle }}</td>
+        <td>{{ item.banque }}</td>
+        <td class="font-mono text-xs">{{ item.iban }}</td>
+        <td>{{ item.soldeOuverture | number }}</td>
+        <td>{{ item.devise }}</td>
+        <td class="flex gap-1">
+          <button (click)="ouvrirFormulaire(item)" class="text-blue-500 hover:text-blue-700 text-xs">✎</button>
+          <button (click)="supprimer(item.id)" class="text-red-500 hover:text-red-700 text-xs">🗑</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<app-custom-modal [showModal]="showForm" (onCloseModal)="fermerFormulaire()">
+  <h3 class="text-lg font-semibold mb-4">{{ editingId ? 'Modifier' : 'Nouveau' }} compte bancaire</h3>
+  <div class="grid gap-3">
+    <input [(ngModel)]="formData.libelle" placeholder="Libellé" class="form-input">
+    <input [(ngModel)]="formData.banque" placeholder="Banque" class="form-input">
+    <input [(ngModel)]="formData.iban" placeholder="IBAN" class="form-input">
+    <input type="number" [(ngModel)]="formData.soldeOuverture" placeholder="Solde d'ouverture" class="form-input">
+    <select [(ngModel)]="formData.devise" class="form-input"><option value="XOF">XOF</option><option value="EUR">EUR</option><option value="USD">USD</option></select>
+    <div class="flex gap-2 justify-end mt-2">
+      <app-custom-button text="Annuler" [outlined]="true" (click)="fermerFormulaire()"></app-custom-button>
+      <app-custom-button text="Enregistrer" (click)="sauvegarder()"></app-custom-button>
+    </div>
+  </div>
+</app-custom-modal>

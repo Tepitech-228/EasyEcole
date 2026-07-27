@@ -3,6 +3,8 @@ import { SessionGed } from "../models/SessionGed";
 import { DocumentGed } from "../models/DocumentGed";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import Folder from "../models/Folder";
+import crypto from "crypto";
+import { AuditService } from "../../../core/services/AuditService";
 
 function parseJsonField(value: any): any {
   if (!value) return null;
@@ -17,14 +19,17 @@ function parseJsonField(value: any): any {
 export default class SessionGedController {
   static async list(req: Request, res: Response): Promise<Response> {
     try {
+      const includeDocuments = String(req.query.includeDocuments || 'false') === 'true';
+
       const sessions = await SessionGed.findAll({
         include: [
           { association: SessionGed.associations.creator, attributes: ['id', 'nom', 'prenoms'] },
-          { association: SessionGed.associations.documents }
+          ...(includeDocuments ? [{ association: SessionGed.associations.documents }] : [])
         ],
         order: [['createdAt', 'DESC']]
       });
       return res.status(200).json(sessions);
+
     } catch (error) {
       return res.status(500).json({ success: false, error });
     }
@@ -32,10 +37,12 @@ export default class SessionGedController {
 
   static async get(req: Request, res: Response): Promise<Response> {
     try {
+      const includeDocuments = String(req.query.includeDocuments || 'false') === 'true';
+
       const session = await SessionGed.findByPk(req.params.id, {
         include: [
           { association: SessionGed.associations.creator, attributes: ['id', 'nom', 'prenoms'] },
-          { association: SessionGed.associations.documents }
+          ...(includeDocuments ? [{ association: SessionGed.associations.documents }] : [])
         ]
       });
       if (!session) {
@@ -165,6 +172,48 @@ export default class SessionGedController {
       }
 
       return res.status(201).json(createdDocs);
+    } catch (error) {
+      return res.status(500).json({ success: false, error });
+    }
+  }
+
+  static async generateShareLink(req: Request, res: Response): Promise<Response> {
+    try {
+      const session = await SessionGed.findByPk(req.params.id, {
+        include: [{ association: SessionGed.associations.documents }]
+      });
+      if (!session) {
+        return res.status(404).json({ success: false, message: 'Session non trouvée' });
+      }
+
+      const expiresInDays = parseInt(String(req.query.expiresInDays || '7'), 10);
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + expiresInDays);
+
+      const payload = {
+        sessionId: session.id,
+        documentIds: (session as any).documents?.map((d: any) => d.id) || [],
+        expiresAt: expiresAt.toISOString(),
+        createdBy: (req as any).utilisateurId
+      };
+
+      const secret = crypto.randomBytes(32).toString('hex');
+      const data = JSON.stringify(payload);
+      const iv = crypto.randomBytes(16);
+      const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(secret.slice(0, 32), 'utf8'), iv);
+      let encrypted = cipher.update(data, 'utf8', 'hex');
+      encrypted += cipher.final('hex');
+      const token = iv.toString('hex') + ':' + encrypted;
+
+      for (const docId of payload.documentIds) {
+        await AuditService.log(docId, (req as any).utilisateurId, 'consultation', { shared: true, sessionId: session.id });
+      }
+
+      return res.status(200).json({
+        token,
+        url: `/ged/shared/${token}`,
+        expiresAt
+      });
     } catch (error) {
       return res.status(500).json({ success: false, error });
     }

@@ -13,7 +13,6 @@ router
     .get('/statistics/count', [], SeanceController.getCount)
     .post('/check-conflits', [], SeanceController.checkConflits)
     .post('/publier', [], SeanceController.publierEmploiDuTemps)
-    .get('/rappel-salle', SeanceController.getRappelSalle)
     .get('/tableau-de-bord', [Authenticate, AuthEnseignant], SeanceController.getTeacherDashboard)
     .get('/:id', SeanceController.getSeance)
     .put('/:id', [], SeanceController.updateSeance)

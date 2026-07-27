@@ -71,34 +71,102 @@
           </tr>
         </table>
 
-        <table class="notes-table">
-          <thead>
-            <tr>
-              <th class="text-left">Matières</th>
-              <th>CC</th>
-              <th>Devoir</th>
-              <th>Examen</th>
-              <th>Moyenne</th>
-              <th>Coef</th>
-              <th>Validé</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let l of b.lignesBulletins">
-              <td class="text-left font-medium">{{ l.cours?.intitule }}</td>
-              <td [ngClass]="getNoteClass(l.moyenneCC)">{{ l.moyenneCC != null ? l.moyenneCC : '-' }}</td>
-              <td [ngClass]="getNoteClass(l.noteDevoir)">{{ l.noteDevoir != null ? l.noteDevoir : '-' }}</td>
-              <td [ngClass]="getNoteClass(l.noteExamen)">{{ l.noteExamen != null ? l.noteExamen : '-' }}</td>
-              <td class="font-bold" [ngClass]="getNoteClass(l.moyenne)">{{ l.moyenne != null ? l.moyenne + '/20' : '-' }}</td>
-              <td>{{ l.coefficient || '-' }}</td>
-              <td>
-                <span *ngIf="l.moyenne != null && l.moyenne >= 10" class="valide-badge">Validé</span>
-                <span *ngIf="l.moyenne != null && l.moyenne < 10" class="non-valide-badge">Non</span>
-                <span *ngIf="l.moyenne == null" class="text-gray-300 text-xs">-</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <ng-container *ngIf="b.ues && b.ues.length; else flatNotes">
+          <table class="notes-table" *ngFor="let ue of b.ues">
+            <thead>
+              <tr class="ue-header">
+                <th colspan="7">
+                  <div class="ue-header-content">
+                    <a [routerLink]="'/cours/cours/' + ue.coursId" class="ue-link">{{ ue.ueCode }} - {{ ue.ueLibelle }}</a>
+                    <span class="ue-moyenne" [ngClass]="getNoteClass(ue.moyenneUe)">Moy: {{ ue.moyenneUe }}/20</span>
+                    <span class="ue-credits">{{ ue.creditEcts }} crédits</span>
+                    <span *ngIf="ue.estValidee" class="valide-badge">Validé</span>
+                    <span *ngIf="!ue.estValidee" class="non-valide-badge">Non validé</span>
+                  </div>
+                </th>
+              </tr>
+              <tr>
+                <th class="text-left">Matières</th>
+                <th>CC</th>
+                <th>Devoir</th>
+                <th>Examen</th>
+                <th>Moyenne</th>
+                <th>Coef</th>
+                <th>Validé</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let l of ue.lignes">
+                <td class="text-left font-medium">{{ l.cours?.intitule }}</td>
+                <td [ngClass]="getNoteClass(l.moyenneCC)">{{ l.moyenneCC != null ? l.moyenneCC : '-' }}</td>
+                <td [ngClass]="getNoteClass(l.noteDevoir)">{{ l.noteDevoir != null ? l.noteDevoir : '-' }}</td>
+                <td [ngClass]="getNoteClass(l.noteExamen)">{{ l.noteExamen != null ? l.noteExamen : '-' }}</td>
+                <td class="font-bold" [ngClass]="getNoteClass(l.moyenne)">{{ l.moyenne != null ? l.moyenne + '/20' : '-' }}</td>
+                <td>{{ l.coefficient || '-' }}</td>
+                <td>
+                  <span *ngIf="l.moyenne != null && l.moyenne >= 10" class="valide-badge">Validé</span>
+                  <span *ngIf="l.moyenne != null && l.moyenne < 10" class="non-valide-badge">Non</span>
+                  <span *ngIf="l.moyenne == null" class="text-gray-300 text-xs">-</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </ng-container>
+        <ng-template #flatNotes>
+          <table class="notes-table">
+            <thead>
+              <tr>
+                <th class="text-left">Matières</th>
+                <th>CC</th>
+                <th>Devoir</th>
+                <th>Examen</th>
+                <th>Moyenne</th>
+                <th>Coef</th>
+                <th>Validé</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let l of b.lignesBulletins">
+                <td class="text-left font-medium">{{ l.cours?.intitule }}</td>
+                <td [ngClass]="getNoteClass(l.moyenneCC)">{{ l.moyenneCC != null ? l.moyenneCC : '-' }}</td>
+                <td [ngClass]="getNoteClass(l.noteDevoir)">{{ l.noteDevoir != null ? l.noteDevoir : '-' }}</td>
+                <td [ngClass]="getNoteClass(l.noteExamen)">{{ l.noteExamen != null ? l.noteExamen : '-' }}</td>
+                <td class="font-bold" [ngClass]="getNoteClass(l.moyenne)">{{ l.moyenne != null ? l.moyenne + '/20' : '-' }}</td>
+                <td>{{ l.coefficient || '-' }}</td>
+                <td>
+                  <span *ngIf="l.moyenne != null && l.moyenne >= 10" class="valide-badge">Validé</span>
+                  <span *ngIf="l.moyenne != null && l.moyenne < 10" class="non-valide-badge">Non</span>
+                  <span *ngIf="l.moyenne == null" class="text-gray-300 text-xs">-</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </ng-template>
+
+        <div *ngIf="b.rattrapageGrades?.length" class="mt-6 border-t border-amber-200 pt-4">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 ring-1 ring-amber-200">
+              Rattrapage
+            </span>
+            <span class="text-sm font-semibold text-gray-700">Notes de session 2</span>
+          </div>
+          <table class="notes-table">
+            <thead>
+              <tr>
+                <th class="text-left">Matière</th>
+                <th>Note rattrapage</th>
+                <th>Moyenne finale</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let rg of b.rattrapageGrades">
+                <td class="text-left font-medium">{{ rg.coursIntitule }}</td>
+                <td [ngClass]="getNoteClass(rg.noteRattrapage)">{{ rg.noteRattrapage != null ? rg.noteRattrapage + '/20' : '-' }}</td>
+                <td [ngClass]="getNoteClass(rg.moyenneFinale)">{{ rg.moyenneFinale != null ? rg.moyenneFinale + '/20' : '-' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
         <div class="summary-section">
           <div class="summary-item">
@@ -117,6 +185,13 @@
             <span class="summary-label">Crédits validés</span>
             <span class="summary-value">{{ b.creditsValides || '0' }} / {{ b.totalCredits || '0' }}</span>
           </div>
+        </div>
+
+        <div *ngIf="b.deliberationId" class="text-center mb-4 no-print">
+          <a [routerLink]="'/bulletins/deliberations/' + b.deliberationId" class="inline-flex items-center text-sm font-semibold text-blue-700 hover:text-blue-900 transition-colors">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Voir la délibération
+          </a>
         </div>
 
         <div *ngIf="b.appreciation" class="appreciation-box">

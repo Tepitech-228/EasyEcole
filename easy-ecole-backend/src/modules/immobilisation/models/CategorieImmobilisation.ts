@@ -8,6 +8,7 @@ export class CategorieImmobilisation extends Model<InferAttributes<CategorieImmo
   declare description: CreationOptional<string>
   declare tauxAmortissement: CreationOptional<number>
   declare dureeVie: CreationOptional<number>
+  declare modeAmortissement: CreationOptional<string>
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
 }
@@ -18,6 +19,7 @@ CategorieImmobilisation.init({
   description: { type: DataTypes.TEXT, allowNull: true },
   tauxAmortissement: { type: DataTypes.DECIMAL(5, 2), allowNull: true },
   dureeVie: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
+  modeAmortissement: { type: DataTypes.ENUM('lineaire', 'degressif'), allowNull: true },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
 }, {

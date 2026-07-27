@@ -1,10 +1,10 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { DemandeDocument } from "./DemandeDocument";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../ScolariteModule";
 
 export class DocumentDelivre extends Model<InferAttributes<DocumentDelivre>, InferCreationAttributes<DocumentDelivre>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare demandeId: ForeignKey<DemandeDocument['id']>
   declare fichierPDF: string
   declare dateDelivrance: CreationOptional<Date>

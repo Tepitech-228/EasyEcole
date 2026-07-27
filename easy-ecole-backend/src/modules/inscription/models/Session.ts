@@ -1,4 +1,4 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { NiveauEtude } from "./NiveauEtude";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
@@ -8,7 +8,7 @@ import { DossierInscription } from "./DossierInscription";
 import { AnneeAcademique } from "./AnneeAcademique";
 
 export class Session extends Model<InferAttributes<Session>, InferCreationAttributes<Session>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare dateDebut: Date
   declare dateFin: Date
   declare description: CreationOptional<string>

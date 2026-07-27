@@ -19,6 +19,15 @@ import RhLigneBulletinRouter from "./routers/RhLigneBulletinRouter"
 import RhPrestationEnseignantRouter from "./routers/RhPrestationEnseignantRouter"
 import RhContratEnseignantRouter from "./routers/RhContratEnseignantRouter"
 import RhPlanningPersonnelRouter from "./routers/RhPlanningPersonnelRouter"
+import RhCategorieProfessionnelleRouter from "./routers/RhCategorieProfessionnelleRouter"
+import RhGrilleSalarialeRouter from "./routers/RhGrilleSalarialeRouter"
+import RhHeureSupplementaireRouter from "./routers/RhHeureSupplementaireRouter"
+import RhPretRouter from "./routers/RhPretRouter"
+import RhRemboursementPretRouter from "./routers/RhRemboursementPretRouter"
+import RhReportingRouter from "./routers/RhReportingRouter"
+import RhPrestataireRouter from "./routers/RhPrestataireRouter"
+import RhIndemnitePrestataireRouter from "./routers/RhIndemnitePrestataireRouter"
+import RhDemandeCongeRouter from "./routers/RhDemandeCongeRouter"
 import Authenticate from "../../core/middlewares/Authenticate";
 
 const router = express.Router();
@@ -43,5 +52,14 @@ router
     .use('/prestations-enseignant', [Authenticate], RhPrestationEnseignantRouter)
     .use('/contrats-enseignant', [Authenticate], RhContratEnseignantRouter)
     .use('/planning-personnel', [Authenticate], RhPlanningPersonnelRouter)
+    .use('/categories-professionnelles', [Authenticate], RhCategorieProfessionnelleRouter)
+    .use('/grilles-salariales', [Authenticate], RhGrilleSalarialeRouter)
+    .use('/heures-supplementaires', [Authenticate], RhHeureSupplementaireRouter)
+    .use('/prets', [Authenticate], RhPretRouter)
+    .use('/remboursements-pret', [Authenticate], RhRemboursementPretRouter)
+    .use('/reportings', [Authenticate], RhReportingRouter)
+    .use('/prestataires', [Authenticate], RhPrestataireRouter)
+    .use('/indemnites-prestataires', [Authenticate], RhIndemnitePrestataireRouter)
+    .use('/demandes-conge', [Authenticate], RhDemandeCongeRouter)
 
 export default router;

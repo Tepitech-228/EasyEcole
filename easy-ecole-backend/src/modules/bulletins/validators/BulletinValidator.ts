@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { SemestresParcours } from "../../../core/enums/SemestresParcours";
 
 export function validerGeneration(req: Request, res: Response, next: Function) {
   const { classeId, semestre, anneeAcademiqueId } = req.body;
@@ -7,8 +8,8 @@ export function validerGeneration(req: Request, res: Response, next: Function) {
   if (!classeId) erreurs.push("classeId est requis");
   if (!semestre) erreurs.push("semestre est requis");
   if (!anneeAcademiqueId) erreurs.push("anneeAcademiqueId est requis");
-  if (semestre && !['semestre1', 'semestre2'].includes(semestre)) {
-    erreurs.push("semestre doit être 'semestre1' ou 'semestre2'");
+  if (semestre && !Object.values(SemestresParcours).includes(semestre)) {
+    erreurs.push(`semestre doit être l'un des suivants : ${Object.values(SemestresParcours).join(', ')}`);
   }
 
   if (erreurs.length) {

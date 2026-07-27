@@ -1,5 +1,5 @@
 <div class="flex justify-between items-start gap-x-8 mb-8">
-    <app-header-title title="Cours" subtitle="Consulter la liste des cours proposés"></app-header-title>
+    <app-header-title title="Unités d'enseignements" subtitle="Consulter la liste des UE proposées"></app-header-title>
     <div class="flex justify-end items-center">
         <app-custom-button (click)="openNouveauCoursModal()" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" text="Nouveau cours"></app-custom-button>
     </div>
@@ -12,11 +12,7 @@
             <option [value]="'undefined'">Filter par niveau d'étude...</option>
             <option *ngFor="let niveau of _niveauxEtude" [value]="niveau.id">{{ niveau.libelle }}</option>
         </select>
-        <select *ngIf="rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isAdmin" [(ngModel)]="selectedClasse" (change)="filtrerCours()"
-            class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
-            <option [value]="'undefined'">Filter par classe...</option>
-            <option *ngFor="let classe of _classes" [value]="classe.id">{{ classe.libelle }}</option>
-        </select>
+
         <select *ngIf="rolesValue.isApprenant || rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isAdmin" [(ngModel)]="selectedParcours" (change)="filtrerCours()"
             class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
             <option [value]="'undefined'">Filter par parcours...</option>
@@ -59,6 +55,11 @@
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
             </div>
             <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Crédits ECTS</span>
+                <input type="number" formControlName="creditEcts" placeholder="Ex: 6"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-3">
                 <span class="mb-2 block text-sm text-gray-400">Semestre</span>
                 <input type="number" formControlName="semestre" placeholder="Ex: 1"
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
@@ -71,17 +72,14 @@
                     <option *ngFor="let p of _parcours" [value]="p.id">{{ p.titre }}</option>
                 </select>
             </div>
-            <div class="col-span-3">
-                <label class="mb-2 block text-sm text-gray-400">Classe</label>
-                <select formControlName="classeId"
-                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-                    <option [value]="null" disabled>Sélectionner une classe</option>
-                    <option *ngFor="let classe of _classes" [value]="classe.id">{{ classe.libelle }}</option>
-                </select>
-            </div>
             <div class="col-span-full">
                 <span class="mb-2 block text-sm text-gray-400">Description (facultative)</span>
                 <textarea rows="3" formControlName="description" placeholder="Description du cours..."
+                    class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
+            </div>
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Objectifs (facultatif)</span>
+                <textarea rows="3" formControlName="objectifs" placeholder="Objectifs pédagogiques..."
                     class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
             </div>
             <div class="col-span-full">

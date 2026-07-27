@@ -1,8 +1,11 @@
 <div class="flex justify-between items-start gap-x-8 mb-8">
     <app-header-title title="Paramètres validateurs" subtitle="Configurer les validateurs d'achat"></app-header-title>
+    <app-custom-button text="Nouveau validateur" link="/achats/validateurs/nouveau"></app-custom-button>
 </div>
 
-<div class="flex flex-col">
+<app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+<div *ngIf="!loading" class="flex flex-col">
     <div class="overflow-x-auto">
         <div class="py-2 inline-block min-w-full">
             <div class="overflow-hidden">
@@ -12,13 +15,25 @@
                             <th class="text-sm font-medium text-gray-900 px-2 py-4 text-left">#</th>
                             <th class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Utilisateur</th>
                             <th class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Niveau</th>
-                            <th class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Montant max</th>
+                            <th class="text-sm font-medium text-gray-900 px-2 py-4 text-right">Montant max</th>
                             <th class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Actif</th>
                             <th class="text-sm font-medium text-gray-900 px-2 py-4 text-right">Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td colspan="6" class="text-center py-4 text-sm text-gray-500">Aucun validateur</td></tr>
+                        <tr *ngIf="validateurs.length==0" class="bg-white p-0 border-b">
+                            <td class="text-sm text-center py-4 text-gray-600" colspan="6">Aucun validateur</td>
+                        </tr>
+                        <tr *ngFor="let v of validateurs; index as i" class="bg-white hover:bg-gray-100 p-0 border-b">
+                            <td class="px-2 py-4 text-sm text-gray-600">{{ i + 1 }}</td>
+                            <td class="px-2 py-4 text-sm font-medium text-gray-900">{{ v.utilisateur }}</td>
+                            <td class="px-2 py-4 text-sm text-gray-600">{{ v.niveau }}</td>
+                            <td class="px-2 py-4 text-sm text-gray-600 text-right">{{ v.montantMax | currency:'XAF':'symbol':'1.0-0' }}</td>
+                            <td class="px-2 py-4 text-sm"><span class="px-2 py-1 rounded text-xs font-semibold" [ngClass]="getStatutBadge(v.actif)">{{ v.actif ? 'Oui' : 'Non' }}</span></td>
+                            <td class="px-2 py-4 text-right">
+                                <app-custom-button [link]="'/achats/validateurs/' + v.id" text="Modifier" color="primary" size="small"></app-custom-button>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>

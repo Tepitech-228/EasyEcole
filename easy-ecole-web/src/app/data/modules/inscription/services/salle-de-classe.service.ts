@@ -13,7 +13,24 @@ export class SalleDeClasseService {
 
   constructor(private httpClient: HttpClient) { }
 
-  getAll(): Observable<SalleDeClasse[]> {
-    return this.httpClient.get<SalleDeClasse[]>(`${this.SERVICE_URL}`)
+  getAll(classeId?: string): Observable<SalleDeClasse[]> {
+    const params = classeId ? `?classeId=${classeId}` : ''
+    return this.httpClient.get<SalleDeClasse[]>(`${this.SERVICE_URL}${params}`)
+  }
+
+  get(id: string): Observable<SalleDeClasse> {
+    return this.httpClient.get<SalleDeClasse>(`${this.SERVICE_URL}/${id}`)
+  }
+
+  create(item: SalleDeClasse): Observable<SalleDeClasse> {
+    return this.httpClient.post<SalleDeClasse>(`${this.SERVICE_URL}`, item)
+  }
+
+  update(item: SalleDeClasse): Observable<SalleDeClasse> {
+    return this.httpClient.put<SalleDeClasse>(`${this.SERVICE_URL}/${item.id!}`, item)
+  }
+
+  delete(id: string): Observable<any> {
+    return this.httpClient.delete(`${this.SERVICE_URL}/${id}`)
   }
 }

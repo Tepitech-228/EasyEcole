@@ -21,7 +21,7 @@ export default class UtilisateurController {
             const utilisateurs = await Utilisateur.findAll(options);
             return res.status(200).send(utilisateurs);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            return res.status(500).json({ success: false, message: "Erreur interne du serveur" });
         }
     }
 
@@ -41,7 +41,7 @@ export default class UtilisateurController {
 
             return res.status(200).send(utilisateur);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            return res.status(500).json({ success: false, message: "Erreur interne du serveur" });
         }
     }
 
@@ -68,7 +68,7 @@ export default class UtilisateurController {
                     return res.status(200).json({ success: true });
                 })
                 .catch((error) => {
-                    return res.status(400).json({ success: false, error: error });
+                    return res.status(400).json({ success: false, message: "Erreur lors de la mise à jour" });
                 });
 
             return null
@@ -102,7 +102,7 @@ export default class UtilisateurController {
             await utilisateur.update(updateData);
             return res.status(200).json({ success: true, message: "Utilisateur mis à jour" });
         } catch (error) {
-            return res.status(500).json({ success: false, error });
+            return res.status(500).json({ success: false, message: "Erreur interne du serveur" });
         }
     }
 
@@ -120,19 +120,22 @@ export default class UtilisateurController {
                 return res.status(400).json({ success: false, message: "Email ou identifiant déjà utilisé" });
             }
 
+            if (!req.body.motDePasse || req.body.motDePasse.length < 6) {
+                return res.status(400).json({ success: false, message: "Mot de passe requis (min 6 caractères)" });
+            }
             const utilisateur = await Utilisateur.create({
                 nom: req.body.nom,
                 prenoms: req.body.prenoms,
                 email: req.body.email,
                 identifiant: req.body.identifiant,
-                motDePasse: bcrypt.hashSync(req.body.motDePasse || 'password123', 10),
+                motDePasse: bcrypt.hashSync(req.body.motDePasse, 10),
                 role: req.body.role || RolesUtilisateur.APPRENANT,
                 contact: req.body.contact || null,
             });
 
             return res.status(201).json({ success: true, utilisateur });
         } catch (error) {
-            return res.status(500).json({ success: false, error });
+            return res.status(500).json({ success: false, message: "Erreur interne du serveur" });
         }
     }
 
@@ -149,7 +152,7 @@ export default class UtilisateurController {
                     return res.status(200).json({ success: true, message: "Utilisateur supprime" });
                 })
                 .catch((error) => {
-                    return res.status(500).json({ success: false, error: error });
+                    return res.status(500).json({ success: false, message: "Erreur lors de la suppression" });
                 });
         }
         else {
@@ -171,7 +174,7 @@ export default class UtilisateurController {
                 return res.status(200).json({ success: true, count: value });
             })
             .catch((error) => {
-                return res.status(500).json({ success: false, error: error });
+                return res.status(500).json({ success: false, message: "Erreur lors du comptage" });
             });
 
         return null

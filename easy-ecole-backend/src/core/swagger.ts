@@ -1,4 +1,5 @@
 import swaggerJsdoc from 'swagger-jsdoc';
+import { modelSchemas } from './swagger_schemas';
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -10,19 +11,26 @@ const options: swaggerJsdoc.Options = {
 
 ## Modules
 - **Auth** — Authentification, utilisateurs, apprenants, enseignants, institutions
-- **Inscription** — Sessions, cours, classes, parcours, notes, présence
+- **Inscription** — Sessions, cours, classes, parcours, notes, présence, capacité salles
 - **Orientation** — Catalogue de parcours, demandes d'orientation
 - **Bulletins** — Génération de bulletins, relevés de notes
 - **Stages** — Offres, demandes, conventions, rapports
-- **Stock** — Articles, fournisseurs, commandes, mouvements
-- **Immobilisation** — Sites, bâtiments, actifs, maintenance
+- **Stock** — Articles, fournisseurs, commandes, mouvements, affectation salles
+- **Immobilisation** — Sites, bâtiments, actifs, maintenance, affectation salles
 - **Achats** — Demandes, commandes, factures, fournisseurs, budgets
-- **RH** — Employés, paie, contrats, offres d'emploi, candidatures
+- **DocGen** — Génération documents, templates, cachets, signatures, workflows, vérification
+- **RH** — Employés, paie, contrats, offres d'emploi, candidatures, GED
 - **Scolarité** — Demandes de documents, registres, discipline, conseils de classe
 - **E-Learning** — Cours en ligne, quiz, progression, certificats
 - **Communication** — Messagerie, annonces, discussions, suggestions
 - **Comptabilité** — Plan comptable, journaux, écritures
-- **Reporting** — Tableaux de bord, effectifs, notes, paiements, RH`
+- **Reporting** — Tableaux de bord, effectifs, notes, paiements, RH
+- **GED** — Gestion électronique de documents, arbre hiérarchique, courriers
+- **Qualité** — Non-conformités, audits, actions correctives, enquêtes satisfaction
+- **Marché** — Planification, appels d'offres, contrats, avenants
+- **Établissement** — Configuration et informations de l'établissement
+- **Menu** — Menu de navigation dynamique
+- **Parent** — Liaison parent-enfant, suivi scolaire`
     },
     servers: [
       { url: '/api/v1', description: 'API de base' }
@@ -34,7 +42,8 @@ const options: swaggerJsdoc.Options = {
           scheme: 'bearer',
           bearerFormat: 'JWT'
         }
-      }
+      },
+      schemas: modelSchemas
     }
   },
   apis: [
@@ -51,7 +60,14 @@ const options: swaggerJsdoc.Options = {
     './src/modules/elearning/routers/*.ts',
     './src/modules/communication/routers/*.ts',
     './src/modules/comptabilite/routers/*.ts',
-    './src/modules/reporting/routers/*.ts'
+    './src/modules/reporting/routers/*.ts',
+    './src/modules/docgen/routers/*.ts',
+    './src/modules/ged/routers/*.ts',
+    './src/modules/qualite/routers/*.ts',
+    './src/modules/marche/routers/*.ts',
+    './src/modules/etablissement/routers/*.ts',
+    './src/modules/parent/*.ts',
+    './src/modules/menu/*.ts',
   ]
 };
 

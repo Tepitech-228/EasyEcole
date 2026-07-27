@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CountOptions, FindOptions, InferAttributes } from "sequelize";
+import { CountOptions, FindOptions, InferAttributes, Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { DemandeOrientation } from "../models/DemandeOrientation";
 import { ParcoursChoisi } from "../models/ParcoursChoisi";
@@ -8,25 +8,92 @@ import { PrerequisParcoursChoisi } from "../models/PrerequisParcoursChoisi";
 import { PrerequisParcours } from "../models/PrerequisParcours";
 import { EmailSender } from "../../../core/helpers/EmailSender";
 import { Apprenant } from "../../auth/models/Apprenant";
+import { ReponseOrientation } from "../models/ReponseOrientation";
 
 export default class DemandeOrientationController {
 
     constructor() { }
 
     static async getAllDemandesOrientation(req: Request, res: Response): Promise<Response> {
-        let options: FindOptions<InferAttributes<DemandeOrientation>> = {}
+        const page = Math.max(1, parseInt(req.query.page as string) || 1);
+        const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+        const offset = (page - 1) * limit;
+
+        const { anneeAcademiqueId, niveauEtudeId, parcoursId, statut, search } = req.query;
+
+        let where: any = {};
+        let parcoursChoisiWhere: any = {};
+        let parcoursInclude: any = null;
+
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
-            options = { where: { utilisateurId: (req as any).utilisateurId }, include: [{ association: DemandeOrientation.associations.utilisateur, include: [{ model: Apprenant, as: 'apprenant' }] }, DemandeOrientation.associations.reponseOrientation, DemandeOrientation.associations.parcoursChoisis] }
+            where.utilisateurId = (req as any).utilisateurId;
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
-            options = { include: [{ association: DemandeOrientation.associations.utilisateur, include: [{ model: Apprenant, as: 'apprenant' }] }, DemandeOrientation.associations.reponseOrientation, DemandeOrientation.associations.parcoursChoisis] }
+
+        if (anneeAcademiqueId) {
+            where.anneeAcademiqueId = anneeAcademiqueId;
         }
+
+        if (parcoursId) {
+            parcoursChoisiWhere.parcoursId = parcoursId;
+        }
+
+        if (niveauEtudeId) {
+            parcoursInclude = {
+                model: Parcours,
+                as: 'parcours',
+                where: { niveauEtudeId }
+            };
+        }
+
+        if (statut === 'termine') {
+            where['$reponseOrientation.id$'] = { [Op.ne]: null };
+        } else if (statut === 'en_cours') {
+            where['$reponseOrientation.id$'] = null;
+        }
+
+        if (search) {
+            where['$utilisateur.nom$'] = { [Op.like]: `%${search}%` };
+        }
+
+        let includeOptions: any[] = [
+            { association: DemandeOrientation.associations.utilisateur, include: [{ model: Apprenant, as: 'apprenant' }] },
+            { association: DemandeOrientation.associations.reponseOrientation, required: false },
+            DemandeOrientation.associations.anneeAcademique
+        ];
+
+        const hasParcoursFilter = parcoursId || niveauEtudeId;
+        const parcoursChoisiInclude: any = { association: DemandeOrientation.associations.parcoursChoisis };
+
+        if (hasParcoursFilter) {
+            parcoursChoisiInclude.where = parcoursChoisiWhere;
+            parcoursChoisiInclude.required = true;
+        }
+
+        if (parcoursInclude) {
+            parcoursChoisiInclude.include = [parcoursInclude];
+        }
+
+        includeOptions.push(parcoursChoisiInclude);
 
         try {
-            let demandesOrientation: DemandeOrientation[];
-            demandesOrientation = await DemandeOrientation.findAll(options);
+            const { count, rows } = await DemandeOrientation.findAndCountAll({
+                where,
+                include: includeOptions,
+                order: [['dateDemande', 'DESC']],
+                limit,
+                offset,
+                distinct: true
+            });
 
-            return res.status(200).send(demandesOrientation);
+            return res.status(200).json({
+                data: rows,
+                pagination: {
+                    page,
+                    limit,
+                    total: count,
+                    totalPages: Math.ceil(count / limit)
+                }
+            });
         } catch (error) {
             return res.status(500).json({ success: false, error: error });
         }

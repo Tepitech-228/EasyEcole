@@ -1,0 +1,42 @@
+<app-header-title title="Soldes de congés" subtitle="Suivi des soldes par employé"></app-header-title>
+
+<div class="flex justify-between mb-4">
+  <div></div>
+  <app-custom-button text="Initialiser solde" (click)="ouvrirInitSolde()"></app-custom-button>
+</div>
+
+<app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+<div *ngIf="!loading && items.length === 0" class="text-center py-8 text-gray-400">Aucun solde défini</div>
+
+<div class="overflow-x-auto" *ngIf="!loading && items.length > 0">
+  <table class="w-full text-sm">
+    <thead><tr class="text-left border-b"><th>Employé</th><th>Type</th><th>Année</th><th>Total</th><th>Pris</th><th>Reste</th></tr></thead>
+    <tbody>
+      <tr *ngFor="let item of items" class="border-b hover:bg-gray-50">
+        <td class="py-2">{{ item.employe?.prenom }} {{ item.employe?.nom }} <span class="text-xs text-gray-400">#{{ item.employeId }}</span></td>
+        <td>{{ getTypeConge(item.typeConge) }}</td>
+        <td>{{ item.annee }}</td>
+        <td>{{ item.total }}j</td>
+        <td><span class="text-amber-600">{{ item.pris }}j</span></td>
+        <td><strong [class.text-green-600]="item.reste > 0" [class.text-red-600]="item.reste <= 0">{{ item.reste }}j</strong></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<app-custom-modal [showModal]="showInitForm" (onCloseModal)="showInitForm = false">
+  <h3 class="text-lg font-semibold mb-4">Initialiser un solde</h3>
+  <div class="grid gap-3">
+    <input [(ngModel)]="initData.employeId" placeholder="ID Employé" class="form-input">
+    <input type="number" [(ngModel)]="initData.annee" placeholder="Année" class="form-input">
+    <select [(ngModel)]="initData.typeConge" class="form-input">
+      <option value="annuel">Annuel</option><option value="maladie">Maladie</option><option value="exceptionnel">Exceptionnel</option>
+    </select>
+    <input type="number" [(ngModel)]="initData.total" placeholder="Total jours" class="form-input">
+    <div class="flex gap-2 justify-end mt-2">
+      <app-custom-button text="Annuler" [outlined]="true" (click)="showInitForm = false"></app-custom-button>
+      <app-custom-button text="Initialiser" (click)="initialiserSolde()"></app-custom-button>
+    </div>
+  </div>
+</app-custom-modal>

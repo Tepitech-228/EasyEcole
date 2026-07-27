@@ -102,7 +102,6 @@
     <div class="flex flex-col items-center mt-4 mb-8">
         <div class="flex gap-x-12">
             <app-custom-button (click)="getFichePaiement()" text="Bordereau de paiement" color="indigo"></app-custom-button>
-            <app-custom-button *ngIf="rolesValue.isApprenant && fraisTotal > 0" [disabled]="getFraisPayes() >= fraisTotal" (click)="paiementMobileMoney()" text="Payer par Mobile Money" color="gray" [outlined]="true"></app-custom-button>
             <app-custom-button *ngIf="rolesValue.isInstitution && demande.sessionId" [link]="'/inscription/sessions/' + demande.sessionId" text="Gérer les frais" color="gray" [outlined]="true"></app-custom-button>
             <app-custom-button *ngIf="rolesValue.isInstitution" (click)="showPaiementModal = true" text="Enregistrer un paiement" color="gray" [outlined]="true"></app-custom-button>
             <app-custom-button text="Paiements" link="/inscription/paiements"></app-custom-button>

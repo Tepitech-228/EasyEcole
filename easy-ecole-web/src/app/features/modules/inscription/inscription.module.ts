@@ -31,9 +31,13 @@ import { PreInscriptionSectionComponent } from './pages/details-demande-page/pre
 import { ChoixCoursPageComponent } from './pages/choix-cours-page/choix-cours-page.component';
 import { ListeDossiersPageComponent } from './pages/liste-dossiers-page/liste-dossiers-page.component';
 import { ListeFraisParcoursPageComponent } from './pages/liste-frais-parcours-page/liste-frais-parcours-page.component';
+import { HierarchyPageComponent } from './pages/hierarchy/hierarchy-page.component';
+import { ListeEffectifsPageComponent } from './pages/liste-effectifs-page/liste-effectifs-page.component';
+import { SuiviUePageComponent } from './pages/suivi-ue-page/suivi-ue-page.component';
+import { ListeSallesDeClassePageComponent } from './pages/liste-salles-de-classe-page/liste-salles-de-classe-page.component';
+import { OnboardingPageComponent } from './pages/onboarding-page/onboarding-page.component';
+import { ListeClassesPageComponent } from './pages/liste-classes-page/liste-classes-page.component';
 import { ReactiveFormsModule } from '@angular/forms';
-
-
 @NgModule({
   declarations: [
     MonCursusPageComponent,
@@ -60,9 +64,15 @@ import { ReactiveFormsModule } from '@angular/forms';
     ComiteOrientationPageComponent,
     ComiteDetailsPageComponent,
     PreInscriptionSectionComponent,
-    ChoixCoursPageComponent,
-    ListeDossiersPageComponent,
-    ListeFraisParcoursPageComponent
+      ChoixCoursPageComponent,
+      ListeDossiersPageComponent,
+      ListeFraisParcoursPageComponent,
+     HierarchyPageComponent,
+     ListeEffectifsPageComponent,
+     SuiviUePageComponent,
+      ListeSallesDeClassePageComponent,
+      ListeClassesPageComponent,
+      OnboardingPageComponent
   ],
   imports: [
     CommonModule,

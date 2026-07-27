@@ -1,0 +1,360 @@
+<div class="flex h-full gap-4">
+  <!-- Sidebar filters -->
+  <aside class="w-[300px] shrink-0 bg-white border border-gray-200 rounded-xl overflow-y-auto">
+    <div class="p-3 border-b border-gray-100 flex items-center justify-between">
+      <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Filtres</h3>
+      <button class="text-xs text-blue-600 hover:underline" (click)="resetFilters()">Réinitialiser</button>
+    </div>
+
+    <div class="p-3 flex flex-col gap-4">
+      <!-- Search -->
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Recherche plein texte</label>
+        <input
+          type="text"
+          [(ngModel)]="search"
+          (ngModelChange)="onSearch()"
+          placeholder="Titre, référence, auteur..."
+          class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400" />
+      </div>
+
+      <!-- Domain -->
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Domaine</label>
+        <div class="flex flex-col gap-1">
+          <button
+            class="text-left px-2.5 py-1.5 rounded-md text-sm transition-colors"
+            [class.bg-blue-50]="!selectedDomainId"
+            [class.text-blue-600]="!selectedDomainId"
+            [class.text-gray-600]="selectedDomainId"
+            (click)="resetFilters()">
+            Tous
+          </button>
+          <div *ngFor="let node of domainNodes">
+            <button
+              class="w-full text-left px-2.5 py-1.5 rounded-md text-sm transition-colors flex items-center justify-between"
+              [class.bg-blue-50]="selectedDomainId === node.domain.id"
+              [class.text-blue-600]="selectedDomainId === node.domain.id"
+              [class.text-gray-600]="selectedDomainId !== node.domain.id"
+              (click)="toggleDomain(node)">
+              <span class="truncate">{{ node.domain.label }}</span>
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 transition-transform" [class.rotate-90]="node.expanded"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <div *ngIf="node.expanded" class="ml-2 border-l border-gray-200 pl-2 mt-1">
+              <div *ngIf="node.loading" class="text-xs text-gray-400">Chargement...</div>
+              <div *ngIf="!node.loading && node.folders.length === 0" class="text-xs text-gray-400">Aucun dossier</div>
+              <ng-container *ngFor="let folder of node.folders">
+                <button
+                  class="w-full text-left px-2 py-1 rounded text-xs transition-colors"
+                  [class.bg-blue-50]="folderIdFilter === folder.id"
+                  [class.text-blue-600]="folderIdFilter === folder.id"
+                  [class.text-gray-500]="folderIdFilter !== folder.id"
+                  (click)="toggleFolder(node, folder)">
+                  {{ folder.nom }}
+                </button>
+                <div *ngIf="folder._children?.length" class="ml-2 border-l border-gray-200 pl-2">
+                  <button
+                    *ngFor="let child of folder._children"
+                    class="w-full text-left px-2 py-1 rounded text-xs text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                    [class.bg-blue-50]="folderIdFilter === child.id"
+                    [class.text-blue-600]="folderIdFilter === child.id"
+                    (click)="$event.stopPropagation(); folderIdFilter=child.id; page=1; load()">
+                    {{ child.nom }}
+                  </button>
+                </div>
+              </ng-container>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Document Type -->
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Type de document</label>
+        <select [(ngModel)]="selectedDocumentTypeId" (change)="onFilterChange()" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+          <option [ngValue]="null">Tous les types</option>
+          <option *ngFor="let dt of documentTypes" [ngValue]="dt.id">{{ dt.label }} ({{ dt.code }})</option>
+        </select>
+      </div>
+
+      <!-- Academic filters -->
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Semestre</label>
+        <select [(ngModel)]="selectedSemestre" (change)="onFilterChange()" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+          <option value="">Tous</option>
+          <option value="semestre1">Semestre 1</option>
+          <option value="semestre2">Semestre 2</option>
+          <option value="semestre3">Semestre 3</option>
+          <option value="semestre4">Semestre 4</option>
+          <option value="semestre5">Semestre 5</option>
+          <option value="semestre6">Semestre 6</option>
+        </select>
+      </div>
+
+      <!-- Source -->
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Source</label>
+        <select [(ngModel)]="selectedSourceType" (change)="onFilterChange()" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+          <option value="">Toutes</option>
+          <option value="genere_application">Généré (App)</option>
+          <option value="numerise_interne">Numérisé (Interne)</option>
+          <option value="recu_externe">Reçu (Externe)</option>
+          <option value="document_sortant">Document sortant</option>
+        </select>
+      </div>
+
+      <!-- Mode d'envoi -->
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Mode d'envoi</label>
+        <select [(ngModel)]="selectedModeEnvoi" (change)="onFilterChange()" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+          <option value="">Tous</option>
+          <option value="courrier">Courrier postal</option>
+          <option value="email">Email</option>
+          <option value="remise_main_propre">Remise en main propre</option>
+          <option value="fax">Fax</option>
+        </select>
+      </div>
+
+      <!-- Date range -->
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Date de création</label>
+        <div class="flex gap-2">
+          <input type="date" [(ngModel)]="dateCreationFrom" (change)="onFilterChange()" class="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-blue-400" placeholder="Du" />
+          <input type="date" [(ngModel)]="dateCreationTo" (change)="onFilterChange()" class="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-blue-400" placeholder="Au" />
+        </div>
+      </div>
+
+      <!-- Processus generateur -->
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Processus générateur</label>
+        <select [(ngModel)]="selectedProcessusGenerateurId" (change)="onFilterChange()" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+          <option [ngValue]="null">Tous</option>
+          <option *ngFor="let p of processusGenerateurs" [ngValue]="p.id">{{ p.code }} — {{ p.libelle }}</option>
+        </select>
+      </div>
+
+      <!-- Storage location -->
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Lieu de stockage</label>
+        <select [(ngModel)]="selectedStorageLocation" (change)="onFilterChange()" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+          <option value="">Tous</option>
+          <option value="local">Local</option>
+          <option value="nas">NAS</option>
+          <option value="cloud">Cloud</option>
+        </select>
+      </div>
+
+      <!-- Confidentiality -->
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Confidentialité</label>
+        <select [(ngModel)]="selectedConfidentiality" (change)="onFilterChange()" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+          <option value="">Tous niveaux</option>
+          <option value="public">Public</option>
+          <option value="interne">Interne</option>
+          <option value="restreint">Restreint</option>
+          <option value="confidentiel">Confidentiel</option>
+        </select>
+      </div>
+
+      <!-- Lifecycle -->
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Cycle de vie</label>
+        <select [(ngModel)]="selectedLifecycle" (change)="onFilterChange()" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+          <option value="">Tous statuts</option>
+          <option value="courant">Courant</option>
+          <option value="intermediaire">Intermédiaire</option>
+          <option value="definitif">Définitif</option>
+          <option value="a_detruire">À détruire</option>
+        </select>
+      </div>
+
+      <!-- Sort -->
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Tri</label>
+        <select [(ngModel)]="selectedSort" (change)="onFilterChange()" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+          <option value="createdAt_desc">Date de création (récent)</option>
+          <option value="createdAt_asc">Date de création (ancien)</option>
+          <option value="titre_asc">Titre (A → Z)</option>
+          <option value="reference_asc">Référence (A → Z)</option>
+          <option value="taille_desc">Taille (plus grand)</option>
+          <option value="taille_asc">Taille (plus petit)</option>
+        </select>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Results -->
+  <main class="flex-1 min-w-0 flex flex-col gap-4">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <h2 class="text-lg font-semibold text-gray-800">
+        {{ total }} résultat{{ total > 1 ? 's' : '' }}
+      </h2>
+      <div class="flex items-center gap-2">
+        <button
+          class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium transition-colors"
+          [class.bg-blue-50]="viewMode === 'table'"
+          [class.text-blue-600]="viewMode === 'table'"
+          [class.text-gray-500]="viewMode !== 'table'"
+          (click)="viewMode = 'table'">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="inline-block mr-1"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Liste
+        </button>
+        <button
+          class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium transition-colors"
+          [class.bg-blue-50]="viewMode === 'grid'"
+          [class.text-blue-600]="viewMode === 'grid'"
+          [class.text-gray-500]="viewMode !== 'grid'"
+          (click)="viewMode = 'grid'">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="inline-block mr-1"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          Grille
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="flex gap-3" *ngIf="documents.length > 0">
+      <div class="bg-white border border-gray-200 rounded-xl px-4 py-3 flex flex-col gap-0.5 min-w-[110px]">
+        <span class="font-bold text-xl text-gray-800">{{ documents.length }}</span>
+        <span class="text-xs text-gray-400">Documents</span>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="py-16 text-center text-sm text-gray-400">Chargement...</div>
+
+    <!-- Empty -->
+    <div *ngIf="!loading && documents.length === 0" class="py-16 text-center">
+      <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#6e7391" stroke-width="1.5" class="mx-auto mb-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <p class="text-sm text-gray-400">Aucun document trouvé</p>
+    </div>
+
+    <!-- Table view -->
+    <div class="bg-white border border-gray-200 rounded-xl" style="overflow-x: auto;" *ngIf="!loading && viewMode === 'table' && documents.length > 0">
+      <table class="w-full border-collapse">
+        <thead>
+          <tr class="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide bg-gray-50 border-b border-gray-200">
+            <th class="py-3.5 px-4">Référence</th>
+            <th class="py-3.5 px-4">Titre</th>
+            <th class="py-3.5 px-4">Type</th>
+            <th class="py-3.5 px-4">Domaine</th>
+            <th class="py-3.5 px-4">Semestre</th>
+            <th class="py-3.5 px-4">Source</th>
+            <th class="py-3.5 px-4">Destinataire</th>
+            <th class="py-3.5 px-4">DUA</th>
+            <th class="py-3.5 px-4">Confidentialité</th>
+            <th class="py-3.5 px-4">Cycle</th>
+            <th class="py-3.5 px-4">Taille</th>
+            <th class="py-3.5 px-4">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let d of documents"
+            class="text-sm text-gray-700 border-b border-gray-100 cursor-pointer transition-colors hover:bg-gray-50"
+            (click)="navigateToDocument(d)">
+            <td class="py-3 px-4 font-mono text-xs text-gray-500">{{ d.reference || '-' }}</td>
+            <td class="py-3 px-4">
+              <span class="font-semibold text-gray-800">{{ d.titre }}</span>
+              <span *ngIf="d.tags" class="text-xs text-gray-400 ml-1">— {{ d.tags }}</span>
+            </td>
+            <td class="py-3 px-4">
+              <span class="inline-block px-2.5 py-0.5 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-600">{{ getTypeLabel(d) }}</span>
+            </td>
+            <td class="py-3 px-4 text-xs text-gray-500">{{ getDomainLabel(d) }}</td>
+            <td class="py-3 px-4 text-xs text-gray-500">{{ getSemestreLabel(d.semestre) }}</td>
+            <td class="py-3 px-4 text-xs text-gray-500">{{ getSourceLabel(d.sourceType) }}</td>
+            <td class="py-3 px-4 text-xs text-gray-500">{{ d.destinataire || '-' }}</td>
+            <td class="py-3 px-4 text-xs text-gray-500">{{ formatDate(d.duaEndDate) }}</td>
+            <td class="py-3 px-4">
+              <span class="inline-block px-2.5 py-0.5 rounded-md text-xs font-semibold whitespace-nowrap" [class]="getConfidentialityBadge(d.confidentialityLevel)">
+                {{ getConfidentialityLabel(d.confidentialityLevel) }}
+              </span>
+            </td>
+            <td class="py-3 px-4">
+              <span class="inline-block px-2.5 py-0.5 rounded-md text-xs font-semibold whitespace-nowrap" [class]="getLifecycleBadge(d.lifecycleStatus)">
+                {{ getLifecycleLabel(d.lifecycleStatus) }}
+              </span>
+            </td>
+            <td class="py-3 px-4 text-xs text-gray-500">{{ formatTaille(d.taille) }}</td>
+            <td class="py-3 px-4" (click)="$event.stopPropagation()">
+              <div class="flex gap-1.5">
+                <button class="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition-all" title="Télécharger" (click)="download(d)">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </button>
+                <button class="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition-all" title="Exporter PDF" (click)="exportPdf(d)">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Grid view -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" *ngIf="!loading && viewMode === 'grid' && documents.length > 0">
+      <div
+        *ngFor="let d of documents"
+        class="bg-white border border-gray-200 rounded-xl p-4 cursor-pointer hover:shadow-md transition-shadow"
+        (click)="navigateToDocument(d)">
+        <div class="flex items-center justify-between mb-2">
+          <span class="inline-block px-2 py-0.5 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-600">{{ getTypeLabel(d) }}</span>
+          <span class="inline-block px-2 py-0.5 rounded-md text-xs font-semibold" [class]="getConfidentialityBadge(d.confidentialityLevel)">{{ getConfidentialityLabel(d.confidentialityLevel) }}</span>
+        </div>
+        <h3 class="font-semibold text-gray-800 text-sm mb-1 truncate">{{ d.titre }}</h3>
+        <p class="font-mono text-xs text-gray-400 mb-2">{{ d.reference || '-' }}</p>
+        <div class="flex flex-wrap gap-1 text-xs text-gray-500">
+          <span class="bg-gray-100 px-2 py-0.5 rounded">{{ getDomainLabel(d) }}</span>
+          <span class="bg-gray-100 px-2 py-0.5 rounded">{{ getSemestreLabel(d.semestre) }}</span>
+          <span class="bg-gray-100 px-2 py-0.5 rounded">{{ getLifecycleLabel(d.lifecycleStatus) }}</span>
+        </div>
+        <div class="mt-2 text-xs text-gray-400">
+          {{ formatTaille(d.taille) }} — v{{ d.versionMajor }}.{{ d.versionMinor ?? 0 }}
+        </div>
+        <div class="mt-2 flex gap-1.5" (click)="$event.stopPropagation()">
+          <button class="flex-1 px-2 py-1 border border-gray-200 rounded-lg text-xs text-gray-500 hover:text-blue-600 hover:border-blue-400 transition-all" (click)="download(d)">Télécharger</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex items-center justify-between" *ngIf="totalPages > 1">
+      <span class="text-xs text-gray-400">{{ total }} document(s) — Page {{ page }} / {{ totalPages }}</span>
+      <div class="flex items-center gap-1">
+        <button
+          class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          [disabled]="page <= 1"
+          (click)="goToPage(1)">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
+        </button>
+        <button
+          class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          [disabled]="page <= 1"
+          (click)="goToPage(page - 1)">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button
+          *ngFor="let p of pages"
+          class="w-8 h-8 rounded-lg text-xs font-medium transition-colors"
+          [class.bg-blue-600]="p === page"
+          [class.text-white]="p === page"
+          [class.text-gray-600]="p !== page"
+          [class.hover:bg-gray-100]="p !== page"
+          (click)="goToPage(p)">{{ p }}</button>
+        <button
+          class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          [disabled]="page >= totalPages"
+          (click)="goToPage(page + 1)">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <button
+          class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          [disabled]="page >= totalPages"
+          (click)="goToPage(totalPages)">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </main>
+</div>

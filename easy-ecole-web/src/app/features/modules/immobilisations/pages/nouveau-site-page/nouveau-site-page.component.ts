@@ -15,6 +15,7 @@ export class NouveauSitePageComponent extends BaseComponentClass implements OnIn
 
     error: boolean = false
     alreadyExists: boolean = false
+    saving = false
 
     siteForm: FormGroup = new FormGroup({
         nom: new FormControl(null, [Validators.required]),
@@ -36,14 +37,13 @@ export class NouveauSitePageComponent extends BaseComponentClass implements OnIn
     create(): void {
         this.siteForm.markAllAsTouched()
         if (this.siteForm.valid) {
-            let site: Site = new Site()
+            this.saving = true
+            const site: Site = new Site()
             site.nom = this.siteForm.get('nom')!.value
             site.adresse = this.siteForm.get('adresse')!.value
 
             this.siteService.create(site).subscribe({
-                next: (res) => {
-                    this.router.navigate(['/immobilisations/sites'])
-                },
+                next: () => this.router.navigate(['/immobilisations/sites']),
                 error: (err: HttpErrorResponse) => {
                     console.log(err)
                     this.alreadyExists = err.error.alreadyExists
@@ -55,7 +55,9 @@ export class NouveauSitePageComponent extends BaseComponentClass implements OnIn
                         this.error = false
                         this.alreadyExists = false
                     }, 3000)
-                }
+                    this.saving = false
+                },
+                complete: () => { this.saving = false }
             })
         }
     }

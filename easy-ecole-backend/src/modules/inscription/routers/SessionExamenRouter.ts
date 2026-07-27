@@ -10,5 +10,6 @@ router.post('/', [Authenticate], SessionExamenController.create.bind(SessionExam
 router.put('/:id', [Authenticate], SessionExamenController.update.bind(SessionExamenController));
 router.delete('/:id', [Authenticate], SessionExamenController.delete.bind(SessionExamenController));
 router.get('/by-classe/:classeId', [Authenticate], SessionExamenController.getByClasse.bind(SessionExamenController));
+router.post('/creer-paire', [Authenticate], SessionExamenController.creerPaire.bind(SessionExamenController));
 
 export default router;

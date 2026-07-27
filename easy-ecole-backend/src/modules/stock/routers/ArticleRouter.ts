@@ -80,6 +80,7 @@ router
      *         description: Article mis à jour
      */
     .put('/:id', [Authenticate], ArticleController.update)
+    .put('/:id/statut', [Authenticate], ArticleController.updateStatut)
     /**
      * @openapi
      * /stocks/articles/{id}:

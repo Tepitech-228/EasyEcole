@@ -1,4 +1,4 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { DemandeInscription } from "./DemandeInscription";
 import { Utilisateur } from "../../auth/models/Utilisateur";
@@ -11,7 +11,7 @@ export enum EtatPreInscription {
 }
 
 export class PreInscription extends Model<InferAttributes<PreInscription>, InferCreationAttributes<PreInscription>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare demandeInscriptionId: ForeignKey<DemandeInscription['id']>
   declare statut: string
   declare commentaire: CreationOptional<string>

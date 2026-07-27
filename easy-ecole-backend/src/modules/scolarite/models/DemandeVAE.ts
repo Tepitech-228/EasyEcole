@@ -1,11 +1,11 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../ScolariteModule";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { Parcours } from "../../inscription/models/Parcours";
 
 export class DemandeVAE extends Model<InferAttributes<DemandeVAE>, InferCreationAttributes<DemandeVAE>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare utilisateurId: ForeignKey<Utilisateur['id']>
   declare utilisateur?: NonAttribute<Utilisateur>
   declare type: 'vae' | 'vap' | 'equivalence'

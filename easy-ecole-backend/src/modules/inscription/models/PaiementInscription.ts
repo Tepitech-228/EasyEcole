@@ -1,4 +1,4 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { Utilisateur } from "../../auth/models/Utilisateur";
@@ -6,7 +6,7 @@ import { TypesPaiement } from "../../../core/enums/TypesPaiement";
 import { DemandeInscription } from "./DemandeInscription";
 
 export class PaiementInscription extends Model<InferAttributes<PaiementInscription>, InferCreationAttributes<PaiementInscription>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare numero: string
   declare datePaiement: Date
   declare description: CreationOptional<string>

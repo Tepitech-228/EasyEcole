@@ -1,11 +1,11 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { PaiementInscription } from "./PaiementInscription";
 import { Bordereau } from "./Bordereau";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 
 export class Quitus extends Model<InferAttributes<Quitus>, InferCreationAttributes<Quitus>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare paiementInscriptionId: CreationOptional<ForeignKey<PaiementInscription['id']>>
   declare bordereauId: CreationOptional<ForeignKey<Bordereau['id']>>
   declare code: string

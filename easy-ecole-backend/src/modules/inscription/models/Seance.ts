@@ -1,4 +1,4 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { Cours } from "./Cours";
@@ -7,7 +7,7 @@ import { Enseignant } from "../../auth/models/Enseignant";
 import { SalleDeClasse } from "./SalleDeClasse";
 
 export class Seance extends Model<InferAttributes<Seance>, InferCreationAttributes<Seance>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare titre: string
   declare jourSemaine: JoursSemaine
   declare salle: string
@@ -51,6 +51,14 @@ Seance.init({
   },
   salle: {
     type: new DataTypes.STRING,
+    allowNull: false
+  },
+  coursId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: false
+  },
+  enseignantId: {
+    type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false
   },
   dateDebut: {

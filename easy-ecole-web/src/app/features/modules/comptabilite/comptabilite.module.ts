@@ -7,6 +7,9 @@ import { PlanComptablePageComponent } from './pages/plan-comptable-page/plan-com
 import { BalancePageComponent } from './pages/balance-page/balance-page.component';
 import { GrandLivrePageComponent } from './pages/grand-livre-page/grand-livre-page.component';
 import { EcrituresPageComponent } from './pages/ecritures-page/ecritures-page.component';
+import { ComptesBancairesPageComponent } from './pages/comptes-bancaires-page/comptes-bancaires-page.component';
+import { RelevesBancairesPageComponent } from './pages/releves-bancaires-page/releves-bancaires-page.component';
+import { RapprochementPageComponent } from './pages/rapprochement-page/rapprochement-page.component';
 
 @NgModule({
   declarations: [
@@ -15,6 +18,9 @@ import { EcrituresPageComponent } from './pages/ecritures-page/ecritures-page.co
     BalancePageComponent,
     GrandLivrePageComponent,
     EcrituresPageComponent,
+    ComptesBancairesPageComponent,
+    RelevesBancairesPageComponent,
+    RapprochementPageComponent,
   ],
   imports: [
     CommonModule,

@@ -58,8 +58,8 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
 
   getBordereaux(): void {
     this.bordereauService.getAll().subscribe({
-      next: (res) => {
-        this.bordereaux = res
+      next: (res: any) => {
+        this.bordereaux = res.data || res
       },
       error: (err) => {
         console.log(err)
@@ -80,11 +80,13 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
 
   getDemande(): void {
     this.demandeInscriptionService.getAll().subscribe({
-      next: (res) => {
-        if (res.length > 0) {
-          this.demande = res[0]
-          if (this.demande.session) {
-            this.generateMonthsFromSession(this.demande.session)
+      next: (res: any) => {
+        const items: any[] = res.data || res
+        if (items.length > 0) {
+          const demande = items[0]
+          this.demande = demande
+          if (demande.session) {
+            this.generateMonthsFromSession(demande.session)
           }
         }
       },

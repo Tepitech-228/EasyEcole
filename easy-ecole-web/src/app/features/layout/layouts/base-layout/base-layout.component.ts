@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { interval, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { AuthService } from 'src/app/data/modules/auth/services/auth.service';
 import { PanierParcoursChoisiService } from 'src/app/data/modules/orientation/services/panier-parcours-choisi.service';
@@ -26,11 +26,9 @@ export class BaseLayoutComponent extends BaseComponentClass implements OnInit, O
   showPanierModal: boolean = false
   showProfileDropdown: boolean = false
   showNotifDropdown: boolean = false
-  rappelSalleNotif: { currentCours?: string; currentSalle?: string; nextCours?: string | null; nextSalle?: string | null; minutesRestantes?: number } | null = null
   nonLuesCount: number = 0
   notifications: any[] = []
   private notifSub: Subscription | null = null
-  private rappelSub: Subscription | null = null
   private notifCountSub: Subscription | null = null
 
   readonly PROFILES_PATH: string = environment.MEDIAS_PATH.AUTH.PROFILES
@@ -63,7 +61,6 @@ export class BaseLayoutComponent extends BaseComponentClass implements OnInit, O
 
   ngOnDestroy(): void {
     this.notifSub?.unsubscribe()
-    this.rappelSub?.unsubscribe()
     this.notifCountSub?.unsubscribe()
   }
 
@@ -79,18 +76,6 @@ export class BaseLayoutComponent extends BaseComponentClass implements OnInit, O
 
   private startPolling(): void {
     if (!this.rolesValue.isEnseignant && !this.rolesValue.isApprenant && !this.rolesValue.isInstitution && !this.rolesValue.isAdmin) return;
-
-    this.rappelSub = interval(60000).subscribe(() => {
-      this.notificationService.getRappelSalle().subscribe({
-        next: (res: any) => {
-          if (res?.rappel) {
-            this.rappelSalleNotif = res.rappel;
-            this.soundService.play('rappel_salle')
-            setTimeout(() => this.rappelSalleNotif = null, 35000);
-          }
-        }
-      });
-    });
 
     this.notificationService.getAll().subscribe({
       next: (data) => {

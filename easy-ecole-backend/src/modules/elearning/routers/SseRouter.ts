@@ -4,6 +4,11 @@ import SseController from "../controllers/SseController";
 
 const router = express.Router();
 
-router.get('/', [Authenticate], SseController.connect);
+router.get('/', [(req: any, res: any, next: any) => {
+  if (!req.headers['authorization'] && req.query.token) {
+    req.headers['authorization'] = `Bearer ${req.query.token}`;
+  }
+  next();
+}, Authenticate], SseController.connect);
 
 export default router;

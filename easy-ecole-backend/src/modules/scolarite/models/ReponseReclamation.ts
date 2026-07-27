@@ -1,11 +1,11 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { Reclamation } from "./Reclamation";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../ScolariteModule";
 
 export class ReponseReclamation extends Model<InferAttributes<ReponseReclamation>, InferCreationAttributes<ReponseReclamation>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare reclamationId: ForeignKey<Reclamation['id']>
   declare repondeurId: ForeignKey<Utilisateur['id']>
   declare reponse: string

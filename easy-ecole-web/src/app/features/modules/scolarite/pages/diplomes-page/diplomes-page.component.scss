@@ -1,0 +1,91 @@
+.page-container {
+  @apply p-6;
+}
+
+.card {
+  @apply bg-white rounded-lg shadow-sm;
+}
+
+.card-header {
+  @apply p-6;
+}
+
+.card-title {
+  @apply text-lg font-semibold text-gray-900;
+}
+
+.card-subtitle {
+  @apply text-sm text-gray-500 mt-1;
+}
+
+.card-body {
+  @apply p-6;
+}
+
+.card-footer {
+  @apply px-6 py-4 border-t border-gray-100;
+}
+
+.form-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4;
+}
+
+.form-group {
+  @apply flex flex-col gap-1.5;
+}
+
+.form-label {
+  @apply block text-sm font-medium text-gray-700;
+}
+
+.form-input {
+  @apply w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition;
+}
+
+.form-input-sm {
+  @apply border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none;
+}
+
+.form-select {
+  @apply w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white transition;
+}
+
+.form-actions {
+  @apply flex justify-end gap-3 pt-2 border-t border-gray-100;
+}
+
+.data-table {
+  @apply min-w-full;
+}
+
+.data-table thead {
+  @apply bg-gray-50 border-b;
+}
+
+.data-table th {
+  @apply text-sm font-medium text-gray-700 px-4 py-3 text-left;
+}
+
+.data-table tbody tr {
+  @apply bg-white hover:bg-gray-50 border-b transition-colors;
+}
+
+.data-table td {
+  @apply text-sm text-gray-600 px-4 py-3 whitespace-nowrap;
+}
+
+.btn-icon {
+  @apply inline-flex items-center justify-center p-1.5 rounded-md transition;
+}
+
+.loading-shimmer {
+  @apply p-6 space-y-4;
+}
+
+.shimmer-row {
+  @apply h-12 bg-gray-100 rounded-lg animate-pulse;
+}
+
+.empty-state {
+  @apply py-16 flex flex-col items-center justify-center gap-4;
+}

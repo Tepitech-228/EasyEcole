@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { MccService } from '../../services/mcc.service';
+import { CoursService } from 'src/app/data/modules/inscription/services/cours.service';
 
 @Component({
   selector: 'app-mcc-form-page',
@@ -15,16 +16,17 @@ export class MccFormPageComponent extends BaseComponentClass implements OnInit {
   itemId: number | null = null;
   submitted = false;
   loading = false;
+  ueList: any[] = [];
 
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
-    private service: MccService
+    private service: MccService,
+    private coursService: CoursService
   ) {
     super();
     this.form = this.fb.group({
-      ueId: [null, Validators.required],
       coursId: [null, Validators.required],
       coefficient: [1, [Validators.required, Validators.min(0.5)]],
       creditEcts: [0],
@@ -32,6 +34,11 @@ export class MccFormPageComponent extends BaseComponentClass implements OnInit {
   }
 
   ngOnInit(): void {
+    this.coursService.getAll().subscribe({
+      next: (res) => { this.ueList = res; },
+      error: () => {}
+    });
+
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.isEditMode = true;
@@ -50,8 +57,8 @@ export class MccFormPageComponent extends BaseComponentClass implements OnInit {
     const obs = this.isEditMode
       ? this.service.update(this.itemId!, this.form.value)
       : this.service.create(this.form.value);
-    obs.subscribe(() => this.router.navigate(['/bulletins/mcc']));
+    obs.subscribe(() => this.router.navigate(['/bulletins/parametres-notation']));
   }
 
-  annuler(): void { this.router.navigate(['/bulletins/mcc']); }
+  annuler(): void { this.router.navigate(['/bulletins/parametres-notation']); }
 }

@@ -1,6 +1,7 @@
 require("./models/_associations")
 import express from "express";
 import Authenticate from "../../core/middlewares/Authenticate";
+import { InscriptionComplete } from "../../core/middlewares/InscriptionComplete";
 import EntrepriseRouter from "./routers/EntrepriseRouter"
 import TuteurRouter from "./routers/TuteurRouter"
 import OffreStageRouter from "./routers/OffreStageRouter"
@@ -13,13 +14,13 @@ import AttestationStageRouter from "./routers/AttestationStageRouter"
 const router = express.Router();
 
 router
-    .use('/entreprises', [Authenticate], EntrepriseRouter)
-    .use('/tuteurs', [Authenticate], TuteurRouter)
-    .use('/offres', [Authenticate], OffreStageRouter)
-    .use('/demandes', [Authenticate], DemandeStageRouter)
-    .use('/conventions', [Authenticate], ConventionStageRouter)
-    .use('/rapports', [Authenticate], RapportStageRouter)
-    .use('/notes', [Authenticate], NoteStageRouter)
-    .use('/attestations', [Authenticate], AttestationStageRouter)
+    .use('/entreprises', [Authenticate, InscriptionComplete], EntrepriseRouter)
+    .use('/tuteurs', [Authenticate, InscriptionComplete], TuteurRouter)
+    .use('/offres', [Authenticate, InscriptionComplete], OffreStageRouter)
+    .use('/demandes', [Authenticate, InscriptionComplete], DemandeStageRouter)
+    .use('/conventions', [Authenticate, InscriptionComplete], ConventionStageRouter)
+    .use('/rapports', [Authenticate, InscriptionComplete], RapportStageRouter)
+    .use('/notes', [Authenticate, InscriptionComplete], NoteStageRouter)
+    .use('/attestations', [Authenticate, InscriptionComplete], AttestationStageRouter)
 
 export default router;

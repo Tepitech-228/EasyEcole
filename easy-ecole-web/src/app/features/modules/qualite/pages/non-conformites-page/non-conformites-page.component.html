@@ -1,0 +1,86 @@
+<app-header-title title="Non-conformités" subtitle="Gestion des non-conformités ISO 21001"></app-header-title>
+
+<div class="flex gap-4 mb-4">
+  <input [(ngModel)]="search" (input)="filtrer()" placeholder="Rechercher..." class="form-input flex-1">
+  <select [(ngModel)]="filtreType" (change)="filtrer()" class="form-input w-40">
+    <option value="">Tous types</option>
+    <option value="critique">Critique</option>
+    <option value="majeure">Majeure</option>
+    <option value="mineure">Mineure</option>
+  </select>
+  <select [(ngModel)]="filtreStatut" (change)="filtrer()" class="form-input w-40">
+    <option value="">Tous statuts</option>
+    <option value="ouverte">Ouverte</option>
+    <option value="en_cours">En cours</option>
+    <option value="traitee">Traitée</option>
+    <option value="fermee">Fermée</option>
+  </select>
+  <app-custom-button text="Nouvelle NC" (click)="ouvrirFormulaire()"></app-custom-button>
+</div>
+
+<app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+<div *ngIf="!loading && filtered.length === 0" class="text-center py-8 text-gray-400">Aucune non-conformité</div>
+
+<div class="grid gap-3">
+  <div *ngFor="let item of filtered" class="bg-white rounded-lg shadow p-4 border-l-4 cursor-pointer hover:shadow-md transition"
+    [class.border-red-500]="item.type==='critique'" [class.border-orange-400]="item.type==='majeure'" [class.border-yellow-400]="item.type==='mineure'"
+    (click)="voirDetails(item)">
+    <div class="flex justify-between items-start">
+      <div class="flex-1">
+        <div class="flex gap-2 mb-1">
+          <app-custom-badge [color]="getBadgeColor(item.type)" [text]="item.type || ''"></app-custom-badge>
+          <span class="text-xs" [class]="getStatutColor(item.statut)">{{ item.statut }}</span>
+          <span class="text-xs text-gray-400">{{ item.source }}</span>
+        </div>
+        <p class="text-sm text-gray-700">{{ item.description }}</p>
+        <span class="text-xs text-gray-400">{{ item.processus }} — {{ item.declareeLe | date:'shortDate' }}</span>
+      </div>
+      <div class="flex gap-1 ml-2">
+        <button (click)="$event.stopPropagation(); ouvrirFormulaire(item)" class="text-blue-500 hover:text-blue-700 text-xs">✎</button>
+        <button (click)="$event.stopPropagation(); supprimer(item.id)" class="text-red-500 hover:text-red-700 text-xs">✕</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-custom-modal [showModal]="showForm" (onCloseModal)="fermerFormulaire()">
+  <h3 class="text-lg font-semibold mb-4">{{ editingId ? 'Modifier' : 'Nouvelle' }} non-conformité</h3>
+  <div class="grid gap-3">
+    <div class="flex gap-3">
+      <select [(ngModel)]="formData.type" class="form-input flex-1">
+        <option value="critique">Critique</option><option value="majeure">Majeure</option><option value="mineure">Mineure</option>
+      </select>
+      <select [(ngModel)]="formData.priorite" class="form-input flex-1">
+        <option value="haute">Haute</option><option value="moyenne">Moyenne</option><option value="basse">Basse</option>
+      </select>
+    </div>
+    <input [(ngModel)]="formData.source" placeholder="Source" class="form-input">
+    <input [(ngModel)]="formData.processus" placeholder="Processus" class="form-input">
+    <textarea [(ngModel)]="formData.description" placeholder="Description" class="form-input" rows="3"></textarea>
+    <input [(ngModel)]="formData.cause" placeholder="Cause (optionnelle)" class="form-input">
+    <select [(ngModel)]="formData.statut" class="form-input">
+      <option value="ouverte">Ouverte</option><option value="en_cours">En cours</option>
+      <option value="traitee">Traitée</option><option value="fermee">Fermée</option>
+    </select>
+    <div class="flex gap-2 justify-end mt-2">
+      <app-custom-button text="Annuler" [outlined]="true" (click)="fermerFormulaire()"></app-custom-button>
+      <app-custom-button text="Enregistrer" (click)="sauvegarder()"></app-custom-button>
+    </div>
+  </div>
+</app-custom-modal>
+
+<app-custom-modal [showModal]="!!selected" (onCloseModal)="fermerFormulaire()">
+  <h3 class="text-lg font-semibold mb-2">Détails NC</h3>
+  <div class="space-y-2 text-sm" *ngIf="selected">
+    <p><strong>Type :</strong> {{ selected.type }}</p>
+    <p><strong>Priorité :</strong> {{ selected.priorite }}</p>
+    <p><strong>Source :</strong> {{ selected.source }}</p>
+    <p><strong>Processus :</strong> {{ selected.processus }}</p>
+    <p><strong>Statut :</strong> {{ selected.statut }}</p>
+    <p><strong>Description :</strong> {{ selected.description }}</p>
+    <p *ngIf="selected.cause"><strong>Cause :</strong> {{ selected.cause }}</p>
+    <p><strong>Déclarée le :</strong> {{ selected.declareeLe | date:'shortDate' }}</p>
+    <p *ngIf="selected.clotureeLe"><strong>Clôturée le :</strong> {{ selected.clotureeLe | date:'shortDate' }}</p>
+  </div>
+</app-custom-modal>

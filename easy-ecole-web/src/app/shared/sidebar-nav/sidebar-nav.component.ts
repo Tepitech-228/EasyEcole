@@ -19,6 +19,44 @@ export class SidebarNavComponent implements OnInit {
   loading: boolean = true;
 
 
+  private poleColors: Record<string, string> = {
+    'Pedagogique': '#2563EB',
+    'Financier': '#10B981',
+    'Ressources Humaines': '#8B5CF6',
+    'Communication & Collaboration': '#F59E0B',
+    'Archivages Numeriques': '#92400E',
+    'E-Learning': '#14B8A6',
+    'Administration & Systeme': '#64748B',
+    'Gestion documentaire': '#0891B2',
+  };
+
+  private hexToRgba(hex: string, alpha: number): string {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  getPoleColor(poleLabel: string): string {
+    return this.poleColors[poleLabel] || '#2563EB';
+  }
+
+  getPoleBg(poleLabel: string): string {
+    return this.hexToRgba(this.getPoleColor(poleLabel), 0.15);
+  }
+
+  getPoleBgActive(poleLabel: string): string {
+    return this.hexToRgba(this.getPoleColor(poleLabel), 0.30);
+  }
+
+  get activePoleColor(): string {
+    return this.getPoleColor(this.activePoleLabel || '');
+  }
+
+  get activePoleColorLight(): string {
+    return this.hexToRgba(this.activePoleColor, 0.25);
+  }
+
   constructor(private menuService: MenuService) {}
 
   ngOnInit(): void {

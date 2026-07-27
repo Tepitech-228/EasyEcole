@@ -1,10 +1,17 @@
 const hostname: string = window.location.hostname;
-const apiBaseUrl: string = "http://" + hostname + ":3000/"
-const apiUrl: string = "http://" + hostname + ":3000/api/v1"
+const apiBaseUrl: string = "https://" + hostname + ":3000/"
+const apiUrl: string = "https://" + hostname + ":3000/api/v1"
 
 export const environment = {
   production: true,
+
+  /** URL de base de l'API (utilis�e par l'HttpInterceptor pour pr�fixer toutes les requ�tes) */
+  apiUrl: apiUrl,
+
+  /** Alias conserv� pour r�trocompatibilit� */
   API_URL: apiUrl,
+
+  /** Configuration des endpoints par module */
   API_MODULES: {
     AUTH: apiUrl + '/auth',
     ORIENTATION: apiUrl + '/orientation',
@@ -24,18 +31,19 @@ export const environment = {
   },
   MEDIAS_PATH: {
     AUTH: {
-      PROFILES: apiUrl + "auth/profiles/",
-      PHOTOS: apiBaseUrl + "auth/apprenants/photos/"
+      PROFILES: apiBaseUrl + "auth/profiles/",
+      PHOTOS: apiBaseUrl + "auth/apprenants/photos/",
+      PHOTOS_ENSEIGNANTS: apiBaseUrl + "auth/enseignants/photos/",
     },
     ORIENTATION: {
-      PARCOURS: apiBaseUrl + "orientation/parcours/",
-      DEBOUCHES: apiBaseUrl + "orientation/debouches/",
+      PARCOURS: apiUrl + "/orientation/parcours/",
+      DEBOUCHES: apiUrl + "/orientation/debouches/",
     },
     INSCRIPTION: {
-      DOSSIERS: apiBaseUrl + "inscription/dossiers/",
-      BORDEREAUX: apiBaseUrl + "inscription/bordereaux/"
+      DOSSIERS: apiUrl + "/inscription/dossiers/",
+      BORDEREAUX: apiUrl + "/inscription/bordereaux/"
     }
   },
-  QR_CODES_PATH: apiBaseUrl + "auth/apprenants/qr-codes/",
-  QR_CODES_ENSEIGNANTS_PATH: apiBaseUrl + "auth/enseignants/qr-codes/"
+  QR_CODES_PATH: apiUrl + "/auth/apprenants/qr-codes/",
+  QR_CODES_ENSEIGNANTS_PATH: apiUrl + "/auth/enseignants/qr-codes/"
 };

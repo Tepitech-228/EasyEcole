@@ -10,6 +10,11 @@ export class Article {
     declare stockActuel?: number
     declare stockMinimum?: number
     declare prixUnitaire?: number
+    declare statut?: string
+    declare dateMiseEnService?: string
+    declare dureeVieEstimee?: number
+    declare dateFinVie?: string
+    declare motifFinVie?: string
     declare readonly createdAt?: Date
     declare readonly updatedAt?: Date
 }

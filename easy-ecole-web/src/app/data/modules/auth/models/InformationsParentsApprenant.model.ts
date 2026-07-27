@@ -5,9 +5,11 @@ export class InformationsParentsApprenant{
   declare pereVivant?: boolean
   declare nomPrenomsPere?: string
   declare professionPere?: string
+  declare emailPere?: string
   declare mereVivante?: boolean
   declare nomPrenomsMere?: string
   declare professionMere?: string
+  declare emailMere?: string
   declare apprenantId?: string
   declare apprenant?: Apprenant
   

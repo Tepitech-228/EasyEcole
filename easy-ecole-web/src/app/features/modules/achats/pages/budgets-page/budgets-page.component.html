@@ -2,7 +2,24 @@
     <app-header-title title="Budgets" subtitle="Gérer les budgets et engagements"></app-header-title>
 </div>
 
-<div class="flex flex-col">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <p class="text-xs font-medium text-gray-500 uppercase">Budget alloué</p>
+        <p class="text-xl font-bold text-indigo-600 mt-1">{{ totalAlloue | currency:'XAF':'symbol':'1.0-0' }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <p class="text-xs font-medium text-gray-500 uppercase">Budget utilisé</p>
+        <p class="text-xl font-bold text-yellow-600 mt-1">{{ totalUtilise | currency:'XAF':'symbol':'1.0-0' }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <p class="text-xs font-medium text-gray-500 uppercase">Écart</p>
+        <p class="text-xl font-bold text-emerald-600 mt-1">{{ ecartGlobal | currency:'XAF':'symbol':'1.0-0' }}</p>
+    </div>
+</div>
+
+<app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+<div *ngIf="!loading" class="flex flex-col">
     <div class="overflow-x-auto">
         <div class="py-2 inline-block min-w-full">
             <div class="overflow-hidden">
@@ -12,13 +29,29 @@
                             <th class="text-sm font-medium text-gray-900 px-2 py-4 text-left">#</th>
                             <th class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Département</th>
                             <th class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Période</th>
-                            <th class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Alloué</th>
-                            <th class="text-sm font-medium text-gray-900 px-2 py-4 text-left">Utilisé</th>
+                            <th class="text-sm font-medium text-gray-900 px-2 py-4 text-right">Alloué</th>
+                            <th class="text-sm font-medium text-gray-900 px-2 py-4 text-right">Utilisé</th>
+                            <th class="text-sm font-medium text-gray-900 px-2 py-4 text-right">Écart</th>
                             <th class="text-sm font-medium text-gray-900 px-2 py-4 text-right">Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td colspan="6" class="text-center py-4 text-sm text-gray-500">Aucun budget</td></tr>
+                        <tr *ngIf="budgets.length==0" class="bg-white p-0 border-b">
+                            <td class="text-sm text-center py-4 text-gray-600" colspan="7">Aucun budget</td>
+                        </tr>
+                        <tr *ngFor="let b of budgets; index as i" class="bg-white hover:bg-gray-100 p-0 border-b">
+                            <td class="px-2 py-4 text-sm text-gray-600">{{ i + 1 }}</td>
+                            <td class="px-2 py-4 text-sm font-medium text-gray-900">{{ b.departement }}</td>
+                            <td class="px-2 py-4 text-sm text-gray-600">{{ b.periode }}</td>
+                            <td class="px-2 py-4 text-sm text-gray-600 text-right">{{ b.alloue | currency:'XAF':'symbol':'1.0-0' }}</td>
+                            <td class="px-2 py-4 text-sm text-gray-600 text-right">{{ b.utilise | currency:'XAF':'symbol':'1.0-0' }}</td>
+                            <td class="px-2 py-4 text-sm text-right font-medium" [class.text-green-600]="(b.alloue - b.utilise) >= 0" [class.text-red-600]="(b.alloue - b.utilise) < 0">
+                                {{ (b.alloue - b.utilise) | currency:'XAF':'symbol':'1.0-0' }}
+                            </td>
+                            <td class="px-2 py-4 text-right">
+                                <app-custom-button [link]="'/achats/budgets/' + b.id" text="Détails" color="primary" size="small"></app-custom-button>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>

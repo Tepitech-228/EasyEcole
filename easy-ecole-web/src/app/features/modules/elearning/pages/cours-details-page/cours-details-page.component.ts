@@ -2,17 +2,18 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
+import { BaseComponentClass } from 'src/app/core/base-component-class';
 
 @Component({
   selector: 'app-cours-details-page',
   templateUrl: './cours-details-page.component.html',
   styleUrls: ['./cours-details-page.component.scss']
 })
-export class CoursDetailsPageComponent implements OnInit {
+export class CoursDetailsPageComponent extends BaseComponentClass implements OnInit {
   cours: any = null;
   loading = false;
 
-  constructor(private route: ActivatedRoute, private http: HttpClient) {}
+  constructor(private route: ActivatedRoute, private http: HttpClient) { super(); }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -37,13 +38,5 @@ export class CoursDetailsPageComponent implements OnInit {
   get supportsTotal(): number {
     if (!this.cours?.modules) return 0;
     return this.cours.modules.reduce((sum: number, m: any) => sum + (m.supports?.length || 0), 0);
-  }
-
-  get isInstitution(): boolean {
-    return false;
-  }
-
-  get isEnseignant(): boolean {
-    return false;
   }
 }

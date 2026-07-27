@@ -1,0 +1,69 @@
+<div style="max-width:800px;margin:0 auto;padding:40px;font-family:Arial,Helvetica,sans-serif;color:#1A1A1A;">
+
+  <table style="width:100%;border-bottom:2px solid #14213D;padding-bottom:16px;margin-bottom:30px;">
+    <tr>
+      <td style="width:70px;vertical-align:middle;">
+        <img src="{{etablissement.logo}}" alt="Logo" style="width:60px;height:60px;object-fit:contain;">
+      </td>
+      <td style="vertical-align:middle;font-size:16px;font-weight:bold;color:#14213D;">
+        {{etablissement.nom}}<br>
+        <span style="font-size:11px;color:#555;font-weight:normal;">{{etablissement.adresse}}</span>
+      </td>
+    </tr>
+  </table>
+
+  <div style="text-align:center;margin:30px 0;font-size:14px;font-weight:bold;text-transform:uppercase;letter-spacing:2px;">
+    PROCÈS-VERBAL DE DÉLIBÉRATION
+  </div>
+
+  <table style="width:100%;font-size:12px;margin-bottom:20px;border-collapse:collapse;">
+    <tr><td style="padding:4px 0;"><strong>Classe :</strong> {{classe}}</td><td style="padding:4px 0;"><strong>Session :</strong> {{session}}</td></tr>
+    <tr><td style="padding:4px 0;"><strong>Date :</strong> {{date}}</td><td style="padding:4px 0;"><strong>Président :</strong> {{president}}</td></tr>
+  </table>
+
+  <table style="width:100%;border-collapse:collapse;font-size:11px;margin:20px 0;">
+    <thead>
+      <tr style="background-color:#14213D;color:#FFF;">
+        <th style="text-align:left;padding:6px 8px;">N°</th>
+        <th style="text-align:left;padding:6px 8px;">Nom & Prénoms</th>
+        <th style="text-align:center;padding:6px 8px;width:70px;">Moyenne</th>
+        <th style="text-align:center;padding:6px 8px;width:80px;">Mention</th>
+        <th style="text-align:center;padding:6px 8px;width:60px;">Rang</th>
+        <th style="text-align:center;padding:6px 8px;width:110px;">Décision</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each etudiants}}
+      <tr>
+        <td style="padding:5px 8px;border-bottom:1px solid #EEE;">{{index}}</td>
+        <td style="padding:5px 8px;border-bottom:1px solid #EEE;">{{nom}} {{prenom}}</td>
+        <td style="text-align:center;padding:5px 8px;border-bottom:1px solid #EEE;">{{moyenneGenerale}}</td>
+        <td style="text-align:center;padding:5px 8px;border-bottom:1px solid #EEE;">{{mention}}</td>
+        <td style="text-align:center;padding:5px 8px;border-bottom:1px solid #EEE;">{{rang}}</td>
+        <td style="text-align:center;padding:5px 8px;border-bottom:1px solid #EEE;font-weight:bold;">{{decision}}</td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+
+  <div style="font-size:11px;margin:20px 0;">
+    <p><strong>Statistiques :</strong> Admis : {{statistiques.admis}} | Rattrapage : {{statistiques.rattrapage}} | Ajourné : {{statistiques.ajourne}} | Total : {{statistiques.total}}</p>
+  </div>
+
+  <table style="width:100%;margin-top:40px;font-size:11px;">
+    <tr>
+      <td style="text-align:center;">
+        <div style="margin-bottom:40px;">Le Président du Jury</div>
+        <div style="font-weight:bold;">{{president}}</div>
+      </td>
+      <td style="text-align:center;">
+        <div style="margin-bottom:40px;">Le Secrétaire</div>
+        <div style="font-weight:bold;">{{secretaire}}</div>
+      </td>
+    </tr>
+  </table>
+
+  <div style="text-align:center;margin-top:10px;font-size:10px;color:#999;">
+    Document généré le {{dateGeneration}} — Réf: {{reference}}
+  </div>
+</div>

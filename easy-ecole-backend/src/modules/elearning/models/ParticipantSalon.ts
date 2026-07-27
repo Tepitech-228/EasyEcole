@@ -33,7 +33,7 @@ ParticipantSalon.init({
     allowNull: false
   },
   utilisateurId: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false
   },
   dateAjout: {

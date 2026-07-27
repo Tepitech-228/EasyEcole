@@ -1,11 +1,11 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, NonAttribute, ForeignKey } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, NonAttribute, ForeignKey } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { DemandeInscription } from "./DemandeInscription";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 
 export class ReponseInscription extends Model<InferAttributes<ReponseInscription>, InferCreationAttributes<ReponseInscription>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare message: CreationOptional<string>
   declare dateReponse: Date
   declare utilisateurId: ForeignKey<Utilisateur['id']>

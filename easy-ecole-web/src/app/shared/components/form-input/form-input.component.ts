@@ -23,30 +23,40 @@ export class FormInputComponent implements OnInit, ControlValueAccessor, Validat
   @Input() inputType: string = 'text'
   @Input() placeholder: string | null = null
   @Input() value: string | null = null
-  // @Input() formControl!: AbstractControl | null
+
+  _value: any = null
+  onChange: any = () => {}
+  onTouched: any = () => {}
 
   constructor() { }
 
   ngOnInit(): void {
   }
 
-  // ControlValueAccessor methods
   writeValue(obj: any): void {
-    console.log(obj)
+    this._value = obj
   }
 
   registerOnChange(fn: any): void {
-    console.log(fn)
+    this.onChange = fn
   }
 
   registerOnTouched(fn: any): void {
-    console.log(fn)
+    this.onTouched = fn
   }
 
   setDisabledState?(isDisabled: boolean): void {
   }
 
-  // Validator methods
+  onInput(event: any): void {
+    this._value = event.target.value
+    this.onChange(this._value)
+  }
+
+  onBlur(): void {
+    this.onTouched()
+  }
+
   validate(control: AbstractControl): ValidationErrors | null {
     return null
   }

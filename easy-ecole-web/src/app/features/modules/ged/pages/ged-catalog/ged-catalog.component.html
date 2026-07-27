@@ -1,101 +1,292 @@
-<div class="catalog-page">
-  <!-- Filtres -->
-  <div class="filters-bar">
-    <div class="search-field">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-      <input type="text" [(ngModel)]="search" (ngModelChange)="onSearch()" placeholder="Rechercher dans les documents (titre, contenu, auteur, tags...)" />
+<div class="flex h-full gap-4">
+  <!-- Sidebar -->
+  <aside class="w-[270px] shrink-0 bg-white border border-gray-200 rounded-xl overflow-y-auto">
+    <div class="p-3 border-b border-gray-100">
+      <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Domaines</h3>
     </div>
-    <select class="filter-select" [(ngModel)]="selectedFolderId" (change)="load()">
-      <option [ngValue]="undefined">Tous les dossiers</option>
-      <option *ngFor="let f of folders" [ngValue]="f.id">{{ f.nom }}</option>
-    </select>
-    <select class="filter-select" [(ngModel)]="selectedStatut" (change)="load()">
-      <option value="">Tous les statuts</option>
-      <option value="Disponible">Disponible</option>
-      <option value="en_attente">En attente</option>
-      <option value="archive">Archivé</option>
-    </select>
-  </div>
+    <div class="p-1">
+      <button
+        class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+        [class.bg-blue-50]="!selectedNode"
+        [class.text-blue-600]="!selectedNode"
+        [class.text-gray-600]="selectedNode"
+        (click)="resetFilters()">
+        <span class="flex items-center gap-2">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Tous les documents
+        </span>
+      </button>
 
-  <!-- Stats -->
-  <div class="stats-row">
-    <div class="stat-card">
-      <span class="stat-value">{{ documents.length }}</span>
-      <span class="stat-label">Documents</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-value">{{ getNbPages() }}</span>
-      <span class="stat-label">Pages totales</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-value">{{ getTailleTotale() }}</span>
-      <span class="stat-label">Taille totale</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-value">{{ archivedCount }}</span>
-      <span class="stat-label">Archivés</span>
-    </div>
-  </div>
-
-  <!-- Table -->
-  <div class="table-container">
-    <div *ngIf="loading" class="loading-state">Chargement...</div>
-    <div *ngIf="!loading && filteredDocuments.length === 0" class="empty-state">
-      <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#6e7391" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-      <p>Aucun document trouvé</p>
-    </div>
-
-    <table class="ged-table" *ngIf="filteredDocuments.length > 0">
-      <thead>
-        <tr>
-          <th>Titre</th>
-          <th>Type</th>
-          <th>Auteur</th>
-          <th>Pages</th>
-          <th>Taille</th>
-          <th>Statut</th>
-          <th>Conservation</th>
-          <th>Date</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let d of filteredDocuments">
-          <td class="cell-title">
-            <a [routerLink]="['/ged/document', d.id]" class="doc-link">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              {{ d.titre }}
-            </a>
-            <span class="cell-tags" *ngIf="d.tags">— {{ d.tags }}</span>
-          </td>
-          <td><span class="badge-type">{{ d.type || 'PDF' }}</span></td>
-          <td>{{ d.auteur || d.uploader?.prenoms + ' ' + d.uploader?.nom || '-' }}</td>
-          <td>{{ d.nbPages || '-' }}</td>
-          <td>{{ d.taille }}</td>
-          <td>
-            <span class="badge-statut" [class.disponible]="d.statut === 'Disponible'" [class.attente]="d.statut === 'en_attente'" [class.archive]="d.statut === 'archive'">
-              {{ d.statut }}
+      <!-- Academic tree -->
+      <div *ngIf="tree.length > 0">
+        <div *ngFor="let node of tree">
+          <button
+            class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between"
+            [class.bg-blue-50]="selectedNode?.domainId === node.domainId && !selectedNode?.anneeId && !selectedNode?.folderId"
+            [class.text-blue-600]="selectedNode?.domainId === node.domainId && !selectedNode?.anneeId && !selectedNode?.folderId"
+            [class.text-gray-600]="selectedNode?.domainId !== node.domainId || selectedNode?.anneeId || selectedNode?.folderId"
+            (click)="toggleNode(node)">
+            <span class="flex items-center gap-2 min-w-0">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0"><path [attr.d]="getNodeIcon(node)"/></svg>
+              <span class="truncate">{{ node.label }}</span>
+              <span class="text-xs text-gray-400 ml-1" *ngIf="node.data?.docCount">({{ node.data?.docCount }})</span>
             </span>
-          </td>
-          <td class="cell-conservation">
-            <span *ngIf="d.isArchived">Archivé</span>
-            <span *ngIf="!d.isArchived && d.dureeConservation">{{ d.dureeConservation }}</span>
-            <span *ngIf="!d.isArchived && !d.dureeConservation">-</span>
-          </td>
-          <td class="cell-date">{{ d.createdAt | date:'dd/MM/yyyy' }}</td>
-          <td class="cell-actions">
-            <button class="action-btn" title="Télécharger" (click)="download(d)">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            </button>
-            <button class="action-btn" title="Exporter PDF" (click)="exportPdf(d)">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            </button>
-            <button class="action-btn danger" title="Supprimer" (click)="deleteDoc(d)">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 transition-transform" [class.rotate-90]="node.expanded"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          <div *ngIf="node.expanded" class="ml-3 border-l border-gray-200 pl-2">
+            <ng-container *ngIf="node.children.length === 0">
+              <div class="px-3 py-1.5 text-xs text-gray-400">Aucun dossier</div>
+            </ng-container>
+            <ng-container *ngFor="let child of node.children">
+              <button
+                class="w-full text-left px-3 py-1.5 rounded-md text-xs transition-colors flex items-center justify-between"
+                [class.bg-blue-50]="selectedNode === child"
+                [class.text-blue-600]="selectedNode === child"
+                [class.text-gray-500]="selectedNode !== child"
+                (click)="child.leaf ? selectLeaf(child) : toggleNode(child)">
+                <span class="flex items-center gap-1.5 min-w-0">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0"><path [attr.d]="getNodeIcon(child)"/></svg>
+                  <span class="truncate">{{ child.label }}</span>
+                  <span class="text-xs text-gray-400 ml-0.5" *ngIf="child.data?.docCount">({{ child.data?.docCount }})</span>
+                </span>
+                <svg *ngIf="!child.leaf && child.children.length > 0" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 transition-transform" [class.rotate-90]="child.expanded"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+              <div *ngIf="child.expanded && child.children.length > 0" class="ml-3 border-l border-gray-200 pl-2">
+                <ng-container *ngFor="let niveau of child.children">
+                  <button
+                    class="w-full text-left px-3 py-1.5 rounded-md text-xs transition-colors flex items-center justify-between"
+                    [class.bg-blue-50]="selectedNode === niveau"
+                    [class.text-blue-600]="selectedNode === niveau"
+                    [class.text-gray-500]="selectedNode !== niveau"
+                    (click)="niveau.leaf ? selectLeaf(niveau) : toggleNode(niveau)">
+                    <span class="flex items-center gap-1.5 min-w-0">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0"><path [attr.d]="getNodeIcon(niveau)"/></svg>
+                      <span class="truncate">{{ niveau.label }}</span>
+                      <span class="text-xs text-gray-400 ml-0.5" *ngIf="niveau.data?.docCount">({{ niveau.data?.docCount }})</span>
+                    </span>
+                    <svg *ngIf="!niveau.leaf && niveau.children.length > 0" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 transition-transform" [class.rotate-90]="niveau.expanded"><polyline points="9 18 15 12 9 6"/></svg>
+                  </button>
+                  <div *ngIf="niveau.expanded && niveau.children.length > 0" class="ml-3 border-l border-gray-200 pl-2">
+                    <ng-container *ngFor="let parc of niveau.children">
+                      <button
+                        class="w-full text-left px-3 py-1.5 rounded-md text-xs transition-colors flex items-center justify-between"
+                        [class.bg-blue-50]="selectedNode === parc"
+                        [class.text-blue-600]="selectedNode === parc"
+                        [class.text-gray-500]="selectedNode !== parc"
+                        (click)="parc.leaf ? selectLeaf(parc) : toggleNode(parc)">
+                        <span class="flex items-center gap-1.5 min-w-0">
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0"><path [attr.d]="getNodeIcon(parc)"/></svg>
+                          <span class="truncate">{{ parc.label }}</span>
+                          <span class="text-xs text-gray-400 ml-0.5" *ngIf="parc.data?.docCount">({{ parc.data?.docCount }})</span>
+                        </span>
+                        <svg *ngIf="!parc.leaf && parc.children.length > 0" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 transition-transform" [class.rotate-90]="parc.expanded"><polyline points="9 18 15 12 9 6"/></svg>
+                      </button>
+                      <div *ngIf="parc.expanded && parc.children.length > 0" class="ml-3 border-l border-gray-200 pl-2">
+                        <ng-container *ngFor="let cls of parc.children">
+                          <button
+                            class="w-full text-left px-3 py-1.5 rounded-md text-xs transition-colors flex items-center gap-1.5"
+                            [class.bg-blue-50]="selectedNode === cls"
+                            [class.text-blue-600]="selectedNode === cls"
+                            [class.text-gray-500]="selectedNode !== cls"
+                            (click)="selectLeaf(cls)">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0"><path [attr.d]="getNodeIcon(cls)"/></svg>
+                            <span class="truncate">{{ cls.label }}</span>
+                            <span class="text-xs text-gray-400 ml-0.5" *ngIf="cls.data?.docCount">({{ cls.data?.docCount }})</span>
+                          </button>
+                        </ng-container>
+                      </div>
+                    </ng-container>
+                  </div>
+                </ng-container>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fallback: flat domain list when tree is empty -->
+      <div *ngIf="tree.length === 0">
+        <ng-container *ngFor="let domain of domains">
+          <button
+            class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+            [class.bg-blue-50]="selectedNode?.domainId === domain.id"
+            [class.text-blue-600]="selectedNode?.domainId === domain.id"
+            [class.text-gray-600]="selectedNode?.domainId !== domain.id"
+            (click)="selectDomain(domain)">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0"><path [attr.d]="getNodeIcon({ type: 'domain' })"/></svg>
+            <span class="truncate">{{ domain.label }}</span>
+          </button>
+        </ng-container>
+        <div *ngIf="domains.length === 0" class="px-3 py-2 text-xs text-gray-400">Aucun domaine</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="flex-1 min-w-0 flex flex-col gap-4">
+    <!-- Filter bar -->
+    <div class="flex items-center gap-3 flex-wrap">
+      <div class="flex-1 min-w-[240px] flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3.5 py-2.5">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#8696a0" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input
+          type="text"
+          [(ngModel)]="search"
+          (ngModelChange)="onSearch()"
+          placeholder="Rechercher (titre, référence, auteur...)"
+          class="flex-1 border-none bg-transparent text-sm text-gray-800 outline-none placeholder-gray-400" />
+      </div>
+      <select class="px-3 py-2.5 border border-gray-200 rounded-xl bg-white text-sm text-gray-600 outline-none cursor-pointer" [(ngModel)]="selectedDomainId" (change)="filterByDomain(selectedDomainId)">
+        <option [ngValue]="null">Tout domaine</option>
+        <option *ngFor="let d of domains" [ngValue]="d.id">{{ d.label }}</option>
+      </select>
+      <select class="px-3 py-2.5 border border-gray-200 rounded-xl bg-white text-sm text-gray-600 outline-none cursor-pointer" [(ngModel)]="selectedConfidentiality" (change)="page=1; load()">
+        <option value="">Toute confidentialité</option>
+        <option value="public">Public</option>
+        <option value="interne">Interne</option>
+        <option value="restreint">Restreint</option>
+        <option value="confidentiel">Confidentiel</option>
+      </select>
+      <select class="px-3 py-2.5 border border-gray-200 rounded-xl bg-white text-sm text-gray-600 outline-none cursor-pointer" [(ngModel)]="selectedProcessusGenerateurId" (change)="page=1; load()">
+        <option [ngValue]="null">Tout processus</option>
+        <option *ngFor="let p of processusGenerateurs" [ngValue]="p.id">{{ p.code }}</option>
+      </select>
+      <select class="px-3 py-2.5 border border-gray-200 rounded-xl bg-white text-sm text-gray-600 outline-none cursor-pointer" [(ngModel)]="selectedSessionId" (change)="page=1; load()">
+        <option [ngValue]="null">Toute session</option>
+        <option *ngFor="let s of sessions" [ngValue]="s.id">{{ s.nom }}</option>
+      </select>
+      <select class="px-3 py-2.5 border border-gray-200 rounded-xl bg-white text-sm text-gray-600 outline-none cursor-pointer" [(ngModel)]="selectedLifecycle" (change)="page=1; load()">
+        <option value="">Tout cycle de vie</option>
+        <option value="courant">Courant</option>
+        <option value="intermediaire">Intermédiaire</option>
+        <option value="definitif">Définitif</option>
+        <option value="a_detruire">À détruire</option>
+      </select>
+    </div>
+
+    <!-- Stats -->
+    <div class="flex gap-3">
+      <div class="bg-white border border-gray-200 rounded-xl px-4 py-3 flex flex-col gap-0.5 min-w-[110px]">
+        <span class="font-bold text-xl text-gray-800">{{ documents.length }}</span>
+        <span class="text-xs text-gray-400">Documents</span>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-xl px-4 py-3 flex flex-col gap-0.5 min-w-[110px]">
+        <span class="font-bold text-xl text-gray-800">{{ getNbPages() }}</span>
+        <span class="text-xs text-gray-400">Pages</span>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-xl px-4 py-3 flex flex-col gap-0.5 min-w-[110px]">
+        <span class="font-bold text-xl text-gray-800">{{ getTailleTotale() }}</span>
+        <span class="text-xs text-gray-400">Taille totale</span>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-xl px-4 py-3 flex flex-col gap-0.5 min-w-[110px]">
+        <span class="font-bold text-xl text-gray-800">{{ archivedCount }}</span>
+        <span class="text-xs text-gray-400">Archivés</span>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white border border-gray-200 rounded-xl" style="overflow-x: auto;">
+      <div *ngIf="loading" class="py-16 text-center text-sm text-gray-400">Chargement...</div>
+      <div *ngIf="!loading && documents.length === 0" class="py-16 text-center">
+        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#6e7391" stroke-width="1.5" class="mx-auto mb-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <p class="text-sm text-gray-400">Aucun document trouvé</p>
+      </div>
+      <table class="w-full border-collapse" *ngIf="!loading && documents.length > 0">
+        <thead>
+          <tr class="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide bg-gray-50 border-b border-gray-200">
+            <th class="py-3.5 px-4">Référence</th>
+            <th class="py-3.5 px-4">Titre</th>
+            <th class="py-3.5 px-4">Type</th>
+            <th class="py-3.5 px-4">Domaine</th>
+            <th class="py-3.5 px-4">Processus</th>
+            <th class="py-3.5 px-4">Confidentialité</th>
+            <th class="py-3.5 px-4">Cycle de vie</th>
+            <th class="py-3.5 px-4">Version</th>
+            <th class="py-3.5 px-4">Taille</th>
+            <th class="py-3.5 px-4">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let d of documents"
+            class="text-sm text-gray-700 border-b border-gray-100 cursor-pointer transition-colors hover:bg-gray-50"
+            (click)="navigateToDocument(d)">
+            <td class="py-3 px-4 font-mono text-xs text-gray-500">{{ d.reference || '-' }}</td>
+            <td class="py-3 px-4">
+              <span class="font-semibold text-gray-800">{{ d.titre }}</span>
+              <span *ngIf="d.tags" class="text-xs text-gray-400 ml-1">— {{ d.tags }}</span>
+            </td>
+            <td class="py-3 px-4">
+              <span class="inline-block px-2.5 py-0.5 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-600">{{ getTypeLabel(d) }}</span>
+            </td>
+            <td class="py-3 px-4 text-xs text-gray-500">{{ getDomainLabel(d) }}</td>
+            <td class="py-3 px-4 text-xs text-gray-500">{{ d.processusGenerateur?.code || '-' }}</td>
+            <td class="py-3 px-4">
+              <span class="inline-block px-2.5 py-0.5 rounded-md text-xs font-semibold whitespace-nowrap" [class]="getConfidentialityBadge(d.confidentialityLevel)">
+                {{ getConfidentialityLabel(d.confidentialityLevel) }}
+              </span>
+            </td>
+            <td class="py-3 px-4">
+              <span class="inline-block px-2.5 py-0.5 rounded-md text-xs font-semibold whitespace-nowrap" [class]="getLifecycleBadge(d.lifecycleStatus)">
+                {{ getLifecycleLabel(d.lifecycleStatus) }}
+              </span>
+            </td>
+            <td class="py-3 px-4 text-xs text-gray-500 font-mono">{{ getVersionLabel(d) }}</td>
+            <td class="py-3 px-4 text-xs text-gray-500">{{ formatTaille(d.taille) }}</td>
+            <td class="py-3 px-4" (click)="$event.stopPropagation()">
+              <div class="flex gap-1.5">
+                <button class="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition-all" title="Télécharger" (click)="download(d)">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </button>
+                <button class="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition-all" title="Exporter PDF" (click)="exportPdf(d)">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </button>
+                <button class="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center text-gray-400 hover:text-red-600 hover:border-red-400 hover:bg-red-50 transition-all" title="Supprimer" (click)="deleteDoc(d)">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex items-center justify-between" *ngIf="totalPages > 1">
+      <span class="text-xs text-gray-400">{{ total }} document(s) — Page {{ page }} / {{ totalPages }}</span>
+      <div class="flex items-center gap-1">
+        <button
+          class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          [disabled]="page <= 1"
+          (click)="goToPage(1)">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
+        </button>
+        <button
+          class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          [disabled]="page <= 1"
+          (click)="goToPage(page - 1)">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button
+          *ngFor="let p of pages"
+          class="w-8 h-8 rounded-lg text-xs font-medium transition-colors"
+          [class.bg-blue-600]="p === page"
+          [class.text-white]="p === page"
+          [class.text-gray-600]="p !== page"
+          [class.hover:bg-gray-100]="p !== page"
+          (click)="goToPage(p)">{{ p }}</button>
+        <button
+          class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          [disabled]="page >= totalPages"
+          (click)="goToPage(page + 1)">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <button
+          class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          [disabled]="page >= totalPages"
+          (click)="goToPage(totalPages)">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </main>
 </div>

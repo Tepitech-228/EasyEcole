@@ -1,0 +1,41 @@
+<div class="mb-8">
+    <app-header-title title="Reporting immobilisations" subtitle="Tableau de bord des immobilisations"></app-header-title>
+</div>
+
+<app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+<div *ngIf="!loading" class="space-y-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <p class="text-xs font-medium text-gray-500 uppercase">Total immobilisations</p>
+            <p class="text-2xl font-bold text-gray-900 mt-1">{{ totalImmobilisations }}</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <p class="text-xs font-medium text-gray-500 uppercase">Valeur totale</p>
+            <p class="text-2xl font-bold text-indigo-600 mt-1">{{ valeurTotale | currency:'XAF':'symbol':'1.0-0' }}</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <p class="text-xs font-medium text-gray-500 uppercase">Assurances actives</p>
+            <p class="text-2xl font-bold text-green-600 mt-1">{{ assurancesActives }}</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <p class="text-xs font-medium text-gray-500 uppercase">Affectations en cours</p>
+            <p class="text-2xl font-bold text-blue-600 mt-1">{{ affectationsEnCours }}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <p class="text-xs font-medium text-gray-500 uppercase">En service</p>
+            <p class="text-xl font-bold text-green-600 mt-1">{{ enServiceCount }}</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <p class="text-xs font-medium text-gray-500 uppercase">En maintenance</p>
+            <p class="text-xl font-bold text-yellow-600 mt-1">{{ enMaintenanceCount }}</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <p class="text-xs font-medium text-gray-500 uppercase">Hors service / Réformé</p>
+            <p class="text-xl font-bold text-red-600 mt-1">{{ horsServiceCount }}</p>
+        </div>
+    </div>
+</div>

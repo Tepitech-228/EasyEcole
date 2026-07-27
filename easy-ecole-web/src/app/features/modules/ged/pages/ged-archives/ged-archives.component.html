@@ -1,7 +1,34 @@
 <div class="archives-page">
   <div class="page-head">
     <h2>Archives</h2>
-    <p>{{ documents.length }} document{{ documents.length > 1 ? 's' : '' }} archivé{{ documents.length > 1 ? 's' : '' }} · {{ tailleTotale }}</p>
+    <p>{{ total }} document{{ total > 1 ? 's' : '' }} archivé{{ total > 1 ? 's' : '' }} · {{ tailleTotale }}</p>
+  </div>
+
+  <div class="domain-stats" *ngIf="getStatsByDomain().length > 0">
+    <div class="stat-card" *ngFor="let s of getStatsByDomain()">
+      <span class="stat-count">{{ s.count }}</span>
+      <span class="stat-label">{{ s.label }}</span>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <input type="text" [(ngModel)]="search" (ngModelChange)="onFilterChange()" placeholder="Rechercher un document..." class="filter-input" />
+    <select [(ngModel)]="selectedDomainId" (change)="onFilterChange()" class="filter-select">
+      <option [ngValue]="null">Tous domaines</option>
+      <option *ngFor="let d of domains" [ngValue]="d.id">{{ d.label }}</option>
+    </select>
+    <select [(ngModel)]="selectedDocumentTypeId" (change)="onFilterChange()" class="filter-select">
+      <option [ngValue]="null">Tous types</option>
+      <option *ngFor="let t of documentTypes" [ngValue]="t.id">{{ t.label }}</option>
+    </select>
+    <select [(ngModel)]="selectedSourceType" (change)="onFilterChange()" class="filter-select">
+      <option value="">Toutes sources</option>
+      <option value="interne">Interne</option>
+      <option value="externe">Externe</option>
+      <option value="numerisation">Numérisation</option>
+      <option value="courrier">Courrier</option>
+      <option value="email">Email</option>
+    </select>
   </div>
 
   <div *ngIf="loading" class="loading-state">Chargement...</div>
@@ -10,7 +37,7 @@
     <p>Aucun document archivé</p>
   </div>
 
-  <div class="table-container" *ngIf="documents.length > 0">
+  <div class="table-container" style="overflow-x: auto;" *ngIf="documents.length > 0">
     <table class="ged-table">
       <thead>
         <tr>
@@ -19,6 +46,8 @@
           <th>Taille</th>
           <th>Pages</th>
           <th>Conservation</th>
+          <th>DUA fin</th>
+          <th>Statut DUA</th>
           <th>Archivé le</th>
           <th>Actions</th>
         </tr>
@@ -32,6 +61,10 @@
           <td>{{ d.taille }}</td>
           <td>{{ d.nbPages || '-' }}</td>
           <td>{{ d.dureeConservation || '-' }}</td>
+          <td>{{ (d.duaEndDate | date:'dd/MM/yyyy') || '-' }}</td>
+          <td>
+            <span class="dua-badge" [class]="getDuaBadge(getDuaStatus(d))">{{ getDuaStatusLabel(getDuaStatus(d)) }}</span>
+          </td>
           <td>{{ d.archivedUntil | date:'dd/MM/yyyy' || '-' }}</td>
           <td class="cell-actions">
             <button class="action-btn" title="Télécharger" (click)="download(d)">
@@ -44,5 +77,11 @@
         </tr>
       </tbody>
     </table>
+
+    <div class="pagination">
+      <button class="page-btn" (click)="pageChanged(currentPage - 1)" [disabled]="currentPage <= 1">Précédent</button>
+      <span class="page-info">Page {{ currentPage }} / {{ totalPages }} ({{ total }} total)</span>
+      <button class="page-btn" (click)="pageChanged(currentPage + 1)" [disabled]="currentPage >= totalPages">Suivant</button>
+    </div>
   </div>
 </div>

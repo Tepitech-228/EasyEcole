@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { CommonModule } from '@angular/common';
+import { ReportingService } from 'src/app/data/modules/reporting/services/reporting.service';
 
 @Component({
   selector: 'app-dashboard-global-page',
@@ -8,6 +9,10 @@ import { HttpClient } from '@angular/common/http';
 })
 export class DashboardGlobalPageComponent implements OnInit {
   data: any = {};
+chartEffectifs: number[] = [];
+chartEffectifsLabels: string[] = [];
+chartPaiements: number[] = [];
+chartPaiementsLabels: string[] = [];
   links = [
     { path: '/reporting/effectifs', label: 'Effectifs' },
     { path: '/reporting/notes', label: 'Notes & Réussite' },
@@ -19,11 +24,17 @@ export class DashboardGlobalPageComponent implements OnInit {
     { path: '/reporting/achats', label: 'Achats' },
   ];
 
-  constructor(private http: HttpClient) {}
+  constructor(private reporting: ReportingService) {}
 
   ngOnInit(): void {
-    this.http.get('/api/reporting/consolide/dashboard').subscribe({
-      next: (res: any) => this.data = res,
+    this.reporting.getDashboard().subscribe({
+      next: (res: any) => {
+        this.data = res;
+        this.chartEffectifs = res?.effectifsParMois || [];
+        this.chartEffectifsLabels = res?.moisLabels || [];
+        this.chartPaiements = res?.paiementsParMois || [];
+        this.chartPaiementsLabels = res?.moisLabels || [];
+      },
       error: () => {}
     });
   }

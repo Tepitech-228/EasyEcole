@@ -7,8 +7,6 @@ import { NiveauEtude } from 'src/app/data/modules/inscription/models/NiveauEtude
 import { Cours } from 'src/app/data/modules/inscription/models/Cours.model';
 import { NiveauEtudeService } from 'src/app/data/modules/inscription/services/niveau-etude.service';
 import { CoursService } from 'src/app/data/modules/inscription/services/cours.service';
-import { Classe } from 'src/app/data/modules/inscription/models/Classe.model';
-import { ClasseService } from 'src/app/data/modules/inscription/services/classe.service';
 import { CursusApprenant } from 'src/app/data/modules/inscription/models/CursusApprenant.model';
 import { CursusApprenantService } from 'src/app/data/modules/inscription/services/cursus-apprenant.service';
 import { Parcours } from 'src/app/data/modules/inscription/models/Parcours.model';
@@ -26,13 +24,10 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
   _cours: Cours[] = []
   niveauxEtude: NiveauEtude[] = []
   _niveauxEtude: NiveauEtude[] = []
-  classes: Classe[] = []
-  _classes: Classe[] = []
   parcours: Parcours[] = []
   _parcours: Parcours[] = []
 
   selectedNiveauEtude: string = 'undefined'
-  selectedClasse: string = 'undefined'
   selectedParcours: string = 'undefined'
 
   searchCours?: string
@@ -42,24 +37,23 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
     code: new FormControl(null, [Validators.required]),
     intitule: new FormControl(null, [Validators.required]),
     credit: new FormControl(null, []),
+    creditEcts: new FormControl(null, []),
     semestre: new FormControl(null, []),
     description: new FormControl(null, []),
+    objectifs: new FormControl(null, []),
     estObligatoire: new FormControl(false, []),
     parcoursId: new FormControl(null, [Validators.required]),
-    classeId: new FormControl(null, [Validators.required]),
   })
 
   constructor(
     private router: Router,
     private niveauEtudeService: NiveauEtudeService,
     private coursService: CoursService,
-    private classeService: ClasseService,
     private cursusApprenantService: CursusApprenantService,
     private parcoursService: ParcoursService,
   ) {
     super()
     this.getNiveauxEtude()
-    this.getClasses()
     this.getParcours()
 
     if (this.rolesValue.isApprenant) {
@@ -86,11 +80,12 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
       cours.code = this.nouveauCoursForm.get('code')!.value
       cours.intitule = this.nouveauCoursForm.get('intitule')!.value
       cours.credit = this.nouveauCoursForm.get('credit')!.value
+      cours.creditEcts = this.nouveauCoursForm.get('creditEcts')!.value
       cours.semestre = this.nouveauCoursForm.get('semestre')!.value
       cours.description = this.nouveauCoursForm.get('description')!.value
+      cours.objectifs = this.nouveauCoursForm.get('objectifs')!.value
       cours.estObligatoire = this.nouveauCoursForm.get('estObligatoire')!.value
       cours.parcoursId = this.nouveauCoursForm.get('parcoursId')!.value
-      cours.classeId = this.nouveauCoursForm.get('classeId')!.value
 
       this.coursService.create(cours).subscribe({
         next: (res) => {
@@ -112,16 +107,12 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
     this._niveauxEtude = this.niveauxEtude.filter((value: NiveauEtude) => {
       return this.selectedNiveauEtude == 'undefined' || value.id == this.selectedNiveauEtude
     })
-    this._classes = this.classes.filter((value: Classe) => {
-      return this.selectedNiveauEtude == 'undefined' || value.niveauEtudeId == this.selectedNiveauEtude
-    })
     this._parcours = this.parcours.filter((value: Parcours) => {
       return this.selectedNiveauEtude == 'undefined' || value.niveauEtudeId == this.selectedNiveauEtude
     })
 
     this._cours = this.cours.filter((value: Cours) => {
       return (this.selectedNiveauEtude == 'undefined' || value.parcours?.niveauEtudeId == this.selectedNiveauEtude) &&
-        (this.selectedClasse == 'undefined' || value.classeId == this.selectedClasse) &&
         (this.selectedParcours == 'undefined' || value.parcoursId == this.selectedParcours)
     })
   }
@@ -130,7 +121,6 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
     this.searchCours = undefined
     
     this.selectedNiveauEtude = 'undefined'
-    this.selectedClasse = 'undefined'
     this.selectedParcours = 'undefined'
     this.filtrerCours()
   }
@@ -188,21 +178,6 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
           next: (res) => {
             this.niveauxEtude = res
             this._niveauxEtude = this.niveauxEtude
-          },
-          error: (err) => {
-            console.log(err)
-          },
-        }
-      )
-  }
-
-  getClasses(): void {
-    this.classeService.getAll()
-      .subscribe(
-        {
-          next: (res) => {
-            this.classes = res
-            this._classes = this.classes
           },
           error: (err) => {
             console.log(err)

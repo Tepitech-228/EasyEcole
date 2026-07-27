@@ -1,0 +1,8 @@
+﻿Listening on http://localhost:3000
+Database connected successfully
+node : Warning (FK constraint ignored): Trop de clefs sont d├®finies. Maximum de 64 clefs allou├®
+    + CategoryInfo          : NotSpecified: (Warning (FK con...4 clefs allou├®:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Database: all data synchronized
+[RappelSalleCron] Cron de rappel d├®marr├® (chaque minute, fen├¬tre H-10min)

@@ -7,7 +7,7 @@
   <div class="mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
     <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
       <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total</p>
-      <p class="mt-1 text-2xl font-bold text-gray-900">{{ deliberations.length }}</p>
+      <p class="mt-1 text-2xl font-bold text-gray-900">{{ totalItems }}</p>
     </div>
     <div class="bg-white rounded-2xl border border-amber-100 p-5 shadow-sm">
       <p class="text-xs font-medium text-amber-600 uppercase tracking-wider">Planifiées</p>
@@ -31,39 +31,49 @@
     </div>
   </div>
 
-  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div class="flex flex-wrap gap-3">
-        <select [(ngModel)]="filtres.classeId" (change)="charger()" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
-          <option value="">Toutes les classes</option>
-          <option *ngFor="let c of classes" [value]="c.id">{{ c.libelle }}</option>
-        </select>
-        <select [(ngModel)]="filtres.anneeAcademiqueId" (change)="charger()" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
-          <option value="">Toutes les années</option>
-          <option *ngFor="let a of anneesAcademiques" [value]="a.id">{{ a.libelle }}</option>
-        </select>
-        <select [(ngModel)]="filtres.periode" (change)="charger()" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
-          <option value="">Toutes périodes</option>
-          <option value="semestre1">Semestre 1</option>
-          <option value="semestre2">Semestre 2</option>
-        </select>
-        <select [(ngModel)]="filtres.statut" (change)="charger()" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
-          <option value="">Tous statuts</option>
-          <option value="planifiee">Planifiée</option>
-          <option value="en_cours">En cours</option>
-          <option value="cloturee">Clôturée</option>
-          <option value="publiee">Publiée</option>
-          <option value="contestee">Contestée</option>
-        </select>
-        <button (click)="resetFiltres()" class="text-sm px-3 py-2 text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200">
-          Réinitialiser
-        </button>
-      </div>
-      <button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="ouvrirFormulaire()" class="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-sm">
-        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-        Planifier
-      </button>
+  <app-filters-annee-niveau-parcours
+    [annees]="annees"
+    [niveaux]="niveaux"
+    [parcoursList]="parcoursList"
+    [sessions]="sessions"
+    [loading]="!dataLoaded"
+    [showResultCount]="true"
+    [resultCount]="totalItems"
+    [resultLabel]="'délibération(s)'"
+    (filterChange)="onFilterChange($event)">
+  </app-filters-annee-niveau-parcours>
+
+  <div class="bg-white border border-gray-200 rounded-lg p-3 mb-4 flex items-center gap-4 flex-wrap">
+    <div class="flex items-center gap-2">
+      <label class="text-xs font-medium text-gray-500">Période</label>
+      <select [(ngModel)]="filterPeriode" (change)="charger()" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+        <option value="">Toutes périodes</option>
+        <option value="semestre1">Semestre 1</option>
+        <option value="semestre2">Semestre 2</option>
+        <option value="semestre3">Semestre 3</option>
+        <option value="semestre4">Semestre 4</option>
+        <option value="semestre5">Semestre 5</option>
+        <option value="semestre6">Semestre 6</option>
+      </select>
     </div>
+    <div class="flex items-center gap-2">
+      <label class="text-xs font-medium text-gray-500">Statut</label>
+      <select [(ngModel)]="filterStatut" (change)="charger()" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+        <option value="">Tous statuts</option>
+        <option value="planifiee">Planifiée</option>
+        <option value="en_cours">En cours</option>
+        <option value="cloturee">Clôturée</option>
+        <option value="publiee">Publiée</option>
+        <option value="contestee">Contestée</option>
+      </select>
+    </div>
+    <button (click)="resetFiltres()" class="text-sm px-3 py-2 text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200">
+      Réinitialiser
+    </button>
+    <button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="ouvrirFormulaire()" class="ml-auto inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-sm">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      Planifier
+    </button>
   </div>
 
   <div *ngIf="showForm" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
@@ -84,7 +94,7 @@
         <label class="block text-xs font-medium text-gray-500 mb-1">Année scolaire</label>
         <select [(ngModel)]="formData.anneeAcademiqueId" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
           <option value="">Sélectionner</option>
-          <option *ngFor="let a of anneesAcademiques" [value]="a.id">{{ a.libelle }}</option>
+          <option *ngFor="let a of annees" [value]="a.id">{{ a.libelle }}</option>
         </select>
       </div>
       <div>
@@ -92,6 +102,10 @@
         <select [(ngModel)]="formData.periode" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
           <option value="semestre1">Semestre 1</option>
           <option value="semestre2">Semestre 2</option>
+          <option value="semestre3">Semestre 3</option>
+          <option value="semestre4">Semestre 4</option>
+          <option value="semestre5">Semestre 5</option>
+          <option value="semestre6">Semestre 6</option>
         </select>
       </div>
       <div>
@@ -112,64 +126,28 @@
     </div>
   </div>
 
-  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-    <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-100">
-        <thead>
-          <tr class="bg-gray-50/50">
-            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Délibération</th>
-            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Classe</th>
-            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
-            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Période</th>
-            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Effectif</th>
-            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Admis</th>
-            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Statut</th>
-            <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-50">
-          <tr *ngFor="let d of deliberations; trackBy: trackByFn" class="hover:bg-gray-50/50 transition-colors">
-            <td class="px-5 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ d.libelle }}</td>
-            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ d.classe?.libelle || '-' }}</td>
-            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ d.date | date:'dd/MM/yyyy' }}</td>
-            <td class="px-5 py-4 whitespace-nowrap text-center text-sm text-gray-700">{{ d.periode === 'semestre1' ? 'S1' : 'S2' }}</td>
-            <td class="px-5 py-4 whitespace-nowrap text-center text-sm text-gray-700">{{ d.effectif || '-' }}</td>
-            <td class="px-5 py-4 whitespace-nowrap text-center text-sm text-gray-700">{{ d.admis || '-' }}</td>
-            <td class="px-5 py-4 whitespace-nowrap text-center">
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" [ngClass]="getStatutClass(d.statut)">
-                <span class="w-1.5 h-1.5 rounded-full mr-1.5"
-                      [ngClass]="d.statut === 'publiee' ? 'bg-purple-500' : d.statut === 'contestee' ? 'bg-red-500' : d.statut === 'cloturee' ? 'bg-green-500' : d.statut === 'en_cours' ? 'bg-blue-500' : 'bg-amber-500'"></span>
-                {{ getStatutLabel(d.statut) }}
-              </span>
-            </td>
-            <td class="px-5 py-4 whitespace-nowrap text-right">
-              <div class="flex items-center justify-end gap-2">
-                <a [routerLink]="[d.id]"
-                   class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
-                  Détails
-                  <svg class="w-3.5 h-3.5 ml-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                </a>
-                <button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="supprimer(d.id)"
-                        class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <app-loading-spinner *ngIf="loading"></app-loading-spinner>
-    <div *ngIf="!loading && deliberations.length === 0" class="px-5 py-12 text-center">
-      <svg class="mx-auto h-12 w-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-      <p class="mt-4 text-sm text-gray-500">Aucune délibération trouvée</p>
-    </div>
-    <div *ngIf="pagination.totalPages > 1" class="px-5 py-4 border-t border-gray-100 flex items-center justify-between">
-      <p class="text-sm text-gray-500">Page {{ pagination.page }} sur {{ pagination.totalPages }}</p>
-      <div class="flex gap-2">
-        <button [disabled]="pagination.page <= 1" (click)="pagination.page = pagination.page - 1; charger()" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50">Précédent</button>
-        <button [disabled]="pagination.page >= pagination.totalPages" (click)="pagination.page = pagination.page + 1; charger()" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50">Suivant</button>
-      </div>
-    </div>
-  </div>
+  <app-batch-toolbar
+    *ngIf="selectedIds.length > 0"
+    [selectedCount]="selectedIds.length"
+    [actions]="batchActions"
+    [loading]="batchLoading"
+    (action)="onBatchAction({ action: $event, ids: selectedIds })"
+    (deselectAll)="selectedIds = []">
+  </app-batch-toolbar>
+
+  <app-dossier-view
+    [nodes]="treeNodes"
+    [columns]="itemColumns"
+    [batchActions]="batchActions"
+    [loading]="loading"
+    [totalItems]="totalItems"
+    [currentPage]="currentPage"
+    [totalPages]="totalPages"
+    [pageSize]="pageSize"
+    [renderItemActions]="true"
+    (selectionChange)="onSelectionChange($event)"
+    (batchAction)="onBatchAction($event)"
+    (pageChange)="onPageChange($event)"
+    (itemAction)="onItemAction($event)">
+  </app-dossier-view>
 </div>

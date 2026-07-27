@@ -1,4 +1,4 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { TypeDocument } from "./TypeDocument";
@@ -6,12 +6,16 @@ import { DocumentDelivre } from "./DocumentDelivre";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../ScolariteModule";
 
 export class DemandeDocument extends Model<InferAttributes<DemandeDocument>, InferCreationAttributes<DemandeDocument>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare etudiantId: ForeignKey<Utilisateur['id']>
   declare typeDocumentId: ForeignKey<TypeDocument['id']>
   declare statut: string
   declare date: CreationOptional<Date>
   declare fraisPayes: CreationOptional<boolean>
+  declare parcoursId: CreationOptional<number | null>
+  declare niveauEtudeId: CreationOptional<number | null>
+  declare classeId: CreationOptional<number | null>
+  declare anneeAcademiqueId: CreationOptional<number | null>
   declare etudiant?: NonAttribute<Utilisateur>
   declare typeDocument?: NonAttribute<TypeDocument>
   declare documentDelivre?: NonAttribute<DocumentDelivre>
@@ -46,6 +50,22 @@ DemandeDocument.init({
     type: DataTypes.BOOLEAN,
     defaultValue: false,
     allowNull: false
+  },
+  parcoursId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
+  },
+  niveauEtudeId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
+  },
+  classeId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
+  },
+  anneeAcademiqueId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

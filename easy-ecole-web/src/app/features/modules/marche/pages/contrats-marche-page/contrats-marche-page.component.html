@@ -1,0 +1,61 @@
+<app-header-title title="Contrats de marché" subtitle="Gestion des contrats de marché"></app-header-title>
+
+<div class="flex justify-end mb-4">
+  <app-custom-button text="Nouveau contrat" (click)="ouvrirFormulaire()"></app-custom-button>
+</div>
+
+<app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+<div *ngIf="!loading && items.length === 0" class="text-center py-8 text-gray-400">Aucun contrat</div>
+
+<div class="overflow-x-auto" *ngIf="!loading && items.length > 0">
+  <table class="w-full text-sm">
+    <thead><tr class="text-left border-b"><th>Réf.</th><th>Objet</th><th>AO/AMI</th><th>Période</th><th>Montant</th><th>Statut</th><th>Actions</th></tr></thead>
+    <tbody>
+      <tr *ngFor="let item of items" class="border-b hover:bg-gray-50">
+        <td class="py-2 font-mono text-xs">{{ item.reference }}</td>
+        <td class="max-w-xs truncate">{{ item.objet }}</td>
+        <td class="text-xs">{{ item.appelOffreId ? 'AO: ' + getAOLabel(item.appelOffreId) : '' }}{{ item.manifestationInteretId ? 'AMI: ' + getAMILabel(item.manifestationInteretId) : '' }}</td>
+        <td class="text-xs">{{ item.dateDebut | date:'shortDate' }} → {{ item.dateFin | date:'shortDate' }}</td>
+        <td>{{ item.montantContractuel | number }} FCFA</td>
+        <td><span class="px-2 py-1 rounded text-xs" [class]="getStatutColor(item.statut)">{{ getStatutLabel(item.statut) }}</span></td>
+        <td class="flex gap-1">
+          <button *ngIf="item.statut==='signe'" (click)="signer(item.id)" class="text-green-600 hover:text-green-800 text-xs" title="Signer">🖊</button>
+          <button (click)="ouvrirFormulaire(item)" class="text-blue-500 hover:text-blue-700 text-xs">✎</button>
+          <button (click)="supprimer(item.id)" class="text-red-500 hover:text-red-700 text-xs">🗑</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<app-custom-modal [showModal]="showForm" (onCloseModal)="fermerFormulaire()">
+  <h3 class="text-lg font-semibold mb-4">{{ editingId ? 'Modifier' : 'Nouveau' }} contrat</h3>
+  <div class="grid gap-3">
+    <select [(ngModel)]="formData.appelOffreId" class="form-input">
+      <option value="">— Appel d'offres —</option>
+      <option *ngFor="let a of appelsOffre" [value]="a.id">{{ a.reference }} — {{ a.objet | slice:0:40 }}</option>
+    </select>
+    <select [(ngModel)]="formData.manifestationInteretId" class="form-input">
+      <option value="">— Manifestation d'intérêt —</option>
+      <option *ngFor="let a of manifestations" [value]="a.id">{{ a.reference }} — {{ a.objet | slice:0:40 }}</option>
+    </select>
+    <input [(ngModel)]="formData.reference" placeholder="Référence" class="form-input">
+    <textarea [(ngModel)]="formData.objet" placeholder="Objet" class="form-input" rows="2"></textarea>
+    <div class="flex gap-3">
+      <div class="flex-1"><label class="text-xs text-gray-500">Signature</label><input type="date" [(ngModel)]="formData.dateSignature" class="form-input"></div>
+      <div class="flex-1"><label class="text-xs text-gray-500">Début</label><input type="date" [(ngModel)]="formData.dateDebut" class="form-input"></div>
+      <div class="flex-1"><label class="text-xs text-gray-500">Fin</label><input type="date" [(ngModel)]="formData.dateFin" class="form-input"></div>
+    </div>
+    <input type="number" [(ngModel)]="formData.montantContractuel" placeholder="Montant contractuel" class="form-input">
+    <textarea [(ngModel)]="formData.conditionsParticulieres" placeholder="Conditions particulières" class="form-input" rows="2"></textarea>
+    <select [(ngModel)]="formData.statut" class="form-input">
+      <option value="signe">Signé</option><option value="encours">En cours</option>
+      <option value="termine">Terminé</option><option value="resile">Résilié</option>
+    </select>
+    <div class="flex gap-2 justify-end mt-2">
+      <app-custom-button text="Annuler" [outlined]="true" (click)="fermerFormulaire()"></app-custom-button>
+      <app-custom-button text="Enregistrer" (click)="sauvegarder()"></app-custom-button>
+    </div>
+  </div>
+</app-custom-modal>

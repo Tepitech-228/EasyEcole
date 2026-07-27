@@ -15,16 +15,6 @@ export interface Notification {
   updatedAt: Date;
 }
 
-export interface RappelSalle {
-  currentCours: string;
-  currentSalle: string;
-  currentFin: Date;
-  nextCours: string | null;
-  nextSalle: string | null;
-  nextHeureDebut: Date | null;
-  minutesRestantes: number;
-}
-
 @Injectable({
   providedIn: 'root'
 })
@@ -40,10 +30,6 @@ export class NotificationService {
 
   marquerLu(id: number): Observable<any> {
     return this.httpClient.put(`${this.SERVICE_URL}/${id}/lu`, {})
-  }
-
-  getRappelSalle(): Observable<{ rappel: RappelSalle | null }> {
-    return this.httpClient.get<{ rappel: RappelSalle | null }>(`${environment.API_MODULES.INSCRIPTION}/seances/rappel-salle`)
   }
 
   publierEmploiDuTemps(): Observable<{ success: boolean; message: string; enseignantsNotifies: number; etudiantsNotifies: number }> {

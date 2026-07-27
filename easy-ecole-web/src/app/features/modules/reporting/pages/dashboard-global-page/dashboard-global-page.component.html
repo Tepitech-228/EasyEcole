@@ -21,10 +21,14 @@
     </div>
   </div>
 
-  <div class="bg-white rounded-lg shadow p-6 mt-6">
-    <h2 class="text-lg font-semibold text-gray-700 mb-4">Graphique à intégrer</h2>
-    <div class="chart-placeholder">
-      <span>Graphique à intégrer</span>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+    <div class="bg-white rounded-lg shadow p-6">
+      <h2 class="text-lg font-semibold text-gray-700 mb-4">Évolution des effectifs</h2>
+      <app-graphique-ligne [labels]="chartEffectifsLabels" [data]="chartEffectifs" label="Effectifs" color="#6366F1"></app-graphique-ligne>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+      <h2 class="text-lg font-semibold text-gray-700 mb-4">Paiements</h2>
+      <app-graphique-barre [labels]="chartPaiementsLabels" [data]="chartPaiements" label="Paiements (XAF)" color="#10B981"></app-graphique-barre>
     </div>
   </div>
 </div>

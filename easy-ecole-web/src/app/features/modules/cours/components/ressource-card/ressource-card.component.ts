@@ -9,6 +9,7 @@ import { FichierRessourceService } from 'src/app/data/modules/inscription/servic
 import { RolesValueType } from 'src/app/data/types/RolesValueType';
 import { getClassWithColor } from 'file-icons-js';
 import { RessourceService } from 'src/app/data/modules/inscription/services/ressource.service';
+import { sanitizeHtml } from 'src/app/shared/utils/sanitize-html.util';
 
 @Component({
   selector: 'app-ressource-card',
@@ -35,7 +36,7 @@ export class RessourceCardComponent implements OnInit {
 
   getContenu(): SafeHtml | null {
     if (this.ressource.description) {
-      return this.sanitizer.bypassSecurityTrustHtml(this.ressource.description)
+      return this.sanitizer.bypassSecurityTrustHtml(sanitizeHtml(this.ressource.description))
     }
 
     return null

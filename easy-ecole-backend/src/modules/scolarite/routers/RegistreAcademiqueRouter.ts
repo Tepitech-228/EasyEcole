@@ -40,6 +40,29 @@ router
 
 /**
  * @openapi
+ * /scolarite/registres/batch/statut:
+ *   put:
+ *     tags: [Registres Académiques]
+ *     summary: Met à jour la décision de plusieurs registres
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               ids: { type: array, items: { type: string } }
+ *               decision: { type: string }
+ *     responses:
+ *       200:
+ *         description: Décisions mises à jour
+ */
+    .put('/batch/statut', RegistreAcademiqueController.batchStatut)
+
+/**
+ * @openapi
  * /scolarite/registres/{id}:
  *   get:
  *     tags: [Registres Académiques]

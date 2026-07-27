@@ -1,4 +1,4 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { Classe } from "./Classe";
 import { Cours } from "./Cours";
@@ -6,7 +6,7 @@ import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { Ressource } from "./Ressource";
 
 export class FichierRessource extends Model<InferAttributes<FichierRessource>, InferCreationAttributes<FichierRessource>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare titre: string
   declare description: CreationOptional<string>
   declare fichier: string

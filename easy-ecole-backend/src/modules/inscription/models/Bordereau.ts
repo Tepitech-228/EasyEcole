@@ -1,4 +1,4 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { Echeance } from "./Echeance";
@@ -6,7 +6,7 @@ import { Utilisateur } from "../../auth/models/Utilisateur";
 import { Quitus } from "./Quitus";
 
 export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAttributes<Bordereau>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare type: 'inscription' | 'scolarite'
   declare echeanceId: ForeignKey<Echeance['id']>
   declare utilisateurId: ForeignKey<Utilisateur['id']>
@@ -40,6 +40,14 @@ Bordereau.init({
     type: DataTypes.INTEGER.UNSIGNED,
     autoIncrement: true,
     primaryKey: true
+  },
+  echeanceId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: false
+  },
+  utilisateurId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: false
   },
   type: {
     type: DataTypes.ENUM('inscription', 'scolarite'),

@@ -13,6 +13,7 @@ import DemandeInscriptionRouter from "./routers/DemandeInscriptionRouter"
 import ReponseInscriptionRouter from "./routers/ReponseInscriptionRouter"
 import FraisInscriptionRouter from "./routers/FraisInscriptionRouter"
 import Authenticate from "../../core/middlewares/Authenticate";
+import { InscriptionComplete } from "../../core/middlewares/InscriptionComplete";
 import PaiementInscriptionRouter from "./routers/PaiementInscriptionRouter";
 import QuitusRouter from "./routers/QuitusRouter";
 import DossierInscriptionRouter from "./routers/DossierInscriptionRouter";
@@ -40,8 +41,10 @@ import EcheanceRouter from "./routers/EcheanceRouter";
 import BordereauController from "./controllers/BordereauController";
 import BordereauRouter from "./routers/BordereauRouter";
 import DossierEtudiantRouter from "./routers/DossierEtudiantRouter";
+import HierarchyRouter from "./routers/HierarchyRouter";
 import PreInscriptionRouter from "./routers/PreInscriptionRouter";
-import UniteEnseignementRouter from "./routers/UniteEnseignementRouter";
+
+import EcueRouter from "./routers/EcueRouter";
 import MccRouter from "./routers/MccRouter";
 import RegleEvaluationRouter from "./routers/RegleEvaluationRouter";
 import SessionExamenRouter from "./routers/SessionExamenRouter";
@@ -53,16 +56,21 @@ import AuditNoteRouter from "../bulletins/routers/AuditNoteRouter";
 import EchelleNoteRouter from "../bulletins/routers/EchelleNoteRouter";
 import JuryMembreRouter from "../bulletins/routers/JuryMembreRouter";
 import PassationRouter from "../bulletins/routers/PassationRouter";
+import SuiviUeRouter from "../bulletins/routers/SuiviUeRouter";
 import PublicationNoteRouter from "./routers/PublicationNoteRouter";
 import FraisParcoursRouter from "./routers/FraisParcoursRouter";
 import ReductionFraisRouter from "./routers/ReductionFraisRouter";
 import PenaliteRetardRouter from "./routers/PenaliteRetardRouter";
 import DashboardController from "./controllers/DashboardController";
+import CoursController from "./controllers/CoursController";
 
 const router = express.Router();
 
 // Route publique pour téléchargement (sans Authenticate)
 router.get('/bordereaux/:id/download', BordereauController.downloadBordereau)
+
+// Route pour l'arbre pédagogique (accessible depuis /arbre-pedagogique)
+router.get('/arbre-pedagogique', [Authenticate], CoursController.getArbrePedagogique)
 
 router
     .use('/sessions', [Authenticate], SessionRouter)
@@ -81,45 +89,48 @@ router
     .use('/quitus', [Authenticate], QuitusRouter)
     .use('/dossiersInscription', [Authenticate], DossierInscriptionRouter)
     .use('/anneesAcademiques', [Authenticate], AnneeAcademiqueRouter)
-    .use('/cursusApprenant', [Authenticate], CursusApprenantRouter)
+    .use('/cursusApprenant', [Authenticate, InscriptionComplete], CursusApprenantRouter)
     .use('/sallesDeClasse', [Authenticate], SalleDeClasseRouter)
-    .use('/chapitresCours', [Authenticate], ChapitreCoursRouter)
-    .use('/ressources', [Authenticate], RessourceRouter)
-    .use('/fichiersRessource', [Authenticate], FichierRessourceRouter)
-    .use('/seances', [Authenticate], SeanceRouter)
-    .use('/listesPresences', [Authenticate], ListePresenceRouter)
-    .use('/presences', [Authenticate], PresenceRouter)
-    .use('/presencesCoursParticipants', [Authenticate], PresenceCoursParticipantRouter)
-    .use('/', [Authenticate], PresenceEnseignantRouter)
-    .use('/', [Authenticate], AbsenceCoursRouter)
-    .use('/cahiersDeTexte', [Authenticate], CahierDeTexteRouter)
-    .use('/blocsCahierDeTexte', [Authenticate], BlocCahierDeTexteRouter)
+    .use('/chapitresCours', [Authenticate, InscriptionComplete], ChapitreCoursRouter)
+    .use('/ressources', [Authenticate, InscriptionComplete], RessourceRouter)
+    .use('/fichiersRessource', [Authenticate, InscriptionComplete], FichierRessourceRouter)
+    .use('/seances', [Authenticate, InscriptionComplete], SeanceRouter)
+    .use('/listesPresences', [Authenticate, InscriptionComplete], ListePresenceRouter)
+    .use('/presences', [Authenticate, InscriptionComplete], PresenceRouter)
+    .use('/presencesCoursParticipants', [Authenticate, InscriptionComplete], PresenceCoursParticipantRouter)
+    .use('/', [Authenticate, InscriptionComplete], PresenceEnseignantRouter)
+    .use('/', [Authenticate, InscriptionComplete], AbsenceCoursRouter)
+    .use('/cahiersDeTexte', [Authenticate, InscriptionComplete], CahierDeTexteRouter)
+    .use('/blocsCahierDeTexte', [Authenticate, InscriptionComplete], BlocCahierDeTexteRouter)
     .use('/typesNoteEvaluation', [Authenticate], TypeNoteEvaluationRouter)
     .use('/listesNoteEvaluation', [Authenticate], ListeNoteEvaluationRouter)
-    .use('/notesEvaluation', [Authenticate], NoteEvaluationRouter)
-    .use('/pointages', [Authenticate], PointageRouter)
-    .use('/', [Authenticate], BulletinRouter)
-    .use('/', [Authenticate], DeliberationRouter)
-    .use('/echeances', [Authenticate], EcheanceRouter)
-    .use('/bordereaux', [Authenticate], BordereauRouter)
-    .use('/dossiers', [Authenticate], DossierEtudiantRouter)
+    .use('/notesEvaluation', [Authenticate, InscriptionComplete], NoteEvaluationRouter)
+    .use('/pointages', [Authenticate, InscriptionComplete], PointageRouter)
+    .use('/', [Authenticate, InscriptionComplete], BulletinRouter)
+    .use('/', [Authenticate, InscriptionComplete], DeliberationRouter)
+    .use('/echeances', [Authenticate, InscriptionComplete], EcheanceRouter)
+    .use('/bordereaux', [Authenticate, InscriptionComplete], BordereauRouter)
+    .use('/dossiers', [Authenticate, InscriptionComplete], DossierEtudiantRouter)
+    .use('/hierarchy', [Authenticate], HierarchyRouter)
     .use('/pre-inscriptions', [Authenticate], PreInscriptionRouter)
-    .use('/unites-enseignement', [Authenticate], UniteEnseignementRouter)
+
+    .use('/ecues', [Authenticate], EcueRouter)
     .use('/mcc', [Authenticate], MccRouter)
     .use('/regles-evaluation', [Authenticate], RegleEvaluationRouter)
     .use('/sessions-examens', [Authenticate], SessionExamenRouter)
-    .use('/absences', [Authenticate], AbsenceRouter)
-    .use('/equivalences', [Authenticate], EquivalenceRouter)
-    .use('/dispenses', [Authenticate], DispenseRouter)
-    .use('/rattrapages', [Authenticate], RattrapageRouter)
-    .use('/audit-notes', [Authenticate], AuditNoteRouter)
+    .use('/absences', [Authenticate, InscriptionComplete], AbsenceRouter)
+    .use('/equivalences', [Authenticate, InscriptionComplete], EquivalenceRouter)
+    .use('/dispenses', [Authenticate, InscriptionComplete], DispenseRouter)
+    .use('/rattrapages', [Authenticate, InscriptionComplete], RattrapageRouter)
+    .use('/audit-notes', [Authenticate, InscriptionComplete], AuditNoteRouter)
     .use('/echelles-notes', [Authenticate], EchelleNoteRouter)
     .use('/jury-membres', [Authenticate], JuryMembreRouter)
-    .use('/', [Authenticate], PassationRouter)
-    .use('/publications-notes', [Authenticate], PublicationNoteRouter)
+    .use('/', [Authenticate, InscriptionComplete], PassationRouter)
+    .use('/', [Authenticate, InscriptionComplete], SuiviUeRouter)
+    .use('/publications-notes', [Authenticate, InscriptionComplete], PublicationNoteRouter)
     .use('/frais-parcours', [Authenticate], FraisParcoursRouter)
     .use('/reductions-frais', [Authenticate], ReductionFraisRouter)
     .use('/penalites-retard', [Authenticate], PenaliteRetardRouter)
-    .get('/dashboard', [Authenticate], DashboardController.getDashboard)
+    .get('/dashboard', [Authenticate, InscriptionComplete], DashboardController.getDashboard)
 
 export default router;

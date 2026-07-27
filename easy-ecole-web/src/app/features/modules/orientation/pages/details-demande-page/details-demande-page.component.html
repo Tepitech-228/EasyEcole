@@ -63,7 +63,7 @@
             <div *ngIf="rolesValue.isInstitution || demande.reponseOrientation != undefined" class="flex justify-center" [ngSwitch]="demande.parcoursChoisis![index].etatDeValidation!">
                 <app-custom-badge *ngSwitchCase="etatsValidationParcours.VALIDE" color="green"
                     text="Validé"></app-custom-badge>
-                <app-custom-badge *ngSwitchCase="etatsValidationParcours.REJETE" color="red"
+                <app-custom-badge *ngSwitchCase="etatsValidationParcours.REJETE" color="primary"
                     text="Rejeté"></app-custom-badge>
                 <app-custom-badge *ngSwitchDefault text="En cours"></app-custom-badge>
             </div>
@@ -144,7 +144,7 @@
 
     <div *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin) && demande.reponseOrientation == undefined" class="flex justify-between items-center mb-2">
         <app-custom-button (click)="rejeterParcoursChoisi()" text="Rejeter" [outlined]="true"
-            color="red"></app-custom-button>
+            color="primary"></app-custom-button>
         <app-custom-button (click)="validerParcoursChoisi()" text="Valider" color="green"></app-custom-button>
     </div>
 </ng-container>

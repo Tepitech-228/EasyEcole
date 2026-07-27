@@ -1,0 +1,39 @@
+import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes } from "sequelize";
+import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
+import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../EtablissementModule";
+
+export class Etablissement extends Model<InferAttributes<Etablissement>, InferCreationAttributes<Etablissement>> {
+  declare id: CreationOptional<string>
+  declare nom: string
+  declare type: CreationOptional<string>
+  declare pays: CreationOptional<string>
+  declare ville: CreationOptional<string>
+  declare adresse: CreationOptional<string>
+  declare telephone: CreationOptional<string>
+  declare email: CreationOptional<string>
+  declare siteWeb: CreationOptional<string>
+  declare actif: CreationOptional<boolean>
+  declare readonly createdAt: CreationOptional<Date>
+  declare readonly updatedAt: CreationOptional<Date>
+}
+
+Etablissement.init({
+  id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
+  nom: { type: DataTypes.STRING, allowNull: false },
+  type: { type: DataTypes.STRING, allowNull: true },
+  pays: { type: DataTypes.STRING, allowNull: true },
+  ville: { type: DataTypes.STRING, allowNull: true },
+  adresse: { type: DataTypes.TEXT, allowNull: true },
+  telephone: { type: DataTypes.STRING, allowNull: true },
+  email: { type: DataTypes.STRING, allowNull: true },
+  siteWeb: { type: DataTypes.STRING, allowNull: true },
+  actif: { type: DataTypes.BOOLEAN, defaultValue: true },
+  createdAt: DataTypes.DATE,
+  updatedAt: DataTypes.DATE,
+}, {
+  sequelize: DatabaseConnection.getInstance().sequelize,
+  paranoid: true,
+  modelName: MODULE_MODEL_PREFIX + 'Etablissement',
+  tableName: MODULE_TABLE_PREFIX + 'etablissements',
+  timestamps: true
+})

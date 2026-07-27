@@ -1,0 +1,56 @@
+<app-header-title title="Revues de direction" subtitle="Planification et suivi des revues de direction ISO 21001"></app-header-title>
+
+<div class="flex justify-between mb-4">
+  <div></div>
+  <app-custom-button text="Nouvelle revue" (click)="ouvrirFormulaire()"></app-custom-button>
+</div>
+
+<app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+<div *ngIf="!loading && items.length === 0" class="text-center py-8 text-gray-400">Aucune revue de direction</div>
+
+<div class="grid gap-3" *ngIf="!loading && items.length > 0">
+  <div *ngFor="let item of items" class="bg-white rounded-lg shadow p-4 cursor-pointer hover:shadow-md" (click)="voirDetails(item)">
+    <div class="flex justify-between items-start">
+      <div>
+        <h3 class="font-semibold">{{ item.titre }}</h3>
+        <p class="text-sm text-gray-500">{{ item.dateTenue | date:'shortDate' }} — {{ item.participants?.split(',').length || 0 }} participants</p>
+      </div>
+      <span class="px-2 py-1 rounded text-xs"
+        [class.bg-amber-100]="item.statut==='planifiee'" [class.text-amber-700]="item.statut==='planifiee'"
+        [class.bg-green-100]="item.statut==='tenue'" [class.text-green-700]="item.statut==='tenue'"
+        [class.bg-blue-100]="item.statut==='validee'" [class.text-blue-700]="item.statut==='validee'">{{ item.statut }}</span>
+    </div>
+  </div>
+</div>
+
+<app-custom-modal [showModal]="showForm" (onCloseModal)="fermerFormulaire()">
+  <h3 class="text-lg font-semibold mb-4">{{ editingId ? 'Modifier' : 'Nouvelle' }} revue de direction</h3>
+  <div class="grid gap-3">
+    <input [(ngModel)]="formData.titre" placeholder="Titre" class="form-input">
+    <label class="text-xs text-gray-500">Date tenue</label>
+    <input type="date" [(ngModel)]="formData.dateTenue" class="form-input">
+    <textarea [(ngModel)]="formData.participants" placeholder="Participants (séparés par des virgules)" class="form-input" rows="2"></textarea>
+    <textarea [(ngModel)]="formData.ordreJour" placeholder="Ordre du jour" class="form-input" rows="3"></textarea>
+    <textarea [(ngModel)]="formData.compteRendu" placeholder="Compte rendu (optionnel)" class="form-input" rows="3"></textarea>
+    <select [(ngModel)]="formData.statut" class="form-input">
+      <option value="planifiee">Planifiée</option><option value="tenue">Tenue</option><option value="validee">Validée</option>
+    </select>
+    <div class="flex gap-2 justify-end mt-2">
+      <app-custom-button text="Annuler" [outlined]="true" (click)="fermerFormulaire()"></app-custom-button>
+      <app-custom-button text="Enregistrer" (click)="sauvegarder()"></app-custom-button>
+    </div>
+  </div>
+</app-custom-modal>
+
+<app-custom-modal [showModal]="!!selected" (onCloseModal)="fermerFormulaire()">
+  <h3 class="text-lg font-semibold mb-2">Détails revue</h3>
+  <div class="space-y-2 text-sm" *ngIf="selected">
+    <p><strong>Titre :</strong> {{ selected.titre }}</p>
+    <p><strong>Date :</strong> {{ selected.dateTenue | date:'shortDate' }}</p>
+    <p><strong>Participants :</strong> {{ selected.participants }}</p>
+    <p><strong>Ordre du jour :</strong> {{ selected.ordreJour }}</p>
+    <p *ngIf="selected.compteRendu"><strong>Compte rendu :</strong> {{ selected.compteRendu }}</p>
+    <p><strong>Statut :</strong> {{ selected.statut }}</p>
+  </div>
+</app-custom-modal>

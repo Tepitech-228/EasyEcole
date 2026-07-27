@@ -5,6 +5,7 @@ import { InscriptionPageComponent } from './pages/inscription-page/inscription-p
 import { ForgotPasswordPageComponent } from './pages/forgot-password-page/forgot-password-page.component';
 import { ResetPasswordPageComponent } from './pages/reset-password-page/reset-password-page.component';
 import { ConfirmEmailPageComponent } from './pages/confirm-email-page/confirm-email-page.component';
+import { OtpPageComponent } from './pages/otp-page/otp-page.component';
 import { AuthGuard } from 'src/app/core/guards/auth.guard';
 
 const routes: Routes = [
@@ -34,6 +35,10 @@ const routes: Routes = [
   {
     path: 'confirmation-email',
     component: ConfirmEmailPageComponent,
+  },
+  {
+    path: 'otp',
+    component: OtpPageComponent,
   },
 ];
 

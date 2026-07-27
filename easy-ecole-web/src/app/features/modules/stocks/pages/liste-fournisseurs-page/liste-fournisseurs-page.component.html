@@ -31,7 +31,7 @@
 
   <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
     <div class="flex justify-end">
-      <app-custom-button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin || rolesValue.isCaissierBanque" (click)="ouvrirFormulaire()" text="Nouveau fournisseur" color="red"></app-custom-button>
+      <app-custom-button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin || rolesValue.isCaissierBanque" (click)="ouvrirFormulaire()" text="Nouveau fournisseur" color="primary"></app-custom-button>
     </div>
   </div>
 
@@ -61,7 +61,7 @@
     </div>
     <div class="flex justify-end gap-3 mt-4">
       <app-custom-button (click)="fermerFormulaire()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
-      <app-custom-button (click)="creerFournisseur()" text="Créer" color="red"></app-custom-button>
+      <app-custom-button (click)="creerFournisseur()" text="Créer" color="primary"></app-custom-button>
     </div>
   </div>
 
@@ -85,7 +85,7 @@
             <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ f.telephone || '-' }}</td>
             <td class="px-5 py-4 whitespace-nowrap text-right">
               <div class="flex items-center justify-end gap-2">
-                <app-custom-button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin || rolesValue.isCaissierBanque" (click)="supprimer(f.id)" text="Supprimer" color="red" [outlined]="true"></app-custom-button>
+                <app-custom-button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin || rolesValue.isCaissierBanque" (click)="supprimer(f.id)" text="Supprimer" color="primary" [outlined]="true"></app-custom-button>
               </div>
             </td>
           </tr>

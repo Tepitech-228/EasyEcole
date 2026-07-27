@@ -21,7 +21,8 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     'Directeur': [
         'menu.tableau-de-bord',
         'menu.inscription', 'menu.inscription.sessions', 'menu.inscription.parcours',
-        'menu.inscription.demandes', 'menu.inscription.dossiers-etudiants',
+        'menu.inscription.demandes',         'menu.inscription.dossiers-etudiants',
+        'menu.inscription.effectifs',
         'menu.inscription.paiements', 'menu.inscription.comptabilite',
         'menu.inscription.echeances', 'menu.inscription.validation-bordereaux',
         'menu.orientation', 'menu.orientation.parcours', 'menu.orientation.demandes',

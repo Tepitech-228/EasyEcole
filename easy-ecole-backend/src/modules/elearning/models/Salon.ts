@@ -8,7 +8,7 @@ import { Utilisateur } from "../../auth/models/Utilisateur";
 
 export class Salon extends Model<InferAttributes<Salon>, InferCreationAttributes<Salon>> {
   declare id: CreationOptional<string>
-  declare coursId: ForeignKey<CoursEnLigne['id']>
+  declare coursId: ForeignKey<CoursEnLigne['id']> | null
   declare titre: string
   declare type: CreationOptional<string>
   declare dateCreation: CreationOptional<Date>
@@ -45,7 +45,7 @@ Salon.init({
   },
   coursId: {
     type: DataTypes.INTEGER.UNSIGNED,
-    allowNull: false
+    allowNull: true
   },
   titre: {
     type: new DataTypes.STRING,

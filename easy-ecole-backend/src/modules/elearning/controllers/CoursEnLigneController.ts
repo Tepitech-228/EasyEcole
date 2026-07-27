@@ -213,9 +213,11 @@ export default class CoursEnLigneController {
         }
 
         try {
+            const image = req.file ? req.file.filename : undefined;
             const cours = await CoursEnLigne.create({
                 titre: req.body.titre,
                 description: req.body.description,
+                image,
                 statut: req.body.statut || 'actif',
                 enseignantId: req.body.enseignantId || null,
                 format: req.body.format || 'mixte'

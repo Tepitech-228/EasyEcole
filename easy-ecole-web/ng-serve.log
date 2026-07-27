@@ -1,0 +1,59 @@
+- Generating browser application bundles (phase: setup)...
+√ Browser application bundle generation complete.
+
+Initial Chunk Files                                                                                     | Names         |       Size
+styles.css, styles.js                                                                                   | styles        |    4.31 MB
+vendor.js                                                                                               | vendor        |    4.25 MB
+main.js                                                                                                 | main          |  763.61 kB
+polyfills.js                                                                                            | polyfills     |  572.40 kB
+scripts.js                                                                                              | scripts       |  211.30 kB
+runtime.js                                                                                              | runtime       |   14.06 kB
+
+| Initial Total |   10.08 MB
+
+Lazy Chunk Files                                                                                        | Names         |       Size
+src_app_features_modules_inscription_inscription_module_ts.js                                           | -             |    1.59 MB
+default-node_modules_html5-qrcode_esm_index_js.js                                                       | -             |    1.23 MB
+src_app_features_modules_cours_cours_module_ts.js                                                       | -             | 1008.63 kB
+src_app_features_modules_bulletins_bulletins_module_ts.js                                               | -             |  938.77 kB
+src_app_features_modules_ged_ged_module_ts.js                                                           | -             |  866.36 kB
+default-src_app_data_modules_inscription_services_annee-academique_service_ts-src_app_data_mo-01288e.js | -             |  797.94 kB
+src_app_features_modules_scolarite_scolarite_module_ts.js                                               | -             |  796.96 kB
+src_app_features_modules_elearning_elearning_module_ts.js                                               | -             |  668.77 kB
+src_app_features_modules_rh_rh_module_ts.js                                                             | -             |  650.67 kB
+src_app_features_modules_parametres_parametres_module_ts.js                                             | -             |  471.71 kB
+src_app_features_modules_stocks_stocks_module_ts.js                                                     | -             |  470.62 kB
+src_app_features_modules_communication_communication_module_ts.js                                       | -             |  444.16 kB
+default-node_modules_quill_dist_quill_js.js                                                             | -             |  434.06 kB
+src_app_features_modules_orientation_orientation_module_ts.js                                           | -             |  320.03 kB
+src_app_features_modules_administration_administration_module_ts.js                                     | -             |  296.94 kB
+src_app_features_modules_docgen_docgen_module_ts.js                                                     | -             |  223.18 kB
+src_app_features_modules_achats_achats_module_ts.js                                                     | -             |  214.26 kB
+default-node_modules_quill-emoji_dist_quill-emoji_js-node_modules_quill-image-resize-module_i-1b3a9f.js | -             |  207.08 kB
+src_app_features_modules_stages_stages_module_ts.js                                                     | -             |  199.30 kB
+default-src_app_core_services_socket_service_ts.js                                                      | -             |  180.88 kB
+src_app_features_modules_pointage_pointage_module_ts.js                                                 | -             |  179.94 kB
+src_app_features_modules_parent_parent_module_ts.js                                                     | -             |  163.27 kB
+src_app_features_modules_comptabilite_comptabilite_module_ts.js                                         | -             |  160.50 kB
+src_app_features_modules_reporting_reporting_module_ts.js                                               | -             |  134.98 kB
+src_app_features_modules_auth_auth_module_ts.js                                                         | -             |  133.92 kB
+common.js                                                                                               | common        |   21.37 kB
+
+Build at: 2026-07-23T15:47:10.658Z - Hash: ad413ad3876844207d71 - Time: 90920ms
+
+Warning: D:\EasyEcole\easy-ecole-web\node_modules\socket.io-parser\build\esm-debug\index.js depends on 'debug'. CommonJS or AMD dependencies can cause optimization bailouts.
+For more info see: https://angular.io/guide/build#configuring-commonjs-dependencies
+
+
+
+** Angular Live Development Server is listening on localhost:4201, open your browser on http://localhost:4201/ **
+
+
+√ Compiled successfully.
+√ Browser application bundle generation complete.
+
+32 unchanged chunks
+
+Build at: 2026-07-23T15:47:21.756Z - Hash: 04c9ab61cac476c7dc9d - Time: 9926ms
+
+√ Compiled successfully.

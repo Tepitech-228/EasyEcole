@@ -1,0 +1,160 @@
+<div class="flex justify-between items-start mb-8">
+  <app-header-title title="Configuration stockage" subtitle="Gérer les emplacements de stockage et le chiffrement des documents"></app-header-title>
+</div>
+
+<div *ngIf="loading" class="text-center py-16 text-gray-400">Chargement...</div>
+
+<form [formGroup]="form" (ngSubmit)="saveConfig()" *ngIf="!loading">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- Stockage local -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h3 class="text-base font-semibold text-gray-900 mb-4 flex items-center gap-x-2">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9H9l-3-9H2"/></svg>
+        Stockage local
+      </h3>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Chemin</label>
+          <input type="text" formControlName="localPath" placeholder="Ex: /var/ged/documents"
+            class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Espace utilisé / Total</label>
+          <div class="flex items-center gap-x-3">
+            <input type="text" formControlName="localUsed" placeholder="0"
+              class="w-24 rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm text-center">
+            <span class="text-gray-400">/</span>
+            <input type="text" formControlName="localTotal" placeholder="0"
+              class="w-24 rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm text-center">
+            <span class="text-sm text-gray-500">Go</span>
+          </div>
+          <div class="mt-2 bg-gray-200 rounded-full h-2 overflow-hidden">
+            <div class="h-full rounded-full transition-all"
+              [class.bg-green-500]="localUsagePercent < 70"
+              [class.bg-yellow-500]="localUsagePercent >= 70 && localUsagePercent < 90"
+              [class.bg-red-500]="localUsagePercent >= 90"
+              [style.width.%]="localUsagePercent">
+            </div>
+          </div>
+          <span class="text-xs text-gray-400 mt-1 block">{{ localUsagePercent }}% utilisé</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stockage NAS -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h3 class="text-base font-semibold text-gray-900 mb-4 flex items-center gap-x-2">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+        Stockage NAS
+      </h3>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">URL</label>
+          <input type="text" formControlName="nasUrl" placeholder="Ex: smb://nas.example.com/ged"
+            class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Identifiant</label>
+          <input type="text" formControlName="nasUsername" placeholder="Nom d'utilisateur"
+            class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
+          <div class="relative">
+            <input [type]="showNasPassword ? 'text' : 'password'" formControlName="nasPassword" placeholder="Mot de passe"
+              class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm pr-10">
+            <button type="button" (click)="showNasPassword = !showNasPassword"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <path *ngIf="!showNasPassword" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle *ngIf="!showNasPassword" cx="12" cy="12" r="3"/>
+                <line *ngIf="showNasPassword" x1="1" y1="1" x2="23" y2="23"/><path *ngIf="showNasPassword" d="M21 12c0 2.2-2 8-9 8-2.5 0-4.5-.7-6-1.8M3.4 16.6C2 14.8 1 12 1 12s4-8 11-8c2.8 0 5.1.8 6.9 2.2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <button type="button" (click)="testNasConnection()" [disabled]="testingNas"
+          class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50">
+          {{ testingNas ? 'Test en cours...' : 'Tester connexion' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Stockage Cloud -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h3 class="text-base font-semibold text-gray-900 mb-4 flex items-center gap-x-2">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+        Stockage Cloud
+      </h3>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Fournisseur</label>
+          <select formControlName="cloudProvider"
+            class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+            <option value="">Sélectionner</option>
+            <option value="aws">AWS S3</option>
+            <option value="azure">Azure Blob</option>
+            <option value="gcp">Google Cloud Storage</option>
+            <option value="ovh">OVH Object Storage</option>
+            <option value="scaleway">Scaleway Object Storage</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Credentials</label>
+          <div class="relative">
+            <input [type]="showCloudCredentials ? 'text' : 'password'" formControlName="cloudCredentials" placeholder="Clé d'accès"
+              class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm pr-10">
+            <button type="button" (click)="showCloudCredentials = !showCloudCredentials"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <path *ngIf="!showCloudCredentials" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle *ngIf="!showCloudCredentials" cx="12" cy="12" r="3"/>
+                <line *ngIf="showCloudCredentials" x1="1" y1="1" x2="23" y2="23"/><path *ngIf="showCloudCredentials" d="M21 12c0 2.2-2 8-9 8-2.5 0-4.5-.7-6-1.8M3.4 16.6C2 14.8 1 12 1 12s4-8 11-8c2.8 0 5.1.8 6.9 2.2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Bucket</label>
+          <input type="text" formControlName="cloudBucket" placeholder="Ex: easy-ecole-ged"
+            class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+        </div>
+        <button type="button" (click)="testCloudConnection()" [disabled]="testingCloud"
+          class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50">
+          {{ testingCloud ? 'Test en cours...' : 'Tester connexion' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Chiffrement -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h3 class="text-base font-semibold text-gray-900 mb-4 flex items-center gap-x-2">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Chiffrement
+      </h3>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Algorithme</label>
+          <input type="text" formControlName="encryptionAlgorithm" readonly
+            class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 bg-gray-50 sm:text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Rotation des clés (jours)</label>
+          <input type="number" formControlName="keyRotationDays"
+            class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+        </div>
+        <button type="button" (click)="generateNewKey()"
+          class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-50">
+          Générer nouvelle clé
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="flex justify-end mt-6">
+    <button type="submit" [disabled]="saving"
+      class="px-6 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-md hover:bg-indigo-700 disabled:opacity-50">
+      {{ saving ? 'Enregistrement...' : 'Enregistrer la configuration' }}
+    </button>
+  </div>
+</form>

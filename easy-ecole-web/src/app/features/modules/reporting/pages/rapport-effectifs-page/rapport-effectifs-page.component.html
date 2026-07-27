@@ -13,9 +13,7 @@
 
   <div class="bg-white rounded-lg shadow p-6 mb-6">
     <h2 class="text-lg font-semibold text-gray-700 mb-4">Évolution des effectifs</h2>
-    <div class="chart-placeholder">
-      <span>Graphique à intégrer</span>
-    </div>
+    <app-graphique-barre [labels]="chartLabels" [data]="chartData" label="Données" color="#6366F1"></app-graphique-barre>
   </div>
 
   <div class="bg-white rounded-lg shadow overflow-x-auto">

@@ -92,9 +92,9 @@ export async function seedComptabilite(): Promise<void> {
     if (parcours.length > 0 && niveaux.length > 0 && annees.length > 0) {
       await FraisParcours.bulkCreate([
         {
-          parcoursId: Number(parcours[0].id),
-          niveauEtudeId: Number(niveaux[0].id),
-          anneeAcademiqueId: Number(annees[0].id),
+          parcoursId: Number(parcours[0].id) as number,
+          niveauEtudeId: Number(niveaux[0].id) as number,
+          anneeAcademiqueId: Number(annees[0].id) as number,
           montantInscription: 50000,
           montantScolarite: 500000,
           nbMensualites: 10,

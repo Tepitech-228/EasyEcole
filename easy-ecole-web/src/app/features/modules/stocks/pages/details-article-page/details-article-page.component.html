@@ -18,7 +18,7 @@
         <p class="mt-1 text-sm text-gray-500">Réf: {{ article.reference }}</p>
       </div>
       <div class="flex items-center gap-3 mt-2 sm:mt-0">
-        <app-custom-button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin || rolesValue.isCaissierBanque" (click)="delete()" text="Supprimer" color="red"></app-custom-button>
+        <app-custom-button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin || rolesValue.isCaissierBanque" (click)="delete()" text="Supprimer" color="primary"></app-custom-button>
       </div>
     </div>
 

@@ -1,4 +1,4 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { ReponseInscription } from "./ReponseInscription";
@@ -15,7 +15,7 @@ import { DemandeInscriptionCours } from "./DemandeInscriptionCours";
 import { PreInscription } from "./PreInscription";
 
 export class DemandeInscription extends Model<InferAttributes<DemandeInscription>, InferCreationAttributes<DemandeInscription>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare matricule: CreationOptional<string>
   declare dateDemande: Date
   declare dateValidation: CreationOptional<Date>

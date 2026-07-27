@@ -1,7 +1,9 @@
 import express from "express"
+import multer from "multer"
 import CoursEnLigneController from "../controllers/CoursEnLigneController"
 import Authenticate from "../../../core/middlewares/Authenticate"
 
+const upload = multer({ dest: "public/elearning/cours/" });
 const router = express.Router()
 
 /**
@@ -37,7 +39,7 @@ router
  *       201:
  *         description: Cours en ligne créé
  */
-    .post('/', [Authenticate], CoursEnLigneController.create)
+    .post('/', [Authenticate, upload.single('image')], CoursEnLigneController.create)
 
 /**
  * @openapi
@@ -84,7 +86,7 @@ router
  *       200:
  *         description: Cours en ligne mis à jour
  */
-    .put('/:id', [Authenticate], CoursEnLigneController.update)
+    .put('/:id', [Authenticate, upload.single('image')], CoursEnLigneController.update)
 
 /**
  * @openapi

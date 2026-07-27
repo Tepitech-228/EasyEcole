@@ -31,9 +31,11 @@ export class MouvementStock extends Model<InferAttributes<MouvementStock>, Infer
 
 MouvementStock.init({
   id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
+  articleId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false },
   type: { type: DataTypes.ENUM('entree', 'sortie'), allowNull: false },
   quantite: { type: DataTypes.INTEGER, allowNull: false },
   motif: { type: new DataTypes.STRING, allowNull: true },
+  fournisseurId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
   siteId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
   prixUnitaire: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
   dateMouvement: { type: DataTypes.DATE, defaultValue: new Date(), allowNull: false },

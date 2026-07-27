@@ -8,7 +8,6 @@ import { DemandeInscription } from "../models/DemandeInscription";
 import { Banque } from "../../auth/models/Banque";
 import { CaissierBanque } from "../../auth/models/CaissierBanque";
 import { Utilisateur } from "../../auth/models/Utilisateur";
-import { MobileMoneyCinetpay } from "../../../core/helpers/MobileMoneyCinetpay";
 import { creerEcritureComptable } from "../../comptabilite/helpers/ComptabiliteHelper";
 
 export default class PaiementInscriptionController {
@@ -122,52 +121,6 @@ export default class PaiementInscriptionController {
         }
 
         return null
-    }
-
-    static async createMobileMoneyPaiementInscription(req: Request, res: Response): Promise<Response> {
-        try {
-            const { matriculeInscription, montant, description } = req.body;
-
-            if (!matriculeInscription || !montant) {
-                return res.status(400).json({ success: false, message: "matriculeInscription et montant requis" });
-            }
-
-            const demande = await DemandeInscription.findOne({ where: { matricule: matriculeInscription } });
-            if (!demande) {
-                return res.status(404).json({ success: false, message: "Inscription non trouvée" });
-            }
-
-            // Créer le paiement
-            const paiementInscription = new PaiementInscription();
-            paiementInscription.matriculeInscription = matriculeInscription;
-            paiementInscription.montant = montant;
-            paiementInscription.type = TypesPaiement.EN_LIGNE;
-            paiementInscription.description = description || 'Paiement mobile money';
-            paiementInscription.utilisateurId = (req as any).utilisateurId;
-            await paiementInscription.save();
-
-            // Créer l'écriture comptable
-            try {
-                await creerEcritureComptable({
-                    req,
-                    journalCode: 'VEN',
-                    compteDebitNumero: '512',
-                    compteCreditNumero: '702',
-                    montant: paiementInscription.montant,
-                    libelle: description || `Paiement mobile money #${paiementInscription.numero}`,
-                    reference: paiementInscription.numero,
-                    moduleSource: 'inscription',
-                    referenceModuleId: String(paiementInscription.id)
-                });
-            } catch (err) {
-                console.error("Erreur création écriture comptable:", err);
-            }
-
-            return res.status(201).json({ success: true, paiement: paiementInscription });
-        } catch (error) {
-            console.error("Erreur paiement mobile money:", error);
-            return res.status(500).json({ success: false, message: "Erreur lors du paiement mobile" });
-        }
     }
 
     static async updatePaiementInscription(req: Request, res: Response): Promise<Response | null> {

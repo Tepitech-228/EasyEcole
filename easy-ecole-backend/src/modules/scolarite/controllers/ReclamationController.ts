@@ -69,7 +69,8 @@ export default class ReclamationController {
     }
 
     static async repondreReclamation(req: Request, res: Response): Promise<Response | null> {
-        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION) {
+        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION &&
+            (req as any).utilisateurRole != RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false })
         }
 
@@ -96,7 +97,8 @@ export default class ReclamationController {
     }
 
     static async updateReclamationStatut(req: Request, res: Response): Promise<Response | null> {
-        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION) {
+        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION &&
+            (req as any).utilisateurRole != RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false })
         }
 

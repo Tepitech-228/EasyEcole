@@ -2,6 +2,7 @@
   <div class="chat-page__header">
     <a routerLink=".." class="chat-page__back">&larr; Retour</a>
     <h2 class="chat-page__title">Salons de discussion</h2>
+    <button class="chat-page__create-btn" (click)="openCreateModal()">+ Créer un salon</button>
   </div>
 
   <div class="chat-page__body">
@@ -25,6 +26,54 @@
       <div *ngIf="!selectedSalon" class="chat-page__placeholder">
         Sélectionnez un salon pour commencer à discuter.
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showCreateModal" (click)="closeCreateModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Créer un salon</h3>
+      <button class="modal-close" (click)="closeCreateModal()">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <input type="text" [(ngModel)]="salonTitre" placeholder="Titre du salon" class="modal-input" />
+
+      <div class="filter-bar">
+        <label>Filtrer par rôle :</label>
+        <select [(ngModel)]="filterRole" class="modal-select">
+          <option value="">Tous les rôles</option>
+          <option *ngFor="let entry of roleLabels | keyvalue" [value]="entry.key">{{ entry.value }}</option>
+        </select>
+      </div>
+
+      <div class="user-list" *ngIf="groupedUsers.length > 0; else noUsers">
+        <div class="user-group" *ngFor="let group of groupedUsers">
+          <h4 class="group-label">{{ group.label }} ({{ group.users.length }})</h4>
+          <div class="group-users">
+            <label class="user-item" *ngFor="let user of group.users"
+                   [class.selected]="selectedParticipantIds.has(user.id)">
+              <input type="checkbox" [checked]="selectedParticipantIds.has(user.id)"
+                     (change)="toggleParticipant(user.id)" />
+              <span class="user-avatar">{{ (user.prenoms || user.nom || '?').charAt(0) }}</span>
+              <span class="user-name">{{ user.prenoms || '' }} {{ user.nom || '' }}</span>
+              <span class="user-email">{{ user.email }}</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <ng-template #noUsers>
+        <p class="no-users">Aucun utilisateur trouvé.</p>
+      </ng-template>
+    </div>
+
+    <div class="modal-footer">
+      <span class="selected-count" *ngIf="selectedParticipantIds.size > 0">
+        {{ selectedParticipantIds.size }} participant{{ selectedParticipantIds.size > 1 ? 's' : '' }} sélectionné{{ selectedParticipantIds.size > 1 ? 's' : '' }}
+      </span>
+      <button class="btn-cancel" (click)="closeCreateModal()">Annuler</button>
+      <button class="btn-create" (click)="createSalon()" [disabled]="!salonTitre.trim()">Créer le salon</button>
     </div>
   </div>
 </div>

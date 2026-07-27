@@ -1,0 +1,68 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <app-header-title title="Workflows de signature" subtitle="Définissez les étapes de signature pour chaque type de document"></app-header-title>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+    <div class="flex gap-3 items-center">
+      <label class="text-sm font-medium text-gray-700">Type de document :</label>
+      <select [(ngModel)]="selectedTypeId" (change)="chargerSteps()" class="block rounded-md border-0 py-1.5 text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 text-sm">
+        <option value="">Sélectionner...</option>
+        <option *ngFor="let t of types" [value]="t.id">{{ t.code }} — {{ t.libelle }}</option>
+      </select>
+    </div>
+  </div>
+
+  <div *ngIf="selectedTypeId" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-base font-semibold text-gray-900">Étapes du workflow</h3>
+      <app-custom-button (click)="ajouterEtape()" text="Ajouter une étape" color="blue" [outlined]="true"></app-custom-button>
+    </div>
+
+    <!-- Workflow visual -->
+    <div class="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
+      <div *ngFor="let step of steps; let i = index" class="flex items-center gap-2">
+        <div class="flex flex-col items-center p-3 rounded-xl border" [class.border-blue-200]="step.role === 'enseignant'" [class.border-green-200]="step.role === 'directeur'" [class.border-gray-200]="true">
+          <span class="text-xs font-semibold text-gray-500">{{ step.libelle }}</span>
+          <span class="text-xs text-gray-400">{{ step.role }}</span>
+          <span class="text-xs text-gray-400">{{ step.delaiHeures }}h</span>
+        </div>
+        <svg *ngIf="i < steps.length - 1" class="w-5 h-5 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      </div>
+    </div>
+
+    <!-- Steps list -->
+    <div class="space-y-2">
+      <div *ngFor="let step of steps; let i = index" class="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:bg-gray-50">
+        <div class="flex items-center gap-4">
+          <span class="text-sm font-medium text-gray-900 w-6">{{ i + 1 }}.</span>
+          <div>
+            <p class="text-sm font-medium text-gray-900">{{ step.libelle }}</p>
+            <p class="text-xs text-gray-500">{{ step.role }} · {{ step.delaiHeures }}h max</p>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <app-custom-button (click)="editerEtape(step)" text="Modifier" color="blue" [outlined]="true"></app-custom-button>
+          <app-custom-button (click)="supprimerEtape(i)" text="Supprimer" color="indigo" [outlined]="true"></app-custom-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit step form -->
+    <div *ngIf="editingStepIndex !== null || stepForm.libelle !== undefined" class="mt-4 p-4 border border-gray-200 rounded-lg">
+      <h4 class="text-sm font-semibold text-gray-900 mb-3">{{ editingStepIndex !== null ? 'Modifier' : 'Nouvelle' }} étape</h4>
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+        <div><label class="block text-xs text-gray-500 mb-1">Libellé *</label><input [(ngModel)]="stepForm.libelle" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2" placeholder="Signature enseignant" /></div>
+        <div><label class="block text-xs text-gray-500 mb-1">Rôle</label><select [(ngModel)]="stepForm.role" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2"><option *ngFor="let r of roles" [value]="r">{{ r }}</option></select></div>
+        <div><label class="block text-xs text-gray-500 mb-1">Ordre</label><input [(ngModel)]="stepForm.ordre" type="number" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2" /></div>
+        <div><label class="block text-xs text-gray-500 mb-1">Délai (heures)</label><input [(ngModel)]="stepForm.delaiHeures" type="number" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2" /></div>
+      </div>
+      <div class="flex justify-end gap-2 mt-3">
+        <app-custom-button (click)="editingStepIndex = null; stepForm = {}" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+        <app-custom-button (click)="sauvegarderEtape()" text="Valider" color="blue"></app-custom-button>
+      </div>
+    </div>
+
+    <div class="flex justify-end mt-6">
+      <app-custom-button (click)="sauvegarderWorkflow()" text="Enregistrer le workflow" color="indigo"></app-custom-button>
+    </div>
+  </div>
+</div>

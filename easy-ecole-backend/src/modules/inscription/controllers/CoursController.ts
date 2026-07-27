@@ -2,50 +2,60 @@ import { Request, Response } from "express";
 import { CountOptions, FindOptions, InferAttributes, Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Cours } from "../models/Cours";
+import { NiveauEtude } from "../models/NiveauEtude";
 import { Parcours } from "../models/Parcours";
 import { Enseignant } from "../../auth/models/Enseignant";
-import { DemandeInscription } from "../models/DemandeInscription";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { CoursParticipant } from "../models/CoursParticipant";
-import { ListePresence } from "../models/ListePresence";
-import { Presence } from "../models/Presence";
-import { PresenceCoursParticipant } from "../models/PresenceCoursParticipant";
 
 export default class CoursController {
 
     constructor() { }
 
     static async getAllCours(req: Request, res: Response): Promise<Response> {
-        let options: FindOptions<InferAttributes<Cours>> = {}
+        const hasPagination = req.query.page !== undefined || req.query.limit !== undefined;
+        const page = Math.max(1, parseInt(req.query.page as string) || 1);
+        const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+        const offset = (page - 1) * limit;
+        const orderBy = (req.query.orderBy as string) || 'createdAt';
+        const orderDir = (req.query.orderDir as string)?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+        const filters: any = {};
+        if (req.query.parcoursId) filters.parcoursId = req.query.parcoursId as string;
+        if (req.query.classeId) filters.classeId = req.query.classeId as string;
+        if (req.query.semestre) filters.semestre = req.query.semestre as string;
+        if (req.query.estObligatoire !== undefined) filters.estObligatoire = req.query.estObligatoire === 'true';
+        if (req.query.enseignantId) filters.enseignantId = req.query.enseignantId as string;
+
+        let options: any = {
+            order: [[orderBy, orderDir]],
+        }
+
+        if (hasPagination) {
+            options.offset = offset;
+            options.limit = limit;
+        }
 
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT || (req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
-            if (req.query.parcoursId) {
-                options = {
-                    include: [
-                        Cours.associations.classe,
-                        { association: Cours.associations.enseignant, include: [Enseignant.associations.utilisateur] },
-                        { association: Cours.associations.parcours, include: [Parcours.associations.niveauEtude] }
-                    ],
-                    where: { parcoursId: req.query.parcoursId as string }
-                }
-            }
-            else {
-                options = {
-                    include: [
-                        Cours.associations.classe,
-                        { association: Cours.associations.enseignant, include: [Enseignant.associations.utilisateur] },
-                        { association: Cours.associations.parcours, include: [Parcours.associations.niveauEtude] }
-                    ],
-                }
+            options = {
+                ...options,
+                include: [
+                    Cours.associations.classe,
+                    { association: Cours.associations.enseignant, include: [Enseignant.associations.utilisateur] },
+                    { association: Cours.associations.parcours, include: [Parcours.associations.niveauEtude] },
+                ],
+                where: { ...filters }
             }
         }
         else if ((req as any).utilisateurRole == RolesUtilisateur.ENSEIGNANT) {
             options = {
+                ...options,
                 include: [
                     Cours.associations.classe,
                     { association: Cours.associations.enseignant, where: { utilisateurId: (req as any).utilisateurId } },
-                    { association: Cours.associations.parcours, include: [Parcours.associations.niveauEtude] }
+                    { association: Cours.associations.parcours, include: [Parcours.associations.niveauEtude] },
                 ],
+                where: { ...filters }
             }
         }
         else {
@@ -53,10 +63,21 @@ export default class CoursController {
         }
 
         try {
-            let cours: Cours[];
-            cours = await Cours.findAll(options);
-
-            return res.status(200).send(cours);
+            if (hasPagination) {
+                const { count, rows } = await Cours.findAndCountAll(options);
+                return res.status(200).json({
+                    data: rows,
+                    pagination: {
+                        page,
+                        limit,
+                        total: count,
+                        totalPages: Math.ceil(count / limit)
+                    }
+                });
+            } else {
+                const cours = await Cours.findAll(options);
+                return res.status(200).send(cours);
+            }
         } catch (error) {
             return res.status(500).json({ success: false, error: error });
         }
@@ -74,7 +95,7 @@ export default class CoursController {
                     Cours.associations.chapitresCours,
                     Cours.associations.seances,
                     Cours.associations.enseignant,
-                    { association: Cours.associations.parcours, include: [Parcours.associations.niveauEtude] }
+                    { association: Cours.associations.parcours, include: [Parcours.associations.niveauEtude] },
                 ],
             }
         }
@@ -86,7 +107,7 @@ export default class CoursController {
                     Cours.associations.chapitresCours,
                     Cours.associations.seances,
                     { association: Cours.associations.enseignant, where: { utilisateurId: (req as any).utilisateurId } },
-                    { association: Cours.associations.parcours, include: [Parcours.associations.niveauEtude] }
+                    { association: Cours.associations.parcours, include: [Parcours.associations.niveauEtude] },
                 ],
             }
         }
@@ -109,10 +130,6 @@ export default class CoursController {
     static async getCoursParticipants(req: Request, res: Response): Promise<Response | null> {
         let options: FindOptions<InferAttributes<CoursParticipant>> = {}
 
-        // if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
-        //     return res.status(403).json({ success: false })
-        // }
-        // else {
         options = {
             where: { coursId: req.params.id },
             include: [
@@ -126,22 +143,6 @@ export default class CoursController {
                 CoursParticipant.associations.cursusApprenant
             ]
         }
-        // options = {
-        //     attributes: [],
-        //     where: { id: req.params.id },
-        //     include: [
-        //         {
-        //             association: Cours.associations.demandesInscription,
-        //             where: { dateValidation: { [Op.not]: null, } },
-        //             required: true,
-        //             include: [
-        //                 { association: DemandeInscription.associations.cursusApprenant, required: true, },
-        //                 { association: DemandeInscription.associations.utilisateur, required: true, }
-        //             ]
-        //         }
-        //     ]
-        // }
-        // }
 
         try {
             let coursParticipants: CoursParticipant[];
@@ -159,31 +160,37 @@ export default class CoursController {
             return res.status(403).json({ success: false })
         }
 
-        let cours: Cours | null = await Cours.findOne({ where: { code: req.body.code, parcoursId: req.body.parcoursId } });
+        if (!req.body.code) {
+            const annee = new Date().getFullYear();
+            const dernier = await Cours.findOne({
+                order: [['id', 'DESC']],
+                attributes: ['id']
+            });
+            const seq = (dernier?.id ?? 0) + 1;
+            req.body.code = `UE-${annee}-${String(seq).padStart(3, '0')}`;
+        }
 
-        if (cours != null) {
+        const existing = await Cours.findOne({ where: { code: req.body.code, parcoursId: req.body.parcoursId } });
+        if (existing) {
             return res.status(400).json({ success: false, alreadyExists: true });
         }
-        else {
-            let cours: Cours = new Cours();
-            cours.code = req.body.code
-            cours.intitule = req.body.intitule
-            cours.credit = req.body.credit
-            cours.estObligatoire = req.body.estObligatoire
-            cours.description = req.body.description
-            cours.semestre = req.body.semestre
-            cours.classeId = req.body.classeId
-            cours.parcoursId = req.body.parcoursId
 
-            await cours.save()
-                .then((cours) => {
-                    return res.status(201).send(cours);
-                })
-                .catch((error) => {
-                    return res.status(400).json({ success: false, error: error });
-                });
-        }
-        return null
+        const newCours = await Cours.create({
+            code: req.body.code,
+            intitule: req.body.intitule,
+            credit: req.body.credit,
+            creditEcts: req.body.creditEcts ?? req.body.credit,
+            objectifs: req.body.objectifs ?? req.body.intitule,
+            estObligatoire: req.body.estObligatoire ?? true,
+            description: req.body.description,
+            semestre: req.body.semestre,
+            classeId: req.body.classeId,
+            parcoursId: req.body.parcoursId,
+            volumeHoraire: req.body.volumeHoraire,
+            coefficient: req.body.coefficient,
+        });
+
+        return res.status(201).send(newCours);
     }
 
     static async updateCours(req: Request, res: Response): Promise<Response | null> {
@@ -201,25 +208,27 @@ export default class CoursController {
             if (cours.code != req.body.code && await Cours.findOne({ where: { code: req.body.code, parcoursId: req.body.parcoursId } }) != null) {
                 return res.status(400).json({ success: false, alreadyExists: true });
             }
-            else {
 
-                await cours.update({
-                    code: req.body.code,
-                    intitule: req.body.intitule,
-                    credit: req.body.credit,
-                    estObligatoire: req.body.estObligatoire,
-                    description: req.body.description,
-                    semestre: req.body.semestre,
-                    classeId: req.body.classeId,
-                    parcoursId: req.body.parcoursId,
+            await cours.update({
+                code: req.body.code,
+                intitule: req.body.intitule,
+                credit: req.body.credit,
+                creditEcts: req.body.creditEcts,
+                objectifs: req.body.objectifs,
+                estObligatoire: req.body.estObligatoire,
+                description: req.body.description,
+                semestre: req.body.semestre,
+                classeId: req.body.classeId,
+                parcoursId: req.body.parcoursId,
+                volumeHoraire: req.body.volumeHoraire,
+                coefficient: req.body.coefficient,
+            })
+                .then(async (cours) => {
+                    return res.status(200).send(cours);
                 })
-                    .then(async (cours) => {
-                        return res.status(200).send(cours);
-                    })
-                    .catch((error) => {
-                        return res.status(400).json({ success: false, error: error });
-                    });
-            }
+                .catch((error) => {
+                    return res.status(400).json({ success: false, error: error });
+                });
         }
         else {
             return res.status(404).json({ success: false, message: "Cours non trouvé" });
@@ -340,6 +349,58 @@ export default class CoursController {
             return res.status(200).send(coursList)
         } catch (error) {
             return res.status(500).json({ success: false, error: error })
+        }
+    }
+
+    static async getArbrePedagogique(req: Request, res: Response): Promise<Response> {
+        try {
+            const parcours = await Parcours.findAll({
+                include: [
+                    { association: Parcours.associations.niveauEtude },
+                    { association: Parcours.associations.cours }
+                ],
+                order: [
+                    [{ model: NiveauEtude, as: 'niveauEtude' }, 'libelle', 'ASC'],
+                    ['titre', 'ASC']
+                ]
+            });
+
+            const tree = parcours.map(p => {
+                const coursList = (p as any).cours || [];
+                const semestres: Record<string, any> = {};
+
+                coursList.forEach((c: any) => {
+                    const sem = c.semestre || 'non-defini';
+                    if (!semestres[sem]) {
+                        semestres[sem] = { semestre: sem, cours: [], totalCredits: 0, totalCours: 0 };
+                    }
+                    semestres[sem].cours.push({
+                        id: c.id,
+                        code: c.code,
+                        intitule: c.intitule,
+                        credit: c.credit,
+                        creditEcts: c.creditEcts,
+                        volumeHoraire: c.volumeHoraire,
+                        coefficient: c.coefficient,
+                        objectifs: c.objectifs,
+                    });
+                    semestres[sem].totalCredits += c.creditEcts || c.credit || 0;
+                    semestres[sem].totalCours += 1;
+                });
+
+                return {
+                    id: p.id,
+                    titre: p.titre,
+                    description: p.description,
+                    type: p.type,
+                    niveau: p.niveauEtude ? { id: p.niveauEtude.id, libelle: p.niveauEtude.libelle } : null,
+                    semestres: Object.values(semestres)
+                };
+            });
+
+            return res.status(200).send(tree);
+        } catch (error) {
+            return res.status(500).json({ success: false, error: error });
         }
     }
 

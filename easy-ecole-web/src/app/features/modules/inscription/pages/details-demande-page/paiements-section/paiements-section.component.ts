@@ -22,6 +22,7 @@ export class PaiementsSectionComponent implements OnInit {
   @Input() demande!: DemandeInscription
   @Input() coursChoisis?: DemandeInscriptionCours[]
   @Input() rolesValue!: RolesValueType
+  @Output() nextStep: EventEmitter<any> = new EventEmitter()
 
   readonly typesPaiement = TypesPaiement
   session!: Session
@@ -118,23 +119,6 @@ export class PaiementsSectionComponent implements OnInit {
     this.paiementMontant = undefined
     this.paiementDescription = undefined
     this.paiementError = false
-  }
-
-  paiementMobileMoney(): void {
-    let paiement: PaiementInscription = new PaiementInscription()
-    paiement.datePaiement = new Date()
-    paiement.montant = this.fraisTotal
-    paiement.description = "Easy Ecole - Paiement des frais d'inscription"
-    paiement.matriculeInscription = this.demande!.matricule!
-
-    this.paiementInscriptionService.createMobileMoney(paiement).subscribe({
-      next: (value) => {
-        window.open(value.data.payment_url, '_blank', 'noopener, noreferrer');
-      },
-      error: (error) => {
-        console.log(error)
-      }
-    })
   }
 
 }

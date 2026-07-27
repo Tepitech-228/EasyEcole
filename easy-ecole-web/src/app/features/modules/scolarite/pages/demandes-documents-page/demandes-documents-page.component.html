@@ -140,6 +140,6 @@
 <app-custom-modal [showModal]="showDeleteModal" title="Annuler la demande" subtitle="Voulez-vous vraiment annuler cette demande ?" (onCloseModal)="showDeleteModal = false">
   <div class="flex gap-4 justify-end mt-6">
     <app-custom-button (click)="showDeleteModal = false" text="Non" color="gray" [outlined]="true"></app-custom-button>
-    <app-custom-button (click)="deleteDemande()" text="Oui, annuler" color="red"></app-custom-button>
+    <app-custom-button (click)="deleteDemande()" text="Oui, annuler" color="primary"></app-custom-button>
   </div>
 </app-custom-modal>

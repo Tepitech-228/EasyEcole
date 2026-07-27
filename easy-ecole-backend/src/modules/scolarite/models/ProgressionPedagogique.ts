@@ -1,11 +1,11 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../ScolariteModule";
 import { Cours } from "../../inscription/models/Cours";
 import { ChapitreCours } from "../../inscription/models/ChapitreCours";
 
 export class ProgressionPedagogique extends Model<InferAttributes<ProgressionPedagogique>, InferCreationAttributes<ProgressionPedagogique>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare coursId: ForeignKey<Cours['id']>
   declare cours?: NonAttribute<Cours>
   declare semaine: number

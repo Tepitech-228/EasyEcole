@@ -1,0 +1,174 @@
+<div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+  <div *ngIf="loading" class="p-6 space-y-4">
+    <div *ngFor="let _ of [].constructor(4)" class="animate-pulse flex items-center gap-3">
+      <div class="w-4 h-4 bg-gray-200 rounded"></div>
+      <div class="w-6 h-6 bg-gray-200 rounded"></div>
+      <div class="h-4 bg-gray-200 rounded flex-1"></div>
+      <div class="w-16 h-4 bg-gray-200 rounded"></div>
+    </div>
+  </div>
+
+  <div *ngIf="!loading">
+    <app-batch-toolbar
+      *ngIf="selectedIds.size > 0"
+      [selectedCount]="selectedIds.size"
+      [actions]="batchActions"
+      (action)="onBatchAction($event)"
+      (deselectAll)="deselectAll()">
+    </app-batch-toolbar>
+
+    <div class="divide-y divide-gray-100">
+      <div *ngFor="let node of nodes; let i = index; let isLast = last" class="select-none">
+        <div class="flex items-center gap-2 hover:bg-gray-50 transition cursor-pointer relative"
+             [style.paddingLeft.px]="level * 20 + 12">
+
+          <!-- Tree connector lines -->
+          <div class="absolute left-0 top-0 bottom-0" *ngIf="level > 0">
+            <div class="border-l-2 border-gray-200 absolute left-0 top-0"
+                 [style.height.%]="100" *ngIf="!isLast"></div>
+            <div class="border-l-2 border-gray-200 absolute left-0"
+                 [style.height.px]="22" *ngIf="isLast"></div>
+          </div>
+
+          <div class="w-4 flex-shrink-0 flex items-center justify-center relative" *ngIf="level > 0">
+            <div class="border-t-2 border-gray-200 absolute right-0"
+                 [style.width.px]="10"></div>
+          </div>
+
+          <div class="w-4 flex-shrink-0" *ngIf="level === 0"></div>
+
+          <!-- Expand/collapse button -->
+          <button
+            *ngIf="node.children?.length || node.items?.length"
+            (click)="toggleExpand(node); $event.stopPropagation()"
+            class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-gray-600 transition flex-shrink-0">
+            <span class="material-symbols-outlined text-base">{{ node.expanded ? 'expand_more' : 'chevron_right' }}</span>
+          </button>
+          <div class="w-5 flex-shrink-0" *ngIf="!node.children?.length && !node.items?.length"></div>
+
+          <!-- Checkbox -->
+          <input
+            type="checkbox"
+            [checked]="node.selected"
+            (change)="toggleSelect(node)"
+            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 flex-shrink-0">
+
+          <!-- Icon -->
+          <span class="material-symbols-outlined text-lg flex-shrink-0"
+                [class.text-yellow-600]="node.type === 'annee'"
+                [class.text-indigo-500]="node.type === 'niveau'"
+                [class.text-green-600]="node.type === 'parcours'"
+                [class.text-blue-500]="node.type === 'etudiant'"
+                [class.text-gray-400]="node.type === 'item'">
+            {{ getNodeIcon(node) }}
+          </span>
+
+          <!-- Label -->
+          <span class="text-sm font-medium text-gray-800 flex-1 truncate">{{ node.label }}</span>
+
+          <!-- Count badge -->
+          <span *ngIf="node.items?.length" class="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5 mr-1">
+            {{ node.items!.length }}
+          </span>
+        </div>
+
+        <!-- Children nodes (recursive) -->
+        <div *ngIf="node.expanded && node.children?.length">
+          <app-dossier-view
+            [nodes]="node.children || []"
+            [columns]="columns"
+            [batchActions]="batchActions"
+            [itemActions]="itemActions"
+            [renderItemActions]="renderItemActions"
+            [level]="level + 1"
+            (toggleNode)="toggleNode.emit($event)"
+            (selectionChange)="selectionChange.emit($event)"
+            (batchAction)="batchAction.emit($event)"
+            (itemAction)="itemAction.emit($event)">
+          </app-dossier-view>
+        </div>
+
+        <!-- Items table (leaf level) -->
+        <div *ngIf="node.expanded && node.items?.length" [style.marginLeft.px]="(level + 1) * 20 + 16">
+          <div class="border border-gray-200 rounded-md overflow-hidden m-2">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-100">
+                <tr>
+                  <th class="w-10 px-3 py-2">
+                    <input
+                      type="checkbox"
+                      [checked]="isAllItemsSelected(node)"
+                      (change)="toggleAllItems(node)"
+                      class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                  </th>
+                  <th *ngFor="let col of columns" class="text-left px-3 py-2 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    {{ col.label }}
+                  </th>
+                  <th *ngIf="renderItemActions" class="text-right px-3 py-2 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200 bg-white">
+                <tr *ngFor="let item of node.items" class="hover:bg-gray-50 transition">
+                  <td class="px-3 py-2">
+                    <input
+                      type="checkbox"
+                      [checked]="isItemSelected(item)"
+                      (change)="toggleItemSelect(item)"
+                      class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                  </td>
+                  <td *ngFor="let col of columns" class="px-3 py-2 text-sm text-gray-700">
+                    <ng-container [ngSwitch]="col.key">
+                      <app-custom-badge *ngSwitchCase="'statut'" [text]="item[col.key]" [color]="getBadgeColor(item[col.key])"></app-custom-badge>
+                      <span *ngSwitchDefault>{{ item[col.key] }}</span>
+                    </ng-container>
+                  </td>
+                  <td *ngIf="renderItemActions" class="px-3 py-2 text-right">
+                    <button
+                      *ngFor="let action of itemActions"
+                      (click)="itemAction.emit({ item, action: action.action }); $event.stopPropagation()"
+                      class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md transition mx-0.5"
+                      [class]="'text-indigo-700 bg-indigo-100 hover:bg-indigo-200'">
+                      <span *ngIf="action.icon" class="material-symbols-outlined text-sm">{{ action.icon }}</span>
+                      {{ action.label }}
+                    </button>
+                    <button
+                      *ngFor="let action of batchActions"
+                      (click)="itemAction.emit({ item, action: action.action }); $event.stopPropagation()"
+                      class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md transition mx-0.5"
+                      [class]="'text-' + action.color + '-700 bg-' + action.color + '-100 hover:bg-' + action.color + '-200'">
+                      <span *ngIf="action.icon" class="material-symbols-outlined text-sm">{{ action.icon }}</span>
+                      {{ action.label }}
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="totalPages > 1" class="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-200">
+      <span class="text-sm text-gray-600">
+        Page {{ currentPage }} / {{ totalPages }}
+        ({{ totalItems }} résultat(s))
+      </span>
+      <div class="flex gap-1">
+        <button
+          (click)="pageChange.emit(currentPage - 1)"
+          [disabled]="currentPage <= 1"
+          class="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+          <span class="material-symbols-outlined text-base align-middle">chevron_left</span>
+        </button>
+        <button
+          (click)="pageChange.emit(currentPage + 1)"
+          [disabled]="currentPage >= totalPages"
+          class="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+          <span class="material-symbols-outlined text-base align-middle">chevron_right</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

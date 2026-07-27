@@ -1,83 +1,100 @@
-<div class="gestion-page">
-  <div class="gestion-page__header">
-    <h2 class="gestion-page__title">Gestion e-learning</h2>
-    <button (click)="toggleCreateForm()" class="btn btn--primary">
-      {{ showCreateForm ? 'Annuler' : 'Nouveau cours' }}
-    </button>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <app-header-title title="Gestion e-learning" subtitle="Gérer les cours en ligne, modules et supports pédagogiques"></app-header-title>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+    <div class="flex justify-between items-center flex-wrap gap-3">
+      <div class="flex items-center gap-2 text-sm text-gray-500">
+        <span class="font-medium text-gray-900">{{ coursList.length }}</span> cours
+      </div>
+      <app-custom-button (click)="toggleCreateForm()" [text]="showCreateForm ? 'Annuler' : 'Nouveau cours'" color="indigo"></app-custom-button>
+    </div>
   </div>
 
-  <div *ngIf="showCreateForm" class="card">
-    <h3 class="card__title">Créer un nouveau cours</h3>
-    <div class="form-group">
-      <label class="form-label">Titre</label>
-      <input [(ngModel)]="newCours.titre" type="text" class="form-input">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Description</label>
-      <textarea [(ngModel)]="newCours.description" class="form-textarea"></textarea>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Format</label>
-        <select [(ngModel)]="newCours.format" class="form-select">
-          <option value="video">Vidéo</option>
-          <option value="pdf">PDF</option>
-          <option value="mixte">Mixte</option>
-        </select>
+  <div *ngIf="showCreateForm" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Créer un nouveau cours</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Titre *</label>
+        <input [(ngModel)]="newCours.titre" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" placeholder="Titre du cours" />
       </div>
-      <div class="form-group">
-        <label class="form-label">Professeur</label>
-        <select [(ngModel)]="newCours.enseignantId" class="form-select">
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Professeur</label>
+        <select [(ngModel)]="newCours.enseignantId" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
           <option [ngValue]="null">— Sélectionner —</option>
           <option *ngFor="let e of enseignants" [ngValue]="e.utilisateur?.id || e.id">
             {{ e.utilisateur?.prenoms || e.prenoms }} {{ e.utilisateur?.nom || e.nom }}
           </option>
         </select>
       </div>
+      <div class="sm:col-span-2">
+        <label class="block text-xs font-medium text-gray-500 mb-1">Description</label>
+        <textarea [(ngModel)]="newCours.description" rows="3" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" placeholder="Description du cours..."></textarea>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Format</label>
+        <select [(ngModel)]="newCours.format" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+          <option value="video">Vidéo</option>
+          <option value="pdf">PDF</option>
+          <option value="mixte">Mixte</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Image du cours</label>
+        <input (change)="onFileSelected($event)" type="file" accept="image/*" class="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+      </div>
     </div>
-    <button (click)="createCours()" [disabled]="!newCours.titre" class="btn btn--primary">
-      Créer
-    </button>
+    <div class="flex justify-end gap-3">
+      <app-custom-button (click)="toggleCreateForm()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+      <app-custom-button (click)="createCours()" [disabled]="!newCours.titre || creating" [text]="creating ? 'Création...' : 'Créer le cours'" color="indigo"></app-custom-button>
+    </div>
   </div>
 
-  <div *ngIf="loading" class="spinner-wrapper">
-    <div class="spinner"></div>
-  </div>
-
-  <div *ngIf="!loading" class="card">
-    <div class="table-wrapper">
-      <table class="table">
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-100">
         <thead>
-          <tr>
-            <th>Titre</th>
-            <th>Format</th>
-            <th>Professeur</th>
-            <th>Statut</th>
-            <th>Modules</th>
-            <th class="table__th--right">Actions</th>
+          <tr class="bg-gray-50/50">
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Titre</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Format</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Professeur</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Statut</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Modules</th>
+            <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase">Actions</th>
           </tr>
         </thead>
-        <tbody>
-          <tr *ngFor="let cours of coursList">
-            <td>
-              <a [routerLink]="['/elearning', cours.id]" class="table__link">{{ cours.titre }}</a>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngFor="let cours of coursList" class="hover:bg-gray-50/50 transition-colors">
+            <td class="px-5 py-4 whitespace-nowrap">
+              <a [routerLink]="['/elearning', cours.id]" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">{{ cours.titre }}</a>
             </td>
-            <td>
-              <span class="badge badge--format" [class.badge--video]="cours.format === 'video'" [class.badge--pdf]="cours.format === 'pdf'" [class.badge--mixte]="cours.format === 'mixte'">{{ cours.format || 'mixte' }}</span>
+            <td class="px-5 py-4">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                [class.bg-blue-50]="cours.format === 'video'" [class.text-blue-700]="cours.format === 'video'"
+                [class.bg-amber-50]="cours.format === 'pdf'" [class.text-amber-700]="cours.format === 'pdf'"
+                [class.bg-purple-50]="cours.format === 'mixte'" [class.text-purple-700]="cours.format === 'mixte'">
+                {{ cours.format || 'mixte' }}
+              </span>
             </td>
-            <td class="table__muted">{{ cours.enseignant?.prenoms }} {{ cours.enseignant?.nom }}</td>
-            <td>
-              <span class="badge" [ngClass]="cours.statut === 'actif' ? 'badge--success' : 'badge--muted'">{{ cours.statut }}</span>
+            <td class="px-5 py-4 text-sm text-gray-500">{{ cours.enseignant?.prenoms }} {{ cours.enseignant?.nom }}</td>
+            <td class="px-5 py-4">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                [class.bg-green-50]="cours.statut === 'actif'" [class.text-green-700]="cours.statut === 'actif'"
+                [class.bg-gray-100]="cours.statut !== 'actif'" [class.text-gray-600]="cours.statut !== 'actif'">
+                {{ cours.statut }}
+              </span>
             </td>
-            <td class="table__muted">{{ cours.modules?.length || 0 }}</td>
-            <td class="table__td--right">
-              <a [routerLink]="['/elearning', cours.id, 'upload']" class="table__action-link">Upload</a>
-              <button (click)="deleteCours(cours.id)" class="table__action-link table__action-link--danger">Supprimer</button>
+            <td class="px-5 py-4 text-sm text-gray-500">{{ cours.modules?.length || 0 }}</td>
+            <td class="px-5 py-4 text-right">
+              <div class="flex justify-end gap-2">
+                <a [routerLink]="['/elearning', cours.id, 'upload']" class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-100">Upload</a>
+                <app-custom-button (click)="deleteCours(cours.id)" text="Supprimer" color="primary" [outlined]="true"></app-custom-button>
+              </div>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
-    <div *ngIf="coursList.length === 0" class="table__empty">Aucun cours e-learning.</div>
+    <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+    <div *ngIf="!loading && coursList.length === 0" class="px-5 py-12 text-center text-sm text-gray-500">Aucun cours e-learning.</div>
   </div>
 </div>
