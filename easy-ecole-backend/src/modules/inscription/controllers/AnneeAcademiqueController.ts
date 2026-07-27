@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { CountOptions, FindOptions, InferAttributes } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { AnneeAcademique } from "../models/AnneeAcademique";
+import { FolderAutoService } from "../../ged/services/FolderAutoService";
 
 export default class AnneeAcademiqueController {
 
@@ -57,7 +58,16 @@ export default class AnneeAcademiqueController {
             anneeAcademique.description = req.body.description
 
             await anneeAcademique.save()
-                .then((anneeAcademique) => {
+                .then(async (anneeAcademique) => {
+                    // 🔥 Génération automatique de l'arborescence GED pour tous les domaines
+                    try {
+                        const userId = (req as any).utilisateurId;
+                        await FolderAutoService.generateForAcademicYear(anneeAcademique.id, userId);
+                        console.log(`📁 Arborescence GED générée pour l'année ${anneeAcademique.libelle}`);
+                    } catch (err) {
+                        console.error(`⚠️ Erreur génération arborescence GED:`, err);
+                        // Non bloquant : l'année a été créée, les dossiers seront créés plus tard
+                    }
                     return res.status(201).send(anneeAcademique);
                 })
                 .catch((error) => {
