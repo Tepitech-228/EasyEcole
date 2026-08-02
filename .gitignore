@@ -1,0 +1,36 @@
+# Dépendances
+node_modules/
+
+# Builds
+dist/
+lib/
+easy-ecole-backend/lib/
+easy-ecole-web/dist/
+
+# Logs
+*.log
+logs/
+
+# Environnement (ne jamais committer les secrets)
+.env
+.env.*
+!**/.env.example
+
+# Fichiers temporaires Office / système
+~$*
+*.tmp
+Thumbs.db
+.DS_Store
+
+# Tests & couverture
+coverage/
+easy-ecole-web/coverage/
+easy-ecole-web/.angular/
+easy-ecole-web/.cache/
+
+# IDE
+.vscode/
+.idea/
+
+# Artefacts locaux de dev
+easy-ecole-web/test-tailwind.html

@@ -22,6 +22,7 @@
         "db:seed-ged-demo": "ts-node src/modules/ged/seed-ged-demo.ts",
         "db:seed-ged-full": "ts-node src/modules/ged/seed-ged-full-demo.ts",
         "db:seed-ged-folders": "ts-node src/core/scripts/seed-ged-folders.ts",
+        "db:seed-accounts": "ts-node src/core/scripts/seed-accounts.ts",
         "db:seed-docgen": "ts-node src/modules/docgen/seed/seed.ts",
         "test": "jest",
         "test:watch": "jest --watch",
