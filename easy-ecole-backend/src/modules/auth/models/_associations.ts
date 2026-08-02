@@ -88,9 +88,21 @@ Utilisateur.hasMany(UserPermission, { as: 'userPermissions', foreignKey: 'utilis
 Role.belongsToMany(Permission, { through: RolePermission, as: 'permissions', foreignKey: 'roleId' })
 Permission.belongsToMany(Role, { through: RolePermission, as: 'roles', foreignKey: 'permissionId' })
 
+// Associations directes pour RolePermission (utilisées par getRolePermissions)
+RolePermission.belongsTo(Permission, { as: 'permission', foreignKey: 'permissionId' })
+Permission.hasMany(RolePermission, { as: 'rolePermissions', foreignKey: 'permissionId' })
+RolePermission.belongsTo(Role, { as: 'role', foreignKey: 'roleId' })
+Role.hasMany(RolePermission, { as: 'rolePermissions', foreignKey: 'roleId' })
+
 // Role - Utilisateur (via UserRole)
 Role.belongsToMany(Utilisateur, { through: UserRole, as: 'utilisateurs', foreignKey: 'roleId' })
 Utilisateur.belongsToMany(Role, { through: UserRole, as: 'roles', foreignKey: 'utilisateurId' })
+
+// Associations directes pour UserRole (utilisées par getRoleUtilisateurs)
+UserRole.belongsTo(Utilisateur, { as: 'utilisateur', foreignKey: 'utilisateurId' })
+Utilisateur.hasMany(UserRole, { as: 'userRoles', foreignKey: 'utilisateurId' })
+UserRole.belongsTo(Role, { as: 'role', foreignKey: 'roleId' })
+Role.hasMany(UserRole, { as: 'userRoles', foreignKey: 'roleId' })
 
 // ParentEnfant - Utilisateur (parent)
 ParentEnfant.belongsTo(Utilisateur, { as: 'parentUtilisateur', foreignKey: 'parentUtilisateurId' })

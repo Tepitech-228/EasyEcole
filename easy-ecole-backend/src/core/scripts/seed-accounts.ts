@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import * as bcrypt from 'bcrypt';
 
 async function seedAccounts() {
@@ -15,6 +16,7 @@ async function seedAccounts() {
     const AutAdrI = sequelize.model('AutAdresseInstitution');
     const AutE = sequelize.model('AutEnseignant');
     const AutAdrE = sequelize.model('AutAdresseEnseignant');
+    const AutCO = sequelize.model('AutComiteOrientation');
 
     const accounts = [
         {
@@ -29,7 +31,7 @@ async function seedAccounts() {
         {
             nom: 'TEPITECH',
             prenoms: 'Corporation',
-            identifiant: 'institution',
+            identifiant: 'institution-tepitech',
             email: 'tepitechcorp@gmail.com',
             password: 'Inst@2026!',
             role: 'institution',
@@ -54,6 +56,18 @@ async function seedAccounts() {
                 lieuNaissance: 'Kara',
                 fonction: "Professeur d'Histoire",
                 adresse: { pays: 'Togo', ville: 'Lomé', quartier: 'Tokoin', boitePostale: 'BP 200', prorietaireBoitePostale: 'Gédéon Histoire', telMobile: '+2280102000001' },
+            },
+        },
+        {
+            nom: 'Kakashi',
+            prenoms: 'Comité',
+            identifiant: 'comite-kakashi',
+            email: 'kakashitogo@gmail.com',
+            password: 'Comite@2026!',
+            role: 'comite_orientation',
+            contact: '+2280104000003',
+            comiteData: {
+                fonction: 'Membre du Comité d\'orientation',
             },
         },
     ];
@@ -114,6 +128,17 @@ async function seedAccounts() {
                     utilisateurId: utilisateur.id,
                 });
                 console.log(`    → Profil enseignant créé`);
+            }
+        }
+
+        if (acc.role === 'comite_orientation' && acc.comiteData) {
+            const existing = await AutCO.findOne({ where: { utilisateurId: utilisateur.id } });
+            if (!existing) {
+                await AutCO.create({
+                    fonction: acc.comiteData.fonction,
+                    utilisateurId: utilisateur.id,
+                });
+                console.log(`    → Profil comité orientation créé`);
             }
         }
     }

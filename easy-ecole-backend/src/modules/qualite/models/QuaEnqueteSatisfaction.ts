@@ -27,7 +27,7 @@ QuaEnqueteSatisfaction.init({
   titre: { type: DataTypes.STRING(200), allowNull: false },
   description: { type: DataTypes.TEXT, allowNull: true },
   cible: { type: DataTypes.ENUM('apprenants', 'parents', 'personnel', 'enseignants', 'tous'), allowNull: false },
-  questions: { type: DataTypes.JSON, allowNull: false },
+  questions: { type: DataTypes.TEXT, allowNull: false },
   dateDebut: { type: DataTypes.DATEONLY, allowNull: false },
   dateFin: { type: DataTypes.DATEONLY, allowNull: false },
   statut: { type: DataTypes.ENUM('brouillon', 'active', 'cloturee'), defaultValue: 'brouillon' },

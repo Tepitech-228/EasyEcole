@@ -8,6 +8,7 @@ import rateLimit from 'express-rate-limit'
 import http from "http"
 import https from "https"
 import fs from "fs"
+import path from "path"
 import { Server as SocketIOServer } from "socket.io"
 import swaggerUi from 'swagger-ui-express'
 import router from "./routes"
@@ -21,6 +22,7 @@ import { PermissionSeed } from './modules/auth/seed/PermissionSeed'
 import { RoleSeed } from './modules/auth/seed/RoleSeed'
 import { RappelSalleCron } from './core/services/RappelSalleCron'
 import { NotificationGedService } from './modules/ged/services/NotificationGedService'
+import { seedComptabilite } from './modules/comptabilite/seed'
 import { errorHandler } from './core/middlewares/ErrorHandler'
 
 // Tests
@@ -34,8 +36,8 @@ import { errorHandler } from './core/middlewares/ErrorHandler'
 // console.log(iDGenerator.generateMotDePasseUtilisateur())
 
 // Cinetpay
-// const mobileMoneyCinetpay = MobileMoneyCinetpay.getInstance()
-// mobileMoneyCinetpay.init()
+const mobileMoneyCinetpay = MobileMoneyCinetpay.getInstance()
+mobileMoneyCinetpay.init()
 
 const app = express()
 const port: number = Number(process.env.PORT) || 3000
@@ -87,7 +89,11 @@ app.use(limiter)
 app.use(morgan("dev"))
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: false, limit: '10mb' }))
-app.use(express.static('public'))
+
+// Restricted static serving — only media subdirectories, NOT qr-codes or cartes
+app.use('/media/photos/apprenants', express.static(path.resolve('public', 'auth', 'apprenants', 'photos')))
+app.use('/media/photos/enseignants', express.static(path.resolve('public', 'auth', 'enseignants', 'photos')))
+app.use('/media/profiles', express.static(path.resolve('public', 'auth', 'profiles')))
 
 /** Swagger Documentation */
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
@@ -140,6 +146,13 @@ server.on("listening", async () => {
         await NotificationGedService.verifierDUA();
     } catch (e) {
         console.error('DUA check error:', e);
+    }
+
+    // Seed comptabilite (comptes, journaux, frais parcours)
+    try {
+        await seedComptabilite();
+    } catch (e) {
+        console.error('Comptabilite seed error:', e);
     }
 
     // Mail notification

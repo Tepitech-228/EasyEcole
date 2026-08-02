@@ -12,6 +12,7 @@ const ALL_PERMISSIONS: Array<{ key: string; libelle: string; module: string; typ
     { key: 'menu.inscription.cursus', libelle: 'Mon cursus', module: 'Inscription', type: 'menu', parentKey: 'menu.inscription' },
     { key: 'menu.inscription.mon-dossier', libelle: 'Mon dossier', module: 'Inscription', type: 'menu', parentKey: 'menu.inscription' },
     { key: 'menu.inscription.dossiers-etudiants', libelle: 'Dossiers étudiants', module: 'Inscription', type: 'menu', parentKey: 'menu.inscription' },
+    { key: 'menu.inscription.cartes', libelle: 'Cartes étudiantes', module: 'Inscription', type: 'menu', parentKey: 'menu.inscription' },
     { key: 'menu.inscription.effectifs', libelle: 'Effectifs inscrits', module: 'Inscription', type: 'menu', parentKey: 'menu.inscription' },
     { key: 'menu.inscription.paiements', libelle: 'Paiements', module: 'Inscription', type: 'menu', parentKey: 'menu.inscription' },
     { key: 'menu.inscription.comptabilite', libelle: 'Comptabilité', module: 'Inscription', type: 'menu', parentKey: 'menu.inscription' },

@@ -7,5 +7,6 @@ declare module "express-serve-static-core" {
     utilisateurEmail?: string;
     utilisateurRole?: RolesUtilisateur;
     utilisateur?: any;
+    etablissementId?: number | null;
   }
 }

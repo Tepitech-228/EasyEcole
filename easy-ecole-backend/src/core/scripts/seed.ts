@@ -35,6 +35,7 @@ async function seed() {
     require('../../modules/rh/models/_associations');
     require('../../modules/achats/models/_associations');
     require('../../modules/comptabilite/models/_associations');
+    require('../../modules/etablissement/models/_associations');
     require('../../modules/communication/models/_associations');
     require('../../modules/communication/models/Communication');
     require('../../modules/communication/models/Actualite');
@@ -1220,6 +1221,29 @@ async function seed() {
         await seedCataloguePart3();
         console.log('  ✓ Partie 3 : DRO, MKT, COM, EDU');
     } catch (e: any) { console.warn('  ⚠ Partie 3 ignorée:', e.message); }
+
+    // ════════════════════════════════════════════════════
+    //  DÉFAUT ÉTABLISSEMENT
+    // ════════════════════════════════════════════════════
+    console.log('\n── ÉTABLISSEMENT DÉFAUT ──');
+    try {
+        const { Etablissement } = require('../../modules/etablissement/models/Etablissement');
+        const existing = await Etablissement.findOne({ where: { nom: "Université des Sciences et Technologies" } });
+        if (!existing) {
+            await Etablissement.create({
+                nom: "Université des Sciences et Technologies",
+                code: "UST",
+                type: "Université",
+                pays: "Côte d'Ivoire",
+                ville: "Abidjan",
+                devise: "FCFA",
+                actif: true
+            });
+            console.log('  ✓ Établissement par défaut créé');
+        } else {
+            console.log('  ✓ Établissement par défaut existe déjà');
+        }
+    } catch (e: any) { console.warn('  ⚠ Établissement ignoré:', e.message); }
 
     console.log('\n═══════════════════════════════════════════');
     console.log('  SEED TERMINÉ — UST');

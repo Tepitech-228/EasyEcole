@@ -51,6 +51,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                 icon: 'folder_special',
                 items: [
                     { label: 'Dossiers etudiants', route: '/inscription/dossiers', icon: 'folder_special', permissionKey: 'menu.inscription.dossiers-etudiants', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Cartes étudiantes', route: '/inscription/cartes', icon: 'credit_card', permissionKey: 'menu.inscription.cartes', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Arborescence dossiers', route: '/inscription/hierarchy', icon: 'account_tree', permissionKey: 'menu.inscription.hierarchy', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Registres', route: '/scolarite/registres', icon: 'menu_book', permissionKey: 'menu.scolarite.registres', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Equivalences', route: '/bulletins/equivalences', icon: 'swap_horiz', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
@@ -394,7 +395,6 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                     { label: 'Roles', route: '/parametres/roles', icon: 'manage_accounts', permissionKey: 'menu.administration.roles', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Permissions', route: '/parametres/permissions', icon: 'security', permissionKey: 'menu.administration.permissions', allowedRoles: [RolesUtilisateur.ADMIN] },
                     { label: 'QR Codes', route: '/administration/qr-codes', icon: 'qr_code', permissionKey: 'menu.administration.qr-codes', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
-                    { label: 'Cartes', route: '/administration/cartes', icon: 'credit_card', permissionKey: 'menu.administration.cartes', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Journal audit', route: '/administration/audit-logs', icon: 'fact_check', permissionKey: 'menu.administration.journal-audit', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Configuration', route: '/administration/configuration', icon: 'tune', permissionKey: 'menu.administration.configuration', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                 ]

@@ -1,4 +1,4 @@
-import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, NonAttribute, Association } from "sequelize";
+import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { Institution } from "./Institution";
@@ -7,6 +7,7 @@ import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../AuthModule";
 import { CaissierBanque } from "./CaissierBanque";
 import { Enseignant } from "./Enseignant";
 import { ComiteOrientation } from "./ComiteOrientation";
+import { Etablissement } from "../../etablissement/models/Etablissement";
 
 export class Utilisateur extends Model<InferAttributes<Utilisateur>, InferCreationAttributes<Utilisateur>> {
   declare id: CreationOptional<number>
@@ -19,6 +20,8 @@ export class Utilisateur extends Model<InferAttributes<Utilisateur>, InferCreati
   declare contact: string
   declare tokenVersion: CreationOptional<number>
   declare photoDeProfil: CreationOptional<string>
+  declare etablissementId: ForeignKey<Etablissement['id'] | null>
+  declare etablissement?: NonAttribute<Etablissement>
   declare dateVerificationEmail: CreationOptional<Date>
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -35,6 +38,7 @@ export class Utilisateur extends Model<InferAttributes<Utilisateur>, InferCreati
     enseignant: Association<Utilisateur, Enseignant>
     caissierBanque: Association<Utilisateur, CaissierBanque>
     comiteOrientation: Association<Utilisateur, ComiteOrientation>
+    etablissement: Association<Utilisateur, Etablissement>
   }
 }
 
@@ -85,6 +89,7 @@ Utilisateur.init({
     type: new DataTypes.STRING,
     allowNull: true
   },
+  etablissementId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
   dateVerificationEmail: {
     type: DataTypes.DATE,
     allowNull: true

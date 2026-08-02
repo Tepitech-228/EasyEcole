@@ -8,8 +8,9 @@ import Folder from "../../modules/ged/models/Folder";
 import { ProcessusGenerateur } from "../../modules/ged/models/ProcessusGenerateur";
 import { ReferenceService } from "./ReferenceService";
 import { AuditService } from "./AuditService";
+import { GED_CONFIG } from "../config/GedConfig";
 
-const GED_DIR = "public/ged";
+const GED_DIR = GED_CONFIG.STORAGE_DIR;
 const PROCESSUS_CODES = {
   INSCRIPTION: 'INSCRIPTION',
   BORDEREAU: 'BORDEREAU',

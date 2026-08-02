@@ -7,6 +7,7 @@ import { Cours } from "../../inscription/models/Cours";
 import * as path from "path";
 import * as fs from "fs";
 import QRCode from "qrcode";
+import { QrTokenService } from "../../../core/services/QrTokenService";
 
 export default class EnseignantController {
 
@@ -180,7 +181,7 @@ export default class EnseignantController {
     }
 
     static async generateQrCodes(req: Request, res: Response): Promise<Response | null> {
-        const dir: string = "public/auth/enseignants/qr-codes/"
+        const dir: string = path.resolve(process.cwd(), 'storage', 'qr-codes', 'enseignants')
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true })
         }
@@ -202,13 +203,15 @@ export default class EnseignantController {
                 if (!enseignant.utilisateur) continue
 
                 const userId = String(enseignant.utilisateur.id)
+                const qrData = QrTokenService.signer(Number(enseignant.utilisateur.id))
                 const fileName = `${userId}.png`
                 const filePath = path.join(dir, fileName)
 
-                await QRCode.toFile(filePath, userId, {
+                await QRCode.toFile(filePath, qrData, {
                     type: 'png',
                     width: 400,
-                    margin: 2,
+                    margin: 4,
+                    errorCorrectionLevel: 'Q',
                     color: {
                         dark: '#000000',
                         light: '#ffffff'

@@ -1,29 +1,29 @@
-const mockModel = () => {
-  const Model: any = jest.fn()
-  Model.findAll = jest.fn()
-  Model.findOne = jest.fn()
-  Model.create = jest.fn()
-  Model.bulkCreate = jest.fn()
-  Model.findByPk = jest.fn()
-  Model.count = jest.fn()
-  Model.findAndCountAll = jest.fn()
-  Model.update = jest.fn()
-  Model.destroy = jest.fn()
-  Model.hasMany = jest.fn()
-  Model.belongsTo = jest.fn()
-  Model.belongsToMany = jest.fn()
-  Model.hasOne = jest.fn()
-  return Model
-}
+import { Sequelize } from 'sequelize';
+
+// Mock manuel de DatabaseConnection, utilisé automatiquement par Jest quand un
+// test appelle `jest.mock('../../../core/helpers/DatabaseConnection')` sans factory
+// (ex: PresenceController.test.ts, SeanceController.test.ts).
+//
+// Pourquoi : l'automock de Jest transforme `getInstance()` en `jest.fn()` qui ne
+// retourne pas d'instance Sequelize valide. Les modèles exécutent pourtant
+// `CoursParticipant.init({ ..., sequelize: DatabaseConnection.getInstance().sequelize })`
+// au moment de l'import, ce qui déclenche
+//   TypeError: Cannot read properties of undefined (reading 'define')
+// dans sequelize/lib/model.js (Model.init accède à `this.sequelize.options.define`).
+//
+// Ce mock retourne une VRAIE instance Sequelize (aucune connexion au constructeur :
+// Sequelize est paresseux), ce qui permet à Model.init() de s'exécuter normalement.
+const sequelize = new Sequelize({
+  database: 'easyecole_test',
+  username: 'root',
+  password: '',
+  dialect: 'mysql',
+  host: 'localhost',
+  port: 3306,
+  logging: false,
+});
 
 export const DatabaseConnection = {
-  instance: null as any,
-  getInstance: jest.fn().mockReturnValue({
-    sequelize: {
-      define: jest.fn().mockImplementation(() => mockModel()),
-      authenticate: jest.fn().mockResolvedValue(undefined),
-      sync: jest.fn().mockResolvedValue(undefined),
-      query: jest.fn().mockResolvedValue([]),
-    },
-  }),
-}
+  instance: null,
+  getInstance: jest.fn().mockReturnValue({ sequelize }),
+};

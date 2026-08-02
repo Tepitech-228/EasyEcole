@@ -25,6 +25,7 @@ function signToken(utilisateur: Utilisateur): string {
       identifiant: utilisateur.identifiant,
       role: utilisateur.role,
       tokenVersion: utilisateur.tokenVersion,
+      etablissementId: (utilisateur as any).etablissementId || null,
     },
     JWT_SECRET
   )

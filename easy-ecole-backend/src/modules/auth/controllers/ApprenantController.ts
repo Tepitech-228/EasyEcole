@@ -10,6 +10,7 @@ import { PersonnePrevenirApprenant } from "../models/PersonnePrevenirApprenant";
 import * as path from "path";
 import * as fs from "fs";
 import QRCode from "qrcode";
+import { QrTokenService } from "../../../core/services/QrTokenService";
 
 export default class ApprenantController {
 
@@ -244,7 +245,7 @@ export default class ApprenantController {
     }
 
     static async generateQrCodes(req: Request, res: Response): Promise<Response | null> {
-        const dir: string = "public/auth/apprenants/qr-codes/"
+        const dir: string = path.resolve(process.cwd(), 'storage', 'qr-codes', 'apprenants')
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true })
         }
@@ -278,20 +279,7 @@ export default class ApprenantController {
 
                 try {
                     const user = apprenant.utilisateur
-                    const cursus = (user as any).cursusApprenant?.[0]
-                    const demande = cursus?.demandeInscription
-
-                    const qrData = JSON.stringify({
-                        id: String(user.id),
-                        nom: user.nom,
-                        prenoms: user.prenoms,
-                        matricule: demande?.matricule || user.identifiant || '',
-                        parcours: cursus?.parcours?.titre || '',
-                        classe: cursus?.classe?.libelle || '',
-                        annee: cursus?.anneeAcademique?.libelle || '',
-                        email: user.email || '',
-                        contact: user.contact || ''
-                    })
+                    const qrData = QrTokenService.signer(Number(user.id))
 
                     const baseName = `${user.id}`;
                     let fileName = `${baseName}.png`;
@@ -307,7 +295,8 @@ export default class ApprenantController {
                     await QRCode.toFile(filePath, qrData, {
                         type: 'png',
                         width: 400,
-                        margin: 2,
+                        margin: 4,
+                        errorCorrectionLevel: 'Q',
                         color: {
                             dark: '#000000',
                             light: '#ffffff'
@@ -348,5 +337,19 @@ export default class ApprenantController {
             });
 
         return null
+    }
+
+    static async getQrCode(req: Request, res: Response): Promise<Response | null> {
+        const { fileName } = req.params;
+        const dir = path.resolve(process.cwd(), 'storage', 'qr-codes', 'apprenants');
+        const filePath = path.join(dir, fileName);
+
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ success: false, message: 'QR code non trouvé' });
+        }
+
+        res.setHeader('Content-Type', 'image/png');
+        res.sendFile(filePath);
+        return null;
     }
 }

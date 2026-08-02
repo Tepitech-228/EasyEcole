@@ -12,6 +12,10 @@ export class Etablissement extends Model<InferAttributes<Etablissement>, InferCr
   declare telephone: CreationOptional<string>
   declare email: CreationOptional<string>
   declare siteWeb: CreationOptional<string>
+  declare code: CreationOptional<string>
+  declare logo: CreationOptional<string>
+  declare devise: CreationOptional<string>
+  declare anneeScolaireCourante: CreationOptional<string>
   declare actif: CreationOptional<boolean>
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -27,6 +31,10 @@ Etablissement.init({
   telephone: { type: DataTypes.STRING, allowNull: true },
   email: { type: DataTypes.STRING, allowNull: true },
   siteWeb: { type: DataTypes.STRING, allowNull: true },
+  code: { type: DataTypes.STRING(10), allowNull: true, unique: true },
+  logo: { type: DataTypes.STRING, allowNull: true },
+  devise: { type: DataTypes.STRING(10), defaultValue: 'FCFA' },
+  anneeScolaireCourante: { type: DataTypes.STRING(20), allowNull: true },
   actif: { type: DataTypes.BOOLEAN, defaultValue: true },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

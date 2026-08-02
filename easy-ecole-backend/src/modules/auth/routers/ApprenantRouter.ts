@@ -184,5 +184,28 @@ router
      *         description: Non autorisé
      */
     .get('/statistics/count', [AuthInstitution], ApprenantController.getCount)
+    /**
+     * @openapi
+     * /auth/apprenants/qr-codes/{fileName}:
+     *   get:
+     *     tags: [Apprenants]
+     *     summary: Télécharger un QR code d'apprenant
+     *     security:
+     *       - bearerAuth: []
+     *     parameters:
+     *       - in: path
+     *         name: fileName
+     *         required: true
+     *         schema:
+     *           type: string
+     *     responses:
+     *       200:
+     *         description: Fichier QR code
+     *       401:
+     *         description: Non autorisé
+     *       404:
+     *         description: QR code non trouvé
+     */
+    .get('/qr-codes/:fileName', [Authenticate], ApprenantController.getQrCode)
 
 export default router

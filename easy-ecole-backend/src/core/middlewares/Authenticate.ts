@@ -28,6 +28,7 @@ export default async (req: Request, res: Response, next: Function) => {
         req.utilisateurIdentifiant = decoded.identifiant;
         req.utilisateurEmail = decoded.email;
         req.utilisateurRole = decoded.role;
+        req.etablissementId = (decoded as any).etablissementId || null;
 
         return next()
     } catch (error: any) {
@@ -41,4 +42,5 @@ export interface EncodePayload {
     email: string
     role: RolesUtilisateur
     tokenVersion: number
+    etablissementId?: number | null
 }

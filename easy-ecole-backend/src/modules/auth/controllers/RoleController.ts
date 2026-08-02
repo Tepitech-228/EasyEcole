@@ -124,7 +124,7 @@ export default class RoleController {
             const { id } = req.params;
             const userRoles = await UserRole.findAll({
                 where: { roleId: id },
-                include: [{ model: Utilisateur, as: 'utilisateur', attributes: ['id', 'nom', 'prenom', 'email'] }]
+                include: [{ model: Utilisateur, as: 'utilisateur', attributes: ['id', 'nom', 'prenoms', 'email'] }]
             });
             return res.status(200).send(userRoles);
         } catch (error) {

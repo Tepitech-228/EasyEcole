@@ -3,8 +3,9 @@ import path from "path";
 import crypto from "crypto";
 import { StorageInterface, StorageOptions, StorageResult } from "./StorageInterface";
 import { EncryptionService } from "../EncryptionService";
+import { GED_CONFIG } from "../../config/GedConfig";
 
-const DEFAULT_STORAGE_DIR = "public/ged";
+const DEFAULT_STORAGE_DIR = GED_CONFIG.STORAGE_DIR;
 
 export class LocalStorageService implements StorageInterface {
   private baseDir: string;

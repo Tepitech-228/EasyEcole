@@ -24,7 +24,7 @@ QuaReponseSatisfaction.init({
   id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
   enqueteSatisfactionId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false },
   utilisateurId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false },
-  reponses: { type: DataTypes.JSON, allowNull: false },
+  reponses: { type: DataTypes.TEXT, allowNull: false },
   commentaire: { type: DataTypes.TEXT, allowNull: true },
   soumiseLe: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
   createdAt: DataTypes.DATE,
