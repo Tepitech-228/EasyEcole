@@ -28,6 +28,8 @@ export class SidebarNavComponent implements OnInit {
     'E-Learning': '#14B8A6',
     'Administration & Systeme': '#64748B',
     'Gestion documentaire': '#0891B2',
+    'Espace Parents': '#EC4899',
+    'Qualite': '#84CC16',
   };
 
   private hexToRgba(hex: string, alpha: number): string {

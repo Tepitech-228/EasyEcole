@@ -118,7 +118,9 @@
 }
 
 .mosaic-wrap.expanded {
-  max-height: 400px;
+  max-height: 70vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .mosaic {
