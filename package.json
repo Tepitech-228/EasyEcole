@@ -1,0 +1,14 @@
+{
+  "name": "easy-ecole",
+  "version": "1.0.0",
+  "private": true,
+  "description": "EasyEcole - commande unique pour lancer backend + frontend",
+  "scripts": {
+    "dev": "concurrently -n BACKEND,FRONTEND -c blue,green \"npm run dev --prefix easy-ecole-backend\" \"npm start --prefix easy-ecole-web\"",
+    "backend": "npm run dev --prefix easy-ecole-backend",
+    "frontend": "npm start --prefix easy-ecole-web"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
