@@ -10,6 +10,7 @@ import QuizRouter from "./routers/QuizRouter"
 import ProgressionRouter from "./routers/ProgressionRouter"
 import CertificatRouter from "./routers/CertificatRouter"
 import ProgressionApprenantRouter from "./routers/ProgressionApprenantRouter"
+import ArborescenceRouter from "./routers/ArborescenceRouter"
 import Authenticate from "../../core/middlewares/Authenticate"
 import { InscriptionComplete } from "../../core/middlewares/InscriptionComplete"
 
@@ -26,5 +27,6 @@ router
     .use('/progression', [Authenticate, InscriptionComplete], ProgressionRouter)
     .use('/progression-apprenant', [Authenticate, InscriptionComplete], ProgressionApprenantRouter)
     .use('/certificats', [Authenticate, InscriptionComplete], CertificatRouter)
+    .use('/arborescence', [Authenticate], ArborescenceRouter)
 
 export default router
