@@ -16,6 +16,7 @@ import { ProgressionPageComponent } from './pages/progression-page/progression-p
 import { CertificatsPageComponent } from './pages/certificats-page/certificats-page.component';
 import { DevoirsPageComponent } from './pages/devoirs-page/devoirs-page.component';
 import { DevoirDetailPageComponent } from './pages/devoir-detail-page/devoir-detail-page.component';
+import { CatalogueElearningPageComponent } from './pages/catalogue-elearning-page/catalogue-elearning-page.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -30,6 +31,7 @@ const routes: Routes = [
   { path: 'devoirs/:id', component: DevoirDetailPageComponent },
   { path: 'devoirs', component: DevoirsPageComponent },
   { path: 'admin/gestion', component: GestionElearningPageComponent },
+  { path: 'catalogue', component: CatalogueElearningPageComponent },
   { path: ':id/player', component: CoursPlayerPageComponent },
   { path: ':id/chat', component: ChatPageComponent },
   { path: ':id/upload', component: UploadSupportPageComponent },

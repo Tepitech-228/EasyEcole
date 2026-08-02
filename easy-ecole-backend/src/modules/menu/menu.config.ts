@@ -345,6 +345,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                     { label: 'Progression', route: '/elearning/progression', icon: 'trending_up', permissionKey: 'menu.elearning.progression', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
                     { label: 'Certificats', route: '/elearning/certificats', icon: 'verified', permissionKey: 'menu.elearning.certificats', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
                     { label: 'Devoirs', route: '/elearning/devoirs', icon: 'assignment', permissionKey: 'menu.elearning.devoirs', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
+                    { label: 'Catalogue e-learning', route: '/elearning/catalogue', icon: 'account_tree', permissionKey: 'menu.elearning.catalogue', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN, RolesUtilisateur.ENSEIGNANT] },
                 ]
             },
             {
