@@ -3,6 +3,30 @@
 
   <app-custom-alert *ngIf="errorMessage" [show]="true" [title]="errorMessage" type="danger" [inline]="true"></app-custom-alert>
 
+  <app-custom-alert *ngIf="generationResult" [show]="true"
+    [title]="'Registres générés : ' + generationResult.crees + ' créés, ' + generationResult.maj + ' mis à jour, ' + generationResult.total + ' au total'"
+    type="success" [inline]="true"></app-custom-alert>
+
+  <div *ngIf="showGeneratePanel" class="card mb-6">
+    <div class="card-header border-b">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 class="card-title">Générer les registres</h2>
+          <p class="card-subtitle">Alimenter les registres académiques depuis une délibération clôturée ou publiée</p>
+        </div>
+        <app-custom-button text="Annuler" color="gray" [outlined]="true" (click)="showGeneratePanel = false"></app-custom-button>
+      </div>
+    </div>
+    <div class="card-body flex flex-wrap gap-4 items-center">
+      <select [(ngModel)]="selectedDeliberationId" class="form-select-sm w-72">
+        <option [ngValue]="null">Sélectionner une délibération...</option>
+        <option *ngFor="let d of deliberations" [ngValue]="d.id">{{ getDeliberationLabel(d) }}</option>
+      </select>
+      <app-custom-button text="Générer" [disabled]="generating || !selectedDeliberationId" (click)="genererRegistres()"></app-custom-button>
+      <span *ngIf="deliberations.length === 0" class="text-sm text-gray-500">Aucune délibération clôturée ou publiée disponible.</span>
+    </div>
+  </div>
+
   <div class="stats-grid">
     <div class="stat-card">
       <span class="stat-icon text-blue-600 bg-blue-100">
@@ -56,6 +80,10 @@
             <option value="">Toutes les années</option>
             <option *ngFor="let a of anneeScolaireList" [value]="a">{{ a }}</option>
           </select>
+          <select [(ngModel)]="selectedFiliere" (change)="onFilterChange()" class="form-select-sm">
+            <option value="">Toutes les filières</option>
+            <option *ngFor="let f of filiereList" [value]="f">{{ f }}</option>
+          </select>
           <select [(ngModel)]="selectedClasse" (change)="onFilterChange()" class="form-select-sm">
             <option value="">Toutes les classes</option>
             <option *ngFor="let c of classeList" [value]="c">{{ c }}</option>
@@ -64,8 +92,9 @@
             <option value="">Toutes les décisions</option>
             <option *ngFor="let d of decisionList" [value]="d">{{ d }}</option>
           </select>
-          <app-custom-button *ngIf="selectedAnneeScolaire || selectedClasse || selectedDecision || searchText"
+          <app-custom-button *ngIf="selectedAnneeScolaire || selectedFiliere || selectedClasse || selectedDecision || searchText"
             (click)="reinitialiserFiltres()" text="Réinitialiser" color="gray" [outlined]="true"></app-custom-button>
+          <app-custom-button (click)="openGeneratePanel()" text="Générer depuis une délibération" color="indigo"></app-custom-button>
         </div>
       </div>
     </div>

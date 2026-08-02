@@ -40,6 +40,34 @@ router
 
 /**
  * @openapi
+ * /scolarite/registres/generer:
+ *   post:
+ *     tags: [Registres Académiques]
+ *     summary: Génère automatiquement les registres académiques depuis une délibération clôturée ou publiée
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - deliberationId
+ *             properties:
+ *               deliberationId: { type: number }
+ *     responses:
+ *       200:
+ *         description: Récapitulatif de la génération { crees, maj, total }
+ *       400:
+ *         description: Délibération non clôturée / non publiée ou paramètre manquant
+ *       404:
+ *         description: Délibération non trouvée
+ */
+    .post('/generer', RegistreAcademiqueController.generer)
+
+/**
+ * @openapi
  * /scolarite/registres/batch/statut:
  *   put:
  *     tags: [Registres Académiques]

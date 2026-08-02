@@ -1,6 +1,14 @@
 import { Request, Response } from "express";
 import { FindOptions, InferAttributes, Op } from "sequelize";
+import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { RegistreAcademique } from "../models/RegistreAcademique";
+import { Deliberation } from "../../bulletins/models/Deliberation";
+import { ResultatDeliberation } from "../../bulletins/models/ResultatDeliberation";
+import { CursusApprenant } from "../../inscription/models/CursusApprenant";
+import { Classe } from "../../inscription/models/Classe";
+import { AnneeAcademique } from "../../inscription/models/AnneeAcademique";
+import { Parcours } from "../../inscription/models/Parcours";
+import { NiveauEtude } from "../../inscription/models/NiveauEtude";
 
 export default class RegistreAcademiqueController {
 
@@ -12,12 +20,14 @@ export default class RegistreAcademiqueController {
             const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
             const offset = (page - 1) * limit;
 
-            const { anneeScolaire, classe, decision, search } = req.query;
+            const { anneeScolaire, classe, decision, filiere, niveau, search } = req.query;
 
             const where: any = {};
 
             if (anneeScolaire) where.anneeScolaire = anneeScolaire;
             if (classe) where.classe = classe;
+            if (filiere) where.filiere = filiere;
+            if (niveau) where.niveau = niveau;
             if (decision) where.decision = decision;
             if (search) {
                 where[Op.or] = [
@@ -64,6 +74,100 @@ export default class RegistreAcademiqueController {
 
             return res.status(200).json({ success: true, count });
         } catch (error) {
+            return res.status(500).json({ success: false, error: error });
+        }
+    }
+
+    /**
+     * Génère / met à jour automatiquement les registres académiques à partir
+     * des résultats d'une délibération (statut 'cloturee' ou 'publiee').
+     * UPSERT par couple (matricule, anneeScolaire) pour éviter les doublons.
+     * POST /scolarite/registres/generer  { deliberationId }
+     */
+    static async generer(req: Request, res: Response): Promise<Response> {
+        const transaction = await DatabaseConnection.getInstance().sequelize.transaction();
+        try {
+            const { deliberationId } = req.body;
+
+            if (!deliberationId) {
+                await transaction.rollback();
+                return res.status(400).json({ success: false, message: "deliberationId requis" });
+            }
+
+            const deliberation = await Deliberation.findByPk(deliberationId, {
+                transaction,
+                include: [
+                    { model: Classe, as: 'classe' },
+                    { model: AnneeAcademique, as: 'anneeAcademique' }
+                ]
+            });
+
+            if (!deliberation) {
+                await transaction.rollback();
+                return res.status(404).json({ success: false, message: "Délibération non trouvée" });
+            }
+
+            if (!['cloturee', 'publiee'].includes(deliberation.statut)) {
+                await transaction.rollback();
+                return res.status(400).json({
+                    success: false,
+                    message: "La délibération doit être clôturée (cloturee) ou publiée (publiee) pour générer le registre"
+                });
+            }
+
+            const resultats = await ResultatDeliberation.findAll({
+                where: { deliberationId },
+                transaction,
+                include: [{
+                    model: CursusApprenant,
+                    as: 'cursusApprenant',
+                    include: [
+                        { model: Parcours, as: 'parcours' },
+                        { model: NiveauEtude, as: 'niveauEtude' }
+                    ]
+                }]
+            });
+
+            const anneeScolaire = deliberation.anneeAcademique?.libelle ?? '';
+            const classeLibelle = deliberation.classe?.libelle ?? '';
+
+            let crees = 0;
+            let maj = 0;
+
+            for (const r of resultats) {
+                const cursus = r.cursusApprenant;
+
+                const values = {
+                    etudiant: [r.nom, r.prenoms].filter(Boolean).join(' ').trim(),
+                    matricule: r.matricule,
+                    classe: classeLibelle,
+                    filiere: cursus?.intituleParcours || cursus?.parcours?.titre || null,
+                    niveau: cursus?.niveauEtude?.libelle || null,
+                    moyenne: r.moyenne ?? 0,
+                    rang: r.rang ?? 0,
+                    decision: r.decision,
+                    anneeScolaire,
+                    cursusApprenantId: cursus?.id ?? null
+                };
+
+                const [registre, created] = await RegistreAcademique.findOrCreate({
+                    where: { matricule: r.matricule, anneeScolaire },
+                    defaults: values,
+                    transaction
+                });
+
+                if (created) {
+                    crees++;
+                } else {
+                    await registre.update(values, { transaction });
+                    maj++;
+                }
+            }
+
+            await transaction.commit();
+            return res.status(200).json({ success: true, crees, maj, total: resultats.length });
+        } catch (error) {
+            await transaction.rollback();
             return res.status(500).json({ success: false, error: error });
         }
     }

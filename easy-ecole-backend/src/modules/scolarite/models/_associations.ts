@@ -90,3 +90,6 @@ Cours.hasMany(ProgressionPedagogique, { foreignKey: 'coursId', as: 'progressions
 ProgressionPedagogique.belongsTo(Cours, { foreignKey: 'coursId', as: 'cours' })
 ChapitreCours.hasMany(ProgressionPedagogique, { foreignKey: 'chapitreId', as: 'progressionsPedagogiques' })
 ProgressionPedagogique.belongsTo(ChapitreCours, { foreignKey: 'chapitreId', as: 'chapitre' })
+
+CursusApprenant.hasMany(RegistreAcademique, { foreignKey: 'cursusApprenantId', as: 'registresAcademiques' })
+RegistreAcademique.belongsTo(CursusApprenant, { foreignKey: 'cursusApprenantId', as: 'cursusApprenant' })

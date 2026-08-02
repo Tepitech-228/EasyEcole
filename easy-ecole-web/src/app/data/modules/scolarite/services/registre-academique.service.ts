@@ -4,13 +4,32 @@ import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { RegistreAcademique } from '../models/RegistreAcademique.model';
 
+export interface RegistreAcademiqueQuery {
+  page?: number;
+  limit?: number;
+  anneeScolaire?: string;
+  classe?: string;
+  decision?: string;
+  search?: string;
+  filiere?: string;
+  niveau?: string;
+  [key: string]: any;
+}
+
+export interface GenererRegistresResult {
+  success: boolean;
+  crees: number;
+  maj: number;
+  total: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class RegistreAcademiqueService {
   private readonly SERVICE_URL: string = `${environment.API_MODULES.SCOLARITE}/registres`
 
   constructor(private httpClient: HttpClient) { }
 
-  getAll(params?: any): Observable<any> {
+  getAll(params?: RegistreAcademiqueQuery): Observable<any> {
     let httpParams = new HttpParams()
     if (params) {
       Object.keys(params).forEach(key => {
@@ -20,6 +39,14 @@ export class RegistreAcademiqueService {
       })
     }
     return this.httpClient.get<any>(`${this.SERVICE_URL}/`, { params: httpParams })
+  }
+
+  /**
+   * Upsert des registres académiques depuis une délibération clôturée ou publiée.
+   * Route à appeler AVANT toute logique `/:id`.
+   */
+  generer(deliberationId: number): Observable<GenererRegistresResult> {
+    return this.httpClient.post<GenererRegistresResult>(`${this.SERVICE_URL}/generer`, { deliberationId })
   }
 
   batchStatut(ids: number[], decision: string): Observable<any> {

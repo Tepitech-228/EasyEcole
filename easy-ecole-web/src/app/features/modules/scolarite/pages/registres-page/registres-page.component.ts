@@ -1,7 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { RegistreAcademiqueService } from 'src/app/data/modules/scolarite/services/registre-academique.service';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+import { ToastService } from 'src/app/core/services/toast.service';
+import { DeliberationService } from 'src/app/features/modules/bulletins/services/deliberation.service';
 import { DossierNode, DossierColumn, BatchAction } from 'src/app/shared/components/dossier-view/dossier-view.component';
+
+interface GenerationRecap {
+  crees: number;
+  maj: number;
+  total: number;
+}
 
 @Component({
   selector: 'app-registres-page',
@@ -15,10 +23,12 @@ export class RegistresPageComponent extends BaseComponentClass implements OnInit
 
   // Filters
   selectedAnneeScolaire: string = ''
+  selectedFiliere: string = ''
   selectedClasse: string = ''
   selectedDecision: string = ''
   searchText: string = ''
   anneeScolaireList: string[] = []
+  filiereList: string[] = []
   classeList: string[] = []
   decisionList: string[] = ['Admis', 'Redouble']
 
@@ -36,13 +46,24 @@ export class RegistresPageComponent extends BaseComponentClass implements OnInit
     { label: 'Marquer Redouble', color: 'red', action: 'redouble' }
   ]
 
+  // Génération depuis une délibération
+  showGeneratePanel: boolean = false
+  deliberations: any[] = []
+  selectedDeliberationId: number | null = null
+  generating: boolean = false
+  generationResult: GenerationRecap | null = null
+
   // Pagination
   currentPage: number = 1
   totalPages: number = 1
   totalItems: number = 0
   pageSize: number = 20
 
-  constructor(private registreService: RegistreAcademiqueService) {
+  constructor(
+    private registreService: RegistreAcademiqueService,
+    private deliberationService: DeliberationService,
+    private toastService: ToastService
+  ) {
     super()
     this.loadRegistres()
   }
@@ -79,6 +100,7 @@ export class RegistresPageComponent extends BaseComponentClass implements OnInit
     }
 
     if (this.selectedAnneeScolaire) params.anneeScolaire = this.selectedAnneeScolaire
+    if (this.selectedFiliere) params.filiere = this.selectedFiliere
     if (this.selectedClasse) params.classe = this.selectedClasse
     if (this.selectedDecision) params.decision = this.selectedDecision
     if (this.searchText) params.search = this.searchText
@@ -109,11 +131,13 @@ export class RegistresPageComponent extends BaseComponentClass implements OnInit
 
   buildFilterLists(): void {
     this.anneeScolaireList = [...new Set(this.registres.map(r => r.anneeScolaire))].sort()
+    this.filiereList = [...new Set(this.registres.map(r => r.filiere).filter((f: string) => !!f && String(f).trim() !== ''))].sort()
     this.classeList = [...new Set(this.registres.map(r => r.classe))].sort()
   }
 
   buildDossierTree(): void {
     const anneeMap = new Map<string, DossierNode>()
+    const hasFiliere = this.registres.some(r => r.filiere && String(r.filiere).trim() !== '')
 
     for (const r of this.registres) {
       const annee = r.anneeScolaire || 'Inconnue'
@@ -124,11 +148,25 @@ export class RegistresPageComponent extends BaseComponentClass implements OnInit
       }
       const anneeNode = anneeMap.get(annee)!
 
-      const classeKey = `${annee}_${classe}`
-      let classeNode = anneeNode.children!.find(c => c.id === classeKey)
+      // Niveau intermédiaire Filière (Année → Filière → Classe → étudiants)
+      // avec repli sur Année → Classe si aucune donnée ne contient de filière.
+      let classeContainer: DossierNode[] = anneeNode.children!
+      if (hasFiliere) {
+        const filiere = r.filiere && String(r.filiere).trim() !== '' ? String(r.filiere).trim() : 'Sans filière'
+        const filiereKey = `${annee}_filiere_${filiere}`
+        let filiereNode = anneeNode.children!.find(c => c.id === filiereKey)
+        if (!filiereNode) {
+          filiereNode = { type: 'niveau', label: filiere, id: filiereKey, children: [], expanded: true }
+          anneeNode.children!.push(filiereNode)
+        }
+        classeContainer = filiereNode.children!
+      }
+
+      const classeKey = `${annee}_${hasFiliere ? 'filiere_' : ''}${classe}`
+      let classeNode = classeContainer.find(c => c.id === classeKey)
       if (!classeNode) {
         classeNode = { type: 'parcours', label: classe, id: classeKey, children: [], expanded: true }
-        anneeNode.children!.push(classeNode)
+        classeContainer.push(classeNode)
       }
 
       classeNode.items = classeNode.items || []
@@ -172,8 +210,61 @@ export class RegistresPageComponent extends BaseComponentClass implements OnInit
     })
   }
 
+  // ── Génération depuis une délibération ──
+
+  openGeneratePanel(): void {
+    this.showGeneratePanel = true
+    this.generationResult = null
+    if (this.deliberations.length === 0) {
+      this.deliberationService.getAll({ limit: 100 }).subscribe({
+        next: (res: any) => {
+          const data = res?.data || (Array.isArray(res) ? res : [])
+          this.deliberations = (Array.isArray(data) ? data : [])
+            .filter((d: any) => d && (d.statut === 'cloturee' || d.statut === 'publiee'))
+        },
+        error: () => {
+          this.toastService.error('Erreur lors du chargement des délibérations')
+        }
+      })
+    }
+  }
+
+  getDeliberationLabel(d: any): string {
+    const libelle = d?.libelle || `Délibération #${d?.id}`
+    const classe = d?.classe?.libelle ? ` — ${d.classe.libelle}` : ''
+    const statut = d?.statut ? ` (${d.statut})` : ''
+    return `${libelle}${classe}${statut}`
+  }
+
+  genererRegistres(): void {
+    if (!this.selectedDeliberationId || this.generating) return
+
+    this.generating = true
+    this.generationResult = null
+    this.registreService.generer(this.selectedDeliberationId).subscribe({
+      next: (res: any) => {
+        this.generating = false
+        const recap: GenerationRecap = {
+          crees: res?.crees ?? 0,
+          maj: res?.maj ?? 0,
+          total: res?.total ?? 0
+        }
+        this.generationResult = recap
+        this.toastService.success(`Registres générés : ${recap.crees} créés, ${recap.maj} mis à jour, ${recap.total} au total`)
+        this.showGeneratePanel = false
+        this.selectedDeliberationId = null
+        this.loadRegistres()
+      },
+      error: () => {
+        this.generating = false
+        this.toastService.error('Erreur lors de la génération des registres')
+      }
+    })
+  }
+
   reinitialiserFiltres(): void {
     this.selectedAnneeScolaire = ''
+    this.selectedFiliere = ''
     this.selectedClasse = ''
     this.selectedDecision = ''
     this.searchText = ''
