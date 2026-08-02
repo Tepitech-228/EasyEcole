@@ -19,6 +19,7 @@ import { SessionGed } from "../models/SessionGed";
 import GedSignature from "../models/GedSignature";
 import { NotificationGedService } from "../services/NotificationGedService";
 import { NamingConventionService } from "../services/NamingConventionService";
+import { GED_CONFIG } from "../../../core/config/GedConfig";
 
 function parseJsonField(value: any): any {
   if (!value) return null;
@@ -26,7 +27,7 @@ function parseJsonField(value: any): any {
   try { return JSON.parse(value); } catch { return null; }
 }
 
-const UPLOAD_DIR = "public/ged";
+const UPLOAD_DIR = GED_CONFIG.UPLOAD_DIR;
 
 export default class DocumentGedController {
 
@@ -99,6 +100,18 @@ export default class DocumentGedController {
             ]
             if (req.query.sessionId) {
                 includeList.push({ association: 'session', attributes: ['id', 'nom'] })
+            }
+
+            // Filter by tag IDs (comma‑separated)
+            if (req.query.tagIds) {
+                const tagIdArray = String(req.query.tagIds).split(',').map(Number).filter(n => !isNaN(n));
+                if (tagIdArray.length > 0) {
+                    includeList.push({
+                        association: 'documentTags',
+                        required: true,
+                        where: { tagId: tagIdArray }
+                    });
+                }
             }
 
             const sortField = String(req.query.sortField || 'createdAt');
@@ -1025,6 +1038,41 @@ export default class DocumentGedController {
             }));
 
             return res.status(200).json(enrichedLogs);
+        } catch (error) {
+            return res.status(500).json({ success: false, error });
+        }
+    }
+
+    static async delete(req: Request, res: Response): Promise<Response> {
+        if ((req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
+            return res.status(403).json({ success: false, message: "Réservé à l'administrateur" });
+        }
+
+        try {
+            const document = await DocumentGed.findByPk(req.params.id);
+            if (!document) {
+                return res.status(404).json({ success: false, message: "Document non trouvé" });
+            }
+
+            if (document.lifecycleStatus === 'definitif') {
+                return res.status(400).json({
+                    success: false,
+                    message: "Les documents avec le statut 'definitif' ne peuvent pas être supprimés"
+                });
+            }
+
+            // Supprimer le fichier physique
+            const filePath = path.resolve(process.cwd(), UPLOAD_DIR, document.fichier);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+
+            // Soft-delete en base
+            await document.destroy();
+
+            await AuditService.log(document.id, (req as any).utilisateurId, 'suppression_effective');
+
+            return res.status(200).json({ success: true, message: "Document supprimé" });
         } catch (error) {
             return res.status(500).json({ success: false, error });
         }

@@ -6,8 +6,9 @@ import path from "path";
 import fs from "fs";
 import crypto from "crypto";
 import { Op, Sequelize } from "sequelize";
+import { GED_CONFIG } from "../../../core/config/GedConfig";
 
-const UPLOAD_DIR = "public/ged";
+const UPLOAD_DIR = GED_CONFIG.UPLOAD_DIR;
 
 function computeHash(filePath: string): string | null {
   try {

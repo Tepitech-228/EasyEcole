@@ -2,7 +2,10 @@ import { Request, Response } from "express";
 import { DocGenDocument } from "../models/DocGenDocument";
 import crypto from "crypto";
 
-const DOCGEN_SECRET = process.env.DOCGEN_SECRET || 'docgen_secret_default';
+const DOCGEN_SECRET: string = process.env.DOCGEN_SECRET || '';
+if (!DOCGEN_SECRET) {
+  throw new Error('DOCGEN_SECRET environment variable is required');
+}
 
 export default class VerificationController {
   static async verifier(req: Request, res: Response): Promise<Response> {
@@ -18,7 +21,14 @@ export default class VerificationController {
       const verificationUrl = `${baseUrl}/api/v1/verification/document/${matricule}/${reference}`;
       const expectedHmac = crypto.createHmac('sha256', DOCGEN_SECRET).update(verificationUrl).digest('hex');
 
-      if (token && token !== expectedHmac) {
+      if (typeof token !== 'string' || token.length === 0) {
+        return res.status(403).json({ success: false, message: 'Token de vérification invalide' });
+      }
+
+      const tokenBuffer = Buffer.from(token, 'hex');
+      const expectedBuffer = Buffer.from(expectedHmac, 'hex');
+
+      if (tokenBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(tokenBuffer, expectedBuffer)) {
         return res.status(403).json({ success: false, message: 'Token de vérification invalide' });
       }
 

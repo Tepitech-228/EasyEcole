@@ -12,6 +12,7 @@ import CourrierRouter from "./routers/CourrierRouter";
 import FolderAutoRouter from "./routers/FolderAutoRouter";
 import DashboardGedRouter from "./routers/DashboardGedRouter";
 import NotificationGedRouter from "./routers/NotificationGedRouter";
+import TagRouter from "./routers/TagRouter";
 
 const router = express.Router();
 
@@ -26,6 +27,7 @@ router
     .use('/courrier', [Authenticate], CourrierRouter)
     .use('/dashboard', [Authenticate], DashboardGedRouter)
     .use('/notifications', [Authenticate], NotificationGedRouter)
+    .use('/tags', [Authenticate], TagRouter)
         /**
      * @openapi
      * /academic-tree:

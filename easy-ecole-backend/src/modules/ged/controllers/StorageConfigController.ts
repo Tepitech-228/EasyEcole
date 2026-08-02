@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import path from "path";
 import fs from "fs";
+import { GED_CONFIG } from "../../../core/config/GedConfig";
 
 const CONFIG_PATH = path.resolve(process.cwd(), "config", "storage.json");
 
@@ -16,7 +17,7 @@ function readConfig(): any {
   if (!fs.existsSync(CONFIG_PATH)) {
     const defaults = {
       provider: "local",
-      basePath: "public/ged",
+      basePath: GED_CONFIG.UPLOAD_DIR,
       options: {}
     };
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(defaults, null, 2));

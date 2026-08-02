@@ -6,12 +6,17 @@ import { ReferenceService } from "../services/ReferenceService";
 import { DataResolverService } from "../services/DataResolverService";
 import { TemplateEngine } from "../services/TemplateEngine";
 import { PdfGeneratorService } from "../services/PdfGeneratorService";
+import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
+import { CursusApprenant } from "../../inscription/models/CursusApprenant";
 import path from "path";
 import fs from "fs";
 import crypto from "crypto";
 import qrcode from "qrcode";
 
-const DOCGEN_SECRET = process.env.DOCGEN_SECRET || 'docgen_secret_default';
+const DOCGEN_SECRET: string = process.env.DOCGEN_SECRET || '';
+if (!DOCGEN_SECRET) {
+  throw new Error('DOCGEN_SECRET environment variable is required');
+}
 const STORAGE_DIR = path.resolve(process.cwd(), 'storage', 'docgen');
 
 export default class DocumentController {
@@ -111,6 +116,62 @@ export default class DocumentController {
           generatedById: (req as any).utilisateurId,
         });
         documents.push(doc);
+
+        // Archivage automatique dans la GED selon le type de document
+        try {
+          const codePrefix = typeCode.substring(0, 3);
+          const anneeAcademiqueId = Number(params.anneeAcademiqueId) || undefined;
+          const semestre = params.semestre || undefined;
+          let parcoursId: number | undefined;
+          let niveauEtudeId: number | undefined;
+          let classeId: number | undefined = Number(params.classeId) || undefined;
+          let cursusApprenantId: number | undefined = Number(params.cursusApprenantId) || undefined;
+
+          if (params.cursusApprenantId || params.etudiantId) {
+            const cursusWhere: any = {};
+            if (params.cursusApprenantId) cursusWhere.id = params.cursusApprenantId;
+            else if (params.etudiantId) cursusWhere.utilisateurId = params.etudiantId;
+            const cursus = await CursusApprenant.findOne({
+              where: cursusWhere,
+              include: [{ association: 'parcours' }, { association: 'niveauEtude' }]
+            }) as any;
+            if (cursus) {
+              parcoursId = Number(cursus.parcoursId) || undefined;
+              niveauEtudeId = Number(cursus.niveauEtudeId) || undefined;
+              classeId = classeId || Number(cursus.classeId) || undefined;
+              cursusApprenantId = cursusApprenantId || cursus.id;
+            }
+          }
+
+          if (codePrefix === 'DIP' && anneeAcademiqueId && parcoursId && niveauEtudeId) {
+            await ArchiveGedService.archiverDocumentDiplome({
+              titre: `Diplôme - ${etudiant.nom} ${etudiant.prenom}`,
+              fichier: fileName,
+              pdfBuffer,
+              anneeAcademiqueId,
+              parcoursId,
+              niveauEtudeId,
+              cursusApprenantId: cursusApprenantId!,
+              uploaderId: (req as any).utilisateurId || 1,
+            });
+          } else if (['SCO', 'INS', 'CER'].includes(codePrefix) && anneeAcademiqueId && parcoursId && niveauEtudeId) {
+            await ArchiveGedService.archiverDocumentScolarite({
+              titre: `${type?.libelle || 'Document'} - ${etudiant.nom} ${etudiant.prenom}`,
+              documentTypeCode: 'attestation',
+              fichier: fileName,
+              pdfBuffer,
+              anneeAcademiqueId,
+              parcoursId,
+              niveauEtudeId,
+              classeId: classeId!,
+              semestre,
+              cursusApprenantId: cursusApprenantId!,
+              uploaderId: (req as any).utilisateurId || 1,
+            });
+          }
+        } catch (archivalErr) {
+          console.error('Erreur archivage GED (docgen):', archivalErr);
+        }
       }
 
       return res.status(201).json({ success: true, data: documents });

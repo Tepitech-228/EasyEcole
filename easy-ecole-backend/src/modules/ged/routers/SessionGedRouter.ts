@@ -5,8 +5,9 @@ import fs from "fs";
 import SessionGedController from "../controllers/SessionGedController";
 import Authenticate from "../../../core/middlewares/Authenticate";
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
+import { GED_CONFIG } from "../../../core/config/GedConfig";
 
-const UPLOAD_DIR = "public/ged";
+const UPLOAD_DIR = GED_CONFIG.UPLOAD_DIR;
 const fullPath = path.resolve(process.cwd(), UPLOAD_DIR);
 if (!fs.existsSync(fullPath)) {
   fs.mkdirSync(fullPath, { recursive: true });

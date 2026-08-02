@@ -11,6 +11,8 @@ import { ProcessusGenerateur } from "./ProcessusGenerateur";
 import RolePermission from "./RolePermission";
 import RegistreCourrier from "./RegistreCourrier";
 import GedSignature from "./GedSignature";
+import Tag from "./Tag";
+import DocumentTag from "./DocumentTag";
 
 // ── Uploader ──
 Utilisateur.hasMany(DocumentGed, { foreignKey: 'uploaderId', as: 'gedDocuments' });
@@ -101,3 +103,11 @@ DocumentGed.hasMany(RegistreCourrier, { foreignKey: 'documentId', as: 'registreC
 RegistreCourrier.belongsTo(DocumentGed, { foreignKey: 'documentId', as: 'document' });
 Utilisateur.hasMany(RegistreCourrier, { foreignKey: 'utilisateurId', as: 'registreCourriers' });
 RegistreCourrier.belongsTo(Utilisateur, { foreignKey: 'utilisateurId', as: 'utilisateur' });
+
+// ── Tags (many-to-many) ──
+DocumentGed.belongsToMany(Tag, { through: DocumentTag, foreignKey: 'documentId', otherKey: 'tagId', as: 'tagList' });
+Tag.belongsToMany(DocumentGed, { through: DocumentTag, foreignKey: 'tagId', otherKey: 'documentId', as: 'documents' });
+DocumentTag.belongsTo(DocumentGed, { foreignKey: 'documentId', as: 'document' });
+DocumentTag.belongsTo(Tag, { foreignKey: 'tagId', as: 'tag' });
+DocumentGed.hasMany(DocumentTag, { foreignKey: 'documentId', as: 'documentTags' });
+Tag.hasMany(DocumentTag, { foreignKey: 'tagId', as: 'documentTags' });

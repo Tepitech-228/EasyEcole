@@ -5,10 +5,12 @@ import fs from "fs";
 import DocumentGedController from "../controllers/DocumentGedController";
 import IntegrityController from "../controllers/IntegrityController";
 import Authenticate from "../../../core/middlewares/Authenticate";
+import { AuthAdmin } from "../../../core/middlewares/AuthAdmin";
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
 import { AuthConfidentiality } from "../../../core/middlewares/AuthConfidentiality";
+import { GED_CONFIG } from "../../../core/config/GedConfig";
 
-const UPLOAD_DIR = "public/ged";
+const UPLOAD_DIR = GED_CONFIG.UPLOAD_DIR;
 const fullPath = path.resolve(process.cwd(), UPLOAD_DIR);
 if (!fs.existsSync(fullPath)) {
     fs.mkdirSync(fullPath, { recursive: true });
@@ -218,6 +220,18 @@ router
      *         description: Success
      */
 .post('/:id/confirm-deletion', [Authenticate], DocumentGedController.confirmDeletion)
+        /**
+     * @openapi
+     * /:id:
+     *   delete:
+     *     tags: [GED]
+     *     summary: DELETE /:id (suppression simple admin)
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Document supprimé
+     */
+.delete('/:id', [Authenticate], DocumentGedController.delete)
 
     // Signature workflow
         /**
@@ -283,7 +297,7 @@ router
      *       200:
      *         description: Success
      */
-.post('/:id/verify-integrity', [Authenticate], IntegrityController.verifyDocument)
+.post('/:id/verify-integrity', [Authenticate, AuthAdmin], IntegrityController.verifyDocument)
 
     // Audit (with confidentiality check)
         /**
