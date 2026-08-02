@@ -32,6 +32,7 @@ import { ChoixCoursPageComponent } from './pages/choix-cours-page/choix-cours-pa
 import { ListeDossiersPageComponent } from './pages/liste-dossiers-page/liste-dossiers-page.component';
 import { ListeFraisParcoursPageComponent } from './pages/liste-frais-parcours-page/liste-frais-parcours-page.component';
 import { HierarchyPageComponent } from './pages/hierarchy/hierarchy-page.component';
+import { HierarchyDossiersPageComponent } from './pages/hierarchy-dossiers-page/hierarchy-dossiers-page.component';
 import { ListeEffectifsPageComponent } from './pages/liste-effectifs-page/liste-effectifs-page.component';
 import { SuiviUePageComponent } from './pages/suivi-ue-page/suivi-ue-page.component';
 import { ListeSallesDeClassePageComponent } from './pages/liste-salles-de-classe-page/liste-salles-de-classe-page.component';
@@ -69,6 +70,7 @@ import { ReactiveFormsModule } from '@angular/forms';
       ListeDossiersPageComponent,
       ListeFraisParcoursPageComponent,
      HierarchyPageComponent,
+     HierarchyDossiersPageComponent,
      ListeEffectifsPageComponent,
      SuiviUePageComponent,
       ListeSallesDeClassePageComponent,

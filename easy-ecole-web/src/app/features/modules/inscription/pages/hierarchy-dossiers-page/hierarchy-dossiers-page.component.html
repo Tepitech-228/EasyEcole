@@ -1,0 +1,133 @@
+<div class="dossiers-page">
+    <div class="page-head">
+        <div class="page-head-left">
+            <h2>Arborescence des dossiers</h2>
+            <p>Naviguez par année académique, niveau et parcours</p>
+        </div>
+    </div>
+
+    <div class="hierarchy-layout">
+        <!-- Tree sidebar -->
+        <div class="tree-panel">
+            <div *ngIf="treeLoading" class="loading-state">Chargement...</div>
+            <div *ngIf="!treeLoading && tree.length === 0" class="empty-state">Aucune donnée</div>
+            <div class="tree" *ngIf="!treeLoading && tree.length > 0">
+                <div *ngFor="let node of tree" class="tree-node">
+                    <div class="node-row" [class.selected]="selectedNode?.id === node.id" (click)="select(node)">
+                        <span class="toggle" (click)="$event.stopPropagation(); toggle(node)">
+                            <svg *ngIf="node.children?.length" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" [class.rotated]="node.expanded"><polyline points="9 18 15 12 9 6"/></svg>
+                            <svg *ngIf="!node.children?.length" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/></svg>
+                        </span>
+                        <span class="icon">
+                            <svg *ngIf="node.type === 'annee'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            <svg *ngIf="node.type === 'niveau'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 1.1 2.7 3 6 3s6-1.9 6-3v-5"/></svg>
+                            <svg *ngIf="node.type === 'parcours'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                        </span>
+                        <span class="label">{{ node.label }}</span>
+                        <span class="counts">
+                            <span class="mini-badge dossiers" [title]="'Dossiers'">{{ node.data.dossiers }}</span>
+                            <span class="mini-badge demandes" [title]="'Demandes'">{{ node.data.demandes }}</span>
+                            <span class="mini-badge bordereaux" [title]="'Bordereaux'">{{ node.data.bordereaux }}</span>
+                        </span>
+                    </div>
+                    <div *ngIf="node.expanded && node.children?.length" class="children">
+                        <div *ngFor="let child of node.children" class="tree-node child">
+                            <div class="node-row" [class.selected]="selectedNode?.id === child.id" (click)="select(child)">
+                                <span class="toggle" (click)="$event.stopPropagation(); toggle(child)">
+                                    <svg *ngIf="child.children?.length" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" [class.rotated]="child.expanded"><polyline points="9 18 15 12 9 6"/></svg>
+                                    <svg *ngIf="!child.children?.length" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/></svg>
+                                </span>
+                                <span class="icon">
+                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 1.1 2.7 3 6 3s6-1.9 6-3v-5"/></svg>
+                                </span>
+                                <span class="label">{{ child.label }}</span>
+                                <span class="counts">
+                                    <span class="mini-badge dossiers" [title]="'Dossiers'">{{ child.data.dossiers }}</span>
+                                    <span class="mini-badge demandes" [title]="'Demandes'">{{ child.data.demandes }}</span>
+                                    <span class="mini-badge bordereaux" [title]="'Bordereaux'">{{ child.data.bordereaux }}</span>
+                                </span>
+                            </div>
+                            <div *ngIf="child.expanded && child.children?.length" class="children">
+                                <div *ngFor="let grand of child.children" class="tree-node grandchild">
+                                    <div class="node-row" [class.selected]="selectedNode?.id === grand.id" (click)="select(grand)">
+                                        <span class="icon">
+                                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                                        </span>
+                                        <span class="label">{{ grand.label }}</span>
+                                        <span class="counts">
+                                            <span class="mini-badge dossiers" [title]="'Dossiers'">{{ grand.data.dossiers }}</span>
+                                            <span class="mini-badge demandes" [title]="'Demandes'">{{ grand.data.demandes }}</span>
+                                            <span class="mini-badge bordereaux" [title]="'Bordereaux'">{{ grand.data.bordereaux }}</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detail panel -->
+        <div class="detail-panel" *ngIf="selectedNode">
+            <div class="detail-head">
+                <div class="detail-title">
+                    <h3>{{ selectedNode.label }}</h3>
+                    <span class="detail-sub">{{ getNodeTypeLabel(selectedNode.type) }}</span>
+                </div>
+                <div class="count-badges">
+                    <span class="count-badge dossiers">{{ counts.dossiers }} dossier(s)</span>
+                    <span class="count-badge demandes">{{ counts.demandes }} demande(s)</span>
+                    <span class="count-badge bordereaux">{{ counts.bordereaux }} bordereau(x)</span>
+                </div>
+            </div>
+
+            <div *ngIf="detailLoading" class="loading-state">Chargement...</div>
+
+            <div *ngIf="!detailLoading && detailDossiers.length === 0" class="empty-state">
+                Aucun dossier pour cet élément
+            </div>
+
+            <div class="table-container" *ngIf="!detailLoading && detailDossiers.length > 0">
+                <table class="ged-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th *ngIf="rolesValue.isInstitution || rolesValue.isAdmin">Apprenant</th>
+                            <th>Matricule</th>
+                            <th>Statut</th>
+                            <th>Date création</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let d of detailDossiers; index as i">
+                            <td>{{ i + 1 }}</td>
+                            <td *ngIf="rolesValue.isInstitution || rolesValue.isAdmin">
+                                <div class="user-cell">
+                                    <img class="user-avatar" [src]="getPhotoUrl(d)" alt="">
+                                    <div>
+                                        <div class="user-name">{{ d.utilisateur?.nom || '' }} {{ d.utilisateur?.prenoms || '' }}</div>
+                                        <div class="user-email">{{ d.utilisateur?.email || '' }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ d.matricule || '-' }}</td>
+                            <td>
+                                <app-custom-badge [text]="d.statut || 'inconnu'" [color]="getDossierStatutColor(d.statut)"></app-custom-badge>
+                            </td>
+                            <td>{{ formatDate(d.dateCreation) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="detail-placeholder" *ngIf="!selectedNode">
+            <svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="#94b3ff" stroke-width="1.5">
+                <path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-6l-2-2H5a2 2 0 0 0-2 2z"/>
+                <path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-6l-2-2H5a2 2 0 0 0-2 2z" transform="translate(3,3) scale(0.75)"/>
+            </svg>
+            <p>Sélectionnez un élément dans l'arborescence pour voir ses dossiers</p>
+        </div>
+    </div>
+</div>

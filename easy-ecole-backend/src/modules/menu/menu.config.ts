@@ -52,7 +52,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                 items: [
                     { label: 'Dossiers etudiants', route: '/inscription/dossiers', icon: 'folder_special', permissionKey: 'menu.inscription.dossiers-etudiants', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Cartes étudiantes', route: '/inscription/cartes', icon: 'credit_card', permissionKey: 'menu.inscription.cartes', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
-                    { label: 'Arborescence dossiers', route: '/inscription/hierarchy', icon: 'account_tree', permissionKey: 'menu.inscription.hierarchy', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Arborescence dossiers', route: '/inscription/hierarchy-dossiers', icon: 'account_tree', permissionKey: 'menu.inscription.hierarchy', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Registres', route: '/scolarite/registres', icon: 'menu_book', permissionKey: 'menu.scolarite.registres', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Equivalences', route: '/bulletins/equivalences', icon: 'swap_horiz', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
                     { label: 'Dispenses', route: '/bulletins/dispenses', icon: 'file_copy', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },

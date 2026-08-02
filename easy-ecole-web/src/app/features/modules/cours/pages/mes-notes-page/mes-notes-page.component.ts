@@ -32,7 +32,7 @@ export class MesNotesPageComponent extends BaseComponentClass implements OnInit 
 
   getNoteClass(v: number | null): string {
     if (v == null) return '';
-    return v >= 10 ? 'text-emerald-600' : 'text-orange-600';
+    return v >= 10 ? 'text-emerald-600' : 'text-red-600';
   }
 
   formatDate(d: string): string {
