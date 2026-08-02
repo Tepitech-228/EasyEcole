@@ -20,7 +20,11 @@ export class ScanPresencePageComponent extends BaseComponentClass implements OnD
   scannedUserPhoto: string = ''
   errorMessage: string = ''
   successMessage: string = ''
+  paiementStatut: 'vert' | 'rouge' | null = null
+  paiementEcheancesEnRetard: number = 0
+  paiementMessage: string = ''
   private html5QrCode: Html5Qrcode | null = null
+  private audioCtx: AudioContext | null = null
 
   readonly PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS
 
@@ -36,6 +40,54 @@ export class ScanPresencePageComponent extends BaseComponentClass implements OnD
 
   ngOnDestroy(): void {
     this.stopScanner()
+    if (this.audioCtx) {
+      this.audioCtx.close()
+    }
+  }
+
+  private playTone(startTime: number, frequency: number, duration: number): void {
+    const audioCtx = this.audioCtx
+    if (!audioCtx) return
+    const osc = audioCtx.createOscillator()
+    const gain = audioCtx.createGain()
+    osc.connect(gain)
+    gain.connect(audioCtx.destination)
+    osc.type = 'sine'
+    osc.frequency.value = frequency
+    gain.gain.setValueAtTime(0.3, startTime)
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration)
+    osc.start(startTime)
+    osc.stop(startTime + duration)
+  }
+
+  /** Succès : 2 bips brefs aigus (1568 Hz / G6) */
+  private playBeepSucces(): void {
+    try {
+      if (!this.audioCtx) {
+        this.audioCtx = new AudioContext()
+      }
+      const now = this.audioCtx.currentTime
+      this.playTone(now, 1568, 0.09)
+      this.playTone(now + 0.12, 1568, 0.09)
+    } catch {}
+    try {
+      navigator.vibrate(150)
+    } catch {}
+  }
+
+  /** Refus / erreur : double-bip grave (2 x 392 Hz / G4, ~0,15 s, espacés ~0,12 s) */
+  private playBeepRefus(): void {
+    try {
+      if (!this.audioCtx) {
+        this.audioCtx = new AudioContext()
+      }
+      const now = this.audioCtx.currentTime
+      this.playTone(now, 392, 0.15)
+      this.playTone(now + 0.27, 392, 0.15)
+    } catch {}
+    try {
+      navigator.vibrate([150, 60, 150])
+    } catch {}
   }
 
   startScanner(): void {
@@ -71,6 +123,16 @@ export class ScanPresencePageComponent extends BaseComponentClass implements OnD
     this.presenceService.scanPresence(this.presenceId, codeQR).subscribe({
       next: (res: any) => {
         this.successMessage = 'Présence marquée avec succès'
+        const paiement = res?.paiement
+        if (paiement?.statut === 'rouge') {
+          this.paiementStatut = 'rouge'
+          this.paiementEcheancesEnRetard = paiement.echeancesEnRetard ?? 0
+          this.paiementMessage = paiement.message || ''
+          this.playBeepRefus()
+        } else {
+          this.paiementStatut = 'vert'
+          this.playBeepSucces()
+        }
         if (res?.data) {
           this.scannedUserNom = res.data.nom || 'Étudiant'
           this.scannedUserPrenoms = res.data.prenoms || ''
@@ -88,10 +150,14 @@ export class ScanPresencePageComponent extends BaseComponentClass implements OnD
           this.scannedUser = null
           this.successMessage = ''
           this.errorMessage = ''
+          this.paiementStatut = null
+          this.paiementEcheancesEnRetard = 0
+          this.paiementMessage = ''
           this.startScanner()
         }, 2000)
       },
       error: (err) => {
+        this.playBeepRefus()
         if (err.error?.alreadyExists) {
           this.errorMessage = 'Cet étudiant est déjà marqué présent'
         } else {

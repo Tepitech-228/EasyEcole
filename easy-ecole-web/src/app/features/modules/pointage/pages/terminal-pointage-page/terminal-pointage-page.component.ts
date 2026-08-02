@@ -64,6 +64,51 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     } catch {}
   }
 
+  private playTone(startTime: number, frequency: number, duration: number): void {
+    const audioCtx = this.audioCtx
+    if (!audioCtx) return
+    const osc = audioCtx.createOscillator()
+    const gain = audioCtx.createGain()
+    osc.connect(gain)
+    gain.connect(audioCtx.destination)
+    osc.type = 'sine'
+    osc.frequency.value = frequency
+    gain.gain.setValueAtTime(0.3, startTime)
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration)
+    osc.start(startTime)
+    osc.stop(startTime + duration)
+  }
+
+  /** Succès : 2 bips brefs aigus (1568 Hz / G6) */
+  private playBeepSucces(): void {
+    try {
+      if (!this.audioCtx) {
+        this.audioCtx = new AudioContext()
+      }
+      const now = this.audioCtx.currentTime
+      this.playTone(now, 1568, 0.09)
+      this.playTone(now + 0.12, 1568, 0.09)
+    } catch {}
+    try {
+      navigator.vibrate(150)
+    } catch {}
+  }
+
+  /** Refus / erreur : double-bip grave (2 x 392 Hz / G4, ~0,15 s, espacés ~0,12 s) */
+  private playBeepRefus(): void {
+    try {
+      if (!this.audioCtx) {
+        this.audioCtx = new AudioContext()
+      }
+      const now = this.audioCtx.currentTime
+      this.playTone(now, 392, 0.15)
+      this.playTone(now + 0.27, 392, 0.15)
+    } catch {}
+    try {
+      navigator.vibrate([150, 60, 150])
+    } catch {}
+  }
+
   private getCacheKey(codeQR: string): string {
     return 'scan_cache_' + codeQR
   }
@@ -113,10 +158,12 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       next: (res) => {
         this.todayPointage = res
         this.selfSuccess = 'Arrivée pointée à ' + res.heureArrivee
+        this.playBeepSucces()
         setTimeout(() => this.selfSuccess = '', 4000)
       },
       error: (err) => {
         this.selfError = err.error?.message || 'Erreur lors du pointage'
+        this.playBeepRefus()
         setTimeout(() => this.selfError = '', 4000)
       }
     })
@@ -127,10 +174,12 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       next: (res) => {
         this.todayPointage = res
         this.selfSuccess = 'Départ pointé à ' + res.heureDepart
+        this.playBeepSucces()
         setTimeout(() => this.selfSuccess = '', 4000)
       },
       error: (err) => {
         this.selfError = err.error?.message || 'Erreur lors du pointage'
+        this.playBeepRefus()
         setTimeout(() => this.selfError = '', 4000)
       }
     })
@@ -187,7 +236,9 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   private displayScannedResult(res: any): void {
     if (res.statut === 'rouge') {
       this.scanError = res.message || 'Accès refusé'
+      this.playBeepRefus()
     } else {
+      this.playBeepSucces()
       this.scannedUser = {
         userId: res.utilisateurId,
         nom: res.nom || 'Inconnu',
@@ -218,6 +269,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       },
       error: (err) => {
         this.scanError = err.error?.message || 'Utilisateur non trouvé'
+        this.playBeepRefus()
       }
     })
   }
@@ -230,7 +282,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
 
     serviceCall.subscribe({
       next: (res) => {
-        this.playBeep()
+        this.playBeepSucces()
         this.scanSuccess = mode === 'arrivee'
           ? 'Arrivée pointée à ' + res.heureArrivee
           : 'Départ pointé à ' + res.heureDepart
@@ -238,6 +290,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
         setTimeout(() => this.scanSuccess = '', 4000)
       },
       error: (err) => {
+        this.playBeepRefus()
         if (err.error?.alreadyExists) {
           this.scanError = mode === 'arrivee'
             ? 'Arrivée déjà pointée aujourd\'hui'

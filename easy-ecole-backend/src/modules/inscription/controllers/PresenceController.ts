@@ -9,6 +9,7 @@ import { Enseignant } from "../../auth/models/Enseignant";
 import { Cours } from "../models/Cours";
 import { Parcours } from "../models/Parcours";
 import { QrTokenService } from "../../../core/services/QrTokenService";
+import { VerificationPaiementService, VerificationPaiementResult } from "../services/VerificationPaiementService";
 import * as fs from "fs"
 import * as path from "path"
 
@@ -223,7 +224,28 @@ export default class PresenceController {
 
             await presenceCoursParticipant.save()
 
-            return res.status(201).json({ success: true, data: presenceCoursParticipant })
+            // Vérification du paiement : ne bloque JAMAIS l'enregistrement de la présence
+            let paiement: VerificationPaiementResult = {
+                statut: 'vert',
+                echeancesEnRetard: 0,
+                echeancesRestantes: [],
+                message: 'Accès autorisé'
+            }
+            try {
+                paiement = await VerificationPaiementService.verifierPaiement(resolvedUserId)
+            } catch (error) {
+                // Ne pas bloquer : la présence est déjà enregistrée
+            }
+
+            return res.status(201).json({
+                success: true,
+                data: presenceCoursParticipant,
+                paiement: {
+                    statut: paiement.statut,
+                    echeancesEnRetard: paiement.echeancesEnRetard,
+                    message: paiement.message
+                }
+            })
         } catch (error) {
             return res.status(500).json({ success: false, error: error })
         }

@@ -36,6 +36,24 @@
             {{ (scannedUserNom || '?')[0] }}{{ (scannedUserPrenoms || '')[0] }}
         </div>
         <p class="text-green-900 font-bold text-base">{{ scannedUserNom }} {{ scannedUserPrenoms }}</p>
+
+        <!-- Statut paiement (la présence reste validée) -->
+        <div *ngIf="paiementStatut === 'rouge'" class="mt-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-3 text-left">
+          <svg class="w-5 h-5 text-red-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <div>
+            <p class="text-red-800 font-semibold text-sm">Paiement en retard — {{ paiementEcheancesEnRetard }} échéance(s)</p>
+            <p *ngIf="paiementMessage" class="text-red-600 text-xs mt-0.5">{{ paiementMessage }}</p>
+          </div>
+        </div>
+        <div *ngIf="paiementStatut === 'vert'" class="mt-4 bg-green-50 border border-green-200 rounded-xl px-4 py-3 flex items-center gap-3 text-left">
+          <svg class="w-5 h-5 text-green-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+          <p class="text-green-800 font-semibold text-sm">Paiement à jour</p>
+        </div>
+
         <p class="text-xs text-green-600 mt-2">Nouveau scan automatique dans un instant…</p>
     </div>
 

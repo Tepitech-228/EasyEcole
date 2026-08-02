@@ -6,6 +6,7 @@ import { Utilisateur } from "../../auth/models/Utilisateur";
 import { DossierEtudiant } from "../models/DossierEtudiant";
 import { Echeance } from "../models/Echeance";
 import { QrTokenService } from "../../../core/services/QrTokenService";
+import { VerificationPaiementService } from "../services/VerificationPaiementService";
 
 const ROLES_POINTAGE = [
   RolesUtilisateur.APPRENANT,
@@ -286,30 +287,19 @@ export default class PointageController {
             }
 
             if (dossier) {
-                if (dossier.statut == 'suspendu' || dossier.statut == 'archive') {
+                const paiement = VerificationPaiementService.verifierDossier(dossier);
+
+                if (paiement.statut == 'rouge') {
                     return res.status(200).json({
                         statut: 'rouge',
-                        message: `Dossier ${dossier.statut}`
-                    });
-                }
-
-                const now = new Date()
-                const echeancesImpayees = (dossier.echeances || []).filter(
-                    e => (e.statut == 'impaye' || e.statut == 'en_retard') && new Date(e.dateLimite) <= now
-                )
-
-                if (echeancesImpayees.length > 0) {
-                    const premiereImpayee = echeancesImpayees[0]
-                    return res.status(200).json({
-                        statut: 'rouge',
-                        message: `Échéance mois ${premiereImpayee.numeroEcheance} ${premiereImpayee.statut == 'en_retard' ? 'en retard' : 'impayée'}`,
-                        echeancesRestantes: echeancesImpayees
+                        message: paiement.message,
+                        ...(paiement.echeancesRestantes.length > 0 ? { echeancesRestantes: paiement.echeancesRestantes } : {})
                     });
                 }
 
                 return res.status(200).json({
                     statut: 'vert',
-                    message: 'Accès autorisé',
+                    message: paiement.message,
                     utilisateurId: dossier.utilisateurId,
                     photo: dossier.photo || ''
                 });
