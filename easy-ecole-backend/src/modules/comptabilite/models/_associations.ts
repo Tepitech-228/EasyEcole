@@ -1,6 +1,7 @@
 import { Compte } from "./Compte"
 import { JournalComptable } from "./JournalComptable"
 import { EcritureComptable } from "./EcritureComptable"
+import { ExerciceComptable } from "./ExerciceComptable"
 import { FraisParcours } from "./FraisParcours"
 import { LigneFraisEtudiant } from "./LigneFraisEtudiant"
 import { ReductionFrais } from "./ReductionFrais"
@@ -13,6 +14,16 @@ import { Utilisateur } from "../../auth/models/Utilisateur"
 import { CompteBancaire } from "./CompteBancaire"
 import { ReleveBancaire } from "./ReleveBancaire"
 import { LigneReleveBancaire } from "./LigneReleveBancaire"
+
+// Associations ExerciceComptable
+ExerciceComptable.hasMany(EcritureComptable, {
+  as: 'ecritures',
+  foreignKey: 'exerciceId'
+})
+EcritureComptable.belongsTo(ExerciceComptable, {
+  as: 'exercice',
+  foreignKey: 'exerciceId'
+})
 
 // Associations EcritureComptable
 EcritureComptable.belongsTo(JournalComptable, {

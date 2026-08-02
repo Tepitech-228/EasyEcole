@@ -3,6 +3,7 @@ import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../ComptabiliteModule";
 import { Compte } from "./Compte";
 import { JournalComptable } from "./JournalComptable";
+import { ExerciceComptable } from "./ExerciceComptable";
 import type { LigneReleveBancaire } from "./LigneReleveBancaire";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 
@@ -12,6 +13,7 @@ import { Utilisateur } from "../../auth/models/Utilisateur";
 export class EcritureComptable extends Model<InferAttributes<EcritureComptable>, InferCreationAttributes<EcritureComptable>> {
   declare id: CreationOptional<string>
   declare journalId: ForeignKey<JournalComptable['id']>
+  declare exerciceId: ForeignKey<ExerciceComptable['id']>
   declare numeroEcriture: string // Ex: "ACH001", "VEN042", "BANQ123"
   declare dateEcriture: Date
   declare dateComptable: Date
@@ -31,6 +33,7 @@ export class EcritureComptable extends Model<InferAttributes<EcritureComptable>,
   declare lettre: CreationOptional<string | null>
   declare dateLettrage: CreationOptional<Date | null>
 
+  declare exercice?: NonAttribute<ExerciceComptable>
   declare journal?: NonAttribute<JournalComptable>
   declare compteDebit?: NonAttribute<Compte>
   declare compteCredit?: NonAttribute<Compte>
@@ -41,6 +44,7 @@ export class EcritureComptable extends Model<InferAttributes<EcritureComptable>,
   declare readonly updatedAt: CreationOptional<Date>
 
   declare static associations: {
+    exercice: Association<EcritureComptable, ExerciceComptable>
     journal: Association<EcritureComptable, JournalComptable>
     compteDebit: Association<EcritureComptable, Compte>
     compteCredit: Association<EcritureComptable, Compte>
@@ -55,6 +59,10 @@ EcritureComptable.init({
     type: DataTypes.INTEGER.UNSIGNED,
     autoIncrement: true,
     primaryKey: true
+  },
+  exerciceId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: false
   },
   journalId: {
     type: DataTypes.INTEGER.UNSIGNED,
