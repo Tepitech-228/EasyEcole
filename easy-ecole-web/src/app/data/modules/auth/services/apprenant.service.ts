@@ -33,6 +33,12 @@ export class ApprenantService {
     return this.httpClient.post(`${this.SERVICE_URL}/qr-codes/generate`, { apprenantId })
   }
 
+  getQrCodeBlob(fileName: string): Observable<Blob> {
+    return this.httpClient.get(`${this.SERVICE_URL}/qr-codes/${fileName}`, {
+      responseType: 'blob'
+    });
+  }
+
   updatePhoto(photo: File, apprenantId?: number): Observable<any> {
     let formData: FormData = new FormData()
     formData.append('photo', photo, photo.name)

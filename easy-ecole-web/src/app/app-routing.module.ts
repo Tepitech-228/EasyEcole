@@ -89,11 +89,11 @@ const routes: Routes = [
       },
 
       // Module "Immobilisations"
-      // {
-      //   path: 'etablissements',
-      //   loadChildren: () => import('./features/modules/etablissement/etablissement.module').then(m => m.EtablissementModule),
-      //   canLoad: [AuthGuard]
-      // },
+      {
+        path: 'immobilisations',
+        loadChildren: () => import('./features/modules/immobilisations/immobilisations.module').then(m => m.ImmobilisationsModule),
+        canLoad: [AuthGuard]
+      },
 
       // Module "Qualité"
       {

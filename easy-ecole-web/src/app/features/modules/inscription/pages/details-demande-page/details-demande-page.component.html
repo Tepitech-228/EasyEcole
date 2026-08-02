@@ -1,5 +1,6 @@
 <app-return-back></app-return-back>
 
+<ng-container *ngIf="!loading; else loadingTemplate">
 <ng-container *ngIf="demande">
     <div *ngIf="rolesValue.isInstitution"
         class="flex md:flex-row flex-col gap-y-6 justify-between md:items-start md-items-end w-full border-0 py-4 mb-6">
@@ -61,7 +62,7 @@
     <ng-container>
         <!-- Section: Informations personnelles -->
         <ng-container *ngIf="currentItemSection == 0">
-            <app-infos-section [utilisateur]="demande.utilisateur!"></app-infos-section>
+            <app-infos-section [utilisateur]="demande.utilisateur!" (nextStep)="onStepComplete(0, 'Informations personnelles complètes.')"></app-infos-section>
         </ng-container>
 
         <!-- Section: Choix parcours -->
@@ -100,7 +101,17 @@
             <app-custom-button (click)="openValidationModal()" text="Valider"></app-custom-button>
         </div>
     </div>
-</ng-container>
+</ng-container> <!-- end demande -->
+</ng-container> <!-- end !loading -->
+
+<ng-template #loadingTemplate>
+    <div class="flex justify-center items-center py-20">
+        <div class="flex flex-col items-center gap-y-4">
+            <div class="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-sm text-gray-500">Chargement de la demande d'inscription...</p>
+        </div>
+    </div>
+</ng-template>
 
 <!-- Modals -->
 <app-custom-modal title="Réponse" subtitle="Valider la réponse et saisir un message qui sera envoyé à l'apprenant" (onCloseModal)="closeReponseModal()" [center]="true" [showModal]="showReponseModal">

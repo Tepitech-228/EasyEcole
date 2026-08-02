@@ -34,13 +34,9 @@ export class ChatInputComponent {
     const file = event.target.files?.[0];
     if (file) {
       this.selectedFile = file;
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (e) => { this.previewUrl = e.target?.result as string; };
-        reader.readAsDataURL(file);
-      } else {
-        this.previewUrl = null;
-      }
+      const reader = new FileReader();
+      reader.onload = (e) => { this.previewUrl = e.target?.result as string; };
+      reader.readAsDataURL(file);
     }
   }
 

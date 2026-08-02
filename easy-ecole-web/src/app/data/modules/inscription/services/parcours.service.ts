@@ -13,8 +13,9 @@ export class ParcoursService {
 
   constructor(private httpClient: HttpClient) { }
 
-  getAll(): Observable<Parcours[]> {
-    return this.httpClient.get<Parcours[]>(`${this.SERVICE_URL}`)
+  getAll(niveauEtudeId?: number | string): Observable<Parcours[]> {
+    const params = niveauEtudeId != null ? { niveauEtudeId: String(niveauEtudeId) } : undefined
+    return this.httpClient.get<Parcours[]>(`${this.SERVICE_URL}`, { params })
   }
 
   get(id: string): Observable<Parcours> {

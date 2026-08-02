@@ -26,6 +26,7 @@ import { SuiviUePageComponent } from './pages/suivi-ue-page/suivi-ue-page.compon
 import { ListeSallesDeClassePageComponent } from './pages/liste-salles-de-classe-page/liste-salles-de-classe-page.component';
 import { ListeClassesPageComponent } from './pages/liste-classes-page/liste-classes-page.component';
 import { OnboardingPageComponent } from './pages/onboarding-page/onboarding-page.component';
+import { CartesPageComponent } from './pages/cartes-page/cartes-page.component';
 
 const routes: Routes = [
   {
@@ -158,6 +159,12 @@ const routes: Routes = [
   {
     path: 'dossiers',
     component: ListeDossiersPageComponent,
+    pathMatch: 'full'
+  },
+
+  {
+    path: 'cartes',
+    component: CartesPageComponent,
     pathMatch: 'full'
   },
 

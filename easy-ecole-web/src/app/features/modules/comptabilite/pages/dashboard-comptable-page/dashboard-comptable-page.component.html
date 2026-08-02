@@ -1,5 +1,17 @@
 <div class="p-6">
-  <app-header-title title="Comptabilité" subtitle="Tableau de bord comptable OHADA"></app-header-title>
+  <div class="flex items-center justify-between mb-6">
+    <app-header-title title="Comptabilité" subtitle="Tableau de bord comptable OHADA"></app-header-title>
+
+    <!-- Exercice selector -->
+    <div *ngIf="exercices.length > 0" class="flex items-center gap-2">
+      <label class="text-sm text-gray-500 font-medium">Exercice :</label>
+      <select (change)="onExerciceChange($event)" class="border border-gray-300 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary">
+        <option *ngFor="let ex of exercices" [value]="ex.id" [selected]="ex.actif">
+          {{ ex.libelle }}
+        </option>
+      </select>
+    </div>
+  </div>
 
   <!-- Navigation tabs -->
   <div class="mb-8 flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
@@ -8,6 +20,9 @@
     <a routerLink="/comptabilite/balance" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50">Balance</a>
     <a routerLink="/comptabilite/grand-livre" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50">Grand livre</a>
     <a routerLink="/comptabilite/ecritures" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50">Écritures</a>
+    <a routerLink="/comptabilite/bilan" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50">Bilan</a>
+    <a routerLink="/comptabilite/compte-resultat" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50">Compte de résultat</a>
+    <a routerLink="/comptabilite/exercices" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50">Exercices</a>
   </div>
 
   <div *ngIf="loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-pulse">

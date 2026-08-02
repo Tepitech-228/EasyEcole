@@ -5,21 +5,48 @@
 
 <div class="flex flex-col items-center">
     <div *ngIf="!scannedUserId && !successMessage && !errorMessage" class="w-full max-w-md">
-        <div id="qr-reader" class="mx-auto rounded-lg overflow-hidden shadow-lg border border-gray-200"></div>
+        <div id="qr-reader" class="mx-auto rounded-xl overflow-hidden shadow-lg border border-gray-200"></div>
         <div class="text-center mt-4 text-sm text-gray-500">
-            <div *ngIf="scanning">Caméra active - Pointez le QR code étudiant</div>
-            <div *ngIf="!scanning && !errorMessage">Démarrage de la caméra...</div>
+            <div *ngIf="scanning" class="inline-flex items-center gap-2 text-gray-600">
+                <span class="relative flex h-2.5 w-2.5" aria-hidden="true">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                </span>
+                Caméra active — Pointez le QR code étudiant
+            </div>
+            <div *ngIf="!scanning && !errorMessage" class="inline-flex items-center gap-2 text-gray-400">
+                <div class="w-4 h-4 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin" aria-hidden="true"></div>
+                Démarrage de la caméra…
+            </div>
         </div>
     </div>
 
-    <div *ngIf="successMessage" class="bg-green-50 border border-green-200 rounded-lg p-6 text-center max-w-md mx-auto">
-        <div class="text-green-600 text-lg font-medium mb-2">✓ Présence marquée</div>
-        <div class="text-green-700">{{ scannedUserNom }}</div>
+    <div *ngIf="successMessage" class="bg-green-50 border border-green-200 rounded-2xl p-8 text-center max-w-md mx-auto w-full shadow-sm">
+        <div class="w-14 h-14 rounded-full bg-green-100 text-green-600 flex items-center justify-center mx-auto mb-4">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+            </svg>
+        </div>
+        <p class="text-green-800 font-semibold text-lg mb-3">Présence marquée</p>
+        <div *ngIf="scannedUser?.photo" class="w-24 h-24 rounded-full mx-auto mb-3 overflow-hidden ring-4 ring-green-200 shadow-md">
+            <img [src]="scannedUser.photo" [alt]="'Photo de ' + scannedUserNom" class="w-full h-full object-cover">
+        </div>
+        <div *ngIf="!scannedUser?.photo"
+             class="w-24 h-24 rounded-full bg-green-100 text-green-700 flex items-center justify-center mx-auto mb-3 font-bold text-2xl">
+            {{ (scannedUserNom || '?')[0] }}{{ (scannedUserPrenoms || '')[0] }}
+        </div>
+        <p class="text-green-900 font-bold text-base">{{ scannedUserNom }} {{ scannedUserPrenoms }}</p>
+        <p class="text-xs text-green-600 mt-2">Nouveau scan automatique dans un instant…</p>
     </div>
 
-    <div *ngIf="errorMessage" class="bg-red-50 border border-red-200 rounded-lg p-6 text-center max-w-md mx-auto">
-        <div class="text-red-600 text-lg font-medium mb-2">Erreur</div>
-        <div class="text-red-700">{{ errorMessage }}</div>
-        <app-custom-button class="mt-4" (click)="startScanner()" text="Réessayer"></app-custom-button>
+    <div *ngIf="errorMessage" class="bg-red-50 border border-red-200 rounded-2xl p-8 text-center max-w-md mx-auto w-full shadow-sm">
+        <div class="w-14 h-14 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+        </div>
+        <p class="text-red-800 font-semibold text-lg mb-1">Scan non validé</p>
+        <p class="text-red-700 text-sm">{{ errorMessage }}</p>
+        <app-custom-button class="mt-5" (click)="startScanner()" text="Réessayer"></app-custom-button>
     </div>
 </div>

@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { AnneeAcademique } from 'src/app/data/modules/inscription/models/AnneeAcademique.model';
 import { DossierEtudiant } from 'src/app/data/modules/inscription/models/DossierEtudiant.model';
@@ -70,6 +71,7 @@ export class ListeDossiersPageComponent extends BaseComponentClass implements On
   detailLoading = false
 
   constructor(
+    private http: HttpClient,
     private dossierEtudiantService: DossierEtudiantService,
     private anneeAcademiqueService: AnneeAcademiqueService,
     private niveauEtudeService: NiveauEtudeService,
@@ -202,6 +204,11 @@ export class ListeDossiersPageComponent extends BaseComponentClass implements On
     this.detailData = null
   }
 
+  telechargerCarte(dossierId: string): void {
+    const url = this.dossierEtudiantService.telechargerCarteUrl(dossierId)
+    window.open(url, '_blank')
+  }
+
   getDossiers(): void {
     this.loading = true
     this.error = false
@@ -326,5 +333,20 @@ export class ListeDossiersPageComponent extends BaseComponentClass implements On
       return this.PHOTOS_PATH + dossier.utilisateur.apprenant.photo
     }
     return 'assets/images/blank-profile-picture.png'
+  }
+
+  /** Télécharge un fichier via HttpClient (avec token) et l'ouvre dans un nouvel onglet */
+  telechargerFichier(basePath: string, nomFichier: string): void {
+    const url = `${basePath}${nomFichier}`;
+    this.http.get(url, { responseType: 'blob' }).subscribe({
+      next: (blob) => {
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      },
+      error: (err) => {
+        console.error('❌ Erreur téléchargement fichier:', err);
+      }
+    });
   }
 }

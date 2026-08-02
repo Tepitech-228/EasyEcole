@@ -1,0 +1,123 @@
+<div *ngIf="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" (click)="close()">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900">{{ title }}</h3>
+                <p class="text-sm text-gray-500 mt-1">{{ subtitle }}</p>
+            </div>
+            <button (click)="close()" class="text-gray-400 hover:text-gray-600 transition">
+                <span class="material-symbols-outlined text-3xl">close</span>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="px-6 py-6">
+
+            <!-- Étape 1 : Télécharger le template -->
+            <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div class="flex items-center gap-x-3">
+                    <span class="material-symbols-outlined text-2xl text-gray-500">description</span>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-gray-700">1. Téléchargez le template</p>
+                        <p class="text-xs text-gray-500">Remplissez le fichier Excel avec vos données</p>
+                    </div>
+                    <button (click)="onDownloadTemplate()"
+                        class="inline-flex items-center gap-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition shadow-sm"
+                        [style.color]="'#' + themeColor">
+                        <span class="material-symbols-outlined text-base">download</span>
+                        Télécharger le template
+                    </button>
+                </div>
+            </div>
+
+            <!-- Étape 2 : Sélectionner le fichier -->
+            <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div class="flex items-center gap-x-3">
+                    <span class="material-symbols-outlined text-2xl text-gray-500">upload_file</span>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-gray-700">2. Sélectionnez votre fichier Excel</p>
+                        <p class="text-xs text-gray-500">Format accepté : .xlsx, .xls</p>
+                    </div>
+                    <label class="cursor-pointer inline-flex items-center gap-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition shadow-sm">
+                        <span class="material-symbols-outlined text-base">folder_open</span>
+                        Parcourir
+                        <input type="file" accept=".xlsx,.xls" (change)="onFileSelected($event)" class="hidden">
+                    </label>
+                </div>
+                <div *ngIf="selectedFile" class="mt-3 flex items-center gap-x-2 text-sm text-gray-600">
+                    <span class="material-symbols-outlined text-base text-green-600">check_circle</span>
+                    <span>Fichier sélectionné : <strong>{{ selectedFile.name }}</strong></span>
+                </div>
+            </div>
+
+            <!-- Message d'erreur -->
+            <div *ngIf="error" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-x-2">
+                <span class="material-symbols-outlined text-base">error</span>
+                {{ error }}
+            </div>
+
+            <!-- Résultat de l'import -->
+            <div *ngIf="result" class="mb-4 p-4 rounded-lg border"
+                [class.bg-green-50]="result.errorCount === 0"
+                [class.border-green-200]="result.errorCount === 0"
+                [class.bg-yellow-50]="result.errorCount > 0"
+                [class.border-yellow-200]="result.errorCount > 0">
+                <div class="flex items-center gap-x-2 mb-2">
+                    <span class="material-symbols-outlined"
+                        [class.text-green-600]="result.errorCount === 0"
+                        [class.text-yellow-600]="result.errorCount > 0">
+                        {{ result.errorCount === 0 ? 'check_circle' : 'warning' }}
+                    </span>
+                    <span class="text-sm font-medium"
+                        [class.text-green-800]="result.errorCount === 0"
+                        [class.text-yellow-800]="result.errorCount > 0">
+                        {{ getResultSummary() }}
+                    </span>
+                </div>
+
+                <!-- Détail des erreurs -->
+                <div *ngIf="result.details && result.details.length > 0" class="mt-2 max-h-40 overflow-y-auto">
+                    <table class="min-w-full text-xs">
+                        <thead>
+                            <tr class="text-gray-500">
+                                <th class="text-left px-2 py-1">Ligne</th>
+                                <th class="text-left px-2 py-1">Statut</th>
+                                <th class="text-left px-2 py-1">Message</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let detail of result.details; let i = index"
+                                class="border-t border-gray-100"
+                                [class.text-green-700]="detail.statut === 'succès'"
+                                [class.text-red-700]="detail.statut === 'erreur'">
+                                <td class="px-2 py-1">{{ i + 1 }}</td>
+                                <td class="px-2 py-1 font-medium">
+                                    <span *ngIf="detail.statut === 'succès'">✅ Succès</span>
+                                    <span *ngIf="detail.statut === 'erreur'">❌ Erreur</span>
+                                </td>
+                                <td class="px-2 py-1">{{ detail.message }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Loading -->
+            <div *ngIf="loading" class="flex justify-center items-center py-8">
+                <div class="flex flex-col items-center gap-y-3">
+                    <div class="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                    <p class="text-sm text-gray-500">Import en cours...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex items-center justify-between px-6 py-4 border-t border-gray-200">
+            <app-custom-button (click)="close()" text="Fermer" [outlined]="true" color="gray"></app-custom-button>
+            <app-custom-button (click)="onImport()" [disabled]="!selectedFile || loading" text="Importer"></app-custom-button>
+        </div>
+
+    </div>
+</div>

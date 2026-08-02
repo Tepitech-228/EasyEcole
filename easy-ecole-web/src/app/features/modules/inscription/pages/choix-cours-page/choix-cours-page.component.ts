@@ -82,7 +82,9 @@ export class ChoixCoursPageComponent implements OnInit {
     const aSauvegarder = [...obligatoiresIds, ...facultatifsChoisisIds]
 
     if (aSauvegarder.length === 0) {
-      this.router.navigate(['/inscription/demandes/' + this.id])
+      this.router.navigate(['/inscription/demandes/' + this.id], {
+        queryParams: { step: 'paiements' }
+      })
       return
     }
 
@@ -94,14 +96,18 @@ export class ChoixCoursPageComponent implements OnInit {
         next: () => {
           completed++
           if (completed >= aSauvegarder.length) {
-            this.router.navigate(['/inscription/demandes/' + this.id])
+            this.router.navigate(['/inscription/demandes/' + this.id], {
+              queryParams: { step: 'paiements' }
+            })
           }
         },
         error: (err) => {
           console.log(err)
           completed++
           if (completed >= aSauvegarder.length) {
-            this.router.navigate(['/inscription/demandes/' + this.id])
+            this.router.navigate(['/inscription/demandes/' + this.id], {
+              queryParams: { step: 'paiements' }
+            })
           }
         }
       })

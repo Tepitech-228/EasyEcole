@@ -1,44 +1,87 @@
+/* ── Variables bleu & blanc ── */
+$blue-50: #eff4ff;
+$blue-100: #dbe6ff;
+$blue-200: #bfd2ff;
+$blue-300: #94b3ff;
+$blue-400: #6b8dff;
+$blue-500: #3b5bff;
+$blue-600: #2a44d4;
+$blue-700: #1f33a8;
+$blue-800: #1a2880;
+$blue-900: #0f1b5e;
+$gray-50: #f9fafc;
+$gray-100: #f0f2f8;
+$gray-200: #e2e5ee;
+$gray-300: #c5c9d6;
+$gray-400: #9aa2b5;
+$gray-500: #6e7691;
+$gray-600: #4a5068;
+$white: #ffffff;
+$shadow-sm: 0 1px 3px rgba(59, 91, 255, 0.06);
+$shadow-md: 0 4px 16px rgba(59, 91, 255, 0.10);
+$radius: 14px;
+
 .demandes-page {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
+  padding: 4px;
 }
 
+/* ── En‑tête avec dégradé bleu ── */
 .page-head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
+  background: linear-gradient(135deg, $blue-600 0%, $blue-500 60%, $blue-400 100%);
+  padding: 20px 28px;
+  border-radius: $radius;
+  box-shadow: 0 4px 20px rgba(59, 91, 255, 0.25);
 }
 
 .page-head-left h2 {
-  font-family: 'Sora', sans-serif;
-  font-size: 18px;
+  font-family: 'Sora', system-ui, sans-serif;
+  font-size: 20px;
   font-weight: 700;
-  color: #131f45;
+  color: $white;
   margin: 0 0 4px;
+  letter-spacing: -0.3px;
 }
 
 .page-head-left p {
   font-size: 13px;
-  color: #8696a0;
+  color: rgba(255, 255, 255, 0.8);
   margin: 0;
 }
 
+/* ── Layout principal ── */
 .hierarchy-layout {
   display: flex;
-  gap: 16px;
-  height: calc(100vh - 140px);
-  min-height: 500px;
+  gap: 20px;
+  height: calc(100vh - 160px);
+  min-height: 520px;
 }
 
+/* ── Panneau arbre ── */
 .tree-panel {
   width: 360px;
-  background: #fff;
-  border: 1px solid #e6e8f0;
-  border-radius: 14px;
+  background: $white;
+  border: 1px solid $gray-200;
+  border-radius: $radius;
   overflow-y: auto;
   padding: 12px;
   flex-shrink: 0;
+  box-shadow: $shadow-sm;
+  transition: box-shadow 0.2s;
+
+  &:hover {
+    box-shadow: $shadow-md;
+  }
+
+  /* Scrollbar bleutée */
+  &::-webkit-scrollbar { width: 6px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: $blue-200; border-radius: 3px; }
 }
 
 .tree-node {
@@ -53,15 +96,17 @@
   padding: 8px 10px;
   border-radius: 10px;
   cursor: pointer;
-  transition: background 0.12s;
-}
+  transition: all 0.15s ease;
 
-.node-row:hover {
-  background: #f5f6fa;
-}
+  &:hover {
+    background: $blue-50;
+  }
 
-.node-row.selected {
-  background: #eef2ff;
+  &.selected {
+    background: linear-gradient(135deg, $blue-50 0%, $white 100%);
+    border: 1px solid $blue-200;
+    box-shadow: 0 1px 4px rgba(59, 91, 255, 0.12);
+  }
 }
 
 .toggle {
@@ -71,22 +116,33 @@
   width: 20px;
   height: 20px;
   flex-shrink: 0;
-}
+  color: $gray-400;
+  transition: color 0.15s;
 
-.toggle svg.rotated {
-  transform: rotate(90deg);
+  .node-row:hover & { color: $blue-500; }
+
+  svg.rotated { transform: rotate(90deg); }
 }
 
 .icon {
-  font-size: 16px;
-  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: $blue-400;
+  transition: color 0.15s;
+
+  .node-row:hover & { color: $blue-600; }
+  .node-row.selected & { color: $blue-500; }
 }
 
 .label {
   flex: 1;
   font-size: 13px;
   font-weight: 500;
-  color: #1b2140;
+  color: $blue-900;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -95,71 +151,88 @@
 .badge.demandes-badge {
   font-size: 11px;
   font-weight: 600;
-  color: #3b5bff;
-  background: #eef2ff;
-  padding: 2px 8px;
+  color: $white;
+  background: $blue-500;
+  padding: 2px 10px;
   border-radius: 12px;
   white-space: nowrap;
   flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(59, 91, 255, 0.2);
+  transition: transform 0.15s;
+
+  .node-row:hover & { transform: scale(1.08); }
 }
 
 .children {
   margin-left: 18px;
-  border-left: 1px solid #e6e8f0;
+  border-left: 2px solid $blue-100;
   padding-left: 8px;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
+/* ── Panneau détail ── */
 .detail-panel {
   flex: 1;
-  background: #fff;
-  border: 1px solid #e6e8f0;
-  border-radius: 14px;
+  background: $white;
+  border: 1px solid $gray-200;
+  border-radius: $radius;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   min-width: 0;
+  box-shadow: $shadow-sm;
+  transition: box-shadow 0.2s;
+
+  &:hover { box-shadow: $shadow-md; }
 }
 
 .detail-head {
-  padding: 16px;
-  border-bottom: 1px solid #e6e8f0;
+  padding: 18px 24px;
+  border-bottom: 1px solid $gray-100;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  background: linear-gradient(180deg, $blue-50 0%, $white 100%);
 }
 
 .detail-head h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 700;
-  color: #131f45;
+  color: $blue-900;
 }
 
 .count-badge {
   font-size: 12px;
-  font-weight: 500;
-  color: #6e7391;
-  background: #f5f6fa;
-  padding: 4px 10px;
-  border-radius: 8px;
+  font-weight: 600;
+  color: $blue-500;
+  background: $white;
+  border: 1px solid $blue-200;
+  padding: 4px 12px;
+  border-radius: 20px;
   white-space: nowrap;
 }
 
+/* ── Placeholder ── */
 .detail-placeholder {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  color: #8696a0;
+  gap: 12px;
+  color: $gray-400;
   font-size: 14px;
+  background: $gray-50;
+  border-radius: 0 0 $radius $radius;
+
+  svg { opacity: 0.5; }
 }
 
+/* ── Tableau ── */
 .table-container {
   overflow: auto;
   flex: 1;
@@ -167,40 +240,67 @@
 
 .ged-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.ged-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
 .ged-table th {
   text-align: left;
-  padding: 12px 16px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #8696a0;
+  padding: 14px 20px;
+  font-size: 11px;
+  font-weight: 700;
+  color: $blue-700;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
-  background: #f5f6fa;
-  border-bottom: 1px solid #e6e8f0;
-}
+  letter-spacing: 0.5px;
+  background: $blue-50;
+  border-bottom: 2px solid $blue-200;
 
-.ged-table th.text-right {
-  text-align: right;
+  &.text-right { text-align: right; }
 }
 
 .ged-table td {
-  padding: 10px 16px;
+  padding: 12px 20px;
   font-size: 13px;
-  color: #1b2140;
-  border-bottom: 1px solid #f0f1f5;
+  color: $blue-900;
+  border-bottom: 1px solid $gray-100;
+  transition: background 0.12s;
+
+  &.text-right { text-align: right; }
 }
 
-.ged-table td.text-right {
-  text-align: right;
+.ged-table tbody tr {
+  transition: background 0.12s, box-shadow 0.12s;
+  cursor: pointer;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: $blue-500;
+    opacity: 0;
+    transition: opacity 0.15s;
+    border-radius: 0 2px 2px 0;
+  }
+
+  &:hover {
+    td { background: $blue-50; }
+    &::before { opacity: 1; }
+  }
+
+  &:last-child td { border-bottom: none; }
 }
 
-.ged-table tr:hover td {
-  background: #fafbfc;
-}
-
+/* ── Cellule utilisateur ── */
 .user-cell {
   display: flex;
   align-items: center;
@@ -208,28 +308,33 @@
 }
 
 .user-avatar {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #e6e8f0;
+  border: 2px solid $blue-100;
   flex-shrink: 0;
+  transition: border-color 0.15s;
+
+  tr:hover & { border-color: $blue-300; }
 }
 
 .user-name {
   font-size: 13px;
   font-weight: 600;
-  color: #1b2140;
+  color: $blue-900;
 }
 
 .user-email {
   font-size: 11px;
-  color: #8696a0;
+  color: $gray-400;
 }
 
+/* ── États vides / chargement ── */
 .loading-state,
 .empty-state {
-  padding: 40px 20px;
+  padding: 48px 20px;
   text-align: center;
-  color: #8696a0;
+  color: $gray-400;
+  font-size: 14px;
 }

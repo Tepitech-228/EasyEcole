@@ -1,9 +1,53 @@
 <div class="flex justify-between items-start mb-8">
     <app-header-title title="Cours" subtitle="Retrouver la liste de vos cours"></app-header-title>
-    <div class="flex justify-end items-center">
+    <div class="flex justify-end items-center gap-x-3">
+        <!-- Import/Export UE -->
+        <div class="relative" (mouseenter)="showUeMenu = true" (mouseleave)="showUeMenu = false">
+            <app-custom-button text="UE" color="indigo" [outlined]="true"></app-custom-button>
+            <div *ngIf="showUeMenu" class="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[180px]">
+                <button (click)="openImportDialog()" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg">
+                  <span class="material-symbols-outlined text-base align-text-bottom mr-1">upload</span> Importer des UE
+                </button>
+                <button (click)="onExportUe()" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                  <span class="material-symbols-outlined text-base align-text-bottom mr-1">download</span> Exporter les UE
+                </button>
+            </div>
+        </div>
+        <!-- Import/Export Enseignants -->
+        <div class="relative" (mouseenter)="showEnsMenu = true" (mouseleave)="showEnsMenu = false">
+            <app-custom-button text="Enseignants" color="green" [outlined]="true"></app-custom-button>
+            <div *ngIf="showEnsMenu" class="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[180px]">
+                <button (click)="openEnsImportDialog()" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg">
+                  <span class="material-symbols-outlined text-base align-text-bottom mr-1">upload</span> Importer des enseignants
+                </button>
+                <button (click)="onExportEnseignants()" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                  <span class="material-symbols-outlined text-base align-text-bottom mr-1">download</span> Exporter les enseignants
+                </button>
+            </div>
+        </div>
         <app-custom-button text="Valider"></app-custom-button>
     </div>
 </div>
+
+<app-excel-import-dialog
+    #importDialog
+    title="Import des Unités d'Enseignement"
+    subtitle="Importez des UE depuis un fichier Excel"
+    templateFilename="template-ue.xlsx"
+    [downloadTemplate]="onDownloadTemplate.bind(this)"
+    [importFn]="onImportUe.bind(this)"
+    (imported)="onImportDone()">
+</app-excel-import-dialog>
+
+<app-excel-import-dialog
+    #importEnsDialog
+    title="Import des Enseignants"
+    subtitle="Importez des enseignants depuis un fichier Excel"
+    templateFilename="template-enseignants.xlsx"
+    [downloadTemplate]="onDownloadEnsTemplate.bind(this)"
+    [importFn]="onImportEnseignants.bind(this)"
+    (imported)="onImportEnsDone()">
+</app-excel-import-dialog>
 
 <app-filters-annee-niveau-parcours
     [annees]="annees"

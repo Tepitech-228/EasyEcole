@@ -14,6 +14,8 @@ export class DossierEtudiant {
   declare modePaiement?: 'unique' | 'mensuel'
   declare nbMensualites?: number
   declare demarrageParcours?: Date
+  declare cartePath?: string
+  declare carteGeneree?: boolean
   declare utilisateur?: Utilisateur
   declare echeances?: Echeance[]
   declare coursParticipants?: CoursParticipant[]

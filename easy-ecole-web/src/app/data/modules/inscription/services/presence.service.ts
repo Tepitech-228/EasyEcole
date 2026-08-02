@@ -33,8 +33,8 @@ export class PresenceService {
     return this.httpClient.delete(`${this.SERVICE_URL}/${id}`)
   }
 
-  scanPresence(presenceId: string, userId: string): Observable<any> {
-    return this.httpClient.post(`${this.SERVICE_URL}/scan`, { presenceId, userId })
+  scanPresence(presenceId: string, codeQR: string): Observable<any> {
+    return this.httpClient.post(`${this.SERVICE_URL}/scan`, { presenceId, codeQR })
   }
 
   signPresence(id: string, signature: string): Observable<Presence> {

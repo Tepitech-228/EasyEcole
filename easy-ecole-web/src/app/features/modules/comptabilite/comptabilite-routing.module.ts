@@ -8,6 +8,9 @@ import { EcrituresPageComponent } from './pages/ecritures-page/ecritures-page.co
 import { ComptesBancairesPageComponent } from './pages/comptes-bancaires-page/comptes-bancaires-page.component';
 import { RelevesBancairesPageComponent } from './pages/releves-bancaires-page/releves-bancaires-page.component';
 import { RapprochementPageComponent } from './pages/rapprochement-page/rapprochement-page.component';
+import { ExercicesPageComponent } from './pages/exercices-page/exercices-page.component';
+import { BilanPageComponent } from './pages/bilan-page/bilan-page.component';
+import { CompteResultatPageComponent } from './pages/compte-resultat-page/compte-resultat-page.component';
 
 const routes: Routes = [
   {
@@ -53,6 +56,21 @@ const routes: Routes = [
   {
     path: 'rapprochement',
     component: RapprochementPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'exercices',
+    component: ExercicesPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'bilan',
+    component: BilanPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'compte-resultat',
+    component: CompteResultatPageComponent,
     pathMatch: 'full'
   },
 ];

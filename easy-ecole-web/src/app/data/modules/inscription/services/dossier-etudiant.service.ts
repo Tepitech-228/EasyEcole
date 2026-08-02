@@ -44,4 +44,12 @@ export class DossierEtudiantService {
   update(id: string, data: any): Observable<DossierEtudiant> {
     return this.httpClient.put<DossierEtudiant>(`${this.SERVICE_URL}/${id}`, data)
   }
+
+  telechargerCarteUrl(id: string): string {
+    return `${this.SERVICE_URL}/${id}/carte`
+  }
+
+  regenererCarte(id: string): Observable<any> {
+    return this.httpClient.post(`${this.SERVICE_URL}/${id}/regenerer-carte`, {})
+  }
 }

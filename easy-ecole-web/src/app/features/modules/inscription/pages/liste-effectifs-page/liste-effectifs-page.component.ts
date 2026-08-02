@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { AnneeAcademique } from 'src/app/data/modules/inscription/models/AnneeAcademique.model';
 import { NiveauEtude } from 'src/app/data/modules/inscription/models/NiveauEtude.model';
@@ -14,6 +14,8 @@ import { environment } from 'src/environments/environment';
 import { DossierNode, DossierColumn, BatchAction } from 'src/app/shared/components/dossier-view/dossier-view.component';
 import { FilterValue } from 'src/app/shared/components/filters-annee-niveau-parcours/filters-annee-niveau-parcours.component';
 import { combineLatest } from 'rxjs';
+import { ExcelService } from 'src/app/data/modules/inscription/services/excel.service';
+import { ExcelImportDialogComponent } from 'src/app/shared/components/excel-import-dialog/excel-import-dialog.component';
 
 @Component({
   selector: 'app-liste-effectifs-page',
@@ -21,6 +23,8 @@ import { combineLatest } from 'rxjs';
   styleUrls: ['./liste-effectifs-page.component.scss']
 })
 export class ListeEffectifsPageComponent extends BaseComponentClass implements OnInit {
+
+  @ViewChild('importDialog') importDialog!: ExcelImportDialogComponent;
 
   effectifs: CursusApprenant[] = []
   error: boolean = false
@@ -68,6 +72,7 @@ export class ListeEffectifsPageComponent extends BaseComponentClass implements O
     private niveauEtudeService: NiveauEtudeService,
     private parcoursService: ParcoursService,
     private classeService: ClasseService,
+    private excelService: ExcelService,
   ) {
     super()
   }
@@ -273,5 +278,39 @@ export class ListeEffectifsPageComponent extends BaseComponentClass implements O
       return this.PHOTOS_PATH + photo
     }
     return 'assets/images/blank-profile-picture.png'
+  }
+
+  // ========================================================================
+  //  IMPORT / EXPORT EXCEL
+  // ========================================================================
+
+  openImportDialog(): void {
+    this.importDialog.open();
+  }
+
+  onDownloadTemplate(): void {
+    this.excelService.downloadApprenantTemplate().subscribe({
+      next: (blob) => ExcelService.downloadBlob(blob, 'template-apprenants.xlsx'),
+      error: (err) => console.error('Erreur téléchargement template', err),
+    });
+  }
+
+  onImportApprenants(file: File) {
+    return this.excelService.importApprenants(file);
+  }
+
+  onExportApprenants(): void {
+    this.excelService.exportApprenants().subscribe({
+      next: (blob) => ExcelService.downloadBlob(blob, 'apprenants.xlsx'),
+      error: (err) => console.error('Erreur export apprenants', err),
+    });
+  }
+
+  onImportDone(): void {
+    this.refreshData();
+  }
+
+  private refreshData(): void {
+    this.ngOnInit();
   }
 }

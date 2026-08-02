@@ -18,7 +18,13 @@ export class SocketService implements OnDestroy {
   private memberAddedSubject = new Subject<any>();
   private memberRemovedSubject = new Subject<any>();
   private memberRoleChangedSubject = new Subject<any>();
+  private reconnectSubject = new Subject<void>();
   estConnecte: boolean = false;
+
+  /** Observable émis à chaque reconnexion du socket (utile pour ré-intégrer les rooms) */
+  onReconnect(): Observable<void> {
+    return this.reconnectSubject.asObservable();
+  }
 
   connect(): void {
     if (this.socket?.connected) {
@@ -55,7 +61,13 @@ export class SocketService implements OnDestroy {
     this.socket.on('member:roleChanged', (data: any) => {
       this.memberRoleChangedSubject.next(data);
     });
-    this.estConnecte = true;
+    this.socket.on('connect', () => {
+      this.estConnecte = true;
+      this.reconnectSubject.next();
+    });
+    this.socket.on('disconnect', () => {
+      this.estConnecte = false;
+    });
   }
 
   disconnect(): void {
@@ -74,12 +86,12 @@ export class SocketService implements OnDestroy {
     this.socket?.emit('leave:salon', salonId);
   }
 
-  sendMessage(salonId: number, message: string, utilisateurId: number): void {
-    this.socket?.emit('send:message', { salonId, message, utilisateurId });
+  sendMessage(salonId: number, message: string, utilisateurId: number, tempId?: number): void {
+    this.socket?.emit('send:message', { salonId, message, utilisateurId, _tempId: tempId });
   }
 
-  sendMediaMessage(salonId: number, message: string, utilisateurId: number, typeMessage: string, pieceJointe: string | null): void {
-    this.socket?.emit('send:message', { salonId, message, utilisateurId, typeMessage, pieceJointe });
+  sendMediaMessage(salonId: number, message: string, utilisateurId: number, typeMessage: string, pieceJointe: string | null, tempId?: number): void {
+    this.socket?.emit('send:message', { salonId, message, utilisateurId, typeMessage, pieceJointe, _tempId: tempId });
   }
 
   notifyTyping(salonId: number, utilisateurId: number): void {

@@ -1,4 +1,4 @@
-<div *ngIf="demande.dossiersDemande!.length == 0 && demande.session!.dossiersInscription!.length != 0" class="w-full">
+<div *ngIf="(demande.dossiersDemande?.length || 0) == 0 && (demande.session?.dossiersInscription?.length || 0) != 0" class="w-full">
     <app-custom-alert color="blue" [inline]="true" [show]="rolesValue.isApprenant">Veuillez uploader vos dossiers d'inscription</app-custom-alert>
     <app-custom-alert color="blue" [inline]="true" [show]="rolesValue.isInstitution">Téléversement des dossiers en cours</app-custom-alert>
 </div>
@@ -19,12 +19,12 @@
                 <div class="w-7/12 max-w-4xl mx-auto">
                     <table class="min-w-full mb-12">
                         <tbody>
-                            <tr *ngIf="demande.session!.dossiersInscription!.length == 0"
+                            <tr *ngIf="(demande.session?.dossiersInscription?.length || 0) == 0"
                                 class="bg-white p-0 border-b transition duration-300 ease-in-out">
                                 <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
                                     colspan="5">Aucun dossier à fournir</td>
                             </tr>
-                            <tr *ngFor="let dossier of demande.session!.dossiersInscription!; index as index"
+                            <tr *ngFor="let dossier of (demande.session?.dossiersInscription ?? []); index as index"
                                 class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
                                 <td
                                     class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
@@ -58,7 +58,7 @@
                             </tr>
                         </tbody>
                     </table>
-                    <div *ngIf="(rolesValue.isApprenant || rolesValue.isInstitution) && demande.session!.dossiersInscription!.length != 0" class="flex items-center justify-center">
+                    <div *ngIf="(rolesValue.isApprenant || rolesValue.isInstitution) && (demande.session?.dossiersInscription?.length || 0) != 0" class="flex items-center justify-center">
                         <app-custom-button (click)="validerDossiersInscription()" text="Valider" color="green" [fullWidth]="true" [disabled]="uploading || !hasSelectedFiles"></app-custom-button>
                     </div>
                 </div>

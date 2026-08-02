@@ -2,6 +2,7 @@ import { Component, OnDestroy } from '@angular/core';
 import { Html5Qrcode } from 'html5-qrcode';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { PointageService } from 'src/app/data/modules/inscription/services/pointage.service';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-terminal-pointage-page',
@@ -26,6 +27,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   private static readonly SCAN_TIMEOUT_MS = 30000
   private static readonly CACHE_TTL_MS = 60000
   private audioCtx: AudioContext | null = null
+
+  readonly PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS
 
   constructor(private pointageService: PointageService) {
     super()
@@ -191,7 +194,9 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
         prenoms: res.prenoms || '',
         role: res.role || 'apprenant',
         statut: 'vert',
-        message: res.message
+        message: res.message,
+        photo: res.photo || '',
+        photoUrl: res.photo ? this.PHOTOS_PATH + res.photo : 'assets/images/blank-profile-picture.png'
       }
     }
   }

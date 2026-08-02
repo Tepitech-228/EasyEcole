@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
@@ -17,6 +17,8 @@ import { ClasseService } from 'src/app/data/modules/inscription/services/classe.
 import { DossierNode, DossierColumn } from 'src/app/shared/components/dossier-view/dossier-view.component';
 import { FilterValue } from 'src/app/shared/components/filters-annee-niveau-parcours/filters-annee-niveau-parcours.component';
 import { SemestresParcours } from 'src/app/data/enums/SemestresParcours';
+import { ExcelService } from 'src/app/data/modules/inscription/services/excel.service';
+import { ExcelImportDialogComponent } from 'src/app/shared/components/excel-import-dialog/excel-import-dialog.component';
 
 @Component({
   selector: 'app-liste-cours-page',
@@ -54,6 +56,12 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
 
   currentFilter: FilterValue = { anneeId: '', niveauId: '', parcoursId: '' };
 
+  @ViewChild('importDialog') importDialog!: ExcelImportDialogComponent;
+  @ViewChild('importEnsDialog') importEnsDialog!: ExcelImportDialogComponent;
+
+  showUeMenu: boolean = false;
+  showEnsMenu: boolean = false;
+
   showNouveaucoursModal: boolean = false
   showEditerCoursModal: boolean = false
   showSupprimerCoursModal: boolean = false
@@ -75,6 +83,7 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
     private parcoursService: ParcoursService,
     private sessionService: SessionService,
     private classeService: ClasseService,
+    private excelService: ExcelService,
   ) {
     super()
     if (!this.rolesValue.isApprenant && !this.rolesValue.isInstitution && !this.rolesValue.isAdmin && !this.rolesValue.isEnseignant) {
@@ -231,5 +240,65 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
 
   closeNouveaucoursModal(): void {
     this.showNouveaucoursModal = false
+  }
+
+  // ========================================================================
+  //  IMPORT / EXPORT EXCEL
+  // ========================================================================
+
+  openImportDialog(): void {
+    this.importDialog.open();
+  }
+
+  onDownloadTemplate(): void {
+    this.excelService.downloadUeTemplate().subscribe({
+      next: (blob) => ExcelService.downloadBlob(blob, 'template-ue.xlsx'),
+      error: (err) => console.error('Erreur téléchargement template', err),
+    });
+  }
+
+  onImportUe(file: File) {
+    return this.excelService.importUe(file);
+  }
+
+  onExportUe(): void {
+    this.excelService.exportUe().subscribe({
+      next: (blob) => ExcelService.downloadBlob(blob, 'ue.xlsx'),
+      error: (err) => console.error('Erreur export UE', err),
+    });
+  }
+
+  onImportDone(): void {
+    this.loadCours();
+  }
+
+  // ========================================================================
+  //  ENSEIGNANTS
+  // ========================================================================
+
+  openEnsImportDialog(): void {
+    this.importEnsDialog.open();
+  }
+
+  onDownloadEnsTemplate(): void {
+    this.excelService.downloadEnseignantTemplate().subscribe({
+      next: (blob) => ExcelService.downloadBlob(blob, 'template-enseignants.xlsx'),
+      error: (err) => console.error('Erreur téléchargement template enseignants', err),
+    });
+  }
+
+  onImportEnseignants(file: File) {
+    return this.excelService.importEnseignants(file);
+  }
+
+  onExportEnseignants(): void {
+    this.excelService.exportEnseignants().subscribe({
+      next: (blob) => ExcelService.downloadBlob(blob, 'enseignants.xlsx'),
+      error: (err) => console.error('Erreur export enseignants', err),
+    });
+  }
+
+  onImportEnsDone(): void {
+    // Rafraîchir si nécessaire (les enseignants sont utilisés dans les cours)
   }
 }

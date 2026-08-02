@@ -28,6 +28,7 @@ export class PaiePageComponent extends BaseComponentClass implements OnInit {
 
   ngOnInit(): void {
     this.form = this.fb.group({
+      id: [null],
       mois: ['', Validators.required],
       annee: [new Date().getFullYear(), Validators.required],
       dateDebut: ['', Validators.required],
@@ -58,13 +59,14 @@ export class PaiePageComponent extends BaseComponentClass implements OnInit {
 
   openCreate() {
     this.isEditing = false;
-    this.form.reset({ mois: '', annee: new Date().getFullYear(), dateDebut: '', dateFin: '', statut: 'ouverte' });
+    this.form.reset({ id: null, mois: '', annee: new Date().getFullYear(), dateDebut: '', dateFin: '', statut: 'ouverte' });
     this.showModal = true;
   }
 
   openEdit(p: any) {
     this.isEditing = true;
     this.form.patchValue({
+      id: p.id,
       mois: p.mois,
       annee: p.annee,
       dateDebut: p.dateDebut,
@@ -112,8 +114,15 @@ export class PaiePageComponent extends BaseComponentClass implements OnInit {
   }
 
   getStatutBadge(statut: string): string {
-    const s = statut?.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const map: any = { ouverte: 'bg-green-100 text-green-700', verrouillee: 'bg-red-100 text-red-700', cloturee: 'bg-gray-100 text-gray-700' };
-    return map[s] || map[statut] || 'bg-gray-100 text-gray-700';
+    const s = (statut || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const map: Record<string, string> = { ouverte: 'paie-badge--ouverte', verrouillee: 'paie-badge--verrouillee', cloturee: 'paie-badge--cloturee' };
+    return map[s] || map[statut] || 'paie-badge--cloturee';
+  }
+
+  countByStatut(statut: string): number {
+    return this.periodes.filter(p => {
+      const s = (p.statut || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return s === statut;
+    }).length;
   }
 }

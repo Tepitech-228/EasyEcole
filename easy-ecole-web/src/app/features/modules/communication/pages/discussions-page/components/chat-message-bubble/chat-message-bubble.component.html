@@ -21,16 +21,21 @@
       <div *ngIf="isFile && hasPieceJointe" class="file-container">
         <div class="file-icon">📎</div>
         <div class="file-info">
-          <span class="file-name">Fichier</span>
-          <a [href]="pieceJointeUrl" target="_blank" class="file-link">Ouvrir</a>
+          <span class="file-name">{{ message.message || 'Fichier' }}</span>
+          <button class="file-link" (click)="telechargerOuOuvrirFichier()">Ouvrir</button>
         </div>
       </div>
       <!-- Text -->
       <div *ngIf="isText" class="msg-text">{{ message.message }}</div>
       <div class="msg-meta">
         <span>{{ messageTime }}</span>
-        <span *ngIf="isOwn && message.lu" class="read-status">✓✓</span>
-        <span *ngIf="isOwn && !message.lu" class="read-status">✓</span>
+        <span *ngIf="isOwn" class="msg-status" [ngClass]="'msg-status--' + statut">
+          <ng-container [ngSwitch]="statut">
+            <span *ngSwitchCase="'envoye'" class="status-icon">✓</span>
+            <span *ngSwitchCase="'recu'" class="status-icon">✓✓</span>
+            <span *ngSwitchCase="'lu'" class="status-icon status-icon--lu">✓✓</span>
+          </ng-container>
+        </span>
       </div>
     </div>
     <div class="bubble-actions" *ngIf="isOwn">

@@ -33,6 +33,7 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
 
   readonly PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS
 
+  loading: boolean = true
   id: string
   apprenant?: Apprenant
   demande?: DemandeInscription
@@ -50,6 +51,7 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
 
   currentItemSection: number = 0
   wizardItems: WizardItemType[] = []
+  requestedStep: string | null = null
 
   stepMessage: { text: string; type: 'success' | 'info' | 'warning' } | null = null
 
@@ -75,10 +77,25 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
     private router: Router) {
     super()
     this.id = this.activatedRoute.snapshot.paramMap.get("id") as string
+    this.requestedStep = this.activatedRoute.snapshot.queryParamMap.get('step')
     this.getDemandeInscription()
   }
 
   ngOnInit(): void {
+    this.activatedRoute.queryParamMap.subscribe(params => {
+      const step = params.get('step');
+      if (step) {
+        this.requestedStep = step;
+        if (this.demande) {
+          this.initSteps();
+        }
+      } else if (this.requestedStep) {
+        this.requestedStep = null;
+        if (this.demande) {
+          this.initSteps();
+        }
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -129,15 +146,18 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
   }
 
   getDemandeInscription(): void {
+    this.loading = true
     this.demandeInscriptionService.get(this.id!)
       .subscribe({
         next: (res) => {
           this.demande = res
+          this.loading = false
           console.log(res)
           this.initSteps()
         },
         error: (err) => {
-          console.log(err)
+          console.error('Erreur chargement demande:', err)
+          this.loading = false
           if (err.status == 404) {
             this.router.navigate(['/inscription/demandes'])
           }
@@ -161,6 +181,16 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
 
   onStepComplete(stepIndex: number, nextStepMessage: string): void {
     this.stepMessage = { text: nextStepMessage, type: 'success' }
+
+    const nextRoute = this.getNextStudentRoute(stepIndex);
+    if (nextRoute) {
+      this.router.navigate([nextRoute.route], {
+        queryParams: nextRoute.queryParams,
+        replaceUrl: true
+      });
+      return;
+    }
+
     if (stepIndex < 6) {
       this.currentItemSection = stepIndex + 1
     }
@@ -170,8 +200,57 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
     }, 800)
   }
 
+  private getNextStudentRoute(stepIndex: number): { route: string; queryParams?: any } | null {
+    if (!this.demande?.id) return null;
+    if (this.rolesValue.isInstitution || this.rolesValue.isAdmin || !this.rolesValue.isApprenant) return null;
+
+    switch (stepIndex) {
+      case 0:
+        return { route: `/inscription/demandes/${this.demande.id}/choix-parcours` };
+      case 1:
+        return { route: `/inscription/demandes/${this.demande.id}`, queryParams: { step: 'documents' } };
+      case 2:
+        return { route: `/inscription/demandes/${this.demande.id}`, queryParams: { step: 'preinscription' } };
+      case 3:
+        if (this.demande.preInscription?.statut === EtatPreInscription.VALIDE) {
+          return { route: `/inscription/demandes/${this.demande.id}/choix-cours` };
+        }
+        return null;
+      case 4:
+        return { route: `/inscription/demandes/${this.demande.id}`, queryParams: { step: 'paiements' } };
+      case 5:
+        return { route: `/inscription/demandes/${this.demande.id}`, queryParams: { step: 'validation' } };
+      default:
+        return null;
+    }
+  }
+
+  private getStepIndexFromParam(step: string | null): number | null {
+    switch (step?.toLowerCase()) {
+      case 'parcours':
+        return 1;
+      case 'documents':
+        return 2;
+      case 'preinscription':
+        return 3;
+      case 'cours':
+        return 4;
+      case 'paiements':
+        return 5;
+      case 'validation':
+        return 6;
+      default:
+        return null;
+    }
+  }
+
   initSteps(): void {
     this.initWizardItems()
+
+    const requestedStepIndex = this.getStepIndexFromParam(this.requestedStep);
+    if (requestedStepIndex !== null) {
+      this.currentItemSection = requestedStepIndex;
+    }
     const demande = this.demande!
     const parcoursChoisis = demande.parcoursChoisis || []
     const session = demande.session
@@ -264,7 +343,7 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
   }
 
   private autoPoll(): void {
-    const pending = [3, 5].includes(this.currentItemSection)
+    const pending = [0, 3, 5].includes(this.currentItemSection)
     if (pending) {
       this.startPolling()
     } else {
@@ -318,9 +397,11 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
   }
  
   checkFraisInscription(): boolean {
-    this.demande!.session!.fraisInscription!.forEach(element => {
-      this.fraisTotal = 0
+    this.fraisTotal = 0
+    const fraisInscription = this.demande?.session?.fraisInscription
+    if (!fraisInscription) return false
 
+    fraisInscription.forEach(element => {
       if (element.fraisDesCours) {
         const fraisDesCours = this.demande!.cours!.reduce((accumulator, currentValue) => {
           return accumulator + element.montant * (currentValue.credit ?? 0)
@@ -333,9 +414,9 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
     })
 
     // Go to next step
-    let fraisPayes: number = this.demande!.paiementsInscription?.reduce((accumulator, currentValue) => {
+    const fraisPayes: number = this.demande?.paiementsInscription?.reduce((accumulator, currentValue) => {
       return accumulator + (currentValue.montant ?? 0)
-    }, 0) as number
+    }, 0) ?? 0
 
     return fraisPayes >= this.fraisTotal
   }

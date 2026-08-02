@@ -44,8 +44,34 @@ export class ChatMessageBubbleComponent {
     return type !== 'discussion' && type !== undefined;
   }
 
+  /** Statut de delivery : 'envoye' | 'recu' | 'lu' */
+  get statut(): 'envoye' | 'recu' | 'lu' {
+    if (this.message?.lu) return 'lu';
+    if (this.message?.statut === 'recu') return 'recu';
+    return 'envoye';
+  }
+
   showActions: boolean = false;
   toggleActions(): void { this.showActions = !this.showActions; }
   onEdit(): void { this.edit.emit({ id: this.message.id, message: this.message.message }); this.showActions = false; }
   onDelete(): void { this.delete.emit(this.message.id); this.showActions = false; }
+
+  telechargerOuOuvrirFichier(): void {
+    const dataUrl = this.message.pieceJointe;
+    if (!dataUrl) return;
+    // Convertir le data URL en Blob → URL temporaire contournant le blocage Chrome
+    const reponse = fetch(dataUrl).then(res => res.blob()).then(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = this.message.message || 'fichier';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }).catch(() => {
+      // Fallback si fetch échoue (ex: PDF/XML)
+      window.open(dataUrl, '_blank');
+    });
+  }
 }

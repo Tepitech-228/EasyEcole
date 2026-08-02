@@ -168,8 +168,8 @@
       </div>
     </div>
 
-    <!-- Colonne droite: QR Code -->
-    <div class="md:col-span-1">
+    <!-- Colonne droite: QR Code + Carte -->
+    <div class="md:col-span-1 space-y-6">
       <div class="bg-white shadow rounded-lg p-6 text-center">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">QR Code</h3>
         <div *ngIf="qrCodeData" class="flex justify-center mb-4">
@@ -181,6 +181,31 @@
           <span class="block text-xs text-gray-500 mb-1">Matricule</span>
           <span class="block text-sm font-bold text-gray-800">{{ dossier.matricule }}</span>
         </div>
+      </div>
+
+      <!-- Carte étudiante -->
+      <div class="bg-white shadow rounded-lg p-6 text-center">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Carte étudiante</h3>
+        <div class="flex justify-center mb-4">
+          <div class="w-32 h-20 rounded overflow-hidden border border-gray-200 bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+            <span class="material-symbols-outlined text-4xl text-indigo-400">credit_card</span>
+          </div>
+        </div>
+        <p class="text-xs text-gray-400 mb-4" *ngIf="dossier.carteGeneree">
+          Carte générée — disponible en PDF
+        </p>
+        <p class="text-xs text-gray-400 mb-4" *ngIf="!dossier.carteGeneree">
+          Carte non encore générée
+        </p>
+        <button (click)="telechargerCarte()"
+                [disabled]="!dossier.carteGeneree"
+                class="w-full inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold shadow-sm transition
+                       focus:outline-none focus:ring-2 focus:ring-offset-2
+                       disabled:opacity-50 disabled:cursor-not-allowed
+                       enabled:bg-indigo-600 enabled:text-white enabled:hover:bg-indigo-500 enabled:focus:ring-indigo-500">
+          <span class="material-symbols-outlined text-base">download</span>
+          Télécharger ma carte
+        </button>
       </div>
     </div>
   </div>

@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Html5Qrcode } from 'html5-qrcode';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { PresenceService } from 'src/app/data/modules/inscription/services/presence.service';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-scan-presence-page',
@@ -12,11 +13,16 @@ import { PresenceService } from 'src/app/data/modules/inscription/services/prese
 export class ScanPresencePageComponent extends BaseComponentClass implements OnDestroy {
   presenceId: string = ''
   scanning: boolean = false
+  scannedUser: any = null
   scannedUserId: string | null = null
   scannedUserNom: string = ''
+  scannedUserPrenoms: string = ''
+  scannedUserPhoto: string = ''
   errorMessage: string = ''
   successMessage: string = ''
   private html5QrCode: Html5Qrcode | null = null
+
+  readonly PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS
 
   constructor(
     private route: ActivatedRoute,
@@ -61,13 +67,25 @@ export class ScanPresencePageComponent extends BaseComponentClass implements OnD
     this.markPresence(decodedText)
   }
 
-  private markPresence(userId: string): void {
-    this.presenceService.scanPresence(this.presenceId, userId).subscribe({
+  private markPresence(codeQR: string): void {
+    this.presenceService.scanPresence(this.presenceId, codeQR).subscribe({
       next: (res: any) => {
         this.successMessage = 'Présence marquée avec succès'
-        this.scannedUserNom = 'Étudiant'
+        if (res?.data) {
+          this.scannedUserNom = res.data.nom || 'Étudiant'
+          this.scannedUserPrenoms = res.data.prenoms || ''
+          this.scannedUserPhoto = res.data.photo ? (this.PHOTOS_PATH + res.data.photo) : ''
+        } else {
+          this.scannedUserNom = 'Étudiant'
+        }
+        this.scannedUser = {
+          nom: this.scannedUserNom,
+          prenoms: this.scannedUserPrenoms,
+          photo: this.scannedUserPhoto
+        }
         setTimeout(() => {
           this.scannedUserId = null
+          this.scannedUser = null
           this.successMessage = ''
           this.errorMessage = ''
           this.startScanner()

@@ -1,6 +1,20 @@
 <div class="flex justify-between items-start mb-8">
     <app-header-title title="Effectifs inscrits" subtitle="Consulter les étudiants inscrits par année, niveau, parcours et classe"></app-header-title>
+    <div class="flex justify-end items-center gap-x-3">
+        <app-custom-button (click)="openImportDialog()" text="Import Excel" color="indigo" [outlined]="true"></app-custom-button>
+        <app-custom-button (click)="onExportApprenants()" text="Export Excel" color="indigo" [outlined]="true"></app-custom-button>
+    </div>
 </div>
+
+<app-excel-import-dialog
+    #importDialog
+    title="Import des Apprenants"
+    subtitle="Importez des étudiants depuis un fichier Excel"
+    templateFilename="template-apprenants.xlsx"
+    [downloadTemplate]="onDownloadTemplate.bind(this)"
+    [importFn]="onImportApprenants.bind(this)"
+    (imported)="onImportDone()">
+</app-excel-import-dialog>
 
 <div *ngIf="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
     Une erreur est survenue lors du chargement

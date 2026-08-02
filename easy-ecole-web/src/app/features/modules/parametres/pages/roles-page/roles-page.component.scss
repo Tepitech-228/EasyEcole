@@ -1,0 +1,574 @@
+:host {
+  display: block;
+  animation: fadeInPage 0.35s ease-out;
+}
+
+@keyframes fadeInPage {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* =============================================
+   PAGE LAYOUT
+   ============================================= */
+.roles-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+
+  @media (min-width: 1024px) {
+    grid-template-columns: 340px 1fr;
+  }
+}
+
+/* =============================================
+   SIDEBAR — Liste des profils
+   ============================================= */
+.roles-sidebar {
+  @apply bg-white rounded-xl border border-gray-200 overflow-hidden;
+  transition: box-shadow 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  max-height: 75vh;
+
+  &:hover {
+    @apply shadow-md;
+  }
+}
+
+.roles-sidebar-header {
+  @apply px-5 py-4 border-b border-gray-100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+
+  h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1F3C75;
+  }
+
+  .roles-count {
+    @apply text-xs font-medium;
+    color: #9ca3af;
+    background: #f3f4f6;
+    padding: 0.15rem 0.65rem;
+    border-radius: 9999px;
+  }
+}
+
+.roles-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+}
+
+.roles-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1.5px solid transparent;
+  margin-bottom: 0.25rem;
+
+  &:hover {
+    background: #f8faff;
+    border-color: rgba(31, 60, 117, 0.08);
+  }
+
+  &.active {
+    background: #eef2ff;
+    border-color: #1F3C75;
+    box-shadow: 0 0 0 3px rgba(31, 60, 117, 0.08);
+  }
+
+  .role-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #1F3C75, #2d4f8f);
+  }
+
+  .role-info {
+    flex: 1;
+    min-width: 0;
+
+    .role-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    .role-desc {
+      font-size: 0.75rem;
+      color: #9ca3af;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
+  .role-delete-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: #d1d5db;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    opacity: 0;
+    flex-shrink: 0;
+
+    &:hover {
+      background: #fef2f2;
+      color: #ef4444;
+    }
+
+    svg { width: 15px; height: 15px; }
+  }
+
+  &:hover .role-delete-btn {
+    opacity: 1;
+  }
+}
+
+/* =============================================
+   PANEL DROIT — Détails du rôle
+   ============================================= */
+.roles-detail {
+  @apply bg-white rounded-xl border border-gray-200 overflow-hidden;
+  transition: box-shadow 0.25s ease;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+
+  &:hover {
+    @apply shadow-md;
+  }
+}
+
+.roles-detail-header {
+  @apply px-6 py-4 border-b border-gray-100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+
+  .detail-title-area {
+    .detail-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #1F3C75;
+    }
+
+    .detail-subtitle {
+      font-size: 0.8rem;
+      color: #9ca3af;
+      margin-top: 0.1rem;
+    }
+  }
+}
+
+/* =============================================
+   TABS
+   ============================================= */
+.roles-tabs {
+  display: flex;
+  gap: 0;
+  @apply px-6 border-b border-gray-100;
+
+  .roles-tab {
+    padding: 0.7rem 1rem;
+    font-size: 0.825rem;
+    font-weight: 500;
+    color: #6b7280;
+    border-bottom: 2.5px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+
+    &:hover {
+      color: #1F3C75;
+      background: #f8faff;
+    }
+
+    &.active {
+      color: #1F3C75;
+      border-bottom-color: #1F3C75;
+      font-weight: 600;
+    }
+
+    .tab-badge {
+      font-size: 0.65rem;
+      font-weight: 600;
+      background: #e5e7eb;
+      color: #4b5563;
+      padding: 0.1rem 0.5rem;
+      border-radius: 9999px;
+    }
+  }
+}
+
+/* =============================================
+   PERMISSIONS
+   ============================================= */
+.permissions-scroll {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 480px;
+
+  &::-webkit-scrollbar { width: 5px; }
+  &::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+}
+
+.permission-module {
+  border-bottom: 1px solid #f3f4f6;
+
+  &:last-child { border-bottom: none; }
+}
+
+.permission-module-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1.25rem;
+  background: #f8faff;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #eef2ff;
+  }
+
+  .module-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1F3C75;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .module-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    .toggle-label {
+      font-size: 0.7rem;
+      color: #9ca3af;
+    }
+
+    input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      border: 1.5px solid #d1d5db;
+      accent-color: #1F3C75;
+      cursor: pointer;
+    }
+  }
+}
+
+.permission-item {
+  display: flex;
+  align-items: center;
+  padding: 0.55rem 1.25rem 0.55rem 2rem;
+  transition: background 0.12s;
+
+  &:hover {
+    background: #f9fafb;
+  }
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    cursor: pointer;
+    width: 100%;
+
+    input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      border-radius: 3px;
+      border: 1.5px solid #d1d5db;
+      accent-color: #1F3C75;
+      cursor: pointer;
+    }
+
+    .perm-label {
+      font-size: 0.8rem;
+      color: #374151;
+    }
+
+    .perm-key {
+      font-size: 0.7rem;
+      color: #d1d5db;
+      margin-left: auto;
+      font-family: 'Courier New', monospace;
+    }
+  }
+}
+
+.permissions-footer {
+  @apply px-6 py-3 border-t border-gray-100 flex justify-end;
+  background: #fafbfc;
+}
+
+/* =============================================
+   UTILISATEURS TAB
+   ============================================= */
+.users-content {
+  padding: 1.25rem;
+  flex: 1;
+}
+
+.users-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+
+  h4 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #374151;
+  }
+}
+
+.user-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f3f4f6;
+  gap: 0.75rem;
+
+  &:last-of-type { border-bottom: none; }
+
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+    min-width: 0;
+
+    .user-avatar-mini {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #6366f1, #818cf8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .user-name {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #1f2937;
+    }
+
+    .user-email {
+      font-size: 0.75rem;
+      color: #9ca3af;
+    }
+  }
+
+  .user-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+}
+
+.user-action-btn {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &.btn-apply {
+    background: #eef2ff;
+    color: #1F3C75;
+
+    &:hover { background: #dbe4ff; }
+  }
+
+  &.btn-remove {
+    background: #fef2f2;
+    color: #ef4444;
+
+    &:hover { background: #fee2e2; }
+  }
+}
+
+/* =============================================
+   LOADING SKELETON
+   ============================================= */
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.roles-skeleton {
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  .skeleton-item {
+    height: 52px;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+    background-size: 800px 100%;
+    animation: shimmer 1.5s infinite ease-in-out;
+  }
+}
+
+/* =============================================
+   ÉTAT VIDE (aucun rôle sélectionné)
+   ============================================= */
+.roles-empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+
+  .empty-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #eef2ff, #f8faff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    color: #1F3C75;
+  }
+
+  .empty-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.25rem;
+  }
+
+  .empty-desc {
+    font-size: 0.85rem;
+    color: #9ca3af;
+    max-width: 280px;
+  }
+}
+
+/* =============================================
+   MODALS — Personnalisation des champs
+   ============================================= */
+.roles-form-field {
+  @apply w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm transition-all duration-200;
+
+  &:focus {
+    outline: none;
+    border-color: #1F3C75;
+    box-shadow: 0 0 0 3px rgba(31, 60, 117, 0.12);
+  }
+}
+
+.roles-form-label {
+  @apply block text-sm font-medium mb-1.5;
+  color: #374151;
+}
+
+/* =============================================
+   ASSIGN USER MODAL
+   ============================================= */
+.assign-user-list {
+  max-height: 320px;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+}
+
+.assign-user-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid #f3f4f6;
+  gap: 0.75rem;
+
+  &:last-of-type { border-bottom: none; }
+
+  .user-data {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+
+    .mini-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #1F3C75, #2d4f8f);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+  }
+}
+
+.assign-btn {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.35rem 0.85rem;
+  border-radius: 8px;
+  border: none;
+  background: #eef2ff;
+  color: #1F3C75;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    background: #dbe4ff;
+  }
+}

@@ -55,6 +55,18 @@ export class MonDossierPageComponent extends BaseComponentClass implements OnIni
     return 'assets/images/blank-profile-picture.png'
   }
 
+  get carteDownloadUrl(): string {
+    return this.dossier?.id
+      ? this.dossierEtudiantService.telechargerCarteUrl(this.dossier.id)
+      : ''
+  }
+
+  telechargerCarte(): void {
+    if (this.carteDownloadUrl) {
+      window.open(this.carteDownloadUrl, '_blank')
+    }
+  }
+
   getStatutBadgeColor(statut?: string): string {
     switch (statut) {
       case 'actif': return 'green'

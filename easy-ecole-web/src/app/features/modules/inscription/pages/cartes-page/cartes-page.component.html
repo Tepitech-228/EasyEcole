@@ -1,0 +1,275 @@
+<div class="cartes-page-wrapper px-4 sm:px-6 lg:px-8 py-8">
+  <nav class="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.05em] text-[#4c4546] mb-4 print-hidden">
+    <a class="hover:text-black transition-colors" href="#">Pôle pédagogique</a>
+    <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+    <span class="text-black">Cartes étudiantes</span>
+  </nav>
+
+  <div class="flex justify-between items-start mb-6 print-hidden">
+    <app-header-title title="Cartes étudiantes" subtitle="Configurer la mise en page, regrouper les étudiants et personnaliser les champs"></app-header-title>
+  </div>
+
+  <div class="flex items-center gap-1 bg-[#EEEEEE] rounded p-1 mb-6 w-fit print-hidden">
+    <button type="button" (click)="setMode('picker')" [class.active]="cardMode === 'picker'" class="mode-tab">
+      <span class="material-symbols-outlined text-[14px] mr-1.5 align-text-bottom">group</span> Sélection
+    </button>
+    <button type="button" (click)="setMode('manual')" [class.active]="cardMode === 'manual'" class="mode-tab">
+      <span class="material-symbols-outlined text-[14px] mr-1.5 align-text-bottom">edit_note</span> Saisie manuelle
+    </button>
+  </div>
+
+  <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+  <div *ngIf="!loading && error" class="mb-6 p-4 bg-red-50 border border-red-200 rounded flex items-center gap-3">
+    <div>
+      <p class="text-sm font-medium text-red-800">Erreur de chargement</p>
+      <p class="text-sm text-red-600">Impossible de charger la liste des étudiants.</p>
+    </div>
+    <button (click)="loadApprenants()" class="ml-auto px-3 py-1.5 text-sm font-medium text-red-700 bg-red-100 rounded hover:bg-red-200 transition-colors">Réessayer</button>
+  </div>
+
+  <div *ngIf="cardMode === 'picker' && !loading && !error && apprenants.length == 0" class="flex flex-col items-center py-20 bg-white rounded border border-[#E0E0E0]">
+    <div class="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+      <svg class="h-8 w-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+    </div>
+    <p class="text-gray-400 text-sm">Aucun étudiant trouvé</p>
+  </div>
+
+  <div *ngIf="cardMode === 'manual' || !!selectedApprenant" class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+    <div class="xl:col-span-5 flex flex-col gap-4 print-hidden">
+      <div class="bg-white border border-[#E0E0E0] rounded-xl p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-[11px] font-semibold uppercase tracking-[0.05em] text-black">Configuration de la carte</h3>
+            <p class="text-xs text-[#4c4546] mt-1">Ajoutez des champs, changez l’ordre et regroupez les étudiants par salle ou filière.</p>
+          </div>
+          <span class="material-symbols-outlined text-[18px] text-[#4c4546]">tune</span>
+        </div>
+
+        <div class="mb-4">
+          <p class="form-label mb-2">Regrouper par</p>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" (click)="setGroupBy('none')" [class.active]="groupBy === 'none'" class="chip">Aucun</button>
+            <button type="button" (click)="setGroupBy('salle')" [class.active]="groupBy === 'salle'" class="chip">Salle</button>
+            <button type="button" (click)="setGroupBy('filiere')" [class.active]="groupBy === 'filiere'" class="chip">Filière</button>
+            <button type="button" (click)="setGroupBy('niveau')" [class.active]="groupBy === 'niveau'" class="chip">Niveau</button>
+            <button type="button" (click)="setGroupBy('parcours')" [class.active]="groupBy === 'parcours'" class="chip">Parcours</button>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <p class="form-label mb-2">Champs visibles</p>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" *ngFor="let option of fieldOptions" (click)="toggleField(option.key)" class="field-chip" [class.selected]="selectedFields.includes(option.key)">
+              {{ option.label }}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <p class="form-label mb-2">Champs personnalisés</p>
+          <div class="flex gap-2 mb-2">
+            <input [(ngModel)]="customFieldInput" type="text" class="form-input" placeholder="Ex. Téléphone parent">
+            <button type="button" (click)="addCustomField()" class="px-3 py-2 bg-black text-white text-[11px] uppercase rounded">Ajouter</button>
+          </div>
+          <div *ngFor="let field of customFields; let i = index" class="flex gap-2 mb-2">
+            <input type="text" [value]="field.label" (input)="updateCustomFieldLabel(i, $event)" class="form-input" placeholder="Libellé">
+            <input type="text" [value]="field.value" (input)="updateCustomFieldValue(i, $event)" class="form-input" placeholder="Valeur">
+            <button type="button" (click)="removeCustomField(i)" class="px-2 text-red-600">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="cardMode === 'picker' && apprenants.length > 0" class="bg-white border border-[#E0E0E0] rounded-xl p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-[11px] font-semibold uppercase tracking-[0.05em] text-black">Étudiants à imprimer</h3>
+          <span class="text-[11px] text-[#4c4546]">{{ apprenants.length }} au total</span>
+        </div>
+        <div *ngFor="let group of getGroupedApprenants()" class="mb-4">
+          <div class="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#0F7A45] mb-2">{{ group.label }}</div>
+          <div class="grid grid-cols-2 gap-3">
+            <div *ngFor="let apprenant of group.apprenants" (click)="onPreviewClick(apprenant)" class="rounded-lg border border-[#E0E0E0] p-2 cursor-pointer hover:border-[#0F7A45]" [class.border-[#0F7A45]]="isSelected(apprenant)">
+              <div class="font-semibold text-sm truncate">{{ apprenant.utilisateur?.nom }} {{ apprenant.utilisateur?.prenoms }}</div>
+              <div class="text-[11px] text-[#4c4546] truncate">{{ getMatricule(apprenant) }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <form *ngIf="cardMode === 'manual'" [formGroup]="manualForm" class="bg-white p-6 border border-[#E0E0E0] rounded shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-[11px] font-semibold uppercase tracking-[0.05em] text-black">Génération manuelle</h3>
+          <span class="material-symbols-outlined text-[18px] text-[#4c4546]">edit_note</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block"><span class="form-label">Nom</span><input formControlName="nom" type="text" class="form-input"></label>
+          <label class="block"><span class="form-label">Prénoms</span><input formControlName="prenoms" type="text" class="form-input"></label>
+          <label class="block"><span class="form-label">Matricule</span><input formControlName="matricule" type="text" class="form-input"></label>
+          <label class="block"><span class="form-label">Année académique</span><input formControlName="anneeScolaire" type="text" class="form-input"></label>
+          <label class="block"><span class="form-label">Filière</span><input formControlName="filiere" type="text" class="form-input"></label>
+          <label class="block"><span class="form-label">Parcours</span><input formControlName="parcours" type="text" class="form-input"></label>
+          <label class="block"><span class="form-label">Niveau</span><input formControlName="niveau" type="text" class="form-input"></label>
+          <label class="block"><span class="form-label">Salle</span><input formControlName="salle" type="text" class="form-input"></label>
+          <label class="block"><span class="form-label">Date de naissance</span><input formControlName="dateNaissance" type="date" class="form-input"></label>
+          <label class="block"><span class="form-label">Urgence — nom</span><input formControlName="urgenceNom" type="text" class="form-input"></label>
+          <label class="block"><span class="form-label">Urgence — prénoms</span><input formControlName="urgencePrenoms" type="text" class="form-input"></label>
+          <label class="block"><span class="form-label">Urgence — téléphone</span><input formControlName="urgenceTel" type="tel" class="form-input"></label>
+          <label class="block col-span-2"><span class="form-label">Urgence — adresse</span><input formControlName="urgenceAdresse" type="text" class="form-input"></label>
+          <div class="col-span-2">
+            <span class="form-label">Photo (optionnelle)</span>
+            <div class="flex items-center gap-3">
+              <label class="cursor-pointer inline-flex items-center justify-center gap-2 px-3 py-2 bg-transparent border border-black text-black rounded font-semibold text-[11px] uppercase tracking-[0.05em] hover:bg-[#EEEEEE] transition-all">
+                <span class="material-symbols-outlined text-[16px]">upload</span> Choisir une photo
+                <input type="file" accept="image/*" class="hidden" (change)="onManualPhotoSelected($event)">
+              </label>
+              <span class="text-[11px] text-[#4c4546]">{{ manualPhotoSrc ? 'Photo chargée — mise à jour en direct' : 'Aucune photo (avatar par défaut)' }}</span>
+            </div>
+          </div>
+        </div>
+      </form>
+
+      <div class="grid grid-cols-2 gap-3">
+        <button (click)="printCard()" class="bg-black text-white py-2.5 rounded border border-black font-semibold text-[11px] uppercase tracking-[0.05em] hover:opacity-90 transition-all flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined text-[18px]">print</span> IMPRIMER
+        </button>
+        <button (click)="toggleFlip()" class="bg-transparent text-black py-2.5 rounded border border-black font-semibold text-[11px] uppercase tracking-[0.05em] hover:bg-[#EEEEEE] transition-all flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined text-[18px]">sync</span> PIVOTER
+        </button>
+      </div>
+    </div>
+
+    <div class="xl:col-span-7 flex flex-col items-center justify-center min-h-[500px]">
+      <div class="lg:sticky lg:top-6 w-full max-w-[560px] flex flex-col items-center">
+        <div class="card-container w-full max-w-[500px] aspect-[1.586/1] relative">
+          <div class="card-inner w-full h-full relative cursor-pointer transition-transform duration-700 preserve-3d shadow-xl rounded-xl" [class.card-flip]="cardFlipped" (click)="toggleFlip()">
+            <div class="card-face absolute inset-0 rounded-[18px] overflow-hidden v4-card">
+              <div class="card-sheen"></div>
+              <svg class="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <pattern id="esa-wm" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <g fill="none" stroke="#0F7A45" stroke-width="0.5" opacity="0.14">
+                      <path d="M-10 20 C0 5,10 35,20 20 C30 5,40 35,50 20"></path>
+                      <path d="M-10 20 C0 35,10 5,20 20 C30 35,40 5,50 20"></path>
+                    </g>
+                  </pattern>
+                </defs>
+                <rect fill="url(#esa-wm)" width="100%" height="100%"></rect>
+              </svg>
+              <div class="wm-esa">ESA</div>
+
+              <div class="h-full flex flex-col relative z-10">
+                <div class="card-header">
+                  <div class="school-block">
+                    <svg class="w-[52px] h-[29px] shrink-0" viewBox="0 0 190 100" xmlns="http://www.w3.org/2000/svg">
+                      <g transform="translate(4,18)">
+                        <polygon points="0,20 34,4 68,20 34,36" fill="#0F7A45" stroke="#12181D" stroke-width="2.5" stroke-linejoin="round"></polygon>
+                        <rect x="18" y="20" width="32" height="18" rx="2" fill="#12181D"></rect>
+                        <line x1="59" y1="14" x2="72" y2="50" stroke="#FFC72C" stroke-width="2.5" stroke-linecap="round"></line>
+                        <circle cx="73" cy="53" r="5" fill="#C81E2C" stroke="#12181D" stroke-width="1"></circle>
+                      </g>
+                      <text x="88" y="66" font-family="Arial, sans-serif" font-weight="700" font-size="52" letter-spacing="1">
+                        <tspan fill="#0F7A45">E</tspan><tspan fill="#FFC72C" stroke="#12181D" stroke-width="1">S</tspan><tspan fill="#C81E2C">A</tspan>
+                      </text>
+                    </svg>
+                    <div class="leading-[1.15] min-w-0">
+                      <b class="block font-heading text-[13.5px] tracking-[0.01em] text-[#12181D] truncate">École Supérieure des Affaires</b>
+                      <small class="text-[10px] font-semibold text-[#0F7A45]">Lomé · Togo</small>
+                    </div>
+                  </div>
+                  <div class="country-pill">
+                    <div class="text-right">
+                      <b>RÉP. TOGOLAISE</b>
+                      <span>Travail · Liberté · Patrie</span>
+                    </div>
+                    <svg class="w-[26px] h-[18px] rounded-[2px] border border-[#D9D6CC] shrink-0" viewBox="0 0 30 20" xmlns="http://www.w3.org/2000/svg">
+                      <rect width="30" height="20" fill="#fff"></rect>
+                      <rect width="30" y="0" height="4" fill="#0F7A45"></rect>
+                      <rect width="30" y="8" height="4" fill="#0F7A45"></rect>
+                      <rect width="30" y="16" height="4" fill="#0F7A45"></rect>
+                      <rect width="12" height="12" fill="#C81E2C"></rect>
+                      <polygon points="6,2 7.2,5.5 11,5.5 8,7.7 9.2,11.2 6,9 2.8,11.2 4,7.7 1,5.5 4.8,5.5" fill="#FFC72C"></polygon>
+                    </svg>
+                  </div>
+                </div>
+
+                <div class="sep"></div>
+
+                <div class="card-title-row">
+                  <div>
+                    <p class="eyebrow">Prévisualisation</p>
+                    <h2>Carte d'étudiant</h2>
+                  </div>
+                  <span class="year-badge">{{ card.anneeScolaire }}</span>
+                </div>
+
+                <div class="card-main">
+                  <div class="photo-panel">
+                    <img [src]="card.photoSrc" [alt]="'Photo de ' + card.nom + ' ' + card.prenoms" (error)="onPhotoError($event, selectedApprenant)">
+                    <div class="photo-caption">Étudiant · {{ card.matricule }}</div>
+                  </div>
+
+                  <div class="data-panel">
+                    <div class="info-grid">
+                      <div *ngFor="let field of getVisibleCardFields()" class="field-card">
+                        <div class="k">{{ field.label }}</div>
+                        <div class="v">{{ field.value }}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card-footer">
+                  <div class="location">LOMÉ — TOGO <span>· Carte officielle</span></div>
+                  <div class="signature-block">
+                    <div class="sig-line"></div>
+                    <small>Signature de l'étudiant</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-face card-back absolute inset-0 rounded-[18px] overflow-hidden v4-card">
+              <div class="card-sheen"></div>
+              <svg class="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+                <rect fill="url(#esa-wm)" width="100%" height="100%"></rect>
+              </svg>
+              <div class="wm-esa">ESA</div>
+              <div class="h-full flex flex-col relative z-10 px-[18px] pt-[16px] pb-[14px]">
+                <div class="back-top">
+                  <div class="qr-panel">
+                    <img *ngIf="card.qrSrc" [src]="card.qrSrc" alt="QR code de la carte étudiante" class="w-full h-full object-contain">
+                    <span *ngIf="!card.qrSrc" class="material-symbols-outlined text-[36px] text-[#12181D]">qr_code_2</span>
+                  </div>
+                  <div class="back-title">
+                    <b>Validation</b>
+                    <span>Scannez pour vérifier le statut de l'étudiant</span>
+                  </div>
+                </div>
+                <div class="legal">Carte personnelle, non cessible et incessible. Elle doit être présentée à toute demande d'un responsable de l'établissement. Toute falsification expose son auteur à des poursuites judiciaires.</div>
+                <div class="contact-card">
+                  <div class="contact-title">En cas de perte ou de vol</div>
+                  <div class="contact-body">Contactez le service de la scolarité : +228 22 51 00 00 · scolarite@esa-togo.tg · esa-togo.tg</div>
+                </div>
+                <div class="emergency-card">
+                  <div class="emergency-head">Contact d'urgence</div>
+                  <div class="emergency-body">
+                    <div class="e-field"><span class="e-k">Nom</span><span class="e-v">{{ card.urgenceNom }} {{ card.urgencePrenoms }}</span></div>
+                    <div class="e-field"><span class="e-k">Téléphone</span><span class="e-v">{{ card.urgenceTel }}</span></div>
+                    <div class="e-field"><span class="e-k">Adresse</span><span class="e-v">{{ card.urgenceAdresse }}</span></div>
+                  </div>
+                </div>
+                <div class="b-foot">
+                  <span>LOMÉ · TOGO</span>
+                  <span>ESA — CARTE D'ÉTUDIANT</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="mt-6 text-[#4c4546] text-[11px] font-semibold uppercase tracking-[0.05em] animate-pulse print-hidden">CLIQUEZ SUR LA CARTE POUR LA RETOURNER</p>
+      </div>
+    </div>
+  </div>
+</div>

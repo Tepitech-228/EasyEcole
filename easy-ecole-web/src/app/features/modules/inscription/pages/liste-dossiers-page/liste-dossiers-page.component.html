@@ -204,9 +204,9 @@
                   <span class="doc-name">{{ doc.dossierInscription?.titre || 'Document' }}</span>
                   <span class="doc-file">{{ doc.nomFichier }}</span>
                 </div>
-                <a [href]="DOSSIERS_PATH + doc.nomFichier" target="_blank" class="doc-download" title="Voir le PDF">
+                <button class="doc-download" (click)="telechargerFichier(DOSSIERS_PATH, doc.nomFichier)" title="Voir le PDF">
                   <span class="material-symbols-outlined">open_in_new</span>
-                </a>
+                </button>
               </div>
             </div>
           </div>
@@ -261,9 +261,9 @@
                 <span class="badge-sm" [ngClass]="bord.statut === 'valide' ? 'badge-green' : bord.statut === 'rejete' ? 'badge-red' : 'badge-yellow'">
                   {{ bord.statut }}
                 </span>
-                <a [href]="BORDEREAUX_PATH + bord.fichier" target="_blank" class="doc-download" title="Voir le bordereau">
+                <button class="doc-download" (click)="telechargerFichier(BORDEREAUX_PATH, bord.fichier)" title="Voir le bordereau">
                   <span class="material-symbols-outlined">open_in_new</span>
-                </a>
+                </button>
               </div>
             </div>
           </div>
@@ -272,6 +272,12 @@
     </ng-template>
 
     <div class="modal-footer">
+      <button *ngIf="detailData?.dossier?.carteGeneree"
+              class="btn-primary"
+              (click)="telechargerCarte(detailData.dossier.id)">
+        <span class="material-symbols-outlined text-sm align-text-bottom">credit_card</span>
+        Télécharger la carte
+      </button>
       <button class="btn-cancel" (click)="closeDetailModal()">Fermer</button>
     </div>
   </div>

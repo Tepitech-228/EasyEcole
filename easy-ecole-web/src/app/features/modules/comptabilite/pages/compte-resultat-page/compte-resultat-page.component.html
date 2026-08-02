@@ -1,0 +1,208 @@
+<div class="p-6">
+  <!-- Navigation tabs -->
+  <div class="mb-8 flex gap-1 bg-gray-100 p-1 rounded-xl w-fit max-w-full overflow-x-auto">
+    <a routerLink="/comptabilite/dashboard" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50 whitespace-nowrap">Dashboard</a>
+    <a routerLink="/comptabilite/plan-comptable" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50 whitespace-nowrap">Plan comptable</a>
+    <a routerLink="/comptabilite/balance" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50 whitespace-nowrap">Balance</a>
+    <a routerLink="/comptabilite/grand-livre" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50 whitespace-nowrap">Grand livre</a>
+    <a routerLink="/comptabilite/ecritures" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50 whitespace-nowrap">Écritures</a>
+    <a routerLink="/comptabilite/bilan" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50 whitespace-nowrap">Bilan</a>
+    <a routerLink="/comptabilite/compte-resultat" class="px-5 py-2.5 rounded-lg text-sm font-medium bg-white text-primary shadow-sm whitespace-nowrap">Compte de résultat</a>
+    <a routerLink="/comptabilite/exercices" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50 whitespace-nowrap">Exercices</a>
+  </div>
+
+  <app-return-back></app-return-back>
+
+  <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 mb-6">
+    <app-header-title title="Compte de résultat" subtitle="Produits — Charges — Résultat net"></app-header-title>
+
+    <div class="flex flex-wrap items-center gap-4">
+      <!-- Period selector -->
+      <div class="flex items-center gap-2">
+        <label for="cr-date-debut" class="text-sm text-gray-500 font-medium">Du :</label>
+        <input id="cr-date-debut" type="date" [(ngModel)]="dateDebut" (change)="onDateChange()"
+          class="border border-gray-300 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary">
+      </div>
+      <div class="flex items-center gap-2">
+        <label for="cr-date-fin" class="text-sm text-gray-500 font-medium">Au :</label>
+        <input id="cr-date-fin" type="date" [(ngModel)]="dateFin" (change)="onDateChange()"
+          class="border border-gray-300 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary">
+      </div>
+
+      <!-- Exercice selector -->
+      <div *ngIf="exercices.length > 0" class="flex items-center gap-2">
+        <label for="cr-exercice-select" class="text-sm text-gray-500 font-medium">Exercice :</label>
+        <select id="cr-exercice-select" (change)="onExerciceChange($event)"
+          class="border border-gray-300 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary">
+          <option *ngFor="let ex of exercices" [value]="ex.id" [selected]="ex.actif">
+            {{ ex.libelle }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Export buttons -->
+      <div class="flex gap-2">
+        <button (click)="exportPdf()"
+          class="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 transition-colors shadow-sm">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/><path d="M13 3l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h6z"/></svg>
+          PDF
+        </button>
+        <button (click)="exportExcel()"
+          class="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-medium hover:bg-emerald-700 transition-colors shadow-sm">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/><path d="M13 3l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h6z"/></svg>
+          Excel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error message -->
+  <div *ngIf="error" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+    <svg class="w-5 h-5 text-red-500 shrink-0" fill="currentColor" viewBox="0 -960 960 960"><path d="M480-280q17 0 28.5-11.5T520-320q0-17-11.5-28.5T480-360q-17 0-28.5 11.5T440-320q0 17 11.5 28.5T480-280Zm-40-160h80v-240h-80v240Zm40 360q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Z"/></svg>
+    <div>
+      <p class="text-sm font-medium text-red-800">Erreur de chargement</p>
+      <p class="text-sm text-red-600">Impossible de charger le compte de résultat.</p>
+    </div>
+    <button (click)="loadCompteResultat()" class="ml-auto px-3 py-1.5 text-sm font-medium text-red-700 bg-red-100 rounded-lg hover:bg-red-200 transition-colors">Réessayer</button>
+  </div>
+
+  <!-- Loading skeleton -->
+  <div *ngIf="loading && !error" class="space-y-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 animate-pulse">
+        <div class="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
+        <div *ngFor="let i of [1,2,3,4,5]" class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+        <div class="h-4 bg-gray-200 rounded w-1/3 mt-4"></div>
+      </div>
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 animate-pulse">
+        <div class="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
+        <div *ngFor="let i of [1,2,3,4,5]" class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+        <div class="h-4 bg-gray-200 rounded w-1/3 mt-4"></div>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 animate-pulse">
+      <div class="h-8 bg-gray-200 rounded w-1/4"></div>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div *ngIf="!loading && !error && !crpData"
+       class="flex flex-col items-center py-16 bg-white rounded-2xl border border-gray-200 shadow-sm">
+    <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+    </svg>
+    <p class="text-sm text-gray-500">Aucune donnée de compte de résultat pour la période sélectionnée.</p>
+  </div>
+
+  <!-- Content -->
+  <div *ngIf="!loading && !error && crpData">
+    <!-- Exercice info -->
+    <div class="mb-6 px-4 py-2.5 bg-gray-50 rounded-xl border border-gray-200 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 -960 960 960"><path d="M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520h200L520-800v200Z"/></svg>
+        <span class="text-sm font-medium text-gray-700">Exercice :</span>
+        <span class="text-sm text-gray-900 font-semibold">{{ exerciceLibelle }}</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-gray-500">Période :</span>
+        <span class="text-sm font-medium text-gray-900">{{ formatDate(crpData.periode.dateDebut) }} → {{ formatDate(crpData.periode.dateFin) }}</span>
+      </div>
+    </div>
+
+    <!-- Produits / Charges tables -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <!-- PRODUITS -->
+      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 bg-emerald-50 border-b border-gray-200">
+          <h3 class="text-lg font-semibold text-emerald-900">PRODUITS (Classe 7)</h3>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">N° compte</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Libellé</th>
+                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Montant</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <tr *ngIf="produitsPostes.length === 0">
+                <td colspan="3" class="px-4 py-6 text-center text-sm text-gray-500">Aucun produit</td>
+              </tr>
+              <tr *ngFor="let p of produitsPostes" class="hover:bg-gray-50">
+                <td class="px-4 py-3 font-mono font-semibold text-gray-900">{{ p.compte.numero }}</td>
+                <td class="px-4 py-3 text-gray-700">{{ p.compte.libelle }}</td>
+                <td class="px-4 py-3 text-right font-medium text-emerald-600">{{ formatMontant(p.solde) }}</td>
+              </tr>
+              <tr class="bg-gray-50 font-semibold">
+                <td colspan="2" class="px-4 py-3 text-sm text-gray-900">TOTAL PRODUITS</td>
+                <td class="px-4 py-3 text-right text-emerald-700">{{ formatMontant(totalProduits) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CHARGES -->
+      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 bg-red-50 border-b border-gray-200">
+          <h3 class="text-lg font-semibold text-red-900">CHARGES (Classe 6)</h3>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">N° compte</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Libellé</th>
+                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Montant</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <tr *ngIf="chargesPostes.length === 0">
+                <td colspan="3" class="px-4 py-6 text-center text-sm text-gray-500">Aucune charge</td>
+              </tr>
+              <tr *ngFor="let p of chargesPostes" class="hover:bg-gray-50">
+                <td class="px-4 py-3 font-mono font-semibold text-gray-900">{{ p.compte.numero }}</td>
+                <td class="px-4 py-3 text-gray-700">{{ p.compte.libelle }}</td>
+                <td class="px-4 py-3 text-right font-medium text-red-600">{{ formatMontant(p.solde) }}</td>
+              </tr>
+              <tr class="bg-gray-50 font-semibold">
+                <td colspan="2" class="px-4 py-3 text-sm text-gray-900">TOTAL CHARGES</td>
+                <td class="px-4 py-3 text-right text-red-700">{{ formatMontant(totalCharges) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Résultat net -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-lg flex items-center justify-center shrink-0" [ngClass]="isBenefice ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 -960 960 960">
+              <path *ngIf="isBenefice" d="M400-320v-320h80v320h-80Zm0 160v-80h80v80h-80Zm-80-80v-80h80v80h-80Z"/>
+              <path *ngIf="isBenefice" d="M480-80q-82 0-155-31.5t-127.5-86Q143-252 111.5-325T80-480q0-83 31.5-155.5t86-127Q252-817 325-848.5T480-880q83 0 155.5 31.5t127 86q54.5 54.5 86 127T880-480q0 82-31.5 155t-86 127.5q-54.5 54.5-127 86T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Z"/>
+              <path *ngIf="!isBenefice" d="M480-280q17 0 28.5-11.5T520-320q0-17-11.5-28.5T480-360q-17 0-28.5 11.5T440-320q0 17 11.5 28.5T480-280Zm-40-160h80v-240h-80v240Zm40 360q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Z"/>
+            </svg>
+          </div>
+          <div>
+            <p class="text-sm text-gray-500 font-medium uppercase">Résultat net</p>
+            <p class="text-2xl font-bold" [ngClass]="isBenefice ? 'text-emerald-700' : 'text-red-700'">
+              {{ formatMontant(resultatNet) }}
+            </p>
+            <p class="text-xs text-gray-500 mt-1">
+              {{ isBenefice ? 'Bénéfice' : 'Perte' }} — Produits {{ formatMontant(totalProduits) }} — Charges {{ formatMontant(totalCharges) }}
+            </p>
+          </div>
+        </div>
+        <div class="text-right">
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium" [ngClass]="isBenefice ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'">
+            {{ isBenefice ? 'BÉNÉFICE' : 'PERTE' }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

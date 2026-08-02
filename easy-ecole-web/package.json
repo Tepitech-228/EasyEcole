@@ -7,6 +7,8 @@
     "build": "set NODE_OPTIONS=--openssl-legacy-provider && ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "test:e2e": "cypress run",
+    "test:e2e:dev": "cypress open",
     "build:temp": "set NODE_OPTIONS=--openssl-legacy-provider && ng build --output-path=dist-temp3"
   },
   "private": true,

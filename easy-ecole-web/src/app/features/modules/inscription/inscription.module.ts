@@ -37,6 +37,7 @@ import { SuiviUePageComponent } from './pages/suivi-ue-page/suivi-ue-page.compon
 import { ListeSallesDeClassePageComponent } from './pages/liste-salles-de-classe-page/liste-salles-de-classe-page.component';
 import { OnboardingPageComponent } from './pages/onboarding-page/onboarding-page.component';
 import { ListeClassesPageComponent } from './pages/liste-classes-page/liste-classes-page.component';
+import { CartesPageComponent } from './pages/cartes-page/cartes-page.component';
 import { ReactiveFormsModule } from '@angular/forms';
 @NgModule({
   declarations: [
@@ -72,7 +73,8 @@ import { ReactiveFormsModule } from '@angular/forms';
      SuiviUePageComponent,
       ListeSallesDeClassePageComponent,
       ListeClassesPageComponent,
-      OnboardingPageComponent
+      OnboardingPageComponent,
+      CartesPageComponent
   ],
   imports: [
     CommonModule,

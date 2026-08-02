@@ -18,6 +18,8 @@ import { environment } from 'src/environments/environment';
 export class PaiementsSectionComponent implements OnInit {
 
   error: boolean = false
+  loading: boolean = false
+  errorMessage: string = ''
 
   @Input() demande!: DemandeInscription
   @Input() coursChoisis?: DemandeInscriptionCours[]
@@ -58,21 +60,32 @@ export class PaiementsSectionComponent implements OnInit {
   // }
 
   getFraisInscription(): void {
-    this.session.fraisInscription!.forEach(element => {
+    this.loading = true
+    this.errorMessage = ''
+
+    const fraisInscription = this.session?.fraisInscription
+    if (!fraisInscription || !this.coursChoisis) {
+      this.loading = false
+      if (!fraisInscription) {
+        this.errorMessage = 'Aucun frais d\'inscription configuré pour cette session.'
+      }
+      return
+    }
+
+    for (const element of fraisInscription) {
       if (element.fraisDesCours) {
-        const fraisDesCours = this.coursChoisis!.reduce((accumulator, currentValue) => {
-          // console.log(currentValue.intitule + ': ' + element.montant * (currentValue.credit ?? 0) + ' FCFA')
-          return accumulator + element.montant * (currentValue.cours!.credit ?? 0)
+        const fraisDesCours = this.coursChoisis.reduce((accumulator, currentValue) => {
+          return accumulator + element.montant * (currentValue.cours?.credit ?? 0)
         }, 0)
         this.fraisAPayer.push({ titre: 'Montant des cours', montant: fraisDesCours })
         this.fraisTotal += fraisDesCours
       }
       else {
         this.fraisTotal += element.montant
-        // console.log(element.titre + ': ' + element.montant + ' FCFA')
         this.fraisAPayer.push({ titre: element.titre, montant: element.montant })
       }
-    })
+    }
+    this.loading = false
   }
 
   getFraisPayes(): number {
@@ -97,19 +110,28 @@ export class PaiementsSectionComponent implements OnInit {
     }
 
     this.paiementError = false
-    let paiement: PaiementInscription = new PaiementInscription()
+    const paiement: PaiementInscription = new PaiementInscription()
     paiement.montant = this.paiementMontant
     paiement.description = this.paiementDescription || "Paiement en espèces"
-    paiement.matriculeInscription = this.demande!.matricule!
+    paiement.matriculeInscription = this.demande?.matricule ?? ''
     paiement.datePaiement = new Date()
 
     this.paiementInscriptionService.create(paiement).subscribe({
-      next: (value) => {
+      next: () => {
         this.closePaiementModal()
-        window.location.reload()
+        // Recharger les paiements sans recharger toute la page
+        this.demande = { ...this.demande }
+        if (this.demande.paiementsInscription) {
+          this.demande.paiementsInscription.push(paiement)
+        } else {
+          this.demande.paiementsInscription = [paiement]
+        }
       },
       error: (error) => {
-        console.log(error)
+        console.error('Erreur paiement:', error)
+        this.paiementError = true
+        this.errorMessage = 'Erreur lors de l\'enregistrement du paiement. Veuillez réessayer.'
+        setTimeout(() => { this.errorMessage = '' }, 5000)
       }
     })
   }

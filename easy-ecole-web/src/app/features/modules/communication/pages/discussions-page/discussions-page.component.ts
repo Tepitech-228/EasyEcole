@@ -33,6 +33,8 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
   hasMoreMessages: boolean = true;
   loadingMessages: boolean = false;
   activeTab: string = 'messagerie';
+  /** Compteur local pour ID temporaires des messages optimistes */
+  private localMsgIdCounter: number = 0;
 
   private socketSubscriptions: Subscription[] = [];
   private chatApi = environment.API_MODULES.ELEARNING + '/chat';
@@ -61,6 +63,15 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
     this.loadUsers();
     this.loadSalons();
     this.subscribeToSockets();
+    // Réintégrer les rooms à chaque reconnexion du socket
+    this.socketSubscriptions.push(
+      this.socketService.onReconnect().subscribe(() => {
+        this.rejoindreTousLesSalons();
+        if (this.selectedSalon) {
+          this.socketService.joinSalon(this.selectedSalon.id);
+        }
+      })
+    );
   }
 
   ngOnDestroy(): void {
@@ -75,14 +86,48 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
   private subscribeToSockets(): void {
     this.socketSubscriptions.push(
       this.socketService.onNewMessage().subscribe((message: any) => {
-        if (this.selectedSalon && message.salonId === this.selectedSalon.id) {
-          this.messages = [...this.messages, this.enrichMessage(message)];
+        if (message.utilisateurId === this.currentUserId && this.selectedSalon && message.salonId === this.selectedSalon.id) {
+          // C'est notre propre message revenu du serveur → mettre à jour le message optimiste
+          let found = false;
+          this.messages = this.messages.map(m => {
+            // Match par _tempId, ou par contenu + intervalle court (fallback)
+            const matchTempId = m._tempId && m._tempId === message._tempId;
+            const matchFallback = !matchTempId && m._tempId && m.message === message.message
+              && Math.abs(new Date(message.date).getTime() - new Date(m.date).getTime()) < 5000;
+            if (matchTempId || matchFallback) {
+              found = true;
+              return this.enrichMessage({ ...message, statut: 'recu', _tempId: m._tempId });
+            }
+            return m;
+          });
+          if (!found) {
+            this.messages = [...this.messages, this.enrichMessage({ ...message, statut: 'recu' })];
+          }
+        } else if (this.selectedSalon && message.salonId === this.selectedSalon.id) {
+          // Message d'un autre utilisateur
+          this.messages = [...this.messages, this.enrichMessage({ ...message, statut: 'recu', lu: false })];
           this.markAsSeenIfActive(message);
+          // On est sur le salon → remettre les non-lues à 0
+          const curIdx = this.salons.findIndex(s => s.id === message.salonId);
+          if (curIdx >= 0) this.salons[curIdx].nonLues = 0;
         }
+        // Remonter le salon en tête de liste
         const idx = this.salons.findIndex(s => s.id === message.salonId);
         if (idx >= 0) {
           const salon = this.salons[idx];
-          salon.dernierMessage = message;
+          // dernierMessage doit être une chaîne (texte), pas l'objet message entier
+          salon.dernierMessage = message.message || (
+            message.typeMessage === 'image' ? '📷 Photo'
+            : message.typeMessage === 'video' ? '📹 Vidéo'
+            : message.typeMessage === 'sticker' ? '🎨 Sticker'
+            : message.typeMessage === 'fichier' ? '📎 Fichier'
+            : ''
+          );
+          salon.dateDernierMessage = message.date;
+          // Incrémenter les non-lues si c'est un message d'un autre salon
+          if (this.selectedSalon?.id !== message.salonId && message.utilisateurId !== this.currentUserId) {
+            salon.nonLues = (salon.nonLues || 0) + 1;
+          }
           this.salons.splice(idx, 1);
           this.salons.unshift(salon);
         }
@@ -105,7 +150,7 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
       this.socketService.onMessagesSeen().subscribe((data: any) => {
         if (data.messageIds && this.selectedSalon?.id === data.salonId) {
           this.messages = this.messages.map(m =>
-            data.messageIds.includes(m.id) ? { ...m, lu: true } : m
+            data.messageIds.includes(m.id) ? { ...m, lu: true, statut: 'lu' } : m
           );
         }
       })
@@ -134,8 +179,18 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
         this.availableUsers = (data || []).filter(
           (u: any) => this.normalizeUserId(u.id) !== null
         );
+      },
+      error: () => {
+        console.warn('⚠️ Impossible de charger la liste des utilisateurs (rôle non autorisé)');
+        this.availableUsers = [];
       }
     });
+  }
+
+  private rejoindreTousLesSalons(): void {
+    for (const s of this.salons) {
+      this.socketService.joinSalon(s.id);
+    }
   }
 
   loadSalons(): void {
@@ -144,6 +199,9 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
       next: (data: any) => {
         this.salons = data || [];
         this.loading = false;
+        // Rejoindre les rooms socket de tous les salons pour recevoir
+        // les mises à jour en temps réel (messages:seen, new:message, etc.)
+        this.rejoindreTousLesSalons();
       },
       error: () => {
         this.loading = false;
@@ -152,9 +210,7 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
   }
 
   selectSalon(salon: any): void {
-    if (this.selectedSalon) {
-      this.socketService.leaveSalon(this.selectedSalon.id);
-    }
+    console.log('🔄 selectSalon:', salon?.id, salon?.titre);
     this.selectedSalon = salon;
     this.messages = [];
     this.page = 1;
@@ -187,9 +243,12 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
             url += `&before=${encodeURIComponent(beforeDate)}`;
         }
     }
+    console.log('📥 Chargement messages pour salon #' + salonId + ' page=' + this.page);
     this.http.get(url).subscribe({
         next: (data: any) => {
-            const msgs = (data?.data || data || []).map((m: any) => this.enrichMessage(m));
+            const raw = data?.data || data || [];
+            console.log(`✅ ${raw.length} messages reçus pour salon #${salonId}`);
+            const msgs = raw.map((m: any) => this.enrichMessage(m));
             if (this.page === 1) {
                 this.messages = msgs;
             } else {
@@ -199,7 +258,8 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
             this.loadingMessages = false;
             this.markAsSeenIfActive();
         },
-        error: () => {
+        error: (err) => {
+            console.error('❌ Erreur chargement messages:', err);
             this.loadingMessages = false;
         }
     });
@@ -247,28 +307,77 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
 
   sendMessage(text: string): void {
     if (!text.trim() || !this.selectedSalon) return;
-    this.socketService.sendMessage(this.selectedSalon.id, text.trim(), this.currentUserId);
+    const tempId = --this.localMsgIdCounter;
+    const optimisticMessage = {
+      id: tempId,
+      _tempId: tempId,
+      salonId: this.selectedSalon.id,
+      message: text.trim(),
+      utilisateurId: this.currentUserId,
+      utilisateur: { id: this.currentUserId },
+      date: new Date().toISOString(),
+      typeMessage: 'text',
+      pieceJointe: null,
+      statut: 'envoye',
+      lu: false
+    };
+    this.messages = [...this.messages, this.enrichMessage(optimisticMessage)];
+    // Émettre via socket avec le _tempId pour faire le lien au retour
+    this.socketService.sendMessage(this.selectedSalon.id, text.trim(), this.currentUserId, tempId);
   }
 
   sendMediaMessage(data: { message: string; typeMessage: string; pieceJointe: string | null }): void {
     if (!this.selectedSalon) return;
+    const tempId = --this.localMsgIdCounter;
+    const optimisticMessage = {
+      id: tempId,
+      _tempId: tempId,
+      salonId: this.selectedSalon.id,
+      message: data.message || '',
+      utilisateurId: this.currentUserId,
+      utilisateur: { id: this.currentUserId },
+      date: new Date().toISOString(),
+      typeMessage: data.typeMessage || 'fichier',
+      pieceJointe: data.pieceJointe || null,
+      statut: 'envoye',
+      lu: false
+    };
+    this.messages = [...this.messages, this.enrichMessage(optimisticMessage)];
+    // Envoyer avec _tempId pour faire le lien au retour
     this.socketService.sendMediaMessage(
       this.selectedSalon.id,
       data.message,
       this.currentUserId,
       data.typeMessage,
-      data.pieceJointe || null
+      data.pieceJointe || null,
+      tempId
     );
   }
 
   sendSticker(emoji: string): void {
     if (!this.selectedSalon) return;
+    const tempId = --this.localMsgIdCounter;
+    const optimisticMessage = {
+      id: tempId,
+      _tempId: tempId,
+      salonId: this.selectedSalon.id,
+      message: emoji,
+      utilisateurId: this.currentUserId,
+      utilisateur: { id: this.currentUserId },
+      date: new Date().toISOString(),
+      typeMessage: 'sticker',
+      pieceJointe: null,
+      statut: 'envoye',
+      lu: false
+    };
+    this.messages = [...this.messages, this.enrichMessage(optimisticMessage)];
     this.socketService.sendMediaMessage(
       this.selectedSalon.id,
       emoji,
       this.currentUserId,
       'sticker',
-      null
+      null,
+      tempId
     );
     this.showStickerPicker = false;
   }
@@ -411,10 +520,22 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
       : authorId === this.currentUserId
         ? this.currentUserName
         : `Membre ${authorId || ''}`;
+    // Déterminer le statut de delivery
+    let statut = message.statut;
+    if (!statut) {
+      if (message.lu) {
+        statut = 'lu';
+      } else if (authorId === this.currentUserId) {
+        statut = 'envoye'; // nos messages historiques sont au moins "envoyés"
+      } else {
+        statut = 'recu'; // messages des autres sont "reçus"
+      }
+    }
     return {
       ...message,
       authorName: authorName || 'Participant',
-      lu: message.lu || false
+      lu: message.lu || false,
+      statut
     };
   }
 
@@ -460,15 +581,26 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
     return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
   }
 
-  startNewPrivateMessage(user: any): void {
+  startNewPrivateMessage(event: { utilisateurId: number; sujet: string; message: string }): void {
+    const user = this.availableUsers.find(u => u.id === event.utilisateurId);
+    if (!user) {
+      console.error('Utilisateur introuvable dans la liste:', event.utilisateurId);
+      return;
+    }
     this.newMessageUser = user;
     this.showNewMessageModal = false;
     const existing = this.salons.find(s =>
       s.type === 'discussion' &&
-      s.participants?.some((p: any) => this.normalizeUserId(p) === this.normalizeUserId(user.id))
+      s.participants?.some((p: any) =>
+        this.normalizeUserId(p.utilisateurId ?? p.id ?? p) === this.normalizeUserId(user.id)
+      )
     );
     if (existing) {
       this.selectSalon(existing);
+      if (event.message) {
+        this.selectedSalon = existing;
+        setTimeout(() => this.sendMessage(event.message));
+      }
     } else {
       this.http.post(`${this.chatApi}/salons`, {
         titre: user.prenoms ? `${user.prenoms} ${user.nom}` : user.nom || `Discussion avec #${user.id}`,
@@ -478,6 +610,9 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
         next: (salon: any) => {
           this.salons = [salon, ...this.salons];
           this.selectSalon(salon);
+          if (event.message) {
+            setTimeout(() => this.sendMessage(event.message));
+          }
         }
       });
     }

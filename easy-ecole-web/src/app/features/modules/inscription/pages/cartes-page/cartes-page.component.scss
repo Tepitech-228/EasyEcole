@@ -1,0 +1,726 @@
+$primary: #000000;
+$primary-dark: #000000;
+$gray-50: #F9F9F9;
+$gray-100: #F5F5F5;
+$gray-200: #EEEEEE;
+$gray-300: #E0E0E0;
+$gray-400: #BDBDBD;
+$gray-500: #9E9E9E;
+$gray-800: #424242;
+$gray-900: #212121;
+$white: #FFFFFF;
+
+$togo-red: #D21034;
+$togo-red-container: #E2213D;
+$togo-green: #006A4E;
+$togo-yellow: #FFCE00;
+$on-surface-variant: #4c4546;
+
+$font-display: 'Hanken Grotesk', 'Open Sans', sans-serif;
+$font-data: 'Inter', 'Open Sans', sans-serif;
+
+/* ====================================================
+   PAGE BACKGROUND
+   ==================================================== */
+.cartes-page-wrapper {
+  position: relative;
+  min-height: 100vh;
+  background: $gray-50;
+}
+
+/* ====================================================
+   CARD PREVIEWS (grille de mini-cartes)
+   ==================================================== */
+.previews-scroll {
+  max-height: none;
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-right: -4px;
+}
+
+@media (min-width: 1024px) {
+  .previews-scroll {
+    max-height: 68vh;
+  }
+}
+
+.previews-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.previews-scroll::-webkit-scrollbar-thumb {
+  background: $gray-300;
+  border-radius: 3px;
+}
+
+.mini-card-wrap {
+  transition: transform 0.15s ease;
+}
+
+.mini-card-wrap:hover {
+  transform: translateY(-2px);
+}
+
+.mini-card {
+  aspect-ratio: 1.586 / 1;
+  perspective: 900px;
+  transition: box-shadow 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.mini-card-wrap:hover .mini-card {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.mini-card-wrap.selected .mini-card {
+  box-shadow: 0 0 0 2px $primary, 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.mini-card-inner {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mini-card-inner.flipped {
+  transform: rotateY(180deg);
+}
+
+.mini-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.mini-face-back {
+  transform: rotateY(180deg);
+}
+
+/* ====================================================
+   MODE TOGGLER (Sélection / Saisie manuelle)
+   ==================================================== */
+.mode-tab {
+  display: inline-flex;
+  align-items: center;
+  font-family: $font-data;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: $on-surface-variant;
+  padding: 6px 16px;
+  border-radius: 4px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  cursor: pointer;
+}
+
+.mode-tab:hover {
+  color: $primary;
+}
+
+.mode-tab.active {
+  background: $primary;
+  color: $white;
+}
+
+/* ====================================================
+   FORMULAIRE SAISIE MANUELLE
+   ==================================================== */
+.form-label {
+  display: block;
+  font-family: $font-data;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: $on-surface-variant;
+  margin-bottom: 4px;
+}
+
+.form-input {
+  width: 100%;
+  font-family: $font-data;
+  font-size: 13px;
+  line-height: 18px;
+  color: $gray-900;
+  background: $white;
+  border: 1px solid $gray-300;
+  border-radius: 4px;
+  padding: 8px 10px;
+  transition: border-color 0.15s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: $primary;
+}
+
+.form-input::placeholder {
+  color: $gray-400;
+}
+
+.form-input[type="date"] {
+  color-scheme: light;
+}
+
+.chip {
+  border: 1px solid $gray-300;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: $gray-800;
+  background: $white;
+}
+
+.chip.active, .field-chip.selected {
+  background: $togo-green;
+  color: $white;
+  border-color: $togo-green;
+}
+
+.field-chip {
+  border: 1px solid $gray-300;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: $gray-800;
+  background: $white;
+  text-align: left;
+}
+
+/* ====================================================
+   FICHE INDIVIDUELLE
+   ==================================================== */
+.fiche-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: $font-data;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.badge-active {
+  background: $togo-red-container;
+  color: $white;
+}
+
+.badge-pending {
+  background: $togo-yellow;
+  color: $primary;
+}
+
+.fiche-label {
+  font-family: $font-data;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: $on-surface-variant;
+}
+
+.fiche-value {
+  font-family: $font-data;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 18px;
+  color: $gray-900;
+  text-align: right;
+}
+
+/* ====================================================
+   CARTE — Design ESA (réf. couleurs Togo)
+   Papier crème, watermark ESA, séparateur tricolore
+   ==================================================== */
+.v4-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #FCFBF7 0%, #F4EEDC 100%);
+  border: 1px solid rgba(217, 214, 204, 0.9);
+  box-shadow: 0 18px 45px rgba(18, 24, 29, 0.12);
+}
+
+.font-heading {
+  font-family: 'Space Grotesk', 'Hanken Grotesk', sans-serif;
+}
+
+.card-sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at top right, rgba(255, 199, 44, 0.16), transparent 32%);
+  z-index: 0;
+}
+
+/* Watermark : texte ESA géant (très discret) */
+.wm-esa {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 110px;
+  color: rgba(15, 122, 69, 0.045);
+  transform: rotate(-18deg);
+  pointer-events: none;
+  letter-spacing: 0.05em;
+  z-index: 0;
+}
+
+/* Séparateur tricolore (vert / jaune / rouge) */
+.sep {
+  height: 3px;
+  background: linear-gradient(90deg, #0F7A45 0%, #0F7A45 33%, #FFC72C 33%, #FFC72C 66%, #C81E2C 66%, #C81E2C 100%);
+}
+.mini-sep {
+  height: 2px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 22px 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.school-block {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.country-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(217, 214, 204, 0.95);
+}
+
+.country-pill b {
+  display: block;
+  font-size: 10px;
+  line-height: 1.2;
+  color: #12181D;
+}
+
+.country-pill span {
+  display: block;
+  font-size: 8.5px;
+  color: #C81E2C;
+  font-style: italic;
+  font-weight: 600;
+}
+
+.card-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 22px 6px;
+  position: relative;
+  z-index: 1;
+}
+
+.eyebrow {
+  margin: 0 0 2px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #0F7A45;
+}
+
+.card-title-row h2 {
+  margin: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #12181D;
+}
+
+/* Badge année académique */
+.year-badge {
+  background: linear-gradient(135deg, #0F7A45 0%, #156B4C 100%);
+  color: #FFFFFF;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  padding: 4px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  box-shadow: 0 6px 14px rgba(15, 122, 69, 0.18);
+}
+
+.card-main {
+  display: flex;
+  gap: 14px;
+  flex: 1;
+  min-height: 0;
+  padding: 8px 22px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.photo-panel {
+  width: 116px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.photo-panel img {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 2px solid #0F7A45;
+  background: #E4E1D6;
+}
+
+.photo-caption {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #62666B;
+  text-align: center;
+}
+
+.data-panel {
+  flex: 1;
+  min-width: 0;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.field-card {
+  min-height: 58px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(217, 214, 204, 0.95);
+  backdrop-filter: blur(4px);
+}
+
+.field-card .k {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 8.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #0F7A45;
+  margin-bottom: 3px;
+  line-height: 1.2;
+}
+
+.field-card .v {
+  font-weight: 700;
+  font-size: 12px;
+  color: #12181D;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+/* Ligne de signature (footer recto) */
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 12px;
+  padding: 10px 22px 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.location {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: #0F7A45;
+}
+
+.location span {
+  color: #62666B;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.signature-block {
+  text-align: right;
+}
+
+.sig-line {
+  width: 120px;
+  border-bottom: 1.5px solid #C81E2C;
+  margin-bottom: 2px;
+}
+
+.signature-block small {
+  font-size: 8.5px;
+  color: #62666B;
+}
+
+/* ===== Verso ===== */
+.back-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.qr-panel {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: 2px solid #0F7A45;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.back-title {
+  min-width: 0;
+}
+
+.back-title b {
+  display: block;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #0F7A45;
+  margin-bottom: 2px;
+}
+
+.back-title span {
+  display: block;
+  font-size: 11px;
+  color: #62666B;
+}
+
+.legal {
+  position: relative;
+  z-index: 1;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: #12181D;
+  background: #EFEDE2;
+  border-left: 4px solid #FFC72C;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.contact-card {
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(217, 214, 204, 0.95);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.contact-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #C81E2C;
+  margin-bottom: 4px;
+}
+
+.contact-body {
+  font-size: 10px;
+  color: #62666B;
+  line-height: 1.5;
+}
+
+.emergency-card {
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(135deg, #0F7A45 0%, #0D6A3E 100%);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.emergency-head {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #FFFFFF;
+  margin-bottom: 8px;
+}
+
+.emergency-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.e-field {
+  display: flex;
+  gap: 6px;
+  font-size: 10px;
+}
+
+.e-k {
+  width: 64px;
+  color: rgba(255, 255, 255, 0.78);
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-size: 8.5px;
+  padding-top: 1px;
+}
+
+.e-v {
+  font-weight: 600;
+  color: #FFFFFF;
+  word-break: break-word;
+}
+
+.b-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  position: relative;
+  z-index: 1;
+}
+
+.b-foot span:first-child { color: #0F7A45; }
+.b-foot span:last-child { color: #C81E2C; }
+
+.card-container {
+  perspective: 1500px;
+}
+
+.card-inner {
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.card-flip {
+  transform: rotateY(180deg) !important;
+}
+
+.card-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.card-back {
+  transform: rotateY(180deg);
+}
+
+/* ====================================================
+   PRINT — carte recto/verso empilés (85.6 × 54 mm)
+   ==================================================== */
+@media print {
+  .print-hidden { display: none !important; }
+
+  /* Masque toute l'application (sidebar, topbar, autres pages) */
+  body * { visibility: hidden !important; }
+
+  .cartes-page-wrapper,
+  .cartes-page-wrapper * { visibility: visible !important; }
+
+  /* La carte se centre sur la page d'impression */
+  .card-container {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 85.6mm !important;
+    perspective: none !important;
+    z-index: 9999 !important;
+  }
+
+  .card-inner,
+  .card-inner.card-flip {
+    transform: none !important;
+    position: relative !important;
+    width: 85.6mm !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .card-face {
+    backface-visibility: visible !important;
+    -webkit-backface-visibility: visible !important;
+    position: relative !important;
+    width: 85.6mm !important;
+    height: 54mm !important;
+    border-radius: 4px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-shadow: none !important;
+  }
+
+  .card-face.card-back {
+    transform: none !important;
+    page-break-before: always !important;
+  }
+}
+
+@page {
+  size: 85.6mm 54mm;
+  margin: 0;
+}
+
+@media print {
+  @page :first { size: 85.6mm 54mm; margin: 0; }
+  @page :second { size: 85.6mm 54mm; margin: 0; }
+}

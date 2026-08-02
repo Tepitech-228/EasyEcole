@@ -1,8 +1,58 @@
+/* ============================================================
+   Design System — Student ID Card Reference
+   Palette: Togo-themed blue gradient (#1e3a5f → #2563eb),
+            cool grays (#475569, #94a3b8), green (#2E7D32)
+   Typography: Inter (primary), Sora (secondary)
+   Spacing: mm-based scale converted to rem
+   BorderRadius: 1mm / 2mm / 6px / 50%
+   ============================================================ */
+
+:root {
+  /* ── Color Palette (extracted from ID card) ── */
+  --ds-primary: #1e3a5f;
+  --ds-primary-light: #2563eb;
+  --ds-primary-gradient: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+  --ds-secondary: #475569;
+  --ds-secondary-light: #94a3b8;
+  --ds-accent: #2563eb;
+  --ds-accent-bg: #eff6ff;
+  --ds-success: #2e7d32;
+  --ds-white: #ffffff;
+  --ds-black: #000000;
+  --ds-text-primary: #1e3a5f;
+  --ds-text-secondary: #475569;
+  --ds-text-tertiary: #94a3b8;
+
+  /* ── Translucent overlays (from ID card) ── */
+  --ds-overlay-strong: rgba(255, 255, 255, 0.30);
+  --ds-overlay-medium: rgba(255, 255, 255, 0.20);
+  --ds-overlay-weak: rgba(255, 255, 255, 0.15);
+  --ds-text-faint: rgba(0, 0, 0, 0.06);
+
+  /* ── Spacing scale (mm-based → rem, 1mm ≈ 0.236rem) ── */
+  --ds-space-xs: 0.236rem;   /* 1mm  */
+  --ds-space-sm: 0.472rem;   /* 2mm  */
+  --ds-space-md: 0.708rem;   /* 3mm  */
+  --ds-space-lg: 0.945rem;   /* 4mm  */
+  --ds-space-xl: 1.18rem;    /* 5mm  */
+
+  /* ── Border radius (from ID card) ── */
+  --ds-radius-sm: 0.236rem;   /* 1mm  */
+  --ds-radius-md: 0.472rem;   /* 2mm  */
+  --ds-radius-lg: 0.625rem;   /* ~10px */
+  --ds-radius-full: 50%;
+
+  /* ── Typography ── */
+  --ds-font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --ds-font-secondary: 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
 :host {
   display: flex;
   flex-direction: column;
   flex: 1;
   min-height: 0;
+  font-family: var(--ds-font-primary);
 }
 
 .sidebar {
@@ -18,12 +68,13 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--pole-bg);
+  background: var(--ds-primary-gradient);
   border: none;
   padding: 8px 10px;
-  font-size: 12px;
+  font-family: var(--ds-font-primary);
+  font-size: 0.8125rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--ds-white);
   cursor: pointer;
   text-align: left;
 }
@@ -32,7 +83,7 @@
   width: 20px;
   height: 20px;
   flex-shrink: 0;
-  background-color: #ffffff;
+  background-color: var(--ds-white);
   -webkit-mask-size: contain;
   -webkit-mask-repeat: no-repeat;
   -webkit-mask-position: center;
@@ -49,7 +100,7 @@
   width: 14px;
   height: 14px;
   transition: transform 0.2s ease;
-  color: #ffffff;
+  color: var(--ds-white);
   opacity: 0.7;
 }
 
@@ -57,14 +108,13 @@
   transform: rotate(180deg);
 }
 
-
 /* —— Mosaïque des pôles —— */
 .mosaic-wrap {
   max-height: 0;
   overflow: hidden;
   transition: max-height 0.25s ease;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid var(--ds-overlay-medium);
+  background: var(--ds-overlay-weak);
 }
 
 .mosaic-wrap.expanded {
@@ -84,9 +134,11 @@
   align-items: center;
   gap: 3px;
   padding: 8px 4px;
-  border-radius: 6px;
-  border: 1px solid;
+  border-radius: var(--ds-radius-md);
+  border: 1px solid var(--ds-overlay-medium);
+  background: var(--ds-overlay-weak);
   cursor: pointer;
+  font-family: var(--ds-font-primary);
 
   span {
     font-size: 10px;
@@ -107,9 +159,9 @@
   }
 
   &.active {
-    box-shadow: 0 0 0 1.5px #fff inset;
-    span { color: #ffffff; }
-    .pole-icon-lg { background-color: #ffffff !important; }
+    box-shadow: 0 0 0 1.5px var(--ds-white) inset;
+    span { color: var(--ds-white); }
+    .pole-icon-lg { background-color: var(--ds-white) !important; }
   }
 }
 
@@ -125,12 +177,8 @@
   mask-position: center;
 }
 
-
-
-
 /* —— Contenu pôle actif (groupes accordéon) —— */
 .pole-content {
-
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -138,6 +186,7 @@
   padding: 4px 8px 4px 4px;
   overflow-y: auto;
   min-width: 0;
+  font-family: var(--ds-font-primary);
 }
 
 /* Groups */
@@ -152,9 +201,9 @@
   justify-content: space-between;
   width: 100%;
   padding: 8px 12px 8px 12px;
-  border-left: 3px solid rgba(141, 212, 255, 0.5);
+  border-left: 3px solid rgba(141, 212, 255, 0.50);
   background: transparent;
-  color: rgba(141, 212, 255, 0.9);
+  color: rgba(141, 212, 255, 0.90);
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
@@ -183,7 +232,7 @@
   width: 14px;
   height: 14px;
   flex-shrink: 0;
-  background-color: rgba(141, 212, 255, 0.8);
+  background-color: rgba(141, 212, 255, 0.80);
   -webkit-mask-size: contain;
   -webkit-mask-repeat: no-repeat;
   -webkit-mask-position: center;
@@ -197,6 +246,7 @@
   font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
+  color: var(--ds-text-secondary);
 }
 
 .group-chevron {
@@ -242,11 +292,12 @@
   min-height: 40px;
   padding: 6px 12px;
   margin: 0 0 4px;
-  border-radius: 10px;
+  border-radius: var(--ds-radius-lg);
   border: 1px solid transparent;
   background: rgba(255, 255, 255, 0.03);
   transition: all 0.2s ease;
   position: relative;
+  font-family: var(--ds-font-primary);
 }
 
 .active-indicator {
@@ -258,7 +309,7 @@
   width: 3px;
   height: 20px;
   border-radius: 0 3px 3px 0;
-  background: #8dd4ff;
+  background: var(--ds-primary-light);
 }
 
 .nav-item.active .active-indicator {
@@ -268,7 +319,7 @@
 .nav-item.active .nav-item-inner,
 .nav-item-inner:hover {
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
-  border-color: rgba(255, 255, 255, 0.16);
+  border-color: var(--ds-overlay-medium);
   transform: translateX(2px);
 }
 
@@ -278,7 +329,7 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: 8px;
+  border-radius: var(--ds-radius-md);
   background: rgba(255, 255, 255, 0.08);
   flex-shrink: 0;
   transition: background 0.2s ease;
@@ -304,12 +355,13 @@
 
 .nav-item.active .item-icon,
 .nav-item-inner:hover .item-icon {
-  background-color: #8dd4ff;
+  background-color: var(--ds-primary-light);
 }
 
 .item-label {
-  font-size: 12px;
+  font-size: 0.8125rem;
   font-weight: 500;
+  font-family: var(--ds-font-primary);
   color: rgba(255, 255, 255, 0.78);
   white-space: nowrap;
   overflow: hidden;
@@ -332,8 +384,8 @@
 .spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  border-top-color: #8dd4ff;
+  border: 2px solid var(--ds-overlay-weak);
+  border-top-color: var(--ds-primary-light);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }

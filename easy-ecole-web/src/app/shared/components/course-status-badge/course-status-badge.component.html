@@ -1,0 +1,7 @@
+<span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset"
+      [class.text-[10px]]="size === 'sm'"
+      [class.text-xs]="size === 'md'"
+      [ngClass]="colorClass">
+  <span class="w-1.5 h-1.5 rounded-full" [ngClass]="dotColor"></span>
+  {{ label }}
+</span>

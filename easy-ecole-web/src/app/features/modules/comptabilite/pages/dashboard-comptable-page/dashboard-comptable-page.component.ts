@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+import { ExerciceComptable } from 'src/app/data/modules/comptabilite/models/Comptabilite.model';
 import { ComptabiliteService } from 'src/app/data/modules/comptabilite/services/comptabilite.service';
 
 @Component({
@@ -19,10 +20,44 @@ export class DashboardComptablePageComponent extends BaseComponentClass implemen
   nbComptes = 0;
   dernieresEcritures: any[] = [];
 
+  exercices: ExerciceComptable[] = [];
+  currentExercice: ExerciceComptable | null = null;
+
   constructor(private service: ComptabiliteService) { super(); }
 
   ngOnInit(): void {
+    this.loadExercices();
     this.loadData();
+  }
+
+  private loadExercices(): void {
+    this.service.getAllExercices().subscribe({
+      next: (data) => {
+        this.exercices = data;
+        const actif = data.find(ex => ex.actif);
+        if (actif) {
+          this.currentExercice = actif;
+          this.service.setCurrentExercice(actif);
+        }
+      },
+      error: () => {}
+    });
+
+    this.service.getExerciceEnCours().subscribe({
+      next: (ex) => {
+        this.currentExercice = ex;
+        this.service.setCurrentExercice(ex);
+      },
+      error: () => {}
+    });
+  }
+
+  onExerciceChange(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    const id = Number(select.value);
+    const exercice = this.exercices.find(ex => ex.id === id) || null;
+    this.currentExercice = exercice;
+    this.service.setCurrentExercice(exercice);
   }
 
   private loadData(): void {

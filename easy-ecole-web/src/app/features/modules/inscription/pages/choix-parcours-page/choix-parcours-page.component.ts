@@ -84,21 +84,32 @@ export class ChoixParcoursPageComponent extends BaseComponentClass implements On
   }
 
   getParcours(): void {
-    this.parcoursService.getAll()
-      .subscribe(
-        {
-          next: (res) => {
-            // TODO:: filter => parcours non choisis  
-            this.parcours = res.filter(value => value.niveauEtudeId == this.demandeInscription!.session!.niveauEtudeId)
-            // console.log(this.parcours)
-            this.selectedParcours = undefined
-            this.selectedParcoursId = undefined
-          },
-          error: (err: HttpErrorResponse) => {
-            console.log(err)
-          },
-        }
-      )
+    const niveauEtudeId = this.demandeInscription?.session?.niveauEtudeId
+    // 1) Essayer avec filtre niveauEtudeId
+    this.parcoursService.getAll(niveauEtudeId)
+      .subscribe({
+        next: (res) => {
+          console.log('[getParcours] AVEC filtre niveauEtudeId=' + niveauEtudeId + ' →', res)
+          if (res.length === 0 && niveauEtudeId != null) {
+            // 2) Si vide, re-essayer SANS filtre pour voir s'il y a des parcours ailleurs
+            console.log('[getParcours] Aucun résultat filtré → tentative sans filtre')
+            this.parcoursService.getAll().subscribe({
+              next: (all) => {
+                console.log('[getParcours] SANS filtre →', all)
+                this.parcours = all
+              },
+              error: (e) => console.error('[getParcours] Erreur sans filtre :', e)
+            })
+          } else {
+            this.parcours = res
+          }
+          this.selectedParcours = undefined
+          this.selectedParcoursId = undefined
+        },
+        error: (err: HttpErrorResponse) => {
+          console.error('[getParcours] Erreur :', err)
+        },
+      })
   }
 
   openChoixParcoursModal(): void {
@@ -247,7 +258,9 @@ export class ChoixParcoursPageComponent extends BaseComponentClass implements On
             next: (res) => {
               console.log(res)
               this.closeChoixParcoursModal()
-              this.router.navigate(['/inscription/demandes/' + this.demandeInscription?.id])
+              this.router.navigate(['/inscription/demandes/' + this.demandeInscription?.id], {
+                queryParams: { step: 'documents' }
+              })
             },
             error: (err: HttpErrorResponse) => {
               console.log(err)

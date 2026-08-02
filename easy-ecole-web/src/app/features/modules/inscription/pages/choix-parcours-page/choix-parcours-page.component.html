@@ -69,7 +69,9 @@
         <span class="mb-2 block text-sm text-gray-400">Filière</span>
         <select [(ngModel)]="selectedParcoursId" (change)="onChange($event)"
             class="block min-w-full rounded-md border-0 py-1.5 text-gray-600 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:max-w-xs sm:text-sm sm:leading-6">
+            <option value="" disabled selected>-- Sélectionnez une filière --</option>
             <option *ngFor="let p of parcours" [value]="p.id">{{ p.titre }}</option>
+            <option *ngIf="parcours && parcours.length === 0" value="" disabled>Aucune filière disponible pour votre niveau d'étude</option>
         </select>
         <app-form-message *ngIf="selectedParcoursId == undefined" text="Veuillez choisir un parcours"></app-form-message>
     </div>
