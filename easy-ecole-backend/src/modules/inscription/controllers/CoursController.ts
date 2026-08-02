@@ -130,18 +130,43 @@ export default class CoursController {
     static async getCoursParticipants(req: Request, res: Response): Promise<Response | null> {
         let options: FindOptions<InferAttributes<CoursParticipant>> = {}
 
-        options = {
-            where: { coursId: req.params.id },
-            include: [
-                { 
-                    association: CoursParticipant.associations.utilisateur,
-                    attributes: ['nom', 'prenoms', 'identifiant', 'email', 'contact', 'photoDeProfil'],
-                    include: [Utilisateur.associations.apprenant],
-                    required: true,
-                },
-                CoursParticipant.associations.cours,
-                CoursParticipant.associations.cursusApprenant
-            ]
+        // Un enseignant ne peut voir les participants que de ses propres cours
+        if ((req as any).utilisateurRole == RolesUtilisateur.ENSEIGNANT) {
+            const enseignant = await Enseignant.findOne({ where: { utilisateurId: (req as any).utilisateurId } });
+            if (!enseignant) {
+                return res.status(403).json({ success: false, message: "Enseignant non trouvé" });
+            }
+            options = {
+                where: { coursId: req.params.id },
+                include: [
+                    { 
+                        association: CoursParticipant.associations.utilisateur,
+                        attributes: ['nom', 'prenoms', 'identifiant', 'email', 'contact', 'photoDeProfil'],
+                        include: [Utilisateur.associations.apprenant],
+                        required: true,
+                    },
+                    {
+                        association: CoursParticipant.associations.cours,
+                        where: { enseignantId: enseignant.id },
+                        required: true
+                    },
+                    CoursParticipant.associations.cursusApprenant
+                ]
+            }
+        } else {
+            options = {
+                where: { coursId: req.params.id },
+                include: [
+                    { 
+                        association: CoursParticipant.associations.utilisateur,
+                        attributes: ['nom', 'prenoms', 'identifiant', 'email', 'contact', 'photoDeProfil'],
+                        include: [Utilisateur.associations.apprenant],
+                        required: true,
+                    },
+                    CoursParticipant.associations.cours,
+                    CoursParticipant.associations.cursusApprenant
+                ]
+            }
         }
 
         try {

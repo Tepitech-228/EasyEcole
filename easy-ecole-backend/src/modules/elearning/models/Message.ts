@@ -50,7 +50,7 @@ Message.init({
     defaultValue: 'text'
   },
   pieceJointe: {
-    type: new DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   estModifie: {

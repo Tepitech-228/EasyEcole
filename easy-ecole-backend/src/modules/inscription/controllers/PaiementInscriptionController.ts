@@ -8,7 +8,8 @@ import { DemandeInscription } from "../models/DemandeInscription";
 import { Banque } from "../../auth/models/Banque";
 import { CaissierBanque } from "../../auth/models/CaissierBanque";
 import { Utilisateur } from "../../auth/models/Utilisateur";
-import { creerEcritureComptable } from "../../comptabilite/helpers/ComptabiliteHelper";
+import { creerEcritureComptable, lettrerEcritures411 } from "../../comptabilite/helpers/ComptabiliteHelper";
+import { MobileMoneyCinetpay } from "../../../core/helpers/MobileMoneyCinetpay";
 
 export default class PaiementInscriptionController {
 
@@ -32,7 +33,7 @@ export default class PaiementInscriptionController {
             if (banque == null) {
                 return res.status(500).json({ success: false });
             }
-            options = { include: [{ association: PaiementInscription.associations.utilisateur, where: {role: RolesUtilisateur.CAISSIER_BANQUE}, include: [{ association: Utilisateur.associations.caissierBanque, where: { banqueId: banque.id } }] }] }
+            options = {}
         }
 
         try {
@@ -98,16 +99,24 @@ export default class PaiementInscriptionController {
 
             await paiementInscription.save()
                 .then(async (paiementInscription) => {
+                    // INSC-1.2: Écriture paiement (Débit 512 / Crédit 411)
                     await creerEcritureComptable({
                         req,
                         journalCode: 'VEN',
                         compteDebitNumero: '512',
-                        compteCreditNumero: '702',
+                        compteCreditNumero: '411',
                         montant: paiementInscription.montant,
                         libelle: paiementInscription.description || `Paiement inscription #${paiementInscription.numero}`,
                         reference: paiementInscription.numero,
                         moduleSource: 'inscription',
                         referenceModuleId: String(paiementInscription.id)
+                    })
+
+                    // INSC-1.3: Lettrage automatique des créances 411
+                    await lettrerEcritures411({
+                        referenceModuleId: String(demandeInscription!.id),
+                        paiementId: String(paiementInscription.id),
+                        montant: paiementInscription.montant
                     })
 
                     return res.status(201).send(paiementInscription);
@@ -209,5 +218,112 @@ export default class PaiementInscriptionController {
             });
 
         return null
+    }
+
+    static async createMobileMoneyPayment(req: Request, res: Response): Promise<Response | null> {
+        if ((req as any).utilisateurRole != RolesUtilisateur.APPRENANT &&
+            (req as any).utilisateurRole != RolesUtilisateur.INSTITUTION) {
+            return res.status(403).json({ success: false })
+        }
+
+        let options: FindOptions<InferAttributes<DemandeInscription>> = {}
+        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
+            options = { where: { matricule: req.body.matriculeInscription, utilisateurId: (req as any).utilisateurId } }
+        } else {
+            options = { where: { matricule: req.body.matriculeInscription } }
+        }
+
+        const demandeInscription = await DemandeInscription.findOne(options)
+        if (demandeInscription == null) {
+            return res.status(404).json({ matriculeNotExists: true })
+        }
+
+        const cinetpay = MobileMoneyCinetpay.getInstance()
+        if (!cinetpay.isInitialized()) {
+            return res.status(503).json({ success: false, message: 'Mobile money non configuré' })
+        }
+
+        const transactionId = cinetpay.generateTransactionId('INSC')
+
+        const paiementInscription = new PaiementInscription()
+        paiementInscription.numero = IDGenerator.getInstance().generateNumeroPaiement()
+        paiementInscription.matriculeInscription = req.body.matriculeInscription
+        paiementInscription.montant = req.body.montant
+        paiementInscription.description = req.body.description || `Paiement mobile money inscription`
+        paiementInscription.datePaiement = new Date()
+        paiementInscription.type = TypesPaiement.MOBILE_MONEY
+        paiementInscription.utilisateurId = (req as any).utilisateurId
+
+        try {
+            await paiementInscription.save()
+
+            const paymentResult = await cinetpay.createPayment({
+                transactionId,
+                amount: paiementInscription.montant,
+                description: paiementInscription.description,
+                customerName: `${demandeInscription.utilisateur?.nom || ''} ${demandeInscription.utilisateur?.prenoms || ''}`,
+                customerEmail: demandeInscription.utilisateur?.email,
+                customerPhone: req.body.customerPhone,
+                redirectUrl: req.body.redirectUrl,
+                callbackUrl: req.body.callbackUrl,
+            })
+
+            if (!paymentResult.success) {
+                return res.status(400).json({ success: false, message: paymentResult.message })
+            }
+
+            await creerEcritureComptable({
+                req,
+                journalCode: 'VEN',
+                compteDebitNumero: '512',
+                compteCreditNumero: '411',
+                montant: paiementInscription.montant,
+                libelle: paiementInscription.description || `Paiement mobile money #${paiementInscription.numero}`,
+                reference: paiementInscription.numero,
+                moduleSource: 'inscription',
+                referenceModuleId: String(paiementInscription.id)
+            })
+
+            await lettrerEcritures411({
+                referenceModuleId: String(demandeInscription.id),
+                paiementId: String(paiementInscription.id),
+                montant: paiementInscription.montant
+            })
+
+            return res.status(201).json({
+                ...paiementInscription.toJSON(),
+                transactionId,
+                paymentUrl: paymentResult.data?.paymentUrl,
+                status: paymentResult.data?.status,
+            })
+        } catch (error) {
+            return res.status(500).json({ success: false, error: error })
+        }
+    }
+
+    static async checkMobileMoneyPayment(req: Request, res: Response): Promise<Response> {
+        const { transactionId } = req.params
+
+        const cinetpay = MobileMoneyCinetpay.getInstance()
+        if (!cinetpay.isInitialized()) {
+            return res.status(503).json({ success: false, message: 'Mobile money non configuré' })
+        }
+
+        try {
+            const result = await cinetpay.checkPayment(transactionId)
+
+            if (result.success && result.status === 'accepted') {
+                const paiement = await PaiementInscription.findOne({
+                    where: { numero: transactionId }
+                })
+                if (paiement && !paiement.dateValidation) {
+                    await paiement.update({ dateValidation: new Date() })
+                }
+            }
+
+            return res.status(200).json(result)
+        } catch (error) {
+            return res.status(500).json({ success: false, error: error })
+        }
     }
 }

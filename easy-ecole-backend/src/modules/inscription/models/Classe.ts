@@ -4,6 +4,7 @@ import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { NiveauEtude } from "./NiveauEtude";
 import { Parcours } from "./Parcours";
 import { CursusApprenant } from "./CursusApprenant";
+import { Etablissement } from "../../etablissement/models/Etablissement";
 
 export class Classe extends Model<InferAttributes<Classe>, InferCreationAttributes<Classe>> {
   declare id: CreationOptional<number>
@@ -14,6 +15,8 @@ export class Classe extends Model<InferAttributes<Classe>, InferCreationAttribut
   declare niveauEtude?: NonAttribute<NiveauEtude>
   declare parcoursId: ForeignKey<Parcours['id']> | null
   declare parcours?: NonAttribute<Parcours>
+  declare etablissementId: ForeignKey<Etablissement['id'] | null>
+  declare etablissement?: NonAttribute<Etablissement>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -23,6 +26,7 @@ export class Classe extends Model<InferAttributes<Classe>, InferCreationAttribut
   declare static associations: {
     niveauEtude: Association<Classe, NiveauEtude>
     parcours: Association<Classe, Parcours>
+    etablissement: Association<Classe, Etablissement>
     cursusApprenants: Association<Classe, CursusApprenant>
   };
 }
@@ -55,6 +59,7 @@ Classe.init({
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: true
   },
+  etablissementId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
 }, {

@@ -13,6 +13,7 @@ export class PaiementInscription extends Model<InferAttributes<PaiementInscripti
   declare montant: number
   declare matriculeInscription: string
   declare type: TypesPaiement
+  declare dateValidation: CreationOptional<Date>
   declare utilisateurId: ForeignKey<Utilisateur['id']>
   declare utilisateur?: NonAttribute<Utilisateur>
   declare demandeInscription?: NonAttribute<DemandeInscription>
@@ -60,9 +61,13 @@ PaiementInscription.init({
   },
   type: {
     type: DataTypes.ENUM,
-    values: [TypesPaiement.ESPECE, TypesPaiement.EN_LIGNE],
+    values: [TypesPaiement.ESPECE, TypesPaiement.EN_LIGNE, TypesPaiement.MOBILE_MONEY],
     defaultValue: TypesPaiement.ESPECE,
     allowNull: false
+  },
+  dateValidation: {
+    type: DataTypes.DATE,
+    allowNull: true
   },
   utilisateurId: {
     type: DataTypes.INTEGER.UNSIGNED,

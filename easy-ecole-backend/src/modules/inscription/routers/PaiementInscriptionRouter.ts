@@ -98,5 +98,50 @@ router
  *         description: Nombre de paiements
  */
     .get('/statistics/count', [], PaiementInscriptionController.getCount)
+    /**
+     * @openapi
+     * /inscription/paiementsInscription/mobile-money:
+     *   post:
+     *     tags: [Paiements]
+     *     summary: Crée un paiement par mobile money (Cinetpay)
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             properties:
+     *               matriculeInscription:
+     *                 type: string
+     *               montant:
+     *                 type: number
+     *               customerPhone:
+     *                 type: string
+     *               redirectUrl:
+     *                 type: string
+     *               callbackUrl:
+     *                 type: string
+     *     responses:
+     *       201:
+     *         description: Paiement créé avec URL de paiement
+     */
+    .post('/mobile-money', PaiementInscriptionController.createMobileMoneyPayment)
+    /**
+     * @openapi
+     * /inscription/paiementsInscription/mobile-money/{transactionId}:
+     *   get:
+     *     tags: [Paiements]
+     *     summary: Vérifie le statut d'un paiement mobile money
+     *     parameters:
+     *       - in: path
+     *         name: transactionId
+     *         required: true
+     *         schema:
+     *           type: string
+     *     responses:
+     *       200:
+     *         description: Statut du paiement
+     */
+    .get('/mobile-money/:transactionId', PaiementInscriptionController.checkMobileMoneyPayment)
 
 export default router

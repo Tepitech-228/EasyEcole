@@ -3,6 +3,17 @@ import path from 'path';
 import fs from 'fs';
 import puppeteer from 'puppeteer';
 import { Etablissement } from '../../etablissement/models/Etablissement';
+import { QrTokenService } from '../../../core/services/QrTokenService';
+
+function escapeHtml(str: string): string {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
 export interface CarteData {
   nom: string;
@@ -24,17 +35,22 @@ export class GenerateurCarteService {
     const ecoleNom = (etab as any)?.nomCommercial || (etab as any)?.raisonSociale || 'ESA';
     const ecoleLogo = (etab as any)?.logo || '';
 
-    const qrData = JSON.stringify({
-      matricule: data.matricule,
-      utilisateurId: data.utilisateurId,
-      nom: `${data.nom} ${data.prenom}`,
-      ecole: ecoleNom,
-    });
-    const qrBase64 = await QRCode.toDataURL(qrData, { width: 200, margin: 1 });
+    const qrData = QrTokenService.signer(data.utilisateurId);
+    const qrBase64 = await QRCode.toDataURL(qrData, { width: 200, margin: 4, errorCorrectionLevel: 'Q' });
+
+    const ecoleNomEsc = escapeHtml(ecoleNom);
+    const matriculeEsc = escapeHtml(data.matricule);
+    const nomEsc = escapeHtml(data.nom);
+    const prenomEsc = escapeHtml(data.prenom);
+    const dateNaissanceEsc = escapeHtml(data.dateNaissance || 'N/R');
+    const classeEsc = escapeHtml(data.classe);
+    const filiereEsc = escapeHtml(data.filiere);
+    const anneeEsc = escapeHtml(data.anneeAcademique);
+    const photoEsc = escapeHtml(data.photo || '');
 
     const photoStyle = data.photo && fs.existsSync(path.resolve('public', data.photo))
       ? `<img src="file:///${path.resolve('public', data.photo).replace(/\\/g, '/')}" alt="Photo" class="photo" />`
-      : `<div class="photo-placeholder">${data.nom.charAt(0)}${data.prenom.charAt(0)}</div>`;
+      : `<div class="photo-placeholder">${nomEsc.charAt(0)}${prenomEsc.charAt(0)}</div>`;
 
     const html = `<!DOCTYPE html>
 <html><head>
@@ -62,24 +78,24 @@ export class GenerateurCarteService {
 </head><body>
 <div class="card">
   <div class="sidebar">
-    <div class="ecole">${ecoleNom}</div>
-    ${photoStyle}
-    <div class="matricule">${data.matricule}</div>
-  </div>
-  <div class="main">
-    <div class="nom">${data.nom}<br/>${data.prenom}</div>
-    <div class="info"><span>Né(e)</span> ${data.dateNaissance || 'N/R'}</div>
-    <div class="info"><span>Classe</span> ${data.classe}</div>
-    <div class="filiere">${data.filiere}</div>
-    <div class="validite">Année academique ${data.anneeAcademique}</div>
-  </div>
-  <div class="qr"><img src="${qrBase64}" /></div>
-  <div class="watermark">ESA</div>
+     <div class="ecole">${ecoleNomEsc}</div>
+     ${photoStyle}
+     <div class="matricule">${matriculeEsc}</div>
+   </div>
+   <div class="main">
+     <div class="nom">${nomEsc}<br/>${prenomEsc}</div>
+     <div class="info"><span>Né(e)</span> ${dateNaissanceEsc}</div>
+     <div class="info"><span>Classe</span> ${classeEsc}</div>
+     <div class="filiere">${filiereEsc}</div>
+     <div class="validite">Année academique ${anneeEsc}</div>
+   </div>
+   <div class="qr"><img src="${qrBase64}" /></div>
+   <div class="watermark">${ecoleNomEsc}</div>
 </div>
 </body></html>`;
 
     const filename = `carte_${data.matricule}_${Date.now()}.pdf`;
-    const outputDir = path.resolve('public/inscription/cartes');
+    const outputDir = path.resolve('storage', 'cartes');
     if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
     const outputPath = path.join(outputDir, filename);
 
@@ -101,6 +117,6 @@ export class GenerateurCarteService {
       await browser.close();
     }
 
-    return `inscription/cartes/${filename}`;
+    return `storage/cartes/${filename}`;
   }
 }

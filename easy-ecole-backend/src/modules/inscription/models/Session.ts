@@ -6,6 +6,7 @@ import { DemandeInscription } from "./DemandeInscription";
 import { FraisInscription } from "./FraisInscription";
 import { DossierInscription } from "./DossierInscription";
 import { AnneeAcademique } from "./AnneeAcademique";
+import { Etablissement } from "../../etablissement/models/Etablissement";
 
 export class Session extends Model<InferAttributes<Session>, InferCreationAttributes<Session>> {
   declare id: CreationOptional<number>
@@ -16,6 +17,8 @@ export class Session extends Model<InferAttributes<Session>, InferCreationAttrib
   declare anneeAcademique?: NonAttribute<AnneeAcademique>
   declare niveauEtudeId: ForeignKey<NiveauEtude['id']>
   declare niveauEtude?: NonAttribute<NiveauEtude>
+  declare etablissementId: ForeignKey<Etablissement['id'] | null>
+  declare etablissement?: NonAttribute<Etablissement>
   declare demandesInscription?: NonAttribute<DemandeInscription[]>
   declare fraisInscription?: NonAttribute<FraisInscription[]>
   declare dossiersInscription?: NonAttribute<DossierInscription[]>
@@ -26,6 +29,7 @@ export class Session extends Model<InferAttributes<Session>, InferCreationAttrib
   declare static associations: {
     niveauEtude: Association<Session, NiveauEtude>
     anneeAcademique: Association<Session, AnneeAcademique>
+    etablissement: Association<Session, Etablissement>
     demandesInscription: Association<Session, DemandeInscription>
     fraisInscription: Association<Session, FraisInscription>
     dossiersInscription: Association<Session, DossierInscription>
@@ -54,6 +58,7 @@ Session.init({
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: true
   },
+  etablissementId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
   anneeAcademiqueId: {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: true

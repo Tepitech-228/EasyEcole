@@ -150,19 +150,24 @@ export default class DemandeDocumentController {
             docDelivre.fichierPDF = filename
             await docDelivre.save()
 
-            ArchiveGedService.archiverDepuisFichier({
-                fichierSource: `public/scolarite/documents/${filename}`,
-                domaineCode: 'SCOL',
-                typeDocumentCode: 'attestation',
-                processusCode: 'SCOLARITE_DEMANDE',
-                processusLibelle: 'Demande de scolarité',
-                processusModule: 'scolarite',
-                titre: `${typeDocument?.libelle || 'Document'} - ${demande.id}`,
-                dossierGed: 'Scolarité',
-                sousDossierGed: 'Documents de scolarité',
-                sourceType: 'genere_application',
-                confidentialite: 'interne',
-            }).catch(err => console.error("Erreur archivage document scolarite:", err))
+            // Archivage avec le service dédié (plus de champs contextuels renseignés)
+            const aai = Number(demande.anneeAcademiqueId) || 0;
+            const pi = Number(demande.parcoursId) || 0;
+            const nei = Number(demande.niveauEtudeId) || 0;
+            if (aai && pi && nei) {
+                ArchiveGedService.archiverDocumentScolarite({
+                    titre: `${typeDocument?.libelle || 'Document'} - ${demande.id}`,
+                    documentTypeCode: 'attestation',
+                    fichier: filename,
+                    anneeAcademiqueId: aai,
+                    parcoursId: pi,
+                    niveauEtudeId: nei,
+                    classeId: Number(demande.classeId) || undefined,
+                    semestre: undefined,
+                    cursusApprenantId: undefined,
+                    uploaderId: (req as any).utilisateurId || 1,
+                }).catch((err: any) => console.error("Erreur archivage document scolarite:", err));
+            }
         }
 
         await demande.update({ statut: req.body.statut })

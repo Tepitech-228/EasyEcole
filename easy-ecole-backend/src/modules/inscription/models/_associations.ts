@@ -39,6 +39,7 @@ import { FraisParcours } from "./FraisParcours";
 import { ReductionFrais } from "./ReductionFrais";
 import { PenaliteRetard } from "./PenaliteRetard";
 import { PreInscription } from "./PreInscription";
+import { EtapeInscription } from "./EtapeInscription";
 import { Quitus } from "./Quitus";
 import { DossierEtudiant } from "./DossierEtudiant";
 import { Echeance } from "./Echeance";
@@ -135,6 +136,10 @@ DemandeInscriptionCours.belongsTo(DemandeInscription, { foreignKey: 'demandeInsc
 Session.hasMany(DemandeInscription, { foreignKey: 'sessionId', as: 'demandesInscription' })
 DemandeInscription.belongsTo(Session, { foreignKey: 'sessionId', as: 'session' })
 
+// DemandeInscription - EtapeInscription
+EtapeInscription.hasMany(DemandeInscription, { foreignKey: 'etapeInscriptionId', as: 'demandesInscriptionEtape' })
+DemandeInscription.belongsTo(EtapeInscription, { foreignKey: 'etapeInscriptionId', as: 'etapeInscription' })
+
 // ReponseInscription - Utilisateur
 Utilisateur.hasMany(ReponseInscription, { foreignKey: 'utilisateurId', as: 'reponsesInscription' })
 ReponseInscription.belongsTo(Utilisateur, { foreignKey: 'utilisateurId', as: 'utilisateur' })
@@ -189,7 +194,6 @@ CursusApprenant.belongsTo(Utilisateur, { foreignKey: 'utilisateurId', as: 'utili
 
 // CursusApprenant - Etablissement
 CursusApprenant.belongsTo(Etablissement, { foreignKey: 'etablissementId', as: 'etablissement' })
-Etablissement.hasMany(CursusApprenant, { foreignKey: 'etablissementId', as: 'cursusApprenants' })
 
 // CursusApprenant - Parcours
 Parcours.hasMany(CursusApprenant, { foreignKey: 'parcoursId', as: 'cursusApprenant' })

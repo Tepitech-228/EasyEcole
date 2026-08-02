@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { Op } from "sequelize";
+import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { AnneeAcademique } from "../models/AnneeAcademique";
 import { NiveauEtude } from "../models/NiveauEtude";
 import { Parcours } from "../models/Parcours";
@@ -14,8 +15,18 @@ import { ParcoursChoisi } from "../models/ParcoursChoisi";
 
 export default class HierarchyController {
 
+  /** Retourne un filtre utilisateurId si l'utilisateur est un apprenant */
+  private static getUtilisateurFilter(req: Request): { utilisateurId?: number } | undefined {
+    if ((req as any).utilisateurRole === RolesUtilisateur.APPRENANT) {
+      return { utilisateurId: (req as any).utilisateurId };
+    }
+    return undefined;
+  }
+
   static async getTree(req: Request, res: Response): Promise<Response> {
     try {
+      const userFilter = HierarchyController.getUtilisateurFilter(req);
+
       const annees = await AnneeAcademique.findAll({
         order: [['libelle', 'DESC']]
       });
@@ -28,7 +39,7 @@ export default class HierarchyController {
           attributes: ['id', 'niveauEtudeId']
         });
 
-        const niveauIds = [...new Set(sessions.map((s: any) => s.niveauEtudeId).filter(Boolean))] as number[];
+        const niveauIds = Array.from(new Set(sessions.map((s: any) => s.niveauEtudeId).filter(Boolean))) as number[];
         const niveaux = niveauIds.length > 0
           ? await NiveauEtude.findAll({ where: { id: { [Op.in]: niveauIds } }, order: [['libelle', 'ASC']] })
           : [];
@@ -42,6 +53,7 @@ export default class HierarchyController {
           const parcoursNiveau = allParcours.filter(p => p.niveauEtudeId === niveau.id);
 
           const { count: dCount, rows: dRows } = await DossierEtudiant.findAndCountAll({
+            where: userFilter,
             include: [{
               association: DossierEtudiant.associations.coursParticipants,
               required: false,
@@ -53,6 +65,7 @@ export default class HierarchyController {
           });
 
           const { count: demCount, rows: demRows } = await DemandeInscription.findAndCountAll({
+            where: userFilter,
             include: [{
               association: DemandeInscription.associations.session,
               where: { anneeAcademiqueId: anneeId, niveauEtudeId: niveau.id },
@@ -61,6 +74,7 @@ export default class HierarchyController {
           });
 
           const { count: bCount, rows: bRows } = await Bordereau.findAndCountAll({
+            where: userFilter,
             include: [{
               association: Bordereau.associations.echeance,
               required: true,
@@ -81,6 +95,7 @@ export default class HierarchyController {
 
           const parcoursData = await Promise.all(parcoursNiveau.map(async (p) => {
             const { count: dParcoursCount, rows: dParcoursRows } = await DossierEtudiant.findAndCountAll({
+              where: userFilter,
               include: [{
                 association: DossierEtudiant.associations.coursParticipants,
                 required: false,
@@ -92,6 +107,7 @@ export default class HierarchyController {
             });
 
             const { count: demParcoursCount, rows: demParcoursRows } = await DemandeInscription.findAndCountAll({
+              where: userFilter,
               include: [{
                 association: DemandeInscription.associations.parcoursChoisis,
                 where: { choixFinal: true, parcoursId: p.id },
@@ -104,6 +120,7 @@ export default class HierarchyController {
             });
 
             const { count: bParcoursCount, rows: bParcoursRows } = await Bordereau.findAndCountAll({
+              where: userFilter,
               include: [{
                 association: Bordereau.associations.echeance,
                 required: true,
@@ -173,6 +190,7 @@ export default class HierarchyController {
 
   static async getDetails(req: Request, res: Response): Promise<Response> {
     try {
+      const userFilter = HierarchyController.getUtilisateurFilter(req);
       const { type, id, anneeId } = req.params;
       let dossiers: any[] = [];
       let demandes: any[] = [];
@@ -180,6 +198,7 @@ export default class HierarchyController {
 
       if (type === 'annee') {
         const { count: dCount, rows: dRows } = await DossierEtudiant.findAndCountAll({
+          where: userFilter,
           include: [{
             association: DossierEtudiant.associations.coursParticipants,
             required: false,
@@ -192,6 +211,7 @@ export default class HierarchyController {
         dossiers = dRows;
 
         const { count: demCount, rows: demRows } = await DemandeInscription.findAndCountAll({
+          where: userFilter,
           include: [{
             association: DemandeInscription.associations.session,
             where: { anneeAcademiqueId: Number(id) },
@@ -203,6 +223,7 @@ export default class HierarchyController {
         demandes = demRows;
 
         const { count: borCount, rows: borRows } = await Bordereau.findAndCountAll({
+          where: userFilter,
           include: [{
             association: Bordereau.associations.echeance,
             required: true,
@@ -223,6 +244,7 @@ export default class HierarchyController {
           bordereaux = borRows;
       } else if (type === 'niveau') {
         const { count: dCount, rows: dRows } = await DossierEtudiant.findAndCountAll({
+          where: userFilter,
           include: [{
             association: DossierEtudiant.associations.coursParticipants,
             required: false,
@@ -235,6 +257,7 @@ export default class HierarchyController {
         dossiers = dRows;
 
         const { count: demCount, rows: demRows } = await DemandeInscription.findAndCountAll({
+          where: userFilter,
           include: [{
             association: DemandeInscription.associations.session,
             where: { anneeAcademiqueId: Number(anneeId), niveauEtudeId: Number(id) },
@@ -246,6 +269,7 @@ export default class HierarchyController {
         demandes = demRows;
 
         const { count: borCount, rows: borRows } = await Bordereau.findAndCountAll({
+          where: userFilter,
           include: [{
             association: Bordereau.associations.echeance,
             required: true,
@@ -267,6 +291,7 @@ export default class HierarchyController {
 
       } else if (type === 'parcours') {
         const { count: dCount, rows: dRows } = await DossierEtudiant.findAndCountAll({
+          where: userFilter,
           include: [{
             association: DossierEtudiant.associations.coursParticipants,
             required: false,
@@ -280,6 +305,7 @@ export default class HierarchyController {
         dossiers = dRows;
 
         const { count: demCount, rows: demRows } = await DemandeInscription.findAndCountAll({
+          where: userFilter,
           include: [{
             association: DemandeInscription.associations.parcoursChoisis,
             where: { choixFinal: true, parcoursId: Number(id) },
@@ -295,6 +321,7 @@ export default class HierarchyController {
         demandes = demRows;
 
         const { count: borCount, rows: borRows } = await Bordereau.findAndCountAll({
+          where: userFilter,
           include: [{
             association: Bordereau.associations.echeance,
             required: true,

@@ -1,6 +1,7 @@
 import express from "express"
 
 import CursusApprenantController from "../controllers/CursusApprenantController"
+import Authenticate from "../../../core/middlewares/Authenticate";
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
 import CheckPermission from "../../../core/middlewares/CheckPermission";
 
@@ -140,5 +141,6 @@ router
  *         description: Nombre de cursus apprenant
  */
     .get('/statistics/count', [AuthInstitution], CursusApprenantController.getCount)
+    .get('/mon-suivi/statuts-cours', [Authenticate], CursusApprenantController.getStatutsCours)
 
 export default router

@@ -8,6 +8,7 @@ import { ListePresence } from "../models/ListePresence";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { Cours } from "../models/Cours";
 import { Parcours } from "../models/Parcours";
+import { QrTokenService } from "../../../core/services/QrTokenService";
 import * as fs from "fs"
 import * as path from "path"
 
@@ -165,9 +166,19 @@ export default class PresenceController {
             return res.status(403).json({ success: false })
         }
 
-        const { presenceId, userId } = req.body
-        if (!presenceId || !userId) {
-            return res.status(400).json({ success: false, message: "presenceId et userId requis" })
+        const { presenceId, userId, codeQR } = req.body
+
+        let resolvedUserId: string | number | null = userId || null;
+
+        if (codeQR && typeof codeQR === 'string') {
+            const verified = QrTokenService.verifier(codeQR);
+            if (verified) {
+                resolvedUserId = verified.userId;
+            }
+        }
+
+        if (!presenceId || !resolvedUserId) {
+            return res.status(400).json({ success: false, message: "presenceId et userId (ou codeQR valide) requis" })
         }
 
         try {
@@ -186,7 +197,7 @@ export default class PresenceController {
 
             const coursParticipant = await CoursParticipant.findOne({
                 where: {
-                    utilisateurId: userId,
+                    utilisateurId: resolvedUserId,
                     coursId: coursId
                 }
             })

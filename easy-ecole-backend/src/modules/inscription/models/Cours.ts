@@ -5,6 +5,7 @@ import { Parcours } from "./Parcours";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { SemestresParcours } from "../../../core/enums/SemestresParcours";
 import { Enseignant } from "../../auth/models/Enseignant";
+import { Etablissement } from "../../etablissement/models/Etablissement";
 import { ChapitreCours } from "./ChapitreCours";
 import { Seance } from "./Seance";
 import { DemandeInscription } from "./DemandeInscription";
@@ -26,6 +27,8 @@ export class Cours extends Model<InferAttributes<Cours>, InferCreationAttributes
   declare parcours?: NonAttribute<Parcours>
   declare enseignantId: ForeignKey<Enseignant['id'] | null>
   declare enseignant?: NonAttribute<Enseignant>
+  declare etablissementId: ForeignKey<Etablissement['id'] | null>
+  declare etablissement?: NonAttribute<Etablissement>
   declare volumeHoraire: CreationOptional<number | null>
   declare coefficient: CreationOptional<number | null>
   declare chapitresCours?: ChapitreCours[]
@@ -40,6 +43,7 @@ export class Cours extends Model<InferAttributes<Cours>, InferCreationAttributes
     classe: Association<Cours, Classe>
     parcours: Association<Cours, Parcours>
     enseignant: Association<Cours, Enseignant>
+    etablissement: Association<Cours, Etablissement>
     chapitresCours: Association<Cours, ChapitreCours>
     seances: Association<Cours, Seance>,
     demandesInscription: Association<Cours, DemandeInscription>,
@@ -69,12 +73,13 @@ Cours.init({
   },
   classeId: {
     type: DataTypes.INTEGER.UNSIGNED,
-    allowNull: false
+    allowNull: true
   },
   enseignantId: {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: true
   },
+  etablissementId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
   credit: {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: true,

@@ -14,6 +14,9 @@ export class CursusApprenant extends Model<InferAttributes<CursusApprenant>, Inf
   declare externe: boolean
   declare etablissementId: ForeignKey<Etablissement['id'] | null>
   declare etablissement?: NonAttribute<Etablissement>
+  declare statutReinscription: CreationOptional<string>
+  declare dateReinscription: CreationOptional<Date>
+  declare emailReinscriptionEnvoyeLe: CreationOptional<Date>
   declare intituleParcours: string
   declare parcoursId: ForeignKey<Parcours['id']>
   declare parcours?: NonAttribute<Parcours>
@@ -57,6 +60,9 @@ CursusApprenant.init({
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: true,
   },
+  statutReinscription: { type: DataTypes.ENUM('en_attente','confirme','abandon','desactive'), allowNull: true },
+  dateReinscription: { type: DataTypes.DATE, allowNull: true },
+  emailReinscriptionEnvoyeLe: { type: DataTypes.DATE, allowNull: true },
   intituleParcours: {
     type: new DataTypes.STRING,
     allowNull: true,

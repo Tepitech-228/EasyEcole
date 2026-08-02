@@ -28,7 +28,7 @@ export default class SeanceController {
     }
 
     static async getAllSeances(req: Request, res: Response): Promise<Response> {
-        let options: FindOptions<InferAttributes<Seance>> = { include: this.baseIncludes() }
+        let options: FindOptions<InferAttributes<Seance>> = { include: SeanceController.baseIncludes() }
 
         try {
             let seances: Seance[];
@@ -67,7 +67,15 @@ export default class SeanceController {
 
     static async getSeance(req: Request, res: Response): Promise<Response> {
         let options: FindOptions<InferAttributes<Seance>> = {}
-        options = { where: { id: req.params.id }, include: this.baseIncludes() }
+        options = { where: { id: req.params.id }, include: SeanceController.baseIncludes() }
+
+        // Un enseignant ne peut voir que ses propres séances
+        if ((req as any).utilisateurRole == RolesUtilisateur.ENSEIGNANT) {
+            const enseignant = await Enseignant.findOne({ where: { utilisateurId: (req as any).utilisateurId } });
+            if (enseignant) {
+                (options.where as any).enseignantId = enseignant.id;
+            }
+        }
 
         try {
             const seance: Seance | null = await Seance.findOne(options);
@@ -100,7 +108,7 @@ export default class SeanceController {
 
         try {
             let options: FindOptions<InferAttributes<Seance>> = {
-                include: this.baseIncludes(),
+                include: SeanceController.baseIncludes(),
                 where: {
                     dateDebut: { [Op.lte]: fin },
                     dateFin: { [Op.gte]: debut }

@@ -13,6 +13,7 @@ import { Bulletin } from "../models/Bulletin";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { MoteurCalculService } from "../services/MoteurCalculService";
 import { GenerateurPVService } from "../services/GenerateurPVService";
+import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
 import { DecisionType } from "../enums/DecisionType";
 import { logger } from "../../../core/helpers/Logger";
 
@@ -363,8 +364,30 @@ export default class DeliberationController {
 
   async genererPV(req: Request, res: Response) {
     try {
-      const filename = await GenerateurPVService.generer(Number(req.params.id));
-      return res.json({ message: 'PV gÃ©nÃ©rÃ© avec succÃ¨s', filename });
+      const deliberationId = Number(req.params.id);
+      const deliberation = await Deliberation.findByPk(deliberationId, {
+        include: [{ association: Deliberation.associations.classe }]
+      });
+      if (!deliberation) {
+        return res.status(404).json({ message: 'DÃ©libÃ©ration non trouvÃ©e' });
+      }
+
+      const filename = await GenerateurPVService.generer(deliberationId);
+
+      const classe = deliberation.classe as any;
+      // Archivage automatique dans la GED
+      await ArchiveGedService.archiverDocumentDeliberation({
+        titre: `PV DÃ©libÃ©ration - ${classe?.libelle || ''} - ${deliberation.periode} - ${deliberation.date?.toLocaleDateString('fr-FR') || ''}`,
+        fichier: filename,
+        anneeAcademiqueId: deliberation.anneeAcademiqueId,
+        parcoursId: classe?.parcoursId || undefined,
+        niveauEtudeId: classe?.niveauEtudeId || undefined,
+        classeId: deliberation.classeId,
+        semestre: deliberation.periode,
+        uploaderId: (req as any).utilisateurId || 1
+      });
+
+      return res.json({ message: 'PV gÃ©nÃ©rÃ© et archivÃ© avec succÃ¨s', filename });
     } catch (error) {
       logger.error('Erreur gÃ©nÃ©ration PV:', error);
       return res.status(500).json({ message: 'Erreur lors de la gÃ©nÃ©ration du PV' });

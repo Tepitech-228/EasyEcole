@@ -5,6 +5,7 @@ import { Pointage } from "../models/Pointage";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { DossierEtudiant } from "../models/DossierEtudiant";
 import { Echeance } from "../models/Echeance";
+import { QrTokenService } from "../../../core/services/QrTokenService";
 
 const ROLES_POINTAGE = [
   RolesUtilisateur.APPRENANT,
@@ -252,15 +253,28 @@ export default class PointageController {
             let userId: string | null = null;
             let dossier: DossierEtudiant | null = null;
 
-            if (codeQR.startsWith('{')) {
-                const qrData = JSON.parse(codeQR)
-                userId = qrData.id || null;
+            const verified = QrTokenService.verifier(codeQR);
+            if (verified) {
+                userId = String(verified.userId);
                 dossier = await DossierEtudiant.findOne({
-                    where: { matricule: qrData.matricule },
+                    where: { utilisateurId: verified.userId },
                     include: [{
                         association: DossierEtudiant.associations.echeances
                     }]
-                })
+                });
+            } else if (codeQR.startsWith('{')) {
+                try {
+                    const qrData = JSON.parse(codeQR)
+                    userId = qrData.id || null;
+                    dossier = await DossierEtudiant.findOne({
+                        where: { matricule: qrData.matricule },
+                        include: [{
+                            association: DossierEtudiant.associations.echeances
+                        }]
+                    })
+                } catch (parseError) {
+                    return res.status(400).json({ success: false, message: 'Code QR invalide' });
+                }
             } else {
                 userId = codeQR;
                 dossier = await DossierEtudiant.findOne({
@@ -296,7 +310,8 @@ export default class PointageController {
                 return res.status(200).json({
                     statut: 'vert',
                     message: 'Accès autorisé',
-                    utilisateurId: dossier.utilisateurId
+                    utilisateurId: dossier.utilisateurId,
+                    photo: dossier.photo || ''
                 });
             }
 
@@ -309,7 +324,8 @@ export default class PointageController {
                         utilisateurId: userId,
                         nom: utilisateur.nom,
                         prenoms: utilisateur.prenoms,
-                        role: utilisateur.role
+                        role: utilisateur.role,
+                        photo: utilisateur.photoDeProfil || ''
                     });
                 }
             }

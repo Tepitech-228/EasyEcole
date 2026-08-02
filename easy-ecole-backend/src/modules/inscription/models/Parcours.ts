@@ -4,6 +4,7 @@ import { NiveauEtude } from "./NiveauEtude";
 import { PrerequisParcours } from "./PrerequisParcours";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { Cours } from "./Cours";
+import { Etablissement } from "../../etablissement/models/Etablissement";
 
 export class Parcours extends Model<InferAttributes<Parcours>, InferCreationAttributes<Parcours>> {
   declare id: CreationOptional<number>
@@ -12,6 +13,8 @@ export class Parcours extends Model<InferAttributes<Parcours>, InferCreationAttr
   declare type: CreationOptional<string>
   declare niveauEtudeId: ForeignKey<NiveauEtude['id']>
   declare niveauEtude?: NonAttribute<NiveauEtude>
+  declare etablissementId: ForeignKey<Etablissement['id'] | null>
+  declare etablissement?: NonAttribute<Etablissement>
   declare prerequisParcours?: NonAttribute<PrerequisParcours[]>
   declare cours?: NonAttribute<Cours[]>
 
@@ -20,6 +23,7 @@ export class Parcours extends Model<InferAttributes<Parcours>, InferCreationAttr
 
   declare static associations: {
     niveauEtude: Association<Parcours, NiveauEtude>
+    etablissement: Association<Parcours, Etablissement>
     prerequisParcours: Association<Parcours, PrerequisParcours>
     cours: Association<Parcours, Cours>
   };
@@ -48,6 +52,7 @@ Parcours.init({
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: true
   },
+  etablissementId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
 }, {

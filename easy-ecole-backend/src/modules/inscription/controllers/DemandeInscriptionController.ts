@@ -27,6 +27,7 @@ import fs from "fs";
 import path from "path";
 import { DocumentPDFGenerator } from "../../../core/helpers/DocumentPDFGenerator";
 import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
+import { creerEcritureComptable } from "../../comptabilite/helpers/ComptabiliteHelper";
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 
@@ -471,6 +472,21 @@ export default class DemandeInscriptionController {
         await demandeInscription.update({
             dateValidation: req.body.dateValidation ?? new Date(),
         })
+
+        // INSC-1.1: Génération auto écriture comptable inscription (Débit 411 / Crédit 702100)
+        if (fraisTotal > 0) {
+            await creerEcritureComptable({
+                req,
+                journalCode: 'VEN',
+                compteDebitNumero: '411',
+                compteCreditNumero: '702100',
+                montant: fraisTotal,
+                libelle: `Frais d'inscription - ${demandeInscription.matricule}`,
+                reference: demandeInscription.matricule,
+                moduleSource: 'inscription',
+                referenceModuleId: String(demandeInscription.id)
+            })
+        }
 
         if (demandeInscription.utilisateur) {
             const parcoursChoisiFinal = demandeInscription.parcoursChoisis.find(pc => pc.choixFinal == true)

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Op } from "sequelize";
+import { Op, Sequelize } from "sequelize";
 import { Salon } from "../models/Salon";
 import { Message } from "../models/Message";
 import { ParticipantSalon } from "../models/ParticipantSalon";
@@ -17,15 +17,37 @@ export default class ChatController {
                     model: Salon,
                     as: 'salon',
                     include: [
-                        { model: Message, as: 'messages', limit: 1, order: [['date', 'DESC']] }
+                        { model: Message, as: 'messages', limit: 1, order: [['date', 'DESC']] },
+                        { model: ParticipantSalon, as: 'participants' }
                     ]
                 }]
             });
+
+            // Récupérer tous les salonIds en une seule fois
+            const salonIds = participations.map((p: any) => p.salonId).filter(Boolean);
+            const unreadCountMap = new Map<number, number>();
+            if (salonIds.length > 0) {
+                const unreadRows = await Message.findAll({
+                    attributes: [
+                        'salonId',
+                        [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']
+                    ],
+                    where: {
+                        salonId: { [Op.in]: salonIds },
+                        lu: false,
+                        utilisateurId: { [Op.ne]: utilisateurId }
+                    },
+                    group: ['salonId'],
+                    raw: true
+                });
+                (unreadRows as any[]).forEach((row: any) => {
+                    unreadCountMap.set(row.salonId, parseInt(row.count, 10));
+                });
+            }
+
             const salons = participations.map((p: any) => {
                 const salon = p.salon;
-                const nonLues = salon.messages?.filter((m: any) => {
-                    return !m.lu && m.utilisateurId !== utilisateurId;
-                }).length || 0;
+                const nonLues = unreadCountMap.get(salon.id) || 0;
                 const dernierMsg = salon.messages?.[0] || null;
                 return {
                     ...salon.toJSON(),

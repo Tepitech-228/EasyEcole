@@ -13,6 +13,7 @@ import { DemandeInscriptionDossier } from "./DemandeInscriptionDossier";
 import { CursusApprenant } from "./CursusApprenant";
 import { DemandeInscriptionCours } from "./DemandeInscriptionCours";
 import { PreInscription } from "./PreInscription";
+import { Etablissement } from "../../etablissement/models/Etablissement";
 
 export class DemandeInscription extends Model<InferAttributes<DemandeInscription>, InferCreationAttributes<DemandeInscription>> {
   declare id: CreationOptional<number>
@@ -25,6 +26,8 @@ export class DemandeInscription extends Model<InferAttributes<DemandeInscription
   declare etapeInscription?: NonAttribute<EtapeInscription>
   declare utilisateurId: ForeignKey<Utilisateur['id']>
   declare utilisateur?: NonAttribute<Utilisateur>
+  declare etablissementId: ForeignKey<Etablissement['id'] | null>
+  declare etablissement?: NonAttribute<Etablissement>
   declare reponseInscription?: NonAttribute<ReponseInscription>
   declare preInscription?: NonAttribute<PreInscription>
   declare parcoursChoisis?: ParcoursChoisi[]
@@ -39,6 +42,7 @@ export class DemandeInscription extends Model<InferAttributes<DemandeInscription
 
   declare static associations: {
     utilisateur: Association<DemandeInscription, Utilisateur>
+    etablissement: Association<DemandeInscription, Etablissement>
     reponseInscription: Association<DemandeInscription, ReponseInscription>
     preInscription: Association<DemandeInscription, PreInscription>
     parcoursChoisis: Association<DemandeInscription, ParcoursChoisi>
@@ -83,6 +87,7 @@ DemandeInscription.init({
     allowNull: false,
     unique: 'session-utilisateur'
   },
+  etablissementId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
 }, {

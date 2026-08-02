@@ -33,11 +33,29 @@ export default class NoteEvaluationController {
             if (listeNoteEvaluationId) where.listeNoteEvaluationId = listeNoteEvaluationId;
             if (coursParticipantId) where.coursParticipantId = coursParticipantId;
 
+            const include: any[] = [
+                { association: NoteEvaluation.associations.coursParticipant }
+            ];
+
+            // Un enseignant ne voit que les notes de ses propres cours
+            if ((req as any).utilisateurRole == RolesUtilisateur.ENSEIGNANT) {
+                const enseignant = await Enseignant.findOne({ where: { utilisateurId: (req as any).utilisateurId } });
+                if (enseignant) {
+                    include.push({
+                        association: NoteEvaluation.associations.listeNoteEvaluation,
+                        required: true,
+                        include: [{
+                            association: ListeNoteEvaluation.associations.cours,
+                            where: { enseignantId: enseignant.id },
+                            required: true
+                        }]
+                    });
+                }
+            }
+
             const notes = await NoteEvaluation.findAll({
                 where,
-                include: [
-                    { association: NoteEvaluation.associations.coursParticipant }
-                ]
+                include
             });
 
             return res.status(200).json(notes);
@@ -52,12 +70,21 @@ export default class NoteEvaluationController {
             const note = await NoteEvaluation.findByPk(req.params.id, {
                 include: [
                     { association: NoteEvaluation.associations.coursParticipant },
-                    { association: NoteEvaluation.associations.listeNoteEvaluation }
+                    { association: NoteEvaluation.associations.listeNoteEvaluation, include: [{ association: ListeNoteEvaluation.associations.cours }] }
                 ]
             });
 
             if (!note) {
                 return res.status(404).json({ success: false, message: "Note non trouvée" });
+            }
+
+            // Un enseignant ne peut voir que les notes de ses propres cours
+            if ((req as any).utilisateurRole == RolesUtilisateur.ENSEIGNANT) {
+                const enseignant = await Enseignant.findOne({ where: { utilisateurId: (req as any).utilisateurId } });
+                const cours = (note as any).listeNoteEvaluation?.cours;
+                if (!enseignant || !cours || cours.enseignantId !== enseignant.id) {
+                    return res.status(403).json({ success: false, message: "Vous n'êtes pas l'enseignant de ce cours" });
+                }
             }
 
             return res.status(200).json(note);

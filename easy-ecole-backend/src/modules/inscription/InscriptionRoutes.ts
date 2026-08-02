@@ -43,6 +43,8 @@ import BordereauRouter from "./routers/BordereauRouter";
 import DossierEtudiantRouter from "./routers/DossierEtudiantRouter";
 import HierarchyRouter from "./routers/HierarchyRouter";
 import PreInscriptionRouter from "./routers/PreInscriptionRouter";
+import ReinscriptionRouter from "./routers/ReinscriptionRouter";
+import CartesController from "./controllers/CartesController";
 
 import EcueRouter from "./routers/EcueRouter";
 import MccRouter from "./routers/MccRouter";
@@ -61,6 +63,7 @@ import PublicationNoteRouter from "./routers/PublicationNoteRouter";
 import FraisParcoursRouter from "./routers/FraisParcoursRouter";
 import ReductionFraisRouter from "./routers/ReductionFraisRouter";
 import PenaliteRetardRouter from "./routers/PenaliteRetardRouter";
+import ExcelRouter from "./routers/ExcelRouter";
 import DashboardController from "./controllers/DashboardController";
 import CoursController from "./controllers/CoursController";
 
@@ -68,6 +71,9 @@ const router = express.Router();
 
 // Route publique pour téléchargement (sans Authenticate)
 router.get('/bordereaux/:id/download', BordereauController.downloadBordereau)
+
+// Route publique pour vérification de carte (sans Authenticate)
+router.get('/cartes/verifier/:code', CartesController.verifier)
 
 // Route pour l'arbre pédagogique (accessible depuis /arbre-pedagogique)
 router.get('/arbre-pedagogique', [Authenticate], CoursController.getArbrePedagogique)
@@ -98,12 +104,27 @@ router
     .use('/listesPresences', [Authenticate, InscriptionComplete], ListePresenceRouter)
     .use('/presences', [Authenticate, InscriptionComplete], PresenceRouter)
     .use('/presencesCoursParticipants', [Authenticate, InscriptionComplete], PresenceCoursParticipantRouter)
+    // ⚠️ Routes critiques placées AVANT les montages racine pour éviter
+    //    que .use('/', ..., InscriptionComplete) n'intercepte toutes les requêtes.
+    .use('/pre-inscriptions', [Authenticate], PreInscriptionRouter)
+    .use('/hierarchy', [Authenticate], HierarchyRouter)
+    .use('/typesNoteEvaluation', [Authenticate], TypeNoteEvaluationRouter)
+    .use('/listesNoteEvaluation', [Authenticate], ListeNoteEvaluationRouter)
+    .use('/echelles-notes', [Authenticate], EchelleNoteRouter)
+    .use('/jury-membres', [Authenticate], JuryMembreRouter)
+    .use('/ecues', [Authenticate], EcueRouter)
+    .use('/mcc', [Authenticate], MccRouter)
+    .use('/regles-evaluation', [Authenticate], RegleEvaluationRouter)
+    .use('/sessions-examens', [Authenticate], SessionExamenRouter)
+    .use('/frais-parcours', [Authenticate], FraisParcoursRouter)
+    .use('/reductions-frais', [Authenticate], ReductionFraisRouter)
+    .use('/penalites-retard', [Authenticate], PenaliteRetardRouter)
+    .use('/excel', [Authenticate], ExcelRouter)
+    // Montages racine — ne serviront que pour les routes qui n'ont pas matché ci-dessus
     .use('/', [Authenticate, InscriptionComplete], PresenceEnseignantRouter)
     .use('/', [Authenticate, InscriptionComplete], AbsenceCoursRouter)
     .use('/cahiersDeTexte', [Authenticate, InscriptionComplete], CahierDeTexteRouter)
     .use('/blocsCahierDeTexte', [Authenticate, InscriptionComplete], BlocCahierDeTexteRouter)
-    .use('/typesNoteEvaluation', [Authenticate], TypeNoteEvaluationRouter)
-    .use('/listesNoteEvaluation', [Authenticate], ListeNoteEvaluationRouter)
     .use('/notesEvaluation', [Authenticate, InscriptionComplete], NoteEvaluationRouter)
     .use('/pointages', [Authenticate, InscriptionComplete], PointageRouter)
     .use('/', [Authenticate, InscriptionComplete], BulletinRouter)
@@ -111,26 +132,15 @@ router
     .use('/echeances', [Authenticate, InscriptionComplete], EcheanceRouter)
     .use('/bordereaux', [Authenticate, InscriptionComplete], BordereauRouter)
     .use('/dossiers', [Authenticate, InscriptionComplete], DossierEtudiantRouter)
-    .use('/hierarchy', [Authenticate], HierarchyRouter)
-    .use('/pre-inscriptions', [Authenticate], PreInscriptionRouter)
-
-    .use('/ecues', [Authenticate], EcueRouter)
-    .use('/mcc', [Authenticate], MccRouter)
-    .use('/regles-evaluation', [Authenticate], RegleEvaluationRouter)
-    .use('/sessions-examens', [Authenticate], SessionExamenRouter)
+    .use('/', [Authenticate, InscriptionComplete], PassationRouter)
+    .use('/', [Authenticate, InscriptionComplete], SuiviUeRouter)
+    .use('/publications-notes', [Authenticate, InscriptionComplete], PublicationNoteRouter)
     .use('/absences', [Authenticate, InscriptionComplete], AbsenceRouter)
     .use('/equivalences', [Authenticate, InscriptionComplete], EquivalenceRouter)
     .use('/dispenses', [Authenticate, InscriptionComplete], DispenseRouter)
     .use('/rattrapages', [Authenticate, InscriptionComplete], RattrapageRouter)
     .use('/audit-notes', [Authenticate, InscriptionComplete], AuditNoteRouter)
-    .use('/echelles-notes', [Authenticate], EchelleNoteRouter)
-    .use('/jury-membres', [Authenticate], JuryMembreRouter)
-    .use('/', [Authenticate, InscriptionComplete], PassationRouter)
-    .use('/', [Authenticate, InscriptionComplete], SuiviUeRouter)
-    .use('/publications-notes', [Authenticate, InscriptionComplete], PublicationNoteRouter)
-    .use('/frais-parcours', [Authenticate], FraisParcoursRouter)
-    .use('/reductions-frais', [Authenticate], ReductionFraisRouter)
-    .use('/penalites-retard', [Authenticate], PenaliteRetardRouter)
+    .use('/reinscription', ReinscriptionRouter)
     .get('/dashboard', [Authenticate, InscriptionComplete], DashboardController.getDashboard)
 
 export default router;

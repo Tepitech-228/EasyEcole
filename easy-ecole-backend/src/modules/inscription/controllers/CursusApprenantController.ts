@@ -6,6 +6,7 @@ import { Utilisateur } from "../../auth/models/Utilisateur";
 import { DemandeInscription } from "../models/DemandeInscription";
 import { Cours } from "../models/Cours";
 import { Parcours } from "../models/Parcours";
+import { CoursStatutService } from '../services/CoursStatutService';
 
 export default class CursusApprenantController {
 
@@ -221,6 +222,26 @@ export default class CursusApprenantController {
         }
 
         return null
+    }
+
+    static async getStatutsCours(req: Request, res: Response): Promise<Response> {
+      try {
+        const utilisateurId = (req as any).utilisateurId;
+
+        const cursus = await CursusApprenant.findOne({
+          where: { utilisateurId },
+          order: [['createdAt', 'DESC']]
+        });
+
+        if (!cursus) {
+          return res.status(404).json({ success: false, message: "Aucun cursus trouvé" });
+        }
+
+        const resultats = await CoursStatutService.getStatutsCours(cursus.id);
+        return res.status(200).send(resultats);
+      } catch (error) {
+        return res.status(500).json({ success: false, error });
+      }
     }
 
     static async getCount(req: Request, res: Response): Promise<Response | null> {
