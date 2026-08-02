@@ -6,6 +6,18 @@ import { Session } from 'src/app/data/modules/inscription/models/Session.model';
 import { EtatsSession } from 'src/app/data/enums/EtatsSession';
 import { environment } from 'src/environments/environment';
 
+interface ProchaineEcheance {
+  libelle: string;
+  montant: number;
+  dateLimite: string;
+}
+
+interface EcheancesInfo {
+  totalImpayees: number;
+  enRetard: number;
+  prochaineEcheance: ProchaineEcheance | null;
+}
+
 @Component({
   selector: 'app-dashboard-page',
   templateUrl: './dashboard-page.component.html',
@@ -444,6 +456,33 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
 
   get demandesRecentes(): any[] {
     return this.dashboardData.demandesRecentes || [];
+  }
+
+  // ─── Paiements (Apprenant) ───────────────────────────
+  get echeancesInfo(): EcheancesInfo | null {
+    const e = this.dashboardData?.echeances;
+    if (!e || typeof e !== 'object') return null;
+    return {
+      totalImpayees: Number(e.totalImpayees) || 0,
+      enRetard: Number(e.enRetard) || 0,
+      prochaineEcheance: e.prochaineEcheance ?? null
+    };
+  }
+
+  get paiementAlertState(): 'retard' | 'aVenir' | 'aJour' | null {
+    const e = this.echeancesInfo;
+    if (!e) return null;
+    if (e.enRetard > 0) return 'retard';
+    if (e.totalImpayees > 0 && e.prochaineEcheance) return 'aVenir';
+    return 'aJour';
+  }
+
+  get echeancesEnRetard(): number {
+    return this.echeancesInfo?.enRetard ?? 0;
+  }
+
+  get prochaineEcheance(): ProchaineEcheance | null {
+    return this.echeancesInfo?.prochaineEcheance ?? null;
   }
 
   // ─── Unified Banner Config ───────────────────────────

@@ -16,12 +16,29 @@ import { ListeNoteEvaluation } from "../models/ListeNoteEvaluation";
 import { RhPlanningPersonnel } from "../../rh/models/RhPlanningPersonnel";
 import { Notification } from "../../elearning/models/Notification";
 import { Echeance } from "../models/Echeance";
+import { DossierEtudiant } from "../models/DossierEtudiant";
 import { Bordereau } from "../models/Bordereau";
 import { Session } from "../models/Session";
 import { PaiementInscription } from "../models/PaiementInscription";
 import { SemestreProgressionService } from "../../../core/services/SemestreProgressionService";
 
 const DAYS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+
+function toDateOnlyString(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function echeanceDateStr(dateLimite: Date | string): string {
+  return typeof dateLimite === 'string' ? dateLimite : toDateOnlyString(dateLimite);
+}
+
+function buildLibelleEcheance(e: Echeance): string {
+  if (e.moisConcerne) return `Échéance ${e.moisConcerne}`;
+  return `Échéance n°${e.numeroEcheance} (${e.type === 'scolarite' ? 'Scolarité' : 'Inscription'})`;
+}
 
 class DashboardController {
 
@@ -199,7 +216,58 @@ class DashboardController {
 
         const totalCours = coursIds.length;
 
-        return { success: true, role: 'apprenant', data: { agenda, notesRecentes, moyenne, totalPresences, totalCours, progression } };
+        const echeances = await DashboardController.getEcheancesApprenant(utilisateurId);
+
+        return { success: true, role: 'apprenant', data: { agenda, notesRecentes, moyenne, totalPresences, totalCours, progression, echeances } };
+    }
+
+    /**
+     * Agrégation des échéances d'un apprenant pour le dashboard :
+     * totalImpayees (impaye + en_retard), enRetard, et la prochaine échéance
+     * (la plus proche à venir, sinon la plus récente échue).
+     */
+    private static async getEcheancesApprenant(utilisateurId: number): Promise<{
+        totalImpayees: number;
+        enRetard: number;
+        prochaineEcheance: { libelle: string; montant: number; dateLimite: string } | null;
+    }> {
+        try {
+            const dossier = await DossierEtudiant.findOne({
+                where: { utilisateurId },
+                include: [{ association: DossierEtudiant.associations.echeances }],
+            });
+
+            const echeances = (dossier?.echeances || []) as Echeance[];
+            if (echeances.length === 0) {
+                return { totalImpayees: 0, enRetard: 0, prochaineEcheance: null };
+            }
+
+            const impayees = echeances.filter(e => e.statut === 'impaye' || e.statut === 'en_retard');
+            const enRetard = echeances.filter(e => e.statut === 'en_retard').length;
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const todayStr = toDateOnlyString(today);
+
+            let prochaineEcheance: { libelle: string; montant: number; dateLimite: string } | null = null;
+            if (impayees.length > 0) {
+                const triees = impayees
+                    .map(e => ({ echeance: e, dateStr: echeanceDateStr(e.dateLimite) }))
+                    .sort((a, b) => (a.dateStr < b.dateStr ? -1 : a.dateStr > b.dateStr ? 1 : 0));
+
+                const cible = triees.find(t => t.dateStr >= todayStr) || triees[triees.length - 1];
+                prochaineEcheance = {
+                    libelle: buildLibelleEcheance(cible.echeance),
+                    montant: cible.echeance.montant,
+                    dateLimite: cible.dateStr,
+                };
+            }
+
+            return { totalImpayees: impayees.length, enRetard, prochaineEcheance };
+        } catch (error) {
+            console.error('[DashboardController] Erreur récupération échéances apprenant:', error);
+            return { totalImpayees: 0, enRetard: 0, prochaineEcheance: null };
+        }
     }
 
     private static async getNotesRecentes(utilisateurId: number): Promise<any[]> {

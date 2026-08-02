@@ -21,6 +21,7 @@ import { setupChatSocket } from './modules/elearning/socket/chatSocket'
 import { PermissionSeed } from './modules/auth/seed/PermissionSeed'
 import { RoleSeed } from './modules/auth/seed/RoleSeed'
 import { RappelSalleCron } from './core/services/RappelSalleCron'
+import { RappelEcheanceCron } from './core/services/RappelEcheanceCron'
 import { NotificationGedService } from './modules/ged/services/NotificationGedService'
 import { seedComptabilite } from './modules/comptabilite/seed'
 import { errorHandler } from './core/middlewares/ErrorHandler'
@@ -140,6 +141,9 @@ server.on("listening", async () => {
 
     // Start cron for room reminders
     RappelSalleCron.start();
+
+    // Start cron for overdue échéance reminders
+    RappelEcheanceCron.start();
 
     // Check DUA expirations on startup
     try {
