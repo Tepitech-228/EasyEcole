@@ -11,7 +11,26 @@ const router = express.Router()
  * /inscription/sallesDeClasse:
  *   get:
  *     tags: [Salles de classe]
- *     summary: Liste toutes les salles de classe
+ *     summary: Liste toutes les salles de classe (filtres combinés optionnels)
+ *     parameters:
+ *       - in: query
+ *         name: classeId
+ *         required: false
+ *         schema:
+ *           type: integer
+ *         description: Filtre par classe
+ *       - in: query
+ *         name: parcoursId
+ *         required: false
+ *         schema:
+ *           type: integer
+ *         description: Filtre par filière (parcours)
+ *       - in: query
+ *         name: etablissementId
+ *         required: false
+ *         schema:
+ *           type: integer
+ *         description: Filtre par établissement
  *     responses:
  *       200:
  *         description: Liste des salles de classe

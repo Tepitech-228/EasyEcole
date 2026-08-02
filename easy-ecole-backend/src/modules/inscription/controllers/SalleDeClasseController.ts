@@ -20,12 +20,29 @@ export default class SalleDeClasseController {
                         association: 'site' as any
                     }]
                 }]
+            }, {
+                association: SalleDeClasse.associations.classe
+            }, {
+                association: SalleDeClasse.associations.parcours
+            }, {
+                association: SalleDeClasse.associations.etablissement
             }]
         }
-        if(req.query.classeId) {
+
+        let where: any = {}
+        if (req.query.classeId) {
+            where.classeId = req.query.classeId as string
+        }
+        if (req.query.parcoursId) {
+            where.parcoursId = req.query.parcoursId as string
+        }
+        if (req.query.etablissementId) {
+            where.etablissementId = req.query.etablissementId as string
+        }
+        if (Object.keys(where).length > 0) {
             options = {
                 ...options,
-                where: {classeId: req.query.classeId as string}
+                where
             }
         }
 
@@ -51,6 +68,12 @@ export default class SalleDeClasseController {
                         association: 'site' as any
                     }]
                 }]
+            }, {
+                association: SalleDeClasse.associations.classe
+            }, {
+                association: SalleDeClasse.associations.parcours
+            }, {
+                association: SalleDeClasse.associations.etablissement
             }]
         }
 
@@ -85,6 +108,8 @@ export default class SalleDeClasseController {
             salledeclasse.equipements = req.body.equipements ? JSON.stringify(req.body.equipements) : null
             salledeclasse.localisationId = req.body.localisationId
             salledeclasse.classeId = req.body.classeId
+            salledeclasse.parcoursId = req.body.parcoursId
+            salledeclasse.etablissementId = req.body.etablissementId
 
             await salledeclasse.save()
                 .then((salledeclasse) => {
@@ -117,6 +142,8 @@ export default class SalleDeClasseController {
                 equipements: req.body.equipements ? JSON.stringify(req.body.equipements) : (req.body.equipements === null ? null : salledeclasse.equipements),
                 localisationId: req.body.localisationId ?? salledeclasse.localisationId,
                 classeId: req.body.classeId ?? salledeclasse.classeId,
+                parcoursId: req.body.parcoursId ?? salledeclasse.parcoursId,
+                etablissementId: req.body.etablissementId ?? salledeclasse.etablissementId,
             })
                 .then(async (salledeclasse) => {
                     return res.status(200).send(salledeclasse);

@@ -2770,6 +2770,10 @@ schemas: {
       description: { type: 'string', nullable: true },
       capacite: { type: 'number', nullable: true },
       equipements: { type: 'string', nullable: true },
+      localisationId: { type: 'number', nullable: true },
+      classeId: { type: 'number', nullable: true },
+      parcoursId: { type: 'number', nullable: true },
+      etablissementId: { type: 'number', nullable: true },
     }
   },
   Salon: {

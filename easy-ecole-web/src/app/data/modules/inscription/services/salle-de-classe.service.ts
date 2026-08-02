@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
@@ -13,9 +13,12 @@ export class SalleDeClasseService {
 
   constructor(private httpClient: HttpClient) { }
 
-  getAll(classeId?: string): Observable<SalleDeClasse[]> {
-    const params = classeId ? `?classeId=${classeId}` : ''
-    return this.httpClient.get<SalleDeClasse[]>(`${this.SERVICE_URL}${params}`)
+  getAll(classeId?: string, parcoursId?: string, etablissementId?: string): Observable<SalleDeClasse[]> {
+    let params = new HttpParams();
+    if (classeId != null && classeId !== '') params = params.set('classeId', classeId);
+    if (parcoursId != null && parcoursId !== '') params = params.set('parcoursId', parcoursId);
+    if (etablissementId != null && etablissementId !== '') params = params.set('etablissementId', etablissementId);
+    return this.httpClient.get<SalleDeClasse[]>(this.SERVICE_URL, { params })
   }
 
   get(id: string): Observable<SalleDeClasse> {

@@ -60,6 +60,14 @@ SalleDeClasse.belongsTo(Classe, { as: 'classe', foreignKey: 'classeId' })
 SalleDeClasse.belongsTo(Localisation, { foreignKey: 'localisationId', as: 'localisation' })
 Localisation.hasMany(SalleDeClasse, { foreignKey: 'localisationId', as: 'sallesDeClasse' })
 
+// SalleDeClasse - Parcours
+Parcours.hasMany(SalleDeClasse, { foreignKey: 'parcoursId', as: 'sallesDeClasse' })
+SalleDeClasse.belongsTo(Parcours, { as: 'parcours', foreignKey: 'parcoursId' })
+
+// SalleDeClasse - Etablissement
+Etablissement.hasMany(SalleDeClasse, { foreignKey: 'etablissementId', as: 'sallesDeClasse' })
+SalleDeClasse.belongsTo(Etablissement, { as: 'etablissement', foreignKey: 'etablissementId' })
+
 // NiveauEtude - Classe
 NiveauEtude.hasMany(Classe, { foreignKey: 'niveauEtudeId', as: 'classes' })
 Classe.belongsTo(NiveauEtude, { as: 'niveauEtude', foreignKey: 'niveauEtudeId' })

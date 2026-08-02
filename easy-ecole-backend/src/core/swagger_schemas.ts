@@ -2841,7 +2841,9 @@ export const modelSchemas = {
       capacite: { type: 'integer', nullable: true },
       equipements: { type: 'string', nullable: true },
       localisationId: { type: 'integer' },
-      classeId: { type: 'integer' },
+      classeId: { type: 'integer', nullable: true },
+      parcoursId: { type: 'integer', nullable: true },
+      etablissementId: { type: 'integer', nullable: true },
     }
   },
   Salon: {

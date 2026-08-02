@@ -1,7 +1,7 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
   <app-header-title
     title="Salles de classe"
-    subtitle="Gérez les salles de classe et leur affectation aux classes">
+    subtitle="Gérez les salles de classe et leur affectation aux classes et filières">
   </app-header-title>
 
   <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -23,8 +23,13 @@
       <div class="flex gap-4">
         <select [(ngModel)]="selectedClasseId" (change)="getSalles()"
           class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
-          <option value="undefined">Toutes les classes</option>
+          <option value="">Toutes les classes</option>
           <option *ngFor="let c of classes" [value]="c.id">{{ c.libelle }}</option>
+        </select>
+        <select [(ngModel)]="selectedParcoursId" (change)="getSalles()"
+          class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+          <option value="">Toutes les filières</option>
+          <option *ngFor="let p of parcoursList" [value]="p.id">{{ p.titre }}</option>
         </select>
       </div>
       <div class="flex gap-2">
@@ -35,7 +40,7 @@
   </div>
 
   <div *ngIf="showForm" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
-    <h3 class="text-lg font-semibold text-gray-900 mb-4">Nouvelle salle de classe</h3>
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ editingId ? 'Modifier' : 'Nouvelle' }} salle de classe</h3>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <div>
         <label class="block text-xs font-medium text-gray-500 mb-1">Libellé *</label>
@@ -44,8 +49,15 @@
       <div>
         <label class="block text-xs font-medium text-gray-500 mb-1">Classe</label>
         <select [(ngModel)]="formData.classeId" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
-          <option value="">Sélectionner</option>
+          <option value="">À tout</option>
           <option *ngFor="let c of classes" [value]="c.id">{{ c.libelle }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Filière (parcours)</label>
+        <select [(ngModel)]="formData.parcoursId" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+          <option value="">À tout</option>
+          <option *ngFor="let p of parcoursList" [value]="p.id">{{ p.titre }}</option>
         </select>
       </div>
     </div>
@@ -55,7 +67,7 @@
     </div>
     <div class="flex justify-end gap-3 mt-4">
       <app-custom-button (click)="fermerFormulaire()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
-      <app-custom-button (click)="creerSalle()" text="Créer" color="primary"></app-custom-button>
+      <app-custom-button (click)="sauvegarder()" [text]="editingId ? 'Modifier' : 'Créer'" color="primary"></app-custom-button>
     </div>
   </div>
 
@@ -66,7 +78,7 @@
           <tr class="bg-gray-50/50">
             <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Libellé</th>
             <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
-            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Classe</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Affectation</th>
             <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
@@ -74,9 +86,10 @@
           <tr *ngFor="let s of salles; trackBy: trackByFn" class="hover:bg-gray-50/50 transition-colors">
             <td class="px-5 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ s.libelle }}</td>
             <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-500">{{ s.description || '-' }}</td>
-            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ getClasseLibelle(s.classeId) }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ getAffectation(s) }}</td>
             <td class="px-5 py-4 whitespace-nowrap text-right">
               <div class="flex items-center justify-end gap-2">
+                <app-custom-button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="editerSalle(s)" text="Modifier" color="blue" [outlined]="true"></app-custom-button>
                 <app-custom-button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="supprimer(s.id)" text="Supprimer" color="primary" [outlined]="true"></app-custom-button>
               </div>
             </td>
