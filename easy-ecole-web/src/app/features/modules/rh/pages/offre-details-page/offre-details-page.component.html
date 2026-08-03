@@ -1,20 +1,22 @@
 <app-return-back link="/rh/offres-emploi" text="Retour aux offres"></app-return-back>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+<div *ngIf="errorMessage" class="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+  {{ errorMessage }}
+</div>
+
+<div *ngIf="!loading && offre" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
   <div class="lg:col-span-2">
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl font-semibold text-gray-900">Développeur Angular</h2>
-        <span class="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">Ouverte</span>
+        <h2 class="text-xl font-semibold text-gray-900">{{ getPosteTitre() }}</h2>
+        <span class="px-3 py-1 rounded-full text-xs font-medium" [ngClass]="getStatutBadge(offre.statut || '')">{{ offre.statut || '-' }}</span>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div><label class="block text-xs font-medium text-gray-500 uppercase mb-1">Date publication</label><p class="text-sm text-gray-900">15/01/2026</p></div>
-        <div><label class="block text-xs font-medium text-gray-500 uppercase mb-1">Date clôture</label><p class="text-sm text-gray-900">15/02/2026</p></div>
-        <div class="md:col-span-2"><label class="block text-xs font-medium text-gray-500 uppercase mb-1">Description</label><p class="text-sm text-gray-700">Recherche un développeur Angular expérimenté...</p></div>
-      </div>
-      <div class="mt-6 flex gap-3">
-        <app-custom-button text="Modifier" color="primary"></app-custom-button>
-        <app-custom-button text="Voir candidatures" color="indigo" link="/rh/candidatures"></app-custom-button>
+        <div><label class="block text-xs font-medium text-gray-500 uppercase mb-1">Date publication</label><p class="text-sm text-gray-900">{{ offre.datePublication ? (offre.datePublication | date:'dd/MM/yyyy') : '-' }}</p></div>
+        <div><label class="block text-xs font-medium text-gray-500 uppercase mb-1">Date clôture</label><p class="text-sm text-gray-900">{{ offre.dateCloture ? (offre.dateCloture | date:'dd/MM/yyyy') : '-' }}</p></div>
+        <div class="md:col-span-2"><label class="block text-xs font-medium text-gray-500 uppercase mb-1">Description</label><p class="text-sm text-gray-700">{{ offre.description || 'Aucune description.' }}</p></div>
       </div>
     </div>
   </div>
@@ -22,10 +24,16 @@
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <h3 class="text-lg font-semibold text-gray-900 mb-2">Statistiques</h3>
       <div class="space-y-3">
-        <div class="flex justify-between text-sm"><span class="text-gray-500">Candidatures</span><span class="font-semibold text-gray-900">8</span></div>
-        <div class="flex justify-between text-sm"><span class="text-gray-500">À examiner</span><span class="font-semibold text-gray-900">4</span></div>
-        <div class="flex justify-between text-sm"><span class="text-gray-500">Retenues</span><span class="font-semibold text-gray-900">1</span></div>
+        <div class="flex justify-between text-sm"><span class="text-gray-500">Candidatures</span><span class="font-semibold text-gray-900">{{ candidatureCount }}</span></div>
+        <div class="flex justify-between text-sm"><span class="text-gray-500">Retenues</span><span class="font-semibold text-gray-900">{{ candidatureRetenues }}</span></div>
+      </div>
+      <div class="mt-6 flex flex-col gap-3">
+        <app-custom-button text="Voir les candidatures" color="indigo" link="/rh/candidatures"></app-custom-button>
       </div>
     </div>
   </div>
+</div>
+
+<div *ngIf="!loading && !offre && !errorMessage" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
+  <p class="text-sm text-gray-500">Aucune information disponible.</p>
 </div>

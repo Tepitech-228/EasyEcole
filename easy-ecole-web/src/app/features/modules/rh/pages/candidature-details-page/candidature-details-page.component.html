@@ -1,28 +1,55 @@
 <app-return-back link="/rh/candidatures" text="Retour aux candidatures"></app-return-back>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+<div *ngIf="errorMessage" class="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+  {{ errorMessage }}
+</div>
+
+<div *ngIf="!loading && candidature" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
   <div class="lg:col-span-2">
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl font-semibold text-gray-900">Candidature #{{ candidatureId }}</h2>
-        <span class="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Soumise</span>
+        <h2 class="text-xl font-semibold text-gray-900">{{ candidature.nom || 'Candidature #' + candidatureId }}</h2>
+        <span class="px-3 py-1 rounded-full text-xs font-medium" [ngClass]="getStatutBadge(candidature.statut || '')">{{ candidature.statut || '-' }}</span>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div><label class="block text-xs font-medium text-gray-500 uppercase mb-1">Candidat</label><p class="text-sm text-gray-900">Dupont Jean</p></div>
-        <div><label class="block text-xs font-medium text-gray-500 uppercase mb-1">Offre</label><p class="text-sm text-gray-900">Développeur Angular</p></div>
-        <div><label class="block text-xs font-medium text-gray-500 uppercase mb-1">Date dépôt</label><p class="text-sm text-gray-900">20/01/2026</p></div>
-        <div><label class="block text-xs font-medium text-gray-500 uppercase mb-1">Statut</label><p class="text-sm text-gray-900">Soumise</p></div>
+        <div><label class="block text-xs font-medium text-gray-500 uppercase mb-1">Offre</label><p class="text-sm text-gray-900">{{ getOffreTitre() }}</p></div>
+        <div><label class="block text-xs font-medium text-gray-500 uppercase mb-1">Email</label><p class="text-sm text-gray-900">{{ candidature.email || '-' }}</p></div>
+        <div><label class="block text-xs font-medium text-gray-500 uppercase mb-1">Téléphone</label><p class="text-sm text-gray-900">{{ candidature.telephone || '-' }}</p></div>
+        <div><label class="block text-xs font-medium text-gray-500 uppercase mb-1">Date dépôt</label><p class="text-sm text-gray-900">{{ candidature.createdAt ? (candidature.createdAt | date:'dd/MM/yyyy') : '-' }}</p></div>
+        <div><label class="block text-xs font-medium text-gray-500 uppercase mb-1">CV</label><p class="text-sm text-gray-900">{{ candidature.cv || 'Non fourni' }}</p></div>
+        <div><label class="block text-xs font-medium text-gray-500 uppercase mb-1">Lettre de motivation</label><p class="text-sm text-gray-900">{{ candidature.lettreMotivation || 'Non fournie' }}</p></div>
       </div>
-      <div class="mt-6 flex gap-3">
-        <app-custom-button text="Valider" color="emerald"></app-custom-button>
-        <app-custom-button text="Rejeter" color="primary"></app-custom-button>
+      <div class="mt-6">
+        <label class="block text-xs font-medium text-gray-500 uppercase mb-2">Changer le statut</label>
+        <select [value]="candidature.statut" (change)="changerStatut($event.target.value)" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white">
+          <option value="soumise">Soumise</option>
+          <option value="étudiée">Étudiée</option>
+          <option value="retenue">Retenue</option>
+          <option value="rejetée">Rejetée</option>
+        </select>
       </div>
     </div>
   </div>
   <div>
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <h3 class="text-lg font-semibold text-gray-900 mb-4">Documents</h3>
-      <p class="text-sm text-gray-500">CV et lettre de motivation à venir.</p>
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">Entretiens</h3>
+      <div *ngIf="getEntries(candidature.entretiens).length === 0" class="text-sm text-gray-500">Aucun entretien planifié.</div>
+      <ul *ngIf="getEntries(candidature.entretiens).length > 0" class="space-y-3">
+        <li *ngFor="let e of getEntries(candidature.entretiens)" class="border border-gray-100 rounded-lg p-3">
+          <div class="flex justify-between text-sm">
+            <span class="font-medium text-gray-900">{{ e.date ? (e.date | date:'dd/MM/yyyy') : '-' }}</span>
+            <span class="text-gray-500">{{ e.heure || '-' }}</span>
+          </div>
+          <div class="text-xs text-gray-500 mt-1">{{ e.lieu || 'Lieu non précisé' }}</div>
+          <div *ngIf="e.commentaire" class="text-xs text-gray-600 mt-1">{{ e.commentaire }}</div>
+        </li>
+      </ul>
     </div>
   </div>
+</div>
+
+<div *ngIf="!loading && !candidature && !errorMessage" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
+  <p class="text-sm text-gray-500">Aucune information disponible.</p>
 </div>

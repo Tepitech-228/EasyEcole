@@ -1,25 +1,82 @@
-<app-header-title title="Offres d'emploi"></app-header-title>
+<app-header-title
+  title="Offres d'emploi"
+  subtitle="Gérez les offres d'emploi publiées par l'établissement">
+</app-header-title>
 
-<div class="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
-  <div class="p-4 border-b border-gray-100">
-    <p class="text-sm text-gray-500">Gérez les offres d'emploi publiées par l'établissement.</p>
+<div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+  <div class="flex justify-end">
+    <app-custom-button *ngIf="rolesValue.isRessourcesHumaines || rolesValue.isAdmin" (click)="ouvrirCreation()" text="Nouvelle offre" color="primary"></app-custom-button>
   </div>
-  <table class="min-w-full divide-y divide-gray-200">
-    <thead class="bg-gray-50">
-      <tr>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Poste</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date publication</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date clôture</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
-        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-      </tr>
-    </thead>
-    <tbody class="bg-white divide-y divide-gray-200">
-      <tr class="hover:bg-gray-50">
-        <td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500">
-          Aucune offre trouvée
-        </td>
-      </tr>
-    </tbody>
-  </table>
+</div>
+
+<div *ngIf="errorMessage" class="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+  {{ errorMessage }}
+</div>
+
+<div *ngIf="showForm" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
+  <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ isEditing ? 'Modifier l\'offre' : 'Nouvelle offre' }}</h3>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">Poste *</label>
+      <select [(ngModel)]="formData.posteId" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+        <option value="">Sélectionner un poste</option>
+        <option *ngFor="let p of postes" [value]="p.id">{{ p.titre }}</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">Date de clôture</label>
+      <input [(ngModel)]="formData.dateCloture" type="date" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" />
+    </div>
+    <div *ngIf="isEditing">
+      <label class="block text-xs font-medium text-gray-500 mb-1">Statut</label>
+      <select [(ngModel)]="formData.statut" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+        <option value="publiée">Publiée</option>
+        <option value="fermée">Fermée</option>
+      </select>
+    </div>
+    <div class="sm:col-span-2">
+      <label class="block text-xs font-medium text-gray-500 mb-1">Description</label>
+      <textarea [(ngModel)]="formData.description" rows="3" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="Description de l'offre"></textarea>
+    </div>
+  </div>
+  <div class="flex justify-end gap-3 mt-4">
+    <app-custom-button (click)="fermerFormulaire()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+    <app-custom-button (click)="soumettre()" text="{{ isEditing ? 'Enregistrer' : 'Créer' }}" color="primary"></app-custom-button>
+  </div>
+</div>
+
+<div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-100">
+      <thead>
+        <tr class="bg-gray-50/50">
+          <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Poste</th>
+          <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date publication</th>
+          <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date clôture</th>
+          <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Statut</th>
+          <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        <tr *ngFor="let o of offres; trackBy: trackByFn" class="hover:bg-gray-50/50 transition-colors cursor-pointer" (click)="voirDetail(o.id)">
+          <td class="px-5 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ getPosteTitre(o) }}</td>
+          <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ o.datePublication ? (o.datePublication | date:'dd/MM/yyyy') : '-' }}</td>
+          <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ o.dateCloture ? (o.dateCloture | date:'dd/MM/yyyy') : '-' }}</td>
+          <td class="px-5 py-4 whitespace-nowrap">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-medium" [ngClass]="getStatutBadge(o.statut || '')">{{ o.statut || '-' }}</span>
+          </td>
+          <td class="px-5 py-4 whitespace-nowrap text-right" (click)="$event.stopPropagation()">
+            <div class="flex items-center justify-end gap-2">
+              <app-custom-button (click)="ouvrirEdition(o)" text="Modifier" color="gray" [outlined]="true"></app-custom-button>
+              <app-custom-button (click)="supprimer(o.id)" text="Supprimer" color="primary" [outlined]="true"></app-custom-button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+  <div *ngIf="!loading && offres.length === 0" class="px-5 py-12 text-center">
+    <p class="mt-4 text-sm text-gray-500">Aucune offre d'emploi</p>
+  </div>
 </div>
