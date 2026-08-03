@@ -6,7 +6,7 @@ import { RemboursementPret } from '../models/RemboursementPret.model';
 
 @Injectable({ providedIn: 'root' })
 export class RhRemboursementPretService {
-    private readonly SERVICE_URL: string = `${environment.API_MODULES.RH}/remboursements-prets`
+    private readonly SERVICE_URL: string = `${environment.API_MODULES.RH}/remboursements-pret`
     constructor(private httpClient: HttpClient) { }
     getAll(): Observable<RemboursementPret[]> { return this.httpClient.get<RemboursementPret[]>(`${this.SERVICE_URL}`) }
     get(id: string): Observable<RemboursementPret> { return this.httpClient.get<RemboursementPret>(`${this.SERVICE_URL}/${id}`) }
