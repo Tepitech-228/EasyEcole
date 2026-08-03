@@ -30,10 +30,7 @@
             <td class="p-1">{{ e.libelle }}</td>
             <td class="p-1 text-red-600">{{ e.debit | number }}</td>
             <td class="p-1 text-green-600">{{ e.credit | number }}</td>
-            <td class="p-1">
-              <span class="text-green-700 font-mono text-xs">{{ e.lettre }}</span>
-              <button (click)="deletrer(e.id)" class="ml-1 text-red-400 hover:text-red-600 text-xs">✕</button>
-            </td>
+            <td class="p-1"><span class="text-green-700 font-mono text-xs">{{ e.lettre }}</span></td>
           </tr>
         </tbody>
       </table>
@@ -60,7 +57,10 @@
             <td class="p-1">{{ l.libelle }}</td>
             <td class="p-1 text-red-600">{{ l.debit | number }}</td>
             <td class="p-1 text-green-600">{{ l.credit | number }}</td>
-            <td class="p-1"><span class="text-green-700 font-mono text-xs">{{ l.lettre }}</span></td>
+            <td class="p-1">
+              <span class="text-green-700 font-mono text-xs">{{ l.lettre }}</span>
+              <button (click)="deletrer(l.id)" class="ml-1 text-red-400 hover:text-red-600 text-xs" title="Défaire le rapprochement">✕</button>
+            </td>
           </tr>
         </tbody>
       </table>

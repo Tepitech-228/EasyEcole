@@ -17,8 +17,6 @@ export class RapprochementPageComponent extends BaseComponentClass implements On
   releveSelectionneId = '';
   showLettreForm = false;
   lettreData = { ecritureId: '', ligneReleveId: '' };
-  private readonly API_ECRITURES = `${environment.API_URL}/comptabilite/ecritures`;
-  private readonly API_RELEVES = `${environment.API_URL}/comptabilite/releves-bancaires`;
   private readonly API_RAPPROCHEMENT = `${environment.API_URL}/comptabilite/rapprochement`;
 
   constructor(private http: HttpClient) { super(); }
@@ -29,31 +27,33 @@ export class RapprochementPageComponent extends BaseComponentClass implements On
     });
   }
 
+  /**
+   * Source de données : GET /comptabilite/rapprochement/non-rapprochees
+   * Renvoie { success, ecritures, lignesReleve } déjà pré-filtrées (écritures
+   * non lettrées du compte 512 et lignes de relevé non rapprochées).
+   */
   chargerDonnees(): void {
     if (!this.compteBancaireId) return;
     this.loading = true;
-    this.http.get<any[]>(`${this.API_ECRITURES}?compteBancaireId=${this.compteBancaireId}`).subscribe({
-      next: (res) => { this.ecritures = res; this.chargeLignesReleve(); },
-      error: () => this.loading = false
-    });
-  }
-
-  chargeLignesReleve(): void {
-    this.http.get<any[]>(`${this.API_RELEVES}?compteBancaireId=${this.compteBancaireId}&_embed=lignes`).subscribe({
+    const url = `${this.API_RAPPROCHEMENT}/non-rapprochees?compteBancaireId=${this.compteBancaireId}`;
+    this.http.get<any>(url).subscribe({
       next: (res) => {
-        this.lignesReleve = [].concat(...res.map((r: any) => (r.lignes || []).map((l: any) => ({ ...l, _releveDate: r.dateReleve }))));
+        this.ecritures = (res && res.ecritures) || [];
+        this.lignesReleve = (res && res.lignesReleve) || [];
         this.loading = false;
       },
-      error: () => this.loading = false
+      error: () => { this.ecritures = []; this.lignesReleve = []; this.loading = false; }
     });
   }
 
   get ecrituresNonLettrees(): any[] {
+    // Les écritures provenant de /non-rapprochees sont toutes non identifiées par une lettre
     return this.ecritures.filter(e => !e.lettre);
   }
 
   get lignesNonLettrees(): any[] {
-    return this.lignesReleve.filter(l => !l.lettre);
+    // Les lignes provenant de /non-rapprochees sont marquées rapprochee: false
+    return this.lignesReleve.filter(l => !l.rapprochee);
   }
 
   get ecrituresLettrees(): any[] {
@@ -61,7 +61,7 @@ export class RapprochementPageComponent extends BaseComponentClass implements On
   }
 
   get lignesLettrees(): any[] {
-    return this.lignesReleve.filter(l => l.lettre);
+    return this.lignesReleve.filter(l => l.rapprochee);
   }
 
   ouvrirLettrage(ecritureId?: string, ligneId?: string): void {
@@ -69,9 +69,17 @@ export class RapprochementPageComponent extends BaseComponentClass implements On
     this.showLettreForm = true;
   }
 
+  /**
+   * Rapproche une écriture avec une ligne de relevé.
+   * POST /comptabilite/rapprochement/rapprocher  body { ecritureComptableId, ligneReleveId }
+   */
   lettrer(): void {
     if (!this.lettreData.ecritureId || !this.lettreData.ligneReleveId) return;
-    this.http.post(this.API_RAPPROCHEMENT, this.lettreData).subscribe({
+    const payload = {
+      ecritureComptableId: this.lettreData.ecritureId,
+      ligneReleveId: this.lettreData.ligneReleveId
+    };
+    this.http.post(`${this.API_RAPPROCHEMENT}/rapprocher`, payload).subscribe({
       next: () => {
         this.showLettreForm = false;
         this.chargerDonnees();
@@ -79,8 +87,13 @@ export class RapprochementPageComponent extends BaseComponentClass implements On
     });
   }
 
-  deletrer(ecritureId: string): void {
-    this.http.delete(`${this.API_RAPPROCHEMENT}/${ecritureId}`).subscribe({
+  /**
+   * Défaire un rapprochement.
+   * POST /comptabilite/rapprochement/defaire/:ligneReleveId  (id du rapprochement = id de la ligne)
+   */
+  deletrer(ligneReleveId: string): void {
+    if (!ligneReleveId) return;
+    this.http.post(`${this.API_RAPPROCHEMENT}/defaire/${ligneReleveId}`, {}).subscribe({
       next: () => this.chargerDonnees()
     });
   }
