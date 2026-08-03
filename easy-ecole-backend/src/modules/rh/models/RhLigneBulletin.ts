@@ -12,6 +12,10 @@ export class RhLigneBulletin extends Model<InferAttributes<RhLigneBulletin>, Inf
   declare base: CreationOptional<number>
   declare taux: CreationOptional<number>
   declare montant: CreationOptional<number>
+  /** Traçabilité : type de source de la ligne ('base' | 'hs' | 'prestation' | 'retrait'). */
+  declare source: CreationOptional<string | null>
+  /** Identifiant de l'élément source (rubrique, heure supp, prestation ou prêt). */
+  declare sourceId: CreationOptional<string | null>
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
 
@@ -48,6 +52,14 @@ RhLigneBulletin.init({
     type: DataTypes.DECIMAL(12, 2),
     allowNull: true,
     defaultValue: 0
+  },
+  source: {
+    type: DataTypes.ENUM('base', 'hs', 'prestation', 'retrait'),
+    allowNull: true
+  },
+  sourceId: {
+    type: new DataTypes.STRING(64),
+    allowNull: true
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

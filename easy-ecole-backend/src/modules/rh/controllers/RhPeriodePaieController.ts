@@ -1,9 +1,7 @@
 import { Request, Response } from "express";
 import { RhPeriodePaie } from "../models/RhPeriodePaie";
-import { RhEmploye } from "../models/RhEmploye";
 import { RhBulletinPaie } from "../models/RhBulletinPaie";
-import { RhLigneBulletin } from "../models/RhLigneBulletin";
-import { RhRubriquePaie } from "../models/RhRubriquePaie";
+import { RhPaieService } from "../services/RhPaieService";
 
 export default class RhPeriodePaieController {
 
@@ -65,61 +63,14 @@ export default class RhPeriodePaieController {
       if (!periode) return res.status(404).json({ success: false, message: "Période non trouvée" });
       if (periode.statut === 'verrouillée') return res.status(400).json({ success: false, message: "Période verrouillée" });
 
-      const rubriques = await RhRubriquePaie.findAll();
-      const employes = await RhEmploye.findAll({ where: { statut: 'actif' } });
-      const bulletinsCrees: RhBulletinPaie[] = [];
+      // Génération idempotente et transactionnelle via RhPaieService.
+      const count = await RhPaieService.genererBulletinsPourPeriode(periode);
 
-      for (const employe of employes) {
-        const bulletin = await RhBulletinPaie.create({
-          employeId: employe.id,
-          periodeId: periode.id,
-          totalGains: 0,
-          totalRetenues: 0,
-          netAPayer: 0,
-          statut: 'brouillon'
-        });
-
-        let totalGains = 0;
-        let totalRetenues = 0;
-
-        for (const rubrique of rubriques) {
-          let montant = 0;
-          let base = 0;
-
-          if (rubrique.modeCalcul === 'fixe') {
-            montant = Number(rubrique.valeur) || 0;
-          } else if (rubrique.modeCalcul === 'pourcentage') {
-            if (rubrique.code === 'SALAIRE_BASE') {
-              base = Number(employe.salaireBase) || 0;
-              montant = base;
-            } else {
-              base = Number(employe.salaireBase) || 0;
-              montant = base * (Number(rubrique.valeur) || 0) / 100;
-            }
-          }
-
-          if (montant > 0) {
-            await RhLigneBulletin.create({
-              bulletinId: bulletin.id,
-              rubriqueId: rubrique.id,
-              libelle: rubrique.libelle,
-              base,
-              taux: rubrique.modeCalcul === 'pourcentage' ? Number(rubrique.valeur) : 0,
-              montant
-            });
-
-            if (rubrique.type === 'gain') totalGains += montant;
-            else if (rubrique.type === 'retenue' || rubrique.type === 'cotisation') totalRetenues += montant;
-          }
-        }
-
-        const netAPayer = totalGains - totalRetenues;
-        await bulletin.update({ totalGains, totalRetenues, netAPayer });
-        bulletinsCrees.push(bulletin);
+      return res.status(200).json({ success: true, message: `${count} bulletins générés`, count });
+    } catch (error: any) {
+      if (error?.message?.includes('régénération refusée')) {
+        return res.status(409).json({ success: false, message: error.message });
       }
-
-      return res.status(200).json({ success: true, message: `${bulletinsCrees.length} bulletins générés`, count: bulletinsCrees.length });
-    } catch (error) {
       return res.status(500).json({ success: false, error });
     }
   }
