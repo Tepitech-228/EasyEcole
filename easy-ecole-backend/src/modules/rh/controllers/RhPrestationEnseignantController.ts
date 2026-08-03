@@ -78,11 +78,11 @@ export default class RhPrestationEnseignantController {
       if (!prestation) {
         return res.status(404).json({ success: false, message: "Prestation non trouvée" });
       }
-      if (prestation.statut !== 'validee') {
+      if (prestation.statut !== 'validée') {
         return res.status(400).json({ success: false, message: "La prestation doit d'abord être validée" });
       }
 
-      await prestation.update({ statut: 'payee' });
+      await prestation.update({ statut: 'payée' });
 
       // Créer l'écriture comptable
       if (prestation.montant && Number(prestation.montant) > 0) {
