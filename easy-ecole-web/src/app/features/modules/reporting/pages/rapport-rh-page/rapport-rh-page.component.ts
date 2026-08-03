@@ -1,5 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { ReportingService } from 'src/app/data/modules/reporting/services/reporting.service';
 
 @Component({
@@ -17,10 +16,20 @@ export class RapportRhPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.reporting.getRhEffectifs().subscribe({
-      next: (res: any) => this.effectifs = res
+      next: (res: any) => {
+        this.effectifs = res;
+        this.chartLabels = res.map((row: any) => row.date?.slice(0, 10) || 'N/A');
+        this.chartData = res.map((row: any) => Number(row.nbEmployes) || 0);
+      },
+      error: () => {
+        this.effectifs = [];
+        this.chartLabels = [];
+        this.chartData = [];
+      }
     });
     this.reporting.getRhPaie().subscribe({
-      next: (res: any) => this.paie = res
+      next: (res: any) => this.paie = res,
+      error: () => { this.paie = []; }
     });
   }
 }

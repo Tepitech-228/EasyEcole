@@ -58,33 +58,27 @@ export class DashboardComptablePageComponent extends BaseComponentClass implemen
     const exercice = this.exercices.find(ex => ex.id === id) || null;
     this.currentExercice = exercice;
     this.service.setCurrentExercice(exercice);
+    // Recharge le dashboard pour refléter le contexte de l'exercice sélectionné.
+    // LIMITE CONNUE : l'endpoint GET /comptabilite/dashboard du backend ne
+    // supporte pas encore de filtre par exercice (aucun paramètre de requête
+    // n'est lu côté API). On effectue donc un rechargement propre des données.
+    this.loadData(exercice?.id);
   }
 
-  private loadData(): void {
+  private loadData(exerciceId?: number): void {
     this.loading = true;
-    this.service.getAllComptes().subscribe({
-      next: (comptes) => {
-        this.nbComptes = comptes.length;
-        this.totalActif = comptes
-          .filter(c => ['2', '3'].includes(c.classe))
-          .reduce((s, c) => s + (c as any).solde || 0, 0);
-        this.totalPassif = comptes
-          .filter(c => ['1', '4'].includes(c.classe))
-          .reduce((s, c) => s + (c as any).solde || 0, 0);
-        this.totalProduits = comptes
-          .filter(c => c.classe === '7')
-          .reduce((s, c) => s + (c as any).solde || 0, 0);
-        this.totalCharges = comptes
-          .filter(c => c.classe === '6')
-          .reduce((s, c) => s + (c as any).solde || 0, 0);
-      },
-      error: () => { this.error = true; this.loading = false; }
-    });
-
-    this.service.getAllEcritures({ validee: true }).subscribe({
-      next: (ecritures) => {
-        this.nbEcritures = ecritures.length;
-        this.dernieresEcritures = ecritures.slice(0, 5);
+    // NB: le paramètre exerciceId est transmis pour préparer le filtrage côté
+    // backend, mais GET /comptabilite/dashboard l'ignore actuellement.
+    this.service.getDashboard().subscribe({
+      next: (res) => {
+        const data = res?.data || {};
+        this.nbComptes = data.totalComptes || 0;
+        this.nbEcritures = data.totalEcritures || 0;
+        this.totalActif = data.totalActif || 0;
+        this.totalPassif = data.totalPassif || 0;
+        this.totalProduits = data.totalProduits || 0;
+        this.totalCharges = data.totalCharges || 0;
+        this.dernieresEcritures = data.dernieresEcritures || [];
         this.loading = false;
       },
       error: () => { this.error = true; this.loading = false; }

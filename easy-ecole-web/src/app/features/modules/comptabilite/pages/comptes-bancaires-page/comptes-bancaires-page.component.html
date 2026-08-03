@@ -13,10 +13,10 @@
     <thead><tr class="text-left border-b"><th>Libellé</th><th>Banque</th><th>IBAN</th><th>Solde ouverture</th><th>Devise</th><th>Actions</th></tr></thead>
     <tbody>
       <tr *ngFor="let item of items" class="border-b hover:bg-gray-50">
-        <td class="py-2 font-medium">{{ item.libelle }}</td>
-        <td>{{ item.banque }}</td>
+        <td class="py-2 font-medium">{{ item.banque }}</td>
+        <td>{{ item.titulaire }}</td>
         <td class="font-mono text-xs">{{ item.iban }}</td>
-        <td>{{ item.soldeOuverture | number }}</td>
+        <td>{{ item.solde | number }}</td>
         <td>{{ item.devise }}</td>
         <td class="flex gap-1">
           <button (click)="ouvrirFormulaire(item)" class="text-blue-500 hover:text-blue-700 text-xs">✎</button>
@@ -30,10 +30,13 @@
 <app-custom-modal [showModal]="showForm" (onCloseModal)="fermerFormulaire()">
   <h3 class="text-lg font-semibold mb-4">{{ editingId ? 'Modifier' : 'Nouveau' }} compte bancaire</h3>
   <div class="grid gap-3">
-    <input [(ngModel)]="formData.libelle" placeholder="Libellé" class="form-input">
     <input [(ngModel)]="formData.banque" placeholder="Banque" class="form-input">
+    <input [(ngModel)]="formData.titulaire" placeholder="Titulaire" class="form-input">
+    <input [(ngModel)]="formData.numeroCompte" placeholder="Numéro de compte" class="form-input">
+    <input [(ngModel)]="formData.rib" placeholder="RIB" class="form-input">
     <input [(ngModel)]="formData.iban" placeholder="IBAN" class="form-input">
-    <input type="number" [(ngModel)]="formData.soldeOuverture" placeholder="Solde d'ouverture" class="form-input">
+    <input [(ngModel)]="formData.swift" placeholder="SWIFT" class="form-input">
+    <input type="number" [(ngModel)]="formData.solde" placeholder="Solde" class="form-input">
     <select [(ngModel)]="formData.devise" class="form-input"><option value="XOF">XOF</option><option value="EUR">EUR</option><option value="USD">USD</option></select>
     <div class="flex gap-2 justify-end mt-2">
       <app-custom-button text="Annuler" [outlined]="true" (click)="fermerFormulaire()"></app-custom-button>

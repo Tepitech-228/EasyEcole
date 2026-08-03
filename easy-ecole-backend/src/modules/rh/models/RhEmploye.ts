@@ -17,6 +17,9 @@ export class RhEmploye extends Model<InferAttributes<RhEmploye>, InferCreationAt
   declare dateEmbauche: Date
   declare typeContratId: ForeignKey<RhTypeContrat['id']>
   declare salaireBase: CreationOptional<number>
+  declare matricule?: string | null
+  declare nom?: string | null
+  declare prenoms?: string | null
   declare statut: CreationOptional<string>
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -58,6 +61,18 @@ RhEmploye.init({
     type: DataTypes.DECIMAL(12, 2),
     allowNull: true,
     defaultValue: 0
+  },
+  matricule: {
+    type: new DataTypes.STRING(50),
+    allowNull: true
+  },
+  nom: {
+    type: new DataTypes.STRING(100),
+    allowNull: true
+  },
+  prenoms: {
+    type: new DataTypes.STRING(100),
+    allowNull: true
   },
   statut: {
     type: DataTypes.ENUM('actif', 'suspendu', 'quitté'),

@@ -13,10 +13,12 @@ import RapprochementRouter from "./routers/RapprochementRouter"
 import ExerciceComptableRouter from "./routers/ExerciceComptableRouter"
 import EtatsFinanciersRouter from "./routers/EtatsFinanciersRouter"
 import Authenticate from "../../core/middlewares/Authenticate"
+import ComptabiliteDashboardController from "./controllers/ComptabiliteDashboardController"
 
 const router = express.Router()
 
 router
+  .get('/dashboard', [Authenticate], ComptabiliteDashboardController.getDashboard)
   .use('/comptes', [Authenticate], CompteRouter)
   .use('/journaux', [Authenticate], JournalComptableRouter)
   .use('/ecritures', [Authenticate], EcritureComptableRouter)

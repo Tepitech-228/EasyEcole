@@ -78,6 +78,10 @@ export class ComptabiliteService {
     this.currentExerciceSubject.next(exercice);
   }
 
+  getDashboard(): Observable<any> {
+    return this.httpClient.get<any>(`${this.SERVICE_URL}/dashboard`)
+  }
+
   getAllExercices(): Observable<ExerciceComptable[]> {
     return this.httpClient.get<ExerciceComptable[]>(`${this.SERVICE_URL}/exercices`)
   }

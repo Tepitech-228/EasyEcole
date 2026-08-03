@@ -29,10 +29,12 @@ import RhPrestataireRouter from "./routers/RhPrestataireRouter"
 import RhIndemnitePrestataireRouter from "./routers/RhIndemnitePrestataireRouter"
 import RhDemandeCongeRouter from "./routers/RhDemandeCongeRouter"
 import Authenticate from "../../core/middlewares/Authenticate";
+import RhDashboardController from "./controllers/RhDashboardController";
 
 const router = express.Router();
 
 router
+    .get('/dashboard', [Authenticate], RhDashboardController.getDashboard)
     .use('/departements', [Authenticate], RhDepartementRouter)
     .use('/types-contrat', [Authenticate], RhTypeContratRouter)
     .use('/postes', [Authenticate], RhPosteRouter)

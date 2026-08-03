@@ -8,7 +8,7 @@
     </div>
     <select [(ngModel)]="filterDepartement" class="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
       <option value="">Tous les départements</option>
-      <option *ngFor="let d of ['IT','Finance','RH','Marketing']" [value]="d">{{d}}</option>
+      <option *ngFor="let d of distinctDepartements" [value]="d">{{d}}</option>
     </select>
   </div>
   <button (click)="openCreate()" class="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm">
@@ -32,11 +32,11 @@
       </tr>
     </thead>
     <tbody class="bg-white divide-y divide-gray-200">
-      <tr *ngFor="let emp of employes" class="hover:bg-gray-50">
+      <tr *ngFor="let emp of filteredEmployes" class="hover:bg-gray-50">
         <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ emp.matricule }}</td>
         <td class="px-6 py-4 text-sm text-gray-900">{{ emp.nom }} {{ emp.prenoms }}</td>
-        <td class="px-6 py-4 text-sm text-gray-700">{{ emp.poste }}</td>
-        <td class="px-6 py-4 text-sm text-gray-700">{{ emp.departement }}</td>
+        <td class="px-6 py-4 text-sm text-gray-700">{{ emp.poste?.titre || emp.poste || '-' }}</td>
+        <td class="px-6 py-4 text-sm text-gray-700">{{ emp.departement?.nom || emp.departement || '-' }}</td>
         <td class="px-6 py-4">
           <span class="px-2.5 py-0.5 rounded-full text-xs font-medium" [ngClass]="getStatutBadge(emp.statut)">{{ emp.statut }}</span>
         </td>
@@ -69,21 +69,22 @@
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Poste</label>
-        <input type="text" formControlName="poste" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+        <select formControlName="posteId" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+          <option [ngValue]="null">Sélectionner</option>
+          <option *ngFor="let p of postes" [ngValue]="p.id">{{ p.titre }}</option>
+        </select>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Département</label>
-        <select formControlName="departement" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-          <option value="">Sélectionner</option>
-          <option *ngFor="let d of ['IT','Finance','RH','Marketing']" [value]="d">{{d}}</option>
+        <select formControlName="departementId" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+          <option [ngValue]="null">Sélectionner</option>
+          <option *ngFor="let d of departements" [ngValue]="d.id">{{ d.nom }}</option>
         </select>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Statut</label>
         <select formControlName="statut" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-          <option value="actif">Actif</option>
-          <option value="inactif">Inactif</option>
-          <option value="conge">En congé</option>
+          <option *ngFor="let s of ['actif','suspendu','quitté']" [value]="s">{{ s }}</option>
         </select>
       </div>
     </div>

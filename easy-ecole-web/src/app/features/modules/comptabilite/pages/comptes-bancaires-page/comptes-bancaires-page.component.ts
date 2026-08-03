@@ -30,14 +30,24 @@ export class ComptesBancairesPageComponent extends BaseComponentClass implements
 
   ouvrirFormulaire(item?: any): void {
     this.editingId = item?.id || null;
-    this.formData = item ? { ...item } : { libelle: '', iban: '', banque: '', soldeOuverture: 0, devise: 'XOF' };
+    this.formData = item ? { ...item } : {
+      banque: '',
+      rib: '',
+      iban: '',
+      swift: '',
+      titulaire: '',
+      numeroCompte: '',
+      solde: 0,
+      devise: 'XOF',
+      actif: true
+    };
     this.showForm = true;
   }
 
   fermerFormulaire(): void { this.showForm = false; this.editingId = null; }
 
   sauvegarder(): void {
-    if (!this.formData.libelle) return;
+    if (!this.formData.banque || !this.formData.iban || !this.formData.titulaire) return;
     const obs = this.editingId
       ? this.http.put(`${this.API}/${this.editingId}`, this.formData)
       : this.http.post(this.API, this.formData);
