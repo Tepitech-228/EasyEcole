@@ -52,7 +52,25 @@
     </div>
   </div>
 
-  <div class="mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+  <div *ngIf="!rolesValue.isApprenant" class="mt-6 border-b border-gray-200">
+    <nav class="-mb-px flex gap-x-4" aria-label="Tabs">
+      <button
+        (click)="activeTab = 'auto'"
+        [class]="activeTab === 'auto' ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+        class="border-b-3 py-2.5 px-4 text-sm font-medium transition-colors">
+        Rattrapages automatiques
+      </button>
+      <button
+        (click)="activeTab = 'demandes'"
+        [class]="activeTab === 'demandes' ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+        class="border-b-3 py-2.5 px-4 text-sm font-medium transition-colors">
+        Demandes étudiants
+      </button>
+    </nav>
+  </div>
+
+  <!-- Tab: Rattrapages automatiques -->
+  <div *ngIf="activeTab === 'auto' || rolesValue.isApprenant" class="mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
     <div class="overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-100">
         <thead>
@@ -112,6 +130,130 @@
       <svg class="mx-auto h-12 w-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
       <p class="mt-4 text-sm text-gray-500">Aucune inscription rattrapage trouvée</p>
       <p class="text-sm text-gray-400">Utilisez "Assigner auto" pour inscrire les étudiants en échec</p>
+    </div>
+  </div>
+
+  <!-- Tab: Demandes étudiants -->
+  <div *ngIf="activeTab === 'demandes'" class="mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-100">
+        <thead>
+          <tr class="bg-gray-50/50">
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Étudiant</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Matière</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Statut</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Note</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Montant</th>
+            <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Paiement</th>
+            <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider" *="!rolesValue.isApprenant">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngFor="let d of demandesEtudiant; trackBy: trackByFn" class="hover:bg-gray-50/50 transition-colors">
+            <td class="px-5 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+              {{ d.demandeur?.prenoms }} {{ d.demandeur?.nom }}
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ d.cours?.libelle || d.cours?.code || '—' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-center">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                    [ngClass]="{
+                      'bg-amber-50 text-amber-700 ring-1 ring-amber-200': d.statut === 'inscrit',
+                      'bg-blue-50 text-blue-700 ring-1 ring-blue-200': d.statut === 'convoque',
+                      'bg-green-50 text-green-700 ring-1 ring-green-200': d.statut === 'present',
+                      'bg-red-50 text-red-700 ring-1 ring-red-200': d.statut === 'absent',
+                      'bg-purple-50 text-purple-700 ring-1 ring-purple-200': d.statut === 'valide'
+                    }">
+                {{ d.statut }}
+              </span>
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap text-center text-sm text-gray-700">
+              {{ d.noteRattrapage != null ? d.noteRattrapage : '—' }}
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap text-center text-sm text-gray-700">
+              {{ d.montant ? d.montant + ' FC' : '—' }}
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap text-center">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                    [ngClass]="d.statutPaiement === 'paye' ? 'bg-green-50 text-green-700 ring-1 ring-green-200' : 'bg-red-50 text-red-700 ring-1 ring-red-200'">
+                {{ d.statutPaiement === 'paye' ? 'Payé' : 'Impayé' }}
+              </span>
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap text-center" *="!rolesValue.isApprenant">
+              <div class="flex items-center justify-end gap-2">
+                <button *ngIf="d.statut === 'inscrit' || d.statut === 'convoque'"
+                        (click)="openProgrammeModal(d)"
+                        class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                  Programmer
+                </button>
+                <button *ngIf="d.statutPaiement !== 'paye'"
+                        (click)="confirmerPaiement(d)"
+                        [disabled]="paysantId === d.id"
+                        class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors">
+                  <span *ngIf="paysantId === d.id">…</span>
+                  <span *ngIf="paysantId !== d.id">Confirmer paiement</span>
+                </button>
+                <button *ngIf="d.statutPaiement !== 'paye'"
+                        (click)="confirmerPaiementAuto(d)"
+                        [disabled]="paysantId === d.id"
+                        class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors">
+                  <span *ngIf="paysantId === d.id">…</span>
+                  <span *ngIf="paysantId !== d.id">Paiement auto</span>
+                </button>
+                <a [routerLink]="['/bulletins/rattrapages', d.id]"
+                   class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
+                  Détail
+                </a>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div *ngIf="demandesEtudiant.length === 0" class="px-5 py-12 text-center">
+      <svg class="mx-auto h-12 w-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6M9 8h6"/></svg>
+      <p class="mt-4 text-sm text-gray-500">Aucune demande étudiant</p>
+      <p class="text-sm text-gray-400">Les étudiants peuvent demander un rattrapage depuis leur espace dédié</p>
+    </div>
+  </div>
+
+  <!-- Modal : Programmation -->
+  <div *ngIf="showProgrammeModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30" (click)="showProgrammeModal = false">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-lg mx-4" (click)="$event.stopPropagation()">
+      <h3 class="text-lg font-semibold text-gray-900">Programmer la session de rattrapage</h3>
+      <p class="text-sm text-gray-500 mt-1">Définissez la date, l'heure, la salle et l'enseignant.</p>
+
+      <div class="mt-6 space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Date</label>
+          <input type="date" [(ngModel)]="programmeForm.dateRattrapage" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Heure début</label>
+            <input type="time" [(ngModel)]="programmeForm.heureDebut" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Heure fin</label>
+            <input type="time" [(ngModel)]="programmeForm.heureFin" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Salle</label>
+          <input type="text" [(ngModel)]="programmeForm.salle" placeholder="ex. Salle 204" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Enseignant</label>
+          <select [(ngModel)]="programmeForm.enseignantId" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm">
+            <option [value]="null">Sélectionner...</option>
+            <option *ngFor="let e of enseignants" [value]="e.id">{{ e.utilisateur?.prenoms }} {{ e.utilisateur?.nom }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mt-6 flex items-center justify-end gap-3">
+        <button (click)="showProgrammeModal = false" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 font-medium">Annuler</button>
+        <button (click)="submitProgramme()" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-xl transition-colors">Programmer</button>
+      </div>
     </div>
   </div>
 

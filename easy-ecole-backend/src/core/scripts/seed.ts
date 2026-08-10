@@ -811,7 +811,8 @@ async function seed() {
 
     const etuUsers = await AutU.findAll({ where: { role: 'apprenant' }, order: [['id', 'ASC']], limit: 5 });
     for (let ei = 0; ei < etuUsers.length; ei++) {
-        const doc = await ScolDemDoc.create({ etudiantId: etuUsers[ei].id, typeDocumentId: ei < 2 ? docCertif.id : docReleve.id, statut: ei < 3 ? 'delivree' : 'soumise', date: new Date(), fraisPayes: ei < 3 });
+        const typeDoc = ei < 2 ? docCertif : docReleve;
+        const doc = await ScolDemDoc.create({ etudiantId: etuUsers[ei].id, typeDocumentId: typeDoc.id, statut: ei < 3 ? 'delivree' : 'soumise', date: new Date(), fraisPayes: ei < 3, source: 'demande_etudiant', montant: typeDoc.frais });
         if (ei < 3) {
             await ScolDocDel.create({ demandeId: doc.id, fichierPDF: `${ei < 2 ? 'certificat' : 'releve'}_${etuUsers[ei].id}.pdf`, dateDelivrance: new Date() });
         }

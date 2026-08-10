@@ -1,6 +1,5 @@
 import fs from "fs";
 import path from "path";
-import { PDFParse } from "pdf-parse";
 
 export interface MetadataExtraite {
   nbPages: number
@@ -29,21 +28,44 @@ export class OcrService {
   }
 
   private static async _extrairePdf(filePath: string): Promise<MetadataExtraite> {
-    const buffer = fs.readFileSync(filePath);
-    const parser = new PDFParse({ data: buffer });
-    const [info, textResult] = await Promise.all([parser.getInfo(), parser.getText()]);
+    try {
+      const pdfModule = await import("pdf-parse");
+      const PDFParseCtor = (pdfModule as any).default ?? (pdfModule as any).PDFParse ?? (pdfModule as any);
+      const buffer = fs.readFileSync(filePath);
 
-    const motsCles = this._extraireMotsCles(textResult.text);
-    parser.destroy();
+      if (typeof PDFParseCtor !== "function") {
+        return this._metadataFallback(filePath);
+      }
 
+      const PDFParse = PDFParseCtor;
+      const parser = new PDFParse({ data: buffer });
+      const [info, textResult] = await Promise.all([parser.getInfo(), parser.getText()]);
+
+      const motsCles = this._extraireMotsCles(textResult.text);
+      parser.destroy();
+
+      return {
+        nbPages: info.total || 0,
+        auteur: info.info?.Author || null,
+        dateDocument: info.info?.CreationDate
+          ? this._normalizeDate(info.info.CreationDate)
+          : null,
+        motsCles,
+        contenuTexte: textResult.text?.substring(0, 10000) || null
+      };
+    } catch (error) {
+      console.warn("OCR PDF skipped due to runtime incompatibility:", (error as Error).message);
+      return this._metadataFallback(filePath);
+    }
+  }
+
+  private static _metadataFallback(filePath: string): MetadataExtraite {
     return {
-      nbPages: info.total || 0,
-      auteur: info.info?.Author || null,
-      dateDocument: info.info?.CreationDate
-        ? this._normalizeDate(info.info.CreationDate)
-        : null,
-      motsCles,
-      contenuTexte: textResult.text?.substring(0, 10000) || null
+      nbPages: 0,
+      auteur: null,
+      dateDocument: null,
+      motsCles: [],
+      contenuTexte: null
     };
   }
 

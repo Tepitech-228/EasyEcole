@@ -8,7 +8,9 @@ export default class MccController {
     constructor() { }
 
     static async getAll(req: Request, res: Response): Promise<Response> {
-        let options: FindOptions<InferAttributes<Mcc>> = { include: [{ all: true }] }
+        let options: FindOptions<InferAttributes<Mcc>> = {
+            include: [Mcc.associations.cours, Mcc.associations.ecue]
+        }
         try {
             let data = await Mcc.findAll(options);
             return res.status(200).send(data);
@@ -19,7 +21,9 @@ export default class MccController {
 
     static async get(req: Request, res: Response): Promise<Response> {
         try {
-            const data = await Mcc.findByPk(req.params.id, { include: [{ all: true }] });
+            const data = await Mcc.findByPk(req.params.id, {
+                include: [Mcc.associations.cours, Mcc.associations.ecue]
+            });
             if (!data) return res.status(404).json({ success: false, message: "MCC non trouvé" });
             return res.status(200).send(data);
         } catch (error) {
@@ -71,7 +75,7 @@ export default class MccController {
         try {
             const data = await Mcc.findAll({
                 where: { coursId: req.params.ueId },
-                include: [{ all: true }]
+                include: [Mcc.associations.cours, Mcc.associations.ecue]
             });
             return res.status(200).send(data);
         } catch (error) {

@@ -28,6 +28,8 @@ import { ListeSallesDeClassePageComponent } from './pages/liste-salles-de-classe
 import { ListeClassesPageComponent } from './pages/liste-classes-page/liste-classes-page.component';
 import { OnboardingPageComponent } from './pages/onboarding-page/onboarding-page.component';
 import { CartesPageComponent } from './pages/cartes-page/cartes-page.component';
+import { GestionSemestresPageComponent } from './pages/gestion-semestres-page/gestion-semestres-page.component';
+import { ImportExportExcelPageComponent } from './pages/import-export-excel-page/import-export-excel-page.component';
 
 const routes: Routes = [
   {
@@ -170,6 +172,12 @@ const routes: Routes = [
   },
 
   {
+    path: 'semestres',
+    component: GestionSemestresPageComponent,
+    pathMatch: 'full'
+  },
+
+  {
     path: 'effectifs',
     component: ListeEffectifsPageComponent,
     pathMatch: 'full'
@@ -219,6 +227,12 @@ const routes: Routes = [
         pathMatch: 'full'
       }
     ]
+  },
+
+  {
+    path: 'import-export-excel',
+    component: ImportExportExcelPageComponent,
+    pathMatch: 'full'
   },
 ];
 

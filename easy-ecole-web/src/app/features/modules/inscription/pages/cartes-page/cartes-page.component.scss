@@ -457,7 +457,7 @@ $font-data: 'Inter', 'Open Sans', sans-serif;
 .card-footer {
   display: flex;
   justify-content: space-between;
-  align-items: end;
+  align-items: flex-end;
   gap: 12px;
   padding: 10px 22px 16px;
   position: relative;

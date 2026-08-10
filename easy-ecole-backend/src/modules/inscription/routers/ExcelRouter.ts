@@ -130,4 +130,62 @@ router.post("/apprenants/import", upload.single("fichier"), ExcelController.impo
  */
 router.get("/apprenants/export", ExcelController.exportApprenants)
 
+/**
+ * @openapi
+ * /inscription/excel/apprenants/export/filtres:
+ *   get:
+ *     tags: [Excel Import/Export]
+ *     summary: Exporter les apprenants filtrés (parcoursId, filiereId, anneeAcademiqueId, salleId, niveauId, classeId)
+ */
+router.get("/apprenants/export/filtres", ExcelController.exportApprenantsFiltres)
+
+// ========================================================================
+//  ENSEIGNANTS — Export filtré
+// ========================================================================
+
+/**
+ * @openapi
+ * /inscription/excel/enseignants/export/filtres:
+ *   get:
+ *     tags: [Excel Import/Export]
+ *     summary: Exporter les enseignants filtrés (filiereId, coursId, anneeAcademiqueId)
+ */
+router.get("/enseignants/export/filtres", ExcelController.exportEnseignantsFiltres)
+
+// ========================================================================
+//  UTILISATEURS PAR RÔLE — Template / Import / Export
+// ========================================================================
+
+/**
+ * @openapi
+ * /inscription/excel/utilisateurs/template:
+ *   get:
+ *     tags: [Excel Import/Export]
+ *     summary: Télécharger le template Excel pour l'import d'utilisateurs par rôle
+ *     parameters:
+ *       - in: query
+ *         name: role
+ *         schema: { type: string }
+ *         description: Rôle ciblé (institution, caissier_banque, ressources_humaines, cabinet_comptable, admin, parent, enseignant, apprenant...)
+ */
+router.get("/utilisateurs/template", ExcelController.downloadUtilisateurTemplate)
+
+/**
+ * @openapi
+ * /inscription/excel/utilisateurs/import:
+ *   post:
+ *     tags: [Excel Import/Export]
+ *     summary: Importer des utilisateurs par rôle (création automatique des comptes)
+ */
+router.post("/utilisateurs/import", upload.single("fichier"), ExcelController.importUtilisateursParRole)
+
+/**
+ * @openapi
+ * /inscription/excel/utilisateurs/export:
+ *   get:
+ *     tags: [Excel Import/Export]
+ *     summary: Exporter les utilisateurs par rôle (ou tous si rôle absent)
+ */
+router.get("/utilisateurs/export", ExcelController.exportUtilisateursParRole)
+
 export default router

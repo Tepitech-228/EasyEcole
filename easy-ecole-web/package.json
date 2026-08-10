@@ -3,13 +3,13 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "set NODE_OPTIONS=--openssl-legacy-provider && ng serve",
-    "build": "set NODE_OPTIONS=--openssl-legacy-provider && ng build",
-    "watch": "ng build --watch --configuration development",
-    "test": "ng test",
+    "start": "set NODE_OPTIONS=--openssl-legacy-provider --max-old-space-size=4096&& ng serve --host 0.0.0.0 --port 4200",
+    "build": "set NODE_OPTIONS=--openssl-legacy-provider --max-old-space-size=4096&& ng build",
+    "watch": "set NODE_OPTIONS=--openssl-legacy-provider --max-old-space-size=4096&& ng build --watch --configuration development",
+    "test": "set NODE_OPTIONS=--openssl-legacy-provider --max-old-space-size=4096&& ng test",
     "test:e2e": "cypress run",
     "test:e2e:dev": "cypress open",
-    "build:temp": "set NODE_OPTIONS=--openssl-legacy-provider && ng build --output-path=dist-temp3"
+    "build:temp": "set NODE_OPTIONS=--openssl-legacy-provider --max-old-space-size=4096&& ng build --output-path=dist-temp3"
   },
   "private": true,
   "dependencies": {

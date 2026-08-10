@@ -7,7 +7,7 @@
 </div>
 
 <div *ngIf="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-    Une erreur est survenue lors du traitement
+    {{ apiErrorMessage || 'Une erreur est survenue lors du traitement' }}
 </div>
 
 <!-- Filtres par année / niveau / parcours -->
@@ -157,6 +157,8 @@
   [nodes]="treeNodes"
   [columns]="itemColumns"
   [batchActions]="batchActions"
+  [itemActions]="itemActions"
+  [renderItemActions]="true"
   [loading]="false"
   [totalItems]="totalItems"
   [currentPage]="currentPage"
@@ -228,11 +230,11 @@
         </div>
         <div class="flex-1 overflow-auto p-6 bg-gray-100 flex items-center justify-center">
             <img *ngIf="isImageFile(pdfBordereau!.fichier!)"
-                [src]="BORDEREAUX_PATH + pdfBordereau!.fichier"
+                [src]="getBordereauDownloadUrl(pdfBordereau!.id!) | safeUrl | async"
                 class="max-w-full max-h-[70vh] object-contain rounded shadow"
                 alt="Bordereau">
             <iframe *ngIf="!isImageFile(pdfBordereau!.fichier!)"
-                [src]="getDocUrl(pdfBordereau!.fichier!)"
+                [src]="getBordereauDownloadUrl(pdfBordereau!.id!) | safeUrl | async"
                 class="w-full h-[70vh] rounded shadow"></iframe>
         </div>
         <div class="flex items-center justify-center gap-x-4 px-6 py-4 border-t border-gray-200">

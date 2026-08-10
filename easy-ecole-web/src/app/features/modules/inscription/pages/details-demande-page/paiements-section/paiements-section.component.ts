@@ -117,7 +117,10 @@ export class PaiementsSectionComponent implements OnInit {
     paiement.datePaiement = new Date()
 
     this.paiementInscriptionService.create(paiement).subscribe({
-      next: () => {
+      next: (res: any) => {
+        if (res?.receiptUrl) {
+          window.open(res.receiptUrl, '_blank')
+        }
         this.closePaiementModal()
         // Recharger les paiements sans recharger toute la page
         this.demande = { ...this.demande }

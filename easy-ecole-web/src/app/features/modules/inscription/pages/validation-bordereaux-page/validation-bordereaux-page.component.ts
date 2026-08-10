@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { combineLatest } from 'rxjs';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 import { AnneeAcademique } from 'src/app/data/modules/inscription/models/AnneeAcademique.model';
 import { Bordereau } from 'src/app/data/modules/inscription/models/Bordereau.model';
 import { NiveauEtude } from 'src/app/data/modules/inscription/models/NiveauEtude.model';
@@ -24,6 +24,7 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
 
   error: boolean = false
   successMessage: string = ''
+  apiErrorMessage: string = ''
 
   showValidationModal: boolean = false
   showRejetModal: boolean = false
@@ -76,6 +77,10 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
     { label: 'Rejeter', color: 'red', action: 'rejeter' }
   ];
 
+  itemActions: BatchAction[] = [
+    { label: 'Voir le bordereau', color: 'blue', action: 'voirBordereau', icon: 'visibility' }
+  ];
+
   readonly BORDEREAUX_PATH: string = environment.MEDIAS_PATH.INSCRIPTION.BORDEREAUX
 
   constructor(
@@ -84,7 +89,7 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
     private niveauEtudeService: NiveauEtudeService,
     private parcoursService: ParcoursService,
     private sessionService: SessionService,
-    private sanitizer: DomSanitizer,
+    private localStorage: LocalStorageService
   ) {
     super()
   }
@@ -223,6 +228,8 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
     if (this.selectedBordereau) {
       const type = this.selectedBordereau.type || this.selectedBordereau.echeance?.type
       const bordereauId = this.selectedBordereau.id
+      this.error = false
+      this.apiErrorMessage = ''
 
       this.bordereauService.valider(bordereauId!).subscribe({
         next: () => {
@@ -233,9 +240,10 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
           this.showSuccessModal = true
         },
         error: (err) => {
-          console.log(err)
+          console.error('Erreur validation bordereau:', err)
+          this.apiErrorMessage = err?.error?.message || err?.error?.error?.message || 'Une erreur est survenue lors de la validation du bordereau.'
           this.error = true
-          setTimeout(() => { this.error = false }, 3000)
+          setTimeout(() => { this.error = false; this.apiErrorMessage = ''; }, 5000)
         }
       })
     }
@@ -243,6 +251,9 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
 
   rejeterBordereau(): void {
     if (this.selectedBordereau && this.commentaireRejet.trim()) {
+      this.error = false
+      this.apiErrorMessage = ''
+
       this.bordereauService.rejeter(this.selectedBordereau.id!, this.commentaireRejet).subscribe({
         next: () => {
           this.successMessage = 'Bordereau rejeté'
@@ -252,9 +263,10 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
           setTimeout(() => { this.successMessage = '' }, 3000)
         },
         error: (err) => {
-          console.log(err)
+          console.error('Erreur rejet bordereau:', err)
+          this.apiErrorMessage = err?.error?.message || err?.error?.error?.message || 'Une erreur est survenue lors du rejet du bordereau.'
           this.error = true
-          setTimeout(() => { this.error = false }, 3000)
+          setTimeout(() => { this.error = false; this.apiErrorMessage = ''; }, 5000)
         }
       })
     }
@@ -418,10 +430,6 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
     return /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(fichier)
   }
 
-  getDocUrl(fichier: string): SafeResourceUrl {
-    return this.sanitizer.bypassSecurityTrustResourceUrl(this.BORDEREAUX_PATH + fichier)
-  }
-
   openPdfModal(bordereau: Bordereau): void {
     this.pdfBordereau = bordereau
     this.showPdfModal = true
@@ -430,5 +438,14 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   closePdfModal(): void {
     this.showPdfModal = false
     this.pdfBordereau = undefined
+  }
+
+  getBordereauDownloadUrl(id: string): string {
+    const token = this.localStorage.get(LocalStorageService.AUTH_TOKEN)
+    let url = `${this.BORDEREAUX_PATH}${id}/download`
+    if (token) {
+      url += `?token=${encodeURIComponent(token)}`
+    }
+    return url
   }
 }

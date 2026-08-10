@@ -5,8 +5,15 @@
             <ng-container *ngFor="let item of items; index as i">
                 <div class="flex-1">
                     <a role="button" [ngClass]="item.isBlocked ? 'cursor-not-allowed' : (i > 0 && items[i - 1].condition) || i == 0 ? 'cursor-pointer' : 'cursor-not-allowed'" (click)="item.isBlocked ? null : (i > 0 && items[i - 1].condition) || i == 0 ? item.action() : null">
-                        <div [ngClass]="item.condition ? item.incomplete ? incompleteColor : activeColor : inactiveColor" class="w-10 h-10 mx-auto rounded-full text-lg text-white flex items-center">
-                            <span [ngClass]="item.condition ? 'text-white' : 'text-gray-700'" class="text-center w-full">{{ i + 1 }}</span>
+                        <div [ngClass]="item.condition ? item.incomplete ? incompleteColor : activeColor : inactiveColor" class="relative w-10 h-10 mx-auto rounded-full text-white flex items-center justify-center">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" [ngClass]="item.condition ? 'text-white' : 'text-gray-700'">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" [attr.d]="item.icon"/>
+                            </svg>
+                            <span *ngIf="item.condition && !item.incomplete" class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-white border border-gray-200 flex items-center justify-center">
+                                <svg class="w-2.5 h-2.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </span>
                         </div>
                     </a>
                     <div class="text-gray-500 font-medium text-center text-sm mt-4" style="width: 80px !important;">

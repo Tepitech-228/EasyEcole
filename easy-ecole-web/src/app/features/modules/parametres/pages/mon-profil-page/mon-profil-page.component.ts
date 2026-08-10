@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { EtatsPhysique } from 'src/app/data/enums/EtatsPhysique';
 import { SituationsMatrimoniales } from 'src/app/data/enums/SituationsMatrimoniales';
@@ -46,12 +47,18 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
   situationsMatrimoniales = SituationsMatrimoniales
   etatsPhysique = EtatsPhysique
 
+  onboardingMode: boolean = false
+
   constructor(
     private apprenantService: ApprenantService,
     private institutionService: InstitutionService,
     private enseignantService: EnseignantService,
-    private caissierBanqueService: CaissierBanqueService) {
+    private caissierBanqueService: CaissierBanqueService,
+    private router: Router,
+    private activatedRoute: ActivatedRoute) {
     super()
+
+    this.onboardingMode = this.activatedRoute.snapshot.queryParamMap.get('onboarding') === 'true'
 
     if(this.rolesValue.isApprenant) {
       this.getApprenant()
@@ -201,6 +208,9 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
           this.updateSuccess = true
           setTimeout(() => { this.updateSuccess = false }, 2000)
           this.getApprenant()
+          if (this.onboardingMode) {
+            this.router.navigate(['/inscription/onboarding'])
+          }
         },
         error: (err: HttpErrorResponse) => {
           console.log(err)

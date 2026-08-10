@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 
 export interface Livre {
   id: string
@@ -23,7 +24,7 @@ export class BibliothequeService {
 
   private readonly SERVICE_URL: string = `${environment.API_MODULES.INSCRIPTION}`.replace('/inscription', '/scolarite/bibliotheque')
 
-  constructor(private httpClient: HttpClient) { }
+  constructor(private httpClient: HttpClient, private localStorage: LocalStorageService) { }
 
   getAll(): Observable<Livre[]> {
     return this.httpClient.get<Livre[]>(`${this.SERVICE_URL}`)
@@ -46,6 +47,9 @@ export class BibliothequeService {
   }
 
   getDownloadUrl(id: string): string {
-    return `${this.SERVICE_URL}/download/${id}`
+    const token = this.localStorage.get(LocalStorageService.AUTH_TOKEN)
+    let url = `${this.SERVICE_URL}/download/${id}`
+    if (token) url += `?token=${encodeURIComponent(token)}`
+    return url
   }
 }

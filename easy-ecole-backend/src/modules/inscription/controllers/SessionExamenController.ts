@@ -10,7 +10,12 @@ export default class SessionExamenController {
     constructor() { }
 
     static async getAll(req: Request, res: Response): Promise<Response> {
-        let options: FindOptions<InferAttributes<SessionExamen>> = { include: [{ all: true }] }
+        let options: FindOptions<InferAttributes<SessionExamen>> = {
+            include: [
+                SessionExamen.associations.classe,
+                SessionExamen.associations.anneeAcademique
+            ]
+        }
         try {
             let data = await SessionExamen.findAll(options);
             return res.status(200).send(data);
@@ -21,7 +26,12 @@ export default class SessionExamenController {
 
     static async get(req: Request, res: Response): Promise<Response> {
         try {
-            const data = await SessionExamen.findByPk(req.params.id, { include: [{ all: true }] });
+            const data = await SessionExamen.findByPk(req.params.id, {
+                include: [
+                    SessionExamen.associations.classe,
+                    SessionExamen.associations.anneeAcademique
+                ]
+            });
             if (!data) return res.status(404).json({ success: false, message: "Session non trouvée" });
             return res.status(200).send(data);
         } catch (error) {
@@ -73,7 +83,10 @@ export default class SessionExamenController {
         try {
             const data = await SessionExamen.findAll({
                 where: { classeId: req.params.classeId },
-                include: [{ all: true }]
+                include: [
+                    SessionExamen.associations.classe,
+                    SessionExamen.associations.anneeAcademique
+                ]
             });
             return res.status(200).send(data);
         } catch (error) {

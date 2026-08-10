@@ -56,7 +56,12 @@
             <option value="" disabled>Sélectionner un type</option>
             <option *ngFor="let type of typesDocument" [value]="type.id">{{ type.libelle }} - {{ type.frais | number }} FC</option>
           </select>
-          <p *ngIf="selectedTypeFrais" class="form-helper">Frais : {{ selectedTypeFrais | number }} FC</p>
+          <p *ngIf="selectedTypeFrais === 0" class="form-helper text-emerald-600 font-medium">
+            Cette demande est gratuite (génération normale)
+          </p>
+          <p *ngIf="selectedTypeFrais && selectedTypeFrais > 0" class="form-helper text-orange-600 font-medium">
+            Cette demande est payante : {{ selectedTypeFrais | number }} FC
+          </p>
         </div>
       </div>
       <div class="form-actions">
@@ -107,21 +112,49 @@
           <div>
             <p class="list-item-title">{{ demande.typeDocument?.libelle || 'Document' }}</p>
             <p class="list-item-subtitle">Date: {{ demande.date | date:'EEEE d MMMM yyyy, HH:mm' }}</p>
-            <p *ngIf="demande.fraisPayes" class="list-item-subtitle text-green-600">Frais payés</p>
-            <p *ngIf="!demande.fraisPayes && demande.statut === 'validee'" class="list-item-subtitle text-orange-600">Frais non payés</p>
+
+            <!-- Gratuit / Payant (via GET /:id/verifier-acces) -->
+            <p *ngIf="accesFor(demande).gratuit" class="list-item-subtitle text-emerald-600">
+              Gratuit (génération normale)
+            </p>
+            <p *ngIf="!accesFor(demande).gratuit" class="list-item-subtitle text-orange-600">
+              Payant — {{ accesFor(demande).montant | number }} FC
+            </p>
+
+            <!-- Statut du paiement -->
+            <p *ngIf="!accesFor(demande).gratuit && accesFor(demande).fraisPayes" class="list-item-subtitle text-green-600">
+              Paiement confirmé
+            </p>
+            <p *ngIf="!accesFor(demande).gratuit && !accesFor(demande).fraisPayes" class="list-item-subtitle text-red-500">
+              En attente de paiement
+            </p>
+
             <p *ngIf="demande.documentDelivre" class="list-item-subtitle text-green-600">
               Délivré le {{ demande.documentDelivre.dateDelivrance | date:'short' }}
             </p>
           </div>
         </div>
         <div class="list-item-right">
-          <app-custom-badge [text]="statutLabel(demande.statut)" [color]="statutColor(demande.statut)"></app-custom-badge>
-          <button *ngIf="demande.statut === 'soumise'" (click)="confirmDelete(demande)"
-            class="btn-icon text-red-500 hover:text-red-700" title="Annuler la demande">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-            </svg>
-          </button>
+          <div class="flex flex-col items-end gap-2">
+            <div class="flex items-center gap-2">
+              <app-custom-badge [text]="accesFor(demande).gratuit ? 'Gratuit' : 'Payant'" [color]="accesFor(demande).gratuit ? 'green' : 'orange'"></app-custom-badge>
+              <app-custom-badge *ngIf="!accesFor(demande).gratuit" [text]="accesFor(demande).fraisPayes ? 'Payé' : 'Impayé'" [color]="accesFor(demande).fraisPayes ? 'green' : 'red'"></app-custom-badge>
+              <app-custom-badge [text]="statutLabel(demande.statut)" [color]="statutColor(demande.statut)"></app-custom-badge>
+            </div>
+
+            <!-- Paiement d'une demande payante non réglée -->
+            <div *ngIf="!accesFor(demande).gratuit && !accesFor(demande).fraisPayes && demande.statut !== 'delivree'" class="flex items-center gap-2">
+              <app-custom-button (click)="payerBordereau(demande)" [disabled]="payingId === demande.id" text="Payer (bordereau)" color="primary"></app-custom-button>
+              <app-custom-button (click)="payerEnLigne(demande)" [disabled]="payingId === demande.id" text="Payer en ligne" color="primary" [outlined]="true"></app-custom-button>
+            </div>
+
+            <button *ngIf="demande.statut === 'soumise' && !accesFor(demande).fraisPayes" (click)="confirmDelete(demande)"
+              class="btn-icon text-red-500 hover:text-red-700" title="Annuler la demande">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>

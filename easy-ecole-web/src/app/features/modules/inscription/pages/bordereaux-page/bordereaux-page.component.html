@@ -5,6 +5,30 @@
     </div>
 </div>
 
+<div class="mb-6 grid gap-4 md:grid-cols-3">
+    <div class="col-span-1 md:col-span-2">
+        <label class="block text-sm font-semibold text-gray-700 mb-2">Recherche rapide</label>
+        <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="applyFilters()" placeholder="Rechercher type, référence, statut, fichier..."
+            class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100" />
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+        <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Type</label>
+            <select [(ngModel)]="selectedType" (ngModelChange)="applyFilters()"
+                class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100">
+                <option *ngFor="let option of typeOptions" [value]="option.value">{{ option.label }}</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Statut</label>
+            <select [(ngModel)]="selectedStatus" (ngModelChange)="applyFilters()"
+                class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100">
+                <option *ngFor="let option of statusOptions" [value]="option.value">{{ option.label }}</option>
+            </select>
+        </div>
+    </div>
+</div>
+
 <div class="mb-8">
     <div class="overflow-x-auto">
         <div class="py-2 inline-block min-w-full">
@@ -47,7 +71,7 @@
                             <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
                                 colspan="9">Aucun bordereau uploadé</td>
                         </tr>
-                        <tr *ngFor="let bordereau of bordereaux; index as index"
+                        <tr *ngFor="let bordereau of filteredBordereaux; index as index"
                             class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
                             <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                 <div class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ index + 1 }}</div>

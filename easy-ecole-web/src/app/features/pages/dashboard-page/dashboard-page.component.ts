@@ -130,12 +130,12 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
     return {
       labels: months,
       datasets: [{
-        label: 'Demandes',
+        label: 'Pré-inscriptions',
         data: demandes.length ? demandes : months.map(() => 0),
-        backgroundColor: this.createGradient('rgba(59, 130, 246, 0.85)', 'rgba(59, 130, 246, 0.25)', 12),
+        backgroundColor: this.createGradient('rgba(59, 130, 246, 0.94)', 'rgba(59, 130, 246, 0.24)', 12),
         borderColor: '#2563eb',
         borderWidth: 2,
-        borderRadius: 8,
+        borderRadius: 12,
         borderSkipped: false,
       }]
     };
@@ -144,14 +144,16 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
   get adminDoughnutData(): any {
     const total = this.dashboardData.totalApprenants || 0;
     const ens = this.dashboardData.totalEnseignants || 0;
+    const other = Math.max(0, (this.dashboardData.totalPersonnels || 0) - ens);
     return {
-      labels: ['Apprenants', 'Enseignants'],
+      labels: ['Apprenants', 'Enseignants', 'Autres'],
       datasets: [{
-        data: [total, ens],
-        backgroundColor: ['#3b82f6', '#10b981'],
-        hoverBackgroundColor: ['#2563eb', '#059669'],
-        borderWidth: 0,
-        hoverOffset: 8,
+        data: [total, ens, other > 0 ? other : 0],
+        backgroundColor: ['#3b82f6', '#10b981', '#6366f1'],
+        hoverBackgroundColor: ['#2563eb', '#059669', '#4f46e5'],
+        borderColor: ['#ffffff', '#ffffff', '#ffffff'],
+        borderWidth: 4,
+        hoverOffset: 10,
       }]
     };
   }
@@ -163,22 +165,45 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: '#1e293b',
-        titleFont: { size: 12 },
-        bodyFont: { size: 12 },
-        padding: 12,
-        cornerRadius: 10,
+        backgroundColor: '#0f172a',
+        titleFont: { size: 12, family: 'Inter, sans-serif' },
+        bodyFont: { size: 12, family: 'Inter, sans-serif' },
+        padding: 14,
+        cornerRadius: 12,
         displayColors: false,
+        callbacks: {
+          label: (ctx: any) => ` ${ctx.dataset.label}: ${ctx.parsed.y}`
+        }
       }
     },
     scales: {
       x: {
         grid: { display: false },
-        ticks: { font: { size: 10, family: 'Inter, sans-serif' }, color: '#94a3b8' }
+        ticks: { font: { size: 11, family: 'Inter, sans-serif' }, color: '#64748b' }
       },
       y: {
-        grid: { color: '#f1f5f9', drawBorder: false },
-        ticks: { font: { size: 10, family: 'Inter, sans-serif' }, color: '#94a3b8', stepSize: 5 }
+        grid: { color: '#e2e8f0', drawBorder: false },
+        beginAtZero: true,
+        ticks: {
+          font: { size: 11, family: 'Inter, sans-serif' },
+          color: '#64748b',
+          callback: (value: any) => value.toString()
+        }
+      }
+    },
+    elements: {
+      line: {
+        tension: 0.4,
+        borderWidth: 3,
+        borderColor: '#2563eb',
+        backgroundColor: 'rgba(59, 130, 246, 0.16)'
+      },
+      point: {
+        radius: 5,
+        backgroundColor: '#0ea5e9',
+        borderWidth: 2,
+        borderColor: '#ffffff',
+        hoverRadius: 7
       }
     }
   };
@@ -191,16 +216,24 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
     plugins: {
       legend: {
         position: 'bottom',
-        labels: { padding: 20, usePointStyle: true, pointStyle: 'circle', font: { size: 12, family: 'Inter, sans-serif' } }
+        labels: {
+          padding: 16,
+          usePointStyle: true,
+          pointStyle: 'circle',
+          font: { size: 12, family: 'Inter, sans-serif' },
+          color: '#475569'
+        }
       },
       tooltip: {
-        backgroundColor: '#1e293b',
-        padding: 12,
-        cornerRadius: 10,
+        backgroundColor: '#0f172a',
+        titleFont: { size: 12, family: 'Inter, sans-serif' },
+        bodyFont: { size: 12, family: 'Inter, sans-serif' },
+        padding: 14,
+        cornerRadius: 12,
         callbacks: {
           label: (ctx: any) => {
             const total = ctx.dataset.data.reduce((a: number, b: number) => a + b, 0);
-            const pct = ((ctx.parsed / total) * 100).toFixed(1);
+            const pct = total ? ((ctx.parsed / total) * 100).toFixed(1) : '0.0';
             return ` ${ctx.label}: ${ctx.parsed} (${pct}%)`;
           }
         }
@@ -301,11 +334,89 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
         data: [payees, impayees],
         backgroundColor: ['#10b981', '#ef4444'],
         hoverBackgroundColor: ['#059669', '#dc2626'],
-        borderWidth: 0,
-        hoverOffset: 8,
+        borderWidth: 2,
+        borderColor: ['#10b981', '#ef4444'],
+        hoverOffset: 12,
       }]
     };
   }
+
+  comptableDoughnutOptions: any = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '70%',
+    animation: { animateRotate: true, duration: 1200, easing: 'easeOutQuart' as any },
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          padding: 20,
+          usePointStyle: true,
+          pointStyle: 'circle',
+          font: { size: 12, family: 'Inter, sans-serif' },
+          color: '#475569'
+        }
+      },
+      tooltip: {
+        backgroundColor: '#111827',
+        titleFont: { size: 12, family: 'Inter, sans-serif' },
+        bodyFont: { size: 12, family: 'Inter, sans-serif' },
+        padding: 14,
+        cornerRadius: 12,
+        displayColors: false
+      }
+    }
+  };
+
+  get comptableBarData(): any {
+    return {
+      labels: ['Paiements', 'Bordereaux', 'Échéances impayées'],
+      datasets: [{
+        label: 'Volume',
+        data: [
+          this.dashboardData.totalPaiements || 0,
+          this.dashboardData.totalBordereaux || 0,
+          this.dashboardData.echeancesImpayees || 0
+        ],
+        backgroundColor: ['rgba(14, 165, 233, 0.86)', 'rgba(79, 70, 229, 0.86)', 'rgba(239, 68, 68, 0.86)'],
+        borderColor: ['#0ea5e9', '#4f46e5', '#ef4444'],
+        borderWidth: 2,
+        borderRadius: 12,
+        borderSkipped: false,
+      }]
+    };
+  }
+
+  comptableBarOptions: any = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 1100, easing: 'easeOutQuart' as any },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#111827',
+        titleFont: { size: 12, family: 'Inter, sans-serif' },
+        bodyFont: { size: 12, family: 'Inter, sans-serif' },
+        padding: 14,
+        cornerRadius: 12,
+        displayColors: false,
+        callbacks: {
+          label: (ctx: any) => ` ${ctx.dataset.label}: ${ctx.parsed.y}`
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { font: { size: 11, family: 'Inter, sans-serif' }, color: '#475569' }
+      },
+      y: {
+        grid: { color: '#e2e8f0' },
+        beginAtZero: true,
+        ticks: { font: { size: 11, family: 'Inter, sans-serif' }, color: '#475569' }
+      }
+    }
+  };
 
   // ─── Orientation Charts ─────────────────────────────────
   get orientationDoughnutData(): any {
@@ -318,11 +429,39 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
         data: [enAttente, validees, rejetees],
         backgroundColor: ['#f59e0b', '#10b981', '#ef4444'],
         hoverBackgroundColor: ['#d97706', '#059669', '#dc2626'],
-        borderWidth: 0,
-        hoverOffset: 8,
+        borderWidth: 2,
+        borderColor: ['#f59e0b', '#10b981', '#ef4444'],
+        hoverOffset: 12,
       }]
     };
   }
+
+  orientationDoughnutOptions: any = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '72%',
+    animation: { animateRotate: true, duration: 1300, easing: 'easeOutCubic' as any },
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          padding: 18,
+          usePointStyle: true,
+          pointStyle: 'circle',
+          font: { size: 12, family: 'Inter, sans-serif' },
+          color: '#475569'
+        }
+      },
+      tooltip: {
+        backgroundColor: '#111827',
+        titleFont: { size: 12, family: 'Inter, sans-serif' },
+        bodyFont: { size: 12, family: 'Inter, sans-serif' },
+        padding: 14,
+        cornerRadius: 12,
+        displayColors: false
+      }
+    }
+  };
 
   // ─── Enseignant Charts ─────────────────────────────────
   get enseignantBarData(): any {
@@ -423,7 +562,10 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
 
   // ─── Helpers ───────────────────────────────────────────
   private createGradient(start: string, end: string, count: number): string[] {
-    return Array(count).fill(null).map(() => start);
+    return Array(count).fill(null).map((_, index) => {
+      const alpha = 0.85 - (index * 0.04);
+      return start.replace(/0\.85/, alpha.toFixed(2));
+    });
   }
 
   get total(): number {

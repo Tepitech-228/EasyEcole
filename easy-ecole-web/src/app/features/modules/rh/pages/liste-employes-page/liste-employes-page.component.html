@@ -41,6 +41,7 @@
           <span class="px-2.5 py-0.5 rounded-full text-xs font-medium" [ngClass]="getStatutBadge(emp.statut)">{{ emp.statut }}</span>
         </td>
         <td class="px-6 py-4 text-right text-sm">
+          <a [routerLink]="['/rh/employes', emp.id]" class="text-indigo-600 hover:text-indigo-900 font-medium mr-3">Voir</a>
           <button (click)="openEdit(emp)" class="text-indigo-600 hover:text-indigo-900 font-medium mr-3">Modifier</button>
           <button (click)="deleteItem(emp.id)" class="text-red-600 hover:text-red-900 font-medium">Supprimer</button>
         </td>

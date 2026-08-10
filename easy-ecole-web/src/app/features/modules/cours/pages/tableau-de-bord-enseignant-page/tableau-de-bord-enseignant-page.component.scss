@@ -1,63 +1,141 @@
-.page-container {
-  @apply p-6;
+.dashboard-enseignant-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+.dashboard-banner {
+  border-radius: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 20px 45px rgba(59, 130, 246, 0.18);
+}
+
+.teacher-banner {
+  background: linear-gradient(135deg, #f59e0b, #f97316, #ea580c);
+}
+
+.dashboard-kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.8);
 }
 
 .stats-grid {
-  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
 }
 
 .stat-card {
-  @apply bg-white rounded-lg shadow-sm p-4 flex items-center gap-4;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1.15rem 1rem;
+  background: rgba(255,255,255,0.96);
+  border: 1px solid rgba(226,232,240,0.96);
+  border-radius: 1.1rem;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
 }
 
 .stat-icon {
-  @apply p-3 rounded-lg flex-shrink-0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.9rem;
 }
 
+.stat-icon.blue { background: #dbeafe; color: #1d4ed8; }
+.stat-icon.green { background: #dcfce7; color: #15803d; }
+.stat-icon.orange { background: #ffedd5; color: #c2410c; }
+.stat-icon.purple { background: #f3e8ff; color: #7c3aed; }
+
 .stat-value {
-  @apply text-2xl font-bold text-gray-900;
+  font-size: 1.8rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #0f172a;
 }
 
 .stat-label {
-  @apply text-sm text-gray-500;
+  margin-top: 0.25rem;
+  font-size: 0.78rem;
+  color: #64748b;
 }
 
 .card {
-  @apply bg-white rounded-lg shadow-sm;
+  background: rgba(255,255,255,0.96);
+  border: 1px solid rgba(226,232,240,0.96);
+  border-radius: 1.2rem;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
 }
 
 .card-header {
-  @apply p-6;
+  padding: 1.1rem 1.2rem;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .card-title {
-  @apply text-lg font-semibold text-gray-900;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
 }
 
 .card-body {
-  @apply p-6;
+  padding: 1.1rem 1.2rem;
 }
 
 .data-table {
-  @apply w-full text-left;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.9rem 1rem;
+  text-align: left;
 }
 
 .data-table th {
-  @apply px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50;
+  background: #f8fafc;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #64748b;
 }
 
 .data-table td {
-  @apply px-6 py-4 text-sm text-gray-900 border-t border-gray-100;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.8rem;
+  color: #0f172a;
 }
 
 .data-table tr:hover td {
-  @apply bg-gray-50;
+  background: #f8fafc;
 }
 
 .empty-state {
-  @apply py-12 flex flex-col items-center justify-center;
+  padding: 2.4rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
 }
 
 .loading-shimmer {
-  @apply space-y-4;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (max-width: 1024px) {
+  .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .stats-grid { grid-template-columns: 1fr; }
 }

@@ -87,7 +87,7 @@
 
         <!-- Section: Paiements -->
         <ng-container *ngIf="currentItemSection == 5">
-            <app-paiements-section [demande]="demande" [coursChoisis]="demande!.coursChoisis" [rolesValue]="rolesValue" (nextStep)="onStepComplete(5, 'Paiement effectué. En attente de validation finale par l\'institution.')"></app-paiements-section>
+            <app-paiements-section [demande]="demande" [coursChoisis]="demande!.coursChoisis" [rolesValue]="rolesValue" (nextStep)="onStepComplete(5, 'Paiement effectué. En attente de validation du bordereau.')"></app-paiements-section>
         </ng-container>
 
         <!-- Section: Validation -->

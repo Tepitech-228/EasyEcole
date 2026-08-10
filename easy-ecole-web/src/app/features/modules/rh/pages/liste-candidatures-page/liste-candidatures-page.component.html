@@ -48,7 +48,7 @@
         <td class="px-6 py-4 text-sm text-gray-700">{{ c.cv ? 'Téléchargeable' : '-' }}</td>
         <td class="px-6 py-4 text-right text-sm">
           <div class="flex items-center justify-end gap-3">
-            <select [value]="c.statut" (change)="changerStatut(c, $event.target.value)" class="text-xs border border-gray-200 rounded-lg px-2 py-1">
+            <select #statutSelect [value]="c.statut" (change)="changerStatut(c, statutSelect.value)" class="text-xs border border-gray-200 rounded-lg px-2 py-1">
               <option value="soumise">Soumise</option>
               <option value="étudiée">Étudiée</option>
               <option value="retenue">Retenue</option>

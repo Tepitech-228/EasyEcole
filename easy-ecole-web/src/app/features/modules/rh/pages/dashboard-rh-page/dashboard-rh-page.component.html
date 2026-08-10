@@ -1,91 +1,90 @@
-<app-header-title title="Tableau de bord RH"></app-header-title>
-
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-  <div *ngFor="let s of stats" [routerLink]="s.link" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer group">
-    <div class="flex items-center justify-between">
-      <div>
-        <p class="text-sm font-medium text-gray-500">{{ s.label }}</p>
-        <p class="text-2xl font-bold text-gray-900 mt-2 group-hover:text-indigo-600 transition-colors">{{ s.value }}</p>
-      </div>
-      <div class="p-3 rounded-full" [class]="'bg-' + s.color + '-50'">
-        <span class="material-icons text-2xl" [class]="'text-' + s.color + '-600'">{{ s.icon }}</span>
-      </div>
+<div class="dashboard-rh-shell">
+  <div class="dashboard-banner rh-banner">
+    <div>
+      <p class="dashboard-kicker">Ressources humaines</p>
+      <h1 class="text-2xl font-bold text-white">Tableau de bord RH</h1>
     </div>
   </div>
-</div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-  <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-    <h3 class="text-lg font-semibold text-gray-900 mb-4">Actions rapides</h3>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <a *ngFor="let q of quickLinks" [routerLink]="q.link" class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-indigo-50 hover:text-indigo-700 transition-colors group">
-        <div class="p-2 bg-white rounded-lg shadow-sm">
-          <span class="material-icons text-indigo-600">{{ q.icon }}</span>
-        </div>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div *ngFor="let s of stats" [routerLink]="s.link" class="dashboard-stat-card cursor-pointer group">
+      <div class="flex items-center justify-between">
         <div>
-          <p class="text-sm font-semibold text-gray-900 group-hover:text-indigo-700">{{ q.label }}</p>
-          <p class="text-xs text-gray-500">{{ q.desc }}</p>
+          <p class="dashboard-card-label">{{ s.label }}</p>
+          <p class="dashboard-card-number small group-hover:text-indigo-600 transition-colors">{{ s.value }}</p>
         </div>
-      </a>
+        <div class="p-3 rounded-full" [class]="'bg-' + s.color + '-50'">
+          <span class="material-icons text-2xl" [class]="'text-' + s.color + '-600'">{{ s.icon }}</span>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <div class="lg:col-span-2 dashboard-panel p-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">Actions rapides</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <a *ngFor="let q of quickLinks" [routerLink]="q.link" class="dashboard-quick-link">
+          <div class="p-2 bg-white rounded-lg shadow-sm">
+            <span class="material-icons text-indigo-600">{{ q.icon }}</span>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-gray-900">{{ q.label }}</p>
+            <p class="text-xs text-gray-500">{{ q.desc }}</p>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <div class="dashboard-panel p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-900">Activités récentes</h3>
+        <button class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">Voir tout</button>
+      </div>
+      <div class="space-y-4">
+        <div *ngFor="let a of recentActivities" class="flex items-start gap-3">
+          <div class="p-2 bg-indigo-50 rounded-full">
+            <span class="material-icons text-indigo-600 text-sm">notifications</span>
+          </div>
+          <div class="flex-1">
+            <p class="text-sm font-medium text-gray-900">{{ a.action }}</p>
+            <p class="text-xs text-gray-500">{{ a.detail }}</p>
+          </div>
+          <span class="text-xs text-gray-400 whitespace-nowrap">{{ a.time }}</span>
+        </div>
+        <div *ngIf="recentActivities.length === 0" class="text-sm text-gray-500 text-center py-8">Aucune activité récente</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dashboard-panel p-6">
     <div class="flex items-center justify-between mb-4">
-      <h3 class="text-lg font-semibold text-gray-900">Activités récentes</h3>
-      <button class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">Voir tout</button>
+      <h3 class="text-lg font-semibold text-gray-900">Effectifs par département</h3>
+      <button class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors">
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+        Exporter
+      </button>
     </div>
-    <div class="space-y-4">
-      <div *ngFor="let a of recentActivities" class="flex items-start gap-3">
-        <div class="p-2 bg-indigo-50 rounded-full">
-          <span class="material-icons text-indigo-600 text-sm">notifications</span>
-        </div>
-        <div class="flex-1">
-          <p class="text-sm font-medium text-gray-900">{{ a.action }}</p>
-          <p class="text-xs text-gray-500">{{ a.detail }}</p>
-        </div>
-        <span class="text-xs text-gray-400 whitespace-nowrap">{{ a.time }}</span>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="p-4 bg-gray-50 rounded-lg">
+        <p class="text-xs font-medium text-gray-500 uppercase">IT</p>
+        <p class="text-lg font-bold text-gray-900 mt-1">12</p>
+        <div class="mt-2 w-full bg-gray-200 rounded-full h-2"><div class="bg-indigo-600 h-2 rounded-full" style="width: 60%"></div></div>
       </div>
-      <div *ngIf="recentActivities.length === 0" class="text-sm text-gray-500 text-center py-8">Aucune activité récente</div>
-    </div>
-  </div>
-</div>
-
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-  <div class="flex items-center justify-between mb-4">
-    <h3 class="text-lg font-semibold text-gray-900">Effectifs par département</h3>
-    <button class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors">
-      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-      Exporter
-    </button>
-  </div>
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-    <div class="p-4 bg-gray-50 rounded-lg">
-      <p class="text-xs font-medium text-gray-500 uppercase">IT</p>
-      <p class="text-lg font-bold text-gray-900 mt-1">12</p>
-      <div class="mt-2 w-full bg-gray-200 rounded-full h-2">
-        <div class="bg-indigo-600 h-2 rounded-full" style="width: 60%"></div>
+      <div class="p-4 bg-gray-50 rounded-lg">
+        <p class="text-xs font-medium text-gray-500 uppercase">Finance</p>
+        <p class="text-lg font-bold text-gray-900 mt-1">8</p>
+        <div class="mt-2 w-full bg-gray-200 rounded-full h-2"><div class="bg-green-600 h-2 rounded-full" style="width: 40%"></div></div>
       </div>
-    </div>
-    <div class="p-4 bg-gray-50 rounded-lg">
-      <p class="text-xs font-medium text-gray-500 uppercase">Finance</p>
-      <p class="text-lg font-bold text-gray-900 mt-1">8</p>
-      <div class="mt-2 w-full bg-gray-200 rounded-full h-2">
-        <div class="bg-green-600 h-2 rounded-full" style="width: 40%"></div>
+      <div class="p-4 bg-gray-50 rounded-lg">
+        <p class="text-xs font-medium text-gray-500 uppercase">RH</p>
+        <p class="text-lg font-bold text-gray-900 mt-1">5</p>
+        <div class="mt-2 w-full bg-gray-200 rounded-full h-2"><div class="bg-yellow-500 h-2 rounded-full" style="width: 25%"></div></div>
       </div>
-    </div>
-    <div class="p-4 bg-gray-50 rounded-lg">
-      <p class="text-xs font-medium text-gray-500 uppercase">RH</p>
-      <p class="text-lg font-bold text-gray-900 mt-1">5</p>
-      <div class="mt-2 w-full bg-gray-200 rounded-full h-2">
-        <div class="bg-yellow-500 h-2 rounded-full" style="width: 25%"></div>
-      </div>
-    </div>
-    <div class="p-4 bg-gray-50 rounded-lg">
-      <p class="text-xs font-medium text-gray-500 uppercase">Marketing</p>
-      <p class="text-lg font-bold text-gray-900 mt-1">6</p>
-      <div class="mt-2 w-full bg-gray-200 rounded-full h-2">
-        <div class="bg-purple-600 h-2 rounded-full" style="width: 30%"></div>
+      <div class="p-4 bg-gray-50 rounded-lg">
+        <p class="text-xs font-medium text-gray-500 uppercase">Marketing</p>
+        <p class="text-lg font-bold text-gray-900 mt-1">6</p>
+        <div class="mt-2 w-full bg-gray-200 rounded-full h-2"><div class="bg-purple-600 h-2 rounded-full" style="width: 30%"></div></div>
       </div>
     </div>
   </div>

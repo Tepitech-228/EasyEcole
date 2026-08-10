@@ -7,7 +7,9 @@ export default class AbsenceController {
     constructor() { }
 
     static async getAll(req: Request, res: Response): Promise<Response> {
-        let options: FindOptions<InferAttributes<Absence>> = { include: [{ all: true }] }
+        let options: FindOptions<InferAttributes<Absence>> = {
+            include: [Absence.associations.noteEvaluation]
+        }
         try {
             let data = await Absence.findAll(options);
             return res.status(200).send(data);
@@ -18,7 +20,9 @@ export default class AbsenceController {
 
     static async get(req: Request, res: Response): Promise<Response> {
         try {
-            const data = await Absence.findByPk(req.params.id, { include: [{ all: true }] });
+            const data = await Absence.findByPk(req.params.id, {
+                include: [Absence.associations.noteEvaluation]
+            });
             if (!data) return res.status(404).json({ success: false, message: "Absence non trouvée" });
             return res.status(200).send(data);
         } catch (error) {
@@ -61,7 +65,7 @@ export default class AbsenceController {
         try {
             const data = await Absence.findOne({
                 where: { noteEvaluationId: req.params.noteEvaluationId },
-                include: [{ all: true }]
+                include: [Absence.associations.noteEvaluation]
             });
             return res.status(200).send(data);
         } catch (error) {

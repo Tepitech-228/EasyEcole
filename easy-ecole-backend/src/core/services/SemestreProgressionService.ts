@@ -1,6 +1,7 @@
 import { CursusApprenant } from "../../modules/inscription/models/CursusApprenant";
 import { Cours } from "../../modules/inscription/models/Cours";
 import { Bulletin } from "../../modules/bulletins/models/Bulletin";
+import { SemestreAcademique } from "../../modules/inscription/models/SemestreAcademique";
 import { Op } from "sequelize";
 
 export interface AnneeParcoursInfo {
@@ -88,16 +89,17 @@ export class SemestreProgressionService {
     return mapping;
   }
 
-  static getSemestreEnCours(): string {
-    const now = new Date();
-    const mois = now.getMonth() + 1;
-    const jour = now.getDate();
+  static async getSemestreEnCours(parcoursId: number, anneeAcademiqueId: number): Promise<string | null> {
+    const semestre = await SemestreAcademique.findOne({
+      where: {
+        parcoursId,
+        anneeAcademiqueId,
+        statut: 'en_cours'
+      },
+      order: [['dateDebut', 'ASC']]
+    });
 
-    if (mois >= 10 || mois <= 2) return 'semestre1';
-    if (mois >= 3 && mois <= 6) return 'semestre2';
-
-    if (mois >= 10) return 'semestre1';
-    return 'semestre2';
+    return semestre?.codeSemestre || null;
   }
 
   static async getProgression(
@@ -116,7 +118,7 @@ export class SemestreProgressionService {
     const parcoursId = Number((cursus as any).parcoursId);
 
     const annees = this.getAnneesParcours(niveauLibelle);
-    const semestreEnCours = this.getSemestreEnCours();
+    const semestreEnCours = await this.getSemestreEnCours(parcoursId, Number((cursus as any).anneeAcademiqueId));
 
     const toutesUes = await Cours.findAll({
       where: { parcoursId },
@@ -194,7 +196,9 @@ export class SemestreProgressionService {
 
     return {
       anneeActuelle: niveauLibelle,
-      semestreEnCours: semestresInclus.includes(semestreEnCours) ? semestreEnCours : semestresInclus[0] || null,
+      semestreEnCours: semestreEnCours && semestresInclus.includes(semestreEnCours)
+        ? semestreEnCours
+        : semestresInclus[0] || null,
       annees,
       semestres
     };

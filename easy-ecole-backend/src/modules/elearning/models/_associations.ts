@@ -14,6 +14,10 @@ import { ReponseQuiz } from "./ReponseQuiz";
 import { Certificat } from "./Certificat";
 import { ProgressionApprenant } from "./ProgressionApprenant";
 import { Utilisateur } from "../../auth/models/Utilisateur";
+import { Cours } from "../../inscription/models/Cours";
+
+CoursEnLigne.belongsTo(Cours, { as: 'coursPedagogique', foreignKey: 'coursId', constraints: false });
+Cours.hasMany(CoursEnLigne, { foreignKey: 'coursId', as: 'coursEnLigne', constraints: false });
 
 CoursEnLigne.hasMany(ModuleElearning, { foreignKey: 'coursId', as: 'modules' })
 ModuleElearning.belongsTo(CoursEnLigne, { as: 'cours', foreignKey: 'coursId' })

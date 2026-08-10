@@ -2,14 +2,22 @@ import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 import { Cours } from 'src/app/data/modules/inscription/models/Cours.model';
+import { SalleDeClasseService } from 'src/app/data/modules/inscription/services/salle-de-classe.service';
+import { SalleDeClasse } from 'src/app/data/modules/inscription/models/SalleDeClasse.model';
 
-interface ArbreNode {
+interface HierarchyNode {
   id: string;
-  type: 'parcours' | 'niveau' | 'semestre' | 'ue' | 'cours';
+  type: 'annee' | 'niveau' | 'parcours' | 'salle' | 'semestre' | 'ue' | 'cours';
   label: string;
-  children?: ArbreNode[];
   data?: any;
+  children?: HierarchyNode[];
   expanded?: boolean;
+  path?: {
+    anneeId?: string;
+    niveauId?: string;
+    parcoursId?: string;
+    salleId?: string;
+  };
 }
 
 @Component({
@@ -18,72 +26,135 @@ interface ArbreNode {
   styleUrls: ['./hierarchy-page.component.scss']
 })
 export class HierarchyPageComponent implements OnInit {
-  tree: ArbreNode[] = [];
+  tree: HierarchyNode[] = [];
+  filteredTree: HierarchyNode[] = [];
   loading = false;
-  selectedNode: ArbreNode | null = null;
+  selectedNode: HierarchyNode | null = null;
   selectedCoursList: Cours[] = [];
 
-  constructor(private http: HttpClient) {}
+  searchTerm = '';
+  selectedYearId = '';
+  selectedNiveauId = '';
+  selectedParcoursId = '';
+  selectedSalleId = '';
+
+  salles: SalleDeClasse[] = [];
+
+  constructor(
+    private http: HttpClient,
+    private salleService: SalleDeClasseService
+  ) {}
 
   ngOnInit(): void {
     this.loadTree();
   }
 
-  loadTree() {
+  loadTree(): void {
     this.loading = true;
-    this.http.get<any>(`${environment.API_MODULES.INSCRIPTION}/arbre-pedagogique`).subscribe({
+    this.http.get<any[]>(`${environment.API_MODULES.INSCRIPTION}/hierarchy`).subscribe({
       next: (data) => {
         this.tree = this.buildTree(data);
+        this.filteredTree = this.tree;
+        this.loadSalles();
         this.loading = false;
       },
       error: () => { this.loading = false; }
     });
   }
 
-  private buildTree(data: any): ArbreNode[] {
-    if (!data) return [];
-    if (Array.isArray(data)) {
-      return data.map(item => this.mapNode(item));
-    }
-    return [this.mapNode(data)];
+  private loadSalles(): void {
+    this.salleService.getAll().subscribe({
+      next: (salles) => {
+        this.salles = salles || [];
+        this.attachSallesToTree();
+        this.expandAllNodes(this.tree);
+        this.applyFilters();
+      },
+      error: (err) => {
+        console.error('Erreur chargement salles :', err);
+      }
+    });
   }
 
-  private mapNode(item: any): ArbreNode {
-    const node: ArbreNode = {
-      id: item.id || `${item.type}-${Math.random()}`,
+  private buildTree(data: any[]): HierarchyNode[] {
+    if (!data) return [];
+    return data.map(item => this.buildNode(item, {}));
+  }
+
+  private buildNode(item: any, parentPath: any): HierarchyNode {
+    const nodePath = { ...parentPath };
+    if (item.type === 'annee') nodePath.anneeId = String(item.data?.id || item.id || '');
+    if (item.type === 'niveau') nodePath.niveauId = String(item.data?.id || item.id || '');
+    if (item.type === 'parcours') nodePath.parcoursId = String(item.data?.id || item.id || '');
+
+    const node: HierarchyNode = {
+      id: String(item.id || `${item.type}-${Math.random()}`),
       type: item.type || 'parcours',
-      label: item.libelle || item.label || item.titre || item.intitule || item.code || '',
-      data: item,
+      label: item.label || item.libelle || item.titre || item.intitule || item.code || '',
+      data: item.data || item,
       expanded: false,
-      children: undefined
+      path: nodePath,
+      children: item.children ? item.children.map((child: any) => this.buildNode(child, nodePath)) : undefined
     };
-    if (item.niveaux || item.parcours || item.semestres || item.ues || item.cours) {
-      node.children = [];
-      if (item.niveaux) node.children.push(...item.niveaux.map((n: any) => this.mapNode({ ...n, type: 'niveau' })));
-      if (item.parcours) node.children.push(...item.parcours.map((p: any) => this.mapNode({ ...p, type: 'parcours' })));
-      if (item.semestres) node.children.push(...item.semestres.map((s: any) => this.mapNode({ ...s, type: 'semestre' })));
-      if (item.ues) node.children.push(...item.ues.map((u: any) => {
-        const n = this.mapNode({ ...u, type: 'ue' });
-        if (u.cours && typeof u.cours === 'object') {
-          n.children = [this.mapNode({ ...u.cours, type: 'cours' })];
-        }
-        return n;
-      }));
-      if (item.cours && typeof item.cours === 'object' && !Array.isArray(item.cours)) {
-        node.children.push(this.mapNode({ ...item.cours, type: 'cours' }));
-      }
-    }
-    if (!node.children?.length) node.children = undefined;
+
     return node;
   }
 
-  toggle(node: ArbreNode) {
+  private attachSallesToTree(): void {
+    const sallesByParcours = new Map<string, SalleDeClasse[]>();
+    this.salles.forEach(salle => {
+      const parcoursId = String(salle.parcoursId || '');
+      if (!parcoursId) return;
+      const list = sallesByParcours.get(parcoursId) || [];
+      list.push(salle);
+      sallesByParcours.set(parcoursId, list);
+    });
+
+    this.tree = this.tree.map(node => this.attachSallesToNode(node, sallesByParcours));
+    this.filteredTree = this.tree;
+  }
+
+  private expandAllNodes(nodes: HierarchyNode[]): void {
+    nodes.forEach(node => {
+      if (node.children?.length) {
+        node.expanded = true;
+        this.expandAllNodes(node.children);
+      }
+    });
+  }
+
+  private attachSallesToNode(node: HierarchyNode, sallesByParcours: Map<string, SalleDeClasse[]>): HierarchyNode {
+    const children = node.children ? node.children.map(child => this.attachSallesToNode(child, sallesByParcours)) : [];
+
+    if (node.type === 'parcours') {
+      const salleNodes = (sallesByParcours.get(String(node.data?.id)) || []).map(salle => ({
+        id: `salle-${salle.id}`,
+        type: 'salle' as const,
+        label: salle.libelle || 'Salle',
+        data: salle,
+        expanded: false,
+        path: { ...node.path, salleId: String(salle.id) }
+      }));
+
+      return {
+        ...node,
+        children: [...children, ...salleNodes]
+      };
+    }
+
+    return {
+      ...node,
+      children: children.length ? children : undefined
+    };
+  }
+
+  toggle(node: HierarchyNode): void {
     if (node.children?.length) {
       node.expanded = !node.expanded;
     }
   }
 
-  select(node: ArbreNode) {
+  select(node: HierarchyNode): void {
     this.selectedNode = node;
     if (node.type === 'cours' && node.data) {
       this.selectedCoursList = [node.data as Cours];
@@ -94,7 +165,7 @@ export class HierarchyPageComponent implements OnInit {
     }
   }
 
-  private collectCours(children: ArbreNode[]): Cours[] {
+  private collectCours(children: HierarchyNode[]): Cours[] {
     const result: Cours[] = [];
     for (const child of children) {
       if (child.type === 'cours' && child.data) {
@@ -116,12 +187,104 @@ export class HierarchyPageComponent implements OnInit {
 
   getTypeIcon(type: string): string {
     switch (type) {
-      case 'parcours': return '📚';
+      case 'annee': return '🗓️';
       case 'niveau': return '🎓';
+      case 'parcours': return '📚';
+      case 'salle': return '🏫';
       case 'semestre': return '📅';
       case 'ue': return '📋';
       case 'cours': return '📝';
       default: return '📄';
     }
+  }
+
+  getTypeLabel(type: string): string {
+    switch (type) {
+      case 'annee': return 'Année';
+      case 'niveau': return 'Niveau';
+      case 'parcours': return 'Filière';
+      case 'salle': return 'Salle';
+      case 'semestre': return 'Semestre';
+      case 'ue': return 'UE';
+      case 'cours': return 'Cours';
+      default: return 'Élément';
+    }
+  }
+
+  get yearOptions(): { id: string; label: string }[] {
+    return this.tree.map(node => ({ id: node.path?.anneeId || node.id, label: node.label }));
+  }
+
+  get niveauOptions(): { id: string; label: string }[] {
+    const items = new Map<string, string>();
+    this.tree.forEach(annee => annee.children?.forEach(niveau => {
+      if (niveau.path?.niveauId) items.set(niveau.path.niveauId, niveau.label);
+    }));
+    return Array.from(items.entries()).map(([id, label]) => ({ id, label }));
+  }
+
+  get parcoursOptions(): { id: string; label: string }[] {
+    const items = new Map<string, string>();
+    this.tree.forEach(annee => annee.children?.forEach(niveau => niveau.children?.forEach(parcours => {
+      if (parcours.path?.parcoursId) items.set(parcours.path.parcoursId, parcours.label);
+    })));
+    return Array.from(items.entries()).map(([id, label]) => ({ id, label }));
+  }
+
+  get salleOptions(): { id: string; label: string }[] {
+    return this.salles.map(salle => ({ id: String(salle.id), label: salle.libelle || `Salle ${salle.id}` }));
+  }
+
+  get hasActiveFilters(): boolean {
+    return !!(this.searchTerm || this.selectedYearId || this.selectedNiveauId || this.selectedParcoursId || this.selectedSalleId);
+  }
+
+  applyFilters(): void {
+    this.filteredTree = this.filterNodes(this.tree);
+  }
+
+  private filterNodes(nodes: HierarchyNode[]): HierarchyNode[] {
+    const result: HierarchyNode[] = [];
+
+    for (const node of nodes) {
+      const children = node.children ? this.filterNodes(node.children) : [];
+      const nodeMatches = this.nodeMatchesFilters(node);
+      if (nodeMatches || children.length > 0) {
+        result.push({ ...node, children: children.length ? children : undefined });
+      }
+    }
+
+    return result;
+  }
+
+  private nodeMatchesFilters(node: HierarchyNode): boolean {
+    if (this.searchTerm) {
+      const value = node.label || '';
+      if (!value.toLowerCase().includes(this.searchTerm.toLowerCase())) {
+        return false;
+      }
+    }
+    if (this.selectedYearId && node.path?.anneeId !== this.selectedYearId) {
+      return false;
+    }
+    if (this.selectedNiveauId && node.path?.niveauId !== this.selectedNiveauId) {
+      return false;
+    }
+    if (this.selectedParcoursId && node.path?.parcoursId !== this.selectedParcoursId) {
+      return false;
+    }
+    if (this.selectedSalleId && node.path?.salleId !== this.selectedSalleId) {
+      return false;
+    }
+    return true;
+  }
+
+  clearFilters(): void {
+    this.searchTerm = '';
+    this.selectedYearId = '';
+    this.selectedNiveauId = '';
+    this.selectedParcoursId = '';
+    this.selectedSalleId = '';
+    this.applyFilters();
   }
 }

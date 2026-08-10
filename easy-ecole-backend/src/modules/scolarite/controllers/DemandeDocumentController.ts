@@ -8,6 +8,7 @@ import { DocumentPDFGenerator } from "../../../core/helpers/DocumentPDFGenerator
 import { CursusApprenant } from "../../inscription/models/CursusApprenant";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
+import DemandeDocumentPaiementService from "../services/DemandeDocumentPaiementService";
 
 export default class DemandeDocumentController {
 
@@ -87,11 +88,24 @@ export default class DemandeDocumentController {
             return res.status(403).json({ success: false })
         }
 
+        if (!req.body.typeDocumentId) {
+            return res.status(400).json({ success: false, message: "typeDocumentId requis" });
+        }
+
+        // Règle métier : toute demande soumise par un étudiant est une demande volontaire.
+        // Le montant est le frais paramétré sur le TypeDocument (0 = gratuit).
+        const typeDocument = await TypeDocument.findByPk(req.body.typeDocumentId)
+        const montant = Number(typeDocument?.frais) || 0
+
         let demande: DemandeDocument = new DemandeDocument();
         demande.etudiantId = (req as any).utilisateurId
         demande.typeDocumentId = req.body.typeDocumentId
         demande.statut = 'soumise'
-        demande.fraisPayes = req.body.fraisPayes || false
+        demande.source = 'demande_etudiant'
+        demande.montant = montant
+        // Gratuit si aucun frais paramétré, sinon en attente de paiement
+        demande.fraisPayes = montant <= 0
+        demande.compteProduit = '704'
 
         await demande.save()
             .then(async (demande) => {
@@ -134,6 +148,12 @@ export default class DemandeDocumentController {
         }
 
             if (req.body.statut == 'validee' || req.body.statut == 'delivree') {
+            // Règle métier : une demande volontaire payante doit être réglée avant
+            // validation / délivrance du document.
+            if (demande.source === 'demande_etudiant' && !demande.fraisPayes) {
+                return res.status(400).json({ success: false, message: "Paiement requis avant délivrance du document" });
+            }
+
             let typeDocument = demande.typeDocument
             if (!typeDocument) {
                 typeDocument = (await TypeDocument.findOne({ where: { id: demande.typeDocumentId } })) ?? undefined
@@ -230,6 +250,16 @@ export default class DemandeDocumentController {
             return res.status(400).json({ success: false, message: "statut must be one of: validee, rejetee, delivree" })
         }
 
+        if (statut === 'validee' || statut === 'delivree') {
+            const demandes = await DemandeDocument.findAll({ where: { id: ids } })
+            const nonPayees = demandes.filter(d =>
+                d.source === 'demande_etudiant' && !d.fraisPayes && Number(d.montant) > 0
+            )
+            if (nonPayees.length > 0) {
+                return res.status(400).json({ success: false, message: "Paiement requis avant délivrance du document" })
+            }
+        }
+
         const transaction = await DatabaseConnection.getInstance().sequelize.transaction()
         try {
             const [count] = await DemandeDocument.update(
@@ -242,5 +272,118 @@ export default class DemandeDocumentController {
             await transaction.rollback()
             return res.status(500).json({ success: false, error })
         }
+    }
+
+    static async creerBordereauDemandeDocument(req: Request, res: Response): Promise<Response | null> {
+        const role = (req as any).utilisateurRole
+        const utilisateurId = (req as any).utilisateurId
+
+        const demande: DemandeDocument | null = await DemandeDocument.findByPk(req.params.id)
+        if (demande == null) {
+            return res.status(404).json({ success: false, message: "Demande non trouvée" })
+        }
+
+        const isOwner = role == RolesUtilisateur.APPRENANT && demande.etudiantId == utilisateurId
+        if (!isOwner && role != RolesUtilisateur.INSTITUTION && role != RolesUtilisateur.ADMIN) {
+            return res.status(403).json({ success: false })
+        }
+
+        const montant = Number(demande.montant) || 0
+        if (montant <= 0) {
+            return res.status(400).json({ success: false, message: "Aucun frais à payer pour cette demande" })
+        }
+        if (demande.fraisPayes) {
+            return res.status(400).json({ success: false, message: "Demande déjà payée" })
+        }
+
+        const bordereauExistant = await DemandeDocumentPaiementService.trouverBordereauDemande(demande)
+        if (bordereauExistant) {
+            return res.status(400).json({ success: false, message: "Un bordereau existe déjà pour cette demande" })
+        }
+
+        try {
+            const bordereau = await DemandeDocumentPaiementService.creerBordereauPourDemande(demande, utilisateurId)
+            return res.status(201).send(bordereau)
+        } catch (error) {
+            return res.status(500).json({ success: false, error })
+        }
+    }
+
+    static async confirmerPaiementDemandeDocument(req: Request, res: Response): Promise<Response | null> {
+        const role = (req as any).utilisateurRole
+        if (role != RolesUtilisateur.INSTITUTION && role != RolesUtilisateur.CAISSIER_BANQUE && role != RolesUtilisateur.ADMIN) {
+            return res.status(403).json({ success: false })
+        }
+
+        const demande: DemandeDocument | null = await DemandeDocument.findByPk(req.params.id)
+        if (demande == null) {
+            return res.status(404).json({ success: false, message: "Demande non trouvée" })
+        }
+
+        if (demande.fraisPayes) {
+            return res.status(400).json({ success: false, message: "Demande déjà payée" })
+        }
+
+        try {
+            const demandeMaj = await DemandeDocumentPaiementService.confirmerPaiement(demande, {
+                paiementId: req.body.paiementId
+            })
+            return res.status(200).send(demandeMaj)
+        } catch (error) {
+            return res.status(500).json({ success: false, error })
+        }
+    }
+
+    static async confirmerPaiementAutoDemandeDocument(req: Request, res: Response): Promise<Response | null> {
+        const role = (req as any).utilisateurRole
+        const utilisateurId = (req as any).utilisateurId
+
+        const demande: DemandeDocument | null = await DemandeDocument.findByPk(req.params.id)
+        if (demande == null) {
+            return res.status(404).json({ success: false, message: "Demande non trouvée" })
+        }
+
+        const isOwner = role == RolesUtilisateur.APPRENANT && demande.etudiantId == utilisateurId
+        if (!isOwner && role != RolesUtilisateur.INSTITUTION && role != RolesUtilisateur.ADMIN) {
+            return res.status(403).json({ success: false })
+        }
+
+        const montant = Number(demande.montant) || 0
+        if (montant <= 0) {
+            return res.status(400).json({ success: false, message: "Aucun frais à payer pour cette demande" })
+        }
+        if (demande.fraisPayes) {
+            return res.status(400).json({ success: false, message: "Demande déjà payée" })
+        }
+
+        try {
+            const demandeMaj = await DemandeDocumentPaiementService.confirmerPaiementAuto(demande, req)
+            return res.status(200).send(demandeMaj)
+        } catch (error) {
+            return res.status(500).json({ success: false, error })
+        }
+    }
+
+    static async verifierAccesDemandeDocument(req: Request, res: Response): Promise<Response | null> {
+        const role = (req as any).utilisateurRole
+        const utilisateurId = (req as any).utilisateurId
+
+        const demande: DemandeDocument | null = await DemandeDocument.findByPk(req.params.id)
+        if (demande == null) {
+            return res.status(404).json({ success: false, message: "Demande non trouvée" })
+        }
+
+        const isOwner = role == RolesUtilisateur.APPRENANT && demande.etudiantId == utilisateurId
+        if (!isOwner && role != RolesUtilisateur.INSTITUTION && role != RolesUtilisateur.ADMIN && role != RolesUtilisateur.CAISSIER_BANQUE) {
+            return res.status(403).json({ success: false })
+        }
+
+        const montant = Number(demande.montant) || 0
+        return res.status(200).json({
+            gratuit: montant <= 0 || demande.source === 'automatique',
+            montant,
+            fraisPayes: !!demande.fraisPayes,
+            source: demande.source
+        })
     }
 }

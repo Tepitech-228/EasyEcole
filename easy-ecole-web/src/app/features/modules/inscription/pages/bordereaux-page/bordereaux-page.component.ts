@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 import { Bordereau } from 'src/app/data/modules/inscription/models/Bordereau.model';
 import { Echeance } from 'src/app/data/modules/inscription/models/Echeance.model';
 import { DemandeInscription } from 'src/app/data/modules/inscription/models/DemandeInscription.model';
@@ -32,6 +33,23 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
   selectedFile?: File
   pdfBordereau?: Bordereau
 
+  searchTerm = ''
+  selectedType = ''
+  selectedStatus = ''
+
+  readonly typeOptions = [
+    { value: '', label: 'Tous' },
+    { value: 'inscription', label: 'Inscription' },
+    { value: 'scolarite', label: 'Scolarité' }
+  ]
+
+  readonly statusOptions = [
+    { value: '', label: 'Tous' },
+    { value: 'valide', label: 'Validé' },
+    { value: 'rejete', label: 'Rejeté' },
+    { value: 'en_attente', label: 'En attente' }
+  ]
+
   readonly BORDEREAUX_PATH: string = environment.MEDIAS_PATH.INSCRIPTION.BORDEREAUX
 
   bordereauForm: FormGroup = new FormGroup({
@@ -46,6 +64,7 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
     private echeanceService: EcheanceService,
     private demandeInscriptionService: DemandeInscriptionService,
     private sanitizer: DomSanitizer,
+    private localStorage: LocalStorageService
   ) {
     super()
     this.getBordereaux()
@@ -65,6 +84,31 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
         console.log(err)
       }
     })
+  }
+
+  get filteredBordereaux(): Bordereau[] {
+    return this.bordereaux.filter(bordereau => {
+      const matchesSearch = this.searchTerm
+        ? [
+            bordereau.type,
+            bordereau.echeance ? `Mois ${bordereau.echeance.numeroEcheance}` : '',
+            bordereau.referenceBancaire,
+            bordereau.statut,
+            bordereau.fichier
+          ]
+            .filter(Boolean)
+            .some(value => value?.toLowerCase().includes(this.searchTerm.toLowerCase()))
+        : true
+
+      const matchesType = this.selectedType ? (bordereau.type === this.selectedType || (!bordereau.type && bordereau.echeance?.type === this.selectedType)) : true
+      const matchesStatus = this.selectedStatus ? bordereau.statut === this.selectedStatus : true
+
+      return matchesSearch && matchesType && matchesStatus
+    })
+  }
+
+  applyFilters(): void {
+    // trigger Angular change detection via getters
   }
 
   getEcheances(): void {
@@ -172,7 +216,12 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
   }
 
   getDocUrl(fichier: string): SafeResourceUrl {
-    return this.sanitizer.bypassSecurityTrustResourceUrl(this.BORDEREAUX_PATH + fichier)
+    const token = this.localStorage.get(LocalStorageService.AUTH_TOKEN)
+    let url = this.BORDEREAUX_PATH + fichier
+    if (token) {
+      url += `?token=${encodeURIComponent(token)}`
+    }
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url)
   }
 
   openPdfModal(bordereau: Bordereau): void {

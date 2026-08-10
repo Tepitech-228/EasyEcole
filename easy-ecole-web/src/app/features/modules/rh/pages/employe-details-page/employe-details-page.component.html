@@ -1,31 +1,51 @@
 <app-return-back link="/rh/employes" text="Retour à la liste des employés"></app-return-back>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-  <div class="lg:col-span-1">
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
-      <div class="w-24 h-24 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-        <span class="material-icons text-4xl text-indigo-600">person</span>
-      </div>
-      <h2 class="text-xl font-semibold text-gray-900">Empl. #{{ employeId }}</h2>
-      <p class="text-sm text-gray-500 mt-1">Département IT</p>
-      <span class="mt-3 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">Actif</span>
+<app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+<div *ngIf="!loading && notFound" class="empty-state">
+  <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#9aa4c2" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+  <h3 class="text-lg font-semibold text-gray-800">Employé introuvable</h3>
+  <p class="text-sm text-gray-500 mt-1">{{ errorMessage || 'Cet employé n\'existe pas ou a été supprimé.' }}</p>
+  <button (click)="goBack()" class="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">Retour</button>
+</div>
+
+<div *ngIf="!loading && employe" class="employee-details">
+  <div class="header-card">
+    <div class="avatar">
+      <span class="material-icons text-4xl text-indigo-600">person</span>
+    </div>
+    <div class="header-info">
+      <h2 class="text-xl font-semibold text-gray-900">{{ employe.nomComplet }}</h2>
+      <p class="text-sm text-gray-500 mt-1">Matricule : {{ employe.matricule || '-' }}</p>
+      <span class="mt-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium" [class]="getStatutBadge(employe.statut)">
+        {{ employe.statut || '-' }}
+      </span>
     </div>
   </div>
-  <div class="lg:col-span-2">
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <h3 class="text-lg font-semibold text-gray-900 mb-4">Informations personnelles</h3>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div><label class="block text-xs font-medium text-gray-500 uppercase mb-1">Nom</label><p class="text-sm text-gray-900">Dupont</p></div>
-        <div><label class="block text-xs font-medium text-gray-500 uppercase mb-1">Prénoms</label><p class="text-sm text-gray-900">Jean</p></div>
-        <div><label class="block text-xs font-medium text-gray-500 uppercase mb-1">Matricule</label><p class="text-sm text-gray-900">EMP001</p></div>
-        <div><label class="block text-xs font-medium text-gray-500 uppercase mb-1">Poste</label><p class="text-sm text-gray-900">Développeur</p></div>
-        <div><label class="block text-xs font-medium text-gray-500 uppercase mb-1">Téléphone</label><p class="text-sm text-gray-900">+242 06 000 00 00</p></div>
-        <div><label class="block text-xs font-medium text-gray-500 uppercase mb-1">Email</label><p class="text-sm text-gray-900">jean.dupont@ecole.cg</p></div>
-      </div>
-      <div class="mt-6 flex gap-3">
-        <app-custom-button text="Modifier" color="primary"></app-custom-button>
-        <app-custom-button text="Importer contrat" color="gray" [outlined]="true"></app-custom-button>
-      </div>
+
+  <div class="tabs">
+    <button class="tab" [class.active]="activeTab === 'contrats'" (click)="setTab('contrats')">Contrats</button>
+    <button class="tab" [class.active]="activeTab === 'bulletins'" (click)="setTab('bulletins')">Bulletins</button>
+    <button class="tab" [class.active]="activeTab === 'conge'" (click)="setTab('conge')">Congés</button>
+  </div>
+
+  <div class="tab-content">
+    <div *ngIf="activeTab === 'contrats'" class="panel">
+      <h3 class="panel-title">Contrats</h3>
+      <p class="text-sm text-gray-500">Consultez les contrats de cet employé.</p>
+      <a [routerLink]="['/rh/contrats-enseignant']" [queryParams]="{ employeId: employeId }" class="link-btn">Voir la liste des contrats →</a>
+    </div>
+
+    <div *ngIf="activeTab === 'bulletins'" class="panel">
+      <h3 class="panel-title">Bulletins</h3>
+      <p class="text-sm text-gray-500">Consultez les bulletins de paie de cet employé.</p>
+      <a [routerLink]="['/rh/paie']" [queryParams]="{ employeId: employeId }" class="link-btn">Voir la paie →</a>
+    </div>
+
+    <div *ngIf="activeTab === 'conge'" class="panel">
+      <h3 class="panel-title">Congés</h3>
+      <p class="text-sm text-gray-500">Consultez les demandes de congé de cet employé.</p>
+      <a [routerLink]="['/rh/demandes-conge']" [queryParams]="{ employeId: employeId }" class="link-btn">Voir les demandes de congé →</a>
     </div>
   </div>
 </div>

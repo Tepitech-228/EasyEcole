@@ -1,143 +1,138 @@
-<div class="flex flex-col gap-6">
-  <div class="flex items-center justify-between flex-wrap gap-4">
-    <div>
-      <h1 class="text-2xl font-bold text-gray-900">Espace Parents</h1>
-      <p class="text-sm text-gray-500">Tableau de bord</p>
-    </div>
-    <div *ngIf="enfants.length > 1" class="flex items-center gap-2">
-      <label class="text-sm font-medium text-gray-600">Enfant :</label>
-      <select
-        class="px-3 py-2 border border-gray-200 rounded-xl bg-white text-sm text-gray-700 outline-none cursor-pointer"
-        [ngModel]="selectedEnfant"
-        (ngModelChange)="selectEnfant($event)">
-        <option *ngFor="let e of enfants" [ngValue]="e">{{ e.prenoms }} {{ e.nom }}</option>
-      </select>
+<div class="dashboard-parent-shell">
+  <div class="dashboard-banner parent-banner">
+    <div class="flex items-center justify-between flex-wrap gap-4">
+      <div>
+        <p class="dashboard-kicker">Espace parents</p>
+        <h1 class="text-2xl font-bold text-white">Suivi de l’élève</h1>
+      </div>
+      <div *ngIf="enfants.length > 1" class="flex items-center gap-2 rounded-full bg-white/15 px-3 py-2 backdrop-blur-sm">
+        <label class="text-sm font-medium text-white/80">Enfant :</label>
+        <select
+          class="px-3 py-2 border border-white/20 rounded-xl bg-white/10 text-sm text-white outline-none cursor-pointer"
+          [ngModel]="selectedEnfant"
+          (ngModelChange)="selectEnfant($event)">
+          <option *ngFor="let e of enfants" [ngValue]="e" class="text-gray-900">{{ e.prenoms }} {{ e.nom }}</option>
+        </select>
+      </div>
     </div>
   </div>
 
-  <div *ngIf="selectedEnfant" class="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-700">
+  <div *ngIf="selectedEnfant" class="dashboard-identity-pill">
     {{ selectedEnfant.prenoms }} {{ selectedEnfant.nom }}
     <span *ngIf="selectedEnfant.classe"> — {{ selectedEnfant.classe }}</span>
   </div>
 
   <ng-container *ngIf="!loading; else loadingState">
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-      <div class="bg-white border border-gray-200 rounded-xl p-4 flex flex-col items-center gap-2 cursor-pointer hover:shadow-md hover:border-blue-300 transition-all" (click)="navigateTo('notes')">
-        <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#2563eb" stroke-width="2">
-            <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-          </svg>
+    <div class="dashboard-actions-grid">
+      <div class="dashboard-action-card blue" (click)="navigateTo('notes')">
+        <div class="dashboard-icon-wrap blue">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m7-7H5"/></svg>
         </div>
-        <span class="text-sm font-medium text-gray-700">Notes</span>
+        <div>
+          <span class="dashboard-action-title">Notes</span>
+          <p class="dashboard-action-subtitle">Suivre les résultats</p>
+        </div>
       </div>
-      <div class="bg-white border border-gray-200 rounded-xl p-4 flex flex-col items-center gap-2 cursor-pointer hover:shadow-md hover:border-blue-300 transition-all" (click)="navigateTo('absences')">
-        <div class="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#ea580c" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>
-          </svg>
+      <div class="dashboard-action-card orange" (click)="navigateTo('absences')">
+        <div class="dashboard-icon-wrap orange">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
         </div>
-        <span class="text-sm font-medium text-gray-700">Absences</span>
+        <div>
+          <span class="dashboard-action-title">Absences</span>
+          <p class="dashboard-action-subtitle">Voir les justificatifs</p>
+        </div>
       </div>
-      <div class="bg-white border border-gray-200 rounded-xl p-4 flex flex-col items-center gap-2 cursor-pointer hover:shadow-md hover:border-blue-300 transition-all" (click)="navigateTo('emploi-du-temps')">
-        <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#16a34a" stroke-width="2">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-          </svg>
+      <div class="dashboard-action-card green" (click)="navigateTo('emploi-du-temps')">
+        <div class="dashboard-icon-wrap green">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
         </div>
-        <span class="text-sm font-medium text-gray-700">EDT</span>
+        <div>
+          <span class="dashboard-action-title">Emploi du temps</span>
+          <p class="dashboard-action-subtitle">Prochain cours</p>
+        </div>
       </div>
-      <div class="bg-white border border-gray-200 rounded-xl p-4 flex flex-col items-center gap-2 cursor-pointer hover:shadow-md hover:border-blue-300 transition-all" (click)="navigateTo('paiements')">
-        <div class="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#9333ea" stroke-width="2">
-            <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-          </svg>
+      <div class="dashboard-action-card purple" (click)="navigateTo('paiements')">
+        <div class="dashboard-icon-wrap purple">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.105 0-2 .895-2 2v3H8l4 4 4-4h-2v-3c0-1.105-.895-2-2-2z"/></svg>
         </div>
-        <span class="text-sm font-medium text-gray-700">Paiements</span>
+        <div>
+          <span class="dashboard-action-title">Paiements</span>
+          <p class="dashboard-action-subtitle">Suivre les échéances</p>
+        </div>
       </div>
-      <div class="bg-white border border-gray-200 rounded-xl p-4 flex flex-col items-center gap-2 cursor-pointer hover:shadow-md hover:border-blue-300 transition-all" (click)="navigateTo('documents')">
-        <div class="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#4f46e5" stroke-width="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-          </svg>
+      <div class="dashboard-action-card indigo" (click)="navigateTo('documents')">
+        <div class="dashboard-icon-wrap indigo">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 3H7a2 2 0 01-2-2V7a2 2 0 012-2h5l5 5v7a2 2 0 01-2 2z"/></svg>
         </div>
-        <span class="text-sm font-medium text-gray-700">Documents</span>
+        <div>
+          <span class="dashboard-action-title">Documents</span>
+          <p class="dashboard-action-subtitle">Dossiers et attestations</p>
+        </div>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="bg-white border border-gray-200 rounded-xl p-5">
-        <span class="text-xs font-semibold text-gray-500 uppercase">Moyenne</span>
-        <p class="text-3xl font-bold mt-1" [class.text-green-600]="(dashboard?.moyenne ?? 0) >= 10" [class.text-red-600]="(dashboard?.moyenne ?? 0) > 0 && (dashboard?.moyenne ?? 0) < 10">
+    <div class="dashboard-metrics-grid">
+      <div class="dashboard-metric-card">
+        <span class="dashboard-card-label">Moyenne</span>
+        <p class="dashboard-card-number" [class.text-green-600]="(dashboard?.moyenne ?? 0) >= 10" [class.text-red-600]="(dashboard?.moyenne ?? 0) > 0 && (dashboard?.moyenne ?? 0) < 10">
           {{ dashboard?.moyenne != null ? (dashboard!.moyenne! | number:'1.2-2') : '—' }}
         </p>
-        <p class="text-xs text-gray-400 mt-0.5">/ 20</p>
+        <p class="dashboard-card-meta">/ 20</p>
       </div>
-      <div class="bg-white border border-gray-200 rounded-xl p-5">
-        <span class="text-xs font-semibold text-gray-500 uppercase">Absences</span>
-        <p class="text-3xl font-bold text-gray-800 mt-1">{{ dashboard?.totalAbsences ?? 0 }}</p>
-        <p class="text-xs text-gray-400 mt-0.5">{{ dashboard?.absencesNonJustifiees ?? 0 }} non justifiée(s)</p>
+      <div class="dashboard-metric-card">
+        <span class="dashboard-card-label">Absences</span>
+        <p class="dashboard-card-number">{{ dashboard?.totalAbsences ?? 0 }}</p>
+        <p class="dashboard-card-meta">{{ dashboard?.absencesNonJustifiees ?? 0 }} non justifiée(s)</p>
       </div>
-      <div class="bg-white border border-gray-200 rounded-xl p-5">
-        <span class="text-xs font-semibold text-gray-500 uppercase">Prochain cours</span>
-        <p *ngIf="dashboard?.prochainCours" class="text-sm font-semibold text-gray-800 mt-1">{{ dashboard?.prochainCours?.cours }}</p>
-        <p *ngIf="dashboard?.prochainCours" class="text-xs text-gray-500">{{ dashboard?.prochainCours?.date }} à {{ dashboard?.prochainCours?.heure }} · Salle {{ dashboard?.prochainCours?.salle }}</p>
-        <p *ngIf="!dashboard?.prochainCours" class="text-base text-gray-400 mt-1">—</p>
+      <div class="dashboard-metric-card">
+        <span class="dashboard-card-label">Prochain cours</span>
+        <p *ngIf="dashboard?.prochainCours" class="dashboard-card-body-text">{{ dashboard?.prochainCours?.cours }}</p>
+        <p *ngIf="dashboard?.prochainCours" class="dashboard-card-meta">{{ dashboard?.prochainCours?.date }} à {{ dashboard?.prochainCours?.heure }} · Salle {{ dashboard?.prochainCours?.salle }}</p>
+        <p *ngIf="!dashboard?.prochainCours" class="dashboard-card-empty">—</p>
       </div>
-      <div class="bg-white border border-gray-200 rounded-xl p-5">
-        <span class="text-xs font-semibold text-gray-500 uppercase">Échéances</span>
-        <p class="text-3xl font-bold text-gray-800 mt-1">{{ dashboard?.echeances?.length ?? 0 }}</p>
-        <p *ngIf="dashboard?.echeances && dashboard!.echeances!.length > 0 && !dashboard!.echeances![0].paye" class="text-xs text-red-500 mt-0.5">Paiement en attente</p>
+      <div class="dashboard-metric-card">
+        <span class="dashboard-card-label">Échéances</span>
+        <p class="dashboard-card-number">{{ dashboard?.echeances?.length ?? 0 }}</p>
+        <p *ngIf="dashboard?.echeances && dashboard!.echeances!.length > 0 && !dashboard!.echeances![0].paye" class="dashboard-card-meta danger">Paiement en attente</p>
       </div>
     </div>
 
-    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-      <div class="px-4 py-3 border-b border-gray-200">
-        <h3 class="font-semibold text-gray-800">Dernière note</h3>
+    <div class="dashboard-panel">
+      <div class="dashboard-section-header">
+        <h3>Dernière note</h3>
       </div>
-      <div *ngIf="!dashboard?.derniereNote" class="py-12 text-center text-sm text-gray-400">Aucune note récente</div>
-      <table *ngIf="dashboard?.derniereNote" class="w-full border-collapse">
+      <div *ngIf="!dashboard?.derniereNote" class="dashboard-empty-state">Aucune note récente</div>
+      <table *ngIf="dashboard?.derniereNote" class="dashboard-table">
         <thead>
-          <tr class="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide bg-gray-50 border-b border-gray-200">
-            <th class="py-3.5 px-4">Cours</th>
-            <th class="py-3.5 px-4">Note</th>
-            <th class="py-3.5 px-4">Appréciation</th>
+          <tr>
+            <th>Cours</th>
+            <th>Note</th>
+            <th>Appréciation</th>
           </tr>
         </thead>
         <tbody>
-          <tr class="text-sm text-gray-700 border-b border-gray-100 hover:bg-gray-50">
-            <td class="py-3 px-4 font-medium text-gray-800">{{ dashboard?.derniereNote?.cours }}</td>
-            <td class="py-3 px-4">
-              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold"
-                [class.bg-green-50]="(dashboard?.derniereNote?.note ?? 0) >= 10"
-                [class.text-green-600]="(dashboard?.derniereNote?.note ?? 0) >= 10"
-                [class.bg-red-50]="(dashboard?.derniereNote?.note ?? 0) < 10"
-                [class.text-red-600]="(dashboard?.derniereNote?.note ?? 0) < 10">
-                {{ dashboard?.derniereNote?.note }}/20
-              </span>
-            </td>
-            <td class="py-3 px-4 text-xs text-gray-500">{{ dashboard?.derniereNote?.appreciation }}</td>
+          <tr>
+            <td class="font-medium">{{ dashboard?.derniereNote?.cours }}</td>
+            <td>{{ dashboard?.derniereNote?.note }}</td>
+            <td>{{ dashboard?.derniereNote?.appreciation || '—' }}</td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <div *ngIf="dashboard?.echeances && dashboard!.echeances!.length > 0" class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-      <div class="px-4 py-3 border-b border-gray-200">
-        <h3 class="font-semibold text-gray-800">Échéances à venir</h3>
+    <div *ngIf="dashboard?.echeances && dashboard!.echeances!.length > 0" class="dashboard-panel">
+      <div class="dashboard-section-header">
+        <h3>Échéances à venir</h3>
       </div>
-      <div class="divide-y divide-gray-100">
-        <div *ngFor="let echeance of dashboard?.echeances" class="px-4 py-3 flex items-center justify-between text-sm hover:bg-gray-50">
+      <div class="dashboard-list">
+        <div *ngFor="let echeance of dashboard?.echeances" class="dashboard-list-item">
           <div>
-            <p class="font-medium text-gray-800">{{ echeance.libelle }}</p>
-            <p class="text-xs text-gray-500">{{ echeance.dateEcheance }}</p>
+            <p class="dashboard-list-title">{{ echeance.libelle }}</p>
+            <p class="dashboard-list-subtitle">{{ echeance.dateEcheance }}</p>
           </div>
           <div class="text-right">
-            <p class="font-semibold text-gray-800">{{ echeance.montant | number }} FCFA</p>
-            <span class="inline-block px-2 py-0.5 rounded-md text-xs font-semibold"
-              [class.bg-green-50]="echeance.paye"
-              [class.text-green-600]="echeance.paye"
-              [class.bg-red-50]="!echeance.paye"
-              [class.text-red-600]="!echeance.paye">
+            <p class="dashboard-list-price">{{ echeance.montant | number }} FCFA</p>
+            <span class="dashboard-status-badge" [class.success]="echeance.paye" [class.danger]="!echeance.paye">
               {{ echeance.paye ? 'Payé' : 'Impayé' }}
             </span>
           </div>
@@ -147,12 +142,6 @@
   </ng-container>
 
   <ng-template #loadingState>
-    <div class="bg-white border border-gray-200 rounded-xl p-12 text-center text-sm text-gray-400">
-      <svg class="animate-spin h-5 w-5 text-blue-500 mx-auto mb-2" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-      </svg>
-      Chargement du tableau de bord...
-    </div>
+    <div class="dashboard-empty-state large">Chargement du tableau de bord...</div>
   </ng-template>
 </div>

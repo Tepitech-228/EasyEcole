@@ -23,7 +23,7 @@
       </div>
       <div class="mt-6">
         <label class="block text-xs font-medium text-gray-500 uppercase mb-2">Changer le statut</label>
-        <select [value]="candidature.statut" (change)="changerStatut($event.target.value)" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white">
+        <select #statutSelect [value]="candidature.statut" (change)="changerStatut(statutSelect.value)" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white">
           <option value="soumise">Soumise</option>
           <option value="étudiée">Étudiée</option>
           <option value="retenue">Retenue</option>

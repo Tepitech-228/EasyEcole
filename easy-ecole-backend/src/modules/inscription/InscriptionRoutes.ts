@@ -50,6 +50,7 @@ import EcueRouter from "./routers/EcueRouter";
 import MccRouter from "./routers/MccRouter";
 import RegleEvaluationRouter from "./routers/RegleEvaluationRouter";
 import SessionExamenRouter from "./routers/SessionExamenRouter";
+import SemestreAcademiqueRouter from "./routers/SemestreAcademiqueRouter";
 import AbsenceRouter from "./routers/AbsenceRouter";
 import EquivalenceRouter from "./routers/EquivalenceRouter";
 import DispenseRouter from "./routers/DispenseRouter";
@@ -107,6 +108,7 @@ router
     // ⚠️ Routes critiques placées AVANT les montages racine pour éviter
     //    que .use('/', ..., InscriptionComplete) n'intercepte toutes les requêtes.
     .use('/pre-inscriptions', [Authenticate], PreInscriptionRouter)
+    .use('/bordereaux', [Authenticate], BordereauRouter)
     .use('/hierarchy', [Authenticate], HierarchyRouter)
     .use('/typesNoteEvaluation', [Authenticate], TypeNoteEvaluationRouter)
     .use('/listesNoteEvaluation', [Authenticate], ListeNoteEvaluationRouter)
@@ -115,6 +117,7 @@ router
     .use('/ecues', [Authenticate], EcueRouter)
     .use('/mcc', [Authenticate], MccRouter)
     .use('/regles-evaluation', [Authenticate], RegleEvaluationRouter)
+    .use('/semestres-academiques', [Authenticate], SemestreAcademiqueRouter)
     .use('/sessions-examens', [Authenticate], SessionExamenRouter)
     .use('/frais-parcours', [Authenticate], FraisParcoursRouter)
     .use('/reductions-frais', [Authenticate], ReductionFraisRouter)
@@ -130,7 +133,6 @@ router
     .use('/', [Authenticate, InscriptionComplete], BulletinRouter)
     .use('/', [Authenticate, InscriptionComplete], DeliberationRouter)
     .use('/echeances', [Authenticate, InscriptionComplete], EcheanceRouter)
-    .use('/bordereaux', [Authenticate, InscriptionComplete], BordereauRouter)
     .use('/dossiers', [Authenticate, InscriptionComplete], DossierEtudiantRouter)
     .use('/', [Authenticate, InscriptionComplete], PassationRouter)
     .use('/', [Authenticate, InscriptionComplete], SuiviUeRouter)

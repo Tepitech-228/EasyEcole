@@ -9,6 +9,7 @@
     <a routerLink="/comptabilite/bilan" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50 whitespace-nowrap">Bilan</a>
     <a routerLink="/comptabilite/compte-resultat" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50 whitespace-nowrap">Compte de résultat</a>
     <a routerLink="/comptabilite/exercices" class="px-5 py-2.5 rounded-lg text-sm font-medium bg-white text-primary shadow-sm whitespace-nowrap">Exercices</a>
+    <a *ngIf="rolesValue.isAdmin" routerLink="/comptabilite/parametres-frais" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50 whitespace-nowrap">Paramètres des frais</a>
   </div>
 
   <div class="flex items-center justify-between mb-6">

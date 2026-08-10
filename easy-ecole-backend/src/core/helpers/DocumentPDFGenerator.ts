@@ -157,6 +157,83 @@ export class DocumentPDFGenerator {
         return filename;
     }
 
+    static generateReceipt(
+        paiementId: string | number,
+        reference: string,
+        etudiantNom: string,
+        matricule: string,
+        montant: number,
+        datePaiement: Date,
+        typePaiement: string,
+        description: string,
+        logoPath: string | undefined,
+        outputDir: string
+    ): string {
+        const dir = path.resolve(outputDir);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+
+        const filename = `recu_paiement_${reference}_${Date.now()}.pdf`;
+        const filePath = path.join(dir, filename);
+
+        const doc = new PDFDocument({
+            size: 'A4',
+            margin: 50
+        });
+
+        const stream = fs.createWriteStream(filePath);
+        doc.pipe(stream);
+
+        if (logoPath && fs.existsSync(logoPath)) {
+            const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+            const imageWidth = 140;
+            const x = doc.page.margins.left + (pageWidth - imageWidth) / 2;
+            try {
+                doc.image(logoPath, x, doc.y, { fit: [imageWidth, 80] });
+                doc.moveDown(1.5);
+            } catch (error) {
+                // ignore if logo cannot be rendered
+            }
+        }
+
+        doc.fontSize(22).text('REÇU DE PAIEMENT', { align: 'center' });
+        doc.moveDown(1);
+
+        doc.fontSize(10).text(`Référence de paiement: ${reference}`, { align: 'right' });
+        doc.fontSize(10).text(`Date d'émission: ${new Date().toLocaleDateString('fr-FR')}`, { align: 'right' });
+        doc.moveDown(1.5);
+
+        doc.fontSize(12).text('INFORMATIONS ÉTUDIANT', { underline: true });
+        doc.moveDown(0.5);
+        doc.fontSize(11).text(`Nom complet: ${etudiantNom}`);
+        doc.fontSize(11).text(`Matricule: ${matricule}`);
+        doc.moveDown(1.5);
+
+        doc.fontSize(12).text('DÉTAILS DU PAIEMENT', { underline: true });
+        doc.moveDown(0.5);
+        doc.fontSize(11).text(`Numéro de paiement: ${paiementId}`);
+        doc.fontSize(11).text(`Montant payé: ${montant.toLocaleString('fr-FR')} FC`);
+        doc.fontSize(11).text(`Date de paiement: ${datePaiement.toLocaleDateString('fr-FR')}`);
+        doc.fontSize(11).text(`Mode de paiement: ${typePaiement}`);
+        if (description) {
+            doc.moveDown(0.5);
+            doc.fontSize(11).text(`Description: ${description}`);
+        }
+
+        doc.moveDown(2);
+        doc.fontSize(11).text('Statut: PAYÉ', { align: 'center' });
+        doc.moveDown(4);
+
+        doc.fontSize(12).text('Signature et cachet de l\'établissement', { align: 'center' });
+        doc.moveDown(4);
+        doc.fontSize(10).text('Fait à Kinshasa, le ' + new Date().toLocaleDateString('fr-FR'), { align: 'right' });
+
+        doc.end();
+
+        return filename;
+    }
+
     static generateDocument(demandeId: string | number, libelle: string, outputDir: string): string {
         const dir = path.resolve(outputDir);
         if (!fs.existsSync(dir)) {

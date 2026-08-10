@@ -15,10 +15,12 @@ export class AuditNote extends Model<InferAttributes<AuditNote>, InferCreationAt
   declare motif: CreationOptional<string | null>
 
   declare modifieParUtilisateur?: Utilisateur
+  declare noteEvaluation?: NoteEvaluation
 
   declare readonly createdAt: CreationOptional<Date>
 
   declare static associations: {
+    noteEvaluation: Association<AuditNote, NoteEvaluation>
     modifieParUtilisateur: Association<AuditNote, Utilisateur>
   }
 }

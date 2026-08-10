@@ -169,13 +169,13 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
     this.currentItemSection = 0
 
     this.wizardItems = [
-      { text: "Informations personnelles", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 0 } },
-      { text: "Choix parcours", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 1 } },
-      { text: "Documents", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 2 } },
-      { text: "Préinscription", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 3 } },
-      { text: "Cours", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 4 } },
-      { text: "Paiements", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 5 } },
-      { text: "Validation", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 6 } },
+      { text: "Informations personnelles", icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 0 } },
+      { text: "Choix du parcours", icon: "M12 14l9-5-9-5-9 5 9 5zm0 0v6m-6.5-2.5L12 20l6.5-2.5", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 1 } },
+      { text: "Documents", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 2 } },
+      { text: "Préinscription", icon: "M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 3 } },
+      { text: "Choix des cours", icon: "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 4 } },
+      { text: "Paiements", icon: "M3 10h18M7 15h2M5 5h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 5 } },
+      { text: "Confirmation bordereau", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 6 } },
     ]
   }
 
@@ -206,23 +206,83 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
 
     switch (stepIndex) {
       case 0:
-        return { route: `/inscription/demandes/${this.demande.id}/choix-parcours` };
       case 1:
-        return { route: `/inscription/demandes/${this.demande.id}`, queryParams: { step: 'documents' } };
       case 2:
-        return { route: `/inscription/demandes/${this.demande.id}`, queryParams: { step: 'preinscription' } };
+      case 4:
+      case 5:
+        return this.getNextRelevantStudentRoute();
       case 3:
         if (this.demande.preInscription?.statut === EtatPreInscription.VALIDE) {
-          return { route: `/inscription/demandes/${this.demande.id}/choix-cours` };
+          return this.getNextRelevantStudentRoute();
         }
         return null;
-      case 4:
-        return { route: `/inscription/demandes/${this.demande.id}`, queryParams: { step: 'paiements' } };
-      case 5:
-        return { route: `/inscription/demandes/${this.demande.id}`, queryParams: { step: 'validation' } };
       default:
         return null;
     }
+  }
+
+  private getNextRelevantStudentRoute(): { route: string; queryParams?: any } | null {
+    if (!this.demande?.id) return null;
+    const id = this.demande.id;
+
+    if (!this.hasSelectedParcours()) {
+      return { route: `/inscription/demandes/${id}/choix-parcours` };
+    }
+
+    if (this.needsDocuments()) {
+      return { route: `/inscription/demandes/${id}`, queryParams: { step: 'documents' } };
+    }
+
+    if (this.needsPreInscription()) {
+      return { route: `/inscription/demandes/${id}`, queryParams: { step: 'preinscription' } };
+    }
+
+    if (this.needsCourseSelection()) {
+      return { route: `/inscription/demandes/${id}/choix-cours` };
+    }
+
+    if (this.needsPayment()) {
+      return { route: `/inscription/demandes/${id}`, queryParams: { step: 'paiements' } };
+    }
+
+    if (this.needsValidation()) {
+      return { route: `/inscription/demandes/${id}`, queryParams: { step: 'validation' } };
+    }
+
+    return null;
+  }
+
+  private hasSelectedParcours(): boolean {
+    return !!(this.demande?.parcoursChoisis && this.demande.parcoursChoisis.length > 0);
+  }
+
+  private needsDocuments(): boolean {
+    const session = this.demande?.session;
+    if (!session) return false;
+
+    const dossiersRequis = session.dossiersInscription || [];
+    const dossiersUploades = this.demande?.dossiersDemande || [];
+
+    return dossiersRequis.length > 0 && dossiersUploades.length !== dossiersRequis.length;
+  }
+
+  private needsPreInscription(): boolean {
+    if (this.needsDocuments()) return false;
+
+    const pre = this.demande?.preInscription;
+    return !pre || pre.statut !== EtatPreInscription.VALIDE;
+  }
+
+  private needsCourseSelection(): boolean {
+    return this.demande?.preInscription?.statut === EtatPreInscription.VALIDE && !this.checkCours();
+  }
+
+  private needsPayment(): boolean {
+    return !this.checkFraisInscription();
+  }
+
+  private needsValidation(): boolean {
+    return this.checkFraisInscription() && !this.demande?.dateValidation;
   }
 
   private getStepIndexFromParam(step: string | null): number | null {
@@ -265,19 +325,13 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
     if (parcoursChoisis.length > 0) {
       this.wizardItems[1].condition = true
 
-      if (demande.reponseInscription != null) {
-        const hasChoixFinal = parcoursChoisis.some(e => e.choixFinal == true)
-        if (!hasChoixFinal) {
-          this.stepMessage = { text: 'Parcours soumis — en attente de votre choix final.', type: 'info' }
-          if (this.currentItemSection < 1) this.currentItemSection = 1
-        } else {
-          this.parcoursFinal = parcoursChoisis.find(e => e.choixFinal == true)!.parcours
-          this.currentItemSection = 2
-          this.wizardItems[2].isBlocked = false
-        }
+      const parcoursFinal = parcoursChoisis.find(e => e.choixFinal == true) ?? (parcoursChoisis.length === 1 ? parcoursChoisis[0] : undefined)
+
+      if (demande.reponseInscription != null && parcoursChoisis.length > 1 && !parcoursFinal) {
+        this.stepMessage = { text: 'Parcours soumis — en attente de votre choix final.', type: 'info' }
+        if (this.currentItemSection < 1) this.currentItemSection = 1
       } else {
-        // Student flow
-        this.parcoursFinal = parcoursChoisis[0].parcours
+        this.parcoursFinal = parcoursFinal?.parcours
         this.currentItemSection = 2
         this.wizardItems[2].isBlocked = false
       }
@@ -339,11 +393,15 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
       }
     }
 
+    if (this.currentItemSection === 6 && this.demande?.dateValidation == null && this.checkFraisInscription()) {
+this.stepMessage = { text: 'Paiement reçu. En attente de validation du bordereau.', type: 'info' }
+    }
+
     this.autoPoll()
   }
 
   private autoPoll(): void {
-    const pending = [0, 3, 5].includes(this.currentItemSection)
+    const pending = [0, 3, 5, 6].includes(this.currentItemSection)
     if (pending) {
       this.startPolling()
     } else {
@@ -366,9 +424,9 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
           console.log(this.demande!.cours)
           for (let index = 0; index < this.demande!.cours.length; index++) {
             const element = this.demande!.cours[index];
-            
-            if(element.estObligatoire) {
-              if(coursObligatoires.find(value => value.id == element.id) == undefined) {
+
+            if (element.estObligatoire) {
+              if (coursObligatoires.find(value => value.id == element.id) == undefined) {
                 return false
               }
             }
@@ -382,7 +440,8 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
       }
     }
 
-    return false
+    // Parcours final défini mais aucun cours rattaché : rien à choisir, l'étape est acquise
+    return this.parcoursFinal != null
   }
 
   private checkCoursChoisisValidation(): boolean {
@@ -399,7 +458,7 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
   checkFraisInscription(): boolean {
     this.fraisTotal = 0
     const fraisInscription = this.demande?.session?.fraisInscription
-    if (!fraisInscription) return false
+    if (!fraisInscription) return true
 
     fraisInscription.forEach(element => {
       if (element.fraisDesCours) {

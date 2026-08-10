@@ -1,10 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
-import { RhEmployeService } from 'src/app/data/modules/rh/services/rh-employe.service';
-import { RhHeureSupplementaireService } from 'src/app/data/modules/rh/services/rh-heure-supplementaire.service';
-import { RhPretService } from 'src/app/data/modules/rh/services/rh-pret.service';
-import { HeureSupplementaire } from 'src/app/data/modules/rh/models/HeureSupplementaire.model';
-import { PretEmploye } from 'src/app/data/modules/rh/models/PretEmploye.model';
+import { RhReportingService } from 'src/app/data/modules/rh/services/rh-reporting.service';
 
 @Component({
   selector: 'app-reporting-rh-page',
@@ -12,44 +8,66 @@ import { PretEmploye } from 'src/app/data/modules/rh/models/PretEmploye.model';
   styleUrls: ['./reporting-rh-page.component.scss']
 })
 export class ReportingRhPageComponent extends BaseComponentClass implements OnInit {
-  loading: boolean = false;
-  totalEmployes: number = 0;
-  masseSalariale: number = 0;
-  heuresSupTotal: number = 0;
-  pretsEnCours: number = 0;
-  heuresSupCount: number = 0;
-  pretsCount: number = 0;
+  loading = false;
+  errorMessage: string | null = null;
 
-  constructor(
-    private employeService: RhEmployeService,
-    private heureService: RhHeureSupplementaireService,
-    private pretService: RhPretService,
-  ) { super(); }
+  stats: any = null;
+  masseSalariale: any = null;
+  effectifs: any = null;
+  situationPrets: any = null;
+
+  constructor(private reportingService: RhReportingService) { super() }
 
   ngOnInit(): void {
-    this.loadStats();
+    this.loadAll();
   }
 
-  loadStats(): void {
+  private loadAll(): void {
     this.loading = true;
-    this.employeService.getAll().subscribe({
-      next: (employes) => {
-        this.totalEmployes = employes.length;
-      }
+    this.errorMessage = null;
+
+    this.reportingService.getStats().subscribe({
+      next: (data) => { this.stats = data; },
+      error: () => { this.errorMessage = 'Impossible de charger les statistiques.'; }
     });
-    this.heureService.getAll().subscribe({
-      next: (heures: HeureSupplementaire[]) => {
-        this.heuresSupTotal = heures.reduce((acc, h) => acc + (h.montant || 0), 0);
-        this.heuresSupCount = heures.length;
-      }
+
+    this.reportingService.getMasseSalariale().subscribe({
+      next: (data) => { this.masseSalariale = data; },
+      error: () => { this.errorMessage = 'Impossible de charger la masse salariale.'; }
     });
-    this.pretService.getAll().subscribe({
-      next: (prets: PretEmploye[]) => {
-        this.pretsEnCours = prets.filter(p => p.statut === 'En cours' || p.statut === 'En attente').length;
-        this.pretsCount = prets.length;
-        this.masseSalariale = prets.reduce((acc, p) => acc + (p.mensualite || 0), 0);
-      },
-      complete: () => this.loading = false
+
+    this.reportingService.getEffectifs().subscribe({
+      next: (data) => { this.effectifs = data; },
+      error: () => { this.errorMessage = 'Impossible de charger les effectifs.'; }
     });
+
+    this.reportingService.getSituationPrets().subscribe({
+      next: (data) => { this.situationPrets = data; this.loading = false; },
+      error: () => { this.errorMessage = 'Impossible de charger la situation des prêts.'; this.loading = false; }
+    });
+  }
+
+  get totalEmployes(): number {
+    return this.effectifs?.total || this.stats?.totalEmployes || 0;
+  }
+
+  get masseSalarialeMontant(): number {
+    return this.masseSalariale?.montant || this.stats?.masseSalariale || 0;
+  }
+
+  get heuresSupCount(): number {
+    return this.stats?.heuresSupCount || 0;
+  }
+
+  get heuresSupTotal(): number {
+    return this.stats?.heuresSupTotal || 0;
+  }
+
+  get pretsEnCours(): number {
+    return this.situationPrets?.enCours || this.stats?.pretsEnCours || 0;
+  }
+
+  get pretsCount(): number {
+    return this.situationPrets?.total || this.stats?.pretsCount || 0;
   }
 }

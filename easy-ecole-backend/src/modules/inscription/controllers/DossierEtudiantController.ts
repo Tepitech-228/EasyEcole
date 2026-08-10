@@ -28,6 +28,26 @@ import { GenerateurCarteService } from "../services/GenerateurCarteService";
 import fs from "fs";
 import path from "path";
 
+const hasChoixFinalValue = (value: unknown): boolean => {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value === 1;
+    if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+        return normalized === '1' || normalized === 'true';
+    }
+    return false;
+};
+
+const getParcoursFinal = <T extends { choixFinal?: any }>(parcoursChoisis?: Array<T> | null): T | undefined => {
+    if (!Array.isArray(parcoursChoisis) || parcoursChoisis.length === 0) return undefined;
+
+    const explicit = parcoursChoisis.find(pc => hasChoixFinalValue(pc.choixFinal));
+    if (explicit) return explicit;
+    if (parcoursChoisis.length === 1) return parcoursChoisis[0];
+
+    return undefined;
+};
+
 export default class DossierEtudiantController {
 
     constructor() { }
@@ -41,8 +61,7 @@ export default class DossierEtudiantController {
         let where: any = {}
         let include: any[] = [
             { association: DossierEtudiant.associations.utilisateur, include: [{ model: Apprenant, as: 'apprenant' }] },
-            DossierEtudiant.associations.echeances,
-            { association: DossierEtudiant.associations.coursParticipants, include: [CoursParticipant.associations.cours] }
+            DossierEtudiant.associations.echeances
         ]
 
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
@@ -125,13 +144,174 @@ export default class DossierEtudiantController {
         }
     }
 
+    static async getArbreDossiers(req: Request, res: Response): Promise<Response> {
+        const role = (req as any).utilisateurRole
+        if (role !== RolesUtilisateur.INSTITUTION && role !== RolesUtilisateur.ADMIN) {
+            return res.status(403).json({ success: false, message: "Accès réservé à l'administration" })
+        }
+
+        try {
+            // 1) Tous les dossiers étudiants avec utilisateur -> apprenant (nom, prenoms, photo)
+            const dossiers = await DossierEtudiant.findAll({
+                include: [
+                    { association: DossierEtudiant.associations.utilisateur, include: [{ model: Apprenant, as: 'apprenant' }] }
+                ]
+            })
+
+            // 2) Toutes les demandes d'inscription (cursus + session) en UNE seule requête.
+            //    Triées par dateDemande DESC : la 1ère occurrence par utilisateur est la plus récente.
+            const demandes = await DemandeInscription.findAll({
+                order: [['dateDemande', 'DESC']],
+                include: [
+                    {
+                        association: DemandeInscription.associations.cursusApprenant,
+                        include: [
+                            { model: AnneeAcademique, as: 'anneeAcademique' },
+                            { model: Parcours, as: 'parcours' },
+                            { model: NiveauEtude, as: 'niveauEtude' },
+                            { model: Classe, as: 'classe', include: [{ model: SalleDeClasse, as: 'sallesDeClasse' }] }
+                        ]
+                    },
+                    {
+                        association: DemandeInscription.associations.session,
+                        include: [{ model: AnneeAcademique, as: 'anneeAcademique' }]
+                    }
+                ]
+            })
+
+            // Regroupement : dernière demande (la plus récente) par utilisateur
+            const demandeParUtilisateur = new Map<number, DemandeInscription>()
+            for (const demande of demandes) {
+                if (!demandeParUtilisateur.has(demande.utilisateurId)) {
+                    demandeParUtilisateur.set(demande.utilisateurId, demande)
+                }
+            }
+
+            // 3) Agrégation en arbre via des Maps imbriqués (clés = ids, null => libellé de repli)
+            const anneesMap = new Map<string, any>() // key: 'A_<anneeId>' ou 'A_NULL'
+
+            for (const dossier of dossiers) {
+                const utilisateur: any = dossier.utilisateur
+                const apprenant: any = utilisateur?.apprenant
+
+                const demande = demandeParUtilisateur.get(dossier.utilisateurId)
+                const cursus: any = (demande as any)?.cursusApprenant
+                const session: any = demande?.session
+
+                // -- Détermination du nœud année / filière / niveau / classe --
+                let anneeId: number | null = null
+                let anneeLabel = 'Non affectés'
+                let parcoursId: number | null = null
+                let filiereLabel = 'Sans parcours'
+                let niveauId: number | null = null
+                let niveauLabel = '—'
+                let classeId: number | null = null
+                let classeLabel = '—'
+                let salles: string[] = []
+
+                if (cursus) {
+                    anneeId = cursus.anneeAcademique?.id ?? null
+                    anneeLabel = cursus.anneeAcademique?.libelle ?? 'Année inconnue'
+                    parcoursId = cursus.parcours?.id ?? null
+                    filiereLabel = cursus.parcours?.titre ?? 'Sans parcours'
+                    niveauId = cursus.niveauEtude?.id ?? null
+                    niveauLabel = cursus.niveauEtude?.libelle ?? '—'
+                    classeId = cursus.classe?.id ?? null
+                    classeLabel = cursus.classe?.libelle ?? '—'
+                    salles = (cursus.classe?.sallesDeClasse ?? []).map((s: any) => s.libelle)
+                } else if (session?.anneeAcademique) {
+                    // Demande sans cursus : rattachement à l'année de la session si disponible
+                    anneeId = session.anneeAcademique.id ?? null
+                    anneeLabel = session.anneeAcademique.libelle ?? 'Année inconnue'
+                }
+
+                const anneeKey = anneeId === null ? 'A_NULL' : `A_${anneeId}`
+                let anneeNode = anneesMap.get(anneeKey)
+                if (!anneeNode) {
+                    anneeNode = { anneeId, annee: anneeLabel, filieresMap: new Map<string, any>() }
+                    anneesMap.set(anneeKey, anneeNode)
+                }
+
+                const filiereKey = parcoursId === null ? 'P_NULL' : `P_${parcoursId}`
+                let filiereNode = anneeNode.filieresMap.get(filiereKey)
+                if (!filiereNode) {
+                    filiereNode = { parcoursId, filiere: filiereLabel, niveauxMap: new Map<string, any>() }
+                    anneeNode.filieresMap.set(filiereKey, filiereNode)
+                }
+
+                const niveauKey = niveauId === null ? 'N_NULL' : `N_${niveauId}`
+                let niveauNode = filiereNode.niveauxMap.get(niveauKey)
+                if (!niveauNode) {
+                    niveauNode = { niveauId, niveau: niveauLabel, classesMap: new Map<string, any>() }
+                    filiereNode.niveauxMap.set(niveauKey, niveauNode)
+                }
+
+                const classeKey = classeId === null ? 'C_NULL' : `C_${classeId}`
+                let classeNode = niveauNode.classesMap.get(classeKey)
+                if (!classeNode) {
+                    classeNode = { classeId, classe: classeLabel, salles, dossiers: [] }
+                    niveauNode.classesMap.set(classeKey, classeNode)
+                }
+
+                classeNode.dossiers.push({
+                    id: dossier.id,
+                    utilisateurId: dossier.utilisateurId,
+                    matricule: dossier.matricule,
+                    nom: utilisateur?.nom ?? '',
+                    prenoms: utilisateur?.prenoms ?? '',
+                    statut: dossier.statut,
+                    photo: apprenant?.photo ?? null,
+                    dateCreation: dossier.dateCreation,
+                })
+            }
+
+            // 4) Sérialisation + tri (années DESC, filières/niveaux/classes A->Z, dossiers par nom+prenoms)
+            const arbre = [...anneesMap.values()]
+                .map((anneeNode: any) => ({
+                    anneeId: anneeNode.anneeId,
+                    annee: anneeNode.annee,
+                    filieres: [...anneeNode.filieresMap.values()]
+                        .sort((a: any, b: any) => a.filiere.localeCompare(b.filiere))
+                        .map((filiereNode: any) => ({
+                            parcoursId: filiereNode.parcoursId,
+                            filiere: filiereNode.filiere,
+                            niveaux: [...filiereNode.niveauxMap.values()]
+                                .sort((a: any, b: any) => a.niveau.localeCompare(b.niveau))
+                                .map((niveauNode: any) => ({
+                                    niveauId: niveauNode.niveauId,
+                                    niveau: niveauNode.niveau,
+                                    classes: [...niveauNode.classesMap.values()]
+                                        .sort((a: any, b: any) => a.classe.localeCompare(b.classe))
+                                        .map((classeNode: any) => ({
+                                            classeId: classeNode.classeId,
+                                            classe: classeNode.classe,
+                                            salles: classeNode.salles,
+                                            dossiers: classeNode.dossiers.sort((a: any, b: any) =>
+                                                `${a.nom} ${a.prenoms}`.localeCompare(`${b.nom} ${b.prenoms}`)
+                                            ),
+                                        })),
+                                })),
+                        })),
+                }))
+                .sort((a: any, b: any) => {
+                    const aId = a.anneeId === null ? -1 : a.anneeId
+                    const bId = b.anneeId === null ? -1 : b.anneeId
+                    return bId - aId
+                })
+
+            return res.status(200).json(arbre)
+        } catch (error) {
+            console.error('Erreur getArbreDossiers:', error)
+            return res.status(500).json({ success: false, error })
+        }
+    }
+
     static async getDossier(req: Request, res: Response): Promise<Response> {
         let options: FindOptions<InferAttributes<DossierEtudiant>> = {
             where: { id: req.params.id },
             include: [
                 { association: DossierEtudiant.associations.utilisateur, include: [{ model: Apprenant, as: 'apprenant' }] },
-                DossierEtudiant.associations.echeances,
-                { association: DossierEtudiant.associations.coursParticipants, include: [CoursParticipant.associations.cours] }
+                DossierEtudiant.associations.echeances
             ]
         }
 
@@ -157,8 +337,7 @@ export default class DossierEtudiantController {
                 where: { utilisateurId: (req as any).utilisateurId },
                 include: [
                     { association: DossierEtudiant.associations.utilisateur, include: [{ model: Apprenant, as: 'apprenant' }] },
-                    DossierEtudiant.associations.echeances,
-                    { association: DossierEtudiant.associations.coursParticipants, include: [CoursParticipant.associations.cours] }
+                    DossierEtudiant.associations.echeances
                 ]
             });
 
@@ -195,7 +374,7 @@ export default class DossierEtudiantController {
                 { association: DemandeInscription.associations.session, include: [Session.associations.anneeAcademique] },
             ]
         })
-        const parcoursChoisiFinal = demande?.parcoursChoisis?.find(pc => pc.choixFinal === true)
+        const parcoursChoisiFinal = getParcoursFinal(demande?.parcoursChoisis)
         const classeMatricule = req.body.classeId ? await Classe.findByPk(req.body.classeId) : null
         const anneeLibelle = demande?.session?.anneeAcademique?.libelle || new Date().getFullYear().toString()
 

@@ -12,6 +12,10 @@ export class DemandeDocument extends Model<InferAttributes<DemandeDocument>, Inf
   declare statut: string
   declare date: CreationOptional<Date>
   declare fraisPayes: CreationOptional<boolean>
+  declare source: CreationOptional<string>
+  declare montant: CreationOptional<number | null>
+  declare paiementId: CreationOptional<number | null>
+  declare compteProduit: CreationOptional<string | null>
   declare parcoursId: CreationOptional<number | null>
   declare niveauEtudeId: CreationOptional<number | null>
   declare classeId: CreationOptional<number | null>
@@ -50,6 +54,26 @@ DemandeDocument.init({
     type: DataTypes.BOOLEAN,
     defaultValue: false,
     allowNull: false
+  },
+  source: {
+    type: DataTypes.ENUM('automatique', 'demande_etudiant'),
+    defaultValue: 'demande_etudiant',
+    allowNull: false
+  },
+  montant: {
+    type: DataTypes.FLOAT,
+    allowNull: true,
+    defaultValue: 0
+  },
+  paiementId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true,
+    defaultValue: null
+  },
+  compteProduit: {
+    type: new DataTypes.STRING,
+    allowNull: true,
+    defaultValue: '704'
   },
   parcoursId: {
     type: DataTypes.INTEGER.UNSIGNED,

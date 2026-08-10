@@ -1,8 +1,9 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 export interface DossierNode {
-  type: 'annee' | 'niveau' | 'parcours' | 'etudiant' | 'item';
+  type: 'annee' | 'niveau' | 'parcours' | 'classe' | 'salle' | 'etudiant' | 'item';
   label: string;
+  subtitle?: string;
   id?: string;
   children?: DossierNode[];
   items?: any[];
@@ -131,6 +132,8 @@ export class DossierViewComponent {
       case 'annee': return 'calendar_month';
       case 'niveau': return 'school';
       case 'parcours': return 'route';
+      case 'classe': return 'meeting_room';
+      case 'salle': return 'door_front';
       case 'etudiant': return 'person';
       case 'item': return 'description';
       default: return 'folder';
@@ -145,5 +148,11 @@ export class DossierViewComponent {
       case 'delivree': return 'blue';
       default: return 'gray';
     }
+  }
+
+  /** Conversion sûre d'une valeur (montant, booléen, string...) en nombre pour l'affichage */
+  toNumber(value: any): number {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
   }
 }

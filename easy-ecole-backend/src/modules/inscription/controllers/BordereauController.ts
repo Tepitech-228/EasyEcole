@@ -25,9 +25,39 @@ import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
 import { EmailSender } from "../../../core/helpers/EmailSender";
 import { creerEcritureComptable } from "../../comptabilite/helpers/ComptabiliteHelper";
 import { PreInscription, EtatPreInscription } from "../models/PreInscription";
+import { ReponseInscription } from "../models/ReponseInscription";
+import { DemandeInscriptionCours } from "../models/DemandeInscriptionCours";
 import { DossierStorageService } from "../services/DossierStorageService";
 import { FolderAutoService } from "../../ged/services/FolderAutoService";
 import { GenerateurCarteService } from "../services/GenerateurCarteService";
+
+export const isChoixFinalValue = (value: unknown): boolean => {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value === 1;
+    if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+        return normalized === '1' || normalized === 'true';
+    }
+    return false;
+};
+
+export const hasChoixFinal = (parcoursChoisis?: Array<{ choixFinal?: any; parcoursId?: number | string | null }> | null): boolean => {
+    if (!Array.isArray(parcoursChoisis) || parcoursChoisis.length === 0) return false;
+
+    if (parcoursChoisis.length === 1) return true;
+
+    return parcoursChoisis.some(pc => isChoixFinalValue(pc?.choixFinal));
+};
+
+export const getParcoursFinal = <T extends { choixFinal?: any; parcoursId?: number | string | null }>(parcoursChoisis?: Array<T> | null): T | undefined => {
+    if (!Array.isArray(parcoursChoisis) || parcoursChoisis.length === 0) return undefined;
+
+    const explicit = parcoursChoisis.find(pc => isChoixFinalValue(pc?.choixFinal));
+    if (explicit) return explicit;
+    if (parcoursChoisis.length === 1) return parcoursChoisis[0];
+
+    return undefined;
+};
 
 export default class BordereauController {
 
@@ -153,6 +183,19 @@ export default class BordereauController {
             if (echeance == null) {
                 return res.status(404).json({ success: false, message: "Échéance non trouvée" });
             }
+            // Garde-fou : seuls les étudiants déjà inscrits (dossier actif + cursus) peuvent
+            // soumettre un bordereau de scolarité. Le bordereau d'inscription initial, lui,
+            // est autorisé sans condition (c'est lui qui déclenche l'inscription).
+            const [dossier, cursus] = await Promise.all([
+                DossierEtudiant.findOne({ where: { utilisateurId: (req as any).utilisateurId, statut: 'actif' } }),
+                CursusApprenant.findOne({ where: { utilisateurId: (req as any).utilisateurId } }),
+            ])
+            if (!dossier || !cursus) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Accès refusé. Vous devez d'abord finaliser votre inscription.",
+                })
+            }
         }
 
         let fichier: string | null = null
@@ -257,10 +300,27 @@ export default class BordereauController {
                     if (!demande.parcoursChoisis || demande.parcoursChoisis.length === 0) {
                         return res.status(400).json({ success: false, message: "Aucun parcours choisi" })
                     }
-                    if (!demande.reponseInscription) {
-                        return res.status(400).json({ success: false, message: "Réponse de l'institution manquante" })
+                    // Admission automatique : la validation du bordereau d'inscription vaut acceptation.
+                    // Plus besoin de réponse manuelle de l'institution (POST /reponsesInscription).
+                    let reponseInscription = demande.reponseInscription
+                    if (!reponseInscription) {
+                        reponseInscription = await ReponseInscription.create({
+                            message: "Admission accordée automatiquement suite à la validation du bordereau",
+                            dateReponse: new Date(),
+                            utilisateurId: (req as any).utilisateurId,
+                            demandeInscriptionId: demande.id
+                        })
+                        try {
+                            EmailSender.getInstance().sendReponseInscription(
+                                demande.utilisateur?.identifiant ?? '',
+                                demande.utilisateur?.email ?? '',
+                                reponseInscription.message
+                            )
+                        } catch (emailError) {
+                            console.error("Erreur envoi email d'admission:", emailError)
+                        }
                     }
-                    if (demande.parcoursChoisis.filter(pc => pc.choixFinal === true).length === 0) {
+                    if (!hasChoixFinal(demande.parcoursChoisis)) {
                         return res.status(400).json({ success: false, message: "Aucun parcours final sélectionné" })
                     }
                     const dossiersRequis = demande.session?.dossiersInscription || []
@@ -271,18 +331,29 @@ export default class BordereauController {
                     if (!demande.preInscription || demande.preInscription.statut !== EtatPreInscription.VALIDE) {
                         return res.status(400).json({ success: false, message: "La préinscription doit être validée" })
                     }
-                    const parcoursFinal = demande.parcoursChoisis.find(pc => pc.choixFinal === true)
-                    if (parcoursFinal && parcoursFinal.parcoursId) {
-                        const coursParcours = demande.cours || []
-                        const coursObligatoires = coursParcours.filter(c => c.estObligatoire)
-                        if (coursObligatoires.length > 0) {
-                            const coursChoisisIds = (demande.coursChoisis || []).map(cc => cc.coursId)
-                            if (!coursObligatoires.every(c => coursChoisisIds.includes(c.id))) {
-                                return res.status(400).json({ success: false, message: "Tous les cours obligatoires doivent être choisis" })
-                            }
-                            if ((demande.coursChoisis || []).filter(cc => cc.etat === EtatsCoursChoisi.ENCOURS).length > 0) {
-                                return res.status(400).json({ success: false, message: "Tous les cours choisis doivent être validés par l'institution" })
-                            }
+                    const parcoursFinal = getParcoursFinal(demande.parcoursChoisis)
+                    const parcoursChoisiFinal = getParcoursFinal(demande.parcoursChoisis)
+
+                    // Les cours du parcours final. NB : demande.cours est une belongsToMany vers les
+                    // cours CHOISIS (ins_cours_choisis), pas vers les cours du parcours. On charge donc
+                    // les cours du parcours via l'association Parcours -> Cours.
+                    const coursDuParcours = parcoursFinal?.parcoursId
+                        ? await Cours.findAll({
+                            where: { parcoursId: parcoursFinal.parcoursId },
+                            include: [Cours.associations.classe]
+                        })
+                        : []
+
+                    // L'apprenant ne choisit que les facultatifs : les cours obligatoires du parcours
+                    // final sont ajoutés automatiquement ici (acceptés en VALIDE).
+                    const coursObligatoires = coursDuParcours.filter(c => c.estObligatoire)
+                    if (coursObligatoires.length > 0) {
+                        const coursChoisisIds = (demande.coursChoisis || []).map(cc => cc.coursId)
+                        const obligatoiresManquants = coursObligatoires
+                            .filter(c => !coursChoisisIds.includes(c.id))
+                            .map(c => ({ coursId: c.id, demandeInscriptionId: demande.id, etat: EtatsCoursChoisi.VALIDE }))
+                        if (obligatoiresManquants.length > 0) {
+                            await DemandeInscriptionCours.bulkCreate(obligatoiresManquants)
                         }
                     }
                     const fraisTotal = (demande.session?.fraisInscription || []).reduce((sum, f) => sum + f.montant, 0)
@@ -292,17 +363,26 @@ export default class BordereauController {
                     }
 
                     // Create CursusApprenant
-                    const parcoursChoisiFinal = demande.parcoursChoisis.find(pc => pc.choixFinal === true)
+                    const parcoursFinalForCursus = getParcoursFinal(demande.parcoursChoisis)
 
                     // Generate matricule final: ESA-AAAA-PP-FFFF-CODE
                     const anneeLibelle = demande.session?.anneeAcademique?.libelle || new Date().getFullYear().toString()
-                    const parcoursData = parcoursChoisiFinal?.parcours
-                    const niveauEtude = parcoursData?.niveauEtudeId
-                        ? await (await import('../models/NiveauEtude')).NiveauEtude.findByPk(parcoursData.niveauEtudeId)
+                    const parcoursData = parcoursFinalForCursus?.parcours
+
+                    // Classe et niveau dérivés automatiquement depuis les cours du parcours
+                    // (le parcours peut ne pas renseigner de niveau ; la classe peut ne pas être
+                    // reliée au parcours, mais ses cours portent la classe).
+                    const classeDerivee = coursDuParcours.find(c => c.classe?.id)?.classe ?? null
+                    if (!classeDerivee || !classeDerivee.id) {
+                        return res.status(400).json({ success: false, message: "Aucune classe n'a pu être déterminée pour le parcours final" })
+                    }
+                    const niveauEtudeId = parcoursData?.niveauEtudeId ?? classeDerivee.niveauEtudeId
+                    const niveauEtude = niveauEtudeId
+                        ? await (await import('../models/NiveauEtude')).NiveauEtude.findByPk(niveauEtudeId)
                         : null
                     const parcoursNom = parcoursData?.type || parcoursData?.titre || 'PARCOURS'
                     const niveauNom = niveauEtude?.libelle || 'Niveau'
-                    const classeNom = 'NON_DEFINI'
+                    const classeNom = classeDerivee.libelle
                     const anneeId = demande.session?.anneeAcademiqueId
 
                     const matricule = IDGenerator.getInstance().generateMatriculeFinal(
@@ -344,7 +424,9 @@ export default class BordereauController {
                     const cursusApprenant = new CursusApprenant()
                     cursusApprenant.externe = false
                     cursusApprenant.parcoursId = parcoursChoisiFinal?.parcoursId!
-                    cursusApprenant.niveauEtudeId = parcoursChoisiFinal?.parcours?.niveauEtudeId!
+                    cursusApprenant.niveauEtudeId = niveauEtudeId!
+                    cursusApprenant.classeId = classeDerivee.id!
+                    cursusApprenant.anneeAcademiqueId = anneeId!
                     cursusApprenant.utilisateurId = demande.utilisateurId
                     cursusApprenant.demandeInscriptionId = demande.id
                     const savedCursus = await cursusApprenant.save()
@@ -398,15 +480,18 @@ export default class BordereauController {
                     }
 
                     // Create CoursParticipant for validated courses
-                    if (demande.coursChoisis) {
-                        for (const coursChoisi of demande.coursChoisis) {
-                            if (coursChoisi.etat === EtatsCoursChoisi.VALIDE) {
-                                const cp = new CoursParticipant()
-                                cp.coursId = coursChoisi.coursId
-                                cp.utilisateurId = demande.utilisateurId
-                                cp.cursusApprenantId = savedCursus.id
-                                await cp.save()
-                            }
+                    // (relecture fraîche : la liste a pu être enrichie par l'ajout automatique
+                    // des cours obligatoires effectué plus haut, après le chargement de la demande)
+                    const coursChoisisFinal = await DemandeInscriptionCours.findAll({
+                        where: { demandeInscriptionId: demande.id }
+                    })
+                    for (const coursChoisi of coursChoisisFinal) {
+                        if (coursChoisi.etat === EtatsCoursChoisi.VALIDE) {
+                            const cp = new CoursParticipant()
+                            cp.coursId = coursChoisi.coursId
+                            cp.utilisateurId = demande.utilisateurId
+                            cp.cursusApprenantId = savedCursus.id
+                            await cp.save()
                         }
                     }
 
@@ -586,7 +671,7 @@ export default class BordereauController {
                                         ]
                                     })
                                     if (demandeQuitus) {
-                                        const pFinal = demandeQuitus.parcoursChoisis?.find(pc => pc.choixFinal === true)
+                                        const pFinal = demandeQuitus.parcoursChoisis?.find(pc => isChoixFinalValue(pc.choixFinal))
                                         const pData = pFinal?.parcours
                                         const ne = pData?.niveauEtudeId
                                             ? await (await import('../models/NiveauEtude')).NiveauEtude.findByPk(pData.niveauEtudeId)

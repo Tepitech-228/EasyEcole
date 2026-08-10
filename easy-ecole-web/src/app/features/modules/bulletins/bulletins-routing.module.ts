@@ -22,6 +22,7 @@ import { DispenseFormPageComponent } from './pages/dispense-form-page/dispense-f
 import { AuditNotesPageComponent } from './pages/audit-notes-page/audit-notes-page.component';
 import { JuryMembreFormPageComponent } from './pages/jury-membre-form-page/jury-membre-form-page.component';
 import { ListeRattrapagesPageComponent } from './pages/liste-rattrapages-page/liste-rattrapages-page.component';
+import { MesRattrapagesPageComponent } from './pages/mes-rattrapages-page/mes-rattrapages-page.component';
 import { RattrapageFormPageComponent } from './pages/rattrapage-form-page/rattrapage-form-page.component';
 import { DetailRattrapagePageComponent } from './pages/detail-rattrapage-page/detail-rattrapage-page.component';
 import { FeuillePresencePageComponent } from './pages/feuille-presence-page/feuille-presence-page.component';
@@ -57,6 +58,7 @@ const routes: Routes = [
   { path: 'jury/nouveau', component: JuryMembreFormPageComponent },
   { path: 'jury/:id', component: JuryMembreFormPageComponent },
   { path: 'rattrapages', component: ListeRattrapagesPageComponent },
+  { path: 'rattrapages/mes-demandes', component: MesRattrapagesPageComponent },
   { path: 'rattrapages/nouveau', component: RattrapageFormPageComponent },
   { path: 'rattrapages/:id', component: DetailRattrapagePageComponent },
   { path: 'feuille-presence', component: FeuillePresencePageComponent },

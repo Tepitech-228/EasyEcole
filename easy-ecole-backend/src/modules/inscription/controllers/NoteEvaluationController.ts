@@ -6,6 +6,8 @@ import { ListeNoteEvaluation } from "../models/ListeNoteEvaluation";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { AuditNote } from "../../bulletins/models/AuditNote";
 import { validateNoteValue, validateBulkNotesInput, ValidationError } from "../../../core/validators/noteValidators";
+import { SemestreAcademiqueService } from "../services/SemestreAcademiqueService";
+import { SemestreAcademique } from "../models/SemestreAcademique";
 
 async function creerAudit(noteEvaluationId: number, ancienneNote: number | null, nouvelleNote: number | null, modifiePar: number, motif?: string) {
     if (ancienneNote === nouvelleNote) return;
@@ -25,6 +27,28 @@ async function creerAudit(noteEvaluationId: number, ancienneNote: number | null,
 export default class NoteEvaluationController {
 
     constructor() { }
+
+    private static async getSemesterLockState(evaluation: any): Promise<{ allowed: boolean; reason?: string }> {
+        try {
+            const course = await (evaluation as any).getCours?.();
+            if (!course?.parcoursId) {
+                return { allowed: true };
+            }
+
+            const semester = await SemestreAcademique.findOne({
+                where: {
+                    parcoursId: course.parcoursId,
+                    anneeAcademiqueId: evaluation.anneeAcademiqueId,
+                    codeSemestre: course.semestre || 'semestre1'
+                },
+                order: [['id', 'DESC']]
+            });
+
+            return SemestreAcademiqueService.canWriteNotes((semester as any)?.statut);
+        } catch (error) {
+            return { allowed: true };
+        }
+    }
 
     static async getAll(req: Request, res: Response): Promise<Response> {
         try {
@@ -125,6 +149,11 @@ export default class NoteEvaluationController {
                 return res.status(404).json({ success: false, message: "Évaluation non trouvée" });
             }
 
+            const semesterCheck = await this.getSemesterLockState(evaluation as any);
+            if (!semesterCheck.allowed) {
+                return res.status(409).json({ success: false, message: semesterCheck.reason });
+            }
+
             const participant = await CoursParticipant.findByPk(coursParticipantId);
             if (!participant) {
                 return res.status(404).json({ success: false, message: "Participant non trouvé" });
@@ -185,6 +214,11 @@ export default class NoteEvaluationController {
             const evaluation = await ListeNoteEvaluation.findByPk(listeNoteEvaluationId);
             if (!evaluation) {
                 return res.status(404).json({ success: false, message: "Évaluation non trouvée" });
+            }
+
+            const semesterCheck = await this.getSemesterLockState(evaluation as any);
+            if (!semesterCheck.allowed) {
+                return res.status(409).json({ success: false, message: semesterCheck.reason });
             }
 
             // Vérifier si l'évaluation a déjà des notes publiées

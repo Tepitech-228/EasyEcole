@@ -12,6 +12,7 @@ import ReleveBancaireRouter from "./routers/ReleveBancaireRouter"
 import RapprochementRouter from "./routers/RapprochementRouter"
 import ExerciceComptableRouter from "./routers/ExerciceComptableRouter"
 import EtatsFinanciersRouter from "./routers/EtatsFinanciersRouter"
+import ParametreFraisRouter from "./routers/ParametreFraisRouter"
 import Authenticate from "../../core/middlewares/Authenticate"
 import ComptabiliteDashboardController from "./controllers/ComptabiliteDashboardController"
 
@@ -31,5 +32,6 @@ router
   .use('/rapprochement', [Authenticate], RapprochementRouter)
   .use('/exercices', [Authenticate], ExerciceComptableRouter)
   .use('/etats-financiers', [Authenticate], EtatsFinanciersRouter)
+  .use('/parametres-frais', [Authenticate], ParametreFraisRouter)
 
 export default router

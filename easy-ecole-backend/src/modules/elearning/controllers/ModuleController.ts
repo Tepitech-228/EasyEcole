@@ -68,8 +68,9 @@ export default class ModuleController {
     }
 
     static async delete(req: Request, res: Response): Promise<Response> {
-        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION) {
-            return res.status(403).json({ success: false })
+        const role = (req as any).utilisateurRole;
+        if (role !== RolesUtilisateur.ADMIN && role !== RolesUtilisateur.INSTITUTION) {
+            return res.status(403).json({ success: false, message: "Accès refusé" })
         }
 
         try {

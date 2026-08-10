@@ -60,13 +60,23 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
     { label: 'Rejeter la sélection', color: 'red', action: 'rejeter', icon: 'close' }
   ];
 
+  // Action individuelle sur une ligne
+  itemActions: BatchAction[] = [
+    { label: 'Confirmer le paiement', color: 'green', action: 'confirmerPaiement', icon: 'payments' }
+  ];
+
   // Columns for item display
   itemColumns = [
     { key: 'typeDocument', label: 'Type document' },
     { key: 'statut', label: 'Statut' },
-    { key: 'date', label: 'Date' },
-    { key: 'fraisPayes', label: 'Frais' }
+    { key: 'montant', label: 'Montant' },
+    { key: 'source', label: 'Source' },
+    { key: 'paiement', label: 'Paiement' },
+    { key: 'date', label: 'Date' }
   ];
+
+  // Id de la demande dont le paiement est en cours de confirmation
+  paiementLoadingId: string | null = null;
 
   constructor(
     private demandeService: DemandeDocumentService,
@@ -192,6 +202,14 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
     this.selectedIds = event.ids;
   }
 
+  /**
+   * Une demande volontaire payante (montant > 0, fraisPayes = false) ne peut
+   * pas être validée / délivrée avant confirmation du paiement.
+   */
+  isPaiementBloquant(demande: DemandeDocument): boolean {
+    return Number(demande.montant) > 0 && !demande.fraisPayes;
+  }
+
   onBatchAction(event: { action: string; ids: number[] }): void {
     if (event.action === 'rejeter' && event.ids.length > 0) {
       this.showRejetModal = true;
@@ -209,6 +227,17 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
   }
 
   private executeBatch(statut: string, ids: number[]): void {
+    // Blocage visuel côté front : une demande payante impayée ne peut pas être validée.
+    if (statut === 'validee') {
+      const bloquantes = this.demandes.filter(d =>
+        d.id && ids.includes(Number(d.id)) && this.isPaiementBloquant(d)
+      );
+      if (bloquantes.length > 0) {
+        this.errorMessage = 'Paiement requis avant délivrance du document : certaines demandes sont payantes et non réglées (confirmez d\'abord le paiement).';
+        return;
+      }
+    }
+
     this.batchLoading = true;
     this.errorMessage = '';
     this.successMessage = '';
@@ -227,12 +256,46 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
   }
 
   onItemAction(event: { item: any; action: string }): void {
-    if (event.action === 'valider') {
+    if (event.action === 'confirmerPaiement') {
+      this.confirmerPaiement(event.item);
+    } else if (event.action === 'valider') {
+      if (this.isPaiementBloquant(event.item)) {
+        this.errorMessage = 'Paiement requis : cette demande est payante et non réglée. Confirmez d\'abord le paiement.';
+        return;
+      }
       this.executeBatch('validee', [event.item.id]);
     } else if (event.action === 'rejeter') {
       this.selectedIds = [event.item.id];
       this.showRejetModal = true;
     }
+  }
+
+  /** Confirme l'encaissement d'une demande payante (PUT /:id/confirmer-paiement) */
+  confirmerPaiement(demande: DemandeDocument): void {
+    if (!demande.id) return;
+    if (demande.fraisPayes) {
+      this.errorMessage = 'Cette demande est déjà réglée.';
+      return;
+    }
+    if (Number(demande.montant) <= 0) {
+      this.errorMessage = 'Cette demande est gratuite, aucun paiement à confirmer.';
+      return;
+    }
+
+    this.paiementLoadingId = demande.id;
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.demandeService.confirmerPaiement(demande.id).subscribe({
+      next: () => {
+        this.paiementLoadingId = null;
+        this.successMessage = 'Paiement confirmé avec succès.';
+        this.loadDemandes();
+      },
+      error: (err) => {
+        this.paiementLoadingId = null;
+        this.errorMessage = err?.error?.message || 'Erreur lors de la confirmation du paiement';
+      }
+    });
   }
 
   onPageChange(page: number): void {

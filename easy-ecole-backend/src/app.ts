@@ -24,6 +24,7 @@ import { RappelSalleCron } from './core/services/RappelSalleCron'
 import { RappelEcheanceCron } from './core/services/RappelEcheanceCron'
 import { NotificationGedService } from './modules/ged/services/NotificationGedService'
 import { seedComptabilite } from './modules/comptabilite/seed'
+import { seedParametresFrais } from './modules/comptabilite/seed-parametres-frais'
 import { errorHandler } from './core/middlewares/ErrorHandler'
 
 // Tests
@@ -95,6 +96,7 @@ app.use(express.urlencoded({ extended: false, limit: '10mb' }))
 app.use('/media/photos/apprenants', express.static(path.resolve('public', 'auth', 'apprenants', 'photos')))
 app.use('/media/photos/enseignants', express.static(path.resolve('public', 'auth', 'enseignants', 'photos')))
 app.use('/media/profiles', express.static(path.resolve('public', 'auth', 'profiles')))
+app.use('/media/videos', express.static(path.resolve('public', 'elearning', 'videos')))
 
 /** Swagger Documentation */
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
@@ -157,6 +159,13 @@ server.on("listening", async () => {
         await seedComptabilite();
     } catch (e) {
         console.error('Comptabilite seed error:', e);
+    }
+
+    // Seed paramètres de frais (frais rattrapage, demande de document, comptes produits)
+    try {
+        await seedParametresFrais();
+    } catch (e) {
+        console.error('Parametres frais seed error:', e);
     }
 
     // Mail notification

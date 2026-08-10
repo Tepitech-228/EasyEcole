@@ -74,12 +74,10 @@ export class ChoixCoursPageComponent implements OnInit {
   }
 
   valider(): void {
-    const obligatoiresIds = this.tousLesCours
-      .filter(c => c.estObligatoire)
-      .map(c => c.id!)
-
+    // L'apprenant ne choisit que les cours facultatifs.
+    // Les cours obligatoires sont ajoutés automatiquement côté backend.
     const facultatifsChoisisIds = Object.keys(this.choixCours).filter(k => this.choixCours[k])
-    const aSauvegarder = [...obligatoiresIds, ...facultatifsChoisisIds]
+    const aSauvegarder = [...facultatifsChoisisIds]
 
     if (aSauvegarder.length === 0) {
       this.router.navigate(['/inscription/demandes/' + this.id], {

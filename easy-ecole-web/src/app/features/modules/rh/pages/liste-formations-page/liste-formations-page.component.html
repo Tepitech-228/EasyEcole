@@ -29,7 +29,7 @@
         <td class="px-6 py-4 text-sm text-gray-700">{{ (f.dateDebut | date:'dd/MM/yyyy') || '-' }}</td>
         <td class="px-6 py-4 text-sm text-gray-700">{{ (f.dateFin | date:'dd/MM/yyyy') || '-' }}</td>
         <td class="px-6 py-4">
-          <span class="px-2.5 py-0.5 rounded-full text-xs font-medium" [ngClass]="getTypeBadge(f.type)">{{ f.type }}</span>
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-medium" [ngClass]="getTypeBadge(f.type || '')">{{ f.type || '-' }}</span>
         </td>
         <td class="px-6 py-4 text-sm text-gray-700">{{ participantCount(f) }}</td>
         <td class="px-6 py-4 text-right text-sm space-x-3">
@@ -51,7 +51,7 @@
 </div>
 
 <!-- Modal création / édition -->
-<app-custom-modal [visible]="showModal" (close)="closeModal()" [title]="isEditing ? 'Modifier la formation' : 'Nouvelle formation'">
+<app-custom-modal [showModal]="showModal" (onCloseModal)="closeModal()" [title]="isEditing ? 'Modifier la formation' : 'Nouvelle formation'">
   <form [formGroup]="form" (ngSubmit)="onSubmit()">
     <div class="space-y-4">
       <div>

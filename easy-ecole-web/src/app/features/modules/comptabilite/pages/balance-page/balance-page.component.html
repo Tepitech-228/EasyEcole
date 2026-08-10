@@ -8,6 +8,7 @@
     <a routerLink="/comptabilite/bilan" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50">Bilan</a>
     <a routerLink="/comptabilite/compte-resultat" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50">Compte de résultat</a>
     <a routerLink="/comptabilite/exercices" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50">Exercices</a>
+    <a *ngIf="rolesValue.isAdmin" routerLink="/comptabilite/parametres-frais" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50">Paramètres des frais</a>
   </div>
 
   <app-header-title title="Balance comptable" subtitle="Synthèse des comptes"></app-header-title>

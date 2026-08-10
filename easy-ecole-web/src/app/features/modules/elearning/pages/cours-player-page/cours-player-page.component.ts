@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { environment } from 'src/environments/environment';
+import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 
 @Component({
   selector: 'app-cours-player-page',
@@ -17,7 +18,7 @@ export class CoursPlayerPageComponent implements OnInit {
   sidebarOuverte = true;
   afficherQuiz = false;
 
-  constructor(private route: ActivatedRoute, private http: HttpClient, private router: Router, private sanitizer: DomSanitizer) { }
+  constructor(private route: ActivatedRoute, private http: HttpClient, private router: Router, private sanitizer: DomSanitizer, private localStorage: LocalStorageService) { }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -155,7 +156,9 @@ export class CoursPlayerPageComponent implements OnInit {
 
   get pdfUrl(): SafeResourceUrl | null {
     if (!this.supportActif) return null;
-    const path = `/elearning/videos/${this.supportActif.fichierOriginal}`;
-    return this.sanitizer.bypassSecurityTrustResourceUrl(path);
+    const base = `/media/videos/${this.supportActif.fichierOriginal}`;
+    const token = this.localStorage.get(LocalStorageService.AUTH_TOKEN);
+    const url = token ? `${base}?token=${encodeURIComponent(token)}` : base;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
 }

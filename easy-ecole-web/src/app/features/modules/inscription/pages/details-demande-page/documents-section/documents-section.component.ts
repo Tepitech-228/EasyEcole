@@ -17,6 +17,7 @@ const MAX_TOTAL_SIZE = 3 * 1024 * 1024 * 1024; // 3 Go
 export class DocumentsSectionComponent implements OnInit {
 
   error: boolean = false
+  errorMessage: string = ''
   uploading: boolean = false
   uploadProgress: number = 0
 
@@ -53,13 +54,13 @@ export class DocumentsSectionComponent implements OnInit {
   choisirFichier(dossierId: string): void {
     let input: HTMLInputElement = document.createElement('input');
     input.type = 'file';
-    input.accept = "application/pdf"
-    input.multiple = true
+    input.accept = "application/pdf,.pdf"
+    input.multiple = false
 
     input.onchange = _ => {
       if (input.files && input.files.length > 0) {
         const files = Array.from(input.files);
-        // Validate total size
+        // Vérifie la taille totale
         let totalSize = 0;
         const existing = this.dossiersInscription[dossierId] || [];
         for (let f of [...existing, ...files]) totalSize += f.size;
@@ -67,14 +68,20 @@ export class DocumentsSectionComponent implements OnInit {
           alert('La taille totale des fichiers dépasse 3 Go. Veuillez sélectionner des fichiers plus petits.');
           return;
         }
-        // Validate PDF only
+        // Vérifie que c'est bien un PDF (extension OU MIME, car certains navigateurs
+        // renvoient un type MIME vide pour les PDF sélectionnés)
         for (let f of files) {
-          if (f.type !== 'application/pdf') {
+          const estPdf = f.type === 'application/pdf'
+            || f.type === 'application/x-pdf'
+            || f.type === ''
+            || f.type === 'application/octet-stream';
+          if (!estPdf || !f.name.toLowerCase().endsWith('.pdf')) {
             alert(`"${f.name}" n'est pas un fichier PDF valide.`);
             return;
           }
         }
-        this.dossiersInscription[dossierId] = [...existing, ...files];
+        // Un seul fichier par dossier requis → remplace toute sélection précédente
+        this.dossiersInscription[dossierId] = [...files];
       }
     };
 
@@ -92,6 +99,8 @@ export class DocumentsSectionComponent implements OnInit {
   validerDossiersInscription(): void {
     this.uploading = true;
     this.uploadProgress = 0;
+    this.error = false;
+    this.errorMessage = '';
     const dossierIds = Object.keys(this.dossiersInscription);
     let completed = 0;
     const total = dossierIds.reduce((sum, id) => sum + (this.dossiersInscription[id]?.length || 0), 0);
@@ -120,6 +129,9 @@ export class DocumentsSectionComponent implements OnInit {
             console.error(err);
             this.error = true;
             this.uploading = false;
+            this.errorMessage = err?.error?.message
+              || err?.message
+              || "Une erreur est survenue lors de l'upload. Vérifiez que vos fichiers sont des PDF de moins de 20 Mo.";
           }
         });
     }

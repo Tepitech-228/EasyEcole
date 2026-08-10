@@ -1,19 +1,17 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { forkJoin } from 'rxjs';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
-import { AnneeAcademique } from 'src/app/data/modules/inscription/models/AnneeAcademique.model';
-import { DossierEtudiant } from 'src/app/data/modules/inscription/models/DossierEtudiant.model';
-import { NiveauEtude } from 'src/app/data/modules/inscription/models/NiveauEtude.model';
-import { Parcours } from 'src/app/data/modules/inscription/models/Parcours.model';
-import { Session } from 'src/app/data/modules/inscription/models/Session.model';
-import { AnneeAcademiqueService } from 'src/app/data/modules/inscription/services/annee-academique.service';
-import { DossierEtudiantService } from 'src/app/data/modules/inscription/services/dossier-etudiant.service';
-import { NiveauEtudeService } from 'src/app/data/modules/inscription/services/niveau-etude.service';
-import { ParcoursService } from 'src/app/data/modules/inscription/services/parcours.service';
-import { SessionService } from 'src/app/data/modules/inscription/services/session.service';
+import {
+  DossierArbreAnnee,
+  DossierArbreClasse,
+  DossierArbreDossier,
+  DossierArbreFiliere,
+  DossierArbreNiveau,
+  DossierEtudiantService,
+} from 'src/app/data/modules/inscription/services/dossier-etudiant.service';
 import { environment } from 'src/environments/environment';
 import { DossierNode, DossierColumn, BatchAction } from 'src/app/shared/components/dossier-view/dossier-view.component';
-import { FilterValue } from 'src/app/shared/components/filters-annee-niveau-parcours/filters-annee-niveau-parcours.component';
 
 @Component({
   selector: 'app-liste-dossiers-page',
@@ -22,28 +20,15 @@ import { FilterValue } from 'src/app/shared/components/filters-annee-niveau-parc
 })
 export class ListeDossiersPageComponent extends BaseComponentClass implements OnInit {
 
-  dossiers: DossierEtudiant[] = []
+  arbre: DossierArbreAnnee[] = []
+  nodes: DossierNode[] = []
+  totalAffiches: number = 0
+
   error: boolean = false
   loading: boolean = false
 
-  annees: AnneeAcademique[] = []
-  niveaux: NiveauEtude[] = []
-  parcoursList: Parcours[] = []
-  sessions: Session[] = []
-
-  selectedAnneeId: string = ''
-  selectedNiveauId: string = ''
-  selectedParcoursId: string = ''
-  selectedStatut: string = ''
   searchTerm: string = ''
-
-  niveauxFiltres: NiveauEtude[] = []
-  parcoursFiltres: Parcours[] = []
-
-  page: number = 1
-  limit: number = 20
-  total: number = 0
-  totalPages: number = 0
+  selectedStatut: string = ''
 
   readonly PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS
   readonly DOSSIERS_PATH: string = environment.MEDIAS_PATH.INSCRIPTION.DOSSIERS
@@ -66,6 +51,12 @@ export class ListeDossiersPageComponent extends BaseComponentClass implements On
     { label: 'Visualiser', color: 'indigo', action: 'visualiser', icon: 'visibility' },
   ]
 
+  private readonly statutMap: Record<string, 'actif' | 'suspendu' | 'archive'> = {
+    valider: 'actif',
+    suspendre: 'suspendu',
+    archiver: 'archive',
+  }
+
   showDetailModal = false
   detailData: any = null
   detailLoading = false
@@ -73,109 +64,207 @@ export class ListeDossiersPageComponent extends BaseComponentClass implements On
   constructor(
     private http: HttpClient,
     private dossierEtudiantService: DossierEtudiantService,
-    private anneeAcademiqueService: AnneeAcademiqueService,
-    private niveauEtudeService: NiveauEtudeService,
-    private parcoursService: ParcoursService,
-    private sessionService: SessionService,
   ) {
     super()
   }
 
   ngOnInit(): void {
-    this.loadAnnees()
-    this.loadNiveaux()
-    this.loadParcours()
-    this.loadSessions()
-    this.getDossiers()
+    this.getArbre()
   }
 
-  loadAnnees(): void {
-    this.anneeAcademiqueService.getAll().subscribe({
-      next: (res) => { this.annees = res },
-      error: (err) => console.log(err)
+  getArbre(): void {
+    this.loading = true
+    this.error = false
+
+    this.dossierEtudiantService.getArbre().subscribe({
+      next: (res) => {
+        this.arbre = Array.isArray(res) ? res : []
+        this.rebuildTree()
+        this.loading = false
+      },
+      error: (err) => {
+        console.log(err)
+        this.error = true
+        this.loading = false
+      }
     })
-  }
-
-  loadNiveaux(): void {
-    this.niveauEtudeService.getAll().subscribe({
-      next: (res) => { this.niveaux = res },
-      error: (err) => console.log(err)
-    })
-  }
-
-  loadParcours(): void {
-    this.parcoursService.getAll().subscribe({
-      next: (res) => { this.parcoursList = res },
-      error: (err) => console.log(err)
-    })
-  }
-
-  loadSessions(): void {
-    this.sessionService.getAll().subscribe({
-      next: (res) => { this.sessions = res },
-      error: (err) => console.log(err)
-    })
-  }
-
-  onFilterChange(filters: FilterValue): void {
-    this.selectedAnneeId = filters.anneeId
-    this.selectedNiveauId = filters.niveauId
-    this.selectedParcoursId = filters.parcoursId
-    this.page = 1
-
-    if (this.selectedAnneeId) {
-      const niveauIds = new Set<string>()
-      this.sessions
-        .filter(s => s.anneeAcademiqueId && String(s.anneeAcademiqueId) === String(this.selectedAnneeId))
-        .forEach(s => { if (s.niveauEtudeId) niveauIds.add(String(s.niveauEtudeId)) })
-      this.niveauxFiltres = niveauIds.size > 0
-        ? this.niveaux.filter(n => niveauIds.has(String(n.id!)))
-        : this.niveaux
-    } else {
-      this.niveauxFiltres = []
-    }
-
-    if (this.selectedNiveauId) {
-      this.parcoursFiltres = this.parcoursList.filter(p =>
-        String(p.niveauEtudeId) === String(this.selectedNiveauId)
-      )
-    } else {
-      this.parcoursFiltres = []
-    }
-
-    this.getDossiers()
-  }
-
-  onStatutChange(): void {
-    this.page = 1
-    this.getDossiers()
   }
 
   onSearch(): void {
-    this.page = 1
-    this.getDossiers()
+    this.rebuildTree()
   }
 
-  onPageChange(page: number): void {
-    this.page = page
-    this.getDossiers()
+  onStatutChange(): void {
+    this.rebuildTree()
   }
+
+  // ========================================================================
+  //  Construction de l'arborescence (Année → Filière → Niveau → Classe → Salles → Étudiants)
+  // ========================================================================
+
+  private rebuildTree(): void {
+    this.nodes = this.arbre
+      .map(a => this.buildAnneeNode(a))
+      .filter((n): n is DossierNode => !!n)
+    this.totalAffiches = this.countItems(this.nodes)
+  }
+  private buildAnneeNode(annee: DossierArbreAnnee): DossierNode | null {
+    const children = annee.filieres
+      .map(f => this.buildFiliereNode(f))
+      .filter((n): n is DossierNode => !!n)
+    if (children.length === 0) return null
+
+    return {
+      type: 'annee',
+      id: annee.anneeId ? String(annee.anneeId) : annee.annee,
+      label: annee.annee,
+      expanded: true,
+      children,
+      subtitle: `${this.countClasses(children)} classe(s) · ${this.countItems(children)} étudiant(s)`,
+    }
+  }
+
+  private buildFiliereNode(filiere: DossierArbreFiliere): DossierNode | null {
+    const children = filiere.niveaux
+      .map(n => this.buildNiveauNode(n))
+      .filter((n): n is DossierNode => !!n)
+    if (children.length === 0) return null
+
+    return {
+      type: 'parcours',
+      id: filiere.parcoursId ? String(filiere.parcoursId) : filiere.filiere,
+      label: filiere.filiere,
+      expanded: false,
+      children,
+      subtitle: `${this.countItems(children)} étudiant(s)`,
+    }
+  }
+
+  private buildNiveauNode(niveau: DossierArbreNiveau): DossierNode | null {
+    const children = niveau.classes
+      .map(c => this.buildClasseNode(c))
+      .filter((n): n is DossierNode => !!n)
+    if (children.length === 0) return null
+
+    return {
+      type: 'niveau',
+      id: niveau.niveauId ? String(niveau.niveauId) : niveau.niveau,
+      label: niveau.niveau,
+      expanded: false,
+      children,
+      subtitle: `${this.countItems(children)} étudiant(s)`,
+    }
+  }
+
+  private buildClasseNode(classe: DossierArbreClasse): DossierNode | null {
+    const items = (classe.dossiers ?? [])
+      .filter(d => this.dossierMatchesFilter(d))
+      .map(d => this.dossierToItem(d))
+    if (items.length === 0) return null
+
+    const salles = classe.salles ?? []
+    if (salles.length > 0) {
+      // Une salle par nœud enfant, les dossiers de la classe en items.
+      return {
+        type: 'classe',
+        id: classe.classeId ? String(classe.classeId) : classe.classe,
+        label: classe.classe,
+        expanded: false,
+        children: salles.map(salle => ({
+          type: 'salle' as const,
+          label: salle,
+          expanded: false,
+          items,
+        })),
+      }
+    }
+
+    // Sans salle rattachée : les dossiers sont directement les items de la classe.
+    return {
+      type: 'classe',
+      id: classe.classeId ? String(classe.classeId) : classe.classe,
+      label: classe.classe,
+      expanded: false,
+      items,
+    }
+  }
+
+  private dossierMatchesFilter(d: DossierArbreDossier): boolean {
+    if (this.selectedStatut && d.statut !== this.selectedStatut) return false
+
+    const query = this.searchTerm.trim().toLowerCase()
+    if (!query) return true
+
+    const haystack = [d.matricule, d.nom, d.prenoms].filter(Boolean).join(' ').toLowerCase()
+    return haystack.includes(query)
+  }
+
+  private dossierToItem(d: DossierArbreDossier): any {
+    const nomComplet = [d.nom, d.prenoms].filter(Boolean).join(' ').trim()
+    return {
+      id: d.id,
+      matricule: d.matricule ?? '-',
+      nom: nomComplet || '-',
+      prenoms: d.prenoms ?? '',
+      statut: d.statut ?? 'inactif',
+      dateCreation: this.formatDate(d.dateCreation),
+      photo: this.getPhotoUrl(d),
+    }
+  }
+
+  private formatDate(value: string | Date | undefined): string {
+    if (!value) return '-'
+    const date = new Date(value)
+    return isNaN(date.getTime()) ? '-' : date.toLocaleDateString('fr-FR')
+  }
+
+  private getPhotoUrl(d: DossierArbreDossier): string {
+    if (d.photo) {
+      if (/^https?:\/\//i.test(d.photo)) return d.photo
+      return this.PHOTOS_PATH + d.photo
+    }
+    return 'assets/images/blank-profile-picture.png'
+  }
+
+  /** Compte récursivement les items (étudiants) d'un ensemble de nœuds et de leurs descendants. */
+  private countItems(nodes: DossierNode[]): number {
+    let count = 0
+    for (const node of nodes) {
+      count += node.items?.length ?? 0
+      count += this.countItems(node.children ?? [])
+    }
+    return count
+  }
+
+  /** Compte récursivement les nœuds de type 'classe' porteurs d'items. */
+  private countClasses(nodes: DossierNode[]): number {
+    let count = 0
+    for (const node of nodes) {
+      if (node.type === 'classe' && (node.items?.length ?? 0) > 0) count += 1
+      count += this.countClasses(node.children ?? [])
+    }
+    return count
+  }
+
+  // ========================================================================
+  //  Actions (batch + item)
+  // ========================================================================
 
   onBatchAction(event: { action: string, ids: number[] }): void {
-    const statutMap: any = {
-      valider: 'actif',
-      suspendre: 'suspendu',
-      archiver: 'archive'
-    }
-    const newStatut = statutMap[event.action]
-    if (!newStatut) return
+    const newStatut = this.statutMap[event.action]
+    if (!newStatut || event.ids.length === 0) return
 
-    for (const id of event.ids) {
-      this.dossierEtudiantService.update(String(id), { statut: newStatut }).subscribe({
-        error: (err) => console.log(err)
-      })
-    }
-    this.getDossiers()
+    const requetes = event.ids.map(id =>
+      this.dossierEtudiantService.update(String(id), { statut: newStatut })
+    )
+
+    forkJoin(requetes).subscribe({
+      next: () => this.getArbre(),
+      error: (err) => {
+        console.log(err)
+        this.getArbre()
+      }
+    })
   }
 
   onItemAction(event: { item: any, action: string }): void {
@@ -207,132 +296,6 @@ export class ListeDossiersPageComponent extends BaseComponentClass implements On
   telechargerCarte(dossierId: string): void {
     const url = this.dossierEtudiantService.telechargerCarteUrl(dossierId)
     window.open(url, '_blank')
-  }
-
-  getDossiers(): void {
-    this.loading = true
-    this.error = false
-
-    const params: any = {
-      page: this.page,
-      limit: this.limit
-    }
-    if (this.selectedAnneeId) params.anneeAcademiqueId = this.selectedAnneeId
-    if (this.selectedNiveauId) params.niveauEtudeId = this.selectedNiveauId
-    if (this.selectedParcoursId) params.parcoursId = this.selectedParcoursId
-    if (this.selectedStatut) params.statut = this.selectedStatut
-    if (this.searchTerm.trim()) params.search = this.searchTerm.trim()
-
-    this.dossierEtudiantService.getAllPaginated(params).subscribe({
-      next: (res) => {
-        this.dossiers = res.data
-        this.page = res.pagination.page
-        this.limit = res.pagination.limit
-        this.total = res.pagination.total
-        this.totalPages = res.pagination.totalPages
-        this.loading = false
-      },
-      error: (err) => {
-        console.log(err)
-        this.error = true
-        this.loading = false
-      }
-    })
-  }
-
-  get treeNodes(): DossierNode[] {
-    return this.buildTreeNodes()
-  }
-
-  private buildTreeNodes(): DossierNode[] {
-    const nodes: DossierNode[] = []
-
-    if (!this.selectedAnneeId) {
-      nodes.push({
-        type: 'annee',
-        label: 'Tous les dossiers étudiants',
-        expanded: true,
-        items: this.dossiers.map(d => this.dossierToItem(d))
-      })
-    } else if (!this.selectedNiveauId) {
-      nodes.push({
-        type: 'annee',
-        label: this.getAnneeLibelle(this.selectedAnneeId),
-        expanded: true,
-        children: this.niveauxFiltres.map(n => ({
-          type: 'niveau',
-          label: n.libelle,
-          id: n.id,
-          expanded: false,
-        }))
-      })
-    } else if (!this.selectedParcoursId) {
-      nodes.push({
-        type: 'annee',
-        label: this.getAnneeLibelle(this.selectedAnneeId),
-        expanded: true,
-        children: [{
-          type: 'niveau',
-          label: this.getNiveauLibelle(this.selectedNiveauId),
-          expanded: true,
-          children: this.parcoursFiltres.map(p => ({
-            type: 'parcours' as const,
-            label: p.titre || '',
-            id: p.id,
-            expanded: false,
-          }))
-        }]
-      })
-    } else {
-      nodes.push({
-        type: 'annee',
-        label: this.getAnneeLibelle(this.selectedAnneeId),
-        expanded: true,
-        children: [{
-          type: 'niveau',
-          label: this.getNiveauLibelle(this.selectedNiveauId),
-          expanded: true,
-          children: [{
-            type: 'parcours',
-            label: this.getParcoursTitre(this.selectedParcoursId),
-            expanded: true,
-            items: this.dossiers.map(d => this.dossierToItem(d))
-          }]
-        }]
-      })
-    }
-
-    return nodes
-  }
-
-  private dossierToItem(d: DossierEtudiant): any {
-    return {
-      id: d.id,
-      matricule: d.matricule,
-      nom: d.utilisateur ? `${d.utilisateur.nom} ${d.utilisateur.prenoms}` : '-',
-      statut: d.statut || 'inactif',
-      dateCreation: d.dateCreation ? new Date(d.dateCreation).toLocaleDateString('fr-FR') : '-',
-      photo: this.getPhotoUrl(d),
-    }
-  }
-
-  getAnneeLibelle(id: string): string {
-    return this.annees.find(a => a.id === id)?.libelle || id
-  }
-
-  getNiveauLibelle(id: string): string {
-    return this.niveaux.find(n => n.id === id)?.libelle || id
-  }
-
-  getParcoursTitre(id: string): string {
-    return this.parcoursList.find(p => p.id === id)?.titre || id
-  }
-
-  getPhotoUrl(dossier: DossierEtudiant): string {
-    if (dossier.utilisateur?.apprenant?.photo) {
-      return this.PHOTOS_PATH + dossier.utilisateur.apprenant.photo
-    }
-    return 'assets/images/blank-profile-picture.png'
   }
 
   /** Télécharge un fichier via HttpClient (avec token) et l'ouvre dans un nouvel onglet */

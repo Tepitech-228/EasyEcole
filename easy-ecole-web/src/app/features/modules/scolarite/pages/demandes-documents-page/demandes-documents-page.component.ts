@@ -1,5 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { DemandeDocument } from 'src/app/data/modules/scolarite/models/DemandeDocument.model';
+import { Router } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
+import { DemandeDocument, VerifierAccesDemandeDocument } from 'src/app/data/modules/scolarite/models/DemandeDocument.model';
 import { TypeDocument } from 'src/app/data/modules/scolarite/models/TypeDocument.model';
 import { DemandeDocumentService } from 'src/app/data/modules/scolarite/services/demande-document.service';
 import { TypeDocumentService } from 'src/app/data/modules/scolarite/services/type-document.service';
@@ -23,12 +26,18 @@ export class DemandesDocumentsPageComponent extends BaseComponentClass implement
   showDeleteModal: boolean = false;
   demandeToDelete: DemandeDocument | null = null;
 
+  /** État précis (gratuit/payant/payé) récupéré via GET /:id/verifier-acces */
+  accesMap: Record<string, VerifierAccesDemandeDocument> = {};
+  /** Id de la demande en cours de paiement (pour désactiver les boutons) */
+  payingId: string | null = null;
+
   currentPage: number = 1;
   pageSize: number = 10;
 
   constructor(
     private demandeService: DemandeDocumentService,
-    private typeDocumentService: TypeDocumentService
+    private typeDocumentService: TypeDocumentService,
+    private router: Router
   ) {
     super();
   }
@@ -61,12 +70,54 @@ export class DemandesDocumentsPageComponent extends BaseComponentClass implement
         this.demandes = data.data || data;
         this._demandes = [...this.demandes];
         this.loading = false;
+        this.loadAcces();
       },
       error: () => {
         this.errorMessage = 'Erreur lors du chargement des demandes';
         this.loading = false;
       }
     });
+  }
+
+  /**
+   * Récupère l'état précis (gratuit / montant / fraisPayes / source) de chaque demande
+   * via GET /:id/verifier-acces. Les appels en échec retombent sur les champs de la demande.
+   */
+  private loadAcces(): void {
+    const demandesAvecId = this.demandes.filter(d => !!d.id);
+    if (demandesAvecId.length === 0) {
+      this.accesMap = {};
+      return;
+    }
+
+    const calls = demandesAvecId.map(d =>
+      this.demandeService.verifierAcces(d.id!).pipe(
+        map(acces => ({ id: d.id!, acces })),
+        catchError(() => of({ id: d.id!, acces: null }))
+      )
+    );
+
+    forkJoin(calls).subscribe(results => {
+      const map: Record<string, VerifierAccesDemandeDocument> = {};
+      results.forEach(r => {
+        if (r.acces) map[r.id] = r.acces;
+      });
+      this.accesMap = map;
+    });
+  }
+
+  /** État d'accès d'une demande (endpoint verifier-acces, sinon repli sur les champs locaux) */
+  accesFor(demande: DemandeDocument): VerifierAccesDemandeDocument {
+    if (demande.id && this.accesMap[demande.id]) {
+      return this.accesMap[demande.id];
+    }
+    const montant = Number(demande.montant) || 0;
+    return {
+      gratuit: montant <= 0 || demande.source === 'automatique',
+      montant,
+      fraisPayes: !!demande.fraisPayes,
+      source: demande.source || 'demande_etudiant'
+    };
   }
 
   loadTypesDocument() {
@@ -81,14 +132,58 @@ export class DemandesDocumentsPageComponent extends BaseComponentClass implement
     this.errorMessage = '';
     this.successMessage = '';
     this.demandeService.create(this.newDemande).subscribe({
-      next: () => {
+      next: (demande) => {
         this.newDemande = { typeDocumentId: '' };
-        this.successMessage = 'Demande soumise avec succès';
+        const payant = Number(demande.montant) > 0;
+        this.successMessage = payant
+          ? `Demande soumise avec succès. Cette demande est payante (${Number(demande.montant).toLocaleString('fr-FR')} FC) — veuillez procéder au paiement.`
+          : 'Demande soumise avec succès (gratuite).';
         this.loadDemandes();
       },
       error: () => {
         this.errorMessage = 'Erreur lors de la soumission de la demande';
         this.loading = false;
+      }
+    });
+  }
+
+  /**
+   * Paiement via bordereau : crée le bordereau de la demande puis redirige
+   * vers la page « Mes bordereaux » (encaissement bordereau existant).
+   */
+  payerBordereau(demande: DemandeDocument) {
+    if (!demande.id) return;
+    this.payingId = demande.id;
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.demandeService.creerBordereau(demande.id).subscribe({
+      next: () => {
+        this.payingId = null;
+        this.successMessage = 'Bordereau de paiement créé. Téléversez votre justificatif depuis « Mes bordereaux ».';
+        this.router.navigate(['/inscription/bordereaux']);
+      },
+      error: (err) => {
+        this.payingId = null;
+        this.errorMessage = err?.error?.message || 'Erreur lors de la création du bordereau';
+      }
+    });
+  }
+
+  /** Paiement en ligne simulé : confirmation automatique + écriture comptable */
+  payerEnLigne(demande: DemandeDocument) {
+    if (!demande.id) return;
+    this.payingId = demande.id;
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.demandeService.confirmerPaiementAuto(demande.id).subscribe({
+      next: () => {
+        this.payingId = null;
+        this.successMessage = 'Paiement en ligne confirmé avec succès.';
+        this.loadDemandes();
+      },
+      error: (err) => {
+        this.payingId = null;
+        this.errorMessage = err?.error?.message || 'Erreur lors du paiement en ligne';
       }
     });
   }

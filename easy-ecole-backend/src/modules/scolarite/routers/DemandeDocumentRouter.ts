@@ -82,6 +82,84 @@ router
     .put('/:id', DemandeDocumentController.traiterDemandeDocument)
     /**
      * @openapi
+     * /scolarite/demandesDocument/{id}/verifier-acces:
+     *   get:
+     *     tags: [Demandes de documents]
+     *     summary: Indique si la demande est gratuite ou payante (montant, frais payés, source)
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema:
+     *           type: string
+     *     responses:
+     *       200:
+     *         description: Informations d'accès au document
+     */
+    .get('/:id/verifier-acces', DemandeDocumentController.verifierAccesDemandeDocument)
+    /**
+     * @openapi
+     * /scolarite/demandesDocument/{id}/bordereau:
+     *   post:
+     *     tags: [Demandes de documents]
+     *     summary: Génère un bordereau de paiement pour la demande de document payante
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema:
+     *           type: string
+     *     responses:
+     *       201:
+     *         description: Bordereau créé
+     */
+    .post('/:id/bordereau', DemandeDocumentController.creerBordereauDemandeDocument)
+    /**
+     * @openapi
+     * /scolarite/demandesDocument/{id}/confirmer-paiement:
+     *   put:
+     *     tags: [Demandes de documents]
+     *     summary: Confirme l'encaissement d'une demande payante (institution/caissier)
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema:
+     *           type: string
+     *     requestBody:
+     *       required: false
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             properties:
+     *               paiementId:
+     *                 type: integer
+     *                 description: Référence du paiement/bordereau (facultatif)
+     *     responses:
+     *       200:
+     *         description: Demande marquée comme payée
+     */
+    .put('/:id/confirmer-paiement', DemandeDocumentController.confirmerPaiementDemandeDocument)
+    /**
+     * @openapi
+     * /scolarite/demandesDocument/{id}/confirmer-paiement-auto:
+     *   post:
+     *     tags: [Demandes de documents]
+     *     summary: Confirme un paiement en ligne (crée le paiement et l'écriture comptable automatiquement)
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema:
+     *           type: string
+     *     responses:
+     *       200:
+     *         description: Paiement en ligne confirmé et écriture comptable générée
+     */
+    .post('/:id/confirmer-paiement-auto', DemandeDocumentController.confirmerPaiementAutoDemandeDocument)
+    /**
+     * @openapi
      * /scolarite/demandesDocument/{id}:
      *   delete:
      *     tags: [Demandes de documents]

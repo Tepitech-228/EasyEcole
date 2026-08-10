@@ -14,6 +14,7 @@ import { Utilisateur } from "../../auth/models/Utilisateur"
 import { CompteBancaire } from "./CompteBancaire"
 import { ReleveBancaire } from "./ReleveBancaire"
 import { LigneReleveBancaire } from "./LigneReleveBancaire"
+import { ParametreFrais } from "./ParametreFrais"
 
 // Associations ExerciceComptable
 ExerciceComptable.hasMany(EcritureComptable, {

@@ -17,6 +17,15 @@ export class ListeRattrapagesPageComponent extends BaseComponentClass implements
   showAssignModal = false;
   assignForm = { sessionExamenId: null as number | null, classeId: null as number | null, semestre: '' as string, anneeAcademiqueId: null as number | null };
 
+  activeTab: 'auto' | 'demandes' = this.rolesValue.isApprenant ? 'demandes' : 'auto';
+  demandesEtudiant: any[] = [];
+  loadingDemandes = false;
+  showProgrammeModal = false;
+  selectedDemande: any = null;
+  programmeForm = { dateRattrapage: '' as string, heureDebut: '' as string, heureFin: '' as string, salle: '' as string, enseignantId: null as number | null };
+  enseignants: any[] = [];
+  paysantId: number | null = null;
+
   constructor(
     private service: RattrapageService,
     private router: Router
@@ -28,6 +37,11 @@ export class ListeRattrapagesPageComponent extends BaseComponentClass implements
       next: (sessions) => { this.sessions = sessions; this.loading = false; this.loadAll(); },
       error: () => { this.loading = false; }
     });
+
+    if (!this.rolesValue.isApprenant) {
+      this.loadDemandesEtudiant();
+      this.loadEnseignants();
+    }
   }
 
   loadAll(): void {
@@ -89,4 +103,65 @@ export class ListeRattrapagesPageComponent extends BaseComponentClass implements
   }
 
   trackByFn(index: number, item: any): number { return item.id; }
+
+  loadDemandesEtudiant(): void {
+    this.loadingDemandes = true;
+    this.service.getDemandes().subscribe({
+      next: (res) => { this.demandesEtudiant = res; this.loadingDemandes = false; },
+      error: () => { this.demandesEtudiant = []; this.loadingDemandes = false; }
+    });
+  }
+
+  loadEnseignants(): void {
+    this.service.getEnseignantsDisponibles().subscribe({
+      next: (res) => { this.enseignants = res; },
+      error: () => { this.enseignants = []; }
+    });
+  }
+
+  openProgrammeModal(demande: any): void {
+    this.selectedDemande = demande;
+    this.programmeForm = {
+      dateRattrapage: '',
+      heureDebut: '',
+      heureFin: '',
+      salle: '',
+      enseignantId: demande.enseignantId || null
+    };
+    this.showProgrammeModal = true;
+  }
+
+  submitProgramme(): void {
+    if (!this.selectedDemande) return;
+    this.service.programmer(this.selectedDemande.id, this.programmeForm).subscribe({
+      next: () => {
+        this.showProgrammeModal = false;
+        this.selectedDemande = null;
+        this.loadDemandesEtudiant();
+      },
+      error: (err) => { console.error(err); }
+    });
+  }
+
+  confirmerPaiement(demande: any): void {
+    this.paysantId = demande.id;
+    this.service.confirmerPaiement(demande.id, demande.paiementId).subscribe({
+      next: () => {
+        this.paysantId = null;
+        this.loadDemandesEtudiant();
+      },
+      error: (err) => { console.error(err); this.paysantId = null; }
+    });
+  }
+
+  confirmerPaiementAuto(demande: any): void {
+    this.paysantId = demande.id;
+    this.service.confirmerPaiementAuto(demande.id).subscribe({
+      next: () => {
+        this.paysantId = null;
+        this.loadDemandesEtudiant();
+      },
+      error: (err) => { console.error(err); this.paysantId = null; }
+    });
+  }
 }

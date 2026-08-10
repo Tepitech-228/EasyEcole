@@ -1,4 +1,3 @@
-import puppeteer from 'puppeteer';
 import path from 'path';
 import fs from 'fs';
 import { DocGenCachet } from '../models/DocGenCachet';
@@ -10,6 +9,7 @@ export class PdfGeneratorService {
     margins?: { top?: string; right?: string; bottom?: string; left?: string };
     ecoleNom?: string;
   }): Promise<Buffer> {
+    const puppeteer = await this.getPuppeteer();
     const browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
@@ -37,6 +37,15 @@ export class PdfGeneratorService {
       return Buffer.from(pdf);
     } finally {
       await browser.close();
+    }
+  }
+
+  private static async getPuppeteer(): Promise<any> {
+    try {
+      const mod = await import('puppeteer');
+      return (mod as any).default ?? mod;
+    } catch (error) {
+      throw new Error('Puppeteer is not available in this environment: ' + (error as Error).message);
     }
   }
 

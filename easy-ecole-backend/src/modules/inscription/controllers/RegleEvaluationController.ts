@@ -8,7 +8,9 @@ export default class RegleEvaluationController {
     constructor() { }
 
     static async getAll(req: Request, res: Response): Promise<Response> {
-        let options: FindOptions<InferAttributes<RegleEvaluation>> = { include: [{ all: true }] }
+        let options: FindOptions<InferAttributes<RegleEvaluation>> = {
+            include: [RegleEvaluation.associations.parcours]
+        }
         try {
             let data = await RegleEvaluation.findAll(options);
             return res.status(200).send(data);

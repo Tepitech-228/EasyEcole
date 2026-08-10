@@ -26,7 +26,9 @@ export class CursusApprenantService {
   }
 
   getCoursChoisis(id?: string): Observable<CursusApprenant> {
-    return this.httpClient.get<CursusApprenant>(`${this.SERVICE_URL}/${id}/cours`)
+    // Sans id : route dédiée qui filtre par l'apprenant connecté (évite /undefined/cours)
+    const url = id ? `${this.SERVICE_URL}/${id}/cours` : `${this.SERVICE_URL}/cours`
+    return this.httpClient.get<CursusApprenant>(url)
   }
 
   create(cursusApprenant: CursusApprenant): Observable<CursusApprenant> {

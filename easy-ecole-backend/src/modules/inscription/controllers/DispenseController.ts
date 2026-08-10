@@ -8,7 +8,13 @@ export default class DispenseController {
     constructor() { }
 
     static async getAll(req: Request, res: Response): Promise<Response> {
-        let options: FindOptions<InferAttributes<Dispense>> = { include: [{ all: true }] }
+        let options: FindOptions<InferAttributes<Dispense>> = {
+            include: [
+                Dispense.associations.cursusApprenant,
+                Dispense.associations.cours,
+                Dispense.associations.valideParUtilisateur
+            ]
+        }
         try {
             let data = await Dispense.findAll(options);
             return res.status(200).send(data);
@@ -19,7 +25,13 @@ export default class DispenseController {
 
     static async get(req: Request, res: Response): Promise<Response> {
         try {
-            const data = await Dispense.findByPk(req.params.id, { include: [{ all: true }] });
+            const data = await Dispense.findByPk(req.params.id, {
+                include: [
+                    Dispense.associations.cursusApprenant,
+                    Dispense.associations.cours,
+                    Dispense.associations.valideParUtilisateur
+                ]
+            });
             if (!data) return res.status(404).json({ success: false, message: "Dispense non trouvée" });
             return res.status(200).send(data);
         } catch (error) {

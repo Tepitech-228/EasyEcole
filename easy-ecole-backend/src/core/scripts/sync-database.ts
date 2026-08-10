@@ -37,6 +37,7 @@ async function syncDatabase() {
         require('../../modules/inscription/models/_associations');
         require('../../modules/inscription/models/Mcc');
         require('../../modules/inscription/models/RegleEvaluation');
+        require('../../modules/inscription/models/SemestreAcademique');
         require('../../modules/inscription/models/SessionExamen');
         require('../../modules/inscription/models/Absence');
         require('../../modules/inscription/models/Equivalence');

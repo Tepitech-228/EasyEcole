@@ -1,3 +1,94 @@
 :host {
   display: block;
 }
+
+.dashboard-comptable-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+.compta-banner {
+  background: linear-gradient(135deg, #0891b2, #0e7490, #1e40af);
+}
+
+.dashboard-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 1rem;
+  border-radius: 0.8rem;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 150ms ease;
+}
+
+.dashboard-tab:hover {
+  background: rgba(255,255,255,0.8);
+  color: #0f172a;
+}
+
+.dashboard-tab.active {
+  background: white;
+  color: #0f172a;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+.compta-kpi {
+  border-radius: 1.4rem;
+  padding: 1.4rem;
+  color: white;
+  box-shadow: 0 16px 30px rgba(14, 116, 144, 0.16);
+}
+
+.compta-kpi.blue { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+.compta-kpi.cyan { background: linear-gradient(135deg, #0891b2, #0e7490); }
+.compta-kpi.emerald { background: linear-gradient(135deg, #10b981, #059669); }
+.compta-kpi.violet { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+
+.compta-link {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.03);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.compta-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
+}
+
+.compta-link .icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 0.9rem;
+}
+
+.compta-link.blue .icon { background: #dbeafe; color: #1d4ed8; }
+.compta-link.green .icon { background: #dcfce7; color: #15803d; }
+.compta-link.amber .icon { background: #fef3c7; color: #b45309; }
+.compta-link.rose .icon { background: #ffe4e6; color: #be123c; }
+
+.compta-link p {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.compta-link span {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.7rem;
+  color: #64748b;
+}

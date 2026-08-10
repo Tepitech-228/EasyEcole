@@ -9,7 +9,7 @@ export interface ExcelImportResult {
   success: boolean;
   importedCount: number;
   errorCount: number;
-  details: { email?: string; code?: string; statut: string; message: string; motDePasse?: string }[];
+  details: { ligne?: number; email?: string; code?: string; statut: string; message: string; motDePasse?: string }[];
 }
 
 @Injectable({
@@ -81,6 +81,32 @@ export class ExcelService {
     return this.http.get(`${EXCEL_BASE}/apprenants/export`, { responseType: 'blob' });
   }
 
+  /** Exporter les apprenants filtrés au format Excel */
+  exportApprenantsFiltres(params?: any): Observable<Blob> {
+    let httpParams = new HttpParams();
+    if (params) {
+      Object.keys(params).forEach(key => {
+        if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
+          httpParams = httpParams.set(key, String(params[key]));
+        }
+      });
+    }
+    return this.http.get(`${EXCEL_BASE}/apprenants/export/filtres`, { params: httpParams, responseType: 'blob' });
+  }
+
+  /** Télécharger le template d'export des enseignants filtrés */
+  exportEnseignantsFiltres(params?: any): Observable<Blob> {
+    let httpParams = new HttpParams();
+    if (params) {
+      Object.keys(params).forEach(key => {
+        if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
+          httpParams = httpParams.set(key, String(params[key]));
+        }
+      });
+    }
+    return this.http.get(`${EXCEL_BASE}/enseignants/export/filtres`, { params: httpParams, responseType: 'blob' });
+  }
+
   // ========================================================================
   //  UTILITAIRE
   // ========================================================================
@@ -93,5 +119,37 @@ export class ExcelService {
     a.download = filename;
     a.click();
     window.URL.revokeObjectURL(url);
+  }
+
+  // ========================================================================
+  //  UTILISATEURS PAR RÔLE
+  // ========================================================================
+
+  /** Télécharger le template d'import d'utilisateurs par rôle */
+  downloadUtilisateurTemplate(role?: string): Observable<Blob> {
+    let params: HttpParams | undefined;
+    if (role) {
+      params = new HttpParams().set('role', role);
+    }
+    return this.http.get(`${EXCEL_BASE}/utilisateurs/template`, { params, responseType: 'blob' });
+  }
+
+  /** Importer des utilisateurs par rôle depuis un fichier Excel */
+  importUtilisateursParRole(file: File, role?: string): Observable<ExcelImportResult> {
+    const formData = new FormData();
+    formData.append('fichier', file);
+    if (role) {
+      formData.append('role', role);
+    }
+    return this.http.post<ExcelImportResult>(`${EXCEL_BASE}/utilisateurs/import`, formData);
+  }
+
+  /** Exporter les utilisateurs par rôle (ou tous si rôle absent) */
+  exportUtilisateursParRole(role?: string): Observable<Blob> {
+    let params: HttpParams | undefined;
+    if (role) {
+      params = new HttpParams().set('role', role);
+    }
+    return this.http.get(`${EXCEL_BASE}/utilisateurs/export`, { params, responseType: 'blob' });
   }
 }

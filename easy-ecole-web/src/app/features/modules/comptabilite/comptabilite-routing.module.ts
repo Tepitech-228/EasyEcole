@@ -11,6 +11,7 @@ import { RapprochementPageComponent } from './pages/rapprochement-page/rapproche
 import { ExercicesPageComponent } from './pages/exercices-page/exercices-page.component';
 import { BilanPageComponent } from './pages/bilan-page/bilan-page.component';
 import { CompteResultatPageComponent } from './pages/compte-resultat-page/compte-resultat-page.component';
+import { ParametresFraisPageComponent } from './pages/parametres-frais-page/parametres-frais-page.component';
 
 const routes: Routes = [
   {
@@ -71,6 +72,11 @@ const routes: Routes = [
   {
     path: 'compte-resultat',
     component: CompteResultatPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'parametres-frais',
+    component: ParametresFraisPageComponent,
     pathMatch: 'full'
   },
 ];

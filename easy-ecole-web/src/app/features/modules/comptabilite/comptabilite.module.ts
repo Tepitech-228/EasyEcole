@@ -12,6 +12,7 @@ import { ComptesBancairesPageComponent } from './pages/comptes-bancaires-page/co
 import { RelevesBancairesPageComponent } from './pages/releves-bancaires-page/releves-bancaires-page.component';
 import { RapprochementPageComponent } from './pages/rapprochement-page/rapprochement-page.component';
 import { ExercicesPageComponent } from './pages/exercices-page/exercices-page.component';
+import { ParametresFraisPageComponent } from './pages/parametres-frais-page/parametres-frais-page.component';
 import { BilanPageComponent } from './pages/bilan-page/bilan-page.component';
 import { CompteResultatPageComponent } from './pages/compte-resultat-page/compte-resultat-page.component';
 
@@ -28,6 +29,7 @@ import { CompteResultatPageComponent } from './pages/compte-resultat-page/compte
     ExercicesPageComponent,
     BilanPageComponent,
     CompteResultatPageComponent,
+    ParametresFraisPageComponent,
   ],
   imports: [
     CommonModule,

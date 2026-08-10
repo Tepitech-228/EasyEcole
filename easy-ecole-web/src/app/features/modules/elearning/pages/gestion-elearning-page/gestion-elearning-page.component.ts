@@ -11,18 +11,20 @@ import { BaseComponentClass } from 'src/app/core/base-component-class';
 export class GestionElearningPageComponent extends BaseComponentClass implements OnInit {
   coursList: any[] = [];
   enseignants: any[] = [];
+  coursPedagogiques: any[] = [];
   loading = false;
   creating = false;
   showCreateForm = false;
 
   selectedFile: File | null = null;
-  newCours = { titre: '', description: '', format: 'mixte', enseignantId: null as number | null };
+  newCours = { titre: '', description: '', format: 'mixte', enseignantId: null as number | null, coursId: '' };
 
   constructor(private http: HttpClient) { super(); }
 
   ngOnInit(): void {
     this.loadCours();
     this.loadEnseignants();
+    this.loadCoursPedagogiques();
   }
 
   loadCours(): void {
@@ -40,6 +42,13 @@ export class GestionElearningPageComponent extends BaseComponentClass implements
     });
   }
 
+  loadCoursPedagogiques(): void {
+    this.http.get(`${environment.API_URL}/inscription/cours`).subscribe({
+      next: (data: any) => { this.coursPedagogiques = Array.isArray(data) ? data : []; },
+      error: () => {}
+    });
+  }
+
   onFileSelected(event: any): void {
     this.selectedFile = event.target?.files?.[0] || null;
   }
@@ -47,7 +56,7 @@ export class GestionElearningPageComponent extends BaseComponentClass implements
   toggleCreateForm(): void {
     this.showCreateForm = !this.showCreateForm;
     if (!this.showCreateForm) {
-      this.newCours = { titre: '', description: '', format: 'mixte', enseignantId: null };
+      this.newCours = { titre: '', description: '', format: 'mixte', enseignantId: null, coursId: '' };
       this.selectedFile = null;
     }
   }
@@ -60,6 +69,7 @@ export class GestionElearningPageComponent extends BaseComponentClass implements
     formData.append('titre', this.newCours.titre);
     formData.append('description', this.newCours.description);
     formData.append('format', this.newCours.format);
+    if (this.newCours.coursId) formData.append('coursId', this.newCours.coursId);
     if (this.newCours.enseignantId) formData.append('enseignantId', String(this.newCours.enseignantId));
     if (this.selectedFile) formData.append('image', this.selectedFile);
 
@@ -67,7 +77,7 @@ export class GestionElearningPageComponent extends BaseComponentClass implements
       next: () => {
         this.creating = false;
         this.showCreateForm = false;
-        this.newCours = { titre: '', description: '', format: 'mixte', enseignantId: null };
+        this.newCours = { titre: '', description: '', format: 'mixte', enseignantId: null, coursId: '' };
         this.selectedFile = null;
         this.loadCours();
       },

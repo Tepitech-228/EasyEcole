@@ -22,6 +22,8 @@ import { DossierEtudiant } from "../models/DossierEtudiant";
 import { DemandeInscriptionDossier } from "../models/DemandeInscriptionDossier";
 import { DossierInscription } from "../models/DossierInscription";
 import { Classe } from "../models/Classe";
+import { PaiementInscription } from "../models/PaiementInscription";
+import { FraisInscription } from "../models/FraisInscription";
 import { GenerateurCarteService } from "../services/GenerateurCarteService";
 import fs from "fs";
 import path from "path";
@@ -30,6 +32,26 @@ import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
 import { creerEcritureComptable } from "../../comptabilite/helpers/ComptabiliteHelper";
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
+
+const hasChoixFinalValue = (value: unknown): boolean => {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value === 1;
+    if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+        return normalized === '1' || normalized === 'true';
+    }
+    return false;
+};
+
+const getParcoursFinal = <T extends { choixFinal?: any }>(parcoursChoisis?: Array<T> | null): T | undefined => {
+    if (!Array.isArray(parcoursChoisis) || parcoursChoisis.length === 0) return undefined;
+
+    const explicit = parcoursChoisis.find(pc => hasChoixFinalValue(pc.choixFinal));
+    if (explicit) return explicit;
+    if (parcoursChoisis.length === 1) return parcoursChoisis[0];
+
+    return undefined;
+};
 
 export default class DemandeInscriptionController {
 
@@ -101,67 +123,112 @@ export default class DemandeInscriptionController {
     }
 
     static async getDemandeInscription(req: Request, res: Response): Promise<Response> {
-        let options: FindOptions<InferAttributes<DemandeInscription>> = {}
-        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
-            options = {
-                where: { id: req.params.id, utilisateurId: (req as any).utilisateurId },
-                include: [
-                    {
-                        association: DemandeInscription.associations.utilisateur, include: [{
-                            model: Apprenant, as: 'apprenant'
-                        }]
-                    },
-                    { association: DemandeInscription.associations.session, include: [Session.associations.dossiersInscription, Session.associations.fraisInscription] },
-                    DemandeInscription.associations.preInscription,
-                    DemandeInscription.associations.reponseInscription,
-                    { association: DemandeInscription.associations.cours, include: [Cours.associations.classe] },
-                    {
-                        association: DemandeInscription.associations.coursChoisis, include: [
-                            { association: DemandeInscriptionCours.associations.cours, include: [Cours.associations.classe] }
-                        ]
-                    },
-                    DemandeInscription.associations.paiementsInscription,
-                    DemandeInscription.associations.dossiersDemande, {
-                        model: ParcoursChoisi, as: 'parcoursChoisis', include: [
-                            { model: Parcours, as: 'parcours', include: [Parcours.associations.niveauEtude, Parcours.associations.cours, { model: PrerequisParcours, as: 'prerequisParcours', include: [PrerequisParcours.associations.parcours, PrerequisParcours.associations.matierePrerequis, PrerequisParcours.associations.niveauEtude] }] },
-                            { model: PrerequisParcoursChoisi, as: 'prerequisParcoursChoisis', include: [{ model: PrerequisParcours, as: 'prerequisParcours', include: [PrerequisParcours.associations.parcours, PrerequisParcours.associations.matierePrerequis, PrerequisParcours.associations.niveauEtude] }] }
-                        ]
-                    }]
-            }
-        }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
-            options = {
-                where: { id: req.params.id },
-                include: [
-                    {
-                        association: DemandeInscription.associations.utilisateur, include: [{
-                            model: Apprenant, as: 'apprenant'
-                        }]
-                    },
-                    { association: DemandeInscription.associations.session, include: [Session.associations.dossiersInscription, Session.associations.fraisInscription] },
-                    DemandeInscription.associations.preInscription,
-                    DemandeInscription.associations.reponseInscription,
-                    { association: DemandeInscription.associations.cours, include: [Cours.associations.classe] },
-                    {
-                        association: DemandeInscription.associations.coursChoisis, include: [
-                            { association: DemandeInscriptionCours.associations.cours, include: [Cours.associations.classe] }
-                        ]
-                    },
-                    DemandeInscription.associations.paiementsInscription,
-                    DemandeInscription.associations.dossiersDemande, {
-                        model: ParcoursChoisi, as: 'parcoursChoisis', include: [
-                            { model: Parcours, as: 'parcours', include: [Parcours.associations.niveauEtude, Parcours.associations.cours, { model: PrerequisParcours, as: 'prerequisParcours', include: [PrerequisParcours.associations.parcours, PrerequisParcours.associations.matierePrerequis, PrerequisParcours.associations.niveauEtude] }] },
-                            { model: PrerequisParcoursChoisi, as: 'prerequisParcoursChoisis', include: [{ model: PrerequisParcours, as: 'prerequisParcours', include: [PrerequisParcours.associations.parcours, PrerequisParcours.associations.matierePrerequis, PrerequisParcours.associations.niveauEtude] }] }
-                        ]
-                    }]
-            }
-        }
+        const isApprenant = (req as any).utilisateurRole == RolesUtilisateur.APPRENANT;
+        const where: any = isApprenant
+            ? { id: req.params.id, utilisateurId: (req as any).utilisateurId }
+            : { id: req.params.id };
 
         try {
-            const demandeInscription: DemandeInscription | null = await DemandeInscription.findOne(options);
+            // ── 1. Requête racine (légère, sans hasMany) ─────────────────────────
+            const demandeInscription: DemandeInscription | null = await DemandeInscription.findOne({
+                where,
+                include: [
+                    {
+                        association: DemandeInscription.associations.utilisateur, include: [{
+                            model: Apprenant, as: 'apprenant'
+                        }]
+                    },
+                    DemandeInscription.associations.session,
+                    DemandeInscription.associations.preInscription,
+                    DemandeInscription.associations.reponseInscription
+                ]
+            });
 
             if (demandeInscription == null)
                 return res.status(404).json({ success: false, message: "Demande non trouvée" });
+
+            const demandeId = Number(req.params.id);
+
+            // ── 2. Collections en requêtes indépendantes (zéro produit cartésien) ──
+            const [
+                sessionDossiersInscription,
+                sessionFraisInscription,
+                coursChoisis,
+                dossiersDemande,
+                paiementsInscription,
+                parcoursChoisis
+            ] = await Promise.all([
+                // Documents requis de la session
+                DossierInscription.findAll({ where: { sessionId: demandeInscription.sessionId } }),
+                // Frais d'inscription de la session
+                FraisInscription.findAll({ where: { sessionId: demandeInscription.sessionId } }),
+                // Cours choisis (avec le cours et sa classe)
+                DemandeInscriptionCours.findAll({
+                    where: { demandeInscriptionId: demandeId },
+                    include: [
+                        { association: DemandeInscriptionCours.associations.cours, include: [Cours.associations.classe] }
+                    ]
+                }),
+                // Documents déposés (avec le dossier requis correspondant)
+                DemandeInscriptionDossier.findAll({
+                    where: { demandeId },
+                    include: [{ association: DemandeInscriptionDossier.associations.dossierInscription }]
+                }),
+                // Paiements de la demande
+                PaiementInscription.findAll({ where: { matriculeInscription: demandeInscription.matricule } }),
+                // Parcours choisis (avec parcours → niveauEtude, prerequisParcours, prerequisParcoursChoisis)
+                ParcoursChoisi.findAll({
+                    where: { demandeInscriptionId: demandeId },
+                    include: [
+                        {
+                            model: Parcours, as: 'parcours', include: [
+                                Parcours.associations.niveauEtude,
+                                {
+                                    model: PrerequisParcours, as: 'prerequisParcours', include: [
+                                        PrerequisParcours.associations.parcours,
+                                        PrerequisParcours.associations.matierePrerequis,
+                                        PrerequisParcours.associations.niveauEtude
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            model: PrerequisParcoursChoisi, as: 'prerequisParcoursChoisis', include: [
+                                {
+                                    model: PrerequisParcours, as: 'prerequisParcours', include: [
+                                        PrerequisParcours.associations.parcours,
+                                        PrerequisParcours.associations.matierePrerequis,
+                                        PrerequisParcours.associations.niveauEtude
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                })
+            ]);
+
+            // ── 3. Cours du parcours (séparé de la requête parcours pour éviter la multiplication) ──
+            const parcoursIds = [...new Set(parcoursChoisis.map(pc => pc.parcoursId).filter((id): id is number => id != null))];
+            if (parcoursIds.length > 0) {
+                const coursParParcours = await Cours.findAll({ where: { parcoursId: { [Op.in]: parcoursIds } } });
+                for (const pc of parcoursChoisis) {
+                    (pc.parcours as any)?.setDataValue('cours', coursParParcours.filter(c => c.parcoursId == pc.parcoursId));
+                }
+            }
+
+            // ── 4. Assemblage du DTO en mémoire ─────────────────────────────────
+            (demandeInscription as any).setDataValue('coursChoisis', coursChoisis);
+            // `cours` (belongsToMany) se déduit de la même table de liaison que coursChoisis
+            (demandeInscription as any).setDataValue('cours', coursChoisis.map(cc => (cc as any).cours).filter(c => c != null));
+            (demandeInscription as any).setDataValue('dossiersDemande', dossiersDemande);
+            (demandeInscription as any).setDataValue('paiementsInscription', paiementsInscription);
+            (demandeInscription as any).setDataValue('parcoursChoisis', parcoursChoisis);
+
+            const session = (demandeInscription as any).session;
+            if (session) {
+                session.setDataValue('dossiersInscription', sessionDossiersInscription);
+                session.setDataValue('fraisInscription', sessionFraisInscription);
+            }
 
             return res.status(200).send(demandeInscription);
         } catch (error) {
@@ -303,12 +370,19 @@ export default class DemandeInscriptionController {
     }
 
     static async createDemandeInscriptionCours(req: Request, res: Response): Promise<Response | null> {
-        if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
+        const role = (req as any).utilisateurRole
+        // Seuls l'apprenant (choix des cours) et l'institution (saisie à sa place) peuvent ajouter des cours.
+        // Les cours obligatoires comme les facultatifs sont acceptés automatiquement (etat = VALIDE).
+        if (role != RolesUtilisateur.APPRENANT && role != RolesUtilisateur.INSTITUTION) {
             return res.status(403).json({ success: false })
         }
 
         const demande = await DemandeInscription.findByPk(req.params.id, {
-            include: [{ association: DemandeInscription.associations.preInscription }]
+            include: [
+                { association: DemandeInscription.associations.preInscription },
+                { association: DemandeInscription.associations.cours },
+                { association: DemandeInscription.associations.coursChoisis },
+            ]
         })
         if (!demande) {
             return res.status(404).json({ success: false, message: "Demande non trouvée" })
@@ -327,10 +401,20 @@ export default class DemandeInscriptionController {
             let demandeInscriptionCours: DemandeInscriptionCours = new DemandeInscriptionCours();
             demandeInscriptionCours.coursId = Number(req.body.coursId)
             demandeInscriptionCours.demandeInscriptionId = Number(req.params.id)
-            demandeInscriptionCours.etat = EtatsCoursChoisi.REJETE
+            demandeInscriptionCours.etat = EtatsCoursChoisi.VALIDE
 
             await demandeInscriptionCours.save()
                 .then(async () => {
+                    // L'apprenant ne choisit que les cours facultatifs : les cours obligatoires
+                    // du parcours final sont ajoutés automatiquement (acceptés en VALIDE).
+                    const dejaChoisis = new Set((demande.coursChoisis || []).map(cc => cc.coursId))
+                    dejaChoisis.add(Number(req.body.coursId))
+                    const obligatoiresManquants = (demande.cours || [])
+                        .filter(c => c.estObligatoire && !dejaChoisis.has(c.id))
+                        .map(c => ({ coursId: c.id, demandeInscriptionId: demande.id, etat: EtatsCoursChoisi.VALIDE }))
+                    if (obligatoiresManquants.length > 0) {
+                        await DemandeInscriptionCours.bulkCreate(obligatoiresManquants)
+                    }
                     return res.status(201).send({ success: true });
                 })
                 .catch((error) => {
@@ -407,7 +491,8 @@ export default class DemandeInscriptionController {
         if (!demandeInscription.reponseInscription) {
             return res.status(400).json({ success: false, message: "La réponse de l'institution n'a pas été envoyée" })
         }
-        if (demandeInscription.parcoursChoisis.filter(pc => pc.choixFinal == true).length == 0) {
+        const hasFinalParcours = !!getParcoursFinal(demandeInscription.parcoursChoisis)
+        if (!hasFinalParcours) {
             return res.status(400).json({ success: false, message: "Aucun parcours final sélectionné" })
         }
 
@@ -424,7 +509,10 @@ export default class DemandeInscriptionController {
         }
 
         // Vérifier cours choisis
-        const parcoursFinal = demandeInscription.parcoursChoisis.find(pc => pc.choixFinal == true)
+        // Règle métier : les cours obligatoires sont acceptés automatiquement, l'étudiant
+        // choisit ses cours facultatifs (créés directement en VALIDE). Aucune validation
+        // par l'institution n'est requise sur les cours.
+        const parcoursFinal = getParcoursFinal(demandeInscription.parcoursChoisis)
         if (parcoursFinal && parcoursFinal.parcoursId) {
             const coursParcours = demandeInscription.cours || []
             const coursObligatoires = coursParcours.filter(c => c.estObligatoire)
@@ -433,9 +521,6 @@ export default class DemandeInscriptionController {
                 const tousObligatoiresChoisis = coursObligatoires.every(c => coursChoisisIds.includes(c.id))
                 if (!tousObligatoiresChoisis) {
                     return res.status(400).json({ success: false, message: "Tous les cours obligatoires doivent être choisis" })
-                }
-                if ((demandeInscription.coursChoisis || []).filter(cc => cc.etat == EtatsCoursChoisi.ENCOURS).length > 0) {
-                    return res.status(400).json({ success: false, message: "Tous les cours choisis doivent être validés par l'institution" })
                 }
             }
         }
@@ -489,7 +574,7 @@ export default class DemandeInscriptionController {
         }
 
         if (demandeInscription.utilisateur) {
-            const parcoursChoisiFinal = demandeInscription.parcoursChoisis.find(pc => pc.choixFinal == true)
+            const parcoursChoisiFinal = getParcoursFinal(demandeInscription.parcoursChoisis)
             const cursusApprenant = new CursusApprenant()
             cursusApprenant.externe = false
             cursusApprenant.parcoursId = parcoursChoisiFinal?.parcoursId || req.body.cursusApprenant?.parcoursId

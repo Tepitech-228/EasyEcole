@@ -10,6 +10,7 @@ import { ListeCommandesPageComponent } from './pages/liste-commandes-page/liste-
 import { CommandeDetailsPageComponent } from './pages/commande-details-page/commande-details-page.component';
 import { ReceptionsPageComponent } from './pages/receptions-page/receptions-page.component';
 import { FacturesPageComponent } from './pages/factures-page/factures-page.component';
+import { FactureDetailsPageComponent } from './pages/facture-details-page/facture-details-page.component';
 import { BudgetsPageComponent } from './pages/budgets-page/budgets-page.component';
 import { FournisseursPageComponent } from './pages/fournisseurs-page/fournisseurs-page.component';
 import { ParametresValidateursPageComponent } from './pages/parametres-validateurs-page/parametres-validateurs-page.component';
@@ -24,6 +25,7 @@ import { ParametresValidateursPageComponent } from './pages/parametres-validateu
     CommandeDetailsPageComponent,
     ReceptionsPageComponent,
     FacturesPageComponent,
+    FactureDetailsPageComponent,
     BudgetsPageComponent,
     FournisseursPageComponent,
     ParametresValidateursPageComponent,

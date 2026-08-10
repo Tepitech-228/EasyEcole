@@ -55,6 +55,7 @@ router
  *         description: Paiement non trouvé
  */
     .get('/:id', PaiementInscriptionController.getPaiementInscription)
+    .get('/:id/recu', PaiementInscriptionController.getPaymentReceipt)
 /**
  * @openapi
  * /inscription/paiementsInscription/{id}:

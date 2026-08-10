@@ -208,13 +208,15 @@ export default class CoursEnLigneController {
     }
 
     static async create(req: Request, res: Response): Promise<Response> {
-        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole !== RolesUtilisateur.ENSEIGNANT) {
-            return res.status(403).json({ success: false })
+        const role = (req as any).utilisateurRole;
+        if (role !== RolesUtilisateur.ADMIN && role !== RolesUtilisateur.INSTITUTION && role !== RolesUtilisateur.ENSEIGNANT) {
+            return res.status(403).json({ success: false, message: "Accès refusé" })
         }
 
         try {
             const image = req.file ? req.file.filename : undefined;
             const cours = await CoursEnLigne.create({
+                coursId: req.body.coursId || null,
                 titre: req.body.titre,
                 description: req.body.description,
                 image,
@@ -230,7 +232,7 @@ export default class CoursEnLigneController {
 
     static async update(req: Request, res: Response): Promise<Response> {
         if ((req as any).utilisateurRole === RolesUtilisateur.APPRENANT) {
-            return res.status(403).json({ success: false })
+            return res.status(403).json({ success: false, message: "Accès refusé" })
         }
 
         try {
@@ -246,8 +248,9 @@ export default class CoursEnLigneController {
     }
 
     static async delete(req: Request, res: Response): Promise<Response> {
-        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION) {
-            return res.status(403).json({ success: false })
+        const role = (req as any).utilisateurRole;
+        if (role !== RolesUtilisateur.ADMIN && role !== RolesUtilisateur.INSTITUTION) {
+            return res.status(403).json({ success: false, message: "Accès refusé" })
         }
 
         try {

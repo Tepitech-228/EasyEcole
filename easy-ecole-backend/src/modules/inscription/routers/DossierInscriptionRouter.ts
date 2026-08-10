@@ -28,14 +28,21 @@ const storage = multer.diskStorage({
 const upload = multer({
     storage,
     fileFilter: (_req, file, cb) => {
-        const acceptedMimes = ['application/pdf'];
-        if (acceptedMimes.includes(file.mimetype)) {
+        const ext = path.extname(file.originalname).toLowerCase();
+        // Tolère les PDF dont le navigateur envoie un MIME vide, générique
+        // (application/octet-stream) ou dérivé (application/x-pdf)
+        const isPdf = file.mimetype === 'application/pdf'
+            || file.mimetype === 'application/x-pdf'
+            || file.mimetype === 'application/octet-stream'
+            || file.mimetype === ''
+            || file.mimetype === undefined;
+        if (isPdf && ext === '.pdf') {
             cb(null, true);
         } else {
             cb(new Error('Seuls les fichiers PDF sont acceptés'));
         }
     },
-    limits: { fileSize: 3 * 1024 * 1024 * 1024 }
+    limits: { fileSize: 20 * 1024 * 1024 } // 20 Mo max par fichier
 })
 
 /**
@@ -96,6 +103,21 @@ router
  *         description: Fichier téléchargé
  */
     .put('/', [Authenticate, upload.array('fichiers', 50)], DossierInscriptionController.uploadDossierInscription)
+
+// Gestion dédiée des erreurs multer (taille, type, nombre) → 400 explicite au lieu du 500 générique
+router.use((err: any, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (err instanceof multer.MulterError) {
+        let message = "Erreur lors de l'upload du fichier";
+        if (err.code === 'LIMIT_FILE_SIZE') message = "Le fichier dépasse la taille maximale autorisée (20 Mo)";
+        else if (err.code === 'LIMIT_FILE_COUNT') message = "Trop de fichiers envoyés (50 maximum)";
+        else if (err.code === 'LIMIT_UNEXPECTED_FILE') message = "Champ de fichier inattendu";
+        return res.status(400).json({ success: false, message });
+    }
+    if (err && err.message === 'Seuls les fichiers PDF sont acceptés') {
+        return res.status(400).json({ success: false, message: err.message });
+    }
+    next(err);
+})
 
 /**
  * @openapi

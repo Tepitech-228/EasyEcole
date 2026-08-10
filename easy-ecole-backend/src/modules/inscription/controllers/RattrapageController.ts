@@ -16,6 +16,9 @@ import { Utilisateur } from "../../auth/models/Utilisateur";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { EmailSender } from "../../../core/helpers/EmailSender";
 import { Notification } from "../../elearning/models/Notification";
+import { Bordereau } from "../models/Bordereau";
+import { ParametreFrais } from "../../comptabilite/models/ParametreFrais";
+import { creerEcritureComptable } from "../../comptabilite/helpers/ComptabiliteHelper";
 
 export default class RattrapageController {
 
@@ -29,9 +32,9 @@ export default class RattrapageController {
       const data = await RattrapageInscription.findAll({
         where,
         include: [
-          { association: RattrapageInscription.associations.coursParticipant, include: [{ all: true }] },
+          { association: RattrapageInscription.associations.coursParticipant },
           { association: RattrapageInscription.associations.cours },
-          { association: RattrapageInscription.associations.sessionExamen, include: [{ all: true }] }
+          { association: RattrapageInscription.associations.sessionExamen }
         ]
       });
       return res.status(200).send(data);
@@ -44,9 +47,9 @@ export default class RattrapageController {
     try {
       const data = await RattrapageInscription.findByPk(req.params.id, {
         include: [
-          { association: RattrapageInscription.associations.coursParticipant, include: [{ all: true }] },
+          { association: RattrapageInscription.associations.coursParticipant },
           { association: RattrapageInscription.associations.cours },
-          { association: RattrapageInscription.associations.sessionExamen, include: [{ all: true }] }
+          { association: RattrapageInscription.associations.sessionExamen }
         ]
       });
       if (!data) return res.status(404).json({ success: false, message: "Inscription rattrapage non trouvée" });
@@ -63,7 +66,11 @@ export default class RattrapageController {
     try {
       const data = await RattrapageInscription.create(req.body);
       const full = await RattrapageInscription.findByPk(data.id, {
-        include: [{ all: true }]
+        include: [
+          { association: RattrapageInscription.associations.coursParticipant },
+          { association: RattrapageInscription.associations.cours },
+          { association: RattrapageInscription.associations.sessionExamen }
+        ]
       });
       return res.status(201).send(full);
     } catch (error) {
@@ -116,7 +123,7 @@ export default class RattrapageController {
       const bulletins = await Bulletin.findAll({
         where: { classeId, semestre, anneeAcademiqueId },
         include: [
-          { association: Bulletin.associations.cursusApprenant, include: [{ all: true }] },
+          { association: Bulletin.associations.cursusApprenant },
           { association: Bulletin.associations.lignesBulletins }
         ]
       });
@@ -155,7 +162,7 @@ export default class RattrapageController {
 
             const full = await RattrapageInscription.findByPk(rattrapage.id, {
               include: [
-                { association: RattrapageInscription.associations.coursParticipant, include: [{ all: true }] },
+                { association: RattrapageInscription.associations.coursParticipant },
                 { association: RattrapageInscription.associations.cours },
                 { association: RattrapageInscription.associations.sessionExamen }
               ]
@@ -222,6 +229,10 @@ export default class RattrapageController {
       for (const item of notes) {
         const rattrapage = await RattrapageInscription.findByPk(item.id);
         if (!rattrapage) continue;
+
+        if (rattrapage.source === 'demande_etudiant' && rattrapage.statutPaiement === 'impaye' && item.noteRattrapage != null) {
+          return res.status(400).json({ success: false, message: "Paiement requis avant validation du rattrapage" });
+        }
 
         await rattrapage.update({
           noteRattrapage: item.noteRattrapage ?? null,
@@ -359,6 +370,339 @@ export default class RattrapageController {
           enseignantNom: (s as any).enseignant?.utilisateur?.prenoms + ' ' + (s as any).enseignant?.utilisateur?.nom || ''
         }
       });
+    } catch (error) {
+      return res.status(500).json({ success: false, error });
+    }
+  }
+
+  static async creerDemandeEtudiant(req: Request, res: Response): Promise<Response | null> {
+    if ((req as any).utilisateurRole != RolesUtilisateur.APPRENANT) {
+      return res.status(403).json({ success: false, message: "Accès réservé aux étudiants" });
+    }
+    try {
+      const { coursId, sessionExamenId, coursParticipantId, motifEtudiant, creneauSouhaite } = req.body;
+      const utilisateurId = (req as any).utilisateurId;
+
+      if (!coursId) {
+        return res.status(400).json({ success: false, message: "coursId requis" });
+      }
+
+      let participant = await CoursParticipant.findOne({
+        where: { coursId, utilisateurId }
+      });
+
+      if (!participant && coursParticipantId) {
+        participant = await CoursParticipant.findByPk(coursParticipantId);
+      }
+
+      if (!participant) {
+        return res.status(400).json({ success: false, message: "L'étudiant n'est pas inscrit à ce cours" });
+      }
+
+      const param = await ParametreFrais.findOne({ where: { cle: 'frais_rattrapage' } });
+      const montant = param ? param.valeur : 5000;
+
+      const rattrapage = await RattrapageInscription.create({
+        coursParticipantId: participant.id,
+        coursId,
+        sessionExamenId: sessionExamenId || null,
+        source: 'demande_etudiant',
+        statut: 'inscrit',
+        montant,
+        statutPaiement: 'impaye',
+        demandePar: utilisateurId,
+        motifEtudiant: motifEtudiant || null,
+        creneauSouhaite: creneauSouhaite || null,
+      });
+
+      const full = await RattrapageInscription.findByPk(rattrapage.id, {
+        include: [
+          { association: RattrapageInscription.associations.coursParticipant },
+          { association: RattrapageInscription.associations.cours },
+          { association: RattrapageInscription.associations.sessionExamen }
+        ]
+      });
+      return res.status(201).send(full);
+    } catch (error) {
+      return res.status(500).json({ success: false, error });
+    }
+  }
+
+  static async getMesDemandes(req: Request, res: Response): Promise<Response> {
+    if ((req as any).utilisateurRole != RolesUtilisateur.APPRENANT) {
+      return res.status(403).json({ success: false, message: "Accès réservé aux étudiants" });
+    }
+    try {
+      const data = await RattrapageInscription.findAll({
+        where: {
+          demandePar: (req as any).utilisateurId,
+          source: 'demande_etudiant'
+        },
+        include: [
+          { association: RattrapageInscription.associations.coursParticipant },
+          { association: RattrapageInscription.associations.cours },
+          { association: RattrapageInscription.associations.sessionExamen },
+          { association: RattrapageInscription.associations.demandeur }
+        ]
+      });
+      return res.status(200).send(data);
+    } catch (error) {
+      return res.status(500).json({ success: false, error });
+    }
+  }
+
+  static async getDemandes(req: Request, res: Response): Promise<Response> {
+    const role = (req as any).utilisateurRole;
+    if (role != RolesUtilisateur.INSTITUTION && role != RolesUtilisateur.ADMIN && role != RolesUtilisateur.CAISSIER_BANQUE) {
+      return res.status(403).json({ success: false, message: "Accès réservé à l'institution" });
+    }
+    try {
+      const where: any = { source: 'demande_etudiant' };
+      if (req.query.statut) where.statut = req.query.statut;
+      if (req.query.coursId) where.coursId = req.query.coursId;
+
+      const data = await RattrapageInscription.findAll({
+        where,
+        include: [
+          { association: RattrapageInscription.associations.coursParticipant },
+          { association: RattrapageInscription.associations.cours },
+          { association: RattrapageInscription.associations.sessionExamen },
+          { association: RattrapageInscription.associations.demandeur }
+        ]
+      });
+      return res.status(200).send(data);
+    } catch (error) {
+      return res.status(500).json({ success: false, error });
+    }
+  }
+
+  static async programmerDemande(req: Request, res: Response): Promise<Response | null> {
+    const role = (req as any).utilisateurRole;
+    if (role != RolesUtilisateur.INSTITUTION && role != RolesUtilisateur.ADMIN) {
+      return res.status(403).json({ success: false, message: "Accès réservé à l'institution" });
+    }
+    try {
+      const rattrapage = await RattrapageInscription.findByPk(req.params.id);
+      if (!rattrapage) return res.status(404).json({ success: false, message: "Rattrapage non trouvé" });
+
+      const { dateRattrapage, heureDebut, heureFin, salle, enseignantId } = req.body;
+
+      if (enseignantId) {
+        const enseignantUser = await Utilisateur.findByPk(enseignantId);
+        if (!enseignantUser || enseignantUser.role != RolesUtilisateur.ENSEIGNANT) {
+          return res.status(400).json({ success: false, message: "L'utilisateur sélectionné n'est pas un enseignant" });
+        }
+      }
+
+      await rattrapage.update({
+        dateRattrapage: dateRattrapage || null,
+        heureDebut: heureDebut || null,
+        heureFin: heureFin || null,
+        salle: salle || null,
+        enseignantId: enseignantId || null,
+        statut: 'convoque'
+      });
+
+      const full = await RattrapageInscription.findByPk(rattrapage.id, {
+        include: [
+          { association: RattrapageInscription.associations.coursParticipant },
+          { association: RattrapageInscription.associations.cours },
+          { association: RattrapageInscription.associations.sessionExamen }
+        ]
+      });
+      return res.status(200).send(full);
+    } catch (error) {
+      return res.status(500).json({ success: false, error });
+    }
+  }
+
+  static async getEnseignantsDisponibles(req: Request, res: Response): Promise<Response> {
+    const role = (req as any).utilisateurRole;
+    if (role != RolesUtilisateur.INSTITUTION && role != RolesUtilisateur.ADMIN) {
+      return res.status(403).json({ success: false, message: "Accès réservé à l'institution" });
+    }
+    try {
+      const enseignants = await Enseignant.findAll({
+        include: [{ association: Enseignant.associations.utilisateur }]
+      });
+      return res.status(200).send(enseignants);
+    } catch (error) {
+      return res.status(500).json({ success: false, error });
+    }
+  }
+
+  static async creerBordereauDemande(req: Request, res: Response): Promise<Response | null> {
+    const role = (req as any).utilisateurRole;
+    const utilisateurId = (req as any).utilisateurId;
+
+    try {
+      const rattrapage = await RattrapageInscription.findByPk(req.params.id);
+      if (!rattrapage) return res.status(404).json({ success: false, message: "Rattrapage non trouvé" });
+
+      const isOwner = role == RolesUtilisateur.APPRENANT && rattrapage.demandePar == utilisateurId;
+      if (!isOwner && role != RolesUtilisateur.INSTITUTION && role != RolesUtilisateur.ADMIN) {
+        return res.status(403).json({ success: false });
+      }
+
+      if (!rattrapage.montant || rattrapage.montant <= 0) {
+        return res.status(400).json({ success: false, message: "Le montant du rattrapage est invalide" });
+      }
+
+      if (rattrapage.statutPaiement === 'paye') {
+        return res.status(400).json({ success: false, message: "Rattrapage déjà payé" });
+      }
+
+      const existingBordereau = await Bordereau.findOne({
+        where: { referenceBancaire: `rattrapage-${rattrapage.id}` }
+      });
+
+      if (existingBordereau) {
+        return res.status(200).send(existingBordereau);
+      }
+
+      const bordereau = new Bordereau();
+      bordereau.type = 'scolarite';
+      bordereau.utilisateurId = rattrapage.demandePar!;
+      bordereau.fichier = `rattrapage-${rattrapage.id}.pdf`;
+      bordereau.montant = Number(rattrapage.montant);
+      bordereau.referenceBancaire = `rattrapage-${rattrapage.id}`;
+      bordereau.statut = 'en_attente';
+      bordereau.dateSoumission = new Date();
+      await bordereau.save();
+
+      return res.status(201).send(bordereau);
+    } catch (error) {
+      return res.status(500).json({ success: false, error });
+    }
+  }
+
+  static async confirmerPaiementDemande(req: Request, res: Response): Promise<Response | null> {
+    const role = (req as any).utilisateurRole;
+    if (role != RolesUtilisateur.INSTITUTION && role != RolesUtilisateur.ADMIN && role != RolesUtilisateur.CAISSIER_BANQUE) {
+      return res.status(403).json({ success: false, message: "Accès réservé à l'institution" });
+    }
+    try {
+      const rattrapage = await RattrapageInscription.findByPk(req.params.id);
+      if (!rattrapage) return res.status(404).json({ success: false, message: "Rattrapage non trouvé" });
+
+      if (rattrapage.statutPaiement === 'paye') {
+        return res.status(400).json({ success: false, message: "Rattrapage déjà payé" });
+      }
+
+      let paiementId: number | null = null;
+      if (req.body.paiementId) {
+        const parsed = Number(req.body.paiementId);
+        if (Number.isFinite(parsed) && parsed > 0) {
+          paiementId = parsed;
+        }
+      }
+
+      if (paiementId == null) {
+        const bordereau = await Bordereau.findOne({
+          where: { referenceBancaire: `rattrapage-${rattrapage.id}` }
+        });
+        paiementId = bordereau ? bordereau.id : null;
+      }
+
+      await RattrapageInscription.update(
+        { statutPaiement: 'paye', paiementId },
+        { where: { id: rattrapage.id } }
+      );
+
+      const updated = await RattrapageInscription.findByPk(rattrapage.id, {
+        include: [
+          { association: RattrapageInscription.associations.coursParticipant },
+          { association: RattrapageInscription.associations.cours },
+          { association: RattrapageInscription.associations.sessionExamen },
+          { association: RattrapageInscription.associations.demandeur },
+          { association: RattrapageInscription.associations.bordereau }
+        ]
+      });
+      return res.status(200).send(updated);
+    } catch (error) {
+      return res.status(500).json({ success: false, error });
+    }
+  }
+
+  static async confirmerPaiementAutoDemande(req: Request, res: Response): Promise<Response | null> {
+    const role = (req as any).utilisateurRole;
+    const utilisateurId = (req as any).utilisateurId;
+
+    try {
+      const rattrapage = await RattrapageInscription.findByPk(req.params.id);
+      if (!rattrapage) return res.status(404).json({ success: false, message: "Rattrapage non trouvé" });
+
+      const isOwner = role == RolesUtilisateur.APPRENANT && rattrapage.demandePar == utilisateurId;
+      if (!isOwner && role != RolesUtilisateur.INSTITUTION && role != RolesUtilisateur.ADMIN) {
+        return res.status(403).json({ success: false });
+      }
+
+      if (!rattrapage.montant || rattrapage.montant <= 0) {
+        return res.status(400).json({ success: false, message: "Aucun frais à payer pour ce rattrapage" });
+      }
+
+      if (rattrapage.statutPaiement === 'paye') {
+        return res.status(400).json({ success: false, message: "Rattrapage déjà payé" });
+      }
+
+      let bordereau = await Bordereau.findOne({
+        where: { referenceBancaire: `rattrapage-${rattrapage.id}` }
+      });
+
+      if (!bordereau) {
+        const param = await ParametreFrais.findOne({ where: { cle: 'frais_rattrapage' } });
+        const montant = param ? param.valeur : 5000;
+
+        bordereau = new Bordereau();
+        bordereau.type = 'scolarite';
+        bordereau.utilisateurId = rattrapage.demandePar!;
+        bordereau.fichier = `rattrapage-${rattrapage.id}.pdf`;
+        bordereau.montant = Number(montant);
+        bordereau.referenceBancaire = `rattrapage-${rattrapage.id}`;
+        bordereau.statut = 'en_attente';
+        bordereau.dateSoumission = new Date();
+        await bordereau.save();
+      }
+
+      bordereau.statut = 'valide';
+      bordereau.dateValidation = new Date();
+      bordereau.valideParId = utilisateurId;
+      await bordereau.save();
+
+      try {
+        const compteProduitParam = await ParametreFrais.findOne({ where: { cle: 'compte_produit_rattrapage' } });
+        const compteCreditNumero = compteProduitParam ? String(compteProduitParam.valeur) : '704';
+
+        await creerEcritureComptable({
+          req,
+          journalCode: 'VEN',
+          compteDebitNumero: '512',
+          compteCreditNumero: compteCreditNumero,
+          montant: bordereau.montant,
+          libelle: `Paiement en ligne rattrapage #${rattrapage.id}`,
+          reference: bordereau.referenceBancaire ?? `rattrapage-${bordereau.id}`,
+          moduleSource: 'evaluations',
+          referenceModuleId: String(rattrapage.id)
+        });
+      } catch (comptaError) {
+        console.error("Erreur écriture comptable (non bloquante):", comptaError);
+      }
+
+      await RattrapageInscription.update(
+        { statutPaiement: 'paye', paiementId: bordereau.id },
+        { where: { id: rattrapage.id } }
+      );
+
+      const updated = await RattrapageInscription.findByPk(rattrapage.id, {
+        include: [
+          { association: RattrapageInscription.associations.coursParticipant },
+          { association: RattrapageInscription.associations.cours },
+          { association: RattrapageInscription.associations.sessionExamen },
+          { association: RattrapageInscription.associations.demandeur },
+          { association: RattrapageInscription.associations.bordereau }
+        ]
+      });
+      return res.status(200).send(updated);
     } catch (error) {
       return res.status(500).json({ success: false, error });
     }

@@ -44,6 +44,22 @@ router
 
 /**
  * @openapi
+ * /inscription/cursusApprenant/cours:
+ *   get:
+ *     tags: [Cursus Apprenant]
+ *     summary: Récupère les cours choisis de l'apprenant connecté (sans id, filtré par token)
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Cours choisis du cursus de l'apprenant connecté
+ *       403:
+ *         description: Réservé aux apprenants
+ */
+    .get('/cours', CursusApprenantController.getCoursChoisisCursusApprenant)
+
+/**
+ * @openapi
  * /inscription/cursusApprenant/{id}:
  *   get:
  *     tags: [Cursus Apprenant]

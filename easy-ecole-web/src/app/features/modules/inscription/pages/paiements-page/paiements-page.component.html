@@ -1,122 +1,112 @@
-<div class="flex justify-between items-start mb-8">
-    <app-header-title title="Paiements" subtitle="Retrouver la liste des paiements effectués en ligne et en espèces"></app-header-title>
-    <div class="flex justify-end items-center">
-        <app-custom-button (click)="showNouveauPaiementModal = true" *ngIf="(rolesValue.isInstitution || rolesValue.isCaissierBanque)" text="Nouveau paiement"></app-custom-button>
+<div class="paiements-page">
+    <div class="page-head">
+        <div class="page-head-left">
+            <h2>Paiements</h2>
+            <p>Parcourez les paiements par année, dossier et transaction</p>
+        </div>
+        <div>
+            <app-custom-button (click)="showNouveauPaiementModal = true" *ngIf="(rolesValue.isInstitution || rolesValue.isCaissierBanque)" text="Nouveau paiement"></app-custom-button>
+        </div>
     </div>
-</div>
 
-<div class="mb-8">
-    <div class="overflow-x-auto">
-        <div class="py-2 inline-block min-w-full">
-            <div class="overflow-hidden">
-                <table class="min-w-full">
-                    <thead class="bg-gray-100 border-b">
-                        <tr>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                <div class="px-2">
-                                    #
-                                </div>
-                            </th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                <div class="px-2">
-                                    Numéro
-                                </div>
-                            </th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                <div class="px-2">
-                                    Matricule d'inscription
-                                </div>
-                            </th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                <div class="px-2">
-                                    Date de paiement
-                                </div>
-                            </th>
-                            <th *ngIf="!rolesValue.isCaissierBanque" scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                <div class="px-2">
-                                    Type
-                                </div>
-                            </th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
-                                <div class="px-2">
-                                    Montant
-                                </div>
-                            </th>
-                            <th *ngIf="(rolesValue.isInstitution || rolesValue.isCaissierBanque)" scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
-                                <div class="px-2">
-                                    Action
-                                </div>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngIf="paiementsInscription.length == 0"
-                            class="bg-white p-0 border-b transition duration-300 ease-in-out">
-                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
-                                colspan="5">Aucun paiement effectué</td>
-                        </tr>
-                        <tr *ngFor="let paiement of paiementsInscription; index as index"
-                            class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
-                            <td
-                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div
-                                    class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
-                                    {{ index + 1 }}
-                                </div>
-                            </td>
-                            <td
-                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ paiement.numero }}</div>
-                            </td>
-                            <td
-                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ paiement.matriculeInscription }}</div>
-                            </td>
-                            <td
-                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ paiement.datePaiement! | date: 'dd/MM/YYYY' }} à {{ paiement.datePaiement! | date:
-                                    'HH:mm' }}</div>
-                            </td>
-                            <td *ngIf="!rolesValue.isCaissierBanque" class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2"
-                                [ngSwitch]="paiement.type">
-                                <app-custom-badge *ngSwitchCase="typesPaiement.EN_LIGNE" color="green" text="En ligne"></app-custom-badge>
-                                <app-custom-badge *ngSwitchCase="typesPaiement.BANCAIRE" color="blue" text="Bancaire"></app-custom-badge>
-                                <app-custom-badge *ngSwitchDefault text="En espèces"></app-custom-badge>
-                            </td>
-                            <td
-                                class="bg-transparent text-right text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ paiement.montant | currency:'XAF' }}</div>
-                            </td>
-                            <td *ngIf="(rolesValue.isInstitution || rolesValue.isCaissierBanque)"
-                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div
-                                    class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
-                                    <span>
-                                        <app-custom-button (click)="openDetailsPaiementModal(paiement)" text="Détails"></app-custom-button>
-                                    </span>
-                                </div>
-                            </td>
-                        </tr>
-                        <!-- <tr
-                            class="bg-white font-bold hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
-                            <td
-                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div
-                                    class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
-                                </div>
-                            </td>
-                            <td
-                                class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">Total</div>
-                            </td>
-                            <td
-                                class="bg-transparent text-right text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ fraisTotal | currency:'XAF' }}</div>
-                            </td>
-                        </tr> -->
-                    </tbody>
-                </table>
+    <div class="filter-bar grid gap-4 md:grid-cols-3 mb-6">
+        <div class="col-span-2">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Recherche rapide</label>
+            <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="applyFilters()" placeholder="Recherche par matricule, numéro, nom, référence..."
+                class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100" />
+        </div>
+        <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Année</label>
+            <select [(ngModel)]="selectedYear" (ngModelChange)="applyFilters()"
+                class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100">
+                <option value="">Toutes les années</option>
+                <option *ngFor="let option of yearOptions" [value]="option.value">{{ option.label }}</option>
+            </select>
+        </div>
+        <div class="flex items-end">
+            <button class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                type="button" (click)="clearFilters()">Effacer</button>
+        </div>
+    </div>
+
+    <div class="hierarchy-layout">
+        <div class="tree-panel">
+            <div *ngIf="treeLoading" class="loading-state">Chargement...</div>
+            <div *ngIf="!treeLoading && paymentTree.length === 0" class="empty-state">Aucun paiement disponible</div>
+            <ng-container *ngIf="!treeLoading && paymentTree.length > 0">
+                <ng-template #recursiveTree let-nodes="nodes" let-level="level">
+                    <div *ngFor="let node of nodes" class="tree-node" [ngClass]="{'child-node': level > 0}">
+                        <div class="node-row" [class.selected]="selectedNode?.id === node.id" (click)="select(node)">
+                            <span class="toggle" (click)="$event.stopPropagation(); toggle(node)">
+                                <svg *ngIf="node.children?.length" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" [class.rotated]="node.expanded"><polyline points="9 18 15 12 9 6"/></svg>
+                                <svg *ngIf="!node.children?.length" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/></svg>
+                            </span>
+                            <span class="icon">{{ getNodeIcon(node.type) }}</span>
+                            <span class="label">{{ node.label }}</span>
+                            <span *ngIf="node.type === 'student'" class="mini-badge blue">{{ getChildPaymentCount(node) }} paiement(s)</span>
+                            <span *ngIf="node.type === 'year'" class="mini-badge gray">{{ getChildPaymentCount(node) }} paiement(s)</span>
+                            <span *ngIf="node.type === 'payment'" class="mini-badge green">{{ node.data?.montant | currency:'XAF' }}</span>
+                        </div>
+                        <div *ngIf="node.expanded && node.children?.length" class="children">
+                            <ng-container *ngTemplateOutlet="recursiveTree; context: { nodes: node.children, level: level + 1 }"></ng-container>
+                        </div>
+                    </div>
+                </ng-template>
+                <ng-container *ngTemplateOutlet="recursiveTree; context: { nodes: paymentTree, level: 0 }"></ng-container>
+            </ng-container>
+        </div>
+
+        <div class="detail-panel" *ngIf="selectedNode">
+            <div class="detail-head">
+                <div>
+                    <h3>{{ selectedNode.label }}</h3>
+                    <p class="detail-sub">{{ getNodeTypeLabel(selectedNode.type) }}</p>
+                </div>
+                <div class="detail-stats">
+                    <span class="count-badge">{{ selectedPayments.length }} paiement(s)</span>
+                    <span class="amount-badge">{{ selectedTotalAmount | currency:'XAF' }}</span>
+                </div>
             </div>
+
+            <div class="detail-body" *ngIf="selectedPayments.length > 0">
+                <div *ngIf="selectedNode.type !== 'payment'" class="summary-card">
+                    <p class="summary-text">Sélectionnez un paiement pour voir les détails.</p>
+                </div>
+
+                <div class="payment-list">
+                    <div *ngFor="let paiement of selectedPayments" class="payment-card">
+                        <div class="payment-card-left">
+                            <p class="payment-label">{{ paiement.numero || 'Paiement' }}</p>
+                            <p class="payment-meta">{{ paiement.datePaiement! | date:'dd/MM/yyyy HH:mm' }} • {{ paiement.matriculeInscription }}</p>
+                            <div class="payment-tags">
+                                <span class="payment-detail-chip">{{ getPaymentTypeLabel(paiement.type) }}</span>
+                                <span *ngIf="paiement.referenceBancaire" class="payment-detail-chip info">Réf. {{ paiement.referenceBancaire }}</span>
+                            </div>
+                        </div>
+                        <div class="payment-card-right">
+                            <span class="payment-amount">{{ paiement.montant | currency:'XAF' }}</span>
+                            <div class="payment-actions">
+                                <app-custom-button *ngIf="(rolesValue.isInstitution || rolesValue.isCaissierBanque)" (click)="openDetailsPaiementModal(paiement)" text="Détails"></app-custom-button>
+                                <app-custom-button *ngIf="paiement.id" (click)="openReceipt(paiement)" text="Reçu"></app-custom-button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-empty" *ngIf="selectedPayments.length === 0">
+                <p>Aucun paiement associé à cette sélection.</p>
+            </div>
+        </div>
+
+        <div class="detail-placeholder" *ngIf="!selectedNode">
+            <svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="#94b3ff" stroke-width="1.5">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+            <p>Sélectionnez un élément dans l'arborescence pour voir les détails.</p>
         </div>
     </div>
 </div>
@@ -171,10 +161,10 @@
             </div>
         </div>
     </form>
-    <div class="flex items-center justify-between py-3">
+    <!-- <div class="flex items-center justify-between py-3">
         <app-custom-button (click)="closeNouveauPaiementModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
         <app-custom-button (click)="ajouterPaiement()" text="Enregistrer"></app-custom-button>
-    </div>
+    </div> -->
 </app-custom-modal>
 
 <app-custom-modal title="Détails " subtitle="Régler un paiement de frais d'inscription" (onCloseModal)="closeDetailsPaiementModal()" [center]="true" [showModal]="showDetailsPaiementModal">
@@ -216,11 +206,11 @@
                     class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">{{selectedPaiement.description}}</textarea>
             </div>
         </div>
+        <div class="flex justify-end gap-3">
+            <app-custom-button *ngIf="selectedPaiement?.id" (click)="openReceipt(selectedPaiement)" text="Télécharger le reçu"></app-custom-button>
+            <app-custom-button (click)="closeDetailsPaiementModal()" text="Fermer" [outlined]="true" color="gray"></app-custom-button>
+        </div>
     </form>
-    <!-- <div class="flex items-center justify-between py-3">
-        <app-custom-button (click)="closeNouveauPaiementModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
-        <app-custom-button (click)="ajouterPaiement()" text="Enregistrer"></app-custom-button>
-    </div> -->
 </app-custom-modal>
 
 <!-- <app-custom-modal *ngIf="selectedPaiement" title="Editer" subtitle="Mettre à jour les informations de ce paiement d'inscription" (onCloseModal)="closeEditerPaiementModal()" [center]="true" [showModal]="showEditerPaiementModal">

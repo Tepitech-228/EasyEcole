@@ -36,69 +36,80 @@
   <!-- ==================== ADMIN DASHBOARD ==================== -->
   <ng-container *ngIf="!loading && rolesValue.isAdmin">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 pt-6">
+      <div class="mb-8 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.22em] text-blue-600">PILOTAGE</p>
+          <h2 class="mt-2 text-xl font-bold text-gray-900">Tableau de bord de l’établissement</h2>
+        </div>
+        <span class="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
+          <span class="h-2 w-2 rounded-full bg-blue-500"></span>
+          Vue générale {{ currentYear }}
+        </span>
+      </div>
+
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+        <div class="dashboard-panel dashboard-kpi-card blue">
           <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Apprenants</span>
+            <span class="dashboard-card-label">Étudiants</span>
             <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
               <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             </div>
           </div>
-          <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ dashboardData.totalApprenants || 0 }}</p>
-          <p class="mt-1 text-xs text-green-600 font-medium">+{{ dashboardData.demandesEnAttente || 0 }} en attente</p>
+          <p class="dashboard-card-number">{{ dashboardData.totalApprenants || 0 }}</p>
+          <p class="dashboard-card-trend positive">+{{ dashboardData.demandesEnAttente || 0 }} en attente</p>
         </div>
 
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+        <div class="dashboard-panel dashboard-kpi-card green">
           <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Enseignants</span>
+            <span class="dashboard-card-label">Enseignants</span>
             <div class="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center">
               <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
             </div>
           </div>
-          <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ dashboardData.totalEnseignants || 0 }}</p>
-          <p class="mt-1 text-xs text-gray-500">Total enregistrés</p>
+          <p class="dashboard-card-number">{{ dashboardData.totalEnseignants || 0 }}</p>
+          <p class="dashboard-card-trend neutral">Personnel enregistré</p>
         </div>
 
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+        <div class="dashboard-panel dashboard-kpi-card purple">
           <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Sessions</span>
+            <span class="dashboard-card-label">Sessions</span>
             <div class="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center">
               <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
             </div>
           </div>
-          <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ dashboardData.sessionsOuvertes || 0 }}</p>
-          <p class="mt-1 text-xs text-purple-600 font-medium">/ {{ dashboardData.totalSessions || 0 }} total</p>
+          <p class="dashboard-card-number">{{ dashboardData.sessionsOuvertes || 0 }}</p>
+          <p class="dashboard-card-trend positive">/ {{ dashboardData.totalSessions || 0 }} au total</p>
         </div>
 
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+        <div class="dashboard-panel dashboard-kpi-card amber">
           <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Attente</span>
+            <span class="dashboard-card-label">À traiter</span>
             <div class="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center">
               <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </div>
           </div>
-          <p class="text-2xl sm:text-3xl font-bold text-amber-600">{{ dashboardData.demandesEnAttente || 0 }}</p>
-          <p class="mt-1 text-xs text-amber-600 font-medium">Demandes en attente</p>
+          <p class="dashboard-card-number text-amber-600">{{ dashboardData.demandesEnAttente || 0 }}</p>
+          <p class="dashboard-card-trend warning">Demandes en attente</p>
         </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div class="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <div class="flex items-center justify-between mb-4">
+        <div class="lg:col-span-2 dashboard-panel dashboard-chart-panel dashboard-panel--premium">
+          <div class="chart-card-header">
             <div>
-              <h3 class="text-base font-semibold text-gray-900">Demandes d'inscription {{ currentYear }}</h3>
-              <p class="text-xs text-gray-500">Évolution mensuelle</p>
+              <h3 class="chart-card-title">Suivi des inscriptions</h3>
+              <p class="chart-card-subtitle">Évolution mensuelle de {{ currentYear }}</p>
             </div>
           </div>
           <div class="h-64">
-            <canvas baseChart [data]="adminBarChartData" [options]="adminBarOptions" type="bar"></canvas>
+            <canvas baseChart [data]="adminBarChartData" [options]="adminBarOptions" type="line"></canvas>
           </div>
         </div>
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <div class="flex items-center justify-between mb-4">
+        <div class="dashboard-panel dashboard-chart-panel dashboard-panel--premium">
+          <div class="chart-card-header">
             <div>
-              <h3 class="text-base font-semibold text-gray-900">Répartition</h3>
-              <p class="text-xs text-gray-500">Personnel & étudiants</p>
+              <h3 class="chart-card-title">Répartition</h3>
+              <p class="chart-card-subtitle">Personnel & étudiants</p>
             </div>
           </div>
           <div class="h-64 flex items-center justify-center">
@@ -108,52 +119,124 @@
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-10">
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-base font-semibold text-gray-900">Accès rapide</h3>
+        <div class="dashboard-panel dashboard-chart-panel dashboard-panel--premium">
+          <div class="chart-card-header">
+            <div>
+              <h3 class="chart-card-title">Indicateurs clés</h3>
+              <p class="chart-card-subtitle">Synthèse visuelle des principaux KPIs</p>
+            </div>
           </div>
-          <div class="grid grid-cols-3 gap-3">
-            <a routerLink="/inscription/sessions" class="flex flex-col items-center gap-2 p-3 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors text-blue-700">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-              <span class="text-xs font-medium">Sessions</span>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="rounded-3xl p-5 bg-slate-50 shadow-sm border border-slate-200">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400 mb-3">Apprenants</p>
+                  <p class="text-3xl font-bold text-slate-900">{{ dashboardData.totalApprenants || 0 }}</p>
+                  <p class="mt-2 text-sm text-slate-500">Effectifs inscrits</p>
+                </div>
+                <div class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100 text-blue-700">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5V10a2 2 0 00-2-2h-3m-4 0H7a2 2 0 00-2 2v10h5m7 0a2 2 0 01-2 2H9a2 2 0 01-2-2m7-10V5a2 2 0 10-4 0v5"/></svg>
+                </div>
+              </div>
+            </div>
+            <div class="rounded-3xl p-5 bg-slate-50 shadow-sm border border-slate-200">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400 mb-3">Enseignants</p>
+                  <p class="text-3xl font-bold text-slate-900">{{ dashboardData.totalEnseignants || 0 }}</p>
+                  <p class="mt-2 text-sm text-slate-500">Personnel actif</p>
+                </div>
+                <div class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                </div>
+              </div>
+            </div>
+            <div class="rounded-3xl p-5 bg-slate-50 shadow-sm border border-slate-200">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400 mb-3">Demandes en cours</p>
+                  <p class="text-3xl font-bold text-slate-900">{{ dashboardData.demandesEnCours?.length || 0 }}</p>
+                  <p class="mt-2 text-sm text-slate-500">Dossiers en traitement</p>
+                </div>
+                <div class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg>
+                </div>
+              </div>
+            </div>
+            <div class="rounded-3xl p-5 bg-slate-50 shadow-sm border border-slate-200">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400 mb-3">Échéances impayées</p>
+                  <p class="text-3xl font-bold text-slate-900">{{ dashboardData.echeancesImpayees || 0 }}</p>
+                  <p class="mt-2 text-sm text-slate-500">Actions financières à prioriser</p>
+                </div>
+                <div class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100 text-red-700">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 11V6a1 1 0 112 0v5m-1 4h.01M10 19h4a2 2 0 002-2v-5a2 2 0 00-2-2h-4a2 2 0 00-2 2v5a2 2 0 002 2z"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 gap-6 pb-10">
+        <div class="dashboard-panel dashboard-chart-panel dashboard-panel--premium">
+          <div class="chart-card-header">
+            <div>
+              <h3 class="chart-card-title">Accès rapides</h3>
+              <p class="chart-card-subtitle">Ouvrir les actions les plus prioritaires</p>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <a routerLink="/inscription/sessions" class="group p-4 rounded-3xl bg-blue-50 hover:bg-blue-100 transition-all border border-blue-100 shadow-sm">
+              <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100 text-blue-700 mb-3">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              </div>
+              <p class="text-sm font-semibold text-slate-900">Sessions</p>
+              <p class="text-xs text-slate-500">Voir le planning</p>
             </a>
-            <a routerLink="/inscription/demandes" class="flex flex-col items-center gap-2 p-3 rounded-xl bg-green-50 hover:bg-green-100 transition-colors text-green-700">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-              <span class="text-xs font-medium">Demandes</span>
+            <a routerLink="/inscription/demandes" class="group p-4 rounded-3xl bg-emerald-50 hover:bg-emerald-100 transition-all border border-emerald-100 shadow-sm">
+              <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 mb-3">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              </div>
+              <p class="text-sm font-semibold text-slate-900">Demandes</p>
+              <p class="text-xs text-slate-500">Accéder aux dossiers</p>
             </a>
-            <a routerLink="/bulletins" class="flex flex-col items-center gap-2 p-3 rounded-xl bg-purple-50 hover:bg-purple-100 transition-colors text-purple-700">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-              <span class="text-xs font-medium">Bulletins</span>
+            <a routerLink="/inscription/paiements" class="group p-4 rounded-3xl bg-cyan-50 hover:bg-cyan-100 transition-all border border-cyan-100 shadow-sm">
+              <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-100 text-cyan-700 mb-3">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
+              </div>
+              <p class="text-sm font-semibold text-slate-900">Paiements</p>
+              <p class="text-xs text-slate-500">Suivi des encaissements</p>
             </a>
-            <a routerLink="/cours/cours" class="flex flex-col items-center gap-2 p-3 rounded-xl bg-orange-50 hover:bg-orange-100 transition-colors text-orange-700">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-              <span class="text-xs font-medium">Cours</span>
-            </a>
-            <a routerLink="/inscription/paiements" class="flex flex-col items-center gap-2 p-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 transition-colors text-emerald-700">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
-              <span class="text-xs font-medium">Paiements</span>
-            </a>
-            <a routerLink="/inscription/sessions" class="flex flex-col items-center gap-2 p-3 rounded-xl bg-rose-50 hover:bg-rose-100 transition-colors text-rose-700">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-              <span class="text-xs font-medium">Statistiques</span>
+            <a routerLink="/bulletins" class="group p-4 rounded-3xl bg-violet-50 hover:bg-violet-100 transition-all border border-violet-100 shadow-sm">
+              <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-100 text-violet-700 mb-3">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+              </div>
+              <p class="text-sm font-semibold text-slate-900">Bulletins</p>
+              <p class="text-xs text-slate-500">Voir les notes</p>
             </a>
           </div>
         </div>
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-base font-semibold text-gray-900">Demandes récentes</h3>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-10">
+        <div class="dashboard-panel dashboard-chart-panel dashboard-panel--premium">
+          <div class="chart-card-header">
+            <div>
+              <h3 class="chart-card-title">Activité récente</h3>
+              <p class="chart-card-subtitle">Dernières demandes d’inscription</p>
+            </div>
             <a routerLink="/inscription/demandes" class="text-xs font-medium text-blue-600 hover:text-blue-700">Voir tout</a>
           </div>
           <div *ngIf="dashboardData.recentDemandes?.length" class="space-y-3">
-            <div *ngFor="let d of dashboardData.recentDemandes" class="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 transition-colors">
-              <div class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center text-sm font-bold text-blue-700">
+            <div *ngFor="let d of dashboardData.recentDemandes" class="flex items-center gap-3 p-3 rounded-2xl bg-white/90 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <div class="w-11 h-11 rounded-2xl bg-blue-100 flex items-center justify-center text-base font-semibold text-blue-700">
                 {{ (d.utilisateur?.nom?.[0] || '?') }}
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-900 truncate">{{ d.utilisateur?.nom }} {{ d.utilisateur?.prenoms }}</p>
-                <p class="text-xs text-gray-500">{{ d.dateDemande | date:'dd MMM yyyy' }}</p>
+                <p class="text-sm font-semibold text-slate-900 truncate">{{ d.utilisateur?.nom }} {{ d.utilisateur?.prenoms }}</p>
+                <p class="text-xs text-slate-500">{{ d.dateDemande | date:'dd MMM yyyy' }} • {{ d.preInscription?.typeDemande || 'Inscription' }}</p>
               </div>
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
                     [ngClass]="d.preInscription?.statut === 'valide' ? 'bg-green-50 text-green-700' : d.preInscription?.statut === 'rejete' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'">
                 {{ d.preInscription?.statut === 'valide' ? 'Validée' : d.preInscription?.statut === 'rejete' ? 'Rejetée' : 'En attente' }}
               </span>
@@ -300,7 +383,8 @@
   <ng-container *ngIf="!loading && rolesValue.isApprenant">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 pt-6">
 
-      <div *ngIf="demandesCompletes.length > 0" class="bg-gradient-to-r from-orange-400 to-orange-600 rounded-2xl p-6 mb-6 text-white shadow-sm">
+      <div *ngIf="demandesCompletes.length > 0" class="rounded-2xl p-6 mb-6 text-white shadow-md"
+        style="background: linear-gradient(135deg, #fb923c, #ea580c, #c2410c);">
         <div class="flex items-center justify-between">
           <div>
             <h3 class="text-lg font-semibold">Inscription complète 🎉</h3>
@@ -313,7 +397,8 @@
         </div>
       </div>
 
-      <div *ngIf="demandesEnCours.length > 0" class="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-6 mb-6 text-white shadow-sm">
+      <div *ngIf="demandesEnCours.length > 0" class="rounded-2xl p-6 mb-6 text-white shadow-md"
+        style="background: linear-gradient(135deg, #f59e0b, #f97316, #ea580c);">
         <div class="flex items-center justify-between">
           <div>
             <h3 class="text-lg font-semibold">Inscription en cours</h3>
@@ -326,7 +411,8 @@
         </div>
       </div>
 
-      <div *ngIf="demandesEnCours.length === 0 && demandesCompletes.length === 0 && sessions.length > 0" class="bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl p-6 mb-6 text-white shadow-sm">
+      <div *ngIf="demandesEnCours.length === 0 && demandesCompletes.length === 0 && sessions.length > 0" class="rounded-2xl p-6 mb-6 text-white shadow-md"
+        style="background: linear-gradient(135deg, #3b82f6, #6366f1, #4f46e5);">
         <div class="flex items-center justify-between">
           <div>
             <h3 class="text-lg font-semibold">Bienvenue ! Prêt à commencer ?</h3>
@@ -339,7 +425,8 @@
         </div>
       </div>
 
-      <div *ngIf="demandesEnCours.length === 0 && demandesCompletes.length === 0 && sessions.length === 0" class="bg-gradient-to-r from-gray-400 to-gray-500 rounded-2xl p-6 mb-6 text-white shadow-sm">
+      <div *ngIf="demandesEnCours.length === 0 && demandesCompletes.length === 0 && sessions.length === 0" class="rounded-2xl p-6 mb-6 text-white shadow-md"
+        style="background: linear-gradient(135deg, #9ca3af, #6b7280);">
         <div class="flex items-center justify-between">
           <div>
             <h3 class="text-lg font-semibold">Aucune session ouverte</h3>
@@ -373,7 +460,7 @@
           </div>
           <div class="flex-1 min-w-0">
             <h3 class="text-sm font-semibold text-amber-800">Paiement à prévoir</h3>
-            <p class="mt-1 text-sm text-amber-700">
+            <p class="mt-1 text-sm text-amber-700" *ngIf="prochaineEcheance">
               Prochaine échéance : <span class="font-semibold">{{ prochaineEcheance.libelle }}</span> de <span class="font-semibold">{{ prochaineEcheance.montant | number }} FCFA</span> le {{ prochaineEcheance.dateLimite | date:'dd MMM yyyy' }}
             </p>
           </div>
@@ -624,23 +711,46 @@
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-10">
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <h3 class="text-base font-semibold text-gray-900 mb-4">Rapport de paiement</h3>
+        <div class="dashboard-panel dashboard-chart-panel dashboard-panel--premium">
+          <div class="chart-card-header">
+            <div>
+              <h3 class="chart-card-title">Rapport de paiement</h3>
+              <p class="chart-card-subtitle">Suivi des échéances payées et impayées</p>
+            </div>
+          </div>
           <div class="h-64 flex items-center justify-center">
-            <canvas baseChart [data]="comptableDoughnutData" [options]="adminDoughnutOptions" type="doughnut"></canvas>
+            <canvas baseChart [data]="comptableDoughnutData" [options]="comptableDoughnutOptions" type="doughnut"></canvas>
           </div>
         </div>
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <h3 class="text-base font-semibold text-gray-900 mb-4">Actions rapides</h3>
+        <div class="dashboard-panel dashboard-chart-panel dashboard-panel--premium">
+          <div class="chart-card-header">
+            <div>
+              <h3 class="chart-card-title">Actions rapides</h3>
+              <p class="chart-card-subtitle">Accès comptable prioritaire</p>
+            </div>
+          </div>
           <div class="grid grid-cols-2 gap-3">
-            <a routerLink="/comptabilite" class="p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors">
-              <svg class="w-6 h-6 text-blue-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-              <span class="text-sm font-medium text-gray-900">Comptabilité</span>
+            <a routerLink="/comptabilite" class="flex flex-col items-center gap-2 p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors text-blue-700">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+              <span class="text-sm font-medium">Comptabilité</span>
             </a>
-            <a routerLink="/inscription/paiements" class="p-4 rounded-xl bg-green-50 hover:bg-green-100 transition-colors">
-              <svg class="w-6 h-6 text-green-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
-              <span class="text-sm font-medium text-gray-900">Paiements</span>
+            <a routerLink="/inscription/paiements" class="flex flex-col items-center gap-2 p-4 rounded-xl bg-green-50 hover:bg-green-100 transition-colors text-green-700">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
+              <span class="text-sm font-medium">Paiements</span>
             </a>
+          </div>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 pb-10">
+        <div class="dashboard-panel dashboard-chart-panel dashboard-panel--premium">
+          <div class="chart-card-header">
+            <div>
+              <h3 class="chart-card-title">Volume financier</h3>
+              <p class="chart-card-subtitle">Comparaison des paiements, bordereaux et impayés</p>
+            </div>
+          </div>
+          <div class="h-72">
+            <canvas baseChart [data]="comptableBarData" [options]="comptableBarOptions" type="bar"></canvas>
           </div>
         </div>
       </div>
@@ -670,14 +780,24 @@
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-10">
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <h3 class="text-base font-semibold text-gray-900 mb-4">Statut des pré-inscriptions</h3>
+        <div class="dashboard-panel dashboard-chart-panel dashboard-panel--premium">
+          <div class="chart-card-header">
+            <div>
+              <h3 class="chart-card-title">Statut des pré-inscriptions</h3>
+              <p class="chart-card-subtitle">Répartition des décisions en temps réel</p>
+            </div>
+          </div>
           <div class="h-64 flex items-center justify-center">
-            <canvas baseChart [data]="orientationDoughnutData" [options]="adminDoughnutOptions" type="doughnut"></canvas>
+            <canvas baseChart [data]="orientationDoughnutData" [options]="orientationDoughnutOptions" type="doughnut"></canvas>
           </div>
         </div>
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <h3 class="text-base font-semibold text-gray-900 mb-4">Demandes récentes</h3>
+        <div class="dashboard-panel dashboard-chart-panel dashboard-panel--premium">
+          <div class="chart-card-header">
+            <div>
+              <h3 class="chart-card-title">Demandes récentes</h3>
+              <p class="chart-card-subtitle">Activité du comité d’orientation</p>
+            </div>
+          </div>
           <div *ngIf="dashboardData.demandesRecentes?.length" class="space-y-3">
             <div *ngFor="let d of dashboardData.demandesRecentes" class="flex items-center justify-between p-2.5 rounded-xl hover:bg-gray-50 transition-colors">
               <div class="flex items-center gap-3">

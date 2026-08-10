@@ -1,6 +1,20 @@
-<div *ngIf="demande.dateValidation == undefined" class="w-full">
-    <app-custom-alert color="blue" [inline]="true" [show]="rolesValue.isApprenant">Validation en cours. Veuillez patienter...</app-custom-alert>
-    <app-custom-alert color="yellow" [inline]="true" [show]="rolesValue.isInstitution">Validation en attente...</app-custom-alert>
+<div *ngIf="demande.dateValidation == undefined" class="w-full space-y-2">
+    <app-custom-alert color="blue" [inline]="true" [show]="rolesValue.isApprenant">
+        <span class="material-symbols-outlined align-middle text-sm mr-2">hourglass_top</span>
+        Validation du bordereau en cours. Votre inscription sera finalisée après validation du bordereau de paiement.
+    </app-custom-alert>
+    <app-custom-alert color="yellow" [inline]="true" [show]="rolesValue.isInstitution">
+        <span class="material-symbols-outlined align-middle text-sm mr-2">pending</span>
+        Validation du bordereau requise. L'inscription sera finalisée une fois le bordereau validé.
+    </app-custom-alert>
+    <app-custom-alert color="yellow" [inline]="true" [show]="rolesValue.isCabinetComptable">
+        <span class="material-symbols-outlined align-middle text-sm mr-2">hourglass_bottom</span>
+        Contrôle comptable en cours. La finalisation passe par la validation du bordereau de paiement.
+    </app-custom-alert>
+    <app-custom-alert color="blue" [inline]="true" [show]="rolesValue.isComiteOrientation && !rolesValue.isInstitution">
+        <span class="material-symbols-outlined align-middle text-sm mr-2">hourglass_top</span>
+        Ce dossier a déjà été transmis par le comité d'orientation. La dernière étape est la validation du bordereau.
+    </app-custom-alert>
 </div>
 
 <div class="w-full mb-8">

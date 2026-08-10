@@ -39,6 +39,8 @@ import { ListeSallesDeClassePageComponent } from './pages/liste-salles-de-classe
 import { OnboardingPageComponent } from './pages/onboarding-page/onboarding-page.component';
 import { ListeClassesPageComponent } from './pages/liste-classes-page/liste-classes-page.component';
 import { CartesPageComponent } from './pages/cartes-page/cartes-page.component';
+import { GestionSemestresPageComponent } from './pages/gestion-semestres-page/gestion-semestres-page.component';
+import { ImportExportExcelPageComponent } from './pages/import-export-excel-page/import-export-excel-page.component';
 import { ReactiveFormsModule } from '@angular/forms';
 @NgModule({
   declarations: [
@@ -76,7 +78,9 @@ import { ReactiveFormsModule } from '@angular/forms';
       ListeSallesDeClassePageComponent,
       ListeClassesPageComponent,
       OnboardingPageComponent,
-      CartesPageComponent
+       CartesPageComponent,
+       GestionSemestresPageComponent,
+       ImportExportExcelPageComponent
   ],
   imports: [
     CommonModule,

@@ -78,27 +78,60 @@ export default class DossierInscriptionController {
             return res.status(400).json({ success: false, message: 'Aucun fichier fourni' });
         }
 
-        for (const fichier of fichiers) {
-            await DemandeInscriptionDossier.create({
-                nomFichier: fichier.filename,
-                dossierId: req.body.dossierId,
-                demandeId: req.body.demandeId,
-            });
+        const { demandeId, dossierId } = req.body;
+        if (!demandeId || !dossierId) {
+            return res.status(400).json({ success: false, message: 'demandeId et dossierId sont requis' });
         }
 
-        const demande = await DemandeInscription.findByPk(req.body.demandeId, {
-            include: [
-                { association: DemandeInscription.associations.cours },
-                { association: DemandeInscription.associations.coursChoisis },
-                { association: DemandeInscription.associations.session },
-                { association: DemandeInscription.associations.etapeInscription },
-                { association: DemandeInscription.associations.dossiersDemande },
-                { association: DemandeInscription.associations.paiementsInscription },
-                { association: DemandeInscription.associations.reponseInscription },
-            ]
-        });
+        const UPLOAD_DIR = path.resolve('public', 'inscription', 'dossiers');
+        const includes = [
+            { association: DemandeInscription.associations.cours },
+            { association: DemandeInscription.associations.coursChoisis },
+            { association: DemandeInscription.associations.session },
+            { association: DemandeInscription.associations.etapeInscription },
+            { association: DemandeInscription.associations.dossiersDemande },
+            { association: DemandeInscription.associations.paiementsInscription },
+            { association: DemandeInscription.associations.reponseInscription },
+        ];
 
-        return res.status(201).json(demande);
+        try {
+            const demandeExiste = await DemandeInscription.findByPk(demandeId);
+            if (demandeExiste == null) {
+                return res.status(404).json({ success: false, message: "Demande d'inscription introuvable" });
+            }
+
+            // Remplacement propre : on supprime les anciens fichiers de CE dossier
+            // pour éviter les doublons qui cassent le comptage front/back.
+            const anciens = await DemandeInscriptionDossier.findAll({ where: { demandeId, dossierId } });
+            for (const ancien of anciens) {
+                await ancien.destroy();
+                const oldPath = path.join(UPLOAD_DIR, ancien.nomFichier);
+                if (fs.existsSync(oldPath)) {
+                    try { fs.unlinkSync(oldPath); } catch (_) { /* fichier déjà supprimé */ }
+                }
+            }
+
+            for (const fichier of fichiers) {
+                await DemandeInscriptionDossier.create({
+                    nomFichier: fichier.filename,
+                    dossierId,
+                    demandeId,
+                });
+            }
+
+            const demande = await DemandeInscription.findByPk(demandeId, { include: includes });
+            return res.status(201).json(demande);
+        } catch (error) {
+            // Nettoyage des fichiers déjà écrits par multer pour ne pas laisser d'orphelins
+            for (const fichier of fichiers) {
+                const writtenPath = path.join(UPLOAD_DIR, fichier.filename);
+                if (fs.existsSync(writtenPath)) {
+                    try { fs.unlinkSync(writtenPath); } catch (_) { }
+                }
+            }
+            console.error('[uploadDossierInscription]', error);
+            return res.status(500).json({ success: false, message: "Erreur lors du téléversement des documents" });
+        }
     }
 
     static async updateDossierInscription(req: Request, res: Response): Promise<Response | null> {

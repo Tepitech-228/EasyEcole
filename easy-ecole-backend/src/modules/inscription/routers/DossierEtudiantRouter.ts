@@ -21,6 +21,20 @@ router
     .get('/', DossierEtudiantController.getAllDossiers)
     /**
      * @openapi
+     * /inscription/dossiers/arbre:
+     *   get:
+     *     tags: [Dossiers Étudiants]
+     *     summary: Renvoie l'arbre hiérarchique complet des dossiers étudiants (institution/admin uniquement)
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Arbre hiérarchique des dossiers (années > filières > niveaux > classes > dossiers)
+     *       403:
+     *         description: Accès refusé (rôle non autorisé)
+     */
+    .get('/arbre', [AuthInstitution], DossierEtudiantController.getArbreDossiers)
+    /**
+     * @openapi
      * /inscription/dossiers/mon-dossier:
      *   get:
      *     tags: [Dossiers Étudiants]

@@ -13,6 +13,26 @@ import { IDGenerator } from "../../../core/helpers/IDGenerator";
 import { EmailSender } from "../../../core/helpers/EmailSender";
 import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
 
+const hasChoixFinalValue = (value: unknown): boolean => {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value === 1;
+    if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+        return normalized === '1' || normalized === 'true';
+    }
+    return false;
+};
+
+const getParcoursFinal = <T extends { choixFinal?: any }>(parcoursChoisis?: Array<T> | null): T | undefined => {
+    if (!Array.isArray(parcoursChoisis) || parcoursChoisis.length === 0) return undefined;
+
+    const explicit = parcoursChoisis.find(pc => hasChoixFinalValue(pc.choixFinal));
+    if (explicit) return explicit;
+    if (parcoursChoisis.length === 1) return parcoursChoisis[0];
+
+    return undefined;
+};
+
 export default class QuitusController {
 
     constructor() { }
@@ -139,7 +159,7 @@ export default class QuitusController {
 
                     if (!existingDossier && demande) {
                         const fraisTotal = demande.session?.fraisInscription?.reduce((sum, f) => sum + f.montant, 0) || 0
-                        const parcoursChoisi = demande.parcoursChoisis?.find(pc => pc.choixFinal == true)
+                        const parcoursChoisi = getParcoursFinal(demande.parcoursChoisis)
                         const demarrage = parcoursChoisi?.createdAt || demande.createdAt || new Date()
 
                         let dossier = new DossierEtudiant()

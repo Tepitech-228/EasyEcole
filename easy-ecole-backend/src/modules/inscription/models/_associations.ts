@@ -44,6 +44,7 @@ import { Quitus } from "./Quitus";
 import { DossierEtudiant } from "./DossierEtudiant";
 import { Echeance } from "./Echeance";
 import { Bordereau } from "./Bordereau";
+import { SemestreAcademique } from "./SemestreAcademique";
 import { initBulletinAssociations } from "../../bulletins/models/_associations";
 
 // Cours - Parcours
@@ -222,6 +223,12 @@ CursusApprenant.belongsTo(AnneeAcademique, { foreignKey: 'anneeAcademiqueId', as
 // CursusApprenant - DemandeInscription
 DemandeInscription.hasOne(CursusApprenant, { foreignKey: 'demandeInscriptionId', as: 'cursusApprenant' })
 CursusApprenant.belongsTo(DemandeInscription, { foreignKey: 'demandeInscriptionId', as: 'demandeInscription' })
+
+// SemestreAcademique - Parcours / AnneeAcademique
+Parcours.hasMany(SemestreAcademique, { foreignKey: 'parcoursId', as: 'semestresAcademiques' })
+SemestreAcademique.belongsTo(Parcours, { foreignKey: 'parcoursId', as: 'parcours' })
+AnneeAcademique.hasMany(SemestreAcademique, { foreignKey: 'anneeAcademiqueId', as: 'semestresAcademiques' })
+SemestreAcademique.belongsTo(AnneeAcademique, { foreignKey: 'anneeAcademiqueId', as: 'anneeAcademique' })
 
 // CoursParticipant - Cours
 Cours.hasMany(CoursParticipant, { foreignKey: 'coursId', as: 'coursParticipants' })
@@ -428,6 +435,14 @@ RattrapageInscription.belongsTo(Cours, { as: 'cours', foreignKey: 'coursId' })
 
 SessionExamen.hasMany(RattrapageInscription, { foreignKey: 'sessionExamenId', as: 'rattrapagesInscription' })
 RattrapageInscription.belongsTo(SessionExamen, { as: 'sessionExamen', foreignKey: 'sessionExamenId' })
+
+// RattrapageInscription - Utilisateur (demandeur : étudiant ayant soumis la demande)
+Utilisateur.hasMany(RattrapageInscription, { foreignKey: 'demandePar', as: 'rattrapagesDemandes' })
+RattrapageInscription.belongsTo(Utilisateur, { foreignKey: 'demandePar', as: 'demandeur' })
+
+// RattrapageInscription - Bordereau (paiementId : bordereau de paiement lié à la demande)
+Bordereau.hasOne(RattrapageInscription, { foreignKey: 'paiementId', as: 'rattrapage' })
+RattrapageInscription.belongsTo(Bordereau, { foreignKey: 'paiementId', as: 'bordereau' })
 
 import { PublicationNote } from "./PublicationNote";
 

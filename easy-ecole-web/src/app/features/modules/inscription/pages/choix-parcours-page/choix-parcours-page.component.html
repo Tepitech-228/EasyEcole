@@ -1,7 +1,7 @@
 <app-return-back></app-return-back>
 
 <div class="flex justify-between items-start mb-8">
-    <app-header-title title="Choix des filières" subtitle="Choisissez vos filières dans l'ordre de préférence"></app-header-title>
+    <app-header-title title="Choix du parcours" subtitle="Choisissez un seul parcours pour votre inscription"></app-header-title>
     <div class="flex justify-end items-center">
         <app-custom-button (click)="confirmerChoix()" text="Valider"></app-custom-button>
     </div>
@@ -43,15 +43,11 @@
                             </tbody>
                         </table>
                         <div class="w-full mb-8">
-                            <app-form-message *ngIf="minParcoursChoisisError" [text]="'Veuillez choisir au moins ' + MIN_PARCOURS_CHOISIS + ' filière(s)'"></app-form-message>
-                            <app-form-message *ngIf="maxParcoursChoisisError" [text]="'Vous devez choisir moins de ' + MAX_PARCOURS_CHOISIS + ' filières'"></app-form-message>
+                            <app-form-message *ngIf="minParcoursChoisisError" [text]="'Veuillez choisir un parcours'"></app-form-message>
+                            <app-form-message *ngIf="maxParcoursChoisisError" [text]="'Vous ne pouvez choisir qu’un seul parcours'"></app-form-message>
                         </div>
                         <div class="flex items-center justify-center">
-                            <!-- <button (click)="openChoixParcoursModal()"
-                                class="p-1 rounded focus:ring-1 focus:ring-gray-300">
-                                <img src="assets/icons/add.svg" alt="add">
-                            </button> -->
-                            <app-custom-button (click)="openChoixParcoursModal()" text="Ajouter" [outlined]="true" [fullWidth]="true" [disabled]="parcoursChoisis.length == MAX_PARCOURS_CHOISIS"></app-custom-button>
+                            <app-custom-button (click)="openChoixParcoursModal()" text="Choisir un parcours" [outlined]="true" [fullWidth]="true" [disabled]="parcoursChoisis.length >= MAX_PARCOURS_CHOISIS"></app-custom-button>
                         </div>
                     </div>
                 </div>

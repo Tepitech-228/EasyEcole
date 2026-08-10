@@ -1,0 +1,219 @@
+<div class="p-6">
+  <!-- Navigation tabs -->
+  <div class="mb-8 flex gap-1 bg-gray-100 p-1 rounded-xl w-fit max-w-full overflow-x-auto">
+    <a routerLink="/comptabilite/dashboard" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50 whitespace-nowrap">Dashboard</a>
+    <a routerLink="/comptabilite/plan-comptable" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50 whitespace-nowrap">Plan comptable</a>
+    <a routerLink="/comptabilite/balance" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50 whitespace-nowrap">Balance</a>
+    <a routerLink="/comptabilite/grand-livre" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50 whitespace-nowrap">Grand livre</a>
+    <a routerLink="/comptabilite/ecritures" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50 whitespace-nowrap">Écritures</a>
+    <a routerLink="/comptabilite/bilan" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50 whitespace-nowrap">Bilan</a>
+    <a routerLink="/comptabilite/compte-resultat" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50 whitespace-nowrap">Compte de résultat</a>
+    <a routerLink="/comptabilite/exercices" class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white/50 whitespace-nowrap">Exercices</a>
+    <a routerLink="/comptabilite/parametres-frais" class="px-5 py-2.5 rounded-lg text-sm font-medium bg-white text-primary shadow-sm whitespace-nowrap">Paramètres des frais</a>
+  </div>
+
+  <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
+    <app-header-title title="Paramètres des frais" subtitle="Paramétrage des frais de services (rattrapages, demandes de documents) et des comptes produits associés"></app-header-title>
+    <button (click)="openCreateModal()" class="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors shadow-sm">
+      <svg class="w-4 h-4" fill="currentColor" viewBox="0 -960 960 960"><path d="M440-280h80v-160h160v-80H520v-160h-80v160H280v80h160v160Zm40 200q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/></svg>
+      Nouveau paramètre
+    </button>
+  </div>
+
+  <!-- Error message -->
+  <div *ngIf="error" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+    <svg class="w-5 h-5 text-red-500 shrink-0" fill="currentColor" viewBox="0 -960 960 960"><path d="M480-280q17 0 28.5-11.5T520-320q0-17-11.5-28.5T480-360q-17 0-28.5 11.5T440-320q0 17 11.5 28.5T480-280Zm-40-160h80v-240h-80v240Zm40 360q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Z"/></svg>
+    <div>
+      <p class="text-sm font-medium text-red-800">Erreur de chargement</p>
+      <p class="text-sm text-red-600">Impossible de charger la liste des paramètres de frais.</p>
+    </div>
+    <button (click)="loadParametres()" class="ml-auto px-3 py-1.5 text-sm font-medium text-red-700 bg-red-100 rounded-lg hover:bg-red-200 transition-colors">Réessayer</button>
+  </div>
+
+  <!-- Loading skeleton -->
+  <div *ngIf="loading" class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="animate-pulse">
+      <div class="px-6 py-4 border-b border-gray-100">
+        <div class="h-4 bg-gray-200 rounded w-1/4"></div>
+      </div>
+      <div *ngFor="let i of [1,2,3,4]" class="px-6 py-4 border-b border-gray-100 flex gap-4">
+        <div class="h-4 bg-gray-200 rounded w-40"></div>
+        <div class="h-4 bg-gray-200 rounded w-64"></div>
+        <div class="h-4 bg-gray-200 rounded w-24"></div>
+        <div class="h-4 bg-gray-200 rounded w-24"></div>
+        <div class="h-4 bg-gray-200 rounded w-20"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!loading && !error" class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <!-- Filters -->
+    <div class="px-6 py-4 border-b border-gray-200 flex flex-wrap items-center gap-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Module</label>
+        <select [(ngModel)]="filterModule" (change)="applyFilters()" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary">
+          <option value="">Tous</option>
+          <option *ngFor="let m of moduleOptions" [value]="m">{{ moduleLabel(m) }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Type</label>
+        <select [(ngModel)]="filterType" (change)="applyFilters()" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary">
+          <option value="">Tous</option>
+          <option *ngFor="let t of types" [value]="t.value">{{ t.label }}</option>
+        </select>
+      </div>
+      <span class="ml-auto text-sm text-gray-500">{{ filteredParametres.length }} paramètre(s)</span>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm min-w-[720px]">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Clé</th>
+            <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Libellé</th>
+            <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Valeur</th>
+            <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Type</th>
+            <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Module</th>
+            <th class="px-6 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <tr *ngIf="filteredParametres.length === 0">
+            <td colspan="6" class="px-6 py-8 text-center text-sm text-gray-500">
+              <div class="flex flex-col items-center gap-2">
+                <svg class="w-10 h-10 text-gray-300" fill="currentColor" viewBox="0 -960 960 960"><path d="M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520h200L520-800v200Z"/></svg>
+                <p>Aucun paramètre de frais trouvé</p>
+                <button (click)="openCreateModal()" class="text-primary hover:underline text-sm font-medium">Créer le premier paramètre</button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngFor="let p of filteredParametres" class="hover:bg-gray-50 transition-colors">
+            <td class="px-6 py-3.5 font-mono font-semibold text-gray-900">{{ p.cle }}</td>
+            <td class="px-6 py-3.5 text-gray-700">{{ p.libelle }}</td>
+            <td class="px-6 py-3.5 font-semibold text-gray-800">{{ formatValeur(p) }}</td>
+            <td class="px-6 py-3.5">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" [ngClass]="typeBadgeClass[p.type]">
+                {{ typeLabel(p.type) }}
+              </span>
+            </td>
+            <td class="px-6 py-3.5 text-gray-600">{{ moduleLabel(p.module) }}</td>
+            <td class="px-6 py-3.5 text-right">
+              <div class="flex items-center justify-end gap-2">
+                <button (click)="openEditModal(p)" class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Modifier">
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 -960 960 960"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t27 18l55 56q12 11 17 26t5 30q0 16-5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></svg>
+                </button>
+                <button (click)="confirmDelete(p)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Supprimer">
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 -960 960 960"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal : Création / Édition -->
+  <app-custom-modal
+    [title]="isEditing ? 'Modifier le paramètre de frais' : 'Nouveau paramètre de frais'"
+    [subtitle]="isEditing ? selectedParametre?.cle : 'Créer un paramètre de frais'"
+    [showModal]="showModal"
+    (onCloseModal)="closeModal()"
+  >
+    <form [formGroup]="parametreForm" (ngSubmit)="onSubmit()" class="space-y-5">
+      <!-- Clé -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Clé <span class="text-red-500">*</span></label>
+        <input type="text" formControlName="cle" placeholder="Ex: frais_demande_document"
+          class="w-full border rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary font-mono"
+          [ngClass]="parametreForm.get('cle')?.invalid && parametreForm.get('cle')?.touched ? 'border-red-300 bg-red-50' : 'border-gray-300'">
+        <p *ngIf="parametreForm.get('cle')?.invalid && parametreForm.get('cle')?.touched" class="mt-1 text-xs text-red-500">La clé est requise.</p>
+      </div>
+
+      <!-- Libellé -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Libellé <span class="text-red-500">*</span></label>
+        <input type="text" formControlName="libelle" placeholder="Ex: Frais de demande de document"
+          class="w-full border rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          [ngClass]="parametreForm.get('libelle')?.invalid && parametreForm.get('libelle')?.touched ? 'border-red-300 bg-red-50' : 'border-gray-300'">
+        <p *ngIf="parametreForm.get('libelle')?.invalid && parametreForm.get('libelle')?.touched" class="mt-1 text-xs text-red-500">Le libellé est requis.</p>
+      </div>
+
+      <!-- Type + Module -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">Type <span class="text-red-500">*</span></label>
+          <select formControlName="type"
+            class="w-full border rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary border-gray-300">
+            <option *ngFor="let t of types" [value]="t.value">{{ t.label }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">Module <span class="text-red-500">*</span></label>
+          <select formControlName="module"
+            class="w-full border rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary border-gray-300">
+            <option *ngFor="let m of moduleOptions" [value]="m">{{ moduleLabel(m) }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Valeur -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Valeur <span class="text-red-500">*</span></label>
+        <input type="number" step="any" min="0" formControlName="valeur" placeholder="Ex: 5000"
+          class="w-full border rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          [ngClass]="parametreForm.get('valeur')?.invalid && parametreForm.get('valeur')?.touched ? 'border-red-300 bg-red-50' : 'border-gray-300'">
+        <p *ngIf="parametreForm.get('valeur')?.invalid && parametreForm.get('valeur')?.touched" class="mt-1 text-xs text-red-500">La valeur est requise.</p>
+      </div>
+
+      <!-- Description -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+        <textarea formControlName="description" rows="2" placeholder="Description facultative du paramètre..."
+          class="w-full border rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary border-gray-300"></textarea>
+      </div>
+
+      <!-- Submit error -->
+      <div *ngIf="submitError" class="p-3 bg-red-50 border border-red-200 rounded-lg">
+        <p class="text-sm text-red-700">{{ submitError }}</p>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center justify-end gap-3 pt-2 border-t border-gray-100">
+        <button type="button" (click)="closeModal()" class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">
+          Annuler
+        </button>
+        <button type="submit" [disabled]="submitting"
+          class="px-4 py-2.5 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+          <div *ngIf="submitting" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+          {{ isEditing ? 'Enregistrer' : 'Créer' }}
+        </button>
+      </div>
+    </form>
+  </app-custom-modal>
+
+  <!-- Modal : Suppression -->
+  <app-custom-modal
+    title="Supprimer le paramètre de frais"
+    subtitle="Voulez-vous vraiment supprimer ce paramètre de frais ?"
+    [showModal]="showDeleteModal"
+    (onCloseModal)="closeDeleteModal()"
+  >
+    <div *ngIf="parametreToDelete" class="mb-4 p-4 bg-gray-50 rounded-xl border border-gray-200 text-sm">
+      <p class="font-semibold text-gray-900 font-mono">{{ parametreToDelete.cle }}</p>
+      <p class="text-gray-600 mt-0.5">{{ parametreToDelete.libelle }}</p>
+    </div>
+    <div class="flex items-center justify-end gap-3 pt-2 border-t border-gray-100">
+      <button type="button" (click)="closeDeleteModal()" class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">
+        Annuler
+      </button>
+      <button type="button" (click)="deleteParametre()" [disabled]="deleting"
+        class="px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+        <div *ngIf="deleting" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+        Supprimer
+      </button>
+    </div>
+  </app-custom-modal>
+</div>

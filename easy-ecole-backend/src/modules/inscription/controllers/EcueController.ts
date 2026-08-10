@@ -8,7 +8,9 @@ export default class EcueController {
 
     static async getAll(req: Request, res: Response): Promise<Response> {
         try {
-            const data = await Ecue.findAll({ include: [{ all: true }] });
+            const data = await Ecue.findAll({
+                include: [Ecue.associations.cours]
+            });
             return res.status(200).send(data);
         } catch (error) {
             return res.status(500).json({ success: false, error: error });
@@ -17,7 +19,9 @@ export default class EcueController {
 
     static async get(req: Request, res: Response): Promise<Response> {
         try {
-            const data = await Ecue.findByPk(req.params.id, { include: [{ all: true }] });
+            const data = await Ecue.findByPk(req.params.id, {
+                include: [Ecue.associations.cours]
+            });
             if (!data) return res.status(404).json({ success: false, message: "ECUE non trouvé" });
             return res.status(200).send(data);
         } catch (error) {
@@ -69,7 +73,7 @@ export default class EcueController {
         try {
             const data = await Ecue.findAll({
                 where: { coursId: req.params.ueId },
-                include: [{ all: true }]
+                include: [Ecue.associations.cours]
             });
             return res.status(200).send(data);
         } catch (error) {

@@ -9,7 +9,13 @@ export default class EquivalenceController {
     constructor() { }
 
     static async getAll(req: Request, res: Response): Promise<Response> {
-        let options: FindOptions<InferAttributes<Equivalence>> = { include: [{ all: true }] }
+        let options: FindOptions<InferAttributes<Equivalence>> = {
+            include: [
+                Equivalence.associations.cursusApprenant,
+                Equivalence.associations.coursDestination,
+                Equivalence.associations.valideParUtilisateur
+            ]
+        }
         try {
             let data = await Equivalence.findAll(options);
             return res.status(200).send(data);
@@ -20,7 +26,13 @@ export default class EquivalenceController {
 
     static async get(req: Request, res: Response): Promise<Response> {
         try {
-            const data = await Equivalence.findByPk(req.params.id, { include: [{ all: true }] });
+            const data = await Equivalence.findByPk(req.params.id, {
+                include: [
+                    Equivalence.associations.cursusApprenant,
+                    Equivalence.associations.coursDestination,
+                    Equivalence.associations.valideParUtilisateur
+                ]
+            });
             if (!data) return res.status(404).json({ success: false, message: "Équivalence non trouvée" });
             return res.status(200).send(data);
         } catch (error) {
@@ -72,7 +84,11 @@ export default class EquivalenceController {
         try {
             const data = await Equivalence.findAll({
                 where: { cursusApprenantId: req.params.cursusApprenantId },
-                include: [{ all: true }]
+                include: [
+                    Equivalence.associations.cursusApprenant,
+                    Equivalence.associations.coursDestination,
+                    Equivalence.associations.valideParUtilisateur
+                ]
             });
             return res.status(200).send(data);
         } catch (error) {

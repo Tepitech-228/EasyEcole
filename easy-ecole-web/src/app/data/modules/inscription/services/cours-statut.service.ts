@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { CourseStatus } from '../../../shared/components/course-status-badge/course-status-badge.component';
+import { CourseStatus } from '../../../../shared/components/course-status-badge/course-status-badge.component';
 import { environment } from 'src/environments/environment';
 
 export interface CoursStatut {

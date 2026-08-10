@@ -1,0 +1,61 @@
+.dashboard-rh-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+.rh-banner {
+  background: linear-gradient(135deg, #db2777, #be185d, #9d174d);
+}
+
+.dashboard-stat-card {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(226, 232, 240, 0.96);
+  border-radius: 1.1rem;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+  padding: 1.2rem;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.dashboard-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.08);
+}
+
+.dashboard-stat-card .dashboard-card-label {
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.dashboard-card-number.small {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-top: 0.6rem;
+}
+
+.dashboard-quick-link {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  transition: all 150ms ease;
+}
+
+.dashboard-quick-link:hover {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+}
+
+.dashboard-panel {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(226, 232, 240, 0.96);
+  border-radius: 1.1rem;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+}

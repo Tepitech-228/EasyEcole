@@ -12,6 +12,10 @@
     </div>
 </div>
 
+<div *ngIf="error && !uploading" class="w-full mb-6">
+    <app-custom-alert color="red" [inline]="true" [show]="true">{{ errorMessage }}</app-custom-alert>
+</div>
+
 <div class="flex flex-col">
     <div class="mb-8 overflow-x-auto">
         <div class="py-2 inline-block min-w-full">

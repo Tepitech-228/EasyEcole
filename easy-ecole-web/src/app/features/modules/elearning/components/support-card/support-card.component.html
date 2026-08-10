@@ -9,7 +9,8 @@
     </div>
   </div>
   <div class="flex gap-2">
-    <a *ngIf="support.fichierOriginal" [href]="'/elearning/videos/' + support.fichierOriginal" target="_blank" class="text-blue-600 text-xs hover:underline">Voir</a>
+    <a *ngIf="support.fichierOriginal" [href]="'/media/videos/' + support.fichierOriginal" target="_blank" class="text-blue-600 text-xs hover:underline">Voir</a>
+    <a *ngIf="support.fichierCompresse" [href]="'/media/videos/compressed/' + support.fichierCompresse" target="_blank" class="text-green-600 text-xs hover:underline">HD</a>
     <a *ngIf="support.fichierCompresse" [href]="'/elearning/videos/compressed/' + support.fichierCompresse" target="_blank" class="text-green-600 text-xs hover:underline">HD</a>
   </div>
 </div>

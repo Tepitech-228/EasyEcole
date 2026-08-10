@@ -12,7 +12,10 @@ export default class JuryMembreController {
             if (req.query.deliberationId) where.deliberationId = req.query.deliberationId;
             let data = await JuryMembre.findAll({
                 where,
-                include: [{ all: true }]
+                include: [
+                    JuryMembre.associations.deliberation,
+                    JuryMembre.associations.utilisateur
+                ]
             });
             return res.status(200).send(data);
         } catch (error) {
@@ -22,7 +25,12 @@ export default class JuryMembreController {
 
     static async get(req: Request, res: Response): Promise<Response> {
         try {
-            const data = await JuryMembre.findByPk(req.params.id, { include: [{ all: true }] });
+            const data = await JuryMembre.findByPk(req.params.id, {
+                include: [
+                    JuryMembre.associations.deliberation,
+                    JuryMembre.associations.utilisateur
+                ]
+            });
             if (!data) return res.status(404).json({ success: false, message: "Membre non trouvé" });
             return res.status(200).send(data);
         } catch (error) {

@@ -1,7 +1,6 @@
 import QRCode from 'qrcode';
 import path from 'path';
 import fs from 'fs';
-import puppeteer from 'puppeteer';
 import { Etablissement } from '../../etablissement/models/Etablissement';
 import { QrTokenService } from '../../../core/services/QrTokenService';
 
@@ -57,7 +56,7 @@ export class GenerateurCarteService {
 <meta charset="UTF-8">
 <style>
   @page { size: 85.6mm 54mm; margin: 0; }
-  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
   body { width: 85.6mm; height: 54mm; display: flex; }
   .card { width: 100%; height: 100%; display: flex; position: relative; overflow: hidden; }
   .sidebar { width: 38%; background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%); color: white; padding: 4mm 3mm; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
@@ -99,6 +98,7 @@ export class GenerateurCarteService {
     if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
     const outputPath = path.join(outputDir, filename);
 
+    const { default: puppeteer } = await import('puppeteer');
     const browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox']

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Op, fn, col, literal } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
+import { EtatsDePresence } from "../../../core/enums/EtatsDePresence";
 import { Apprenant } from "../../auth/models/Apprenant";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { Utilisateur } from "../../auth/models/Utilisateur";
@@ -11,6 +12,7 @@ import { Seance } from "../models/Seance";
 import { Cours } from "../models/Cours";
 import { Classe } from "../models/Classe";
 import { CoursParticipant } from "../models/CoursParticipant";
+import { PresenceCoursParticipant } from "../models/PresenceCoursParticipant";
 import { NoteEvaluation } from "../models/NoteEvaluation";
 import { ListeNoteEvaluation } from "../models/ListeNoteEvaluation";
 import { RhPlanningPersonnel } from "../../rh/models/RhPlanningPersonnel";
@@ -73,7 +75,11 @@ class DashboardController {
     }
 
     private static async getAdminDashboard() {
-        const [totalApprenants, totalEnseignants, sessions, preInscriptions, recentDemandes] = await Promise.all([
+        const annee = new Date().getFullYear();
+        const debutAnnee = new Date(annee, 0, 1);
+        const finAnnee = new Date(annee, 11, 31, 23, 59, 59);
+
+        const [totalApprenants, totalEnseignants, sessions, preInscriptions, recentDemandes, demandesParMois] = await Promise.all([
             Apprenant.count(),
             Enseignant.count(),
             DemandeInscription.findAll({ attributes: ['id', 'dateDemande', 'sessionId', 'matricule'] }),
@@ -84,7 +90,19 @@ class DashboardController {
                 include: [{ association: 'preInscription', attributes: ['statut'] }],
                 attributes: ['id', 'dateDemande', 'matricule'],
             }),
+            DemandeInscription.count({
+                where: { dateDemande: { [Op.between]: [debutAnnee, finAnnee] } },
+                group: [fn('MONTH', col('dateDemande'))],
+            }),
         ]);
+
+        // 12 valeurs (Jan → Déc) pour le graphique "Pré-inscriptions" du dashboard admin
+        const moisCounts: number[] = Array(12).fill(0);
+        for (const g of (demandesParMois as any[])) {
+            const mois = Number(g.dateDemande);
+            if (mois >= 1 && mois <= 12) moisCounts[mois - 1] = g.count;
+        }
+
         return {
             success: true,
             role: 'admin',
@@ -94,6 +112,7 @@ class DashboardController {
                 totalSessions: sessions.length,
                 demandesEnAttente: preInscriptions.length,
                 sessionsOuvertes: sessions.length,
+                demandesParMois: moisCounts,
                 recentDemandes: await Promise.all(recentDemandes.map(async (d) => {
                     const u = d.utilisateur;
                     return {
@@ -210,9 +229,12 @@ class DashboardController {
             ? (notesRecentes.reduce((sum: number, n: any) => sum + (n.note || 0), 0) / notesRecentes.length).toFixed(1)
             : null;
 
-        const totalPresences = coursIds.length > 0 ? await CoursParticipant.count({
-            include: [{ association: 'cours', where: { id: coursIds } }]
-        }) : 0;
+        // Présences réellement renseignées (present / absence_justifiee) des cours participants de l'utilisateur.
+        // On compte uniquement les états effectifs, jamais 'non_renseigne' ni les simples inscriptions aux cours.
+        const totalPresences = await PresenceCoursParticipant.count({
+            include: [{ association: 'coursParticipant', where: { utilisateurId } }],
+            where: { etatDePresence: { [Op.in]: [EtatsDePresence.PRESENT, EtatsDePresence.ABSENCE_JUSTIFIEE] } }
+        });
 
         const totalCours = coursIds.length;
 

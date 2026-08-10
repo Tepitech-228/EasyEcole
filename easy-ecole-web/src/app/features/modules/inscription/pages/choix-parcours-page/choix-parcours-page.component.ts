@@ -43,7 +43,7 @@ export class ChoixParcoursPageComponent extends BaseComponentClass implements On
 
   parcoursChoisis: ParcoursChoisi[] = []
   readonly MIN_PARCOURS_CHOISIS: number = 1
-  readonly MAX_PARCOURS_CHOISIS: number = 3
+  readonly MAX_PARCOURS_CHOISIS: number = 1
 
   constructor(
     private demandeInscriptionService: DemandeInscriptionService,
@@ -205,7 +205,7 @@ export class ChoixParcoursPageComponent extends BaseComponentClass implements On
     this.containsEmptyNote = Object.values(this._prerequisParcoursChoisi).filter(value => value == undefined).length != 0
     console.log("Contains Empty note: " + this.containsEmptyNote)
 
-    if (!this.containsEmptyNote) {
+    if (!this.containsEmptyNote && this.parcoursChoisis.length < this.MAX_PARCOURS_CHOISIS) {
       let prerequisParcoursChoisis: PrerequisParcoursChoisi[] = []
 
       for (const key in this._prerequisParcoursChoisi) {
@@ -224,8 +224,9 @@ export class ChoixParcoursPageComponent extends BaseComponentClass implements On
       parcoursChoisi.parcours = this.selectedParcours
       parcoursChoisi.demandeInscriptionId = this.demandeInscription!.id
       parcoursChoisi.prerequisParcoursChoisis = prerequisParcoursChoisis
+      parcoursChoisi.choixFinal = true
 
-      this.parcoursChoisis.push(parcoursChoisi)
+      this.parcoursChoisis = [parcoursChoisi]
       this.closeChoixParcoursModal()
     }
   }
@@ -252,7 +253,12 @@ export class ChoixParcoursPageComponent extends BaseComponentClass implements On
     console.log(this.parcoursChoisis)
 
     this.parcoursChoisis.forEach((parcoursChoisi: ParcoursChoisi) => {
-      this.parcoursChoisiService.create(parcoursChoisi)
+      const payload = {
+        ...parcoursChoisi,
+        choixFinal: this.parcoursChoisis.length === 1 || parcoursChoisi.choixFinal === true
+      }
+
+      this.parcoursChoisiService.create(payload as ParcoursChoisi)
         .subscribe(
           {
             next: (res) => {

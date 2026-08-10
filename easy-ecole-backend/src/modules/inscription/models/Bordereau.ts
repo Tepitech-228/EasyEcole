@@ -8,7 +8,7 @@ import { Quitus } from "./Quitus";
 export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAttributes<Bordereau>> {
   declare id: CreationOptional<number>
   declare type: 'inscription' | 'scolarite'
-  declare echeanceId: ForeignKey<Echeance['id']>
+  declare echeanceId: ForeignKey<Echeance['id']> | null
   declare utilisateurId: ForeignKey<Utilisateur['id']>
   declare fichier: string
   declare montant: number
@@ -43,7 +43,7 @@ Bordereau.init({
   },
   echeanceId: {
     type: DataTypes.INTEGER.UNSIGNED,
-    allowNull: false
+    allowNull: true
   },
   utilisateurId: {
     type: DataTypes.INTEGER.UNSIGNED,

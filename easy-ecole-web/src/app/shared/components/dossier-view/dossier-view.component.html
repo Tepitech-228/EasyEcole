@@ -58,13 +58,18 @@
                 [class.text-yellow-600]="node.type === 'annee'"
                 [class.text-indigo-500]="node.type === 'niveau'"
                 [class.text-green-600]="node.type === 'parcours'"
+                [class.text-violet-500]="node.type === 'classe'"
+                [class.text-orange-500]="node.type === 'salle'"
                 [class.text-blue-500]="node.type === 'etudiant'"
                 [class.text-gray-400]="node.type === 'item'">
             {{ getNodeIcon(node) }}
           </span>
 
           <!-- Label -->
-          <span class="text-sm font-medium text-gray-800 flex-1 truncate">{{ node.label }}</span>
+          <span class="text-sm font-medium text-gray-800 flex-1 truncate">
+            {{ node.label }}
+            <span *ngIf="node.subtitle" class="text-xs font-normal text-gray-400 ml-1">{{ node.subtitle }}</span>
+          </span>
 
           <!-- Count badge -->
           <span *ngIf="node.items?.length" class="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5 mr-1">
@@ -121,6 +126,24 @@
                   <td *ngFor="let col of columns" class="px-3 py-2 text-sm text-gray-700">
                     <ng-container [ngSwitch]="col.key">
                       <app-custom-badge *ngSwitchCase="'statut'" [text]="item[col.key]" [color]="getBadgeColor(item[col.key])"></app-custom-badge>
+                      <ng-container *ngSwitchCase="'typeDocument'">
+                        <span>{{ item.typeDocument?.libelle || item[col.key] || '—' }}</span>
+                      </ng-container>
+                      <ng-container *ngSwitchCase="'montant'">
+                        <span *ngIf="toNumber(item[col.key]) > 0">{{ toNumber(item[col.key]) | number:'1.0-0' }} FC</span>
+                        <span *ngIf="toNumber(item[col.key]) <= 0" class="text-gray-400">Gratuit</span>
+                      </ng-container>
+                      <ng-container *ngSwitchCase="'source'">
+                        <app-custom-badge [text]="item.source === 'automatique' ? 'Génération normale' : 'Demande volontaire'" [color]="item.source === 'automatique' ? 'green' : 'orange'"></app-custom-badge>
+                      </ng-container>
+                      <ng-container *ngSwitchCase="'paiement'">
+                        <app-custom-badge *ngIf="toNumber(item.montant) <= 0" text="Gratuit" color="gray"></app-custom-badge>
+                        <app-custom-badge *ngIf="toNumber(item.montant) > 0 && item.fraisPayes" text="Payé" color="green"></app-custom-badge>
+                        <app-custom-badge *ngIf="toNumber(item.montant) > 0 && !item.fraisPayes" text="Impayé" color="red"></app-custom-badge>
+                      </ng-container>
+                      <ng-container *ngSwitchCase="'date'">
+                        <span>{{ item.date | date:'dd/MM/yyyy HH:mm' }}</span>
+                      </ng-container>
                       <span *ngSwitchDefault>{{ item[col.key] }}</span>
                     </ng-container>
                   </td>

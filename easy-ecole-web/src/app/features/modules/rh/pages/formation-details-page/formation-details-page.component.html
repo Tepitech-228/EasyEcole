@@ -8,7 +8,7 @@
       <h2 class="text-xl font-semibold text-gray-900">{{ formation.titre }}</h2>
       <p class="text-sm text-gray-500">{{ formation.description || 'Aucune description' }}</p>
     </div>
-    <span class="px-3 py-1 rounded-full text-xs font-medium" [ngClass]="getTypeBadge(formation.type)">{{ formation.type }}</span>
+    <span class="px-3 py-1 rounded-full text-xs font-medium" [ngClass]="getTypeBadge(formation.type || '')">{{ formation.type || '-' }}</span>
   </div>
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
     <div class="p-4 bg-gray-50 rounded-lg">
@@ -43,7 +43,7 @@
         <tr *ngFor="let p of participations" class="hover:bg-gray-50">
           <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ participantName(p) }}</td>
           <td class="px-6 py-4">
-            <span class="px-2.5 py-0.5 rounded-full text-xs font-medium" [ngClass]="getStatutBadge(p.statut)">{{ p.statut }}</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-medium" [ngClass]="getStatutBadge(p.statut || '')">{{ p.statut || '-' }}</span>
           </td>
         </tr>
         <tr *ngIf="participations.length === 0">

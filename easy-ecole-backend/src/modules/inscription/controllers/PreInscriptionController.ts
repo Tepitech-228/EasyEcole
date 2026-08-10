@@ -7,6 +7,7 @@ import { DemandeInscription } from "../models/DemandeInscription";
 import { ParcoursChoisi } from "../models/ParcoursChoisi";
 import { Session } from "../models/Session";
 import { Utilisateur } from "../../auth/models/Utilisateur";
+import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { EmailSender } from "../../../core/helpers/EmailSender";
 import { DocumentPDFGenerator } from "../../../core/helpers/DocumentPDFGenerator";
 import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
@@ -18,8 +19,14 @@ export default class PreInscriptionController {
     static async soumettre(req: Request, res: Response): Promise<Response | null> {
         const demandeId = req.params.demandeId
 
+        // L'apprenant soumet SA demande ; l'institution peut soumettre toute demande de sa session
+        const whereDemande: any = { id: demandeId };
+        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
+            whereDemande.utilisateurId = (req as any).utilisateurId;
+        }
+
         const demande = await DemandeInscription.findOne({
-            where: { id: demandeId, utilisateurId: (req as any).utilisateurId },
+            where: whereDemande,
             include: [
                 { association: DemandeInscription.associations.parcoursChoisis },
                 { association: DemandeInscription.associations.session, include: [Session.associations.dossiersInscription] },
@@ -107,7 +114,7 @@ export default class PreInscriptionController {
     }
 
     static async valider(req: Request, res: Response): Promise<Response | null> {
-        const demandeId = req.params.id
+        const demandeId = req.params.demandeId
         const commentaire = req.body.commentaire
 
         const demande = await DemandeInscription.findOne({
@@ -123,27 +130,22 @@ export default class PreInscriptionController {
             return res.status(404).json({ success: false, message: "Demande non trouvée" })
         }
 
-        let preInscription = await PreInscription.findOne({ where: { demandeInscriptionId: demandeId } })
+        const preInscription = await PreInscription.findOne({ where: { demandeInscriptionId: demandeId } })
 
-        if (preInscription) {
-            if (preInscription.statut != EtatPreInscription.EN_ATTENTE) {
-                return res.status(400).json({ success: false, message: "Cette demande a déjà été traitée" })
-            }
-            await preInscription.update({
-                statut: EtatPreInscription.VALIDE,
-                commentaire: commentaire,
-                dateTraitement: new Date(),
-                traiteParId: (req as any).utilisateurId
-            })
-        } else {
-            preInscription = await PreInscription.create({
-                demandeInscriptionId: Number(demandeId),
-                statut: EtatPreInscription.VALIDE,
-                commentaire: commentaire,
-                dateTraitement: new Date(),
-                traiteParId: (req as any).utilisateurId
-            })
+        if (!preInscription) {
+            return res.status(400).json({ success: false, message: "La demande n'a pas été soumise" })
         }
+
+        if (preInscription.statut != EtatPreInscription.EN_ATTENTE) {
+            return res.status(400).json({ success: false, message: "Cette demande a déjà été traitée" })
+        }
+
+        await preInscription.update({
+            statut: EtatPreInscription.VALIDE,
+            commentaire: commentaire,
+            dateTraitement: new Date(),
+            traiteParId: (req as any).utilisateurId
+        })
 
         // Générer l'autorisation provisoire d'inscription PDF
         try {
@@ -192,7 +194,7 @@ export default class PreInscriptionController {
     }
 
     static async rejeter(req: Request, res: Response): Promise<Response | null> {
-        const demandeId = req.params.id
+        const demandeId = req.params.demandeId
         const commentaire = req.body.commentaire
 
         if (!commentaire || !commentaire.trim()) {
@@ -208,27 +210,22 @@ export default class PreInscriptionController {
             return res.status(404).json({ success: false, message: "Demande non trouvée" })
         }
 
-        let preInscription = await PreInscription.findOne({ where: { demandeInscriptionId: demandeId } })
+        const preInscription = await PreInscription.findOne({ where: { demandeInscriptionId: demandeId } })
 
-        if (preInscription) {
-            if (preInscription.statut != EtatPreInscription.EN_ATTENTE) {
-                return res.status(400).json({ success: false, message: "Cette demande a déjà été traitée" })
-            }
-            await preInscription.update({
-                statut: EtatPreInscription.REJETE,
-                commentaire: commentaire,
-                dateTraitement: new Date(),
-                traiteParId: (req as any).utilisateurId
-            })
-        } else {
-            preInscription = await PreInscription.create({
-                demandeInscriptionId: Number(demandeId),
-                statut: EtatPreInscription.REJETE,
-                commentaire: commentaire,
-                dateTraitement: new Date(),
-                traiteParId: (req as any).utilisateurId
-            })
+        if (!preInscription) {
+            return res.status(400).json({ success: false, message: "La demande n'a pas été soumise" })
         }
+
+        if (preInscription.statut != EtatPreInscription.EN_ATTENTE) {
+            return res.status(400).json({ success: false, message: "Cette demande a déjà été traitée" })
+        }
+
+        await preInscription.update({
+            statut: EtatPreInscription.REJETE,
+            commentaire: commentaire,
+            dateTraitement: new Date(),
+            traiteParId: (req as any).utilisateurId
+        })
 
         if (demande.utilisateur) {
             EmailSender.getInstance().sendPreInscriptionRejetee(

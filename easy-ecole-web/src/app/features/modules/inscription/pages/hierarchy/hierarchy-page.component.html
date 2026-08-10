@@ -1,15 +1,63 @@
 <div class="hierarchy-page">
   <div class="page-head">
-    <h2>Arbre pédagogique</h2>
-    <p>Parcours → Niveau → Semestre → UE → Cours</p>
+    <h2>Arborescence pédagogique</h2>
+    <p>Année académique → Niveau → Parcours (filière) → Salles</p>
+  </div>
+
+  <div class="filter-panel">
+    <div class="filter-row search-row">
+      <div class="filter-field search-field">
+        <label>Rechercher</label>
+        <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="applyFilters()" placeholder="Rechercher par année, niveau, parcours, salle..." />
+      </div>
+      <div class="filter-summary" *ngIf="filteredTree.length >= 0">
+        <span>{{ filteredTree.length }} noeud(s) affiché(s)</span>
+      </div>
+    </div>
+
+    <div class="filter-row">
+      <div class="filter-field">
+        <label>Année académique</label>
+        <select [(ngModel)]="selectedYearId" (change)="applyFilters()">
+          <option value="">Toutes</option>
+          <option *ngFor="let option of yearOptions" [value]="option.id">{{ option.label }}</option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label>Niveau</label>
+        <select [(ngModel)]="selectedNiveauId" (change)="applyFilters()">
+          <option value="">Tous</option>
+          <option *ngFor="let option of niveauOptions" [value]="option.id">{{ option.label }}</option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label>Filière</label>
+        <select [(ngModel)]="selectedParcoursId" (change)="applyFilters()">
+          <option value="">Tous</option>
+          <option *ngFor="let option of parcoursOptions" [value]="option.id">{{ option.label }}</option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label>Salle</label>
+        <select [(ngModel)]="selectedSalleId" (change)="applyFilters()">
+          <option value="">Toutes</option>
+          <option *ngFor="let option of salleOptions" [value]="option.id">{{ option.label }}</option>
+        </select>
+      </div>
+
+      <button *ngIf="hasActiveFilters" class="clear-filters-button" (click)="clearFilters()">Effacer les filtres</button>
+    </div>
   </div>
 
   <div class="hierarchy-layout">
     <!-- Tree sidebar -->
     <div class="tree-panel">
       <div *ngIf="loading" class="loading-state">Chargement...</div>
-      <div *ngIf="!loading && tree.length === 0" class="empty-state">Aucune donnée</div>
-      <ng-container *ngIf="!loading && tree.length > 0">
+      <div *ngIf="!loading && filteredTree.length === 0" class="empty-state">Aucun résultat</div>
+      <ng-container *ngIf="!loading && filteredTree.length > 0">
         <ng-template #recursiveTree let-nodes="nodes" let-level="level">
           <div *ngFor="let node of nodes" class="tree-node">
             <div class="node-row" [class.selected]="selectedNode?.id === node.id" (click)="select(node)">
@@ -19,14 +67,16 @@
               </span>
               <span class="icon">{{ getTypeIcon(node.type) }}</span>
               <span class="label">{{ node.label }}</span>
-              <span class="type-badge" *ngIf="node.type === 'cours' && node.data?.credit">Crédits: {{ node.data.credit }}</span>
+              <span class="node-type-badge">{{ getTypeLabel(node.type) }}</span>
+              <span *ngIf="node.type === 'salle'" class="type-badge">Salle</span>
+              <span *ngIf="node.type === 'cours' && node.data?.credit" class="type-badge">Crédits: {{ node.data.credit }}</span>
             </div>
             <div *ngIf="node.expanded && node.children?.length" class="children">
               <ng-container *ngTemplateOutlet="recursiveTree; context: { nodes: node.children, level: level + 1 }"></ng-container>
             </div>
           </div>
         </ng-template>
-        <ng-container *ngTemplateOutlet="recursiveTree; context: { nodes: tree, level: 0 }"></ng-container>
+        <ng-container *ngTemplateOutlet="recursiveTree; context: { nodes: filteredTree, level: 0 }"></ng-container>
       </ng-container>
     </div>
 
@@ -62,6 +112,27 @@
           <div>
             <span class="text-gray-500">Obligatoire</span>
             <p class="font-medium">{{ coursData.estObligatoire ? 'Oui' : 'Non' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-body p-4" *ngIf="selectedNode.type === 'salle'">
+        <div class="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <span class="text-gray-500">Salle</span>
+            <p class="font-medium">{{ selectedNode.data?.libelle || '-' }}</p>
+          </div>
+          <div>
+            <span class="text-gray-500">Description</span>
+            <p class="font-medium">{{ selectedNode.data?.description || '-' }}</p>
+          </div>
+          <div>
+            <span class="text-gray-500">Parcours</span>
+            <p class="font-medium">{{ selectedNode.data?.parcours?.titre || '-' }}</p>
+          </div>
+          <div>
+            <span class="text-gray-500">Classe</span>
+            <p class="font-medium">{{ selectedNode.data?.classe?.libelle || '-' }}</p>
           </div>
         </div>
       </div>

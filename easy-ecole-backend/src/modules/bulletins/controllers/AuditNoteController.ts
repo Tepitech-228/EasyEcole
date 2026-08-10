@@ -12,7 +12,10 @@ export default class AuditNoteController {
             if (req.query.modifiePar) where.modifiePar = req.query.modifiePar;
             let data = await AuditNote.findAll({
                 where,
-                include: [{ all: true }],
+                include: [
+                    AuditNote.associations.noteEvaluation,
+                    AuditNote.associations.modifieParUtilisateur
+                ],
                 order: [['createdAt', 'DESC']]
             });
             return res.status(200).send(data);
@@ -25,7 +28,10 @@ export default class AuditNoteController {
         try {
             const data = await AuditNote.findAll({
                 where: { noteEvaluationId: req.params.noteEvaluationId },
-                include: [{ all: true }],
+                include: [
+                    AuditNote.associations.noteEvaluation,
+                    AuditNote.associations.modifieParUtilisateur
+                ],
                 order: [['createdAt', 'DESC']]
             });
             return res.status(200).send(data);

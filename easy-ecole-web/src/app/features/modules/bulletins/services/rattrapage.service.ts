@@ -52,4 +52,37 @@ export class RattrapageService {
   getProchainCours(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/enseignant/prochain-cours`);
   }
+
+  getDemandes(params?: any): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/demandes`, { params });
+  }
+
+  creerDemande(data: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/demandes`, data);
+  }
+
+  getMesDemandes(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/mes-demandes`);
+  }
+
+  getEnseignantsDisponibles(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/demandes/enseignants-disponibles`);
+  }
+
+  programmer(id: number, data: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/demandes/${id}/programmer`, data);
+  }
+
+  creerBordereau(id: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/demandes/${id}/bordereau`, {});
+  }
+
+  confirmerPaiement(id: number, paiementId?: number): Observable<any> {
+    const body = paiementId !== undefined && paiementId !== null ? { paiementId } : {};
+    return this.http.put<any>(`${this.apiUrl}/demandes/${id}/confirmer-paiement`, body);
+  }
+
+  confirmerPaiementAuto(id: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/demandes/${id}/confirmer-paiement-auto`, {});
+  }
 }

@@ -8,43 +8,54 @@
       </div>
     </div>
 
-    <!-- En attente ou pas encore soumis -->
-    <div *ngIf="estEnAttente" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-      <div class="flex items-center gap-x-2">
-        <span class="material-symbols-outlined text-yellow-600">hourglass_empty</span>
-        <span class="text-sm text-yellow-800 font-medium">
-          {{ statut ? 'Votre dossier est en cours d\'examen par le comité d\'orientation' : 'Votre dossier n\'a pas encore été soumis au comité d\'orientation' }}
-        </span>
+    <!-- En attente or not submitted -->
+    <div *ngIf="estEnAttente" class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
+      <div class="flex items-start gap-x-3">
+        <span class="material-symbols-outlined text-4xl text-yellow-600">hourglass_empty</span>
+        <div>
+          <h3 class="text-lg font-semibold text-yellow-900 mb-2">Votre dossier est en attente du comité d'orientation</h3>
+          <p class="text-sm text-yellow-800 leading-6">
+            {{ statut ? 'Le comité examine votre dossier. Vous serez informé dès qu’il aura pris une décision.' : 'Vous devez soumettre votre dossier au comité d’orientation pour continuer le processus.' }}
+          </p>
+          <p *ngIf="!statut" class="mt-3 text-sm text-gray-600">
+            Cette étape est nécessaire avant la validation par bordereau. Si tout est en ordre, le comité validera votre dossier et vous pourrez choisir vos cours.
+          </p>
+        </div>
       </div>
     </div>
 
     <!-- Validée -->
-    <div *ngIf="estValidee" class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-      <div class="flex items-center gap-x-2">
-        <span class="material-symbols-outlined text-green-600">check_circle</span>
+    <div *ngIf="estValidee" class="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+      <div class="flex items-start gap-x-3">
+        <span class="material-symbols-outlined text-4xl text-green-600">check_circle</span>
         <div>
-          <span class="text-sm text-green-800 font-medium">Votre dossier a été validé par le comité d'orientation</span>
-          <p *ngIf="demande.preInscription?.commentaire" class="text-xs text-green-600 mt-1">
-            Commentaire : {{ demande.preInscription?.commentaire }}
+          <h3 class="text-lg font-semibold text-green-900 mb-2">Préinscription validée</h3>
+          <p class="text-sm text-green-800 leading-6">
+            Le comité d'orientation a validé votre dossier. Vous pouvez maintenant continuer le processus d'inscription.
+          </p>
+          <p *ngIf="demande.preInscription?.commentaire" class="mt-3 text-sm text-green-700">
+            Commentaire du comité : {{ demande.preInscription?.commentaire }}
           </p>
         </div>
       </div>
-      <div *ngIf="demande.preInscription?.autorisationPDF" class="mt-4">
-        <button (click)="telechargerAutorisation()"
-          class="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 flex items-center gap-x-2">
-          <span class="material-symbols-outlined text-sm">download</span>
-          Télécharger l'autorisation provisoire d'inscription
+      <div class="mt-5">
+        <button (click)="continuer()"
+          class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700">
+          Continuer vers la suite du processus
         </button>
       </div>
     </div>
 
     <!-- Rejetée -->
-    <div *ngIf="estRejetee" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-      <div class="flex items-center gap-x-2">
-        <span class="material-symbols-outlined text-red-600">cancel</span>
+    <div *ngIf="estRejetee" class="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
+      <div class="flex items-start gap-x-3">
+        <span class="material-symbols-outlined text-4xl text-red-600">cancel</span>
         <div>
-          <span class="text-sm text-red-800 font-medium">Votre dossier a été rejeté par le comité d'orientation</span>
-          <p *ngIf="demande.preInscription?.commentaire" class="text-xs text-red-600 mt-1">
+          <h3 class="text-lg font-semibold text-red-900 mb-2">Préinscription rejetée</h3>
+          <p class="text-sm text-red-800 leading-6">
+            Le comité d'orientation n'a pas validé votre dossier. Corrigez les informations ou contactez l'administration pour plus de détails.
+          </p>
+          <p *ngIf="demande.preInscription?.commentaire" class="mt-3 text-sm text-red-700">
             Motif : {{ demande.preInscription?.commentaire }}
           </p>
         </div>

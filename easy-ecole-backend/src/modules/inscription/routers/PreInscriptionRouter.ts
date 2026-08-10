@@ -115,7 +115,7 @@ router
 
 /**
  * @openapi
- * /inscription/preInscriptions/{id}/valider:
+ * /inscription/preInscriptions/{demandeId}/valider:
  *   put:
  *     tags: [Pré-Inscriptions]
  *     summary: Valide une pré-inscription par le comité d'orientation (génère autorisation PDF)
@@ -123,7 +123,8 @@ router
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: demandeId
+ *         description: ID de la demande d'inscription
  *         required: true
  *         schema:
  *           type: string
@@ -131,11 +132,11 @@ router
  *       200:
  *         description: Pré-inscription validée
  */
-    .put('/:id/valider', [Authenticate, AuthComiteOrientation], PreInscriptionController.valider)
+    .put('/:demandeId/valider', [Authenticate, AuthComiteOrientation], PreInscriptionController.valider)
 
 /**
  * @openapi
- * /inscription/preInscriptions/{id}/rejeter:
+ * /inscription/preInscriptions/{demandeId}/rejeter:
  *   put:
  *     tags: [Pré-Inscriptions]
  *     summary: Rejette une pré-inscription
@@ -143,7 +144,8 @@ router
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: demandeId
+ *         description: ID de la demande d'inscription
  *         required: true
  *         schema:
  *           type: string
@@ -151,6 +153,6 @@ router
  *       200:
  *         description: Pré-inscription rejetée
  */
-    .put('/:id/rejeter', [Authenticate, AuthComiteOrientation], PreInscriptionController.rejeter)
+    .put('/:demandeId/rejeter', [Authenticate, AuthComiteOrientation], PreInscriptionController.rejeter)
 
 export default router

@@ -4,6 +4,8 @@ import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { Cours } from "./Cours";
 import { SessionExamen } from "./SessionExamen";
 import { CoursParticipant } from "./CoursParticipant";
+import { Utilisateur } from "../../auth/models/Utilisateur";
+import { Bordereau } from "./Bordereau";
 
 export class RattrapageInscription extends Model<InferAttributes<RattrapageInscription>, InferCreationAttributes<RattrapageInscription>> {
   declare id: CreationOptional<number>
@@ -19,9 +21,20 @@ export class RattrapageInscription extends Model<InferAttributes<RattrapageInscr
   declare heureFin: CreationOptional<string | null>
   declare notificationEnvoyee: CreationOptional<boolean>
 
+  // Champs demandes étudiantes (rattrapage à la demande)
+  declare source: CreationOptional<string> // ENUM('auto','demande_etudiant') défaut 'auto'
+  declare motifEtudiant: CreationOptional<string | null>
+  declare creneauSouhaite: CreationOptional<string | null>
+  declare montant: CreationOptional<number | null>
+  declare statutPaiement: CreationOptional<string> // ENUM('impaye','paye') défaut 'impaye'
+  declare paiementId: CreationOptional<number | null>
+  declare demandePar: CreationOptional<number | null> // utilisateurId étudiant
+
   declare coursParticipant?: NonAttribute<CoursParticipant>
   declare cours?: NonAttribute<Cours>
   declare sessionExamen?: NonAttribute<SessionExamen>
+  declare demandeur?: NonAttribute<Utilisateur>
+  declare bordereau?: NonAttribute<Bordereau>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -31,6 +44,8 @@ export class RattrapageInscription extends Model<InferAttributes<RattrapageInscr
     coursParticipant: Association<RattrapageInscription, CoursParticipant>
     cours: Association<RattrapageInscription, Cours>
     sessionExamen: Association<RattrapageInscription, SessionExamen>
+    demandeur: Association<RattrapageInscription, Utilisateur>
+    bordereau: Association<RattrapageInscription, Bordereau>
   }
 }
 
@@ -50,7 +65,7 @@ RattrapageInscription.init({
   },
   sessionExamenId: {
     type: DataTypes.INTEGER.UNSIGNED,
-    allowNull: false
+    allowNull: true
   },
   noteRattrapage: {
     type: DataTypes.FLOAT,
@@ -85,6 +100,36 @@ RattrapageInscription.init({
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: false
+  },
+  source: {
+    type: DataTypes.ENUM('auto', 'demande_etudiant'),
+    allowNull: false,
+    defaultValue: 'auto'
+  },
+  motifEtudiant: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  creneauSouhaite: {
+    type: DataTypes.STRING(255),
+    allowNull: true
+  },
+  montant: {
+    type: DataTypes.FLOAT,
+    allowNull: true
+  },
+  statutPaiement: {
+    type: DataTypes.ENUM('impaye', 'paye'),
+    allowNull: false,
+    defaultValue: 'impaye'
+  },
+  paiementId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
+  },
+  demandePar: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
