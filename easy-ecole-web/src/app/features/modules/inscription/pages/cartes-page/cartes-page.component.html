@@ -140,130 +140,211 @@
       </div>
     </div>
 
-    <div class="xl:col-span-7 flex flex-col items-center justify-center min-h-[500px]">
+    <div class="xl:col-span-7 card-column flex flex-col items-center justify-center min-h-[500px]">
       <div class="lg:sticky lg:top-6 w-full max-w-[560px] flex flex-col items-center">
         <div class="card-container w-full max-w-[500px] aspect-[1.586/1] relative">
-          <div class="card-inner w-full h-full relative cursor-pointer transition-transform duration-700 preserve-3d shadow-xl rounded-xl" [class.card-flip]="cardFlipped" (click)="toggleFlip()">
-            <div class="card-face absolute inset-0 rounded-[18px] overflow-hidden v4-card">
-              <div class="card-sheen"></div>
-              <svg class="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <pattern id="esa-wm" width="40" height="40" patternUnits="userSpaceOnUse">
-                    <g fill="none" stroke="#0F7A45" stroke-width="0.5" opacity="0.14">
-                      <path d="M-10 20 C0 5,10 35,20 20 C30 5,40 35,50 20"></path>
-                      <path d="M-10 20 C0 35,10 5,20 20 C30 35,40 5,50 20"></path>
+          <div class="card-inner w-full h-full relative cursor-pointer transition-transform duration-700 preserve-3d shadow-xl rounded-2xl" [class.card-flip]="cardFlipped" (click)="toggleFlip()">
+
+            <!-- ===================== RECTO ===================== -->
+            <div class="card-face absolute inset-0 rounded-2xl overflow-hidden">
+              <div class="sep"></div>
+
+              <div class="watermark-layer">
+                <svg class="watermark-esa wm-esa" viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <polygon points="50,5 75,5 60,25 35,25" />
+                  <polygon points="70,5 95,5 80,25 55,25" />
+                  <polygon points="90,5 115,5 100,25 75,25" />
+                  <rect x="10" y="18" width="180" height="48" fill="none" stroke-width="3" />
+                  <path d="M 22 30 L 38 22 L 54 30 L 38 38 Z" />
+                  <text x="65" y="52" font-family="Montserrat" font-weight="900" font-size="32">ESA</text>
+                </svg>
+              </div>
+
+              <div class="card-header card-header-recto">
+                <div class="logo-chip">
+                  <svg class="esa-logo" viewBox="0 0 190 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <g transform="translate(4,18)">
+                      <polygon points="0,20 34,4 68,20 34,36" fill="#0a2a4a" stroke="#06101e" stroke-width="2.5" stroke-linejoin="round"></polygon>
+                      <rect x="18" y="20" width="32" height="18" rx="2" fill="#06101e"></rect>
+                      <line x1="59" y1="14" x2="72" y2="50" stroke="#e5a840" stroke-width="2.5" stroke-linecap="round"></line>
+                      <circle cx="73" cy="53" r="5" fill="#c48b28" stroke="#06101e" stroke-width="1"></circle>
                     </g>
-                  </pattern>
-                </defs>
-                <rect fill="url(#esa-wm)" width="100%" height="100%"></rect>
-              </svg>
-              <div class="wm-esa">ESA</div>
-
-              <div class="h-full flex flex-col relative z-10">
-                <div class="card-header">
-                  <div class="school-block">
-                    <svg class="w-[52px] h-[29px] shrink-0" viewBox="0 0 190 100" xmlns="http://www.w3.org/2000/svg">
-                      <g transform="translate(4,18)">
-                        <polygon points="0,20 34,4 68,20 34,36" fill="#0F7A45" stroke="#12181D" stroke-width="2.5" stroke-linejoin="round"></polygon>
-                        <rect x="18" y="20" width="32" height="18" rx="2" fill="#12181D"></rect>
-                        <line x1="59" y1="14" x2="72" y2="50" stroke="#FFC72C" stroke-width="2.5" stroke-linecap="round"></line>
-                        <circle cx="73" cy="53" r="5" fill="#C81E2C" stroke="#12181D" stroke-width="1"></circle>
-                      </g>
-                      <text x="88" y="66" font-family="Arial, sans-serif" font-weight="700" font-size="52" letter-spacing="1">
-                        <tspan fill="#0F7A45">E</tspan><tspan fill="#FFC72C" stroke="#12181D" stroke-width="1">S</tspan><tspan fill="#C81E2C">A</tspan>
-                      </text>
-                    </svg>
-                    <div class="leading-[1.15] min-w-0">
-                      <b class="block font-heading text-[13.5px] tracking-[0.01em] text-[#12181D] truncate">École Supérieure des Affaires</b>
-                      <small class="text-[10px] font-semibold text-[#0F7A45]">Lomé · Togo</small>
-                    </div>
-                  </div>
-                  <div class="country-pill">
-                    <div class="text-right">
-                      <b>RÉP. TOGOLAISE</b>
-                      <span>Travail · Liberté · Patrie</span>
-                    </div>
-                    <svg class="w-[26px] h-[18px] rounded-[2px] border border-[#D9D6CC] shrink-0" viewBox="0 0 30 20" xmlns="http://www.w3.org/2000/svg">
-                      <rect width="30" height="20" fill="#fff"></rect>
-                      <rect width="30" y="0" height="4" fill="#0F7A45"></rect>
-                      <rect width="30" y="8" height="4" fill="#0F7A45"></rect>
-                      <rect width="30" y="16" height="4" fill="#0F7A45"></rect>
-                      <rect width="12" height="12" fill="#C81E2C"></rect>
-                      <polygon points="6,2 7.2,5.5 11,5.5 8,7.7 9.2,11.2 6,9 2.8,11.2 4,7.7 1,5.5 4.8,5.5" fill="#FFC72C"></polygon>
-                    </svg>
-                  </div>
+                    <text x="88" y="66" font-family="Montserrat, sans-serif" font-weight="800" font-size="52" letter-spacing="1">
+                      <tspan fill="#0a2a4a">E</tspan><tspan fill="#c48b28">S</tspan><tspan fill="#e5a840">A</tspan>
+                    </text>
+                  </svg>
                 </div>
 
-                <div class="sep"></div>
+                <div class="header-right">
+                  <div class="country-name">RÉPUBLIQUE TOGOLAISE</div>
+                  <div class="country-motto">Travail · Liberté · Patrie</div>
+                </div>
+              </div>
 
-                <div class="card-title-row">
-                  <div>
-                    <p class="eyebrow">Prévisualisation</p>
-                    <h2>Carte d'étudiant</h2>
-                  </div>
-                  <span class="year-badge">{{ card.anneeScolaire }}</span>
+              <div class="card-body-recto">
+                <div class="card-title-band">
+                  <span class="rule"></span>
+                  <span class="band-text">Carte d'Étudiant</span>
+                  <span class="rule"></span>
                 </div>
 
-                <div class="card-main">
-                  <div class="photo-panel">
+                <div class="body-row">
+                  <div class="photo-container photo-panel">
                     <img [src]="card.photoSrc" [alt]="'Photo de ' + card.nom + ' ' + card.prenoms" (error)="onPhotoError($event, selectedApprenant)">
-                    <div class="photo-caption">Étudiant · {{ card.matricule }}</div>
                   </div>
 
-                  <div class="data-panel">
+                  <div class="details-container data-panel">
                     <div class="info-grid">
-                      <div *ngFor="let field of getVisibleCardFields()" class="field-card">
-                        <div class="k">{{ field.label }}</div>
-                        <div class="v">{{ field.value }}</div>
+                      <div class="field-row field-card" *ngFor="let field of getVisibleCardFields()">
+                        <span class="field-icon">
+                          <span class="material-symbols-outlined" *ngIf="field.key === 'matricule'">badge</span>
+                          <span class="material-symbols-outlined" *ngIf="field.key === 'nom'">person</span>
+                          <span class="material-symbols-outlined" *ngIf="field.key === 'prenoms'">person</span>
+                          <span class="material-symbols-outlined" *ngIf="field.key === 'filiere'">school</span>
+                          <span class="material-symbols-outlined" *ngIf="field.key === 'parcours'">route</span>
+                          <span class="material-symbols-outlined" *ngIf="field.key === 'niveau'">library_books</span>
+                          <span class="material-symbols-outlined" *ngIf="field.key === 'anneeScolaire'">calendar_month</span>
+                          <span class="material-symbols-outlined" *ngIf="field.key === 'dateNaissance'">cake</span>
+                          <span class="material-symbols-outlined" *ngIf="field.key === 'salle'">meeting_room</span>
+                          <span class="material-symbols-outlined" *ngIf="field.key === 'urgenceNom'">phone_in_talk</span>
+                          <span class="material-symbols-outlined" *ngIf="field.key !== 'matricule' && field.key !== 'nom' && field.key !== 'prenoms' && field.key !== 'filiere' && field.key !== 'parcours' && field.key !== 'niveau' && field.key !== 'anneeScolaire' && field.key !== 'dateNaissance' && field.key !== 'salle' && field.key !== 'urgenceNom'">star</span>
+                        </span>
+                        <span class="field-label">{{ field.label }}</span>
+                        <span class="field-value" [title]="field.value">{{ field.value }}</span>
                       </div>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                <div class="card-footer">
-                  <div class="location">LOMÉ — TOGO <span>· Carte officielle</span></div>
-                  <div class="signature-block">
-                    <div class="sig-line"></div>
-                    <small>Signature de l'étudiant</small>
-                  </div>
+              <div class="qr-container">
+                <div class="qr-box qr-panel">
+                  <img *ngIf="card.qrSrc" [src]="card.qrSrc" alt="QR code de la carte étudiante">
+                  <span *ngIf="!card.qrSrc" class="material-symbols-outlined qr-fallback">qr_code_2</span>
                 </div>
+                <div class="qr-badge">SCAN TO VERIFY</div>
+              </div>
+
+              <div class="card-footer">
+                <span class="footer-text">TRAVAIL · LIBERTÉ · PATRIE</span>
+                <span class="card-badge {{ card.badgeClass }}">{{ card.badge }}</span>
               </div>
             </div>
 
-            <div class="card-face card-back absolute inset-0 rounded-[18px] overflow-hidden v4-card">
-              <div class="card-sheen"></div>
-              <svg class="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg">
-                <rect fill="url(#esa-wm)" width="100%" height="100%"></rect>
-              </svg>
-              <div class="wm-esa">ESA</div>
-              <div class="h-full flex flex-col relative z-10 px-[18px] pt-[16px] pb-[14px]">
-                <div class="back-top">
-                  <div class="qr-panel">
-                    <img *ngIf="card.qrSrc" [src]="card.qrSrc" alt="QR code de la carte étudiante" class="w-full h-full object-contain">
-                    <span *ngIf="!card.qrSrc" class="material-symbols-outlined text-[36px] text-[#12181D]">qr_code_2</span>
+            <div class="card-face card-back absolute inset-0 rounded-2xl overflow-hidden">
+              <div class="sep"></div>
+
+              <div class="watermark-layer">
+                <svg class="watermark-esa wm-esa" viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <polygon points="50,5 75,5 60,25 35,25" />
+                  <polygon points="70,5 95,5 80,25 55,25" />
+                  <polygon points="90,5 115,5 100,25 75,25" />
+                  <rect x="10" y="18" width="180" height="48" fill="none" stroke-width="3" />
+                  <path d="M 22 30 L 38 22 L 54 30 L 38 38 Z" />
+                  <text x="65" y="52" font-family="Montserrat" font-weight="900" font-size="32">ESA</text>
+                </svg>
+              </div>
+
+              <div class="verso-header">
+                <div class="logo-chip">
+                  <svg class="esa-logo" viewBox="0 0 190 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <g transform="translate(4,18)">
+                      <polygon points="0,20 34,4 68,20 34,36" fill="#0a2a4a" stroke="#06101e" stroke-width="2.5" stroke-linejoin="round"></polygon>
+                      <rect x="18" y="20" width="32" height="18" rx="2" fill="#06101e"></rect>
+                      <line x1="59" y1="14" x2="72" y2="50" stroke="#e5a840" stroke-width="2.5" stroke-linecap="round"></line>
+                      <circle cx="73" cy="53" r="5" fill="#c48b28" stroke="#06101e" stroke-width="1"></circle>
+                    </g>
+                    <text x="88" y="66" font-family="Montserrat, sans-serif" font-weight="800" font-size="52" letter-spacing="1">
+                      <tspan fill="#0a2a4a">E</tspan><tspan fill="#c48b28">S</tspan><tspan fill="#e5a840">A</tspan>
+                    </text>
+                  </svg>
+                </div>
+                <div class="verso-header-text">
+                  <h3>INFORMATIONS GÉNÉRALES</h3>
+                  <p>CARTE D'ÉTUDIANT</p>
+                  <div class="validity">VALIDE POUR L'ANNÉE ACADÉMIQUE {{ card.anneeScolaire }}</div>
+                </div>
+              </div>
+
+              <div class="card-body-verso">
+                <div class="verso-columns">
+
+                  <div class="verso-column verso-column-left">
+                    <div class="section-block">
+                      <div class="section-title">
+                        <span class="material-symbols-outlined">contract</span> RÈGLEMENTATIONS
+                      </div>
+                      <ul class="rules-list">
+                        <li>La carte est personnelle, non transférable et doit être présentée à toute réquisition des autorités.</li>
+                        <li>En cas de perte, signaler immédiatement à l'administration.</li>
+                      </ul>
+                      <div class="section-title">
+                        <span class="material-symbols-outlined">id_card</span> INFORMATIONS
+                      </div>
+                      <div class="verso-info-grid">
+                        <div class="verso-info-row">
+                          <span class="material-symbols-outlined">person</span>
+                          <span class="info-label">Titulaire</span>
+                          <span class="info-value">{{ card.nom }} {{ card.prenoms }}</span>
+                        </div>
+                        <div class="verso-info-row">
+                          <span class="material-symbols-outlined">badge</span>
+                          <span class="info-label">Matricule</span>
+                          <span class="info-value">{{ card.matricule }}</span>
+                        </div>
+                        <div class="verso-info-row">
+                          <span class="material-symbols-outlined">location_city</span>
+                          <span class="info-label">Adresse</span>
+                          <span class="info-value">{{ etablissementLocalisation }}</span>
+                        </div>
+                        <div class="verso-info-row">
+                          <span class="material-symbols-outlined">account_balance</span>
+                          <span class="info-label">Établ.</span>
+                          <span class="info-value">{{ etablissementNom }}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div class="back-title">
-                    <b>Validation</b>
-                    <span>Scannez pour vérifier le statut de l'étudiant</span>
+
+                  <div class="verso-column verso-column-right">
+                    <div class="section-block">
+                      <div class="section-title">
+                        <span class="material-symbols-outlined">phone_in_talk</span> PERSONNES À PRÉVENIR
+                      </div>
+                      <div class="verso-info-grid">
+                        <div class="verso-info-row">
+                          <span class="material-symbols-outlined">contact_phone</span>
+                          <span class="info-value">{{ card.urgenceNom }} {{ card.urgencePrenoms }} — {{ card.urgenceTel }}</span>
+                        </div>
+                        <div class="verso-info-row">
+                          <span class="material-symbols-outlined">home</span>
+                          <span class="info-value">{{ card.urgenceAdresse }}</span>
+                        </div>
+                      </div>
+                      <div class="section-title">
+                        <span class="material-symbols-outlined">draw</span> SIGNATURE DU DIRECTEUR
+                      </div>
+                      <div class="signature-row">
+                        <span class="signature-label">Le Directeur Général</span>
+                        <span class="signature-line sig-line"></span>
+                      </div>
+                    </div>
                   </div>
+
                 </div>
-                <div class="legal">Carte personnelle, non cessible et incessible. Elle doit être présentée à toute demande d'un responsable de l'établissement. Toute falsification expose son auteur à des poursuites judiciaires.</div>
-                <div class="contact-card">
-                  <div class="contact-title">En cas de perte ou de vol</div>
-                  <div class="contact-body">Contactez le service de la scolarité : +228 22 51 00 00 · scolarite@esa-togo.tg · esa-togo.tg</div>
+              </div>
+
+              <div class="qr-container">
+                <div class="qr-box qr-panel">
+                  <img *ngIf="card.qrSrc" [src]="card.qrSrc" alt="QR code de validation">
+                  <span *ngIf="!card.qrSrc" class="material-symbols-outlined qr-fallback">qr_code_3</span>
                 </div>
-                <div class="emergency-card">
-                  <div class="emergency-head">Contact d'urgence</div>
-                  <div class="emergency-body">
-                    <div class="e-field"><span class="e-k">Nom</span><span class="e-v">{{ card.urgenceNom }} {{ card.urgencePrenoms }}</span></div>
-                    <div class="e-field"><span class="e-k">Téléphone</span><span class="e-v">{{ card.urgenceTel }}</span></div>
-                    <div class="e-field"><span class="e-k">Adresse</span><span class="e-v">{{ card.urgenceAdresse }}</span></div>
-                  </div>
-                </div>
-                <div class="b-foot">
-                  <span>LOMÉ · TOGO</span>
-                  <span>ESA — CARTE D'ÉTUDIANT</span>
-                </div>
+                <div class="qr-badge">SCAN TO VALIDATE</div>
+              </div>
+
+              <div class="card-footer">
+                <span class="footer-text">TRAVAIL · LIBERTÉ · PATRIE</span>
+                <div class="footer-subtext">© {{ etablissementNom }} — {{ etablissementLocalisation }}</div>
               </div>
             </div>
           </div>

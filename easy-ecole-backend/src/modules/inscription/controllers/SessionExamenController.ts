@@ -4,6 +4,8 @@ import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { SessionExamen } from "../models/SessionExamen";
 import { AnneeAcademique } from "../models/AnneeAcademique";
 import { Classe } from "../models/Classe";
+import { SessionCorrecteur } from "../models/SessionCorrecteur";
+import { Enseignant } from "../../auth/models/Enseignant";
 
 export default class SessionExamenController {
 
@@ -20,7 +22,8 @@ export default class SessionExamenController {
             let data = await SessionExamen.findAll(options);
             return res.status(200).send(data);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -35,7 +38,8 @@ export default class SessionExamenController {
             if (!data) return res.status(404).json({ success: false, message: "Session non trouvée" });
             return res.status(200).send(data);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -47,7 +51,8 @@ export default class SessionExamenController {
             const data = await SessionExamen.create(req.body);
             return res.status(201).send(data);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -61,7 +66,8 @@ export default class SessionExamenController {
             await data.update(req.body);
             return res.status(200).send(data);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -75,7 +81,8 @@ export default class SessionExamenController {
             await data.destroy();
             return res.status(200).json({ success: true });
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -90,7 +97,8 @@ export default class SessionExamenController {
             });
             return res.status(200).send(data);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -137,7 +145,53 @@ export default class SessionExamenController {
                 data: { normale: sessionNormale, rattrapage: sessionRattrapage }
             });
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
+        }
+    }
+
+    // Désignation des correcteurs par cours (session de rattrapage)
+    static async saveCorrecteurs(req: Request, res: Response): Promise<Response | null> {
+        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
+            return res.status(403).json({ success: false })
+        }
+        try {
+            const { correcteurs } = req.body;
+            if (!Array.isArray(correcteurs)) {
+                return res.status(400).json({ success: false, message: "correcteurs doit être un tableau [{coursId, enseignantId}]" });
+            }
+
+            const session = await SessionExamen.findByPk(req.params.id);
+            if (!session) return res.status(404).json({ success: false, message: "Session examen non trouvée" });
+
+            await SessionCorrecteur.destroy({ where: { sessionExamenId: session.id } });
+
+            const rows = correcteurs
+                .filter(c => c.coursId && c.enseignantId)
+                .map(c => ({ sessionExamenId: session.id, coursId: c.coursId, enseignantId: c.enseignantId }));
+
+            const created = rows.length ? await SessionCorrecteur.bulkCreate(rows) : [];
+
+            return res.status(201).json({ success: true, count: created.length });
+        } catch (error) {
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
+        }
+    }
+
+    static async getCorrecteurs(req: Request, res: Response): Promise<Response | null> {
+        try {
+            const correcteurs = await SessionCorrecteur.findAll({
+                where: { sessionExamenId: req.params.id },
+                include: [
+                    { association: SessionCorrecteur.associations.cours },
+                    { association: SessionCorrecteur.associations.enseignant, include: [{ association: Enseignant.associations.utilisateur }] }
+                ]
+            });
+            return res.status(200).send(correcteurs);
+        } catch (error) {
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 }

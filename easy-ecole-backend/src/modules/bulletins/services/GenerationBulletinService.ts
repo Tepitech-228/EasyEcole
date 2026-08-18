@@ -7,6 +7,7 @@ import { CoursParticipant } from "../../inscription/models/CoursParticipant";
 import { ListeNoteEvaluation } from "../../inscription/models/ListeNoteEvaluation";
 import { Mcc } from "../../inscription/models/Mcc";
 import { RegleEvaluation } from "../../inscription/models/RegleEvaluation";
+import { SalleDeClasse } from "../../inscription/models/SalleDeClasse";
 
 export interface LigneBulletinCalcul {
   coursId: number
@@ -38,12 +39,44 @@ export class GenerationBulletinService {
     classeId: number,
     semestre: string,
     anneeAcademiqueId: number,
-    transaction?: Transaction
+    transaction?: Transaction,
+    salleId?: number | null
   ): Promise<BulletinGenerationResult[]> {
     const results: BulletinGenerationResult[] = [];
 
+    // Restriction optionnelle par salle :
+    // Le lien réel salle -> étudiants est : SalleDeClasse.classeId -> Classe.id -> CursusApprenant.classeId
+    // (association Classe.hasMany(SalleDeClasse, { foreignKey: 'classeId' })).
+    // Si la salle porte également un parcours (SalleDeClasse.parcoursId), on ajoute le filtre parcours.
+    // LIMITATION DOCUMENTEE : si la salle n'a ni classeId ni parcoursId renseignés (ex: salles historiques),
+    // on enregistre salleId sur les bulletins SANS filtrer les étudiants (aucun lien exploitable).
+    let salleClasseId: number | null = null;
+    let salleParcoursId: number | null = null;
+
+    if (salleId) {
+      const salle = await SalleDeClasse.findByPk(salleId, { transaction });
+      if (!salle) {
+        throw new Error(`Salle introuvable (id=${salleId})`);
+      }
+      salleClasseId = salle.classeId ?? null;
+      salleParcoursId = salle.parcoursId ?? null;
+    }
+
+    const whereCursus: any = { classeId, anneeAcademiqueId };
+    // Classe effective portée par le bulletin : celle de la salle si elle est renseignée,
+    // sinon la classe passée en paramètre (salle générique ou sans lien classe).
+    let classeEffective = Number(classeId);
+    if (salleClasseId !== null && Number(salleClasseId) !== Number(classeId)) {
+      // La salle est rattachée à une autre classe : on ne prend que les étudiants de CETTE salle.
+      whereCursus.classeId = salleClasseId;
+      classeEffective = Number(salleClasseId);
+    }
+    if (salleParcoursId !== null) {
+      whereCursus.parcoursId = salleParcoursId;
+    }
+
     const cursusList = await CursusApprenant.findAll({
-      where: { classeId, anneeAcademiqueId },
+      where: whereCursus,
       include: [{ association: CursusApprenant.associations.utilisateur }]
     });
 
@@ -166,9 +199,10 @@ export class GenerationBulletinService {
         semestre,
         cursusApprenantId: cursus.id as any,
         utilisateurId: cursus.utilisateurId as any,
-        classeId: classeId as any,
+        classeId: classeEffective as any,
         parcoursId: cursus.parcoursId as any,
         niveauEtudeId: cursus.niveauEtudeId as any,
+        salleId: salleId ?? null as any,
         moyenneGenerale,
         totalCredits,
         creditsValides,

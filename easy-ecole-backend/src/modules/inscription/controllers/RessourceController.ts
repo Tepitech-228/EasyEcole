@@ -18,7 +18,8 @@ export default class RessourceController {
 
             return res.status(200).send(ressource);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -34,7 +35,8 @@ export default class RessourceController {
 
             return res.status(200).send(ressource);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -129,7 +131,8 @@ export default class RessourceController {
                     return res.status(200).json({ success: true, message: "Ressource supprimée" });
                 })
                 .catch((error) => {
-                    return res.status(500).json({ success: false, error: error });
+                    console.error('Erreur', error);
+                    return res.status(500).json({ success: false, message: 'Erreur interne' });
                 });
         }
         else {
@@ -151,7 +154,8 @@ export default class RessourceController {
                 return res.status(200).json({ success: true, count: value });
             })
             .catch((error) => {
-                return res.status(500).json({ success: false, error: error });
+                console.error('Erreur', error);
+                return res.status(500).json({ success: false, message: 'Erreur interne' });
             });
 
         return null

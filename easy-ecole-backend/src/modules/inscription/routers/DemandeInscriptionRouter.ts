@@ -2,6 +2,7 @@ import express from "express"
 
 import DemandeInscriptionController from "../controllers/DemandeInscriptionController"
 import { AuthApprenant } from "../../../core/middlewares/AuthApprenant";
+import { AuthComiteOrientation } from "../../../core/middlewares/AuthComiteOrientation";
 
 const router = express.Router()
 
@@ -19,7 +20,7 @@ const router = express.Router()
  */
 router
     .get('/', DemandeInscriptionController.getAllDemandesInscription)
-    .put('/batch/statut', [], DemandeInscriptionController.batchStatut)
+    .put('/batch/statut', [AuthComiteOrientation], DemandeInscriptionController.batchStatut)
 
 /**
  * @openapi

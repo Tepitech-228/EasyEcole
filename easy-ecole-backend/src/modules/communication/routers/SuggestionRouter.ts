@@ -1,8 +1,12 @@
 import express from "express"
+import Authenticate from "../../../core/middlewares/Authenticate"
 
 import SuggestionController from "../controllers/SuggestionController"
 
 const router = express.Router()
+
+// Proteger - suggestions internes
+router.use([Authenticate]);
 
 router
     /**

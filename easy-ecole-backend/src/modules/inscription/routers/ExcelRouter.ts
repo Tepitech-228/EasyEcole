@@ -3,10 +3,15 @@ import multer from "multer"
 import * as path from "path"
 import * as fs from "fs"
 import { customAlphabet } from "nanoid"
+import Authenticate from "../../../core/middlewares/Authenticate"
+import CheckPermission from "../../../core/middlewares/CheckPermission"
 
 import ExcelController from "../controllers/ExcelController"
 
 const router = express.Router()
+
+// Protéger TOUTES les routes Excel
+router.use([Authenticate, CheckPermission('excel.import.export')]);
 
 // Configuration Multer pour les fichiers Excel
 const storage = multer.diskStorage({

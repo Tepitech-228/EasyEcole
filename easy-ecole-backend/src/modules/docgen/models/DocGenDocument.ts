@@ -17,6 +17,7 @@ export class DocGenDocument extends Model<InferAttributes<DocGenDocument>, Infer
   declare sourceId: CreationOptional<number>
   declare generatedById: CreationOptional<number>
   declare version: CreationOptional<number>
+  declare mailEnvoye: CreationOptional<boolean>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -74,6 +75,11 @@ DocGenDocument.init({
   version: {
     type: DataTypes.INTEGER,
     defaultValue: 1
+  },
+  mailEnvoye: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

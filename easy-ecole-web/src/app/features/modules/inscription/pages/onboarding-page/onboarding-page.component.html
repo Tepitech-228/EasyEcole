@@ -121,3 +121,54 @@
     </ng-container>
   </div>
 </div>
+
+<!-- Modal : choix de la session d'inscription -->
+<div *ngIf="showSessionModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+  <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg mx-4 max-h-[85vh] overflow-y-auto">
+    <h3 class="text-lg font-semibold text-gray-900 mb-2">Choisissez votre session d'inscription</h3>
+    <p class="text-sm text-gray-500 mb-4">
+      Plusieurs sessions d'inscription sont ouvertes. Sélectionnez celle qui vous convient.
+    </p>
+
+    <div class="space-y-3 mb-6">
+      <button *ngFor="let session of sessionsOuvertes"
+        (click)="choisirSession(session.id)"
+        class="w-full text-left p-4 rounded-xl border-2 transition-colors cursor-pointer"
+        [ngClass]="{
+          'border-indigo-500 bg-indigo-50': selectedSessionId === session.id,
+          'border-gray-200 bg-white hover:border-gray-300': selectedSessionId !== session.id
+        }">
+        <div class="flex items-center justify-between gap-x-3">
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-gray-900">
+              {{ session.anneeAcademique?.libelle || 'Session d\'inscription' }}
+            </p>
+            <p class="text-xs text-gray-500 mt-0.5">
+              Du {{ session.dateDebut | date: 'dd/MM/yyyy' }} au {{ session.dateFin | date: 'dd/MM/yyyy' }}
+            </p>
+            <p *ngIf="session.niveauEtude?.libelle" class="text-xs text-gray-500 mt-0.5">
+              Niveau : {{ session.niveauEtude.libelle }}
+            </p>
+            <p *ngIf="session.description" class="text-xs text-gray-400 mt-0.5">{{ session.description }}</p>
+          </div>
+          <span class="flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center"
+            [ngClass]="{
+              'border-indigo-500': selectedSessionId === session.id,
+              'border-gray-300': selectedSessionId !== session.id
+            }">
+            <span *ngIf="selectedSessionId === session.id" class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+          </span>
+        </div>
+      </button>
+    </div>
+
+    <div class="flex justify-end gap-x-3">
+      <button (click)="annulerChoixSession()"
+        class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer">Annuler</button>
+      <button (click)="confirmerCreationDemande()" [disabled]="selectedSessionId == null || sessionLoading"
+        class="px-4 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
+        {{ sessionLoading ? 'Création...' : 'Créer ma demande' }}
+      </button>
+    </div>
+  </div>
+</div>

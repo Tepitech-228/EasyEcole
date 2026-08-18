@@ -20,7 +20,17 @@ export class DocumentsPageComponent extends BaseComponentClass implements OnInit
   selectedStatut: string = '';
   search: string = '';
   showGenerateModal = false;
-  generateData = { typeCode: '', sourceType: '', sourceId: undefined as number | undefined, metadata: '' };
+  generateData = {
+    typeCode: '',
+    sourceType: '',
+    sourceId: undefined as number | undefined,
+    cursusApprenantId: undefined as number | undefined,
+    classeId: undefined as number | undefined,
+    anneeAcademiqueId: undefined as number | undefined,
+    etudiantId: undefined as number | undefined,
+    semestre: '',
+    metadata: '',
+  };
 
   constructor(
     private documentService: DocGenDocumentService,
@@ -51,7 +61,7 @@ export class DocumentsPageComponent extends BaseComponentClass implements OnInit
   }
 
   ouvrirGeneration(): void {
-    this.generateData = { typeCode: '', sourceType: '', sourceId: undefined, metadata: '' };
+    this.generateData = { typeCode: '', sourceType: '', sourceId: undefined, cursusApprenantId: undefined, classeId: undefined, anneeAcademiqueId: undefined, etudiantId: undefined, semestre: '', metadata: '' };
     this.showGenerateModal = true;
   }
 
@@ -59,14 +69,27 @@ export class DocumentsPageComponent extends BaseComponentClass implements OnInit
     if (!this.generateData.typeCode) return;
     let metadata = {};
     try { if (this.generateData.metadata) metadata = JSON.parse(this.generateData.metadata); } catch {}
-    this.documentService.generate({
+    const payload: any = {
       typeCode: this.generateData.typeCode,
       sourceType: this.generateData.sourceType || undefined,
       sourceId: this.generateData.sourceId,
-      metadata,
-    }).subscribe({
+      cursusApprenantId: this.generateData.cursusApprenantId,
+      classeId: this.generateData.classeId,
+      anneeAcademiqueId: this.generateData.anneeAcademiqueId,
+      etudiantId: this.generateData.etudiantId,
+      semestre: this.generateData.semestre || undefined,
+      metadata: Object.keys(metadata).length ? metadata : undefined,
+    };
+    // API001 : le controller backend extrait sourceId du body sans le réinjecter dans les params du resolver.
+    // Le resolver resolveAutorisationProvisoire lit params.sourceId || params.cursusApprenantId,
+    // on passe donc l'id de la demande via cursusApprenantId en attendant le correctif backend.
+    if (this.generateData.typeCode === 'API001' && payload.sourceId) {
+      payload.sourceType = 'demande_inscription';
+      payload.cursusApprenantId = payload.sourceId;
+    }
+    this.documentService.generate(payload).subscribe({
       next: () => { this.showGenerateModal = false; this.getDocuments(); },
-      error: (err) => alert('Erreur: ' + err.message)
+      error: (err) => alert('Erreur: ' + (err.error?.message || err.message || 'Erreur lors de la génération'))
     });
   }
 

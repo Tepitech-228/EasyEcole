@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+import { ValidationService } from 'src/app/data/modules/achats/services/validation.service';
+import { DemandeAchat, getMontantDemande, getNomUtilisateur } from 'src/app/data/modules/achats/models/achats.models';
 
 @Component({
   selector: 'app-validations-page',
@@ -11,7 +13,7 @@ export class ValidationsPageComponent extends BaseComponentClass implements OnIn
   loading = false
   searchTerm = ''
 
-  constructor() { super() }
+  constructor(private validationService: ValidationService) { super() }
 
   ngOnInit(): void {
     this.loadValidations()
@@ -19,13 +21,25 @@ export class ValidationsPageComponent extends BaseComponentClass implements OnIn
 
   loadValidations() {
     this.loading = true
-    setTimeout(() => {
-      this.validations = [
-        { id: 1, demandeId: 'DEM-001', description: 'Achat ordinateurs', montant: 2500000, demandeur: 'M. Dupont', dateSoumission: '2026-01-15', statut: 'en_attente' },
-        { id: 2, demandeId: 'DEM-002', description: 'Fournitures bureau', montant: 150000, demandeur: 'Mme Martin', dateSoumission: '2026-01-18', statut: 'validee' },
-      ]
-      this.loading = false
-    }, 500)
+    this.validationService.getValidationsEnAttente().subscribe({
+      next: (demandes: DemandeAchat[]) => {
+        this.validations = demandes.map(d => ({
+          id: d.id,
+          demandeId: 'DEM-' + d.id,
+          description: d.description,
+          demandeur: getNomUtilisateur(d.soumisPar),
+          montant: getMontantDemande(d),
+          dateSoumission: d.dateSoumission,
+          // Les demandes filtrées par le backend sont au statut "soumise" (= en attente)
+          statut: 'en_attente',
+        }))
+        this.loading = false
+      },
+      error: () => {
+        this.validations = []
+        this.loading = false
+      }
+    })
   }
 
   get enAttenteCount(): number {
@@ -46,12 +60,22 @@ export class ValidationsPageComponent extends BaseComponentClass implements OnIn
   }
 
   valider(id: number) {
-    const idx = this.validations.findIndex(v => v.id === id)
-    if (idx > -1) this.validations[idx].statut = 'validee'
+    this.validationService.approuver(id).subscribe({
+      next: () => {
+        const idx = this.validations.findIndex(v => v.id === id)
+        if (idx > -1) this.validations[idx].statut = 'validee'
+      },
+      error: () => {}
+    })
   }
 
   rejeter(id: number) {
-    const idx = this.validations.findIndex(v => v.id === id)
-    if (idx > -1) this.validations[idx].statut = 'rejetee'
+    this.validationService.rejeter(id).subscribe({
+      next: () => {
+        const idx = this.validations.findIndex(v => v.id === id)
+        if (idx > -1) this.validations[idx].statut = 'rejetee'
+      },
+      error: () => {}
+    })
   }
 }

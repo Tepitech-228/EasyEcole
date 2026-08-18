@@ -38,6 +38,11 @@ export class OnboardingPageComponent extends BaseComponentClass implements OnIni
     { numero: 9, label: 'Validation finale', description: 'Inscription validée par l\'administration', etat: 'en_attente', route: null },
   ];
 
+  sessionsOuvertes: any[] = [];
+  showSessionModal: boolean = false;
+  selectedSessionId: number | null = null;
+  sessionLoading: boolean = false;
+
   constructor(
     private http: HttpClient,
     private router: Router,
@@ -217,28 +222,61 @@ export class OnboardingPageComponent extends BaseComponentClass implements OnIni
           return;
         }
 
-        const body = { dateDemande: new Date(), sessionId: sessions[0].id };
-        this.http.post(`${this.API_URL}/inscription/demandesInscription`, body).subscribe({
-          next: (res2: any) => {
-            this.setMessage('Demande créée avec succès !', 'success');
-            setTimeout(() => {
-              this.router.navigate(['/inscription/demandes', res2.id]);
-            }, 1000);
-          },
-          error: (err: HttpErrorResponse) => {
-            if (err.error?.alreadySignUp) {
-              this.setMessage('Vous avez déjà une demande d\'inscription en cours', 'info');
-              this.chargerDemande();
-            } else {
-              this.setMessage('Erreur lors de la création de la demande', 'error');
-              this.loading = false;
-            }
-          }
-        });
+        // Une seule session ouverte : création directe.
+        if (sessions.length === 1) {
+          this.creerDemandeSession(sessions[0].id);
+          return;
+        }
+
+        // Plusieurs sessions ouvertes : l'étudiant choisit celle qu'il préfère.
+        this.sessionsOuvertes = sessions;
+        this.selectedSessionId = sessions[0].id;
+        this.showSessionModal = true;
+        this.loading = false;
       },
       error: () => {
         this.setMessage('Erreur lors du chargement des sessions', 'error');
         this.loading = false;
+      }
+    });
+  }
+
+  choisirSession(sessionId: number): void {
+    this.selectedSessionId = sessionId;
+  }
+
+  annulerChoixSession(): void {
+    this.showSessionModal = false;
+    this.sessionsOuvertes = [];
+    this.selectedSessionId = null;
+  }
+
+  confirmerCreationDemande(): void {
+    if (this.selectedSessionId == null || this.sessionLoading) return;
+    this.showSessionModal = false;
+    this.creerDemandeSession(this.selectedSessionId);
+  }
+
+  private creerDemandeSession(sessionId: number): void {
+    this.sessionLoading = true;
+    const body = { dateDemande: new Date(), sessionId };
+    this.http.post(`${this.API_URL}/inscription/demandesInscription`, body).subscribe({
+      next: (res2: any) => {
+        this.sessionLoading = false;
+        this.setMessage('Demande créée avec succès !', 'success');
+        setTimeout(() => {
+          this.router.navigate(['/inscription/demandes', res2.id]);
+        }, 1000);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.sessionLoading = false;
+        if (err.error?.alreadySignUp) {
+          this.setMessage('Vous avez déjà une demande d\'inscription en cours', 'info');
+          this.chargerDemande();
+        } else {
+          this.setMessage('Erreur lors de la création de la demande', 'error');
+          this.loading = false;
+        }
       }
     });
   }

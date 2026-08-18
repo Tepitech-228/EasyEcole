@@ -13,6 +13,7 @@ export interface RegistreAcademiqueQuery {
   search?: string;
   filiere?: string;
   niveau?: string;
+  top?: number;
   [key: string]: any;
 }
 
@@ -39,6 +40,19 @@ export class RegistreAcademiqueService {
       })
     }
     return this.httpClient.get<any>(`${this.SERVICE_URL}/`, { params: httpParams })
+  }
+
+  /**
+   * Classement des N meilleurs étudiants de chaque promotion (palmarès).
+   * Le backend groupe les registres par promotion et renvoie les top N.
+   * Route : GET /scolarite/registres?top=50
+   */
+  getTop(params?: RegistreAcademiqueQuery): Observable<any> {
+    const query: RegistreAcademiqueQuery = { ...(params ?? {}) }
+    if (query.top === undefined || query.top === null) {
+      query.top = 50
+    }
+    return this.getAll(query)
   }
 
   /**

@@ -40,7 +40,16 @@ export default class SuiviUeController {
       });
 
       if (!cursus) {
-        return res.status(404).json({ message: 'Aucun cursus trouvÃ©' });
+        // Utilisateur sans cursus (admin, institution, enseignant, ...) :
+        // le front gere l'affichage, on renvoie une structure SuiviUeResult vide
+        return res.json({
+          cursusApprenantId: 0,
+          parcours: '',
+          anneeActuelle: '',
+          ues: [],
+          stats: { totalEcts: 0, ectsValides: 0, ectsEnDette: 0, ectsRestants: 0, tauxValidation: 0 },
+          progression: null
+        });
       }
 
       const cursusId = Number(cursus.id);

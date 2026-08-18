@@ -254,22 +254,22 @@ export class ListeEffectifsPageComponent extends BaseComponentClass implements O
 
   getAnneeLibelle(id: string): string {
     if (id === 'toutes-annees') return 'Toutes les années'
-    return this.annees.find(a => a.id === id)?.libelle || id
+    return this.annees.find(a => String(a.id) === String(id))?.libelle || id
   }
 
   getNiveauLibelle(id: string): string {
     if (id === 'tous-niveaux') return 'Tous les niveaux'
-    return this.niveaux.find(n => n.id === id)?.libelle || id
+    return this.niveaux.find(n => String(n.id) === String(id))?.libelle || id
   }
 
   getParcoursTitre(id: string): string {
     if (id === 'tous-parcours') return 'Tous les parcours'
-    return this.parcoursList.find(p => p.id === id)?.titre || id
+    return this.parcoursList.find(p => String(p.id) === String(id))?.titre || id
   }
 
   getClasseLibelle(id: string): string {
     if (id === 'toutes-classes') return 'Toutes les classes'
-    return this.classes.find(c => c.id === id)?.libelle || id
+    return this.classes.find(c => String(c.id) === String(id))?.libelle || id
   }
 
   getPhotoUrl(c: CursusApprenant): string {

@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+import { ReceptionService } from 'src/app/data/modules/achats/services/reception.service';
+import { Reception, getQuantiteRecue } from 'src/app/data/modules/achats/models/achats.models';
 
 @Component({
   selector: 'app-receptions-page',
@@ -11,7 +13,7 @@ export class ReceptionsPageComponent extends BaseComponentClass implements OnIni
   loading = false
   searchTerm = ''
 
-  constructor() { super() }
+  constructor(private receptionService: ReceptionService) { super() }
 
   ngOnInit(): void {
     this.loadReceptions()
@@ -19,13 +21,24 @@ export class ReceptionsPageComponent extends BaseComponentClass implements OnIni
 
   loadReceptions() {
     this.loading = true
-    setTimeout(() => {
-      this.receptions = [
-        { id: 1, commandeId: 'CMD-001', fournisseur: 'Tech Solutions', date: '2026-01-25', statut: 'reçue', quantiteRecue: 100 },
-        { id: 2, commandeId: 'CMD-002', fournisseur: 'Bureau Express', date: '2026-01-28', statut: 'partielle', quantiteRecue: 50 },
-      ]
-      this.loading = false
-    }, 500)
+    this.receptionService.getAll().subscribe({
+      next: (items: Reception[]) => {
+        this.receptions = items.map(r => ({
+          id: r.id,
+          commandeId: r.commande ? 'CMD-' + r.commande.id : ('CMD-' + r.commandeId),
+          fournisseur: r.commande?.fournisseur?.nom || r.commande?.fournisseurId || '—',
+          date: r.date,
+          quantiteRecue: getQuantiteRecue(r),
+          // Le backend expose les statuts "totale" / "partielle"
+          statut: r.statut === 'totale' ? 'reçue' : r.statut,
+        }))
+        this.loading = false
+      },
+      error: () => {
+        this.receptions = []
+        this.loading = false
+      }
+    })
   }
 
   getStatutBadge(statut: string): string {

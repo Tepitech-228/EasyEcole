@@ -38,6 +38,7 @@ import NoteEvaluationRouter from "./routers/NoteEvaluationRouter";
 import BulletinRouter from "../bulletins/routers/BulletinRouter"
 import DeliberationRouter from "../bulletins/routers/DeliberationRouter"
 import EcheanceRouter from "./routers/EcheanceRouter";
+import PaiementStatutRouter from "./routers/PaiementStatutRouter";
 import BordereauController from "./controllers/BordereauController";
 import BordereauRouter from "./routers/BordereauRouter";
 import DossierEtudiantRouter from "./routers/DossierEtudiantRouter";
@@ -67,6 +68,7 @@ import PenaliteRetardRouter from "./routers/PenaliteRetardRouter";
 import ExcelRouter from "./routers/ExcelRouter";
 import DashboardController from "./controllers/DashboardController";
 import CoursController from "./controllers/CoursController";
+import DesignationMemoireRouter from "./routers/DesignationMemoireRouter";
 
 const router = express.Router();
 
@@ -110,6 +112,11 @@ router
     .use('/pre-inscriptions', [Authenticate], PreInscriptionRouter)
     .use('/bordereaux', [Authenticate], BordereauRouter)
     .use('/hierarchy', [Authenticate], HierarchyRouter)
+    // Statut de paiement étudiant/parent — placé AVANT les montages racine pour
+    // éviter qu'une route générique n'intercepte le chemin, et volontairement sans
+    // InscriptionComplete : un étudiant en situation de blocage doit pouvoir consulter
+    // son statut (la vérification de rôle se fait dans le contrôleur).
+    .use('/paiement', [Authenticate], PaiementStatutRouter)
     .use('/typesNoteEvaluation', [Authenticate], TypeNoteEvaluationRouter)
     .use('/listesNoteEvaluation', [Authenticate], ListeNoteEvaluationRouter)
     .use('/echelles-notes', [Authenticate], EchelleNoteRouter)
@@ -142,7 +149,8 @@ router
     .use('/dispenses', [Authenticate, InscriptionComplete], DispenseRouter)
     .use('/rattrapages', [Authenticate, InscriptionComplete], RattrapageRouter)
     .use('/audit-notes', [Authenticate, InscriptionComplete], AuditNoteRouter)
-    .use('/reinscription', ReinscriptionRouter)
+    .use('/designation-memoires', [Authenticate], DesignationMemoireRouter)
+    .use('/reinscription', [Authenticate], ReinscriptionRouter)
     .get('/dashboard', [Authenticate, InscriptionComplete], DashboardController.getDashboard)
 
 export default router;

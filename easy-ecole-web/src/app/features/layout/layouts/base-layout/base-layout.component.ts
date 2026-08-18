@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { AuthService } from 'src/app/data/modules/auth/services/auth.service';
@@ -10,6 +11,7 @@ import { environment } from 'src/environments/environment';
 import { NotificationService } from 'src/app/data/modules/elearning/services/notification.service';
 import { SseService } from 'src/app/data/services/sse.service';
 import { NotificationSoundService } from 'src/app/data/services/notification-sound.service';
+import { StatutPaiementService } from 'src/app/data/modules/inscription/services/statut-paiement.service';
 
 @Component({
   selector: 'app-base-layout',
@@ -31,6 +33,16 @@ export class BaseLayoutComponent extends BaseComponentClass implements OnInit, O
   private notifSub: Subscription | null = null
   private notifCountSub: Subscription | null = null
 
+  // Blocage paiement (apprenant / parent)
+  paiementBloque: boolean = false
+  statutPaiementMessage: string = ''
+  echeancesEnRetard: number = 0
+  montantRestant?: number
+  private statutPaiementTimer: ReturnType<typeof setInterval> | null = null
+
+  /** Routes de régularisation sur lesquelles le bandeau de blocage est masqué. */
+  private readonly REGULARISATION_ROUTES: string[] = ['/inscription/paiements', '/inscription/bordereaux']
+
   readonly PROFILES_PATH: string = environment.MEDIAS_PATH.AUTH.PROFILES
 
   soundEnabled: boolean = true
@@ -43,6 +55,8 @@ export class BaseLayoutComponent extends BaseComponentClass implements OnInit, O
     private notificationService: NotificationService,
     private sseService: SseService,
     private soundService: NotificationSoundService,
+    private statutPaiementService: StatutPaiementService,
+    private router: Router,
     private http: HttpClient) {
     super()
     this.soundEnabled = this.soundService.isEnabled
@@ -57,11 +71,60 @@ export class BaseLayoutComponent extends BaseComponentClass implements OnInit, O
     this.permissionState.loadPermissions()
     this.startPolling()
     this.subscribeToSse()
+    if (this.rolesValue.isApprenant || this.rolesValue.isParent) {
+      this.refreshStatutPaiement()
+      this.statutPaiementTimer = setInterval(() => this.refreshStatutPaiement(), 60000)
+    }
   }
 
   ngOnDestroy(): void {
     this.notifSub?.unsubscribe()
     this.notifCountSub?.unsubscribe()
+    if (this.statutPaiementTimer) {
+      clearInterval(this.statutPaiementTimer)
+      this.statutPaiementTimer = null
+    }
+  }
+
+  /**
+   * Interroge GET /inscription/paiement/statut (apprenant / parent).
+   * Échoue gracieusement : tout statut absent ou erreur ⇒ pas de bandeau.
+   */
+  refreshStatutPaiement(): void {
+    this.statutPaiementService.getStatut().subscribe({
+      next: (statut) => {
+        if (statut && statut.statut === 'rouge') {
+          this.paiementBloque = true
+          this.statutPaiementMessage = statut.message || ''
+          this.echeancesEnRetard = statut.echeancesEnRetard ?? 0
+          this.montantRestant = statut.montantRestant
+        } else {
+          this.paiementBloque = false
+        }
+      },
+      error: () => {
+        this.paiementBloque = false
+      }
+    })
+  }
+
+  /**
+   * Le bandeau est affiché uniquement si le paiement est bloqué ET que l'utilisateur
+   * n'est pas déjà sur une page de régularisation (paiements / bordereaux).
+   * Aucun redirect forcé : la restriction d'accès est gérée côté serveur (menu filtré).
+   */
+  get showPaiementBandeau(): boolean {
+    if (!this.paiementBloque) return false
+    const url = this.router.url
+    return !this.REGULARISATION_ROUTES.some(route => url.startsWith(route))
+  }
+
+  get bandeauMessage(): string {
+    if (this.statutPaiementMessage) return this.statutPaiementMessage
+    if (this.echeancesEnRetard > 0) {
+      return `Paiement en retard — ${this.echeancesEnRetard} échéance(s). Vos accès sont limités jusqu'à régularisation.`
+    }
+    return 'Paiement en retard. Vos accès sont limités jusqu\'à régularisation.'
   }
 
   private subscribeToSse(): void {

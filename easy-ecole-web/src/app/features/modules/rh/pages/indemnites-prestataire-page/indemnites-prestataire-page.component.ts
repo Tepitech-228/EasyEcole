@@ -3,6 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { RhIndemnitePrestataireService } from 'src/app/data/modules/rh/services/rh-indemnite-prestataire.service';
 import { RhPrestataireService } from 'src/app/data/modules/rh/services/rh-prestataire.service';
+import { EtablissementService } from 'src/app/data/modules/etablissement/services/etablissement.service';
 import { IndemnitePrestataire } from 'src/app/data/modules/rh/models/IndemnitePrestataire.model';
 import { Prestataire } from 'src/app/data/modules/rh/models/Prestataire.model';
 
@@ -16,17 +17,24 @@ export class IndemnitesPrestatairePageComponent extends BaseComponentClass imple
   prestataires: Prestataire[] = [];
   loading: boolean = false;
   showForm: boolean = false;
-  formData: any = { prestataireId: '', typeIndemnite: '', libelle: '', montant: '', devise: 'FCFA', dateDebut: '', dateFin: '', nombreJours: 1, description: '', statut: 'En attente', datePaiement: '', modePaiement: '', validePar: '' };
+
+  private get deviseEtablissement(): string {
+    return this.etablissementService.etablissement?.devise || 'FCFA'
+  }
+
+  formData: any = { prestataireId: '', typeIndemnite: '', libelle: '', montant: '', devise: '', dateDebut: '', dateFin: '', nombreJours: 1, description: '', statut: 'En attente', datePaiement: '', modePaiement: '', validePar: '' };
   prestataireIdFilter: string = '';
   selectedPrestataire: Prestataire | null = null;
 
   constructor(
     private indemniteService: RhIndemnitePrestataireService,
     private prestataireService: RhPrestataireService,
+    private etablissementService: EtablissementService,
     private route: ActivatedRoute,
   ) { super(); }
 
   ngOnInit(): void {
+    this.formData.devise = this.deviseEtablissement
     this.prestataireIdFilter = this.route.snapshot.params['prestataireId'] || '';
     if (this.prestataireIdFilter) {
       this.prestataireService.get(this.prestataireIdFilter).subscribe({
@@ -83,7 +91,7 @@ export class IndemnitesPrestatairePageComponent extends BaseComponentClass imple
   }
 
   ouvrirFormulaire() {
-    this.formData = { prestataireId: this.prestataireIdFilter || '', typeIndemnite: '', libelle: '', montant: '', devise: 'FCFA', dateDebut: '', dateFin: '', nombreJours: 1, description: '', statut: 'En attente', datePaiement: '', modePaiement: '', validePar: '' };
+    this.formData = { prestataireId: this.prestataireIdFilter || '', typeIndemnite: '', libelle: '', montant: '', devise: this.deviseEtablissement, dateDebut: '', dateFin: '', nombreJours: 1, description: '', statut: 'En attente', datePaiement: '', modePaiement: '', validePar: '' };
     this.showForm = true;
   }
 

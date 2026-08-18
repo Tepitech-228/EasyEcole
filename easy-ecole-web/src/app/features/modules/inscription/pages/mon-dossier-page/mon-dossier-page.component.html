@@ -67,6 +67,53 @@
         </div>
       </div>
 
+      <!-- Parcours académique -->
+      <div class="bg-white shadow rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Parcours académique</h3>
+        <div class="grid grid-cols-2 gap-y-4 gap-x-6">
+          <div>
+            <span class="block text-xs text-gray-400">Sexe</span>
+            <span class="block text-sm font-medium text-gray-800">{{ dossier.utilisateur?.apprenant?.sexe || '---' }}</span>
+          </div>
+          <div>
+            <span class="block text-xs text-gray-400">N° CNI</span>
+            <span class="block text-sm font-medium text-gray-800">{{ dossier.utilisateur?.apprenant?.cni || '---' }}</span>
+          </div>
+          <div>
+            <span class="block text-xs text-gray-400">Année d'obtention du Bac</span>
+            <span class="block text-sm font-medium text-gray-800">{{ dossier.utilisateur?.apprenant?.anneeObtentionBac || '---' }}</span>
+          </div>
+          <div>
+            <span class="block text-xs text-gray-400">Série du Bac</span>
+            <span class="block text-sm font-medium text-gray-800">{{ dossier.utilisateur?.apprenant?.serieBac || '---' }}</span>
+          </div>
+          <div>
+            <span class="block text-xs text-gray-400">Année de 1ère inscription</span>
+            <span class="block text-sm font-medium text-gray-800">{{ dossier.utilisateur?.apprenant?.anneePremiereInscription || '---' }}</span>
+          </div>
+          <div>
+            <span class="block text-xs text-gray-400">Nombre d'inscriptions</span>
+            <span class="block text-sm font-medium text-gray-800">{{ dossier.utilisateur?.apprenant?.nombreInscriptions || '---' }}</span>
+          </div>
+          <div>
+            <span class="block text-xs text-gray-400">Nouveau / Ancien</span>
+            <span class="block text-sm font-medium text-gray-800">{{ (dossier.utilisateur?.apprenant?.statutEtudiant || 'nouveau') | titlecase }}</span>
+          </div>
+          <div>
+            <span class="block text-xs text-gray-400">Diplôme / certificat préparé</span>
+            <span class="block text-sm font-medium text-gray-800">{{ dossier.utilisateur?.apprenant?.diplomePrepare || '---' }}</span>
+          </div>
+          <div>
+            <span class="block text-xs text-gray-400">Présence de handicap</span>
+            <span class="block text-sm font-medium text-gray-800">{{ dossier.utilisateur?.apprenant?.statutHandicap ? 'Oui' : 'Non' }}</span>
+          </div>
+          <div>
+            <span class="block text-xs text-gray-400">Nature du handicap</span>
+            <span class="block text-sm font-medium text-gray-800">{{ dossier.utilisateur?.apprenant?.natureHandicap || '---' }}</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Informations du dossier -->
       <div class="bg-white shadow rounded-lg p-6">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">Informations du dossier</h3>
@@ -164,6 +211,29 @@
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- Documents officiels (attestations) -->
+      <div class="bg-white shadow rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-1">Documents</h3>
+        <p class="text-sm text-gray-500 mb-4">Téléchargez vos attestations officielles au format PDF.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div *ngFor="let type of attestationTypes" class="border border-gray-200 rounded-lg p-4 flex flex-col gap-3">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-indigo-500 text-xl">description</span>
+              <span class="text-sm font-medium text-gray-800">{{ type.label }}</span>
+            </div>
+            <button (click)="telechargerAttestation(type.typeCode)"
+                    [disabled]="isAttestationLoading(type.typeCode)"
+                    class="inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold shadow-sm transition
+                           focus:outline-none focus:ring-2 focus:ring-offset-2
+                           disabled:opacity-50 disabled:cursor-not-allowed
+                           enabled:bg-indigo-600 enabled:text-white enabled:hover:bg-indigo-500 enabled:focus:ring-indigo-500">
+              <span class="material-symbols-outlined text-base">{{ isAttestationLoading(type.typeCode) ? 'hourglass_top' : 'download' }}</span>
+              {{ isAttestationLoading(type.typeCode) ? 'Génération en cours…' : 'Télécharger' }}
+            </button>
+          </div>
         </div>
       </div>
     </div>

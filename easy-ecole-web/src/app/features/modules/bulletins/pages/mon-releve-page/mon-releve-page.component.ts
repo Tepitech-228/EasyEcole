@@ -11,6 +11,9 @@ export class MonRelevePageComponent extends BaseComponentClass implements OnInit
   bulletins: any[] = [];
   loading: boolean = false;
 
+  /** Semi-semestres accessibles en 1ère année (le backend filtre déjà la liste). */
+  private static readonly SEMESTRES_PREMIERE_ANNEE: string[] = ['semestre1', 'semestre2'];
+
   constructor(private bulletinService: BulletinService) { super(); }
 
   ngOnInit() {
@@ -20,6 +23,19 @@ export class MonRelevePageComponent extends BaseComponentClass implements OnInit
       error: () => this.loading = false,
       complete: () => this.loading = false
     });
+  }
+
+  /** L'utilisateur connecté est un apprenant de 1ère année : sa liste ne comporte que les semestres 1-2. */
+  get estPremiereAnnee(): boolean {
+    return this.rolesValue.isApprenant &&
+      this.bulletins.length > 0 &&
+      this.bulletins.every((b: any) => MonRelevePageComponent.SEMESTRES_PREMIERE_ANNEE.includes(b.semestre));
+  }
+
+  /** Bulletins réellement affichés : masque les semestres > 2 pour les 1ères années. */
+  get bulletinsVisibles(): any[] {
+    if (!this.estPremiereAnnee) return this.bulletins;
+    return this.bulletins.filter((b: any) => MonRelevePageComponent.SEMESTRES_PREMIERE_ANNEE.includes(b.semestre));
   }
 
   getSemestre(s: string): string {

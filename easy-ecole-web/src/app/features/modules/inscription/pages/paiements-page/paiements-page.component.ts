@@ -1,11 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 import { TypesPaiement } from 'src/app/data/enums/TypesPaiement';
 import { DemandeInscription } from 'src/app/data/modules/inscription/models/DemandeInscription.model';
+import { DossierEtudiant } from 'src/app/data/modules/inscription/models/DossierEtudiant.model';
+import { Echeance } from 'src/app/data/modules/inscription/models/Echeance.model';
 import { PaiementInscription } from 'src/app/data/modules/inscription/models/PaiementInscription.model';
 import { DemandeInscriptionService } from 'src/app/data/modules/inscription/services/demande-inscription.service';
+import { DossierEtudiantService } from 'src/app/data/modules/inscription/services/dossier-etudiant.service';
 import { PaiementInscriptionService } from 'src/app/data/modules/inscription/services/paiement-inscription.service';
 import { environment } from 'src/environments/environment';
 
@@ -18,6 +22,11 @@ export class PaiementsPageComponent extends BaseComponentClass implements OnInit
 
   error: boolean = false
   matriculeNotExists: boolean = false
+
+  // Échéancier de l'étudiant (vue apprenant / parent)
+  dossier?: DossierEtudiant
+  echeancierLoading: boolean = false
+  echeancierError: boolean = false
 
   showNouveauPaiementModal: boolean = false
   showDetailsPaiementModal: boolean = false
@@ -42,10 +51,15 @@ export class PaiementsPageComponent extends BaseComponentClass implements OnInit
   constructor(
     private paiementInscriptionService: PaiementInscriptionService,
     private demandeInscriptionService: DemandeInscriptionService,
+    private dossierEtudiantService: DossierEtudiantService,
+    private router: Router,
     private localStorage: LocalStorageService
   ) {
     super()
     this.getPaiements()
+    if (this.rolesValue.isApprenant) {
+      this.getMonDossier()
+    }
   }
 
   paiementForm: FormGroup = new FormGroup({
@@ -55,6 +69,79 @@ export class PaiementsPageComponent extends BaseComponentClass implements OnInit
   })
 
   ngOnInit(): void {
+  }
+
+  // ─────────────────────────────────────────────
+  // Échéancier de l'étudiant (Mon échéancier)
+  // ─────────────────────────────────────────────
+
+  getMonDossier(): void {
+    this.echeancierLoading = true
+    this.echeancierError = false
+    this.dossierEtudiantService.getMonDossier().subscribe({
+      next: (res) => {
+        this.dossier = res
+        this.echeancierLoading = false
+      },
+      error: (err) => {
+        console.log(err)
+        this.echeancierLoading = false
+        this.echeancierError = true
+      }
+    })
+  }
+
+  get echeances(): Echeance[] {
+    return this.dossier?.echeances || []
+  }
+
+  get totalRestant(): number {
+    return this.echeances
+      .filter(echeance => echeance.statut !== 'paye')
+      .reduce((sum, echeance) => sum + (echeance.montant || 0), 0)
+  }
+
+  get echeanceImpayeeCount(): number {
+    return this.echeances.filter(echeance => echeance.statut !== 'paye').length
+  }
+
+  /** Échéance impayée la plus proche (par date limite, sinon par n°). */
+  get prochaineEcheance(): Echeance | null {
+    const impayees = this.echeances.filter(echeance => echeance.statut !== 'paye')
+    if (impayees.length === 0) return null
+    return impayees.slice().sort((a, b) => {
+      const dateA = a.dateLimite ? new Date(a.dateLimite).getTime() : Number.MAX_SAFE_INTEGER
+      const dateB = b.dateLimite ? new Date(b.dateLimite).getTime() : Number.MAX_SAFE_INTEGER
+      if (dateA !== dateB) return dateA - dateB
+      return (a.numeroEcheance || 0) - (b.numeroEcheance || 0)
+    })[0]
+  }
+
+  estEcheanceImpayee(echeance: Echeance): boolean {
+    return echeance.statut !== 'paye'
+  }
+
+  getStatutEcheanceColor(statut?: string): string {
+    switch (statut) {
+      case 'paye': return 'green'
+      case 'en_retard': return 'red'
+      case 'impaye': return 'yellow'
+      default: return 'gray'
+    }
+  }
+
+  getStatutEcheanceLabel(statut?: string): string {
+    switch (statut) {
+      case 'paye': return 'Payée'
+      case 'en_retard': return 'En retard'
+      case 'impaye': return 'Impayée'
+      default: return statut || '—'
+    }
+  }
+
+  /** Envoie l'étudiant vers la page de régularisation (upload de bordereau/reçu, flux existant apprenant). */
+  payerEcheance(): void {
+    this.router.navigate(['/inscription/bordereaux'])
   }
 
   getPaiements(): void {
@@ -250,7 +337,10 @@ export class PaiementsPageComponent extends BaseComponentClass implements OnInit
       this.paiementInscriptionService.create(paiement).subscribe({
         next: (res: any) => {
           if (res?.receiptUrl) {
-            window.open(res.receiptUrl, '_blank')
+            const token = this.localStorage.get(LocalStorageService.AUTH_TOKEN)
+            let url = res.receiptUrl
+            if (token) url += `${url.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}`
+            window.open(url, '_blank')
           }
           this.getPaiements()
           this.closeNouveauPaiementModal()

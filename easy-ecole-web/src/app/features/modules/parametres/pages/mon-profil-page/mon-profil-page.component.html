@@ -33,6 +33,45 @@
     </div>
     <form [formGroup]="profilForm" *ngIf="profilForm">
         <div class="flex flex-col gap-x-4 mb-8">
+            <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
+                <div class="col-span-2">
+                    <label for="nom" class="mb-2 block text-sm leading-6 text-gray-600">Nom</label>
+                    <input type="text" id="nom" formControlName="nom"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('nom')!.invalid && (profilForm.get('nom')!.dirty || profilForm.get('nom')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('nom')!.errors?.['required']"
+                            text="Veuillez saisir votre nom"></app-form-message>
+                    </div>
+                </div>
+                <div class="col-span-2">
+                    <label for="prenoms" class="mb-2 block text-sm leading-6 text-gray-600">Prénoms</label>
+                    <input type="text" id="prenoms" formControlName="prenoms"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('prenoms')!.invalid && (profilForm.get('prenoms')!.dirty || profilForm.get('prenoms')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('prenoms')!.errors?.['required']"
+                            text="Veuillez saisir vos prénoms"></app-form-message>
+                    </div>
+                </div>
+                <div class="col-span-2">
+                    <label for="identifiant" class="mb-2 block text-sm leading-6 text-gray-600">Matricule</label>
+                    <input type="text" id="identifiant" formControlName="identifiant" [disabled]="true"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 bg-gray-100">
+                </div>
+                <div class="col-span-2">
+                    <label for="contact" class="mb-2 block text-sm leading-6 text-gray-600">Contact</label>
+                    <input type="text" id="contact" formControlName="contact"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="sexe" class="mb-2 block text-sm leading-6 text-gray-600">Sexe</label>
+                    <select id="sexe" formControlName="sexe"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        <option *ngFor="let option of sexeOptions" [value]="option.value">{{ option.label }}</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="flex flex-col gap-x-4 mb-8">
             <!-- <h2 class="text-base font-semibold leading-7 text-gray-900">Profile</h2> -->
             <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
                 <div class="col-span-3">
@@ -129,6 +168,86 @@
                                 class="block text-sm font-regular leading-6 text-gray-700">Auditif</label>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+        <div class="flex flex-col gap-x-4 mb-8">
+            <h2 class="text-base font-semibold leading-7 text-gray-900 mb-2">Scolarité</h2>
+            <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
+                <div class="col-span-2">
+                    <label for="cni" class="mb-2 block text-sm leading-6 text-gray-600">N° CNI</label>
+                    <input type="text" id="cni" formControlName="cni"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="statutEtudiant" class="mb-2 block text-sm leading-6 text-gray-600">Nouveau / Ancien</label>
+                    <div class="flex items-center py-1 gap-x-4">
+                        <div class="flex items-center gap-x-3">
+                            <input id="nouveau" formControlName="statutEtudiant" type="radio" value="nouveau"
+                                class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                            <label for="nouveau" class="block text-sm font-regular leading-6 text-gray-700">Nouveau</label>
+                        </div>
+                        <div class="flex items-center gap-x-3">
+                            <input id="ancien" formControlName="statutEtudiant" type="radio" value="ancien"
+                                class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                            <label for="ancien" class="block text-sm font-regular leading-6 text-gray-700">Ancien</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-span-2">
+                    <label for="filiere" class="mb-2 block text-sm leading-6 text-gray-600">Filière</label>
+                    <input type="text" id="filiere" formControlName="filiere" [disabled]="true"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 bg-gray-100">
+                </div>
+                <div class="col-span-2">
+                    <label for="anneeEtude" class="mb-2 block text-sm leading-6 text-gray-600">Année d'étude</label>
+                    <input type="text" id="anneeEtude" formControlName="anneeEtude" [disabled]="true"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 bg-gray-100">
+                </div>
+                <div class="col-span-2">
+                    <label for="diplomePrepare" class="mb-2 block text-sm leading-6 text-gray-600">Diplôme / certificat préparé</label>
+                    <input type="text" id="diplomePrepare" formControlName="diplomePrepare"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="anneeObtentionBac" class="mb-2 block text-sm leading-6 text-gray-600">Année d'obtention du Bac</label>
+                    <input type="text" id="anneeObtentionBac" formControlName="anneeObtentionBac" placeholder="Ex: 2020"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="serieBac" class="mb-2 block text-sm leading-6 text-gray-600">Série du Bac</label>
+                    <input type="text" id="serieBac" formControlName="serieBac" placeholder="Ex: C, D, E..."
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="anneePremiereInscription" class="mb-2 block text-sm leading-6 text-gray-600">Année de 1ère inscription</label>
+                    <input type="text" id="anneePremiereInscription" formControlName="anneePremiereInscription" placeholder="Ex: 2022"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="nombreInscriptions" class="mb-2 block text-sm leading-6 text-gray-600">Nombre d'inscriptions</label>
+                    <input type="number" id="nombreInscriptions" formControlName="nombreInscriptions" min="1"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="statutHandicap" class="mb-2 block text-sm leading-6 text-gray-600">Présence de handicap</label>
+                    <div class="flex items-center py-1 gap-x-4">
+                        <div class="flex items-center gap-x-3">
+                            <input id="handicapNon" formControlName="statutHandicap" type="radio" [value]="false"
+                                class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                            <label for="handicapNon" class="block text-sm font-regular leading-6 text-gray-700">Non</label>
+                        </div>
+                        <div class="flex items-center gap-x-3">
+                            <input id="handicapOui" formControlName="statutHandicap" type="radio" [value]="true"
+                                class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                            <label for="handicapOui" class="block text-sm font-regular leading-6 text-gray-700">Oui</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-span-2" *ngIf="profilForm.get('statutHandicap')!.value == true">
+                    <label for="natureHandicap" class="mb-2 block text-sm leading-6 text-gray-600">Nature du handicap</label>
+                    <input type="text" id="natureHandicap" formControlName="natureHandicap" placeholder="Précisez la nature du handicap"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                 </div>
             </div>
         </div>
@@ -453,7 +572,6 @@
 
 <div class="w-full" *ngIf="enseignant && rolesValue.isEnseignant">
     <div class="w-full mb-8">
-        <!-- <label for="titre" class="mb-2 block text-sm leading-6 text-gray-600">Titre</label> -->
         <div class="mt-2 flex items-center gap-x-8">
             <img class="h-36 w-36 rounded-md object-cover object-center border-2 border-gray-300"
                 [src]="imageURL ? imageURL : enseignant.photo ? PHOTOS_PATH + enseignant.photo : 'assets/images/blank-profile-picture.png'" alt="profile">
@@ -469,12 +587,46 @@
     </div>
     <form [formGroup]="profilForm" *ngIf="profilForm">
         <div class="flex flex-col gap-x-4 mb-8">
-            <!-- <h2 class="text-base font-semibold leading-7 text-gray-900">Profile</h2> -->
             <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
                 <div class="col-span-2">
-                    <label for="fonction" class="mb-2 block text-sm leading-6 text-gray-600">Fonction</label>
-                    <input type="text" id="fonction" formControlName="fonction"
+                    <label for="nom" class="mb-2 block text-sm leading-6 text-gray-600">Nom</label>
+                    <input type="text" id="nom" formControlName="nom"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('nom')!.invalid && (profilForm.get('nom')!.dirty || profilForm.get('nom')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('nom')!.errors?.['required']"
+                            text="Veuillez saisir votre nom"></app-form-message>
+                    </div>
+                </div>
+                <div class="col-span-2">
+                    <label for="prenoms" class="mb-2 block text-sm leading-6 text-gray-600">Prénoms</label>
+                    <input type="text" id="prenoms" formControlName="prenoms"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('prenoms')!.invalid && (profilForm.get('prenoms')!.dirty || profilForm.get('prenoms')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('prenoms')!.errors?.['required']"
+                            text="Veuillez saisir vos prénoms"></app-form-message>
+                    </div>
+                </div>
+                <div class="col-span-2">
+                    <label for="matricule" class="mb-2 block text-sm leading-6 text-gray-600">N° Matricule</label>
+                    <input type="text" id="matricule" formControlName="matricule"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="cni" class="mb-2 block text-sm leading-6 text-gray-600">N° de CNI</label>
+                    <input type="text" id="cni" formControlName="cni"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="contact" class="mb-2 block text-sm leading-6 text-gray-600">Contact</label>
+                    <input type="text" id="contact" formControlName="contact"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="sexe" class="mb-2 block text-sm leading-6 text-gray-600">Sexe</label>
+                    <select id="sexe" formControlName="sexe"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        <option *ngFor="let option of sexeOptions" [value]="option.value">{{ option.label }}</option>
+                    </select>
                 </div>
                 <div class="col-span-2">
                     <label for="dateNaissance" class="mb-2 block text-sm leading-6 text-gray-600">Date de naissance</label>
@@ -493,6 +645,76 @@
                         <app-form-message *ngIf="profilForm.get('lieuNaissance')!.errors?.['required']"
                             text="Veuillez saisir votre lieu de naissance"></app-form-message>
                     </div>
+                </div>
+                <div class="col-span-2">
+                    <label for="nationalite" class="mb-2 block text-sm leading-6 text-gray-600">Nationalité</label>
+                    <input type="text" id="nationalite" formControlName="nationalite"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="plusHautDiplome" class="mb-2 block text-sm leading-6 text-gray-600">Diplôme le plus élevé</label>
+                    <input type="text" id="plusHautDiplome" formControlName="plusHautDiplome"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="gradeAcademique" class="mb-2 block text-sm leading-6 text-gray-600">Grade universitaire</label>
+                    <input type="text" id="gradeAcademique" formControlName="gradeAcademique"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="statut" class="mb-2 block text-sm leading-6 text-gray-600">Statut</label>
+                    <input type="text" id="statut" formControlName="statut"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="specialite" class="mb-2 block text-sm leading-6 text-gray-600">Spécialité</label>
+                    <input type="text" id="specialite" formControlName="specialite"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="fonctionAdministrative" class="mb-2 block text-sm leading-6 text-gray-600">Fonction administrative</label>
+                    <input type="text" id="fonctionAdministrative" formControlName="fonctionAdministrative"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="heureTheoriqueAnnuelle" class="mb-2 block text-sm leading-6 text-gray-600">Heures de cours théorique/an</label>
+                    <input type="number" id="heureTheoriqueAnnuelle" formControlName="heureTheoriqueAnnuelle" min="0"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="heureReelleAnnuelle" class="mb-2 block text-sm leading-6 text-gray-600">Heures de cours réalisé/an</label>
+                    <input type="number" id="heureReelleAnnuelle" formControlName="heureReelleAnnuelle" min="0"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="anneeExperience" class="mb-2 block text-sm leading-6 text-gray-600">Nombre d’année d’expérience dans l’enseignement</label>
+                    <input type="number" id="anneeExperience" formControlName="anneeExperience" min="0"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="nifOtr" class="mb-2 block text-sm leading-6 text-gray-600">NIF/OTR</label>
+                    <input type="text" id="nifOtr" formControlName="nifOtr"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="statutHandicap" class="mb-2 block text-sm leading-6 text-gray-600">Présence de handicap</label>
+                    <div class="flex items-center py-1 gap-x-4">
+                        <div class="flex items-center gap-x-3">
+                            <input id="handicapNon" formControlName="statutHandicap" type="radio" [value]="false"
+                                class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                            <label for="handicapNon" class="block text-sm font-regular leading-6 text-gray-700">Non</label>
+                        </div>
+                        <div class="flex items-center gap-x-3">
+                            <input id="handicapOui" formControlName="statutHandicap" type="radio" [value]="true"
+                                class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                            <label for="handicapOui" class="block text-sm font-regular leading-6 text-gray-700">Oui</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-span-2" *ngIf="profilForm.get('statutHandicap')!.value == true">
+                    <label for="natureHandicap" class="mb-2 block text-sm leading-6 text-gray-600">Nature du handicap</label>
+                    <input type="text" id="natureHandicap" formControlName="natureHandicap" placeholder="Précisez la nature du handicap"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                 </div>
             </div>
         </div>
@@ -610,6 +832,141 @@
 
         <div class="w-full flex justify-end items-center pb-12">
             <app-custom-button [disabled]="false" (click)="validerProfilCaissierBanque()" text="Enregistrer"></app-custom-button>
+        </div>
+    </form>
+</div>
+
+<div class="w-full" *ngIf="personnelAdministratif && rolesValue.isPersonnelAdministratif">
+    <div class="w-full mb-8">
+        <div class="mt-2 flex items-center gap-x-8">
+            <img class="h-36 w-36 rounded-md object-cover object-center border-2 border-gray-300"
+                [src]="imageURL ? imageURL : personnelAdministratif.photo ? PHOTOS_PATH + personnelAdministratif.photo : 'assets/images/blank-profile-picture.png'" alt="profile">
+            <div class="flex flex-col gap-y-5">
+                <div *ngIf="personnelAdministratif.dateNaissance" class="flex gap-x-5">
+                    <app-custom-button (click)="!file ? choisirFichier() : modifierPhotoProfilEnseignant()" [text]="!file ? 'Changer' : 'Enregistrer'" [outlined]="!file ? true : false"></app-custom-button>
+                    <app-custom-button *ngIf="file" (click)="supprimerFichier()" text="Annuler" color="primary" [outlined]="true"></app-custom-button>
+                </div>
+                <p *ngIf="!personnelAdministratif.dateNaissance" class="text-xs leading-5 text-red-600">Veuillez renseigner vos informations <br> avant d'ajouter une photo</p>
+                <p class="text-xs leading-5 text-gray-600">Images: PNG, JPG, JEPG</p>
+            </div>
+        </div>
+    </div>
+    <form [formGroup]="profilForm" *ngIf="profilForm">
+        <div class="flex flex-col gap-x-4 mb-8">
+            <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
+                <div class="col-span-2">
+                    <label for="nom" class="mb-2 block text-sm leading-6 text-gray-600">Nom</label>
+                    <input type="text" id="nom" formControlName="nom"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('nom')!.invalid && (profilForm.get('nom')!.dirty || profilForm.get('nom')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('nom')!.errors?.['required']"
+                            text="Veuillez saisir votre nom"></app-form-message>
+                    </div>
+                </div>
+                <div class="col-span-2">
+                    <label for="prenoms" class="mb-2 block text-sm leading-6 text-gray-600">Prénoms</label>
+                    <input type="text" id="prenoms" formControlName="prenoms"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('prenoms')!.invalid && (profilForm.get('prenoms')!.dirty || profilForm.get('prenoms')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('prenoms')!.errors?.['required']"
+                            text="Veuillez saisir vos prénoms"></app-form-message>
+                    </div>
+                </div>
+                <div class="col-span-2">
+                    <label for="matricule" class="mb-2 block text-sm leading-6 text-gray-600">N° Matricule</label>
+                    <input type="text" id="matricule" formControlName="matricule"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="cni" class="mb-2 block text-sm leading-6 text-gray-600">N° de CNI</label>
+                    <input type="text" id="cni" formControlName="cni"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="contact" class="mb-2 block text-sm leading-6 text-gray-600">Contact</label>
+                    <input type="text" id="contact" formControlName="contact"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="sexe" class="mb-2 block text-sm leading-6 text-gray-600">Sexe</label>
+                    <select id="sexe" formControlName="sexe"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        <option *ngFor="let option of sexeOptions" [value]="option.value">{{ option.label }}</option>
+                    </select>
+                </div>
+                <div class="col-span-2">
+                    <label for="dateNaissance" class="mb-2 block text-sm leading-6 text-gray-600">Date de naissance</label>
+                    <input type="date" id="dateNaissance" formControlName="dateNaissance"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('dateNaissance')!.invalid && (profilForm.get('dateNaissance')!.dirty || profilForm.get('dateNaissance')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('dateNaissance')!.errors?.['required']"
+                            text="Veuillez saisir votre date de naissance"></app-form-message>
+                    </div>
+                </div>
+                <div class="col-span-2">
+                    <label for="lieuNaissance" class="mb-2 block text-sm leading-6 text-gray-600">Lieu de naissance</label>
+                    <input type="text" id="lieuNaissance" formControlName="lieuNaissance"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('lieuNaissance')!.invalid && (profilForm.get('lieuNaissance')!.dirty || profilForm.get('lieuNaissance')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('lieuNaissance')!.errors?.['required']"
+                            text="Veuillez saisir votre lieu de naissance"></app-form-message>
+                    </div>
+                </div>
+                <div class="col-span-2">
+                    <label for="nationalite" class="mb-2 block text-sm leading-6 text-gray-600">Nationalité</label>
+                    <input type="text" id="nationalite" formControlName="nationalite"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="plusHautDiplome" class="mb-2 block text-sm leading-6 text-gray-600">Diplôme le plus élevé</label>
+                    <input type="text" id="plusHautDiplome" formControlName="plusHautDiplome"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="statut" class="mb-2 block text-sm leading-6 text-gray-600">Statut</label>
+                    <input type="text" id="statut" formControlName="statut"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="fonction" class="mb-2 block text-sm leading-6 text-gray-600">Fonction occupée</label>
+                    <input type="text" id="fonction" formControlName="fonction"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="directionService" class="mb-2 block text-sm leading-6 text-gray-600">Direction / Service</label>
+                    <input type="text" id="directionService" formControlName="directionService"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="nifOtr" class="mb-2 block text-sm leading-6 text-gray-600">NIF/OTR</label>
+                    <input type="text" id="nifOtr" formControlName="nifOtr"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+                <div class="col-span-2">
+                    <label for="statutHandicap" class="mb-2 block text-sm leading-6 text-gray-600">Présence de handicap</label>
+                    <div class="flex items-center py-1 gap-x-4">
+                        <div class="flex items-center gap-x-3">
+                            <input id="handicapNon" formControlName="statutHandicap" type="radio" [value]="false"
+                                class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                            <label for="handicapNon" class="block text-sm font-regular leading-6 text-gray-700">Non</label>
+                        </div>
+                        <div class="flex items-center gap-x-3">
+                            <input id="handicapOui" formControlName="statutHandicap" type="radio" [value]="true"
+                                class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                            <label for="handicapOui" class="block text-sm font-regular leading-6 text-gray-700">Oui</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-span-2" *ngIf="profilForm.get('statutHandicap')!.value == true">
+                    <label for="natureHandicap" class="mb-2 block text-sm leading-6 text-gray-600">Nature du handicap</label>
+                    <input type="text" id="natureHandicap" formControlName="natureHandicap" placeholder="Précisez la nature du handicap"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full flex justify-end items-center pb-12">
+            <app-custom-button [disabled]="false" (click)="validerProfilPersonnelAdministratif()" text="Enregistrer"></app-custom-button>
         </div>
     </form>
 </div>

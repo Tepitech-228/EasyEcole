@@ -10,6 +10,7 @@ import { GedDocumentPageComponent } from './pages/ged-document-page/ged-document
 import { GedArchivesComponent } from './pages/ged-archives/ged-archives.component';
 import { GedDisposalComponent } from './pages/ged-disposal/ged-disposal.component';
 import { GedBatchUploadComponent } from './pages/ged-batch-upload/ged-batch-upload.component';
+import { GedFoldersComponent } from './pages/ged-folders/ged-folders.component';
 import { PermissionsGedComponent } from './permissions/permissions-ged.component';
 import { ProcessusListComponent } from './processus/processus-list.component';
 import { ProcessusFormComponent } from './processus/processus-form.component';
@@ -19,7 +20,7 @@ const routes: Routes = [
   { path: '', redirectTo: 'catalog', pathMatch: 'full' },
   { path: 'courrier', component: GedCourrierComponent },
   { path: 'upload', component: GedMergeComponent },
-  { path: 'folders', redirectTo: 'upload', pathMatch: 'full' },
+  { path: 'folders', component: GedFoldersComponent },
   { path: 'nomenclature', redirectTo: 'upload', pathMatch: 'full' },
   { path: 'catalog', component: GedCatalogComponent },
   { path: 'search', component: GedSearchComponent },

@@ -9,6 +9,8 @@ export class Bordereau {
   declare utilisateurId?: string
   declare fichier?: string
   declare montant?: number
+  /** Modalité de paiement choisie par l'étudiant lors de la génération du bordereau d'inscription. */
+  declare modalite?: '1x' | '3x' | '10x'
   declare referenceBancaire?: string
   declare statut?: 'en_attente' | 'valide' | 'rejete'
   declare dateSoumission?: Date

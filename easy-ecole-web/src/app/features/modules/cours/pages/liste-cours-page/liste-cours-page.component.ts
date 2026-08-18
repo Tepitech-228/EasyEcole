@@ -1,12 +1,15 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { FormArray, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { NiveauEtude } from 'src/app/data/modules/inscription/models/NiveauEtude.model';
 import { Cours } from 'src/app/data/modules/inscription/models/Cours.model';
+import { Ecue } from 'src/app/data/modules/inscription/models/Ecue.model';
 import { NiveauEtudeService } from 'src/app/data/modules/inscription/services/niveau-etude.service';
 import { CoursService } from 'src/app/data/modules/inscription/services/cours.service';
+import { EcueService } from 'src/app/data/modules/inscription/services/ecue.service';
 import { CursusApprenant } from 'src/app/data/modules/inscription/models/CursusApprenant.model';
 import { CursusApprenantService } from 'src/app/data/modules/inscription/services/cursus-apprenant.service';
 import { Parcours } from 'src/app/data/modules/inscription/models/Parcours.model';
@@ -43,12 +46,14 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
     objectifs: new FormControl(null, []),
     estObligatoire: new FormControl(false, []),
     parcoursId: new FormControl(null, [Validators.required]),
+    ecues: new FormArray([]),
   })
 
   constructor(
     private router: Router,
     private niveauEtudeService: NiveauEtudeService,
     private coursService: CoursService,
+    private ecueService: EcueService,
     private cursusApprenantService: CursusApprenantService,
     private parcoursService: ParcoursService,
   ) {
@@ -64,8 +69,26 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
     }
   }
 
+  get ecuesFormArray(): FormArray {
+    return this.nouveauCoursForm.get('ecues') as FormArray
+  }
+
+  ajouterEcue(): void {
+    this.ecuesFormArray.push(new FormGroup({
+      code: new FormControl(null, [Validators.required]),
+      libelle: new FormControl(null, [Validators.required]),
+      creditEcts: new FormControl(null, []),
+      coefficient: new FormControl(null, []),
+    }))
+  }
+
+  supprimerEcue(index: number): void {
+    this.ecuesFormArray.removeAt(index)
+  }
+
   openNouveauCoursModal(): void {
     this.nouveauCoursForm.reset()
+    this.ecuesFormArray.clear()
     this.showNouveauCoursModal = true
   }
 
@@ -87,9 +110,32 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
       cours.estObligatoire = this.nouveauCoursForm.get('estObligatoire')!.value
       cours.parcoursId = this.nouveauCoursForm.get('parcoursId')!.value
 
+      const ecuesSaisis = this.ecuesFormArray.value.filter((e: any) => e.code && e.libelle)
+
       this.coursService.create(cours).subscribe({
         next: (res) => {
-          this.router.navigate(['/cours/cours/' + res.id])
+          if (ecuesSaisis.length === 0) {
+            this.router.navigate(['/cours/cours/' + res.id])
+            return
+          }
+
+          const observables = ecuesSaisis.map((e: any) => {
+            const ecue = new Ecue()
+            ecue.code = e.code
+            ecue.libelle = e.libelle
+            ecue.creditEcts = e.creditEcts
+            ecue.coefficient = e.coefficient || 1
+            ecue.coursId = res.id
+            return this.ecueService.create(ecue)
+          })
+
+          forkJoin(observables).subscribe({
+            next: () => this.router.navigate(['/cours/cours/' + res.id]),
+            error: (err) => {
+              console.log(err)
+              this.router.navigate(['/cours/cours/' + res.id])
+            },
+          })
         },
         error: (err: HttpErrorResponse) => {
           console.log(err)

@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { saveAs } from 'file-saver';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 import { environment } from 'src/environments/environment';
 
 @Component({
@@ -14,7 +15,16 @@ export class FactureDetailsPageComponent extends BaseComponentClass implements O
   loading = false
   notFound = false
   facture: any = null
+  showSignatureModal = false
+  signing = false
+  showPaiementModal = false
+  paying = false
   private readonly API = `${environment.API_URL}/achats/factures`
+
+  @ViewChild('signatureCanvas', { static: false }) canvasRef!: ElementRef<HTMLCanvasElement>
+  private signatureCtx!: CanvasRenderingContext2D
+  private signatureDrawing = false
+  private signatureHasInk = false
 
   constructor(private route: ActivatedRoute, private http: HttpClient) { super() }
 
@@ -57,6 +67,141 @@ export class FactureDetailsPageComponent extends BaseComponentClass implements O
   getStatutBadge(statut: string): string {
     const map: any = { emise: 'bg-yellow-100 text-yellow-700', payee: 'bg-green-100 text-green-700', annulee: 'bg-red-100 text-red-700' }
     return map[statut] || 'bg-gray-100 text-gray-700'
+  }
+
+  // ---------- Signature électronique ----------
+
+  get estSignee(): boolean {
+    return !!this.facture?.signatureData
+  }
+
+  get peutSigner(): boolean {
+    return !!this.facture && !this.facture.signatureData && this.facture.statut !== 'annulee'
+  }
+
+  get peutMarquerPayee(): boolean {
+    return !!this.facture && this.facture.statut === 'emise'
+  }
+
+  get signatureVide(): boolean {
+    return !this.signatureHasInk
+  }
+
+  getTokenInfos(): any {
+    try {
+      const token = localStorage.getItem(LocalStorageService.AUTH_TOKEN)
+      if (!token) return {}
+      const parts = token.split('.')
+      return JSON.parse(atob(parts[1]))
+    } catch { return {} }
+  }
+
+  ouvrirSignature(): void {
+    this.showSignatureModal = true
+    this.signatureHasInk = false
+    setTimeout(() => this.initSignatureCanvas(), 100)
+  }
+
+  annulerSignature(): void {
+    this.showSignatureModal = false
+  }
+
+  private initSignatureCanvas(): void {
+    if (!this.canvasRef) return
+    const canvas = this.canvasRef.nativeElement
+    this.signatureCtx = canvas.getContext('2d')!
+    this.signatureCtx.strokeStyle = '#000'
+    this.signatureCtx.lineWidth = 2
+    this.signatureCtx.lineCap = 'round'
+    this.signatureCtx.lineJoin = 'round'
+  }
+
+  onMouseDown(e: MouseEvent): void {
+    this.signatureDrawing = true
+    this.signatureHasInk = true
+    this.signatureCtx.beginPath()
+    this.signatureCtx.moveTo(e.offsetX, e.offsetY)
+  }
+
+  onMouseMove(e: MouseEvent): void {
+    if (!this.signatureDrawing) return
+    this.signatureCtx.lineTo(e.offsetX, e.offsetY)
+    this.signatureCtx.stroke()
+  }
+
+  onMouseUp(): void {
+    this.signatureDrawing = false
+  }
+
+  onTouchStart(e: TouchEvent): void {
+    e.preventDefault()
+    const rect = this.canvasRef.nativeElement.getBoundingClientRect()
+    const touch = e.touches[0]
+    this.signatureDrawing = true
+    this.signatureHasInk = true
+    this.signatureCtx.beginPath()
+    this.signatureCtx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top)
+  }
+
+  onTouchMove(e: TouchEvent): void {
+    e.preventDefault()
+    if (!this.signatureDrawing) return
+    const rect = this.canvasRef.nativeElement.getBoundingClientRect()
+    const touch = e.touches[0]
+    this.signatureCtx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top)
+    this.signatureCtx.stroke()
+  }
+
+  onTouchEnd(): void {
+    this.signatureDrawing = false
+  }
+
+  clearSignature(): void {
+    if (!this.canvasRef) return
+    const canvas = this.canvasRef.nativeElement
+    this.signatureCtx.clearRect(0, 0, canvas.width, canvas.height)
+    this.signatureHasInk = false
+  }
+
+  validerSignature(): void {
+    if (this.signatureVide || this.signing || !this.canvasRef) return
+    const dataUrl = this.canvasRef.nativeElement.toDataURL('image/png')
+    this.confirmerSignature(dataUrl)
+  }
+
+  confirmerSignature(dataUrl: string): void {
+    const id = this.facture?.id
+    if (!id) return
+    this.signing = true
+    const infos = this.getTokenInfos()
+    this.http.put<any>(`${this.API}/${id}/signer`, {
+      signatureData: dataUrl,
+      signataireNom: infos.displayname || 'Utilisateur connecté',
+      signataireRole: infos.role || ''
+    }).subscribe({
+      next: (data) => { this.facture = data; this.signing = false; this.showSignatureModal = false },
+      error: () => { this.signing = false; this.showSignatureModal = false }
+    })
+  }
+
+  // ---------- Marquer payée ----------
+
+  ouvrirPaiementModal(): void {
+    this.showPaiementModal = true
+  }
+
+  annulerPaiementModal(): void {
+    this.showPaiementModal = false
+  }
+
+  marquerPayee(): void {
+    const id = this.facture?.id
+    if (!id || this.paying) return
+    this.paying = true
+    this.http.put<any>(`${this.API}/${id}`, { statut: 'payee' }).subscribe({
+      next: (data) => { this.facture = data; this.paying = false; this.showPaiementModal = false },
+      error: () => { this.paying = false; this.showPaiementModal = false }
+    })
   }
 
   private escapeXml(value: any): string {
@@ -139,6 +284,15 @@ export class FactureDetailsPageComponent extends BaseComponentClass implements O
   </table>
 
   <p class="footer">Document généré par EasyEcole le ${this.escapeXml(new Date().toLocaleDateString('fr-FR'))} à ${this.escapeXml(new Date().toLocaleTimeString('fr-FR'))}.</p>
+${f.signatureData ? `
+  <div style="margin-top:48px; display:flex; justify-content:flex-end;">
+    <div style="text-align:center; width:300px;">
+      <img src="${f.signatureData}" style="max-height:90px; max-width:260px; display:block; margin:0 auto;" alt="Signature"/>
+      <div style="border-bottom:1px solid #9ca3af; margin:8px 0;"></div>
+      <div style="font-size:13px;"><strong>${this.escapeXml(f.signataireNom || '')}</strong>${f.signataireRole ? ' &middot; ' + this.escapeXml(f.signataireRole) : ''}</div>
+      <div style="font-size:11px; color:#6b7280;">Signé le ${f.dateSignature ? this.escapeXml(new Date(f.dateSignature).toLocaleDateString('fr-FR')) : ''}</div>
+    </div>
+  </div>` : ''}
 </body>
 </html>`
 

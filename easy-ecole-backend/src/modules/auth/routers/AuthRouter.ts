@@ -20,11 +20,11 @@ const resendOtpLimiter = rateLimit({
 })
 
 const loginLimiter = rateLimit({
-  windowMs: 60000,
+  windowMs: 15 * 60 * 1000,
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, message: 'Trop de tentatives, réessayez dans 1 minute' }
+  message: { success: false, message: 'Trop de tentatives, réessayez dans 15 minutes' }
 })
 
 const verifyOtpLimiter = rateLimit({

@@ -16,7 +16,8 @@ export default class NiveauEtudeController {
 
             return res.status(200).send(niveauxEtude);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -32,7 +33,8 @@ export default class NiveauEtudeController {
 
             return res.status(200).send(niveauEtude);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -113,7 +115,8 @@ export default class NiveauEtudeController {
                     return res.status(200).json({ success: true, message: "Niveau d'étude supprimé" });
                 })
                 .catch((error) => {
-                    return res.status(500).json({ success: false, error: error });
+                    console.error('Erreur', error);
+                    return res.status(500).json({ success: false, message: 'Erreur interne' });
                 });
         }
         else {
@@ -135,7 +138,8 @@ export default class NiveauEtudeController {
                 return res.status(200).json({ success: true, count: value });
             })
             .catch((error) => {
-                return res.status(500).json({ success: false, error: error });
+                console.error('Erreur', error);
+                return res.status(500).json({ success: false, message: 'Erreur interne' });
             });
 
         return null

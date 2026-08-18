@@ -14,8 +14,6 @@ export class ListeRattrapagesPageComponent extends BaseComponentClass implements
   stats: any = null;
   loading = false;
   selectedSessionId: number | null = null;
-  showAssignModal = false;
-  assignForm = { sessionExamenId: null as number | null, classeId: null as number | null, semestre: '' as string, anneeAcademiqueId: null as number | null };
 
   activeTab: 'auto' | 'demandes' = this.rolesValue.isApprenant ? 'demandes' : 'auto';
   demandesEtudiant: any[] = [];
@@ -25,6 +23,12 @@ export class ListeRattrapagesPageComponent extends BaseComponentClass implements
   programmeForm = { dateRattrapage: '' as string, heureDebut: '' as string, heureFin: '' as string, salle: '' as string, enseignantId: null as number | null };
   enseignants: any[] = [];
   paysantId: number | null = null;
+
+  // Saisie des notes (correcteur désigné par l'institution)
+  showNotesModal = false;
+  notesSaisie: any[] = [];
+  notesError: string | null = null;
+  notesSaving = false;
 
   constructor(
     private service: RattrapageService,
@@ -65,18 +69,6 @@ export class ListeRattrapagesPageComponent extends BaseComponentClass implements
   onSessionChange(sessionId: number | string): void {
     this.selectedSessionId = sessionId ? Number(sessionId) : null;
     this.loadAll();
-  }
-
-  openAssignModal(): void {
-    this.assignForm = { sessionExamenId: null, classeId: null, semestre: '', anneeAcademiqueId: null };
-    this.showAssignModal = true;
-  }
-
-  submitAssign(): void {
-    this.service.assignerAuto(this.assignForm).subscribe({
-      next: (res) => { this.showAssignModal = false; this.loadAll(); },
-      error: (err) => { console.error(err); }
-    });
   }
 
   notifierTous(): void {
@@ -129,6 +121,19 @@ export class ListeRattrapagesPageComponent extends BaseComponentClass implements
       enseignantId: demande.enseignantId || null
     };
     this.showProgrammeModal = true;
+
+    // Présélection du correcteur désigné pour ce cours lors de la création de la session
+    if (demande.sessionExamenId && demande.coursId) {
+      this.service.getCorrecteursSession(demande.sessionExamenId).subscribe({
+        next: (correcteurs: any[]) => {
+          const c = (correcteurs || []).find((x: any) => String(x.coursId) === String(demande.coursId));
+          if (c && !this.programmeForm.enseignantId) {
+            this.programmeForm.enseignantId = c.enseignantId;
+          }
+        },
+        error: () => {}
+      });
+    }
   }
 
   submitProgramme(): void {
@@ -162,6 +167,28 @@ export class ListeRattrapagesPageComponent extends BaseComponentClass implements
         this.loadDemandesEtudiant();
       },
       error: (err) => { console.error(err); this.paysantId = null; }
+    });
+  }
+
+  openNotesModal(): void {
+    this.notesError = null;
+    this.notesSaisie = this.inscriptions.map(i => ({ id: i.id, noteRattrapage: i.noteRattrapage ?? null }));
+    this.showNotesModal = true;
+  }
+
+  submitNotes(): void {
+    this.notesError = null;
+    this.notesSaving = true;
+    this.service.saveNotes(this.notesSaisie).subscribe({
+      next: () => {
+        this.notesSaving = false;
+        this.showNotesModal = false;
+        this.loadAll();
+      },
+      error: (err) => {
+        this.notesSaving = false;
+        this.notesError = err.error?.message || 'Erreur lors de la saisie des notes.';
+      }
     });
   }
 }

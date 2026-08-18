@@ -5,7 +5,7 @@ import { environment } from 'src/environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class AchatsService {
-  private readonly URL = `${environment.API_MODULES.STOCKS || environment.API_URL}/achats`;
+  private readonly URL = environment.API_MODULES.ACHATS;
 
   constructor(private http: HttpClient) {}
 

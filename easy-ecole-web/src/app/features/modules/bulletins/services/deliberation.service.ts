@@ -1,13 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 import { environment } from './../../../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class DeliberationService {
   private apiUrl = `${environment.API_URL}/inscription/deliberations`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private localStorage: LocalStorageService) {}
 
   getAll(params?: any): Observable<any> {
     return this.http.get<any>(this.apiUrl, { params });
@@ -62,7 +63,10 @@ export class DeliberationService {
   }
 
   telechargerPV(filename: string): string {
-    return `${this.apiUrl}/pv/${filename}`;
+    const token = this.localStorage.get(LocalStorageService.AUTH_TOKEN)
+    let url = `${this.apiUrl}/pv/${filename}`
+    if (token) url += `?token=${encodeURIComponent(token)}`
+    return url
   }
 
   calculerSuggestions(id: number): Observable<any> {

@@ -6,6 +6,7 @@ import { Permission } from "../auth/models/Permission";
 import { Role } from "../auth/models/Role";
 import { UserPermission } from "../auth/models/UserPermission";
 import { UserRole } from "../auth/models/UserRole";
+import { VerificationPaiementService } from "../inscription/services/VerificationPaiementService";
 
 const router = Router();
 
@@ -47,6 +48,49 @@ function filterMenuByPermissions(
         }
 
         poles.push({ ...pole, groups: filteredGroups });
+        return poles;
+    }, []);
+}
+
+/**
+ * Entrées du menu que l'on conserve lorsque l'étudiant est en situation de blocage
+ * paiement (statut 'rouge') : uniquement ce qui permet de régulariser.
+ * Identification par permissionKey (identifiants stables) ET par route (univoque)
+ * pour éviter les faux positifs sur d'autres entrées homonymes (« Paiements »
+ * existe aussi dans Reporting et Espace Parents). Structure réelle du menu :
+ * items { label, route, icon, permissionKey }.
+ *   - « Mes bordereaux »  → /inscription/bordereaux → permissionKey 'menu.finances.bordereaux'
+ *   - « Paiements »       → /inscription/paiements  → permissionKey 'menu.finances.paiements'
+ */
+const ENTREES_REGULARISATION_PAIEMENT: ReadonlySet<string> = new Set([
+    'menu.finances.bordereaux',
+    'menu.finances.paiements',
+]);
+
+const ROUTES_REGULARISATION_PAIEMENT: ReadonlySet<string> = new Set([
+    '/inscription/bordereaux',
+    '/inscription/paiements',
+]);
+
+export function filtrerMenuPourRegularisation(menu: MenuPoleConfig[]): MenuPoleConfig[] {
+    return menu.reduce<MenuPoleConfig[]>((poles, pole) => {
+        const groups = pole.groups.reduce<MenuGroupConfig[]>((groupsAcc, group) => {
+            const items = group.items.filter(item =>
+                (item.permissionKey && ENTREES_REGULARISATION_PAIEMENT.has(item.permissionKey)) ||
+                (item.route && ROUTES_REGULARISATION_PAIEMENT.has(item.route))
+            );
+            if (items.length === 0) {
+                return groupsAcc;
+            }
+            groupsAcc.push({ ...group, items });
+            return groupsAcc;
+        }, []);
+
+        if (groups.length === 0) {
+            return poles;
+        }
+
+        poles.push({ ...pole, groups });
         return poles;
     }, []);
 }
@@ -126,6 +170,21 @@ router    /**
         }
 
         const filteredMenu = filterMenuByPermissions(MENU_CONFIG, userRole, userPermissionKeys);
+
+        // ── Blocage partiel du menu pour les étudiants en situation de paiement
+        //    en retard (chantier modalités 1x/3x/10x) ─────────────────────────────
+        //    Uniquement pour le rôle APPRENANT (les parents ne sont pas impactés).
+        //    Le calcul est fait À LA VOLÉE à chaque appel : le déblocage est donc
+        //    automatique dès que le statut redevient 'vert' (aucun flag persistant).
+        //    En statut 'rouge', ne sont conservées que les entrées permettant de
+        //    régulariser : « Mes bordereaux » et « Paiements ».
+        if (userRole === RolesUtilisateur.APPRENANT) {
+            const paiement = await VerificationPaiementService.verifierPaiement(utilisateurId!);
+            if (paiement.statut === 'rouge') {
+                return res.status(200).json(filtrerMenuPourRegularisation(filteredMenu));
+            }
+        }
+
         return res.status(200).json(filteredMenu);
     } catch (error) {
         console.error('Erreur lors du chargement du menu:', error);

@@ -1,7 +1,12 @@
 import express from "express"
+import Authenticate from "../../../core/middlewares/Authenticate"
+import CheckPermission from "../../../core/middlewares/CheckPermission"
 import PlanificationMarcheController from "../controllers/PlanificationMarcheController"
 
 const router = express.Router()
+
+// Proteger toutes les routes marche - donnees financieres sensibles
+router.use([Authenticate, CheckPermission('marche.planification.consulter')]);
 
 router
         /**

@@ -38,8 +38,8 @@ const upload = multer({ storage: storage })
  *         description: Liste des apprenants
  */
 router
-    .get('/', ApprenantController.getAllApprenants)
-    // .post('/', [AuthInstitution], ApprenantController.createApprenant)
+    .get('/', [Authenticate], ApprenantController.getAllApprenants)
+    .post('/', [AuthInstitution], ApprenantController.createApprenant)
     /**
      * @openapi
      * /auth/apprenants/{id}:
@@ -58,7 +58,7 @@ router
      *       404:
      *         description: Apprenant non trouvé
      */
-    .get('/:id', ApprenantController.getApprenant)
+    .get('/:id', [Authenticate], ApprenantController.getApprenant)
     /**
      * @openapi
      * /auth/apprenants:

@@ -1,0 +1,47 @@
+// ── Switch de permission (CSS pur, indépendant de Tailwind) ─────────────────
+.perm-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+  cursor: pointer;
+
+  input {
+    position: absolute;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .perm-switch__track {
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    background-color: #d1d5db; /* gray-300 */
+    transition: background-color 0.2s ease;
+  }
+
+  .perm-switch__thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 9999px;
+    background-color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    transition: transform 0.2s ease;
+  }
+
+  input:checked ~ .perm-switch__track {
+    background-color: #4f46e5; /* indigo-600 */
+  }
+
+  input:checked ~ .perm-switch__track .perm-switch__thumb {
+    transform: translateX(16px);
+  }
+}

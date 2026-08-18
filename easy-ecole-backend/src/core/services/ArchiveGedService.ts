@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
+import { Op } from "sequelize";
 import { DocumentGed } from "../../modules/ged/models/DocumentGed";
 import Domain from "../../modules/ged/models/Domain";
 import DocumentType from "../../modules/ged/models/DocumentType";
@@ -20,12 +21,62 @@ const PROCESSUS_CODES = {
   DIPLOME: 'DIPLOME'
 } as const;
 
-async function findFolder(domainId: number, parentNom: string, childNom?: string): Promise<number | undefined> {
-  const parent = await Folder.findOne({ where: { nom: parentNom, domainId } })
-  if (!parent) return undefined
-  if (!childNom) return parent.id
-  const child = await Folder.findOne({ where: { nom: childNom, domainId, parentId: parent.id } })
-  return child?.id ?? parent.id
+/**
+ * Types de dossiers présents dans l'arborescence générée par FolderAutoService :
+ * Année → DOMAIN → PROCESS → NIVEAU → PARCOURS → CLASSE → MATRICULE → DOSSIER_ETUDIANT
+ */
+const TREE_FOLDER_TYPES = ['PROCESS', 'NIVEAU', 'PARCOURS', 'CLASSE', 'MATRICULE', 'DOSSIER_ETUDIANT'];
+
+async function findFolder(
+  domainId: number,
+  parentNom: string,
+  childNom?: string,
+  options?: { anneeAcademiqueId?: number; folderType?: string }
+): Promise<number | undefined> {
+  const anneeAcademiqueId = options?.anneeAcademiqueId;
+  const folderType = options?.folderType;
+
+  // Résolution dans l'arborescence auto-générée : Année → DOMAIN → PROCESS/NIVEAU/PARCOURS/CLASSE/MATRICULE/DOSSIER_ETUDIANT
+  if (anneeAcademiqueId) {
+    const yearFolder = await Folder.findOne({
+      where: { folderType: 'YEAR', anneeAcademiqueId }
+    });
+    if (!yearFolder) return undefined;
+
+    const domainFolder = await Folder.findOne({
+      where: { folderType: 'DOMAIN', domainId, parentId: yearFolder.id, anneeAcademiqueId }
+    });
+    if (!domainFolder) return undefined;
+
+    const parentTypes = folderType ? [folderType] : TREE_FOLDER_TYPES;
+    const parent = await Folder.findOne({
+      where: {
+        folderType: parentTypes,
+        nom: parentNom,
+        domainId,
+        anneeAcademiqueId,
+        parentId: { [Op.ne]: null } as any
+      }
+    });
+    if (!parent) return undefined;
+    if (!childNom) return parent.id;
+
+    const child = await Folder.findOne({
+      where: { nom: childNom, parentId: parent.id, anneeAcademiqueId }
+    });
+    return child?.id ?? parent.id;
+  }
+
+  // Fallback historique : recherche à plat par nom (compatibilité dossiers non typés)
+  const parentWhere: any = { nom: parentNom, domainId };
+  if (folderType) parentWhere.folderType = folderType;
+  const parent = await Folder.findOne({ where: parentWhere });
+  if (!parent) return undefined;
+  if (!childNom) return parent.id;
+  const childWhere: any = { nom: childNom, domainId, parentId: parent.id };
+  if (folderType) childWhere.folderType = folderType;
+  const child = await Folder.findOne({ where: childWhere });
+  return child?.id ?? parent.id;
 }
 
 async function findOrCreateProcessus(code: string, libelle: string, moduleSource?: string): Promise<string> {
@@ -96,7 +147,7 @@ export class ArchiveGedService {
       ...(params.classeId ? [`classe:${params.classeId}`] : [])
     ].join('/');
 
-    const folderId = await findFolder(domain.id, params.dossierGed, params.sousDossierGed);
+    const folderId = await findFolder(domain.id, params.dossierGed, params.sousDossierGed, { anneeAcademiqueId: params.anneeAcademiqueId });
     const processusGenerateurId = await findOrCreateProcessus(params.processusCode, params.processusLibelle, params.processusModule);
 
     const document = await DocumentGed.create({
@@ -184,7 +235,7 @@ export class ArchiveGedService {
       ...(options.classeId ? [`classe:${options.classeId}`] : [])
     ].join('/');
 
-    const folderId = await findFolder(domain.id, 'Inscriptions', "Dossiers d'inscription")
+    const folderId = await findFolder(domain.id, 'Inscriptions', "Dossiers d'inscription", { anneeAcademiqueId: options.anneeAcademiqueId })
 
     const processusGenerateurId = await findOrCreateProcessus(
       PROCESSUS_CODES.INSCRIPTION,
@@ -274,7 +325,7 @@ export class ArchiveGedService {
       ...(options.semestre ? [`semestre:${options.semestre}`] : [])
     ].join('/');
 
-    const folderId = await findFolder(domain.id, 'Bordereaux de paiement')
+    const folderId = await findFolder(domain.id, 'Bordereaux de paiement', undefined, { anneeAcademiqueId: options.anneeAcademiqueId })
 
     const processusGenerateurId = await findOrCreateProcessus(
       PROCESSUS_CODES.BORDEREAU,
@@ -371,7 +422,7 @@ export class ArchiveGedService {
       `classe:${bulletin.classeId}`
     ].join('/');
 
-    const folderId = await findFolder(domain.id, 'Scolarité', 'Bulletins et relevés de notes')
+    const folderId = await findFolder(domain.id, 'Scolarité', 'Bulletins et relevés de notes', { anneeAcademiqueId: bulletin.anneeAcademiqueId })
 
     const processusGenerateurId = await findOrCreateProcessus(
       PROCESSUS_CODES.BULLETIN,
@@ -466,7 +517,7 @@ export class ArchiveGedService {
       ...(params.semestre ? [`semestre:${params.semestre}`] : [])
     ].join('/');
 
-    const folderId = await findFolder(domain.id, 'Scolarité', 'Documents de scolarité')
+    const folderId = await findFolder(domain.id, 'Scolarité', 'Documents de scolarité', { anneeAcademiqueId: params.anneeAcademiqueId })
 
     const processusGenerateurId = await findOrCreateProcessus(
       PROCESSUS_CODES.SCOLARITE_DEMANDE,
@@ -557,7 +608,7 @@ export class ArchiveGedService {
       ...(params.semestre ? [`semestre:${params.semestre}`] : [])
     ].join('/');
 
-    const folderId = await findFolder(domain.id, 'Scolarité', 'Délibérations et PV de jury')
+    const folderId = await findFolder(domain.id, 'Scolarité', 'Délibérations et PV de jury', { anneeAcademiqueId: params.anneeAcademiqueId })
 
     const processusGenerateurId = await findOrCreateProcessus(
       PROCESSUS_CODES.DELIBERATION,
@@ -643,7 +694,7 @@ export class ArchiveGedService {
       `niveau:${params.niveauEtudeId}`
     ].join('/');
 
-    const folderId = await findFolder(domain.id, 'Scolarité', 'Diplômes')
+    const folderId = await findFolder(domain.id, 'Scolarité', 'Diplômes', { anneeAcademiqueId: params.anneeAcademiqueId })
 
     const processusGenerateurId = await findOrCreateProcessus(
       PROCESSUS_CODES.DIPLOME,

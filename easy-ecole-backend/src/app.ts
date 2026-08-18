@@ -97,11 +97,194 @@ app.use('/media/photos/apprenants', express.static(path.resolve('public', 'auth'
 app.use('/media/photos/enseignants', express.static(path.resolve('public', 'auth', 'enseignants', 'photos')))
 app.use('/media/profiles', express.static(path.resolve('public', 'auth', 'profiles')))
 app.use('/media/videos', express.static(path.resolve('public', 'elearning', 'videos')))
+app.use('/media/scolarite/documents', express.static(path.resolve('public', 'scolarite', 'documents')))
+
+app.get('/logo-esa.png', (req, res) => {
+  const filePath = path.resolve('public', 'logo-esa.png')
+  res.sendFile(filePath)
+})
 
 /** Swagger Documentation */
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'EasyEcole API Docs'
+  customCss: `
+    .swagger-ui .topbar {
+      background: #002147 !important;
+      border-bottom: 3px solid #FFD100 !important;
+    }
+    .swagger-ui .topbar .link {
+      content: url('/logo-esa.png') !important;
+      width: 140px !important;
+      height: auto !important;
+      display: block !important;
+      margin: 8px auto !important;
+    }
+    .swagger-ui .info .title {
+      color: #002147 !important;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
+      font-weight: 700 !important;
+      font-size: 24px !important;
+      text-align: center !important;
+      margin-bottom: 8px !important;
+    }
+    .swagger-ui .info {
+      background: linear-gradient(135deg, rgba(0,33,71,0.03) 0%, rgba(255,209,0,0.03) 50%, rgba(0,150,64,0.03) 100%) !important;
+      border-left: 4px solid #002147 !important;
+      border-radius: 0 6px 6px 0 !important;
+    }
+    .swagger-ui .info .description {
+      color: #333 !important;
+      font-size: 13px !important;
+    }
+    .swagger-ui .info .base-url {
+      color: #002147 !important;
+      font-weight: 600 !important;
+    }
+    .swagger-ui .opblock-tag {
+      color: #002147 !important;
+      border-bottom: 2px solid #FFD100 !important;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
+      font-weight: 600 !important;
+      font-size: 16px !important;
+    }
+    .swagger-ui .opblock {
+      border-radius: 4px !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
+      border: 1px solid #e6e6e6 !important;
+    }
+    .swagger-ui .opblock.opblock-get {
+      border-top: 3px solid #009640 !important;
+    }
+    .swagger-ui .opblock.opblock-post {
+      border-top: 3px solid #FFD100 !important;
+    }
+    .swagger-ui .opblock.opblock-put {
+      border-top: 3px solid #ff9800 !important;
+    }
+    .swagger-ui .opblock.opblock-delete {
+      border-top: 3px solid #e53935 !important;
+    }
+    .swagger-ui .opblock.opblock-patch {
+      border-top: 3px solid #9c27b0 !important;
+    }
+    .swagger-ui .btn.authorize {
+      background-color: #002147 !important;
+      border-color: #002147 !important;
+      color: #fff !important;
+      font-weight: 600 !important;
+      border-radius: 4px !important;
+      padding: 6px 16px !important;
+    }
+    .swagger-ui .btn.authorize:hover {
+      background-color: #003366 !important;
+    }
+    .swagger-ui .scheme-container {
+      background: #f8f9fa !important;
+      border-bottom: 1px solid #e6e6e6 !important;
+      padding: 12px 0 !important;
+    }
+    .swagger-ui .scheme-container .schemes {
+      display: flex !important;
+      gap: 10px !important;
+    }
+    .swagger-ui .model-title {
+      color: #002147 !important;
+      font-weight: 600 !important;
+    }
+    .swagger-ui .model {
+      background: #fafafa !important;
+      border: 1px solid #e6e6e6 !important;
+      border-radius: 4px !important;
+    }
+    .swagger-ui .model-box {
+      background: #ffffff !important;
+    }
+    .swagger-ui table thead tr {
+      background-color: #002147 !important;
+      color: #ffffff !important;
+    }
+    .swagger-ui table thead tr th {
+      color: #ffffff !important;
+      font-weight: 600 !important;
+    }
+    .swagger-ui .response-col_status {
+      color: #002147 !important;
+      font-weight: 700 !important;
+    }
+    .swagger-ui .response-col_description .description {
+      color: #333 !important;
+    }
+    .swagger-ui .tab li {
+      color: #002147 !important;
+      font-weight: 600 !important;
+    }
+    .swagger-ui .tab li.active {
+      border-bottom: 2px solid #FFD100 !important;
+      color: #002147 !important;
+    }
+    .swagger-ui .opblock-summary {
+      color: #002147 !important;
+      font-weight: 600 !important;
+    }
+    .swagger-ui .opblock-summary-description {
+      color: #333 !important;
+      font-size: 12px !important;
+    }
+    .swagger-ui .parameter__type {
+      color: #009640 !important;
+      font-weight: 600 !important;
+    }
+    .swagger-ui .parameter__name {
+      color: #002147 !important;
+      font-weight: 600 !important;
+    }
+    .swagger-ui .example {
+      background: #f8f9fa !important;
+      border: 1px solid #e6e6e6 !important;
+      border-radius: 4px !important;
+    }
+    .swagger-ui .microlight {
+      background: #f8f9fa !important;
+      border-radius: 4px !important;
+    }
+    .swagger-ui .microlight code {
+      color: #1a1a1a !important;
+    }
+    .swagger-ui .btn {
+      border-radius: 4px !important;
+      font-weight: 600 !important;
+    }
+    .swagger-ui .btn.try-out__btn {
+      background: #002147 !important;
+      color: #fff !important;
+      border-color: #002147 !important;
+    }
+    .swagger-ui .btn.execute {
+      background-color: #009640 !important;
+      border-color: #009640 !important;
+      color: #fff !important;
+    }
+    .swagger-ui .btn.execute:hover {
+      background-color: #007a33 !important;
+    }
+    .swagger-ui .loading-container .loading {
+      border-color: #FFD100 transparent transparent !important;
+    }
+    .swagger-ui a {
+      color: #002147 !important;
+    }
+    .swagger-ui a:hover {
+      color: #003366 !important;
+    }
+    .swagger-ui .opblock .opblock-summary {
+      background: #fafafa !important;
+      border-bottom: 1px solid #e6e6e6 !important;
+    }
+    .swagger-ui .opblock .opblock-summary:hover {
+      background: #f0f4f8 !important;
+    }
+  `,
+  customSiteTitle: 'ESA-TOGO API Documentation',
+  customfavIcon: '/logo-esa.png'
 }))
 
 const API_BASE_URL = "/api/v1"

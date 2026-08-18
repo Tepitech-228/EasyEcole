@@ -3,6 +3,7 @@ import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { Classe } from "./Classe";
 import { AnneeAcademique } from "./AnneeAcademique";
+import { SessionCorrecteur } from "./SessionCorrecteur";
 
 export class SessionExamen extends Model<InferAttributes<SessionExamen>, InferCreationAttributes<SessionExamen>> {
   declare id: CreationOptional<number>
@@ -18,6 +19,7 @@ export class SessionExamen extends Model<InferAttributes<SessionExamen>, InferCr
 
   declare classe?: NonAttribute<Classe>
   declare anneeAcademique?: NonAttribute<AnneeAcademique>
+  declare correcteurs?: NonAttribute<SessionCorrecteur[]>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -26,6 +28,7 @@ export class SessionExamen extends Model<InferAttributes<SessionExamen>, InferCr
   declare static associations: {
     classe: Association<SessionExamen, Classe>
     anneeAcademique: Association<SessionExamen, AnneeAcademique>
+    correcteurs: Association<SessionExamen, SessionCorrecteur>
   }
 }
 

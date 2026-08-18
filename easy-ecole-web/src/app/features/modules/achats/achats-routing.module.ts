@@ -8,6 +8,7 @@ import { ValidationsPageComponent } from './pages/validations-page/validations-p
 import { ListeCommandesPageComponent } from './pages/liste-commandes-page/liste-commandes-page.component';
 import { CommandeDetailsPageComponent } from './pages/commande-details-page/commande-details-page.component';
 import { ReceptionsPageComponent } from './pages/receptions-page/receptions-page.component';
+import { ReceptionDetailsPageComponent } from './pages/reception-details-page/reception-details-page.component';
 import { FacturesPageComponent } from './pages/factures-page/factures-page.component';
 import { FactureDetailsPageComponent } from './pages/facture-details-page/facture-details-page.component';
 import { BudgetsPageComponent } from './pages/budgets-page/budgets-page.component';
@@ -44,6 +45,7 @@ const routes: Routes = [
     path: 'receptions',
     children: [
       { path: '', component: ReceptionsPageComponent, pathMatch: 'full' },
+      { path: ':id', component: ReceptionDetailsPageComponent, pathMatch: 'full' },
     ]
   },
   {

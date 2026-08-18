@@ -1,17 +1,34 @@
 import { Request, Response } from "express";
-import { CountOptions, FindOptions, InferAttributes } from "sequelize";
+import { CountOptions, FindOptions, InferAttributes, Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { Cours } from "../models/Cours";
 import { Parcours } from "../models/Parcours";
 import { CahierDeTexte } from "../models/CahierDeTexte";
+import { CoursParticipant } from "../models/CoursParticipant";
 
 export default class CahierDeTexteController {
 
     constructor() { }
 
     static async getAllCahiersDeTexte(req: Request, res: Response): Promise<Response> {
+        const role = (req as any).utilisateurRole;
+        const utilisateurId = (req as any).utilisateurId;
+        const where: any = {};
+
+        // Filtre : l'étudiant ne voit que les cahiers de SES cours choisis
+        if (role === RolesUtilisateur.APPRENANT) {
+            const coursParticipants = await CoursParticipant.findAll({ where: { utilisateurId }, attributes: ['coursId'] });
+            where.coursId = { [Op.in]: coursParticipants.map(cp => cp.coursId) };
+        }
+        // Filtre : l'enseignant ne voit que les cahiers de SES cours
+        else if (role === RolesUtilisateur.ENSEIGNANT) {
+            const enseignant = await Enseignant.findOne({ where: { utilisateurId } });
+            if (enseignant) where.enseignantId = enseignant.id;
+        }
+
         let options: FindOptions<InferAttributes<CahierDeTexte>> = {
+            where,
             include: [
                 {
                     association: CahierDeTexte.associations.cours, include: [
@@ -30,7 +47,8 @@ export default class CahierDeTexteController {
 
             return res.status(200).send(cahiersDeTexte);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -58,7 +76,8 @@ export default class CahierDeTexteController {
 
             return res.status(200).send(cahierDeTexte);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -144,7 +163,8 @@ export default class CahierDeTexteController {
                     return res.status(200).json({ success: true, message: "CahierDeTexte supprimé" });
                 })
                 .catch((error) => {
-                    return res.status(500).json({ success: false, error: error });
+                    console.error('Erreur', error);
+                    return res.status(500).json({ success: false, message: 'Erreur interne' });
                 });
         }
         else {
@@ -166,7 +186,8 @@ export default class CahierDeTexteController {
                 return res.status(200).json({ success: true, count: value });
             })
             .catch((error) => {
-                return res.status(500).json({ success: false, error: error });
+                console.error('Erreur', error);
+                return res.status(500).json({ success: false, message: 'Erreur interne' });
             });
 
         return null

@@ -3,6 +3,8 @@ import { FormBuilder, FormGroup } from '@angular/forms';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { Apprenant } from 'src/app/data/modules/auth/models/Apprenant.model';
 import { ApprenantService } from 'src/app/data/modules/auth/services/apprenant.service';
+import { Etablissement } from 'src/app/data/modules/etablissement/models/Etablissement.model';
+import { EtablissementService } from 'src/app/data/modules/etablissement/services/etablissement.service';
 import { environment } from 'src/environments/environment';
 
 interface CardData {
@@ -59,6 +61,11 @@ export class CartesPageComponent extends BaseComponentClass {
   customFieldInput = ''
 
   readonly PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS
+
+  /** Nom de l'établissement chargé depuis l'API (fallback discret : chaîne vide). */
+  etablissementNom: string = ''
+  /** Localisation "Ville · Pays" chargée depuis l'API (fallback discret : chaîne vide). */
+  etablissementLocalisation: string = ''
   readonly fieldOptions = [
     { key: 'matricule', label: 'Matricule' },
     { key: 'nom', label: 'Nom' },
@@ -74,8 +81,9 @@ export class CartesPageComponent extends BaseComponentClass {
 
   manualForm: FormGroup
 
-  constructor(private apprenantService: ApprenantService, private fb: FormBuilder) {
+  constructor(private apprenantService: ApprenantService, private etablissementService: EtablissementService, private fb: FormBuilder) {
     super()
+    this.chargerEtablissement()
     this.dateDelivrance = this.formatDate(new Date())
     this.manualForm = this.fb.group({
       nom: [''],
@@ -93,6 +101,19 @@ export class CartesPageComponent extends BaseComponentClass {
       urgenceAdresse: ['']
     })
     this.loadApprenants()
+  }
+
+  chargerEtablissement(): void {
+    this.etablissementService.getEtablissement().subscribe({
+      next: (etablissement: Etablissement | null) => {
+        this.etablissementNom = etablissement?.nom || ''
+        this.etablissementLocalisation = [etablissement?.ville, etablissement?.pays].filter(Boolean).join(' · ')
+      },
+      error: () => {
+        this.etablissementNom = ''
+        this.etablissementLocalisation = ''
+      }
+    })
   }
 
   loadApprenants(): void {

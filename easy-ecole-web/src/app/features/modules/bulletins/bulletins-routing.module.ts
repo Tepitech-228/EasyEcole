@@ -28,6 +28,7 @@ import { DetailRattrapagePageComponent } from './pages/detail-rattrapage-page/de
 import { FeuillePresencePageComponent } from './pages/feuille-presence-page/feuille-presence-page.component';
 import { AbsencesCoursPageComponent } from './pages/absences-cours-page/absences-cours-page.component';
 import { DettesAcademiquesPageComponent } from './pages/dettes-academiques-page/dettes-academiques-page.component';
+import { ApprenantGuard } from 'src/app/core/guards/apprenant.guard';
 
 const routes: Routes = [
   { path: '', component: ListeBulletinsPageComponent },
@@ -58,7 +59,7 @@ const routes: Routes = [
   { path: 'jury/nouveau', component: JuryMembreFormPageComponent },
   { path: 'jury/:id', component: JuryMembreFormPageComponent },
   { path: 'rattrapages', component: ListeRattrapagesPageComponent },
-  { path: 'rattrapages/mes-demandes', component: MesRattrapagesPageComponent },
+  { path: 'rattrapages/mes-demandes', component: MesRattrapagesPageComponent, canActivate: [ApprenantGuard] },
   { path: 'rattrapages/nouveau', component: RattrapageFormPageComponent },
   { path: 'rattrapages/:id', component: DetailRattrapagePageComponent },
   { path: 'feuille-presence', component: FeuillePresencePageComponent },

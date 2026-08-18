@@ -18,8 +18,9 @@ import { Session } from "../models/Session";
 import { ParcoursChoisi } from "../models/ParcoursChoisi";
 import { CoursParticipant } from "../models/CoursParticipant";
 import { CursusApprenant } from "../models/CursusApprenant";
-import { AnneeAcademique } from "../models/AnneeAcademique";
+import { Etablissement } from "../../etablissement/models/Etablissement";
 import { Parcours } from "../models/Parcours";
+import { AnneeAcademique } from "../models/AnneeAcademique";
 import { NiveauEtude } from "../models/NiveauEtude";
 import { Classe } from "../models/Classe";
 import { SalleDeClasse } from "../models/SalleDeClasse";
@@ -140,7 +141,8 @@ export default class DossierEtudiantController {
                 return res.status(200).send(rows)
             }
         } catch (error) {
-            return res.status(500).json({ success: false, error: error })
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -327,7 +329,8 @@ export default class DossierEtudiantController {
 
             return res.status(200).send(dossier);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -344,9 +347,21 @@ export default class DossierEtudiantController {
             if (dossier == null)
                 return res.status(404).json({ success: false, message: "Dossier étudiant non trouvé" });
 
+            // Chantier modalités 1x/3x/10x : expose la modalité de paiement du
+            // bordereau d'inscription choisi. Le DossierEtudiant n'a pas de lien
+            // direct vers un bordereau, on remonte donc le bordereau d'inscription
+            // validé le plus récent de l'étudiant.
+            const bordereauInscription = await Bordereau.findOne({
+                where: { utilisateurId: (req as any).utilisateurId, type: 'inscription', statut: 'valide' },
+                order: [['dateSoumission', 'DESC']],
+                attributes: ['id', 'modalite']
+            });
+            (dossier as any).setDataValue('modaliteBordereau', (bordereauInscription as any)?.modalite ?? null);
+
             return res.status(200).send(dossier);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -378,10 +393,22 @@ export default class DossierEtudiantController {
         const classeMatricule = req.body.classeId ? await Classe.findByPk(req.body.classeId) : null
         const anneeLibelle = demande?.session?.anneeAcademique?.libelle || new Date().getFullYear().toString()
 
+        const parcoursData = parcoursChoisiFinal?.parcours
+        const etablissementId = parcoursData?.etablissementId ?? classeMatricule?.etablissementId
+        const etablissement = etablissementId
+            ? await Etablissement.findByPk(etablissementId)
+            : null
+
+        const ordre = await DossierEtudiant.count() + 1
+        const typeCours = (req.body.typeCours as 'jour' | 'soir') || 'jour'
+
         const matricule = IDGenerator.getInstance().generateMatriculeFinal(
-            parcoursChoisiFinal?.parcours!,
+            parcoursData!,
             anneeLibelle,
-            classeMatricule
+            classeMatricule,
+            ordre,
+            etablissement,
+            typeCours
         )
         const codeQR = JSON.stringify({ matricule, utilisateurId: req.body.utilisateurId })
 
@@ -439,7 +466,8 @@ export default class DossierEtudiantController {
 
             return res.status(200).json({ statut: 'vert', message: 'Accès autorisé' });
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 

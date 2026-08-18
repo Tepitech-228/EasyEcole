@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Échéancier - {{etablissement.nom}}</title>
+    <style>
+        @page { size: A4 portrait; margin: 10mm 12mm; }
+        *, *::before, *::after { box-sizing: border-box; }
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; color: #1a1a1a; font-size: 9.5pt; line-height: 1.4; background-color: #f5f5f5; }
+        .doc-page { background-color: #ffffff; width: 210mm; min-height: 297mm; padding: 10mm; margin: 15px auto; page-break-after: always; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15); }
+        .doc-page:last-child { page-break-after: avoid; }
+        .header-table { width: 100%; border-collapse: collapse; border-bottom: 2px solid #002147; padding-bottom: 8px; margin-bottom: 4px; }
+        .header-table td { vertical-align: middle; }
+        .logo-img { max-height: 70px; width: auto; object-fit: contain; }
+        .school-info { text-align: right; font-size: 8.5pt; color: #333; line-height: 1.3; }
+        .banner-accent { height: 4px; background: linear-gradient(to right, #FFD100 33%, #009640 33% 66%, #002147 66%); margin-bottom: 15px; }
+        .doc-title { text-align: center; margin: 10px 0 5px 0; }
+        .doc-title h1 { font-size: 15pt; color: #002147; text-transform: uppercase; letter-spacing: 0.8px; margin: 0; padding-bottom: 4px; border-bottom: 2px solid #FFD100; display: inline-block; }
+        .ref-number { text-align: center; font-size: 9pt; font-weight: bold; color: #002147; margin-bottom: 15px; }
+        .info-box { background-color: rgba(248, 249, 250, 0.85); border-left: 4px solid #002147; padding: 10px 12px; margin: 12px 0; border-radius: 2px; }
+        .label { font-weight: bold; color: #002147; }
+        .value { color: #222; }
+        .grades-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 8.5pt; }
+        .grades-table th { background-color: #002147; color: #ffffff; padding: 7px 5px; text-align: left; font-weight: bold; border: 1px solid #00152e; text-transform: uppercase; font-size: 8pt; }
+        .grades-table td { padding: 5px 6px; border: 1px solid #d0d0d0; }
+        .grades-table tr:nth-child(even) { background-color: rgba(252, 252, 252, 0.85); }
+        .total-row td { font-weight: bold; background-color: #f0f4f8; color: #002147; }
+        .footer-table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+        .footer-table td { vertical-align: top; }
+        .date-cell { font-style: italic; font-size: 9pt; }
+        .sign-cell { text-align: center; width: 220px; }
+        .sign-title { font-weight: bold; font-size: 9pt; color: #002147; margin-bottom: 45px; }
+        .sign-line { border-top: 1px dashed #002147; padding-top: 4px; font-size: 8pt; color: #555; }
+        @media print { body { background-color: #ffffff; } .doc-page { box-shadow: none; margin: 0; width: 100%; padding: 0; } }
+    </style>
+</head>
+<body>
+    <div class="doc-page">
+        <table class="header-table">
+            <tr>
+                <td><img src="{{LOGO_DATA_URI}}" alt="Logo" class="logo-img"></td>
+                <td class="school-info"><strong>{{etablissement.nom}}</strong><br>Service de la Comptabilité<br>{{etablissement.adresse}}<br>Tél : {{etablissement.telephone}} | Email : {{etablissement.email}}</td>
+            </tr>
+        </table>
+        <div class="banner-accent"></div>
+        <div class="doc-title"><h1>Échéancier de paiement</h1></div>
+        <div class="ref-number">Réf. {{reference}} — Année académique {{etudiant.anneeAcademique}}</div>
+        <div class="info-box">
+            <table style="width:100%;border-collapse:collapse;">
+                <tr><td style="width:50%;"><span class="label">Étudiant :</span> <span class="value">{{etudiant.nom}} {{etudiant.prenom}}</span></td><td style="width:50%;"><span class="label">Matricule :</span> <span class="value">{{etudiant.matricule}}</span></td></tr>
+                <tr><td style="width:50%;"><span class="label">Filière :</span> <span class="value">{{etudiant.filiere}}</span></td><td style="width:50%;"><span class="label">Niveau :</span> <span class="value">{{etudiant.niveau}}</span></td></tr>
+            </table>
+        </div>
+        <table class="grades-table">
+            <thead>
+                <tr><th>Type de frais</th><th>Montant (FCFA)</th><th>Payé</th><th>Reste à payer (FCFA)</th></tr>
+            </thead>
+            <tbody>
+                {{#each echeancier}}
+                <tr>
+                    <td>{{type}}</td>
+                    <td style="text-align:right;">{{montantFormate}}</td>
+                    <td style="text-align:center;">{{#if paye}}OUI{{else}}NON{{/if}}</td>
+                    <td style="text-align:right;">{{soldeFormate}}</td>
+                </tr>
+                {{/each}}
+                <tr class="total-row">
+                    <td>TOTAL</td>
+                    <td style="text-align:right;">{{statistiques.total}} FCFA</td>
+                    <td></td>
+                    <td style="text-align:right;">{{statistiques.totalRestant}} FCFA</td>
+                </tr>
+            </tbody>
+        </table>
+        <p style="font-size:8.5pt;color:#555;">Les frais non soldés doivent être acquittés avant la délivrance des documents administratifs de fin d'année.</p>
+        <table class="footer-table">
+            <tr>
+                <td class="date-cell">Fait à Lomé, le {{dateEdition}}</td>
+                <td class="sign-cell">
+                    <div class="sign-title">Le Responsable Financier</div>
+                    <div class="sign-line">Signature & Cachet</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div style="text-align:center;margin-top:10px;font-size:10px;color:#999;">Document généré le {{dateGeneration}} | Réf: {{reference}}</div>
+</body>
+</html>

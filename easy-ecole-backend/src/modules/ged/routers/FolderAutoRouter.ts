@@ -22,7 +22,8 @@ router    /**
     await FolderAutoService.generateForAcademicYear(anneeId, userId);
     return res.status(200).json({ success: true, message: 'Arborescence générée avec succès' });
   } catch (error: any) {
-    return res.status(500).json({ success: false, error: error.message });
+    console.error('Erreur', error);
+    return res.status(500).json({ success: false, message: 'Erreur interne' });
   }
 });
 

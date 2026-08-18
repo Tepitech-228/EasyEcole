@@ -19,10 +19,10 @@ export class CoursStatutService {
   constructor(private http: HttpClient) {}
 
   getStatutsCours(): Observable<CoursStatut[]> {
-    return this.http.get<CoursStatut[]>(`${this.apiUrl}/cursus-apprenant/mon-suivi/statuts-cours`);
+    return this.http.get<CoursStatut[]>(`${this.apiUrl}/cursusApprenant/mon-suivi/statuts-cours`);
   }
 
   getStatutCours(coursId: number): Observable<CoursStatut> {
-    return this.http.get<CoursStatut>(`${this.apiUrl}/cursus-apprenant/mon-suivi/statuts-cours/${coursId}`);
+    return this.http.get<CoursStatut>(`${this.apiUrl}/cursusApprenant/mon-suivi/statuts-cours/${coursId}`);
   }
 }

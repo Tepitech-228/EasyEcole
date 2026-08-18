@@ -166,6 +166,27 @@
             </div>
         </nav>
         <div class="w-full lg:px-8 px-6 pb-10" style="background: #f5f6fa;">
+            <!-- Bandeau de blocage paiement (apprenant / parent) -->
+            <div *ngIf="showPaiementBandeau"
+                class="bandeau-paiement mb-6 flex flex-col gap-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex items-start gap-3">
+                    <svg class="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    </svg>
+                    <div>
+                        <p class="text-sm font-semibold text-red-800">Paiement en retard — accès limités</p>
+                        <p class="text-sm text-red-700">
+                            {{ bandeauMessage }}
+                            <ng-container *ngIf="montantRestant != null"> · Montant restant : {{ montantRestant | currency:'XAF' }}</ng-container>
+                        </p>
+                    </div>
+                </div>
+                <a routerLink="/inscription/paiements"
+                    class="inline-flex flex-shrink-0 items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                    Régulariser
+                </a>
+            </div>
+
             <router-outlet></router-outlet>
         </div>
     </div>

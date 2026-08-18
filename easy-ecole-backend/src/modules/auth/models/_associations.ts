@@ -8,11 +8,13 @@ import { Banque } from "./Banque";
 import { CaissierBanque } from "./CaissierBanque";
 import { ComiteOrientation } from "./ComiteOrientation";
 import { Enseignant } from "./Enseignant";
+import { Etablissement } from "../../etablissement/models/Etablissement";
 import { IdentiteApprenant } from "./IdentiteApprenant";
 import { InformationsParentsApprenant } from "./InformationsParentsApprenant";
 import { InformationsSalarieApprenant } from "./InformationsSalarieApprenant";
 import { Institution } from "./Institution";
 import { PersonnePrevenirApprenant } from "./PersonnePrevenirApprenant";
+import { PersonnelAdministratif } from "./PersonnelAdministratif";
 import { Utilisateur } from "./Utilisateur";
 import { UserPermission } from "./UserPermission";
 import { Permission } from "./Permission";
@@ -111,3 +113,11 @@ Utilisateur.hasMany(ParentEnfant, { as: 'parentEnfants', foreignKey: 'parentUtil
 // ParentEnfant - Apprenant
 ParentEnfant.belongsTo(Apprenant, { as: 'apprenant', foreignKey: 'apprenantId' })
 Apprenant.hasMany(ParentEnfant, { as: 'parents', foreignKey: 'apprenantId' })
+
+// Utilisateur - PersonnelAdministratif
+PersonnelAdministratif.belongsTo(Utilisateur, { as: 'utilisateur', foreignKey: 'utilisateurId' })
+Utilisateur.hasOne(PersonnelAdministratif, { as: 'personnelAdministratif', foreignKey: 'utilisateurId' })
+
+// PersonnelAdministratif - Etablissement
+PersonnelAdministratif.belongsTo(Etablissement, { as: 'etablissement', foreignKey: 'etablissementId' })
+Etablissement.hasMany(PersonnelAdministratif, { as: 'personnel', foreignKey: 'etablissementId' })

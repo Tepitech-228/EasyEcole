@@ -36,12 +36,21 @@ export class DatabaseConnection {
             host: config.options.host,
             port: config.options.port,
             logging: config.options.logging,
-            dialectOptions: env === 'production' ? {
-                ssl: {
-                    require: true,
-                    rejectUnauthorized: true
-                },
-            } : undefined,
+            // NOTE DÉPLOIEMENT : en production, SSL était forcé (require + rejectUnauthorized).
+            // Or le MySQL du conteneur docker-compose (mysql:8.0) utilise un certificat
+            // auto-signé : la connexion échouerait. La variable DB_SSL permet de désactiver
+            // le TLS pour ce cas ("off"), tout en conservant le comportement historique
+            // par défaut (TLS activé) si DB_SSL n'est pas défini.
+            dialectOptions: (() => {
+                const dbSsl = process.env.DB_SSL || (env === 'production' ? 'require' : 'off')
+                if (dbSsl === 'off') {
+                    return { ssl: false }
+                }
+                if (dbSsl === 'require') {
+                    return { ssl: { require: true, rejectUnauthorized: true } }
+                }
+                return undefined
+            })(),
             define: {
                 underscored: false,
                 collate: 'utf8mb3_general_ci',
@@ -76,20 +85,31 @@ export class DatabaseConnection {
                 await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
                 try {
                     await this._sequelize.sync({ alter: true });
+                    console.log("Database: all data synchronized");
                 } catch (syncError: any) {
                     if (
                         syncError.name === 'SequelizeUnknownConstraintError' ||
                         syncError?.parent?.code === 'ER_FK_INCORRECT_OPTION' ||
                         syncError?.parent?.code === 'ER_CANT_CREATE_TABLE' ||
-                        syncError?.parent?.code === 'ER_TOO_MANY_KEYS'
+                        syncError?.parent?.code === 'ER_TOO_MANY_KEYS' ||
+                        syncError?.parent?.code === 'ER_DUP_KEYNAME'
                     ) {
                         console.warn('Warning (FK constraint ignored):', syncError.message);
                     } else {
-                        throw syncError;
+                        console.error('CRITIQUE: le sync automatique de la base a échoué — le schéma en base peut être désynchronisé du code (risque d\'erreurs 500). Cause :', syncError.message);
+                        console.error(syncError);
                     }
                 }
+
+                try {
+                    await this._sequelize.query("ALTER TABLE `ins_bulletins` ADD COLUMN `salleId` INT UNSIGNED NULL");
+                } catch (alterError: any) {
+                    if (alterError?.parent?.code !== 'ER_DUP_FIELDNAME') {
+                        console.warn('Warning (salleId alter ignored):', alterError.message);
+                    }
+                }
+
                 await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
-                console.log("Database: all data synchronized");
             } else {
                 console.log('Production mode: sync disabled, use migrations');
             }
@@ -98,7 +118,8 @@ export class DatabaseConnection {
                 error.name === 'SequelizeUnknownConstraintError' ||
                 error?.parent?.code === 'ER_FK_INCORRECT_OPTION' ||
                 error?.parent?.code === 'ER_CANT_CREATE_TABLE' ||
-                error?.parent?.code === 'ER_TOO_MANY_KEYS'
+                error?.parent?.code === 'ER_TOO_MANY_KEYS' ||
+                error?.parent?.code === 'ER_DUP_KEYNAME'
             ) {
                 console.warn('Warning (FK constraint ignored):', error.message);
             } else {

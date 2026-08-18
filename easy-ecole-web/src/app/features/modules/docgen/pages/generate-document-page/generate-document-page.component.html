@@ -1,94 +1,298 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-  <app-header-title title="Génération de document" subtitle="Générez un document officiel à partir d'un modèle"></app-header-title>
+  <app-header-title title="Génération de documents" subtitle="Gérez les reçus de scolarité, attestations et documents demandés par les étudiants"></app-header-title>
 
-  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
-    <form [formGroup]="form" (ngSubmit)="generate()">
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-        <div>
-          <label class="block text-xs font-medium text-gray-500 mb-1">Type de document *</label>
-          <select formControlName="typeCode" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
-            <option value="">Sélectionner un type</option>
-            <option *ngFor="let t of types" [value]="t.code">{{ t.code }} — {{ t.libelle }}</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-gray-500 mb-1">Étudiant (ID)</label>
-          <input formControlName="etudiantId" type="number" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="ID utilisateur" />
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-gray-500 mb-1">Classe (ID)</label>
-          <input formControlName="classeId" type="number" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="ID classe" />
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-gray-500 mb-1">Année académique (ID)</label>
-          <input formControlName="anneeAcademiqueId" type="number" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="ID année" />
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-gray-500 mb-1">Semestre</label>
-          <select formControlName="semestre" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
-            <option value="">Tous</option>
-            <option value="S1">S1</option>
-            <option value="S2">S2</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-gray-500 mb-1">Inscription (cursus ID)</label>
-          <input formControlName="cursusApprenantId" type="number" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="ID CursusApprenant" />
-        </div>
-      </div>
-
-      <details class="border border-gray-100 rounded-lg p-3 text-sm">
-        <summary class="cursor-pointer text-gray-600 font-medium text-xs uppercase tracking-wide">Options avancées</summary>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-3">
-          <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">Type source</label>
-            <input formControlName="sourceType" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="etudiant, classe..." />
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">ID source</label>
-            <input formControlName="sourceId" type="number" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" />
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">Métadonnées (JSON)</label>
-            <textarea formControlName="metadata" rows="2" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder='{"info": "..."}'></textarea>
-          </div>
-        </div>
-      </details>
-
-      <div class="flex justify-end gap-3 mt-4">
-        <app-custom-button type="button" (click)="result = null; error = null; form.reset()" text="Réinitialiser" color="gray" [outlined]="true"></app-custom-button>
-        <app-custom-button type="submit" [disabled]="generating" text="{{ generating ? 'Génération...' : 'Générer' }}" color="indigo"></app-custom-button>
-      </div>
-    </form>
+  <!-- Onglets -->
+  <div class="flex gap-2 mb-6 border-b border-gray-100 pb-3 overflow-x-auto">
+    <button
+      (click)="activeTab = 'recus'"
+      class="px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all"
+      [ngClass]="activeTab === 'recus' ? 'bg-red-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
+      Reçus de scolarité
+    </button>
+    <button
+      (click)="activeTab = 'demandes'"
+      class="px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all"
+      [ngClass]="activeTab === 'demandes' ? 'bg-red-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
+      Attestations & documents
+    </button>
+    <button
+      (click)="activeTab = 'frais'"
+      class="px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all"
+      [ngClass]="activeTab === 'frais' ? 'bg-red-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
+      Paramétrage des frais
+    </button>
   </div>
 
-  <div *ngIf="error" class="bg-red-50 border border-red-100 rounded-2xl p-4 mb-6 text-sm text-red-700">
-    {{ error }}
-  </div>
-
-  <div *ngIf="result?.data" class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-    <div class="px-5 py-4 border-b border-gray-100">
-      <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Résultat</h3>
+  <!-- Messages -->
+  <div *ngIf="errorMessage" class="bg-red-50 border border-red-100 rounded-2xl p-4 mb-6 text-sm text-red-700 flex items-start gap-3">
+    <span class="mt-0.5">⚠️</span>
+    <div class="flex-1">
+      {{ errorMessage }}
+      <button *ngIf="!recuTypePresent" (click)="recuTypePresent = true" class="ml-2 text-xs underline">Ignorer</button>
     </div>
-    <div class="p-5">
-      <div class="flex items-center gap-3 mb-4">
-        <div class="h-10 w-10 rounded-full bg-green-50 flex items-center justify-center text-green-600">
-          <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-        </div>
-        <div>
-          <p class="text-sm font-medium text-gray-900">Génération réussie</p>
-          <p class="text-xs text-gray-500">{{ result.data.length }} document(s) généré(s)</p>
-        </div>
+    <button (click)="errorMessage = ''" class="text-red-400 hover:text-red-600">✕</button>
+  </div>
+
+  <div *ngIf="successMessage" class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 mb-6 text-sm text-emerald-700 flex items-start gap-3">
+    <span class="mt-0.5">✅</span>
+    <div class="flex-1">{{ successMessage }}</div>
+    <button (click)="successMessage = ''" class="text-emerald-400 hover:text-emerald-600">✕</button>
+  </div>
+
+  <!-- ============ ONGLET 1 : REÇUS DE SCOLARITÉ ============ -->
+  <div *ngIf="activeTab === 'recus'">
+    <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-6 text-sm text-indigo-800 flex items-center gap-3">
+      <span>ℹ️</span>
+      <p>
+        Liste d'attente : étudiants dont le bordereau de frais de scolarité a été chargé et
+        <strong>validé par le cabinet comptable</strong>. Cliquez sur « Générer le reçu » : le
+        reçu est généré au format officiel et <strong>envoyé par mail</strong> à l'étudiant.
+        L'étudiant peut demander une copie physique que vous générez ici.
+      </p>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Liste d'attente des reçus</h3>
+        <button (click)="loadRecus()" class="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1">
+          ⟳ Actualiser
+        </button>
       </div>
-      <div class="space-y-3">
-        <div *ngFor="let doc of result.data" class="flex items-center justify-between p-3 rounded-lg border border-gray-100">
+
+      <div *ngIf="recusLoading" class="p-8 flex justify-center">
+        <app-loading-spinner></app-loading-spinner>
+      </div>
+
+      <div *ngIf="!recusLoading && recus.length === 0" class="p-8 text-center">
+        <p class="text-sm text-gray-400">Aucun bordereau de scolarité validé en attente.</p>
+        <p class="text-xs text-gray-300 mt-1">Les étudiants ayant chargé un bordereau validé par le cabinet comptable apparaîtront ici.</p>
+      </div>
+
+      <div *ngIf="!recusLoading && recus.length > 0" class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+              <th class="px-5 py-3">Étudiant</th>
+              <th class="px-4 py-3">Matricule</th>
+              <th class="px-4 py-3">Échéance</th>
+              <th class="px-4 py-3 text-right">Montant</th>
+              <th class="px-4 py-3">Validé le</th>
+              <th class="px-4 py-3">Statut</th>
+              <th class="px-4 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let bordereau of recus" class="border-t border-gray-50 hover:bg-gray-50/50">
+              <td class="px-5 py-3">
+                <p class="font-medium text-gray-900">
+                  {{ etudiantLabel(bordereau.utilisateur) }}
+                </p>
+                <p class="text-xs text-gray-400">{{ bordereau.referenceBancaire || '—' }}</p>
+              </td>
+              <td class="px-4 py-3 text-gray-600">{{ bordereau.utilisateur?.identifiant || '—' }}</td>
+              <td class="px-4 py-3 text-gray-600">{{ bordereau.echeance?.moisConcerne || (bordereau.echeance?.numeroEcheance ? 'Échéance n°' + bordereau.echeance?.numeroEcheance : 'Scolarité') }}</td>
+              <td class="px-4 py-3 text-right font-semibold text-gray-900">{{ formatMontant(bordereau.montant) }}</td>
+              <td class="px-4 py-3 text-gray-600">
+                <ng-container *ngIf="bordereau.dateValidation">{{ bordereau.dateValidation | date: 'dd/MM/yyyy' }}</ng-container>
+                <ng-container *ngIf="!bordereau.dateValidation">—</ng-container>
+              </td>
+              <td class="px-4 py-3">
+                <ng-container *ngIf="!recuGenere(bordereau)">
+                  <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">En attente</span>
+                </ng-container>
+                <ng-container *ngIf="recuGenere(bordereau)">
+                  <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Reçu généré</span>
+                </ng-container>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex justify-end gap-2">
+                  <ng-container *ngIf="!recuGenere(bordereau)">
+                    <app-custom-button
+                      (click)="genererRecu(bordereau)"
+                      [disabled]="genererLoadingId === bordereau.id"
+                      [text]="genererLoadingId === bordereau.id ? 'Génération...' : 'Générer le reçu'"
+                      color="red"></app-custom-button>
+                  </ng-container>
+                  <ng-container *ngIf="recuGenere(bordereau)">
+                    <app-custom-button
+                      (click)="telechargerRecu(recuGenere(bordereau)!)"
+                      [text]="'Copie physique (PDF)'"
+                      color="blue"
+                      [outlined]="true"></app-custom-button>
+                  </ng-container>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ONGLET 2 : ATTESTATIONS & DOCUMENTS ============ -->
+  <div *ngIf="activeTab === 'demandes'">
+    <div class="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-6 text-sm text-amber-800 flex items-center gap-3">
+      <span>💡</span>
+      <p>
+        Documents demandés par les étudiants (attestations, admissibilité…). Les frais de chaque
+        document sont paramétrés dans l'onglet « Paramétrage des frais ». L'école encaisse en
+        caisse : confirmez le paiement <strong>avant</strong> de délivrer le document.
+      </p>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Demandes de documents</h3>
+        <button (click)="loadDemandes()" class="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1">
+          ⟳ Actualiser
+        </button>
+      </div>
+
+      <div *ngIf="demandesLoading" class="p-8 flex justify-center">
+        <app-loading-spinner></app-loading-spinner>
+      </div>
+
+      <div *ngIf="!demandesLoading && demandes.length === 0" class="p-8 text-center">
+        <p class="text-sm text-gray-400">Aucune demande de document.</p>
+      </div>
+
+      <div *ngIf="!demandesLoading && demandes.length > 0" class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+              <th class="px-5 py-3">Étudiant</th>
+              <th class="px-4 py-3">Document demandé</th>
+              <th class="px-4 py-3 text-right">Frais</th>
+              <th class="px-4 py-3">Paiement</th>
+              <th class="px-4 py-3">Statut</th>
+              <th class="px-4 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let demande of demandes" class="border-t border-gray-50 hover:bg-gray-50/50">
+              <td class="px-5 py-3 font-medium text-gray-900">
+                {{ etudiantLabel(demande.etudiant) }}
+                <p class="text-xs text-gray-400 font-normal">{{ demande.etudiant?.identifiant || '—' }}</p>
+              </td>
+              <td class="px-4 py-3 text-gray-600">
+                <p>{{ demande.typeDocument?.libelle || 'Document' }}</p>
+                <p class="text-xs text-gray-400">{{ (demande.date | date: 'dd/MM/yyyy') || '' }}</p>
+              </td>
+              <td class="px-4 py-3 text-right font-semibold text-gray-900">{{ formatMontant(montantDemande(demande)) }}</td>
+              <td class="px-4 py-3">
+                <span
+                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                  [ngClass]="montantDemande(demande) <= 0 ? 'bg-gray-100 text-gray-500' : (demande.fraisPayes ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700')">
+                  {{ montantDemande(demande) <= 0 ? 'Gratuit' : (demande.fraisPayes ? 'Payé' : 'Impayé') }}
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium" [ngClass]="statutBadgeClass(demande.statut)">
+                  {{ statutLabel(demande.statut) }}
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex justify-end gap-2 flex-wrap">
+                  <app-custom-button
+                    *ngIf="montantDemande(demande) > 0 && !demande.fraisPayes"
+                    (click)="confirmerPaiement(demande)"
+                    [disabled]="paiementLoadingId === demande.id"
+                    [text]="paiementLoadingId === demande.id ? 'Encaissement...' : 'Encaisser (caisse)'"
+                    color="green"
+                    [outlined]="true"></app-custom-button>
+                  <app-custom-button
+                    *ngIf="demande.statut !== 'delivree'"
+                    (click)="delivrerDocument(demande)"
+                    [disabled]="delivranceLoadingId === demande.id"
+                    [text]="delivranceLoadingId === demande.id ? 'Délivrance...' : 'Générer le document'"
+                    color="indigo"></app-custom-button>
+                  <ng-container *ngIf="demande.statut === 'delivree'">
+                    <span class="text-xs text-emerald-600 self-center">PDF généré ✓</span>
+                  </ng-container>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ONGLET 3 : PARAMÉTRAGE DES FRAIS ============ -->
+  <div *ngIf="activeTab === 'frais'">
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Frais des documents</h3>
+        <app-custom-button (click)="openCreateType()" text="+ Nouveau document" color="red"></app-custom-button>
+      </div>
+
+      <div *ngIf="typesDocLoading" class="p-8 flex justify-center">
+        <app-loading-spinner></app-loading-spinner>
+      </div>
+
+      <div *ngIf="!typesDocLoading && typesDocument.length === 0" class="p-8 text-center">
+        <p class="text-sm text-gray-400">Aucun type de document paramétré.</p>
+      </div>
+
+      <div *ngIf="!typesDocLoading && typesDocument.length > 0" class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+              <th class="px-5 py-3">Document</th>
+              <th class="px-4 py-3 text-right">Frais facturés</th>
+              <th class="px-4 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let type of typesDocument" class="border-t border-gray-50 hover:bg-gray-50/50">
+              <td class="px-5 py-3 font-medium text-gray-900">{{ type.libelle }}</td>
+              <td class="px-4 py-3 text-right font-semibold text-gray-900">{{ formatMontant(type.frais) }}</td>
+              <td class="px-4 py-3">
+                <div class="flex justify-end gap-2">
+                  <app-custom-button (click)="openEditType(type)" text="Modifier" color="blue" [outlined]="true"></app-custom-button>
+                  <app-custom-button
+                    (click)="deleteType(type)"
+                    [disabled]="typeDeleteLoadingId === type.id"
+                    text="Supprimer"
+                    color="gray"
+                    [outlined]="true"></app-custom-button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Modale création / édition -->
+    <div *ngIf="typeFormOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" (click.self)="closeTypeForm()">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+        <h3 class="text-base font-semibold text-gray-900 mb-4">
+          {{ typeFormMode === 'edit' ? 'Modifier le document' : 'Nouveau document' }}
+        </h3>
+
+        <div class="space-y-4">
           <div>
-            <p class="text-sm font-medium text-gray-900">{{ doc.reference }}</p>
-            <p class="text-xs text-gray-500">Généré le {{ doc.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Libellé du document *</label>
+            <input
+              [(ngModel)]="typeForm.libelle"
+              placeholder="Ex : Attestation d'admissibilité"
+              class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" />
           </div>
-          <div class="flex gap-2">
-            <app-custom-button (click)="download(doc)" text="Télécharger" color="blue" [outlined]="true"></app-custom-button>
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Frais (FCFA)</label>
+            <input
+              [(ngModel)]="typeForm.frais"
+              type="number"
+              min="0"
+              placeholder="0 = gratuit"
+              class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" />
           </div>
+        </div>
+
+        <div class="flex justify-end gap-3 mt-6">
+          <app-custom-button (click)="closeTypeForm()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+          <app-custom-button (click)="saveType()" [disabled]="typeSaveLoading" [text]="typeSaveLoading ? 'Enregistrement...' : 'Enregistrer'" color="red"></app-custom-button>
         </div>
       </div>
     </div>

@@ -4,8 +4,8 @@
       <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
       Retour aux bulletins
     </a>
-    <h1 class="text-2xl font-bold text-gray-900">Générer les bulletins</h1>
-    <p class="mt-1 text-sm text-gray-500">Sélectionnez les paramètres pour générer les bulletins d'une classe</p>
+    <h1 class="text-2xl font-bold text-gray-900">Générer les relevés / bulletins</h1>
+    <p class="mt-1 text-sm text-gray-500">Sélectionnez année académique, niveau, parcours, classe et éventuellement une salle</p>
   </div>
 
   <!-- Generation Form -->
@@ -17,12 +17,13 @@
         </div>
         <div>
           <h2 class="text-base font-semibold text-gray-900">Paramètres de génération</h2>
-          <p class="text-xs text-gray-400">Remplissez tous les champs pour activer la génération</p>
+          <p class="text-xs text-gray-400">La classe est requise ; le semestre et la salle sont optionnels</p>
         </div>
       </div>
     </div>
 
     <div class="px-6 py-6 space-y-5">
+      <!-- Row 1 : Année / Niveau / Parcours -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
           <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Année académique</label>
@@ -33,10 +34,50 @@
           </select>
         </div>
         <div>
-          <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Semestre</label>
+          <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Niveau</label>
+          <select [(ngModel)]="niveauId" (change)="onNiveauChange()"
+                  class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600 transition-shadow">
+            <option [ngValue]="null">Sélectionner...</option>
+            <option *ngFor="let n of niveaux" [ngValue]="n.id">{{ n.libelle }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Filière / Parcours</label>
+          <select [(ngModel)]="parcoursId" (change)="onParcoursChange()" [disabled]="!niveauId"
+                  class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600 transition-shadow disabled:opacity-50 disabled:cursor-not-allowed">
+            <option [ngValue]="null">Sélectionner...</option>
+            <option *ngFor="let p of parcoursList" [ngValue]="p.id">{{ p.titre }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Row 2 : Classe / Salle / Semestre -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Classe</label>
+          <select [(ngModel)]="classeId" (change)="onClasseChange()"
+                  class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600 transition-shadow">
+            <option [ngValue]="null">Sélectionner...</option>
+            <option *ngFor="let c of classesVisibles" [ngValue]="c.id">{{ c.libelle }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">
+            Salle <span class="normal-case font-normal text-gray-400">(optionnel)</span>
+          </label>
+          <select [(ngModel)]="salleId" [disabled]="!classeId"
+                  class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600 transition-shadow disabled:opacity-50 disabled:cursor-not-allowed">
+            <option [ngValue]="null">Toutes les salles</option>
+            <option *ngFor="let s of salles" [ngValue]="s.id">{{ s.libelle }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">
+            Semestre <span class="normal-case font-normal text-gray-400">(optionnel)</span>
+          </label>
           <select [(ngModel)]="semestre"
                   class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600 transition-shadow">
-            <option value="">Sélectionner...</option>
+            <option value="">Tous les semestres</option>
             <option value="semestre1">Semestre 1</option>
             <option value="semestre2">Semestre 2</option>
             <option value="semestre3">Semestre 3</option>
@@ -45,18 +86,23 @@
             <option value="semestre6">Semestre 6</option>
           </select>
         </div>
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Classe</label>
-          <select [(ngModel)]="classeId"
-                  class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600 transition-shadow">
-            <option [ngValue]="null">Sélectionner...</option>
-            <option *ngFor="let c of classes" [ngValue]="c.id">{{ c.libelle }}</option>
-          </select>
+      </div>
+
+      <!-- Recap encart -->
+      <div *ngIf="recapComplete" class="rounded-xl border border-blue-100 bg-blue-50/60 px-4 py-3">
+        <p class="text-xs font-semibold text-blue-700 uppercase tracking-wider mb-2">Récapitulatif de la génération</p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1.5 text-xs text-gray-600">
+          <div><span class="font-medium text-gray-500">Année :</span> {{ getAnneeLibelle() }}</div>
+          <div><span class="font-medium text-gray-500">Filière :</span> {{ getParcoursLibelle() }}</div>
+          <div><span class="font-medium text-gray-500">Niveau :</span> {{ getNiveauLibelle() }}</div>
+          <div><span class="font-medium text-gray-500">Classe :</span> {{ getClasseLibelle() }}</div>
+          <div><span class="font-medium text-gray-500">Salle :</span> {{ getSalleLibelle() }}</div>
+          <div><span class="font-medium text-gray-500">Semestre :</span> {{ getSemestreLabel() }}</div>
         </div>
       </div>
 
       <div class="flex items-center gap-3 pt-2">
-        <button (click)="generer()" [disabled]="!anneeAcademiqueId || !semestre || !classeId || genererLoading"
+        <button (click)="generer()" [disabled]="!anneeAcademiqueId || !classeId || genererLoading"
                 class="inline-flex items-center px-6 py-2.5 bg-blue-700 hover:bg-blue-800 disabled:bg-gray-200 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-colors shadow-sm">
           <svg *ngIf="genererLoading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -65,6 +111,7 @@
           <svg *ngIf="!genererLoading" class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
           {{ genererLoading ? 'Génération en cours...' : 'Générer les bulletins' }}
         </button>
+        <p class="text-xs text-gray-400">Régénération possible pour les années antérieures</p>
       </div>
     </div>
   </div>
@@ -92,7 +139,7 @@
         </div>
         <div>
           <h3 class="text-sm font-semibold text-emerald-900">Génération réussie</h3>
-          <p class="text-xs text-emerald-700">{{ getReussi() }} bulletin(s) créé(s) pour la classe {{ getClasseLibelle() }} ({{ getAnneeLibelle() }} - {{ semestre === 'semestre1' ? 'Semestre 1' : semestre === 'semestre2' ? 'Semestre 2' : semestre === 'semestre3' ? 'Semestre 3' : semestre === 'semestre4' ? 'Semestre 4' : semestre === 'semestre5' ? 'Semestre 5' : 'Semestre 6' }})</p>
+          <p class="text-xs text-emerald-700">{{ getReussi() }} bulletin(s) créé(s) pour la classe {{ getClasseLibelle() }} ({{ getAnneeLibelle() }} - {{ getSemestreLabel() }})</p>
         </div>
       </div>
     </div>
@@ -133,6 +180,7 @@
       <div class="text-xs text-amber-800">
         <p class="font-semibold mb-1">Note importante</p>
         <p>Les bulletins sont générés à partir des notes déjà saisies dans le système (CC, Devoirs, Examens). Assurez-vous que toutes les notes sont renseignées avant de lancer la génération.</p>
+        <p class="mt-1">La régénération est possible pour les années antérieures : relancez la génération pour mettre à jour les bulletins existants (aucune restriction sur l'année académique sélectionnée).</p>
       </div>
     </div>
   </div>

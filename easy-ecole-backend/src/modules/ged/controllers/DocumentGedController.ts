@@ -308,7 +308,8 @@ export default class DocumentGedController {
             return res.status(201).json(document);
         } catch (error) {
             console.error('upload ERROR:', error);
-            return res.status(500).json({ success: false, error: error instanceof Error ? error.message : String(error) });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 

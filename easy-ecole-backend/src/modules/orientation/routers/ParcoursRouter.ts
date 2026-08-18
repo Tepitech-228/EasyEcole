@@ -4,9 +4,14 @@ import multer from "multer"
 import ParcoursController from "../controllers/ParcoursController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
 import CheckPermission from "../../../core/middlewares/CheckPermission";
+import { fileFilter, ALLOWED_IMAGE_TYPES, ALLOWED_VIDEO_TYPES } from "../../../core/config/upload";
 
 const router = express.Router()
-const upload = multer({ dest: "public/orientation/parcours/" });
+const upload = multer({
+    dest: "public/orientation/parcours/",
+    fileFilter: fileFilter([...ALLOWED_IMAGE_TYPES, ...ALLOWED_VIDEO_TYPES]),
+    limits: { fileSize: 50 * 1024 * 1024 }
+});
 
 router
     /**

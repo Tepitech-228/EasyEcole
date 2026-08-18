@@ -1,5 +1,5 @@
 <div class="page-container">
-  <app-header-title title="Registres académiques" subtitle="Consulter l'historique académique des étudiants"></app-header-title>
+  <app-header-title title="Registres académiques" subtitle="Classement des meilleurs étudiants de chaque promotion"></app-header-title>
 
   <app-custom-alert *ngIf="errorMessage" [show]="true" [title]="errorMessage" type="danger" [inline]="true"></app-custom-alert>
 
@@ -30,15 +30,24 @@
   <div class="stats-grid">
     <div class="stat-card">
       <span class="stat-icon text-blue-600 bg-blue-100">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
       </span>
       <div>
-        <p class="stat-value">{{ totalItems }}</p>
-        <p class="stat-label">Étudiants</p>
+        <p class="stat-value">{{ promotions.length }}</p>
+        <p class="stat-label">Promotions</p>
       </div>
     </div>
     <div class="stat-card">
       <span class="stat-icon text-green-600 bg-green-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ totalEtudiantsClasses }}</p>
+        <p class="stat-label">Étudiants classés</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon text-indigo-600 bg-indigo-100">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </span>
       <div>
@@ -47,33 +56,24 @@
       </div>
     </div>
     <div class="stat-card">
-      <span class="stat-icon text-red-600 bg-red-100">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <span class="stat-icon text-amber-600 bg-amber-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
       </span>
       <div>
-        <p class="stat-value">{{ getDecisionCount('Redouble') }}</p>
-        <p class="stat-label">Redoublants</p>
-      </div>
-    </div>
-    <div class="stat-card">
-      <span class="stat-icon text-purple-600 bg-purple-100">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-      </span>
-      <div>
-        <p class="stat-value">{{ classeList.length }}</p>
-        <p class="stat-label">Classes</p>
+        <p class="stat-value">{{ meilleureMoyenne !== null ? (meilleureMoyenne | number:'1.1-1') : '—' }}<span class="text-base text-gray-400">/20</span></p>
+        <p class="stat-label">Meilleure moyenne</p>
       </div>
     </div>
   </div>
 
   <div class="card">
     <div class="card-header border-b">
-      <div class="flex justify-between items-center">
+      <div class="flex flex-wrap justify-between items-center gap-3">
         <div>
-          <h2 class="card-title">Registres</h2>
-          <p class="card-subtitle">Liste des résultats académiques</p>
+          <h2 class="card-title">Palmarès par promotion</h2>
+          <p class="card-subtitle">Meilleurs étudiants de chaque promotion</p>
         </div>
-        <div class="flex gap-4 items-center">
+        <div class="flex flex-wrap gap-3 items-center">
           <input type="text" [(ngModel)]="searchText" (input)="onSearch()" placeholder="Rechercher un étudiant..."
             class="form-input-sm">
           <select [(ngModel)]="selectedAnneeScolaire" (change)="onFilterChange()" class="form-select-sm">
@@ -88,37 +88,71 @@
             <option value="">Toutes les classes</option>
             <option *ngFor="let c of classeList" [value]="c">{{ c }}</option>
           </select>
-          <select [(ngModel)]="selectedDecision" (change)="onFilterChange()" class="form-select-sm">
-            <option value="">Toutes les décisions</option>
-            <option *ngFor="let d of decisionList" [value]="d">{{ d }}</option>
+          <select [(ngModel)]="topN" (change)="onTopNChange()" class="form-select-sm" title="Nombre d'étudiants à afficher par promotion">
+            <option *ngFor="let n of topNOptions" [ngValue]="n">Top {{ n }}</option>
           </select>
-          <app-custom-button *ngIf="selectedAnneeScolaire || selectedFiliere || selectedClasse || selectedDecision || searchText"
-            (click)="reinitialiserFiltres()" text="Réinitialiser" color="gray" [outlined]="true"></app-custom-button>
+          <app-custom-button *ngIf="hasActiveFilters() || topN !== 50" (click)="reinitialiserFiltres()" text="Réinitialiser" color="gray" [outlined]="true"></app-custom-button>
           <app-custom-button (click)="openGeneratePanel()" text="Générer depuis une délibération" color="indigo"></app-custom-button>
         </div>
       </div>
     </div>
-    <div class="card-body p-0">
-      <app-dossier-view
-        [nodes]="dossierNodes"
-        [columns]="dossierColumns"
-        [batchActions]="batchActions"
-        [loading]="loading"
-        [selectedCount]="0"
-        [totalItems]="totalItems"
-        [currentPage]="currentPage"
-        [totalPages]="totalPages"
-        [pageSize]="pageSize"
-        [renderItemActions]="true"
-        (pageChange)="onPageChange($event)"
-        (batchAction)="onBatchAction($event)"
-        (itemAction)="onItemAction($event)">
-      </app-dossier-view>
-      <div *ngIf="!loading && totalItems === 0" class="empty-state">
-        <img class="h-40" src="assets/images/selection-pana.svg" alt="no data">
-        <p class="text-gray-500">Aucun registre trouvé</p>
-        <app-custom-button text="Réinitialiser les filtres" (click)="reinitialiserFiltres()"></app-custom-button>
-      </div>
+    <div class="card-body">
+      <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+      <ng-container *ngIf="!loading">
+        <div *ngIf="promotions.length > 0" class="space-y-6">
+          <div *ngFor="let promo of promotions" class="promotion-card">
+            <div class="promotion-header">
+              <div>
+                <h3 class="promotion-title">{{ promo.promotion }}</h3>
+                <p class="promotion-meta">
+                  <span *ngIf="promo.anneeScolaire">{{ promo.anneeScolaire }}</span>
+                  <span *ngIf="promo.filiere"> · {{ promo.filiere }}</span>
+                  <span *ngIf="promo.niveau"> · {{ promo.niveau }}</span>
+                </p>
+              </div>
+              <span class="promotion-badge">Top {{ topN }} · {{ promo.totalPromotion || 0 }} étudiant(s) dans la promo</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="classement-table">
+                <thead>
+                  <tr>
+                    <th>Rang</th>
+                    <th>Étudiant</th>
+                    <th>Matricule</th>
+                    <th>Classe</th>
+                    <th class="text-center">Moyenne</th>
+                    <th>Décision</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let etudiant of promo.etudiants; trackBy: trackByEtudiant" [ngClass]="podiumRowClass(etudiant.rang)">
+                    <td>
+                      <span class="rang-pill" [ngClass]="rangPillClass(etudiant.rang)">{{ etudiant.rang }}</span>
+                    </td>
+                    <td class="font-semibold text-gray-900">{{ etudiant.etudiant }}</td>
+                    <td class="text-gray-600">{{ etudiant.matricule }}</td>
+                    <td class="text-gray-600">{{ etudiant.classe }}</td>
+                    <td class="font-semibold text-center">{{ formatMoyenne(etudiant.moyenne) }}</td>
+                    <td>
+                      <app-custom-badge [text]="etudiant.decision || '—'" [color]="decisionBadgeColor(etudiant.decision)"></app-custom-badge>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div *ngIf="promo.etudiants.length === 0" class="px-5 py-6 text-center text-sm text-gray-500">
+              Aucun étudiant classé pour cette promotion.
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="promotions.length === 0" class="empty-state">
+          <img class="h-40" src="assets/images/selection-pana.svg" alt="no data">
+          <p class="text-gray-500">Aucun classement trouvé</p>
+          <app-custom-button text="Réinitialiser les filtres" (click)="reinitialiserFiltres()"></app-custom-button>
+        </div>
+      </ng-container>
     </div>
   </div>
 </div>

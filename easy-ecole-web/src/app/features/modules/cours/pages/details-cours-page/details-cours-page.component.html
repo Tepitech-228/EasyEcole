@@ -20,64 +20,13 @@
         </div>
     </div>
 
-    <!-- <div
-        class="mb-8 flex overflow-x-auto overflow-y-hidden border-b border-gray-200 whitespace-nowrap dark:border-gray-700">
-        <button (click)="activeTab = 1"
-            [ngClass]="activeTab == 1 ? 'text-blue-600 border-blue-500 dark:border-blue-400 dark:text-blue-300' : 'text-gray-700 bg-transparent border-transparent dark:text-white hover:border-gray-400'"
-            class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center border-b-2 sm:px-4 -px-1 whitespace-nowrap cursor-base focus:outline-none">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
-            </svg>
-
-            <span class="mx-1 text-sm sm:text-base">
-                Chapîtres
-            </span>
+    <div class="mb-8 flex overflow-x-auto overflow-y-hidden border-b border-gray-200 whitespace-nowrap">
+        <button *ngFor="let tab of tabs" (click)="activeTab = tab.id"
+            [ngClass]="activeTab == tab.id ? 'text-indigo-600 border-indigo-500' : 'text-gray-600 border-transparent hover:border-gray-300 hover:text-gray-800'"
+            class="inline-flex items-center h-11 px-4 text-center border-b-2 text-sm font-medium focus:outline-none">
+            {{ tab.label }}
         </button>
-
-        <button (click)="activeTab = 2; initCalendar()"
-            [ngClass]="activeTab == 2 ? 'text-blue-600 border-blue-500 dark:border-blue-400 dark:text-blue-300' : 'text-gray-700 bg-transparent border-transparent dark:text-white hover:border-gray-400'"
-            class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center border-b-2 sm:px-4 -px-1 whitespace-nowrap cursor-base focus:outline-none">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-
-            <span class="mx-1 text-sm sm:text-base">
-                Emploi du temps
-            </span>
-        </button>
-
-        <button (click)="activeTab = 3"
-            [ngClass]="activeTab == 3 ? 'text-blue-600 border-blue-500 dark:border-blue-400 dark:text-blue-300' : 'text-gray-700 bg-transparent border-transparent dark:text-white hover:border-gray-400'"
-            class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center border-b-2 sm:px-4 -px-1 whitespace-nowrap cursor-base focus:outline-none">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-            </svg>
-
-            <span class="mx-1 text-sm sm:text-base">
-                Participants
-            </span>
-        </button>
-
-        <button (click)="activeTab = 4"
-            [ngClass]="activeTab == 4 ? 'text-blue-600 border-blue-500 dark:border-blue-400 dark:text-blue-300' : 'text-gray-700 bg-transparent border-transparent dark:text-white hover:border-gray-400'"
-            class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center border-b-2 sm:px-4 -px-1 whitespace-nowrap cursor-base focus:outline-none">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-
-            <span class="mx-1 text-sm sm:text-base">
-                Notes d'évaluation
-            </span>
-        </button>
-    </div> -->
+    </div>
 
     <div class="w-full flex justify-between items-center mb-8">
         <div *ngIf="activeTab == 1" class="grid grid-cols-4 w-full gap-x-2 gap-y-4">
@@ -211,6 +160,43 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+        <div *ngIf="activeTab == 5" class="w-full">
+            <div class="flex justify-end mb-4">
+                <app-custom-button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="openEcueModal()" text="Nouvel ECUE"></app-custom-button>
+            </div>
+
+            <div *ngIf="ecues.length == 0" class="text-center py-12 bg-white border border-gray-200 rounded-lg">
+                <span class="material-symbols-outlined text-5xl text-gray-300 mb-4">category</span>
+                <p class="text-gray-500">Aucun ECUE — cette UE est à cours unique</p>
+                <p class="text-sm text-gray-400 mt-2">Ajoutez des ECUE pour composer cette UE de plusieurs matières</p>
+            </div>
+
+            <div *ngIf="ecues.length > 0" class="overflow-x-auto bg-white border border-gray-200 rounded-lg">
+                <table class="min-w-full">
+                    <thead class="bg-gray-50 border-b">
+                        <tr>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">Code</th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">Libellé</th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">Crédits ECTS</th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">Coefficient</th>
+                            <th *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        <tr *ngFor="let ecue of ecues" class="hover:bg-gray-50">
+                            <td class="px-4 py-3 text-sm text-gray-900 font-medium whitespace-nowrap">{{ ecue.code }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.libelle }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.creditEcts ?? '—' }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.coefficient ?? '1' }}</td>
+                            <td *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" class="px-4 py-3 text-sm text-right whitespace-nowrap">
+                                <button (click)="openEcueModal(ecue)" class="text-indigo-600 hover:text-indigo-800 mr-4 font-medium">Modifier</button>
+                                <button (click)="supprimerEcue(ecue)" class="text-red-600 hover:text-red-800 font-medium">Supprimer</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -371,5 +357,43 @@
     <div class="flex items-center justify-between py-3">
         <app-custom-button (click)="closeNouvelleSeanceModal()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
         <app-custom-button (click)="ajouterSeance()" text="Enregistrer"></app-custom-button>
+    </div>
+</app-custom-modal>
+
+<!-- Modal ECUE -->
+<app-custom-modal [title]="editingEcueId ? 'Modifier l\'ECUE' : 'Nouvel ECUE'" subtitle="Composer l'UE avec ses matières (ECUE)" (onCloseModal)="closeEcueModal()" [center]="true" [showModal]="showEcueModal">
+    <form [formGroup]="ecueForm">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-6 mb-8">
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Code</span>
+                <input type="text" formControlName="code" placeholder="Ex: ALGO1"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <div *ngIf="ecueForm.get('code')!.invalid && (ecueForm.get('code')!.dirty || ecueForm.get('code')!.touched)">
+                    <app-form-message *ngIf="ecueForm.get('code')!.errors?.['required']" text="Veuillez saisir le code"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Libellé</span>
+                <input type="text" formControlName="libelle" placeholder="Ex: Algorithmique"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <div *ngIf="ecueForm.get('libelle')!.invalid && (ecueForm.get('libelle')!.dirty || ecueForm.get('libelle')!.touched)">
+                    <app-form-message *ngIf="ecueForm.get('libelle')!.errors?.['required']" text="Veuillez saisir le libellé"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Crédits ECTS</span>
+                <input type="number" formControlName="creditEcts" placeholder="Ex: 3"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Coefficient</span>
+                <input type="number" formControlName="coefficient" placeholder="Ex: 2"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+        </div>
+    </form>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="closeEcueModal()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+        <app-custom-button (click)="enregistrerEcue()" text="Enregistrer"></app-custom-button>
     </div>
 </app-custom-modal>

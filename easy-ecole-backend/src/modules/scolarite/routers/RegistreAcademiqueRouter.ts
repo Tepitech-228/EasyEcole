@@ -8,12 +8,22 @@ const router = express.Router()
  * /scolarite/registres:
  *   get:
  *     tags: [Registres Académiques]
- *     summary: Liste tous les registres académiques
+ *     summary: Liste tous les registres académiques (liste plate paginée, ou Top N par promotion avec ?top=)
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: top
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 50
+ *         description: Classe les 50 (défaut) meilleurs étudiants de chaque promotion. Sans ce paramètre, retourne la liste plate paginée classique.
  *     responses:
  *       200:
- *         description: Liste des registres académiques
+ *         description: Liste des registres académiques (ou classement par promotion si top est fourni)
  */
 router
     .get('/', RegistreAcademiqueController.getAll)

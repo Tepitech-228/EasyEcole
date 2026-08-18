@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { DocGenCachetService } from 'src/app/data/modules/docgen/services/docgen-cachet.service';
 import { DocGenCachet } from 'src/app/data/modules/docgen/models/DocGenCachet.model';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-cachet-page',
@@ -71,6 +72,6 @@ export class CachetPageComponent extends BaseComponentClass implements OnInit {
   }
 
   getImageUrl(cachet: DocGenCachet): string {
-    return cachet.imagePath ? `http://localhost:3000/${cachet.imagePath}` : '';
+    return cachet.imagePath ? `${environment.API_BASE_URL}${cachet.imagePath.replace(/^\/+/, '')}` : '';
   }
 }

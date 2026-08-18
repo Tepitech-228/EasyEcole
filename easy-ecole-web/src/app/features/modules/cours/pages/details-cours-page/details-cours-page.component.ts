@@ -4,7 +4,9 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { Cours } from 'src/app/data/modules/inscription/models/Cours.model';
+import { Ecue } from 'src/app/data/modules/inscription/models/Ecue.model';
 import { CoursService } from 'src/app/data/modules/inscription/services/cours.service';
+import { EcueService } from 'src/app/data/modules/inscription/services/ecue.service';
 import { CalendarOptions, DateSelectArg, EventClickArg, EventInput } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -30,6 +32,24 @@ export class DetailsCoursPageComponent extends BaseComponentClass implements OnI
   id: string
   cours?: Cours
   activeTab: number = 1
+
+  tabs = [
+    { id: 1, label: 'Chapitres' },
+    { id: 2, label: 'Emploi du temps' },
+    { id: 3, label: 'Participants' },
+    { id: 4, label: "Notes d'évaluation" },
+    { id: 5, label: 'ECUE' },
+  ]
+
+  ecues: Ecue[] = []
+  showEcueModal: boolean = false
+  editingEcueId?: string
+  ecueForm: FormGroup = new FormGroup({
+    code: new FormControl(null, [Validators.required]),
+    libelle: new FormControl(null, [Validators.required]),
+    creditEcts: new FormControl(null, []),
+    coefficient: new FormControl(null, []),
+  })
 
   selectedDate?: Date
   showNouvelleSeanceModal: boolean = false
@@ -59,12 +79,14 @@ export class DetailsCoursPageComponent extends BaseComponentClass implements OnI
 
   constructor(
     private coursService: CoursService,
+    private ecueService: EcueService,
     private seanceService: SeanceService,
     private activatedRoute: ActivatedRoute,
     private router: Router) {
     super()
     this.id = this.activatedRoute.snapshot.paramMap.get("id") as string
     this.getCours()
+    this.getEcues()
     this.initCalendar()
   }
 
@@ -129,6 +151,82 @@ export class DetailsCoursPageComponent extends BaseComponentClass implements OnI
           },
         }
       )
+  }
+
+  // ── ECUE ──────────────────────────────────────────────────────────────────
+
+  getEcues(): void {
+    this.ecueService.getByUe(this.id)
+      .subscribe(
+        {
+          next: (res) => {
+            this.ecues = Array.isArray(res) ? res : []
+          },
+          error: (err) => {
+            console.log(err)
+            this.ecues = []
+          },
+        }
+      )
+  }
+
+  openEcueModal(ecue?: Ecue): void {
+    if (ecue) {
+      this.editingEcueId = ecue.id
+      this.ecueForm.patchValue({
+        code: ecue.code,
+        libelle: ecue.libelle,
+        creditEcts: ecue.creditEcts,
+        coefficient: ecue.coefficient,
+      })
+    } else {
+      this.editingEcueId = undefined
+      this.ecueForm.reset()
+    }
+    this.showEcueModal = true
+  }
+
+  closeEcueModal(): void {
+    this.showEcueModal = false
+    this.ecueForm.reset()
+  }
+
+  enregistrerEcue(): void {
+    this.ecueForm.markAllAsTouched()
+    if (this.ecueForm.invalid) return
+
+    const ecue = new Ecue()
+    ecue.code = this.ecueForm.get('code')!.value
+    ecue.libelle = this.ecueForm.get('libelle')!.value
+    ecue.creditEcts = this.ecueForm.get('creditEcts')!.value
+    ecue.coefficient = this.ecueForm.get('coefficient')!.value
+    ecue.coursId = this.id
+
+    const request = this.editingEcueId
+      ? this.ecueService.update({ ...ecue, id: this.editingEcueId })
+      : this.ecueService.create(ecue)
+
+    request.subscribe({
+      next: () => {
+        this.closeEcueModal()
+        this.getEcues()
+      },
+      error: (err) => {
+        console.log(err)
+      },
+    })
+  }
+
+  supprimerEcue(ecue: Ecue): void {
+    if (!ecue.id) return
+    if (!confirm("Supprimer l'ECUE '" + (ecue.libelle || ecue.code) + "' ?")) return
+
+    this.ecueService.delete(ecue.id).subscribe({
+      next: () => this.getEcues(),
+      error: (err) => {
+        console.log(err)
+      },
+    })
   }
 
   getSeances(): EventInput[] {

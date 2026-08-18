@@ -30,7 +30,8 @@ export default class PresenceController {
 
             return res.status(200).send(presences);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -48,7 +49,8 @@ export default class PresenceController {
 
             return res.status(200).send(presence);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -134,7 +136,8 @@ export default class PresenceController {
                     return res.status(200).json({ success: true, message: "Presence supprimée" });
                 })
                 .catch((error) => {
-                    return res.status(500).json({ success: false, error: error });
+                    console.error('Erreur', error);
+                    return res.status(500).json({ success: false, message: 'Erreur interne' });
                 });
         }
         else {
@@ -156,7 +159,8 @@ export default class PresenceController {
                 return res.status(200).json({ success: true, count: value });
             })
             .catch((error) => {
-                return res.status(500).json({ success: false, error: error });
+                console.error('Erreur', error);
+                return res.status(500).json({ success: false, message: 'Erreur interne' });
             });
 
         return null
@@ -247,7 +251,8 @@ export default class PresenceController {
                 }
             })
         } catch (error) {
-            return res.status(500).json({ success: false, error: error })
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -300,7 +305,8 @@ export default class PresenceController {
 
             return res.status(200).send(presence)
         } catch (error) {
-            return res.status(500).json({ success: false, error: error })
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 }

@@ -24,7 +24,7 @@
 
   <div *ngIf="showGenerateModal" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
     <h3 class="text-lg font-semibold text-gray-900 mb-4">Générer un document</h3>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <div>
         <label class="block text-xs font-medium text-gray-500 mb-1">Type de document *</label>
         <select [(ngModel)]="generateData.typeCode" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
@@ -32,8 +32,13 @@
           <option *ngFor="let t of types" [value]="t.code">{{ t.code }} — {{ t.libelle }}</option>
         </select>
       </div>
+      <div><label class="block text-xs font-medium text-gray-500 mb-1">Cursus apprenant ID</label><input [(ngModel)]="generateData.cursusApprenantId" type="number" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="ex: 23" /></div>
+      <div><label class="block text-xs font-medium text-gray-500 mb-1">Classe ID</label><input [(ngModel)]="generateData.classeId" type="number" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="ex: 1, 9, 19" /></div>
+      <div><label class="block text-xs font-medium text-gray-500 mb-1">Année académique ID</label><input [(ngModel)]="generateData.anneeAcademiqueId" type="number" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" /></div>
+      <div><label class="block text-xs font-medium text-gray-500 mb-1">Semestre</label><input [(ngModel)]="generateData.semestre" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="ex: S1, S2" /></div>
+      <div><label class="block text-xs font-medium text-gray-500 mb-1">Étudiant ID (utilisateur)</label><input [(ngModel)]="generateData.etudiantId" type="number" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" /></div>
       <div><label class="block text-xs font-medium text-gray-500 mb-1">Type source</label><input [(ngModel)]="generateData.sourceType" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="etudiant, classe..." /></div>
-      <div><label class="block text-xs font-medium text-gray-500 mb-1">ID source</label><input [(ngModel)]="generateData.sourceId" type="number" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" /></div>
+      <div><label class="block text-xs font-medium text-gray-500 mb-1">ID source (API001)</label><input [(ngModel)]="generateData.sourceId" type="number" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="id de la demande d'inscription" /></div>
       <div><label class="block text-xs font-medium text-gray-500 mb-1">Métadonnées (JSON)</label><textarea [(ngModel)]="generateData.metadata" rows="3" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder='{"etudiantNom": "..."}'></textarea></div>
     </div>
     <div class="flex justify-end gap-3 mt-4">

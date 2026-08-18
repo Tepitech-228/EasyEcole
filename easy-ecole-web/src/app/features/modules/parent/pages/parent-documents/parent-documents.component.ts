@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ParentService, Enfant, DocumentData } from '../../services/parent.service';
+import { LocalStorageService } from 'src/app/core/services/local-storage.service';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-parent-documents',
@@ -15,7 +17,8 @@ export class ParentDocumentsComponent implements OnInit {
 
   constructor(
     private parentService: ParentService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private localStorage: LocalStorageService
   ) {}
 
   ngOnInit(): void {
@@ -46,6 +49,18 @@ export class ParentDocumentsComponent implements OnInit {
   }
 
   download(doc: DocumentData): void {
-    window.open(doc.url, '_blank');
+    if (!doc?.url) return;
+    let url = doc.url;
+    // Préfixe la base API si le backend renvoie un chemin relatif
+    if (/^https?:\/\//i.test(url)) {
+      // déjà absolue
+    } else if (url.startsWith('/')) {
+      url = environment.API_URL + url;
+    } else {
+      url = `${environment.API_URL}/${url}`;
+    }
+    const token = this.localStorage.get(LocalStorageService.AUTH_TOKEN);
+    if (token) url += `${url.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}`;
+    window.open(url, '_blank');
   }
 }

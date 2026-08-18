@@ -1,5 +1,11 @@
 # Documentation EasyEcole
 
+## Vue d'ensemble du produit
+
+> **[DOCUMENTATION-PRODUIT.md](DOCUMENTATION-PRODUIT.md)** — Documentation complète du produit : présentation, architecture technique, démarrage rapide, scripts, rôles/permissions, un chapitre par module (fonctionnalités, tables, API, pages frontend), parcours métier de bout en bout.
+>
+> **[LOGIQUE-METIER-POLES.md](LOGIQUE-METIER-POLES.md)** — Logique métier détaillée par pôle (processus, règles de gestion, cycles de vie, statuts, calculs) et relations entre les pôles (flux, données échangées, impacts).
+
 ## Structure par Pôles
 
 | Pôle | Doc | Pages | Processus clés |

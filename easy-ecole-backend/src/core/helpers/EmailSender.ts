@@ -211,17 +211,25 @@ export class EmailSender {
         })
     }
 
-    public sendMail(mailOptions: SendMailOptions): Promise<void> {
+    public sendMail(mailOptions: SendMailOptions, retries: number = 2): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         return new Promise((resolve, reject) => {
-            this.transporter!.sendMail(mailOptions, function (err, data) {
-                if (err) {
-                    reject(err)
-                }
-                else {
-                    resolve()
-                }
-            })
+            const attempt = (remaining: number) => {
+                this.transporter!.sendMail(mailOptions, function (err, data) {
+                    if (err) {
+                        const isTransient = /4\d\d/.test((err as any)?.responseCode ?? '')
+                        if (remaining > 0 && isTransient) {
+                            setTimeout(() => attempt(remaining - 1), 2000 * (3 - remaining))
+                            return
+                        }
+                        reject(err)
+                    }
+                    else {
+                        resolve()
+                    }
+                })
+            }
+            attempt(retries)
         })
     }
 
@@ -271,7 +279,7 @@ export class EmailSender {
         })
     }
 
-    public sendPreInscriptionValidee(username: string, email: string): Promise<void> {
+    public sendPreInscriptionValidee(username: string, email: string, attachmentPath?: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
             from: `Easy Ecole <${this.getUsername()}>`,
@@ -283,6 +291,15 @@ export class EmailSender {
             <p>Une autorisation provisoire d'inscription est disponible dans votre espace. Connectez-vous à la plateforme pour la télécharger.</p>
             <p>Vous pouvez maintenant procéder au paiement des frais d'inscription auprès de la banque muni de cette autorisation.</p>
             <p>Coridialement, <br> Easy Ecole</p>`
+        }
+
+        if (attachmentPath) {
+            mailOptions.attachments = [
+                {
+                    filename: `autorisation_provisoire_${username}.pdf`,
+                    path: attachmentPath,
+                }
+            ];
         }
 
         return new Promise((resolve, reject) => {
@@ -453,6 +470,19 @@ export class EmailSender {
             </div>`
         }
 
+        return this.sendMail(mailOptions)
+    }
+
+    public sendPdf(email: string, username: string, subject: string, messageHtml: string, pdfPath: string, pdfFilename: string): Promise<void> {
+        if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
+        const mailOptions: SendMailOptions = {
+            from: `Easy Ecole <${this.getUsername()}>`,
+            to: email,
+            encoding: 'UTF-8',
+            subject,
+            html: messageHtml,
+            attachments: [{ filename: pdfFilename, path: pdfPath }]
+        }
         return this.sendMail(mailOptions)
     }
 

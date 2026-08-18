@@ -6,6 +6,7 @@ import { Parcours } from 'src/app/data/modules/orientation/models/Parcours.model
 import { DemandeOrientationService } from 'src/app/data/modules/orientation/services/demande-orientation.service';
 import { PanierParcoursChoisiService } from 'src/app/data/modules/orientation/services/panier-parcours-choisi.service';
 import { ParcoursChoisiService } from 'src/app/data/modules/orientation/services/parcours-choisi.service';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-panier-parcours',
@@ -18,6 +19,8 @@ export class PanierParcoursComponent implements OnInit, OnChanges {
   @Output() onCloseModal: EventEmitter<any> = new EventEmitter()
 
   panierParcoursChoisis: PanierParcoursChoisi[] = []
+
+  readonly PARCOURS_PATH: string = environment.MEDIAS_PATH.ORIENTATION.PARCOURS
 
   constructor(
     private panierParcoursChoisiService: PanierParcoursChoisiService,

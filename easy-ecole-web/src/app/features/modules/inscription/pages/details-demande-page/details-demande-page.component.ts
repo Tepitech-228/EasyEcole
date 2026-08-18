@@ -184,6 +184,14 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
 
     const nextRoute = this.getNextStudentRoute(stepIndex);
     if (nextRoute) {
+      // Si la navigation pointe vers l'URL courante, Angular l'annule (aucun
+      // rechargement) et l'écran reste figé. On rafraîchit alors la demande.
+      const targetUrl = this.router.createUrlTree([nextRoute.route], { queryParams: nextRoute.queryParams });
+      if (this.router.url === this.router.serializeUrl(targetUrl)) {
+        this.getDemandeInscription();
+        return;
+      }
+
       this.router.navigate([nextRoute.route], {
         queryParams: nextRoute.queryParams,
         replaceUrl: true
@@ -198,6 +206,10 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
       this.stepMessage = null
       this.getDemandeInscription()
     }, 800)
+  }
+
+  onDemandeUpdated(demande: DemandeInscription): void {
+    this.demande = demande
   }
 
   private getNextStudentRoute(stepIndex: number): { route: string; queryParams?: any } | null {

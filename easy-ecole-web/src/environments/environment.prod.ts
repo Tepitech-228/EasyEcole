@@ -1,6 +1,13 @@
+// Stratégie réseau (déploiement Docker) :
+//   - L'application est servie par nginx (port 80) qui PROXY les appels
+//     /api/ -> backend:3000 et /media/ -> backend:3000 (voir nginx.conf).
+//   - API et médias sont donc en MÊME ORIGINE que le site : plus besoin du
+//     port 3000 exposé, ni de CORS en cross-origin.
+//   - Alternative (documentée dans GUIDE-DEPLOIEMENT.md) : URL absolue
+//     https://<serveur>:3000 avec le port 3000 exposé + certificats SSL.
 const hostname: string = window.location.hostname;
-const apiBaseUrl: string = "https://" + hostname + ":3000/"
-const apiUrl: string = "https://" + hostname + ":3000/api/v1"
+const apiBaseUrl: string = window.location.protocol + "//" + hostname + "/"
+const apiUrl: string = apiBaseUrl + "api/v1"
 
 export const environment = {
   production: true,
@@ -10,6 +17,9 @@ export const environment = {
 
   /** Alias conserv� pour r�trocompatibilit� */
   API_URL: apiUrl,
+
+  /** URL racine du serveur (sans /api/v1) — pour les fichiers statiques servis par Express */
+  API_BASE_URL: apiBaseUrl,
 
   /** Configuration des endpoints par module */
   API_MODULES: {
@@ -31,9 +41,13 @@ export const environment = {
   },
   MEDIAS_PATH: {
     AUTH: {
-      PROFILES: apiBaseUrl + "auth/profiles/",
-      PHOTOS: apiBaseUrl + "auth/apprenants/photos/",
-      PHOTOS_ENSEIGNANTS: apiBaseUrl + "auth/enseignants/photos/",
+      // Correspondance avec les routes statiques du backend (src/app.ts) :
+      //   /media/profiles            -> public/auth/profiles
+      //   /media/photos/apprenants   -> public/auth/apprenants/photos
+      //   /media/photos/enseignants  -> public/auth/enseignants/photos
+      PROFILES: apiBaseUrl + "media/profiles/",
+      PHOTOS: apiBaseUrl + "media/photos/apprenants/",
+      PHOTOS_ENSEIGNANTS: apiBaseUrl + "media/photos/enseignants/",
     },
     ORIENTATION: {
       PARCOURS: apiUrl + "/orientation/parcours/",
@@ -41,7 +55,8 @@ export const environment = {
     },
     INSCRIPTION: {
       DOSSIERS: apiUrl + "/inscription/dossiers/",
-      BORDEREAUX: apiUrl + "/inscription/bordereaux/"
+      BORDEREAUX: apiUrl + "/inscription/bordereaux/",
+      SIGNATURES: apiBaseUrl + "inscription/presences/signatures/"
     }
   },
   QR_CODES_PATH: apiUrl + "/auth/apprenants/qr-codes/",

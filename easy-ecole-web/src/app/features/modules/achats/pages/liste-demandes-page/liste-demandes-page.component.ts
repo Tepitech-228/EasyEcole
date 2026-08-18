@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+import { DemandeService } from 'src/app/data/modules/achats/services/demande.service';
+import { DemandeAchat, getMontantDemande, getNomUtilisateur } from 'src/app/data/modules/achats/models/achats.models';
 
 @Component({
   selector: 'app-liste-demandes-page',
@@ -12,7 +14,7 @@ export class ListeDemandesPageComponent extends BaseComponentClass implements On
   searchTerm = ''
   filterStatut = ''
 
-  constructor() { super() }
+  constructor(private demandeService: DemandeService) { super() }
 
   ngOnInit(): void {
     this.loadDemandes()
@@ -20,14 +22,23 @@ export class ListeDemandesPageComponent extends BaseComponentClass implements On
 
   loadDemandes() {
     this.loading = true
-    setTimeout(() => {
-      this.demandes = [
-        { id: 1, description: 'Achat ordinateurs', statut: 'brouillon', dateSoumission: '2026-01-15', montantEstime: 2500000, demandeur: 'M. Dupont' },
-        { id: 2, description: 'Fournitures bureau', statut: 'soumise', dateSoumission: '2026-01-18', montantEstime: 150000, demandeur: 'Mme Martin' },
-        { id: 3, description: 'Matériel didactique', statut: 'validee', dateSoumission: '2026-01-20', montantEstime: 800000, demandeur: 'M. Bernard' },
-      ]
-      this.loading = false
-    }, 500)
+    this.demandeService.getAll().subscribe({
+      next: (items: DemandeAchat[]) => {
+        this.demandes = items.map(d => ({
+          id: d.id,
+          description: d.description,
+          demandeur: getNomUtilisateur(d.soumisPar),
+          montantEstime: getMontantDemande(d),
+          statut: d.statut,
+          dateSoumission: d.dateSoumission,
+        }))
+        this.loading = false
+      },
+      error: () => {
+        this.demandes = []
+        this.loading = false
+      }
+    })
   }
 
   get total(): number { return this.demandes.length }
@@ -36,7 +47,7 @@ export class ListeDemandesPageComponent extends BaseComponentClass implements On
   get validees(): number { return this.demandes.filter(d => d.statut === 'validee').length }
 
   getStatutBadge(statut: string): string {
-    const map: any = { brouillon: 'bg-gray-100 text-gray-700', soumise: 'bg-yellow-100 text-yellow-700', validee: 'bg-green-100 text-green-700', rejetee: 'bg-red-100 text-red-700' }
+    const map: any = { brouillon: 'bg-gray-100 text-gray-700', soumise: 'bg-yellow-100 text-yellow-700', validee: 'bg-green-100 text-green-700', rejetee: 'bg-red-100 text-red-700', commandee: 'bg-blue-100 text-blue-700', recue: 'bg-purple-100 text-purple-700' }
     return map[statut] || 'bg-gray-100 text-gray-700'
   }
 }

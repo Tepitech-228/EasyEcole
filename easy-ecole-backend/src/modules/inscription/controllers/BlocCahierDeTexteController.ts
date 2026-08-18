@@ -16,7 +16,8 @@ export default class BlocCahierDeTexteController {
 
             return res.status(200).send(blocsCahierDeTexte);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -34,7 +35,8 @@ export default class BlocCahierDeTexteController {
 
             return res.status(200).send(blocCahierDeTexte);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -122,7 +124,8 @@ export default class BlocCahierDeTexteController {
                     return res.status(200).json({ success: true, message: "BlocCahierDeTexte supprimé" });
                 })
                 .catch((error) => {
-                    return res.status(500).json({ success: false, error: error });
+                    console.error('Erreur', error);
+                    return res.status(500).json({ success: false, message: 'Erreur interne' });
                 });
         }
         else {
@@ -144,7 +147,8 @@ export default class BlocCahierDeTexteController {
                 return res.status(200).json({ success: true, count: value });
             })
             .catch((error) => {
-                return res.status(500).json({ success: false, error: error });
+                console.error('Erreur', error);
+                return res.status(500).json({ success: false, message: 'Erreur interne' });
             });
 
         return null

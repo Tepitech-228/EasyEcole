@@ -19,6 +19,10 @@
                     <img src="assets/icons/student.svg" alt="icon">
                     <div class="px-2 text-sm">{{ cours.enseignant.utilisateur.nom + ' ' + cours.enseignant.utilisateur.prenoms }}</div>
                 </div>
+                <div *ngIf="cours.ecues && cours.ecues.length > 0" class="flex items-center text-secondary">
+                    <img src="assets/icons/category-light.svg" alt="icon">
+                    <div class="px-2 text-sm">{{ cours.ecues.length }} ECUE</div>
+                </div>
                 <!-- <div class="flex items-center text-secondary">
                     <img src="assets/icons/clock-outline.svg" alt="icon">
                     <div class="px-2 text-sm">{{ getDuree() }}</div>

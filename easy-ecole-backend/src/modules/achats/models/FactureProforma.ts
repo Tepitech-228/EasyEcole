@@ -11,6 +11,10 @@ export class FactureProforma extends Model<InferAttributes<FactureProforma>, Inf
   declare dateEmission: CreationOptional<Date>
   declare montantTotal: number
   declare statut: CreationOptional<string>
+  declare signatureData: CreationOptional<string>
+  declare signataireNom: CreationOptional<string>
+  declare signataireRole: CreationOptional<string>
+  declare dateSignature: CreationOptional<Date>
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
 
@@ -27,6 +31,10 @@ FactureProforma.init({
   dateEmission: { type: DataTypes.DATE, defaultValue: new Date(), allowNull: false },
   montantTotal: { type: DataTypes.DECIMAL(12, 2), allowNull: false },
   statut: { type: DataTypes.ENUM('emise', 'payee', 'annulee'), defaultValue: 'emise' },
+  signatureData: { type: DataTypes.TEXT('long'), allowNull: true },
+  signataireNom: { type: new DataTypes.STRING(100), allowNull: true },
+  signataireRole: { type: new DataTypes.STRING(50), allowNull: true },
+  dateSignature: { type: DataTypes.DATE, allowNull: true },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
 }, {

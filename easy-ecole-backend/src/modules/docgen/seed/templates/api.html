@@ -1,0 +1,149 @@
+<style>
+  /* ═══════════ DESIGN ESA — AUTORISATION PROVISOIRE D'INSCRIPTION (OFFICIEL) ═══════════ */
+  @page { size: A4 portrait; margin: 8mm 10mm; }
+  *, *::before, *::after { box-sizing: border-box; }
+  .doc-page { background-color: #ffffff; width: 100%; color: #1a1a1a; font-size: 8.5pt; line-height: 1.45; }
+  .frame { border: 3px solid #002147; padding: 12px; position: relative; display: flex; flex-direction: column; justify-content: space-between; min-height: 255mm; overflow: hidden; }
+  .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 65%; max-width: 400px; opacity: 0.05; z-index: 0; pointer-events: none; }
+  .content-wrapper { position: relative; z-index: 1; }
+  .header-table { width: 100%; border-collapse: collapse; border-bottom: 2px solid #002147; padding-bottom: 4px; margin-bottom: 4px; }
+  .header-table td { vertical-align: middle; }
+  .logo-img { max-height: 60px; width: auto; object-fit: contain; }
+  .school-info { text-align: right; font-size: 8pt; color: #333; line-height: 1.2; }
+  .banner-accent { height: 3px; background-color: #D4AF37; margin-bottom: 8px; }
+  .doc-title { text-align: center; margin: 6px 0 4px; }
+  .doc-title h1 { font-size: 11.5pt; color: #002147; text-transform: uppercase; letter-spacing: 0.5px; margin: 0; padding-bottom: 3px; border-bottom: 2px solid #D4AF37; display: inline-block; }
+  .ref-number { text-align: center; font-size: 8pt; font-weight: bold; color: #002147; margin-bottom: 8px; }
+  .data-table { width: 100%; border-collapse: collapse; margin: 6px 0; font-size: 8pt; }
+  .data-table th, .data-table td { border: 1px solid #002147; padding: 4px 5px; text-align: left; }
+  .data-table th { background-color: #002147 !important; color: #ffffff !important; font-weight: bold; text-align: center; font-size: 7.5pt; text-transform: uppercase; }
+  .data-table td.center { text-align: center; }
+  .dotted-line { border-bottom: 1px dotted #333; display: inline-block; min-width: 100px; }
+  .value { font-weight: bold; color: #002147; }
+  .content-body { margin: 6px 0; text-align: justify; }
+  .content-body p { margin: 5px 0; }
+  .notice-box { background-color: rgba(240, 244, 248, 0.85); border: 1px solid #002147; padding: 6px; margin: 6px 0; font-size: 7.5pt; }
+  .notice-box p { margin: 3px 0; }
+  .footer-table { width: 100%; margin-top: 10px; border-collapse: collapse; position: relative; z-index: 1; }
+  .footer-table td { vertical-align: top; }
+  .date-cell { font-style: italic; font-size: 8pt; }
+  .sign-cell { text-align: center; }
+  .sign-title { font-weight: bold; font-size: 8pt; color: #002147; margin-bottom: 35px; }
+  .sign-sub { font-size: 7.5pt; color: #444; line-height: 1.1; }
+  .doc-meta { text-align: center; margin-top: 8px; font-size: 7pt; color: #999; }
+</style>
+
+<div class="doc-page">
+  <div class="frame">
+    <img src="{{LOGO_DATA_URI}}" alt="" class="watermark">
+
+    <div class="content-wrapper">
+      <table class="header-table">
+        <tr>
+          <td><img src="{{LOGO_DATA_URI}}" alt="Logo ESA" class="logo-img"></td>
+          <td class="school-info">
+            <strong>{{etablissement.nom}}</strong><br>
+            Etablissement d'Enseignement Supérieur Privé<br>
+            Lomé, Togo
+          </td>
+        </tr>
+      </table>
+      <div class="banner-accent"></div>
+
+      <div class="doc-title">
+        <h1>Autorisation Provisoire d'Inscription</h1>
+      </div>
+
+      <div class="content-body">
+        <p>Je soussigné <strong>Dr Charles BIRREGAH</strong>, Fondateur-Président Directeur Général de l'Ecole Supérieure des Affaires (ESA),</p>
+        <p>Vu la demande d'inscription introduite par :<br>
+        <strong>M./Mlle/Mme :</strong> <span class="dotted-line" style="width: 55%;">{{etudiant.nom}} {{etudiant.prenom}}</span> <strong>né(e) le :</strong> <span class="dotted-line" style="width: 15%;">{{etudiant.dateNaissance}}</span> <strong>à :</strong> <span class="dotted-line" style="width: 15%;">{{etudiant.lieuNaissance}}</span> <strong>PAYS :</strong> <span class="dotted-line" style="width: 15%;">{{etudiant.nationalite}}</span></p>
+
+        <p style="margin-bottom: 2px;">Vu les copies légalisées des diplômes (ci-dessous) dont l'authentification a été demandée avec accusé de réception :</p>
+        <table class="data-table">
+          <tr>
+            <th>DIPLÔME</th>
+            <th class="center">BAC</th>
+            <th class="center">DTS/DUT</th>
+            <th class="center">BTS</th>
+            <th class="center">LICENCE</th>
+            <th class="center">MAÎTRISE</th>
+            <th class="center">AUTRES</th>
+          </tr>
+          <tr>
+            <td><strong>SPÉCIALITÉ</strong></td>
+            <td></td><td></td><td></td><td></td><td></td><td></td>
+          </tr>
+        </table>
+
+        <p style="margin-bottom: 2px;">Vu les copies des relevés de notes (ci-dessous) dont l'authentification a été demandée avec accusé de réception :</p>
+        <table class="data-table">
+          <tr>
+            <th>RELEVÉ DE NOTES</th>
+            <th class="center">SEM 1-2</th>
+            <th class="center">SEM 3-4</th>
+            <th class="center">SEM 5-6</th>
+            <th class="center">SEM 7-8</th>
+            <th class="center">SEM 9-10</th>
+          </tr>
+          <tr>
+            <td><strong>SPÉCIALITÉ</strong></td>
+            <td></td><td></td><td></td><td></td><td></td>
+          </tr>
+        </table>
+
+        <p><strong>Autorise</strong> M./Mlle/Mme : <span class="dotted-line" style="width: 70%;">{{etudiant.nom}} {{etudiant.prenom}}</span><br>
+        à s'inscrire pour l'année académique <span class="dotted-line" style="width: 20%;">{{etudiant.anneeAcademique}}</span> en :</p>
+
+        <table class="data-table">
+          <tr>
+            <th>PARCOURS</th>
+            <th class="center">LIC 1-2</th>
+            <th class="center">LIC 3-4</th>
+            <th class="center">LIC 5-6</th>
+            <th class="center">MAS 1-2</th>
+            <th class="center">MAS 3-4</th>
+          </tr>
+          <tr>
+            <td><strong>SPÉCIALITÉ</strong></td>
+            <td></td><td></td><td></td><td></td><td></td>
+          </tr>
+        </table>
+
+        <p style="font-size: 7.5pt; margin: 3px 0;"><strong>Légende :</strong> √ : Pièce présentée / Inscription validée &nbsp;&nbsp;|&nbsp;&nbsp; × : Pièce Non Présentée / Inscription non validée</p>
+
+        <p>En outre, M./Mlle/Mme <span class="dotted-line" style="width: 50%;">{{etudiant.nom}} {{etudiant.prenom}}</span> doit compléter la formation par la validation des UE suivantes en :<br>
+        <strong>Filière :</strong> <span class="dotted-line" style="width: 80%;">{{etudiant.filiere}}</span></p>
+
+        <div class="notice-box">
+          <strong>NB :</strong><br>
+          a- L'Ecole Supérieure des Affaires - ESA, se réserve le droit de procéder à l'authentification des diplômes et attestations de diplômes avant la délivrance d'une inscription définitive.<br>
+          b- Toute production de faux document est passible de sanction disciplinaire et/ou de poursuite judiciaire.
+        </div>
+      </div>
+
+      <table class="footer-table">
+        <tr>
+          <td class="date-cell">Lomé, le {{dateEdition}}</td>
+          <td class="sign-cell" style="width: 70%;">
+            <div class="sign-title">Pour le Comité d'Orientation et d'Equivalence et d'Etude de Dossiers</div>
+            <table style="width: 100%;">
+              <tr>
+                <td style="text-align: center;">
+                  <strong>Steve BARRIGAH-B.</strong><br>
+                  <span class="sign-sub">Secrétaire Général / ESA</span>
+                </td>
+                <td style="text-align: center;">
+                  <strong>GNOHOE-KPADE Jeannot</strong><br>
+                  <span class="sign-sub">Chargé de la communication</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="doc-meta">Document généré le {{dateGeneration}} — Réf : {{reference}}</div>
+</div>

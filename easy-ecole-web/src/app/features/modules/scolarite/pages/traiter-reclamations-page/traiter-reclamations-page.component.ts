@@ -138,4 +138,54 @@ export class TraiterReclamationsPageComponent extends BaseComponentClass impleme
   prevPage(): void {
     if (this.currentPage > 1) this.currentPage--;
   }
+
+  // ── Helpers d'affichage (UI uniquement — n'altèrent pas la logique métier) ──
+
+  setStatut(statut: string): void {
+    this.filterStatut = statut;
+    this.filtrer();
+  }
+
+  statutPillClass(statut: string): string {
+    if (this.filterStatut !== statut) return 'pill-tab pill-tab-inactive';
+    switch (statut) {
+      case 'ouverte': return 'pill-tab pill-tab-ouverte';
+      case 'traitee': return 'pill-tab pill-tab-traitee';
+      case 'fermee': return 'pill-tab pill-tab-fermee';
+      default: return 'pill-tab pill-tab-all';
+    }
+  }
+
+  statutPillCountClass(statut: string): string {
+    return this.filterStatut === statut ? 'pill-count pill-count-active' : 'pill-count';
+  }
+
+  initialeEtudiant(rec: Reclamation): string {
+    const prenoms = rec.etudiant?.prenoms ? String(rec.etudiant.prenoms) : '';
+    const nom = rec.etudiant?.nom ? String(rec.etudiant.nom) : '';
+    const parts = `${prenoms} ${nom}`.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return (rec.etudiantId || 'É').charAt(0).toUpperCase();
+    return parts.slice(0, 2).map(p => p.charAt(0).toUpperCase()).join('');
+  }
+
+  avatarColorClass(statut: string): string {
+    switch (statut) {
+      case 'ouverte': return 'bg-amber-100 text-amber-700';
+      case 'traitee': return 'bg-green-100 text-green-700';
+      case 'fermee': return 'bg-gray-100 text-gray-600';
+      default: return 'bg-gray-100 text-gray-600';
+    }
+  }
+
+  matriculeEtudiant(rec: Reclamation): string {
+    return rec.etudiant?.matricule ? String(rec.etudiant.matricule) : '';
+  }
+
+  formatDate(date: Date | string | null | undefined): string {
+    if (!date) return '—';
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) +
+      ' à ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  }
 }

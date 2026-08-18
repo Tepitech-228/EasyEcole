@@ -1,5 +1,5 @@
 <div class="flex justify-between items-start mb-8">
-  <app-header-title title="Habilitations GED" subtitle="Gérer les permissions d'accès aux documents par rôle, processus et domaine"></app-header-title>
+  <app-header-title title="Habilitations GED" subtitle="Gérer les permissions d'accès aux documents par rôle, processus, domaine et niveau de confidentialité"></app-header-title>
 </div>
 
 <!-- Filtres -->
@@ -12,7 +12,7 @@
   <select [(ngModel)]="filterProcessus" (change)="applyFilters()"
     class="px-3 py-2.5 border border-gray-200 rounded-xl bg-white text-sm text-gray-600 outline-none cursor-pointer">
     <option value="">Tous les processus</option>
-    <option *ngFor="let p of processus" [value]="p.id">{{ p.code }} - {{ p.libelle }}</option>
+    <option *ngFor="let p of processusGenerateurs" [value]="p.id">{{ p.code }} - {{ p.libelle }}</option>
   </select>
   <select [(ngModel)]="filterDomaine" (change)="applyFilters()"
     class="px-3 py-2.5 border border-gray-200 rounded-xl bg-white text-sm text-gray-600 outline-none cursor-pointer">
@@ -31,20 +31,27 @@
     <thead>
       <tr class="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide bg-gray-50 border-b border-gray-200">
         <th class="py-3.5 px-4">Rôle</th>
+        <th class="py-3.5 px-4">Confidentialité</th>
         <th class="py-3.5 px-4">Processus</th>
         <th class="py-3.5 px-4">Domaine</th>
         <th class="py-3.5 px-4 text-center">Lecture</th>
         <th class="py-3.5 px-4 text-center">Écriture</th>
         <th class="py-3.5 px-4 text-center">Suppression</th>
         <th class="py-3.5 px-4 text-center">Téléchargement</th>
+        <th class="py-3.5 px-4 text-center">Actions</th>
       </tr>
     </thead>
     <tbody>
       <tr *ngFor="let p of filteredPermissions"
         class="text-sm text-gray-700 border-b border-gray-100 hover:bg-gray-50 transition-colors">
         <td class="py-3 px-4 font-medium text-gray-900">{{ p.role }}</td>
-        <td class="py-3 px-4 text-gray-500">{{ getProcessusLabel(p.processId) }}</td>
-        <td class="py-3 px-4 text-gray-500">{{ getDomaineLabel(p.domaineId) }}</td>
+        <td class="py-3 px-4">
+          <span class="inline-block px-2.5 py-0.5 rounded-md text-xs font-semibold whitespace-nowrap" [class]="getConfidentialityBadge(p.confidentialityLevel)">
+            {{ getConfidentialityLabel(p.confidentialityLevel) }}
+          </span>
+        </td>
+        <td class="py-3 px-4 text-gray-500">{{ getProcessusLabel(p) }}</td>
+        <td class="py-3 px-4 text-gray-500">{{ getDomaineLabel(p) }}</td>
         <td class="py-3 px-4 text-center">
           <label class="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" [checked]="p.canRead" (change)="togglePermission(p, 'canRead')" class="sr-only peer">
@@ -69,9 +76,75 @@
             <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
           </label>
         </td>
+        <td class="py-3 px-4 text-center">
+          <button
+            class="w-8 h-8 border border-gray-200 rounded-lg inline-flex items-center justify-center text-gray-400 hover:text-red-600 hover:border-red-400 hover:bg-red-50 transition-all disabled:opacity-40"
+            title="Retirer cette permission"
+            [disabled]="deletingId === p.id"
+            (click)="deletePermission(p)">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </td>
       </tr>
     </tbody>
   </table>
+</div>
+
+<!-- Formulaire d'ajout -->
+<div *ngIf="showAddForm" class="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+  <h3 class="text-sm font-semibold text-gray-800 mb-4">Nouvelle permission</h3>
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <label class="flex flex-col gap-1.5 text-xs font-medium text-gray-600">
+      Rôle
+      <select [(ngModel)]="newRole" class="px-3 py-2.5 border border-gray-200 rounded-xl bg-white text-sm text-gray-700 outline-none">
+        <option *ngFor="let r of rolesDisponibles" [value]="r">{{ r }}</option>
+      </select>
+    </label>
+    <label class="flex flex-col gap-1.5 text-xs font-medium text-gray-600">
+      Confidentialité
+      <select [(ngModel)]="newConfidentiality" class="px-3 py-2.5 border border-gray-200 rounded-xl bg-white text-sm text-gray-700 outline-none">
+        <option *ngFor="let n of niveauxConfidentialite" [value]="n.value">{{ n.label }}</option>
+      </select>
+    </label>
+    <label class="flex flex-col gap-1.5 text-xs font-medium text-gray-600">
+      Processus (optionnel)
+      <select [(ngModel)]="newProcessusGenerateurId" class="px-3 py-2.5 border border-gray-200 rounded-xl bg-white text-sm text-gray-700 outline-none">
+        <option value="">Tous les processus</option>
+        <option *ngFor="let p of processusGenerateurs" [value]="p.id">{{ p.code }} - {{ p.libelle }}</option>
+      </select>
+    </label>
+    <label class="flex flex-col gap-1.5 text-xs font-medium text-gray-600">
+      Domaine (optionnel)
+      <select [(ngModel)]="newDomaineId" class="px-3 py-2.5 border border-gray-200 rounded-xl bg-white text-sm text-gray-700 outline-none">
+        <option value="">Tous les domaines</option>
+        <option *ngFor="let d of domaines" [value]="d.id">{{ d.label }}</option>
+      </select>
+    </label>
+  </div>
+  <div class="flex items-center gap-6 mt-4 flex-wrap">
+    <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+      <input type="checkbox" [(ngModel)]="newCanRead" class="w-4 h-4 accent-indigo-600"> Lecture
+    </label>
+    <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+      <input type="checkbox" [(ngModel)]="newCanWrite" class="w-4 h-4 accent-indigo-600"> Écriture
+    </label>
+    <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+      <input type="checkbox" [(ngModel)]="newCanDelete" class="w-4 h-4 accent-indigo-600"> Suppression
+    </label>
+    <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+      <input type="checkbox" [(ngModel)]="newCanDownload" class="w-4 h-4 accent-indigo-600"> Téléchargement
+    </label>
+  </div>
+  <div class="flex justify-end gap-x-3 mt-5">
+    <button (click)="closeAddForm()" [disabled]="adding"
+      class="px-6 py-2 border border-gray-300 text-sm font-semibold rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-50">
+      Annuler
+    </button>
+    <button (click)="addPermission()" [disabled]="adding"
+      class="px-6 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-md hover:bg-indigo-700 disabled:opacity-50">
+      {{ adding ? 'Ajout...' : 'Ajouter la permission' }}
+    </button>
+  </div>
 </div>
 
 <!-- Actions -->
@@ -83,5 +156,9 @@
   <button (click)="savePermissions()" [disabled]="saving"
     class="px-6 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-md hover:bg-indigo-700 disabled:opacity-50">
     {{ saving ? 'Enregistrement...' : 'Enregistrer' }}
+  </button>
+  <button (click)="openAddForm()"
+    class="px-6 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-md hover:bg-emerald-700">
+    + Ajouter une permission
   </button>
 </div>

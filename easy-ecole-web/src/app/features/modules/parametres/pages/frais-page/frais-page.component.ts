@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+import { FraisInscription } from 'src/app/data/modules/inscription/models/FraisInscription.model';
+import { FraisInscriptionService } from 'src/app/data/modules/inscription/services/frais-inscription.service';
 
 interface Frais {
   id: string
@@ -15,14 +17,36 @@ interface Frais {
   templateUrl: './frais-page.component.html',
   styleUrls: ['./frais-page.component.scss']
 })
-export class FraisPageComponent extends BaseComponentClass {
-  fraisList: Frais[] = [
-    { id: '1', nom: 'Frais de scolarité', montant: 500000, periodicite: 'Annuel', description: 'Frais de scolarité annuels', actif: true },
-    { id: '2', nom: 'Frais d\'inscription', montant: 25000, periodicite: 'Unique', description: 'Frais d\'inscription à la rentrée', actif: true },
-    { id: '3', nom: 'Frais de dossier', montant: 10000, periodicite: 'Unique', description: 'Frais d\'étude de dossier', actif: true },
-    { id: '4', nom: 'Assurance scolaire', montant: 15000, periodicite: 'Annuel', description: 'Assurance scolaire obligatoire', actif: false },
-  ]
+export class FraisPageComponent extends BaseComponentClass implements OnInit {
+  fraisList: Frais[] = []
   loading: boolean = false
 
-  constructor() { super() }
+  constructor(private fraisInscriptionService: FraisInscriptionService) { super() }
+
+  ngOnInit(): void {
+    this.chargerFrais()
+  }
+
+  chargerFrais(): void {
+    this.loading = true
+    this.fraisInscriptionService.getAll().subscribe({
+      next: (frais: FraisInscription[]) => {
+        // Le modèle API (FraisInscription) n'expose pas periodicite/actif :
+        // on mappe les colonnes absentes avec des valeurs neutres.
+        this.fraisList = frais.map(f => ({
+          id: f.id ?? '',
+          nom: f.titre ?? '',
+          montant: Number(f.montant) || 0,
+          periodicite: '',
+          description: f.description ?? '',
+          actif: !!f.fraisDesCours,
+        }))
+        this.loading = false
+      },
+      error: () => {
+        this.fraisList = []
+        this.loading = false
+      }
+    })
+  }
 }

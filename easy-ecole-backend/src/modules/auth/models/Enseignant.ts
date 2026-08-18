@@ -9,9 +9,24 @@ export class Enseignant extends Model<InferAttributes<Enseignant>, InferCreation
   declare id: CreationOptional<string>
   declare photo: CreationOptional<string>
   declare qrCode: CreationOptional<string>
+  declare matricule: CreationOptional<string>
+  declare gradeAcademique: CreationOptional<string>
+  declare specialite: CreationOptional<string>
+  declare statut: CreationOptional<string>
+  declare fonctionAdministrative: CreationOptional<string>
+  declare anneeExperience: CreationOptional<number>
+  declare heureTheoriqueAnnuelle: CreationOptional<number>
+  declare heureReelleAnnuelle: CreationOptional<number>
+  declare cni: CreationOptional<string>
+  declare nifOtr: CreationOptional<string>
   declare dateNaissance: CreationOptional<Date>
   declare lieuNaissance: CreationOptional<string>
-  declare fonction: CreationOptional<string>
+  declare sexe: CreationOptional<'M' | 'F' | 'Autre'>
+  declare nationalite: CreationOptional<string>
+  declare contact: CreationOptional<string>
+  declare plusHautDiplome: CreationOptional<string>
+  declare statutHandicap: CreationOptional<boolean>
+  declare natureHandicap: CreationOptional<string>
   declare adresseId: ForeignKey<AdresseEnseignant['id']>
   declare adresse?: AdresseEnseignant
   declare utilisateurId: ForeignKey<Utilisateur['id']>
@@ -43,6 +58,52 @@ Enseignant.init({
     allowNull: true,
     unique: true
   },
+  matricule: {
+    type: new DataTypes.STRING,
+    allowNull: true,
+    unique: true
+  },
+  gradeAcademique: {
+    type: new DataTypes.STRING,
+    allowNull: true
+  },
+  specialite: {
+    type: new DataTypes.STRING,
+    allowNull: true
+  },
+  statut: {
+    type: new DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'Permanent'
+  },
+  fonctionAdministrative: {
+    type: new DataTypes.STRING,
+    allowNull: true
+  },
+  anneeExperience: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: 0
+  },
+  heureTheoriqueAnnuelle: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: 0
+  },
+  heureReelleAnnuelle: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: 0
+  },
+  cni: {
+    type: new DataTypes.STRING,
+    allowNull: true,
+    unique: true
+  },
+  nifOtr: {
+    type: new DataTypes.STRING,
+    allowNull: true
+  },
   dateNaissance: {
     type: DataTypes.DATE,
     allowNull: true,
@@ -51,7 +112,30 @@ Enseignant.init({
     type: new DataTypes.STRING,
     allowNull: true
   },
-  fonction: {
+  sexe: {
+    type: DataTypes.ENUM('M', 'F', 'Autre'),
+    allowNull: true,
+    defaultValue: 'M'
+  },
+  nationalite: {
+    type: new DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'Ivoirienne'
+  },
+  contact: {
+    type: new DataTypes.STRING,
+    allowNull: true
+  },
+  plusHautDiplome: {
+    type: new DataTypes.STRING,
+    allowNull: true
+  },
+  statutHandicap: {
+    type: DataTypes.BOOLEAN,
+    allowNull: true,
+    defaultValue: false
+  },
+  natureHandicap: {
     type: new DataTypes.STRING,
     allowNull: true
   },

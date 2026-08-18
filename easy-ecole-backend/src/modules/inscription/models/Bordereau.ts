@@ -12,6 +12,7 @@ export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAt
   declare utilisateurId: ForeignKey<Utilisateur['id']>
   declare fichier: string
   declare montant: number
+  declare modalite: '1x' | '3x' | '10x'
   declare referenceBancaire: CreationOptional<string>
   declare statut: 'en_attente' | 'valide' | 'rejete'
   declare dateSoumission: CreationOptional<Date>
@@ -59,6 +60,16 @@ Bordereau.init({
   },
   montant: {
     type: DataTypes.FLOAT.UNSIGNED,
+    allowNull: false
+  },
+  /**
+   * Modalité de paiement choisie lors du chargement du bordereau d'inscription
+   * (chantier 1x/3x/10x). N'a de sens que pour les bordereaux de type
+   * 'inscription' (les bordereaux 'scolarite' conservent la valeur par défaut '1x').
+   */
+  modalite: {
+    type: DataTypes.ENUM('1x', '3x', '10x'),
+    defaultValue: '1x',
     allowNull: false
   },
   referenceBancaire: {

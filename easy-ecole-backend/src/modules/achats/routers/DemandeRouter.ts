@@ -1,7 +1,12 @@
 import express from "express"
+import Authenticate from "../../../core/middlewares/Authenticate"
+import CheckPermission from "../../../core/middlewares/CheckPermission"
 import DemandeController from "../controllers/DemandeController"
 
 const router = express.Router()
+
+// Proteger toutes les routes achats - donnees financieres sensibles
+router.use([Authenticate, CheckPermission('achats.demande.consulter')]);
 
 router
     /**

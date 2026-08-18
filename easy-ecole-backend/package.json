@@ -23,8 +23,10 @@
         "db:seed-ged-full": "ts-node src/modules/ged/seed-ged-full-demo.ts",
         "db:seed-ged-folders": "ts-node src/core/scripts/seed-ged-folders.ts",
         "db:seed-accounts": "ts-node src/core/scripts/seed-accounts.ts",
-        "db:seed-docgen": "ts-node src/modules/docgen/seed/seed.ts",
-        "test": "jest",
+    "db:seed-docgen": "ts-node src/modules/docgen/seed/seed.ts",
+    "db:seed-complet": "ts-node src/core/scripts/seed-complet.ts",
+    "db:list-tables": "ts-node src/core/scripts/list-tables.ts",
+    "test": "jest",
         "test:watch": "jest --watch",
         "test:coverage": "jest --coverage"
     },

@@ -3,7 +3,7 @@ import "../models/_associations";
 import { seedDocGenTypes } from "./seed-types";
 import { seedDocGenTemplates } from "./seed-templates";
 
-async function seedDocGen(): Promise<void> {
+export async function seedDocGen(): Promise<void> {
   const db = DatabaseConnection.getInstance();
   await db.init();
 

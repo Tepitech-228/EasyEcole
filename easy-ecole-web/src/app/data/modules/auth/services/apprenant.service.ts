@@ -17,8 +17,8 @@ export class ApprenantService {
     return this.httpClient.get<Apprenant>(`${this.SERVICE_URL}/${id}`)
   }
 
-  update(apprenant: Apprenant): Observable<Apprenant> {
-    return this.httpClient.put<Apprenant>(`${this.SERVICE_URL}/`, apprenant)
+  update(apprenant: any): Observable<any> {
+    return this.httpClient.put<any>(`${this.SERVICE_URL}/`, apprenant)
   }
 
   getAll(): Observable<Apprenant[]> {

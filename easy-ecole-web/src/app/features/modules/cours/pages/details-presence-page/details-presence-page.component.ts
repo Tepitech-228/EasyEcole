@@ -70,7 +70,7 @@ export class DetailsPresencePageComponent extends BaseComponentClass implements 
   @ViewChild(SignatureModalComponent) signatureModal!: SignatureModalComponent
   signingPresenceId: string | null = null
   signing: boolean = false
-  readonly SIGNATURES_PATH: string = 'http://localhost:3000/inscription/presences/signatures/'
+  readonly SIGNATURES_PATH: string = environment.MEDIAS_PATH.INSCRIPTION.SIGNATURES
 
   readonly PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS
 

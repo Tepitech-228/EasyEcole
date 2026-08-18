@@ -10,6 +10,7 @@ import EnseignantRouter from "./routers/EnseignantRouter";
 import ComiteOrientationRouter from "./routers/ComiteOrientationRouter";
 import PermissionRouter from "./routers/PermissionRouter";
 import RoleRouter from "./routers/RoleRouter";
+import PersonnelAdministratifRouter from "./routers/PersonnelAdministratifRouter";
 
 const router = express.Router();
 
@@ -20,6 +21,7 @@ router
     .use('/institutions', [Authenticate], InstitutionRouter)
     .use('/caissiersBanque', [Authenticate], CaissierBanqueRouter)
     .use('/enseignants', [Authenticate], EnseignantRouter)
+    .use('/personnelAdministratif', [Authenticate], PersonnelAdministratifRouter)
     .use('/comite-orientation', [Authenticate], ComiteOrientationRouter)
     .use('/permissions', [Authenticate], PermissionRouter)
     .use('/roles', [Authenticate], RoleRouter)

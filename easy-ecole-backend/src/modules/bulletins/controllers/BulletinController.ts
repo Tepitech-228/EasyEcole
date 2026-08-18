@@ -7,6 +7,8 @@ import { CursusApprenant } from "../../inscription/models/CursusApprenant";
 import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
 import { GenerationBulletinService } from "../services/GenerationBulletinService";
 import { EchelleNote } from "../models/EchelleNote";
+import { SemestresParcours } from "../../../core/enums/SemestresParcours";
+import { SemestreProgressionService } from "../../../core/services/SemestreProgressionService";
 import { logger } from "../../../core/helpers/Logger";
 
 let echellesCache: { noteMin: number; mention: string }[] | null = null;
@@ -32,23 +34,52 @@ function calculerMention(moyenne: number, echelles: { noteMin: number; mention: 
 export default class BulletinController {
   constructor() {}
 
-  // POST /bulletins/generer
+// POST /bulletins/generer
   async generer(req: Request, res: Response) {
     const t = await DatabaseConnection.getInstance().sequelize.transaction();
 
     try {
-      const { classeId, semestre, anneeAcademiqueId } = req.body;
+      const { classeId, semestre, anneeAcademiqueId, salleId } = req.body;
 
-      if (!classeId || !semestre || !anneeAcademiqueId) {
+      if (!classeId || !anneeAcademiqueId) {
         await t.rollback();
-        return res.status(400).json({ message: 'classeId, semestre, anneeAcademiqueId requis' });
+        return res.status(400).json({ message: 'classeId et anneeAcademiqueId sont requis' });
       }
 
-      const resultats = await GenerationBulletinService.generer(
-        classeId, semestre, anneeAcademiqueId, t
-      );
+      // Salle optionnelle : si fournie, le bulletin porte salleId et seuls les étudiants
+      // liés à cette salle sont inclus (filtrage dans GenerationBulletinService).
+      const salleIdNum = salleId !== undefined && salleId !== null && salleId !== ''
+        ? Number(salleId)
+        : undefined;
 
-      if (!resultats.length) {
+      // Semi-contrat : si `semestre` absent, génération pour TOUS les semestres de l'année (1..6, cycle LMD).
+      const semestres: string[] = semestre
+        ? [semestre]
+        : Object.values(SemestresParcours);
+
+      let bulletinsCrees: number[] = [];
+
+      for (const sem of semestres) {
+        const resultats = await GenerationBulletinService.generer(
+          classeId, sem, anneeAcademiqueId, t, salleIdNum
+        );
+
+        const ids = resultats.map(r => Number(r.bulletin.id));
+
+        if (ids.length) {
+          // Rang calculé par classe effective portée par chaque bulletin généré
+          // (cas salle rattachée à une autre classe que le classeId paramètre).
+          const classesDistinctes = Array.from(
+            new Set(resultats.map(r => String(r.bulletin.classeId)))
+          );
+          for (const classeEffective of classesDistinctes) {
+            await this.calculerRangs(Number(classeEffective), sem, anneeAcademiqueId, t);
+          }
+          bulletinsCrees.push(...ids);
+        }
+      }
+
+      if (!bulletinsCrees.length) {
         const cursusCount = await CursusApprenant.count({
           where: { classeId, anneeAcademiqueId }
         });
@@ -56,12 +87,6 @@ export default class BulletinController {
           await t.rollback();
           return res.status(404).json({ message: 'Aucun apprenant trouvÃ© dans cette classe' });
         }
-      }
-
-      const bulletinsCrees = resultats.map(r => Number(r.bulletin.id));
-
-      if (bulletinsCrees.length) {
-        await this.calculerRangs(classeId, semestre, anneeAcademiqueId, t);
       }
 
       await t.commit();
@@ -340,14 +365,25 @@ export default class BulletinController {
     }
   }
 
-  // GET /bulletins/mon-releve
+// GET /bulletins/mon-releve
   async monReleve(req: Request, res: Response) {
     try {
       const utilisateurId = req.utilisateurId!;
       if (!utilisateurId) return res.status(401).json({ message: 'Non authentifiÃ©' });
 
+      // Restriction 1ère année : un apprenant en Licence 1 ne doit voir QUE les
+      // bulletins des semestres 1 et 2 (déterminé via son niveau d'étude courant).
+      const semestresAutorises = await SemestreProgressionService.getSemestresAutorisesApprenant(utilisateurId);
+
+      const where: any = { utilisateurId, statut: 'publie' };
+      // Bulletin.semestre est un ENUM ('semestre1'..'semestre6') exploitable : on
+      // filtre directement les bulletins d'une première année sur les semestres 1-2.
+      if (semestresAutorises) {
+        where.semestre = { [Op.in]: semestresAutorises };
+      }
+
       const bulletin = await Bulletin.findOne({
-        where: { utilisateurId, statut: 'publie' },
+        where,
         include: [
           { association: Bulletin.associations.classe },
           { association: Bulletin.associations.anneeAcademique },

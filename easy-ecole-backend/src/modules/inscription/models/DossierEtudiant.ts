@@ -14,6 +14,8 @@ export class DossierEtudiant extends Model<InferAttributes<DossierEtudiant>, Inf
   declare cartePath: CreationOptional<string>
   declare carteGeneree: CreationOptional<boolean>
   declare statut: 'actif' | 'suspendu' | 'archive'
+  declare anneePremiereInscription: CreationOptional<number>
+  declare nombreInscriptions: CreationOptional<number>
   declare dateCreation: CreationOptional<Date>
   declare fraisScolarite: number
   declare modePaiement: 'unique' | 'mensuel'
@@ -64,6 +66,15 @@ DossierEtudiant.init({
     type: DataTypes.ENUM('actif', 'suspendu', 'archive'),
     defaultValue: 'actif',
     allowNull: false
+  },
+  anneePremiereInscription: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  nombreInscriptions: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: 1
   },
   dateCreation: {
     type: DataTypes.DATEONLY,

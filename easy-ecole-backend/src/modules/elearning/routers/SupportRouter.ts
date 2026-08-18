@@ -2,8 +2,16 @@ import express from "express"
 import multer from "multer"
 import SupportController from "../controllers/SupportController"
 import Authenticate from "../../../core/middlewares/Authenticate"
+import { fileFilter, ALLOWED_VIDEO_TYPES } from "../../../core/config/upload"
 
-const upload = multer({ dest: "public/elearning/videos/" });
+// CRITIQUE : ces fichiers sont servis statiquement via /media/videos — un .html
+// ou .svg y serait interprété (stored XSS). fileFilter strict : vidéo + PDF + images
+// uniquement, jamais de contenu exécutable.
+const upload = multer({
+    dest: "public/elearning/videos/",
+    fileFilter: fileFilter(ALLOWED_VIDEO_TYPES),
+    limits: { fileSize: 50 * 1024 * 1024 }
+});
 
 const router = express.Router()
 

@@ -4,9 +4,14 @@ import multer from "multer"
 import DeboucheParcoursController from "../controllers/DeboucheParcoursController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
 import CheckPermission from "../../../core/middlewares/CheckPermission";
+import { fileFilter, ALLOWED_VIDEO_TYPES } from "../../../core/config/upload";
 
 const router = express.Router()
-const upload = multer({ dest: "public/orientation/debouches/" });
+const upload = multer({
+    dest: "public/orientation/debouches/",
+    fileFilter: fileFilter(ALLOWED_VIDEO_TYPES),
+    limits: { fileSize: 50 * 1024 * 1024 }
+});
 
 router
     /**

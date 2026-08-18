@@ -16,7 +16,8 @@ export default class FraisInscriptionController {
 
             return res.status(200).send(fraisInscription);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -32,7 +33,8 @@ export default class FraisInscriptionController {
 
             return res.status(200).send(fraisInscription);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -124,7 +126,8 @@ export default class FraisInscriptionController {
                     return res.status(200).json({ success: true, message: "Frais supprimée" });
                 })
                 .catch((error) => {
-                    return res.status(500).json({ success: false, error: error });
+                    console.error('Erreur', error);
+                    return res.status(500).json({ success: false, message: 'Erreur interne' });
                 });
         }
         else {
@@ -146,7 +149,8 @@ export default class FraisInscriptionController {
                 return res.status(200).json({ success: true, count: value });
             })
             .catch((error) => {
-                return res.status(500).json({ success: false, error: error });
+                console.error('Erreur', error);
+                return res.status(500).json({ success: false, message: 'Erreur interne' });
             });
 
         return null

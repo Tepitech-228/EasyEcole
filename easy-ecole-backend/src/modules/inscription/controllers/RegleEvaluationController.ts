@@ -15,7 +15,8 @@ export default class RegleEvaluationController {
             let data = await RegleEvaluation.findAll(options);
             return res.status(200).send(data);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -25,7 +26,8 @@ export default class RegleEvaluationController {
             if (!data) return res.status(404).json({ success: false, message: "Règle non trouvée" });
             return res.status(200).send(data);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -37,7 +39,8 @@ export default class RegleEvaluationController {
             const data = await RegleEvaluation.create(req.body);
             return res.status(201).send(data);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -51,7 +54,8 @@ export default class RegleEvaluationController {
             await data.update(req.body);
             return res.status(200).send(data);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -65,7 +69,8 @@ export default class RegleEvaluationController {
             await data.destroy();
             return res.status(200).json({ success: true });
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 }

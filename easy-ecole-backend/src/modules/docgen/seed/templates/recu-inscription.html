@@ -1,0 +1,277 @@
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
+  @page { size: A4 landscape; margin: 0; }
+  body { background-color: #f4f6f8; padding: 0; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+  .document-wrapper { background-color: #ffffff; border: 3px solid #031b4e; padding: 15px; width: 100%; max-width: 1150px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+  .receipts-container { display: flex; position: relative; }
+  .receipt-card { flex: 1; padding: 10px 15px; display: flex; flex-direction: column; }
+  .divider { width: 1px; border-left: 2px dashed #031b4e; position: relative; margin: 0 10px; }
+  .scissors-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #ffffff; padding: 4px 0; font-size: 14px; color: #031b4e; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 8px; border-bottom: 2px solid #c8a130; margin-bottom: 15px; }
+  .logo-box { font-size: 13px; color: #333; padding-top: 5px; }
+  .logo-box img { max-height: 60px; max-width: 160px; object-fit: contain; }
+  .school-info { text-align: right; color: #031b4e; }
+  .school-info h2 { font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.3px; }
+  .school-info p { font-size: 11px; color: #444; margin-top: 2px; }
+  .badge-container { margin-bottom: 10px; }
+  .badge { background-color: #031b4e; color: #ffffff; font-size: 10px; font-weight: bold; padding: 4px 10px; border-radius: 4px; display: inline-block; letter-spacing: 0.5px; }
+  .title-section { text-align: center; margin-bottom: 15px; }
+  .title-section h1 { color: #031b4e; font-size: 16px; font-weight: bold; letter-spacing: 0.5px; }
+  .title-section h3 { color: #031b4e; font-size: 12px; font-weight: bold; margin-top: 3px; letter-spacing: 0.3px; }
+  .info-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; align-items: baseline; }
+  .field-group { display: flex; align-items: baseline; flex-grow: 1; }
+  .label { font-weight: bold; color: #111; white-space: nowrap; margin-right: 4px; }
+  .dots { border-bottom: 1px dotted #555; flex-grow: 1; height: 12px; margin: 0 4px; }
+  .inline-dots { border-bottom: 1px dotted #555; display: inline-block; min-width: 80px; height: 12px; }
+  .value { font-weight: bold; color: #031b4e; }
+  .payment-table { width: 100%; border-collapse: collapse; margin: 10px 0 12px 0; }
+  .payment-table th { background-color: #031b4e; color: #ffffff; font-size: 10px; font-weight: bold; padding: 6px 8px; text-align: left; border: 1px solid #031b4e; }
+  .payment-table th.amount-col { text-align: center; width: 35%; }
+  .payment-table td { border: 1px solid #031b4e; padding: 6px 8px; font-size: 10.5px; }
+  .payment-table td.amount-cell { text-align: right; }
+  .payment-table tr.total-row td { font-weight: bold; }
+  .bottom-details { font-size: 10.5px; margin-top: 4px; }
+  .bottom-row { display: flex; align-items: baseline; margin-bottom: 6px; }
+  .checkbox-group { display: flex; gap: 12px; margin-left: 5px; }
+  .checkbox-item { display: flex; align-items: center; gap: 3px; }
+  .checkbox-box { display: inline-block; width: 11px; height: 11px; border: 1px solid #333; border-radius: 1px; font-size: 9px; line-height: 11px; text-align: center; color: #031b4e; font-weight: bold; }
+  .signatures { display: flex; justify-content: space-between; margin-top: 25px; padding: 0 20px; font-size: 11px; font-weight: bold; color: #111; }
+  .signature-block { text-align: center; display: flex; flex-direction: column; align-items: center; }
+  .signature-line { margin-top: 40px; width: 170px; border-bottom: 1px dotted #555; }
+  @media print { body { background-color: #ffffff; padding: 0; } .document-wrapper { box-shadow: none; border: 2px solid #031b4e; } }
+</style>
+
+<div class="document-wrapper">
+  <div class="receipts-container">
+
+    <!-- ================= SOUCHE COMPTABILITÉ ================= -->
+    <div class="receipt-card">
+      <div class="header">
+        <div class="logo-box"><img src="{{LOGO_DATA_URI}}" alt="Logo ESA"></div>
+        <div class="school-info">
+          <h2>{{etablissement.nom}}</h2>
+          <p>Service de la Comptabilité</p>
+          <p>{{etablissement.adresse}}</p>
+        </div>
+      </div>
+
+      <div class="badge-container">
+        <span class="badge">SOUCHE COMPTABILITÉ</span>
+      </div>
+
+      <div class="title-section">
+        <h1>REÇU DE PAIEMENT</h1>
+        <h3>FRAIS DE SCOLARITÉ</h3>
+      </div>
+
+      <div class="info-row">
+        <div class="field-group" style="flex: 1.2;">
+          <span class="label">N° Reçu :</span> REC-{{paiement.numero}}
+        </div>
+        <div class="field-group" style="flex: 0.8; margin-left: 15px;">
+          <span class="label">Date :</span> {{paiement.datePaiement}}
+        </div>
+      </div>
+
+      <div class="info-row">
+        <div class="field-group">
+          <span class="label">Reçu de M./Mlle/Mme :</span> <span class="value">{{etudiant.nom}} {{etudiant.prenom}}</span>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <div class="field-group" style="flex: 1;">
+          <span class="label">Matricule / ID :</span> <span class="value">{{etudiant.matricule}}</span>
+        </div>
+        <div class="field-group" style="flex: 1; margin-left: 15px;">
+          <span class="label">Classe/Niveau :</span> <span class="value">{{etudiant.niveau}}</span>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <div class="field-group">
+          <span class="label">Filière / Spécialité :</span> <span class="value">{{etudiant.filiere}}</span>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <div class="field-group">
+          <span class="label">Année Académique :</span> {{etudiant.anneeAcademique}}
+        </div>
+      </div>
+
+      <!-- Tableau -->
+      <table class="payment-table">
+        <thead>
+          <tr>
+            <th>LIBELLÉ / MOTIF DU PAIEMENT</th>
+            <th class="amount-col">MONTANT (FCFA)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{paiement.description}}</td>
+            <td class="amount-cell">{{paiement.montantFormate}}</td>
+          </tr>
+          <tr class="total-row">
+            <td>TOTAL PAYÉ</td>
+            <td class="amount-cell">{{paiement.montantFormate}}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Détails bas de page -->
+      <div class="bottom-details">
+        <div class="bottom-row">
+          <span class="label">Montant en lettres :</span> <span class="value">{{paiement.montantEnLettres}}</span> FCFA
+        </div>
+
+        <div class="bottom-row" style="margin: 8px 0;">
+          <span class="label">Mode de paiement :</span>
+          <div class="checkbox-group">
+            <div class="checkbox-item"><span class="checkbox-box">{{#if paiement.estEspece}}✓{{/if}}</span> Espèces</div>
+            <div class="checkbox-item"><span class="checkbox-box">{{#if paiement.estCheque}}✓{{/if}}</span> Chèque</div>
+            <div class="checkbox-item"><span class="checkbox-box">{{#if paiement.estVirement}}✓{{/if}}</span> Virement/Banque</div>
+            <div class="checkbox-item"><span class="checkbox-box">{{#if paiement.estMobileMoney}}✓{{/if}}</span> T-Money/Flooz</div>
+          </div>
+        </div>
+
+        <div class="bottom-row">
+          <span class="label">Reste à payer :</span>
+          <span class="dots"></span>
+          <span class="label" style="margin-left: 5px;">FCFA</span>
+        </div>
+      </div>
+
+      <!-- Signatures -->
+      <div class="signatures">
+        <div class="signature-block">
+          <span>Le Caissier / Agent</span>
+          <div class="signature-line"></div>
+        </div>
+        <div class="signature-block">
+          <span>L'Étudiant(e) / Payeur</span>
+          <div class="signature-line"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Séparateur de découpe -->
+    <div class="divider">
+      <span class="scissors-icon">✂</span>
+    </div>
+
+    <!-- ================= COPIE ÉTUDIANT ================= -->
+    <div class="receipt-card">
+      <div class="header">
+        <div class="logo-box"><img src="{{LOGO_DATA_URI}}" alt="Logo ESA"></div>
+        <div class="school-info">
+          <h2>{{etablissement.nom}}</h2>
+          <p>Service de la Comptabilité</p>
+          <p>{{etablissement.adresse}}</p>
+        </div>
+      </div>
+
+      <div class="badge-container">
+        <span class="badge">COPIE ÉTUDIANT</span>
+      </div>
+
+      <div class="title-section">
+        <h1>REÇU DE PAIEMENT</h1>
+        <h3>FRAIS DE SCOLARITÉ</h3>
+      </div>
+
+      <div class="info-row">
+        <div class="field-group" style="flex: 1.2;">
+          <span class="label">N° Reçu :</span> REC-{{paiement.numero}}
+        </div>
+        <div class="field-group" style="flex: 0.8; margin-left: 15px;">
+          <span class="label">Date :</span> {{paiement.datePaiement}}
+        </div>
+      </div>
+
+      <div class="info-row">
+        <div class="field-group">
+          <span class="label">Reçu de M./Mlle/Mme :</span> <span class="value">{{etudiant.nom}} {{etudiant.prenom}}</span>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <div class="field-group" style="flex: 1;">
+          <span class="label">Matricule / ID :</span> <span class="value">{{etudiant.matricule}}</span>
+        </div>
+        <div class="field-group" style="flex: 1; margin-left: 15px;">
+          <span class="label">Classe/Niveau :</span> <span class="value">{{etudiant.niveau}}</span>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <div class="field-group">
+          <span class="label">Filière / Spécialité :</span> <span class="value">{{etudiant.filiere}}</span>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <div class="field-group">
+          <span class="label">Année Académique :</span> {{etudiant.anneeAcademique}}
+        </div>
+      </div>
+
+      <!-- Tableau -->
+      <table class="payment-table">
+        <thead>
+          <tr>
+            <th>LIBELLÉ / MOTIF DU PAIEMENT</th>
+            <th class="amount-col">MONTANT (FCFA)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{paiement.description}}</td>
+            <td class="amount-cell">{{paiement.montantFormate}}</td>
+          </tr>
+          <tr class="total-row">
+            <td>TOTAL PAYÉ</td>
+            <td class="amount-cell">{{paiement.montantFormate}}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Détails bas de page -->
+      <div class="bottom-details">
+        <div class="bottom-row">
+          <span class="label">Montant en lettres :</span> <span class="value">{{paiement.montantEnLettres}}</span> FCFA
+        </div>
+
+        <div class="bottom-row" style="margin: 8px 0;">
+          <span class="label">Mode de paiement :</span>
+          <div class="checkbox-group">
+            <div class="checkbox-item"><span class="checkbox-box">{{#if paiement.estEspece}}✓{{/if}}</span> Espèces</div>
+            <div class="checkbox-item"><span class="checkbox-box">{{#if paiement.estCheque}}✓{{/if}}</span> Chèque</div>
+            <div class="checkbox-item"><span class="checkbox-box">{{#if paiement.estVirement}}✓{{/if}}</span> Virement/Banque</div>
+            <div class="checkbox-item"><span class="checkbox-box">{{#if paiement.estMobileMoney}}✓{{/if}}</span> T-Money/Flooz</div>
+          </div>
+        </div>
+
+        <div class="bottom-row">
+          <span class="label">Reste à payer :</span>
+          <span class="dots"></span>
+          <span class="label" style="margin-left: 5px;">FCFA</span>
+        </div>
+      </div>
+
+      <!-- Signatures -->
+      <div class="signatures">
+        <div class="signature-block">
+          <span>Le Caissier / Agent</span>
+          <div class="signature-line"></div>
+        </div>
+        <div class="signature-block">
+          <span>L'Étudiant(e) / Payeur</span>
+          <div class="signature-line"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

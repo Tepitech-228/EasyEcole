@@ -3,7 +3,7 @@
             choisi</div>
         <div *ngFor="let panierParcoursChoisi of panierParcoursChoisis" class="w-full flex gap-x-8 py-4 border-b">
             <img class="md:block hidden w-44 h-16 object-cover rounded-md object-center"
-                [src]="panierParcoursChoisi.parcoursChoisi!.parcours!.image ? 'http:///localhost:3000/parcours/' + panierParcoursChoisi.parcoursChoisi!.parcours!.image :  'assets/images/blank-card-picture.jpg'"
+                [src]="panierParcoursChoisi.parcoursChoisi!.parcours!.image ? PARCOURS_PATH + panierParcoursChoisi.parcoursChoisi!.parcours!.image :  'assets/images/blank-card-picture.jpg'"
                 alt="img">
             <div class="flex w-full flex-col justify-between py-1">
                 <div class="text-sm font-medium text-gray-700 line-clamp-1">{{

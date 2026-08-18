@@ -3,6 +3,7 @@ export enum RolesUtilisateur {
     INSTITUTION = "institution",
     CAISSIER_BANQUE = "caissier_banque",
     ENSEIGNANT = "enseignant",
+    PERSONNEL_ADMINISTRATIF = "personnel_administratif",
     RESSOURCES_HUMAINES = "ressources_humaines",
     CABINET_COMPTABLE = "cabinet_comptable",
     COMITE_ORIENTATION = "comite_orientation",

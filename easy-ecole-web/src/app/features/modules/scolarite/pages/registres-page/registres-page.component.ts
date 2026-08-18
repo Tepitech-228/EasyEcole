@@ -1,14 +1,33 @@
 import { Component, OnInit } from '@angular/core';
-import { RegistreAcademiqueService } from 'src/app/data/modules/scolarite/services/registre-academique.service';
+import { RegistreAcademiqueService, RegistreAcademiqueQuery } from 'src/app/data/modules/scolarite/services/registre-academique.service';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { ToastService } from 'src/app/core/services/toast.service';
 import { DeliberationService } from 'src/app/features/modules/bulletins/services/deliberation.service';
-import { DossierNode, DossierColumn, BatchAction } from 'src/app/shared/components/dossier-view/dossier-view.component';
 
 interface GenerationRecap {
   crees: number;
   maj: number;
   total: number;
+}
+
+interface EtudiantPalmares {
+  id: number;
+  etudiant: string;
+  matricule: string;
+  classe: string;
+  moyenne: number;
+  rang: number;
+  decision: string;
+}
+
+interface PromotionPalmares {
+  promotion: string;
+  anneeScolaire: string;
+  filiere: string;
+  niveau: string;
+  classe: string;
+  totalPromotion: number;
+  etudiants: EtudiantPalmares[];
 }
 
 @Component({
@@ -25,26 +44,17 @@ export class RegistresPageComponent extends BaseComponentClass implements OnInit
   selectedAnneeScolaire: string = ''
   selectedFiliere: string = ''
   selectedClasse: string = ''
-  selectedDecision: string = ''
   searchText: string = ''
   anneeScolaireList: string[] = []
   filiereList: string[] = []
   classeList: string[] = []
-  decisionList: string[] = ['Admis', 'Redouble']
 
-  // Dossier view
-  registres: any[] = []
-  dossierNodes: DossierNode[] = []
-  dossierColumns: DossierColumn[] = [
-    { key: 'matricule', label: 'Matricule' },
-    { key: 'moyenne', label: 'Moyenne' },
-    { key: 'rang', label: 'Rang' },
-    { key: 'decision', label: 'Décision' }
-  ]
-  batchActions: BatchAction[] = [
-    { label: 'Marquer Admis', color: 'green', action: 'admis' },
-    { label: 'Marquer Redouble', color: 'red', action: 'redouble' }
-  ]
+  // Top N (palmarès)
+  topN: number = 50
+  topNOptions: number[] = [10, 25, 50, 100]
+
+  // Classement par promotion
+  promotions: PromotionPalmares[] = []
 
   // Génération depuis une délibération
   showGeneratePanel: boolean = false
@@ -53,161 +63,137 @@ export class RegistresPageComponent extends BaseComponentClass implements OnInit
   generating: boolean = false
   generationResult: GenerationRecap | null = null
 
-  // Pagination
-  currentPage: number = 1
-  totalPages: number = 1
-  totalItems: number = 0
-  pageSize: number = 20
-
   constructor(
     private registreService: RegistreAcademiqueService,
     private deliberationService: DeliberationService,
     private toastService: ToastService
   ) {
     super()
-    this.loadRegistres()
+    this.loadPalmares()
   }
 
   ngOnInit(): void {
   }
 
-  getDecisionCount(decision: string): number {
-    return this.registres.filter((r: any) => r.decision === decision).length
+  // ── Agrégats / statistiques ──
+
+  get totalEtudiantsClasses(): number {
+    return this.promotions.reduce((total, promo) => total + (promo.etudiants ? promo.etudiants.length : 0), 0)
   }
 
+  get meilleureMoyenne(): number | null {
+    let max: number | null = null
+    for (const promo of this.promotions) {
+      for (const etudiant of (promo.etudiants || [])) {
+        const moyenne = Number(etudiant.moyenne)
+        if (!isNaN(moyenne) && (max === null || moyenne > max)) {
+          max = moyenne
+        }
+      }
+    }
+    return max
+  }
+
+  getDecisionCount(decision: string): number {
+    return this.promotions.reduce((total, promo) =>
+      total + (promo.etudiants || []).filter(e => e.decision === decision).length, 0)
+  }
+
+  hasActiveFilters(): boolean {
+    return !!this.selectedAnneeScolaire || !!this.selectedFiliere || !!this.selectedClasse || !!this.searchText
+  }
+
+  // ── Chargement du palmarès ──
+
   onFilterChange(): void {
-    this.currentPage = 1
-    this.loadRegistres()
+    this.loadPalmares()
   }
 
   onSearch(): void {
-    this.currentPage = 1
-    this.loadRegistres()
+    this.loadPalmares()
   }
 
-  onPageChange(page: number): void {
-    this.currentPage = page
-    this.loadRegistres()
+  onTopNChange(): void {
+    this.loadPalmares()
   }
 
-  loadRegistres(): void {
+  loadPalmares(): void {
     this.loading = true
     this.errorMessage = ''
 
-    const params: any = {
-      page: this.currentPage,
-      limit: this.pageSize
-    }
-
+    const params: RegistreAcademiqueQuery = { top: this.topN }
     if (this.selectedAnneeScolaire) params.anneeScolaire = this.selectedAnneeScolaire
     if (this.selectedFiliere) params.filiere = this.selectedFiliere
     if (this.selectedClasse) params.classe = this.selectedClasse
-    if (this.selectedDecision) params.decision = this.selectedDecision
     if (this.searchText) params.search = this.searchText
 
-    this.registreService.getAll(params).subscribe({
+    this.registreService.getTop(params).subscribe({
       next: (res: any) => {
-        const data = res.data || res
-        this.registres = Array.isArray(data) ? data : []
-        if (res.pagination) {
-          this.totalItems = res.pagination.total || 0
-          this.totalPages = res.pagination.totalPages || 1
-          this.currentPage = res.pagination.page || 1
-        } else {
-          this.totalItems = this.registres.length
-          this.totalPages = 1
-        }
-
+        const data = res?.data ?? res
+        this.promotions = Array.isArray(data) ? data : []
         this.buildFilterLists()
-        this.buildDossierTree()
         this.loading = false
       },
       error: () => {
-        this.errorMessage = 'Erreur lors du chargement des registres'
+        this.errorMessage = 'Erreur lors du chargement du classement des promotions'
         this.loading = false
       }
     })
   }
 
   buildFilterLists(): void {
-    this.anneeScolaireList = [...new Set(this.registres.map(r => r.anneeScolaire))].sort()
-    this.filiereList = [...new Set(this.registres.map(r => r.filiere).filter((f: string) => !!f && String(f).trim() !== ''))].sort()
-    this.classeList = [...new Set(this.registres.map(r => r.classe))].sort()
-  }
+    this.anneeScolaireList = [...new Set(
+      this.promotions.map(p => p.anneeScolaire).filter(a => !!a && String(a).trim() !== '')
+    )].sort()
+    this.filiereList = [...new Set(
+      this.promotions.map(p => p.filiere).filter(f => !!f && String(f).trim() !== '')
+    )].sort()
 
-  buildDossierTree(): void {
-    const anneeMap = new Map<string, DossierNode>()
-    const hasFiliere = this.registres.some(r => r.filiere && String(r.filiere).trim() !== '')
-
-    for (const r of this.registres) {
-      const annee = r.anneeScolaire || 'Inconnue'
-      const classe = r.classe || 'Inconnue'
-
-      if (!anneeMap.has(annee)) {
-        anneeMap.set(annee, { type: 'annee', label: annee, id: annee, children: [], expanded: true })
+    const classes: string[] = []
+    for (const promo of this.promotions) {
+      if (promo.classe && String(promo.classe).trim() !== '') {
+        classes.push(promo.classe)
       }
-      const anneeNode = anneeMap.get(annee)!
-
-      // Niveau intermédiaire Filière (Année → Filière → Classe → étudiants)
-      // avec repli sur Année → Classe si aucune donnée ne contient de filière.
-      let classeContainer: DossierNode[] = anneeNode.children!
-      if (hasFiliere) {
-        const filiere = r.filiere && String(r.filiere).trim() !== '' ? String(r.filiere).trim() : 'Sans filière'
-        const filiereKey = `${annee}_filiere_${filiere}`
-        let filiereNode = anneeNode.children!.find(c => c.id === filiereKey)
-        if (!filiereNode) {
-          filiereNode = { type: 'niveau', label: filiere, id: filiereKey, children: [], expanded: true }
-          anneeNode.children!.push(filiereNode)
+      for (const etudiant of (promo.etudiants || [])) {
+        if (etudiant.classe && String(etudiant.classe).trim() !== '') {
+          classes.push(etudiant.classe)
         }
-        classeContainer = filiereNode.children!
       }
-
-      const classeKey = `${annee}_${hasFiliere ? 'filiere_' : ''}${classe}`
-      let classeNode = classeContainer.find(c => c.id === classeKey)
-      if (!classeNode) {
-        classeNode = { type: 'parcours', label: classe, id: classeKey, children: [], expanded: true }
-        classeContainer.push(classeNode)
-      }
-
-      classeNode.items = classeNode.items || []
-      classeNode.items.push({
-        id: r.id,
-        etudiant: r.etudiant,
-        matricule: r.matricule,
-        moyenne: r.moyenne,
-        rang: r.rang,
-        decision: r.decision,
-        _registre: r
-      })
     }
-
-    this.dossierNodes = Array.from(anneeMap.values())
+    this.classeList = [...new Set(classes)].sort()
   }
 
-  onBatchAction(ev: { action: string, ids: number[] }): void {
-    const decision = ev.action === 'admis' ? 'Admis' : 'Redouble'
-    this.registreService.batchStatut(ev.ids, decision).subscribe({
-      next: () => {
-        this.loadRegistres()
-      },
-      error: () => {
-        this.errorMessage = 'Erreur lors de la mise à jour'
-      }
-    })
+  // ── Helpers d'affichage ──
+
+  formatMoyenne(moyenne: number | null | undefined): string {
+    if (moyenne === null || moyenne === undefined || isNaN(Number(moyenne))) return '—'
+    return Number(moyenne).toFixed(2)
   }
 
-  onItemAction(ev: { item: any, action: string }): void {
-    // Single item action: toggle decision
-    const currentDecision = ev.item.decision
-    const newDecision = currentDecision === 'Admis' ? 'Redouble' : 'Admis'
-    this.registreService.batchStatut([ev.item.id], newDecision).subscribe({
-      next: () => {
-        this.loadRegistres()
-      },
-      error: () => {
-        this.errorMessage = 'Erreur lors de la mise à jour'
-      }
-    })
+  rangPillClass(rang: number): string {
+    if (rang === 1) return 'rang-1'
+    if (rang === 2) return 'rang-2'
+    if (rang === 3) return 'rang-3'
+    return 'rang-default'
+  }
+
+  podiumRowClass(rang: number): string {
+    if (rang === 1) return 'podium-row-1'
+    if (rang === 2) return 'podium-row-2'
+    if (rang === 3) return 'podium-row-3'
+    return ''
+  }
+
+  decisionBadgeColor(decision: string): string {
+    if (!decision) return 'gray'
+    const d = decision.toLowerCase()
+    if (d.includes('admis')) return 'green'
+    if (d.includes('redouble') || d === 'redoublement') return 'red'
+    return 'blue'
+  }
+
+  trackByEtudiant(index: number, etudiant: EtudiantPalmares): number | string {
+    return etudiant && etudiant.id ? etudiant.id : index
   }
 
   // ── Génération depuis une délibération ──
@@ -253,7 +239,7 @@ export class RegistresPageComponent extends BaseComponentClass implements OnInit
         this.toastService.success(`Registres générés : ${recap.crees} créés, ${recap.maj} mis à jour, ${recap.total} au total`)
         this.showGeneratePanel = false
         this.selectedDeliberationId = null
-        this.loadRegistres()
+        this.loadPalmares()
       },
       error: () => {
         this.generating = false
@@ -266,9 +252,8 @@ export class RegistresPageComponent extends BaseComponentClass implements OnInit
     this.selectedAnneeScolaire = ''
     this.selectedFiliere = ''
     this.selectedClasse = ''
-    this.selectedDecision = ''
     this.searchText = ''
-    this.currentPage = 1
-    this.loadRegistres()
+    this.topN = 50
+    this.loadPalmares()
   }
 }

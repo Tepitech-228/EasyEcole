@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import fs from "fs";
 import path from "path";
-import { CountOptions, FindOptions, InferAttributes } from "sequelize";
+import { CountOptions, FindOptions, InferAttributes, Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { PaiementInscription } from "../models/PaiementInscription";
 import { TypesPaiement } from "../../../core/enums/TypesPaiement";
@@ -16,6 +16,10 @@ import { MobileMoneyCinetpay } from "../../../core/helpers/MobileMoneyCinetpay";
 import { DocumentPDFGenerator } from "../../../core/helpers/DocumentPDFGenerator";
 import { EmailSender } from "../../../core/helpers/EmailSender";
 import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
+import { DocGenGeneratorService } from "../../docgen/services/DocGenGeneratorService";
+import { DocGenType } from "../../docgen/models/DocGenType";
+import { DocGenDocument } from "../../docgen/models/DocGenDocument";
+import { ParentEnfant } from "../../parent/models/ParentEnfant";
 
 export default class PaiementInscriptionController {
 
@@ -48,7 +52,8 @@ export default class PaiementInscriptionController {
 
             return res.status(200).send(paiementsInscription);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -73,7 +78,8 @@ export default class PaiementInscriptionController {
 
             return res.status(200).send(paiementInscription);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -125,33 +131,21 @@ export default class PaiementInscriptionController {
                         montant: paiementInscription.montant
                     })
 
-                    const studentName = demandeInscription?.utilisateur ? `${demandeInscription.utilisateur.nom || ''} ${demandeInscription.utilisateur.prenoms || ''}`.trim() : 'Étudiant';
-                    const logoConfig = await Etablissement.findOne();
-                    let logoPath: string | undefined = undefined;
-                    if (logoConfig && (logoConfig as any).logo) {
-                        const logoValue = (logoConfig as any).logo as string;
-                        logoPath = logoValue.startsWith('public') ? logoValue : path.resolve('public', logoValue);
-                        if (!fs.existsSync(logoPath)) {
-                            logoPath = undefined;
-                        }
-                    }
+                    const receiptDoc = await DocGenGeneratorService.generer({
+                        typeCode: 'INS007',
+                        sourceType: 'paiement',
+                        sourceId: paiementInscription.id,
+                        utilisateurId: paiementInscription.utilisateurId,
+                        params: {
+                            orientation: 'landscape',
+                            margins: { top: '5mm', right: '5mm', bottom: '5mm', left: '5mm' },
+                        },
+                    });
 
-                    const receiptFilename = DocumentPDFGenerator.generateReceipt(
-                        paiementInscription.id!,
-                        paiementInscription.numero,
-                        studentName,
-                        paiementInscription.matriculeInscription,
-                        paiementInscription.montant,
-                        paiementInscription.datePaiement,
-                        paiementInscription.type || TypesPaiement.ESPECE,
-                        paiementInscription.description || '',
-                        logoPath,
-                        "public/inscription/recus/"
-                    );
-
+                    const receiptFilename = `${receiptDoc.reference}.pdf`;
                     const baseUrl = `${req.protocol}://${req.get('host')}`;
                     const receiptUrl = `${baseUrl}/api/v1/inscription/paiementsInscription/${paiementInscription.id}/recu`;
-                    const receiptFilePath = path.resolve(process.cwd(), 'public/inscription/recus', receiptFilename);
+                    const receiptFilePath = receiptDoc.filePath;
 
                     if (demandeInscription?.utilisateur?.email) {
                         const studentEmail = demandeInscription.utilisateur.email;
@@ -174,7 +168,7 @@ export default class PaiementInscriptionController {
                     }
 
                     ArchiveGedService.archiverDepuisFichier({
-                        fichierSource: `public/inscription/recus/${receiptFilename}`,
+                        fichierSource: receiptFilePath,
                         domaineCode: 'FIN',
                         typeDocumentCode: 'bordereau',
                         processusCode: 'BORDEREAU',
@@ -201,11 +195,55 @@ export default class PaiementInscriptionController {
     }
 
     static async getPaymentReceipt(req: Request, res: Response): Promise<Response | null> {
-        const paiementInscription = await PaiementInscription.findByPk(req.params.id, {
-            include: [{ association: PaiementInscription.associations.demandeInscription, include: [{ association: DemandeInscription.associations.utilisateur }] }]
+        const role = (req as any).utilisateurRole;
+
+        const includeDemande: any = {
+            association: PaiementInscription.associations.demandeInscription,
+            include: [{ association: DemandeInscription.associations.utilisateur }]
+        };
+
+        // Scope utilisateur (APPRENANT / PARENT) : un utilisateur ne peut consulter
+        // que les reçus qui lui appartiennent (ou à ses enfants). Retour 404 neutre
+        // (et non 403) pour ne pas révéler l'existence d'un paiement tiers.
+        if (role === RolesUtilisateur.APPRENANT) {
+            includeDemande.where = { utilisateurId: (req as any).utilisateurId };
+        } else if (role === RolesUtilisateur.PARENT) {
+            const enfants = await ParentEnfant.findAll({
+                where: { parentUtilisateurId: (req as any).utilisateurId },
+                include: [{ association: 'apprenant', attributes: ['utilisateurId'] }]
+            });
+            const enfantUtilisateurIds = (enfants as any[])
+                .map((enfant: any) => enfant.apprenant?.utilisateurId)
+                .filter((id: any) => id != null);
+            if (enfantUtilisateurIds.length === 0) {
+                return res.status(404).json({ success: false, message: 'Paiement non trouvé' });
+            }
+            includeDemande.where = { utilisateurId: { [Op.in]: enfantUtilisateurIds } };
+        }
+
+        const paiementInscription = await PaiementInscription.findOne({
+            where: { id: req.params.id },
+            include: [includeDemande]
         });
         if (!paiementInscription) {
             return res.status(404).json({ success: false, message: 'Paiement non trouvé' });
+        }
+
+        const docgenType = await DocGenType.findOne({ where: { code: 'INS007' } });
+        const docgenDoc = docgenType
+            ? await DocGenDocument.findOne({
+                where: { typeId: docgenType.id, sourceId: paiementInscription.id },
+                order: [['createdAt', 'DESC']],
+            })
+            : null;
+
+        if (docgenDoc && fs.existsSync(docgenDoc.filePath)) {
+            const filename = path.basename(docgenDoc.filePath);
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+            const stream = fs.createReadStream(docgenDoc.filePath);
+            stream.pipe(res);
+            return null;
         }
 
         const demande = paiementInscription.demandeInscription;
@@ -305,7 +343,8 @@ export default class PaiementInscriptionController {
                     return res.status(200).json({ success: true, message: "Paiement supprimé" });
                 })
                 .catch((error) => {
-                    return res.status(500).json({ success: false, error: error });
+                    console.error('Erreur', error);
+                    return res.status(500).json({ success: false, message: 'Erreur interne' });
                 });
         }
         else {
@@ -327,7 +366,8 @@ export default class PaiementInscriptionController {
                 return res.status(200).json({ success: true, count: value });
             })
             .catch((error) => {
-                return res.status(500).json({ success: false, error: error });
+                console.error('Erreur', error);
+                return res.status(500).json({ success: false, message: 'Erreur interne' });
             });
 
         return null
@@ -366,6 +406,7 @@ export default class PaiementInscriptionController {
         paiementInscription.datePaiement = new Date()
         paiementInscription.type = TypesPaiement.MOBILE_MONEY
         paiementInscription.utilisateurId = (req as any).utilisateurId
+        paiementInscription.transactionId = transactionId
 
         try {
             await paiementInscription.save()
@@ -410,7 +451,8 @@ export default class PaiementInscriptionController {
                 status: paymentResult.data?.status,
             })
         } catch (error) {
-            return res.status(500).json({ success: false, error: error })
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -427,16 +469,74 @@ export default class PaiementInscriptionController {
 
             if (result.success && result.status === 'accepted') {
                 const paiement = await PaiementInscription.findOne({
-                    where: { numero: transactionId }
+                    where: { transactionId },
+                    include: [{ association: PaiementInscription.associations.demandeInscription, include: [{ association: DemandeInscription.associations.utilisateur }] }]
                 })
+
                 if (paiement && !paiement.dateValidation) {
                     await paiement.update({ dateValidation: new Date() })
+
+                    try {
+                        const receiptDoc = await DocGenGeneratorService.generer({
+                            typeCode: 'INS007',
+                            sourceType: 'paiement',
+                            sourceId: paiement.id,
+                            utilisateurId: paiement.utilisateurId,
+                            params: {
+                                orientation: 'landscape',
+                                margins: { top: '5mm', right: '5mm', bottom: '5mm', left: '5mm' },
+                            },
+                        })
+
+                        const receiptFilename = `${receiptDoc.reference}.pdf`;
+                        const baseUrl = `${req.protocol}://${req.get('host')}`;
+                        const receiptUrl = `${baseUrl}/api/v1/inscription/paiementsInscription/${paiement.id}/recu`;
+
+                        const demande = paiement.demandeInscription;
+                        if (demande?.utilisateur?.email) {
+                            const studentNameEmail = `${demande.utilisateur.nom || ''} ${demande.utilisateur.prenoms || ''}`.trim() || 'Étudiant';
+                            const emailHtml = `<p>Bonjour ${studentNameEmail},</p>
+                                <p>Votre paiement mobile money a été validé. Vous pouvez télécharger votre reçu en cliquant sur le lien ci-dessous :</p>
+                                <p><a href="${receiptUrl}">Télécharger mon reçu</a></p>
+                                <p>Montant payé : ${paiement.montant.toLocaleString('fr-FR')} FC</p>
+                                <p>Référence : ${paiement.numero}</p>
+                                <p>Cordialement,<br/>Easy Ecole</p>`;
+
+                            EmailSender.getInstance().sendMail({
+                                from: `Easy Ecole <${process.env.SMTP_USER || 'no-reply@easyecole.com'}>`,
+                                to: demande.utilisateur.email,
+                                encoding: 'UTF-8',
+                                subject: 'Reçu de paiement Easy Ecole',
+                                html: emailHtml,
+                                attachments: fs.existsSync(receiptDoc.filePath) ? [{ filename: receiptFilename, path: receiptDoc.filePath }] : []
+                            }).catch(err => console.error('Erreur envoi email reçu paiement :', err));
+                        }
+
+                        ArchiveGedService.archiverDepuisFichier({
+                            fichierSource: receiptDoc.filePath,
+                            domaineCode: 'FIN',
+                            typeDocumentCode: 'bordereau',
+                            processusCode: 'BORDEREAU',
+                            processusLibelle: 'Reçu de paiement',
+                            processusModule: 'finance',
+                            titre: `Reçu paiement inscription - ${paiement.numero}`,
+                            dossierGed: 'Bordereaux de paiement',
+                            sourceType: 'genere_application',
+                            confidentialite: 'confidentiel',
+                            cycleVie: 'courant',
+                        }).catch(err => console.error('Erreur archivage reçu paiement :', err));
+
+                        return res.status(200).json({ ...result, receiptUrl, receiptFilename });
+                    } catch (receiptErr) {
+                        console.error('Erreur génération reçu paiement mobile money :', receiptErr);
+                    }
                 }
             }
 
             return res.status(200).json(result)
         } catch (error) {
-            return res.status(500).json({ success: false, error: error })
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 }

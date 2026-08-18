@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+import { BudgetService } from 'src/app/data/modules/achats/services/budget.service';
+import { Budget } from 'src/app/data/modules/achats/models/achats.models';
 
 @Component({
   selector: 'app-budgets-page',
@@ -10,7 +12,7 @@ export class BudgetsPageComponent extends BaseComponentClass implements OnInit {
   budgets: any[] = []
   loading = false
 
-  constructor() { super() }
+  constructor(private budgetService: BudgetService) { super() }
 
   ngOnInit(): void {
     this.loadBudgets()
@@ -18,14 +20,22 @@ export class BudgetsPageComponent extends BaseComponentClass implements OnInit {
 
   loadBudgets() {
     this.loading = true
-    setTimeout(() => {
-      this.budgets = [
-        { id: 1, departement: 'Informatique', periode: '2026-Q1', alloue: 5000000, utilise: 3200000 },
-        { id: 2, departement: 'Ressources Humaines', periode: '2026-Q1', alloue: 2000000, utilise: 1500000 },
-        { id: 3, departement: 'Logistique', periode: '2026-Q1', alloue: 3000000, utilise: 2800000 },
-      ]
-      this.loading = false
-    }, 500)
+    this.budgetService.getAll().subscribe({
+      next: (items: Budget[]) => {
+        this.budgets = items.map(b => ({
+          id: b.id,
+          departement: b.departement?.nom || '—',
+          periode: b.periode,
+          alloue: Number(b.montantAlloue) || 0,
+          utilise: Number(b.montantUtilise) || 0,
+        }))
+        this.loading = false
+      },
+      error: () => {
+        this.budgets = []
+        this.loading = false
+      }
+    })
   }
 
   get totalAlloue(): number {

@@ -27,7 +27,8 @@ export default class CourrierController {
 
       return res.json({ data: rows, total: count, page: Number(page), pageSize: Number(pageSize) });
     } catch (error: any) {
-      return res.status(500).json({ success: false, error: error.message });
+      console.error('Erreur', error);
+      return res.status(500).json({ success: false, message: 'Erreur interne' });
     }
   }
 
@@ -42,7 +43,8 @@ export default class CourrierController {
       if (!record) return res.status(404).json({ success: false, message: 'Entree non trouvee' });
       return res.json(record);
     } catch (error: any) {
-      return res.status(500).json({ success: false, error: error.message });
+      console.error('Erreur', error);
+      return res.status(500).json({ success: false, message: 'Erreur interne' });
     }
   }
 
@@ -72,7 +74,8 @@ export default class CourrierController {
 
       return res.status(201).json(record);
     } catch (error: any) {
-      return res.status(500).json({ success: false, error: error.message });
+      console.error('Erreur', error);
+      return res.status(500).json({ success: false, message: 'Erreur interne' });
     }
   }
 
@@ -88,7 +91,8 @@ export default class CourrierController {
       await record.save();
       return res.json(record);
     } catch (error: any) {
-      return res.status(500).json({ success: false, error: error.message });
+      console.error('Erreur', error);
+      return res.status(500).json({ success: false, message: 'Erreur interne' });
     }
   }
 
@@ -99,7 +103,8 @@ export default class CourrierController {
       await record.destroy();
       return res.json({ success: true });
     } catch (error: any) {
-      return res.status(500).json({ success: false, error: error.message });
+      console.error('Erreur', error);
+      return res.status(500).json({ success: false, message: 'Erreur interne' });
     }
   }
 
@@ -115,7 +120,8 @@ export default class CourrierController {
       const nextNum = lastRecord ? lastRecord.numeroOrdre + 1 : 1;
       return res.json({ annee, nextNumero: nextNum });
     } catch (error: any) {
-      return res.status(500).json({ success: false, error: error.message });
+      console.error('Erreur', error);
+      return res.status(500).json({ success: false, message: 'Erreur interne' });
     }
   }
 
@@ -147,7 +153,8 @@ export default class CourrierController {
       res.setHeader('Content-Disposition', `attachment; filename=registre-courrier-${annee || 'complet'}.csv`);
       return res.send(csv);
     } catch (error: any) {
-      return res.status(500).json({ success: false, error: error.message });
+      console.error('Erreur', error);
+      return res.status(500).json({ success: false, message: 'Erreur interne' });
     }
   }
 }

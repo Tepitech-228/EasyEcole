@@ -15,7 +15,8 @@ export default class MccController {
             let data = await Mcc.findAll(options);
             return res.status(200).send(data);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -27,7 +28,8 @@ export default class MccController {
             if (!data) return res.status(404).json({ success: false, message: "MCC non trouvé" });
             return res.status(200).send(data);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -39,7 +41,8 @@ export default class MccController {
             const data = await Mcc.create(req.body);
             return res.status(201).send(data);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -53,7 +56,8 @@ export default class MccController {
             await data.update(req.body);
             return res.status(200).send(data);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -67,7 +71,8 @@ export default class MccController {
             await data.destroy();
             return res.status(200).json({ success: true });
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -79,7 +84,8 @@ export default class MccController {
             });
             return res.status(200).send(data);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 }

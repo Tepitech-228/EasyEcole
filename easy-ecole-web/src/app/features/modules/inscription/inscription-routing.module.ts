@@ -30,6 +30,7 @@ import { OnboardingPageComponent } from './pages/onboarding-page/onboarding-page
 import { CartesPageComponent } from './pages/cartes-page/cartes-page.component';
 import { GestionSemestresPageComponent } from './pages/gestion-semestres-page/gestion-semestres-page.component';
 import { ImportExportExcelPageComponent } from './pages/import-export-excel-page/import-export-excel-page.component';
+import { DesignationMemoirePageComponent } from './pages/designation-memoire-page/designation-memoire-page.component';
 
 const routes: Routes = [
   {
@@ -232,6 +233,12 @@ const routes: Routes = [
   {
     path: 'import-export-excel',
     component: ImportExportExcelPageComponent,
+    pathMatch: 'full'
+  },
+
+  {
+    path: 'designation-memoire',
+    component: DesignationMemoirePageComponent,
     pathMatch: 'full'
   },
 ];

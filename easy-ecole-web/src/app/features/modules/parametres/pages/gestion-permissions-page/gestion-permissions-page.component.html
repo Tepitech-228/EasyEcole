@@ -59,9 +59,9 @@
             <h3 class="text-sm font-semibold text-gray-800">{{ module }}</h3>
             <div class="flex items-center gap-x-3">
                 <button (click)="toggleModule(module, true)"
-                    class="text-xs text-green-600 hover:text-green-800 font-medium">Tout cocher</button>
+                    class="inline-flex items-center gap-x-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-green-50 text-green-700 ring-1 ring-inset ring-green-200 hover:bg-green-100 transition">Tout cocher</button>
                 <button (click)="toggleModule(module, false)"
-                    class="text-xs text-red-600 hover:text-red-800 font-medium">Tout décocher</button>
+                    class="inline-flex items-center gap-x-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-red-50 text-red-700 ring-1 ring-inset ring-red-200 hover:bg-red-100 transition">Tout décocher</button>
             </div>
         </div>
         <div class="divide-y divide-gray-100">
@@ -76,11 +76,11 @@
                     <span class="text-sm text-gray-700">{{ perm.libelle }}</span>
                     <span *ngIf="perm.parentKey" class="text-xs text-gray-400">({{ perm.key }})</span>
                 </div>
-                <label class="relative inline-flex items-center cursor-pointer">
+                <label class="perm-switch">
                     <input type="checkbox" [checked]="hasPermission(perm.id)"
-                        (change)="togglePermission(perm.id, $any($event.target).checked)"
-                        class="sr-only peer">
-                    <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                        (change)="togglePermission(perm.id, $any($event.target).checked)">
+                    <span class="perm-switch__track"></span>
+                    <span class="perm-switch__thumb"></span>
                 </label>
             </div>
         </div>

@@ -7,7 +7,8 @@ export default class AcademicTreeController {
       const tree = await DomainTreeService.getTree();
       return res.json(tree);
     } catch (error: any) {
-      return res.status(500).json({ success: false, error: error.message || 'Erreur' });
+      console.error('Erreur', error);
+      return res.status(500).json({ success: false, message: 'Erreur interne' });
     }
   }
 }

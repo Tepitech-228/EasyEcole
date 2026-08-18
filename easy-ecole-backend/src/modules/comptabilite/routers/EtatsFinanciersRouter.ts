@@ -1,5 +1,7 @@
 import express from "express"
 import EtatsFinanciersController from "../controllers/EtatsFinanciersController"
+import Authenticate from "../../../core/middlewares/Authenticate"
+import CheckPermission from "../../../core/middlewares/CheckPermission"
 
 const router = express.Router()
 
@@ -27,7 +29,7 @@ const router = express.Router()
  *       200:
  *         description: Bilan comptable
  */
-router.get('/bilan', EtatsFinanciersController.getBilan)
+router.get('/bilan', [Authenticate, CheckPermission('comptabilite.bilan.consulter')], EtatsFinanciersController.getBilan)
 
 /**
  * @openapi
@@ -57,7 +59,7 @@ router.get('/bilan', EtatsFinanciersController.getBilan)
  *       200:
  *         description: Fichier exporté
  */
-router.get('/bilan/export', EtatsFinanciersController.exportBilan)
+router.get('/bilan/export', [Authenticate, CheckPermission('comptabilite.bilan.exporter')], EtatsFinanciersController.exportBilan)
 
 /**
  * @openapi
@@ -88,7 +90,7 @@ router.get('/bilan/export', EtatsFinanciersController.exportBilan)
  *       200:
  *         description: Compte de résultat
  */
-router.get('/compte-resultat', EtatsFinanciersController.getCompteResultat)
+router.get('/compte-resultat', [Authenticate, CheckPermission('comptabilite.resultat.consulter')], EtatsFinanciersController.getCompteResultat)
 
 /**
  * @openapi
@@ -122,6 +124,6 @@ router.get('/compte-resultat', EtatsFinanciersController.getCompteResultat)
  *       200:
  *         description: Fichier exporté
  */
-router.get('/compte-resultat/export', EtatsFinanciersController.exportCompteResultat)
+router.get('/compte-resultat/export', [Authenticate, CheckPermission('comptabilite.resultat.exporter')], EtatsFinanciersController.exportCompteResultat)
 
 export default router

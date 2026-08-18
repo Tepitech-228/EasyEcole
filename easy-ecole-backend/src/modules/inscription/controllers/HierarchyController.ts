@@ -132,7 +132,8 @@ export default class HierarchyController {
       return res.status(200).json(tree);
     } catch (error: any) {
       console.error('[HierarchyController.getTree]', error);
-      return res.status(500).json({ success: false, error: error.message || String(error) });
+      console.error('Erreur', error);
+      return res.status(500).json({ success: false, message: 'Erreur interne' });
     }
   }
 
@@ -245,7 +246,8 @@ export default class HierarchyController {
       return res.status(200).json({ dossiers, demandes, bordereaux });
     } catch (error: any) {
       console.error('[HierarchyController.getDetails]', error);
-      return res.status(500).json({ success: false, error: error.message || String(error) });
+      console.error('Erreur', error);
+      return res.status(500).json({ success: false, message: 'Erreur interne' });
     }
   }
 
@@ -281,7 +283,8 @@ export default class HierarchyController {
 
       return res.status(200).json(tree);
     } catch (error: any) {
-      return res.status(500).json({ success: false, error: error.message || String(error) });
+      console.error('Erreur', error);
+      return res.status(500).json({ success: false, message: 'Erreur interne' });
     }
   }
 
@@ -312,7 +315,8 @@ export default class HierarchyController {
 
       return res.status(200).json(tree);
     } catch (error: any) {
-      return res.status(500).json({ success: false, error: error.message || String(error) });
+      console.error('Erreur', error);
+      return res.status(500).json({ success: false, message: 'Erreur interne' });
     }
   }
 
@@ -336,7 +340,8 @@ export default class HierarchyController {
 
       return res.status(200).json(tree);
     } catch (error: any) {
-      return res.status(500).json({ success: false, error: error.message || String(error) });
+      console.error('Erreur', error);
+      return res.status(500).json({ success: false, message: 'Erreur interne' });
     }
   }
 
@@ -370,7 +375,8 @@ export default class HierarchyController {
 
       return res.status(200).json(tree);
     } catch (error: any) {
-      return res.status(500).json({ success: false, error: error.message || String(error) });
+      console.error('Erreur', error);
+      return res.status(500).json({ success: false, message: 'Erreur interne' });
     }
   }
 
@@ -396,7 +402,8 @@ export default class HierarchyController {
 
       return res.status(200).json(tree);
     } catch (error: any) {
-      return res.status(500).json({ success: false, error: error.message || String(error) });
+      console.error('Erreur', error);
+      return res.status(500).json({ success: false, message: 'Erreur interne' });
     }
   }
 
@@ -422,7 +429,8 @@ export default class HierarchyController {
 
       return res.status(200).json(tree);
     } catch (error: any) {
-      return res.status(500).json({ success: false, error: error.message || String(error) });
+      console.error('Erreur', error);
+      return res.status(500).json({ success: false, message: 'Erreur interne' });
     }
   }
 }

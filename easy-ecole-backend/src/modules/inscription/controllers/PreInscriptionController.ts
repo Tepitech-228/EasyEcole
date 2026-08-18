@@ -9,8 +9,8 @@ import { Session } from "../models/Session";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { EmailSender } from "../../../core/helpers/EmailSender";
-import { DocumentPDFGenerator } from "../../../core/helpers/DocumentPDFGenerator";
 import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
+import { DocGenGeneratorService } from "../../docgen/services/DocGenGeneratorService";
 
 export default class PreInscriptionController {
 
@@ -86,7 +86,8 @@ export default class PreInscriptionController {
             const preInscriptions = await PreInscription.findAll(options);
             return res.status(200).send(preInscriptions);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -109,7 +110,8 @@ export default class PreInscriptionController {
 
             return res.status(200).send(enAttente)
         } catch (error) {
-            return res.status(500).json({ success: false, error: error })
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -147,46 +149,34 @@ export default class PreInscriptionController {
             traiteParId: (req as any).utilisateurId
         })
 
-        // Générer l'autorisation provisoire d'inscription PDF
+        // Générer l'autorisation provisoire d'inscription PDF via docgen
+        let autorisationReference: string | undefined;
         try {
-            const etudiantNom = demande.utilisateur ? `${demande.utilisateur.nom} ${demande.utilisateur.prenoms}` : 'Étudiant'
-            const parcoursTitres = demande.parcoursChoisis
-                ?.filter(pc => pc.parcours)
-                .map(pc => ({ titre: pc.parcours!.titre })) || []
-            const fraisTotal = demande.session?.fraisInscription?.reduce((sum, f) => sum + f.montant, 0) || 0
+            const result = await DocGenGeneratorService.generer({
+                typeCode: 'API001',
+                sourceType: 'pre_inscription',
+                sourceId: Number(demandeId),
+                utilisateurId: (req as any).utilisateurId,
+                params: {
+                    cursusApprenantId: demande.utilisateur?.apprenant?.id,
+                    etudiantId: demande.utilisateurId,
+                }
+            }, req);
 
-            const filename = DocumentPDFGenerator.generateAutorisationProvisoire(
-                demandeId,
-                etudiantNom,
-                demande.matricule,
-                parcoursTitres,
-                fraisTotal,
-                "public/inscription/autorisations/"
-            )
-
-            await preInscription.update({ autorisationPDF: filename })
-
-            ArchiveGedService.archiverDepuisFichier({
-                fichierSource: `public/inscription/autorisations/${filename}`,
-                domaineCode: 'SCOL',
-                typeDocumentCode: 'fiche_inscription',
-                processusCode: 'INSCRIPTION',
-                processusLibelle: 'Inscription',
-                processusModule: 'inscription',
-                titre: `Autorisation provisoire - ${demandeId}`,
-                dossierGed: 'Inscriptions',
-                sousDossierGed: "Dossiers d'inscription",
-                sourceType: 'genere_application',
-                confidentialite: 'confidentiel',
-            }).catch(err => console.error("Erreur archivage autorisation:", err))
+            autorisationReference = result.reference;
+            await preInscription.update({ autorisationPDF: result.reference })
         } catch (err) {
-            console.error("Erreur génération autorisation provisoire PDF:", err)
+            console.error("Erreur génération autorisation provisoire PDF (docgen):", err)
         }
 
         if (demande.utilisateur) {
+            const attachmentPath = autorisationReference
+                ? path.resolve('storage', 'docgen', `${autorisationReference}.pdf`)
+                : undefined;
             EmailSender.getInstance().sendPreInscriptionValidee(
                 demande.utilisateur.identifiant,
-                demande.utilisateur.email
+                demande.utilisateur.email,
+                attachmentPath
             ).catch(err => console.error("Erreur envoi email validation:", err))
         }
 
@@ -253,7 +243,8 @@ export default class PreInscriptionController {
             })
             return res.status(200).send(demandes)
         } catch (error) {
-            return res.status(500).json({ success: false, error: error })
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -278,7 +269,8 @@ export default class PreInscriptionController {
 
             return res.status(200).send(demande)
         } catch (error) {
-            return res.status(500).json({ success: false, error: error })
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -290,18 +282,22 @@ export default class PreInscriptionController {
             return
         }
 
-        // Le fichier peut être dans l'ancien emplacement (public/inscription/autorisations/)
-        // ou dans le nouvel emplacement (public/dossiers/.../) après validation du bordereau
-        let filePath = path.resolve(process.cwd(), preInscription.autorisationPDF)
-        if (!fs.existsSync(filePath)) {
-            filePath = path.resolve(process.cwd(), 'public/inscription/autorisations', preInscription.autorisationPDF)
-        }
-        if (!fs.existsSync(filePath)) {
+        // L'autorisation générée par docgen est stockée dans storage/docgen/{reference}.pdf
+        // mais peut aussi avoir été déplacée dans public/dossiers/... (après validation bordereau)
+        // ou exister encore dans l'ancien emplacement (public/inscription/autorisations/)
+        const valeur = preInscription.autorisationPDF
+        const nomFichier = valeur.endsWith('.pdf') ? valeur : `${valeur}.pdf`
+        const candidats = [
+            path.resolve(process.cwd(), 'storage', 'docgen', nomFichier),
+            path.resolve(process.cwd(), valeur),
+            path.resolve(process.cwd(), 'public/inscription/autorisations', nomFichier),
+        ]
+        const filePath = candidats.find(c => fs.existsSync(c))
+        if (!filePath) {
             res.status(404).json({ success: false, message: "Fichier introuvable sur le serveur" })
             return
         }
 
-        const nomFichier = path.basename(preInscription.autorisationPDF)
         res.setHeader('Content-Type', 'application/pdf')
         res.setHeader('Content-Disposition', `inline; filename="${nomFichier}"`)
 

@@ -18,7 +18,8 @@ export default class ComiteOrientationController {
 
             return res.status(200).send(membre)
         } catch (error) {
-            return res.status(500).json({ success: false, error: error })
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -39,7 +40,8 @@ export default class ComiteOrientationController {
 
             return res.status(200).send(membre)
         } catch (error) {
-            return res.status(500).json({ success: false, error: error })
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 }

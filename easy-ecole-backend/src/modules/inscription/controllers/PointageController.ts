@@ -41,7 +41,8 @@ export default class PointageController {
             pointages = await Pointage.findAll(options);
             return res.status(200).send(pointages);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -58,7 +59,8 @@ export default class PointageController {
 
             return res.status(200).send(pointage);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -97,7 +99,8 @@ export default class PointageController {
                     return res.status(400).json({ success: false, error: error });
                 });
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
 
         return null
@@ -138,7 +141,8 @@ export default class PointageController {
                 });
 
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
 
         return null
@@ -192,7 +196,8 @@ export default class PointageController {
                     return res.status(400).json({ success: false, error: error });
                 });
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
 
         return null
@@ -241,7 +246,8 @@ export default class PointageController {
                 });
 
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
 
         return null
@@ -322,7 +328,8 @@ export default class PointageController {
 
             return res.status(404).json({ statut: 'rouge', message: "Utilisateur non trouvé" });
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 }

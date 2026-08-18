@@ -24,6 +24,7 @@ export class DocumentsSectionComponent implements OnInit {
   @Input() demande!: DemandeInscription
   @Input() rolesValue!: RolesValueType
   @Output() nextStep: EventEmitter<any> = new EventEmitter()
+  @Output() demandeUpdated: EventEmitter<DemandeInscription> = new EventEmitter()
 
   dossiersInscription: { [id: string]: File[] } = {}
 
@@ -122,6 +123,7 @@ export class DocumentsSectionComponent implements OnInit {
                 this.uploadProgress = 100;
                 this.dossiersInscription = {};
                 this.demande = event.body;
+                this.demandeUpdated.emit(event.body);
               }
             }
           },

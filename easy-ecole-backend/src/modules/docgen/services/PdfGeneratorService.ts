@@ -4,7 +4,7 @@ import { DocGenCachet } from '../models/DocGenCachet';
 
 export class PdfGeneratorService {
   static async generate(html: string, options?: {
-    format?: 'A4' | 'Letter';
+    format?: 'A4' | 'Letter' | string;
     orientation?: 'portrait' | 'landscape';
     margins?: { top?: string; right?: string; bottom?: string; left?: string };
     ecoleNom?: string;

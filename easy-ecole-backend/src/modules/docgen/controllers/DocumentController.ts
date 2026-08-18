@@ -7,6 +7,7 @@ import { DataResolverService } from "../services/DataResolverService";
 import { TemplateEngine } from "../services/TemplateEngine";
 import { PdfGeneratorService } from "../services/PdfGeneratorService";
 import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
+import { EmailSender } from "../../../core/helpers/EmailSender";
 import { CursusApprenant } from "../../inscription/models/CursusApprenant";
 import path from "path";
 import fs from "fs";
@@ -57,7 +58,7 @@ export default class DocumentController {
 
   static async generate(req: Request, res: Response): Promise<Response> {
     try {
-      const { typeCode, sourceType, sourceId, metadata, ...params } = req.body;
+      const { typeCode, sourceType, sourceId, metadata, envoyerMail, ...params } = req.body;
 
       const type = await DocGenType.findOne({ where: { code: typeCode } });
       if (!type) return res.status(404).json({ success: false, message: 'Type non trouvé' });
@@ -116,6 +117,27 @@ export default class DocumentController {
           generatedById: (req as any).utilisateurId,
         });
         documents.push(doc);
+
+        // Envoi du PDF par email si demandé (ex. reçus de scolarité générés depuis le secrétariat).
+        // Non bloquant : une erreur d'envoi ne doit pas faire échouer la génération.
+        if (envoyerMail === true) {
+          try {
+            const emailDestinataire = (etudiant as any)?.email;
+            if (emailDestinataire) {
+              await EmailSender.getInstance().sendPdf(
+                emailDestinataire,
+                `${(etudiant as any)?.prenom || ''} ${(etudiant as any)?.nom || ''}`.trim() || 'étudiant(e)',
+                `Easy Ecole: ${type?.libelle || 'Document'} ${reference}`,
+                `<p>Bonjour ${(etudiant as any)?.prenom || ''},</p><p>Veuillez trouver ci-joint votre <b>${type?.libelle || 'document'}</b> (référence ${reference}).</p><p>Cordialement,<br>Easy Ecole</p>`,
+                filePath,
+                fileName
+              );
+            }
+            await doc.update({ mailEnvoye: true });
+          } catch (mailError) {
+            console.error(`Erreur envoi email document ${reference}:`, mailError);
+          }
+        }
 
         // Archivage automatique dans la GED selon le type de document
         try {

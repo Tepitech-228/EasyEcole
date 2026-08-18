@@ -4,6 +4,7 @@ import path from "path"
 import fs from "fs"
 import DevoirController from "../controllers/DevoirController"
 import Authenticate from "../../../core/middlewares/Authenticate"
+import { fileFilter, ALLOWED_VIDEO_TYPES } from "../../../core/config/upload"
 
 const UPLOAD_DIR = "public/elearning/devoirs"
 const fullPath = path.resolve(process.cwd(), UPLOAD_DIR)
@@ -13,7 +14,7 @@ const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, fullPath),
   filename: (_req, file, cb) => cb(null, Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname))
 })
-const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } })
+const upload = multer({ storage, fileFilter: fileFilter(ALLOWED_VIDEO_TYPES), limits: { fileSize: 50 * 1024 * 1024 } })
 
 const router = express.Router()
 router

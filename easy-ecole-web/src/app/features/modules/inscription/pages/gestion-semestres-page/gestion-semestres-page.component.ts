@@ -1,6 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
+import { AnneeAcademique } from 'src/app/data/modules/inscription/models/AnneeAcademique.model';
+import { AnneeAcademiqueService } from 'src/app/data/modules/inscription/services/annee-academique.service';
+import { Parcours } from 'src/app/data/modules/orientation/models/Parcours.model';
+import { ParcoursService } from 'src/app/data/modules/orientation/services/parcours.service';
 
 @Component({
   selector: 'app-gestion-semestres-page',
@@ -18,11 +22,15 @@ import { environment } from 'src/environments/environment';
         <div class="grid gap-4 md:grid-cols-3">
           <div>
             <label class="mb-1 block text-sm font-medium text-gray-700">Parcours</label>
-            <input [(ngModel)]="form.parcoursId" type="number" class="w-full rounded-xl border border-gray-300 px-3 py-2" />
+            <select [(ngModel)]="form.parcoursId" class="w-full rounded-xl border border-gray-300 px-3 py-2">
+              <option *ngFor="let p of parcours" [value]="p.id">{{ p.titre }}</option>
+            </select>
           </div>
           <div>
             <label class="mb-1 block text-sm font-medium text-gray-700">Année académique</label>
-            <input [(ngModel)]="form.anneeAcademiqueId" type="number" class="w-full rounded-xl border border-gray-300 px-3 py-2" />
+            <select [(ngModel)]="form.anneeAcademiqueId" class="w-full rounded-xl border border-gray-300 px-3 py-2">
+              <option *ngFor="let a of anneesAcademiques" [value]="a.id">{{ a.libelle }}</option>
+            </select>
           </div>
           <div>
             <label class="mb-1 block text-sm font-medium text-gray-700">Semestre</label>
@@ -70,18 +78,48 @@ import { environment } from 'src/environments/environment';
             </tr>
           </tbody>
         </table>
+        <div *ngIf="semestres.length === 0" class="px-4 py-8 text-center text-sm text-gray-500">Aucun semestre programmé</div>
       </div>
     </div>
   `
 })
 export class GestionSemestresPageComponent implements OnInit {
   semestres: any[] = [];
-  form = { parcoursId: 1, anneeAcademiqueId: 1, codeSemestre: 'semestre1' };
+  parcours: Parcours[] = [];
+  anneesAcademiques: AnneeAcademique[] = [];
+  form = { parcoursId: '', anneeAcademiqueId: '', codeSemestre: 'semestre1' };
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private parcoursService: ParcoursService,
+    private anneeAcademiqueService: AnneeAcademiqueService
+  ) {}
 
   ngOnInit(): void {
+    this.chargerReferentiels();
     this.load();
+  }
+
+  chargerReferentiels(): void {
+    this.parcoursService.getAll().subscribe({
+      next: (parcours) => {
+        this.parcours = parcours;
+        if (!this.form.parcoursId && parcours.length > 0) {
+          this.form.parcoursId = String(parcours[0].id ?? '');
+        }
+      },
+      error: () => { this.parcours = []; }
+    });
+
+    this.anneeAcademiqueService.getAll().subscribe({
+      next: (annees) => {
+        this.anneesAcademiques = annees;
+        if (!this.form.anneeAcademiqueId && annees.length > 0) {
+          this.form.anneeAcademiqueId = String(annees[0].id ?? '');
+        }
+      },
+      error: () => { this.anneesAcademiques = []; }
+    });
   }
 
   load(): void {

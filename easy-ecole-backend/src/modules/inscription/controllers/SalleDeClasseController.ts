@@ -52,7 +52,8 @@ export default class SalleDeClasseController {
 
             return res.status(200).send(sallesDeClasse);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -85,7 +86,8 @@ export default class SalleDeClasseController {
 
             return res.status(200).send(salledeclasse);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -175,7 +177,8 @@ export default class SalleDeClasseController {
                     return res.status(200).json({ success: true, message: "SalleDeClasse supprimée" });
                 })
                 .catch((error) => {
-                    return res.status(500).json({ success: false, error: error });
+                    console.error('Erreur', error);
+                    return res.status(500).json({ success: false, message: 'Erreur interne' });
                 });
         }
         else {
@@ -197,7 +200,8 @@ export default class SalleDeClasseController {
                 return res.status(200).json({ success: true, count: value });
             })
             .catch((error) => {
-                return res.status(500).json({ success: false, error: error });
+                console.error('Erreur', error);
+                return res.status(500).json({ success: false, message: 'Erreur interne' });
             });
 
         return null

@@ -46,12 +46,6 @@
   @apply px-6 py-4 border-t border-gray-100;
 }
 
-
-
-.form-textarea {
-  @apply w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none;
-}
-
 .form-select-sm {
   @apply border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none;
 }
@@ -60,32 +54,116 @@
   @apply border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none;
 }
 
-.list-item {
-  @apply border-b border-gray-50;
+.form-textarea {
+  @apply w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none;
 }
 
-.list-item-header {
-  @apply flex justify-between items-center px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors;
+/* ── Onglets de statut (pills) ── */
+
+.pill-tab {
+  @apply inline-flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-medium rounded-full transition-colors cursor-pointer select-none;
 }
 
-.list-item-left {
-  @apply flex items-center gap-4 flex-1;
+.pill-tab-inactive {
+  @apply bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-200;
 }
 
-.list-item-content {
-  @apply flex-1;
+.pill-tab-inactive:hover {
+  background-color: #f3f4f6;
+  color: #1f2937;
 }
 
-.list-item-title {
-  @apply font-medium text-gray-900;
+.pill-tab-all {
+  @apply bg-indigo-600 text-white ring-1 ring-inset ring-indigo-600;
 }
 
-.list-item-subtitle {
-  @apply text-sm text-gray-500 mt-0.5;
+.pill-tab-all:hover {
+  background-color: #4338ca;
 }
 
-.list-item-detail {
-  @apply px-6 py-4 bg-gray-50 border-t border-gray-100;
+.pill-tab-ouverte {
+  background-color: #fbbf24;
+  color: #78350f;
+  box-shadow: inset 0 0 0 1px #fbbf24;
+}
+
+.pill-tab-ouverte:hover {
+  background-color: #fbbf24;
+}
+
+.pill-tab-traitee {
+  @apply bg-green-500 text-white ring-1 ring-inset ring-green-500;
+}
+
+.pill-tab-traitee:hover {
+  background-color: #16a34a;
+}
+
+.pill-tab-fermee {
+  @apply bg-gray-500 text-white ring-1 ring-inset ring-gray-500;
+}
+
+.pill-tab-fermee:hover {
+  background-color: #4b5563;
+}
+
+/* Compteur affiché sur chaque pill */
+.pill-count {
+  @apply ml-0.5 px-1.5 py-0.5 text-xs font-semibold leading-none rounded-full;
+}
+
+.pill-tab-inactive .pill-count {
+  @apply bg-gray-200 text-gray-600;
+}
+
+.pill-tab-all .pill-count,
+.pill-tab-traitee .pill-count,
+.pill-tab-fermee .pill-count {
+  @apply bg-white bg-opacity-25;
+}
+
+.pill-tab-ouverte .pill-count {
+  background-color: rgba(120, 53, 15, 0.2);
+  color: #78350f;
+}
+
+/* ── Cartes ticket (réclamations) ── */
+
+.ticket-card {
+  @apply bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden transition-shadow;
+}
+
+.ticket-header {
+  @apply flex items-center gap-4 px-5 py-4 cursor-pointer transition-colors;
+}
+
+.ticket-header:hover {
+  background-color: #f9fafb;
+}
+
+.ticket-expanded .ticket-header {
+  background-color: #f9fafb;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.ticket-avatar {
+  @apply w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0;
+}
+
+.ticket-content {
+  @apply flex-1 min-w-0;
+}
+
+.ticket-motif {
+  @apply font-medium text-gray-900 truncate;
+}
+
+.ticket-meta {
+  @apply flex flex-wrap items-center gap-x-1.5 text-sm text-gray-500 mt-0.5;
+}
+
+.ticket-detail {
+  @apply px-5 py-5 bg-gray-50 border-t border-gray-100;
 }
 
 .detail-section {
@@ -100,32 +178,42 @@
   @apply text-sm text-gray-600 whitespace-pre-wrap;
 }
 
-.response-card {
-  @apply bg-white rounded-lg p-4 mb-2 border border-gray-200;
+/* ── Conversation (bulles de réponse) ── */
+
+.bubble {
+  @apply max-w-lg px-4 py-3 rounded-2xl rounded-tr-md bg-indigo-600 text-white shadow-sm;
 }
 
-.response-text {
-  @apply text-sm text-gray-700 mb-1;
+.bubble-text {
+  @apply text-sm leading-relaxed;
 }
 
-.response-date {
-  @apply text-xs text-gray-400;
+.bubble-date {
+  @apply text-xs mt-1.5 text-indigo-100;
 }
+
+/* ── Formulaire de réponse ── */
 
 .reply-form {
   @apply space-y-3;
 }
 
 .reply-actions {
-  @apply flex gap-2;
+  @apply flex flex-wrap gap-2;
 }
 
-.loading-shimmer {
-  @apply p-6 space-y-4;
+/* ── État « réclamation fermée » ── */
+
+.closed-reclamation {
+  @apply flex items-center gap-3 bg-gray-100 border border-gray-200 rounded-lg px-4 py-3;
 }
 
-.shimmer-row {
-  @apply h-16 bg-gray-100 rounded-lg animate-pulse;
+.closed-reclamation p {
+  @apply text-sm text-gray-500;
+}
+
+.closed-icon {
+  @apply w-7 h-7 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center flex-shrink-0;
 }
 
 .empty-state {

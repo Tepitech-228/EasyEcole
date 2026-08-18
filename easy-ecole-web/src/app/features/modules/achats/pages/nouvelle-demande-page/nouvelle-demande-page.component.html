@@ -21,8 +21,7 @@
                         <select id="validateurId" formControlName="validateurId"
                             class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                             <option value="">Sélectionner un validateur</option>
-                            <option value="1">M. Dupont - Niveau 1</option>
-                            <option value="2">Mme Martin - Niveau 2</option>
+                            <option *ngFor="let v of validateurs" [value]="v.id">{{ getValidateurLabel(v) }}</option>
                         </select>
                         <div *ngIf="form.get('validateurId')!.invalid && (form.get('validateurId')!.dirty || form.get('validateurId')!.touched)" class="mt-1 text-sm text-red-600">
                             <span *ngIf="form.get('validateurId')!.errors?.['required']">Veuillez sélectionner un validateur</span>

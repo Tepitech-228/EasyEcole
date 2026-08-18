@@ -73,6 +73,57 @@ router
 .put('/permissions', [Authenticate, AuthAdmin], RolePermissionController.update)
       /**
      * @openapi
+     * /permissions:
+     *   post:
+     *     tags: [GED]
+     *     summary: POST /permissions
+     *     description: Crée une permission unitaire (donner une permission)
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       201:
+     *         description: Permission créée
+     *       400:
+     *         description: Validation échouée
+     *       409:
+     *         description: Permission identique déjà existante
+     */
+.post('/permissions', [Authenticate, AuthAdmin], RolePermissionController.create)
+      /**
+     * @openapi
+     * /permissions/:id:
+     *   put:
+     *     tags: [GED]
+     *     summary: PUT /permissions/:id
+     *     description: Met à jour une permission unitaire par son id
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Permission mise à jour
+     *       400:
+     *         description: Validation échouée
+     *       404:
+     *         description: Permission introuvable
+     *       409:
+     *         description: Permission identique déjà existante
+     */
+.put('/permissions/:id', [Authenticate, AuthAdmin], RolePermissionController.updateOne)
+      /**
+     * @openapi
+     * /permissions/:id:
+     *   delete:
+     *     tags: [GED]
+     *     summary: DELETE /permissions/:id
+     *     description: Supprime définitivement une permission unitaire
+     *     security: [{ bearerAuth: [] }]
+     *     responses:
+     *       200:
+     *         description: Permission supprimée
+     *       404:
+     *         description: Permission introuvable
+     */
+.delete('/permissions/:id', [Authenticate, AuthAdmin], RolePermissionController.remove)
+      /**
+     * @openapi
      * /permissions/defaults:
      *   post:
      *     tags: [GED]

@@ -11,6 +11,22 @@
     {{ error }}
 </div>
 
+<div *ngIf="accesReserve && !loading" class="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg mb-6 flex items-start gap-3">
+    <svg class="w-5 h-5 text-amber-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+    <div>
+        <p class="text-sm font-semibold text-amber-900">Page réservée aux étudiants</p>
+        <p class="text-sm text-amber-800 mt-0.5">Le suivi pédagogique est disponible uniquement pour les comptes apprenants. Connectez-vous avec un compte étudiant pour consulter vos UE.</p>
+    </div>
+</div>
+
+<div *ngIf="data && !loading && estPremiereAnnee" class="mb-6 flex items-start gap-3 bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3">
+    <svg class="w-5 h-5 text-indigo-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    <div>
+        <p class="text-sm font-semibold text-indigo-900">Vous êtes en 1ère année</p>
+        <p class="text-sm text-indigo-700 mt-0.5">Vos notes des semestres 3 à 6 seront disponibles à partir de la 2ème année.</p>
+    </div>
+</div>
+
 <div *ngIf="data && !loading">
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div class="bg-white rounded-lg shadow p-4">
@@ -44,8 +60,8 @@
         </div>
     </div>
 
-    <div *ngIf="semestresProgression.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        <div *ngFor="let sem of semestresProgression" class="bg-white rounded-lg shadow p-4 border-l-4"
+    <div *ngIf="semestresProgressionVisibles.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div *ngFor="let sem of semestresProgressionVisibles" class="bg-white rounded-lg shadow p-4 border-l-4"
             [class.border-green-500]="sem.statut === 'termine'"
             [class.border-yellow-500]="sem.statut === 'en_cours'"
             [class.border-gray-300]="sem.statut === 'non_entame'"

@@ -30,6 +30,7 @@ import path from "path";
 import { DocumentPDFGenerator } from "../../../core/helpers/DocumentPDFGenerator";
 import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
 import { creerEcritureComptable } from "../../comptabilite/helpers/ComptabiliteHelper";
+import { Etablissement } from "../../etablissement/models/Etablissement";
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 
@@ -118,7 +119,8 @@ export default class DemandeInscriptionController {
                 }
             });
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -232,7 +234,8 @@ export default class DemandeInscriptionController {
 
             return res.status(200).send(demandeInscription);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -271,7 +274,8 @@ export default class DemandeInscriptionController {
 
             return res.status(200).send(demandeInscription);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -380,8 +384,8 @@ export default class DemandeInscriptionController {
         const demande = await DemandeInscription.findByPk(req.params.id, {
             include: [
                 { association: DemandeInscription.associations.preInscription },
-                { association: DemandeInscription.associations.cours },
                 { association: DemandeInscription.associations.coursChoisis },
+                { association: DemandeInscription.associations.parcoursChoisis },
             ]
         })
         if (!demande) {
@@ -391,30 +395,53 @@ export default class DemandeInscriptionController {
             return res.status(400).json({ success: false, message: "La préinscription doit d'abord être validée" })
         }
 
-        let options: FindOptions<InferAttributes<DemandeInscriptionCours>> = {}
-        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
-            options = { where: { coursId: req.body.coursId, demandeInscriptionId: req.params.id } }
+        // Cours obligatoires du parcours final : ils sont ajoutés automatiquement,
+        // l'étudiant ne choisit que les cours facultatifs (qui restent optionnels).
+        const parcoursChoisis = (demande.parcoursChoisis || []).filter(pc => pc.parcoursId != null)
+        const parcoursFinal = getParcoursFinal(parcoursChoisis)
+        const parcoursIds = parcoursFinal?.parcoursId != null
+            ? [parcoursFinal.parcoursId]
+            : parcoursChoisis.map(pc => pc.parcoursId as number)
+        const coursParcours = parcoursIds.length > 0
+            ? await Cours.findAll({ where: { parcoursId: { [Op.in]: parcoursIds } } })
+            : []
+
+        const ajouterObligatoires = async (): Promise<void> => {
+            const dejaChoisis = new Set((demande.coursChoisis || []).map(cc => cc.coursId))
+            const obligatoiresManquants = coursParcours
+                .filter(c => c.estObligatoire && !dejaChoisis.has(c.id))
+                .map(c => ({ coursId: c.id, demandeInscriptionId: demande.id, etat: EtatsCoursChoisi.VALIDE }))
+            if (obligatoiresManquants.length > 0) {
+                await DemandeInscriptionCours.bulkCreate(obligatoiresManquants)
+            }
         }
 
-        let demandeInscriptionCours: DemandeInscriptionCours | null = await DemandeInscriptionCours.findOne(options);
-        if (demandeInscriptionCours == null) {
-            let demandeInscriptionCours: DemandeInscriptionCours = new DemandeInscriptionCours();
-            demandeInscriptionCours.coursId = Number(req.body.coursId)
-            demandeInscriptionCours.demandeInscriptionId = Number(req.params.id)
-            demandeInscriptionCours.etat = EtatsCoursChoisi.VALIDE
+        const coursIdRaw = req.body.coursId
+        const coursId = coursIdRaw != null && coursIdRaw !== '' ? Number(coursIdRaw) : null
 
-            await demandeInscriptionCours.save()
+        if (coursId == null || isNaN(coursId)) {
+            // L'apprenant ne choisit aucun cours facultatif : on ajoute quand même
+            // les cours obligatoires du parcours final, puis on passe à l'étape suivante.
+            try {
+                await ajouterObligatoires()
+                return res.status(201).send({ success: true, skipped: true });
+            } catch (error) {
+                return res.status(400).json({ success: false, error: error });
+            }
+        }
+
+        let demandeInscriptionCours: DemandeInscriptionCours | null = await DemandeInscriptionCours.findOne({
+            where: { coursId, demandeInscriptionId: Number(req.params.id) }
+        });
+        if (demandeInscriptionCours == null) {
+            let nouveauCoursChoisi: DemandeInscriptionCours = new DemandeInscriptionCours();
+            nouveauCoursChoisi.coursId = coursId
+            nouveauCoursChoisi.demandeInscriptionId = Number(req.params.id)
+            nouveauCoursChoisi.etat = EtatsCoursChoisi.VALIDE
+
+            await nouveauCoursChoisi.save()
                 .then(async () => {
-                    // L'apprenant ne choisit que les cours facultatifs : les cours obligatoires
-                    // du parcours final sont ajoutés automatiquement (acceptés en VALIDE).
-                    const dejaChoisis = new Set((demande.coursChoisis || []).map(cc => cc.coursId))
-                    dejaChoisis.add(Number(req.body.coursId))
-                    const obligatoiresManquants = (demande.cours || [])
-                        .filter(c => c.estObligatoire && !dejaChoisis.has(c.id))
-                        .map(c => ({ coursId: c.id, demandeInscriptionId: demande.id, etat: EtatsCoursChoisi.VALIDE }))
-                    if (obligatoiresManquants.length > 0) {
-                        await DemandeInscriptionCours.bulkCreate(obligatoiresManquants)
-                    }
+                    await ajouterObligatoires()
                     return res.status(201).send({ success: true });
                 })
                 .catch((error) => {
@@ -586,15 +613,27 @@ export default class DemandeInscriptionController {
 
             const savedCursus = await cursusApprenant.save()
 
-            // Générer le matricule final: ESA-AAAA-PP-FFFF-CODE
+            // Générer le matricule final: {ordre}-{filiere}{annee}{typeCours}-{anneeAcademique}-{site}
             const classeMatricule = req.body.cursusApprenant?.classeId
                 ? await Classe.findByPk(req.body.cursusApprenant.classeId)
                 : null
             const anneeLibelle = demandeInscription.session?.anneeAcademique?.libelle || new Date().getFullYear().toString()
+            
+            const ordre = savedCursus.classeId && savedCursus.anneeAcademiqueId
+                ? await CursusApprenant.count({ where: { classeId: savedCursus.classeId, anneeAcademiqueId: savedCursus.anneeAcademiqueId } }) + 1
+                : await DossierEtudiant.count() + 1
+            
+            const etablissement = demandeInscription.etablissementId
+                ? await Etablissement.findByPk(demandeInscription.etablissementId)
+                : null
+            
             const matriculeFinal = IDGenerator.getInstance().generateMatriculeFinal(
                 parcoursChoisiFinal?.parcours!,
                 anneeLibelle,
-                classeMatricule
+                classeMatricule,
+                ordre,
+                etablissement,
+                'jour'
             )
             await demandeInscription.update({ matricule: matriculeFinal })
 
@@ -725,7 +764,8 @@ export default class DemandeInscriptionController {
                     return res.status(200).json({ success: true, message: "Demande supprimée" });
                 })
                 .catch((error) => {
-                    return res.status(500).json({ success: false, error: error });
+                    console.error('Erreur', error);
+                    return res.status(500).json({ success: false, message: 'Erreur interne' });
                 });
         }
         else {
@@ -773,7 +813,8 @@ export default class DemandeInscriptionController {
             return res.status(200).json({ success: true, count });
         } catch (error) {
             await transaction.rollback();
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -789,7 +830,8 @@ export default class DemandeInscriptionController {
                 return res.status(200).json({ success: true, count: value });
             })
             .catch((error) => {
-                return res.status(500).json({ success: false, error: error });
+                console.error('Erreur', error);
+                return res.status(500).json({ success: false, message: 'Erreur interne' });
             });
 
         return null

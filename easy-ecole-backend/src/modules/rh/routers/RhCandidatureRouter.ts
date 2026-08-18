@@ -3,9 +3,14 @@ import multer from "multer"
 import RhCandidatureController from "../controllers/RhCandidatureController"
 import { AuthRessourcesHumaines } from "../../../core/middlewares/AuthRessourcesHumaines"
 import Authenticate from "../../../core/middlewares/Authenticate"
+import { fileFilter, ALLOWED_PDF_TYPES } from "../../../core/config/upload"
 
 const router = express.Router()
-const upload = multer({ dest: "public/rh/candidatures/" })
+const upload = multer({
+    dest: "public/rh/candidatures/",
+    fileFilter: fileFilter(ALLOWED_PDF_TYPES),
+    limits: { fileSize: 10 * 1024 * 1024 }
+})
 
 router
   /**

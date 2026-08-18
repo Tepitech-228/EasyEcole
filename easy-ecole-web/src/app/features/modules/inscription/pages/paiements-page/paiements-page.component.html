@@ -9,6 +9,76 @@
         </div>
     </div>
 
+    <!-- Échéancier de l'étudiant (vue apprenant) -->
+    <div *ngIf="rolesValue.isApprenant" class="echeancier-card">
+        <div class="echeancier-head">
+            <div>
+                <h3>Mon échéancier</h3>
+                <p>Échéances de votre dossier d'inscription</p>
+            </div>
+        </div>
+
+        <div *ngIf="echeancierLoading" class="echeancier-empty">Chargement de votre échéancier...</div>
+
+        <div *ngIf="!echeancierLoading && echeancierError" class="echeancier-empty">
+            Impossible de récupérer votre échéancier. Réessayez plus tard.
+        </div>
+
+        <div *ngIf="!echeancierLoading && !echeancierError && echeances.length === 0" class="echeancier-empty">
+            Votre échéancier sera généré après validation de votre bordereau par l'institution.
+        </div>
+
+        <ng-container *ngIf="!echeancierLoading && !echeancierError && echeances.length > 0">
+            <div class="echeancier-summary">
+                <div class="echeancier-stat">
+                    <span class="echeancier-stat-label">Total restant</span>
+                    <span class="echeancier-stat-value">{{ totalRestant | currency:'XAF' }}</span>
+                    <span class="echeancier-stat-sub" *ngIf="echeanceImpayeeCount > 0">{{ echeanceImpayeeCount }} échéance(s) non réglée(s)</span>
+                </div>
+                <div class="echeancier-stat highlight" *ngIf="prochaineEcheance">
+                    <span class="echeancier-stat-label">Prochaine échéance</span>
+                    <span class="echeancier-stat-value">{{ prochaineEcheance.montant | currency:'XAF' }}</span>
+                    <span class="echeancier-stat-sub">
+                        {{ prochaineEcheance.moisConcerne || ('Échéance n°' + prochaineEcheance.numeroEcheance) }}
+                        - {{ prochaineEcheance.dateLimite | date:'dd/MM/yyyy' }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="echeancier-table-wrap">
+                <table class="echeancier-table">
+                    <thead>
+                        <tr>
+                            <th>N°</th>
+                            <th>Mois</th>
+                            <th>Date limite</th>
+                            <th class="echeancier-right">Montant</th>
+                            <th>Statut</th>
+                            <th class="echeancier-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let echeance of echeances">
+                            <td>{{ echeance.numeroEcheance }}</td>
+                            <td>{{ echeance.moisConcerne || '---' }}</td>
+                            <td>{{ (echeance.dateLimite | date:'dd/MM/yyyy') || '---' }}</td>
+                            <td class="echeancier-right">{{ echeance.montant | currency:'XAF' }}</td>
+                            <td>
+                                <app-custom-badge [color]="getStatutEcheanceColor(echeance.statut)"
+                                    [text]="getStatutEcheanceLabel(echeance.statut)"></app-custom-badge>
+                            </td>
+                            <td class="echeancier-right">
+                                <button *ngIf="estEcheanceImpayee(echeance)" type="button" class="payer-btn"
+                                    (click)="payerEcheance()">Payer cette échéance</button>
+                                <span *ngIf="!estEcheanceImpayee(echeance)" class="text-muted">—</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </ng-container>
+    </div>
+
     <div class="filter-bar grid gap-4 md:grid-cols-3 mb-6">
         <div class="col-span-2">
             <label class="block text-sm font-semibold text-gray-700 mb-2">Recherche rapide</label>

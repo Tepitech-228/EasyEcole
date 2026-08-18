@@ -20,7 +20,8 @@ export default class EquivalenceController {
             let data = await Equivalence.findAll(options);
             return res.status(200).send(data);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -36,7 +37,8 @@ export default class EquivalenceController {
             if (!data) return res.status(404).json({ success: false, message: "Équivalence non trouvée" });
             return res.status(200).send(data);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -48,7 +50,8 @@ export default class EquivalenceController {
             const data = await Equivalence.create(req.body);
             return res.status(201).send(data);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -62,7 +65,8 @@ export default class EquivalenceController {
             await data.update(req.body);
             return res.status(200).send(data);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -76,7 +80,8 @@ export default class EquivalenceController {
             await data.destroy();
             return res.status(200).json({ success: true });
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -92,7 +97,8 @@ export default class EquivalenceController {
             });
             return res.status(200).send(data);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 }

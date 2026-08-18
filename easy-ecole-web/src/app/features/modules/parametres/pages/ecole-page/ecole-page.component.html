@@ -4,7 +4,9 @@
     <app-header-title title="École" subtitle="Paramètres généraux de l'établissement"></app-header-title>
 </div>
 
-<div class="bg-white rounded-lg shadow border border-gray-100 p-8">
+<app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+<div *ngIf="!loading" class="bg-white rounded-lg shadow border border-gray-100 p-8">
     <form [formGroup]="ecoleForm">
         <app-parametres-section title="Informations générales" subtitle="Nom, contact et localisation de l'établissement">
             <div class="grid grid-cols-1 gap-6">
@@ -14,12 +16,22 @@
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Acronyme / Sigle</label>
-                        <input type="text" formControlName="acronym" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        <label class="block text-sm font-medium text-gray-700">Type d'établissement</label>
+                        <input type="text" formControlName="type" placeholder="Ex: Institut privé" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Devise monétaire</label>
                         <input type="text" formControlName="devise" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Code / Sigle</label>
+                        <input type="text" formControlName="code" placeholder="Ex: ESA" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Année scolaire courante</label>
+                        <input type="text" formControlName="anneeScolaireCourante" placeholder="Ex: 2025-2026" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">

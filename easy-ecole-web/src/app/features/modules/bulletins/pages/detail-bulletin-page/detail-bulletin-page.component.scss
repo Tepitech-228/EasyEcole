@@ -1,188 +1,322 @@
+/* ════════════════════════════════════════════════════════════════
+   DESIGN ESA V1 — RELEVÉ DE NOTES OFFICIEL (LMD)
+   Source : docs/V1.html (Document 5) — intégré intégralement
+   ════════════════════════════════════════════════════════════════ */
+
+/* ==========================================================
+   CONFIGURATIONS GÉNÉRALES & IMPRESSION A4
+   ========================================================== */
+@page {
+  size: A4 portrait;
+  margin: 10mm 12mm;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 .bulletin-print {
-  max-width: 900px;
-  margin: 0 auto;
+  color: #1a1a1a;
+  font-size: 9.5pt;
+  line-height: 1.4;
 }
 
-.bulletin-card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+/* Page conteneur */
+.doc-page {
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 210mm;
+  min-height: 275mm;
+  padding: 10mm;
+  margin: 15px auto;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
 
-.bulletin-header {
-  padding: 24px 32px;
+.doc-page:last-child {
+  page-break-after: avoid;
 }
 
-.bulletin-body {
-  padding: 24px 32px;
-}
-
-.bulletin-footer {
-  padding: 24px 32px;
-  display: flex;
-  justify-content: space-around;
-  border-top: 1px solid #e5e7eb;
-}
-
-.signature-box {
-  text-align: center;
-  min-width: 200px;
-}
-.signature-image {
-  min-height: 40px;
+/* Cadre bordure ESA - Bleu Foncé */
+.frame {
+  border: 3px solid #002147; /* Bleu Foncé / Navy */
+  padding: 15px;
+  min-height: 255mm;
+  position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  overflow: hidden; /* Empêche les débordements du filigrane */
 }
 
-.signature-label {
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .05em;
-  color: #6b7280;
-  margin-bottom: 8px;
+/* ==========================================================
+   FILIGRANE (WATERMARK)
+   ========================================================== */
+.watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70%;
+  max-width: 450px;
+  opacity: 0.07; /* Transparence discrète pour l'impression */
+  z-index: 0;
+  pointer-events: none;
 }
 
-.signature-line {
-  border-bottom: 2px solid #d1d5db;
-  height: 40px;
+.content-wrapper {
+  position: relative;
+  z-index: 1; /* Garantit que le texte reste au-dessus du filigrane */
 }
 
-.info-table {
+/* ==========================================================
+   EN-TÊTE & PIED DE PAGE
+   ========================================================== */
+.header-table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 24px;
-}
-
-.info-table td {
-  padding: 6px 12px;
-  font-size: 14px;
-}
-
-.info-label {
-  font-weight: 600;
-  color: #374151;
-  width: 80px;
-}
-
-.info-value {
-  color: #111827;
-  padding-right: 32px !important;
-}
-
-.notes-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 20px;
-  font-size: 14px;
-}
-
-.notes-table th {
-  background: #f3f4f6;
-  padding: 10px 12px;
-  text-align: center;
-  font-weight: 600;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: .05em;
-  color: #6b7280;
-  border: 1px solid #e5e7eb;
-}
-
-.notes-table td {
-  padding: 10px 12px;
-  text-align: center;
-  border: 1px solid #e5e7eb;
-  color: #374151;
-}
-
-.notes-table tbody tr:nth-child(even) {
-  background: #fafafa;
-}
-
-.valide-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
-  background: #ecfdf5;
-  color: #059669;
-}
-
-.non-valide-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
-  background: #eff6ff;
-  color: #2563eb;
-}
-
-.summary-section {
-  display: flex;
-  gap: 24px;
-  padding: 16px 0;
-  border-top: 2px solid #e5e7eb;
-  border-bottom: 2px solid #e5e7eb;
-  margin-bottom: 16px;
-}
-
-.summary-item {
-  flex: 1;
-  text-align: center;
-}
-
-.summary-label {
-  display: block;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .05em;
-  color: #6b7280;
+  border-bottom: 2px solid #002147; /* Bleu Foncé */
   margin-bottom: 4px;
 }
 
-.summary-value {
-  display: block;
-  font-size: 18px;
-  font-weight: 700;
-  color: #111827;
+.header-table td {
+  vertical-align: middle;
 }
 
-.appreciation-box {
-  padding: 12px 16px;
-  background: #f9fafb;
-  border-radius: 6px;
-  font-size: 14px;
+.logo-img {
+  max-height: 80px;
+  width: auto;
+  object-fit: contain;
 }
 
-.appreciation-label {
+.school-info {
+  text-align: right;
+  font-size: 8.5pt;
+  color: #333;
+  line-height: 1.3;
+}
+
+/* Une seule ligne dorée d'accentuation */
+.banner-accent {
+  height: 3px;
+  background-color: #D4AF37; /* Couleur Dorée */
+  margin: 8px 0 10px 0;
+}
+
+/* Titres des documents en Bleu Foncé avec soulignement Doré */
+.doc-title {
+  text-align: center;
+  margin: 10px 0 5px 0;
+}
+
+.doc-title h1 {
+  font-size: 15pt;
+  color: #002147; /* Bleu Foncé */
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin: 0;
+  padding-bottom: 4px;
+  border-bottom: 2px solid #D4AF37; /* Ligne dorée sous le titre */
+  display: inline-block;
+}
+
+.ref-number {
+  text-align: center;
+  font-size: 9pt;
+  font-weight: bold;
+  color: #002147; /* Bleu Foncé */
+  margin-bottom: 15px;
+}
+
+/* ==========================================================
+   BOÎTES D'INFORMATIONS ET BLOCS
+   ========================================================== */
+.info-box {
+  background-color: rgba(248, 249, 250, 0.85);
+  border-left: 4px solid #002147;
+  padding: 10px 12px;
+  margin: 12px 0;
+  border-radius: 2px;
+}
+
+.highlight-box {
+  background-color: rgba(240, 244, 248, 0.85);
+  border: 1px solid #002147;
+  padding: 10px;
+  margin: 12px 0;
+  border-radius: 4px;
+  font-size: 9pt;
+  text-align: justify;
+}
+
+.field-row {
+  margin-bottom: 5px;
+}
+
+.field-row:last-child {
+  margin-bottom: 0;
+}
+
+.label {
+  font-weight: bold;
+  color: #002147; /* Bleu Foncé pour les libellés */
+}
+
+.value {
+  color: #222;
+}
+
+/* ==========================================================
+   TABLEAU LMD (RELEVÉ DE NOTES : UE & EC)
+   ========================================================== */
+.grades-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 8.5pt;
+  background-color: rgba(255, 255, 255, 0.85);
+}
+
+.grades-table th {
+  background-color: #002147; /* Entête de tableau en Bleu Foncé */
+  color: #ffffff;
+  padding: 7px 5px;
+  text-align: left;
+  font-weight: bold;
+  border: 1px solid #00152e;
+  text-transform: uppercase;
+  font-size: 8pt;
+}
+
+.grades-table td {
+  padding: 5px 6px;
+  border: 1px solid #d0d0d0;
+}
+
+.grades-table tbody tr:nth-child(even) {
+  background-color: rgba(252, 252, 252, 0.85);
+}
+
+.grades-table .ue-header {
+  background-color: #e6ecf2;
+  font-weight: bold;
+  color: #002147; /* Titres UE en Bleu Foncé */
+  font-size: 8.5pt;
+}
+
+.grades-table .ue-header td {
+  border: 1px solid #d0d0d0;
+  color: #002147;
+  font-weight: bold;
+}
+
+.grades-table .ec-row td:first-child {
+  padding-left: 15px;
   font-weight: 600;
-  color: #374151;
-  margin-right: 8px;
 }
 
-.appreciation-text {
-  color: #4b5563;
+.teacher-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 8pt;
+}
+
+.valide-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 7.5pt;
+  font-weight: 700;
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.non-valide-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 7.5pt;
+  font-weight: 700;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+/* Bilan LMD */
+.summary-box {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 9pt;
+}
+
+.summary-box td {
+  border: 1px solid #002147;
+  padding: 6px 10px;
+  background-color: rgba(240, 244, 248, 0.85);
+  text-align: center;
+  color: #002147;
+}
+
+/* ==========================================================
+   SIGNATURES ET BAS DE PAGE
+   ========================================================== */
+.footer-table {
+  width: 100%;
+  margin-top: 20px;
+  border-collapse: collapse;
+  position: relative;
+  z-index: 1;
+}
+
+.footer-table td {
+  vertical-align: top;
+}
+
+.date-cell {
   font-style: italic;
+  font-size: 9pt;
 }
 
+.sign-cell {
+  text-align: center;
+  width: 220px;
+}
+
+.sign-title {
+  font-weight: bold;
+  font-size: 9pt;
+  color: #002147;
+  margin-bottom: 45px;
+}
+
+.sign-line {
+  border-top: 1px dashed #002147;
+  padding-top: 4px;
+  font-size: 8pt;
+  color: #555;
+}
+
+/* Couleurs des notes */
+.text-green-700 {
+  color: #059669 !important;
+}
+
+.text-blue-700 {
+  color: #2563eb !important;
+}
+
+/* ==========================================================
+   IMPRESSION
+   ========================================================== */
 @media print {
-  @page {
-    margin: 12mm 15mm;
-    size: A4 portrait;
+  body {
+    background-color: #ffffff;
   }
 
   * {
-    background: transparent !important;
     box-shadow: none !important;
     text-shadow: none !important;
   }
@@ -192,147 +326,69 @@
     print-color-adjust: exact;
   }
 
-  /* Masquer sidebar, header, footer du layout parent */
-  app-sidebar, app-header, app-base-layout > *, .sidebar, .header, .topbar,
-  .app-header, .app-sidebar, .main-header, .main-sidebar,
-  .no-print, .no-print *,
-  app-custom-alert, app-return-back, app-loading-spinner,
-  [class*="sidebar"], [class*="header"], [class*="navbar"], [class*="topbar"],
+  app-sidebar,
+  app-header,
+  app-base-layout > *,
+  .sidebar,
+  .header,
+  .topbar,
+  .app-header,
+  .app-sidebar,
+  .main-header,
+  .main-sidebar,
+  .no-print,
+  .no-print *,
+  app-custom-alert,
+  app-return-back,
+  app-loading-spinner,
+  [class*="sidebar"],
+  [class*="header"],
+  [class*="navbar"],
+  [class*="topbar"],
   .flex.justify-end.items-center button,
-  a[routerLink] { display: none !important; }
-
-  /* Afficher uniquement le bulletin */
-  .bulletin-print, .bulletin-print * {
-    display: block !important;
-    visibility: visible !important;
+  a[routerLink] {
+    display: none !important;
   }
 
-  .bulletin-print {
-    max-width: 100%;
-    margin: 0;
-    padding: 0;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-  }
-
-  .bulletin-card {
-    border: 1px solid #000;
-    border-radius: 0;
+  .doc-page {
     box-shadow: none;
-    page-break-inside: avoid;
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
   }
 
-  .bulletin-header {
-    border-radius: 0;
-    padding: 16px 24px;
-    background: #1e3a5f !important;
+  .frame {
+    border: 3px solid #002147;
+    min-height: 270mm;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 
-  .bulletin-header h2 {
-    font-size: 16px;
+  .grades-table,
+  .summary-box,
+  .info-box,
+  .highlight-box {
+    page-break-inside: avoid;
+  }
+
+  .grades-table th {
+    background: #002147 !important;
     color: #fff !important;
-  }
-
-  .bulletin-header p {
-    font-size: 12px;
-  }
-
-  .bulletin-body {
-    padding: 16px 24px;
-  }
-
-  .bulletin-footer {
-    padding: 16px 24px;
-    border-top: 1px solid #000;
-  }
-
-  .info-table td {
-    padding: 4px 8px;
-    font-size: 12px;
-  }
-
-  .notes-table {
-    font-size: 12px;
-    page-break-inside: avoid;
-  }
-
-  .notes-table th {
-    background: #e5e7eb !important;
-    padding: 6px 8px;
-    font-size: 10px;
-    border: 1px solid #000;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 
-  .notes-table td {
-    padding: 6px 8px;
-    border: 1px solid #000;
-  }
-
-  .notes-table tbody tr:nth-child(even) {
-    background: #f5f5f5 !important;
+  .grades-table .ue-header,
+  .grades-table .ue-header td {
+    background: #e6ecf2 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 
-  .valide-badge, .non-valide-badge {
-    padding: 1px 6px;
-    font-size: 10px;
+  .summary-box td {
+    background-color: rgba(240, 244, 248, 0.85) !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
-  }
-
-  .valide-badge {
-    background: #ecfdf5 !important;
-    color: #059669 !important;
-  }
-
-  .non-valide-badge {
-    background: #eff6ff !important;
-    color: #2563eb !important;
-  }
-
-  .summary-section {
-    border-top: 2px solid #000;
-    border-bottom: 2px solid #000;
-    padding: 12px 0;
-    margin-bottom: 12px;
-  }
-
-  .summary-value {
-    font-size: 16px;
-  }
-
-  .summary-label {
-    font-size: 10px;
-  }
-
-  .appreciation-box {
-    border: 1px solid #ccc;
-    padding: 8px 12px;
-    font-size: 12px;
-    page-break-inside: avoid;
-  }
-
-  .signature-box {
-    min-width: 160px;
-  }
-
-  .signature-label {
-    font-size: 10px;
-  }
-
-  .signature-line {
-    height: 32px;
-    border-bottom: 2px solid #000;
-  }
-
-  .signature-image img {
-    max-height: 40px;
   }
 }

@@ -4,14 +4,13 @@ import { PeriodesEvaluation } from '../enums/PeriodesEvaluation';
 const env = process.env.NODE_ENV || 'development';
 const config = require('../config/sequelize.json')[env];
 
-async function seed() {
+export async function seed() {
     const { DatabaseConnection } = require('../helpers/DatabaseConnection');
     const db = DatabaseConnection.getInstance();
     const sequelize = db.sequelize;
 
-    await sequelize.authenticate();
-
     require('../../modules/auth/models/_associations');
+    require('../../modules/auth/models/PersonnelAdministratif');
     require('../../modules/orientation/models/_associations');
     require('../../modules/inscription/models/_associations');
 
@@ -48,21 +47,55 @@ async function seed() {
     require('../../modules/bulletins/seed');
     require('../../modules/ged/seed');
 
+    await sequelize.authenticate();
+    console.log('DB connecté');
+
     try {
         await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
-        await sequelize.sync({ force: true });
+        await sequelize.sync({ alter: true });
         await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
+        console.log('Schema synchronisé');
     } catch (syncError: any) {
         if (
             syncError.name === 'SequelizeUnknownConstraintError' ||
             syncError?.parent?.code === 'ER_FK_INCORRECT_OPTION' ||
             syncError?.parent?.code === 'ER_CANT_CREATE_TABLE' ||
-            syncError?.parent?.code === 'ER_TOO_MANY_KEYS'
+            syncError?.parent?.code === 'ER_TOO_MANY_KEYS' ||
+            syncError?.parent?.code === 'ER_DUP_KEYNAME'
         ) {
-            console.warn('Warning (FK constraint ignored):', syncError.message);
+            console.warn('Warning (sync):', syncError.message);
         } else {
             throw syncError;
         }
+    }
+
+    const models = sequelize.models;
+    const tableNames = Object.values(models)
+        .map((m: any) => (typeof m.getTableName === 'function') ? m.getTableName() : m.tableName)
+        .filter(Boolean);
+
+    const mysql = require('mysql2/promise');
+    const conn = await mysql.createConnection({
+        host: config.options.host,
+        port: config.options.port,
+        user: config.username,
+        password: config.password || '',
+        multipleStatements: true,
+        database: config.database
+    });
+
+    try {
+        await conn.query('SET FOREIGN_KEY_CHECKS = 0');
+        const truncateSQL = tableNames.map(t => `TRUNCATE TABLE \`${t}\``).join('; ');
+        if (truncateSQL) {
+            await conn.query(truncateSQL);
+        }
+        await conn.query('SET FOREIGN_KEY_CHECKS = 1');
+        console.log(`Tables vidées (${tableNames.length} tables)`);
+    } catch (e: any) {
+        console.warn('Warning (truncate):', e.message);
+    } finally {
+        await conn.end();
     }
 
     const M = (name: string) => sequelize.model(name);
@@ -74,6 +107,7 @@ async function seed() {
     const AutC = M('AutCaissierBanque');
     const AutB = M('AutBanque');
     const AutCO = M('AutComiteOrientation');
+    const AutPA = M('AutPersonnelAdministratif');
     const AutAdrI = M('AutAdresseInstitution');
     const AutAdrA = M('AutAdresseApprenant');
     const AutAdrE = M('AutAdresseEnseignant');
@@ -211,6 +245,7 @@ async function seed() {
     const CptCompte = M('CptCompte');
     const CptJournal = M('CptJournalComptable');
     const CptEcriture = M('CptEcritureComptable');
+    const CptExercice = M('CptExerciceComptable');
 
     const ComCom = M('ComCommunication');
     const ComActu = M('ComActualite');
@@ -230,6 +265,21 @@ async function seed() {
 
     const hash = bcrypt.hashSync('password123', 10);
 
+    async function safeCreate(model: any, data: any, whereFields: string[] = []): Promise<any> {
+        try {
+            return await model.create(data);
+        } catch (e: any) {
+            if (e.name === 'SequelizeUniqueConstraintError' || e.parent?.code === 'ER_DUP_ENTRY') {
+                const where: any = {};
+                for (const f of whereFields) {
+                    if (data[f] !== undefined) where[f] = data[f];
+                }
+                return await model.findOne({ where });
+            }
+            throw e;
+        }
+    }
+
     console.log('\n═══════════════════════════════════════════');
     console.log('  UST — Université des Sciences et Technologies');
     console.log('═══════════════════════════════════════════');
@@ -239,57 +289,79 @@ async function seed() {
     // ════════════════════════════════════════════════════
     console.log('\n── UTILISATEURS ──');
 
-    const admin = await AutU.create({ nom: 'TETE', prenoms: 'Ekue Patrice', identifiant: 'admin', email: 'tepitechbuild@gmail.com', motDePasse: hash, role: 'admin', contact: '+22890000000' });
-    console.log('  ✓ Admin — TETE Ekue Patrice (OTP)');
+    let admin: any = null;
 
-    const uInst = await AutU.create({ nom: 'Kodjo', prenoms: 'Mensah', identifiant: 'institution', email: 'direction@easyecole.tg', motDePasse: hash, role: 'institution', contact: '+2280101000001', dateVerificationEmail: new Date() });
+    try {
+        await AutU.destroy({ where: { identifiant: ['admin', 'institution', 'prof-maths', 'prof-info', 'prof-gestion', 'prof-droit', 'caissier1', 'caissier2', 'comite1', 'comite2', 'comptable1'] } });
+        await AutB.destroy({ where: { nom: "Société Générale Côte d'Ivoire" } });
+    } catch (cleanupError: any) {
+        console.warn('Warning (cleanup):', cleanupError.message);
+    }
+
+    try {
+        admin = await AutU.create({ nom: 'TETE', prenoms: 'Ekue Patrice', identifiant: 'admin', email: 'tepitechbuild@gmail.com', motDePasse: hash, role: 'admin', contact: '+22890000000' });
+        console.log('  ✓ Admin — TETE Ekue Patrice (OTP)');
+    } catch (e: any) {
+        console.log('  ✓ Admin existe déjà, ignoré');
+        admin = await AutU.findOne({ where: { identifiant: 'admin' } });
+    }
+
+    const uInst = await safeCreate(AutU, { nom: 'Kodjo', prenoms: 'Mensah', identifiant: 'institution', email: 'direction@easyecole.tg', motDePasse: hash, role: 'institution', contact: '+2280101000001', dateVerificationEmail: new Date() }, ['identifiant']);
     const adrInst = await AutAdrI.create({ pays: 'Côte d\'Ivoire', ville: 'Abidjan', quartier: 'Cocody Angré', boitePostale: 'BP 1500 Abidjan', prorietaireBoitePostale: 'UST', telMobile: '+2280101000001' });
     await AutI.create({ dateNaissance: new Date('1970-05-20'), lieuNaissance: 'Abidjan', fonction: 'Recteur', adresseId: adrInst.id, utilisateurId: uInst.id });
     console.log('  ✓ Institution — Kodjo Mensah');
 
-    const uEns1 = await AutU.create({ nom: 'Kossi', prenoms: 'Yawo', identifiant: 'prof-maths', email: 'prof.maths@easyecole.tg', motDePasse: hash, role: 'enseignant', contact: '+2280102000001' });
+    const uEns1 = await safeCreate(AutU, { nom: 'Kossi', prenoms: 'Yawo', identifiant: 'prof-maths', email: 'prof.maths@easyecole.tg', motDePasse: hash, role: 'enseignant', contact: '+2280102000001' }, ['identifiant']);
     const adrEns1 = await AutAdrE.create({ pays: 'Côte d\'Ivoire', ville: 'Abidjan', quartier: 'Cocody', boitePostale: 'BP 101', prorietaireBoitePostale: 'Yawo Kossi', telMobile: '+2280102000001' });
-    const ens1 = await AutE.create({ dateNaissance: new Date('1982-03-10'), lieuNaissance: 'Abidjan', fonction: 'Professeur de Mathématiques', adresseId: adrEns1.id, utilisateurId: uEns1.id });
+    const ens1 = await AutE.create({ matricule: 'ENS-001', gradeAcademique: 'Professeur', specialite: 'Mathématiques', statut: 'Permanent', fonctionAdministrative: null, anneeExperience: 15, heureTheoriqueAnnuelle: 192, heureReelleAnnuelle: 180, cni: 'CI11111111', nifOtr: 'NIF111111', dateNaissance: new Date('1982-03-10'), lieuNaissance: 'Abidjan', sexe: 'M', nationalite: 'Ivoirienne', contact: '+2280102000001', plusHautDiplome: 'Doctorat en Mathématiques', statutHandicap: false, adresseId: adrEns1.id, utilisateurId: uEns1.id });
     console.log('  ✓ Enseignant — Yawo Kossi (Maths / OTP)');
 
-    const uEns2 = await AutU.create({ nom: 'Kossi', prenoms: 'Maria', identifiant: 'prof-info', email: 'prof.maria@easyecole.tg', motDePasse: hash, role: 'enseignant', contact: '+2280102000002', dateVerificationEmail: new Date() });
+    const uEns2 = await safeCreate(AutU, { nom: 'Kossi', prenoms: 'Maria', identifiant: 'prof-info', email: 'prof.maria@easyecole.tg', motDePasse: hash, role: 'enseignant', contact: '+2280102000002', dateVerificationEmail: new Date() }, ['identifiant']);
     const adrEns2 = await AutAdrE.create({ pays: 'Côte d\'Ivoire', ville: 'Abidjan', quartier: 'Marcory', boitePostale: 'BP 102', prorietaireBoitePostale: 'Maria Kossi', telMobile: '+2280102000002' });
-    const ens2 = await AutE.create({ dateNaissance: new Date('1985-07-22'), lieuNaissance: 'Bouaké', fonction: 'Professeur d\'Informatique', adresseId: adrEns2.id, utilisateurId: uEns2.id });
+    const ens2 = await AutE.create({ matricule: 'ENS-002', gradeAcademique: 'Maître de conférences', specialite: 'Informatique', statut: 'Permanent', fonctionAdministrative: null, anneeExperience: 12, heureTheoriqueAnnuelle: 192, heureReelleAnnuelle: 185, cni: 'CI22222222', nifOtr: 'NIF222222', dateNaissance: new Date('1985-07-22'), lieuNaissance: 'Bouaké', sexe: 'F', nationalite: 'Ivoirienne', contact: '+2280102000002', plusHautDiplome: 'Doctorat en Informatique', statutHandicap: false, adresseId: adrEns2.id, utilisateurId: uEns2.id });
     console.log('  ✓ Enseignant — Maria Kossi (Info)');
 
-    const uEns3 = await AutU.create({ nom: 'Yawo', prenoms: 'Jean', identifiant: 'prof-gestion', email: 'prof.jean@easyecole.tg', motDePasse: hash, role: 'enseignant', contact: '+2280102000003', dateVerificationEmail: new Date() });
+    const uEns3 = await safeCreate(AutU, { nom: 'Yawo', prenoms: 'Jean', identifiant: 'prof-gestion', email: 'prof.jean@easyecole.tg', motDePasse: hash, role: 'enseignant', contact: '+2280102000003', dateVerificationEmail: new Date() }, ['identifiant']);
     const adrEns3 = await AutAdrE.create({ pays: 'Côte d\'Ivoire', ville: 'Abidjan', quartier: 'Plateau', boitePostale: 'BP 103', prorietaireBoitePostale: 'Jean Yawo', telMobile: '+2280102000003' });
-    const ens3 = await AutE.create({ dateNaissance: new Date('1980-11-15'), lieuNaissance: 'Odienné', fonction: 'Professeur de Gestion', adresseId: adrEns3.id, utilisateurId: uEns3.id });
+    const ens3 = await AutE.create({ matricule: 'ENS-003', gradeAcademique: 'Maître Assistant', specialite: 'Gestion', statut: 'Permanent', fonctionAdministrative: 'Chef de département', anneeExperience: 10, heureTheoriqueAnnuelle: 192, heureReelleAnnuelle: 190, cni: 'CI33333333', nifOtr: 'NIF333333', dateNaissance: new Date('1980-11-15'), lieuNaissance: 'Odienné', sexe: 'M', nationalite: 'Ivoirienne', contact: '+2280102000003', plusHautDiplome: 'Master en Gestion', statutHandicap: false, adresseId: adrEns3.id, utilisateurId: uEns3.id });
     console.log('  ✓ Enseignant — Jean Yawo (Gestion)');
 
-    const uEns4 = await AutU.create({ nom: 'Edem', prenoms: 'Ama', identifiant: 'prof-droit', email: 'prof.ama@easyecole.tg', motDePasse: hash, role: 'enseignant', contact: '+2280102000004', dateVerificationEmail: new Date() });
+    const uEns4 = await safeCreate(AutU, { nom: 'Edem', prenoms: 'Ama', identifiant: 'prof-droit', email: 'prof.ama@easyecole.tg', motDePasse: hash, role: 'enseignant', contact: '+2280102000004', dateVerificationEmail: new Date() }, ['identifiant']);
     const adrEns4 = await AutAdrE.create({ pays: 'Côte d\'Ivoire', ville: 'Abidjan', quartier: 'Yopougon', boitePostale: 'BP 104', prorietaireBoitePostale: 'Ama Edem', telMobile: '+2280102000004' });
-    const ens4 = await AutE.create({ dateNaissance: new Date('1988-09-05'), lieuNaissance: 'Man', fonction: 'Professeur de Droit', adresseId: adrEns4.id, utilisateurId: uEns4.id });
+    const ens4 = await AutE.create({ matricule: 'ENS-004', gradeAcademique: 'Assistant', specialite: 'Droit', statut: 'Contractuel', fonctionAdministrative: null, anneeExperience: 5, heureTheoriqueAnnuelle: 192, heureReelleAnnuelle: 180, cni: 'CI44444444', nifOtr: 'NIF444444', dateNaissance: new Date('1988-09-05'), lieuNaissance: 'Man', sexe: 'M', nationalite: 'Ivoirienne', contact: '+2280102000004', plusHautDiplome: 'Master en Droit des Affaires', statutHandicap: false, adresseId: adrEns4.id, utilisateurId: uEns4.id });
     console.log('  ✓ Enseignant — Ama Edem (Droit)');
 
-    const bq = await AutB.create({ nom: 'Société Générale Côte d\'Ivoire' });
+    const bq = await safeCreate(AutB, { nom: 'Société Générale Côte d\'Ivoire' }, ['nom']);
     console.log('  ✓ Banque');
 
-    const uCai1 = await AutU.create({ nom: 'Atsu', prenoms: 'Koffi', identifiant: 'caissier1', email: 'caissier.atsu@easyecole.tg', motDePasse: hash, role: 'caissier_banque', contact: '+2280103000001', dateVerificationEmail: new Date() });
+    const uCai1 = await safeCreate(AutU, { nom: 'Atsu', prenoms: 'Koffi', identifiant: 'caissier1', email: 'caissier.atsu@easyecole.tg', motDePasse: hash, role: 'caissier_banque', contact: '+2280103000001', dateVerificationEmail: new Date() }, ['identifiant']);
     const adrCai1 = await AutAdrC.create({ pays: 'Côte d\'Ivoire', ville: 'Abidjan', quartier: 'Cocody', boitePostale: 'BP 105', prorietaireBoitePostale: 'Koffi Atsu', telMobile: '+2280103000001' });
     await AutC.create({ dateNaissance: new Date('1992-06-18'), lieuNaissance: 'Abidjan', fonction: 'Caissière Principale', adresseId: adrCai1.id, utilisateurId: uCai1.id, banqueId: bq.id });
     console.log('  ✓ Caissier — Koffi Atsu');
 
-    const uCai2 = await AutU.create({ nom: 'Komlan', prenoms: 'Ami', identifiant: 'caissier2', email: 'caissier.ami@easyecole.tg', motDePasse: hash, role: 'caissier_banque', contact: '+2280103000002', dateVerificationEmail: new Date() });
+    const uCai2 = await safeCreate(AutU, { nom: 'Komlan', prenoms: 'Ami', identifiant: 'caissier2', email: 'caissier.ami@easyecole.tg', motDePasse: hash, role: 'caissier_banque', contact: '+2280103000002', dateVerificationEmail: new Date() }, ['identifiant']);
     const adrCai2 = await AutAdrC.create({ pays: 'Côte d\'Ivoire', ville: 'Abidjan', quartier: 'Adjamé', boitePostale: 'BP 106', prorietaireBoitePostale: 'Ami Komlan', telMobile: '+2280103000002' });
     await AutC.create({ dateNaissance: new Date('1990-01-25'), lieuNaissance: 'Korhogo', fonction: 'Caissier', adresseId: adrCai2.id, utilisateurId: uCai2.id, banqueId: bq.id });
     console.log('  ✓ Caissier — Ami Komlan');
 
-    const uCom1 = await AutU.create({ nom: 'Mensah', prenoms: 'Yao', identifiant: 'comite1', email: 'comite.yao@easyecole.tg', motDePasse: hash, role: 'comite_orientation', contact: '+2280104000001', dateVerificationEmail: new Date() });
+    const uCom1 = await safeCreate(AutU, { nom: 'Mensah', prenoms: 'Yao', identifiant: 'comite1', email: 'comite.yao@easyecole.tg', motDePasse: hash, role: 'comite_orientation', contact: '+2280104000001', dateVerificationEmail: new Date() }, ['identifiant']);
     await AutCO.create({ fonction: 'Président du Comité', utilisateurId: uCom1.id });
     console.log('  ✓ Comité orientation — Yao Mensah');
 
-    const uCom2 = await AutU.create({ nom: 'Kokou', prenoms: 'Adjo', identifiant: 'comite2', email: 'comite.adjo@easyecole.tg', motDePasse: hash, role: 'comite_orientation', contact: '+2280104000002', dateVerificationEmail: new Date() });
+    const uCom2 = await safeCreate(AutU, { nom: 'Kokou', prenoms: 'Adjo', identifiant: 'comite2', email: 'comite.adjo@easyecole.tg', motDePasse: hash, role: 'comite_orientation', contact: '+2280104000002', dateVerificationEmail: new Date() }, ['identifiant']);
     await AutCO.create({ fonction: 'Membre du Comité', utilisateurId: uCom2.id });
     console.log('  ✓ Comité orientation — Adjo Kokou');
 
-    const uCab = await AutU.create({ nom: 'Amavi', prenoms: 'Kossiwa', identifiant: 'comptable1', email: 'comptable.kossiwa@easyecole.tg', motDePasse: hash, role: 'cabinet_comptable', contact: '+2280106000001', dateVerificationEmail: new Date() });
+    const uCab = await safeCreate(AutU, { nom: 'Amavi', prenoms: 'Kossiwa', identifiant: 'comptable1', email: 'comptable.kossiwa@easyecole.tg', motDePasse: hash, role: 'cabinet_comptable', contact: '+2280106000001', dateVerificationEmail: new Date() }, ['identifiant']);
     console.log('  ✓ Cabinet comptable — Mamadou Coulibaly');
+
+    const uPers1 = await safeCreate(AutU, { nom: 'Koné', prenoms: 'Aminata', identifiant: 'pers-admin1', email: 'aminata.kone@easyecole.tg', motDePasse: hash, role: 'personnel_administratif', contact: '+2280107000001', dateVerificationEmail: new Date() }, ['identifiant']);
+    await AutPA.create({ matricule: 'PA-001', statut: 'Permanent', fonction: 'Secrétaire Générale', directionService: 'Scolarité', cni: 'CI12345678', dateNaissance: new Date('1985-05-15'), lieuNaissance: 'Abidjan', sexe: 'F', nationalite: 'Ivoirienne', plusHautDiplome: 'Master en Gestion Administrative', statutHandicap: false, utilisateurId: uPers1.id });
+    console.log('  ✓ Personnel administratif — Koné Aminata (Secrétaire Générale)');
+
+    const uPers2 = await safeCreate(AutU, { nom: 'Diallo', prenoms: 'Moussa', identifiant: 'pers-admin2', email: 'moussa.diallo@easyecole.tg', motDePasse: hash, role: 'personnel_administratif', contact: '+2280107000002', dateVerificationEmail: new Date() }, ['identifiant']);
+    await AutPA.create({ matricule: 'PA-002', statut: 'Permanent', fonction: 'Comptable', directionService: 'Finance et Comptabilité', cni: 'CI87654321', dateNaissance: new Date('1980-03-20'), lieuNaissance: 'Bouaké', sexe: 'M', nationalite: 'Ivoirienne', plusHautDiplome: 'BTS Comptabilité', statutHandicap: false, utilisateurId: uPers2.id });
+    console.log('  ✓ Personnel administratif — Diallo Moussa (Comptable)');
 
     interface AppSeed { nom: string; prenoms: string; identifiant: string; email: string; dateNais: Date; lieuNais: string; bp: string; tel: string; quartier: string; ville: string; pere: string; mere: string; professionPere: string; professionMere: string; nomPrevenir: string; telPrevenir: string; otp: boolean; }
     const apprenants: AppSeed[] = [
@@ -312,14 +384,14 @@ async function seed() {
     ];
     console.log('  ✓ 16 étudiants créés');
 
-    for (const a of apprenants) {
-        const u = await AutU.create({ nom: a.nom, prenoms: a.prenoms, identifiant: a.identifiant, email: a.email, motDePasse: hash, role: 'apprenant', contact: a.tel, ...(a.otp ? {} : { dateVerificationEmail: new Date() }) });
+    for (const [i, a] of apprenants.entries()) {
+        const u = await safeCreate(AutU, { nom: a.nom, prenoms: a.prenoms, identifiant: a.identifiant, email: a.email, motDePasse: hash, role: 'apprenant', contact: a.tel, ...(a.otp ? {} : { dateVerificationEmail: new Date() }) }, ['email', 'identifiant']);
         const adr = await AutAdrA.create({ pays: 'Côte d\'Ivoire', ville: a.ville, quartier: a.quartier, boitePostale: a.bp, prorietaireBoitePostale: `${a.nom} ${a.prenoms}`, telMobile: a.tel });
         const ident = await AutIdA.create({ nationalite: 'Ivoirienne', ethnie: 'Akan', religion: 'Chrétienne', situationMatrimoniale: 'celibataire', etatPhysique: 'valide' });
         const infoP = await AutInfoP.create({ nomPrenomsPere: a.pere, professionPere: a.professionPere, nomPrenomsMere: a.mere, professionMere: a.professionMere });
         const [nomPrev, ...prenomsPrev] = a.nomPrevenir.split(' ');
         const persP = await AutPersP.create({ nom: nomPrev, prenoms: prenomsPrev.join(' ') || 'Inconnu', telMobile: a.telPrevenir, quartier: a.quartier, ville: a.ville, pays: 'Côte d\'Ivoire' });
-        await AutA.create({ photo: a.identifiant + '.jpg', dateNaissance: a.dateNais, lieuNaissance: a.lieuNais, adresseId: adr.id, identiteId: ident.id, informationsParentsId: infoP.id, personnePrevenirId: persP.id, utilisateurId: u.id });
+        await AutA.create({ photo: a.identifiant + '.jpg', dateNaissance: a.dateNais, lieuNaissance: a.lieuNais, sexe: 'M', nationalite: 'Ivoirienne', cni: `CNI-${String(100000 + i)}`, statutHandicap: false, natureHandicap: null, anneeObtentionBac: '2022', serieBac: i % 2 === 0 ? 'C' : 'D', anneePremiereInscription: '2024-2025', nombreInscriptions: 1, statutEtudiant: 'nouveau', diplomePrepare: 'Licence Professionnelle', adresseId: adr.id, identiteId: ident.id, informationsParentsId: infoP.id, personnePrevenirId: persP.id, utilisateurId: u.id });
     }
 
     // ════════════════════════════════════════════════════
@@ -329,22 +401,119 @@ async function seed() {
 
     const nivOri1 = await OriNiv.create({ libelle: 'Baccalauréat', description: 'Niveau Bac' });
     const nivOri2 = await OriNiv.create({ libelle: 'Bac+2', description: 'BTS / DUT' });
-    const nivOri3 = await OriNiv.create({ libelle: 'Bac+3', description: 'Licence' });
+    const nivOri3 = await OriNiv.create({ libelle: 'Bac+3', description: 'Licence Professionnelle' });
+    const nivOri4 = await OriNiv.create({ libelle: 'Bac+5', description: 'Master Professionnel / MBA' });
     console.log('  ✓ Niveaux d\'étude (Orientation)');
 
-    const catOri1 = await OriCat.create({ libelle: 'Sciences et Technologies', description: 'Filières scientifiques' });
-    const catOri2 = await OriCat.create({ libelle: 'Commerce et Gestion', description: 'Filières de gestion' });
+    const catOri1 = await OriCat.create({ libelle: 'Sciences et Technologies', description: 'Filières scientifiques et numériques' });
+    const catOri2 = await OriCat.create({ libelle: 'Commerce et Gestion', description: 'Filières de gestion et de commerce' });
     const catOri3 = await OriCat.create({ libelle: 'Sciences Juridiques', description: 'Filières de droit' });
+    const catOri4 = await OriCat.create({ libelle: 'Comptabilité et Finance', description: 'Comptabilité, audit, contrôle et fiscalité' });
+    const catOri5 = await OriCat.create({ libelle: 'Économie et Finance', description: 'Banque, assurance, monnaie et économie' });
+    const catOri6 = await OriCat.create({ libelle: 'Communication et Médias', description: 'Journalisme, communication et relations publiques' });
+    const catOri7 = await OriCat.create({ libelle: 'Administration et Affaires Publiques', description: 'Administration générale, territoriale et des affaires' });
+    const catOri8 = await OriCat.create({ libelle: 'Ingénierie et Génie', description: 'Filières d\'ingénierie et de génie' });
+    const catOri9 = await OriCat.create({ libelle: 'Tourisme, Hôtellerie et Loisirs', description: 'Tourisme, hôtellerie, restauration et loisirs' });
+    const catOri10 = await OriCat.create({ libelle: 'Agriculture et Agro-alimentaire', description: 'Agriculture, aquaculture et agro business' });
+    const catOri11 = await OriCat.create({ libelle: 'Sport et Loisirs', description: 'Management et gestion des organisations sportives' });
     console.log('  ✓ Catégories');
 
-    const parcOri1 = await OriPar.create({ titre: 'Informatique de Gestion', contenu: 'Développement et gestion de projets informatiques', categorieId: catOri1.id, niveauEtudeId: nivOri2.id, dureeDeFormation: '2/y', type: 'LICENCE' });
-    const parcOri2 = await OriPar.create({ titre: 'Réseaux et Télécoms', contenu: 'Infrastructures réseau et télécommunications', categorieId: catOri1.id, niveauEtudeId: nivOri2.id, dureeDeFormation: '2/y', type: 'LICENCE' });
-    const parcOri3 = await OriPar.create({ titre: 'Comptabilité Finance', contenu: 'Comptabilité et audit financier', categorieId: catOri2.id, niveauEtudeId: nivOri3.id, dureeDeFormation: '3/y', type: 'LICENCE' });
-    const parcOri4 = await OriPar.create({ titre: 'Marketing Digital', contenu: 'Marketing digital et communication', categorieId: catOri2.id, niveauEtudeId: nivOri3.id, dureeDeFormation: '3/y', type: 'LICENCE' });
-    const parcOri5 = await OriPar.create({ titre: 'Droit des Affaires', contenu: 'Droit des sociétés et fiscalité', categorieId: catOri3.id, niveauEtudeId: nivOri3.id, dureeDeFormation: '3/y', type: 'LICENCE' });
-    console.log('  ✓ Parcours (Orientation)');
+    interface FiliereESA { titre: string; categorie: { id: number } }
 
-    for (const p of [parcOri1, parcOri2, parcOri3, parcOri4, parcOri5]) {
+    // Liste officielle ESA — Licence Professionnelle & Master Professionnel (37 filières)
+    const filieresLicenceMaster: FiliereESA[] = [
+        { titre: 'Administration générale', categorie: catOri7 },
+        { titre: 'Administration des collectivités territoriales', categorie: catOri7 },
+        { titre: 'Administration des collectivités locales', categorie: catOri7 },
+        { titre: 'Marketing digital et E business', categorie: catOri2 },
+        { titre: 'Protocole et relations publiques', categorie: catOri6 },
+        { titre: 'Gestion commerciale', categorie: catOri2 },
+        { titre: 'Gestion des ressources humaines', categorie: catOri2 },
+        { titre: 'Science et techniques comptables et financières', categorie: catOri4 },
+        { titre: 'Audit et contrôle de gestion', categorie: catOri4 },
+        { titre: 'Commerce international', categorie: catOri2 },
+        { titre: 'Transport logistique', categorie: catOri2 },
+        { titre: 'Marketing-communication', categorie: catOri2 },
+        { titre: 'Gestion des projets et passation des marchés', categorie: catOri7 },
+        { titre: 'Réseaux et télécommunication', categorie: catOri1 },
+        { titre: 'Génie logiciel', categorie: catOri1 },
+        { titre: 'Génie civil', categorie: catOri8 },
+        { titre: 'Energies renouvelables et efficacité énergétique', categorie: catOri8 },
+        { titre: 'Sécurité informatique-cyber sécurité-cybercriminalité', categorie: catOri1 },
+        { titre: 'Marketing', categorie: catOri2 },
+        { titre: 'Génie électrique', categorie: catOri8 },
+        { titre: 'Administration et gestion des affaires', categorie: catOri7 },
+        { titre: 'Gestion fiscales des entreprises', categorie: catOri4 },
+        { titre: 'Economie des transports et développement social', categorie: catOri5 },
+        { titre: 'Management du tourisme et de l\'hôtellerie', categorie: catOri9 },
+        { titre: 'Management et gestion des organisations sportives', categorie: catOri11 },
+        { titre: 'Journalisme', categorie: catOri6 },
+        { titre: 'Banque et finance', categorie: catOri5 },
+        { titre: 'Monnaie et finance', categorie: catOri5 },
+        { titre: 'Banque-assurance', categorie: catOri5 },
+        { titre: 'Technologies alimentaires et biologiques', categorie: catOri10 },
+        { titre: 'Aquaculture', categorie: catOri10 },
+        { titre: 'Informatique industrielle', categorie: catOri1 },
+        { titre: 'Génie mécanique', categorie: catOri8 },
+        { titre: 'Génie industriel', categorie: catOri8 },
+        { titre: 'Agro business', categorie: catOri10 },
+        { titre: 'Modélisation économétrique et analyse des données', categorie: catOri5 },
+        { titre: 'Diplomatie, protocole et relations publiques', categorie: catOri6 },
+    ];
+
+    // Master of Business Administration (MBA)
+    const filieresMBA: FiliereESA[] = [
+        { titre: 'Gestion des entreprises', categorie: catOri2 },
+        { titre: 'Leadership, gouvernance et performance des équipes', categorie: catOri2 },
+    ];
+
+    // BTS (29 filières)
+    const filieresBTS: FiliereESA[] = [
+        { titre: 'Comptabilité et gestion des entreprises', categorie: catOri4 },
+        { titre: 'Communication des entreprises', categorie: catOri6 },
+        { titre: 'Assistant de gestion PME/PMI', categorie: catOri2 },
+        { titre: 'Génie civil', categorie: catOri8 },
+        { titre: 'Secrétariat de direction', categorie: catOri7 },
+        { titre: 'Commerce international', categorie: catOri2 },
+        { titre: 'Transport logistique', categorie: catOri2 },
+        { titre: 'Action commerciale et force de vente', categorie: catOri2 },
+        { titre: 'Gestion des ressources humaines', categorie: catOri2 },
+        { titre: 'Gestion des collectivités locales', categorie: catOri7 },
+        { titre: 'Informatique de gestion (développeur d\'application)', categorie: catOri1 },
+        { titre: 'Informatique de gestion (administrateur de réseaux locaux d\'entreprise)', categorie: catOri1 },
+        { titre: 'Télécommunications', categorie: catOri1 },
+        { titre: 'Maintenance informatique et réseaux', categorie: catOri1 },
+        { titre: 'Journalisme', categorie: catOri6 },
+        { titre: 'Informatique industrielle', categorie: catOri1 },
+        { titre: 'Géomètre topographe', categorie: catOri8 },
+        { titre: 'Assurance', categorie: catOri5 },
+        { titre: 'Finance banque', categorie: catOri5 },
+        { titre: 'Génie électrique', categorie: catOri8 },
+        { titre: 'Restauration', categorie: catOri9 },
+        { titre: 'Hôtellerie', categorie: catOri9 },
+        { titre: 'Génie thermique', categorie: catOri8 },
+        { titre: 'Electromécanique', categorie: catOri8 },
+        { titre: 'Electronique', categorie: catOri1 },
+        { titre: 'Electrotechnique', categorie: catOri8 },
+        { titre: 'Tourisme et loisirs', categorie: catOri9 },
+        { titre: 'Aquaculture', categorie: catOri10 },
+        { titre: 'Technologies alimentaires et biologiques', categorie: catOri10 },
+    ];
+
+    const parcoursOri: any[] = [];
+    for (const f of filieresLicenceMaster) {
+        parcoursOri.push(await OriPar.create({ titre: `${f.titre} (Licence Professionnelle)`, contenu: `Licence Professionnelle — ${f.titre}`, categorieId: f.categorie.id, niveauEtudeId: nivOri3.id, dureeDeFormation: '3/y', type: 'LICENCE' }));
+        parcoursOri.push(await OriPar.create({ titre: `${f.titre} (Master Professionnel)`, contenu: `Master Professionnel — ${f.titre}`, categorieId: f.categorie.id, niveauEtudeId: nivOri4.id, dureeDeFormation: '2/y', type: 'MASTER' }));
+    }
+    for (const f of filieresMBA) {
+        parcoursOri.push(await OriPar.create({ titre: `${f.titre} (MBA)`, contenu: `Master of Business Administration — ${f.titre}`, categorieId: f.categorie.id, niveauEtudeId: nivOri4.id, dureeDeFormation: '2/y', type: 'MBA' }));
+    }
+    for (const f of filieresBTS) {
+        parcoursOri.push(await OriPar.create({ titre: `${f.titre} (BTS)`, contenu: `Brevet de Technicien Supérieur — ${f.titre}`, categorieId: f.categorie.id, niveauEtudeId: nivOri2.id, dureeDeFormation: '2/y', type: 'BTS' }));
+    }
+    console.log(`  ✓ Parcours (Orientation) — ${parcoursOri.length} parcours ESA`);
+
+    for (const p of parcoursOri) {
         await OriDeb.create({ titre: `Débouchés ${p.titre}`, description: `Métiers liés à ${p.titre}`, parcoursId: p.id });
     }
     console.log('  ✓ Débouchés');
@@ -356,7 +525,7 @@ async function seed() {
     const matOri5 = await OriMat.create({ libelle: 'Économie' });
     console.log('  ✓ Matières prérequis');
 
-    for (const p of [parcOri1, parcOri2, parcOri3, parcOri4, parcOri5]) {
+    for (const p of parcoursOri) {
         await OriPreP.create({ parcoursId: p.id, niveauEtudeId: nivOri1.id, matierePrerequisId: matOri3.id, noteRequise: 12, typeEvaluation: TypesEvaluation.MOY, periodeEvaluation: PeriodesEvaluation.SEM1 });
     }
     console.log('  ✓ Prérequis parcours');
@@ -377,10 +546,10 @@ async function seed() {
     const nivIns5 = await InsNiv.create({ libelle: 'Master 2', description: 'Deuxième année de Master' });
     console.log('  ✓ Niveaux d\'étude (Inscription)');
 
-    const parcIns1 = await InsPar.create({ titre: 'Informatique', description: 'Génie Logiciel et Intelligence Artificielle', niveauEtudeId: nivIns1.id, type: 'LICENCE' });
-    const parcIns2 = await InsPar.create({ titre: 'Gestion des Entreprises', description: 'Comptabilité et Finance', niveauEtudeId: nivIns1.id, type: 'LICENCE' });
-    const parcIns3 = await InsPar.create({ titre: 'Droit des Affaires', description: 'Droit commercial et fiscal', niveauEtudeId: nivIns1.id, type: 'LICENCE' });
-    const parcIns4 = await InsPar.create({ titre: 'Marketing Digital', description: 'Stratégies marketing et E-commerce', niveauEtudeId: nivIns1.id, type: 'LICENCE' });
+    const parcIns1 = await InsPar.create({ titre: 'Génie logiciel', description: 'Conception et développement de logiciels et applications', niveauEtudeId: nivIns1.id, type: 'LICENCE' });
+    const parcIns2 = await InsPar.create({ titre: 'Gestion des Ressources Humaines', description: 'Administration et développement du capital humain', niveauEtudeId: nivIns1.id, type: 'LICENCE' });
+    const parcIns3 = await InsPar.create({ titre: 'Administration et Gestion des Affaires', description: 'Administration, gestion et droit des affaires', niveauEtudeId: nivIns1.id, type: 'LICENCE' });
+    const parcIns4 = await InsPar.create({ titre: 'Marketing Digital et E Business', description: 'Stratégies marketing digitales et commerce électronique', niveauEtudeId: nivIns1.id, type: 'LICENCE' });
     console.log('  ✓ Parcours (Inscription)');
 
     const cls1 = await InsClasse.create({ libelle: 'LIC1-A', description: 'Licence 1 Groupe A', niveauEtudeId: nivIns1.id });
@@ -459,7 +628,7 @@ async function seed() {
     for (let i = 0; i < appIds.length; i++) {
         const userId = appIds[i];
         const mat = `UST${String(2024000 + i + 1)}`;
-        const demande = await InsDem.create({ matricule: mat, dateDemande: new Date(), sessionId: sess1.id, utilisateurId: userId, etapeInscriptionId: 1 });
+        const demande = await InsDem.create({ matricule: mat, dateDemande: new Date(), sessionId: sess1.id, utilisateurId: userId });
 
         const pc = await InsParCh.create({ etatDeValidation: 'valide', choixFinal: true, parcoursId: etuParcours[i].id, demandeInscriptionId: demande.id });
 
@@ -474,7 +643,7 @@ async function seed() {
 
         const paiement = await InsPai.create({ numero: `PAY-${mat}-001`, montant: 2075000, datePaiement: new Date(), type: 'espece' as any, matriculeInscription: mat, utilisateurId: userId });
 
-        await InsDosEt.create({ utilisateurId: userId, matricule: mat, statut: 'actif', fraisScolarite: 2075000, modePaiement: 'mensuel', nbMensualites: 10, demarrageParcours: new Date('2024-10-01') });
+        await InsDosEt.create({ utilisateurId: userId, matricule: mat, statut: 'actif', anneePremiereInscription: 2024, nombreInscriptions: 1, fraisScolarite: 2075000, modePaiement: 'mensuel', nbMensualites: 10, demarrageParcours: new Date('2024-10-01') });
 
         const cur = await InsCur.create({ parcoursId: etuParcours[i].id, niveauEtudeId: nivIns1.id, classeId: cls1.id, anneeAcademiqueId: an1.id, utilisateurId: userId, demandeInscriptionId: demande.id, externe: false });
 
@@ -764,7 +933,7 @@ async function seed() {
         await ResultatDelib.create({
             deliberationId: delib.id, cursusApprenantId: b.cursusApprenantId,
             nom: user?.nom ?? '', prenoms: user?.prenoms ?? '',
-            matricule: `UST${String(2024000 + r + 1)}`,
+            matricule: `1-INF1J-24-ST`,
             moyenne: b.moyenneGenerale, mention: b.mention, rang: r + 1,
             decision: b.moyenneGenerale >= 10 ? 'admis' : b.moyenneGenerale >= 8 ? 'rattrapage' : 'redouble'
         });
@@ -827,8 +996,8 @@ async function seed() {
     }
     console.log('  ✓ Réclamations');
 
-    await ScolSanction.create({ etudiant: 'Traoré Aminata', matricule: 'UST2024001', classe: 'LIC1-A', date: new Date('2025-03-10'), motif: 'Absences répétées', sanction: 'Avertissement écrit', statut: 'notifiée' });
-    await ScolSanction.create({ etudiant: 'Kouamé Jean', matricule: 'UST2024002', classe: 'LIC1-A', date: new Date('2025-04-05'), motif: 'Retards fréquents', sanction: 'Blâme', statut: 'notifiée' });
+    await ScolSanction.create({ etudiant: 'Traoré Aminata', matricule: '1-INF1J-24-ST', classe: 'LIC1-A', date: new Date('2025-03-10'), motif: 'Absences répétées', sanction: 'Avertissement écrit', statut: 'notifiée' });
+    await ScolSanction.create({ etudiant: 'Kouamé Jean', matricule: '2-INF1J-24-ST', classe: 'LIC1-A', date: new Date('2025-04-05'), motif: 'Retards fréquents', sanction: 'Blâme', statut: 'notifiée' });
     console.log('  ✓ Sanctions disciplinaires');
 
     await ScolConseil.create({ classe: 'LIC1-A', date: new Date('2025-07-10'), trimestre: 1, president: 'Konan Yves', statut: 'cloturé' });
@@ -861,7 +1030,7 @@ async function seed() {
         });
         allMoyennes.sort((a: number, b: number) => b - a);
         const rang = allMoyennes.indexOf(moy) + 1;
-        await ScolRegAcad.create({ etudiant: `${cp.utilisateur?.prenoms ?? ''} ${cp.utilisateur?.nom ?? ''}`, matricule: `UST${String(2024000 + 1)}`, classe: 'LIC1-A', moyenne: moy, rang: rang || 1, decision: moy >= 10 ? 'Admis' : 'Rattrapage', anneeScolaire: '2024-2025' });
+        await ScolRegAcad.create({ etudiant: `${cp.utilisateur?.prenoms ?? ''} ${cp.utilisateur?.nom ?? ''}`, matricule: `1-INF1J-24-ST`, classe: 'LIC1-A', moyenne: moy, rang: rang || 1, decision: moy >= 10 ? 'Admis' : 'Rattrapage', anneeScolaire: '2024-2025' });
     }
     console.log('  ✓ Registres académiques');
 
@@ -1065,15 +1234,17 @@ async function seed() {
     const jrnOD = await CptJournal.create({ code: 'OD', libelle: 'Journal des opérations diverses', type: 'OD', description: 'OD de clôture et diverses', actif: true });
     console.log('  ✓ Journaux comptables');
 
+    const exercice = await CptExercice.create({ code: 'EX-2025', libelle: 'Exercice 2025', dateDebut: new Date('2025-01-01'), dateFin: new Date('2025-12-31'), statut: 'ouvert' });
+
     const cptAchat = createdComptes.find((c: any) => c.numero === '601');
     const cptFour = createdComptes.find((c: any) => c.numero === '401');
     const cptBanque = createdComptes.find((c: any) => c.numero === '512');
     const cptVentes = createdComptes.find((c: any) => c.numero === '701');
     const cptSal = createdComptes.find((c: any) => c.numero === '641');
 
-    await CptEcriture.create({ journalId: jrnAch.id, numeroEcriture: 'AC-001', dateEcriture: new Date('2025-01-22'), dateComptable: new Date('2025-01-22'), compteDebitId: cptAchat.id, compteCreditId: cptFour.id, montant: 590000, libelle: 'Achat fournitures bureau', reference: 'FACT-001', moduleSource: 'achats', utilisateurSaisieId: admin.id, validee: true, utilisateurValidationId: admin.id, dateValidation: new Date('2025-01-22') });
-    await CptEcriture.create({ journalId: jrnBan.id, numeroEcriture: 'BQ-001', dateEcriture: new Date('2025-01-25'), dateComptable: new Date('2025-01-25'), compteDebitId: cptFour.id, compteCreditId: cptBanque.id, montant: 590000, libelle: 'Paiement facture fournitures', moduleSource: 'achats', utilisateurSaisieId: admin.id, validee: true });
-    await CptEcriture.create({ journalId: jrnBan.id, numeroEcriture: 'BQ-002', dateEcriture: new Date('2025-06-30'), dateComptable: new Date('2025-06-30'), compteDebitId: cptSal.id, compteCreditId: cptBanque.id, montant: 8000000, libelle: 'Paie juin 2025', moduleSource: 'rh', utilisateurSaisieId: admin.id, validee: true });
+    await CptEcriture.create({ exerciceId: exercice.id, journalId: jrnAch.id, numeroEcriture: 'AC-001', dateEcriture: new Date('2025-01-22'), dateComptable: new Date('2025-01-22'), compteDebitId: cptAchat.id, compteCreditId: cptFour.id, montant: 590000, libelle: 'Achat fournitures bureau', reference: 'FACT-001', moduleSource: 'achats', utilisateurSaisieId: admin.id, validee: true, utilisateurValidationId: admin.id, dateValidation: new Date('2025-01-22') });
+    await CptEcriture.create({ exerciceId: exercice.id, journalId: jrnBan.id, numeroEcriture: 'BQ-001', dateEcriture: new Date('2025-01-25'), dateComptable: new Date('2025-01-25'), compteDebitId: cptFour.id, compteCreditId: cptBanque.id, montant: 590000, libelle: 'Paiement facture fournitures', moduleSource: 'achats', utilisateurSaisieId: admin.id, validee: true });
+    await CptEcriture.create({ exerciceId: exercice.id, journalId: jrnBan.id, numeroEcriture: 'BQ-002', dateEcriture: new Date('2025-06-30'), dateComptable: new Date('2025-06-30'), compteDebitId: cptSal.id, compteCreditId: cptBanque.id, montant: 8000000, libelle: 'Paie juin 2025', moduleSource: 'rh', utilisateurSaisieId: admin.id, validee: true });
     console.log('  ✓ Écritures comptables');
 
     // ════════════════════════════════════════════════════
@@ -1250,8 +1421,3 @@ async function seed() {
     console.log('  SEED TERMINÉ — UST');
     console.log('═══════════════════════════════════════════\n');
 }
-
-seed().catch((err: any) => {
-    console.error('Seed failed:', err);
-    process.exit(1);
-});

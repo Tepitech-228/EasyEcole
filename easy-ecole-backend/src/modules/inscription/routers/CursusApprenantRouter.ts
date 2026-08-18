@@ -60,6 +60,21 @@ router
 
 /**
  * @openapi
+ * /inscription/cursusApprenant/statistics/count:
+ *   get:
+ *     tags: [Cursus Apprenant]
+ *     summary: Compte le nombre de cursus apprenant
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Nombre de cursus apprenant
+ */
+    .get('/statistics/count', [AuthInstitution], CursusApprenantController.getCount)
+    .get('/mon-suivi/statuts-cours', [Authenticate], CursusApprenantController.getStatutsCours)
+
+/**
+ * @openapi
  * /inscription/cursusApprenant/{id}:
  *   get:
  *     tags: [Cursus Apprenant]
@@ -143,20 +158,5 @@ router
  *         description: Cursus apprenant supprimé
  */
     .delete('/:id', [AuthInstitution, CheckPermission('action.inscription.cursus.supprimer')], CursusApprenantController.deleteCursusApprenant)
-
-/**
- * @openapi
- * /inscription/cursusApprenant/statistics/count:
- *   get:
- *     tags: [Cursus Apprenant]
- *     summary: Compte le nombre de cursus apprenant
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Nombre de cursus apprenant
- */
-    .get('/statistics/count', [AuthInstitution], CursusApprenantController.getCount)
-    .get('/mon-suivi/statuts-cours', [Authenticate], CursusApprenantController.getStatutsCours)
 
 export default router

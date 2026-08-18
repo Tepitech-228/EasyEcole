@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+import { ValidateurService } from 'src/app/data/modules/achats/services/validateur.service';
+import { Validateur, getNomUtilisateur } from 'src/app/data/modules/achats/models/achats.models';
 
 @Component({
   selector: 'app-parametres-validateurs-page',
@@ -10,7 +12,7 @@ export class ParametresValidateursPageComponent extends BaseComponentClass imple
   validateurs: any[] = []
   loading = false
 
-  constructor() { super() }
+  constructor(private validateurService: ValidateurService) { super() }
 
   ngOnInit(): void {
     this.loadValidateurs()
@@ -18,14 +20,22 @@ export class ParametresValidateursPageComponent extends BaseComponentClass imple
 
   loadValidateurs() {
     this.loading = true
-    setTimeout(() => {
-      this.validateurs = [
-        { id: 1, utilisateur: 'M. Dupont', niveau: 'Niveau 1', montantMax: 500000, actif: true },
-        { id: 2, utilisateur: 'Mme Martin', niveau: 'Niveau 2', montantMax: 1500000, actif: true },
-        { id: 3, utilisateur: 'M. Bernard', niveau: 'Niveau 3', montantMax: 5000000, actif: false },
-      ]
-      this.loading = false
-    }, 500)
+    this.validateurService.getAll().subscribe({
+      next: (items: Validateur[]) => {
+        this.validateurs = items.map(v => ({
+          id: v.id,
+          utilisateur: getNomUtilisateur(v.utilisateur),
+          niveau: v.niveau,
+          montantMax: v.montantMax,
+          actif: v.actif,
+        }))
+        this.loading = false
+      },
+      error: () => {
+        this.validateurs = []
+        this.loading = false
+      }
+    })
   }
 
   getStatutBadge(actif: boolean): string {

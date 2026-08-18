@@ -42,6 +42,7 @@ import { CartesPageComponent } from './pages/cartes-page/cartes-page.component';
 import { GestionSemestresPageComponent } from './pages/gestion-semestres-page/gestion-semestres-page.component';
 import { ImportExportExcelPageComponent } from './pages/import-export-excel-page/import-export-excel-page.component';
 import { ReactiveFormsModule } from '@angular/forms';
+import { DesignationMemoirePageComponent } from './pages/designation-memoire-page/designation-memoire-page.component';
 @NgModule({
   declarations: [
     MonCursusPageComponent,
@@ -80,7 +81,8 @@ import { ReactiveFormsModule } from '@angular/forms';
       OnboardingPageComponent,
        CartesPageComponent,
        GestionSemestresPageComponent,
-       ImportExportExcelPageComponent
+       ImportExportExcelPageComponent,
+       DesignationMemoirePageComponent
   ],
   imports: [
     CommonModule,

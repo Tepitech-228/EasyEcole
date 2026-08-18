@@ -21,7 +21,8 @@ export default class AnneeAcademiqueController {
 
             return res.status(200).send(anneesAcademiques);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -37,7 +38,8 @@ export default class AnneeAcademiqueController {
 
             return res.status(200).send(anneeAcademique);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -124,7 +126,8 @@ export default class AnneeAcademiqueController {
                     return res.status(200).json({ success: true, message: "AnneeAcademique supprimée" });
                 })
                 .catch((error) => {
-                    return res.status(500).json({ success: false, error: error });
+                    console.error('Erreur', error);
+                    return res.status(500).json({ success: false, message: 'Erreur interne' });
                 });
         }
         else {
@@ -146,7 +149,8 @@ export default class AnneeAcademiqueController {
                 return res.status(200).json({ success: true, count: value });
             })
             .catch((error) => {
-                return res.status(500).json({ success: false, error: error });
+                console.error('Erreur', error);
+                return res.status(500).json({ success: false, message: 'Erreur interne' });
             });
 
         return null

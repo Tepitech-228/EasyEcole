@@ -4,14 +4,22 @@ import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { Cours } from "../models/Cours";
 import { Parcours } from "../models/Parcours";
+import { TypeNoteEvaluation } from "../models/TypeNoteEvaluation";
 import { ListeNoteEvaluation } from "../models/ListeNoteEvaluation";
 import { NoteEvaluation } from "../models/NoteEvaluation";
 import { CoursParticipant } from "../models/CoursParticipant";
 import { CursusApprenant } from "../models/CursusApprenant";
 import { DemandeInscription } from "../models/DemandeInscription";
+import { Seance } from "../models/Seance";
+import { Etablissement } from "../../etablissement/models/Etablissement";
+import { EchelleNote } from "../../bulletins/models/EchelleNote";
 import * as ExcelJS from "exceljs";
 import * as fs from "fs";
 import { validateEvaluationInput, ValidationError } from "../../../core/validators/noteValidators";
+
+const NOM_ETABLISSEMENT_DEFAUT = 'Université des Sciences et Technologies (UST)';
+const PV_SHEET_NAME = 'PV Notes';
+const PV_HEADER_ROW = 9; // Ligne d'en-tête du tableau — NE PAS CHANGER (utilisée par importPv)
 
 export default class ListeNoteEvaluationController {
 
@@ -99,6 +107,16 @@ export default class ListeNoteEvaluationController {
 
         if (req.utilisateurRole! != RolesUtilisateur.INSTITUTION && req.utilisateurRole! != RolesUtilisateur.ENSEIGNANT && req.utilisateurRole! != RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false })
+        }
+
+        // Règle métier : les examens sont programmés par l'institution.
+        // Un enseignant ne peut créer que des devoirs (catégorie 'devoir').
+        if (req.utilisateurRole! == RolesUtilisateur.ENSEIGNANT) {
+            const type = await TypeNoteEvaluation.findByPk(req.body.typeNoteEvaluationId);
+            const categorie = type?.categorie ?? null;
+            if (categorie !== 'devoir') {
+                return res.status(403).json({ success: false, message: "Réservé à l'institution : seuls les devoirs peuvent être créés par les enseignants" });
+            }
         }
 
         try {
@@ -213,6 +231,7 @@ export default class ListeNoteEvaluationController {
                 where: { id: req.params.id },
                 include: [
                     { association: ListeNoteEvaluation.associations.typeNoteEvaluation },
+                    { association: ListeNoteEvaluation.associations.anneeAcademique },
                     {
                         association: ListeNoteEvaluation.associations.cours,
                         include: [
@@ -245,53 +264,129 @@ export default class ListeNoteEvaluationController {
                 ]
             })
 
-            const workbook = new ExcelJS.Workbook()
-            workbook.creator = 'EasyEcole'
-            const sheet = workbook.addWorksheet('PV Notes')
-
+            // ---------------------------------------------------------------
+            // Infos d'entête du PV
+            // ---------------------------------------------------------------
             const cours = evaluation.cours
             const enseignant = cours?.enseignant?.utilisateur
             const classe = cours?.classe
             const parcours = cours?.parcours
+            const niveauEtude = (parcours as any)?.niveauEtude
 
-            sheet.mergeCells('A1:E1')
-            const titleCell = sheet.getCell('A1')
-            titleCell.value = 'EASYECOLE — PROCÈS-VERBAL DE NOTES'
-            titleCell.font = { bold: true, size: 14, color: { argb: 'FF1F3C75' } }
-            titleCell.alignment = { horizontal: 'center' }
+            // Nom de l'établissement : Etablissement actif s'il existe, sinon libellé par défaut
+            let nomEtablissement = NOM_ETABLISSEMENT_DEFAUT
+            try {
+                const etablissement = await Etablissement.findOne({ where: { actif: true } })
+                if (etablissement?.nom) nomEtablissement = etablissement.nom
+            } catch { /* fallback hardcodé */ }
 
-            sheet.mergeCells('A2:E2')
-            sheet.getCell('A2').value = `Cours: ${cours?.code || ''} — ${cours?.intitule || ''}`
-            sheet.getCell('A2').font = { bold: true, size: 11 }
+            // Salle associée au cours si disponible (via une séance de ce cours)
+            let nomSalle = ''
+            try {
+                const seance = await Seance.findOne({
+                    where: { coursId: evaluation.coursId },
+                    include: [{ association: Seance.associations.salleDeClasse }],
+                    order: [['dateDebut', 'DESC']],
+                    limit: 1
+                })
+                const salle = (seance as any)?.salleDeClasse
+                if (salle?.libelle) nomSalle = salle.libelle
+            } catch { /* salle optionnelle */ }
 
-            const infoData = [
-                ['Type', evaluation.typeNoteEvaluation?.libelle || ''],
-                ['Date', evaluation.date ? new Date(evaluation.date).toLocaleDateString('fr-FR') : ''],
-                ['Classe', classe?.libelle || ''],
-                ['Parcours', parcours?.titre || ''],
-                ['Enseignant', enseignant ? `${enseignant.nom} ${enseignant.prenoms}` : ''],
+            const semestreCours = (cours as any)?.semestre
+                ? (cours as any).semestre.replace('semestre', 'Semestre ')
+                : ''
+            const anneeAcademiqueLibelle = (evaluation as any).anneeAcademique?.libelle || ''
+            const dateEvaluation = evaluation.date
+                ? new Date(evaluation.date).toLocaleDateString('fr-FR')
+                : ''
+
+            // Échelles de mention (si disponibles)
+            let echelles: { noteMin: number; noteMax: number; mention: string }[] = []
+            try {
+                echelles = await EchelleNote.findAll({
+                    where: { estActive: true },
+                    order: [['noteMin', 'ASC']],
+                    attributes: ['noteMin', 'noteMax', 'mention'],
+                    raw: true
+                }) as any
+            } catch { /* mention non disponible */ }
+
+            const calculerMention = (note: number): string => {
+                if (!echelles.length) return ''
+                for (const e of echelles) {
+                    if (note >= e.noteMin && note <= e.noteMax) return e.mention
+                }
+                return ''
+            }
+
+            // ---------------------------------------------------------------
+            // Construction du classeur Excel
+            // ---------------------------------------------------------------
+            const workbook = new ExcelJS.Workbook()
+            workbook.creator = 'EasyEcole'
+            const sheet = workbook.addWorksheet(PV_SHEET_NAME)
+
+            // --- En-tête (rows 1-8) : le tableau commence à la ligne PV_HEADER_ROW (9)
+            sheet.mergeCells('A1:F1')
+            const etabCell = sheet.getCell('A1')
+            etabCell.value = nomEtablissement.toUpperCase()
+            etabCell.font = { bold: true, size: 16, color: { argb: 'FF1F3C75' } }
+            etabCell.alignment = { horizontal: 'center', vertical: 'middle' }
+            sheet.getRow(1).height = 28
+
+            sheet.mergeCells('A2:F2')
+            const titleCell = sheet.getCell('A2')
+            titleCell.value = 'PROCÈS-VERBAL DE NOTES'
+            titleCell.font = { bold: true, size: 14, color: { argb: 'FF000000' } }
+            titleCell.alignment = { horizontal: 'center', vertical: 'middle' }
+            sheet.getRow(2).height = 22
+
+            // Mention « Année académique »
+            sheet.mergeCells('A3:F3')
+            sheet.getCell('A3').value = `Année académique : ${anneeAcademiqueLibelle}`
+            sheet.getCell('A3').font = { bold: true, size: 11 }
+            sheet.getCell('A3').alignment = { horizontal: 'center' }
+
+            // Mentions : filière/parcours, niveau, classe, salle
+            const mentionInfos = [
+                `Filière / Parcours : ${parcours?.titre || '—'}`,
+                `Niveau : ${niveauEtude?.libelle || '—'}`,
+                `Classe : ${classe?.libelle || '—'}`,
+                `Salle : ${nomSalle || '—'}`,
             ]
-
-            infoData.forEach((row, idx) => {
-                const rowNum = 3 + idx
-                sheet.getCell(`A${rowNum}`).value = row[0]
-                sheet.getCell(`A${rowNum}`).font = { bold: true }
-                sheet.mergeCells(`B${rowNum}:E${rowNum}`)
-                sheet.getCell(`B${rowNum}`).value = row[1]
+            mentionInfos.forEach((txt, i) => {
+                const rowNum = 4 + i
+                sheet.mergeCells(`A${rowNum}:C${rowNum}`)
+                sheet.getCell(`A${rowNum}`).value = txt
+                sheet.getCell(`A${rowNum}`).font = { bold: true, size: 11 }
+                sheet.getCell(`A${rowNum}`).alignment = { vertical: 'middle' }
             })
 
-            const headerRow = 9
-            sheet.getCell(`A${headerRow}`).value = 'N°'
-            sheet.getCell(`B${headerRow}`).value = 'Matricule'
-            sheet.getCell(`C${headerRow}`).value = 'Nom & Prénoms'
-            sheet.getCell(`D${headerRow}`).value = 'Note /20'
-            sheet.getCell(`E${headerRow}`).value = 'Observations'
+            // Mentions : cours/ECUE, code, enseignant, semestre, date
+            const mentionInfos2 = [
+                `ECUE / Cours : ${cours?.intitule || '—'}`,
+                `Code cours : ${cours?.code || '—'}`,
+                `Enseignant : ${enseignant ? `${enseignant.nom} ${enseignant.prenoms}` : '—'}`,
+                `${semestreCours}${dateEvaluation ? `   |   Date : ${dateEvaluation}` : ''}`,
+            ]
+            mentionInfos2.forEach((txt, i) => {
+                const rowNum = 4 + i
+                sheet.mergeCells(`D${rowNum}:F${rowNum}`)
+                sheet.getCell(`D${rowNum}`).value = txt
+                sheet.getCell(`D${rowNum}`).font = { size: 11 }
+                sheet.getCell(`D${rowNum}`).alignment = { vertical: 'middle' }
+            })
 
-            const headerCells = [sheet.getCell(`A${headerRow}`), sheet.getCell(`B${headerRow}`), sheet.getCell(`C${headerRow}`), sheet.getCell(`D${headerRow}`), sheet.getCell(`E${headerRow}`)]
-            headerCells.forEach(cell => {
-                cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 }
-                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F3C75' } }
-                cell.alignment = { horizontal: 'center', vertical: 'middle' }
+            // --- Tableau (header ligne PV_HEADER_ROW, données ensuite)
+            const headerLabels = ['N°', 'Matricule', 'Nom & Prénoms', 'Note /20', 'Mention', 'Observations']
+            headerLabels.forEach((label, i) => {
+                const colLetter = String.fromCharCode(65 + i)
+                const cell = sheet.getCell(`${colLetter}${PV_HEADER_ROW}`)
+                cell.value = label
+                cell.font = { bold: true, color: { argb: 'FF1F3C75' }, size: 11 }
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9E2F3' } } // gris clair bleuté
+                cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
                 cell.border = {
                     top: { style: 'thin' },
                     left: { style: 'thin' },
@@ -299,23 +394,39 @@ export default class ListeNoteEvaluationController {
                     right: { style: 'thin' }
                 }
             })
+            sheet.getRow(PV_HEADER_ROW).height = 20
 
             const notesEval = evaluation.notesEvaluation || []
 
             participants.forEach((p, idx) => {
-                const rowNum = headerRow + 1 + idx
+                const rowNum = PV_HEADER_ROW + 1 + idx
                 const noteEval = notesEval.find(n => n.coursParticipantId == p.id)
                 const participantData = p as any
-                const matricule = participantData.cursusApprenant?.demandeInscription?.matricule || participantData.utilisateur?.identifiant || '---'
-                const nom = `${participantData.utilisateur?.nom || ''} ${participantData.utilisateur?.prenoms || ''}`
+                const matricule = participantData.cursusApprenant?.demandeInscription?.matricule
+                    || participantData.utilisateur?.identifiant
+                    || '---'
+                const nom = `${participantData.utilisateur?.nom || ''}`
+                const prenoms = `${participantData.utilisateur?.prenoms || ''}`
+                const nomComplet = `${nom} ${prenoms}`.trim()
+                const note = noteEval?.note != null ? Number(noteEval.note) : null
 
-                sheet.getCell(`A${rowNum}`).value = idx + 1
-                sheet.getCell(`B${rowNum}`).value = matricule
-                sheet.getCell(`C${rowNum}`).value = nom
-                sheet.getCell(`D${rowNum}`).value = noteEval?.note != null ? Number(noteEval.note) : ''
-                sheet.getCell(`E${rowNum}`).value = ''
+                sheet.getCell(`A${rowNum}`).value = idx + 1                        // N°
+                sheet.getCell(`B${rowNum}`).value = matricule                       // Matricule
+                sheet.getCell(`C${rowNum}`).value = nomComplet                      // Nom & Prénoms
+                sheet.getCell(`D${rowNum}`).value = note !== null ? note : ''       // Note /20
+                sheet.getCell(`E${rowNum}`).value = note !== null && !isNaN(note)
+                    ? calculerMention(note)
+                    : ''                                                            // Mention
+                sheet.getCell(`F${rowNum}`).value = ''                              // Observations
 
-                for (let col = 1; col <= 5; col++) {
+                sheet.getCell(`A${rowNum}`).alignment = { horizontal: 'center', vertical: 'middle' }
+                sheet.getCell(`B${rowNum}`).alignment = { horizontal: 'center', vertical: 'middle' }
+                sheet.getCell(`C${rowNum}`).alignment = { vertical: 'middle' }
+                sheet.getCell(`D${rowNum}`).alignment = { horizontal: 'center', vertical: 'middle' }
+                sheet.getCell(`E${rowNum}`).alignment = { horizontal: 'center', vertical: 'middle' }
+                sheet.getCell(`F${rowNum}`).alignment = { vertical: 'middle' }
+
+                for (let col = 1; col <= 6; col++) {
                     const cell = sheet.getCell(rowNum, col)
                     cell.border = {
                         top: { style: 'thin' },
@@ -323,48 +434,59 @@ export default class ListeNoteEvaluationController {
                         bottom: { style: 'thin' },
                         right: { style: 'thin' }
                     }
-                    if (col === 2 || col === 3) {
-                        cell.alignment = { vertical: 'middle' }
-                    }
-                    if (col === 1 || col === 4) {
-                        cell.alignment = { horizontal: 'center', vertical: 'middle' }
-                    }
                 }
             })
 
-            // Signature de l'enseignant dans le PV
-            const enseignantPv = cours?.enseignant as any
-            const signatureRow = headerRow + participants.length + 2
-            sheet.mergeCells(`A${signatureRow}:E${signatureRow}`)
-            const sigCell = sheet.getCell(`A${signatureRow}`)
-            sigCell.value = 'Signature de l\'enseignant :'
-            sigCell.font = { bold: true, size: 11 }
-
-            const ensNameRow = signatureRow + 1
-            sheet.mergeCells(`A${ensNameRow}:E${ensNameRow}`)
-            if (enseignantPv?.utilisateur) {
-                sheet.getCell(`A${ensNameRow}`).value = `${enseignantPv.utilisateur.nom} ${enseignantPv.utilisateur.prenoms}`
-                sheet.getCell(`A${ensNameRow}`).font = { italic: true, size: 10 }
-            } else {
-                sheet.getCell(`A${ensNameRow}`).value = 'Non signé'
-                sheet.getCell(`A${ensNameRow}`).font = { italic: true, color: { argb: 'FF999999' }, size: 10 }
-            }
-
+            // Largeurs de colonnes
             sheet.getColumn(1).width = 6
             sheet.getColumn(2).width = 16
-            sheet.getColumn(3).width = 35
+            sheet.getColumn(3).width = 38
             sheet.getColumn(4).width = 12
-            sheet.getColumn(5).width = 20
+            sheet.getColumn(5).width = 24
+            sheet.getColumn(6).width = 22
 
-            const instructionsSheet = workbook.addWorksheet('Instructions')
-            instructionsSheet.getCell('A1').value = 'Comment utiliser ce PV :'
-            instructionsSheet.getCell('A1').font = { bold: true, size: 12 }
-            instructionsSheet.getCell('A3').value = '1. Remplissez la colonne "Note /20" pour chaque étudiant'
-            instructionsSheet.getCell('A4').value = '2. Les notes doivent être comprises entre 0 et 20'
-            instructionsSheet.getCell('A5').value = '3. Si besoin, ajoutez des observations dans la colonne "Observations"'
-            instructionsSheet.getCell('A6').value = '4. Sauvegardez le fichier'
-            instructionsSheet.getCell('A7').value = '5. Revenez sur l\'application et importez le fichier rempli'
-            instructionsSheet.getColumn(1).width = 60
+            // --- Pied : zones de signature + mentions légales
+            const lastDataRow = PV_HEADER_ROW + participants.length
+            const signatureStart = lastDataRow + 3
+
+            const zonesSignature = [
+                'Les membres du jury',
+                'Le responsable pédagogique',
+                'L\'enseignant'
+            ]
+            zonesSignature.forEach((zone, i) => {
+                const rowNum = signatureStart + i * 3
+                const colStart = 1 + i * 2
+                const colLetter = String.fromCharCode(64 + colStart)
+                const colEndLetter = String.fromCharCode(64 + colStart + 1)
+                sheet.mergeCells(`${colLetter}${rowNum}:${colEndLetter}${rowNum}`)
+                const cell = sheet.getCell(`${colLetter}${rowNum}`)
+                cell.value = zone
+                cell.font = { bold: true, size: 11 }
+                cell.alignment = { horizontal: 'center', vertical: 'middle' }
+                // Ligne de signature
+                const sigRow = rowNum + 1
+                sheet.mergeCells(`${colLetter}${sigRow}:${colEndLetter}${sigRow + 1}`)
+                const sigCell = sheet.getCell(`${colLetter}${sigRow}`)
+                sigCell.value = 'Signature :'
+                sigCell.font = { italic: true, size: 10, color: { argb: 'FF999999' } }
+                sigCell.alignment = { horizontal: 'center', vertical: 'middle' }
+            })
+
+            const mentionRow = signatureStart + zonesSignature.length * 3 + 1
+            sheet.mergeCells(`A${mentionRow}:F${mentionRow}`)
+            sheet.getCell(`A${mentionRow}`).value =
+                'Document généré par EasyEcole — les notes sont exprimées sur 20. Toute modification hors de la plateforme engage la responsabilité de l\'enseignant.'
+            sheet.getCell(`A${mentionRow}`).font = { italic: true, size: 9, color: { argb: 'FF7F7F7F' } }
+            sheet.getCell(`A${mentionRow}`).alignment = { horizontal: 'center' }
+
+            // Pagination (page X/Y)
+            sheet.headerFooter.oddFooter = '&C Page &P/&N'
+            sheet.headerFooter.evenFooter = '&C Page &P/&N'
+            sheet.pageSetup.printArea = `A1:F${mentionRow}`
+            sheet.pageSetup.fitToPage = true
+            sheet.pageSetup.fitToWidth = 1
+            sheet.pageSetup.fitToHeight = 0
 
             res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
             res.setHeader('Content-Disposition', `attachment; filename="PV_${cours?.code || 'notes'}_${new Date().toISOString().split('T')[0]}.xlsx"`)

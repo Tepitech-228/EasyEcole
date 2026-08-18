@@ -1,7 +1,12 @@
 import express from "express";
+import Authenticate from "../../../core/middlewares/Authenticate";
+import { InscriptionComplete } from "../../../core/middlewares/InscriptionComplete";
 import RattrapageController from "../controllers/RattrapageController";
 
 const router = express.Router();
+
+// Appliquer les middlewares d'authentification à toutes les routes
+router.use([Authenticate, InscriptionComplete]);
 
 router.get('/', RattrapageController.getAll);
 router.get('/sessions', RattrapageController.getSessions);
@@ -20,7 +25,6 @@ router.post('/demandes/:id/confirmer-paiement-auto', RattrapageController.confir
 
 router.get('/:id', RattrapageController.get);
 router.post('/', RattrapageController.create);
-router.post('/assigner-auto', RattrapageController.assignerAuto);
 router.post('/notifier', RattrapageController.notifierEtudiants);
 router.put('/notes', RattrapageController.saveNotes);
 router.put('/:id', RattrapageController.update);

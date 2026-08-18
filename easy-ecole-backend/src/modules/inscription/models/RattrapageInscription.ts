@@ -13,6 +13,7 @@ export class RattrapageInscription extends Model<InferAttributes<RattrapageInscr
   declare coursId: ForeignKey<Cours['id']>
   declare sessionExamenId: ForeignKey<SessionExamen['id']>
   declare noteRattrapage: CreationOptional<number | null>
+  declare corrigePar: CreationOptional<string | null> // utilisateurId de l'enseignant correcteur qui a saisi la note
   declare statut: CreationOptional<string>
   declare enseignantId: CreationOptional<number | null>
   declare salle: CreationOptional<string | null>
@@ -69,6 +70,10 @@ RattrapageInscription.init({
   },
   noteRattrapage: {
     type: DataTypes.FLOAT,
+    allowNull: true
+  },
+  corrigePar: {
+    type: DataTypes.STRING(36),
     allowNull: true
   },
   statut: {

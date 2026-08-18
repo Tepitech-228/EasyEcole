@@ -9,6 +9,15 @@ export interface VerificationPaiementResult {
 }
 
 /**
+ * Résultat enrichi renvoyé par GET /inscription/paiement/statut :
+ * ajoute le montant total restant dû et la prochaine échéance à régler.
+ */
+export interface StatutPaiementDetail extends VerificationPaiementResult {
+    montantRestant: number
+    prochaineEcheance: { dateLimite: string | Date, montant: number } | null
+}
+
+/**
  * Vérification de paiement partagée entre le scan de présence
  * (PresenceController.scanPresence) et le scan de pointage
  * (PointageController.verifierStatutByQR).
@@ -74,5 +83,48 @@ export class VerificationPaiementService {
         }
 
         return VerificationPaiementService.verifierDossier(dossier)
+    }
+
+    /**
+     * Variante pour l'endpoint public étudiant/parent GET /inscription/paiement/statut :
+     * retourne le résultat de verification enrichi de `montantRestant`
+     * (somme de TOUTES les échéances impayées, passées ou à venir) et de
+     * `prochaineEcheance` (échéance impayée dont la date limite est la plus proche).
+     */
+    static async verifierEtEnrichir(utilisateurId: string | number): Promise<StatutPaiementDetail> {
+        const dossier = await DossierEtudiant.findOne({
+            where: { utilisateurId: utilisateurId as any },
+            include: [{
+                association: DossierEtudiant.associations.echeances
+            }]
+        })
+
+        if (!dossier) {
+            return {
+                statut: 'rouge',
+                echeancesEnRetard: 0,
+                echeancesRestantes: [],
+                message: 'Dossier étudiant introuvable',
+                montantRestant: 0,
+                prochaineEcheance: null,
+            }
+        }
+
+        const resultat = VerificationPaiementService.verifierDossier(dossier)
+
+        const impayees = (dossier.echeances || []).filter(
+            e => e.statut == 'impaye' || e.statut == 'en_retard'
+        )
+        const montantRestant = impayees.reduce((somme, e) => somme + (e.montant || 0), 0)
+
+        let prochaineEcheance: { dateLimite: string | Date, montant: number } | null = null
+        if (impayees.length > 0) {
+            const [laPlusProche] = [...impayees].sort(
+                (a, b) => new Date(a.dateLimite).getTime() - new Date(b.dateLimite).getTime()
+            )
+            prochaineEcheance = { dateLimite: laPlusProche.dateLimite, montant: laPlusProche.montant }
+        }
+
+        return { ...resultat, montantRestant, prochaineEcheance }
     }
 }

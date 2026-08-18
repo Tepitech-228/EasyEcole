@@ -30,10 +30,10 @@
             </div>
             <div class="md:col-span-4 col-span-full">
                 <label for="typeNoteEvaluationId" class="mb-2 block text-sm leading-6 text-gray-600">Type d'évaluation</label>
-                <select id="typeNoteEvaluationId" formControlName="typeNoteEvaluationId"
+                <select id="typeNoteEvaluationId" formControlName="typeNoteEvaluationId" (change)="onTypeChange()"
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                     <option value="" disabled>Sélectionner un type</option>
-                    <option *ngFor="let t of typesNote" [value]="t.id">{{ t.libelle }}</option>
+                    <option *ngFor="let t of typesNoteDisponibles" [value]="t.id">{{ t.libelle }}</option>
                 </select>
                 <div *ngIf="evaluationForm.get('typeNoteEvaluationId')!.invalid && (evaluationForm.get('typeNoteEvaluationId')!.dirty || evaluationForm.get('typeNoteEvaluationId')!.touched)">
                     <app-form-message *ngIf="evaluationForm.get('typeNoteEvaluationId')!.errors?.['required']"
@@ -71,6 +71,7 @@
                 <label for="poidsTypeNoteEvaluation" class="mb-2 block text-sm leading-6 text-gray-600">Poids (%)</label>
                 <input type="number" id="poidsTypeNoteEvaluation" formControlName="poidsTypeNoteEvaluation" placeholder="Ex: 20"
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <p class="mt-1 text-xs text-gray-500">Pré-rempli automatiquement : Devoir 40% — Examen 60%</p>
                 <div *ngIf="evaluationForm.get('poidsTypeNoteEvaluation')!.invalid && (evaluationForm.get('poidsTypeNoteEvaluation')!.dirty || evaluationForm.get('poidsTypeNoteEvaluation')!.touched)">
                     <app-form-message *ngIf="evaluationForm.get('poidsTypeNoteEvaluation')!.errors?.['required']"
                         text="Veuillez saisir le poids"></app-form-message>

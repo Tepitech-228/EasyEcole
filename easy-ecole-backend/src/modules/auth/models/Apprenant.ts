@@ -14,6 +14,17 @@ export class Apprenant extends Model<InferAttributes<Apprenant>, InferCreationAt
   declare qrCode: CreationOptional<string>
   declare dateNaissance: Date
   declare lieuNaissance: string
+  declare sexe: CreationOptional<'M' | 'F' | 'Autre'>
+  declare nationalite: CreationOptional<string>
+  declare cni: CreationOptional<string>
+  declare statutHandicap: CreationOptional<boolean>
+  declare natureHandicap: CreationOptional<string>
+  declare anneeObtentionBac: CreationOptional<string>
+  declare serieBac: CreationOptional<string>
+  declare anneePremiereInscription: CreationOptional<string>
+  declare nombreInscriptions: CreationOptional<number>
+  declare statutEtudiant: CreationOptional<'nouveau' | 'ancien'>
+  declare diplomePrepare: CreationOptional<string>
   declare adresseId: ForeignKey<AdresseApprenant['id']>
   declare adresse?: AdresseApprenant
   declare identiteId: ForeignKey<IdentiteApprenant['id']>
@@ -63,6 +74,56 @@ Apprenant.init({
   lieuNaissance: {
     type: new DataTypes.STRING,
     allowNull: false
+  },
+  sexe: {
+    type: DataTypes.ENUM('M', 'F', 'Autre'),
+    defaultValue: 'M',
+    allowNull: false
+  },
+  nationalite: {
+    type: new DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'Ivoirienne'
+  },
+  cni: {
+    type: new DataTypes.STRING,
+    allowNull: true,
+    unique: true
+  },
+  statutHandicap: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    allowNull: false
+  },
+  natureHandicap: {
+    type: new DataTypes.STRING,
+    allowNull: true
+  },
+  anneeObtentionBac: {
+    type: new DataTypes.STRING,
+    allowNull: true
+  },
+  serieBac: {
+    type: new DataTypes.STRING,
+    allowNull: true
+  },
+  anneePremiereInscription: {
+    type: new DataTypes.STRING,
+    allowNull: true
+  },
+  nombreInscriptions: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: 1
+  },
+  statutEtudiant: {
+    type: DataTypes.ENUM('nouveau', 'ancien'),
+    allowNull: true,
+    defaultValue: 'nouveau'
+  },
+  diplomePrepare: {
+    type: new DataTypes.STRING,
+    allowNull: true
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

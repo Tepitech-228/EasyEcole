@@ -1,7 +1,9 @@
 <div class="flex items-center justify-between mb-8 gap-x-4 flex-wrap">
     <app-header-title title="Détails de la facture pro forma" subtitle="Consulter les informations de la facture pro forma fournisseur"></app-header-title>
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-3 flex-wrap">
         <app-custom-button *ngIf="facture && !loading" (click)="telechargerFacture()" text="Télécharger la facture" color="green"></app-custom-button>
+        <app-custom-button *ngIf="peutSigner" (click)="ouvrirSignature()" text="Signer la facture" color="indigo"></app-custom-button>
+        <app-custom-button *ngIf="peutMarquerPayee" (click)="ouvrirPaiementModal()" text="Marquer payée" color="emerald"></app-custom-button>
         <app-return-back [link]="'/achats/factures'" text="Retour aux factures"></app-return-back>
     </div>
 </div>
@@ -65,5 +67,61 @@
     </table>
     <div class="flex justify-end" *ngIf="(facture.lignesFacture || []).length > 0">
         <p class="text-sm font-semibold text-gray-900">Total lignes : <span class="text-indigo-600">{{ totalLignes | currency:'XAF':'symbol':'1.0-0' }}</span></p>
+    </div>
+
+    <div *ngIf="estSignee" class="bg-green-50 rounded-lg border border-green-200 p-4 mt-6 flex items-center gap-4 flex-wrap">
+        <img [src]="facture.signatureData" class="h-16 bg-white rounded border border-gray-200 p-1" alt="Signature" />
+        <div>
+            <p class="text-sm font-semibold text-green-800">Signé électroniquement</p>
+            <p class="text-sm text-gray-600">par <strong>{{ facture.signataireNom }}</strong><span *ngIf="facture.signataireRole"> ({{ facture.signataireRole }})</span> le {{ facture.dateSignature | date:'dd/MM/yyyy à HH:mm' }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Signature électronique -->
+<div *ngIf="showSignatureModal"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg mx-4">
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Signature électronique</h3>
+        <p class="text-sm text-gray-600 mb-4">Dessinez votre signature dans le cadre ci-dessous, puis validez.</p>
+        <div class="flex justify-center mb-4">
+            <canvas #signatureCanvas width="460" height="160"
+                class="border-2 border-dashed border-gray-300 rounded-lg bg-white"
+                style="touch-action:none; cursor:crosshair;"
+                (mousedown)="onMouseDown($event)" (mousemove)="onMouseMove($event)" (mouseup)="onMouseUp()"
+                (touchstart)="onTouchStart($event)" (touchmove)="onTouchMove($event)" (touchend)="onTouchEnd()"></canvas>
+        </div>
+        <p class="text-xs text-gray-500 mb-4">Signataire : <strong>{{ getTokenInfos().displayname || 'Utilisateur connecté' }}</strong><span *ngIf="getTokenInfos().role"> ({{ getTokenInfos().role }})</span></p>
+        <div class="flex justify-between items-center gap-x-3">
+            <button (click)="clearSignature()"
+                class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 font-medium">Effacer</button>
+            <div class="flex gap-x-3">
+                <button (click)="annulerSignature()"
+                    class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 font-medium">Annuler</button>
+                <button (click)="validerSignature()" [disabled]="signing || signatureVide"
+                    class="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-md hover:bg-indigo-700 disabled:opacity-50">
+                    {{ signing ? 'Signature...' : 'Valider la signature' }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Confirmation Paiement -->
+<div *ngIf="showPaiementModal"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm mx-4">
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Confirmer le paiement</h3>
+        <p class="text-sm text-gray-600 mb-4">
+            Marquer la facture pro forma <strong>{{ reference }}</strong> comme <strong>payée</strong> ?
+        </p>
+        <div class="flex justify-end gap-x-3">
+            <button (click)="annulerPaiementModal()"
+                class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 font-medium">Annuler</button>
+            <button (click)="marquerPayee()" [disabled]="paying"
+                class="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-md hover:bg-green-700 disabled:opacity-50">
+                {{ paying ? 'Enregistrement...' : 'Confirmer le paiement' }}
+            </button>
+        </div>
     </div>
 </div>

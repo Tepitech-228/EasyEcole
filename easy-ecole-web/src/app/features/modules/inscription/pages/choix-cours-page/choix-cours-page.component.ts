@@ -80,8 +80,11 @@ export class ChoixCoursPageComponent implements OnInit {
     const aSauvegarder = [...facultatifsChoisisIds]
 
     if (aSauvegarder.length === 0) {
-      this.router.navigate(['/inscription/demandes/' + this.id], {
-        queryParams: { step: 'paiements' }
+      // Aucun cours facultatif choisi : on demande au backend d'ajouter les
+      // cours obligatoires du parcours final, puis on passe aux paiements.
+      this.demandeInscriptionService.createCours(this.id, {} as any).subscribe({
+        next: () => this.allerAuxPaiements(),
+        error: () => this.allerAuxPaiements()
       })
       return
     }
@@ -94,22 +97,24 @@ export class ChoixCoursPageComponent implements OnInit {
         next: () => {
           completed++
           if (completed >= aSauvegarder.length) {
-            this.router.navigate(['/inscription/demandes/' + this.id], {
-              queryParams: { step: 'paiements' }
-            })
+            this.allerAuxPaiements()
           }
         },
         error: (err) => {
           console.log(err)
           completed++
           if (completed >= aSauvegarder.length) {
-            this.router.navigate(['/inscription/demandes/' + this.id], {
-              queryParams: { step: 'paiements' }
-            })
+            this.allerAuxPaiements()
           }
         }
       })
     }
+  }
+
+  private allerAuxPaiements(): void {
+    this.router.navigate(['/inscription/demandes/' + this.id], {
+      queryParams: { step: 'paiements' }
+    })
   }
 
   retour(): void {

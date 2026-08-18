@@ -15,6 +15,9 @@ export const environment = {
   /** Alias conservé pour rétrocompatibilité */
   API_URL: apiUrl,
 
+  /** URL racine du serveur (sans /api/v1) — pour les fichiers statiques servis par Express */
+  API_BASE_URL: apiBaseUrl,
+
   /** Configuration des endpoints par module */
   API_MODULES: {
     AUTH: apiUrl + '/auth',
@@ -29,6 +32,8 @@ export const environment = {
     ELEARNING: apiUrl + '/elearning',
     COMMUNICATION: apiUrl + '/communication',
     RH: apiUrl + '/rh',
+    ACHATS: apiUrl + '/achats',
+    REPORTING: apiUrl + '/reporting',
     GED: apiUrl + '/ged',
   },
   MEDIAS_PATH: {
@@ -43,7 +48,8 @@ export const environment = {
     },
     INSCRIPTION: {
       DOSSIERS: apiUrl + "/inscription/dossiers/",
-      BORDEREAUX: apiUrl + "/inscription/bordereaux/"
+      BORDEREAUX: apiUrl + "/inscription/bordereaux/",
+      SIGNATURES: apiBaseUrl + "inscription/presences/signatures/"
     }
   },
   QR_CODES_PATH: apiUrl + "/auth/apprenants/qr-codes/",

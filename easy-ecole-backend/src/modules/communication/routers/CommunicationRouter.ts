@@ -1,8 +1,12 @@
 import express from "express"
+import Authenticate from "../../../core/middlewares/Authenticate"
 
 import CommunicationController from "../controllers/CommunicationController"
 
 const router = express.Router()
+
+// Proteger toutes les routes
+router.use([Authenticate]);
 
 router
     /**

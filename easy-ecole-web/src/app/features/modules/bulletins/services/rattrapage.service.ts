@@ -33,10 +33,6 @@ export class RattrapageService {
     return this.http.get<any[]>(`${this.apiUrl}/sessions`);
   }
 
-  assignerAuto(data: any): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/assigner-auto`, data);
-  }
-
   notifierEtudiants(ids: number[]): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/notifier`, { ids });
   }
@@ -67,6 +63,10 @@ export class RattrapageService {
 
   getEnseignantsDisponibles(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/demandes/enseignants-disponibles`);
+  }
+
+  getCorrecteursSession(sessionExamenId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.API_URL}/inscription/sessions-examens/${sessionExamenId}/correcteurs`);
   }
 
   programmer(id: number, data: any): Observable<any> {

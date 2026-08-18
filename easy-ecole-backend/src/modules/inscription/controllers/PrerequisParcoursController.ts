@@ -16,7 +16,8 @@ export default class PrerequisParcoursController {
 
             return res.status(200).send(prerequisParcours);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -32,7 +33,8 @@ export default class PrerequisParcoursController {
 
             return res.status(200).send(prerequisParcours);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -108,7 +110,8 @@ export default class PrerequisParcoursController {
                     return res.status(200).json({ success: true, message: "Prerequis supprimé" });
                 })
                 .catch((error) => {
-                    return res.status(500).json({ success: false, error: error });
+                    console.error('Erreur', error);
+                    return res.status(500).json({ success: false, message: 'Erreur interne' });
                 });
         }
         else {
@@ -130,7 +133,8 @@ export default class PrerequisParcoursController {
                 return res.status(200).json({ success: true, count: value });
             })
             .catch((error) => {
-                return res.status(500).json({ success: false, error: error });
+                console.error('Erreur', error);
+                return res.status(500).json({ success: false, message: 'Erreur interne' });
             });
 
         return null

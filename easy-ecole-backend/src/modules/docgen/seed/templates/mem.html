@@ -1,0 +1,112 @@
+<style>
+  /* ═══════════ DESIGN ESA V1 — ATTRIBUTION DE DIRECTEUR DE MÉMOIRE ═══════════ */
+  @page { size: A4 portrait; margin: 10mm 12mm; }
+  *, *::before, *::after { box-sizing: border-box; }
+  .doc-page { background-color: #ffffff; width: 100%; color: #1a1a1a; font-size: 9.5pt; line-height: 1.4; }
+  .frame { border: 3px solid #002147; padding: 15px; position: relative; display: flex; flex-direction: column; justify-content: space-between; min-height: 255mm; overflow: hidden; }
+  .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; max-width: 450px; opacity: 0.07; z-index: 0; pointer-events: none; }
+  .content-wrapper { position: relative; z-index: 1; }
+  .header-table { width: 100%; border-collapse: collapse; border-bottom: 2px solid #002147; margin-bottom: 4px; }
+  .header-table td { vertical-align: middle; }
+  .logo-img { max-height: 80px; width: auto; object-fit: contain; }
+  .school-info { text-align: right; font-size: 8.5pt; color: #333; line-height: 1.3; }
+  .banner-accent { height: 3px; background-color: #D4AF37; margin: 8px 0 10px 0; }
+  .doc-title { text-align: center; margin: 10px 0 5px 0; }
+  .doc-title h1 { font-size: 15pt; color: #002147; text-transform: uppercase; letter-spacing: 0.8px; margin: 0; padding-bottom: 4px; border-bottom: 2px solid #D4AF37; display: inline-block; }
+  .ref-number { text-align: center; font-size: 9pt; font-weight: bold; color: #002147; margin-bottom: 15px; }
+  .info-box { background-color: rgba(248, 249, 250, 0.85); border-left: 4px solid #002147; padding: 10px 12px; margin: 12px 0; border-radius: 2px; }
+  .field-row { margin-bottom: 5px; }
+  .field-row:last-child { margin-bottom: 0; }
+  .label { font-weight: bold; color: #002147; }
+  .value { color: #222; }
+  .content-body { margin: 12px 0; text-align: justify; }
+  .footer-table { width: 100%; margin-top: 20px; border-collapse: collapse; position: relative; z-index: 1; }
+  .footer-table td { vertical-align: top; }
+  .date-cell { font-style: italic; font-size: 9pt; }
+  .sign-cell { text-align: center; width: 220px; }
+  .sign-title { font-weight: bold; font-size: 9pt; color: #002147; margin-bottom: 45px; }
+  .sign-line { border-top: 1px dashed #002147; padding-top: 4px; font-size: 8pt; color: #555; }
+  .doc-meta { text-align: center; margin-top: 10px; font-size: 8pt; color: #999; }
+  .doc-qr { text-align: center; margin-top: 8px; }
+  .doc-qr img { width: 80px; height: 80px; }
+</style>
+
+<div class="doc-page">
+  <div class="frame">
+    <img src="{{LOGO_DATA_URI}}" alt="" class="watermark">
+
+    <div class="content-wrapper">
+      <table class="header-table">
+        <tr>
+          <td><img src="{{LOGO_DATA_URI}}" alt="Logo ESA" class="logo-img"></td>
+          <td class="school-info">
+            <strong>{{etablissement.nom}}</strong><br>
+            Direction de la Recherche &amp; des Mémoires<br>
+            Lomé, Togo<br>
+            Tél : {{etablissement.telephone}} | Email : {{etablissement.email}}
+          </td>
+        </tr>
+      </table>
+      <div class="banner-accent"></div>
+
+      <div class="doc-title">
+        <h1>Attribution de Directeur de Mémoire</h1>
+      </div>
+      <div class="ref-number">Réf. : {{reference}}</div>
+
+      <div class="content-body">
+        <p>Le Directeur des Études et de la Recherche de <strong>{{etablissement.nom}}</strong> informe que :</p>
+
+        <div class="info-box">
+          <div class="field-row">
+            <span class="label">Mme / M. l'Étudiant(e) :</span>
+            <span class="value"><strong>{{etudiant.nom}} {{etudiant.prenom}}</strong></span>
+          </div>
+          <div class="field-row">
+            <span class="label">Matricule :</span> <span class="value"><strong>{{etudiant.matricule}}</strong></span>
+          </div>
+          <div class="field-row">
+            <span class="label">Filière &amp; Niveau :</span>
+            <span class="value">{{etudiant.filiere}} — {{etudiant.niveau}}</span>
+          </div>
+          <div class="field-row">
+            <span class="label">Thème / Sujet de recherche :</span><br>
+            <span class="value" style="font-style: italic;">« {{etudiant.sujet}} »</span>
+          </div>
+        </div>
+
+        <p>est placé(e) sous la direction académique de :</p>
+
+        <div style="padding-left: 15px; margin: 15px 0;">
+          <div class="field-row">
+            <span class="label">Directeur / Encadrant :</span>
+            <span class="value"><strong>{{etudiant.superviseurNom}}</strong></span>
+          </div>
+          <div class="field-row">
+            <span class="label">Grade / Qualité :</span>
+            <span class="value">{{etudiant.superviseurGrade}}</span>
+          </div>
+          <div class="field-row">
+            <span class="label">Contact Encadrant :</span>
+            <span class="value">{{etudiant.superviseurContact}}</span>
+          </div>
+        </div>
+
+        <p>L'étudiant(e) est tenu(e) de prendre contact sans délai avec son Directeur de mémoire afin d'établir le calendrier de travail et d'encadrement en vue de la soutenance.</p>
+      </div>
+    </div>
+
+    <table class="footer-table">
+      <tr>
+        <td class="date-cell">Fait à Lomé, le {{dateEdition}}</td>
+        <td class="sign-cell">
+          <div class="sign-title">Le Directeur de la Recherche</div>
+          <div class="sign-line">Signature &amp; Cachet Officiel</div>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="doc-meta">Document généré le {{dateGeneration}} — Réf : {{reference}}</div>
+  <div class="doc-qr"><img src="{{qrCodeDataUrl}}" alt="QR Code"></div>
+</div>

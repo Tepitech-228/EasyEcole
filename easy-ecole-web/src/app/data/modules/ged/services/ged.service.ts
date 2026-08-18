@@ -124,18 +124,22 @@ export interface DisposalRecord {
   statut?: string;
 }
 
+export type ConfidentialityLevel = 'public' | 'interne' | 'restreint' | 'confidentiel';
+
 export interface GedPermission {
   id: number;
   role: string;
-  roleId?: number;
-  processId?: number;
-  process?: { code: string; libelle: string };
-  domaineId?: number;
-  domaine?: { code: string; label: string };
+  confidentialityLevel: ConfidentialityLevel;
   canRead: boolean;
   canWrite: boolean;
   canDelete: boolean;
   canDownload: boolean;
+  /** null si la permission est globale */
+  processusGenerateurId?: string | null;
+  /** null si la permission est globale */
+  domainId?: number | null;
+  processusGenerateur?: { id: string; code: string; libelle: string };
+  domain?: { id: number; code: string; label: string };
 }
 
 export interface GedProcessus {
@@ -302,11 +306,20 @@ export class GedService {
     return this.httpClient.get(`${this.SERVICE_URL}/${id}/pdf`, { responseType: 'blob' }) as Observable<Blob>;
   }
 
-  getDownloadUrl(id: string): string {
+  /**
+   * Construit une URL de téléchargement d'API protégée en y ajoutant le token
+   * d'authentification en query (?token=...), pour les ouvertures dans un
+   * nouvel onglet (window.open) où l'intercepteur HTTP ne peut pas s'appliquer.
+   */
+  getDownloadUrlWithToken(path: string): string {
     const token = this.localStorage.get(LocalStorageService.AUTH_TOKEN);
-    let url = `${this.SERVICE_URL}/download/${id}`;
-    if (token) url += `?token=${encodeURIComponent(token)}`;
+    let url = path;
+    if (token) url += (url.includes('?') ? '&' : '?') + `token=${encodeURIComponent(token)}`;
     return url;
+  }
+
+  getDownloadUrl(id: string): string {
+    return this.getDownloadUrlWithToken(`${this.SERVICE_URL}/download/${id}`);
   }
 
   getSessions(): Observable<GedSession[]> {
@@ -424,12 +437,29 @@ export class GedService {
     return this.httpClient.post(`${this.ADMIN_URL}/disposal/${id}/reject`, { motif });
   }
 
-  getPermissions(params?: { role?: string; processId?: number; domaineId?: number }): Observable<GedPermission[]> {
+  getPermissions(params?: { role?: string; processusGenerateurId?: string; domainId?: number }): Observable<GedPermission[]> {
     let httpParams = new HttpParams();
     if (params?.role) httpParams = httpParams.set('role', params.role);
-    if (params?.processId) httpParams = httpParams.set('processId', String(params.processId));
-    if (params?.domaineId) httpParams = httpParams.set('domaineId', String(params.domaineId));
+    if (params?.processusGenerateurId) httpParams = httpParams.set('processusGenerateurId', params.processusGenerateurId);
+    if (params?.domainId) httpParams = httpParams.set('domainId', String(params.domainId));
     return this.httpClient.get<GedPermission[]>(`${this.ADMIN_URL}/permissions`, { params: httpParams });
+  }
+
+  createPermission(data: {
+    role: string;
+    confidentialityLevel: ConfidentialityLevel;
+    canRead?: boolean;
+    canWrite?: boolean;
+    canDelete?: boolean;
+    canDownload?: boolean;
+    processusGenerateurId?: string | null;
+    domainId?: number | null;
+  }): Observable<GedPermission> {
+    return this.httpClient.post<GedPermission>(`${this.ADMIN_URL}/permissions`, data);
+  }
+
+  deletePermission(id: number): Observable<any> {
+    return this.httpClient.delete(`${this.ADMIN_URL}/permissions/${id}`);
   }
 
   updatePermission(id: number, data: Partial<GedPermission>): Observable<GedPermission> {
@@ -440,7 +470,16 @@ export class GedService {
     return this.httpClient.post(`${this.ADMIN_URL}/permissions/defaults`, {});
   }
 
-  bulkUpdatePermissions(data: GedPermission[]): Observable<any> {
+  bulkUpdatePermissions(data: Array<{
+    role: string;
+    confidentialityLevel: ConfidentialityLevel;
+    canRead?: boolean;
+    canWrite?: boolean;
+    canDelete?: boolean;
+    canDownload?: boolean;
+    processusGenerateurId?: string | null;
+    domainId?: number | null;
+  }>): Observable<any> {
     return this.httpClient.put(`${this.ADMIN_URL}/permissions`, data);
   }
 

@@ -44,6 +44,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                     { label: 'Preinscriptions', route: '/inscription/comite-orientation', icon: 'how_to_reg', permissionKey: 'menu.comite-orientation.preinscriptions', allowedRoles: [RolesUtilisateur.COMITE_ORIENTATION, RolesUtilisateur.ADMIN] },
                     { label: 'Mes bordereaux', route: '/inscription/bordereaux', icon: 'receipt_long', permissionKey: 'menu.finances.bordereaux', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
                     { label: 'Mon dossier', route: '/inscription/mon-dossier', icon: 'folder_special', permissionKey: 'menu.inscription.mon-dossier', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
+                    { label: 'Désignation directeur mémoire', route: '/inscription/designation-memoire', icon: 'menu_book', permissionKey: 'menu.inscription.designation-memoire', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                 ]
             },
             {
@@ -69,6 +70,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                     { label: 'Calendrier', route: '/scolarite/calendrier', icon: 'calendar_month', permissionKey: 'menu.scolarite.calendrier', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
                     { label: 'Sessions examens', route: '/bulletins/sessions', icon: 'event', permissionKey: 'menu.evaluations.sessions', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
                     { label: 'Rattrapages', route: '/bulletins/rattrapages', icon: 'autorenew', permissionKey: 'menu.evaluations.rattrapages', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
+                    { label: 'Mes rattrapages', route: '/bulletins/rattrapages/mes-demandes', icon: 'autorenew', permissionKey: 'menu.evaluations.rattrapages', allowedRoles: [RolesUtilisateur.APPRENANT] },
                     { label: 'Decisions passage', route: '/scolarite/decisions-passage', icon: 'how_to_vote', permissionKey: 'menu.scolarite.decisions-passage', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                 ]
             },

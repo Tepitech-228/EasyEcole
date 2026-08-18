@@ -2,14 +2,23 @@ import { Request, Response } from "express";
 import { SemestresParcours } from "../../../core/enums/SemestresParcours";
 
 export function validerGeneration(req: Request, res: Response, next: Function) {
-  const { classeId, semestre, anneeAcademiqueId } = req.body;
+  const { classeId, semestre, anneeAcademiqueId, salleId } = req.body;
   const erreurs: string[] = [];
 
   if (!classeId) erreurs.push("classeId est requis");
-  if (!semestre) erreurs.push("semestre est requis");
   if (!anneeAcademiqueId) erreurs.push("anneeAcademiqueId est requis");
-  if (semestre && !Object.values(SemestresParcours).includes(semestre)) {
-    erreurs.push(`semestre doit être l'un des suivants : ${Object.values(SemestresParcours).join(', ')}`);
+  // semestre est OPTIONNEL : son absence déclenche la génération sur tous les semestres (1..6).
+  if (semestre !== undefined && semestre !== null && semestre !== '') {
+    if (!Object.values(SemestresParcours).includes(semestre)) {
+      erreurs.push(`semestre doit être l'un des suivants : ${Object.values(SemestresParcours).join(', ')}`);
+    }
+  }
+  // salleId est optionnel : s'il est fourni, il doit être un entier positif.
+  if (salleId !== undefined && salleId !== null && salleId !== '') {
+    const n = Number(salleId);
+    if (isNaN(n) || n < 1 || !Number.isInteger(n)) {
+      erreurs.push("salleId doit être un entier positif");
+    }
   }
 
   if (erreurs.length) {

@@ -16,7 +16,8 @@ export default class MatierePrerequisController {
 
             return res.status(200).send(matieresPrerequis);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -32,7 +33,8 @@ export default class MatierePrerequisController {
 
             return res.status(200).send(matierePrerequis);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -113,7 +115,8 @@ export default class MatierePrerequisController {
                     return res.status(200).json({ success: true, message: "Matière supprimée" });
                 })
                 .catch((error) => {
-                    return res.status(500).json({ success: false, error: error });
+                    console.error('Erreur', error);
+                    return res.status(500).json({ success: false, message: 'Erreur interne' });
                 });
         }
         else {
@@ -135,7 +138,8 @@ export default class MatierePrerequisController {
                 return res.status(200).json({ success: true, count: value });
             })
             .catch((error) => {
-                return res.status(500).json({ success: false, error: error });
+                console.error('Erreur', error);
+                return res.status(500).json({ success: false, message: 'Erreur interne' });
             });
 
         return null

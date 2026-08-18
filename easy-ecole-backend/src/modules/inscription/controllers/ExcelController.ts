@@ -559,7 +559,7 @@ export default class ExcelController {
           email: u.email,
           identifiant: u.identifiant,
           contact: u.contact,
-          fonction: e.fonction,
+          fonction: e.fonctionAdministrative,
           dateNaissance: e.dateNaissance ? new Date(e.dateNaissance).toLocaleDateString("fr-FR") : "",
           lieuNaissance: e.lieuNaissance,
         });
@@ -1029,7 +1029,7 @@ export default class ExcelController {
           prenoms: u?.prenoms ?? "",
           email: u?.email ?? "",
           telephone: u?.contact ?? "",
-          specialite: e.fonction ?? "",
+          specialite: e.specialite ?? "",
           statut: u?.dateVerificationEmail ? "actif" : "inactif",
           cours: (coursParEnseignant.get(e.id) ?? []).join(", "),
         });
@@ -1263,7 +1263,7 @@ export default class ExcelController {
         };
         if (showApprenant) rowData.matricule = dossierByUserId.get(u.id)?.matricule ?? "";
         if (showProfil) {
-          rowData.fonction = profil?.fonction ?? "";
+          rowData.fonction = (profil as any).fonctionAdministrative ?? (profil as any).fonction ?? "";
           rowData.dateNaissance = profil?.dateNaissance ? new Date(profil.dateNaissance).toLocaleDateString("fr-FR") : "";
           rowData.lieuNaissance = profil?.lieuNaissance ?? "";
         }

@@ -1,0 +1,112 @@
+<style>
+  /* ═══════════ DESIGN ESA — PIÈCES À FOURNIR POUR LA DEMANDE DE DÉLIVRANCE DE DIPLÔME — MASTER (OFFICIEL) ═══════════ */
+  @page { size: A4 portrait; margin: 8mm 10mm; }
+  *, *::before, *::after { box-sizing: border-box; }
+  .doc-page { background-color: #ffffff; width: 100%; color: #1a1a1a; font-size: 8.5pt; line-height: 1.45; }
+  .frame { border: 3px solid #002147; padding: 12px; position: relative; display: flex; flex-direction: column; justify-content: space-between; min-height: 255mm; overflow: hidden; }
+  .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 65%; max-width: 400px; opacity: 0.05; z-index: 0; pointer-events: none; }
+  .content-wrapper { position: relative; z-index: 1; }
+  .header-table { width: 100%; border-collapse: collapse; border-bottom: 2px solid #002147; padding-bottom: 4px; margin-bottom: 4px; }
+  .header-table td { vertical-align: middle; }
+  .logo-img { max-height: 60px; width: auto; object-fit: contain; }
+  .school-info { text-align: right; font-size: 8pt; color: #333; line-height: 1.2; }
+  .banner-accent { height: 3px; background-color: #D4AF37; margin-bottom: 8px; }
+  .doc-title { text-align: center; margin: 6px 0 4px; }
+  .doc-title h1 { font-size: 10.5pt; color: #002147; text-transform: uppercase; letter-spacing: 0.5px; margin: 0; padding-bottom: 3px; border-bottom: 2px solid #D4AF37; display: inline-block; }
+  .doc-subtitle { text-align: center; font-size: 9pt; font-weight: bold; color: #002147; margin-top: 2px; }
+  .ref-number { text-align: center; font-size: 8pt; font-weight: bold; color: #002147; margin-bottom: 8px; }
+  .data-table { width: 100%; border-collapse: collapse; margin: 6px 0; font-size: 8pt; }
+  .data-table th, .data-table td { border: 1px solid #002147; padding: 4px 5px; text-align: left; }
+  .data-table th { background-color: #002147 !important; color: #ffffff !important; font-weight: bold; text-align: center; font-size: 7.5pt; text-transform: uppercase; }
+  .data-table td.center { text-align: center; }
+  .info-box { background-color: rgba(248, 249, 250, 0.85); border-left: 3px solid #002147; padding: 6px 8px; margin: 6px 0; font-size: 8.5pt; }
+  .dotted-line { border-bottom: 1px dotted #333; display: inline-block; min-width: 100px; }
+  .value { font-weight: bold; color: #002147; }
+  .content-body { margin: 6px 0; text-align: justify; }
+  .content-body p { margin: 5px 0; }
+  .footer-table { width: 100%; margin-top: 10px; border-collapse: collapse; position: relative; z-index: 1; }
+  .footer-table td { vertical-align: top; }
+  .date-cell { font-style: italic; font-size: 8pt; }
+  .sign-cell { text-align: center; }
+  .sign-title { font-weight: bold; font-size: 8pt; color: #002147; margin-bottom: 10px; }
+  .doc-meta { text-align: center; margin-top: 8px; font-size: 7pt; color: #999; }
+</style>
+
+<div class="doc-page">
+  <div class="frame">
+    <img src="{{LOGO_DATA_URI}}" alt="" class="watermark">
+
+    <div class="content-wrapper">
+      <table class="header-table">
+        <tr>
+          <td><img src="{{LOGO_DATA_URI}}" alt="Logo ESA" class="logo-img"></td>
+          <td class="school-info">
+            <strong>{{etablissement.nom}}</strong><br>
+            Direction Académique et Scientifique
+          </td>
+        </tr>
+      </table>
+      <div class="banner-accent"></div>
+
+      <div class="doc-title">
+        <h1>Pièces à Fournir pour la Demande de Délivrance de Diplôme</h1>
+        <div class="doc-subtitle">NIVEAU : MASTER (BAC+5)</div>
+      </div>
+
+      <div class="content-body">
+        <p>La demande de délivrance de diplôme est adressée à la Direction Académique et Scientifique de l'ESA en vue de vérifier les éléments constitutifs du dossier qui retracent le profil de l'étudiant comme indiqué dans le tableau ci-dessous.</p>
+
+        <div class="info-box">
+          <strong>Nom &amp; Prénom :</strong> <span class="dotted-line" style="width: 70%;">{{etudiant.nom}} {{etudiant.prenom}}</span><br>
+          <strong>Parcours :</strong> <span class="dotted-line" style="width: 30%;">{{etudiant.diplomeVise}}</span> &nbsp;&nbsp; <strong>Filière :</strong> <span class="dotted-line" style="width: 45%;">{{etudiant.parcours}}</span>
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 6%;">N°</th>
+              <th style="width: 74%;">DÉSIGNATION</th>
+              <th style="width: 10%;" class="center">OUI</th>
+              <th style="width: 10%;" class="center">NON</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="center">1</td><td>Fiche de demande (à retirer à ESA)</td><td></td><td></td></tr>
+            <tr><td class="center">2</td><td>Copie de l'autorisation Provisoire d'inscription</td><td></td><td></td></tr>
+            <tr><td class="center">3</td><td>Fiche d'engagement duly signée</td><td></td><td></td></tr>
+            <tr><td class="center">4</td><td>Copie de la lettre d'authentification du diplômes ou coupon réponse d'authentification (Réserver à l'Administration ESA)</td><td></td><td></td></tr>
+            <tr><td class="center">5</td><td>Copie de la lettre d'authentification des relevés ou coupon réponse d'authentification (Réserver à l'Administration ESA)</td><td></td><td></td></tr>
+            <tr><td class="center">6</td><td>L'original de relevé de notes de Master Semestre 1 et 2</td><td></td><td></td></tr>
+            <tr><td class="center">7</td><td>L'original de relevé de notes de Master Semestre 3 et 4 après soutenance</td><td></td><td></td></tr>
+            <tr><td class="center">8</td><td>L'original de l'attestation du diplôme ou diplôme de licence</td><td></td><td></td></tr>
+            <tr><td class="center">9</td><td>Les relevés de notes de semestres 1, 2, 3, 4, 5 et 6 de Licence</td><td></td><td></td></tr>
+            <tr><td class="center">10</td><td>L'original de l'attestation de BAC 2</td><td></td><td></td></tr>
+            <tr><td class="center">11</td><td>L'original de l'Attestation d'admissibilité</td><td></td><td></td></tr>
+            <tr><td class="center">12</td><td>Attestation de délivrance de diplôme (Réserver à l'Administration ESA)</td><td></td><td></td></tr>
+            <tr><td class="center">13</td><td>Procès-Verbal de Soutenance du Mémoire de Master (Réserver à l'Administration ESA)</td><td></td><td></td></tr>
+            <tr><td class="center">14</td><td>Quitus définitif des membres de jury</td><td></td><td></td></tr>
+            <tr><td class="center">15</td><td>Originaux des Bordereaux de payement des frais de soutenance et du diplôme</td><td></td><td></td></tr>
+            <tr><td class="center">16</td><td>Originaux des Bordereaux et quitus définitif de payement des frais de scolarité de Master Semestre 1 et 2</td><td></td><td></td></tr>
+            <tr><td class="center">17</td><td>Originaux des Bordereaux et quitus de payement des frais de scolarité de Master Semestre 3 et 4</td><td></td><td></td></tr>
+            <tr><td class="center">18</td><td>Une photo d'identité</td><td></td><td></td></tr>
+            <tr><td class="center">19</td><td>Copie légalisée de la carte d'identité nationale</td><td></td><td></td></tr>
+            <tr><td class="center">20</td><td>Un exemplaire définitif du mémoire corrigé après la soutenance</td><td></td><td></td></tr>
+            <tr><td class="center">21</td><td>Fiche de dépôt de mémoire définitif en vue de la demande de diplôme (version PDF du mémoire définitif sur clé USB)</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <table class="footer-table">
+        <tr>
+          <td class="date-cell">Fait à Lomé, le {{dateEdition}}</td>
+          <td class="sign-cell" style="width: 50%;">
+            <div class="sign-title">Réceptionné par</div>
+            <p style="margin: 0;">NOM &amp; PRÉNOM :<br>SIGNATURE :</p>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="doc-meta">Document généré le {{dateGeneration}} — Réf : {{reference}}</div>
+</div>

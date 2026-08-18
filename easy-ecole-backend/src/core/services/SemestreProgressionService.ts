@@ -2,6 +2,7 @@ import { CursusApprenant } from "../../modules/inscription/models/CursusApprenan
 import { Cours } from "../../modules/inscription/models/Cours";
 import { Bulletin } from "../../modules/bulletins/models/Bulletin";
 import { SemestreAcademique } from "../../modules/inscription/models/SemestreAcademique";
+import { Classe } from "../../modules/inscription/models/Classe";
 import { Op } from "sequelize";
 
 export interface AnneeParcoursInfo {
@@ -210,5 +211,59 @@ export class SemestreProgressionService {
       map.set(a.annee, a.semestres);
     }
     return map;
+  }
+
+  /**
+   * Semestres restreints pour un niveau de 1ère année (Licence 1 / L1).
+   * Retourne ['semestre1', 'semestre2'] si le libellé du niveau correspond à une
+   * Licence 1 (ANNEE1 via MAPPING_NIVEAU_SEMESTRES), sinon null.
+   * NB : Master 1 mappe aussi ANNEE1, mais la restriction de visibilité
+   * « 1ère année » ne concerne QUE la Licence 1 (et non le Master 1).
+   */
+  static getSemestresRestreintsPremiereAnnee(niveauLibelle?: string | null): string[] | null {
+    if (!niveauLibelle) return null;
+
+    // Ne restreindre que les licences (pas les masters qui mappent aussi ANNEE1).
+    const normalise = niveauLibelle.trim().toUpperCase();
+    if (!normalise.includes('LICENCE') && !normalise.includes('L1') && !normalise.includes('LIC1')) {
+      return null;
+    }
+
+    const annees = this.getAnneesParcours(niveauLibelle);
+    if (!annees || annees.length === 0) return null;
+
+    const premiereAnnee = annees.find(a => a.annee === 'ANNEE1');
+    if (!premiereAnnee) return null;
+
+    return premiereAnnee.semestres; // ['semestre1', 'semestre2']
+  }
+
+  /**
+   * Récupère les semestres autorisés pour un apprenant selon son niveau d'étude courant.
+   * Retourne ['semestre1', 'semestre2'] pour un niveau de 1ère année, sinon null
+   * (aucune restriction).
+   */
+  static async getSemestresAutorisesApprenant(utilisateurId: number): Promise<string[] | null> {
+    const cursus = await CursusApprenant.findOne({
+      where: { utilisateurId },
+      include: [
+        {
+          association: CursusApprenant.associations.niveauEtude
+        },
+        {
+          association: CursusApprenant.associations.classe,
+          include: [{ association: Classe.associations.niveauEtude }]
+        }
+      ],
+      order: [['anneeAcademiqueId', 'DESC']]
+    });
+
+    if (!cursus) return null;
+
+    const niveauLibelle = (cursus as any).niveauEtude?.libelle
+      || (cursus as any).classe?.niveauEtude?.libelle
+      || '';
+
+    return this.getSemestresRestreintsPremiereAnnee(niveauLibelle);
   }
 }

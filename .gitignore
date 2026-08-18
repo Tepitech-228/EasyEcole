@@ -48,3 +48,28 @@ docker-compose.local.yml
 # Sauvegardes et anciens builds
 backups/
 easy-ecole-web/dist_old/
+
+# Export de déploiement hors-ligne (images Docker tar ~1 Go + dumps SQL) — pas versionné
+export-deploiement/
+
+# Rapports d'audit ponctuels et notes de travail à la racine du backend
+easy-ecole-backend/*.md
+
+# Maquettes / exports temporaires
+docs/*.html
+templates-esa-officiels.zip
+
+# Scripts de dev jetables (back)
+easy-ecole-backend/check-ged.ts
+easy-ecole-backend/check-recu.ts
+easy-ecole-backend/test-db.ts
+easy-ecole-backend/test-db2.ts
+easy-ecole-backend/endpoint-audit.csv
+easy-ecole-backend/endpoint-audit-report.json
+easy-ecole-backend/src/core/scripts/endpoint-audit.ts
+easy-ecole-backend/src/core/scripts/endpoint-audit-http.ts
+easy-ecole-backend/src/core/scripts/test-all-endpoints.ts
+easy-ecole-backend/src/core/scripts/add-designation-memoire.ts
+easy-ecole-backend/src/core/scripts/fix-db-schema.ts
+easy-ecole-backend/src/core/scripts/list-tables.ts
+easy-ecole-backend/src/core/scripts/seed-complet.ts

@@ -10,16 +10,45 @@ import { AnneeAcademique } from "../../inscription/models/AnneeAcademique";
 import { Parcours } from "../../inscription/models/Parcours";
 import { NiveauEtude } from "../../inscription/models/NiveauEtude";
 
+/** Étudiant classé dans le top N d'une promotion */
+interface TopEtudiant {
+    id: number;
+    etudiant: string;
+    matricule: string;
+    classe: string;
+    moyenne: number;
+    rang: number;
+    decision: string;
+}
+
+/** Une promotion regroupée : libellé + métadonnées de regroupement + top N */
+interface TopPromotion {
+    promotion: string;
+    anneeScolaire: string;
+    filiere: string | null;
+    niveau: string | null;
+    classe: string | null;
+    totalPromotion: number;
+    etudiants: TopEtudiant[];
+}
+
+/** Structure interne utilisée pendant le regroupement (avant troncature au top N) */
+interface PromotionGroup {
+    key: string;
+    label: string;
+    anneeScolaire: string;
+    filiere: string | null;
+    niveau: string | null;
+    classe: string | null;
+    members: RegistreAcademique[];
+}
+
 export default class RegistreAcademiqueController {
 
     constructor() { }
 
     static async getAll(req: Request, res: Response): Promise<Response> {
         try {
-            const page = Math.max(1, parseInt(req.query.page as string) || 1);
-            const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
-            const offset = (page - 1) * limit;
-
             const { anneeScolaire, classe, decision, filiere, niveau, search } = req.query;
 
             const where: any = {};
@@ -35,6 +64,35 @@ export default class RegistreAcademiqueController {
                     { matricule: { [Op.substring]: search } }
                 ];
             }
+
+            // Mode « Top N par promotion » (?top=50, défaut 50, max 100)
+            if (req.query.top !== undefined) {
+                const top = Math.min(100, Math.max(1, parseInt(req.query.top as string) || 50));
+
+                const rows = await RegistreAcademique.findAll({
+                    where,
+                    limit: 5000,
+                    order: [
+                        ['anneeScolaire', 'DESC'],
+                        ['filiere', 'ASC'],
+                        ['niveau', 'ASC'],
+                        ['moyenne', 'DESC']
+                    ]
+                });
+
+                const promotions = RegistreAcademiqueController.buildTopPromotions(rows, top);
+
+                return res.status(200).json({
+                    data: promotions,
+                    total: promotions.length,
+                    top
+                });
+            }
+
+            // Mode paginé « liste plate » (comportement d'origine, strictement inchangé)
+            const page = Math.max(1, parseInt(req.query.page as string) || 1);
+            const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+            const offset = (page - 1) * limit;
 
             const { count, rows } = await RegistreAcademique.findAndCountAll({
                 where,
@@ -55,6 +113,91 @@ export default class RegistreAcademiqueController {
         } catch (error) {
             return res.status(500).json({ success: false, error: error });
         }
+    }
+
+    /**
+     * Regroupe des registres en « promotions » et ne conserve que le top N
+     * par promotion (tri moyenne DESC puis rang ASC).
+     *
+     * Définition d'une promotion : anneeScolaire + filiere + niveau (quand
+     * filiere ou niveau est présent) ; repli sur anneeScolaire + classe quand
+     * filiere ET niveau sont absents. Le libellé est composé sans doublons
+     * ni séparateurs vides, ex. « 2025-2026 · Gestion · Licence 1 ».
+     */
+    private static buildTopPromotions(rows: RegistreAcademique[], top: number): TopPromotion[] {
+        const groups = new Map<string, PromotionGroup>();
+
+        for (const row of rows) {
+            const anneeScolaire = (row.anneeScolaire ?? '').trim();
+            const filiere = (row.filiere ?? '').trim() || null;
+            const niveau = (row.niveau ?? '').trim() || null;
+            const classe = (row.classe ?? '').trim() || null;
+
+            // Clé de regroupement : filiere/niveau présents → anneeScolaire+filiere+niveau,
+            // sinon repli sur anneeScolaire+classe. Préfixe pour éviter toute collision.
+            const key = filiere
+                ? `F|${anneeScolaire}|${filiere}|${niveau ?? ''}`
+                : niveau
+                    ? `N|${anneeScolaire}|${niveau}`
+                    : `C|${anneeScolaire}|${classe ?? ''}`;
+
+            // Libellé de la promotion : sans doublons ni séparateurs vides
+            const parts: string[] = [anneeScolaire];
+            if (filiere) {
+                parts.push(filiere);
+                if (niveau && niveau !== filiere) parts.push(niveau);
+            } else if (niveau) {
+                parts.push(niveau);
+            } else if (classe) {
+                parts.push(classe);
+            }
+            const label = parts.join(' · ');
+
+            let group = groups.get(key);
+            if (!group) {
+                group = {
+                    key,
+                    label,
+                    anneeScolaire,
+                    filiere,
+                    niveau,
+                    classe,
+                    members: []
+                };
+                groups.set(key, group);
+            }
+            group.members.push(row);
+        }
+
+        const promotions: TopPromotion[] = [];
+
+        for (const group of groups.values()) {
+            // Classement au sein de la promotion : moyenne DESC puis rang ASC
+            // (le rang affiché reste le rang réel, non re-numéroté).
+            group.members.sort((a, b) => b.moyenne - a.moyenne || a.rang - b.rang);
+
+            const etudiants: TopEtudiant[] = group.members.slice(0, top).map((r) => ({
+                id: r.id,
+                etudiant: r.etudiant,
+                matricule: r.matricule,
+                classe: r.classe,
+                moyenne: r.moyenne,
+                rang: r.rang,
+                decision: r.decision
+            }));
+
+            promotions.push({
+                promotion: group.label,
+                anneeScolaire: group.anneeScolaire,
+                filiere: group.filiere,
+                niveau: group.niveau,
+                classe: group.classe,
+                totalPromotion: group.members.length,
+                etudiants
+            });
+        }
+
+        return promotions;
     }
 
     static async batchStatut(req: Request, res: Response): Promise<Response> {

@@ -24,7 +24,8 @@ export default class EnseignantController {
 
             return res.status(200).send(enseignants);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -57,7 +58,8 @@ export default class EnseignantController {
 
             return res.status(200).send(enseignant);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -77,12 +79,32 @@ export default class EnseignantController {
 
         if (enseignant != null) {
             await enseignant.update({
-                fonction: req.body.fonction,
+                matricule: req.body.matricule,
+                gradeAcademique: req.body.gradeAcademique,
+                specialite: req.body.specialite,
+                statut: req.body.statut,
+                fonctionAdministrative: req.body.fonctionAdministrative,
+                anneeExperience: req.body.anneeExperience,
+                heureTheoriqueAnnuelle: req.body.heureTheoriqueAnnuelle,
+                heureReelleAnnuelle: req.body.heureReelleAnnuelle,
+                cni: req.body.cni,
+                nifOtr: req.body.nifOtr,
                 dateNaissance: req.body.dateNaissance,
                 lieuNaissance: req.body.lieuNaissance,
+                sexe: req.body.sexe,
+                nationalite: req.body.nationalite,
+                contact: req.body.contact,
+                plusHautDiplome: req.body.plusHautDiplome,
+                statutHandicap: req.body.statutHandicap,
+                natureHandicap: req.body.natureHandicap,
             })
                 .then(async (enseignant) => {
                     await AdresseEnseignant.update(req.body.adresse, { where: { enseignantId: enseignant.id } })
+
+                    if (enseignant.utilisateurId && req.body.utilisateur) {
+                        const { Utilisateur } = require('../models/Utilisateur')
+                        await Utilisateur.update(req.body.utilisateur, { where: { id: enseignant.utilisateurId } })
+                    }
 
                     return res.status(200).send(enseignant);
                 })
@@ -92,7 +114,7 @@ export default class EnseignantController {
         }
         else {
             await Enseignant.create({
-                fonction: req.body.fonction,
+                fonctionAdministrative: req.body.fonction,
                 dateNaissance: req.body.dateNaissance,
                 lieuNaissance: req.body.lieuNaissance,
                 adresse: req.body.adresse,
@@ -170,7 +192,8 @@ export default class EnseignantController {
                     return res.status(200).json({ success: true, message: "Enseignant supprimé" });
                 })
                 .catch((error) => {
-                    return res.status(500).json({ success: false, error: error });
+                    console.error('Erreur', error);
+                    return res.status(500).json({ success: false, message: 'Erreur interne' });
                 });
         }
         else {
@@ -229,7 +252,8 @@ export default class EnseignantController {
 
             return res.status(200).json({ success: true, data: results })
         } catch (error) {
-            return res.status(500).json({ success: false, error: error })
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -245,7 +269,8 @@ export default class EnseignantController {
                 return res.status(200).json({ success: true, count: value });
             })
             .catch((error) => {
-                return res.status(500).json({ success: false, error: error });
+                console.error('Erreur', error);
+                return res.status(500).json({ success: false, message: 'Erreur interne' });
             });
 
         return null

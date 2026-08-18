@@ -72,6 +72,37 @@ router
     .get('/:id', FactureController.get)
     /**
      * @openapi
+     * /achats/factures/{id}/signer:
+     *   put:
+     *     tags: [Achats - Factures]
+     *     summary: Signe électroniquement une facture pro forma
+     *     security: [{ bearerAuth: [] }]
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema:
+     *           type: integer
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             properties:
+     *               signatureData:
+     *                 type: string
+     *               signataireNom:
+     *                 type: string
+     *               signataireRole:
+     *                 type: string
+     *     responses:
+     *       200:
+     *         description: Facture signée
+     */
+    .put('/:id/signer', FactureController.signer)
+    /**
+     * @openapi
      * /achats/factures/{id}:
      *   put:
      *     tags: [Achats - Factures]

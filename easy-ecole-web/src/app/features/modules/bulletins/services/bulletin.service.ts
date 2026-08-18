@@ -17,8 +17,16 @@ export class BulletinService {
     return this.http.get<any>(`${this.apiUrl}/${id}`);
   }
 
-  generer(classeId: number, semestre: string, anneeAcademiqueId: number): Observable<any[]> {
-    return this.http.post<any[]>(`${this.apiUrl}/generer`, { classeId, semestre, anneeAcademiqueId });
+  /**
+   * Génère (ou régénère) les bulletins d'une classe.
+   * @param semestre     clé du semestre ('semestre1'...) ou null/'' pour tous les semestres
+   * @param salleId      optionnel : restreint la génération aux étudiants d'une salle
+   */
+  generer(classeId: number, semestre: string | null, anneeAcademiqueId: number, salleId?: string | null): Observable<any[]> {
+    const body: Record<string, unknown> = { classeId, anneeAcademiqueId };
+    if (semestre) body.semestre = semestre;
+    if (salleId) body.salleId = salleId;
+    return this.http.post<any[]>(`${this.apiUrl}/generer`, body);
   }
 
   update(id: number, data: any): Observable<any> {

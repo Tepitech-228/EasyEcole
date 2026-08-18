@@ -1,7 +1,11 @@
 import express from "express"
+import Authenticate from "../../../core/middlewares/Authenticate"
 import SanctionAcademiqueController from "../controllers/SanctionAcademiqueController"
 
 const router = express.Router()
+
+// Proteger - donnees academiques sensibles
+router.use([Authenticate]);
 
 router
     .get('/', SanctionAcademiqueController.getAll)

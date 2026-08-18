@@ -444,7 +444,18 @@ RattrapageInscription.belongsTo(Utilisateur, { foreignKey: 'demandePar', as: 'de
 Bordereau.hasOne(RattrapageInscription, { foreignKey: 'paiementId', as: 'rattrapage' })
 RattrapageInscription.belongsTo(Bordereau, { foreignKey: 'paiementId', as: 'bordereau' })
 
+// SessionCorrecteur — correcteurs désignés par cours pour une session de rattrapage
+import { SessionCorrecteur } from "./SessionCorrecteur";
+
+SessionExamen.hasMany(SessionCorrecteur, { foreignKey: 'sessionExamenId', as: 'correcteurs' })
+SessionCorrecteur.belongsTo(SessionExamen, { as: 'sessionExamen', foreignKey: 'sessionExamenId' })
+Cours.hasMany(SessionCorrecteur, { foreignKey: 'coursId', as: 'correcteursSession' })
+SessionCorrecteur.belongsTo(Cours, { as: 'cours', foreignKey: 'coursId' })
+Enseignant.hasMany(SessionCorrecteur, { foreignKey: 'enseignantId', as: 'correcteursSession' })
+SessionCorrecteur.belongsTo(Enseignant, { as: 'enseignant', foreignKey: 'enseignantId' })
+
 import { PublicationNote } from "./PublicationNote";
+import { DesignationMemoire } from "./DesignationMemoire";
 
 // PublicationNote - ListeNoteEvaluation
 ListeNoteEvaluation.hasMany(PublicationNote, { foreignKey: 'listeNoteEvaluationId', as: 'publicationsNotes' })
@@ -453,6 +464,14 @@ PublicationNote.belongsTo(ListeNoteEvaluation, { as: 'listeNoteEvaluation', fore
 // PublicationNote - Utilisateur (publiePar)
 Utilisateur.hasMany(PublicationNote, { foreignKey: 'publiePar', as: 'publicationsNotes' })
 PublicationNote.belongsTo(Utilisateur, { as: 'publieParUtilisateur', foreignKey: 'publiePar' })
+
+// DesignationMemoire - CursusApprenant
+CursusApprenant.hasMany(DesignationMemoire, { foreignKey: 'cursusApprenantId', as: 'designationMemoire' })
+DesignationMemoire.belongsTo(CursusApprenant, { foreignKey: 'cursusApprenantId', as: 'cursusApprenant' })
+
+// DesignationMemoire - Utilisateur (superviseur)
+Utilisateur.hasMany(DesignationMemoire, { foreignKey: 'superviseurId', as: 'designationsMemoire' })
+DesignationMemoire.belongsTo(Utilisateur, { as: 'superviseur', foreignKey: 'superviseurId' })
 
 // Bulletin associations
 initBulletinAssociations();

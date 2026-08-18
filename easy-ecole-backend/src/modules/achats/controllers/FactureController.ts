@@ -10,9 +10,18 @@ export default class FactureController {
     static async getAll(req: Request, res: Response): Promise<Response> {
         try {
             const items = await FactureProforma.findAll({
-                include: [FactureProforma.associations.commande, FactureProforma.associations.lignesFacture]
+                include: [
+                    { association: FactureProforma.associations.commande, include: [Commande.associations.fournisseur] },
+                    FactureProforma.associations.lignesFacture
+                ]
             });
-            return res.status(200).send(items);
+            const data = items.map(item => {
+                const json = item.toJSON() as any;
+                json.reference = 'PF-' + item.id;
+                json.fournisseur = json.commande?.fournisseur?.nom || null;
+                return json;
+            });
+            return res.status(200).send(data);
         } catch (error) {
             return res.status(500).json({ success: false, error: error });
         }
@@ -94,6 +103,40 @@ export default class FactureController {
                 include: [FactureProforma.associations.lignesFacture]
             });
 
+            return res.status(200).send(updated);
+        } catch (error) {
+            return res.status(500).json({ success: false, error: error });
+        }
+    }
+
+    static async signer(req: Request, res: Response): Promise<Response> {
+        try {
+            const item = await FactureProforma.findOne({ where: { id: req.params.id } });
+            if (item == null)
+                return res.status(404).json({ success: false, message: "Facture non trouvée" });
+
+            if (item.statut === 'annulee')
+                return res.status(400).json({ success: false, message: "Une facture annulée ne peut pas être signée" });
+
+            if (item.signatureData)
+                return res.status(400).json({ success: false, message: "Cette facture a déjà été signée" });
+
+            if (!req.body.signatureData)
+                return res.status(400).json({ success: false, message: "Signature manquante" });
+
+            await item.update({
+                signatureData: req.body.signatureData,
+                signataireNom: req.body.signataireNom || null,
+                signataireRole: req.body.signataireRole || null,
+                dateSignature: new Date()
+            });
+
+            const updated = await FactureProforma.findByPk(item.id, {
+                include: [
+                    { association: FactureProforma.associations.commande, include: [Commande.associations.fournisseur] },
+                    FactureProforma.associations.lignesFacture
+                ]
+            });
             return res.status(200).send(updated);
         } catch (error) {
             return res.status(500).json({ success: false, error: error });

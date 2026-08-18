@@ -8,6 +8,7 @@ import { CursusApprenant } from "../models/CursusApprenant";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { EmailSender } from "../../../core/helpers/EmailSender";
+import { SemestreProgressionService } from "../../../core/services/SemestreProgressionService";
 
 export default class PublicationNoteController {
 
@@ -97,7 +98,7 @@ export default class PublicationNoteController {
                     const noteValue = noteRecord?.note ?? null;
 
                     EmailSender.getInstance().sendMail({
-                        from: `Easy Ecole <${require('../../../core/config/mail.json')[process.env.NODE_ENV || 'development'].username}>`,
+                        from: `Easy Ecole <${process.env.SMTP_USER || require('../../../core/config/mail.json')[process.env.NODE_ENV || 'development'].username}>`,
                         to: user.email,
                         encoding: 'UTF-8',
                         subject: `Easy Ecole: Note disponible - ${coursIntitule}`,
@@ -188,6 +189,10 @@ export default class PublicationNoteController {
                 return res.status(404).json({ success: false, message: "Aucun cursus trouvé pour cet utilisateur" });
             }
 
+            // Restriction 1ère année : un apprenant en Licence 1 ne doit voir QUE
+            // les notes des semestres 1 et 2 (déterminé via son niveau d'étude courant).
+            const semestresAutorises = await SemestreProgressionService.getSemestresAutorisesApprenant(req.utilisateurId!);
+
             const coursParticipants = await CoursParticipant.findAll({
                 where: { cursusApprenantId: cursusApprenant.id },
                 attributes: ['id']
@@ -221,7 +226,22 @@ export default class PublicationNoteController {
                 order: [['updatedAt', 'DESC']]
             });
 
-            return res.status(200).json(notes);
+            // Application de la restriction 1ère année (filtre serveur).
+            // Champ semestre réel : Cours.semestre (ENUM semestre1..semestre6).
+            let notesRetournees = notes;
+            if (semestresAutorises) {
+                const autorises = new Set(semestresAutorises);
+                notesRetournees = notes.filter(n => {
+                    const semestreCours = (n as any).listeNoteEvaluation?.cours?.semestre;
+                    // Cours sans semestre renseigné (données anciennes) : conservés
+                    // pour ne pas masquer l'historique ; cours explicitement rattachés
+                    // à un semestre non autorisé : exclus.
+                    if (!semestreCours) return true;
+                    return autorises.has(semestreCours);
+                });
+            }
+
+            return res.status(200).json(notesRetournees);
         } catch (error) {
             console.error("Erreur récupération mes notes:", error);
             return res.status(500).json({ success: false, message: "Erreur lors de la récupération de vos notes" });

@@ -14,6 +14,7 @@ import { ListeNoteEvaluation } from "../models/ListeNoteEvaluation";
 import { NoteEvaluation } from "../models/NoteEvaluation";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { Enseignant } from "../../auth/models/Enseignant";
+import { SessionCorrecteur } from "../models/SessionCorrecteur";
 import { EmailSender } from "../../../core/helpers/EmailSender";
 import { Notification } from "../../elearning/models/Notification";
 import { Bordereau } from "../models/Bordereau";
@@ -106,78 +107,6 @@ export default class RattrapageController {
     }
   }
 
-  static async assignerAuto(req: Request, res: Response): Promise<Response | null> {
-    if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
-      return res.status(403).json({ success: false });
-    }
-    try {
-      const { sessionExamenId, classeId, semestre, anneeAcademiqueId } = req.body;
-
-      if (!sessionExamenId || !classeId || !semestre) {
-        return res.status(400).json({ success: false, message: "sessionExamenId, classeId, semestre requis" });
-      }
-
-      const sessionExamen = await SessionExamen.findByPk(sessionExamenId);
-      if (!sessionExamen) return res.status(404).json({ success: false, message: "Session examen non trouvée" });
-
-      const bulletins = await Bulletin.findAll({
-        where: { classeId, semestre, anneeAcademiqueId },
-        include: [
-          { association: Bulletin.associations.cursusApprenant },
-          { association: Bulletin.associations.lignesBulletins }
-        ]
-      });
-
-      const coursIds = await Cours.findAll({
-        where: { classeId, semestre },
-        attributes: ['id']
-      }).then(rows => rows.map(r => r.id));
-
-      const created: any[] = [];
-
-      for (const bulletin of bulletins) {
-        if (!bulletin.lignesBulletins) continue;
-
-        for (const ligne of bulletin.lignesBulletins) {
-          if ((ligne.moyenne ?? 0) < 10) {
-            const coursParticipant = await CoursParticipant.findOne({
-              where: { coursId: ligne.coursId, cursusApprenantId: bulletin.cursusApprenantId }
-            });
-            if (!coursParticipant) continue;
-
-            const existant = await RattrapageInscription.findOne({
-              where: {
-                coursParticipantId: coursParticipant.id,
-                sessionExamenId
-              }
-            });
-            if (existant) continue;
-
-            const rattrapage = await RattrapageInscription.create({
-              coursParticipantId: coursParticipant.id,
-              coursId: ligne.coursId,
-              sessionExamenId,
-              statut: 'inscrit'
-            });
-
-            const full = await RattrapageInscription.findByPk(rattrapage.id, {
-              include: [
-                { association: RattrapageInscription.associations.coursParticipant },
-                { association: RattrapageInscription.associations.cours },
-                { association: RattrapageInscription.associations.sessionExamen }
-              ]
-            });
-            created.push(full);
-          }
-        }
-      }
-
-      return res.status(201).json({ success: true, count: created.length, data: created });
-    } catch (error) {
-      return res.status(500).json({ success: false, error });
-    }
-  }
-
   static async getSessions(req: Request, res: Response): Promise<Response> {
     try {
       const data = await SessionExamen.findAll({
@@ -215,9 +144,20 @@ export default class RattrapageController {
   }
 
   static async saveNotes(req: Request, res: Response): Promise<Response | null> {
-    if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
-      return res.status(403).json({ success: false });
+    const role = (req as any).utilisateurRole;
+    const utilisateurId = (req as any).utilisateurId;
+
+    // Saisie réservée à l'institution/admin (désignation) et à l'enseignant correcteur désigné
+    if (role !== RolesUtilisateur.INSTITUTION && role !== RolesUtilisateur.ADMIN && role !== RolesUtilisateur.ENSEIGNANT) {
+      return res.status(403).json({ success: false, message: "Saisie des notes de rattrapage réservée à l'enseignant correcteur désigné ou à l'institution" });
     }
+
+    let enseignantConnecteId: string | null = null;
+    if (role === RolesUtilisateur.ENSEIGNANT) {
+      const enseignant = await Enseignant.findOne({ where: { utilisateurId } });
+      if (enseignant) enseignantConnecteId = enseignant.id;
+    }
+
     try {
       const { notes } = req.body;
 
@@ -230,13 +170,21 @@ export default class RattrapageController {
         const rattrapage = await RattrapageInscription.findByPk(item.id);
         if (!rattrapage) continue;
 
+        // Garde-fou : seul l'enseignant DÉSIGNÉ correcteur (par l'institution) saisit les notes
+        if (role === RolesUtilisateur.ENSEIGNANT) {
+          if (!rattrapage.enseignantId || String(rattrapage.enseignantId) !== String(enseignantConnecteId)) {
+            return res.status(403).json({ success: false, message: "Vous ne pouvez saisir que les notes des copies qui vous ont été désignées comme correcteur par l'institution" });
+          }
+        }
+
         if (rattrapage.source === 'demande_etudiant' && rattrapage.statutPaiement === 'impaye' && item.noteRattrapage != null) {
           return res.status(400).json({ success: false, message: "Paiement requis avant validation du rattrapage" });
         }
 
         await rattrapage.update({
           noteRattrapage: item.noteRattrapage ?? null,
-          statut: item.noteRattrapage != null ? 'valide' : rattrapage.statut
+          statut: item.noteRattrapage != null ? 'valide' : rattrapage.statut,
+          corrigePar: utilisateurId ?? null
         });
 
         results.push(rattrapage);

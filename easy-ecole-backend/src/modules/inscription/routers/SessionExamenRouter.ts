@@ -11,5 +11,7 @@ router.put('/:id', [Authenticate], SessionExamenController.update.bind(SessionEx
 router.delete('/:id', [Authenticate], SessionExamenController.delete.bind(SessionExamenController));
 router.get('/by-classe/:classeId', [Authenticate], SessionExamenController.getByClasse.bind(SessionExamenController));
 router.post('/creer-paire', [Authenticate], SessionExamenController.creerPaire.bind(SessionExamenController));
+router.get('/:id/correcteurs', [Authenticate], SessionExamenController.getCorrecteurs.bind(SessionExamenController));
+router.put('/:id/correcteurs', [Authenticate], SessionExamenController.saveCorrecteurs.bind(SessionExamenController));
 
 export default router;

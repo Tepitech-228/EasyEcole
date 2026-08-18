@@ -43,6 +43,7 @@ export default class CoursController {
                     Cours.associations.classe,
                     { association: Cours.associations.enseignant, include: [Enseignant.associations.utilisateur] },
                     { association: Cours.associations.parcours, include: [Parcours.associations.niveauEtude] },
+                    Cours.associations.ecues,
                 ],
                 where: { ...filters }
             }
@@ -54,6 +55,7 @@ export default class CoursController {
                     Cours.associations.classe,
                     { association: Cours.associations.enseignant, where: { utilisateurId: (req as any).utilisateurId } },
                     { association: Cours.associations.parcours, include: [Parcours.associations.niveauEtude] },
+                    Cours.associations.ecues,
                 ],
                 where: { ...filters }
             }
@@ -79,7 +81,8 @@ export default class CoursController {
                 return res.status(200).send(cours);
             }
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -87,7 +90,7 @@ export default class CoursController {
         let options: FindOptions<InferAttributes<Cours>> = {}
         options = { include: [Cours.associations.classe], where: { id: req.params.id } }
 
-        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT || (req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
+        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT || (req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
             options = {
                 where: { id: req.params.id },
                 include: [
@@ -95,6 +98,7 @@ export default class CoursController {
                     Cours.associations.chapitresCours,
                     Cours.associations.seances,
                     Cours.associations.enseignant,
+                    Cours.associations.ecues,
                     { association: Cours.associations.parcours, include: [Parcours.associations.niveauEtude] },
                 ],
             }
@@ -106,6 +110,7 @@ export default class CoursController {
                     Cours.associations.classe,
                     Cours.associations.chapitresCours,
                     Cours.associations.seances,
+                    Cours.associations.ecues,
                     { association: Cours.associations.enseignant, where: { utilisateurId: (req as any).utilisateurId } },
                     { association: Cours.associations.parcours, include: [Parcours.associations.niveauEtude] },
                 ],
@@ -123,7 +128,8 @@ export default class CoursController {
 
             return res.status(200).send(cours);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -175,7 +181,8 @@ export default class CoursController {
 
             return res.status(200).send(coursParticipants);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -334,7 +341,8 @@ export default class CoursController {
                     return res.status(200).json({ success: true, message: "Cours supprimé" });
                 })
                 .catch((error) => {
-                    return res.status(500).json({ success: false, error: error });
+                    console.error('Erreur', error);
+                    return res.status(500).json({ success: false, message: 'Erreur interne' });
                 });
         }
         else {
@@ -373,7 +381,8 @@ export default class CoursController {
 
             return res.status(200).send(coursList)
         } catch (error) {
-            return res.status(500).json({ success: false, error: error })
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -425,7 +434,8 @@ export default class CoursController {
 
             return res.status(200).send(tree);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -441,7 +451,8 @@ export default class CoursController {
                 return res.status(200).json({ success: true, count: value });
             })
             .catch((error) => {
-                return res.status(500).json({ success: false, error: error });
+                console.error('Erreur', error);
+                return res.status(500).json({ success: false, message: 'Erreur interne' });
             });
 
         return null

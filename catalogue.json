@@ -497,7 +497,8 @@
         "semestre": 4,
         "cycle": "MASTER"
       }
-    ]
+    ],
+    "libelle": "Informatique"
   },
   {
     "code": "GCI",
@@ -997,7 +998,8 @@
         "semestre": 4,
         "cycle": "MASTER"
       }
-    ]
+    ],
+    "libelle": "Génie civil"
   },
   {
     "code": "GEE",
@@ -1497,7 +1499,8 @@
         "semestre": 4,
         "cycle": "MASTER"
       }
-    ]
+    ],
+    "libelle": "Génie électrique et électronique"
   },
   {
     "code": "GES",
@@ -1997,7 +2000,8 @@
         "semestre": 4,
         "cycle": "MASTER"
       }
-    ]
+    ],
+    "libelle": "Gestion des Entreprises"
   },
   {
     "code": "CPT",
@@ -2497,7 +2501,8 @@
         "semestre": 4,
         "cycle": "MASTER"
       }
-    ]
+    ],
+    "libelle": "Science et Techniques Comptables et Financières"
   },
   {
     "code": "ECO",
@@ -2997,7 +3002,8 @@
         "semestre": 4,
         "cycle": "MASTER"
       }
-    ]
+    ],
+    "libelle": "Économie et Développement"
   },
   {
     "code": "DRO",
@@ -3497,7 +3503,8 @@
         "semestre": 4,
         "cycle": "MASTER"
       }
-    ]
+    ],
+    "libelle": "Droit des Affaires"
   },
   {
     "code": "MKT",
@@ -3997,7 +4004,8 @@
         "semestre": 4,
         "cycle": "MASTER"
       }
-    ]
+    ],
+    "libelle": "Marketing et Commerce International"
   },
   {
     "code": "COM",
@@ -4497,7 +4505,8 @@
         "semestre": 4,
         "cycle": "MASTER"
       }
-    ]
+    ],
+    "libelle": "Communication et Journalisme"
   },
   {
     "code": "EDU",
@@ -4997,6 +5006,347 @@
         "semestre": 4,
         "cycle": "MASTER"
       }
-    ]
+    ],
+    "libelle": "Sciences de l'Éducation"
+  },
+  {
+    "code": "LP01",
+    "libelle": "Administration générale",
+    "ues": []
+  },
+  {
+    "code": "LP02",
+    "libelle": "Administration des collectivités territoriales",
+    "ues": []
+  },
+  {
+    "code": "LP03",
+    "libelle": "Administration des collectivités locales",
+    "ues": []
+  },
+  {
+    "code": "LP04",
+    "libelle": "Marketing digital et E business",
+    "ues": []
+  },
+  {
+    "code": "LP05",
+    "libelle": "Protocole et relations publiques",
+    "ues": []
+  },
+  {
+    "code": "LP06",
+    "libelle": "Gestion commerciale",
+    "ues": []
+  },
+  {
+    "code": "LP07",
+    "libelle": "Gestion des ressources humaines",
+    "ues": []
+  },
+  {
+    "code": "LP08",
+    "libelle": "Science et techniques comptables et financières",
+    "ues": []
+  },
+  {
+    "code": "LP09",
+    "libelle": "Audit et contrôle de gestion",
+    "ues": []
+  },
+  {
+    "code": "LP10",
+    "libelle": "Commerce international",
+    "ues": []
+  },
+  {
+    "code": "LP11",
+    "libelle": "Transport logistique",
+    "ues": []
+  },
+  {
+    "code": "LP12",
+    "libelle": "Marketing-communication",
+    "ues": []
+  },
+  {
+    "code": "LP13",
+    "libelle": "Gestion des projets et passation des marchés",
+    "ues": []
+  },
+  {
+    "code": "LP14",
+    "libelle": "Réseaux et télécommunication",
+    "ues": []
+  },
+  {
+    "code": "LP15",
+    "libelle": "Génie logiciel",
+    "ues": []
+  },
+  {
+    "code": "LP16",
+    "libelle": "Génie civil",
+    "ues": []
+  },
+  {
+    "code": "LP17",
+    "libelle": "Energies renouvelables et efficacité énergétique",
+    "ues": []
+  },
+  {
+    "code": "LP18",
+    "libelle": "Sécurité informatique-cyber sécurité-cybercriminalité",
+    "ues": []
+  },
+  {
+    "code": "LP19",
+    "libelle": "Marketing",
+    "ues": []
+  },
+  {
+    "code": "LP20",
+    "libelle": "Génie électrique",
+    "ues": []
+  },
+  {
+    "code": "LP21",
+    "libelle": "Administration et gestion des affaires",
+    "ues": []
+  },
+  {
+    "code": "LP22",
+    "libelle": "Gestion fiscales des entreprises",
+    "ues": []
+  },
+  {
+    "code": "LP23",
+    "libelle": "Economie des transports et développement social",
+    "ues": []
+  },
+  {
+    "code": "LP24",
+    "libelle": "Management du tourisme et de l'hôtellerie",
+    "ues": []
+  },
+  {
+    "code": "LP25",
+    "libelle": "Management et gestion des organisations sportives",
+    "ues": []
+  },
+  {
+    "code": "LP26",
+    "libelle": "Journalisme",
+    "ues": []
+  },
+  {
+    "code": "LP27",
+    "libelle": "Banque et finance",
+    "ues": []
+  },
+  {
+    "code": "LP28",
+    "libelle": "Monnaie et finance",
+    "ues": []
+  },
+  {
+    "code": "LP29",
+    "libelle": "Banque-assurance",
+    "ues": []
+  },
+  {
+    "code": "LP30",
+    "libelle": "Technologies alimentaires et biologiques",
+    "ues": []
+  },
+  {
+    "code": "LP31",
+    "libelle": "Aquaculture",
+    "ues": []
+  },
+  {
+    "code": "LP32",
+    "libelle": "Informatique industrielle",
+    "ues": []
+  },
+  {
+    "code": "LP33",
+    "libelle": "Génie mécanique",
+    "ues": []
+  },
+  {
+    "code": "LP34",
+    "libelle": "Génie industriel",
+    "ues": []
+  },
+  {
+    "code": "LP35",
+    "libelle": "Agro business",
+    "ues": []
+  },
+  {
+    "code": "LP36",
+    "libelle": "Modélisation économétrique et analyse des données",
+    "ues": []
+  },
+  {
+    "code": "LP37",
+    "libelle": "Diplomatie, protocole et relations publiques",
+    "ues": []
+  },
+  {
+    "code": "MBA01",
+    "libelle": "Gestion des entreprises",
+    "ues": []
+  },
+  {
+    "code": "MBA02",
+    "libelle": "Leadership, gouvernance et performance des équipes",
+    "ues": []
+  },
+  {
+    "code": "BTS01",
+    "libelle": "Comptabilité et gestion des entreprises",
+    "ues": []
+  },
+  {
+    "code": "BTS02",
+    "libelle": "Communication des entreprises",
+    "ues": []
+  },
+  {
+    "code": "BTS03",
+    "libelle": "Assistant de gestion PME/PMI",
+    "ues": []
+  },
+  {
+    "code": "BTS04",
+    "libelle": "Génie civil",
+    "ues": []
+  },
+  {
+    "code": "BTS05",
+    "libelle": "Secrétariat de direction",
+    "ues": []
+  },
+  {
+    "code": "BTS06",
+    "libelle": "Commerce international",
+    "ues": []
+  },
+  {
+    "code": "BTS07",
+    "libelle": "Transport logistique",
+    "ues": []
+  },
+  {
+    "code": "BTS08",
+    "libelle": "Action commerciale et force de vente",
+    "ues": []
+  },
+  {
+    "code": "BTS09",
+    "libelle": "Gestion des ressources humaines",
+    "ues": []
+  },
+  {
+    "code": "BTS10",
+    "libelle": "Gestion des collectivités locales",
+    "ues": []
+  },
+  {
+    "code": "BTS11",
+    "libelle": "Informatique de gestion (développeur d'application)",
+    "ues": []
+  },
+  {
+    "code": "BTS12",
+    "libelle": "Informatique de gestion (administrateur de réseaux locaux d'entreprise)",
+    "ues": []
+  },
+  {
+    "code": "BTS13",
+    "libelle": "Télécommunications",
+    "ues": []
+  },
+  {
+    "code": "BTS14",
+    "libelle": "Maintenance informatique et réseaux",
+    "ues": []
+  },
+  {
+    "code": "BTS15",
+    "libelle": "Journalisme",
+    "ues": []
+  },
+  {
+    "code": "BTS16",
+    "libelle": "Informatique industrielle",
+    "ues": []
+  },
+  {
+    "code": "BTS17",
+    "libelle": "Géomètre topographe",
+    "ues": []
+  },
+  {
+    "code": "BTS18",
+    "libelle": "Assurance",
+    "ues": []
+  },
+  {
+    "code": "BTS19",
+    "libelle": "Finance banque",
+    "ues": []
+  },
+  {
+    "code": "BTS20",
+    "libelle": "Génie électrique",
+    "ues": []
+  },
+  {
+    "code": "BTS21",
+    "libelle": "Restauration",
+    "ues": []
+  },
+  {
+    "code": "BTS22",
+    "libelle": "Hôtellerie",
+    "ues": []
+  },
+  {
+    "code": "BTS23",
+    "libelle": "Génie thermique",
+    "ues": []
+  },
+  {
+    "code": "BTS24",
+    "libelle": "Electromécanique",
+    "ues": []
+  },
+  {
+    "code": "BTS25",
+    "libelle": "Electronique",
+    "ues": []
+  },
+  {
+    "code": "BTS26",
+    "libelle": "Electrotechnique",
+    "ues": []
+  },
+  {
+    "code": "BTS27",
+    "libelle": "Tourisme et loisirs",
+    "ues": []
+  },
+  {
+    "code": "BTS28",
+    "libelle": "Aquaculture",
+    "ues": []
+  },
+  {
+    "code": "BTS29",
+    "libelle": "Technologies alimentaires et biologiques",
+    "ues": []
   }
 ]

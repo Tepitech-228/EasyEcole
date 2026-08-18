@@ -19,7 +19,8 @@ export default class PresenceCoursParticipantController {
 
             return res.status(200).send(presencesCoursParticipants);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -35,7 +36,8 @@ export default class PresenceCoursParticipantController {
 
             return res.status(200).send(presenceCoursParticipant);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -108,7 +110,8 @@ export default class PresenceCoursParticipantController {
                     return res.status(200).json({ success: true, message: "PresenceCoursParticipant supprimée" });
                 })
                 .catch((error) => {
-                    return res.status(500).json({ success: false, error: error });
+                    console.error('Erreur', error);
+                    return res.status(500).json({ success: false, message: 'Erreur interne' });
                 });
         }
         else {
@@ -130,7 +133,8 @@ export default class PresenceCoursParticipantController {
                 return res.status(200).json({ success: true, count: value });
             })
             .catch((error) => {
-                return res.status(500).json({ success: false, error: error });
+                console.error('Erreur', error);
+                return res.status(500).json({ success: false, message: 'Erreur interne' });
             });
 
         return null

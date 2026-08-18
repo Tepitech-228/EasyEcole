@@ -2,8 +2,13 @@ import express from "express"
 import multer from "multer"
 import CoursEnLigneController from "../controllers/CoursEnLigneController"
 import Authenticate from "../../../core/middlewares/Authenticate"
+import { fileFilter, ALLOWED_IMAGE_TYPES } from "../../../core/config/upload"
 
-const upload = multer({ dest: "public/elearning/cours/" });
+const upload = multer({
+    dest: "public/elearning/cours/",
+    fileFilter: fileFilter(ALLOWED_IMAGE_TYPES),
+    limits: { fileSize: 10 * 1024 * 1024 }
+});
 const router = express.Router()
 
 /**

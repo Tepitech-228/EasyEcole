@@ -18,7 +18,89 @@
     </div>
 
     <div class="w-full mb-8">
-        <app-details-section text="Informations personnelles"></app-details-section>
+        <app-details-section text="Informations personnelles">
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6 py-4">
+                <div>
+                    <span class="block text-xs text-gray-400">N° Matricule</span>
+                    <span class="block text-sm font-medium text-gray-800">{{ enseignant.matricule || '---' }}</span>
+                </div>
+                <div>
+                    <span class="block text-xs text-gray-400">N° CNI</span>
+                    <span class="block text-sm font-medium text-gray-800">{{ enseignant.cni || '---' }}</span>
+                </div>
+                <div>
+                    <span class="block text-xs text-gray-400">NIF / OTR</span>
+                    <span class="block text-sm font-medium text-gray-800">{{ enseignant.nifOtr || '---' }}</span>
+                </div>
+                <div>
+                    <span class="block text-xs text-gray-400">Sexe</span>
+                    <span class="block text-sm font-medium text-gray-800">{{ enseignant.sexe || '---' }}</span>
+                </div>
+                <div>
+                    <span class="block text-xs text-gray-400">Date de naissance</span>
+                    <span class="block text-sm font-medium text-gray-800">{{ (enseignant.dateNaissance | date: 'dd/MM/yyyy') || '---' }}</span>
+                </div>
+                <div>
+                    <span class="block text-xs text-gray-400">Lieu de naissance</span>
+                    <span class="block text-sm font-medium text-gray-800">{{ enseignant.lieuNaissance || '---' }}</span>
+                </div>
+                <div>
+                    <span class="block text-xs text-gray-400">Nationalité</span>
+                    <span class="block text-sm font-medium text-gray-800">{{ enseignant.nationalite || '---' }}</span>
+                </div>
+                <div>
+                    <span class="block text-xs text-gray-400">Contact</span>
+                    <span class="block text-sm font-medium text-gray-800">{{ enseignant.contact || '---' }}</span>
+                </div>
+                <div>
+                    <span class="block text-xs text-gray-400">Présence de handicap</span>
+                    <span class="block text-sm font-medium text-gray-800">{{ enseignant.statutHandicap ? 'Oui' : 'Non' }}</span>
+                </div>
+                <div>
+                    <span class="block text-xs text-gray-400">Nature du handicap</span>
+                    <span class="block text-sm font-medium text-gray-800">{{ enseignant.natureHandicap || '---' }}</span>
+                </div>
+            </div>
+        </app-details-section>
+    </div>
+
+    <div class="w-full mb-8">
+        <app-details-section text="Situation professionnelle">
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6 py-4">
+                <div>
+                    <span class="block text-xs text-gray-400">Diplôme le plus élevé</span>
+                    <span class="block text-sm font-medium text-gray-800">{{ enseignant.plusHautDiplome || '---' }}</span>
+                </div>
+                <div>
+                    <span class="block text-xs text-gray-400">Grade universitaire</span>
+                    <span class="block text-sm font-medium text-gray-800">{{ enseignant.gradeAcademique || '---' }}</span>
+                </div>
+                <div>
+                    <span class="block text-xs text-gray-400">Statut</span>
+                    <span class="block text-sm font-medium text-gray-800">{{ enseignant.statut || '---' }}</span>
+                </div>
+                <div>
+                    <span class="block text-xs text-gray-400">Spécialité</span>
+                    <span class="block text-sm font-medium text-gray-800">{{ enseignant.specialite || '---' }}</span>
+                </div>
+                <div>
+                    <span class="block text-xs text-gray-400">Fonction administrative</span>
+                    <span class="block text-sm font-medium text-gray-800">{{ enseignant.fonctionAdministrative || '---' }}</span>
+                </div>
+                <div>
+                    <span class="block text-xs text-gray-400">Années d'expérience dans l'enseignement</span>
+                    <span class="block text-sm font-medium text-gray-800">{{ enseignant.anneeExperience ?? '---' }}</span>
+                </div>
+                <div>
+                    <span class="block text-xs text-gray-400">Heures de cours théoriques / an</span>
+                    <span class="block text-sm font-medium text-gray-800">{{ enseignant.heureTheoriqueAnnuelle ?? '---' }}</span>
+                </div>
+                <div>
+                    <span class="block text-xs text-gray-400">Heures de cours réalisées / an</span>
+                    <span class="block text-sm font-medium text-gray-800">{{ enseignant.heureReelleAnnuelle ?? '---' }}</span>
+                </div>
+            </div>
+        </app-details-section>
     </div>
 
     <div class="w-full mb-8">

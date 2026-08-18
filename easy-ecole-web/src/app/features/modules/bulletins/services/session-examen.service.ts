@@ -28,4 +28,12 @@ export class SessionExamenService {
   delete(id: number): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/${id}`);
   }
+
+  getCorrecteurs(id: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/${id}/correcteurs`);
+  }
+
+  saveCorrecteurs(id: number, correcteurs: any[]): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/${id}/correcteurs`, { correcteurs });
+  }
 }

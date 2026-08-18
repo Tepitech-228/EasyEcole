@@ -8,6 +8,7 @@ import { Session } from 'src/app/data/modules/inscription/models/Session.model';
 import { PaiementInscriptionService } from 'src/app/data/modules/inscription/services/paiement-inscription.service';
 import { SessionService } from 'src/app/data/modules/inscription/services/session.service';
 import { RolesValueType } from 'src/app/data/types/RolesValueType';
+import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 import { environment } from 'src/environments/environment';
 
 @Component({
@@ -38,7 +39,8 @@ export class PaiementsSectionComponent implements OnInit {
 
   constructor(
     private sessionService: SessionService,
-    private paiementInscriptionService: PaiementInscriptionService
+    private paiementInscriptionService: PaiementInscriptionService,
+    private localStorage: LocalStorageService
   ) {
   }
 
@@ -96,10 +98,10 @@ export class PaiementsSectionComponent implements OnInit {
 
   getFichePaiement(): void {
     if (this.demande?.id) {
-      window.open(
-        `${environment.API_MODULES.INSCRIPTION}/demandesInscription/${this.demande.id}/fiche-paiement`,
-        '_blank'
-      )
+      const token = this.localStorage.get(LocalStorageService.AUTH_TOKEN)
+      let url = `${environment.API_MODULES.INSCRIPTION}/demandesInscription/${this.demande.id}/fiche-paiement`
+      if (token) url += `?token=${encodeURIComponent(token)}`
+      window.open(url, '_blank')
     }
   }
 
@@ -119,7 +121,10 @@ export class PaiementsSectionComponent implements OnInit {
     this.paiementInscriptionService.create(paiement).subscribe({
       next: (res: any) => {
         if (res?.receiptUrl) {
-          window.open(res.receiptUrl, '_blank')
+          const token = this.localStorage.get(LocalStorageService.AUTH_TOKEN)
+          let url = res.receiptUrl
+          if (token) url += `${url.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}`
+          window.open(url, '_blank')
         }
         this.closePaiementModal()
         // Recharger les paiements sans recharger toute la page

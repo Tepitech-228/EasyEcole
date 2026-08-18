@@ -2,9 +2,14 @@ import express from "express"
 import multer from "multer"
 
 import ActualiteController from "../controllers/ActualiteController"
+import { fileFilter, ALLOWED_IMAGE_TYPES } from "../../../core/config/upload"
 
 const router = express.Router()
-const upload = multer({ dest: "public/communication/actualites/" });
+const upload = multer({
+    dest: "public/communication/actualites/",
+    fileFilter: fileFilter(ALLOWED_IMAGE_TYPES),
+    limits: { fileSize: 10 * 1024 * 1024 }
+});
 
 router
     /**

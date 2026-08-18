@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contrat Pédagogique - ESA</title>
+    <style>
+        @page { size: A4 portrait; margin: 10mm 12mm; }
+        *, *::before, *::after { box-sizing: border-box; }
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; color: #1a1a1a; font-size: 9.5pt; line-height: 1.4; background-color: #f5f5f5; }
+        .doc-page { background-color: #ffffff; width: 210mm; min-height: 297mm; padding: 10mm; margin: 15px auto; page-break-after: always; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15); }
+        .doc-page:last-child { page-break-after: avoid; }
+        .frame { border: 3px solid #002147; padding: 15px; min-height: 270mm; position: relative; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
+        .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; max-width: 450px; opacity: 0.07; z-index: 0; pointer-events: none; }
+        .content-wrapper { position: relative; z-index: 1; }
+        .header-table { width: 100%; border-collapse: collapse; border-bottom: 2px solid #002147; padding-bottom: 8px; margin-bottom: 4px; }
+        .header-table td { vertical-align: middle; }
+        .logo-img { max-height: 80px; width: auto; object-fit: contain; }
+        .school-info { text-align: right; font-size: 8.5pt; color: #333; line-height: 1.3; }
+        .banner-accent { height: 4px; background: linear-gradient(to right, #FFD100 33%, #009640 33% 66%, #002147 66%); margin-bottom: 15px; }
+        .doc-title { text-align: center; margin: 10px 0 5px 0; }
+        .doc-title h1 { font-size: 15pt; color: #002147; text-transform: uppercase; letter-spacing: 0.8px; margin: 0; padding-bottom: 4px; border-bottom: 2px solid #FFD100; display: inline-block; }
+        .ref-number { text-align: center; font-size: 9pt; font-weight: bold; color: #002147; margin-bottom: 15px; }
+        .info-box { background-color: rgba(248, 249, 250, 0.85); border-left: 4px solid #002147; padding: 10px 12px; margin: 12px 0; border-radius: 2px; }
+        .field-row { margin-bottom: 5px; }
+        .field-row:last-child { margin-bottom: 0; }
+        .label { font-weight: bold; color: #002147; }
+        .value { color: #222; }
+        .highlight-box { background-color: rgba(240, 244, 248, 0.85); border: 1px solid #002147; padding: 10px; margin: 12px 0; border-radius: 4px; font-size: 9pt; text-align: justify; }
+        .footer-table { width: 100%; margin-top: 20px; border-collapse: collapse; position: relative; z-index: 1; }
+        .footer-table td { vertical-align: top; }
+        .date-cell { font-style: italic; font-size: 9pt; }
+        .sign-cell { text-align: center; width: 220px; }
+        .sign-title { font-weight: bold; font-size: 9pt; color: #002147; margin-bottom: 45px; }
+        .sign-line { border-top: 1px dashed #002147; padding-top: 4px; font-size: 8pt; color: #555; }
+        @media print { body { background-color: #ffffff; } .doc-page { box-shadow: none; margin: 0; width: 100%; padding: 0; } }
+    </style>
+</head>
+<body>
+    <div class="doc-page">
+        <div class="frame">
+            <img src="{{LOGO_DATA_URI}}" alt="" class="watermark">
+            <div class="content-wrapper">
+                <table class="header-table">
+                    <tr>
+                        <td><img src="{{LOGO_DATA_URI}}" alt="Logo ESA" class="logo-img"></td>
+                        <td class="school-info"><strong>�0COLE SUP�0RIEURE DES AFFAIRES</strong><br>Direction des �0tudes<br>Lomé, Togo<br>Tél : (+228) 90 00 00 00 | Email : contact@esa.tg</td>
+                    </tr>
+                </table>
+                <div class="banner-accent"></div>
+                <div class="doc-title"><h1>Contrat Pédagogique</h1></div>
+                <div class="ref-number">Réf. : {{reference}}</div>
+                <div class="info-box">
+                    <table style="width:100%;border-collapse:collapse;">
+                        <tr><td style="width:50%;vertical-align:top;">
+                            <div class="field-row"><span class="label">�0tudiant :</span> <span class="value">{{etudiant.nom}} {{etudiant.prenom}}</span></div>
+                            <div class="field-row"><span class="label">Matricule :</span> <span class="value">{{etudiant.matricule}}</span></div>
+                            <div class="field-row"><span class="label">Filière :</span> <span class="value">{{etudiant.filiere}}</span></div>
+                        </td><td style="width:50%;vertical-align:top;">
+                            <div class="field-row"><span class="label">Classe :</span> <span class="value">{{etudiant.classe}}</span></div>
+                            <div class="field-row"><span class="label">Année académique :</span> <span class="value">{{etudiant.anneeAcademique}}</span></div>
+                            <div class="field-row"><span class="label">Niveau :</span> <span class="value">{{etudiant.niveau}}</span></div>
+                        </td></tr>
+                    </table>
+                </div>
+                <div class="highlight-box">
+                    <strong>Engagement pédagogique :</strong> L'étudiant(e) s'engage à suivre assidûment les enseignements, à respecter les horaires de cours, à participer aux travaux dirigés et à se soumettre aux évaluations prévues dans le cadre de la formation {{etudiant.filiere}}.
+                </div>
+                <p style="margin-top:20px;">En foi de quoi, le présent contrat est établi pour servir et valoir ce que de droit.</p>
+            </div>
+            <table class="footer-table">
+                <tr>
+                    <td class="date-cell">Fait à Lomé, le {{dateEdition}}</td>
+                    <td class="sign-cell">
+                        <div class="sign-title">Le Directeur des �0tudes</div>
+                        <div class="sign-line">Signature & Cachet Officiel</div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    <div style="text-align:center;margin-top:10px;font-size:10px;color:#999;">Document généré le {{dateGeneration}} � Réf: {{reference}}</div>
+</body>
+</html>

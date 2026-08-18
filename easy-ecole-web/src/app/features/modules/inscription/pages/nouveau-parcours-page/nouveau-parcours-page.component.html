@@ -33,6 +33,8 @@
                     <option [value]="'LICENCE'">Licence</option>
                     <option [value]="'MASTER'">Master</option>
                     <option [value]="'DOCTORAT'">Doctorat</option>
+                    <option [value]="'BTS'">BTS</option>
+                    <option [value]="'MBA'">MBA</option>
                 </select>
                 <div *ngIf="nouveauParcoursForm.get('type')!.invalid && (nouveauParcoursForm.get('type')!.dirty || nouveauParcoursForm.get('type')!.touched)">
                     <app-form-message *ngIf="nouveauParcoursForm.get('type')!.errors?.['required']"

@@ -72,7 +72,7 @@
 
         <!-- Section: Documents -->
         <ng-container *ngIf="currentItemSection == 2">
-            <app-documents-section [demande]="demande" [rolesValue]="rolesValue" (nextStep)="onStepComplete(2, 'Documents uploadés. Vous pouvez soumettre votre dossier au comité d\'orientation.')"></app-documents-section>
+            <app-documents-section [demande]="demande" [rolesValue]="rolesValue" (nextStep)="onStepComplete(2, 'Documents uploadés. Vous pouvez soumettre votre dossier au comité d\'orientation.')" (demandeUpdated)="onDemandeUpdated($event)"></app-documents-section>
         </ng-container>
 
         <!-- Section: Préinscription -->

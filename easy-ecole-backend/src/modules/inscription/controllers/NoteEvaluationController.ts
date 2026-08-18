@@ -149,7 +149,7 @@ export default class NoteEvaluationController {
                 return res.status(404).json({ success: false, message: "Évaluation non trouvée" });
             }
 
-            const semesterCheck = await this.getSemesterLockState(evaluation as any);
+            const semesterCheck = await NoteEvaluationController.getSemesterLockState(evaluation as any);
             if (!semesterCheck.allowed) {
                 return res.status(409).json({ success: false, message: semesterCheck.reason });
             }
@@ -216,7 +216,7 @@ export default class NoteEvaluationController {
                 return res.status(404).json({ success: false, message: "Évaluation non trouvée" });
             }
 
-            const semesterCheck = await this.getSemesterLockState(evaluation as any);
+            const semesterCheck = await NoteEvaluationController.getSemesterLockState(evaluation as any);
             if (!semesterCheck.allowed) {
                 return res.status(409).json({ success: false, message: semesterCheck.reason });
             }

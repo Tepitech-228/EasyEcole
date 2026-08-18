@@ -41,208 +41,161 @@
       <span class="text-sm text-emerald-800">Appréciation sauvegardée</span>
     </div>
 
-    <div class="bulletin-card">
-      <div class="bulletin-header bg-gradient-to-r from-blue-700 to-blue-800 text-white">
-        <div class="text-center">
-          <h2 class="text-xl font-bold tracking-wide">UNIVERSITÉ DES SCIENCES ET TECHNOLOGIES</h2>
-          <p class="text-blue-200 text-sm mt-1">BULLETIN DE NOTES — {{ b.anneeAcademique?.libelle }} — {{ getSemestre(b.semestre) }}</p>
-        </div>
-      </div>
+    <!-- ═══════════ DOCUMENT : RELEVÉ DE NOTES OFFICIEL (LMD) — DESIGN ESA V1 ═══════════ -->
+    <div class="doc-page">
+      <div class="frame">
+        <!-- Filigrane ESA -->
+        <img [src]="logoUrl" alt="" class="watermark">
 
-      <div class="bulletin-body">
-        <table class="info-table">
-          <tr>
-            <td class="info-label">Élève</td>
-            <td class="info-value">{{ b.utilisateur?.nom }} {{ b.utilisateur?.prenoms }}</td>
-            <td class="info-label">Classe</td>
-            <td class="info-value">{{ b.classe?.libelle }}</td>
-          </tr>
-          <tr>
-            <td class="info-label">Email</td>
-            <td class="info-value">{{ b.utilisateur?.email }}</td>
-            <td class="info-label">Parcours</td>
-            <td class="info-value">{{ b.parcours?.titre }}</td>
-          </tr>
-          <tr>
-            <td class="info-label">Niveau</td>
-            <td class="info-value">{{ b.niveauEtude?.libelle }}</td>
-            <td class="info-label">Semestre</td>
-            <td class="info-value">{{ getSemestre(b.semestre) }}</td>
-          </tr>
-        </table>
-
-        <ng-container *ngIf="b.ues && b.ues.length; else flatNotes">
-          <table class="notes-table" *ngFor="let ue of b.ues">
-            <thead>
-              <tr class="ue-header">
-                <th colspan="7">
-                  <div class="ue-header-content">
-                    <a [routerLink]="'/cours/cours/' + ue.coursId" class="ue-link">{{ ue.ueCode }} - {{ ue.ueLibelle }}</a>
-                    <span class="ue-moyenne" [ngClass]="getNoteClass(ue.moyenneUe)">Moy: {{ ue.moyenneUe }}/20</span>
-                    <span class="ue-credits">{{ ue.creditEcts }} crédits</span>
-                    <span *ngIf="ue.estValidee" class="valide-badge">Validé</span>
-                    <span *ngIf="!ue.estValidee" class="non-valide-badge">Non validé</span>
-                  </div>
-                </th>
-              </tr>
-              <tr>
-                <th class="text-left">Matières</th>
-                <th>CC</th>
-                <th>Devoir</th>
-                <th>Examen</th>
-                <th>Moyenne</th>
-                <th>Coef</th>
-                <th>Validé</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let l of ue.lignes">
-                <td class="text-left font-medium">{{ l.cours?.intitule }}</td>
-                <td [ngClass]="getNoteClass(l.moyenneCC)">{{ l.moyenneCC != null ? l.moyenneCC : '-' }}</td>
-                <td [ngClass]="getNoteClass(l.noteDevoir)">{{ l.noteDevoir != null ? l.noteDevoir : '-' }}</td>
-                <td [ngClass]="getNoteClass(l.noteExamen)">{{ l.noteExamen != null ? l.noteExamen : '-' }}</td>
-                <td class="font-bold" [ngClass]="getNoteClass(l.moyenne)">{{ l.moyenne != null ? l.moyenne + '/20' : '-' }}</td>
-                <td>{{ l.coefficient || '-' }}</td>
-                <td>
-                  <span *ngIf="l.moyenne != null && l.moyenne >= 10" class="valide-badge">Validé</span>
-                  <span *ngIf="l.moyenne != null && l.moyenne < 10" class="non-valide-badge">Non</span>
-                  <span *ngIf="l.moyenne == null" class="text-gray-300 text-xs">-</span>
-                </td>
-              </tr>
-            </tbody>
+        <div class="content-wrapper">
+          <!-- En-tête officiel -->
+          <table class="header-table">
+            <tr>
+              <td>
+                <img [src]="logoUrl" alt="Logo" class="logo-img">
+              </td>
+              <td class="school-info">
+                <strong>{{ etablissementNomMajuscules }}</strong><br>
+                Direction des Examens et Régularité Académique<br>
+                {{ etablissementLocalisation || '-' }}<br>
+                Tél : {{ etablissementTelephone || '-' }} | Email : {{ etablissementEmail || '-' }}
+              </td>
+            </tr>
           </table>
-        </ng-container>
-        <ng-template #flatNotes>
-          <table class="notes-table">
-            <thead>
-              <tr>
-                <th class="text-left">Matières</th>
-                <th>CC</th>
-                <th>Devoir</th>
-                <th>Examen</th>
-                <th>Moyenne</th>
-                <th>Coef</th>
-                <th>Validé</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let l of b.lignesBulletins">
-                <td class="text-left font-medium">{{ l.cours?.intitule }}</td>
-                <td [ngClass]="getNoteClass(l.moyenneCC)">{{ l.moyenneCC != null ? l.moyenneCC : '-' }}</td>
-                <td [ngClass]="getNoteClass(l.noteDevoir)">{{ l.noteDevoir != null ? l.noteDevoir : '-' }}</td>
-                <td [ngClass]="getNoteClass(l.noteExamen)">{{ l.noteExamen != null ? l.noteExamen : '-' }}</td>
-                <td class="font-bold" [ngClass]="getNoteClass(l.moyenne)">{{ l.moyenne != null ? l.moyenne + '/20' : '-' }}</td>
-                <td>{{ l.coefficient || '-' }}</td>
-                <td>
-                  <span *ngIf="l.moyenne != null && l.moyenne >= 10" class="valide-badge">Validé</span>
-                  <span *ngIf="l.moyenne != null && l.moyenne < 10" class="non-valide-badge">Non</span>
-                  <span *ngIf="l.moyenne == null" class="text-gray-300 text-xs">-</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </ng-template>
+          <div class="banner-accent"></div>
 
-        <div *ngIf="b.rattrapageGrades?.length" class="mt-6 border-t border-amber-200 pt-4">
-          <div class="flex items-center gap-2 mb-3">
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 ring-1 ring-amber-200">
-              Rattrapage
-            </span>
-            <span class="text-sm font-semibold text-gray-700">Notes de session 2</span>
+          <!-- Titre du document -->
+          <div class="doc-title">
+            <h1>Relevé de Notes Officiel (LMD)</h1>
           </div>
-          <table class="notes-table">
+          <div class="ref-number">Réf. : {{ etablissementCode || 'ESA' }}/{{ b.anneeAcademique?.libelle || '' }}/RN/{{ b.id }}</div>
+
+          <!-- Informations étudiant -->
+          <div class="info-box">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="width: 50%; vertical-align: top;">
+                  <div class="field-row"><span class="label">Nom &amp; Prénom :</span> <span class="value"><strong>{{ b.utilisateur?.nom }} {{ b.utilisateur?.prenoms }}</strong></span></div>
+                  <div class="field-row" *ngIf="b.matricule"><span class="label">Matricule :</span> <span class="value">{{ b.matricule }}</span></div>
+                  <div class="field-row"><span class="label">Classe :</span> <span class="value">{{ b.classe?.libelle }}</span></div>
+                </td>
+                <td style="width: 50%; vertical-align: top;">
+                  <div class="field-row"><span class="label">Année Académique :</span> <span class="value">{{ b.anneeAcademique?.libelle }}</span></div>
+                  <div class="field-row"><span class="label">Filière :</span> <span class="value">{{ b.parcours?.titre }}</span></div>
+                  <div class="field-row"><span class="label">Niveau / Semestre :</span> <span class="value">{{ b.niveauEtude?.libelle }} — {{ getSemestre(b.semestre) }}</span></div>
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Tableau de notes : mode UE (groupé) -->
+          <ng-container *ngIf="b.ues && b.ues.length; else flatNotes">
+            <table class="grades-table" *ngFor="let ue of b.ues">
+              <tbody>
+                <tr class="ue-header">
+                  <td colspan="3"><strong>{{ ue.ueCode }} : {{ ue.ueLibelle }}</strong></td>
+                  <td style="text-align: center;"><strong>{{ ue.creditEcts }} Cr.</strong></td>
+                  <td colspan="4" style="text-align: center;"><strong>{{ ue.moyenneUe != null ? ue.moyenneUe + ' / 20' : '-' }} ({{ ue.estValidee ? 'Validé' : 'Non validé' }})</strong></td>
+                </tr>
+                <tr class="ec-row" *ngFor="let l of ue.lignes">
+                  <td>• {{ l.cours?.intitule }}</td>
+                  <td class="teacher-name">{{ getTeacherName(l.cours) }}</td>
+                  <td style="text-align: center;">{{ l.coefficient || '-' }}</td>
+                  <td style="text-align: center;" [ngClass]="getNoteClass(l.moyenneCC)">{{ l.moyenneCC != null ? l.moyenneCC : '-' }}</td>
+                  <td style="text-align: center;" [ngClass]="getNoteClass(l.noteDevoir)">{{ l.noteDevoir != null ? l.noteDevoir : '-' }}</td>
+                  <td style="text-align: center;" [ngClass]="getNoteClass(l.noteExamen)">{{ l.noteExamen != null ? l.noteExamen : '-' }}</td>
+                  <td style="text-align: center; font-weight: bold;" [ngClass]="getNoteClass(l.moyenne)">{{ l.moyenne != null ? l.moyenne + ' / 20' : '-' }}</td>
+                  <td style="text-align: center; font-style: italic; color: #777; font-size: 7.5pt;">
+                    <span *ngIf="l.moyenne != null && l.moyenne >= 10" class="valide-badge">Validé</span>
+                    <span *ngIf="l.moyenne != null && l.moyenne < 10" class="non-valide-badge">Non</span>
+                    <span *ngIf="l.moyenne == null">[—]</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </ng-container>
+
+          <!-- Tableau de notes : mode plat -->
+          <ng-template #flatNotes>
+            <table class="grades-table">
+              <thead>
+                <tr>
+                  <th style="width: 32%;">UE / Cours (EC)</th>
+                  <th style="width: 18%;">Enseignant</th>
+                  <th style="width: 6%; text-align: center;">Coef</th>
+                  <th style="width: 9%; text-align: center;">CC</th>
+                  <th style="width: 9%; text-align: center;">Devoir</th>
+                  <th style="width: 9%; text-align: center;">Examen</th>
+                  <th style="width: 10%; text-align: center;">Moy. / 20</th>
+                  <th style="width: 7%; text-align: center;">Visa / Validé</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="ec-row" *ngFor="let l of b.lignesBulletins">
+                  <td>{{ l.cours?.intitule }}</td>
+                  <td class="teacher-name">{{ getTeacherName(l.cours) }}</td>
+                  <td style="text-align: center;">{{ l.coefficient || '-' }}</td>
+                  <td style="text-align: center;" [ngClass]="getNoteClass(l.moyenneCC)">{{ l.moyenneCC != null ? l.moyenneCC : '-' }}</td>
+                  <td style="text-align: center;" [ngClass]="getNoteClass(l.noteDevoir)">{{ l.noteDevoir != null ? l.noteDevoir : '-' }}</td>
+                  <td style="text-align: center;" [ngClass]="getNoteClass(l.noteExamen)">{{ l.noteExamen != null ? l.noteExamen : '-' }}</td>
+                  <td style="text-align: center; font-weight: bold;" [ngClass]="getNoteClass(l.moyenne)">{{ l.moyenne != null ? l.moyenne + ' / 20' : '-' }}</td>
+                  <td style="text-align: center; font-style: italic; color: #777; font-size: 7.5pt;">
+                    <span *ngIf="l.moyenne != null && l.moyenne >= 10" class="valide-badge">Validé</span>
+                    <span *ngIf="l.moyenne != null && l.moyenne < 10" class="non-valide-badge">Non</span>
+                    <span *ngIf="l.moyenne == null">[—]</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </ng-template>
+
+          <!-- Rattrapage (session 2) -->
+          <table class="grades-table" *ngIf="b.rattrapageGrades?.length">
             <thead>
               <tr>
                 <th class="text-left">Matière</th>
-                <th>Note rattrapage</th>
-                <th>Moyenne finale</th>
+                <th style="text-align: center;">Note rattrapage</th>
+                <th style="text-align: center;">Moyenne finale</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let rg of b.rattrapageGrades">
-                <td class="text-left font-medium">{{ rg.coursIntitule }}</td>
-                <td [ngClass]="getNoteClass(rg.noteRattrapage)">{{ rg.noteRattrapage != null ? rg.noteRattrapage + '/20' : '-' }}</td>
-                <td [ngClass]="getNoteClass(rg.moyenneFinale)">{{ rg.moyenneFinale != null ? rg.moyenneFinale + '/20' : '-' }}</td>
+              <tr class="ec-row" *ngFor="let rg of b.rattrapageGrades">
+                <td>{{ rg.coursIntitule }}</td>
+                <td style="text-align: center;" [ngClass]="getNoteClass(rg.noteRattrapage)">{{ rg.noteRattrapage != null ? rg.noteRattrapage + ' / 20' : '-' }}</td>
+                <td style="text-align: center;" [ngClass]="getNoteClass(rg.moyenneFinale)">{{ rg.moyenneFinale != null ? rg.moyenneFinale + ' / 20' : '-' }}</td>
               </tr>
             </tbody>
           </table>
-        </div>
 
-        <div class="summary-section">
-          <div class="summary-item">
-            <span class="summary-label">Moyenne Générale</span>
-            <span class="summary-value" [ngClass]="getNoteClass(b.moyenneGenerale)">{{ b.moyenneGenerale != null ? b.moyenneGenerale + '/20' : '-' }}</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">Mention</span>
-            <span class="summary-value">{{ b.mention || '-' }}</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">Rang</span>
-            <span class="summary-value">{{ b.rang ? b.rang + '/' + b.effectifClasse : '-' }}</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">Crédits validés</span>
-            <span class="summary-value">{{ b.creditsValides || '0' }} / {{ b.totalCredits || '0' }}</span>
+          <!-- Bilan annuel / semestriel -->
+          <table class="summary-box">
+            <tr>
+              <td><strong>Total Crédits Capturés :</strong> {{ b.creditsValides || '0' }} / {{ b.totalCredits || '0' }} ECTS</td>
+              <td><strong>Moyenne Générale :</strong> {{ b.moyenneGenerale != null ? b.moyenneGenerale + ' / 20' : '-' }} <span *ngIf="b.rang">— Rang {{ b.rang }}/{{ b.effectifClasse }}</span></td>
+              <td><strong>Décision :</strong> {{ getDecision(b) }} <span *ngIf="b.mention">({{ b.mention }})</span></td>
+            </tr>
+          </table>
+
+          <!-- Appréciation -->
+          <div class="highlight-box" *ngIf="b.appreciation">
+            <span class="label">Appréciation :</span> <em>"{{ b.appreciation }}"</em>
           </div>
         </div>
 
-        <div *ngIf="b.deliberationId" class="text-center mb-4 no-print">
-          <a [routerLink]="'/bulletins/deliberations/' + b.deliberationId" class="inline-flex items-center text-sm font-semibold text-blue-700 hover:text-blue-900 transition-colors">
-            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-            Voir la délibération
-          </a>
-        </div>
-
-        <div *ngIf="b.appreciation" class="appreciation-box">
-          <span class="appreciation-label">Appréciation :</span>
-          <span class="appreciation-text">{{ b.appreciation }}</span>
-        </div>
-      </div>
-
-      <div class="bulletin-footer">
-        <div class="signature-box">
-          <p class="signature-label">Signature de l'Enseignant</p>
-          <div *ngIf="b.signatureEnseignant" class="signature-image">
-            <img [src]="b.signatureEnseignant" alt="Signature enseignant" class="max-h-16 mx-auto">
-            <p *ngIf="b.dateSignatureEnseignant" class="text-xs text-gray-400 mt-1">{{ b.dateSignatureEnseignant | date:'dd/MM/yyyy' }}</p>
-          </div>
-          <div *ngIf="!b.signatureEnseignant && !signingEnseignant" class="signature-line"></div>
-          <div *ngIf="!b.signatureEnseignant && rolesValue.isEnseignant && !signingEnseignant" class="mt-2 no-print">
-            <button (click)="signingEnseignant = true" class="px-3 py-1 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors border-0 cursor-pointer">
-              Signer
-            </button>
-          </div>
-          <div *ngIf="signingEnseignant" class="mt-2 no-print">
-            <app-signature-pad
-              label="Signature Enseignant"
-              [existingSignature]="b.signatureEnseignant"
-              (confirm)="saveSignatureEnseignant($event)"
-              (cancel)="signingEnseignant = false">
-            </app-signature-pad>
-          </div>
-        </div>
-        <div class="signature-box">
-          <p class="signature-label">Signature du Chef d'Établissement</p>
-          <div *ngIf="b.signatureChef" class="signature-image">
-            <img [src]="b.signatureChef" alt="Signature chef" class="max-h-16 mx-auto">
-            <p *ngIf="b.dateSignatureChef" class="text-xs text-gray-400 mt-1">{{ b.dateSignatureChef | date:'dd/MM/yyyy' }}</p>
-          </div>
-          <div *ngIf="!b.signatureChef && !signingChef" class="signature-line"></div>
-          <div *ngIf="!b.signatureChef && rolesValue.isInstitution && !signingChef" class="mt-2 no-print">
-            <button (click)="signingChef = true" class="px-3 py-1 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors border-0 cursor-pointer">
-              Signer
-            </button>
-          </div>
-          <div *ngIf="signingChef" class="mt-2 no-print">
-            <app-signature-pad
-              label="Signature Chef d'Établissement"
-              [existingSignature]="b.signatureChef"
-              (confirm)="saveSignatureChef($event)"
-              (cancel)="signingChef = false">
-            </app-signature-pad>
-          </div>
-        </div>
+        <!-- Pied de page : date & signatures -->
+        <table class="footer-table">
+          <tr>
+            <td class="date-cell">Fait à {{ etablissementVille || '—' }}, le {{ getDateFait(b) }}</td>
+            <td class="sign-cell">
+              <div class="sign-title">Le Directeur des Examens</div>
+              <div class="sign-line">Signature &amp; Cachet Officiel</div>
+            </td>
+            <td class="sign-cell">
+              <div class="sign-title">Le Chef de Scolarité</div>
+              <div class="sign-line">Signature Officielle</div>
+            </td>
+          </tr>
+        </table>
       </div>
     </div>
 

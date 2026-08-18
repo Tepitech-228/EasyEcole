@@ -10,6 +10,7 @@ import { Session } from 'src/app/data/modules/inscription/models/Session.model';
 import { BordereauService } from 'src/app/data/modules/inscription/services/bordereau.service';
 import { EcheanceService } from 'src/app/data/modules/inscription/services/echeance.service';
 import { DemandeInscriptionService } from 'src/app/data/modules/inscription/services/demande-inscription.service';
+import { EtablissementService } from 'src/app/data/modules/etablissement/services/etablissement.service';
 import { environment } from 'src/environments/environment';
 
 @Component({
@@ -50,6 +51,13 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
     { value: 'en_attente', label: 'En attente' }
   ]
 
+  /** Modalités de paiement proposées à l'étudiant lors de la génération d'un bordereau d'inscription. */
+  readonly modaliteOptions: { value: '1x' | '3x' | '10x'; label: string; badge: string }[] = [
+    { value: '1x', label: 'Paiement en 1 fois', badge: '1x' },
+    { value: '3x', label: '3 mensualités', badge: '3x' },
+    { value: '10x', label: '10 mensualités', badge: '10x' }
+  ]
+
   readonly BORDEREAUX_PATH: string = environment.MEDIAS_PATH.INSCRIPTION.BORDEREAUX
 
   bordereauForm: FormGroup = new FormGroup({
@@ -57,12 +65,14 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
     type: new FormControl(null, [Validators.required]),
     montant: new FormControl(null, [Validators.required]),
     referenceBancaire: new FormControl(null, []),
+    modalite: new FormControl('1x', []),
   })
 
   constructor(
     private bordereauService: BordereauService,
     private echeanceService: EcheanceService,
     private demandeInscriptionService: DemandeInscriptionService,
+    private etablissementService: EtablissementService,
     private sanitizer: DomSanitizer,
     private localStorage: LocalStorageService
   ) {
@@ -183,6 +193,47 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
     }
   }
 
+  get selectedBordereauType(): 'inscription' | 'scolarite' | null {
+    const type = this.bordereauForm.get('type')?.value
+    return type === 'inscription' || type === 'scolarite' ? type : null
+  }
+
+  get selectedModalite(): '1x' | '3x' | '10x' {
+    return (this.bordereauForm.get('modalite')?.value as '1x' | '3x' | '10x') || '1x'
+  }
+
+  /** Récap indicatif des tranches (utilisé pour la description contextuelle sous les options). */
+  getModaliteDescription(modalite: '1x' | '3x' | '10x'): string {
+    const montantStr = this.bordereauForm.get('montant')?.value
+    const montant = Number(montantStr)
+
+    switch (modalite) {
+      case '1x':
+        return 'Le montant total est réglé en une seule fois, dès validation de votre bordereau.'
+      case '3x': {
+        if (!montant || montant <= 0) {
+          return 'Le montant sera réparti en tranches mensuelles après validation de votre bordereau.'
+        }
+        const tranche = Math.round((montant / 3) * 100) / 100
+        const solde = Math.round(((montant - 2 * tranche) + Number.EPSILON) * 100) / 100
+        return `3 mensualités indicatives : 2 tranches de ${tranche} ${this.deviseLabel} + solde final de ${solde} ${this.deviseLabel}.`
+      }
+      case '10x': {
+        if (!montant || montant <= 0) {
+          return 'Le montant sera réparti en tranches mensuelles après validation de votre bordereau.'
+        }
+        const tranche = Math.round((montant / 10) * 100) / 100
+        return `10 mensualités indicatives d'environ ${tranche} ${this.deviseLabel} chacune.`
+      }
+      default:
+        return ''
+    }
+  }
+
+  private get deviseLabel(): string {
+    return this.etablissementService.etablissement?.devise || 'FCFA'
+  }
+
   uploadBordereau(): void {
     this.bordereauForm.markAllAsTouched()
     if (this.bordereauForm.valid && this.selectedFile) {
@@ -195,6 +246,10 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
 
       if (type === 'scolarite') {
         formData.append('echeanceId', this.bordereauForm.get('echeanceId')!.value)
+      }
+
+      if (type === 'inscription') {
+        formData.append('modalite', this.selectedModalite)
       }
 
       this.bordereauService.upload(formData).subscribe({

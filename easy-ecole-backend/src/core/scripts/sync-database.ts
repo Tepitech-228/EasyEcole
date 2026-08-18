@@ -42,6 +42,7 @@ async function syncDatabase() {
         require('../../modules/inscription/models/Absence');
         require('../../modules/inscription/models/Equivalence');
         require('../../modules/inscription/models/Dispense');
+        require('../../modules/inscription/models/DesignationMemoire');
         require('../../modules/stage/models/_associations');
         require('../../modules/stock/models/_associations');
         require('../../modules/immobilisation/models/_associations');

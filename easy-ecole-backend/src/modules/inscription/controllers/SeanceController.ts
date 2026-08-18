@@ -61,7 +61,8 @@ export default class SeanceController {
             seances = await Seance.findAll(options);
             return res.status(200).send(seances);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -85,7 +86,8 @@ export default class SeanceController {
 
             return res.status(200).send(seance);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -208,7 +210,8 @@ export default class SeanceController {
             const conflits = await SeanceController.verifierConflits(req.body, req.body.excludeId);
             return res.status(200).send(conflits);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -392,7 +395,8 @@ export default class SeanceController {
                     return res.status(200).json({ success: true, message: "Seance supprimée" });
                 })
                 .catch((error) => {
-                    return res.status(500).json({ success: false, error: error });
+                    console.error('Erreur', error);
+                    return res.status(500).json({ success: false, message: 'Erreur interne' });
                 });
         }
         else {
@@ -414,7 +418,8 @@ export default class SeanceController {
                 return res.status(200).json({ success: true, count: value });
             })
             .catch((error) => {
-                return res.status(500).json({ success: false, error: error });
+                console.error('Erreur', error);
+                return res.status(500).json({ success: false, message: 'Erreur interne' });
             });
 
         return null

@@ -1,0 +1,93 @@
+<style>
+  /* ═══════════ DESIGN ESA — ATTESTATION D'AUTORISATION DE DÉLIVRANCE DU DIPLÔME DE MASTER (OFFICIEL) ═══════════ */
+  @page { size: A4 portrait; margin: 8mm 10mm; }
+  *, *::before, *::after { box-sizing: border-box; }
+  .doc-page { background-color: #ffffff; width: 100%; color: #1a1a1a; font-size: 8.5pt; line-height: 1.45; }
+  .frame { border: 3px solid #002147; padding: 12px; position: relative; display: flex; flex-direction: column; justify-content: space-between; min-height: 255mm; overflow: hidden; }
+  .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 65%; max-width: 400px; opacity: 0.05; z-index: 0; pointer-events: none; }
+  .content-wrapper { position: relative; z-index: 1; }
+  .header-table { width: 100%; border-collapse: collapse; border-bottom: 2px solid #002147; padding-bottom: 4px; margin-bottom: 4px; }
+  .header-table td { vertical-align: middle; }
+  .logo-img { max-height: 60px; width: auto; object-fit: contain; }
+  .school-info { text-align: right; font-size: 8pt; color: #333; line-height: 1.2; }
+  .banner-accent { height: 3px; background-color: #D4AF37; margin-bottom: 8px; }
+  .doc-title { text-align: center; margin: 6px 0 4px; }
+  .doc-title h1 { font-size: 11pt; color: #002147; text-transform: uppercase; letter-spacing: 0.5px; margin: 0; padding-bottom: 3px; border-bottom: 2px solid #D4AF37; display: inline-block; }
+  .ref-number { text-align: center; font-size: 8pt; font-weight: bold; color: #002147; margin-bottom: 8px; }
+  .dotted-line { border-bottom: 1px dotted #333; display: inline-block; min-width: 100px; }
+  .value { font-weight: bold; color: #002147; }
+  .content-body { margin: 6px 0; text-align: justify; }
+  .content-body p { margin: 6px 0; }
+  .notice-box { background-color: rgba(240, 244, 248, 0.85); border: 1px solid #002147; padding: 6px; margin: 6px 0; font-size: 7.5pt; }
+  .footer-table { width: 100%; margin-top: 10px; border-collapse: collapse; position: relative; z-index: 1; }
+  .footer-table td { vertical-align: top; }
+  .date-cell { font-style: italic; font-size: 8pt; }
+  .sign-cell { text-align: center; }
+  .sign-title { font-weight: bold; font-size: 8pt; color: #002147; margin-bottom: 35px; }
+  .sign-sub { font-size: 7.5pt; color: #444; line-height: 1.1; }
+  .doc-meta { text-align: center; margin-top: 8px; font-size: 7pt; color: #999; }
+</style>
+
+<div class="doc-page">
+  <div class="frame">
+    <img src="{{LOGO_DATA_URI}}" alt="" class="watermark">
+
+    <div class="content-wrapper">
+      <table class="header-table">
+        <tr>
+          <td><img src="{{LOGO_DATA_URI}}" alt="Logo ESA" class="logo-img"></td>
+          <td class="school-info">
+            <strong>{{etablissement.nom}}</strong><br>
+            Direction Générale
+          </td>
+        </tr>
+      </table>
+      <div class="banner-accent"></div>
+
+      <div class="doc-title">
+        <h1>Attestation d'Autorisation de Délivrance du Diplôme de Master</h1>
+      </div>
+
+      <div class="content-body" style="line-height: 1.5;">
+        <p>Vu la liste des pièces fournies pour la demande de diplôme,</p>
+        <p>Vu la demande de délivrance de diplôme introduite par <strong>M./Mlle/Mme :</strong> <span class="dotted-line" style="width: 55%;">{{etudiant.nom}} {{etudiant.prenom}}</span><br>
+        inscrit (e) au parcours Master de la filière <span class="dotted-line" style="width: 35%;">{{etudiant.filiere}}</span> promotion <span class="dotted-line" style="width: 15%;">{{etudiant.promotion}}</span></p>
+
+        <p>Vu le nombre de crédits validés et mentionnés sur les relevés de notes de :<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&bull; [ {{#if etudiant.estMaster}}√{{/if}} ] Master 1 (Semestre 1 &amp; 2)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&bull; [ &nbsp; ] Master 2 (Semestre 3 &amp; 4)<br>
+        Soit <span class="dotted-line" style="width: 150px;">{{etudiant.creditsValides}}</span> crédits.</p>
+
+        <p>Vu l'attestation d'admissibilité de Master,</p>
+        <p>Vu le procès-verbal de soutenance et le quitus du président du Jury ;</p>
+        <p>Après vérification de toutes les pièces demandées par la direction académique et scientifique de l'ESA,</p>
+
+        <p style="margin-top: 15px;">La Direction Générale de l'Ecole Supérieure des Affaires (ESA) autorise la délivrance du diplôme de <span class="dotted-line" style="width: 30%;">{{etudiant.diplomeVise}}</span> de la filière <span class="dotted-line" style="width: 30%;">{{etudiant.filiere}}</span></p>
+        <p>à <strong>M./Mlle/Mme :</strong> <span class="dotted-line" style="width: 75%;">{{etudiant.nom}} {{etudiant.prenom}}</span></p>
+      </div>
+
+      <table class="footer-table" style="margin-top: 40px;">
+        <tr>
+          <td class="date-cell">Lomé, le {{dateEdition}}</td>
+          <td class="sign-cell" style="width: 70%;">
+            <div class="sign-title">Pour le Comité d'Orientation et d'Equivalence et d'Etude de Dossiers</div>
+            <table style="width: 100%;">
+              <tr>
+                <td style="text-align: center;">
+                  <strong>Steve BARRIGAH-B.</strong><br>
+                  <span class="sign-sub">Secrétaire Général / ESA</span>
+                </td>
+                <td style="text-align: center;">
+                  <strong>GNOHOE-KPADE Jeannot</strong><br>
+                  <span class="sign-sub">Chargé de la communication</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="doc-meta">Document généré le {{dateGeneration}} — Réf : {{reference}}</div>
+</div>

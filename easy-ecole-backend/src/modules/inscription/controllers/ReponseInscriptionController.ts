@@ -18,7 +18,8 @@ export default class ReponseInscriptionController {
 
             return res.status(200).send(reponsesInscription);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -34,7 +35,8 @@ export default class ReponseInscriptionController {
 
             return res.status(200).send(reponseInscription);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -114,7 +116,8 @@ export default class ReponseInscriptionController {
                     return res.status(200).json({ success: true, message: "Réponse supprimée" });
                 })
                 .catch((error) => {
-                    return res.status(500).json({ success: false, error: error });
+                    console.error('Erreur', error);
+                    return res.status(500).json({ success: false, message: 'Erreur interne' });
                 });
         }
         else {
@@ -136,7 +139,8 @@ export default class ReponseInscriptionController {
                 return res.status(200).json({ success: true, count: value });
             })
             .catch((error) => {
-                return res.status(500).json({ success: false, error: error });
+                console.error('Erreur', error);
+                return res.status(500).json({ success: false, message: 'Erreur interne' });
             });
 
         return null

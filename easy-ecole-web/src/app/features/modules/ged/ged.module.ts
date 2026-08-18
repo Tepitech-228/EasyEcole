@@ -14,6 +14,7 @@ import { GedSearchComponent } from './pages/ged-search/ged-search.component';
 import { GedConservationComponent } from './pages/ged-conservation/ged-conservation.component';
 import { GedDossiersVirtuelsComponent } from './pages/ged-dossiers-virtuels/ged-dossiers-virtuels.component';
 import { GedBatchUploadComponent } from './pages/ged-batch-upload/ged-batch-upload.component';
+import { GedFoldersComponent } from './pages/ged-folders/ged-folders.component';
 import { PermissionsGedComponent } from './permissions/permissions-ged.component';
 import { ProcessusListComponent } from './processus/processus-list.component';
 import { ProcessusFormComponent } from './processus/processus-form.component';
@@ -32,6 +33,7 @@ import { FolderTreeItemComponent } from './components/folder-tree-item/folder-tr
     GedConservationComponent,
     GedDossiersVirtuelsComponent,
     GedBatchUploadComponent,
+    GedFoldersComponent,
     PermissionsGedComponent,
     ProcessusListComponent,
     ProcessusFormComponent,

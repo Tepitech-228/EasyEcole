@@ -8,7 +8,7 @@
       </span>
       <div>
         <p class="stat-label">Solde actuel</p>
-        <p class="stat-value text-2xl font-bold">{{ soldeActuel | number:'1.0-0' }} FCFA</p>
+        <p class="stat-value text-2xl font-bold">{{ soldeActuel | number:'1.0-0' }} {{ devise }}</p>
       </div>
     </div>
 
@@ -65,7 +65,7 @@
             <td>{{ t.libelle }}</td>
             <td>
               <span [class.text-green-600]="t.type === 'credit'" [class.text-red-600]="t.type === 'debit'">
-                {{ t.type === 'credit' ? '+' : '-' }}{{ t.montant | number:'1.0-0' }} FCFA
+                {{ t.type === 'credit' ? '+' : '-' }}{{ t.montant | number:'1.0-0' }} {{ devise }}
               </span>
             </td>
             <td>

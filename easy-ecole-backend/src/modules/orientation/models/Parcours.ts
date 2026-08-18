@@ -48,7 +48,7 @@ Parcours.init({
     allowNull: true
   },
   type: {
-    type: DataTypes.ENUM('LICENCE', 'MASTER', 'DOCTORAT'),
+    type: DataTypes.ENUM('LICENCE', 'MASTER', 'DOCTORAT', 'BTS', 'MBA'),
     allowNull: true
   },
   image: {

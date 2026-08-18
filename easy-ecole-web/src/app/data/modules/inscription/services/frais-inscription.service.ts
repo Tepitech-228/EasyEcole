@@ -13,6 +13,10 @@ export class FraisInscriptionService {
 
   constructor(private httpClient: HttpClient) { }
 
+  getAll(): Observable<FraisInscription[]> {
+    return this.httpClient.get<FraisInscription[]>(`${this.SERVICE_URL}`)
+  }
+
   get(id: string): Observable<FraisInscription> {
     return this.httpClient.get<FraisInscription>(`${this.SERVICE_URL}/${id}`)
   }

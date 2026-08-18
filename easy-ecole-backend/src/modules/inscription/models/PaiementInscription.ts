@@ -14,6 +14,7 @@ export class PaiementInscription extends Model<InferAttributes<PaiementInscripti
   declare matriculeInscription: string
   declare type: TypesPaiement
   declare dateValidation: CreationOptional<Date>
+  declare transactionId: CreationOptional<string>
   declare utilisateurId: ForeignKey<Utilisateur['id']>
   declare utilisateur?: NonAttribute<Utilisateur>
   declare demandeInscription?: NonAttribute<DemandeInscription>
@@ -67,6 +68,10 @@ PaiementInscription.init({
   },
   dateValidation: {
     type: DataTypes.DATE,
+    allowNull: true
+  },
+  transactionId: {
+    type: new DataTypes.STRING,
     allowNull: true
   },
   utilisateurId: {

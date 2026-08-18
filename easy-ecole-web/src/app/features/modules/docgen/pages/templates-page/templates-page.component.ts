@@ -48,4 +48,20 @@ export class TemplatesPageComponent extends BaseComponentClass implements OnInit
     if (!id || !confirm('Supprimer ce template ?')) return;
     this.templateService.delete(id).subscribe({ next: () => this.getTemplates() });
   }
+
+  telecharger(tmpl: DocGenTemplate): void {
+    if (!tmpl.id) return;
+    this.templateService.getById(tmpl.id).subscribe(t => {
+      const code = t.type?.code || 'template';
+      const libelle = (t.libelle || 'template').replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+      const nom = `${code}-${libelle}-v${t.version || 1}.html`;
+      const blob = new Blob([t.contenu || ''], { type: 'text/html;charset=utf-8' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = nom;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    });
+  }
 }

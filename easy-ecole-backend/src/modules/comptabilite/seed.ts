@@ -12,18 +12,20 @@ export async function seedComptabilite(): Promise<void> {
   await db.init();
 
   // === JOURNAUX ===
-  const journalCount = await JournalComptable.count();
-  if (journalCount === 0) {
-    await JournalComptable.bulkCreate([
-      { code: "VEN", libelle: "Ventes / Prestations", type: "Vente", actif: true },
-      { code: "ACH", libelle: "Achats", type: "Achat", actif: true },
-      { code: "BQ", libelle: "Banque", type: "Banque", actif: true },
-      { code: "CAI", libelle: "Caisse", type: "Caisse", actif: true },
-      { code: "PAI", libelle: "Paie et Charges sociales", type: "Paie", actif: true },
-      { code: "OD", libelle: "Opérations Diverses", type: "OD", actif: true },
-    ]);
-    console.log("Journaux VEN, ACH, BQ, CAI, PAI, OD créés");
+  // findOrCreate : idempotent, garantit la présence de chaque journal même si
+  // la table contient déjà des journaux issus d'un autre seed (ex: AC, BQ, OD).
+  const journauxSeed: Array<{ code: string; libelle: string; type: 'Achat' | 'Vente' | 'Banque' | 'Caisse' | 'Paie' | 'OD' | 'Divers'; actif: boolean }> = [
+    { code: "VEN", libelle: "Ventes / Prestations", type: "Vente", actif: true },
+    { code: "ACH", libelle: "Achats", type: "Achat", actif: true },
+    { code: "BQ", libelle: "Banque", type: "Banque", actif: true },
+    { code: "CAI", libelle: "Caisse", type: "Caisse", actif: true },
+    { code: "PAI", libelle: "Paie et Charges sociales", type: "Paie", actif: true },
+    { code: "OD", libelle: "Opérations Diverses", type: "OD", actif: true },
+  ];
+  for (const journal of journauxSeed) {
+    await JournalComptable.findOrCreate({ where: { code: journal.code }, defaults: journal });
   }
+  console.log("Journaux VEN, ACH, BQ, CAI, PAI, OD vérifiés / complétés");
 
   // === PLAN COMPTABLE OHADA ===
   interface CompteSeed {

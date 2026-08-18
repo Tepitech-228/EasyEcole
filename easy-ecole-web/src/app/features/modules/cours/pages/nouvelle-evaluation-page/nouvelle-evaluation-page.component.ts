@@ -52,6 +52,24 @@ export class NouvelleEvaluationPageComponent extends BaseComponentClass implemen
     this.anneeAcademiqueService.getAll().subscribe({ next: (res) => { this.anneesAcademiques = res }, error: (err) => { console.log(err) } })
   }
 
+  // Règle métier : les devoirs sont créés par les profs, les examens sont programmés par l'institution.
+  get typesNoteDisponibles(): TypeNoteEvaluation[] {
+    if (this.rolesValue.isEnseignant && !this.rolesValue.isInstitution && !this.rolesValue.isAdmin) {
+      return this.typesNote.filter(t => t.categorie === 'devoir')
+    }
+    return this.typesNote
+  }
+
+  // Pré-remplit le poids selon le type choisi : 40 pour un devoir, 60 pour un examen (sinon le poids configuré du type).
+  onTypeChange(): void {
+    const typeId = this.evaluationForm.get('typeNoteEvaluationId')!.value
+    const type = this.typesNote.find(t => String(t.id) === String(typeId))
+    if (type) {
+      const poids = type.poids ?? (type.categorie === 'examen' ? 60 : 40)
+      this.evaluationForm.get('poidsTypeNoteEvaluation')!.setValue(poids)
+    }
+  }
+
   create(): void {
     this.evaluationForm.markAllAsTouched()
     if (this.evaluationForm.valid) {

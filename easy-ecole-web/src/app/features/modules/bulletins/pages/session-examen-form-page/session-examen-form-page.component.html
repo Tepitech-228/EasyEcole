@@ -92,6 +92,42 @@
                   placeholder="Observations éventuelles..."></textarea>
       </div>
 
+      <!-- Correcteurs par cours (session de rattrapage) -->
+      <div *ngIf="form.get('type')?.value === 'rattrapage'" class="border-t border-gray-100 pt-6">
+        <h3 class="text-sm font-semibold text-gray-900">Désignation des correcteurs par cours</h3>
+        <p class="text-xs text-gray-500 mt-1 mb-4">
+          Sélectionnez pour chaque cours l'enseignant qui corrigera les copies de rattrapage.
+          Seul cet enseignant pourra saisir les notes.
+        </p>
+
+        <div *ngIf="!form.get('classeId')?.value" class="bg-amber-50 text-amber-700 text-xs rounded-xl px-3 py-2">
+          Sélectionnez d'abord la classe pour charger ses cours.
+        </div>
+
+        <div *ngIf="loadingCours" class="text-sm text-gray-400 py-4">Chargement des cours...</div>
+
+        <div *ngIf="!loadingCours && form.get('classeId')?.value && coursDeLaClasse.length === 0"
+             class="bg-gray-50 text-gray-500 text-xs rounded-xl px-3 py-2">
+          Aucun cours trouvé pour cette classe.
+        </div>
+
+        <div class="space-y-3">
+          <div *ngFor="let cours of coursDeLaClasse"
+               class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-gray-100 rounded-xl px-4 py-3">
+            <div class="min-w-0">
+              <p class="text-sm font-medium text-gray-900 truncate">{{ cours.intitule }}</p>
+              <p class="text-xs text-gray-400">{{ cours.code }}</p>
+            </div>
+            <select [value]="getCorrecteur(cours.id)"
+                    (change)="onCorrecteurChange(cours.id, $any($event.target).value)"
+                    class="sm:w-64 w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white">
+              <option value="">— Aucun correcteur désigné —</option>
+              <option *ngFor="let e of enseignants" [value]="e.id">{{ e.utilisateur?.prenoms }} {{ e.utilisateur?.nom }}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       <!-- Actions -->
       <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
         <button type="button" (click)="annuler()"

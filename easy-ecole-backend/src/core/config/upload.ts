@@ -1,11 +1,12 @@
 import multer from "multer"
 import path from "path"
 
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-const ALLOWED_DOCUMENT_TYPES = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'image/jpeg', 'image/png', 'image/gif']
-const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/ogg', 'application/pdf', 'image/jpeg', 'image/png']
+export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+export const ALLOWED_DOCUMENT_TYPES = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'image/jpeg', 'image/png', 'image/gif']
+export const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/ogg', 'application/pdf', 'image/jpeg', 'image/png']
+export const ALLOWED_PDF_TYPES = ['application/pdf']
 
-function fileFilter(allowedTypes: string[]) {
+export function fileFilter(allowedTypes: string[]) {
   return (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true)

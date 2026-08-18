@@ -1,18 +1,35 @@
 import { Request, Response } from "express";
-import { CountOptions, FindOptions, InferAttributes } from "sequelize";
+import { CountOptions, FindOptions, InferAttributes, Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { Cours } from "../models/Cours";
 import { Parcours } from "../models/Parcours";
 import { ListePresence } from "../models/ListePresence";
 import { Presence } from "../models/Presence";
+import { CoursParticipant } from "../models/CoursParticipant";
 
 export default class ListePresenceController {
 
     constructor() { }
 
     static async getAllListesPresences(req: Request, res: Response): Promise<Response> {
+        const role = (req as any).utilisateurRole;
+        const utilisateurId = (req as any).utilisateurId;
+        const where: any = {};
+
+        // Filtre : l'étudiant ne voit que les feuilles de présence de SES cours choisis
+        if (role === RolesUtilisateur.APPRENANT) {
+            const coursParticipants = await CoursParticipant.findAll({ where: { utilisateurId }, attributes: ['coursId'] });
+            where.coursId = { [Op.in]: coursParticipants.map(cp => cp.coursId) };
+        }
+        // Filtre : l'enseignant ne voit que les feuilles de présence de SES cours
+        else if (role === RolesUtilisateur.ENSEIGNANT) {
+            const enseignant = await Enseignant.findOne({ where: { utilisateurId } });
+            if (enseignant) where.enseignantId = enseignant.id;
+        }
+
         let options: FindOptions<InferAttributes<ListePresence>> = {
+            where,
             include: [
                 {
                     association: ListePresence.associations.cours, include: [
@@ -31,7 +48,8 @@ export default class ListePresenceController {
 
             return res.status(200).send(listesPresences);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -59,7 +77,8 @@ export default class ListePresenceController {
 
             return res.status(200).send(listePresence);
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
 
@@ -145,7 +164,8 @@ export default class ListePresenceController {
                     return res.status(200).json({ success: true, message: "ListePresence supprimée" });
                 })
                 .catch((error) => {
-                    return res.status(500).json({ success: false, error: error });
+                    console.error('Erreur', error);
+                    return res.status(500).json({ success: false, message: 'Erreur interne' });
                 });
         }
         else {
@@ -167,7 +187,8 @@ export default class ListePresenceController {
                 return res.status(200).json({ success: true, count: value });
             })
             .catch((error) => {
-                return res.status(500).json({ success: false, error: error });
+                console.error('Erreur', error);
+                return res.status(500).json({ success: false, message: 'Erreur interne' });
             });
 
         return null

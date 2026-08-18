@@ -13,6 +13,8 @@ export class SuiviUePageComponent extends BaseComponentClass implements OnInit {
   data: SuiviUeResult | null = null
   loading: boolean = false
   error: string | null = null
+  /** La page est visible uniquement par les étudiants : état affiché aux autres rôles. */
+  accesReserve: boolean = false
   filtreSemestre: string = 'tous'
   filtreStatut: string = 'tous'
   anneeActive: string = 'toutes'
@@ -25,10 +27,30 @@ export class SuiviUePageComponent extends BaseComponentClass implements OnInit {
     return this.data?.progression?.semestres || []
   }
 
+  /** Semestres ouverts en 1ère année (le backend ne renvoie que les semestres 1-2 pour un L1). */
+  private static readonly SEMESTRES_PREMIERE_ANNEE: string[] = ['semestre1', 'semestre2'];
+
+  /** L'utilisateur connecté est un apprenant de 1ère année : la progression ne couvre que les semestres 1-2. */
+  get estPremiereAnnee(): boolean {
+    return this.rolesValue.isApprenant &&
+      this.semestresProgression.length > 0 &&
+      this.semestresProgression.every(s => SuiviUePageComponent.SEMESTRES_PREMIERE_ANNEE.includes(s.semestre));
+  }
+
+  /** Progression semestrielle affichée : masque les semestres > 2 pour les 1ères années. */
+  get semestresProgressionVisibles(): SemestreProgression[] {
+    if (!this.estPremiereAnnee) return this.semestresProgression;
+    return this.semestresProgression.filter(s => SuiviUePageComponent.SEMESTRES_PREMIERE_ANNEE.includes(s.semestre));
+  }
+
   get semestres(): string[] {
     if (!this.data) return []
     const set = new Set(this.data.ues.map(u => u.semestre))
-    return Array.from(set).sort()
+    const list = Array.from(set).sort()
+    if (this.estPremiereAnnee) {
+      return list.filter(s => SuiviUePageComponent.SEMESTRES_PREMIERE_ANNEE.includes(s))
+    }
+    return list
   }
 
   get semestresAnneeActive(): string[] {
@@ -44,6 +66,7 @@ export class SuiviUePageComponent extends BaseComponentClass implements OnInit {
   get uesFiltrees(): UeStats[] {
     if (!this.data) return []
     return this.data.ues.filter(u => {
+      if (this.estPremiereAnnee && !SuiviUePageComponent.SEMESTRES_PREMIERE_ANNEE.includes(u.semestre)) return false
       if (this.filtreSemestre !== 'tous' && u.semestre !== this.filtreSemestre) return false
       if (this.filtreStatut !== 'tous' && u.statut !== this.filtreStatut) return false
       if (this.anneeActive !== 'toutes') {
@@ -92,34 +115,29 @@ export class SuiviUePageComponent extends BaseComponentClass implements OnInit {
   }
 
   chargerSuivi(): void {
-    this.loading = true
+    // Réservé aux apprenants : les autres rôles ne doivent pas solliciter le
+    // backend (getMonSuivi renverrait une structure vide côté serveur).
+    this.accesReserve = !this.rolesValue.isApprenant
+    this.loading = false
     this.error = null
 
-    if (this.rolesValue.isApprenant) {
-      this.suiviUeService.getMonSuivi().subscribe({
-        next: (res) => {
-          this.data = res
-          this.loading = false
-        },
-        error: (err) => {
-          this.error = "Erreur lors du chargement de votre suivi pédagogique"
-          this.loading = false
-          console.error(err)
-        }
-      })
-    } else {
-      this.suiviUeService.getMonSuivi().subscribe({
-        next: (res) => {
-          this.data = res
-          this.loading = false
-        },
-        error: (err) => {
-          this.error = "Erreur lors du chargement du suivi"
-          this.loading = false
-          console.error(err)
-        }
-      })
+    if (this.accesReserve) {
+      this.data = null
+      return
     }
+
+    this.loading = true
+    this.suiviUeService.getMonSuivi().subscribe({
+      next: (res) => {
+        this.data = res
+        this.loading = false
+      },
+      error: (err) => {
+        this.error = "Erreur lors du chargement de votre suivi pédagogique"
+        this.loading = false
+        console.error(err)
+      }
+    })
   }
 
   getStatutLabel(statut: string): string {

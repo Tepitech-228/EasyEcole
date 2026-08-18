@@ -20,6 +20,7 @@ export class Bulletin extends Model<InferAttributes<Bulletin>, InferCreationAttr
   declare classeId: ForeignKey<Classe['id']>
   declare parcoursId: ForeignKey<Parcours['id']>
   declare niveauEtudeId: ForeignKey<NiveauEtude['id']>
+  declare salleId: CreationOptional<number | null>
   declare moyenneGenerale: CreationOptional<number | null>
   declare totalCredits: CreationOptional<number | null>
   declare creditsValides: CreationOptional<number | null>
@@ -91,6 +92,11 @@ Bulletin.init({
   niveauEtudeId: {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false
+  },
+  salleId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true,
+    comment: "Salle de classe à laquelle appartient ce bulletin (optionnel)"
   },
   moyenneGenerale: { type: DataTypes.FLOAT, allowNull: true },
   totalCredits: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },

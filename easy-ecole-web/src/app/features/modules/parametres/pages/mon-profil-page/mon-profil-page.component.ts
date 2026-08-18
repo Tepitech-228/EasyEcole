@@ -9,10 +9,12 @@ import { Apprenant } from 'src/app/data/modules/auth/models/Apprenant.model';
 import { CaissierBanque } from 'src/app/data/modules/auth/models/CaissierBanque.model';
 import { Enseignant } from 'src/app/data/modules/auth/models/Enseignant.model';
 import { Institution } from 'src/app/data/modules/auth/models/Institution.model';
+import { PersonnelAdministratif } from 'src/app/data/modules/auth/models/PersonnelAdministratif.model';
 import { ApprenantService } from 'src/app/data/modules/auth/services/apprenant.service';
 import { CaissierBanqueService } from 'src/app/data/modules/auth/services/caissier-banque.service';
 import { EnseignantService } from 'src/app/data/modules/auth/services/enseignant.service';
 import { InstitutionService } from 'src/app/data/modules/auth/services/institution.service';
+import { PersonnelAdministratifService } from 'src/app/data/modules/auth/services/personnel-administratif.service';
 import { environment } from 'src/environments/environment';
 
 @Component({
@@ -42,10 +44,17 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
   institution?: Institution
   enseignant?: Enseignant
   caissier?: CaissierBanque
+  personnelAdministratif?: PersonnelAdministratif
   profilForm!: FormGroup
 
   situationsMatrimoniales = SituationsMatrimoniales
   etatsPhysique = EtatsPhysique
+
+  readonly sexeOptions = [
+    { label: 'Masculin', value: 'M' },
+    { label: 'Féminin', value: 'F' },
+    { label: 'Autre', value: 'Autre' },
+  ]
 
   onboardingMode: boolean = false
 
@@ -54,6 +63,7 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
     private institutionService: InstitutionService,
     private enseignantService: EnseignantService,
     private caissierBanqueService: CaissierBanqueService,
+    private personnelAdministratifService: PersonnelAdministratifService,
     private router: Router,
     private activatedRoute: ActivatedRoute) {
     super()
@@ -71,6 +81,9 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
     }
     else if(this.rolesValue.isCaissierBanque) {
       this.getCaissierBanque()
+    }
+    else if(this.rolesValue.isPersonnelAdministratif) {
+      this.getPersonnelAdministratif()
     }
   }
 
@@ -124,6 +137,19 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
         console.log(value)
         this.caissier = value ?? new CaissierBanque()
         this.initCaissierBanqueForm()
+      },
+      error: (err: HttpErrorResponse) => {
+        console.log(err)
+      }
+    })
+  }
+
+  private getPersonnelAdministratif(): void {
+    this.personnelAdministratifService.get().subscribe({
+      next: (value) => {
+        console.log(value)
+        this.personnelAdministratif = value ?? new PersonnelAdministratif()
+        this.initPersonnelAdministratifForm()
       },
       error: (err: HttpErrorResponse) => {
         console.log(err)
@@ -200,11 +226,22 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
 
   validerProfilApprenant(): void {
     this.profilForm.markAllAsTouched()
-    console.log(this.profilForm.value as Apprenant)
     if (this.profilForm.valid) {
-      this.apprenantService.update(this.profilForm.value as Apprenant).subscribe({
+      const formValue = this.profilForm.value
+      const payload: any = {
+        ...formValue,
+        utilisateur: {
+          nom: formValue.nom,
+          prenoms: formValue.prenoms,
+          contact: formValue.contact,
+        }
+      }
+      delete payload.nom
+      delete payload.prenoms
+      delete payload.contact
+
+      this.apprenantService.update(payload).subscribe({
         next: (value) => {
-          console.log()
           this.updateSuccess = true
           setTimeout(() => { this.updateSuccess = false }, 2000)
           this.getApprenant()
@@ -213,7 +250,6 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
           }
         },
         error: (err: HttpErrorResponse) => {
-          console.log(err)
           this.updateError = true
           setTimeout(() => { this.updateError = false }, 2000)
         }
@@ -243,17 +279,25 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
 
   validerProfilEnseignant(): void {
     this.profilForm.markAllAsTouched()
-    console.log(this.profilForm.value as Apprenant)
     if (this.profilForm.valid) {
-      this.enseignantService.update(this.profilForm.value as Enseignant).subscribe({
+      const formValue = this.profilForm.value
+      const payload: any = {
+        ...formValue,
+        utilisateur: {
+          nom: formValue.nom,
+          prenoms: formValue.prenoms,
+        }
+      }
+      delete payload.nom
+      delete payload.prenoms
+
+      this.enseignantService.update(payload).subscribe({
         next: (value) => {
-          console.log()
           this.updateSuccess = true
           setTimeout(() => { this.updateSuccess = false }, 2000)
           this.getEnseignant()
         },
         error: (err: HttpErrorResponse) => {
-          console.log(err)
           this.updateError = true
           setTimeout(() => { this.updateError = false }, 2000)
         }
@@ -282,10 +326,19 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
   }
 
   initApprenantForm(): void {
+    const cursus = this.apprenant?.cursusApprenant?.[0]
+    const parcours = cursus?.parcours
+    const classe = cursus?.classe
+    const niveau = cursus?.niveauEtude
+
     this.profilForm = new FormGroup({
-      // photo: new FormControl(null, []),
+      nom: new FormControl(this.apprenant?.utilisateur?.nom ?? null, [Validators.required]),
+      prenoms: new FormControl(this.apprenant?.utilisateur?.prenoms ?? null, [Validators.required]),
+      identifiant: new FormControl(this.apprenant?.utilisateur?.identifiant ?? null, []),
+      contact: new FormControl(this.apprenant?.utilisateur?.contact ?? null, []),
       dateNaissance: new FormControl(this.apprenant?.dateNaissance ? this.apprenant?.dateNaissance.toString().split('T')[0] : null, [Validators.required]),
       lieuNaissance: new FormControl(this.apprenant?.lieuNaissance ?? null, [Validators.required]),
+      sexe: new FormControl(this.apprenant?.sexe ?? 'M', [Validators.required]),
       identite: new FormGroup({
         nationalite: new FormControl(this.apprenant?.identite?.nationalite ?? null, [Validators.required]),
         ethnie: new FormControl(this.apprenant?.identite?.ethnie ?? null, []),
@@ -297,6 +350,17 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
         handicapVisuel: new FormControl(this.apprenant?.identite?.handicapVisuel ?? false, [Validators.required]),
         handicapAuditif: new FormControl(this.apprenant?.identite?.handicapAuditif ?? false, [Validators.required]),
       }),
+      cni: new FormControl(this.apprenant?.cni ?? null, []),
+      statutHandicap: new FormControl(this.apprenant?.statutHandicap ?? false, []),
+      natureHandicap: new FormControl(this.apprenant?.natureHandicap ?? null, []),
+      statutEtudiant: new FormControl(this.apprenant?.statutEtudiant ?? 'nouveau', [Validators.required]),
+      diplomePrepare: new FormControl(this.apprenant?.diplomePrepare ?? null, []),
+      anneeObtentionBac: new FormControl(this.apprenant?.anneeObtentionBac ?? null, []),
+      serieBac: new FormControl(this.apprenant?.serieBac ?? null, []),
+      anneePremiereInscription: new FormControl(this.apprenant?.anneePremiereInscription ?? null, []),
+      nombreInscriptions: new FormControl(this.apprenant?.nombreInscriptions ?? 1, []),
+      filiere: new FormControl(parcours?.titre ?? classe?.libelle ?? null, []),
+      anneeEtude: new FormControl(niveau?.libelle ?? null, []),
       adresse: new FormGroup({
         boitePostale: new FormControl(this.apprenant?.adresse?.boitePostale ?? null, [Validators.required]),
         prorietaireBoitePostale: new FormControl(this.apprenant?.adresse?.prorietaireBoitePostale ?? null, [Validators.required]),
@@ -354,18 +418,34 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
 
   initEnseignantForm(): void {
     this.profilForm = new FormGroup({
-      // photo: new FormControl(null, []),
+      nom: new FormControl(this.enseignant?.utilisateur?.nom ?? null, [Validators.required]),
+      prenoms: new FormControl(this.enseignant?.utilisateur?.prenoms ?? null, [Validators.required]),
+      contact: new FormControl(this.enseignant?.contact ?? this.enseignant?.utilisateur?.contact ?? null, []),
+      sexe: new FormControl(this.enseignant?.sexe ?? 'M', [Validators.required]),
       dateNaissance: new FormControl(this.enseignant?.dateNaissance ? this.enseignant?.dateNaissance.toString().split('T')[0] : null, [Validators.required]),
       lieuNaissance: new FormControl(this.enseignant?.lieuNaissance ?? null, [Validators.required]),
-      fonction: new FormControl(this.enseignant?.fonction ?? null),
+      nationalite: new FormControl(this.enseignant?.nationalite ?? null, []),
+      cni: new FormControl(this.enseignant?.cni ?? null, []),
+      matricule: new FormControl(this.enseignant?.matricule ?? null, []),
+      plusHautDiplome: new FormControl(this.enseignant?.plusHautDiplome ?? null, []),
+      gradeAcademique: new FormControl(this.enseignant?.gradeAcademique ?? null, []),
+      specialite: new FormControl(this.enseignant?.specialite ?? null, []),
+      statut: new FormControl(this.enseignant?.statut ?? 'Permanent', []),
+      fonctionAdministrative: new FormControl(this.enseignant?.fonctionAdministrative ?? null, []),
+      anneeExperience: new FormControl(this.enseignant?.anneeExperience ?? 0, []),
+      heureTheoriqueAnnuelle: new FormControl(this.enseignant?.heureTheoriqueAnnuelle ?? 0, []),
+      heureReelleAnnuelle: new FormControl(this.enseignant?.heureReelleAnnuelle ?? 0, []),
+      nifOtr: new FormControl(this.enseignant?.nifOtr ?? null, []),
+      statutHandicap: new FormControl(this.enseignant?.statutHandicap ?? false, []),
+      natureHandicap: new FormControl(this.enseignant?.natureHandicap ?? null, []),
       adresse: new FormGroup({
-        boitePostale: new FormControl(this.enseignant?.adresse?.boitePostale ?? null),
-        prorietaireBoitePostale: new FormControl(this.enseignant?.adresse?.prorietaireBoitePostale ?? null),
-        telMobile: new FormControl(this.enseignant?.adresse?.telMobile ?? null),
-        telDomicile: new FormControl(this.enseignant?.adresse?.telDomicile ?? null),
-        quartier: new FormControl(this.enseignant?.adresse?.quartier ?? null),
-        ville: new FormControl(this.enseignant?.adresse?.ville ?? null),
-        pays: new FormControl(this.enseignant?.adresse?.pays ?? null),
+        boitePostale: new FormControl(this.enseignant?.adresse?.boitePostale ?? null, []),
+        prorietaireBoitePostale: new FormControl(this.enseignant?.adresse?.prorietaireBoitePostale ?? null, []),
+        telMobile: new FormControl(this.enseignant?.adresse?.telMobile ?? null, []),
+        telDomicile: new FormControl(this.enseignant?.adresse?.telDomicile ?? null, []),
+        quartier: new FormControl(this.enseignant?.adresse?.quartier ?? null, []),
+        ville: new FormControl(this.enseignant?.adresse?.ville ?? null, []),
+        pays: new FormControl(this.enseignant?.adresse?.pays ?? null, []),
       }),
     })
   }
@@ -385,6 +465,55 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
         pays: new FormControl(this.caissier?.adresse?.pays ?? null),
       }),
     })
+  }
+
+  initPersonnelAdministratifForm(): void {
+    this.profilForm = new FormGroup({
+      nom: new FormControl(this.personnelAdministratif?.utilisateur?.nom ?? null, [Validators.required]),
+      prenoms: new FormControl(this.personnelAdministratif?.utilisateur?.prenoms ?? null, [Validators.required]),
+      contact: new FormControl(this.personnelAdministratif?.contact ?? this.personnelAdministratif?.utilisateur?.contact ?? null, []),
+      sexe: new FormControl(this.personnelAdministratif?.sexe ?? 'M', [Validators.required]),
+      dateNaissance: new FormControl(this.personnelAdministratif?.dateNaissance ? this.personnelAdministratif?.dateNaissance.toString().split('T')[0] : null, [Validators.required]),
+      lieuNaissance: new FormControl(this.personnelAdministratif?.lieuNaissance ?? null, [Validators.required]),
+      nationalite: new FormControl(this.personnelAdministratif?.nationalite ?? null, []),
+      cni: new FormControl(this.personnelAdministratif?.cni ?? null, []),
+      matricule: new FormControl(this.personnelAdministratif?.matricule ?? null, []),
+      plusHautDiplome: new FormControl(this.personnelAdministratif?.plusHautDiplome ?? null, []),
+      statut: new FormControl(this.personnelAdministratif?.statut ?? 'Permanent', []),
+      fonction: new FormControl(this.personnelAdministratif?.fonction ?? null, []),
+      directionService: new FormControl(this.personnelAdministratif?.directionService ?? null, []),
+      nifOtr: new FormControl(this.personnelAdministratif?.nifOtr ?? null, []),
+      statutHandicap: new FormControl(this.personnelAdministratif?.statutHandicap ?? false, []),
+      natureHandicap: new FormControl(this.personnelAdministratif?.natureHandicap ?? null, []),
+    })
+  }
+
+  validerProfilPersonnelAdministratif(): void {
+    this.profilForm.markAllAsTouched()
+    if (this.profilForm.valid) {
+      const formValue = this.profilForm.value
+      const payload: any = {
+        ...formValue,
+        utilisateur: {
+          nom: formValue.nom,
+          prenoms: formValue.prenoms,
+        }
+      }
+      delete payload.nom
+      delete payload.prenoms
+
+      this.personnelAdministratifService.update(payload).subscribe({
+        next: (value) => {
+          this.updateSuccess = true
+          setTimeout(() => { this.updateSuccess = false }, 2000)
+          this.getPersonnelAdministratif()
+        },
+        error: (err: HttpErrorResponse) => {
+          this.updateError = true
+          setTimeout(() => { this.updateError = false }, 2000)
+        }
+      })
+    }
   }
 
 }
