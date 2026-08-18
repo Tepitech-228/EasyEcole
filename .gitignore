@@ -34,3 +34,17 @@ easy-ecole-web/.cache/
 
 # Artefacts locaux de dev
 easy-ecole-web/test-tailwind.html
+
+# Fichiers générés / de travail (à retirer du suivi avec git rm --cached si déjà commités)
+easy-ecole-backend/storage/
+easy-ecole-backend/boot-test.js
+easy-ecole-web/tmp-*.cjs
+easy-ecole-backend/tmp-*.cjs
+
+# Déploiement local uniquement (dev) — jamais en production
+# Le frontend est remappé sur le port 8091 (port 80 occupé en dev local)
+docker-compose.local.yml
+
+# Sauvegardes et anciens builds
+backups/
+easy-ecole-web/dist_old/

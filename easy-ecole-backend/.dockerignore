@@ -1,0 +1,46 @@
+# Dépendances et builds
+node_modules
+npm-debug.log
+lib
+dist
+build
+coverage
+.angular
+
+# Données locales (jamais dans l'image — montées via volumes)
+public
+storage
+uploads
+
+# Environnement (secrets)
+.env
+.env.*
+!.env.example
+
+# Tests / scripts de maintenance (non nécessaires au runtime)
+src/__tests__
+src/core/scripts
+test
+tests
+jest.config.*
+jest.setup.*
+
+# Documentation
+*.md
+
+# Git / IDE / OS
+.git
+.gitignore
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+*.log
+tmp
+temp
+
+# Artefacts de dev/audit (fichiers parasites de la racine du repo)
+package_temp.json
+package2.json
+boot-test.js
+tmp-*.cjs

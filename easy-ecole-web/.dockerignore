@@ -1,0 +1,29 @@
+# Dépendances et builds
+node_modules
+dist
+.angular
+coverage
+tmp
+out-tsc
+
+# Tests e2e (cypress)
+cypress
+cypress.config.*
+e2e
+
+# Documentation
+*.md
+
+# Git / IDE / OS
+.git
+.gitignore
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+*.log
+test-tailwind.html
+
+# Fichiers de configuration locaux
+.env
+.env.*

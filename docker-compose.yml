@@ -1,0 +1,117 @@
+# =============================================================================
+# EasyEcole — Docker Compose (déploiement production : Ubuntu + Dokploy)
+#
+# 3 services :
+#   - db       : MySQL 8.0 (base de données, volume persistant mysql_data)
+#   - backend  : API Express/Node (build local, volume uploads -> /app/public,
+#                volume storage -> /app/storage)
+#   - frontend : nginx servant le build Angular + proxy /api -> backend:3000
+#
+# PORTS :
+#   - 80 (hôte) -> 80 (frontend/nginx)  : application web + proxy API
+#   - 3000 et 3306 NE SONT PAS exposés sur l'hôte par défaut
+#
+# VARIABLES D'ENVIRONNEMENT (DOKPLOY) :
+#   Saisir toutes les variables dans Dokploy (onglet "Environment" du projet) :
+#   JWT_SECRET, DB_PASS, CORS_ORIGIN, SMTP_*, CINETPAY_*, ENCRYPTION_MASTER_KEY…
+#   - Le service db interpole ${MYSQL_ROOT_PASSWORD}, ${DB_NAME}, ${TZ} depuis
+#     les variables du projet (Dokploy les injecte aussi dans les conteneurs).
+#   - Le service backend reçoit automatiquement toutes les variables du projet
+#     (remplace l'ancien `env_file: .env` — PAS de fichier .env dans le repo).
+#
+# LOCAL (dev) : lancer avec l'override local :
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
+#   (docker-compose.local.yml remap le frontend sur le port 8091 et est ignoré
+#   par git — ne JAMAIS le déployer en production, voir .gitignore)
+#
+# RÉSEAU : réseau bridge par défaut créé par compose ; les services se joignent
+# par leur nom (db, backend, frontend).
+# =============================================================================
+
+name: easyecole
+
+services:
+  # ---------------------------------------------------------------------------
+  # 1) BASE DE DONNÉES MySQL 8.0
+  # ---------------------------------------------------------------------------
+  db:
+    image: mysql:8.0
+    container_name: easyecole-db
+    restart: unless-stopped
+    environment:
+      # Mot de passe root MySQL (à remplacer dans .env)
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      # Base créée au premier démarrage (le DUMP est ensuite importé)
+      MYSQL_DATABASE: ${DB_NAME:-easyecole}
+      # Fuseau horaire
+      TZ: ${TZ:-UTC}
+    # Volume persistant : les données survivent aux recréations de conteneur
+    volumes:
+      - mysql_data:/var/lib/mysql
+    # Healthcheck : on attend que MySQL réponde avant de démarrer le backend
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    # ⚠️ CONFLICT PORT 3306 : si un MySQL natif tourne déjà sur le serveur
+    # Windows, NE PAS exposer le port de ce conteneur sur l'hôte.
+    # Décommentez uniquement si vous avez besoin d'y accéder depuis l'hôte
+    # (utilisez 3307 pour éviter le conflit) :
+    # ports:
+    #   - "3307:3306"
+    # ⚠️ IMPORTANT : si vous exposez un port hôte différent de 3306, mettez à
+    # jour DB_PORT dans .env (le backend pointe vers le service `db`, donc
+    # DB_PORT=3306 reste correct dans le réseau Docker).
+
+  # ---------------------------------------------------------------------------
+  # 2) BACKEND API Express/Node
+  # ---------------------------------------------------------------------------
+  backend:
+    build: ./easy-ecole-backend
+    container_name: easyecole-backend
+    restart: unless-stopped
+    # Variables d'environnement : injectées par Dokploy (onglet "Environment"
+    # du projet). DB_HOST DOIT valoir `db` (nom du service), PAS localhost.
+    # (Ancien `env_file: .env` supprimé : Dokploy ne lit pas de fichier .env.)
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      # Fichiers uploadés (multer, GED, dossiers, docgen, photos…) :
+      # /app/public dans le conteneur (chemin relatif à process.cwd()).
+      - uploads:/app/public
+      # Cartes étudiantes générées + docgen : /app/storage
+      - storage:/app/storage
+    # Port 3000 NON exposé par défaut : le frontend passe par le proxy nginx.
+    # À décommenter pour du debug (tests curl directs) :
+    # ports:
+    #   - "3000:3000"
+    # Santé : pas de healthcheck API dédié ; vérifier via `docker compose ps`
+    # et `docker compose logs backend`.
+
+  # ---------------------------------------------------------------------------
+  # 3) FRONTEND nginx (build Angular + proxy)
+  # ---------------------------------------------------------------------------
+  frontend:
+    build: ./easy-ecole-web
+    container_name: easyecole-frontend
+    restart: unless-stopped
+    ports:
+      # Port HTTP public de l'application. À adapter (ex: "8080:80") si le
+      # port 80 est déjà occupé sur le serveur Windows.
+      - "80:80"
+    depends_on:
+      - backend
+
+# =============================================================================
+# VOLUMES NOMÉS
+# =============================================================================
+volumes:
+  # Données MySQL (base complète importée depuis le dump)
+  mysql_data:
+  # Fichiers uploadés du backend (/app/public)
+  uploads:
+  # Cartes étudiantes et documents générés (/app/storage)
+  storage:
