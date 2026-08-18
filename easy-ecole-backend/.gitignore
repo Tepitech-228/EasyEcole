@@ -15,5 +15,10 @@ public
 .env.local
 .env.production
 
+# Scripts de régularisation ponctuels (exécutés à la demande, non versionnés)
+src/core/scripts/reguler-matricule.ts
+src/core/scripts/_controle-regul-tmp.ts
+
 # Config files with secrets
 src/core/config/mail.json
+src/core/scripts/clean-etudiants.ts

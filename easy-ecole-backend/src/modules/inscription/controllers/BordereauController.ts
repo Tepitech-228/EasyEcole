@@ -253,35 +253,49 @@ export default class BordereauController {
             return res.status(403).json({ success: false })
         }
 
-        let bordereau: Bordereau | null = await Bordereau.findByPk(req.params.id, {
-            include: [
-                { association: Bordereau.associations.echeance, include: [Echeance.associations.dossierEtudiant] },
-                Bordereau.associations.utilisateur
-            ]
-        });
-
-        if (bordereau == null) {
-            return res.status(404).json({ success: false, message: "Bordereau non trouvé" });
-        }
-
-        if (bordereau.statut != 'en_attente') {
-            return res.status(400).json({ success: false, message: "Bordereau déjà traité" });
-        }
-
-        const bordereauType = bordereau.type
-
-        if (bordereauType === 'scolarite' && !bordereau.echeance) {
-            return res.status(400).json({ success: false, message: "Échéance associée introuvable" });
-        }
-
-        bordereau.statut = 'valide'
-        bordereau.dateValidation = new Date()
-        bordereau.valideParId = (req as any).utilisateurId
-        bordereau.commentaire = req.body.commentaire ?? null
-
-        const echeance = bordereau.echeance
+        // ── Transaction + verrou de ligne (anti double-soumission) ──
+        // La route n'était pas transactionnelle : deux clics simultanés passaient les
+        // garde-fous et le 2e appel explosait sur une contrainte unique (Duplicate entry).
+        // On verrouille la ligne bordereau (SELECT ... FOR UPDATE) : le 2e appel attend
+        // le commit du 1er puis voit le statut 'valide' → 400 "Bordereau déjà traité"
+        // propre. Le commit intervient APRÈS le bordereau.save() final ; toute exception
+        // pendant le traitement provoque un rollback global.
+        const transaction = await DatabaseConnection.getInstance().sequelize.transaction();
 
         try {
+            let bordereau: Bordereau | null = await Bordereau.findByPk(req.params.id, {
+                transaction,
+                lock: transaction.LOCK.UPDATE,
+                include: [
+                    { association: Bordereau.associations.echeance, include: [Echeance.associations.dossierEtudiant] },
+                    Bordereau.associations.utilisateur
+                ]
+            });
+
+            if (bordereau == null) {
+                await transaction.rollback();
+                return res.status(404).json({ success: false, message: "Bordereau non trouvé" });
+            }
+
+            if (bordereau.statut != 'en_attente') {
+                await transaction.rollback();
+                return res.status(400).json({ success: false, message: "Bordereau déjà traité" });
+            }
+
+            const bordereauType = bordereau.type
+
+            if (bordereauType === 'scolarite' && !bordereau.echeance) {
+                await transaction.rollback();
+                return res.status(400).json({ success: false, message: "Échéance associée introuvable" });
+            }
+
+            bordereau.statut = 'valide'
+            bordereau.dateValidation = new Date()
+            bordereau.valideParId = (req as any).utilisateurId
+            bordereau.commentaire = req.body.commentaire ?? null
+
+            const echeance = bordereau.echeance
+
             if (bordereauType === 'inscription') {
                 const existingDossier = await DossierEtudiant.findOne({
                     where: { utilisateurId: bordereau.utilisateurId }
@@ -305,16 +319,35 @@ export default class BordereauController {
                     })
 
                     if (!demande) {
+                        await transaction.rollback();
                         return res.status(400).json({ success: false, message: "Aucune demande d'inscription trouvée" })
                     }
 
                     // Validation checks
                     if (!demande.utilisateur?.apprenant) {
+                        await transaction.rollback();
                         return res.status(400).json({ success: false, message: "Informations personnelles incomplètes" })
                     }
                     if (!demande.parcoursChoisis || demande.parcoursChoisis.length === 0) {
+                        await transaction.rollback();
                         return res.status(400).json({ success: false, message: "Aucun parcours choisi" })
                     }
+
+                    // ── Période de cours choisie par l'étudiant (S3) ──
+                    // Le type de cours (J/S) du matricule final dérive EXCLUSIVEMENT de la
+                    // période renseignée par l'étudiant sur son profil (Apprenant.periode,
+                    // 'matin' | 'soir'). Le comptable ne choisit plus : req.body.typeCours
+                    // est ignoré pour le chemin inscription. Sans période renseignée → la
+                    // validation est refusée, avant toute création (aucun effet de bord).
+                    const periodeEtudiant = demande.utilisateur?.apprenant?.periode
+                    if (periodeEtudiant !== 'matin' && periodeEtudiant !== 'soir') {
+                        await transaction.rollback();
+                        return res.status(400).json({
+                            success: false,
+                            message: "L'étudiant doit renseigner sa période (cours du matin ou du soir) dans ses informations personnelles avant validation"
+                        })
+                    }
+                    const typeCoursPeriode: 'jour' | 'soir' = periodeEtudiant === 'matin' ? 'jour' : 'soir'
                     // Admission automatique : la validation du bordereau d'inscription vaut acceptation.
                     // Plus besoin de réponse manuelle de l'institution (POST /reponsesInscription).
                     let reponseInscription = demande.reponseInscription
@@ -324,7 +357,7 @@ export default class BordereauController {
                             dateReponse: new Date(),
                             utilisateurId: (req as any).utilisateurId,
                             demandeInscriptionId: demande.id
-                        })
+                        }, { transaction })
                         try {
                             EmailSender.getInstance().sendReponseInscription(
                                 demande.utilisateur?.identifiant ?? '',
@@ -336,14 +369,17 @@ export default class BordereauController {
                         }
                     }
                     if (!hasChoixFinal(demande.parcoursChoisis)) {
+                        await transaction.rollback();
                         return res.status(400).json({ success: false, message: "Aucun parcours final sélectionné" })
                     }
                     const dossiersRequis = demande.session?.dossiersInscription || []
                     const dossiersUploades = demande.dossiersDemande || []
                     if (dossiersRequis.length > 0 && dossiersUploades.length !== dossiersRequis.length) {
+                        await transaction.rollback();
                         return res.status(400).json({ success: false, message: "Tous les documents requis doivent être téléversés" })
                     }
                     if (!demande.preInscription || demande.preInscription.statut !== EtatPreInscription.VALIDE) {
+                        await transaction.rollback();
                         return res.status(400).json({ success: false, message: "La préinscription doit être validée" })
                     }
                     const parcoursFinal = getParcoursFinal(demande.parcoursChoisis)
@@ -368,32 +404,37 @@ export default class BordereauController {
                             .filter(c => !coursChoisisIds.includes(c.id))
                             .map(c => ({ coursId: c.id, demandeInscriptionId: demande.id, etat: EtatsCoursChoisi.VALIDE }))
                         if (obligatoiresManquants.length > 0) {
-                            await DemandeInscriptionCours.bulkCreate(obligatoiresManquants)
+                            await DemandeInscriptionCours.bulkCreate(obligatoiresManquants, { transaction })
                         }
                     }
                     const fraisTotal = (demande.session?.fraisInscription || []).reduce((sum, f) => sum + f.montant, 0)
                     const fraisPayes = (demande.paiementsInscription || []).reduce((sum, p) => sum + (p.montant || 0), 0)
                     if (fraisPayes < fraisTotal) {
+                        await transaction.rollback();
                         return res.status(400).json({ success: false, message: "Les frais d'inscription ne sont pas entièrement payés" })
                     }
 
                     // Create CursusApprenant
                     const parcoursFinalForCursus = getParcoursFinal(demande.parcoursChoisis)
 
-                     // ── Matricule final STABLE (idempotence) ──
-                     // Le matricule dépendait du compteur global DossierEtudiant.count()+1 :
-                     // chaque retry de validation en générait un nouveau (3 tentatives =
-                     // 3 matricules), ce qui cassait la référence FK
-                     // PaiementInscription.matriculeInscription -> DemandeInscription.matricule.
-                     // Désormais on réutilise le matricule déjà posé sur la demande (retry,
-                     // double-clic) ; s'il n'existe pas encore, on le génère UNE seule fois et
-                     // on le persiste immédiatement sur la demande. Toute passe ultérieure est
-                     // donc stable.
+                     // ── Matricule final au format école (S3) ──
+                     // Format officiel : `<ordre>-<filiere><anneeEtude><J|S>-<anneeAcad2>-<site>`
+                     // (ex. 13-IG1J-23-ST). Il est généré AUTOMATIQUEMENT à la validation du
+                     // bordereau (jamais avant), via IDGenerator.generateMatriculeFinal, puis
+                     // persisté sur la demande.
+                     //  - Si la demande porte DÉJÀ un matricule au format final → réutilisé
+                     //    tel quel (idempotence retry / double-clic, matricule stable).
+                     //  - Sinon (matricule TEMPORAIRE 8 chiffres posé à la pré-inscription,
+                     //    ou valeur inattendue) → génération du matricule final qui ÉCRASE le
+                     //    temporaire sur la demande (régularisation à la volée). Le type de
+                     //    cours (J/S) provient de la période choisie par l'étudiant
+                     //    ('matin' → J, 'soir' → S) ; req.body.typeCours est ignoré.
                      const anneeLibelle = demande.session?.anneeAcademique?.libelle || new Date().getFullYear().toString()
                      const parcoursData = parcoursFinalForCursus?.parcours
 
                      const classeDerivee = coursDuParcours.find(c => c.classe?.id)?.classe ?? null
                      if (!classeDerivee || !classeDerivee.id) {
+                         await transaction.rollback();
                          return res.status(400).json({ success: false, message: "Aucune classe n'a pu être déterminée pour le parcours final" })
                      }
 
@@ -402,20 +443,44 @@ export default class BordereauController {
                          ? await Etablissement.findByPk(etablissementId)
                          : null
 
-                     let matricule = demande.matricule
-                     if (!matricule) {
-                         const ordre = await DossierEtudiant.count() + 1
-                         const typeCours = (req.body.typeCours as 'jour' | 'soir') || 'jour'
+                     // Détection du format final : au moins un tiret + lettres majuscules
+                     // (ex. "1-INF1J-26-ST"). Un temporaire = 8 chiffres uniquement. Toute
+                     // valeur qui ne matche ni l'un ni l'autre est traitée comme "à régénérer" :
+                     // on ne bloque jamais la génération sur un format inattendu.
+                     const MATRICULE_FINAL_REGEX = /^[0-9]+-[A-Z]+[0-9]?[JS]-[0-9]{2}-[A-Z]+$/
+                     const matriculeExistant = demande.matricule
+                     const estFormatFinal = typeof matriculeExistant === 'string'
+                         && MATRICULE_FINAL_REGEX.test(matriculeExistant)
 
+                     let matricule: string
+                     if (estFormatFinal) {
+                         // Retry / reprise : le matricule final est déjà stable sur la demande.
+                         matricule = matriculeExistant
+                     } else {
+                         // Matricule temporaire (8 chiffres) ou inconnu → matricule final.
+                         const ordre = await DossierEtudiant.count() + 1
                          matricule = IDGenerator.getInstance().generateMatriculeFinal(
                              parcoursData!,
                              anneeLibelle,
                              classeDerivee,
                              ordre,
                              etablissement,
-                             typeCours
+                             typeCoursPeriode
                          )
-                         await demande.update({ matricule, dateValidation: new Date() })
+                         await demande.update({ matricule, dateValidation: new Date() }, { transaction })
+                     }
+
+                     // Propagation matricule final : les paiements liés référencent l'ancien
+                     // matricule (temporaire 8 chiffres) de la demande via matriculeInscription.
+                     // On les fait pointer vers le matricule final (idempotent : si déjà à
+                     // jour, la liste est vide → aucune écriture). La FK
+                     // ins_paiements_inscription_ibfk_47 étant en ON UPDATE CASCADE sur le
+                     // matricule de la demande, cette mise à jour explicite est un garde-fou
+                     // redondant, garanti quel que soit le schéma cible.
+                     const paiementsAMettreAJour = (demande.paiementsInscription || [])
+                         .filter(p => p.matriculeInscription && p.matriculeInscription !== matricule)
+                     for (const paiement of paiementsAMettreAJour) {
+                         await paiement.update({ matriculeInscription: matricule }, { transaction })
                      }
 
                      const niveauEtudeId = parcoursData?.niveauEtudeId ?? classeDerivee.niveauEtudeId
@@ -472,7 +537,8 @@ export default class BordereauController {
                             anneeAcademiqueId: anneeId!,
                             utilisateurId: demande.utilisateurId,
                             demandeInscriptionId: demande.id,
-                        }
+                        },
+                        transaction
                     })
 
                     // ── DossierEtudiant (idempotence) ──
@@ -494,7 +560,7 @@ export default class BordereauController {
                         dossier.modePaiement = 'mensuel'
                         dossier.nbMensualites = 10
                         dossier.demarrageParcours = demarrage
-                        await dossier.save()
+                        await dossier.save({ transaction })
                     }
 
                     // ── Échéancier d'inscription selon la modalité du bordereau (1x/3x/10x) ──
@@ -509,19 +575,20 @@ export default class BordereauController {
                     //    sont conservées (historique de paiement).
                     if (bordereau.modalite !== '1x') {
                         await Echeance.destroy({
-                            where: { dossierEtudiantId: dossier.id, type: 'inscription', statut: ['impaye', 'en_retard'] }
+                            where: { dossierEtudiantId: dossier.id, type: 'inscription', statut: ['impaye', 'en_retard'] },
+                            transaction
                         })
                         const echeancesInscription = await GenerateurEcheancierService.generer(
                             dossier,
                             bordereau.modalite,
-                            undefined,
+                            transaction,
                             bordereau.montant
                         )
                         const premiereEcheance = echeancesInscription.find(e => e.numeroEcheance === 1)
                         if (premiereEcheance) {
                             premiereEcheance.statut = 'paye'
                             premiereEcheance.datePaiement = new Date()
-                            await premiereEcheance.save()
+                            await premiereEcheance.save({ transaction })
                         }
                     }
 
@@ -541,7 +608,7 @@ export default class BordereauController {
                             email: user?.email || '',
                             utilisateurId: demande.utilisateurId,
                         })
-                        await dossier.update({ cartePath, carteGeneree: true })
+                        await dossier.update({ cartePath, carteGeneree: true }, { transaction })
 
                         // Copier la carte dans le dossier étudiant
                         const carteSource = path.resolve(process.cwd(), 'public', cartePath)
@@ -580,7 +647,8 @@ export default class BordereauController {
                                     utilisateurId: demande.utilisateurId,
                                     coursId: coursChoisi.coursId,
                                     cursusApprenantId: savedCursus.id,
-                                }
+                                },
+                                transaction
                             })
                         }
                     }
@@ -599,7 +667,7 @@ export default class BordereauController {
                         echeanceScolarite.dateLimite = dateLimite
                         echeanceScolarite.statut = 'impaye'
                         echeanceScolarite.moisConcerne = moisConcerne
-                        await echeanceScolarite.save()
+                        await echeanceScolarite.save({ transaction })
                     }
 
                     // Create PaiementInscription
@@ -615,7 +683,7 @@ export default class BordereauController {
                     paiement.type = TypesPaiement.EN_LIGNE
                     paiement.utilisateurId = bordereau.utilisateurId
                     paiement.description = `Paiement par bordereau #${bordereau.id} (${bordereauType})`
-                    await paiement.save()
+                    await paiement.save({ transaction })
 
                     // Archive documents in GED
                     if (demande.dossiersDemande) {
@@ -701,7 +769,7 @@ export default class BordereauController {
                                     baseChemin.niveau, baseChemin.matricule, 'bordereaux'
                                 );
                                 bordereau.fichier = DossierStorageService.cheminRelatif(newPath);
-                                await bordereau.save();
+                                await bordereau.save({ transaction });
                             }
                         }
                     } catch (moveError) {
@@ -727,19 +795,20 @@ export default class BordereauController {
                     // bordereau que l'on valide : elle est marquée payée.
                     if (bordereau.modalite !== '1x') {
                         await Echeance.destroy({
-                            where: { dossierEtudiantId: existingDossier.id, type: 'inscription', statut: ['impaye', 'en_retard'] }
+                            where: { dossierEtudiantId: existingDossier.id, type: 'inscription', statut: ['impaye', 'en_retard'] },
+                            transaction
                         })
                         const echeancesInscription = await GenerateurEcheancierService.generer(
                             existingDossier,
                             bordereau.modalite,
-                            undefined,
+                            transaction,
                             bordereau.montant
                         )
                         const premiereEcheance = echeancesInscription.find(e => e.numeroEcheance === 1)
                         if (premiereEcheance) {
                             premiereEcheance.statut = 'paye'
                             premiereEcheance.datePaiement = new Date()
-                            await premiereEcheance.save()
+                            await premiereEcheance.save({ transaction })
                         }
                     }
                 }
@@ -771,7 +840,7 @@ export default class BordereauController {
                         quitus.fichierPDF = filename
                         quitus.statut = 'genere'
 
-                        await quitus.save()
+                        await quitus.save({ transaction })
 
                         ArchiveGedService.archiverDepuisFichier({
                             fichierSource: `public/inscription/quitus/${filename}`,
@@ -833,9 +902,18 @@ export default class BordereauController {
             if (echeance) {
                 echeance.statut = 'paye'
                 echeance.datePaiement = new Date()
-                await echeance.save()
+                await echeance.save({ transaction })
             }
-            await bordereau.save()
+            await bordereau.save({ transaction })
+
+            // ── Commit de la transaction ──
+            // Rend atomique l'ensemble : verrou bordereau, matricule final, demande,
+            // reponse d'admission, dossier, cursus, participants, échéances, carte de
+            // paiement, quitus. Le 2e appel concurrent, bloqué sur le verrou de ligne,
+            // lit ensuite un bordereau 'valide' → 400 "Bordereau déjà traité" propre.
+            // Les effets de bord suivants (reçu docgen, écriture comptable) restent non
+            // bloquants et s'exécutent hors transaction.
+            await transaction.commit();
 
             // Reçu de scolarité : paiement effectué à la banque -> génération automatique
             // du reçu (docgen REC001) dès la validation du bordereau par le cabinet comptable,
@@ -887,6 +965,7 @@ export default class BordereauController {
 
             return res.status(200).send(bordereau);
         } catch (error) {
+            await transaction.rollback().catch(() => { });
             console.error("Erreur validation bordereau:", error);
             return res.status(400).json({ success: false, message: (error as Error).message || "Erreur inconnue" });
         }

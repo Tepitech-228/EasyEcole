@@ -354,6 +354,7 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
       statutHandicap: new FormControl(this.apprenant?.statutHandicap ?? false, []),
       natureHandicap: new FormControl(this.apprenant?.natureHandicap ?? null, []),
       statutEtudiant: new FormControl(this.apprenant?.statutEtudiant ?? 'nouveau', [Validators.required]),
+      periode: new FormControl(this.apprenant?.periode ?? null, [Validators.required]),
       diplomePrepare: new FormControl(this.apprenant?.diplomePrepare ?? null, []),
       anneeObtentionBac: new FormControl(this.apprenant?.anneeObtentionBac ?? null, []),
       serieBac: new FormControl(this.apprenant?.serieBac ?? null, []),

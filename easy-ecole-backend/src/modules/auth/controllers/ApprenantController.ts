@@ -117,6 +117,7 @@ export default class ApprenantController {
                 anneePremiereInscription: req.body.anneePremiereInscription,
                 nombreInscriptions: req.body.nombreInscriptions,
                 statutEtudiant: req.body.statutEtudiant,
+                periode: req.body.periode,
                 diplomePrepare: req.body.diplomePrepare,
                 utilisateurId: (req as any).utilisateurRole == RolesUtilisateur.APPRENANT ? (req as any).utilisateurId : req.body.utilisateurId
             }, {
@@ -167,6 +168,7 @@ export default class ApprenantController {
                 anneePremiereInscription: req.body.anneePremiereInscription,
                 nombreInscriptions: req.body.nombreInscriptions,
                 statutEtudiant: req.body.statutEtudiant,
+                periode: req.body.periode,
                 diplomePrepare: req.body.diplomePrepare,
             })
                 .then(async (apprenant) => {
@@ -200,6 +202,7 @@ export default class ApprenantController {
                 anneePremiereInscription: req.body.anneePremiereInscription,
                 nombreInscriptions: req.body.nombreInscriptions,
                 statutEtudiant: req.body.statutEtudiant,
+                periode: req.body.periode,
                 diplomePrepare: req.body.diplomePrepare,
                 adresse: req.body.adresse,
                 identite: req.body.identite,

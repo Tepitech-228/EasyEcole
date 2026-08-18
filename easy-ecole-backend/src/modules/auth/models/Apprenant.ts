@@ -24,6 +24,7 @@ export class Apprenant extends Model<InferAttributes<Apprenant>, InferCreationAt
   declare anneePremiereInscription: CreationOptional<string>
   declare nombreInscriptions: CreationOptional<number>
   declare statutEtudiant: CreationOptional<'nouveau' | 'ancien'>
+  declare periode: CreationOptional<'matin' | 'soir' | null>
   declare diplomePrepare: CreationOptional<string>
   declare adresseId: ForeignKey<AdresseApprenant['id']>
   declare adresse?: AdresseApprenant
@@ -120,6 +121,10 @@ Apprenant.init({
     type: DataTypes.ENUM('nouveau', 'ancien'),
     allowNull: true,
     defaultValue: 'nouveau'
+  },
+  periode: {
+    type: DataTypes.ENUM('matin', 'soir'),
+    allowNull: true
   },
   diplomePrepare: {
     type: new DataTypes.STRING,
