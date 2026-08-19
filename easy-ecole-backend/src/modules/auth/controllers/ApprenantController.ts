@@ -185,6 +185,10 @@ export default class ApprenantController {
                     return res.status(200).send(apprenant);
                 })
                 .catch((error) => {
+                    if (error?.name === 'SequelizeUniqueConstraintError' || error?.parent?.code === 'ER_DUP_ENTRY') {
+                        const champ = Object.keys(error.fields ?? error.original?.fields ?? {})[0] ?? 'champ';
+                        return res.status(409).json({ success: false, message: `La valeur saisie pour « ${champ} » est déjà utilisée par un autre enregistrement.` });
+                    }
                     return res.status(400).json({ success: false, error: error });
                 });
         }
@@ -223,6 +227,10 @@ export default class ApprenantController {
                     return res.status(201).send(apprenant);
                 })
                 .catch((error) => {
+                    if (error?.name === 'SequelizeUniqueConstraintError' || error?.parent?.code === 'ER_DUP_ENTRY') {
+                        const champ = Object.keys(error.fields ?? error.original?.fields ?? {})[0] ?? 'champ';
+                        return res.status(409).json({ success: false, message: `La valeur saisie pour « ${champ} » est déjà utilisée par un autre enregistrement.` });
+                    }
                     return res.status(400).json({ success: false, error: error });
                 });
         }
