@@ -6,9 +6,11 @@ import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { EtatsSession } from 'src/app/data/enums/EtatsSession';
 import { DossierInscription } from 'src/app/data/modules/inscription/models/DossierInscription.model';
 import { FraisInscription } from 'src/app/data/modules/inscription/models/FraisInscription.model';
+import { FraisScolarite, ModaliteFraisScolarite } from 'src/app/data/modules/inscription/models/FraisScolarite.model';
 import { Session } from 'src/app/data/modules/inscription/models/Session.model';
 import { DossierInscriptionService } from 'src/app/data/modules/inscription/services/dossier-inscription.service';
 import { FraisInscriptionService } from 'src/app/data/modules/inscription/services/frais-inscription.service';
+import { FraisScolariteService } from 'src/app/data/modules/inscription/services/frais-scolarite.service';
 import { SessionService } from 'src/app/data/modules/inscription/services/session.service';
 import { environment } from 'src/environments/environment';
 
@@ -28,9 +30,19 @@ export class DetailsSessionPageComponent extends BaseComponentClass implements O
   showNouveauDossierModal: boolean = false
   showEditerDossierModal: boolean = false
   showSupprimerDossierModal: boolean = false
+  showParametrerFraisScolariteModal: boolean = false
 
   selectedFrais?: FraisInscription
   selectedDossier?: DossierInscription
+  fraisScolarite?: FraisScolarite
+  fraisScolariteLoading: boolean = false
+  fraisScolariteError: boolean = false
+
+  readonly modaliteOptions: { value: ModaliteFraisScolarite; label: string }[] = [
+    { value: '1x', label: 'Paiement en 1 fois' },
+    { value: '3x', label: '3 mensualités' },
+    { value: '10x', label: '10 mensualités' },
+  ]
 
   id: string
   session?: Session
@@ -51,15 +63,22 @@ export class DetailsSessionPageComponent extends BaseComponentClass implements O
     description: new FormControl(null, []),
   })
 
+  fraisScolariteForm: FormGroup = new FormGroup({
+    montant: new FormControl(null, [Validators.required]),
+    modalite: new FormControl('10x', [Validators.required]),
+  })
+
   constructor(
     private sessionService: SessionService,
     private fraisInscriptionService: FraisInscriptionService,
     private dossierInscriptionService: DossierInscriptionService,
+    private fraisScolariteService: FraisScolariteService,
     private activatedRoute: ActivatedRoute,
     private router: Router) {
     super()
     this.id = this.activatedRoute.snapshot.paramMap.get("id") as string
     this.getSession()
+    this.getFraisScolarite()
   }
 
   ngOnInit(): void {
@@ -84,6 +103,85 @@ export class DetailsSessionPageComponent extends BaseComponentClass implements O
 
   getEtatSession(dateDebut: Date, dateFin: Date): EtatsSession {
     return Session.getEtat(dateDebut, dateFin);
+  }
+
+  getFraisScolarite(): void {
+    this.fraisScolariteLoading = true
+    this.fraisScolariteService.getBySession(this.id).subscribe({
+      next: (res) => {
+        this.fraisScolarite = res ?? undefined
+        this.fraisScolariteLoading = false
+      },
+      error: (err) => {
+        console.log(err)
+        this.fraisScolariteLoading = false
+      }
+    })
+  }
+
+  get selectedModalite(): ModaliteFraisScolarite {
+    return (this.fraisScolariteForm.get('modalite')?.value as ModaliteFraisScolarite) || '10x'
+  }
+
+  getModaliteDescription(modalite: ModaliteFraisScolarite): string {
+    switch (modalite) {
+      case '1x':
+        return 'Paiement unique de la totalité des frais de scolarité.'
+      case '3x':
+        return 'Paiement réparti sur 3 mensualités.'
+      case '10x':
+        return 'Paiement réparti sur 10 mensualités.'
+    }
+  }
+
+  getModaliteLabel(modalite?: ModaliteFraisScolarite): string {
+    return this.modaliteOptions.find(option => option.value === modalite)?.label ?? '---'
+  }
+
+  getNombreEcheances(modalite: ModaliteFraisScolarite): number {
+    return parseInt(modalite, 10)
+  }
+
+  getDetailEcheances(frais: FraisScolarite): string {
+    const nombreEcheances: number = this.getNombreEcheances(frais.modalite)
+    const montantEcheance: number = Math.round(frais.montant / nombreEcheances)
+    return `${nombreEcheances} x ${montantEcheance.toLocaleString('fr-FR')} FCFA`
+  }
+
+  openParametrerFraisScolariteModal(): void {
+    this.fraisScolariteForm.get('montant')!.setValue(this.fraisScolarite?.montant ?? null)
+    this.fraisScolariteForm.get('modalite')!.setValue(this.fraisScolarite?.modalite ?? '10x')
+    this.fraisScolariteError = false
+    this.showParametrerFraisScolariteModal = true
+  }
+
+  closeParametrerFraisScolariteModal(): void {
+    this.showParametrerFraisScolariteModal = false
+    this.fraisScolariteError = false
+  }
+
+  parametrerFraisScolarite(): void {
+    this.fraisScolariteForm.markAllAsTouched()
+    if (this.fraisScolariteForm.valid && this.session) {
+      let fraisScolarite: FraisScolarite = new FraisScolarite()
+      fraisScolarite.sessionId = this.session.id
+      fraisScolarite.montant = this.fraisScolariteForm.get('montant')!.value
+      fraisScolarite.modalite = this.fraisScolariteForm.get('modalite')!.value
+
+      this.fraisScolariteService.upsert(fraisScolarite).subscribe({
+        next: () => {
+          this.getFraisScolarite()
+          this.closeParametrerFraisScolariteModal()
+        },
+        error: (err) => {
+          console.log(err)
+          this.fraisScolariteError = true
+          setTimeout(() => {
+            this.fraisScolariteError = false
+          }, 3000)
+        }
+      })
+    }
   }
 
   ajouterFrais(): void {

@@ -32,6 +32,7 @@ import { DossierStorageService } from "../services/DossierStorageService";
 import { FolderAutoService } from "../../ged/services/FolderAutoService";
 import { GenerateurCarteService } from "../services/GenerateurCarteService";
 import { GenerateurEcheancierService, estModalitePaiement } from "../services/GenerateurEcheancierService";
+import { GenerateurEcheancierScolariteService, nombreEcheances } from "../services/GenerateurEcheancierScolariteService";
 import { DocGenGeneratorService } from "../../docgen/services/DocGenGeneratorService";
 
 export const isChoixFinalValue = (value: unknown): boolean => {
@@ -284,6 +285,16 @@ export default class BordereauController {
 
             const bordereauType = bordereau.type
 
+            // Garde : les bordereaux de type 'rattrapage' sont traités exclusivement
+            // par le workflow officiel (RattrapageWorkflowController.confirmerPaiement).
+            // La validation classique n'a aucune branche dédiée pour ce type : elle
+            // marquerait le bordereau 'valide' sans quitus ni mise à jour de la demande
+            // (qui resterait 'impaye' → blocage du workflow). On refuse donc explicitement.
+            if (bordereauType === 'rattrapage') {
+                await transaction.rollback();
+                return res.status(400).json({ success: false, message: "Bordereau à traiter via le workflow de rattrapage" });
+            }
+
             if (bordereauType === 'scolarite' && !bordereau.echeance) {
                 await transaction.rollback();
                 return res.status(400).json({ success: false, message: "Échéance associée introuvable" });
@@ -308,7 +319,7 @@ export default class BordereauController {
                             { association: DemandeInscription.associations.utilisateur, include: [{ model: Apprenant, as: 'apprenant' }] },
                             { association: DemandeInscription.associations.parcoursChoisis, include: [{ association: ParcoursChoisi.associations.parcours }] },
                             { association: DemandeInscription.associations.preInscription },
-                            { association: DemandeInscription.associations.session, include: [Session.associations.dossiersInscription, Session.associations.fraisInscription, Session.associations.anneeAcademique] },
+                            { association: DemandeInscription.associations.session, include: [Session.associations.dossiersInscription, Session.associations.fraisInscription, Session.associations.fraisScolarite, Session.associations.anneeAcademique] },
                             { association: DemandeInscription.associations.dossiersDemande },
                             { association: DemandeInscription.associations.cours, include: [Cours.associations.classe] },
                             { association: DemandeInscription.associations.coursChoisis },
@@ -653,21 +664,34 @@ export default class BordereauController {
                         }
                     }
 
-                    // Create 10 échéances de scolarité
-                    const montantParMois = fraisTotal / 10
-                    const debut = new Date(demarrage)
-                    for (let i = 0; i < 10; i++) {
-                        const dateLimite = new Date(debut.getFullYear(), debut.getMonth() + i, 5)
-                        const moisConcerne = debut.getFullYear() + '-' + String(debut.getMonth() + i + 1).padStart(2, '0')
-                        let echeanceScolarite = new Echeance()
-                        echeanceScolarite.dossierEtudiantId = dossier.id
-                        echeanceScolarite.type = 'scolarite'
-                        echeanceScolarite.numeroEcheance = i + 1
-                        echeanceScolarite.montant = montantParMois
-                        echeanceScolarite.dateLimite = dateLimite
-                        echeanceScolarite.statut = 'impaye'
-                        echeanceScolarite.moisConcerne = moisConcerne
-                        await echeanceScolarite.save({ transaction })
+                    // ── Échéancier de scolarité selon le paramétrage (A2) ──
+                    // Règle métier A2 : l'administration paramètre les frais de scolarité par
+                    // session (ins_frais_scolarites : montant + modalité '1x'/'3x'/'10x'). Le
+                    // montant global est divisé en échéances générées ici, à la validation du
+                    // bordereau d'inscription. Le PARAMÉTRAGE EST LA SOURCE DE VÉRITÉ :
+                    //  - FraisScolarite actif trouvé pour la session (demande.sessionId) →
+                    //    purge idempotente des échéances 'scolarite' impayées/en retard du
+                    //    dossier (jamais les payées = historique), puis génération du nouvel
+                    //    échéancier via GenerateurEcheancierScolariteService (n = 1/3/10,
+                    //    dernière échéance absorbant le reste, 1ère échéance au mois suivant).
+                    //  - Aucun paramétrage → AUCUNE échéance de scolarité générée (l'ancien
+                    //    comportement qui créait des échéances à montant 0 est abandonné).
+                    const fraisScolariteSession = (demande.session?.fraisScolarite || []).find(f => f.actif) ?? null
+                    if (fraisScolariteSession) {
+                        await Echeance.destroy({
+                            where: { dossierEtudiantId: dossier.id, type: 'scolarite', statut: ['impaye', 'en_retard'] },
+                            transaction
+                        })
+                        // Aligne le dossier sur la source de vérité (montant global + modalité)
+                        // pour rester cohérent avec l'échéancier généré.
+                        dossier.fraisScolarite = fraisScolariteSession.montant
+                        dossier.modePaiement = fraisScolariteSession.modalite === '1x' ? 'unique' : 'mensuel'
+                        dossier.nbMensualites = nombreEcheances(fraisScolariteSession.modalite)
+                        await dossier.save({ transaction })
+                        await GenerateurEcheancierScolariteService.generer(dossier, fraisScolariteSession, transaction)
+                    }
+                    else {
+                        console.warn(`Aucun frais de scolarité paramétré pour la session ${demande.sessionId} : échéancier de scolarité non généré (le paramétrage est la source de vérité)`)
                     }
 
                     // Create PaiementInscription

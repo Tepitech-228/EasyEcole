@@ -1,0 +1,199 @@
+<div class="mb-8">
+    <app-header-title title="Rattrapage — Mes demandes" subtitle="Soumettre une demande de rattrapage et suivre son avancement jusqu'au paiement"></app-header-title>
+</div>
+
+<div *ngIf="successMessage" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+    {{ successMessage }}
+</div>
+
+<div *ngIf="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+    {{ errorMessage }}
+</div>
+
+<div *ngIf="uploading" class="flex items-center gap-3 bg-indigo-50 border border-indigo-200 text-indigo-700 px-4 py-3 rounded mb-4">
+    <app-loading-spinner></app-loading-spinner>
+    <span class="text-sm">Traitement en cours...</span>
+</div>
+
+<!-- ==================== Sessions ouvertes ==================== -->
+<div class="mb-10">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Sessions de rattrapage ouvertes</h2>
+
+    <div *ngIf="loadingSessions" class="flex justify-center py-10">
+        <app-loading-spinner></app-loading-spinner>
+    </div>
+
+    <div *ngIf="!loadingSessions && sessionsOuvertes.length === 0" class="bg-white border border-gray-200 rounded-xl p-8 text-center">
+        <p class="text-gray-400">Aucune session de rattrapage n'est ouverte pour le moment.</p>
+    </div>
+
+    <div *ngIf="sessionsOuvertes.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div *ngFor="let session of sessionsOuvertes" class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col">
+            <div class="mb-2">
+                <h3 class="text-base font-semibold text-gray-900">{{ session.libelle }}</h3>
+                <p class="text-sm text-gray-500">
+                    {{ session.dateDebut | date: 'dd MMM yyyy' }} — {{ session.dateFin | date: 'dd MMM yyyy' }}
+                </p>
+            </div>
+            <p *ngIf="session.description" class="text-sm text-gray-500 mb-3 line-clamp-2">{{ session.description }}</p>
+            <p class="text-xs text-gray-400 mb-3">
+                {{ (session.documentsRequis && session.documentsRequis.length) || 0 }} pièce(s) requise(s)
+            </p>
+            <div class="mt-auto pt-2">
+                <button *ngIf="!sessionDejaDemandee(session.id)" (click)="openSoumissionModal(session)" type="button"
+                    class="w-full inline-flex items-center justify-center gap-x-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors">
+                    <span class="material-symbols-outlined text-sm">how_to_reg</span>
+                    Soumettre une demande
+                </button>
+                <div *ngIf="sessionDejaDemandee(session.id)"
+                    class="inline-flex items-center justify-center gap-x-1 w-full px-4 py-2 bg-gray-100 text-gray-500 text-sm font-medium rounded-lg">
+                    <span class="material-symbols-outlined text-sm">done</span>
+                    Demande déjà soumise
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== Mes demandes ==================== -->
+<div>
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Suivi de mes demandes</h2>
+
+    <div *ngIf="loadingDemandes" class="flex justify-center py-10">
+        <app-loading-spinner></app-loading-spinner>
+    </div>
+
+    <div *ngIf="!loadingDemandes && mesDemandes.length === 0" class="bg-white border border-gray-200 rounded-xl p-8 text-center">
+        <p class="text-gray-400">Vous n'avez aucune demande de rattrapage. Soumettez-en une dans la section ci-dessus.</p>
+    </div>
+
+    <div *ngIf="mesDemandes.length > 0" class="space-y-4">
+        <div *ngFor="let demande of mesDemandes" class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            <!-- En-tête de la demande -->
+            <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-gray-100">
+                <div>
+                    <p class="text-sm font-semibold text-gray-900">{{ demande.rattrapageSession?.libelle || ('Session #' + demande.rattrapageSessionId) }}</p>
+                    <p class="text-xs text-gray-500">
+                        Soumise le {{ (demande.createdAt | date: 'dd MMM yyyy') || '---' }}
+                    </p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <app-custom-badge [text]="getStatutLabel(demande.statutDemande)" [color]="getStatutBadgeColor(demande.statutDemande || 'en_attente')"></app-custom-badge>
+                    <app-custom-badge *ngIf="demande.statutDemande === 'valide'"
+                        [text]="getStatutPaiementLabel(demande.statutPaiement)"
+                        [color]="getStatutPaiementBadgeColor(demande.statutPaiement)"></app-custom-badge>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 px-5 py-4">
+                <!-- Motif / créneau -->
+                <div>
+                    <p *ngIf="demande.motifEtudiant" class="text-sm text-gray-600 mb-1">
+                        <span class="font-medium text-gray-800">Motif :</span> {{ demande.motifEtudiant }}
+                    </p>
+                    <p *ngIf="demande.creneauSouhaite" class="text-sm text-gray-600 mb-1">
+                        <span class="font-medium text-gray-800">Créneau souhaité :</span> {{ demande.creneauSouhaite }}
+                    </p>
+                    <p *ngIf="demande.motifRejet" class="text-sm text-red-600 mb-1">
+                        <span class="font-medium">Motif du rejet :</span> {{ demande.motifRejet }}
+                    </p>
+                </div>
+
+                <!-- Pièces justificatives -->
+                <div>
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Documents requis</p>
+                    <div class="flex flex-col gap-2">
+                        <div *ngFor="let docRequis of getDocumentsRequis(demande)"
+                            class="flex items-center justify-between gap-2 p-2 rounded-lg border"
+                            [class.border-green-200]="documentDejaDepose(demande, docRequis.id)"
+                            [class.bg-green-50]="documentDejaDepose(demande, docRequis.id)"
+                            [class.border-gray-200]="!documentDejaDepose(demande, docRequis.id)">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="material-symbols-outlined text-sm"
+                                    [class.text-green-600]="documentDejaDepose(demande, docRequis.id)"
+                                    [class.text-gray-400]="!documentDejaDepose(demande, docRequis.id)">
+                                    {{ documentDejaDepose(demande, docRequis.id) ? 'check_circle' : 'upload_file' }}
+                                </span>
+                                <span class="text-sm text-gray-700 truncate">{{ docRequis.libelle }}</span>
+                                <span *ngIf="docRequis.obligatoire" class="text-xs text-red-500">*</span>
+                            </div>
+                            <button *ngIf="!documentDejaDepose(demande, docRequis.id)"
+                                (click)="uploaderDocument(demande, docRequis.id!)" type="button"
+                                class="shrink-0 inline-flex items-center gap-x-1 px-2.5 py-1 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors">
+                                Téléverser
+                            </button>
+                            <span *ngIf="documentDejaDepose(demande, docRequis.id)"
+                                class="shrink-0 text-xs text-green-700">Déposé</span>
+                        </div>
+                        <p *ngIf="getDocumentsRequis(demande).length === 0" class="text-sm text-gray-400">
+                            Aucun document requis pour cette session.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bordereau de paiement -->
+            <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-4 bg-gray-50 border-t border-gray-100">
+                <div class="text-sm text-gray-700">
+                    <ng-container *ngIf="demande.statutDemande === 'valide'">
+                        <p class="font-medium text-gray-800">Bordereau de paiement de rattrapage</p>
+                        <p *ngIf="demande.bordereauDepose" class="text-xs text-gray-500 mt-1">
+                            Bordereau déposé le {{ (demande.bordereauDepose.dateDepot | date: 'dd MMM yyyy') || '---' }}
+                            <span *ngIf="getMontantFormate(demande)" class="font-semibold text-indigo-700"> — Montant : {{ getMontantFormate(demande) }}</span>
+                        </p>
+                    </ng-container>
+                    <ng-container *ngIf="demande.statutDemande !== 'valide'">
+                        <p class="text-xs text-gray-400">Le bordereau de paiement sera disponible après validation par le comité.</p>
+                    </ng-container>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button *ngIf="peutDeposerBordereau(demande) && !demande.bordereauDepose"
+                        (click)="televerserBordereau(demande)" type="button"
+                        class="inline-flex items-center gap-x-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded-lg transition-colors">
+                        <span class="material-symbols-outlined text-sm">upload</span>
+                        Téléverser le bordereau
+                    </button>
+                    <button *ngIf="peutDeposerBordereau(demande) && demande.bordereauDepose"
+                        (click)="televerserBordereau(demande)" type="button"
+                        class="inline-flex items-center gap-x-1 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-medium rounded-lg transition-colors">
+                        <span class="material-symbols-outlined text-sm">sync</span>
+                        Remplacer le bordereau
+                    </button>
+                    <span *ngIf="demande.statutDemande === 'valide' && !demande.bordereauDepose" class="text-xs text-orange-600">
+                        En attente de votre bordereau
+                    </span>
+                    <span *ngIf="demande.bordereauDepose && demande.statutPaiement !== 'paye'" class="text-xs text-amber-600">
+                        Bordereau en cours de vérification
+                    </span>
+                    <span *ngIf="paiementConfirme(demande)" class="text-xs text-green-700">
+                        <span class="material-symbols-outlined text-sm align-middle">verified</span>
+                        Paiement confirmé — inscription définitive aux épreuves
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- // Modal soumission de demande -->
+<app-custom-modal *ngIf="sessionSelectionnee"
+    [title]="'Soumettre une demande — ' + sessionSelectionnee.libelle"
+    subtitle="Précisez le motif de votre demande et le créneau souhaité"
+    (onCloseModal)="closeSoumissionModal()" [center]="true" [showModal]="showSoumissionModal">
+    <div class="mb-6">
+        <span class="mb-2 block text-sm text-gray-400">Motif de la demande *</span>
+        <textarea rows="4" [(ngModel)]="motifEtudiant" placeholder="Expliquer la raison de votre demande de rattrapage..."
+            class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
+    </div>
+    <div class="mb-6">
+        <span class="mb-2 block text-sm text-gray-400">Créneau souhaité</span>
+        <input type="text" [(ngModel)]="creneauSouhaite" placeholder="Ex: Le matin du 05 septembre"
+            class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+    </div>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="closeSoumissionModal()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+        <app-custom-button [disabled]="uploading || !soumissionPossible" (click)="soumettreDemande()"
+            [text]="uploading ? 'Envoi...' : 'Soumettre'"></app-custom-button>
+    </div>
+</app-custom-modal>

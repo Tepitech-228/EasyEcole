@@ -31,6 +31,11 @@ import { CartesPageComponent } from './pages/cartes-page/cartes-page.component';
 import { GestionSemestresPageComponent } from './pages/gestion-semestres-page/gestion-semestres-page.component';
 import { ImportExportExcelPageComponent } from './pages/import-export-excel-page/import-export-excel-page.component';
 import { DesignationMemoirePageComponent } from './pages/designation-memoire-page/designation-memoire-page.component';
+import { ApprenantGuard } from 'src/app/core/guards/apprenant.guard';
+import { RattrapageSessionsPageComponent } from './pages/rattrapage-sessions-page/rattrapage-sessions-page.component';
+import { RattrapageComitePageComponent } from './pages/rattrapage-comite-page/rattrapage-comite-page.component';
+import { RattrapageMesDemandesPageComponent } from './pages/rattrapage-mes-demandes-page/rattrapage-mes-demandes-page.component';
+import { RattrapagePaiementsPageComponent } from './pages/rattrapage-paiements-page/rattrapage-paiements-page.component';
 
 const routes: Routes = [
   {
@@ -239,6 +244,31 @@ const routes: Routes = [
   {
     path: 'designation-memoire',
     component: DesignationMemoirePageComponent,
+    pathMatch: 'full'
+  },
+
+  {
+    path: 'rattrapage/sessions',
+    component: RattrapageSessionsPageComponent,
+    pathMatch: 'full'
+  },
+
+  {
+    path: 'rattrapage/comite',
+    component: RattrapageComitePageComponent,
+    pathMatch: 'full'
+  },
+
+  {
+    path: 'rattrapage/mes-demandes',
+    component: RattrapageMesDemandesPageComponent,
+    pathMatch: 'full',
+    canActivate: [ApprenantGuard]
+  },
+
+  {
+    path: 'rattrapage/paiements',
+    component: RattrapagePaiementsPageComponent,
     pathMatch: 'full'
   },
 ];

@@ -205,13 +205,17 @@ export default class EcheanceController {
         }
 
         // ── Comportement historique (sans modalite) : échéances de scolarité ───────
+        // Règle métier A1 : la 1ère échéance de scolarité est payable au mois
+        // suivant le début du parcours (au mois suivant), d'où le décalage de
+        // +1 mois sur la date limite (et le mois concerné reculé d'autant pour
+        // conserver la convention dateLimite = mois suivant le moisConcerne).
         const montantParMois = dossier.fraisScolarite / dossier.nbMensualites
         const debut = new Date(dossier.demarrageParcours)
         let echeances = []
 
         for (let i = 0; i < dossier.nbMensualites; i++) {
-            const dateLimite = new Date(debut.getFullYear(), debut.getMonth() + i, 5)
-            const moisConcerne = debut.getFullYear() + '-' + String(debut.getMonth() + i + 1).padStart(2, '0')
+            const dateLimite = new Date(debut.getFullYear(), debut.getMonth() + i + 1, 5)
+            const moisConcerne = debut.getFullYear() + '-' + String(debut.getMonth() + i + 2).padStart(2, '0')
 
             let echeance = new Echeance();
             echeance.dossierEtudiantId = dossier.id

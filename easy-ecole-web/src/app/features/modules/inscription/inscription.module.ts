@@ -43,6 +43,10 @@ import { GestionSemestresPageComponent } from './pages/gestion-semestres-page/ge
 import { ImportExportExcelPageComponent } from './pages/import-export-excel-page/import-export-excel-page.component';
 import { ReactiveFormsModule } from '@angular/forms';
 import { DesignationMemoirePageComponent } from './pages/designation-memoire-page/designation-memoire-page.component';
+import { RattrapageSessionsPageComponent } from './pages/rattrapage-sessions-page/rattrapage-sessions-page.component';
+import { RattrapageComitePageComponent } from './pages/rattrapage-comite-page/rattrapage-comite-page.component';
+import { RattrapageMesDemandesPageComponent } from './pages/rattrapage-mes-demandes-page/rattrapage-mes-demandes-page.component';
+import { RattrapagePaiementsPageComponent } from './pages/rattrapage-paiements-page/rattrapage-paiements-page.component';
 @NgModule({
   declarations: [
     MonCursusPageComponent,
@@ -82,7 +86,11 @@ import { DesignationMemoirePageComponent } from './pages/designation-memoire-pag
        CartesPageComponent,
        GestionSemestresPageComponent,
        ImportExportExcelPageComponent,
-       DesignationMemoirePageComponent
+       DesignationMemoirePageComponent,
+       RattrapageSessionsPageComponent,
+       RattrapageComitePageComponent,
+       RattrapageMesDemandesPageComponent,
+       RattrapagePaiementsPageComponent
   ],
   imports: [
     CommonModule,

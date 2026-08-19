@@ -13,6 +13,7 @@ import { Session } from "./Session";
 import { Classe } from "./Classe";
 import { DemandeInscriptionCours } from "./DemandeInscriptionCours";
 import { FraisInscription } from "./FraisInscription";
+import { FraisScolarite } from "./FraisScolarite";
 import { PaiementInscription } from "./PaiementInscription";
 import { DossierInscription } from "./DossierInscription";
 import { DemandeInscriptionDossier } from "./DemandeInscriptionDossier";
@@ -156,6 +157,10 @@ ReponseInscription.belongsTo(Utilisateur, { foreignKey: 'utilisateurId', as: 'ut
 // FraisInscription - Session
 Session.hasMany(FraisInscription, { foreignKey: 'sessionId', as: 'fraisInscription' })
 FraisInscription.belongsTo(Session, { foreignKey: 'sessionId', as: 'session' })
+
+// FraisScolarite - Session (paramétrage des frais de scolarité par session, A2)
+Session.hasMany(FraisScolarite, { foreignKey: 'sessionId', as: 'fraisScolarite' })
+FraisScolarite.belongsTo(Session, { foreignKey: 'sessionId', as: 'session' })
 
 // FraisParcours - Parcours
 Parcours.hasMany(FraisParcours, { foreignKey: 'parcoursId', as: 'fraisParcours' })
@@ -443,6 +448,43 @@ RattrapageInscription.belongsTo(Utilisateur, { foreignKey: 'demandePar', as: 'de
 // RattrapageInscription - Bordereau (paiementId : bordereau de paiement lié à la demande)
 Bordereau.hasOne(RattrapageInscription, { foreignKey: 'paiementId', as: 'rattrapage' })
 RattrapageInscription.belongsTo(Bordereau, { foreignKey: 'paiementId', as: 'bordereau' })
+
+// ---- Rattrapage : workflow officiel (session, classes, pièces justificatives, comité) ----
+
+import { RattrapageSession } from "./RattrapageSession";
+import { RattrapageSessionClasse } from "./RattrapageSessionClasse";
+import { RattrapageDocumentRequis } from "./RattrapageDocumentRequis";
+import { RattrapageDocumentDepose } from "./RattrapageDocumentDepose";
+
+// RattrapageSession - AnneeAcademique
+AnneeAcademique.hasMany(RattrapageSession, { foreignKey: 'anneeAcademiqueId', as: 'rattrapagesSessions' })
+RattrapageSession.belongsTo(AnneeAcademique, { as: 'anneeAcademique', foreignKey: 'anneeAcademiqueId' })
+
+// RattrapageSession - Classes concernées (pivot RattrapageSessionClasse)
+RattrapageSession.hasMany(RattrapageSessionClasse, { foreignKey: 'rattrapageSessionId', as: 'classes', onDelete: 'CASCADE' })
+RattrapageSessionClasse.belongsTo(RattrapageSession, { as: 'rattrapageSession', foreignKey: 'rattrapageSessionId', onDelete: 'CASCADE' })
+Classe.hasMany(RattrapageSessionClasse, { foreignKey: 'classeId', as: 'sessionsRattrapageClasses' })
+RattrapageSessionClasse.belongsTo(Classe, { as: 'classe', foreignKey: 'classeId', onDelete: 'CASCADE' })
+
+// RattrapageSession - Pièces justificatives requises
+RattrapageSession.hasMany(RattrapageDocumentRequis, { foreignKey: 'rattrapageSessionId', as: 'documentsRequis', onDelete: 'CASCADE' })
+RattrapageDocumentRequis.belongsTo(RattrapageSession, { as: 'rattrapageSession', foreignKey: 'rattrapageSessionId', onDelete: 'CASCADE' })
+
+// RattrapageInscription - RattrapageSession
+RattrapageSession.hasMany(RattrapageInscription, { foreignKey: 'rattrapageSessionId', as: 'inscriptions' })
+RattrapageInscription.belongsTo(RattrapageSession, { as: 'rattrapageSession', foreignKey: 'rattrapageSessionId', onDelete: 'SET NULL' })
+
+// RattrapageInscription - Bordereau (bordereauId : bordereau de paiement téléversé par l'étudiant)
+Bordereau.hasMany(RattrapageInscription, { foreignKey: 'bordereauId', as: 'rattrapagesInscriptions' })
+RattrapageInscription.belongsTo(Bordereau, { foreignKey: 'bordereauId', as: 'bordereauDepose', onDelete: 'SET NULL' })
+
+// RattrapageInscription - Documents déposés
+RattrapageInscription.hasMany(RattrapageDocumentDepose, { foreignKey: 'rattrapageInscriptionId', as: 'documentsDeposes', onDelete: 'CASCADE' })
+RattrapageDocumentDepose.belongsTo(RattrapageInscription, { as: 'rattrapageInscription', foreignKey: 'rattrapageInscriptionId', onDelete: 'CASCADE' })
+
+// RattrapageDocumentRequis - RattrapageDocumentDepose
+RattrapageDocumentRequis.hasMany(RattrapageDocumentDepose, { foreignKey: 'documentRequisId', as: 'documentsDeposes', onDelete: 'CASCADE' })
+RattrapageDocumentDepose.belongsTo(RattrapageDocumentRequis, { as: 'documentRequis', foreignKey: 'documentRequisId', onDelete: 'CASCADE' })
 
 // SessionCorrecteur — correcteurs désignés par cours pour une session de rattrapage
 import { SessionCorrecteur } from "./SessionCorrecteur";

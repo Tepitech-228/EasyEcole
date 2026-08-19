@@ -235,6 +235,80 @@
     </div>
 
     <div class="w-full mb-8">
+        <app-details-section text="Frais de scolarité">
+            <div *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" class="relative">
+                <div>
+                    <button (click)="openParametrerFraisScolariteModal()"
+                        class="p-1 rounded focus:ring-1 focus:ring-gray-300">
+                        <img src="assets/icons/add.svg" alt="add">
+                    </button>
+                </div>
+            </div>
+        </app-details-section>
+        <div *ngIf="fraisScolariteLoading" class="text-sm text-gray-400 text-center py-8">Chargement...</div>
+        <div *ngIf="!fraisScolarite && !fraisScolariteLoading" class="text-sm text-gray-400 text-center py-8">Aucun paramétrage des frais de scolarité</div>
+        <div *ngIf="fraisScolarite" class="overflow-x-auto">
+            <div class="py-2 inline-block min-w-full">
+                <div class="overflow-hidden">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-100 border-b">
+                            <tr>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Montant
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Modalité
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Échéances
+                                    </div>
+                                </th>
+                                <th *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
+                                    <div class="px-2">
+                                        Action
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div
+                                        class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ fraisScolarite.montant | currency:'XAF' }}</div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div
+                                        class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        <app-custom-badge color="primary" [text]="getModaliteLabel(fraisScolarite.modalite)"></app-custom-badge>
+                                    </div>
+                                </td>
+                                <td
+                                    class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div
+                                        class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ getDetailEcheances(fraisScolarite) }}</div>
+                                </td>
+                                <td *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div
+                                        class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        <app-custom-button (click)="openParametrerFraisScolariteModal()" text="Paramétrer" color="blue"></app-custom-button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="w-full mb-8">
         <app-details-section text="Dossiers à fournir">
             <div *ngIf="rolesValue.isInstitution" class="relative">
                 <div>
@@ -494,6 +568,39 @@
     <div class="flex items-center justify-between py-30">
         <app-custom-button (click)="closeSupprimerDossierModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
         <app-custom-button (click)="supprimerDossier()" text="Supprimer" color="primary"></app-custom-button>
+    </div>
+</app-custom-modal>
+
+<app-custom-modal title="Paramétrer les frais de scolarité" subtitle="Définir le montant global et la modalité de paiement des frais de scolarité de cette session d'inscription" (onCloseModal)="closeParametrerFraisScolariteModal()" [center]="true" [showModal]="showParametrerFraisScolariteModal">
+    <form [formGroup]="fraisScolariteForm" class="">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Montant global</span>
+                <input type="number" min="0" id="montant" formControlName="montant" placeholder="Saisir le montant ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+
+                <div
+                    *ngIf="fraisScolariteForm.get('montant')!.invalid && (fraisScolariteForm.get('montant')!.dirty || fraisScolariteForm.get('montant')!.touched)">
+                    <app-form-message *ngIf="fraisScolariteForm.get('montant')!.errors?.['required']"
+                        text="Veuillez entrer le montant"></app-form-message>
+                </div>
+            </div>
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Modalité de paiement</span>
+                <select id="modalite" formControlName="modalite"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option *ngFor="let option of modaliteOptions" [value]="option.value">{{ option.label }}</option>
+                </select>
+                <p class="mt-2 text-xs text-gray-500">{{ getModaliteDescription(selectedModalite) }}</p>
+            </div>
+        </div>
+        <div *ngIf="fraisScolariteError" class="mb-4">
+            <app-form-message text="Une erreur est survenue lors du paramétrage. Veuillez réessayer."></app-form-message>
+        </div>
+    </form>
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="closeParametrerFraisScolariteModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+        <app-custom-button (click)="parametrerFraisScolarite()" text="Enregistrer"></app-custom-button>
     </div>
 </app-custom-modal>
 

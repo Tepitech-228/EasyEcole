@@ -4,6 +4,7 @@ import { NiveauEtude } from "./NiveauEtude";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { DemandeInscription } from "./DemandeInscription";
 import { FraisInscription } from "./FraisInscription";
+import { FraisScolarite } from "./FraisScolarite";
 import { DossierInscription } from "./DossierInscription";
 import { AnneeAcademique } from "./AnneeAcademique";
 import { Etablissement } from "../../etablissement/models/Etablissement";
@@ -21,6 +22,7 @@ export class Session extends Model<InferAttributes<Session>, InferCreationAttrib
   declare etablissement?: NonAttribute<Etablissement>
   declare demandesInscription?: NonAttribute<DemandeInscription[]>
   declare fraisInscription?: NonAttribute<FraisInscription[]>
+  declare fraisScolarite?: NonAttribute<FraisScolarite[]>
   declare dossiersInscription?: NonAttribute<DossierInscription[]>
 
   declare readonly createdAt: CreationOptional<Date>
@@ -32,6 +34,7 @@ export class Session extends Model<InferAttributes<Session>, InferCreationAttrib
     etablissement: Association<Session, Etablissement>
     demandesInscription: Association<Session, DemandeInscription>
     fraisInscription: Association<Session, FraisInscription>
+    fraisScolarite: Association<Session, FraisScolarite>
     dossiersInscription: Association<Session, DossierInscription>
   };
 }

@@ -12,6 +12,7 @@ import PrerequisParcoursChoisiRouter from "./routers/PrerequisParcoursChoisiRout
 import DemandeInscriptionRouter from "./routers/DemandeInscriptionRouter"
 import ReponseInscriptionRouter from "./routers/ReponseInscriptionRouter"
 import FraisInscriptionRouter from "./routers/FraisInscriptionRouter"
+import FraisScolariteRouter from "./routers/FraisScolariteRouter"
 import Authenticate from "../../core/middlewares/Authenticate";
 import { InscriptionComplete } from "../../core/middlewares/InscriptionComplete";
 import PaiementInscriptionRouter from "./routers/PaiementInscriptionRouter";
@@ -56,6 +57,7 @@ import AbsenceRouter from "./routers/AbsenceRouter";
 import EquivalenceRouter from "./routers/EquivalenceRouter";
 import DispenseRouter from "./routers/DispenseRouter";
 import RattrapageRouter from "./routers/RattrapageRouter";
+import RattrapageWorkflowRouter from "./routers/RattrapageWorkflowRouter";
 import AuditNoteRouter from "../bulletins/routers/AuditNoteRouter";
 import EchelleNoteRouter from "../bulletins/routers/EchelleNoteRouter";
 import JuryMembreRouter from "../bulletins/routers/JuryMembreRouter";
@@ -94,6 +96,7 @@ router
     .use('/demandesInscription', [Authenticate], DemandeInscriptionRouter)
     .use('/reponsesInscription', [Authenticate], ReponseInscriptionRouter)
     .use('/fraisInscription', [Authenticate], FraisInscriptionRouter)
+    .use('/fraisScolarite', [Authenticate], FraisScolariteRouter)
     .use('/paiementsInscription', [Authenticate], PaiementInscriptionRouter)
     .use('/quitus', [Authenticate], QuitusRouter)
     .use('/dossiersInscription', [Authenticate], DossierInscriptionRouter)
@@ -148,6 +151,7 @@ router
     .use('/equivalences', [Authenticate, InscriptionComplete], EquivalenceRouter)
     .use('/dispenses', [Authenticate, InscriptionComplete], DispenseRouter)
     .use('/rattrapages', [Authenticate, InscriptionComplete], RattrapageRouter)
+    .use('/rattrapage-workflow', [Authenticate, InscriptionComplete], RattrapageWorkflowRouter)
     .use('/audit-notes', [Authenticate, InscriptionComplete], AuditNoteRouter)
     .use('/designation-memoires', [Authenticate], DesignationMemoireRouter)
     .use('/reinscription', [Authenticate], ReinscriptionRouter)

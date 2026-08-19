@@ -81,6 +81,48 @@ export class DatabaseConnection {
             await this._sequelize.authenticate();
             console.log('Database connected successfully');
 
+            // Nettoyer les orphelins AVANT de syncer les tables rattrapage
+            try {
+                await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
+                
+                // Supprimer les RattrapageInscription avec coursParticipantId orpheline
+                await this._sequelize.query(`
+                    DELETE FROM ins_rattrapages_inscriptions 
+                    WHERE coursParticipantId IS NOT NULL 
+                    AND coursParticipantId NOT IN (SELECT id FROM ins_cours_participants)
+                `);
+                
+                // Supprimer les RattrapageDocumentDepose avec rattrapageInscriptionId orpheline
+                await this._sequelize.query(`
+                    DELETE FROM ins_rattrapages_documents_deposes 
+                    WHERE rattrapageInscriptionId NOT IN (SELECT id FROM ins_rattrapages_inscriptions)
+                `);
+
+                await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
+            } catch (cleanupError: any) {
+                console.warn('Warning (rattrapage cleanup):', cleanupError?.message || cleanupError);
+            }
+
+            try {
+                const { FraisScolarite } = require('../../modules/inscription/models/FraisScolarite');
+                const { RattrapageInscription } = require('../../modules/inscription/models/RattrapageInscription');
+                const { RattrapageSession } = require('../../modules/inscription/models/RattrapageSession');
+                const { RattrapageDocumentDepose } = require('../../modules/inscription/models/RattrapageDocumentDepose');
+                const { RattrapageDocumentRequis } = require('../../modules/inscription/models/RattrapageDocumentRequis');
+                const { RattrapageSessionClasse } = require('../../modules/inscription/models/RattrapageSessionClasse');
+
+                await Promise.all([
+                    FraisScolarite.sync({ alter: true }),
+                    RattrapageInscription.sync({ alter: true }),
+                    RattrapageSession.sync({ alter: true }),
+                    RattrapageDocumentDepose.sync({ alter: true }),
+                    RattrapageDocumentRequis.sync({ alter: true }),
+                    RattrapageSessionClasse.sync({ alter: true })
+                ]);
+            } catch (schemaError: any) {
+                console.warn('Warning (rattrapage/frais schema sync ignored):', schemaError?.message || schemaError);
+            }
+
             if (env === 'development') {
                 await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
                 try {

@@ -46,10 +46,15 @@ const arrondir = (montant: number): number => Math.round(montant * 100) / 100;
  * Génère (et enregistre) l'échéancier d'inscription d'un dossier étudiant selon
  * la modalité de paiement :
  *
- *   - '1x'  : 1 échéance du montant total, échue le jour J (moisConcerne = null)
+ * Règle métier A1 : aucun paiement ne doit être considéré comme en retard à
+ * l'inscription. Le premier paiement débute un mois après le jour J de la
+ * validation (au mois suivant). Toutes les échéances sont donc décalées de +1
+ * mois par rapport à J.
+ *
+ *   - '1x'  : 1 échéance du montant total, échue J+1 mois (moisConcerne = null)
  *   - '3x'  : 3 échéances quasi-égales (la dernière absorbe le reste pour que la
- *             somme corresponde exactement au total), échues J, J+1 mois, J+2 mois
- *   - '10x' : 10 échéances mensuelles (J à J+9 mois), moisConcerne = nom du mois
+ *             somme corresponde exactement au total), échues J+1, J+2 et J+3 mois
+ *   - '10x' : 10 échéances mensuelles (J+1 mois à J+10 mois), moisConcerne = nom du mois
  *
  * Chaque échéance est de type 'inscription', statut 'impaye', devise 'XAF'.
  *
@@ -88,7 +93,9 @@ export class GenerateurEcheancierService {
         const echeances: Echeance[] = [];
 
         for (let i = 0; i < nbEcheances; i++) {
-            const dateLimite = ajouterMois(jourJ, i);
+            // Règle métier A1 : la 1ère échéance est payable au mois suivant la
+            // validation (J+1 mois), la 2ème à J+2 mois, etc. → décalage +1 mois.
+            const dateLimite = ajouterMois(jourJ, i + 1);
 
             const echeance = new Echeance();
             echeance.dossierEtudiantId = dossier.id;

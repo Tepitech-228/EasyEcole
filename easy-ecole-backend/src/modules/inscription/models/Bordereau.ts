@@ -7,7 +7,7 @@ import { Quitus } from "./Quitus";
 
 export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAttributes<Bordereau>> {
   declare id: CreationOptional<number>
-  declare type: 'inscription' | 'scolarite'
+  declare type: 'inscription' | 'scolarite' | 'rattrapage'
   declare echeanceId: ForeignKey<Echeance['id']> | null
   declare utilisateurId: ForeignKey<Utilisateur['id']>
   declare fichier: string
@@ -51,7 +51,7 @@ Bordereau.init({
     allowNull: false
   },
   type: {
-    type: DataTypes.ENUM('inscription', 'scolarite'),
+    type: DataTypes.ENUM('inscription', 'scolarite', 'rattrapage'),
     allowNull: false
   },
   fichier: {

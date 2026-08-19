@@ -6,6 +6,8 @@ import { SessionExamen } from "./SessionExamen";
 import { CoursParticipant } from "./CoursParticipant";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { Bordereau } from "./Bordereau";
+import { RattrapageSession } from "./RattrapageSession";
+import { RattrapageDocumentDepose } from "./RattrapageDocumentDepose";
 
 export class RattrapageInscription extends Model<InferAttributes<RattrapageInscription>, InferCreationAttributes<RattrapageInscription>> {
   declare id: CreationOptional<number>
@@ -31,11 +33,21 @@ export class RattrapageInscription extends Model<InferAttributes<RattrapageInscr
   declare paiementId: CreationOptional<number | null>
   declare demandePar: CreationOptional<number | null> // utilisateurId étudiant
 
+  // Workflow officiel (session de rattrapage + validation comité + paiement)
+  declare rattrapageSessionId: ForeignKey<RattrapageSession['id']> | null
+  declare statutDemande: CreationOptional<string | null> // ENUM('en_attente','valide','rejete') — décision COMITÉ
+  declare motifRejet: CreationOptional<string | null> // motif de rejet/renvoi par le comité
+  declare dateValidationComite: CreationOptional<Date | null> // date de la décision du comité
+  declare bordereauId: ForeignKey<Bordereau['id']> | null // bordereau de paiement des frais téléversé par l'étudiant
+
   declare coursParticipant?: NonAttribute<CoursParticipant>
   declare cours?: NonAttribute<Cours>
   declare sessionExamen?: NonAttribute<SessionExamen>
   declare demandeur?: NonAttribute<Utilisateur>
   declare bordereau?: NonAttribute<Bordereau>
+  declare rattrapageSession?: NonAttribute<RattrapageSession>
+  declare bordereauDepose?: NonAttribute<Bordereau>
+  declare documentsDeposes?: NonAttribute<RattrapageDocumentDepose[]>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -47,6 +59,9 @@ export class RattrapageInscription extends Model<InferAttributes<RattrapageInscr
     sessionExamen: Association<RattrapageInscription, SessionExamen>
     demandeur: Association<RattrapageInscription, Utilisateur>
     bordereau: Association<RattrapageInscription, Bordereau>
+    rattrapageSession: Association<RattrapageInscription, RattrapageSession>
+    bordereauDepose: Association<RattrapageInscription, Bordereau>
+    documentsDeposes: Association<RattrapageInscription, RattrapageDocumentDepose>
   }
 }
 
@@ -58,11 +73,11 @@ RattrapageInscription.init({
   },
   coursParticipantId: {
     type: DataTypes.INTEGER.UNSIGNED,
-    allowNull: false
+    allowNull: true
   },
   coursId: {
     type: DataTypes.INTEGER.UNSIGNED,
-    allowNull: false
+    allowNull: true
   },
   sessionExamenId: {
     type: DataTypes.INTEGER.UNSIGNED,
@@ -133,6 +148,26 @@ RattrapageInscription.init({
     allowNull: true
   },
   demandePar: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
+  },
+  rattrapageSessionId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
+  },
+  statutDemande: {
+    type: DataTypes.ENUM('en_attente', 'valide', 'rejete'),
+    allowNull: true
+  },
+  motifRejet: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  dateValidationComite: {
+    type: DataTypes.DATEONLY,
+    allowNull: true
+  },
+  bordereauId: {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: true
   },
