@@ -11,7 +11,7 @@ export class Departement extends Model<InferAttributes<Departement>, InferCreati
 
 Departement.init({
   id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-  nom: { type: new DataTypes.STRING, allowNull: false, unique: true },
+  nom: { type: new DataTypes.STRING, allowNull: false },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
 }, {

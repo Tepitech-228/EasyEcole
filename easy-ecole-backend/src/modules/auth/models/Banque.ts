@@ -26,13 +26,11 @@ Banque.init({
   },
   nom: {
     type: new DataTypes.STRING,
-    allowNull: false,
-    unique: true,
+    allowNull: false
   },
   logo: {
     type: new DataTypes.STRING,
-    allowNull: true,
-    unique: true,
+    allowNull: true
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

@@ -39,8 +39,7 @@ Diplome.init({
   },
   numeroDiplome: {
     type: new DataTypes.STRING,
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   dateDelivrance: {
     type: DataTypes.DATE,

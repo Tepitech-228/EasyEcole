@@ -40,8 +40,7 @@ Parcours.init({
   },
   titre: {
     type: new DataTypes.STRING,
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   dureeDeFormation: {
     type: new DataTypes.STRING,

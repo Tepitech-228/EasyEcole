@@ -26,8 +26,7 @@ DocGenType.init({
   },
   code: {
     type: new DataTypes.STRING(20),
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   libelle: {
     type: new DataTypes.STRING(200),

@@ -60,13 +60,11 @@ Apprenant.init({
   },
   photo: {
     type: new DataTypes.STRING,
-    allowNull: true,
-    unique: true
+    allowNull: true
   },
   qrCode: {
     type: new DataTypes.STRING,
-    allowNull: true,
-    unique: true
+    allowNull: true
   },
   dateNaissance: {
     type: DataTypes.DATE,
@@ -88,8 +86,7 @@ Apprenant.init({
   },
   cni: {
     type: new DataTypes.STRING,
-    allowNull: true,
-    unique: true
+    allowNull: true
   },
   statutHandicap: {
     type: DataTypes.BOOLEAN,

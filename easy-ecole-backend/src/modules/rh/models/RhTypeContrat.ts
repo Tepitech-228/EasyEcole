@@ -25,8 +25,7 @@ RhTypeContrat.init({
   },
   code: {
     type: new DataTypes.STRING,
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   libelle: {
     type: new DataTypes.STRING,

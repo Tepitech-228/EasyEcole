@@ -50,18 +50,15 @@ Enseignant.init({
   },
   photo: {
     type: new DataTypes.STRING,
-    allowNull: true,
-    unique: true
+    allowNull: true
   },
   qrCode: {
     type: new DataTypes.STRING,
-    allowNull: true,
-    unique: true
+    allowNull: true
   },
   matricule: {
     type: new DataTypes.STRING,
-    allowNull: true,
-    unique: true
+    allowNull: true
   },
   gradeAcademique: {
     type: new DataTypes.STRING,
@@ -97,8 +94,7 @@ Enseignant.init({
   },
   cni: {
     type: new DataTypes.STRING,
-    allowNull: true,
-    unique: true
+    allowNull: true
   },
   nifOtr: {
     type: new DataTypes.STRING,

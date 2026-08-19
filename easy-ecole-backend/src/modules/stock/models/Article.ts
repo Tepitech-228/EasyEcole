@@ -38,7 +38,7 @@ export class Article extends Model<InferAttributes<Article>, InferCreationAttrib
 Article.init({
   id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
   nom: { type: new DataTypes.STRING, allowNull: false },
-  reference: { type: new DataTypes.STRING, allowNull: false, unique: true },
+  reference: { type: new DataTypes.STRING, allowNull: false },
   description: { type: DataTypes.TEXT, allowNull: true },
   categorieId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
   siteId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },

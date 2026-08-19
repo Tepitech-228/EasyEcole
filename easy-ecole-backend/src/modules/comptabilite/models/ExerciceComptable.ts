@@ -33,8 +33,7 @@ ExerciceComptable.init({
   },
   code: {
     type: new DataTypes.STRING(9),
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   libelle: {
     type: new DataTypes.STRING(255),

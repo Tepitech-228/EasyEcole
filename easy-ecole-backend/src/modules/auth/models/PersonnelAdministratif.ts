@@ -43,13 +43,11 @@ PersonnelAdministratif.init({
   },
   utilisateurId: {
     type: DataTypes.INTEGER.UNSIGNED,
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   matricule: {
     type: new DataTypes.STRING,
-    allowNull: true,
-    unique: true
+    allowNull: true
   },
   statut: {
     type: new DataTypes.STRING,
@@ -66,8 +64,7 @@ PersonnelAdministratif.init({
   },
   cni: {
     type: new DataTypes.STRING,
-    allowNull: true,
-    unique: true
+    allowNull: true
   },
   nifOtr: {
     type: new DataTypes.STRING,

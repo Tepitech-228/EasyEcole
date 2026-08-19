@@ -30,8 +30,7 @@ Compte.init({
   },
   numero: {
     type: new DataTypes.STRING(10),
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   libelle: {
     type: new DataTypes.STRING(255),

@@ -70,8 +70,7 @@ EcritureComptable.init({
   },
   numeroEcriture: {
     type: new DataTypes.STRING(50),
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   dateEcriture: {
     type: DataTypes.DATEONLY,

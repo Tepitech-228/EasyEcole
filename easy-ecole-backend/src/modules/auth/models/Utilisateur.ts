@@ -60,13 +60,11 @@ Utilisateur.init({
   },
   identifiant: {
     type: new DataTypes.STRING,
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   email: {
     type: new DataTypes.STRING,
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   motDePasse: {
     type: new DataTypes.STRING,

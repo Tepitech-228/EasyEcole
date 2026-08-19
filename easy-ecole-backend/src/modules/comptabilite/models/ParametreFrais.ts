@@ -29,8 +29,7 @@ ParametreFrais.init({
   },
   cle: {
     type: new DataTypes.STRING(100),
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   libelle: {
     type: new DataTypes.STRING(255),

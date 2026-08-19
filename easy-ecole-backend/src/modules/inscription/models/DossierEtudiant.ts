@@ -43,8 +43,7 @@ DossierEtudiant.init({
   },
   matricule: {
     type: new DataTypes.STRING,
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   codeQR: {
     type: DataTypes.TEXT,

@@ -41,8 +41,7 @@ DocGenDocument.init({
   },
   reference: {
     type: new DataTypes.STRING(50),
-    allowNull: true,
-    unique: true
+    allowNull: true
   },
   statut: {
     type: new DataTypes.STRING(30),

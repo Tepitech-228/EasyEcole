@@ -20,7 +20,7 @@ export class Assurance extends Model<InferAttributes<Assurance>, InferCreationAt
 Assurance.init({
   id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
   immobilisationId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false },
-  policeNumber: { type: new DataTypes.STRING, allowNull: false, unique: true },
+  policeNumber: { type: new DataTypes.STRING, allowNull: false },
   assureur: { type: new DataTypes.STRING, allowNull: false },
   couverture: { type: DataTypes.TEXT, allowNull: true },
   primeAnnuelle: { type: DataTypes.DECIMAL(12, 2), allowNull: true },

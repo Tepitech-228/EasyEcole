@@ -12,7 +12,7 @@ export class CategorieAchat extends Model<InferAttributes<CategorieAchat>, Infer
 
 CategorieAchat.init({
   id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-  nom: { type: new DataTypes.STRING, allowNull: false, unique: true },
+  nom: { type: new DataTypes.STRING, allowNull: false },
   description: { type: DataTypes.TEXT, allowNull: true },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

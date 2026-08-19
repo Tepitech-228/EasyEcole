@@ -32,8 +32,7 @@ Quitus.init({
   },
   code: {
     type: new DataTypes.STRING,
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   paiementInscriptionId: {
     type: DataTypes.INTEGER.UNSIGNED,

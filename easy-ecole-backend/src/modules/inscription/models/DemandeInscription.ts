@@ -65,7 +65,6 @@ DemandeInscription.init({
   },
   matricule: {
     type: new DataTypes.STRING,
-    unique: true,
     allowNull: false
   },
   dateDemande: {

@@ -61,7 +61,6 @@ Salon.init({
   },
   codeInvitation: {
     type: new DataTypes.STRING,
-    unique: true,
     allowNull: true
   },
   createdById: {

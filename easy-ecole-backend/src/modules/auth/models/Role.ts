@@ -19,8 +19,7 @@ Role.init({
     },
     nom: {
         type: new DataTypes.STRING(100),
-        allowNull: false,
-        unique: true
+        allowNull: false
     },
     description: {
         type: new DataTypes.STRING(255),

@@ -14,7 +14,7 @@ export class InventaireStock extends Model<InferAttributes<InventaireStock>, Inf
 
 InventaireStock.init({
   id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-  reference: { type: new DataTypes.STRING, allowNull: false, unique: true },
+  reference: { type: new DataTypes.STRING, allowNull: false },
   dateDebut: { type: DataTypes.DATEONLY, allowNull: false },
   dateFin: { type: DataTypes.DATEONLY, allowNull: true },
   statut: { type: DataTypes.ENUM('en_cours', 'cloture'), defaultValue: 'en_cours' },

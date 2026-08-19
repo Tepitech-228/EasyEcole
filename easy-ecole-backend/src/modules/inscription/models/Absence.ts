@@ -29,8 +29,7 @@ Absence.init({
   },
   noteEvaluationId: {
     type: DataTypes.INTEGER.UNSIGNED,
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   type: {
     type: DataTypes.ENUM('present', 'justifie', 'injustifie'),

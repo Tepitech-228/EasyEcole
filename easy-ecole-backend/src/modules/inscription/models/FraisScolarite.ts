@@ -42,10 +42,9 @@ FraisScolarite.init({
   },
   sessionId: {
     type: DataTypes.INTEGER.UNSIGNED,
-    allowNull: false,
+    allowNull: false
     // Un seul paramétrage de scolarité par session : l'upsert du contrôleur
     // met à jour la ligne existante au lieu d'en créer une seconde.
-    unique: true
   },
   montant: {
     type: DataTypes.FLOAT.UNSIGNED,

@@ -28,8 +28,7 @@ RhDepartement.init({
   },
   nom: {
     type: new DataTypes.STRING,
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   description: {
     type: DataTypes.TEXT,

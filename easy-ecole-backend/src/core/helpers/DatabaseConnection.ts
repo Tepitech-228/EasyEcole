@@ -1,4 +1,5 @@
 import { Dialect, QueryTypes, Sequelize } from "sequelize";
+import { ensureUniqueIndexes } from "./ensureUniqueIndexes";
 const env = process.env.NODE_ENV || 'development';
 
 function getDbConfig() {
@@ -154,6 +155,20 @@ export class DatabaseConnection {
                 await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
             } else {
                 console.log('Production mode: sync disabled, use migrations');
+            }
+
+            // --- Contraintes UNIQUE nominatives (après les syncs) ---
+            // Les `unique: true` ont été retirés des modèles (voir ensureUniqueIndexes) :
+            // le sync alter n'émet plus d'ALTER ... UNIQUE (cause racine des index
+            // en double auto-suffixés col_2, col_3...). Ce module recrée / pérennise
+            // les index UNIQUE nominatifs à chaque boot, en dev comme en prod.
+            // Séquençage obligatoire : DOIT s'exécuter APRÈS les syncs (dev) pour
+            // couvrir aussi les installations fraîches (tables créées sans unique,
+            // puis index créés ici), et DOIT rester actif en production.
+            try {
+                await ensureUniqueIndexes(this._sequelize);
+            } catch (uniqueError: any) {
+                console.warn('Warning (ensureUniqueIndexes):', uniqueError?.message || uniqueError);
             }
         } catch (error: any) {
             if (

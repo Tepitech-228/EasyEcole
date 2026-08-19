@@ -36,8 +36,7 @@ PaiementInscription.init({
   },
   numero: {
     type: new DataTypes.STRING,
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   datePaiement: {
     type: DataTypes.DATE,

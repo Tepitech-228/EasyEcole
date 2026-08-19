@@ -15,7 +15,7 @@ export class Localisation extends Model<InferAttributes<Localisation>, InferCrea
 Localisation.init({
   id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
   batimentId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false },
-  code: { type: new DataTypes.STRING, allowNull: false, unique: true },
+  code: { type: new DataTypes.STRING, allowNull: false },
   capacite: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

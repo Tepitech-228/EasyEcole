@@ -22,8 +22,7 @@ Permission.init({
     },
     key: {
         type: new DataTypes.STRING(255),
-        allowNull: false,
-        unique: true
+        allowNull: false
     },
     libelle: {
         type: new DataTypes.STRING(255),

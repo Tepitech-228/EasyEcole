@@ -20,8 +20,7 @@ TypeDocument.init({
   },
   libelle: {
     type: new DataTypes.STRING,
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   frais: {
     type: DataTypes.FLOAT.UNSIGNED,

@@ -39,8 +39,7 @@ Classe.init({
   },
   libelle: {
     type: new DataTypes.STRING,
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   description: {
     type: new DataTypes.STRING,

@@ -13,7 +13,7 @@ export class RhCategorieProfessionnelle extends Model<InferAttributes<RhCategori
 
 RhCategorieProfessionnelle.init({
   id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-  code: { type: new DataTypes.STRING, allowNull: false, unique: true },
+  code: { type: new DataTypes.STRING, allowNull: false },
   libelle: { type: new DataTypes.STRING, allowNull: false },
   description: { type: DataTypes.TEXT, allowNull: true },
   createdAt: DataTypes.DATE,

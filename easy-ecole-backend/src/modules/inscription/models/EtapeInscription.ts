@@ -20,13 +20,11 @@ EtapeInscription.init({
   },
   libelle: {
     type: new DataTypes.STRING,
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   ordre: {
     type: DataTypes.TINYINT.UNSIGNED,
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

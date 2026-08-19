@@ -14,7 +14,7 @@ export class Tag extends Model<InferAttributes<Tag>, InferCreationAttributes<Tag
 
 Tag.init({
   id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-  nom: { type: DataTypes.STRING(100), allowNull: false, unique: true },
+  nom: { type: DataTypes.STRING(100), allowNull: false },
   couleur: { type: DataTypes.STRING(7), defaultValue: '#3B82F6' },
   description: { type: DataTypes.TEXT, allowNull: true },
   createdAt: DataTypes.DATE,

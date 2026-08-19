@@ -31,7 +31,7 @@ Etablissement.init({
   telephone: { type: DataTypes.STRING, allowNull: true },
   email: { type: DataTypes.STRING, allowNull: true },
   siteWeb: { type: DataTypes.STRING, allowNull: true },
-  code: { type: DataTypes.STRING(10), allowNull: true, unique: true },
+  code: { type: DataTypes.STRING(10), allowNull: true },
   logo: { type: DataTypes.STRING, allowNull: true },
   devise: { type: DataTypes.STRING(10), defaultValue: 'FCFA' },
   anneeScolaireCourante: { type: DataTypes.STRING(20), allowNull: true },

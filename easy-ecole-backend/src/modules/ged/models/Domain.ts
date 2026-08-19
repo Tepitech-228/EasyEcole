@@ -20,8 +20,7 @@ Domain.init({
   },
   code: {
     type: new DataTypes.STRING,
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   label: {
     type: new DataTypes.STRING,
