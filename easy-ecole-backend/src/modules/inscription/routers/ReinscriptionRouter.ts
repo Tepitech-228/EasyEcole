@@ -1,13 +1,19 @@
 import express from "express"
-import Authenticate from "../../../core/middlewares/Authenticate";
 import ReinscriptionController from "../controllers/ReinscriptionController"
-import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
 
 const router = express.Router()
 
-router
-    .post('/envoyer-emails', [Authenticate, AuthInstitution], ReinscriptionController.envoyerEmailsReinscription)
-    .get('/confirmer', ReinscriptionController.confirmerReinscription)
-    .get('/', [Authenticate], ReinscriptionController.lister)
+/**
+ * @openapi
+ * /inscription/reinscription/peut-se-reinscrire:
+ *   get:
+ *     tags: [Réinscription]
+ *     summary: Vérifie si l'étudiant peut se réinscrire (pas de dette)
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: Résultat de la vérification
+ */
+router.get('/peut-se-reinscrire', ReinscriptionController.peutSeReinscrire)
 
 export default router

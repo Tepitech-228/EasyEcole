@@ -9,10 +9,15 @@ export class Echeance extends Model<InferAttributes<Echeance>, InferCreationAttr
   declare type: 'inscription' | 'scolarite'
   declare numeroEcheance: number
   declare montant: number
+  /**
+   * Montant déjà imputé sur cette échéance (paiements partiels FIFO).
+   * `resteAPayer` (= montant - montantPaye) est calculé côté service, jamais persisté.
+   */
+  declare montantPaye: CreationOptional<number>
   declare devise: CreationOptional<string>
   declare dateLimite: Date
   declare datePaiement: CreationOptional<Date | null>
-  declare statut: 'impaye' | 'paye' | 'en_retard'
+  declare statut: 'impaye' | 'paye' | 'en_retard' | 'partiel'
   declare moisConcerne: CreationOptional<string>
   declare dossierEtudiant?: NonAttribute<DossierEtudiant>
 
@@ -47,6 +52,11 @@ Echeance.init({
     type: DataTypes.FLOAT.UNSIGNED,
     allowNull: false
   },
+  montantPaye: {
+    type: DataTypes.FLOAT.UNSIGNED,
+    defaultValue: 0,
+    allowNull: false
+  },
   devise: {
     type: new DataTypes.STRING,
     defaultValue: 'XAF',
@@ -62,7 +72,7 @@ Echeance.init({
     defaultValue: null
   },
   statut: {
-    type: DataTypes.ENUM('impaye', 'paye', 'en_retard'),
+    type: DataTypes.ENUM('impaye', 'paye', 'en_retard', 'partiel'),
     defaultValue: 'impaye',
     allowNull: false
   },

@@ -41,6 +41,10 @@ export class BordereauService {
     return this.httpClient.put<Bordereau>(`${this.SERVICE_URL}/${id}/rejeter`, { commentaire })
   }
 
+  traiter(id: string, payload: { type: string; montantConstate: number; referenceBancaire?: string; commentaire?: string }): Observable<{ success: boolean; data: Bordereau; lettrage: any }> {
+    return this.httpClient.put<{ success: boolean; data: Bordereau; lettrage: any }>(`${this.SERVICE_URL}/${id}/traiter`, payload)
+  }
+
   batchValider(ids: number[], commentaire?: string): Observable<{ success: boolean; count: number }> {
     return this.httpClient.put<{ success: boolean; count: number }>(`${this.SERVICE_URL}/batch/statut`, { ids, statut: 'valide', commentaire });
   }

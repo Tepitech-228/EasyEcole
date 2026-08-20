@@ -148,22 +148,26 @@
                     </ng-container>
                   </td>
                   <td *ngIf="renderItemActions" class="px-3 py-2 text-right">
-                    <button
-                      *ngFor="let action of itemActions"
-                      (click)="itemAction.emit({ item, action: action.action }); $event.stopPropagation()"
-                      class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md transition mx-0.5"
-                      [class]="'text-indigo-700 bg-indigo-100 hover:bg-indigo-200'">
-                      <span *ngIf="action.icon" class="material-symbols-outlined text-sm">{{ action.icon }}</span>
-                      {{ action.label }}
-                    </button>
-                    <button
-                      *ngFor="let action of batchActions"
-                      (click)="itemAction.emit({ item, action: action.action }); $event.stopPropagation()"
-                      class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md transition mx-0.5"
-                      [class]="'text-' + action.color + '-700 bg-' + action.color + '-100 hover:bg-' + action.color + '-200'">
-                      <span *ngIf="action.icon" class="material-symbols-outlined text-sm">{{ action.icon }}</span>
-                      {{ action.label }}
-                    </button>
+                    <ng-container *ngFor="let action of itemActions">
+                      <button
+                        *ngIf="isActionVisible(item, action)"
+                        (click)="itemAction.emit({ item, action: action.action }); $event.stopPropagation()"
+                        class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md transition mx-0.5"
+                        [class]="'text-indigo-700 bg-indigo-100 hover:bg-indigo-200'">
+                        <span *ngIf="action.icon" class="material-symbols-outlined text-sm">{{ action.icon }}</span>
+                        {{ action.label }}
+                      </button>
+                    </ng-container>
+                    <ng-container *ngFor="let action of batchActions">
+                      <button
+                        *ngIf="isActionVisible(item, action)"
+                        (click)="itemAction.emit({ item, action: action.action }); $event.stopPropagation()"
+                        class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md transition mx-0.5"
+                        [class]="'text-' + action.color + '-700 bg-' + action.color + '-100 hover:bg-' + action.color + '-200'">
+                        <span *ngIf="action.icon" class="material-symbols-outlined text-sm">{{ action.icon }}</span>
+                        {{ action.label }}
+                      </button>
+                    </ng-container>
                   </td>
                 </tr>
               </tbody>

@@ -18,6 +18,12 @@ export class DossierEtudiant extends Model<InferAttributes<DossierEtudiant>, Inf
   declare nombreInscriptions: CreationOptional<number>
   declare dateCreation: CreationOptional<Date>
   declare fraisScolarite: number
+  /**
+   * Snapshot grille tarifaire figé à la 1ère validation du dossier (JSON).
+   * Contient les montants, la modalité et la date de figement. NULL tant que
+   * le dossier n'a pas été validé une première fois.
+   */
+  declare fraisScolariteSnapshot: CreationOptional<string | null>
   declare modePaiement: 'unique' | 'mensuel'
   declare nbMensualites: number
   declare demarrageParcours: Date
@@ -83,6 +89,11 @@ DossierEtudiant.init({
   fraisScolarite: {
     type: DataTypes.FLOAT.UNSIGNED,
     allowNull: false
+  },
+  fraisScolariteSnapshot: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    defaultValue: null
   },
   modePaiement: {
     type: DataTypes.ENUM('unique', 'mensuel'),

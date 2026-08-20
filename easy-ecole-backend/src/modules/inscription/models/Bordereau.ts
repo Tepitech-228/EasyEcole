@@ -7,11 +7,17 @@ import { Quitus } from "./Quitus";
 
 export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAttributes<Bordereau>> {
   declare id: CreationOptional<number>
-  declare type: 'inscription' | 'scolarite' | 'rattrapage'
+  /**
+   * Refonte du flux bordereaux (Phase 0) : l'étudiant ne fait plus que l'UPLOAD
+   * du fichier. Le type et le montant sont saisis par le cabinet comptable au
+   * moment du traitement → colonnes NULLABLES (le dépôt crée un bordereau sans
+   * type ni montant).
+   */
+  declare type?: 'inscription' | 'scolarite' | 'rattrapage' | null
   declare echeanceId: ForeignKey<Echeance['id']> | null
   declare utilisateurId: ForeignKey<Utilisateur['id']>
   declare fichier: string
-  declare montant: number
+  declare montant?: number | null
   declare modalite: '1x' | '3x' | '10x'
   declare referenceBancaire: CreationOptional<string>
   declare statut: 'en_attente' | 'valide' | 'rejete'
@@ -52,7 +58,8 @@ Bordereau.init({
   },
   type: {
     type: DataTypes.ENUM('inscription', 'scolarite', 'rattrapage'),
-    allowNull: false
+    allowNull: true,
+    defaultValue: null
   },
   fichier: {
     type: new DataTypes.STRING,
@@ -60,7 +67,8 @@ Bordereau.init({
   },
   montant: {
     type: DataTypes.FLOAT.UNSIGNED,
-    allowNull: false
+    allowNull: true,
+    defaultValue: null
   },
   /**
    * Modalité de paiement choisie lors du chargement du bordereau d'inscription

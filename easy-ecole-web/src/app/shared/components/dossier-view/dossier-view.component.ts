@@ -44,6 +44,12 @@ export class DossierViewComponent {
   @Input() renderItemActions: boolean = false;
   @Input() itemActions: BatchAction[] = [];
   @Input() level: number = 0;
+  /**
+   * Filtre optionnel, évalué pour CHAQUE action affichée sur une ligne d'item
+   * (itemActions + batchActions). Reçoit l'item et l'identifiant d'action ;
+   * doit renvoyer `true` pour afficher l'action. Par défaut tout est visible.
+   */
+  @Input() canShowItemAction?: (item: any, action: string) => boolean;
 
   @Output() toggleNode = new EventEmitter<DossierNode>();
   @Output() selectionChange = new EventEmitter<{ ids: number[], node?: DossierNode }>();
@@ -125,6 +131,11 @@ export class DossierViewComponent {
 
   onBatchAction(action: string): void {
     this.batchAction.emit({ action, ids: Array.from(this.selectedIds) });
+  }
+
+  /** Applique le filtre optionnel `canShowItemAction` (si fourni) pour chaque action d'une ligne. */
+  isActionVisible(item: any, action: BatchAction): boolean {
+    return this.canShowItemAction ? this.canShowItemAction(item, action.action) : true;
   }
 
   getNodeIcon(node: DossierNode): string {

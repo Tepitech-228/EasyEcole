@@ -80,5 +80,19 @@ FraisParcours.init({
   paranoid: true,
   modelName: MODULE_MODEL_PREFIX + 'FraisParcours',
   tableName: MODULE_TABLE_PREFIX + 'frais_parcours',
-  timestamps: true
+  timestamps: true,
+  /**
+   * Unicité de la grille tarifaire : un seul paramétrage par
+   * (parcours, niveau d'étude, année académique) — source de vérité de la
+   * hiérarchie tarifaire (fallback : ins_frais_scolarites par session).
+   * Index UNIQUE NOMINATIF : idempotent au sync (comparaison par nom, pas de
+   * suffixe _2/_3 régénéré à chaque boot — voir model.js syncMissingIndexes).
+   */
+  indexes: [
+    {
+      unique: true,
+      fields: ['parcoursId', 'niveauEtudeId', 'anneeAcademiqueId'],
+      name: 'uq_frais_parcours_triplet'
+    }
+  ]
 })

@@ -1,6 +1,7 @@
 import { Transaction } from "sequelize";
 import { DossierEtudiant } from "../models/DossierEtudiant";
 import { Echeance } from "../models/Echeance";
+import { nombreEcheances, ajouterMois, calculerEcheancier } from "./GenerateurEcheancierSessionService";
 
 /**
  * Modalités de paiement supportées pour l'échéancier d'inscription.
@@ -27,20 +28,6 @@ const MOIS_FRANCAIS: readonly string[] = [
     'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
     'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
 ];
-
-/**
- * Ajoute `nbMois` mois à une date en conservant le même jour du mois.
- * Gère les mois courts : le 31 janvier + 1 mois = 28/29 février (pas le 3 mars).
- * Ne dépend d'aucune librairie externe.
- */
-export function ajouterMois(date: Date, nbMois: number): Date {
-    const premierJourCible = new Date(date.getFullYear(), date.getMonth() + nbMois, 1);
-    const dernierJourMoisCible = new Date(premierJourCible.getFullYear(), premierJourCible.getMonth() + 1, 0).getDate();
-    const jourCible = Math.min(date.getDate(), dernierJourMoisCible);
-    return new Date(premierJourCible.getFullYear(), premierJourCible.getMonth(), jourCible);
-}
-
-const arrondir = (montant: number): number => Math.round(montant * 100) / 100;
 
 /**
  * Génère (et enregistre) l'échéancier d'inscription d'un dossier étudiant selon
@@ -85,16 +72,11 @@ export class GenerateurEcheancierService {
             throw new Error("Montant total introuvable pour générer l'échéancier d'inscription");
         }
 
-        const nbEcheances = modalite === '1x' ? 1 : modalite === '3x' ? 3 : 10;
-        const montantStandard = arrondir(montantTotal / nbEcheances);
-        const montantDerniere = arrondir(montantTotal - montantStandard * (nbEcheances - 1));
-
-        const jourJ = new Date();
+        const { nb: nbEcheances, montantStandard, montantDerniere } = calculerEcheancier(montantTotal, modalite)
+        const jourJ = new Date()
         const echeances: Echeance[] = [];
 
         for (let i = 0; i < nbEcheances; i++) {
-            // Règle métier A1 : la 1ère échéance est payable au mois suivant la
-            // validation (J+1 mois), la 2ème à J+2 mois, etc. → décalage +1 mois.
             const dateLimite = ajouterMois(jourJ, i + 1);
 
             const echeance = new Echeance();
@@ -105,9 +87,6 @@ export class GenerateurEcheancierService {
             echeance.devise = 'XAF';
             echeance.dateLimite = dateLimite;
             echeance.statut = 'impaye';
-            // moisConcerne est nullable en base (ins_echeances.moisConcerne) ; le typage
-            // Sequelize le déclare string, d'où le passage par any pour autoriser null
-            // (règle fonctionnelle : moisConcerne = null pour la modalité '1x').
             echeance.moisConcerne = modalite === '1x'
                 ? (null as any)
                 : `${MOIS_FRANCAIS[dateLimite.getMonth()]} ${dateLimite.getFullYear()}`;

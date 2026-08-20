@@ -195,7 +195,7 @@ router
    * /inscription/rattrapage-workflow/demandes:
    *   get:
    *     tags: [Rattrapage Workflow]
-   *     summary: Liste les demandes (apprenant : les siennes ; comité/admin : toutes, filtrable)
+   *     summary: Liste les demandes (les siennes pour l'apprenant, toutes pour comité/admin, filtrable)
    *     security: [{ bearerAuth: [] }]
    *     parameters:
    *       - in: query

@@ -4,7 +4,7 @@ import { Quitus } from "./Quitus.model"
 
 export class Bordereau {
   declare id?: string
-  declare type?: 'inscription' | 'scolarite'
+  declare type?: 'inscription' | 'scolarite' | 'rattrapage'
   declare echeanceId?: string
   declare utilisateurId?: string
   declare fichier?: string

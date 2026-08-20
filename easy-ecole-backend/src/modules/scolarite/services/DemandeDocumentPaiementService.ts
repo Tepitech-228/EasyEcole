@@ -90,7 +90,7 @@ export default class DemandeDocumentPaiementService {
                 journalCode: 'VEN',
                 compteDebitNumero: '512',
                 compteCreditNumero: demande.compteProduit || '704',
-                montant: bordereau.montant,
+                montant: bordereau.montant ?? 0,
                 libelle: `Paiement en ligne demande de document #${demande.id}`,
                 reference: bordereau.referenceBancaire ?? `bordereau-${bordereau.id}`,
                 moduleSource: 'scolarite',

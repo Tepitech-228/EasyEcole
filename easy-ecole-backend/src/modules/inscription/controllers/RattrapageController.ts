@@ -872,7 +872,7 @@ export default class RattrapageController {
           journalCode: 'VEN',
           compteDebitNumero: '512',
           compteCreditNumero: compteCreditNumero,
-          montant: bordereau.montant,
+          montant: bordereau.montant ?? 0,
           libelle: `Paiement en ligne rattrapage #${rattrapage.id}`,
           reference: bordereau.referenceBancaire ?? `rattrapage-${bordereau.id}`,
           moduleSource: 'evaluations',

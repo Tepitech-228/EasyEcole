@@ -13,13 +13,6 @@
     </div>
     <div class="grid grid-cols-2 gap-4">
         <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">Type</label>
-            <select [(ngModel)]="selectedType" (ngModelChange)="applyFilters()"
-                class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100">
-                <option *ngFor="let option of typeOptions" [value]="option.value">{{ option.label }}</option>
-            </select>
-        </div>
-        <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">Statut</label>
             <select [(ngModel)]="selectedStatus" (ngModelChange)="applyFilters()"
                 class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100">
@@ -38,15 +31,6 @@
                         <tr>
                             <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
                                 <div class="px-2">#</div>
-                            </th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                <div class="px-2">Type</div>
-                            </th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                <div class="px-2">Modalité</div>
-                            </th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                <div class="px-2">Échéance</div>
                             </th>
                             <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
                                 <div class="px-2">Référence bancaire</div>
@@ -72,31 +56,12 @@
                         <tr *ngIf="bordereaux.length == 0"
                             class="bg-white p-0 border-b transition duration-300 ease-in-out">
                             <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
-                                colspan="10">Aucun bordereau uploadé</td>
+                                colspan="7">Aucun bordereau uploadé</td>
                         </tr>
                         <tr *ngFor="let bordereau of filteredBordereaux; index as index"
                             class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
                             <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                 <div class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ index + 1 }}</div>
-                            </td>
-                            <td class="bg-transparent text-sm font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 bg-transparent sm:text-sm sm:leading-6">
-                                    <app-custom-badge *ngIf="bordereau.type == 'inscription'" color="violet" text="Inscription"></app-custom-badge>
-                                    <app-custom-badge *ngIf="bordereau.type == 'scolarite'" color="orange" text="Scolarité"></app-custom-badge>
-                                    <span *ngIf="!bordereau.type && bordereau.echeance?.type == 'inscription'" class="text-gray-400 text-xs">Inscription</span>
-                                    <span *ngIf="!bordereau.type && bordereau.echeance?.type == 'scolarite'" class="text-gray-400 text-xs">Scolarité</span>
-                                </div>
-                            </td>
-                            <td class="bg-transparent text-sm font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 bg-transparent sm:text-sm sm:leading-6">
-                                    <app-custom-badge *ngIf="bordereau.modalite" color="primary" [text]="bordereau.modalite"></app-custom-badge>
-                                    <span *ngIf="!bordereau.modalite" class="text-gray-400">---</span>
-                                </div>
-                            </td>
-                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
-                                    {{ bordereau.echeance ? 'Mois ' + bordereau.echeance.numeroEcheance : '---' }}
-                                </div>
                             </td>
                             <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                 <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ bordereau.referenceBancaire || '---' }}</div>
@@ -147,20 +112,8 @@
 <app-custom-modal title="Uploader un bordereau" subtitle="Soumettre un bordereau de paiement pour validation" (onCloseModal)="closeUploadBordereauModal()" [center]="true" [showModal]="showUploadBordereauModal">
     <form [formGroup]="bordereauForm" class="">
         <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
-            <div class="col-span-3">
-                <span class="mb-2 block text-sm text-gray-400">Type</span>
-                <select formControlName="type" (change)="onTypeChange()"
-                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-                    <option value="" disabled>Sélectionner le type</option>
-                    <option value="inscription">Inscription</option>
-                    <option value="scolarite">Scolarité</option>
-                </select>
-                <div *ngIf="bordereauForm.get('type')!.invalid && (bordereauForm.get('type')!.dirty || bordereauForm.get('type')!.touched)">
-                    <app-form-message *ngIf="bordereauForm.get('type')!.errors?.['required']" text="Veuillez sélectionner le type de bordereau"></app-form-message>
-                </div>
-            </div>
-            <div class="col-span-full" *ngIf="selectedBordereauType === 'inscription'">
-                <span class="mb-2 block text-sm text-gray-400">Modalité de paiement</span>
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Modalité de paiement de la scolarité</span>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <label *ngFor="let option of modaliteOptions"
                         [ngClass]="selectedModalite === option.value ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200' : 'border-gray-300 bg-white hover:border-indigo-300'"
@@ -173,20 +126,7 @@
                         </span>
                     </label>
                 </div>
-                <p class="mt-2 text-xs text-gray-500">{{ getModaliteDescription(selectedModalite) }}</p>
-            </div>
-            <div class="col-span-full" *ngIf="bordereauForm.get('type')?.value === 'scolarite'">
-                <span class="mb-2 block text-sm text-gray-400">Mois concerné</span>
-                <select formControlName="echeanceId" (change)="onMonthChange()"
-                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-                    <option value="" disabled>Sélectionner un mois</option>
-                    <option *ngFor="let mois of sessionMonths" [value]="mois.value">
-                        {{ mois.label }}
-                    </option>
-                </select>
-                <div *ngIf="bordereauForm.get('echeanceId')!.invalid && (bordereauForm.get('echeanceId')!.dirty || bordereauForm.get('echeanceId')!.touched)">
-                    <app-form-message *ngIf="bordereauForm.get('echeanceId')!.errors?.['required']" text="Veuillez sélectionner un mois"></app-form-message>
-                </div>
+                <p class="mt-2 text-xs text-gray-500">Choisissez en combien de fois vous souhaitez régler vos frais de scolarité annuels. Votre scolarité sera réglée en <strong>{{ nombreMensualites }} mensualité{{ nombreMensualites > 1 ? 's' : '' }}</strong>.</p>
             </div>
             <div class="col-span-full">
                 <span class="mb-2 block text-sm text-gray-400">Fichier bordereau (PDF ou image)</span>
@@ -194,15 +134,7 @@
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
             </div>
             <div class="col-span-3">
-                <span class="mb-2 block text-sm text-gray-400">Montant</span>
-                <input type="number" min="0" id="montant" formControlName="montant" placeholder="Saisir le montant ici..."
-                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-                <div *ngIf="bordereauForm.get('montant')!.invalid && (bordereauForm.get('montant')!.dirty || bordereauForm.get('montant')!.touched)">
-                    <app-form-message *ngIf="bordereauForm.get('montant')!.errors?.['required']" text="Veuillez entrer le montant"></app-form-message>
-                </div>
-            </div>
-            <div class="col-span-3">
-                <span class="mb-2 block text-sm text-gray-400">Référence bancaire</span>
+                <span class="mb-2 block text-sm text-gray-400">Référence bancaire <span class="text-gray-400">(optionnelle)</span></span>
                 <input type="text" id="referenceBancaire" formControlName="referenceBancaire" placeholder="Référence banque..."
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
             </div>
@@ -217,26 +149,6 @@
 <app-custom-modal title="Détails du bordereau" subtitle="Informations complètes sur ce bordereau" (onCloseModal)="closeDetailsBordereauModal()" [center]="true" [showModal]="showDetailsBordereauModal">
     <form *ngIf="selectedBordereau">
         <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
-            <div class="col-span-3">
-                <span class="mb-2 block text-sm text-gray-400">Échéance</span>
-                <input type="text" readonly [value]="selectedBordereau.echeance ? 'Mois ' + selectedBordereau.echeance.numeroEcheance : '---'"
-                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-            </div>
-            <div class="col-span-3">
-                <span class="mb-2 block text-sm text-gray-400">Modalité de paiement</span>
-                <input type="text" readonly [value]="selectedBordereau.modalite || '---'"
-                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-            </div>
-            <div class="col-span-3">
-                <span class="mb-2 block text-sm text-gray-400">Montant</span>
-                <input type="text" readonly [value]="selectedBordereau.montant | currency:'XAF'"
-                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-            </div>
-            <div class="col-span-3">
-                <span class="mb-2 block text-sm text-gray-400">Référence bancaire</span>
-                <input type="text" readonly [value]="selectedBordereau.referenceBancaire || '---'"
-                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-            </div>
             <div class="col-span-3">
                 <span class="mb-2 block text-sm text-gray-400">Statut</span>
                 <input type="text" readonly [value]="selectedBordereau.statut"

@@ -31,6 +31,20 @@ export const nombreEcheances = (modalite: ModalitePaiement): number => {
   return 1;
 };
 
+export function ajouterMois(date: Date, nbMois: number): Date {
+  const premierJourCible = new Date(date.getFullYear(), date.getMonth() + nbMois, 1);
+  const dernierJourMoisCible = new Date(premierJourCible.getFullYear(), premierJourCible.getMonth() + 1, 0).getDate();
+  const jourCible = Math.min(date.getDate(), dernierJourMoisCible);
+  return new Date(premierJourCible.getFullYear(), premierJourCible.getMonth(), jourCible);
+}
+
+export function calculerEcheancier(montantTotal: number, modalite: ModalitePaiement) {
+  const nb = nombreEcheances(modalite)
+  const montantStandard = arrondir(montantTotal / nb)
+  const montantDerniere = arrondir(montantTotal - montantStandard * (nb - 1))
+  return { nb, montantStandard, montantDerniere }
+}
+
 export function datePremiereEcheanceDepuisSession(dateDebut: Date | string): Date {
   const base = new Date(dateDebut);
   return new Date(base.getFullYear(), base.getMonth() + 1, 5);

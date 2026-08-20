@@ -151,6 +151,43 @@ router
     .put('/:id/rejeter', [AuthCabinetComptable], BordereauController.rejeterBordereau)
     /**
      * @openapi
+     * /inscription/bordereaux/{id}/traiter:
+     *   put:
+     *     tags: [Bordereaux]
+     *     summary: Traite un bordereau (cabinet comptable) — saisie type/montant constaté + cascade FIFO
+     *     security: [{ bearerAuth: [] }]
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema:
+     *           type: string
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             required:
+     *               - type
+     *               - montantConstate
+     *             properties:
+     *               type:
+     *                 type: string
+     *                 enum: [inscription, scolarite, rattrapage]
+     *               montantConstate:
+     *                 type: number
+     *               referenceBancaire:
+     *                 type: string
+     *               commentaire:
+     *                 type: string
+     *     responses:
+     *       200:
+     *         description: Bordereau traité avec lettrage
+     */
+    .put('/:id/traiter', [AuthCabinetComptable, CheckPermission('action.inscription.bordereau.valider')], BordereauController.traiterBordereau)
+    /**
+     * @openapi
      * /inscription/bordereaux/{id}/download:
      *   get:
      *     tags: [Bordereaux]

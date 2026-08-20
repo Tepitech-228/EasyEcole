@@ -15,6 +15,10 @@ import { CompteBancaire } from "./CompteBancaire"
 import { ReleveBancaire } from "./ReleveBancaire"
 import { LigneReleveBancaire } from "./LigneReleveBancaire"
 import { ParametreFrais } from "./ParametreFrais"
+import { BordereauEcheance } from "./BordereauEcheance"
+import { PortefeuilleCredit } from "./PortefeuilleCredit"
+import { Bordereau } from "../../inscription/models/Bordereau"
+import { Echeance } from "../../inscription/models/Echeance"
 
 // Associations ExerciceComptable
 ExerciceComptable.hasMany(EcritureComptable, {
@@ -149,3 +153,55 @@ LigneReleveBancaire.belongsTo(ReleveBancaire, { foreignKey: 'releveBancaireId', 
 // Associations LigneReleveBancaire - EcritureComptable
 LigneReleveBancaire.belongsTo(EcritureComptable, { foreignKey: 'ecritureComptableId', as: 'ecritureComptable' })
 EcritureComptable.hasMany(LigneReleveBancaire, { foreignKey: 'ecritureComptableId', as: 'lignesReleve' })
+
+// ---- Phase 0 refonte paiements : lettrage & portefeuille de crédit ----
+
+// BordereauEcheance (lettrage) - Bordereau
+Bordereau.hasMany(BordereauEcheance, {
+  as: 'imputations',
+  foreignKey: 'bordereauId'
+})
+BordereauEcheance.belongsTo(Bordereau, {
+  as: 'bordereau',
+  foreignKey: 'bordereauId'
+})
+
+// BordereauEcheance (lettrage) - Echeance
+Echeance.hasMany(BordereauEcheance, {
+  as: 'imputations',
+  foreignKey: 'echeanceId'
+})
+BordereauEcheance.belongsTo(Echeance, {
+  as: 'echeance',
+  foreignKey: 'echeanceId'
+})
+
+// PortefeuilleCredit - DossierEtudiant (ancre financière du crédit étudiant)
+DossierEtudiant.hasMany(PortefeuilleCredit, {
+  as: 'portefeuilleCredits',
+  foreignKey: 'dossierEtudiantId'
+})
+PortefeuilleCredit.belongsTo(DossierEtudiant, {
+  as: 'dossierEtudiant',
+  foreignKey: 'dossierEtudiantId'
+})
+
+// PortefeuilleCredit - Bordereau (origine : trop-perçu d'un bordereau)
+Bordereau.hasMany(PortefeuilleCredit, {
+  as: 'portefeuilleCredits',
+  foreignKey: 'bordereauId'
+})
+PortefeuilleCredit.belongsTo(Bordereau, {
+  as: 'bordereau',
+  foreignKey: 'bordereauId'
+})
+
+// PortefeuilleCredit - Echeance (consommation FIFO sur une échéance)
+Echeance.hasMany(PortefeuilleCredit, {
+  as: 'portefeuilleCredits',
+  foreignKey: 'echeanceId'
+})
+PortefeuilleCredit.belongsTo(Echeance, {
+  as: 'echeance',
+  foreignKey: 'echeanceId'
+})

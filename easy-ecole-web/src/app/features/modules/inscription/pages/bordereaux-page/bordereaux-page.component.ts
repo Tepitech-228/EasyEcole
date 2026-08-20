@@ -4,13 +4,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 import { Bordereau } from 'src/app/data/modules/inscription/models/Bordereau.model';
-import { Echeance } from 'src/app/data/modules/inscription/models/Echeance.model';
-import { DemandeInscription } from 'src/app/data/modules/inscription/models/DemandeInscription.model';
-import { Session } from 'src/app/data/modules/inscription/models/Session.model';
 import { BordereauService } from 'src/app/data/modules/inscription/services/bordereau.service';
-import { EcheanceService } from 'src/app/data/modules/inscription/services/echeance.service';
-import { DemandeInscriptionService } from 'src/app/data/modules/inscription/services/demande-inscription.service';
-import { EtablissementService } from 'src/app/data/modules/etablissement/services/etablissement.service';
 import { environment } from 'src/environments/environment';
 
 @Component({
@@ -27,22 +21,12 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
   showPdfModal: boolean = false
 
   bordereaux: Bordereau[] = []
-  echeances: Echeance[] = []
-  sessionMonths: { value: string; label: string }[] = []
-  demande: DemandeInscription | null = null
   selectedBordereau?: Bordereau
   selectedFile?: File
   pdfBordereau?: Bordereau
 
   searchTerm = ''
-  selectedType = ''
   selectedStatus = ''
-
-  readonly typeOptions = [
-    { value: '', label: 'Tous' },
-    { value: 'inscription', label: 'Inscription' },
-    { value: 'scolarite', label: 'Scolarité' }
-  ]
 
   readonly statusOptions = [
     { value: '', label: 'Tous' },
@@ -51,35 +35,36 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
     { value: 'en_attente', label: 'En attente' }
   ]
 
-  /** Modalités de paiement proposées à l'étudiant lors de la génération d'un bordereau d'inscription. */
-  readonly modaliteOptions: { value: '1x' | '3x' | '10x'; label: string; badge: string }[] = [
-    { value: '1x', label: 'Paiement en 1 fois', badge: '1x' },
-    { value: '3x', label: '3 mensualités', badge: '3x' },
-    { value: '10x', label: '10 mensualités', badge: '10x' }
+  /** Modalités de paiement de la scolarité proposées à l'étudiant lors du dépôt du bordereau. */
+  readonly modaliteOptions: { value: '1x' | '3x' | '10x'; label: string; badge: string; mensualites: number }[] = [
+    { value: '1x', label: 'Paiement en 1 fois', badge: '1x', mensualites: 1 },
+    { value: '3x', label: '3 mensualités', badge: '3x', mensualites: 3 },
+    { value: '10x', label: '10 mensualités', badge: '10x', mensualites: 10 }
   ]
 
   readonly BORDEREAUX_PATH: string = environment.MEDIAS_PATH.INSCRIPTION.BORDEREAUX
 
   bordereauForm: FormGroup = new FormGroup({
-    echeanceId: new FormControl(null, []),
-    type: new FormControl(null, [Validators.required]),
-    montant: new FormControl(null, [Validators.required]),
     referenceBancaire: new FormControl(null, []),
-    modalite: new FormControl('1x', []),
+    modalite: new FormControl('1x', [Validators.required]),
   })
+
+  get selectedModalite(): '1x' | '3x' | '10x' {
+    return (this.bordereauForm.get('modalite')?.value as '1x' | '3x' | '10x') || '1x'
+  }
+
+  /** Nombre de mensualités de la modalité choisie (1, 3 ou 10) — confirme le choix à l'étudiant. */
+  get nombreMensualites(): number {
+    return this.modaliteOptions.find(option => option.value === this.selectedModalite)?.mensualites ?? 1
+  }
 
   constructor(
     private bordereauService: BordereauService,
-    private echeanceService: EcheanceService,
-    private demandeInscriptionService: DemandeInscriptionService,
-    private etablissementService: EtablissementService,
     private sanitizer: DomSanitizer,
     private localStorage: LocalStorageService
   ) {
     super()
     this.getBordereaux()
-    this.getEcheances()
-    this.getDemande()
   }
 
   ngOnInit(): void {
@@ -101,7 +86,6 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
       const matchesSearch = this.searchTerm
         ? [
             bordereau.type,
-            bordereau.echeance ? `Mois ${bordereau.echeance.numeroEcheance}` : '',
             bordereau.referenceBancaire,
             bordereau.statut,
             bordereau.fichier
@@ -110,10 +94,9 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
             .some(value => value?.toLowerCase().includes(this.searchTerm.toLowerCase()))
         : true
 
-      const matchesType = this.selectedType ? (bordereau.type === this.selectedType || (!bordereau.type && bordereau.echeance?.type === this.selectedType)) : true
       const matchesStatus = this.selectedStatus ? bordereau.statut === this.selectedStatus : true
 
-      return matchesSearch && matchesType && matchesStatus
+      return matchesSearch && matchesStatus
     })
   }
 
@@ -121,136 +104,17 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
     // trigger Angular change detection via getters
   }
 
-  getEcheances(): void {
-    this.echeanceService.getAll().subscribe({
-      next: (res) => {
-        this.echeances = res
-      },
-      error: (err) => {
-        console.log(err)
-      }
-    })
-  }
-
-  getDemande(): void {
-    this.demandeInscriptionService.getAll().subscribe({
-      next: (res: any) => {
-        const items: any[] = res.data || res
-        if (items.length > 0) {
-          const demande = items[0]
-          this.demande = demande
-          if (demande.session) {
-            this.generateMonthsFromSession(demande.session)
-          }
-        }
-      },
-      error: (err) => {
-        console.log(err)
-      }
-    })
-  }
-
-  generateMonthsFromSession(session: Session): void {
-    const moisNoms = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
-    const debut = new Date(session.dateDebut)
-    const fin = new Date(session.dateFin)
-    const current = new Date(debut.getFullYear(), debut.getMonth(), 1)
-
-    this.sessionMonths = []
-    while (current <= fin) {
-      const value = current.getFullYear() + '-' + String(current.getMonth() + 1).padStart(2, '0')
-      const label = moisNoms[current.getMonth()] + ' ' + current.getFullYear()
-      this.sessionMonths.push({ value, label })
-      current.setMonth(current.getMonth() + 1)
-    }
-  }
-
-  onTypeChange(): void {
-    const type = this.bordereauForm.get('type')!.value
-    const echeanceControl = this.bordereauForm.get('echeanceId')
-
-    if (type === 'inscription') {
-      echeanceControl!.clearValidators()
-      echeanceControl!.setValue(null)
-    } else if (type === 'scolarite') {
-      echeanceControl!.setValidators([Validators.required])
-    }
-    echeanceControl!.updateValueAndValidity()
-  }
-
-  onFileSelected(event: any): void {
-    this.selectedFile = event.target.files[0]
-  }
-
-  onMonthChange(): void {
-    const monthValue = this.bordereauForm.get('echeanceId')!.value
-    if (monthValue) {
-      const month = this.sessionMonths.find(m => m.value === monthValue)
-      if (month) {
-        this.bordereauForm.get('montant')!.setValue(null)
-      }
-    }
-  }
-
-  get selectedBordereauType(): 'inscription' | 'scolarite' | null {
-    const type = this.bordereauForm.get('type')?.value
-    return type === 'inscription' || type === 'scolarite' ? type : null
-  }
-
-  get selectedModalite(): '1x' | '3x' | '10x' {
-    return (this.bordereauForm.get('modalite')?.value as '1x' | '3x' | '10x') || '1x'
-  }
-
-  /** Récap indicatif des tranches (utilisé pour la description contextuelle sous les options). */
-  getModaliteDescription(modalite: '1x' | '3x' | '10x'): string {
-    const montantStr = this.bordereauForm.get('montant')?.value
-    const montant = Number(montantStr)
-
-    switch (modalite) {
-      case '1x':
-        return 'Le montant total est réglé en une seule fois, dès validation de votre bordereau.'
-      case '3x': {
-        if (!montant || montant <= 0) {
-          return 'Le montant sera réparti en tranches mensuelles après validation de votre bordereau.'
-        }
-        const tranche = Math.round((montant / 3) * 100) / 100
-        const solde = Math.round(((montant - 2 * tranche) + Number.EPSILON) * 100) / 100
-        return `3 mensualités indicatives : 2 tranches de ${tranche} ${this.deviseLabel} + solde final de ${solde} ${this.deviseLabel}.`
-      }
-      case '10x': {
-        if (!montant || montant <= 0) {
-          return 'Le montant sera réparti en tranches mensuelles après validation de votre bordereau.'
-        }
-        const tranche = Math.round((montant / 10) * 100) / 100
-        return `10 mensualités indicatives d'environ ${tranche} ${this.deviseLabel} chacune.`
-      }
-      default:
-        return ''
-    }
-  }
-
-  private get deviseLabel(): string {
-    return this.etablissementService.etablissement?.devise || 'FCFA'
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement
+    this.selectedFile = input?.files?.[0] ?? undefined
   }
 
   uploadBordereau(): void {
-    this.bordereauForm.markAllAsTouched()
-    if (this.bordereauForm.valid && this.selectedFile) {
-      const type = this.bordereauForm.get('type')!.value
+    if (this.selectedFile) {
       const formData = new FormData()
-      formData.append('type', type)
-      formData.append('montant', this.bordereauForm.get('montant')!.value)
       formData.append('referenceBancaire', this.bordereauForm.get('referenceBancaire')!.value ?? '')
+      formData.append('modalite', this.selectedModalite)
       formData.append('fichier', this.selectedFile)
-
-      if (type === 'scolarite') {
-        formData.append('echeanceId', this.bordereauForm.get('echeanceId')!.value)
-      }
-
-      if (type === 'inscription') {
-        formData.append('modalite', this.selectedModalite)
-      }
 
       this.bordereauService.upload(formData).subscribe({
         next: () => {
@@ -292,7 +156,7 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
   // Modals
   closeUploadBordereauModal(): void {
     this.showUploadBordereauModal = false
-    this.bordereauForm.reset()
+    this.bordereauForm.reset({ referenceBancaire: null, modalite: '1x' })
     this.selectedFile = undefined
   }
 
