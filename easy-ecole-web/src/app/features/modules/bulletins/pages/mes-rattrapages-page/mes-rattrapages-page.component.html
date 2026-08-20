@@ -1,8 +1,20 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-  <app-header-title title="Mes rattrapages" subtitle="Demandez et suivez vos sessions de rattrapage"></app-header-title>
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900">Mes rattrapages</h1>
+      <p class="text-sm text-gray-500 mt-1">Demandez et suivez vos sessions de rattrapage</p>
+    </div>
+    <button (click)="openDemandeModuleSelector()"
+            class="inline-flex items-center px-6 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-md">
+      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+      </svg>
+      Nouvelle demande
+    </button>
+  </div>
 
-  <app-custom-alert *ngIf="error" [show]="true" [title]="error" type="danger" [inline]="true"></app-custom-alert>
-  <app-custom-alert *ngIf="success" [show]="true" [title]="success" type="success" [inline]="true"></app-custom-alert>
+  <app-custom-alert *ngIf="error" [show]="true" [title]="error" type="danger" [inline]="true" class="mt-6"></app-custom-alert>
+  <app-custom-alert *ngIf="success" [show]="true" [title]="success" type="success" [inline]="true" class="mt-6"></app-custom-alert>
 
   <div *ngIf="loading" class="mt-8">
     <div class="animate-pulse space-y-4">
@@ -122,33 +134,75 @@
     </div>
   </div>
 
-  <!-- Modal : Demande de rattrapage -->
-  <div *ngIf="showDemandeModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30" (click)="showDemandeModal = false">
+  <!-- Modal : Sélection du module pour demande -->
+  <div *ngIf="showModuleSelector" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30" (click)="showModuleSelector = false">
     <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-lg mx-4" (click)="$event.stopPropagation()">
-      <h3 class="text-lg font-semibold text-gray-900">Demander un rattrapage</h3>
-      <p class="text-sm text-gray-500 mt-1">Soumettez votre demande de rattrapage pour ce module.</p>
+      <h3 class="text-lg font-semibold text-gray-900">Choisir un module</h3>
+      <p class="text-sm text-gray-500 mt-1">Sélectionnez le module pour lequel vous demandez un rattrapage.</p>
 
-      <div class="mt-6 space-y-4">
-        <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">Session de rattrapage</label>
-          <select [(ngModel)]="demandeForm.sessionExamenId" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm">
-            <option [value]="null">Sélectionner...</option>
-            <option *ngFor="let s of sessions" [value]="s.id">{{ s.libelle }} — {{ s.classe?.libelle }}</option>
-          </select>
+      <div class="mt-6">
+        <div *ngIf="failedModules.length === 0" class="text-center py-8 text-gray-500">
+          <p>Aucun module en échec. Vous n'avez rien à rattraper ! 🎉</p>
         </div>
-        <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">Créneau souhaité</label>
-          <input type="text" [(ngModel)]="demandeForm.creneauSouhaite" placeholder="ex. Lundi après-midi" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm">
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">Motif</label>
-          <textarea [(ngModel)]="demandeForm.motifEtudiant" rows="3" placeholder="Expliquez pourquoi vous demandez un rattrapage..." class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"></textarea>
+        
+        <div *ngIf="failedModules.length > 0" class="space-y-2 max-h-96 overflow-y-auto">
+          <button *ngFor="let ue of failedModules" 
+                  (click)="selectModuleAndOpenDemande(ue)"
+                  [disabled]="!peutDemander(ue)"
+                  class="w-full text-left p-3 border border-gray-200 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-200">
+            <p class="font-medium text-gray-900">{{ ue.libelle || ue.code }}</p>
+            <p class="text-xs text-gray-500 mt-1">
+              Moyenne: {{ ue.moyenne != null ? ue.moyenne : '—' }}
+              <span *ngIf="ue.semestre"> — {{ ue.semestre }}</span>
+              <span *ngIf="!peutDemander(ue)" class="block text-amber-600 mt-1">Demande déjà soumise</span>
+            </p>
+          </button>
         </div>
       </div>
 
       <div class="mt-6 flex items-center justify-end gap-3">
-        <button (click)="showDemandeModal = false" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 font-medium">Annuler</button>
-        <button (click)="submitDemande()" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-xl transition-colors">Soumettre</button>
+        <button (click)="showModuleSelector = false" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 font-medium">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal : Demande de rattrapage -->
+  <div *ngIf="showDemandeModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30" (click)="showDemandeModal = false">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-lg mx-4" (click)="$event.stopPropagation()">
+      <h3 class="text-lg font-semibold text-gray-900">Demander un rattrapage</h3>
+      <p class="text-sm text-gray-500 mt-1">Complétez les informations de votre demande pour {{ demandeForm.moduleName || 'ce module' }}.</p>
+
+      <div class="mt-6 space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Session de rattrapage *</label>
+          <select [(ngModel)]="demandeForm.sessionExamenId" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+            <option [value]="null">Sélectionner une session...</option>
+            <option *ngFor="let s of sessions" [value]="s.id">{{ s.libelle }} — {{ s.classe?.libelle }}</option>
+          </select>
+          <p class="text-xs text-gray-400 mt-1">Vous serez rattrapé(e) lors de cette session</p>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Créneau souhaité</label>
+          <input type="text" [(ngModel)]="demandeForm.creneauSouhaite" placeholder="ex. Lundi après-midi" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Motif de la demande *</label>
+          <textarea [(ngModel)]="demandeForm.motifEtudiant" rows="3" placeholder="Expliquez pourquoi vous demandez un rattrapage..." class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"></textarea>
+          <p class="text-xs text-gray-400 mt-1">Soyez précis et détaillé pour faciliter le traitement de votre demande</p>
+        </div>
+      </div>
+
+      <div class="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+        <p class="text-xs text-blue-700">
+          <strong>📋 Processus :</strong> Votre demande sera examinée par le comité. Si approuvée, vous recevrez les détails du rattrapage et une demande de paiement.
+        </p>
+      </div>
+
+      <div class="mt-6 flex items-center justify-end gap-3">
+        <button (click)="backToModuleSelector()" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 font-medium">← Retour</button>
+        <button (click)="submitDemande()" [disabled]="!demandeForm.sessionExamenId || !demandeForm.motifEtudiant" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          Soumettre la demande
+        </button>
       </div>
     </div>
   </div>

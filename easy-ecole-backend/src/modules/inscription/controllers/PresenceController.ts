@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CountOptions, FindOptions, InferAttributes } from "sequelize";
+import { CountOptions, FindOptions, InferAttributes, Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Presence } from "../models/Presence";
 import { PresenceCoursParticipant } from "../models/PresenceCoursParticipant";
@@ -18,7 +18,37 @@ export default class PresenceController {
     constructor() { }
 
     static async getAllPresences(req: Request, res: Response): Promise<Response> {
+        const role = (req as any).utilisateurRole;
+        const utilisateurId = (req as any).utilisateurId;
+        const where: any = {};
+
+        // Un étudiant ne voit que les présences de SES cours
+        if (role === RolesUtilisateur.APPRENANT) {
+            const coursParticipants = await CoursParticipant.findAll({ where: { utilisateurId }, attributes: ['coursId'] });
+            if (coursParticipants.length === 0) {
+                return res.status(200).send([]);
+            }
+            // Filtrer via listePresence
+            const listesPresences = await ListePresence.findAll({
+                where: { coursId: { [Op.in]: coursParticipants.map(cp => cp.coursId) } },
+                attributes: ['id']
+            });
+            where.listePresenceId = { [Op.in]: listesPresences.map(lp => lp.id) };
+        }
+        // Un enseignant ne voit que les présences de SES cours
+        else if (role === RolesUtilisateur.ENSEIGNANT) {
+            const enseignant = await Enseignant.findOne({ where: { utilisateurId } });
+            if (enseignant) {
+                const listesPresences = await ListePresence.findAll({
+                    where: { enseignantId: enseignant.id },
+                    attributes: ['id']
+                });
+                where.listePresenceId = { [Op.in]: listesPresences.map(lp => lp.id) };
+            }
+        }
+
         let options: FindOptions<InferAttributes<Presence>> = {
+            where,
             include: [
                 Presence.associations.presencesCoursParticipants
             ]
@@ -38,7 +68,7 @@ export default class PresenceController {
     static async getPresence(req: Request, res: Response): Promise<Response> {
         let options: FindOptions<InferAttributes<Presence>> = {}
         options = {
-            where: { id: req.params.id }, include: [Presence.associations.presencesCoursParticipants]
+            where: { id: req.params.id }, include: [Presence.associations.presencesCoursParticipants, { association: Presence.associations.listePresence }]
         }
 
         try {
@@ -46,6 +76,27 @@ export default class PresenceController {
 
             if (presence == null)
                 return res.status(404).json({ success: false, message: "Presence non trouvée" });
+
+            const role = (req as any).utilisateurRole;
+            const utilisateurId = (req as any).utilisateurId;
+
+            // Un étudiant ne voit que les présences de SES cours
+            if (role === RolesUtilisateur.APPRENANT) {
+                const coursParticipants = await CoursParticipant.findAll({ where: { utilisateurId }, attributes: ['coursId'] });
+                const coursIds = coursParticipants.map(cp => cp.coursId);
+                const listePresence = (presence as any).listePresence;
+                if (!listePresence || !coursIds.includes(listePresence.coursId)) {
+                    return res.status(403).json({ success: false, message: "Vous n'avez pas accès à cette présence" });
+                }
+            }
+            // Un enseignant ne voit que les présences de SES cours
+            else if (role === RolesUtilisateur.ENSEIGNANT) {
+                const enseignant = await Enseignant.findOne({ where: { utilisateurId } });
+                const listePresence = (presence as any).listePresence;
+                if (!enseignant || !listePresence || listePresence.enseignantId !== enseignant.id) {
+                    return res.status(403).json({ success: false, message: "Vous n'avez pas accès à cette présence" });
+                }
+            }
 
             return res.status(200).send(presence);
         } catch (error) {

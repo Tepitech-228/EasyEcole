@@ -180,7 +180,7 @@ router    /**
         //    régulariser : « Mes bordereaux » et « Paiements ».
         if (userRole === RolesUtilisateur.APPRENANT) {
             const paiement = await VerificationPaiementService.verifierPaiement(utilisateurId!);
-            if (paiement.statut === 'rouge') {
+            if (paiement.statut === 'rouge' && paiement.echeancesEnRetard > 0) {
                 return res.status(200).json(filtrerMenuPourRegularisation(filteredMenu));
             }
         }

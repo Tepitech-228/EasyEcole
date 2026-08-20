@@ -1,7 +1,10 @@
 import { Request, Response } from "express";
-import { CountOptions, FindOptions, InferAttributes } from "sequelize";
+import { CountOptions, FindOptions, InferAttributes, Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { PresenceCoursParticipant } from "../models/PresenceCoursParticipant";
+import { Presence } from "../models/Presence";
+import { ListePresence } from "../models/ListePresence";
+import { CoursParticipant } from "../models/CoursParticipant";
 import { Enseignant } from "../../auth/models/Enseignant";
 
 export default class PresenceCoursParticipantController {
@@ -9,8 +12,37 @@ export default class PresenceCoursParticipantController {
     constructor() { }
 
     static async getAllPresencesCoursParticipants(req: Request, res: Response): Promise<Response> {
+        const role = (req as any).utilisateurRole;
+        const utilisateurId = (req as any).utilisateurId;
+        const where: any = {};
+
         let options: FindOptions<InferAttributes<PresenceCoursParticipant>> = {
             include: [PresenceCoursParticipant.associations.presence, PresenceCoursParticipant.associations.coursParticipant]
+        }
+
+        // Un étudiant ne voit que ses propres présences
+        if (role === RolesUtilisateur.APPRENANT) {
+            const coursParticipants = await CoursParticipant.findAll({ where: { utilisateurId }, attributes: ['id'] });
+            where.coursParticipantId = { [require('sequelize').Op.in]: coursParticipants.map(cp => cp.id) };
+            options.where = where;
+        }
+        // Un enseignant ne voit que les présences de SES cours
+        else if (role === RolesUtilisateur.ENSEIGNANT) {
+            const enseignant = await Enseignant.findOne({ where: { utilisateurId } });
+            if (enseignant) {
+                options.include = [
+                    {
+                        association: PresenceCoursParticipant.associations.presence,
+                        required: true,
+                        include: [{
+                            association: Presence.associations.listePresence,
+                            where: { enseignantId: enseignant.id },
+                            required: true
+                        }]
+                    },
+                    PresenceCoursParticipant.associations.coursParticipant
+                ];
+            }
         }
 
         try {
@@ -33,6 +65,30 @@ export default class PresenceCoursParticipantController {
 
             if (presenceCoursParticipant == null)
                 return res.status(404).json({ success: false, message: "PresenceCoursParticipant non trouvée" });
+
+            const role = (req as any).utilisateurRole;
+            const utilisateurId = (req as any).utilisateurId;
+
+            // Un étudiant ne voit que ses propres présences
+            if (role === RolesUtilisateur.APPRENANT) {
+                const coursParticipant = (presenceCoursParticipant as any).coursParticipant;
+                if (!coursParticipant || coursParticipant.utilisateurId !== utilisateurId) {
+                    return res.status(403).json({ success: false, message: "Vous n'avez pas accès à cette présence" });
+                }
+            }
+            // Un enseignant ne voit que les présences de SES cours
+            else if (role === RolesUtilisateur.ENSEIGNANT) {
+                const enseignant = await Enseignant.findOne({ where: { utilisateurId } });
+                const presence = (presenceCoursParticipant as any).presence;
+                if (!enseignant || !presence) {
+                    return res.status(403).json({ success: false, message: "Vous n'avez pas accès à cette présence" });
+                }
+                // Charger la liste de présence pour vérifier l'enseignant
+                const listePresence = await ListePresence.findByPk(presence.listePresenceId);
+                if (!listePresence || listePresence.enseignantId !== enseignant.id) {
+                    return res.status(403).json({ success: false, message: "Vous n'avez pas accès à cette présence" });
+                }
+            }
 
             return res.status(200).send(presenceCoursParticipant);
         } catch (error) {

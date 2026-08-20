@@ -75,6 +75,25 @@ export default class ListePresenceController {
             if (listePresence == null)
                 return res.status(404).json({ success: false, message: "ListePresence non trouvée" });
 
+            const role = (req as any).utilisateurRole;
+            const utilisateurId = (req as any).utilisateurId;
+
+            // Un étudiant ne voit que les listes de présence de SES cours
+            if (role === RolesUtilisateur.APPRENANT) {
+                const coursParticipants = await CoursParticipant.findAll({ where: { utilisateurId }, attributes: ['coursId'] });
+                const coursIds = coursParticipants.map(cp => cp.coursId);
+                if (!coursIds.includes(listePresence.coursId)) {
+                    return res.status(403).json({ success: false, message: "Vous n'avez pas accès à cette liste de présence" });
+                }
+            }
+            // Un enseignant ne voit que les listes de présence de SES cours
+            else if (role === RolesUtilisateur.ENSEIGNANT) {
+                const enseignant = await Enseignant.findOne({ where: { utilisateurId } });
+                if (!enseignant || listePresence.enseignantId !== enseignant.id) {
+                    return res.status(403).json({ success: false, message: "Vous n'avez pas accès à cette liste de présence" });
+                }
+            }
+
             return res.status(200).send(listePresence);
         } catch (error) {
             console.error('Erreur', error);

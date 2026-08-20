@@ -90,9 +90,9 @@ export class GestionPermissionsPageComponent extends BaseComponentClass implemen
 
   togglePermission(permissionId: number, checked: boolean): void {
     if (checked) {
-      this.userPermissions.add(permissionId)
+      this.userPermissions.add(Number(permissionId))
     } else {
-      this.userPermissions.delete(permissionId)
+      this.userPermissions.delete(Number(permissionId))
     }
   }
 

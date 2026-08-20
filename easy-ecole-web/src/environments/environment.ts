@@ -38,9 +38,9 @@ export const environment = {
   },
   MEDIAS_PATH: {
     AUTH: {
-      PROFILES: apiBaseUrl + "auth/profiles/",
-      PHOTOS: apiBaseUrl + "auth/apprenants/photos/",
-      PHOTOS_ENSEIGNANTS: apiBaseUrl + "auth/enseignants/photos/",
+      PROFILES: apiBaseUrl + "media/profiles/",
+      PHOTOS: apiBaseUrl + "media/photos/apprenants/",
+      PHOTOS_ENSEIGNANTS: apiBaseUrl + "media/photos/enseignants/",
     },
     ORIENTATION: {
       PARCOURS: apiUrl + "/orientation/parcours/",

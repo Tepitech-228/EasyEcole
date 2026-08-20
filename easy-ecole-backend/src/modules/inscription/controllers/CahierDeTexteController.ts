@@ -74,6 +74,25 @@ export default class CahierDeTexteController {
             if (cahierDeTexte == null)
                 return res.status(404).json({ success: false, message: "CahierDeTexte non trouvé" });
 
+            const role = (req as any).utilisateurRole;
+            const utilisateurId = (req as any).utilisateurId;
+
+            // Un étudiant ne voit que les cahiers de SES cours
+            if (role === RolesUtilisateur.APPRENANT) {
+                const coursParticipants = await CoursParticipant.findAll({ where: { utilisateurId }, attributes: ['coursId'] });
+                const coursIds = coursParticipants.map(cp => cp.coursId);
+                if (!coursIds.includes(cahierDeTexte.coursId)) {
+                    return res.status(403).json({ success: false, message: "Vous n'avez pas accès à ce cahier de texte" });
+                }
+            }
+            // Un enseignant ne voit que les cahiers de SES cours
+            else if (role === RolesUtilisateur.ENSEIGNANT) {
+                const enseignant = await Enseignant.findOne({ where: { utilisateurId } });
+                if (!enseignant || cahierDeTexte.enseignantId !== enseignant.id) {
+                    return res.status(403).json({ success: false, message: "Vous n'avez pas accès à ce cahier de texte" });
+                }
+            }
+
             return res.status(200).send(cahierDeTexte);
         } catch (error) {
             console.error('Erreur', error);

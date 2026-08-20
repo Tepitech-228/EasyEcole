@@ -1,0 +1,52 @@
+<app-custom-alert [show]="error || alreadyExists" title="Erreur">
+    {{ error ? 'Une erreur est survenue' : '' }}
+    {{ alreadyExists ? 'Cette demande existe déjà.' : '' }}
+</app-custom-alert>
+
+<app-return-back></app-return-back>
+
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Nouvelle demande de stage" subtitle="Renseignez les informations ci-dessous"></app-header-title>
+</div>
+
+<div class="w-full mb-8">
+    <form [formGroup]="form" id="form">
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="md:col-span-3 col-span-full">
+                <label for="offreStageId" class="mb-2 block text-sm leading-6 text-gray-600">Offre de stage</label>
+                <select id="offreStageId" formControlName="offreStageId" [disabled]="loadingOffres"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6">
+                    <option value="">Sélectionner une offre</option>
+                    <option *ngFor="let o of offres" [value]="o.id">{{ o.titre }} ({{ o.lieu }})</option>
+                </select>
+                <div *ngIf="form.get('offreStageId')!.invalid && (form.get('offreStageId')!.dirty || form.get('offreStageId')!.touched)">
+                    <app-form-message *ngIf="form.get('offreStageId')!.errors?.['required']" text="Veuillez sélectionner une offre"></app-form-message>
+                </div>
+            </div>
+            <div class="md:col-span-3 col-span-full">
+                <label for="nouvelleEntreprise" class="mb-2 block text-sm leading-6 text-gray-600">Nouvelle entreprise <span class="text-gray-400">(optionnel)</span></label>
+                <input type="text" id="nouvelleEntreprise" formControlName="nouvelleEntreprise" placeholder="Nom de l'entreprise si nouvelle..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="md:col-span-3 col-span-full">
+                <label for="dateDebut" class="mb-2 block text-sm leading-6 text-gray-600">Date de début</label>
+                <input type="date" id="dateDebut" formControlName="dateDebut"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6">
+                <div *ngIf="form.get('dateDebut')!.invalid && (form.get('dateDebut')!.dirty || form.get('dateDebut')!.touched)">
+                    <app-form-message *ngIf="form.get('dateDebut')!.errors?.['required']" text="Veuillez saisir la date de début"></app-form-message>
+                </div>
+            </div>
+            <div class="md:col-span-3 col-span-full">
+                <label for="dateFin" class="mb-2 block text-sm leading-6 text-gray-600">Date de fin</label>
+                <input type="date" id="dateFin" formControlName="dateFin"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6">
+                <div *ngIf="form.get('dateFin')!.invalid && (form.get('dateFin')!.dirty || form.get('dateFin')!.touched)">
+                    <app-form-message *ngIf="form.get('dateFin')!.errors?.['required']" text="Veuillez saisir la date de fin"></app-form-message>
+                </div>
+            </div>
+        </div>
+        <div class="w-full flex justify-end items-center pb-12">
+            <app-custom-button (click)="create()" [disabled]="disableButton" text="Soumettre la demande"></app-custom-button>
+        </div>
+    </form>
+</div>

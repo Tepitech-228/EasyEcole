@@ -227,6 +227,11 @@ export default class ListeNoteEvaluationController {
 
     static async exportPv(req: Request, res: Response): Promise<Response> {
         try {
+            // Vérification : les étudiants (APPRENANT) n'ont pas le droit d'exporter le PV
+            if ((req as any).utilisateurRole === RolesUtilisateur.APPRENANT) {
+                return res.status(403).json({ success: false, message: "Vous n'avez pas le droit d'exporter un procès-verbal de notes" })
+            }
+
             const evaluation = await ListeNoteEvaluation.findOne({
                 where: { id: req.params.id },
                 include: [
@@ -502,6 +507,11 @@ export default class ListeNoteEvaluationController {
 
     static async importPv(req: Request, res: Response): Promise<Response> {
         try {
+            // Vérification : les étudiants (APPRENANT) n'ont pas le droit d'importer le PV
+            if ((req as any).utilisateurRole === RolesUtilisateur.APPRENANT) {
+                return res.status(403).json({ success: false, message: "Vous n'avez pas le droit d'importer un procès-verbal de notes" })
+            }
+
             if (!req.file) {
                 return res.status(400).json({ success: false, message: "Aucun fichier fourni" })
             }

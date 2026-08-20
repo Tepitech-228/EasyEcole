@@ -21,6 +21,51 @@ import { Bordereau } from "../models/Bordereau";
 import { ParametreFrais } from "../../comptabilite/models/ParametreFrais";
 import { creerEcritureComptable } from "../../comptabilite/helpers/ComptabiliteHelper";
 
+export type DocumentRequisRattrapage = {
+  id: number;
+  libelle: string;
+  obligatoire?: boolean;
+}
+
+export type DocumentDeposeRattrapage = {
+  documentRequisId: number | string;
+}
+
+export function verifierDocumentsObligatoires(
+  documentsRequis: DocumentRequisRattrapage[],
+  documentsDeposes: DocumentDeposeRattrapage[]
+): { ok: boolean; missing: number[] } {
+  const uploadedIds = new Set(
+    documentsDeposes
+      .map((doc) => Number(doc.documentRequisId))
+      .filter((id) => Number.isFinite(id) && id > 0)
+  )
+
+  const missing = documentsRequis
+    .filter((doc) => doc.obligatoire !== false)
+    .map((doc) => doc.id)
+    .filter((id) => !uploadedIds.has(id))
+
+  return { ok: missing.length === 0, missing }
+}
+
+export function peutValiderPaiementRattrapage(
+  statutComite: string | null | undefined,
+  paiementPresent: boolean,
+  montantPaiement?: number | null,
+  montantAttendu?: number | null
+): boolean {
+  if (statutComite !== 'valide') return false
+  if (!paiementPresent) return false
+  if (typeof montantAttendu === 'number' && Number.isFinite(montantAttendu) && montantAttendu > 0) {
+    if (typeof montantPaiement !== 'number' || !Number.isFinite(montantPaiement) || montantPaiement <= 0) {
+      return false
+    }
+    return montantPaiement >= montantAttendu
+  }
+  return true
+}
+
 export default class RattrapageController {
 
   static async getAll(req: Request, res: Response): Promise<Response> {
@@ -120,6 +165,196 @@ export default class RattrapageController {
       return res.status(200).send(data);
     } catch (error) {
       return res.status(500).json({ success: false, error });
+    }
+  }
+
+  static async creerSessionRattrapage(req: Request, res: Response): Promise<Response> {
+    const role = (req as any).utilisateurRole;
+    if (role !== RolesUtilisateur.INSTITUTION && role !== RolesUtilisateur.ADMIN) {
+      return res.status(403).json({ success: false, message: 'Accès réservé à l’administration' })
+    }
+
+    try {
+      const { libelle, dateDebut, dateFin, description, classes, documentsRequis } = req.body || {}
+      if (!libelle || !Array.isArray(classes) || classes.length === 0) {
+        return res.status(400).json({ success: false, message: 'libelle et classes sont requis' })
+      }
+
+      const session = await (await import('../models/RattrapageSession')).RattrapageSession.create({
+        libelle,
+        dateDebut: dateDebut ? new Date(dateDebut) : null,
+        dateFin: dateFin ? new Date(dateFin) : null,
+        description: description ?? null,
+        statut: 'ouverte',
+      })
+
+      const items = classes.map((classeId: number) => ({
+        rattrapageSessionId: session.id,
+        classeId: Number(classeId),
+      }))
+      await (await import('../models/RattrapageSessionClasse')).RattrapageSessionClasse.bulkCreate(items)
+
+      if (Array.isArray(documentsRequis)) {
+        await (await import('../models/RattrapageDocumentRequis')).RattrapageDocumentRequis.bulkCreate(
+          documentsRequis.map((doc: any, index: number) => ({
+            rattrapageSessionId: session.id,
+            libelle: String(doc.libelle || `Pièce ${index + 1}`),
+            obligatoire: doc.obligatoire !== false,
+            ordre: Number(doc.ordre ?? index),
+          }))
+        )
+      }
+
+      const full = await (await import('../models/RattrapageSession')).RattrapageSession.findByPk(session.id, {
+        include: [
+          { association: (await import('../models/RattrapageSession')).RattrapageSession.associations.classes },
+          { association: (await import('../models/RattrapageSession')).RattrapageSession.associations.documentsRequis },
+        ],
+      })
+
+      return res.status(201).json({ success: true, data: full })
+    } catch (error) {
+      return res.status(500).json({ success: false, error })
+    }
+  }
+
+  static async validerDemandeRattrapage(req: Request, res: Response): Promise<Response> {
+    const role = (req as any).utilisateurRole
+    if (role !== RolesUtilisateur.INSTITUTION && role !== RolesUtilisateur.ADMIN) {
+      return res.status(403).json({ success: false, message: 'Validation du comité réservée à l’administration' })
+    }
+
+    try {
+      const demande = await RattrapageInscription.findByPk(req.params.id)
+      if (!demande) {
+        return res.status(404).json({ success: false, message: 'Demande de rattrapage introuvable' })
+      }
+
+      const { decision, motif } = req.body || {}
+      const decisionValide = decision === 'valide' || decision === 'rejete' || decision === 'a_corriger'
+      if (!decisionValide) {
+        return res.status(400).json({ success: false, message: 'Décision invalide' })
+      }
+
+      const statutDemande = decision === 'valide' ? 'valide' : (decision === 'rejete' ? 'rejete' : 'en_attente')
+      demande.statutDemande = statutDemande
+      demande.motifRejet = decision === 'valide' ? null : (motif ?? 'Document(s) non conforme(s)')
+      demande.dateValidationComite = new Date()
+
+      if (decision === 'valide') {
+        demande.statut = 'inscrit'
+      }
+
+      await demande.save()
+
+      return res.status(200).json({ success: true, data: demande })
+    } catch (error) {
+      return res.status(500).json({ success: false, error })
+    }
+  }
+
+  static async televerserDocumentRattrapage(req: Request, res: Response): Promise<Response> {
+    try {
+      const demande = await RattrapageInscription.findByPk(req.params.id)
+      if (!demande) {
+        return res.status(404).json({ success: false, message: 'Demande introuvable' })
+      }
+
+      const { documentRequisId, fichier } = req.body || {}
+      if (!documentRequisId || !fichier) {
+        return res.status(400).json({ success: false, message: 'documentRequisId et fichier sont requis' })
+      }
+
+      const { RattrapageDocumentDepose } = await import('../models/RattrapageDocumentDepose')
+      const document = await RattrapageDocumentDepose.create({
+        rattrapageInscriptionId: demande.id,
+        documentRequisId: Number(documentRequisId),
+        fichier: String(fichier),
+      })
+
+      return res.status(201).json({ success: true, data: document })
+    } catch (error) {
+      return res.status(500).json({ success: false, error })
+    }
+  }
+
+  static async getDocumentsRequisSession(req: Request, res: Response): Promise<Response> {
+    try {
+      const { RattrapageDocumentRequis } = await import('../models/RattrapageDocumentRequis')
+      const documents = await RattrapageDocumentRequis.findAll({
+        where: { rattrapageSessionId: req.params.sessionId },
+        order: [['ordre', 'ASC']],
+      })
+      return res.status(200).json({ success: true, data: documents })
+    } catch (error) {
+      return res.status(500).json({ success: false, error })
+    }
+  }
+
+  static async validerPaiementRattrapage(req: Request, res: Response): Promise<Response> {
+    const role = (req as any).utilisateurRole
+    if (role !== RolesUtilisateur.INSTITUTION && role !== RolesUtilisateur.ADMIN && role !== RolesUtilisateur.CAISSIER_BANQUE) {
+      return res.status(403).json({ success: false, message: 'Validation comptable réservée à l’administration' })
+    }
+
+    try {
+      const demande = await RattrapageInscription.findByPk(req.params.id)
+      if (!demande) {
+        return res.status(404).json({ success: false, message: 'Demande introuvable' })
+      }
+
+      const { bordereauId, montantPaiement } = req.body || {}
+      if (!bordereauId) {
+        return res.status(400).json({ success: false, message: 'bordereauId requis' })
+      }
+
+      const ok = peutValiderPaiementRattrapage(
+        demande.statutDemande,
+        true,
+        Number(montantPaiement ?? demande.montant ?? 0),
+        Number(demande.montant ?? 0)
+      )
+
+      if (!ok) {
+        return res.status(400).json({ success: false, message: 'Paiement non validé : la demande doit être validée par le comité et un bordereau de paiement doit être fourni' })
+      }
+
+      demande.bordereauId = Number(bordereauId)
+      demande.statutPaiement = 'paye'
+      demande.statut = 'inscrit'
+      await demande.save()
+
+      return res.status(200).json({ success: true, data: demande })
+    } catch (error) {
+      return res.status(500).json({ success: false, error })
+    }
+  }
+
+  static async verifierCompletuDeDemande(req: Request, res: Response): Promise<Response> {
+    try {
+      const demande = await RattrapageInscription.findByPk(req.params.id, {
+        include: [{ association: RattrapageInscription.associations.documentsDeposes }],
+      })
+      if (!demande) {
+        return res.status(404).json({ success: false, message: 'Demande introuvable' })
+      }
+
+      const session = await (await import('../models/RattrapageSession')).RattrapageSession.findByPk((demande as any).rattrapageSessionId, {
+        include: [{ association: (await import('../models/RattrapageSession')).RattrapageSession.associations.documentsRequis }],
+      })
+
+      if (!session) {
+        return res.status(400).json({ success: false, message: 'Session de rattrapage introuvable' })
+      }
+
+      const resultat = verifierDocumentsObligatoires(
+        (session as any).documentsRequis || [],
+        (demande as any).documentsDeposes || []
+      )
+
+      return res.status(200).json({ success: true, ...resultat })
+    } catch (error) {
+      return res.status(500).json({ success: false, error })
     }
   }
 
@@ -381,21 +616,32 @@ export default class RattrapageController {
       return res.status(403).json({ success: false, message: "Accès réservé aux étudiants" });
     }
     try {
+      const includes: any[] = [];
+      if (RattrapageInscription.associations?.coursParticipant) {
+        includes.push({ association: RattrapageInscription.associations.coursParticipant });
+      }
+      if (RattrapageInscription.associations?.cours) {
+        includes.push({ association: RattrapageInscription.associations.cours });
+      }
+      if (RattrapageInscription.associations?.sessionExamen) {
+        includes.push({ association: RattrapageInscription.associations.sessionExamen });
+      }
+      if (RattrapageInscription.associations?.demandeur) {
+        includes.push({ association: RattrapageInscription.associations.demandeur });
+      }
+
       const data = await RattrapageInscription.findAll({
         where: {
           demandePar: (req as any).utilisateurId,
           source: 'demande_etudiant'
         },
-        include: [
-          { association: RattrapageInscription.associations.coursParticipant },
-          { association: RattrapageInscription.associations.cours },
-          { association: RattrapageInscription.associations.sessionExamen },
-          { association: RattrapageInscription.associations.demandeur }
-        ]
+        include: includes,
+        order: [['createdAt', 'DESC']]
       });
       return res.status(200).send(data);
     } catch (error) {
-      return res.status(500).json({ success: false, error });
+      console.error('Erreur getMesDemandes rattrapage:', error);
+      return res.status(500).json({ success: false, message: 'Impossible de récupérer mes demandes de rattrapage', error });
     }
   }
 

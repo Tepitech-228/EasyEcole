@@ -61,8 +61,16 @@ export default class NoteEvaluationController {
                 { association: NoteEvaluation.associations.coursParticipant }
             ];
 
+            // Un étudiant ne voit que ses propres notes
+            if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
+                const coursParticipants = await CoursParticipant.findAll({
+                    where: { utilisateurId: (req as any).utilisateurId },
+                    attributes: ['id']
+                });
+                where.coursParticipantId = { [require('sequelize').Op.in]: coursParticipants.map(cp => cp.id) };
+            }
             // Un enseignant ne voit que les notes de ses propres cours
-            if ((req as any).utilisateurRole == RolesUtilisateur.ENSEIGNANT) {
+            else if ((req as any).utilisateurRole == RolesUtilisateur.ENSEIGNANT) {
                 const enseignant = await Enseignant.findOne({ where: { utilisateurId: (req as any).utilisateurId } });
                 if (enseignant) {
                     include.push({
@@ -102,8 +110,15 @@ export default class NoteEvaluationController {
                 return res.status(404).json({ success: false, message: "Note non trouvée" });
             }
 
+            // Un étudiant ne peut voir que ses propres notes
+            if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
+                const coursParticipant = (note as any).coursParticipant;
+                if (!coursParticipant || coursParticipant.utilisateurId !== (req as any).utilisateurId) {
+                    return res.status(403).json({ success: false, message: "Vous n'avez pas accès à cette note" });
+                }
+            }
             // Un enseignant ne peut voir que les notes de ses propres cours
-            if ((req as any).utilisateurRole == RolesUtilisateur.ENSEIGNANT) {
+            else if ((req as any).utilisateurRole == RolesUtilisateur.ENSEIGNANT) {
                 const enseignant = await Enseignant.findOne({ where: { utilisateurId: (req as any).utilisateurId } });
                 const cours = (note as any).listeNoteEvaluation?.cours;
                 if (!enseignant || !cours || cours.enseignantId !== enseignant.id) {

@@ -18,11 +18,13 @@ export class MesRattrapagesPageComponent extends BaseComponentClass implements O
   error: string | null = null;
   success: string | null = null;
 
+  showModuleSelector = false;
   showDemandeModal = false;
   demandeForm = {
     coursId: null as number | null,
     sessionExamenId: null as number | null,
     coursParticipantId: null as number | null,
+    moduleName: '' as string,
     motifEtudiant: '',
     creneauSouhaite: ''
   };
@@ -80,10 +82,39 @@ export class MesRattrapagesPageComponent extends BaseComponentClass implements O
       coursId: module.coursId || module.id,
       sessionExamenId: null,
       coursParticipantId: null,
+      moduleName: module.libelle || module.code || '',
       motifEtudiant: '',
       creneauSouhaite: ''
     };
     this.showDemandeModal = true;
+  }
+
+  openDemandeModuleSelector(): void {
+    if (this.failedModules.length === 0) {
+      this.error = 'Aucun module en échec à rattraper.';
+      return;
+    }
+    this.error = null;
+    this.success = null;
+    this.showModuleSelector = true;
+  }
+
+  selectModuleAndOpenDemande(module: any): void {
+    this.demandeForm = {
+      coursId: module.coursId || module.id,
+      sessionExamenId: null,
+      coursParticipantId: null,
+      moduleName: module.libelle || module.code || '',
+      motifEtudiant: '',
+      creneauSouhaite: ''
+    };
+    this.showModuleSelector = false;
+    this.showDemandeModal = true;
+  }
+
+  backToModuleSelector(): void {
+    this.showDemandeModal = false;
+    this.showModuleSelector = true;
   }
 
   submitDemande(): void {

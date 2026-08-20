@@ -5,6 +5,7 @@ import { ListeOffresPageComponent } from './pages/liste-offres-page/liste-offres
 import { NouvelleOffrePageComponent } from './pages/nouvelle-offre-page/nouvelle-offre-page.component';
 import { DetailsOffrePageComponent } from './pages/details-offre-page/details-offre-page.component';
 import { ListeDemandesPageComponent } from './pages/liste-demandes-page/liste-demandes-page.component';
+import { NouvelleDemandePageComponent } from './pages/nouvelle-demande-page/nouvelle-demande-page.component';
 import { DetailsDemandePageComponent } from './pages/details-demande-page/details-demande-page.component';
 import { ListeEntreprisesPageComponent } from './pages/liste-entreprises-page/liste-entreprises-page.component';
 import { NouvelleEntreprisePageComponent } from './pages/nouvelle-entreprise-page/nouvelle-entreprise-page.component';
@@ -27,6 +28,11 @@ const routes: Routes = [
         path: 'demandes',
         children: [
             { path: '', component: ListeDemandesPageComponent, pathMatch: 'full' },
+            {
+                path: 'nouveau',
+                canActivateChild: [AuthGuard],
+                children: [{ path: '', component: NouvelleDemandePageComponent, pathMatch: 'full' }]
+            },
             { path: ':id', component: DetailsDemandePageComponent, pathMatch: 'full' },
         ]
     },

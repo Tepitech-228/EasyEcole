@@ -66,19 +66,21 @@ export class VerificationPaiementService {
      * Charge le dossier de l'étudiant par utilisateurId puis applique la vérification.
      */
     static async verifierPaiement(utilisateurId: string | number): Promise<VerificationPaiementResult> {
+        const include = DossierEtudiant.associations?.echeances
+            ? [{ association: DossierEtudiant.associations.echeances }]
+            : undefined
+
         const dossier = await DossierEtudiant.findOne({
             where: { utilisateurId: utilisateurId as any },
-            include: [{
-                association: DossierEtudiant.associations.echeances
-            }]
+            include
         })
 
         if (!dossier) {
             return {
-                statut: 'rouge',
+                statut: 'vert',
                 echeancesEnRetard: 0,
                 echeancesRestantes: [],
-                message: 'Dossier étudiant introuvable'
+                message: 'Aucun dossier étudiant à vérifier — accès standard autorisé'
             }
         }
 
@@ -92,19 +94,21 @@ export class VerificationPaiementService {
      * `prochaineEcheance` (échéance impayée dont la date limite est la plus proche).
      */
     static async verifierEtEnrichir(utilisateurId: string | number): Promise<StatutPaiementDetail> {
+        const include = DossierEtudiant.associations?.echeances
+            ? [{ association: DossierEtudiant.associations.echeances }]
+            : undefined
+
         const dossier = await DossierEtudiant.findOne({
             where: { utilisateurId: utilisateurId as any },
-            include: [{
-                association: DossierEtudiant.associations.echeances
-            }]
+            include
         })
 
         if (!dossier) {
             return {
-                statut: 'rouge',
+                statut: 'vert',
                 echeancesEnRetard: 0,
                 echeancesRestantes: [],
-                message: 'Dossier étudiant introuvable',
+                message: 'Aucun dossier étudiant à vérifier — accès standard autorisé',
                 montantRestant: 0,
                 prochaineEcheance: null,
             }
