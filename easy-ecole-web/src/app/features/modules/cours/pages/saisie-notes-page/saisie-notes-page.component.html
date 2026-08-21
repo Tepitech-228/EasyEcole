@@ -21,10 +21,15 @@
           </p>
         </div>
         <div class="flex items-center gap-3">
+          <button (click)="exportPvPdf()" [disabled]="exportingPvPdf || loading"
+                  class="inline-flex items-center px-4 py-2.5 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition-colors disabled:opacity-50">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            {{ exportingPvPdf ? 'Génération PDF...' : 'PV PDF' }}
+          </button>
           <button (click)="exportPv()" [disabled]="exportingPv || loading"
-                  class="inline-flex items-center px-4 py-2.5 text-sm font-semibold text-white bg-white/20 hover:bg-white/30 rounded-lg transition-colors disabled:opacity-50">
-            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-            {{ exportingPv ? 'Génération...' : 'Générer PV' }}
+                  class="inline-flex items-center px-4 py-2.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors disabled:opacity-50">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2.5a2.5 2.5 0 011.5-2.4c1.2.3 2.4.8 3.5 1.5a2.5 2.5 0 011.5 2.4V17m-9 0h18m-18 0a2 2 0 01-2-2v-1.5a2.2 2.2 0 01.8-1.7L12 6.5l3.2 2.8a2.2 2.2 0 01.8 1.7V17a2 2 0 01-2 2"/></svg>
+            {{ exportingPv ? 'Génération Excel...' : 'PV Excel' }}
           </button>
           <button (click)="openImportModal()" [disabled]="loading"
                   class="inline-flex items-center px-4 py-2.5 text-sm font-semibold text-white bg-white/20 hover:bg-white/30 rounded-lg transition-colors disabled:opacity-50">
@@ -126,13 +131,13 @@
       </div>
 
       <div *ngIf="!importResult" class="p-6">
-        <p class="text-sm text-gray-600 mb-4">Sélectionnez le fichier Excel (.xlsx) du PV que vous avez rempli avec les notes.</p>
+        <p class="text-sm text-gray-600 mb-4">Sélectionnez le fichier Excel (.xlsx) ou PDF du PV que vous avez rempli avec les notes.</p>
         <div class="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center hover:border-indigo-300 transition-colors cursor-pointer" (click)="fileInput.click()">
-          <input type="file" accept=".xlsx,.xls" (change)="onFileSelected($event)" class="hidden" #fileInput>
+          <input type="file" accept=".xlsx,.xls,.pdf" (change)="onFileSelected($event)" class="hidden" #fileInput>
           <div *ngIf="!selectedFile" class="flex flex-col items-center gap-2">
             <svg class="h-10 w-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             <span class="text-sm text-indigo-600 font-medium">Cliquez pour sélectionner un fichier</span>
-            <span class="text-xs text-gray-400">.xlsx ou .xls</span>
+            <span class="text-xs text-gray-400">.xlsx, .xls ou .pdf</span>
           </div>
           <div *ngIf="selectedFile" class="flex flex-col items-center gap-2">
             <svg class="h-8 w-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>

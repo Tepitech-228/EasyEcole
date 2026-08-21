@@ -34,6 +34,7 @@ export class SaisieNotesPageComponent extends BaseComponentClass implements OnIn
   showPublishModal: boolean = false
 
   exportingPv: boolean = false
+  exportingPvPdf: boolean = false
   importingPv: boolean = false
   showImportModal: boolean = false
   selectedFile: File | null = null
@@ -190,7 +191,7 @@ export class SaisieNotesPageComponent extends BaseComponentClass implements OnIn
     if (!this.evaluation?.id) return
     this.exportingPv = true
 
-    this.pvEvaluationService.exportPv(this.evaluation.id).subscribe({
+    this.pvEvaluationService.exportPv(this.evaluation.id, 'excel').subscribe({
       next: (blob) => {
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
@@ -205,6 +206,29 @@ export class SaisieNotesPageComponent extends BaseComponentClass implements OnIn
       error: (err) => {
         console.log(err)
         this.exportingPv = false
+      }
+    })
+  }
+
+  exportPvPdf(): void {
+    if (!this.evaluation?.id) return
+    this.exportingPvPdf = true
+
+    this.pvEvaluationService.exportPv(this.evaluation.id, 'pdf').subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `PV_Devoir_${this.evaluation?.cours?.code || 'notes'}_${new Date().toISOString().split('T')[0]}.pdf`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        window.URL.revokeObjectURL(url)
+        this.exportingPvPdf = false
+      },
+      error: (err) => {
+        console.log(err)
+        this.exportingPvPdf = false
       }
     })
   }

@@ -4,6 +4,7 @@ import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { Echeance } from "./Echeance";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { Quitus } from "./Quitus";
+import { TypeOperationBordereau } from "./TypeOperationBordereau";
 
 export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAttributes<Bordereau>> {
   declare id: CreationOptional<number>
@@ -20,16 +21,19 @@ export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAt
   declare montant?: number | null
   declare modalite: '1x' | '3x' | '10x'
   declare referenceBancaire: CreationOptional<string>
-  declare statut: 'en_attente' | 'valide' | 'rejete'
+  declare statut: 'en_attente' | 'valide' | 'rejete' | 'en_saisie_comptable' | 'traite'
   declare dateSoumission: CreationOptional<Date>
   declare dateValidation: CreationOptional<Date | null>
+  declare datePaiement: CreationOptional<Date | null>
   declare valideParId: CreationOptional<ForeignKey<Utilisateur['id']> | null>
   declare commentaire: CreationOptional<string>
   declare quitusId: CreationOptional<ForeignKey<Quitus['id']>>
+  declare typeOperationId: CreationOptional<ForeignKey<TypeOperationBordereau['id']> | null>
   declare echeance?: NonAttribute<Echeance>
   declare utilisateur?: NonAttribute<Utilisateur>
   declare validePar?: NonAttribute<Utilisateur>
   declare quitus?: NonAttribute<Quitus>
+  declare typeOperation?: NonAttribute<TypeOperationBordereau>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -39,6 +43,7 @@ export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAt
     utilisateur: Association<Bordereau, Utilisateur>
     validePar: Association<Bordereau, Utilisateur>
     quitus: Association<Bordereau, Quitus>
+    typeOperation: Association<Bordereau, TypeOperationBordereau>
   };
 }
 
@@ -85,7 +90,7 @@ Bordereau.init({
     allowNull: true
   },
   statut: {
-    type: DataTypes.ENUM('en_attente', 'valide', 'rejete'),
+    type: DataTypes.ENUM('en_attente', 'valide', 'rejete', 'en_saisie_comptable', 'traite'),
     defaultValue: 'en_attente',
     allowNull: false
   },
@@ -95,6 +100,11 @@ Bordereau.init({
     allowNull: false
   },
   dateValidation: {
+    type: DataTypes.DATEONLY,
+    allowNull: true,
+    defaultValue: null
+  },
+  datePaiement: {
     type: DataTypes.DATEONLY,
     allowNull: true,
     defaultValue: null
@@ -109,6 +119,11 @@ Bordereau.init({
     allowNull: true
   },
   quitusId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true,
+    defaultValue: null
+  },
+  typeOperationId: {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: true,
     defaultValue: null

@@ -25,6 +25,26 @@ export class BordereauService {
     return this.httpClient.get<{ data: Bordereau[], pagination: any }>(`${this.SERVICE_URL}`, { params: httpParams });
   }
 
+  getAImputer(params?: any): Observable<{ data: Bordereau[], pagination: any }> {
+    let httpParams = new HttpParams();
+    if (params) {
+      Object.keys(params).forEach(key => {
+        if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
+          httpParams = httpParams.set(key, String(params[key]));
+        }
+      });
+    }
+    return this.httpClient.get<{ data: Bordereau[], pagination: any }>(`${environment.API_MODULES.INSCRIPTION}/finance/bordereaux-a-traiter`, { params: httpParams });
+  }
+
+  imputationPreview(id: string, montantPaiement: number): Observable<any> {
+    return this.httpClient.post<any>(`${environment.API_MODULES.INSCRIPTION}/finance/bordereaux/${id}/imputation-preview`, { montantPaiement })
+  }
+
+  saisir(id: string, payload: any): Observable<any> {
+    return this.httpClient.put<any>(`${environment.API_MODULES.INSCRIPTION}/finance/bordereaux/${id}/saisir`, payload)
+  }
+
   get(id: string): Observable<Bordereau> {
     return this.httpClient.get<Bordereau>(`${this.SERVICE_URL}/${id}`)
   }

@@ -46,6 +46,7 @@ import { DossierEtudiant } from "./DossierEtudiant";
 import { Echeance } from "./Echeance";
 import { Bordereau } from "./Bordereau";
 import { SemestreAcademique } from "./SemestreAcademique";
+import { TypeOperationBordereau } from "./TypeOperationBordereau";
 import { initBulletinAssociations } from "../../bulletins/models/_associations";
 
 // Cours - Parcours
@@ -366,6 +367,10 @@ Bordereau.belongsTo(Utilisateur, { foreignKey: 'valideParId', as: 'validePar' })
 // Bordereau - Quitus
 Bordereau.hasOne(Quitus, { foreignKey: 'bordereauId', as: 'quitus' })
 Quitus.belongsTo(Bordereau, { foreignKey: 'bordereauId', as: 'bordereau' })
+
+// Bordereau - TypeOperationBordereau
+Bordereau.belongsTo(TypeOperationBordereau, { foreignKey: 'typeOperationId', as: 'typeOperation' })
+TypeOperationBordereau.hasMany(Bordereau, { foreignKey: 'typeOperationId', as: 'bordereaux' })
 
 // ---- New LMD / Ã‰valuation AvancÃ©e Associations ----
 

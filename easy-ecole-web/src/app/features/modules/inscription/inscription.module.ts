@@ -47,6 +47,8 @@ import { RattrapageSessionsPageComponent } from './pages/rattrapage-sessions-pag
 import { RattrapageComitePageComponent } from './pages/rattrapage-comite-page/rattrapage-comite-page.component';
 import { RattrapageMesDemandesPageComponent } from './pages/rattrapage-mes-demandes-page/rattrapage-mes-demandes-page.component';
 import { RattrapagePaiementsPageComponent } from './pages/rattrapage-paiements-page/rattrapage-paiements-page.component';
+import { TypesBordereauxPageComponent } from './pages/types-bordereaux-page/types-bordereaux-page.component';
+import { EsacomptaBordereauxPageComponent } from './pages/esacompta-bordereaux-page/esacompta-bordereaux-page.component';
 @NgModule({
   declarations: [
     MonCursusPageComponent,
@@ -87,10 +89,12 @@ import { RattrapagePaiementsPageComponent } from './pages/rattrapage-paiements-p
        GestionSemestresPageComponent,
        ImportExportExcelPageComponent,
        DesignationMemoirePageComponent,
-       RattrapageSessionsPageComponent,
-       RattrapageComitePageComponent,
-       RattrapageMesDemandesPageComponent,
-       RattrapagePaiementsPageComponent
+        RattrapageSessionsPageComponent,
+        RattrapageComitePageComponent,
+        RattrapageMesDemandesPageComponent,
+        RattrapagePaiementsPageComponent,
+        TypesBordereauxPageComponent,
+        EsacomptaBordereauxPageComponent
   ],
   imports: [
     CommonModule,

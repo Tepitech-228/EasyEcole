@@ -6,6 +6,7 @@ export type RolesValueType = {
     isPersonnelAdministratif: boolean
     isRessourcesHumaines: boolean
     isCabinetComptable: boolean
+    isEsacompta: boolean
     isComiteOrientation: boolean
     isAdmin: boolean
     isParent: boolean

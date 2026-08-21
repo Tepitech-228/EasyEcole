@@ -95,7 +95,7 @@ export class DatabaseConnection {
                 
                 // Supprimer les RattrapageDocumentDepose avec rattrapageInscriptionId orpheline
                 await this._sequelize.query(`
-                    DELETE FROM ins_rattrapages_documents_deposes 
+                    DELETE FROM ins_rattrapage_documents_deposes 
                     WHERE rattrapageInscriptionId NOT IN (SELECT id FROM ins_rattrapages_inscriptions)
                 `);
 
@@ -104,24 +104,33 @@ export class DatabaseConnection {
                 console.warn('Warning (rattrapage cleanup):', cleanupError?.message || cleanupError);
             }
 
-            try {
-                const { FraisScolarite } = require('../../modules/inscription/models/FraisScolarite');
-                const { RattrapageInscription } = require('../../modules/inscription/models/RattrapageInscription');
-                const { RattrapageSession } = require('../../modules/inscription/models/RattrapageSession');
-                const { RattrapageDocumentDepose } = require('../../modules/inscription/models/RattrapageDocumentDepose');
-                const { RattrapageDocumentRequis } = require('../../modules/inscription/models/RattrapageDocumentRequis');
-                const { RattrapageSessionClasse } = require('../../modules/inscription/models/RattrapageSessionClasse');
+            // Sync ciblé frais/rattrapage : réservé au développement (en production,
+            // les schémas sont gérés par migrations/scripts — cf. bloc sync global plus bas).
+            // Exécution SEQUENTIELLE : le Promise.all lançait des ALTER TABLE en parallèle
+            // sur des tables liées (FK), provoquant des courses et des warnings
+            // ("Cannot add foreign key constraint" / "Constraint ibfk_* does not exist").
+            if (env === 'development') {
+                try {
+                    const { FraisScolarite } = require('../../modules/inscription/models/FraisScolarite');
+                    const { RattrapageInscription } = require('../../modules/inscription/models/RattrapageInscription');
+                    const { RattrapageSession } = require('../../modules/inscription/models/RattrapageSession');
+                    const { RattrapageDocumentDepose } = require('../../modules/inscription/models/RattrapageDocumentDepose');
+                    const { RattrapageDocumentRequis } = require('../../modules/inscription/models/RattrapageDocumentRequis');
+                    const { RattrapageSessionClasse } = require('../../modules/inscription/models/RattrapageSessionClasse');
 
-                await Promise.all([
-                    FraisScolarite.sync({ alter: true }),
-                    RattrapageInscription.sync({ alter: true }),
-                    RattrapageSession.sync({ alter: true }),
-                    RattrapageDocumentDepose.sync({ alter: true }),
-                    RattrapageDocumentRequis.sync({ alter: true }),
-                    RattrapageSessionClasse.sync({ alter: true })
-                ]);
-            } catch (schemaError: any) {
-                console.warn('Warning (rattrapage/frais schema sync ignored):', schemaError?.message || schemaError);
+                    for (const model of [
+                        FraisScolarite, RattrapageInscription, RattrapageSession,
+                        RattrapageDocumentDepose, RattrapageDocumentRequis, RattrapageSessionClasse
+                    ]) {
+                        try {
+                            await model.sync({ alter: true });
+                        } catch (modelSyncError: any) {
+                            console.warn('Warning (rattrapage/frais schema sync ignored):', modelSyncError?.message || modelSyncError);
+                        }
+                    }
+                } catch (schemaError: any) {
+                    console.warn('Warning (rattrapage/frais schema sync ignored):', schemaError?.message || schemaError);
+                }
             }
 
             if (env === 'development') {

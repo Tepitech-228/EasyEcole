@@ -110,39 +110,17 @@
 </div>
 
 <app-custom-modal title="Uploader un bordereau" subtitle="Soumettre un bordereau de paiement pour validation" (onCloseModal)="closeUploadBordereauModal()" [center]="true" [showModal]="showUploadBordereauModal">
-    <form [formGroup]="bordereauForm" class="">
-        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
-            <div class="col-span-full">
-                <span class="mb-2 block text-sm text-gray-400">Modalité de paiement de la scolarité</span>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <label *ngFor="let option of modaliteOptions"
-                        [ngClass]="selectedModalite === option.value ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200' : 'border-gray-300 bg-white hover:border-indigo-300'"
-                        class="relative flex cursor-pointer items-start gap-x-3 rounded-md border px-4 py-3 transition">
-                        <input type="radio" formControlName="modalite" [value]="option.value"
-                            class="mt-0.5 h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
-                        <span class="flex flex-col gap-y-0.5">
-                            <span class="text-sm font-medium leading-6 text-gray-900">{{ option.label }}</span>
-                            <span class="text-xs text-gray-400">{{ option.badge }}</span>
-                        </span>
-                    </label>
-                </div>
-                <p class="mt-2 text-xs text-gray-500">Choisissez en combien de fois vous souhaitez régler vos frais de scolarité annuels. Votre scolarité sera réglée en <strong>{{ nombreMensualites }} mensualité{{ nombreMensualites > 1 ? 's' : '' }}</strong>.</p>
-            </div>
-            <div class="col-span-full">
-                <span class="mb-2 block text-sm text-gray-400">Fichier bordereau (PDF ou image)</span>
-                <input type="file" id="fichier" accept=".pdf,.jpg,.jpeg,.png" (change)="onFileSelected($event)"
-                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-            </div>
-            <div class="col-span-3">
-                <span class="mb-2 block text-sm text-gray-400">Référence bancaire <span class="text-gray-400">(optionnelle)</span></span>
-                <input type="text" id="referenceBancaire" formControlName="referenceBancaire" placeholder="Référence banque..."
-                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-            </div>
+    <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+        <div class="col-span-full">
+            <span class="mb-2 block text-sm text-gray-400">Fichier bordereau (PDF ou image)</span>
+            <input type="file" id="fichier" accept=".pdf,.jpg,.jpeg,.png" (change)="onFileSelected($event)"
+                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            <p class="mt-2 text-xs text-gray-500">La saisie des informations comptables (référence bancaire, montant, type d'opération) sera effectuée par le service comptable après vérification.</p>
         </div>
-    </form>
+    </div>
     <div class="flex items-center justify-between py-3">
         <app-custom-button (click)="closeUploadBordereauModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
-        <app-custom-button (click)="uploadBordereau()" text="Uploader"></app-custom-button>
+        <app-custom-button (click)="uploadBordereau()" text="Uploader" [disabled]="!selectedFile"></app-custom-button>
     </div>
 </app-custom-modal>
 

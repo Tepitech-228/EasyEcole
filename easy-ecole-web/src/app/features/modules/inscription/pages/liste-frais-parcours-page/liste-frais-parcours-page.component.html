@@ -55,7 +55,7 @@
         <label class="block text-sm font-medium text-gray-700 mb-1">Parcours *</label>
         <select formControlName="parcoursId" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
           <option value="">Sélectionner</option>
-          <option *ngFor="let p of parcoursList" [value]="p.id">{{ p.libelle || p.intitule || p.nom }}</option>
+          <option *ngFor="let p of parcoursList" [value]="p.id">{{ p.titre || p.libelle || p.intitule || p.nom }}</option>
         </select>
       </div>
       <div>

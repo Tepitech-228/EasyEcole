@@ -134,7 +134,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
     {
         label: 'Financier',
         icon: 'paid',
-        allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.APPRENANT, RolesUtilisateur.CAISSIER_BANQUE, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN, RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.ENSEIGNANT],
+        allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.APPRENANT, RolesUtilisateur.CAISSIER_BANQUE, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN, RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ESA_COMPTA],
         groups: [
             {
                 label: 'Finance',
@@ -143,6 +143,8 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                     { label: 'Paiements', route: '/inscription/paiements', icon: 'paid', permissionKey: 'menu.finances.paiements', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.APPRENANT, RolesUtilisateur.CAISSIER_BANQUE, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN] },
                     { label: 'Echeances', route: '/inscription/echeances', icon: 'event', permissionKey: 'menu.finances.echeances', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.APPRENANT, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN] },
                     { label: 'Valid. bordereaux', route: '/inscription/validation-bordereaux', icon: 'task_alt', permissionKey: 'menu.finances.validation-bordereaux', allowedRoles: [RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN] },
+                    { label: 'Bordereaux a traiter', route: '/inscription/finance/bordereaux', icon: 'receipt_long', permissionKey: 'menu.finances.bordereaux-a-traiter', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.ADMIN] },
+                    { label: 'Types de bordereau', route: '/inscription/finance/types-bordereaux', icon: 'category', permissionKey: 'menu.finances.types-bordereaux', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.ADMIN] },
                     { label: 'Comptabilite', route: '/comptabilite/dashboard', icon: 'account_balance', permissionKey: 'menu.finances.comptabilite', allowedRoles: [RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN] },
                 ]
             },

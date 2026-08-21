@@ -23,12 +23,12 @@ const storage = multer.diskStorage({
     },
 })
 const upload = multer({ storage: storage, fileFilter: (req, file, callback) => {
-    const allowed = ['.xlsx', '.xls']
+    const allowed = ['.xlsx', '.xls', '.pdf']
     const ext = path.extname(file.originalname).toLowerCase()
     if (allowed.includes(ext)) {
         callback(null, true)
     } else {
-        callback(new Error('Seuls les fichiers Excel (.xlsx, .xls) sont acceptés'))
+        callback(new Error('Seuls les fichiers Excel (.xlsx, .xls) ou PDF (.pdf) sont acceptés'))
     }
 }})
 
@@ -152,7 +152,7 @@ router
  * /inscription/listesNoteEvaluation/{id}/export-pv:
  *   get:
  *     tags: [Listes Notes Évaluation]
- *     summary: Exporte un procès-verbal de notes au format Excel
+ *     summary: Exporte un procès-verbal de notes au format Excel ou PDF
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -161,9 +161,15 @@ router
  *         required: true
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: format
+ *         schema:
+ *           type: string
+ *           enum: [excel, pdf]
+ *           default: excel
  *     responses:
  *       200:
- *         description: Fichier Excel du PV
+ *         description: Fichier Excel ou PDF du PV
  */
     .get('/:id/export-pv', ListeNoteEvaluationController.exportPv)
 
@@ -172,7 +178,7 @@ router
  * /inscription/listesNoteEvaluation/{id}/import-pv:
  *   post:
  *     tags: [Listes Notes Évaluation]
- *     summary: Importe un procès-verbal de notes depuis un fichier Excel
+ *     summary: Importe un procès-verbal de notes depuis un fichier Excel ou PDF
  *     security:
  *       - bearerAuth: []
  *     parameters:

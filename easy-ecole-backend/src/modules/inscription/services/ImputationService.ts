@@ -76,21 +76,35 @@ export class ImputationService {
 
     /**
      * Récupère toutes les échéances imputables d'un dossier (impayées ou partielles),
-     * triées par dateLimite croissante (FIFO), toutes années confondues.
+     * triées par priorité : inscription d'abord, puis scolarité (FIFO par dateLimite).
      */
     private static async getEcheancesImputables(
         dossierId: number,
         transaction: Transaction,
     ): Promise<Echeance[]> {
-        return Echeance.findAll({
+        const inscription = await Echeance.findAll({
             where: {
                 dossierEtudiantId: dossierId,
+                type: 'inscription',
                 statut: ['impaye', 'partiel', 'en_retard'],
             },
             order: [['dateLimite', 'ASC'], ['id', 'ASC']],
             transaction,
             lock: transaction.LOCK.UPDATE,
         })
+
+        const scolarite = await Echeance.findAll({
+            where: {
+                dossierEtudiantId: dossierId,
+                type: 'scolarite',
+                statut: ['impaye', 'partiel', 'en_retard'],
+            },
+            order: [['dateLimite', 'ASC'], ['id', 'ASC']],
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+        })
+
+        return [...inscription, ...scolarite]
     }
 
     /**
@@ -316,7 +330,7 @@ export class ImputationService {
      * de TOUS les dossiers d'un utilisateur, triées par dateLimite ↑ (trans-années).
      *
      * Le surplus est crédité sur le portefeuille du dossier cible (dossier actif
-     * ou plus récent). Chaque lettrage est tracé via BordereauEcheance.
+     * ou plus récent). Chaque lettrage est tracée via BordereauEcheance.
      */
     static async imputerPourUtilisateur(
         bordereauId: number,
@@ -343,9 +357,10 @@ export class ImputationService {
         }
 
         const dossierIds = dossiers.map(d => d.id)
-        const echeances = await Echeance.findAll({
+        const inscription = await Echeance.findAll({
             where: {
                 dossierEtudiantId: { [Op.in]: dossierIds },
+                type: 'inscription',
                 statut: ['impaye', 'partiel', 'en_retard'],
             },
             order: [['dateLimite', 'ASC'], ['id', 'ASC']],
@@ -353,34 +368,29 @@ export class ImputationService {
             lock: transaction.LOCK.UPDATE,
         })
 
-        let reste = Math.round(montantConstate * 100) / 100
-        const lignes: LigneLettrage[] = []
+        const scolarite = await Echeance.findAll({
+            where: {
+                dossierEtudiantId: { [Op.in]: dossierIds },
+                type: 'scolarite',
+                statut: ['impaye', 'partiel', 'en_retard'],
+            },
+            order: [['dateLimite', 'ASC'], ['id', 'ASC']],
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+        })
 
-        for (const echeance of echeances) {
-            if (reste <= 0) break
+        const echeances = [...inscription, ...scolarite]
+        const { lignes, reste } = await ImputationService.calculerImputation(echeances, montantConstate)
 
-            const du = ImputationService.resteApayer(echeance)
-            if (du <= 0) continue
-
-            const impute = Math.min(reste, du)
-            echeance.montantPaye = Math.round((echeance.montantPaye || 0) + impute)
-            echeance.statut = ImputationService.recalculerStatut(echeance)
-            await echeance.save({ transaction })
-
-            await ImputationService.creerLettrage(bordereauId, echeance.id, impute, transaction)
-
-            const apres = ImputationService.resteApayer(echeance)
-            lignes.push({
-                echeanceId: echeance.id,
-                numeroEcheance: echeance.numeroEcheance,
-                type: echeance.type,
-                montantDu: du,
-                montantImpute: impute,
-                resteApres: apres,
-                statutApres: echeance.statut,
-            })
-
-            reste = Math.round((reste - impute) * 100) / 100
+        // Sauvegardes effectives
+        for (const ligne of lignes) {
+            const echeance = echeances.find(e => e.id === ligne.echeanceId)
+            if (echeance) {
+                echeance.montantPaye = Math.round((echeance.montantPaye || 0) + ligne.montantImpute)
+                echeance.statut = ligne.statutApres
+                await echeance.save({ transaction })
+                await ImputationService.creerLettrage(bordereauId, echeance.id, ligne.montantImpute, transaction)
+            }
         }
 
         const dossierCible = dossiers.find(d => d.statut === 'actif') ?? dossiers[0]
@@ -407,5 +417,113 @@ export class ImputationService {
             surplus: reste,
             portefeuilleCreditId,
         }
+    }
+
+    /**
+     * Simulation pure (read-only) de l'imputation FIFO.
+     * Ne fait aucune écriture en base : pas de save(), pas de lettrage, pas de portefeuille.
+     */
+    static async simulerPourUtilisateur(
+        utilisateurId: number,
+        montantConstate: number,
+        transaction?: Transaction,
+    ): Promise<ResultatImputation> {
+        if (!Number.isFinite(montantConstate) || montantConstate <= 0) {
+            throw new MontantConstateInvalideError(montantConstate)
+        }
+
+        const dossiers = await DossierEtudiant.findAll({
+            where: { utilisateurId },
+            transaction,
+        })
+
+        if (dossiers.length === 0) {
+            return {
+                bordereauId: 0,
+                montantDisponible: montantConstate,
+                lignes: [],
+                surplus: montantConstate,
+            }
+        }
+
+        const dossierIds = dossiers.map(d => d.id)
+        const inscription = await Echeance.findAll({
+            where: {
+                dossierEtudiantId: { [Op.in]: dossierIds },
+                type: 'inscription',
+                statut: ['impaye', 'partiel', 'en_retard'],
+            },
+            order: [['dateLimite', 'ASC'], ['id', 'ASC']],
+            transaction,
+        })
+
+        const scolarite = await Echeance.findAll({
+            where: {
+                dossierEtudiantId: { [Op.in]: dossierIds },
+                type: 'scolarite',
+                statut: ['impaye', 'partiel', 'en_retard'],
+            },
+            order: [['dateLimite', 'ASC'], ['id', 'ASC']],
+            transaction,
+        })
+
+        const echeances = [...inscription, ...scolarite]
+        const { lignes, reste } = await ImputationService.calculerImputation(echeances, montantConstate)
+
+        return {
+            bordereauId: 0,
+            montantDisponible: montantConstate,
+            lignes,
+            surplus: reste,
+        }
+    }
+
+    /**
+     * Logique de calcul FIFO partagée (sans écriture base).
+     */
+    private static async calculerImputation(
+        echeances: Echeance[],
+        montantDisponible: number,
+    ): Promise<{ lignes: LigneLettrage[]; reste: number }> {
+        let reste = Math.round(montantDisponible * 100) / 100
+        const lignes: LigneLettrage[] = []
+
+        for (const echeance of echeances) {
+            if (reste <= 0) break
+
+            const du = ImputationService.resteApayer(echeance)
+            if (du <= 0) continue
+
+            const impute = Math.min(reste, du)
+            const nouveauMontantPaye = Math.round((echeance.montantPaye || 0) + impute)
+            const statutApres = ImputationService.recalculerStatutApres(nouveauMontantPaye, echeance)
+            const apres = Math.round((echeance.montant - nouveauMontantPaye) * 100) / 100
+
+            lignes.push({
+                echeanceId: echeance.id,
+                numeroEcheance: echeance.numeroEcheance,
+                type: echeance.type,
+                montantDu: du,
+                montantImpute: impute,
+                resteApres: apres,
+                statutApres,
+            })
+
+            reste = Math.round((reste - impute) * 100) / 100
+        }
+
+        return { lignes, reste }
+    }
+
+    private static recalculerStatutApres(montantPaye: number, echeance: Echeance): 'paye' | 'partiel' | 'en_retard' | 'impaye' {
+        const reste = Math.round((echeance.montant - montantPaye) * 100) / 100
+        if (reste <= 0) return 'paye'
+        if (montantPaye > 0) return 'partiel'
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const limite = new Date(echeance.dateLimite)
+        limite.setHours(0, 0, 0, 0)
+        if (limite < today) return 'en_retard'
+        return 'impaye'
     }
 }

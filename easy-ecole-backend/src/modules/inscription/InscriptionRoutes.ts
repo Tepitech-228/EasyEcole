@@ -71,6 +71,8 @@ import ExcelRouter from "./routers/ExcelRouter";
 import DashboardController from "./controllers/DashboardController";
 import CoursController from "./controllers/CoursController";
 import DesignationMemoireRouter from "./routers/DesignationMemoireRouter";
+import TypeOperationBordereauRouter from "./routers/TypeOperationBordereauRouter";
+import FinanceRouter from "./routers/FinanceRouter";
 
 const router = express.Router();
 
@@ -132,6 +134,8 @@ router
     .use('/frais-parcours', [Authenticate], FraisParcoursRouter)
     .use('/reductions-frais', [Authenticate], ReductionFraisRouter)
     .use('/penalites-retard', [Authenticate], PenaliteRetardRouter)
+    .use('/types-operations-bordereau', [Authenticate], TypeOperationBordereauRouter)
+    .use('/finance', [Authenticate], FinanceRouter)
     .use('/excel', [Authenticate], ExcelRouter)
     // Montages racine — ne serviront que pour les routes qui n'ont pas matché ci-dessus
     .use('/', [Authenticate, InscriptionComplete], PresenceEnseignantRouter)

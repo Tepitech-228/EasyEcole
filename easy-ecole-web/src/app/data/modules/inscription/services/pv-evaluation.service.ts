@@ -20,8 +20,8 @@ export class PvEvaluationService {
 
   constructor(private httpClient: HttpClient) { }
 
-  exportPv(evaluationId: string): Observable<Blob> {
-    return this.httpClient.get(`${this.SERVICE_URL}/${evaluationId}/export-pv`, {
+  exportPv(evaluationId: string, format: 'pdf' | 'excel' = 'excel'): Observable<Blob> {
+    return this.httpClient.get(`${this.SERVICE_URL}/${evaluationId}/export-pv?format=${format}`, {
       responseType: 'blob'
     })
   }

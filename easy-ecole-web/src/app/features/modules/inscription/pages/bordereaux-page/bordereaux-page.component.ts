@@ -1,5 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
@@ -35,28 +34,7 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
     { value: 'en_attente', label: 'En attente' }
   ]
 
-  /** Modalités de paiement de la scolarité proposées à l'étudiant lors du dépôt du bordereau. */
-  readonly modaliteOptions: { value: '1x' | '3x' | '10x'; label: string; badge: string; mensualites: number }[] = [
-    { value: '1x', label: 'Paiement en 1 fois', badge: '1x', mensualites: 1 },
-    { value: '3x', label: '3 mensualités', badge: '3x', mensualites: 3 },
-    { value: '10x', label: '10 mensualités', badge: '10x', mensualites: 10 }
-  ]
-
   readonly BORDEREAUX_PATH: string = environment.MEDIAS_PATH.INSCRIPTION.BORDEREAUX
-
-  bordereauForm: FormGroup = new FormGroup({
-    referenceBancaire: new FormControl(null, []),
-    modalite: new FormControl('1x', [Validators.required]),
-  })
-
-  get selectedModalite(): '1x' | '3x' | '10x' {
-    return (this.bordereauForm.get('modalite')?.value as '1x' | '3x' | '10x') || '1x'
-  }
-
-  /** Nombre de mensualités de la modalité choisie (1, 3 ou 10) — confirme le choix à l'étudiant. */
-  get nombreMensualites(): number {
-    return this.modaliteOptions.find(option => option.value === this.selectedModalite)?.mensualites ?? 1
-  }
 
   constructor(
     private bordereauService: BordereauService,
@@ -112,8 +90,6 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
   uploadBordereau(): void {
     if (this.selectedFile) {
       const formData = new FormData()
-      formData.append('referenceBancaire', this.bordereauForm.get('referenceBancaire')!.value ?? '')
-      formData.append('modalite', this.selectedModalite)
       formData.append('fichier', this.selectedFile)
 
       this.bordereauService.upload(formData).subscribe({
@@ -156,7 +132,6 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
   // Modals
   closeUploadBordereauModal(): void {
     this.showUploadBordereauModal = false
-    this.bordereauForm.reset({ referenceBancaire: null, modalite: '1x' })
     this.selectedFile = undefined
   }
 

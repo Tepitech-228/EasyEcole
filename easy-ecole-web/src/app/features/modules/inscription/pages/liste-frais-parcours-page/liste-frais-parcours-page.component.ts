@@ -103,7 +103,7 @@ export class ListeFraisParcoursPageComponent extends BaseComponentClass implemen
 
   getParcoursLibelle(id: any): string {
     const p = this.parcoursList.find(x => x.id === id);
-    return p ? p.libelle || p.intitule || p.nom || id : id;
+    return p ? (p.titre || p.libelle || p.intitule || p.nom || id) : String(id);
   }
 
   getNiveauLibelle(id: any): string {

@@ -56,6 +56,7 @@ export class RappelSalleCron {
             {
               model: Enseignant,
               as: 'enseignant',
+              attributes: { exclude: ['utilisateurId'] },
             },
           ],
         })
@@ -72,7 +73,7 @@ export class RappelSalleCron {
 
             if (!enseignant || !cours) continue
 
-            const utilisateurId = enseignant.utilisateurId
+            const utilisateurId = (enseignant as any).utilisateurId
             if (!utilisateurId) continue
 
             const classeNom = cours.classe?.libelle || ''

@@ -36,6 +36,8 @@ import { RattrapageSessionsPageComponent } from './pages/rattrapage-sessions-pag
 import { RattrapageComitePageComponent } from './pages/rattrapage-comite-page/rattrapage-comite-page.component';
 import { RattrapageMesDemandesPageComponent } from './pages/rattrapage-mes-demandes-page/rattrapage-mes-demandes-page.component';
 import { RattrapagePaiementsPageComponent } from './pages/rattrapage-paiements-page/rattrapage-paiements-page.component';
+import { TypesBordereauxPageComponent } from './pages/types-bordereaux-page/types-bordereaux-page.component';
+import { EsacomptaBordereauxPageComponent } from './pages/esacompta-bordereaux-page/esacompta-bordereaux-page.component';
 
 const routes: Routes = [
   {
@@ -269,6 +271,16 @@ const routes: Routes = [
   {
     path: 'rattrapage/paiements',
     component: RattrapagePaiementsPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'finance/types-bordereaux',
+    component: TypesBordereauxPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'finance/bordereaux',
+    component: EsacomptaBordereauxPageComponent,
     pathMatch: 'full'
   },
 ];

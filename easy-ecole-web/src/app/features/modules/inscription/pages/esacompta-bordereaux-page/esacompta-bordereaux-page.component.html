@@ -1,0 +1,159 @@
+<div class="p-6">
+  <app-header-title title="Bordereaux à traiter" subtitle="Saisie comptable et imputation des paiements"></app-header-title>
+
+  <div *ngIf="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+    {{ apiErrorMessage || 'Une erreur est survenue' }}
+  </div>
+
+  <!-- Filtres -->
+  <div class="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-x-4 gap-y-3">
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">Année académique</label>
+        <select [(ngModel)]="selectedAnneeId" (ngModelChange)="onAnneeChange()" [disabled]="!dataLoaded"
+          class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm disabled:bg-gray-100">
+          <option value="">-- Toutes --</option>
+          <option *ngFor="let a of annees" [value]="a.id">{{ a.libelle }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">Niveau d'étude</label>
+        <select [(ngModel)]="selectedNiveauId" (ngModelChange)="onNiveauChange()" [disabled]="!selectedAnneeId || !dataLoaded"
+          class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm disabled:bg-gray-100">
+          <option value="">-- Tous --</option>
+          <option *ngFor="let n of niveauxFiltres" [value]="n.id">{{ n.libelle }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">Filière</label>
+        <select [(ngModel)]="selectedParcoursId" (ngModelChange)="onParcoursChange()" [disabled]="!selectedNiveauId || !dataLoaded"
+          class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm disabled:bg-gray-100">
+          <option value="">-- Toutes --</option>
+          <option *ngFor="let p of parcoursFiltres" [value]="p.id">{{ p.titre || '' }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">Type d'opération</label>
+        <select [(ngModel)]="selectedTypeOperationId" (ngModelChange)="onTypeOperationChange()" [disabled]="!dataLoaded"
+          class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm disabled:bg-gray-100">
+          <option value="">-- Tous --</option>
+          <option *ngFor="let t of typesOperations" [value]="t.id">{{ t.libelle }}</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+  <div *ngIf="!loading && bordereaux.length === 0" class="bg-white rounded-lg border border-gray-200 p-8 text-center">
+    <p class="text-gray-500 text-sm">Aucun bordereau à traiter</p>
+  </div>
+
+  <div *ngIf="!loading && bordereaux.length > 0" class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-3 text-left font-medium text-gray-600">Étudiant</th>
+          <th class="px-4 py-3 text-left font-medium text-gray-600">Matricule</th>
+          <th class="px-4 py-3 text-left font-medium text-gray-600">Type</th>
+          <th class="px-4 py-3 text-right font-medium text-gray-600">Montant</th>
+          <th class="px-4 py-3 text-left font-medium text-gray-600">Date dépôt</th>
+          <th class="px-4 py-3 text-center font-medium text-gray-600">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <tr *ngFor="let b of bordereaux" class="hover:bg-gray-50">
+          <td class="px-4 py-3 text-gray-900">{{ b.utilisateur?.nom }} {{ b.utilisateur?.prenoms }}</td>
+          <td class="px-4 py-3 text-gray-600">{{ b.echeance?.dossierEtudiant?.matricule || '---' }}</td>
+          <td class="px-4 py-3 text-gray-600">{{ getTypeOperationLibelle(b.typeOperationId ?? null) }}</td>
+          <td class="px-4 py-3 text-right text-gray-900">{{ formatCurrency(b.montant) }}</td>
+          <td class="px-4 py-3 text-gray-600">{{ b.dateSoumission | date:'dd/MM/YYYY' }}</td>
+          <td class="px-4 py-3 text-center">
+            <button (click)="openSaisieModal(b)" class="text-indigo-600 hover:text-indigo-800 mr-2">Saisir</button>
+            <button (click)="openPdfModal(b)" class="text-gray-600 hover:text-gray-800">Voir</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Saisie -->
+<app-custom-modal title="Saisie comptable" subtitle="Enregistrer les informations financières" (onCloseModal)="closeSaisieModal()" [center]="true" [showModal]="showSaisieModal">
+  <div *ngIf="selectedBordereau" class="mb-6">
+    <div class="bg-gray-50 rounded-lg p-4 mb-4">
+      <p class="text-sm text-gray-600">Étudiant : <strong>{{ selectedBordereau.utilisateur?.nom }} {{ selectedBordereau.utilisateur?.prenoms }}</strong></p>
+      <p class="text-sm text-gray-600">Matricule : <strong>{{ selectedBordereau.echeance?.dossierEtudiant?.matricule || '---' }}</strong></p>
+      <p class="text-sm text-gray-600">Montant bordereau : <strong>{{ formatCurrency(selectedBordereau.montant) }}</strong></p>
+    </div>
+
+    <form [formGroup]="saisieForm" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Montant réellement payé *</label>
+        <input type="number" formControlName="montantPaiement" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Référence bancaire</label>
+        <input type="text" formControlName="referenceBancaire" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Type d'opération *</label>
+        <select formControlName="typeOperationId" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+          <option value="">-- Sélectionner --</option>
+          <option *ngFor="let t of typesOperations" [value]="t.id">{{ t.libelle }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Date de paiement</label>
+        <input type="date" formControlName="datePaiement" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Commentaire</label>
+        <textarea rows="3" formControlName="commentaire" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"></textarea>
+      </div>
+    </form>
+  </div>
+  <div class="flex items-center justify-between py-3">
+    <app-custom-button (click)="closeSaisieModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+    <div class="flex gap-3">
+      <app-custom-button (click)="onPreview()" text="Aperçu imputation" color="blue"></app-custom-button>
+      <app-custom-button (click)="onConfirmerSaisie()" text="Valider et imputer" [disabled]="saisieForm.invalid" color="green"></app-custom-button>
+    </div>
+  </div>
+</app-custom-modal>
+
+<!-- Modal Preview -->
+<app-custom-modal title="Aperçu de l'imputation" subtitle="Vérifiez la répartition avant validation" (onCloseModal)="closePreviewModal()" [center]="true" [showModal]="showPreviewModal">
+  <div *ngIf="previewResult" class="mb-6">
+    <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+      <p class="text-sm font-medium text-green-800">Montant disponible : {{ formatCurrency(previewResult.montantDisponible) }}</p>
+    </div>
+    <div *ngIf="previewResult.lignes && previewResult.lignes.length > 0" class="space-y-2">
+      <div *ngFor="let ligne of previewResult.lignes" class="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-2">
+        <span class="text-sm text-gray-700">{{ ligne.type === 'inscription' ? 'Inscription' : 'Scolarité' }} - Échéance {{ ligne.numeroEcheance }}</span>
+        <span class="text-sm font-medium" [class.text-green-600]="ligne.statutApres === 'paye'" [class.text-orange-600]="ligne.statutApres === 'partiel'">
+          {{ formatCurrency(ligne.montantImpute) }} → {{ ligne.statutApres === 'paye' ? 'SOLDÉ' : 'PARTIEL' }}
+        </span>
+      </div>
+    </div>
+    <div *ngIf="previewResult.surplus > 0" class="mt-4 bg-purple-50 border border-purple-200 rounded-lg p-3">
+      <p class="text-sm text-purple-700">Surplus crédité : <strong>{{ formatCurrency(previewResult.surplus) }}</strong></p>
+    </div>
+  </div>
+  <div class="flex items-center justify-center py-3">
+    <app-custom-button (click)="closePreviewModal()" text="Fermer"></app-custom-button>
+  </div>
+</app-custom-modal>
+
+<!-- Modal PDF -->
+<app-custom-modal title="Bordereau" subtitle="Aperçu du fichier" (onCloseModal)="closePdfModal()" [center]="true" [showModal]="showPdfModal">
+  <div *ngIf="selectedBordereau && selectedBordereau.fichier" class="w-full">
+    <div [ngSwitch]="isImageFile(selectedBordereau.fichier)">
+      <img *ngSwitchCase="true" [src]="getDocUrl(selectedBordereau.fichier)" class="max-w-full h-auto rounded border border-gray-200">
+      <iframe *ngSwitchDefault [src]="getDocUrl(selectedBordereau.fichier)" class="w-full h-[70vh] rounded border border-gray-200"></iframe>
+    </div>
+  </div>
+  <div *ngIf="!selectedBordereau || !selectedBordereau.fichier" class="text-center text-gray-400 py-8">
+    Aucun fichier disponible
+  </div>
+</app-custom-modal>
