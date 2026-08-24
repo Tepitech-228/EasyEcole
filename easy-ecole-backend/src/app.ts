@@ -89,6 +89,12 @@ app.use(helmet({
 }))
 app.use(cors(corsOptions))
 
+// Derrière un reverse proxy (nginx…), indispensable pour que express-rate-limit
+// identifie les clients réels via X-Forwarded-For (sinon ERR_ERL_UNEXPECTED_X_FORWARDED_FOR :
+// tout le trafic apparaîtrait comme venant de l'IP du proxy).
+// NB: valeur 1 = on fait confiance à UN seul saut de proxy ; ajuster si chaîne de proxies.
+app.set('trust proxy', 1)
+
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 2000,

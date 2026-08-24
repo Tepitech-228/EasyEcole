@@ -173,8 +173,10 @@ export async function ensureUniqueIndexes(sequelize: Sequelize): Promise<EnsureU
     // 2. Index UNIQUE monocolonne déjà présents, par (table, colonne).
     //    (Un index UNIQUE composite n'enferme pas l'unicité d'une colonne
     //    seule : il n'est donc pas considéré comme satisfaisant.)
+    //    NB: MAX(COLUMN_NAME) rend la requête compatible sql_mode=ONLY_FULL_GROUP_BY ;
+    //    HAVING COUNT(*) = 1 garantit une seule ligne par groupe, MAX est donc exacte.
     const stats = await sequelize.query(
-        `SELECT TABLE_NAME, COLUMN_NAME
+        `SELECT TABLE_NAME, MAX(COLUMN_NAME) AS COLUMN_NAME
            FROM information_schema.statistics
           WHERE TABLE_SCHEMA = DATABASE()
             AND NON_UNIQUE = 0
