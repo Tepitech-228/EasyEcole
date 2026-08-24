@@ -1,7 +1,7 @@
 <!-- // Modal -->
 <div *ngIf="showModal" class="fixed inset-0 z-50 p-4 overflow-x-hidden overflow-y-auto transition-all" style="min-height: 100vh;">
     <div class="flex justify-center items-center w-full overflow-y-auto" [ngClass]="center ? 'items-center' : ''" style="min-height: 100%;">
-        <div class="max-w-4xl px-3 py-4 bg-white w-full overflow-y-auto rounded shadow transition-all dark:bg-gray-700">
+        <div class="px-3 py-4 bg-white w-full overflow-y-auto rounded shadow transition-all dark:bg-gray-700" [ngClass]="sizeClass">
             <div class="md:px-4 px-2 mt-3 mb-8">
                 <div class="flex w-full justify-between gap-x-8" [ngClass]="subtitle ? 'items-start' : 'items-center'">
                     <div class="flex flex-col gap-y-2">
