@@ -168,14 +168,15 @@ export class DatabaseConnection {
                 }
 
                 await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
-            } else if (process.env.DB_SYNC_ON_BOOT === 'true') {
+            } else if (process.env.DB_SYNC_ON_BOOT !== 'false') {
                 // Déploiement (Dokploy/Docker) : ce projet n'a PAS de migrations
                 // Sequelize ; le schéma est historiquement créé par le sync alter
-                // du développement. DB_SYNC_ON_BOOT=true permet au démarrage en
-                // production de créer/mettre à jour les tables manquantes
-                // (ex. ins_seances manquante -> crash du cron RappelSalleCron).
-                // À activer ponctuellement puis à désactiver une fois le schéma aligné.
-                console.log('[DB] DB_SYNC_ON_BOOT=true — synchronisation du schéma demandée en production…')
+                // du développement. COMPORTEMENT PAR DÉFAUT en production :
+                // synchronisation AUTOMATIQUE du schéma à chaque démarrage,
+                // sans intervention manuelle (crée les tables manquantes, ex.
+                // ins_seances -> crash du cron RappelSalleCron).
+                // Pour désactiver explicitement : DB_SYNC_ON_BOOT=false.
+                console.log('[DB] Synchronisation automatique du schéma au démarrage (production)…')
                 await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 0')
                 try {
                     await this._sequelize.sync({ alter: true })
@@ -186,7 +187,7 @@ export class DatabaseConnection {
                     await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 1').catch(() => undefined)
                 }
             } else {
-                console.log('Production mode: sync disabled, use migrations (ou DB_SYNC_ON_BOOT=true)');
+                console.log('Production mode: sync disabled (DB_SYNC_ON_BOOT=false)');
             }
 
             // --- Contraintes UNIQUE nominatives (après les syncs) ---
