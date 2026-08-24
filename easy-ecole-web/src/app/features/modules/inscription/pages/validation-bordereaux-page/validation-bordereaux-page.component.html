@@ -229,11 +229,11 @@
         <div class="flex-1 overflow-auto p-6 bg-gray-100 flex items-center justify-center">
             <img *ngIf="isImageFile(pdfBordereau!.fichier!)"
                 [src]="getBordereauDownloadUrl(pdfBordereau!.id!) | safeUrl | async"
-                class="max-w-full max-h-[72vh] object-contain rounded shadow"
+                class="max-w-full max-h-[calc(95vh-190px)] object-contain rounded shadow"
                 alt="Bordereau">
             <iframe *ngIf="!isImageFile(pdfBordereau!.fichier!)"
                 [src]="getBordereauDownloadUrl(pdfBordereau!.id!) | safeUrl | async"
-                class="w-full h-[75vh] rounded shadow"></iframe>
+                class="w-full h-[calc(95vh-190px)] rounded shadow"></iframe>
         </div>
         <div class="flex items-center justify-center gap-x-4 px-6 py-4 border-t border-gray-200">
             <app-custom-button (click)="closePdfModal(); openValidationModal(pdfBordereau!)" text="Valider" color="green"></app-custom-button>

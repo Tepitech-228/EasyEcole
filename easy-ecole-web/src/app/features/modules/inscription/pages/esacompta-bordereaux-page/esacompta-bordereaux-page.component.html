@@ -190,8 +190,8 @@
 <app-custom-modal title="Bordereau" subtitle="Aperçu du fichier" (onCloseModal)="closePdfModal()" [center]="true" [showModal]="showPdfModal" [size]="'full'">
   <div *ngIf="selectedBordereau && selectedBordereau.fichier" class="w-full">
     <div [ngSwitch]="isImageFile(selectedBordereau.fichier)">
-      <img *ngSwitchCase="true" [src]="getDocUrl(selectedBordereau.fichier)" class="max-w-full max-h-[80vh] object-contain mx-auto rounded border border-gray-200">
-      <iframe *ngSwitchDefault [src]="getDocUrlSafe(selectedBordereau.fichier)" class="w-full h-[85vh] rounded border border-gray-200"></iframe>
+      <img *ngSwitchCase="true" [src]="getDocUrl(selectedBordereau.fichier)" class="max-w-full max-h-[calc(100vh-170px)] object-contain mx-auto rounded border border-gray-200">
+      <iframe *ngSwitchDefault [src]="getDocUrlSafe(selectedBordereau.fichier)" class="w-full h-[calc(100vh-170px)] rounded border border-gray-200"></iframe>
     </div>
   </div>
   <div *ngIf="!selectedBordereau || !selectedBordereau.fichier" class="text-center text-gray-400 py-8">

@@ -155,10 +155,10 @@
     <div class="w-full">
         <div *ngIf="pdfBordereau && pdfBordereau.fichier" class="flex flex-col items-center">
             <div *ngIf="isImageFile(pdfBordereau.fichier)" class="mb-4">
-                <img [src]="getDocUrl(pdfBordereau.fichier)" alt="Bordereau" class="max-w-full max-h-[80vh] object-contain rounded border border-gray-200">
+                <img [src]="getDocUrl(pdfBordereau.fichier)" alt="Bordereau" class="max-w-full max-h-[calc(100vh-170px)] object-contain rounded border border-gray-200">
             </div>
             <div *ngIf="!isImageFile(pdfBordereau.fichier)" class="w-full">
-                <iframe [src]="getDocUrl(pdfBordereau.fichier)" class="w-full h-[85vh] rounded border border-gray-200"></iframe>
+                <iframe [src]="getDocUrl(pdfBordereau.fichier)" class="w-full h-[calc(100vh-170px)] rounded border border-gray-200"></iframe>
             </div>
             <div class="mt-4 flex gap-x-4">
                 <a [href]="getDocUrl(pdfBordereau.fichier)" target="_blank" class="inline-flex items-center gap-x-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-500">
