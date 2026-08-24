@@ -16,8 +16,7 @@
 </div>
 
 <div class="w-full" *ngIf="apprenant && rolesValue.isApprenant">
-    <div class="w-full mb-8">
-        <!-- <label for="titre" class="mb-2 block text-sm leading-6 text-gray-600">Titre</label> -->
+    <div class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
         <div class="mt-2 flex items-center gap-x-8">
             <img class="h-36 w-36 rounded-md object-cover object-center border-2 border-gray-300"
                 [src]="imageURL ? imageURL : apprenant.photo ? PHOTOS_PATH + apprenant.photo : 'assets/images/blank-profile-picture.png'" alt="profile">
@@ -31,9 +30,34 @@
             </div>
         </div>
     </div>
+
+    <!-- Fil d'étapes -->
+    <ol class="flex items-center w-full mb-8 overflow-x-auto">
+        <ng-container *ngFor="let etape of etapesProfil; let i = index">
+            <li class="shrink-0">
+                <button type="button" (click)="allerEtape(i + 1)"
+                    class="flex items-center gap-x-2 focus:outline-none"
+                    [class.text-primary-600]="etapeActuelle === i + 1"
+                    [class.text-gray-500]="etapeActuelle !== i + 1">
+                    <span
+                        class="flex h-8 w-8 items-center justify-center rounded-full border text-sm font-semibold transition"
+                        [class.bg-primary-600]="etapeActuelle === i + 1"
+                        [class.border-primary-600]="etapeActuelle === i + 1"
+                        [class.text-white]="etapeActuelle === i + 1"
+                        [class.border-gray-300]="etapeActuelle !== i + 1">{{ i + 1 }}</span>
+                    <span class="text-sm font-medium hidden md:block whitespace-nowrap">{{ etape.titre }}</span>
+                </button>
+            </li>
+            <li *ngIf="i < etapesProfil.length - 1" class="flex-1 h-px bg-gray-300 mx-3 min-w-[24px]"></li>
+        </ng-container>
+    </ol>
+
     <form [formGroup]="profilForm" *ngIf="profilForm">
-        <div class="flex flex-col gap-x-4 mb-8">
-            <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
+        <!-- Étape 1 : Informations personnelles -->
+        <section *ngIf="etapeActuelle === 1" class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+            <h2 class="text-base font-semibold leading-7 text-gray-900 mb-1">Informations personnelles</h2>
+            <p class="text-sm text-gray-500 mb-6">Votre identité et votre état civil</p>
+            <div class="grid grid-cols-6 gap-x-8 gap-y-6">
                 <div class="col-span-2">
                     <label for="nom" class="mb-2 block text-sm leading-6 text-gray-600">Nom</label>
                     <input type="text" id="nom" formControlName="nom"
@@ -58,11 +82,6 @@
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 bg-gray-100">
                 </div>
                 <div class="col-span-2">
-                    <label for="contact" class="mb-2 block text-sm leading-6 text-gray-600">Contact</label>
-                    <input type="text" id="contact" formControlName="contact"
-                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-                </div>
-                <div class="col-span-2">
                     <label for="sexe" class="mb-2 block text-sm leading-6 text-gray-600">Sexe</label>
                     <select id="sexe" formControlName="sexe"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
@@ -70,23 +89,6 @@
                     </select>
                 </div>
                 <div class="col-span-2">
-                    <label for="periode" class="mb-2 block text-sm leading-6 text-gray-600">Période <span class="text-red-600">*</span></label>
-                    <select id="periode" formControlName="periode"
-                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-                        <option value="matin">Cours du matin</option>
-                        <option value="soir">Cours du soir</option>
-                    </select>
-                    <div *ngIf="profilForm.get('periode')!.invalid && (profilForm.get('periode')!.dirty || profilForm.get('periode')!.touched)">
-                        <app-form-message *ngIf="profilForm.get('periode')!.errors?.['required']"
-                            text="Veuillez choisir votre période de cours"></app-form-message>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="flex flex-col gap-x-4 mb-8">
-            <!-- <h2 class="text-base font-semibold leading-7 text-gray-900">Profile</h2> -->
-            <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
-                <div class="col-span-3">
                     <label for="dateNaissance" class="mb-2 block text-sm leading-6 text-gray-600">Date de naissance</label>
                     <input type="date" id="dateNaissance" formControlName="dateNaissance"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
@@ -95,7 +97,7 @@
                             text="Veuillez saisir votre date de naissance"></app-form-message>
                     </div>
                 </div>
-                <div class="col-span-3">
+                <div class="col-span-2">
                     <label for="lieuNaissance" class="mb-2 block text-sm leading-6 text-gray-600">Lieu de naissance</label>
                     <input type="text" id="lieuNaissance" formControlName="lieuNaissance"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
@@ -105,10 +107,10 @@
                     </div>
                 </div>
             </div>
-        </div>
-        <div formGroupName="identite" class="flex flex-col gap-x-4 mb-8">
-            <h2 class="text-base font-semibold leading-7 text-gray-900 mb-2">Identité</h2>
-            <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
+        </section>
+        <div formGroupName="identite" *ngIf="etapeActuelle === 1" class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+            <h2 class="text-base font-semibold leading-7 text-gray-900 mb-6">Identité</h2>
+            <div class="grid grid-cols-6 gap-x-8 gap-y-6">
                 <div class="col-span-2">
                     <label for="nationalite" class="mb-2 block text-sm leading-6 text-gray-600">Nationalité</label>
                     <input type="text" id="nationalite" formControlName="nationalite"
@@ -183,9 +185,22 @@
                 </div>
             </div>
         </div>
-        <div class="flex flex-col gap-x-4 mb-8">
-            <h2 class="text-base font-semibold leading-7 text-gray-900 mb-2">Scolarité</h2>
-            <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
+        <section *ngIf="etapeActuelle === 2" class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+            <h2 class="text-base font-semibold leading-7 text-gray-900 mb-1">Diplômes & parcours</h2>
+            <p class="text-sm text-gray-500 mb-6">Votre cursus, vos diplômes et votre activité professionnelle</p>
+            <div class="grid grid-cols-6 gap-x-8 gap-y-6">
+                <div class="col-span-2">
+                    <label for="periode" class="mb-2 block text-sm leading-6 text-gray-600">Période <span class="text-red-600">*</span></label>
+                    <select id="periode" formControlName="periode"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        <option value="matin">Cours du matin</option>
+                        <option value="soir">Cours du soir</option>
+                    </select>
+                    <div *ngIf="profilForm.get('periode')!.invalid && (profilForm.get('periode')!.dirty || profilForm.get('periode')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('periode')!.errors?.['required']"
+                            text="Veuillez choisir votre période de cours"></app-form-message>
+                    </div>
+                </div>
                 <div class="col-span-2">
                     <label for="cni" class="mb-2 block text-sm leading-6 text-gray-600">N° CNI</label>
                     <input type="text" id="cni" formControlName="cni"
@@ -262,10 +277,22 @@
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                 </div>
             </div>
-        </div>
-        <div formGroupName="adresse" class="flex flex-col gap-x-4 mb-8">
-            <h2 class="text-base font-semibold leading-7 text-gray-900 mb-2">Adresse</h2>
-            <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
+        </section>
+        <!-- Étape 3 : Adresse & contact -->
+        <section *ngIf="etapeActuelle === 3" class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+            <h2 class="text-base font-semibold leading-7 text-gray-900 mb-1">Contact</h2>
+            <p class="text-sm text-gray-500 mb-6">Comment vous joindre</p>
+            <div class="grid grid-cols-6 gap-x-8 gap-y-6">
+                <div class="col-span-2">
+                    <label for="contact" class="mb-2 block text-sm leading-6 text-gray-600">Contact principal</label>
+                    <input type="text" id="contact" formControlName="contact"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+            </div>
+        </section>
+        <div formGroupName="adresse" *ngIf="etapeActuelle === 3" class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+            <h2 class="text-base font-semibold leading-7 text-gray-900 mb-6">Adresse</h2>
+            <div class="grid grid-cols-6 gap-x-8 gap-y-6">
                 <div class="col-span-3">
                     <label for="boitePostale" class="mb-2 block text-sm leading-6 text-gray-600">Boîte postale</label>
                     <input type="text" id="boitePostale" formControlName="boitePostale"
@@ -328,9 +355,9 @@
                 </div>
             </div>
         </div>
-        <div formGroupName="informationsSalarie" class="flex flex-col gap-x-4 mb-8">
-            <h2 class="text-base font-semibold leading-7 text-gray-900 mb-2">Informations sur salarié</h2>
-            <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
+        <div formGroupName="informationsSalarie" *ngIf="etapeActuelle === 2" class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+            <h2 class="text-base font-semibold leading-7 text-gray-900 mb-6">Activité professionnelle</h2>
+            <div class="grid grid-cols-6 gap-x-8 gap-y-6">
                 <div class="col-span-2">
                     <label for="titre" class="mb-2 block text-sm leading-6 text-gray-600">Êtes-vous salarié ?</label>
                     <div class="flex items-center py-1 gap-x-4">
@@ -358,9 +385,10 @@
                 </div>
             </div>
         </div>
-        <div formGroupName="informationsParents" class="flex flex-col gap-x-4 mb-8">
-            <h2 class="text-base font-semibold leading-7 text-gray-900 mb-2">Vos parents</h2>
-            <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
+        <div formGroupName="informationsParents" *ngIf="etapeActuelle === 4" class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+            <h2 class="text-base font-semibold leading-7 text-gray-900 mb-1">Vos parents</h2>
+            <p class="text-sm text-gray-500 mb-6">Informations sur votre père et votre mère</p>
+            <div class="grid grid-cols-6 gap-x-8 gap-y-6">
                 <div class="col-span-3">
                     <label class="mb-2 block text-sm leading-6 text-gray-600">Père</label>
                     <div class="flex flex-col">
@@ -377,16 +405,24 @@
                         </div>
                         <div class="mb-8"></div>
                         
-                        <input type="text" id="professionPere" formControlName="professionPere"
+                        <div class="mt-4">
+                            <label for="professionPere" class="mb-2 block text-sm leading-6 text-gray-600">Profession du père</label>
+                            <input type="text" id="professionPere" formControlName="professionPere" placeholder="Profession de votre père"
                                 class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-                        <div *ngIf="profilForm.get('informationsParents.professionPere')!.invalid && (profilForm.get('informationsParents.professionPere')!.dirty || profilForm.get('informationsParents.professionPere')!.touched)">
-                            <app-form-message *ngIf="profilForm.get('informationsParents.professionPere')!.errors?.['required']"
-                                text="Veuillez préciser la profession de votre père"></app-form-message>
+                            <div *ngIf="profilForm.get('informationsParents.professionPere')!.invalid && (profilForm.get('informationsParents.professionPere')!.dirty || profilForm.get('informationsParents.professionPere')!.touched)">
+                                <app-form-message *ngIf="profilForm.get('informationsParents.professionPere')!.errors?.['required']"
+                                    text="Veuillez préciser la profession de votre père"></app-form-message>
+                            </div>
                         </div>
-                        <div class="form-floating">
-                          <input type="email" class="form-control" id="emailPere" formControlName="emailPere" placeholder="Email du père">
-                          <label for="emailPere">Email du père</label>
-                          <small class="text-muted">Cet email servira de identifiant de connexion pour l'espace parents</small>
+                        <div class="mt-4">
+                            <label for="emailPere" class="mb-2 block text-sm leading-6 text-gray-600">Email du père</label>
+                            <input type="email" id="emailPere" formControlName="emailPere" placeholder="Email du père"
+                                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                            <p class="mt-1 text-xs text-gray-500">Cet email servira d'identifiant de connexion pour l'espace parents.</p>
+                            <div *ngIf="profilForm.get('informationsParents.emailPere')!.invalid && (profilForm.get('informationsParents.emailPere')!.dirty || profilForm.get('informationsParents.emailPere')!.touched)">
+                                <app-form-message *ngIf="profilForm.get('informationsParents.emailPere')!.errors?.['email']"
+                                    text="Email invalide"></app-form-message>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -406,24 +442,33 @@
                         </div>
                         <div class="mb-8"></div>
                         
-                        <input type="text" id="professionMere" formControlName="professionMere"
-                                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-                        <div *ngIf="profilForm.get('informationsParents.professionMere')!.invalid && (profilForm.get('informationsParents.professionMere')!.dirty || profilForm.get('informationsParents.professionMere')!.touched)">
-                            <app-form-message *ngIf="profilForm.get('informationsParents.professionMere')!.errors?.['required']"
-                                text="Veuillez préciser la profession de votre mère"></app-form-message>
+                        <div class="mt-4">
+                            <label for="professionMere" class="mb-2 block text-sm leading-6 text-gray-600">Profession de la mère</label>
+                            <input type="text" id="professionMere" formControlName="professionMere" placeholder="Profession de votre mère"
+                                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                            <div *ngIf="profilForm.get('informationsParents.professionMere')!.invalid && (profilForm.get('informationsParents.professionMere')!.dirty || profilForm.get('informationsParents.professionMere')!.touched)">
+                                <app-form-message *ngIf="profilForm.get('informationsParents.professionMere')!.errors?.['required']"
+                                    text="Veuillez préciser la profession de votre mère"></app-form-message>
+                            </div>
                         </div>
-                        <div class="form-floating">
-                          <input type="email" class="form-control" id="emailMere" formControlName="emailMere" placeholder="Email de la mère">
-                          <label for="emailMere">Email de la mère</label>
-                          <small class="text-muted">Cet email servira de identifiant de connexion pour l'espace parents</small>
+                        <div class="mt-4">
+                            <label for="emailMere" class="mb-2 block text-sm leading-6 text-gray-600">Email de la mère</label>
+                            <input type="email" id="emailMere" formControlName="emailMere" placeholder="Email de la mère"
+                                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                            <p class="mt-1 text-xs text-gray-500">Cet email servira d'identifiant de connexion pour l'espace parents.</p>
+                            <div *ngIf="profilForm.get('informationsParents.emailMere')!.invalid && (profilForm.get('informationsParents.emailMere')!.dirty || profilForm.get('informationsParents.emailMere')!.touched)">
+                                <app-form-message *ngIf="profilForm.get('informationsParents.emailMere')!.errors?.['email']"
+                                    text="Email invalide"></app-form-message>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div formGroupName="personnePrevenir" class="flex flex-col gap-x-4 mb-8">
-            <h2 class="text-base font-semibold leading-7 text-gray-900 mb-2">Personne à prevenir</h2>
-            <div class="grid grid-cols-6 gap-x-24 gap-y-10 mb-8">
+        <div formGroupName="personnePrevenir" *ngIf="etapeActuelle === 5" class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+            <h2 class="text-base font-semibold leading-7 text-gray-900 mb-1">Personne à prévenir</h2>
+            <p class="text-sm text-gray-500 mb-6">Le contact à joindre en cas d'urgence</p>
+            <div class="grid grid-cols-6 gap-x-8 gap-y-6">
                 <div class="col-span-2">
                     <label for="nom" class="mb-2 block text-sm leading-6 text-gray-600">Nom</label>
                     <input type="text" id="nom" formControlName="nom"
@@ -506,8 +551,16 @@
             </div>
         </div>
 
-        <div class="w-full flex justify-end items-center pb-12">
-            <app-custom-button [disabled]="false" (click)="validerProfilApprenant()" text="Enregistrer"></app-custom-button>
+        <!-- Navigation de l'assistant -->
+        <div class="w-full flex justify-between items-center bg-white border border-gray-200 rounded-lg p-4 mb-8">
+            <app-custom-button *ngIf="etapeActuelle > 1" (click)="etapePrecedente()" text="Précédent" color="gray"
+                [outlined]="true"></app-custom-button>
+            <span *ngIf="etapeActuelle === 1" class="text-sm text-gray-400">Étape {{ etapeActuelle }} sur {{ totalEtapes }}</span>
+            <div class="flex items-center gap-x-3">
+                <app-custom-button *ngIf="etapeActuelle < totalEtapes" (click)="etapeSuivante()" text="Suivant"></app-custom-button>
+                <app-custom-button *ngIf="etapeActuelle === totalEtapes" [disabled]="false" (click)="validerProfilApprenant()"
+                    text="Enregistrer"></app-custom-button>
+            </div>
         </div>
     </form>
 </div>

@@ -114,7 +114,10 @@ export class ListeDemandesPageComponent extends BaseComponentClass implements On
   private getSessions(): void {
     this.sessionService.getAll().subscribe({
       next: (res) => {
-        this.sessions = res.filter(session => Session.getEtat(session.dateDebut, session.dateFin) == EtatsSession.OUVERTE)
+        // Sessions non clôturées : en cours ou à venir.
+        this.sessions = res
+          .filter(session => Session.getEtat(session.dateDebut, session.dateFin) != EtatsSession.CLOTUREE)
+          .sort((a, b) => new Date(a.dateDebut).getTime() - new Date(b.dateDebut).getTime())
       },
       error: () => {}
     })

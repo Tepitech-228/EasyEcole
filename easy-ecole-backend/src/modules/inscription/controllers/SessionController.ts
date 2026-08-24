@@ -108,24 +108,59 @@ export default class SessionController {
 
                 if (req.body.frais && Array.isArray(req.body.frais)) {
                     for (const fraisData of req.body.frais) {
-                        await FraisInscription.create({
-                            titre: fraisData.titre,
-                            montant: fraisData.montant,
-                            description: fraisData.description,
-                            fraisDesCours: fraisData.fraisDesCours ?? true,
-                            sessionId: session.id,
-                        }, { transaction: t });
+                        // Une ligne supprimée logiquement conserve la contrainte d'unicité (titre, session) :
+                        // on la met à jour et on la restaure au lieu d'échouer.
+                        const existant = await FraisInscription.findOne({
+                            where: { titre: fraisData.titre, sessionId: session.id },
+                            paranoid: false,
+                            transaction: t,
+                        });
+                        if (existant) {
+                            await existant.update({
+                                montant: fraisData.montant,
+                                description: fraisData.description,
+                                fraisDesCours: fraisData.fraisDesCours ?? true,
+                            }, { transaction: t });
+                            if (existant.deletedAt != null) {
+                                await existant.restore({ transaction: t });
+                            }
+                        }
+                        else {
+                            await FraisInscription.create({
+                                titre: fraisData.titre,
+                                montant: fraisData.montant,
+                                description: fraisData.description,
+                                fraisDesCours: fraisData.fraisDesCours ?? true,
+                                sessionId: session.id,
+                            }, { transaction: t });
+                        }
                     }
                 }
 
                 if (req.body.dossiers && Array.isArray(req.body.dossiers)) {
                     for (const dossierData of req.body.dossiers) {
-                        await DossierInscription.create({
-                            titre: dossierData.titre,
-                            description: dossierData.description,
-                            tailleMax: dossierData.tailleMax,
-                            sessionId: session.id,
-                        }, { transaction: t });
+                        const existant = await DossierInscription.findOne({
+                            where: { titre: dossierData.titre, sessionId: session.id },
+                            paranoid: false,
+                            transaction: t,
+                        });
+                        if (existant) {
+                            await existant.update({
+                                description: dossierData.description,
+                                tailleMax: dossierData.tailleMax,
+                            }, { transaction: t });
+                            if (existant.deletedAt != null) {
+                                await existant.restore({ transaction: t });
+                            }
+                        }
+                        else {
+                            await DossierInscription.create({
+                                titre: dossierData.titre,
+                                description: dossierData.description,
+                                tailleMax: dossierData.tailleMax,
+                                sessionId: session.id,
+                            }, { transaction: t });
+                        }
                     }
                 }
 

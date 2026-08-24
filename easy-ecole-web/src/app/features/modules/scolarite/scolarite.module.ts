@@ -21,6 +21,10 @@ import { ReorientationPageComponent } from './pages/reorientation-page/reorienta
 
 import { DiplomesPageComponent } from './pages/diplomes-page/diplomes-page.component';
 import { DemandesVAEPageComponent } from './pages/demandes-vae-page/demandes-vae-page.component';
+import { DashboardSecretariatPageComponent } from './pages/dashboard-secretariat-page/dashboard-secretariat-page.component';
+import { CaissePageComponent } from './pages/caisse-page/caisse-page.component';
+import { ClotureCaissePageComponent } from './pages/cloture-caisse-page/cloture-caisse-page.component';
+import { FicheDemandePageComponent } from './pages/fiche-demande-page/fiche-demande-page.component';
 
 @NgModule({
   declarations: [
@@ -38,7 +42,11 @@ import { DemandesVAEPageComponent } from './pages/demandes-vae-page/demandes-vae
     DecisionsPassagePageComponent,
     ReorientationPageComponent,
     DiplomesPageComponent,
-    DemandesVAEPageComponent
+    DemandesVAEPageComponent,
+    DashboardSecretariatPageComponent,
+    CaissePageComponent,
+    ClotureCaissePageComponent,
+    FicheDemandePageComponent
   ],
   imports: [
     CommonModule,

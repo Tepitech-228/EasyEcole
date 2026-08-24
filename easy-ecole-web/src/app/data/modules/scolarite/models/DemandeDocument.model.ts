@@ -25,6 +25,18 @@ export interface DemandeDocument {
   etudiant?: any;
   typeDocument?: TypeDocument;
   documentDelivre?: DocumentDelivre;
+  numeroDemande?: string;
+  datePaiement?: Date;
+  modePaiement?: string;
+  numeroRecu?: string;
+  datePreparation?: Date;
+  dateGeneration?: Date;
+  fichierPDF?: string;
+  dateImpression?: Date;
+  nbImpressions?: number;
+  dateRemise?: Date;
+  remisParId?: number;
+  motifRejet?: string;
 }
 
 /**

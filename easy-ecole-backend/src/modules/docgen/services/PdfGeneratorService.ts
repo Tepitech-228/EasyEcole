@@ -104,8 +104,13 @@ export class PdfGeneratorService {
           const base64 = fs.readFileSync(absPath).toString('base64');
           return `<img src="data:${mime};base64,${base64}" alt="Cachet" />`;
         }
+        console.warn(`[DOCGEN][cachet] image introuvable: ${absPath} — document généré sans cachet`);
       }
-    } catch {}
+    } catch (err) {
+      // Le cachet est décoratif : le PDF reste valide sans lui, MAIS un problème
+      // de configuration/lecture doit rester visible pour être corrigé.
+      console.error('[DOCGEN][cachet] échec du chargement — document généré sans cachet:', err instanceof Error ? err.message : err);
+    }
     return '';
   }
 

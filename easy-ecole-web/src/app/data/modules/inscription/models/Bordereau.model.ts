@@ -13,6 +13,7 @@ export class Bordereau {
   declare modalite?: '1x' | '3x' | '10x'
   declare referenceBancaire?: string
   declare statut?: 'en_attente' | 'valide' | 'rejete' | 'en_saisie_comptable' | 'traite'
+  declare statutPaiement?: 'pending' | 'saisi' | 'finalise'
   declare dateSoumission?: Date
   declare dateValidation?: Date | null
   declare datePaiement?: Date | null
@@ -21,6 +22,8 @@ export class Bordereau {
   declare quitusId?: string | null
   declare typeOperationId?: number | null
   declare typeOperation?: TypeOperationBordereau
+  declare numeroBordereau?: string | null
+  declare moyenPaiement?: 'virement' | 'especes' | 'mobile_money' | 'cheque' | null
   declare echeance?: Echeance
   declare utilisateur?: Utilisateur
   declare validePar?: Utilisateur

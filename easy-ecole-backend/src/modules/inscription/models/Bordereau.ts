@@ -22,6 +22,7 @@ export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAt
   declare modalite: '1x' | '3x' | '10x'
   declare referenceBancaire: CreationOptional<string>
   declare statut: 'en_attente' | 'valide' | 'rejete' | 'en_saisie_comptable' | 'traite'
+  declare statutPaiement: 'pending' | 'saisi' | 'finalise'
   declare dateSoumission: CreationOptional<Date>
   declare dateValidation: CreationOptional<Date | null>
   declare datePaiement: CreationOptional<Date | null>
@@ -29,6 +30,8 @@ export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAt
   declare commentaire: CreationOptional<string>
   declare quitusId: CreationOptional<ForeignKey<Quitus['id']>>
   declare typeOperationId: CreationOptional<ForeignKey<TypeOperationBordereau['id']> | null>
+  declare numeroBordereau: CreationOptional<string | null>
+  declare moyenPaiement: CreationOptional<'virement' | 'especes' | 'mobile_money' | 'cheque' | null>
   declare echeance?: NonAttribute<Echeance>
   declare utilisateur?: NonAttribute<Utilisateur>
   declare validePar?: NonAttribute<Utilisateur>
@@ -94,6 +97,11 @@ Bordereau.init({
     defaultValue: 'en_attente',
     allowNull: false
   },
+  statutPaiement: {
+    type: DataTypes.ENUM('pending', 'saisi', 'finalise'),
+    defaultValue: 'pending',
+    allowNull: false
+  },
   dateSoumission: {
     type: DataTypes.DATEONLY,
     defaultValue: DataTypes.NOW,
@@ -125,6 +133,16 @@ Bordereau.init({
   },
   typeOperationId: {
     type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true,
+    defaultValue: null
+  },
+  numeroBordereau: {
+    type: new DataTypes.STRING(100),
+    allowNull: true,
+    defaultValue: null
+  },
+  moyenPaiement: {
+    type: DataTypes.ENUM('virement', 'especes', 'mobile_money', 'cheque'),
     allowNull: true,
     defaultValue: null
   },

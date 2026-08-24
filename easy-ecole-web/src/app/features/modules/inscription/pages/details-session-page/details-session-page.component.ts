@@ -66,6 +66,7 @@ export class DetailsSessionPageComponent extends BaseComponentClass implements O
   fraisScolariteForm: FormGroup = new FormGroup({
     montant: new FormControl(null, [Validators.required]),
     modalite: new FormControl('10x', [Validators.required]),
+    fraisInscription: new FormControl(null, []),
   })
 
   constructor(
@@ -151,6 +152,8 @@ export class DetailsSessionPageComponent extends BaseComponentClass implements O
   openParametrerFraisScolariteModal(): void {
     this.fraisScolariteForm.get('montant')!.setValue(this.fraisScolarite?.montant ?? null)
     this.fraisScolariteForm.get('modalite')!.setValue(this.fraisScolarite?.modalite ?? '10x')
+    const fraisInscriptionExistant = this.getFraisInscriptionStandard()
+    this.fraisScolariteForm.get('fraisInscription')!.setValue(fraisInscriptionExistant?.montant ?? null)
     this.fraisScolariteError = false
     this.showParametrerFraisScolariteModal = true
   }
@@ -158,6 +161,55 @@ export class DetailsSessionPageComponent extends BaseComponentClass implements O
   closeParametrerFraisScolariteModal(): void {
     this.showParametrerFraisScolariteModal = false
     this.fraisScolariteError = false
+  }
+
+  /** Frais d'inscription standard de la session (celui géré par la modale de paramétrage) */
+  private getFraisInscriptionStandard(): FraisInscription | undefined {
+    return (this.session?.fraisInscription || []).find(f => f.titre === 'Frais d\'inscription')
+  }
+
+  private echecParametrage(): void {
+    this.fraisScolariteError = true
+    setTimeout(() => {
+      this.fraisScolariteError = false
+    }, 3000)
+  }
+
+  /** Enregistre le montant des frais d'inscription saisi dans la modale de paramétrage (création ou mise à jour). */
+  private enregistrerFraisInscription(montant: number | null): void {
+    const terminer = (): void => {
+      this.getSession()
+      this.closeParametrerFraisScolariteModal()
+    }
+
+    if (!this.session || montant == null || montant === ('' as any)) {
+      terminer()
+      return
+    }
+
+    const existant = this.getFraisInscriptionStandard()
+    const frais: FraisInscription = new FraisInscription()
+    frais.titre = 'Frais d\'inscription'
+    frais.montant = montant
+    frais.fraisDesCours = existant?.fraisDesCours ?? false
+    if (existant?.description) {
+      frais.description = existant.description
+    }
+    frais.sessionId = this.session.id
+
+    if (existant?.id) {
+      frais.id = existant.id
+      this.fraisInscriptionService.update(frais).subscribe({
+        next: terminer,
+        error: () => this.echecParametrage()
+      })
+    }
+    else {
+      this.fraisInscriptionService.create(frais).subscribe({
+        next: terminer,
+        error: () => this.echecParametrage()
+      })
+    }
   }
 
   parametrerFraisScolarite(): void {
@@ -168,18 +220,13 @@ export class DetailsSessionPageComponent extends BaseComponentClass implements O
       fraisScolarite.montant = this.fraisScolariteForm.get('montant')!.value
       fraisScolarite.modalite = this.fraisScolariteForm.get('modalite')!.value
 
+      const montantFraisInscription = this.fraisScolariteForm.get('fraisInscription')!.value
+
       this.fraisScolariteService.upsert(fraisScolarite).subscribe({
         next: () => {
-          this.getFraisScolarite()
-          this.closeParametrerFraisScolariteModal()
+          this.enregistrerFraisInscription(montantFraisInscription)
         },
-        error: (err) => {
-          console.log(err)
-          this.fraisScolariteError = true
-          setTimeout(() => {
-            this.fraisScolariteError = false
-          }, 3000)
-        }
+        error: () => this.echecParametrage()
       })
     }
   }

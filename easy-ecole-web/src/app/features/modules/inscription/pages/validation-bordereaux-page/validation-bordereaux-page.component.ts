@@ -22,26 +22,22 @@ import { DossierNode, BatchAction } from 'src/app/shared/components/dossier-view
 })
 export class ValidationBordereauxPageComponent extends BaseComponentClass implements OnInit {
 
-  error: boolean = false
-  successMessage: string = ''
-  apiErrorMessage: string = ''
+   error: boolean = false
+   successMessage: string = ''
+   apiErrorMessage: string = ''
 
-   showValidationModal: boolean = false
-   showRejetModal: boolean = false
-   showTraitementModal: boolean = false
-   showLettrageModal: boolean = false
-   showPdfModal: boolean = false
-   pdfBordereau?: Bordereau
-   successResult: { type: 'inscription' | 'scolarite' | 'rattrapage', matricule?: string, codeQuitus?: string } | null = null
-   showSuccessModal: boolean = false
+    showValidationModal: boolean = false
+    showRejetModal: boolean = false
+    showPdfModal: boolean = false
+    pdfBordereau?: Bordereau
+    successResult: { type: 'inscription' | 'scolarite' | 'rattrapage', matricule?: string, codeQuitus?: string } | null = null
+    showSuccessModal: boolean = false
 
-   bordereauxEnAttente: Bordereau[] = []
-   selectedBordereau?: Bordereau
-   commentaireRejet: string = ''
-   typeConstate: string = ''
-   montantConstate: number | null = null
-   referenceBancaireConstate: string = ''
-   lettrageResult: any = null
+  bordereauxEnAttente: Bordereau[] = []
+  selectedBordereau?: Bordereau
+  commentaireRejet: string = ''
+  /** Distingue l'ouverture de la modal de rejet depuis une ligne (simple) ou d'une sélection groupée (batch). */
+  private rejetMode: 'simple' | 'batch' = 'simple'
 
   activeFilter: 'tous' | 'inscription' | 'scolarite' = 'tous'
 
@@ -79,33 +75,20 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   ];
   batchActions: BatchAction[] = [
     { label: 'Voir le bordereau', color: 'blue', action: 'voirBordereau', icon: 'visibility' },
-    { label: 'Valider', color: 'green', action: 'valider' },
-    { label: 'Traiter', color: 'purple', action: 'traiter' },
-    { label: 'Rejeter', color: 'red', action: 'rejeter' }
+    { label: 'Rejeter', color: 'red', action: 'rejeter', icon: 'cancel' }
   ];
 
   itemActions: BatchAction[] = [
     { label: 'Voir le bordereau', color: 'blue', action: 'voirBordereau', icon: 'visibility' },
-    { label: 'Traiter', color: 'purple', action: 'traiter' }
+    { label: 'Valider', color: 'green', action: 'valider', icon: 'check_circle' },
+    { label: 'Rejeter', color: 'red', action: 'rejeter', icon: 'cancel' }
   ];
 
   /**
-   * Refonte du flux : un bordereau uploadé « vierge » (sans type OU sans montant)
-   * ne peut être traité que par l'action exclusive « Traiter ». L'ancien bouton
-   * « Valider » est réservé aux bordereaux historiques complets (type + montant
-   * déjà renseignés).
+   * Le cabinet se limite à authentifier le bordereau : la saisie comptable
+   * (type, montant, référence) est réalisée par ESA-COMPTA en aval.
    */
-  canShowItemAction = (item: any, action: string): boolean => {
-    if (action !== 'valider') return true
-    return !this.isBordereauVierge(item as Bordereau)
-  }
-
-  /** Un bordereau est « vierge » tant que le type ou le montant n'est pas renseigné par le cabinet. */
-  isBordereauVierge(b: Bordereau): boolean {
-    const aUnType = !!(b.type || b.echeance?.type)
-    const aUnMontant = b.montant !== null && b.montant !== undefined
-    return !aUnType || !aUnMontant
-  }
+  canShowItemAction = (item: any, action: string): boolean => true;
 
   readonly BORDEREAUX_PATH: string = environment.MEDIAS_PATH.INSCRIPTION.BORDEREAUX
 
@@ -276,10 +259,36 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   }
 
   rejeterBordereau(): void {
-    if (this.selectedBordereau && this.commentaireRejet.trim()) {
-      this.error = false
-      this.apiErrorMessage = ''
+    if (!this.commentaireRejet.trim()) return
+    this.error = false
+    this.apiErrorMessage = ''
 
+    // ── Rejet groupé : bordereaux cochés dans l'arborescence ──
+    if (this.rejetMode === 'batch') {
+      if (this.selectedIds.length === 0) return
+      this.batchLoading = true
+      this.bordereauService.batchRejeter(this.selectedIds, this.commentaireRejet).subscribe({
+        next: () => {
+          this.batchLoading = false
+          this.selectedIds = []
+          this.successMessage = 'Bordereaux rejetés'
+          this.getBordereauxEnAttente()
+          this.closeRejetModal()
+          setTimeout(() => { this.successMessage = '' }, 3000)
+        },
+        error: (err) => {
+          this.batchLoading = false
+          console.error('Erreur rejet groupé bordereaux:', err)
+          this.apiErrorMessage = err?.error?.message || err?.error?.error?.message || 'Une erreur est survenue lors du rejet groupé.'
+          this.error = true
+          setTimeout(() => { this.error = false; this.apiErrorMessage = '' }, 5000)
+        }
+      })
+      return
+    }
+
+    // ── Rejet unitaire : bouton d'une ligne ──
+    if (this.selectedBordereau) {
       this.bordereauService.rejeter(this.selectedBordereau.id!, this.commentaireRejet).subscribe({
         next: () => {
           this.successMessage = 'Bordereau rejeté'
@@ -369,21 +378,9 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
     if (event.action === 'voirBordereau') {
       return;
     } else if (event.action === 'rejeter') {
+      this.rejetMode = 'batch';
       this.commentaireRejet = '';
       this.showRejetModal = true;
-    } else if (event.action === 'valider') {
-      const idsVierges = event.ids.filter(id =>
-        this.bordereauxEnAttente.some(b => Number(b.id) === id && this.isBordereauVierge(b))
-      )
-      if (idsVierges.length > 0) {
-        this.apiErrorMessage = 'Des bordereaux sélectionnés ne sont pas renseignés (type / montant). Utilisez l\'action « Traiter » pour les compléter avant toute validation.'
-        this.error = true
-        setTimeout(() => { this.error = false; this.apiErrorMessage = '' }, 6000)
-        return
-      }
-      this.executeBatchValidation(event.ids);
-    } else if (event.action === 'traiter') {
-      // Traitement individuel uniquement
     }
   }
 
@@ -392,12 +389,10 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
       this.selectedBordereau = event.item;
       this.showValidationModal = true;
     } else if (event.action === 'rejeter') {
+      this.rejetMode = 'simple';
       this.selectedBordereau = event.item;
       this.commentaireRejet = '';
       this.showRejetModal = true;
-    } else if (event.action === 'traiter') {
-      this.selectedBordereau = event.item;
-      this.openTraitementModal(event.item);
     } else if (event.action === 'voirBordereau') {
       this.openPdfModal(event.item);
     }
@@ -406,36 +401,6 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   onPageChange(page: number): void {
     this.currentPage = page;
     this.getBordereauxEnAttente();
-  }
-
-  private executeBatchValidation(ids: number[]): void {
-    this.batchLoading = true;
-    this.bordereauService.batchValider(ids).subscribe({
-      next: () => {
-        this.batchLoading = false;
-        this.selectedIds = [];
-        this.getBordereauxEnAttente();
-      },
-      error: () => {
-        this.batchLoading = false;
-      }
-    });
-  }
-
-  confirmerRejetBatch(): void {
-    if (this.selectedIds.length === 0 || !this.commentaireRejet.trim()) return;
-    this.batchLoading = true;
-    this.bordereauService.batchRejeter(this.selectedIds, this.commentaireRejet).subscribe({
-      next: () => {
-        this.batchLoading = false;
-        this.selectedIds = [];
-        this.showRejetModal = false;
-        this.getBordereauxEnAttente();
-      },
-      error: () => {
-        this.batchLoading = false;
-      }
-    });
   }
 
   // Modals
@@ -450,6 +415,7 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   }
 
   openRejetModal(bordereau: Bordereau): void {
+    this.rejetMode = 'simple';
     this.selectedBordereau = bordereau
     this.commentaireRejet = ''
     this.showRejetModal = true
@@ -464,70 +430,6 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
     this.showSuccessModal = false
     this.successResult = null
     this.selectedBordereau = undefined
-  }
-
-  openTraitementModal(bordereau: Bordereau): void {
-    this.selectedBordereau = bordereau
-    this.typeConstate = ''
-    this.montantConstate = null
-    this.referenceBancaireConstate = ''
-    this.showTraitementModal = true
-  }
-
-  closeTraitementModal(): void {
-    this.showTraitementModal = false
-    this.selectedBordereau = undefined
-  }
-
-  closeLettrageModal(): void {
-    this.showLettrageModal = false
-    this.lettrageResult = null
-    this.selectedBordereau = undefined
-  }
-
-  traiterBordereau(): void {
-    if (!this.selectedBordereau) return;
-
-    this.error = false
-    this.apiErrorMessage = ''
-
-    if (!this.typeConstate) {
-      this.apiErrorMessage = 'Veuillez constater le type du bordereau (Inscription, Scolarité ou Rattrapage).'
-      this.error = true
-      setTimeout(() => { this.error = false; this.apiErrorMessage = '' }, 5000)
-      return
-    }
-
-    if (this.montantConstate === null || this.montantConstate === undefined || this.montantConstate <= 0) {
-      this.apiErrorMessage = 'Veuillez saisir le montant constaté (strictement positif).'
-      this.error = true
-      setTimeout(() => { this.error = false; this.apiErrorMessage = '' }, 5000)
-      return
-    }
-
-    const payload: any = {
-      type: this.typeConstate,
-      montantConstate: this.montantConstate
-    }
-
-    if (this.referenceBancaireConstate) {
-      payload.referenceBancaire = this.referenceBancaireConstate
-    }
-
-    this.bordereauService.traiter(this.selectedBordereau.id!, payload).subscribe({
-      next: (res: any) => {
-        this.lettrageResult = res.lettrage || res.data
-        this.showTraitementModal = false
-        this.showLettrageModal = true
-        this.getBordereauxEnAttente()
-      },
-      error: (err) => {
-        console.error('Erreur traitement bordereau:', err)
-        this.apiErrorMessage = err?.error?.message || err?.error?.error?.message || 'Une erreur est survenue lors du traitement du bordereau.'
-        this.error = true
-        setTimeout(() => { this.error = false; this.apiErrorMessage = ''; }, 5000)
-      }
-    })
   }
 
   isImageFile(fichier: string): boolean {

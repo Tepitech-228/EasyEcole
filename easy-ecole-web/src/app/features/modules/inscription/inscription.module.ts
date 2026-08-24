@@ -36,7 +36,6 @@ import { HierarchyDossiersPageComponent } from './pages/hierarchy-dossiers-page/
 import { ListeEffectifsPageComponent } from './pages/liste-effectifs-page/liste-effectifs-page.component';
 import { SuiviUePageComponent } from './pages/suivi-ue-page/suivi-ue-page.component';
 import { ListeSallesDeClassePageComponent } from './pages/liste-salles-de-classe-page/liste-salles-de-classe-page.component';
-import { OnboardingPageComponent } from './pages/onboarding-page/onboarding-page.component';
 import { ListeClassesPageComponent } from './pages/liste-classes-page/liste-classes-page.component';
 import { CartesPageComponent } from './pages/cartes-page/cartes-page.component';
 import { GestionSemestresPageComponent } from './pages/gestion-semestres-page/gestion-semestres-page.component';
@@ -49,6 +48,7 @@ import { RattrapageMesDemandesPageComponent } from './pages/rattrapage-mes-deman
 import { RattrapagePaiementsPageComponent } from './pages/rattrapage-paiements-page/rattrapage-paiements-page.component';
 import { TypesBordereauxPageComponent } from './pages/types-bordereaux-page/types-bordereaux-page.component';
 import { EsacomptaBordereauxPageComponent } from './pages/esacompta-bordereaux-page/esacompta-bordereaux-page.component';
+import { ComiteValidationPageComponent } from './pages/comite-validation-page/comite-validation-page.component';
 @NgModule({
   declarations: [
     MonCursusPageComponent,
@@ -83,8 +83,7 @@ import { EsacomptaBordereauxPageComponent } from './pages/esacompta-bordereaux-p
      ListeEffectifsPageComponent,
      SuiviUePageComponent,
       ListeSallesDeClassePageComponent,
-      ListeClassesPageComponent,
-      OnboardingPageComponent,
+ListeClassesPageComponent,
        CartesPageComponent,
        GestionSemestresPageComponent,
        ImportExportExcelPageComponent,
@@ -94,7 +93,8 @@ import { EsacomptaBordereauxPageComponent } from './pages/esacompta-bordereaux-p
         RattrapageMesDemandesPageComponent,
         RattrapagePaiementsPageComponent,
         TypesBordereauxPageComponent,
-        EsacomptaBordereauxPageComponent
+        EsacomptaBordereauxPageComponent,
+        ComiteValidationPageComponent
   ],
   imports: [
     CommonModule,

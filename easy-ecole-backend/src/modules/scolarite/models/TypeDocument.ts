@@ -7,6 +7,11 @@ export class TypeDocument extends Model<InferAttributes<TypeDocument>, InferCrea
   declare libelle: string
   declare frais: number
   declare format: CreationOptional<string>
+  declare categorie: CreationOptional<string | null>
+  declare delaiTraitement: CreationOptional<number | null>
+  declare paiementObligatoire: CreationOptional<boolean>
+  declare generationAuto: CreationOptional<boolean>
+  declare actif: CreationOptional<boolean>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -30,6 +35,29 @@ TypeDocument.init({
   format: {
     type: new DataTypes.STRING,
     allowNull: true
+  },
+  categorie: {
+    type: new DataTypes.STRING(80),
+    allowNull: true
+  },
+  delaiTraitement: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  paiementObligatoire: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true
+  },
+  generationAuto: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true
+  },
+  actif: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

@@ -13,14 +13,15 @@ export default class SigningController {
       const grouped: Record<string, number> = {};
       for (const doc of documents) {
         let meta: any = {};
-        try { meta = JSON.parse(doc.metadata || '{}'); } catch { }
+        try { meta = JSON.parse(doc.metadata || '{}'); } catch { console.warn('[DOCGEN][signatures] metadata JSON invalide pour document #'+doc.id); }
         const classe = meta.classe || 'inconnue';
         grouped[classe] = (grouped[classe] || 0) + 1;
       }
       const result = Object.entries(grouped).map(([classe, count]) => ({ classe, count }));
       return res.status(200).json(result);
     } catch (error) {
-      return res.status(500).json({ success: false, error });
+      console.error('[DOCGEN][Signing]', error);
+      return res.status(500).json({ success: false, code: 'INTERNAL_ERROR', message: "Erreur interne" });
     }
   }
 
@@ -33,14 +34,15 @@ export default class SigningController {
       const grouped: Record<string, number> = {};
       for (const doc of documents) {
         let meta: any = {};
-        try { meta = JSON.parse(doc.metadata || '{}'); } catch { }
+        try { meta = JSON.parse(doc.metadata || '{}'); } catch { console.warn('[DOCGEN][signatures] metadata JSON invalide pour document #'+doc.id); }
         const classe = meta.classe || 'inconnue';
         grouped[classe] = (grouped[classe] || 0) + 1;
       }
       const result = Object.entries(grouped).map(([classe, count]) => ({ classe, count }));
       return res.status(200).json(result);
     } catch (error) {
-      return res.status(500).json({ success: false, error });
+      console.error('[DOCGEN][Signing]', error);
+      return res.status(500).json({ success: false, code: 'INTERNAL_ERROR', message: "Erreur interne" });
     }
   }
 
@@ -71,7 +73,8 @@ export default class SigningController {
       }
       return res.status(200).json({ results });
     } catch (error) {
-      return res.status(500).json({ success: false, error });
+      console.error('[DOCGEN][Signing]', error);
+      return res.status(500).json({ success: false, code: 'INTERNAL_ERROR', message: "Erreur interne" });
     }
   }
 
@@ -84,12 +87,13 @@ export default class SigningController {
       const documents = await DocGenDocument.findAll({ where });
       const filtered = documents.filter(doc => {
         let meta: any = {};
-        try { meta = JSON.parse(doc.metadata || '{}'); } catch { }
+        try { meta = JSON.parse(doc.metadata || '{}'); } catch { console.warn('[DOCGEN][signatures] metadata JSON invalide pour document #'+doc.id); }
         return meta.classe === classe;
       });
       return res.status(200).json(filtered);
     } catch (error) {
-      return res.status(500).json({ success: false, error });
+      console.error('[DOCGEN][Signing]', error);
+      return res.status(500).json({ success: false, code: 'INTERNAL_ERROR', message: "Erreur interne" });
     }
   }
 }

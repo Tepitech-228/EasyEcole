@@ -45,6 +45,13 @@ export class DossierViewComponent {
   @Input() itemActions: BatchAction[] = [];
   @Input() level: number = 0;
   /**
+   * Comportement historique : les batchActions sont aussi affichées sur chaque
+   * ligne (fusionnées avec itemActions). Mettre à false quand la page définit
+   * déjà toutes ses actions par ligne dans itemActions, afin d'éviter les
+   * doublons (ex. "Voir" / "Rejeter" présents dans les deux listes).
+   */
+  @Input() includeBatchInRowActions: boolean = true;
+  /**
    * Filtre optionnel, évalué pour CHAQUE action affichée sur une ligne d'item
    * (itemActions + batchActions). Reçoit l'item et l'identifiant d'action ;
    * doit renvoyer `true` pour afficher l'action. Par défaut tout est visible.
@@ -136,6 +143,35 @@ export class DossierViewComponent {
   /** Applique le filtre optionnel `canShowItemAction` (si fourni) pour chaque action d'une ligne. */
   isActionVisible(item: any, action: BatchAction): boolean {
     return this.canShowItemAction ? this.canShowItemAction(item, action.action) : true;
+  }
+
+  /** Actions visibles pour une ligne (itemActions, plus batchActions si fusion activée). */
+  visibleActions(item: any): BatchAction[] {
+    const base = this.includeBatchInRowActions
+      ? [...this.itemActions, ...this.batchActions]
+      : [...this.itemActions];
+    return base.filter(a => this.isActionVisible(item, a));
+  }
+
+  /** Au-delà de 3 actions sur une même ligne, passage en boutons icônes (avec info-bulle). */
+  useCompactActions(item: any): boolean {
+    return this.visibleActions(item).length > 3;
+  }
+
+  private static readonly ACTION_COLORS: Record<string, string> = {
+    green: 'text-white bg-emerald-600 hover:bg-emerald-700 border-emerald-600 shadow-sm',
+    red: 'text-white bg-red-600 hover:bg-red-700 border-red-600 shadow-sm',
+    blue: 'text-white bg-blue-600 hover:bg-blue-700 border-blue-600 shadow-sm',
+    indigo: 'text-white bg-indigo-600 hover:bg-indigo-700 border-indigo-600 shadow-sm',
+    orange: 'text-white bg-orange-500 hover:bg-orange-600 border-orange-500 shadow-sm',
+    yellow: 'text-yellow-900 bg-yellow-400 hover:bg-yellow-500 border-yellow-400 shadow-sm',
+    gray: 'text-gray-700 bg-gray-200 hover:bg-gray-300 border-gray-300 shadow-sm'
+  };
+
+  /** Classes statiques (compatibles Tailwind JIT) selon la couleur déclarée de l'action. */
+  actionClasses(action: BatchAction, compact: boolean): string {
+    const colors = DossierViewComponent.ACTION_COLORS[action.color] || DossierViewComponent.ACTION_COLORS['indigo'];
+    return colors + (compact ? ' w-9' : ' px-3');
   }
 
   getNodeIcon(node: DossierNode): string {

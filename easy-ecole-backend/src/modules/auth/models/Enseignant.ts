@@ -135,6 +135,11 @@ Enseignant.init({
     type: new DataTypes.STRING,
     allowNull: true
   },
+  utilisateurId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: false,
+    unique: 'enseignant_utilisateur'
+  },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
 }, {

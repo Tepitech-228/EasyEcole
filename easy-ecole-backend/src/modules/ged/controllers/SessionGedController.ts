@@ -12,6 +12,8 @@ function parseJsonField(value: any): any {
   try {
     return JSON.parse(value);
   } catch {
+    // Champ JSON corrompu en base : on dégrade en null mais l'anomalie est signalée.
+    console.warn('[GED][parseJsonField] JSON invalide, valeur ignorée:', String(value).slice(0, 120));
     return null;
   }
 }

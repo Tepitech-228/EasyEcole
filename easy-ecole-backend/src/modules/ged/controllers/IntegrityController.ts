@@ -12,10 +12,17 @@ const UPLOAD_DIR = GED_CONFIG.UPLOAD_DIR;
 
 function computeHash(filePath: string): string | null {
   try {
-    if (!fs.existsSync(filePath)) return null;
+    if (!fs.existsSync(filePath)) {
+      console.warn(`[GED][Integrity] fichier introuvable: ${filePath}`);
+      return null;
+    }
     const buffer = fs.readFileSync(filePath);
     return crypto.createHash("sha256").update(buffer).digest("hex");
-  } catch {
+  } catch (err) {
+    // null = intégrité non vérifiable ; la cause doit être traçable
+    // (panne disque, permissions...) et non confondue avec une altération.
+    console.error(`[GED][Integrity] calcul de hash impossible pour ${filePath}:`,
+      err instanceof Error ? err.message : err);
     return null;
   }
 }

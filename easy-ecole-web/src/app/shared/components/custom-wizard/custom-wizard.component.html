@@ -1,51 +1,53 @@
-<div class="mb-8 flex flex-col gap-y-8">
-    <!-- <div class="text-gray-700 text-md font-medium">Inscription en cours</div> -->
-    <div class="overflow-x-auto">
-        <div class="w-full flex items-start p-0 pb-3">
+<div class="mb-8">
+    <div class="bg-white border border-gray-200 rounded-lg px-4 py-5 overflow-x-auto">
+        <div class="flex items-start min-w-[760px]">
             <ng-container *ngFor="let item of items; index as i">
-                <div class="flex-1">
-                    <a role="button" [ngClass]="item.isBlocked ? 'cursor-not-allowed' : (i > 0 && items[i - 1].condition) || i == 0 ? 'cursor-pointer' : 'cursor-not-allowed'" (click)="item.isBlocked ? null : (i > 0 && items[i - 1].condition) || i == 0 ? item.action() : null">
-                        <div [ngClass]="item.condition ? item.incomplete ? incompleteColor : activeColor : inactiveColor" class="relative w-10 h-10 mx-auto rounded-full text-white flex items-center justify-center">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" [ngClass]="item.condition ? 'text-white' : 'text-gray-700'">
+                <!-- Étape -->
+                <div class="flex flex-col items-center w-28 shrink-0">
+                    <a role="button" tabindex="0"
+                        (click)="peutCliquer(i) ? item.action() : null"
+                        [attr.aria-label]="item.text"
+                        [ngClass]="peutCliquer(i) ? 'cursor-pointer group' : 'cursor-not-allowed opacity-60'">
+                        <span
+                            class="relative flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-200 group-hover:scale-105"
+                            [ngClass]="cercleClasses(item, i)">
+                            <!-- Étape terminée : icône + coche -->
+                            <svg *ngIf="!item.incomplete" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" [attr.d]="item.icon"/>
                             </svg>
-                            <span *ngIf="item.condition && !item.incomplete" class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-white border border-gray-200 flex items-center justify-center">
-                                <svg class="w-2.5 h-2.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <!-- Étape incomplète : alerte -->
+                            <svg *ngIf="item.incomplete" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                            </svg>
+
+                            <!-- Coche de validation -->
+                            <span *ngIf="item.condition && !item.incomplete"
+                                class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm">
+                                <svg class="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
                                 </svg>
                             </span>
-                        </div>
+
+                            <!-- Numéro de l'étape -->
+                            <span
+                                class="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center border"
+                                [ngClass]="numeroClasses(item)">
+                                {{ i + 1 }}
+                            </span>
+                        </span>
                     </a>
-                    <div class="text-gray-500 font-medium text-center text-sm mt-4" style="width: 80px !important;">
+                    <span class="mt-2.5 text-xs font-medium text-center leading-snug px-1"
+                        [ngClass]="labelClasses(item)">
                         {{ item.text }}
-                    </div>
+                    </span>
                 </div>
-        
-        
-                <div *ngIf="i != items.length - 1" class="w-full align-center items-center align-middle content-center flex pt-4" style="min-width: 40px;">
-                    <div [ngClass]="inactiveColor" class="w-full rounded items-center align-middle align-center flex-1">
-                         <div [style.width]="items[i + 1].condition ? '100%' : item.condition ? '50%' : '0%'" [ngClass]="activeColor" class="text-xs leading-none py-1 text-center text-gray-400 rounded" style="width: 100%"></div>
-                    </div>
+
+                <!-- Connecteur -->
+                <div *ngIf="i != items.length - 1" class="flex-1 min-w-[36px] h-0.5 rounded mt-6 overflow-hidden bg-gray-200">
+                    <div class="h-full rounded transition-all duration-300"
+                        [ngClass]="items[i + 1].condition ? 'bg-green-600' : item.condition ? 'bg-green-600' : 'bg-transparent'"></div>
                 </div>
-            </ng-container>        
+            </ng-container>
         </div>
-        
-        <!-- <div class="flex text-xs content-center text-center">
-            <div class="w-1/4">
-                Informations personnelles
-            </div>
-            
-            <div class="w-1/4">
-                Filière
-            </div>
-            
-            <div class="w-1/4">
-                Cours
-            </div>
-            
-            <div class="w-1/4">
-                Paiements
-            </div>
-        </div> -->
     </div>
 </div>

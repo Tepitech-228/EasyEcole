@@ -322,7 +322,10 @@ class DashboardController {
                 type: (n as any).listeNoteEvaluation?.typeNoteEvaluation?.libelle || '',
                 date: n.createdAt,
             }));
-        } catch {
+        } catch (error) {
+            // Le dashboard ne doit pas planter pour un widget, mais une panne DB
+            // affichée comme « aucune note » est un faux succès : elle doit être tracée.
+            console.error('[DashboardController] Erreur récupération notes récentes:', error);
             return [];
         }
     }

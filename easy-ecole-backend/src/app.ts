@@ -27,6 +27,16 @@ import { seedComptabilite } from './modules/comptabilite/seed'
 import { seedParametresFrais } from './modules/comptabilite/seed-parametres-frais'
 import { errorHandler } from './core/middlewares/ErrorHandler'
 
+// ── Dernière barrière de diagnostic (cf. audit erreurs silencieuses §28) ──
+// Ces handlers ne remplacent PAS la gestion locale des erreurs : ils garantissent
+// qu'aucune erreur échappée reste invisible. Journalisation systématique + contexte.
+process.on('unhandledRejection', (reason: any) => {
+    console.error('[UNHANDLED_REJECTION]', new Date().toISOString(), 'raison:', reason instanceof Error ? `${reason.message}\n${reason.stack}` : reason);
+});
+process.on('uncaughtException', (err: Error) => {
+    console.error('[UNCAUGHT_EXCEPTION]', new Date().toISOString(), `${err.message}\n${err.stack}`);
+});
+
 // Tests
 
 // Email sender

@@ -77,12 +77,18 @@ export default class LivreController {
             try {
                 const fs = require('fs');
                 if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-            } catch {}
+            } catch (unlinkErr) {
+                // La suppression BD continuera, mais le fichier restera orphelin sur disque :
+                // l'anomalie doit être traçable pour nettoyage manuel éventuel.
+                console.warn(`[LIVRE][delete] fichier non supprimé: ${filePath}`,
+                    unlinkErr instanceof Error ? unlinkErr.message : unlinkErr);
+            }
 
             await livre.destroy();
             return res.status(200).json({ success: true, message: "Livre supprimé" });
         } catch (error) {
-            return res.status(500).json({ success: false, error: error });
+            console.error('[LIVRE][delete]', error);
+            return res.status(500).json({ success: false, code: 'INTERNAL_ERROR', message: "Erreur lors de la suppression du livre" });
         }
     }
 

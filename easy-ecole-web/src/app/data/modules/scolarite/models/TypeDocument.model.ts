@@ -3,4 +3,9 @@ export interface TypeDocument {
   libelle: string;
   frais: number;
   format?: string;
+  categorie?: string;
+  delaiTraitement?: number;
+  paiementObligatoire?: boolean;
+  generationAuto?: boolean;
+  actif?: boolean;
 }

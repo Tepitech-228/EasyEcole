@@ -13,6 +13,7 @@ import { NiveauEtudeService } from 'src/app/data/modules/inscription/services/ni
 import { ParcoursService } from 'src/app/data/modules/inscription/services/parcours.service';
 import { SessionService } from 'src/app/data/modules/inscription/services/session.service';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
+import { DossierNode, DossierColumn, BatchAction } from 'src/app/shared/components/dossier-view/dossier-view.component';
 
 @Component({
   selector: 'app-esacompta-bordereaux-page',
@@ -51,6 +52,21 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
 
   readonly BORDEREAUX_PATH: string = (window as any).__env?.MEDIAS_PATH?.INSCRIPTION?.BORDEREAUX || '/media/inscription/bordereaux/'
 
+  searchTerm: string = ''
+
+  readonly columns: DossierColumn[] = [
+    { key: 'etudiant', label: 'Étudiant' },
+    { key: 'matricule', label: 'Matricule', width: '130px' },
+    { key: 'typeOperation', label: 'Type' },
+    { key: 'montantBordereau', label: 'Montant', width: '150px' },
+    { key: 'date', label: 'Date dépôt', width: '150px' },
+  ]
+
+  readonly itemActions: BatchAction[] = [
+    { label: 'Saisir', color: 'indigo', action: 'saisir', icon: 'edit' },
+    { label: 'Voir', color: 'gray', action: 'voir', icon: 'visibility' },
+  ]
+
   constructor(
     private bordereauService: BordereauService,
     private typeService: TypeOperationBordereauService,
@@ -65,11 +81,20 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     this.saisieForm = this.fb.group({
       montantPaiement: [null, [Validators.required, Validators.min(1)]],
       referenceBancaire: [''],
+      numeroBordereau: [''],
+      moyenPaiement: [''],
       typeOperationId: ['', Validators.required],
       datePaiement: [''],
       commentaire: ['']
     })
   }
+
+  readonly moyensPaiementOptions: { value: string; label: string }[] = [
+    { value: 'virement', label: 'Virement bancaire' },
+    { value: 'especes', label: 'Espèces' },
+    { value: 'mobile_money', label: 'Mobile Money' },
+    { value: 'cheque', label: 'Chèque' }
+  ]
 
   ngOnInit(): void {
     this.loadData()
@@ -139,11 +164,58 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     this.loadData()
   }
 
+  // ── Vue dossier-view (design effectifs) ──
+
+  get bordereauxFiltres(): Bordereau[] {
+    const q = this.searchTerm.toLowerCase().trim()
+    if (!q) return this.bordereaux
+    return this.bordereaux.filter(b => {
+      const etudiant = `${b.utilisateur?.nom ?? ''} ${b.utilisateur?.prenoms ?? ''}`.toLowerCase()
+      const matricule = (b.echeance?.dossierEtudiant?.matricule || '').toLowerCase()
+      return etudiant.includes(q) || matricule.includes(q)
+    })
+  }
+
+  get treeNodes(): DossierNode[] {
+    const groupes: { [key: string]: any[] } = {}
+    for (const b of this.bordereauxFiltres) {
+      const cle = this.getTypeOperationLibelle(b.typeOperationId ?? null)
+      ;(groupes[cle] = groupes[cle] || []).push(b)
+    }
+    return Object.entries(groupes).map(([type, liste]) => ({
+      type: 'item' as const,
+      label: type,
+      expanded: true,
+      items: liste.map(b => this.bordereauToItem(b)),
+    }))
+  }
+
+  private bordereauToItem(b: Bordereau): any {
+    return {
+      id: b.id,
+      raw: b,
+      etudiant: b.utilisateur ? `${b.utilisateur.nom} ${b.utilisateur.prenoms}` : '—',
+      matricule: b.echeance?.dossierEtudiant?.matricule || '—',
+      typeOperation: this.getTypeOperationLibelle(b.typeOperationId ?? null),
+      montantBordereau: this.formatCurrency(b.montant),
+      date: b.dateSoumission ? new Date(b.dateSoumission) : null,
+    }
+  }
+
+  onItemAction(event: { item: any, action: string }): void {
+    const b = event.item?.raw as Bordereau
+    if (!b) return
+    if (event.action === 'saisir') this.openSaisieModal(b)
+    else if (event.action === 'voir') this.openPdfModal(b)
+  }
+
   openSaisieModal(bordereau: Bordereau): void {
     this.selectedBordereau = bordereau
     this.saisieForm.reset({
       montantPaiement: bordereau.montant || null,
       referenceBancaire: bordereau.referenceBancaire || '',
+      numeroBordereau: bordereau.numeroBordereau || '',
+      moyenPaiement: bordereau.moyenPaiement || '',
       typeOperationId: bordereau.typeOperationId || '',
       datePaiement: bordereau.datePaiement ? new Date(bordereau.datePaiement).toISOString().split('T')[0] : '',
       commentaire: bordereau.commentaire || ''

@@ -1,11 +1,63 @@
-<ng-container *ngIf="errorMessage" class="mb-4">
-    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-        {{ errorMessage }}
-    </div>
-</ng-container>
+<div *ngIf="errorMessage" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-4">
+    {{ errorMessage }}
+</div>
+
+<div *ngIf="uploadSuccess" class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm mb-4">
+    {{ uploadSuccess }}
+</div>
 
 <ng-container *ngIf="!loading; else loadingTemplate">
 <ng-container *ngIf="demande">
+    <!-- Nouveau workflow (étudiant) : upload du bordereau d'inscription -->
+    <div *ngIf="rolesValue.isApprenant" class="bg-white border border-gray-200 rounded-lg p-6 mb-8">
+        <div class="flex items-start justify-between mb-1">
+            <h3 class="text-base font-semibold text-gray-900">Paiement des frais d'inscription</h3>
+            <app-custom-button (click)="showUploadModal = true" text="Uploader un bordereau" color="primary"></app-custom-button>
+        </div>
+        <p class="text-sm text-gray-500 mb-5">Payez par dépôt/transfert bancaire puis uploadez votre bordereau. Le service comptable vérifie et traite votre paiement.</p>
+
+        <h4 class="text-sm font-semibold text-gray-700 mb-3">Mes bordereaux soumis</h4>
+        <div class="overflow-x-auto">
+            <table class="min-w-full">
+                <thead class="bg-gray-100 border-b">
+                    <tr>
+                        <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-3 text-left"><div class="px-2">#</div></th>
+                        <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-3 text-left"><div class="px-2">Fichier</div></th>
+                        <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-3 text-left"><div class="px-2">Statut</div></th>
+                        <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-3 text-left"><div class="px-2">Date</div></th>
+                        <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-3 text-right"><div class="px-2">Montant déclaré</div></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngIf="bordereaux.length == 0">
+                        <td colspan="5" class="text-sm text-center py-4 text-gray-500">Aucun bordereau soumis pour l'instant</td>
+                    </tr>
+                    <tr *ngFor="let bordereau of bordereaux; index as index" class="bg-white hover:bg-gray-50 border-b">
+                        <td class="px-2 py-3 text-sm text-gray-600"><div class="px-2">{{ index + 1 }}</div></td>
+                        <td class="px-2 py-3 text-sm">
+                            <div class="px-2">
+                                <a *ngIf="bordereau.fichier && !isImageFile(bordereau.fichier)" [href]="getDocUrl(bordereau.fichier)" target="_blank"
+                                    class="text-indigo-600 hover:text-indigo-800 underline">Voir le PDF</a>
+                                <a *ngIf="bordereau.fichier && isImageFile(bordereau.fichier)" [href]="getDocUrl(bordereau.fichier)" target="_blank"
+                                    class="text-indigo-600 hover:text-indigo-800 underline">Voir l'image</a>
+                                <span *ngIf="!bordereau.fichier" class="text-gray-400">---</span>
+                            </div>
+                        </td>
+                        <td class="px-2 py-3 text-sm" [ngSwitch]="bordereau.statut">
+                            <div class="px-2">
+                                <app-custom-badge *ngSwitchCase="'valide'" color="green" text="Validé"></app-custom-badge>
+                                <app-custom-badge *ngSwitchCase="'rejete'" color="red" text="Rejeté"></app-custom-badge>
+                                <app-custom-badge *ngSwitchDefault color="yellow" text="En attente"></app-custom-badge>
+                            </div>
+                        </td>
+                        <td class="px-2 py-3 text-sm text-gray-600"><div class="px-2">{{ bordereau.dateSoumission | date: 'dd/MM/YYYY HH:mm' }}</div></td>
+                        <td class="px-2 py-3 text-right text-sm text-gray-600"><div class="px-2">{{ bordereau.montant ? (bordereau.montant | currency:'XAF') : '---' }}</div></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <div class="mb-8">
         <div class="overflow-x-auto">
             <div class="py-2 inline-block min-w-full">
@@ -111,7 +163,6 @@
             <app-custom-button (click)="getFichePaiement()" text="Bordereau de paiement" color="indigo"></app-custom-button>
             <app-custom-button *ngIf="rolesValue.isInstitution && demande.sessionId" [link]="'/inscription/sessions/' + demande.sessionId" text="Gérer les frais" color="gray" [outlined]="true"></app-custom-button>
             <app-custom-button *ngIf="rolesValue.isInstitution" (click)="showPaiementModal = true" text="Enregistrer un paiement" color="gray" [outlined]="true"></app-custom-button>
-            <app-custom-button text="Paiements" link="/inscription/paiements"></app-custom-button>
         </div>
     </div>
     
@@ -197,6 +248,24 @@
         </div>
     </div>
 </ng-template>
+
+<app-custom-modal title="Uploader un bordereau" subtitle="Soumettre votre justificatif de paiement des frais d'inscription" (onCloseModal)="showUploadModal = false" [center]="true" [showModal]="showUploadModal">
+    <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+        <div class="col-span-full">
+            <span class="mb-2 block text-sm text-gray-400">Fichier bordereau (PDF ou image)</span>
+            <input type="file" id="fichierBordereau" accept=".pdf,.jpg,.jpeg,.png" (change)="onFileSelected($event)"
+                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            <p class="mt-2 text-xs text-gray-500">La saisie des informations comptables (référence bancaire, montant constaté, type d'opération) sera effectuée par le service comptable après vérification.</p>
+        </div>
+    </div>
+    <div class="py-3 flex flex-col gap-y-3">
+        <app-form-message *ngIf="errorMessage" [text]="errorMessage"></app-form-message>
+        <div class="flex justify-between items-center">
+            <app-custom-button (click)="showUploadModal = false" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+            <app-custom-button (click)="uploaderBordereau()" [text]="uploading ? 'Upload en cours...' : 'Uploader'" [disabled]="!selectedFile || uploading"></app-custom-button>
+        </div>
+    </div>
+</app-custom-modal>
 
 <app-custom-modal title="Enregistrer un paiement" subtitle="Saisir le montant du paiement effectué en espèces" (onCloseModal)="closePaiementModal()" [center]="true" [showModal]="showPaiementModal">
     <div class="mb-4">

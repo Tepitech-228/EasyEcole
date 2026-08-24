@@ -2,6 +2,7 @@
 import express from "express";
 import DemandeDocumentRouter from "./routers/DemandeDocumentRouter"
 import DocumentDelivreRouter from "./routers/DocumentDelivreRouter"
+import SecretariatRouter from "./routers/SecretariatRouter"
 import ReclamationRouter from "./routers/ReclamationRouter"
 import RegistreAcademiqueRouter from "./routers/RegistreAcademiqueRouter"
 import EvenementCalendrierRouter from "./routers/EvenementCalendrierRouter"
@@ -21,6 +22,7 @@ const router = express.Router();
 router
     .use('/demandesDocument', [Authenticate], DemandeDocumentRouter)
     .use('/typesDocument', [Authenticate], DocumentDelivreRouter)
+    .use('/secretariat', [Authenticate], SecretariatRouter)
     .use('/reclamations', [Authenticate], ReclamationRouter)
     .use('/registres', [Authenticate], RegistreAcademiqueRouter)
     .use('/calendrier', [Authenticate], EvenementCalendrierRouter)

@@ -1,0 +1,80 @@
+<div class="p-6" *ngIf="demande">
+  <app-header-title title="Fiche demande" subtitle="Demande #{{demande.numeroDemande || demande.id}}"></app-header-title>
+
+  <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+  <div *ngIf="!loading" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Colonne gauche : Infos étudiant + demande -->
+    <div class="lg:col-span-1 space-y-6">
+      <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <h3 class="text-sm font-semibold text-gray-900 uppercase mb-3">Étudiant</h3>
+        <div class="text-sm space-y-2">
+          <div><span class="text-gray-600">Nom :</span> <span class="font-medium">{{demande.etudiant?.nom || '---'}} {{demande.etudiant?.prenoms || ''}}</span></div>
+          <div><span class="text-gray-600">Matricule :</span> <span class="font-medium">{{demande.etudiant?.email || '---'}}</span></div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <h3 class="text-sm font-semibold text-gray-900 uppercase mb-3">Demande</h3>
+        <div class="text-sm space-y-2">
+          <div><span class="text-gray-600">Type :</span> <span class="font-medium">{{demande.typeDocument?.libelle || '---'}}</span></div>
+          <div><span class="text-gray-600">Date :</span> <span class="font-medium">{{formatDate(demande.date)}}</span></div>
+          <div><span class="text-gray-600">Source :</span> <span class="font-medium">{{demande.source === 'demande_etudiant' ? 'Volontaire' : 'Automatique'}}</span></div>
+          <div><span class="text-gray-600">Montant :</span> <span class="font-medium">{{demande.montant | number:'1.0-0'}} FCFA</span></div>
+          <div><span class="text-gray-600">En lettres :</span> <span class="font-medium italic">{{getMontantLettres()}}</span></div>
+          <div><span class="text-gray-600">Statut :</span> <span class="font-medium" [class.text-green-700]="demande.statut === 'remise'" [class.text-amber-700]="demande.statut === 'paye'" [class.text-red-700]="demande.statut === 'rejetee'">{{demande.statut}}</span></div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <h3 class="text-sm font-semibold text-gray-900 uppercase mb-3">Paiement</h3>
+        <div class="text-sm space-y-2">
+          <div><span class="text-gray-600">Payé :</span> <span class="font-medium" [class.text-green-700]="demande.fraisPayes" [class.text-red-700]="!demande.fraisPayes">{{demande.fraisPayes ? 'Oui' : 'Non'}}</span></div>
+          <div><span class="text-gray-600">Mode :</span> <span class="font-medium">{{demande.modePaiement || '---'}}</span></div>
+          <div><span class="text-gray-600">N° Reçu :</span> <span class="font-medium">{{demande.numeroRecu || '---'}}</span></div>
+          <div><span class="text-gray-600">Date paiement :</span> <span class="font-medium">{{formatDate(demande.datePaiement)}}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Colonne droite : Timeline + Document -->
+    <div class="lg:col-span-2 space-y-6">
+      <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <h3 class="text-sm font-semibold text-gray-900 uppercase mb-6">Workflow</h3>
+        <div class="relative">
+          <div class="absolute top-4 left-4 right-4 h-1 bg-gray-200"></div>
+          <div class="absolute top-4 left-4 h-1 bg-indigo-600" [style.width.%]="(getCurrentStepIndex() / (workflowSteps.length - 1)) * 100"></div>
+          <div class="relative flex justify-between">
+            <div *ngFor="let step of workflowSteps; let i = index" class="flex flex-col items-center">
+              <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                   [class.bg-indigo-600.text-white]="isStepCompleted(step.key) && !isStepCurrent(step.key)"
+                   [class.bg-indigo-100.text-indigo-700.ring-2.ring-indigo-600]="isStepCurrent(step.key)"
+                   [class.bg-gray-200.text-gray-500]="!isStepCompleted(step.key)">
+                {{i + 1}}
+              </div>
+              <span class="mt-2 text-xs text-center text-gray-700 max-w-[80px]">{{step.label}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <h3 class="text-sm font-semibold text-gray-900 uppercase mb-3">Document</h3>
+        <div class="text-sm space-y-2">
+          <div><span class="text-gray-600">Préparation :</span> <span class="font-medium">{{formatDate(demande.datePreparation)}}</span></div>
+          <div><span class="text-gray-600">Génération :</span> <span class="font-medium">{{formatDate(demande.dateGeneration)}}</span></div>
+          <div><span class="text-gray-600">Fichier :</span> <span class="font-medium">{{demande.fichierPDF || '---'}}</span></div>
+          <div><span class="text-gray-600">Impression :</span> <span class="font-medium">{{formatDate(demande.dateImpression)}}</span></div>
+          <div><span class="text-gray-600">Nb impressions :</span> <span class="font-medium">{{demande.nbImpressions || 0}}</span></div>
+          <div><span class="text-gray-600">Remise :</span> <span class="font-medium">{{formatDate(demande.dateRemise)}}</span></div>
+          <div *ngIf="demande.motifRejet"><span class="text-gray-600">Motif rejet :</span> <span class="font-medium text-red-700">{{demande.motifRejet}}</span></div>
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <app-custom-button (click)="loadDemande()" text="Actualiser" color="gray"></app-custom-button>
+        <app-custom-button (click)="router.navigate(['/scolarite/secretariat/demandes'])" text="Retour liste" color="primary"></app-custom-button>
+      </div>
+    </div>
+  </div>
+</div>

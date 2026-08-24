@@ -23,6 +23,10 @@ import { ProgressionPedagogique } from "./ProgressionPedagogique";
 import { Classe } from "../../inscription/models/Classe";
 import { Cours } from "../../inscription/models/Cours";
 import { ChapitreCours } from "../../inscription/models/ChapitreCours";
+import { RecuCaisse } from "./RecuCaisse";
+import { JournalCaisse } from "./JournalCaisse";
+import { ClotureCaisse } from "./ClotureCaisse";
+import { JournalSecretariat } from "./JournalSecretariat";
 
 ConseilClasse.hasMany(DecisionConseil, { foreignKey: 'conseilClasseId', as: 'decisions' })
 DecisionConseil.belongsTo(ConseilClasse, { foreignKey: 'conseilClasseId', as: 'conseilClasse' })
@@ -93,3 +97,19 @@ ProgressionPedagogique.belongsTo(ChapitreCours, { foreignKey: 'chapitreId', as: 
 
 CursusApprenant.hasMany(RegistreAcademique, { foreignKey: 'cursusApprenantId', as: 'registresAcademiques' })
 RegistreAcademique.belongsTo(CursusApprenant, { foreignKey: 'cursusApprenantId', as: 'cursusApprenant' })
+
+// ── Module Secrétariat ──
+DemandeDocument.hasMany(RecuCaisse, { foreignKey: 'demandeDocumentId', as: 'recus' })
+RecuCaisse.belongsTo(DemandeDocument, { foreignKey: 'demandeDocumentId', as: 'demandeDocument' })
+Utilisateur.hasMany(RecuCaisse, { foreignKey: 'caissierId', as: 'recusEncaisses' })
+RecuCaisse.belongsTo(Utilisateur, { foreignKey: 'caissierId', as: 'caissier' })
+Utilisateur.hasMany(ClotureCaisse, { foreignKey: 'caissierId', as: 'cloturesCaisse' })
+ClotureCaisse.belongsTo(Utilisateur, { foreignKey: 'caissierId', as: 'caissier' })
+Utilisateur.hasMany(JournalSecretariat, { foreignKey: 'utilisateurId', as: 'actionsSecretariat' })
+JournalSecretariat.belongsTo(Utilisateur, { foreignKey: 'utilisateurId', as: 'utilisateur' })
+
+ClotureCaisse.hasMany(JournalCaisse, { foreignKey: 'clotureId', as: 'lignes' })
+JournalCaisse.belongsTo(ClotureCaisse, { foreignKey: 'clotureId', as: 'cloture' })
+
+JournalCaisse.belongsTo(DemandeDocument, { foreignKey: 'demandeDocumentId', as: 'demandeDocument' })
+DemandeDocument.hasMany(JournalCaisse, { foreignKey: 'demandeDocumentId', as: 'lignesCaisse' })

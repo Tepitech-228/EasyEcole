@@ -5,8 +5,21 @@ export class RedisClient {
   private static instance: RedisClient
   private client: Redis | null = null
   private enabled: boolean = false
+  /** Anti-spam de logs : on ne signale la dégradation qu'une fois par clé de contexte. */
+  private static derniersWarnings = new Map<string, number>()
 
   private constructor() { }
+
+  /** Log throttlé (1 message / minute max par contexte) pour rendre les pannes cache visibles. */
+  private signaler(contexte: string, err: unknown, grave: boolean = false): void {
+    const dernier = RedisClient.derniersWarnings.get(contexte) || 0
+    const maintenant = Date.now()
+    if (maintenant - dernier < 60_000) return
+    RedisClient.derniersWarnings.set(contexte, maintenant)
+    const message = `[CACHE][${contexte}] ${err instanceof Error ? err.message : String(err)}`
+    if (grave) console.error(message)
+    else console.warn(message)
+  }
 
   static getInstance(): RedisClient {
     if (!RedisClient.instance) {
@@ -43,7 +56,9 @@ export class RedisClient {
     if (!this.enabled) return null
     try {
       return await this.client!.get(key)
-    } catch {
+    } catch (err) {
+      // Cache miss de secours : la requête reste valide, mais la panne doit être visible.
+      this.signaler('get', err)
       return null
     }
   }
@@ -52,7 +67,9 @@ export class RedisClient {
     if (!this.enabled) return
     try {
       await this.client!.set(key, value, 'EX', ttlSeconds)
-    } catch { }
+    } catch (err) {
+      this.signaler('set', err)
+    }
   }
 
   async delByPattern(pattern: string): Promise<void> {
@@ -67,6 +84,10 @@ export class RedisClient {
           await this.client!.del(...keys)
         }
       } while (cursor !== '0')
-    } catch { }
+    } catch (err) {
+      // GRAVE : invalidation ratée = le cache peut servir des données obsolètes
+      // après une écriture (incohérence lecture/écriture). À surveiller.
+      this.signaler('delByPattern — risque de données obsolètes', err, true)
+    }
   }
 }

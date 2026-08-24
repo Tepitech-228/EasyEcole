@@ -73,6 +73,7 @@ import CoursController from "./controllers/CoursController";
 import DesignationMemoireRouter from "./routers/DesignationMemoireRouter";
 import TypeOperationBordereauRouter from "./routers/TypeOperationBordereauRouter";
 import FinanceRouter from "./routers/FinanceRouter";
+import ComiteValidationRouter from "./routers/ComiteValidationRouter";
 
 const router = express.Router();
 
@@ -136,6 +137,7 @@ router
     .use('/penalites-retard', [Authenticate], PenaliteRetardRouter)
     .use('/types-operations-bordereau', [Authenticate], TypeOperationBordereauRouter)
     .use('/finance', [Authenticate], FinanceRouter)
+    .use('/comite-validations', [Authenticate], ComiteValidationRouter)
     .use('/excel', [Authenticate], ExcelRouter)
     // Montages racine — ne serviront que pour les routes qui n'ont pas matché ci-dessus
     .use('/', [Authenticate, InscriptionComplete], PresenceEnseignantRouter)

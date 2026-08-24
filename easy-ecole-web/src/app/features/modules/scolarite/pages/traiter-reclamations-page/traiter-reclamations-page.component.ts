@@ -164,8 +164,12 @@ export class TraiterReclamationsPageComponent extends BaseComponentClass impleme
     const prenoms = rec.etudiant?.prenoms ? String(rec.etudiant.prenoms) : '';
     const nom = rec.etudiant?.nom ? String(rec.etudiant.nom) : '';
     const parts = `${prenoms} ${nom}`.trim().split(/\s+/).filter(Boolean);
-    if (parts.length === 0) return (rec.etudiantId || 'É').charAt(0).toUpperCase();
-    return parts.slice(0, 2).map(p => p.charAt(0).toUpperCase()).join('');
+    if (parts.length > 0) return parts.slice(0, 2).map(p => p.charAt(0).toUpperCase()).join('');
+    // etudiantId peut être une chaîne, un nombre ou un objet peuplé selon la réponse API
+    if (typeof rec.etudiantId === 'string' && rec.etudiantId.trim()) {
+      return rec.etudiantId.trim().charAt(0).toUpperCase();
+    }
+    return 'É';
   }
 
   avatarColorClass(statut: string): string {

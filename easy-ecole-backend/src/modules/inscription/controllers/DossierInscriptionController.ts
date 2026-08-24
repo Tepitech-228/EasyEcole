@@ -128,7 +128,12 @@ export default class DossierInscriptionController {
             for (const fichier of fichiers) {
                 const writtenPath = path.join(UPLOAD_DIR, fichier.filename);
                 if (fs.existsSync(writtenPath)) {
-                    try { fs.unlinkSync(writtenPath); } catch (_) { }
+                    try { fs.unlinkSync(writtenPath); } catch (unlinkErr) {
+                        // Nettoyage best-effort : l'erreur principale prime, mais un fichier
+                        // orphelin non supprimable doit rester traçable.
+                        console.warn(`[DOSSIER][upload] fichier orphelin non supprimé: ${writtenPath}`,
+                            unlinkErr instanceof Error ? unlinkErr.message : unlinkErr);
+                    }
                 }
             }
             console.error('[uploadDossierInscription]', error);

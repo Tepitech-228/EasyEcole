@@ -91,6 +91,8 @@ export class OcrService {
       const d = new Date(dateStr);
       return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
     } catch {
+      // Justifié : date illisible extraite par OCR → null (champ optionnel).
+      // L'OCR produit des textes imprévisibles ; ce n'est pas une erreur système.
       return null;
     }
   }

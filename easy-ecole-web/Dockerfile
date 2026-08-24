@@ -34,6 +34,11 @@ RUN npm ci
 # Sources de l'application
 COPY angular.json ./
 COPY tsconfig.json tsconfig.app.json tsconfig.spec.json ./
+# Configuration Tailwind INDISPENSABLE au build : sans elle, PostCSS charge
+# Tailwind avec sa config par défaut (aucun glob "content") et purge TOUTES
+# les classes utilitaires -> CSS vide en production alors que ng serve local
+# fonctionne (le fichier existe sur disque).
+COPY tailwind.config.js ./
 COPY src ./src
 
 # Script npm réel : "build": "... && ng build" (production par défaut,

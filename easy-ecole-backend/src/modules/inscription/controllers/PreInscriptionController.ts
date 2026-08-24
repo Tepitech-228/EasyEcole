@@ -149,7 +149,10 @@ export default class PreInscriptionController {
             traiteParId: (req as any).utilisateurId
         })
 
-        // Générer l'autorisation provisoire d'inscription PDF via docgen
+        // Génération de l'autorisation provisoire d'inscription PDF via docgen.
+        // La validation reste acquise, mais un échec de génération est une ALERTE
+        // explicite dans la réponse : le comité sait que le livrable est manquant.
+        const alertes: string[] = [];
         let autorisationReference: string | undefined;
         try {
             const result = await DocGenGeneratorService.generer({
@@ -163,10 +166,10 @@ export default class PreInscriptionController {
                 }
             }, req);
 
-            autorisationReference = result.reference;
             await preInscription.update({ autorisationPDF: result.reference })
         } catch (err) {
             console.error("Erreur génération autorisation provisoire PDF (docgen):", err)
+            alertes.push('GENERATION_AUTORISATION_ECHEC')
         }
 
         if (demande.utilisateur) {
@@ -180,7 +183,10 @@ export default class PreInscriptionController {
             ).catch(err => console.error("Erreur envoi email validation:", err))
         }
 
-        return res.status(200).send(preInscription)
+        return res.status(200).send({
+            ...(preInscription as any).toJSON?.() ?? preInscription,
+            alertes
+        })
     }
 
     static async rejeter(req: Request, res: Response): Promise<Response | null> {

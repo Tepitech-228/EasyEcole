@@ -52,52 +52,122 @@
       [class.text-yellow-800]="stepMessage.type === 'warning'"
       [class.border-yellow-200]="stepMessage.type === 'warning'">
       <span>{{ stepMessage.text }}</span>
-      <button *ngIf="currentItemSection === 3 || currentItemSection === 5" (click)="verifierStatut()" class="ml-4 px-3 py-1 text-xs font-medium rounded bg-white border border-gray-300 hover:bg-gray-50 text-gray-700">
-        Vérifier
-      </button>
     </div>
 
     <app-custom-wizard [items]="wizardItems" activeColor="bg-green-600" incompleteColor="bg-red-500"></app-custom-wizard>
 
     <ng-container>
-        <!-- Section: Informations personnelles -->
+        <!-- Étape 1 : Informations personnelles -->
         <ng-container *ngIf="currentItemSection == 0">
             <app-infos-section [utilisateur]="demande.utilisateur!" (nextStep)="onStepComplete(0, 'Informations personnelles complètes.')"></app-infos-section>
         </ng-container>
 
-        <!-- Section: Choix parcours -->
+        <!-- Étape 2 : Choix parcours -->
         <ng-container *ngIf="currentItemSection == 1">
             <app-choix-parcours-section [parcours]="parcoursFinal" [demande]="demande" [rolesValue]="rolesValue" (nextStep)="onStepComplete(1, 'Parcours finalisé. Vous pouvez maintenant uploader vos documents.')"></app-choix-parcours-section>
         </ng-container>
 
-        <!-- Section: Documents -->
+        <!-- Étape 3 : Documents -->
         <ng-container *ngIf="currentItemSection == 2">
-            <app-documents-section [demande]="demande" [rolesValue]="rolesValue" (nextStep)="onStepComplete(2, 'Documents uploadés. Vous pouvez soumettre votre dossier au comité d\'orientation.')" (demandeUpdated)="onDemandeUpdated($event)"></app-documents-section>
+            <app-documents-section [demande]="demande" [rolesValue]="rolesValue" (nextStep)="onStepComplete(2, 'Documents uploadés. Vous pouvez maintenant procéder au paiement.')" (demandeUpdated)="onDemandeUpdated($event)"></app-documents-section>
         </ng-container>
 
-        <!-- Section: Préinscription -->
+        <!-- Étape 4 : Paiement — Upload bordereau -->
         <ng-container *ngIf="currentItemSection == 3">
-            <app-pre-inscription-section [demande]="demande" [rolesValue]="rolesValue" (nextStep)="onStepComplete(3, 'Dossier soumis au comité d\'orientation. En attente de validation.')" (refresh)="onStepComplete(3, 'Dossier soumis au comité d\'orientation. En attente de validation.')"></app-pre-inscription-section>
+            <app-paiements-section [demande]="demande" [coursChoisis]="demande!.coursChoisis" [rolesValue]="rolesValue" (nextStep)="onStepComplete(3, 'Bordereau uploadé. En attente de validation du traitement comptable.')"></app-paiements-section>
         </ng-container>
 
-        <!-- Section: Cours -->
+        <!-- Étape 5 : Traitement comptable -->
         <ng-container *ngIf="currentItemSection == 4">
-            <app-cours-section [demandeId]="demande!.id!" [parcours]="parcoursFinal" [coursChoisis]="demande!.coursChoisis" [rolesValue]="rolesValue" (nextStep)="onStepComplete(4, 'Cours validés. Veuillez procéder au paiement des frais d\'inscription.')"></app-cours-section>
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-6">
+                <h3 class="text-md font-semibold text-gray-800 dark:text-white">Traitement comptable</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 mb-4">
+                    Le service comptable vérifie votre bordereau de paiement.
+                </p>
+
+                <div *ngIf="bordereauxInscription.length > 0" class="space-y-2 mb-4">
+                    <div *ngFor="let b of bordereauxInscription" class="flex flex-col sm:flex-row sm:items-center justify-between gap-y-1 p-3 rounded-md bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700">
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ b.numeroBordereau || b.referenceBancaire || ('Bordereau #' + b.id) }} <span *ngIf="b.montant" class="text-gray-500">— {{ b.montant }} FCFA</span></span>
+                        <span class="text-xs px-2 py-1 rounded-full font-medium w-fit"
+                            [class.bg-green-100]="b.statut === 'valide'" [class.text-green-800]="b.statut === 'valide'"
+                            [class.bg-red-100]="b.statut === 'rejete'" [class.text-red-800]="b.statut === 'rejete'"
+                            [class.bg-blue-100]="b.statut !== 'valide' && b.statut !== 'rejete'" [class.text-blue-800]="b.statut !== 'valide' && b.statut !== 'rejete'">
+                            {{ b.statut || 'en_attente' }}
+                        </span>
+                    </div>
+                </div>
+
+                <div *ngIf="!aBordereauInscriptionSoumis()" class="mb-2">
+                    <p class="text-sm text-yellow-700">Aucun bordereau soumis — revenez à l'étape précédente pour uploader votre bordereau.</p>
+                </div>
+                <div class="flex items-center justify-between">
+                    <p *ngIf="aBordereauValide()" class="text-sm text-green-700">✅ Bordereau validé par le cabinet comptable.</p>
+                    <p *ngIf="!aBordereauValide() && aBordereauInscriptionSoumis()" class="text-sm text-gray-600">⏳ En attente de validation par le cabinet comptable.</p>
+                    <button *ngIf="!aBordereauValide() && aBordereauInscriptionSoumis()" (click)="verifierStatut()" class="px-3 py-1 text-xs font-medium rounded bg-white border border-gray-300 hover:bg-gray-50 text-gray-700">
+                        Vérifier
+                    </button>
+                </div>
+            </div>
         </ng-container>
 
-        <!-- Section: Paiements -->
+        <!-- Étape 6 : Saisie ESA Compta -->
         <ng-container *ngIf="currentItemSection == 5">
-            <app-paiements-section [demande]="demande" [coursChoisis]="demande!.coursChoisis" [rolesValue]="rolesValue" (nextStep)="onStepComplete(5, 'Paiement effectué. En attente de validation du bordereau.')"></app-paiements-section>
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-6">
+                <h3 class="text-md font-semibold text-gray-800 dark:text-white">Saisie ESA Compta</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 mb-4">
+                    Le service comptable enregistre votre paiement dans ESA Compta.
+                </p>
+
+                <div *ngIf="bordereauxInscription.length > 0" class="space-y-2 mb-4">
+                    <div *ngFor="let b of bordereauxInscription" class="flex flex-col sm:flex-row sm:items-center justify-between gap-y-1 p-3 rounded-md bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700">
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ b.numeroBordereau || b.referenceBancaire || ('Bordereau #' + b.id) }} <span *ngIf="b.montant" class="text-gray-500">— {{ b.montant }} FCFA</span></span>
+                        <span class="text-xs px-2 py-1 rounded-full font-medium w-fit"
+                            [class.bg-green-100]="b.statutPaiement === 'finalise'" [class.text-green-800]="b.statutPaiement === 'finalise'"
+                            [class.bg-blue-100]="b.statutPaiement === 'saisi'" [class.text-blue-800]="b.statutPaiement === 'saisi'"
+                            [class.bg-gray-100]="b.statutPaiement !== 'finalise' && b.statutPaiement !== 'saisi'" [class.text-gray-800]="b.statutPaiement !== 'finalise' && b.statutPaiement !== 'saisi'">
+                            ESA : {{ b.statutPaiement || 'pending' }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <p *ngIf="saisieTerminee()" class="text-sm text-green-700">✅ Saisie ESA terminée — dossier transmis au comité d'orientation.</p>
+                    <p *ngIf="!saisieTerminee() && saisieEnCours()" class="text-sm text-blue-700">⏳ Saisie ESA en cours...</p>
+                    <p *ngIf="!saisieTerminee() && !saisieEnCours()" class="text-sm text-gray-600">⏳ En attente de saisie par le service comptable.</p>
+                    <button *ngIf="!saisieTerminee()" (click)="verifierStatut()" class="px-3 py-1 text-xs font-medium rounded bg-white border border-gray-300 hover:bg-gray-50 text-gray-700">
+                        Vérifier
+                    </button>
+                </div>
+            </div>
         </ng-container>
 
-        <!-- Section: Validation -->
+        <!-- Étape 7 : Comité d'orientation -->
         <ng-container *ngIf="currentItemSection == 6">
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-6">
+                <h3 class="text-md font-semibold text-gray-800 dark:text-white">Comité d'orientation</h3>
+                <p *ngIf="demande.dateValidation" class="text-sm text-green-700 mt-2">✅ Votre dossier a été validé par le comité d'orientation.</p>
+                <div *ngIf="!demande.dateValidation" class="flex items-center justify-between mt-2">
+                    <p class="text-sm text-gray-600">⏳ Dossier transmis au comité d'orientation — en attente de validation.</p>
+                    <button (click)="verifierStatut()" class="px-3 py-1 text-xs font-medium rounded bg-white border border-gray-300 hover:bg-gray-50 text-gray-700">
+                        Vérifier
+                    </button>
+                </div>
+            </div>
+
+            <app-validation-section [parcours]="parcoursFinal" [demande]="demande" [coursChoisis]="demande!.coursChoisis" [rolesValue]="rolesValue"></app-validation-section>
+        </ng-container>
+
+        <!-- Étape 8 : Cours + Validation finale -->
+        <ng-container *ngIf="currentItemSection == 7">
+            <app-cours-section [demandeId]="demande.id!" [parcours]="parcoursFinal" [coursChoisis]="demande!.coursChoisis" [rolesValue]="rolesValue" (nextStep)="onStepComplete(7, 'Cours sélectionnés.')"></app-cours-section>
+
             <app-validation-section [parcours]="parcoursFinal" [demande]="demande" [coursChoisis]="demande!.coursChoisis" [rolesValue]="rolesValue"></app-validation-section>
         </ng-container>
     </ng-container>
 
     <div class="flex justify-end items-end" *ngIf="rolesValue.isInstitution">
         <div *ngIf="currentItemSection == 6 && demande!.dateValidation == undefined" class="flex justify-end items-center gap-x-8">
+            <app-custom-button (click)="deleteDemandeInscription()" text="Supprimer" color="red" [outlined]="true"></app-custom-button>
             <app-custom-button (click)="openValidationModal()" text="Valider"></app-custom-button>
         </div>
     </div>

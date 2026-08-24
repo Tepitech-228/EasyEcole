@@ -21,7 +21,13 @@ function getDbConfig() {
         if (env !== 'production' && config.database) {
             return config
         }
-    } catch { }
+    } catch (err: any) {
+        // Fichier absent = cas nominal (config par variables d'environnement).
+        // Toute autre anomalie doit être visible pour le diagnostic.
+        if (err?.code !== 'MODULE_NOT_FOUND') {
+            console.warn('[DB] lecture de config/sequelize.json impossible:', err?.message || err)
+        }
+    }
     throw new Error('Database configuration not found. Set DB_HOST/DB_NAME env vars or configure sequelize.json')
 }
 
@@ -162,8 +168,25 @@ export class DatabaseConnection {
                 }
 
                 await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
+            } else if (process.env.DB_SYNC_ON_BOOT === 'true') {
+                // Déploiement (Dokploy/Docker) : ce projet n'a PAS de migrations
+                // Sequelize ; le schéma est historiquement créé par le sync alter
+                // du développement. DB_SYNC_ON_BOOT=true permet au démarrage en
+                // production de créer/mettre à jour les tables manquantes
+                // (ex. ins_seances manquante -> crash du cron RappelSalleCron).
+                // À activer ponctuellement puis à désactiver une fois le schéma aligné.
+                console.log('[DB] DB_SYNC_ON_BOOT=true — synchronisation du schéma demandée en production…')
+                await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 0')
+                try {
+                    await this._sequelize.sync({ alter: true })
+                    console.log('[DB] Schéma synchronisé (production).')
+                } catch (syncError: any) {
+                    console.error('CRITIQUE [DB]: échec du sync de démarrage en production :', syncError?.message || syncError)
+                } finally {
+                    await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 1').catch(() => undefined)
+                }
             } else {
-                console.log('Production mode: sync disabled, use migrations');
+                console.log('Production mode: sync disabled, use migrations (ou DB_SYNC_ON_BOOT=true)');
             }
 
             // --- Contraintes UNIQUE nominatives (après les syncs) ---

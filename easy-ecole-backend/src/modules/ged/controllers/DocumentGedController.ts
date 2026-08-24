@@ -24,7 +24,11 @@ import { GED_CONFIG } from "../../../core/config/GedConfig";
 function parseJsonField(value: any): any {
   if (!value) return null;
   if (typeof value === 'object') return value;
-  try { return JSON.parse(value); } catch { return null; }
+  try { return JSON.parse(value); } catch {
+    // Champ JSON corrompu en base : dégradation contrôlée mais signalée.
+    console.warn('[GED][parseJsonField] JSON invalide, valeur ignorée:', String(value).slice(0, 120));
+    return null;
+  }
 }
 
 const UPLOAD_DIR = GED_CONFIG.UPLOAD_DIR;

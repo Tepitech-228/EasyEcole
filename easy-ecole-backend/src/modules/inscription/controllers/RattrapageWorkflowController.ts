@@ -706,6 +706,7 @@ export default class RattrapageWorkflowController {
         modalite: '1x',
         referenceBancaire: `rattrapage-workflow-${demande.id}`,
         statut: 'en_attente',
+        statutPaiement: 'pending',
         commentaire: `Frais de rattrapage — demande #${demande.id} (workflow officiel)`,
       }, { transaction })
 

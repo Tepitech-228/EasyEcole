@@ -9,6 +9,8 @@ import { CursusApprenant } from "../../inscription/models/CursusApprenant";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
 import DemandeDocumentPaiementService from "../services/DemandeDocumentPaiementService";
+import { SecretariatWorkflowService, ErreurWorkflow } from "../services/SecretariatWorkflowService";
+import { Utilisateur } from "../../auth/models/Utilisateur";
 
 export default class DemandeDocumentController {
 
@@ -385,5 +387,124 @@ export default class DemandeDocumentController {
             fraisPayes: !!demande.fraisPayes,
             source: demande.source
         })
+    }
+
+    static async preparerDocument(req: Request, res: Response): Promise<Response | null> {
+        const role = (req as any).utilisateurRole
+        const utilisateurId = (req as any).utilisateurId
+
+        if (role != RolesUtilisateur.SECRETAIRE && role != RolesUtilisateur.ADMIN && role != RolesUtilisateur.INSTITUTION) {
+            return res.status(403).json({ success: false, message: "Accès réservé au secrétariat" })
+        }
+
+        try {
+            const demande = await DemandeDocument.findByPk(req.params.id)
+            if (!demande) {
+                return res.status(404).json({ success: false, code: 'DEMANDE_NOT_FOUND', message: "Demande non trouvée" })
+            }
+            const updated = await SecretariatWorkflowService.passerEnPreparation(demande, utilisateurId)
+            return res.status(200).json(updated)
+        } catch (e) {
+            if (e instanceof ErreurWorkflow) return res.status(e.httpStatus).json({ success: false, code: e.code, message: e.message })
+            console.error(`[SECRETARIAT][preparerDocument] user=${utilisateurId} demande=${req.params.id}`, e)
+            return res.status(500).json({ success: false, code: 'INTERNAL_ERROR', message: "Erreur interne lors de la préparation" })
+        }
+    }
+
+    static async genererDocument(req: Request, res: Response): Promise<Response | null> {
+        const role = (req as any).utilisateurRole
+        const utilisateurId = (req as any).utilisateurId
+
+        if (role != RolesUtilisateur.SECRETAIRE && role != RolesUtilisateur.ADMIN) {
+            return res.status(403).json({ success: false, message: "Accès réservé au secrétariat" })
+        }
+
+        try {
+            const demande = await DemandeDocument.findByPk(req.params.id, {
+                include: [
+                    { model: TypeDocument, as: 'typeDocument' },
+                    { model: Utilisateur, as: 'etudiant' }
+                ]
+            })
+            if (!demande) {
+                return res.status(404).json({ success: false, code: 'DEMANDE_NOT_FOUND', message: "Demande non trouvée" })
+            }
+            const updated = await SecretariatWorkflowService.genererDocument(demande, utilisateurId)
+            return res.status(200).json(updated)
+        } catch (e) {
+            if (e instanceof ErreurWorkflow) return res.status(e.httpStatus).json({ success: false, code: e.code, message: e.message })
+            console.error(`[SECRETARIAT][genererDocument] user=${utilisateurId} demande=${req.params.id}`, e)
+            return res.status(500).json({ success: false, code: 'INTERNAL_ERROR', message: "Erreur interne lors de la génération" })
+        }
+    }
+
+    static async imprimerDocument(req: Request, res: Response): Promise<Response | null> {
+        const role = (req as any).utilisateurRole
+        const utilisateurId = (req as any).utilisateurId
+
+        if (role != RolesUtilisateur.SECRETAIRE && role != RolesUtilisateur.ADMIN) {
+            return res.status(403).json({ success: false, message: "Accès réservé au secrétariat" })
+        }
+
+        try {
+            const demande = await DemandeDocument.findByPk(req.params.id)
+            if (!demande) {
+                return res.status(404).json({ success: false, code: 'DEMANDE_NOT_FOUND', message: "Demande non trouvée" })
+            }
+            const updated = await SecretariatWorkflowService.confirmerImpression(demande, utilisateurId)
+            return res.status(200).json(updated)
+        } catch (e) {
+            if (e instanceof ErreurWorkflow) return res.status(e.httpStatus).json({ success: false, code: e.code, message: e.message })
+            console.error(`[SECRETARIAT][imprimerDocument] user=${utilisateurId} demande=${req.params.id}`, e)
+            return res.status(500).json({ success: false, code: 'INTERNAL_ERROR', message: "Erreur interne lors de la confirmation d'impression" })
+        }
+    }
+
+    static async remettreDocument(req: Request, res: Response): Promise<Response | null> {
+        const role = (req as any).utilisateurRole
+        const utilisateurId = (req as any).utilisateurId
+
+        if (role != RolesUtilisateur.SECRETAIRE && role != RolesUtilisateur.ADMIN) {
+            return res.status(403).json({ success: false, message: "Accès réservé au secrétariat" })
+        }
+
+        try {
+            const demande = await DemandeDocument.findByPk(req.params.id, {
+                include: [{ model: Utilisateur, as: 'etudiant' }]
+            })
+            if (!demande) {
+                return res.status(404).json({ success: false, code: 'DEMANDE_NOT_FOUND', message: "Demande non trouvée" })
+            }
+            const updated = await SecretariatWorkflowService.confirmerRemise(demande, utilisateurId)
+            return res.status(200).json(updated)
+        } catch (e) {
+            if (e instanceof ErreurWorkflow) return res.status(e.httpStatus).json({ success: false, code: e.code, message: e.message })
+            console.error(`[SECRETARIAT][remettreDocument] user=${utilisateurId} demande=${req.params.id}`, e)
+            return res.status(500).json({ success: false, code: 'INTERNAL_ERROR', message: "Erreur interne lors de la remise" })
+        }
+    }
+
+    static async rejeterDemande(req: Request, res: Response): Promise<Response | null> {
+        const role = (req as any).utilisateurRole
+        const utilisateurId = (req as any).utilisateurId
+
+        if (role != RolesUtilisateur.SECRETAIRE && role != RolesUtilisateur.ADMIN && role != RolesUtilisateur.INSTITUTION) {
+            return res.status(403).json({ success: false, message: "Accès réservé au secrétariat" })
+        }
+
+        const motif = req.body.motif || "Demande rejetée"
+
+        try {
+            const demande = await DemandeDocument.findByPk(req.params.id)
+            if (!demande) {
+                return res.status(404).json({ success: false, code: 'DEMANDE_NOT_FOUND', message: "Demande non trouvée" })
+            }
+            const updated = await SecretariatWorkflowService.rejeterDemande(demande, motif, utilisateurId)
+            return res.status(200).json(updated)
+        } catch (e) {
+            if (e instanceof ErreurWorkflow) return res.status(e.httpStatus).json({ success: false, code: e.code, message: e.message })
+            console.error(`[SECRETARIAT][rejeterDemande] user=${utilisateurId} demande=${req.params.id}`, e)
+            return res.status(500).json({ success: false, code: 'INTERNAL_ERROR', message: "Erreur interne lors du rejet" })
+        }
     }
 }

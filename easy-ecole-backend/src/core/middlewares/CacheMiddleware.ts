@@ -14,7 +14,11 @@ export function cache(ttlSeconds: number = 60) {
         if (cached) {
           return res.json(JSON.parse(cached))
         }
-      } catch { }
+      } catch (err) {
+        // Entrée corrompue ou Redis injoignable : on sert la source de vérité,
+        // mais l'anomalie doit rester traçable.
+        console.warn(`[CACHE] lecture impossible pour ${cacheKey}:`, err instanceof Error ? err.message : err)
+      }
 
       const originalJson = res.json.bind(res)
       res.json = function (body: any) {

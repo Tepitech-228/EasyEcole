@@ -26,13 +26,25 @@
           <td class="px-4 py-3 font-medium text-gray-900">{{ t.code }}</td>
           <td class="px-4 py-3 text-gray-600">{{ t.libelle }}</td>
           <td class="px-4 py-3 text-center">
-            <button (click)="toggleActif(t)" [class.text-green-600]="t.actif" [class.text-gray-400]="!t.actif" class="hover:opacity-80">
-              {{ t.actif ? 'Oui' : 'Non' }}
+            <button (click)="toggleActif(t)" title="Cliquer pour activer/désactiver"
+              class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full transition focus:outline-none focus:ring-2 focus:ring-offset-1"
+              [class.bg-green-100]="t.actif" [class.text-green-700]="t.actif"
+              [class.bg-gray-100]="!t.actif" [class.text-gray-500]="!t.actif">
+              <span class="material-symbols-outlined text-sm">{{ t.actif ? 'check_circle' : 'cancel' }}</span>
+              {{ t.actif ? 'Actif' : 'Inactif' }}
             </button>
           </td>
-          <td class="px-4 py-3 text-center">
-            <button (click)="openEdit(t)" class="text-blue-600 hover:text-blue-800 mr-3">Modifier</button>
-            <button (click)="deleteItem(t.id)" class="text-red-600 hover:text-red-800">Supprimer</button>
+          <td class="px-4 py-3 text-center whitespace-nowrap">
+            <button (click)="openEdit(t)" title="Modifier le type"
+              class="inline-flex items-center gap-1 px-2.5 py-1 mr-2 text-xs font-medium rounded-md transition text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-300">
+              <span class="material-symbols-outlined text-sm">edit</span>
+              Modifier
+            </button>
+            <button (click)="deleteItem(t.id)" title="Supprimer le type"
+              class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md transition text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-300">
+              <span class="material-symbols-outlined text-sm">delete</span>
+              Supprimer
+            </button>
           </td>
         </tr>
       </tbody>

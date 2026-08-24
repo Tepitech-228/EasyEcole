@@ -110,7 +110,10 @@ export class GedIntegrationService {
       }
 
       return rootFolder.id;
-    } catch {
+    } catch (err) {
+      // Dossier racine introuvable/non créé : l'appelant doit pouvoir tracer
+      // pourquoi l'archivage GED est dégradé (null = pas de classement).
+      console.error('[GED][getOrCreateRootFolder] échec:', err instanceof Error ? err.message : err);
       return null;
     }
   }
@@ -129,7 +132,11 @@ export class GedIntegrationService {
         const fileBuffer = fs.readFileSync(fullPath);
         return crypto.createHash('sha256').update(fileBuffer).digest('hex');
       }
-    } catch {}
+      console.warn(`[GED][computeHash] fichier introuvable: ${fullPath}`);
+    } catch (err) {
+      // Hash vide = intégrité non vérifiable plus tard : la cause doit être connue.
+      console.error(`[GED][computeHash] échec pour ${filePath}:`, err instanceof Error ? err.message : err);
+    }
     return '';
   }
 }

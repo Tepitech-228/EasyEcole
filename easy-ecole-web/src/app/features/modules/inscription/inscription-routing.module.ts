@@ -7,7 +7,7 @@ import { DetailsParcoursPageComponent } from './pages/details-parcours-page/deta
 import { DetailsSessionPageComponent } from './pages/details-session-page/details-session-page.component';
 import { ListeCoursPageComponent } from './pages/liste-cours-page/liste-cours-page.component';
 import { ListeDemandesPageComponent } from './pages/liste-demandes-page/liste-demandes-page.component';
-import { ListeParcoursPageComponent } from './pages/liste-parcours-page/liste-parcours-page.component';
+import {ListeParcoursPageComponent} from './pages/liste-parcours-page/liste-parcours-page.component';
 import { ListeSessionsPageComponent } from './pages/liste-sessions-page/liste-sessions-page.component';
 import { MonCursusPageComponent } from './pages/mon-cursus-page/mon-cursus-page.component';
 import { NouveauParcoursPageComponent } from './pages/nouveau-parcours-page/nouveau-parcours-page.component';
@@ -19,14 +19,13 @@ import { GestionEcheancesPageComponent } from './pages/gestion-echeances-page/ge
 import { ComiteOrientationPageComponent } from './pages/comite-orientation-page/comite-orientation-page.component';
 import { ComiteDetailsPageComponent } from './pages/comite-details-page/comite-details-page.component';
 import { ListeDossiersPageComponent } from './pages/liste-dossiers-page/liste-dossiers-page.component';
-import { ListeFraisParcoursPageComponent } from './pages/liste-frais-parcours-page/liste-frais-parcours-page.component';
+import {ListeFraisParcoursPageComponent} from './pages/liste-frais-parcours-page/liste-frais-parcours-page.component';
 import { HierarchyPageComponent } from './pages/hierarchy/hierarchy-page.component';
 import { HierarchyDossiersPageComponent } from './pages/hierarchy-dossiers-page/hierarchy-dossiers-page.component';
-import { ListeEffectifsPageComponent } from './pages/liste-effectifs-page/liste-effectifs-page.component';
+import {ListeEffectifsPageComponent} from './pages/liste-effectifs-page/liste-effectifs-page.component';
 import { SuiviUePageComponent } from './pages/suivi-ue-page/suivi-ue-page.component';
 import { ListeSallesDeClassePageComponent } from './pages/liste-salles-de-classe-page/liste-salles-de-classe-page.component';
-import { ListeClassesPageComponent } from './pages/liste-classes-page/liste-classes-page.component';
-import { OnboardingPageComponent } from './pages/onboarding-page/onboarding-page.component';
+import {ListeClassesPageComponent} from './pages/liste-classes-page/liste-classes-page.component';
 import { CartesPageComponent } from './pages/cartes-page/cartes-page.component';
 import { GestionSemestresPageComponent } from './pages/gestion-semestres-page/gestion-semestres-page.component';
 import { ImportExportExcelPageComponent } from './pages/import-export-excel-page/import-export-excel-page.component';
@@ -38,12 +37,12 @@ import { RattrapageMesDemandesPageComponent } from './pages/rattrapage-mes-deman
 import { RattrapagePaiementsPageComponent } from './pages/rattrapage-paiements-page/rattrapage-paiements-page.component';
 import { TypesBordereauxPageComponent } from './pages/types-bordereaux-page/types-bordereaux-page.component';
 import { EsacomptaBordereauxPageComponent } from './pages/esacompta-bordereaux-page/esacompta-bordereaux-page.component';
+import { ComiteValidationPageComponent } from './pages/comite-validation-page/comite-validation-page.component';
 
 const routes: Routes = [
   {
     path: 'onboarding',
-    component: OnboardingPageComponent,
-    pathMatch: 'full'
+    redirectTo: '/inscription/demandes', pathMatch: 'full'
   },
   {
     path: 'sessions',
@@ -281,6 +280,11 @@ const routes: Routes = [
   {
     path: 'finance/bordereaux',
     component: EsacomptaBordereauxPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'comite-validation',
+    component: ComiteValidationPageComponent,
     pathMatch: 'full'
   },
 ];

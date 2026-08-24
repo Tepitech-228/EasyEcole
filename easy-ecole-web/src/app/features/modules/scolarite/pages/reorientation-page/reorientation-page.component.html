@@ -1,94 +1,135 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
-    <div>
-      <h1 class="text-2xl font-bold text-gray-900">Réorientation</h1>
-      <p class="mt-1 text-sm text-gray-500">Gestion des demandes de réorientation</p>
-    </div>
-  </div>
+  <app-header-title title="Réorientation" subtitle="Gestion des demandes de réorientation"></app-header-title>
 
   <div *ngIf="errorMessage" class="mb-4 px-4 py-3 rounded-lg bg-red-50 text-red-700 text-sm ring-1 ring-red-200">{{ errorMessage }}</div>
   <div *ngIf="successMessage" class="mb-4 px-4 py-3 rounded-lg bg-green-50 text-green-700 text-sm ring-1 ring-green-200">{{ successMessage }}</div>
 
-  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
-    <h2 class="text-lg font-semibold text-gray-900 mb-1">Soumettre une demande</h2>
-    <p class="text-sm text-gray-500 mb-5">Formulaire de demande de réorientation</p>
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+  <!-- Formulaire de demande -->
+  <div class="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+    <div class="flex items-center gap-x-2 mb-4">
+      <span class="material-symbols-outlined text-gray-500">sync_alt</span>
+      <span class="text-sm font-medium text-gray-700">Soumettre une demande de réorientation</span>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3 mb-4">
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Cursus Apprenant ID</label>
-        <input type="number" [(ngModel)]="newItem.cursusApprenantId"
-               class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-               placeholder="ID du cursus">
+        <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">
+          <span class="material-symbols-outlined text-sm align-text-bottom mr-1">person</span>
+          Étudiant (cursus)
+        </label>
+        <select [(ngModel)]="selectedCursusId" [disabled]="!dataLoaded"
+          class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed">
+          <option value="">-- Sélectionner un étudiant --</option>
+          <option *ngFor="let c of cursusList" [value]="c.id">{{ cursusLabel(c) }}</option>
+        </select>
       </div>
+
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Parcours actuel ID</label>
-        <input type="number" [(ngModel)]="newItem.parcoursActuelId"
-               class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-               placeholder="ID parcours actuel">
+        <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">
+          <span class="material-symbols-outlined text-sm align-text-bottom mr-1">route</span>
+          Parcours actuel
+        </label>
+        <input type="text" [value]="parcoursTitre(parcoursActuelDuCursus(selectedCursusId))" readonly disabled
+          placeholder="Sélectionner d'abord un étudiant"
+          class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm text-gray-900 shadow-sm bg-gray-100 text-gray-500 cursor-not-allowed">
       </div>
+
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Parcours cible ID</label>
-        <input type="number" [(ngModel)]="newItem.parcoursCibleId"
-               class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-               placeholder="ID parcours cible">
+        <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">
+          <span class="material-symbols-outlined text-sm align-text-bottom mr-1">alt_route</span>
+          Parcours cible
+        </label>
+        <select [(ngModel)]="selectedParcoursCibleId"
+          class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed">
+          <option value="">-- Sélectionner le parcours cible --</option>
+          <option *ngFor="let p of parcoursList" [value]="p.id">{{ p.titre }}</option>
+        </select>
       </div>
     </div>
+
     <div class="mb-4">
-      <label class="block text-sm font-medium text-gray-700 mb-1">Motif</label>
-      <textarea [(ngModel)]="newItem.motif" rows="3"
-                class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white resize-none"
-                placeholder="Motif de la demande"></textarea>
+      <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">
+        <span class="material-symbols-outlined text-sm align-text-bottom mr-1">description</span>
+        Motif de la demande
+      </label>
+      <textarea [(ngModel)]="motif" rows="3"
+        placeholder="Expliquez la raison de la demande de réorientation..."
+        class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-none"></textarea>
     </div>
-    <button (click)="createItem()" [disabled]="!newItem.cursusApprenantId || !newItem.motif || adding"
-            class="inline-flex items-center px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-      Soumettre
-    </button>
+
+    <div class="flex justify-end">
+      <app-custom-button (click)="createItem()" text="Soumettre la demande" color="indigo"
+        [disabled]="!peutSoumettre || adding"></app-custom-button>
+    </div>
   </div>
 
-  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-    <div class="px-6 py-4 border-b border-gray-50">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h2 class="text-lg font-semibold text-gray-900">Demandes de réorientation</h2>
-          <p class="text-sm text-gray-500">Liste des demandes</p>
+  <!-- Liste des demandes -->
+  <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+    <div class="px-4 py-4 border-b border-gray-100">
+      <div class="flex items-center gap-x-4">
+        <div class="flex-1">
+          <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">
+            <span class="material-symbols-outlined text-sm align-text-bottom mr-1">search</span>
+            Rechercher une demande
+          </label>
+          <input type="text" [(ngModel)]="searchQuery" (input)="filtrer()"
+            placeholder="Étudiant, parcours, motif..."
+            class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
         </div>
-        <div>
-          <input type="text" [(ngModel)]="searchQuery" (keyup)="filtrer()" placeholder="Rechercher..."
-                 class="w-full sm:w-64 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
+        <div class="flex-shrink-0 pt-6">
+          <div class="bg-gradient-to-r from-indigo-50 to-indigo-100 border border-indigo-200 rounded-md px-4 py-2.5 text-center">
+            <p class="text-xs text-indigo-600 font-semibold">TOTAL</p>
+            <p class="text-lg font-bold text-indigo-600">{{ _items.length }}</p>
+            <p class="text-xs text-indigo-500">demande(s)</p>
+          </div>
         </div>
       </div>
     </div>
 
-    <div *ngIf="loading" class="p-6 space-y-3">
-      <div *ngFor="let _ of [1,2,3,4,5]" class="h-10 bg-gray-100 rounded-lg animate-pulse"></div>
-    </div>
+    <app-loading-spinner *ngIf="loading"></app-loading-spinner>
 
     <div *ngIf="!loading && _items.length > 0" class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-50">
-        <thead>
-          <tr class="bg-gray-50/50">
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">#</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Cursus</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Parcours actuel</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Parcours cible</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Motif</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Statut</th>
-            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+      <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">#</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Étudiant</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Parcours actuel</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Parcours cible</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Motif</th>
+            <th class="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Statut</th>
+            <th class="px-3 py-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-50">
-          <tr *ngFor="let s of paginatedItems; index as index" class="hover:bg-gray-50/50 transition-colors">
-            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{{ (currentPage - 1) * pageSize + index + 1 }}</td>
-            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{{ s.cursusApprenantId }}</td>
-            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{{ s.parcoursActuelId }}</td>
-            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{{ s.parcoursCibleId }}</td>
-            <td class="px-4 py-3 max-w-xs text-sm text-gray-500 truncate">{{ s.motif }}</td>
-            <td class="px-4 py-3 whitespace-nowrap"><app-custom-badge [text]="s.statut" [color]="getStatutColor(s.statut || 'soumise')"></app-custom-badge></td>
-            <td class="px-4 py-3 whitespace-nowrap text-center">
-              <div class="flex items-center justify-center gap-1.5" *ngIf="s.statut === 'soumise' && (rolesValue.isInstitution || rolesValue.isAdmin)">
-                <button (click)="traiter(s, 'etude')" class="px-2.5 py-1 text-xs font-medium rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors">Étudier</button>
-                <button (click)="traiter(s, 'approuvee')" class="px-2.5 py-1 text-xs font-medium rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors">Approuver</button>
-                <button (click)="traiter(s, 'rejetee')" class="px-2.5 py-1 text-xs font-medium rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors">Rejeter</button>
+        <tbody class="divide-y divide-gray-200 bg-white">
+          <tr *ngFor="let s of paginatedItems; index as index" class="hover:bg-gray-50 transition">
+            <td class="px-3 py-2 text-sm text-gray-500">{{ (currentPage - 1) * pageSize + index + 1 }}</td>
+            <td class="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">{{ etudiantLabel(s) }}</td>
+            <td class="px-3 py-2 text-sm text-gray-700 whitespace-nowrap">{{ parcoursTitre(s.parcoursActuelId) }}</td>
+            <td class="px-3 py-2 text-sm text-gray-700 whitespace-nowrap">{{ parcoursTitre(s.parcoursCibleId) }}</td>
+            <td class="px-3 py-2 text-sm text-gray-500 max-w-xs truncate" [title]="s.motif">{{ s.motif || '—' }}</td>
+            <td class="px-3 py-2 text-center whitespace-nowrap">
+              <app-custom-badge [text]="statutLabel(s.statut || 'soumise')" [color]="getStatutColor(s.statut || 'soumise')"></app-custom-badge>
+            </td>
+            <td class="px-3 py-2 text-right whitespace-nowrap">
+              <div class="inline-flex items-center gap-1.5" *ngIf="s.statut === 'soumise' && (rolesValue.isInstitution || rolesValue.isAdmin)">
+                <button (click)="traiter(s, 'etude')" title="Mettre en étude"
+                  class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md transition text-amber-700 bg-amber-100 hover:bg-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-300">
+                  <span class="material-symbols-outlined text-sm">visibility</span>
+                  Étudier
+                </button>
+                <button (click)="traiter(s, 'approuvee')" title="Approuver la demande"
+                  class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md transition text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-300">
+                  <span class="material-symbols-outlined text-sm">check</span>
+                  Approuver
+                </button>
+                <button (click)="traiter(s, 'rejetee')" title="Rejeter la demande"
+                  class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md transition text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-300">
+                  <span class="material-symbols-outlined text-sm">close</span>
+                  Rejeter
+                </button>
               </div>
+              <span *ngIf="!(s.statut === 'soumise' && (rolesValue.isInstitution || rolesValue.isAdmin))" class="text-gray-300 text-sm">—</span>
             </td>
           </tr>
         </tbody>
@@ -100,19 +141,20 @@
       <p class="mt-4 text-sm text-gray-500">Aucune demande trouvée</p>
     </div>
 
-    <div *ngIf="_items.length > pageSize" class="px-6 py-4 border-t border-gray-50">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <span class="text-sm text-gray-500">{{ _items.length }} demande(s) — Page {{ currentPage }}/{{ totalPages }}</span>
-        <div class="flex gap-2">
-          <button (click)="prevPage()" [disabled]="currentPage === 1"
-                  class="px-3 py-1.5 text-sm font-medium rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-            Précédent
-          </button>
-          <button (click)="nextPage()" [disabled]="currentPage === totalPages"
-                  class="px-3 py-1.5 text-sm font-medium rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-            Suivant
-          </button>
-        </div>
+    <div *ngIf="_items.length > pageSize" class="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-200">
+      <span class="text-sm text-gray-600">
+        Page {{ currentPage }} / {{ totalPages }}
+        ({{ _items.length }} résultat(s))
+      </span>
+      <div class="flex gap-1">
+        <button (click)="prevPage()" [disabled]="currentPage <= 1"
+          class="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+          <span class="material-symbols-outlined text-base align-middle">chevron_left</span>
+        </button>
+        <button (click)="nextPage()" [disabled]="currentPage >= totalPages"
+          class="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+          <span class="material-symbols-outlined text-base align-middle">chevron_right</span>
+        </button>
       </div>
     </div>
   </div>

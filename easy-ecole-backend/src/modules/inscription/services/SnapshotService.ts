@@ -73,7 +73,12 @@ export class SnapshotService {
         if (!raw) return null
         try {
             return JSON.parse(raw) as FraisScolariteSnapshot
-        } catch {
+        } catch (err) {
+            // CRITIQUE : un snapshot illisible concerne des frais FIGÉS. Retourner null
+            // pousse l'appelant à régénérer un montant potentiellement différent :
+            // l'anomalie doit être immédiatement visible pour investigation.
+            console.error('[SNAPSHOT] frais scolarité illisibles (JSON corrompu):',
+                err instanceof Error ? err.message : err, '— contenu:', String(raw).slice(0, 200))
             return null
         }
     }

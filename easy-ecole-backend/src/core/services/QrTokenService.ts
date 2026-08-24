@@ -66,6 +66,8 @@ export class QrTokenService {
     try {
       decoded = Buffer.from(base64Payload, 'base64url').toString('utf8');
     } catch {
+      // Justifié : token QR invalide → rejet (null). Aucun effet de bord possible :
+      // c'est une validation d'entrée, pas une erreur système à propager.
       return null;
     }
 

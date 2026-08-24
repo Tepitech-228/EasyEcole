@@ -454,10 +454,14 @@ export default class RattrapageController {
 
       const sender = EmailSender.getInstance();
       let envoye = 0;
+      const echoues: { rattrapageId: any; destinataire?: string; raison: string }[] = [];
 
       for (const r of rattrapages) {
         const user = (r as any).coursParticipant?.utilisateur as Utilisateur | undefined;
-        if (!user || !user.email) continue;
+        if (!user || !user.email) {
+          echoues.push({ rattrapageId: (r as any).id, raison: 'destinataire inconnu ou sans email' });
+          continue;
+        }
 
         const cours = (r as any).cours as Cours | undefined;
         const session = (r as any).sessionExamen as SessionExamen | undefined;
@@ -488,15 +492,27 @@ export default class RattrapageController {
               message: `Rattrapage ouvert pour ${cours?.intitule || cours?.code || ''} - ${session?.libelle || ''}`,
               date: new Date()
             } as any);
-          } catch (_) {}
+          } catch (notifErr) {
+            // L'email est parti : l'échec de la notification in-app ne doit pas
+            // masquer le succès, mais il doit rester traçable.
+            console.error(`[RATTRAPAGE][notification] échec pour user #${user.id}:`,
+              notifErr instanceof Error ? notifErr.message : notifErr);
+          }
 
           envoye++;
-        } catch (_) {}
+        } catch (mailErr) {
+          // Échec d'envoi : comptabilisé et remonté à l'appelant (pas de succès mensonger),
+          // notificationEnvoyee reste false → une nouvelle tentative restera possible.
+          const raison = mailErr instanceof Error ? mailErr.message : String(mailErr);
+          console.error(`[RATTRAPAGE][notifier] échec d'envoi à ${user.email} (rattrapage #${(r as any).id}):`, raison);
+          echoues.push({ rattrapageId: (r as any).id, destinataire: user.email, raison });
+        }
       }
 
-      return res.json({ success: true, envoye, total: rattrapages.length });
+      return res.json({ success: true, envoye, echoues: echoues.length, detail: echoues, total: rattrapages.length });
     } catch (error) {
-      return res.status(500).json({ success: false, error });
+      console.error('[RATTRAPAGE][notifierEtudiants]', error);
+      return res.status(500).json({ success: false, code: 'INTERNAL_ERROR', message: "Erreur lors des notifications" });
     }
   }
 

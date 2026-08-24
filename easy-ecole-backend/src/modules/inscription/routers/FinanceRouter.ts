@@ -1,9 +1,11 @@
 import express from "express"
 import { Request, Response } from "express";
+import path from "path";
 import { FindOptions, InferAttributes } from "sequelize";
 import { Bordereau } from "../models/Bordereau";
 import { Echeance } from "../models/Echeance";
 import { DossierEtudiant } from "../models/DossierEtudiant";
+import { DemandeInscription } from "../models/DemandeInscription";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { TypeOperationBordereau } from "../models/TypeOperationBordereau";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
@@ -11,8 +13,13 @@ import { AuthEsacompta } from "../../../core/middlewares/AuthEsacompta";
 import CheckPermission from "../../../core/middlewares/CheckPermission";
 import { ImputationService, ResultatImputation } from "../services/ImputationService";
 import { GenererNotificationImputation } from "../services/NotificationImputationService";
+import { EtatPreInscription, PreInscription } from "../models/PreInscription";
+import { Session } from "../models/Session";
 import { BordereauDossierService } from "../services/BordereauDossierService";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
+import { EmailSender } from "../../../core/helpers/EmailSender";
+import { DocGenGeneratorService } from "../../docgen/services/DocGenGeneratorService";
+import { creerEcritureComptable } from "../../comptabilite/helpers/ComptabiliteHelper";
 
 /**
  * Router dédié aux opérations financières ESA-COMPTA.
@@ -175,6 +182,11 @@ router.post('/bordereaux/:id/imputation-preview', [AuthEsacompta, CheckPermissio
  *                 type: number
  *               referenceBancaire:
  *                 type: string
+ *               numeroBordereau:
+ *                 type: string
+ *               moyenPaiement:
+ *                 type: string
+ *                 enum: [virement, especes, mobile_money, cheque]
  *               typeOperationId:
  *                 type: integer
  *               datePaiement:
@@ -216,10 +228,52 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       return res.status(400).json({ success: false, message: "Montant de paiement invalide" })
     }
 
+    // ── Règle du PREMIER bordereau de l'étudiant ──
+    // Aucun dossier étudiant existant → ce bordereau est automatiquement rattaché
+    // aux frais d'inscription : création complète du dossier (matricule, cursus,
+    // cours, échéanciers), puis imputation FIFO qui solde d'abord les frais
+    // d'inscription, le reste constituant le premier versement de scolarité.
+    const { DossierEtudiant } = require('../models/DossierEtudiant')
+    const dossierExistant = await DossierEtudiant.findOne({
+      where: { utilisateurId: bordereau.utilisateurId },
+      transaction,
+    })
+    const estPremierBordereau = !dossierExistant
+
+    let typeOperationIdEffectif = req.body.typeOperationId ?? bordereau.typeOperationId
+    let typeEffectif = bordereau.type
+    if (estPremierBordereau) {
+      typeEffectif = 'inscription'
+      if (!typeOperationIdEffectif) {
+        const typeInscription = await TypeOperationBordereau.findOne({ where: { code: 'INSCRIPTION' }, transaction })
+        if (typeInscription) typeOperationIdEffectif = typeInscription.id
+      }
+    }
+
+    // NOUVEAU : contrôle « premier bordereau ≥ frais d'inscription »
+    // Un premier bordereau dont le montant est inférieur aux frais d'inscription
+    // de la session est rejeté purement et simplement à la saisie ESA.
+    if (estPremierBordereau) {
+      const demande = await DemandeInscription.findOne({
+        where: { utilisateurId: bordereau.utilisateurId },
+        include: [{ association: DemandeInscription.associations.session, include: [Session.associations.fraisInscription] }],
+        transaction,
+      })
+      const fraisInscriptionSession = (demande?.session?.fraisInscription || [])
+        .reduce((sum, f) => sum + (f.montant || 0), 0)
+      if (montantPaiement < fraisInscriptionSession) {
+        await transaction.rollback()
+        return res.status(400).json({ success: false, message: `Montant constaté (${montantPaiement}) inférieur aux frais d'inscription de la session (${fraisInscriptionSession}). Le bordereau doit au minimum couvrir les frais d'inscription.` })
+      }
+    }
+
     // Mise à jour des informations financières
     bordereau.montant = montantPaiement
     bordereau.referenceBancaire = req.body.referenceBancaire ?? bordereau.referenceBancaire
-    bordereau.typeOperationId = req.body.typeOperationId ?? bordereau.typeOperationId
+    bordereau.numeroBordereau = req.body.numeroBordereau ?? bordereau.numeroBordereau
+    bordereau.moyenPaiement = req.body.moyenPaiement ?? bordereau.moyenPaiement
+    bordereau.typeOperationId = typeOperationIdEffectif
+    bordereau.type = typeEffectif ?? null
     bordereau.datePaiement = req.body.datePaiement ? new Date(req.body.datePaiement) : bordereau.datePaiement
     bordereau.commentaire = req.body.commentaire ?? bordereau.commentaire
     bordereau.statut = 'traite'
@@ -227,6 +281,32 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
     bordereau.valideParId = bordereau.valideParId || (req as any).utilisateurId
 
     await bordereau.save({ transaction })
+
+    const typeOperation = bordereau.typeOperation
+    const bordereauType = bordereau.type || typeOperation?.code?.toLowerCase() || 'scolarite'
+
+    // Création du dossier étudiant AVANT l'imputation FIFO : pour un nouvel
+    // étudiant, les échéances (inscription + scolarité) doivent exister au
+    // moment de la cascade, sinon tout le montant partirait en portefeuille.
+    if (bordereauType === 'inscription') {
+      try {
+        await BordereauDossierService.creerDossierEtudiantDepuisBordereau(
+          bordereau,
+          req,
+          transaction,
+          {
+            ignorerVerifFrais: estPremierBordereau,
+            // Règle métier : l'étudiant n'est "créé" (matricule définitif, cursus,
+            // cours, carte) qu'après la validation FINALE du comité. À ce stade on
+            // prépare uniquement le socle financier (dossier, échéanciers, snapshot).
+            pedagogieDifferee: estPremierBordereau
+          }
+        )
+      } catch (dossierError: any) {
+        await transaction.rollback()
+        return res.status(400).json({ success: false, message: dossierError.message || 'Erreur lors de la création du dossier étudiant' })
+      }
+    }
 
     // Imputation FIFO
     const resultatImputation = await ImputationService.imputerPourUtilisateur(
@@ -236,25 +316,53 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       transaction
     )
 
-    const typeOperation = bordereau.typeOperation
-    const bordereauType = bordereau.type || typeOperation?.code?.toLowerCase() || 'scolarite'
-
-    // Création du dossier étudiant pour inscription (flux ESA-Compta)
-    if (bordereauType === 'inscription') {
-      try {
-        await BordereauDossierService.creerDossierEtudiantDepuisBordereau(bordereau, req, transaction)
-      } catch (dossierError: any) {
-        await transaction.rollback()
-        return res.status(400).json({ success: false, message: dossierError.message || 'Erreur lors de la création du dossier étudiant' })
-      }
-    }
-
     if ((bordereauType === 'scolarite' || bordereauType === 'inscription') && bordereau.echeanceId) {
       const echeance = await Echeance.findByPk(bordereau.echeanceId, { transaction })
       if (echeance && echeance.statut !== 'paye') {
         echeance.statut = 'paye'
         echeance.datePaiement = bordereau.datePaiement || new Date()
         await echeance.save({ transaction })
+      }
+    }
+
+    // Quitus de scolarité (PDF + GED + email étudiant), idempotent
+    if (bordereauType === 'scolarite') {
+      try {
+        await BordereauDossierService.genererQuitusScolarite(bordereau, transaction)
+      } catch (quitusError: any) {
+        console.error("Erreur quitus scolarité (non bloquante):", quitusError)
+      }
+    }
+
+    // ── Pipeline d'inscription : NE PLUS TOUCHER ici ──
+    // Depuis le nouveau flux, la transmission au comité d'orientation se fait dès
+    // l'authentification du bordereau par le cabinet (BordereauController.valider /
+    // traiter). La saisie ESA-COMPTA est un travail PARALLÈLE : elle alimente les
+    // données financières (montant constaté, imputation FIFO) sans piloter le
+    // pipeline ni conditionner la validation du comité.
+
+    // Sécurité flux parallèle : si l'ESA saisit AVANT la validation du comité,
+    // creerDossierEtudiantDepuisBordereau exige une pré-inscription validée.
+    // On la pose/valide donc ici si elle n'existe pas encore (idempotent).
+    const demandePipeline = await DemandeInscription.findOne({
+      where: { utilisateurId: bordereau.utilisateurId },
+      order: [['createdAt', 'DESC']],
+      transaction,
+    })
+    if (demandePipeline && estPremierBordereau) {
+      const preInscriptionExistante = await PreInscription.findOne({
+        where: { demandeInscriptionId: demandePipeline.id },
+        transaction,
+      })
+      if (!preInscriptionExistante) {
+        await PreInscription.create({
+          demandeInscriptionId: demandePipeline.id,
+          statut: EtatPreInscription.VALIDE,
+          commentaire: "Pré-inscription validée automatiquement lors de la saisie ESA du premier bordereau",
+        }, { transaction })
+      } else if (preInscriptionExistante.statut !== EtatPreInscription.VALIDE) {
+        preInscriptionExistante.statut = EtatPreInscription.VALIDE
+        await preInscriptionExistante.save({ transaction })
       }
     }
 
@@ -272,6 +380,79 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
     } catch (notifError) {
       console.error("Erreur notification étudiant (non bloquante):", notifError)
     }
+
+    // ── Email N°2 : transmission du dossier au comité de validation ──
+    if (demandePipeline?.statutPipeline === 'transmis_comite') {
+      try {
+        const u: any = bordereau.utilisateur
+        if (u?.email) {
+          const nomComplet = `${u.prenoms || ''} ${u.nom || ''}`.trim() || 'étudiant(e)'
+          await EmailSender.getInstance().sendPdf(
+            u.email,
+            nomComplet,
+            "Votre dossier est transmis au comité de validation",
+            `<p>Cher ${nomComplet},</p>
+             <p>Les informations relatives à votre paiement ont été vérifiées et enregistrées par notre service comptable.</p>
+             <p>Votre dossier est maintenant transmis au comité pour son examen final.</p>
+             <p>Nous vous invitons à consulter régulièrement votre boîte mail afin de prendre connaissance de la décision du comité.</p>
+             <p>Cordialement,<br>Service des inscriptions</p>`,
+            '', ''
+          )
+        }
+      } catch (emailTransError) {
+        console.error("Erreur envoi email transmission comité (non bloquante):", emailTransError)
+      }
+    }
+
+    // Reçu de scolarité docgen REC001 (non bloquant)
+    if (bordereauType === 'scolarite') {
+      try {
+        const recu = await DocGenGeneratorService.generer(
+          {
+            typeCode: 'REC001',
+            sourceType: 'bordereau',
+            sourceId: bordereau.id,
+            utilisateurId: (req as any).utilisateurId,
+          },
+          req
+        );
+        const etudiant = bordereau.utilisateur;
+        if (etudiant?.email) {
+          await EmailSender.getInstance().sendPdf(
+            etudiant.email,
+            `${etudiant.prenoms || ''} ${etudiant.nom || ''}`.trim() || 'étudiant(e)',
+            `Easy Ecole: Reçu de scolarité ${recu.reference}`,
+            `<p>Bonjour ${etudiant.prenoms || ''},</p><p>Veuillez trouver ci-joint votre <b>reçu de scolarité</b> (référence ${recu.reference}).</p><p>Cordialement,<br>Easy Ecole</p>`,
+            recu.filePath,
+            path.basename(recu.filePath)
+          );
+        }
+      } catch (recuError) {
+        console.error("Erreur génération du reçu de scolarité (non bloquante):", recuError)
+      }
+    }
+
+    // Écriture comptable (non bloquant)
+    try {
+      const compteCreditNumero = bordereauType === 'scolarite' ? '701' : '702'
+      await creerEcritureComptable({
+        req,
+        journalCode: 'VEN',
+        compteDebitNumero: '512',
+        compteCreditNumero,
+        montant: bordereau.montant ?? 0,
+        libelle: `Paiement bordereau #${bordereau.id} - ${bordereauType}`,
+        reference: bordereau.referenceBancaire ?? `bordereau-${bordereau.id}`,
+        moduleSource: 'inscription',
+        referenceModuleId: String(bordereau.id)
+      })
+    } catch (comptaError) {
+      console.error("Erreur écriture comptable (non bloquante):", comptaError)
+    }
+
+    // Marquer la saisie ESA comme effectuée
+    bordereau.statutPaiement = 'saisi'
+    await bordereau.save({ transaction })
 
     return res.status(200).json({
       success: true,

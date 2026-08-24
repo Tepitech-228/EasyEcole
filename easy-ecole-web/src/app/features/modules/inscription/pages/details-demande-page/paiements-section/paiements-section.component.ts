@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { TypesPaiement } from 'src/app/data/enums/TypesPaiement';
 import { Cours } from 'src/app/data/modules/inscription/models/Cours.model';
 import { DemandeInscription } from 'src/app/data/modules/inscription/models/DemandeInscription.model';
@@ -10,6 +11,8 @@ import { SessionService } from 'src/app/data/modules/inscription/services/sessio
 import { RolesValueType } from 'src/app/data/types/RolesValueType';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 import { environment } from 'src/environments/environment';
+import { BordereauService } from 'src/app/data/modules/inscription/services/bordereau.service';
+import { Bordereau } from 'src/app/data/modules/inscription/models/Bordereau.model';
 
 @Component({
   selector: 'app-paiements-section',
@@ -28,6 +31,7 @@ export class PaiementsSectionComponent implements OnInit {
   @Output() nextStep: EventEmitter<any> = new EventEmitter()
 
   readonly typesPaiement = TypesPaiement
+  readonly BORDEREAUX_PATH: string = environment.MEDIAS_PATH.INSCRIPTION.BORDEREAUX
   session!: Session
   fraisAPayer: any[] = []
   fraisTotal: number = 0
@@ -37,16 +41,99 @@ export class PaiementsSectionComponent implements OnInit {
   paiementDescription?: string
   paiementError: boolean = false
 
+  // Nouveau workflow : upload de bordereau par l'étudiant
+  bordereaux: Bordereau[] = []
+  selectedFile?: File
+  showUploadModal: boolean = false
+  uploading: boolean = false
+  uploadSuccess: string = ''
+
   constructor(
     private sessionService: SessionService,
     private paiementInscriptionService: PaiementInscriptionService,
-    private localStorage: LocalStorageService
+    private bordereauService: BordereauService,
+    private localStorage: LocalStorageService,
+    private sanitizer: DomSanitizer
   ) {
   }
 
   ngOnInit(): void {
     this.session = this.demande.session!
     this.getFraisInscription()
+    if (this.rolesValue.isApprenant) {
+      this.chargerBordereaux()
+    }
+  }
+
+  /** Bordereaux d'inscription soumis par l'étudiant connecté. */
+  chargerBordereaux(): void {
+    this.bordereauService.getAll({ type: 'inscription' }).subscribe({
+      next: (res: any) => {
+        const data = res?.data || res || []
+        this.bordereaux = Array.isArray(data)
+          ? data.filter((b: any) => !b.type || b.type === 'inscription')
+          : []
+      },
+      error: () => {
+        this.bordereaux = []
+      }
+    })
+  }
+
+  onFileSelected(event: any): void {
+    const file: File = event.target?.files?.[0]
+    if (file) {
+      this.selectedFile = file
+    }
+  }
+
+  uploaderBordereau(): void {
+    if (!this.selectedFile || this.uploading) return
+
+    this.uploading = true
+    this.errorMessage = ''
+    const formData = new FormData()
+    formData.append('fichier', this.selectedFile)
+    formData.append('type', 'inscription')
+
+    this.bordereauService.upload(formData).subscribe({
+      next: () => {
+        this.uploading = false
+        this.selectedFile = undefined
+        this.showUploadModal = false
+        // Feedback visible : bannière de succès + rafraîchissement du wizard parent
+        this.uploadSuccess = '✅ Bordereau uploadé avec succès — en attente de validation par le service comptable.'
+        setTimeout(() => { this.uploadSuccess = '' }, 10000)
+        this.chargerBordereaux()
+        this.nextStep.emit()
+      },
+      error: (err: any) => {
+        this.uploading = false
+        // Message explicite selon la cause (rôle, auth, validation backend)
+        if (err?.status === 403) {
+          this.errorMessage = "Upload refusé : seul un compte étudiant (apprenant) peut soumettre un bordereau."
+        } else if (err?.status === 401) {
+          this.errorMessage = "Session expirée — veuillez vous reconnecter puis réessayer."
+        } else {
+          const backendMsg = err?.error?.message || err?.error?.error?.message || err?.error?.errors
+          this.errorMessage = typeof backendMsg === 'string' && backendMsg ? backendMsg : "Erreur lors de l'upload du bordereau. Veuillez réessayer."
+        }
+        setTimeout(() => { this.errorMessage = '' }, 10000)
+      }
+    })
+  }
+
+  getDocUrl(fichier: string): SafeResourceUrl {
+    const token = this.localStorage.get(LocalStorageService.AUTH_TOKEN)
+    let url = this.BORDEREAUX_PATH + fichier
+    if (token) {
+      url += `?token=${encodeURIComponent(token)}`
+    }
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url)
+  }
+
+  isImageFile(fichier: string): boolean {
+    return /\.(jpe?g|png|gif|webp)$/i.test(fichier)
   }
 
   // private getSession(id: string) {

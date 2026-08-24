@@ -23,6 +23,8 @@ import { AnneeAcademique } from 'src/app/data/modules/inscription/models/AnneeAc
 import { AnneeAcademiqueService } from 'src/app/data/modules/inscription/services/annee-academique.service';
 import { EtatPreInscription } from 'src/app/data/modules/inscription/models/PreInscription.model';
 import { PreInscriptionService } from 'src/app/data/modules/inscription/services/pre-inscription.service';
+import { BordereauService } from 'src/app/data/modules/inscription/services/bordereau.service';
+import { Bordereau } from 'src/app/data/modules/inscription/models/Bordereau.model';
 
 @Component({
   selector: 'app-details-demande-page',
@@ -58,6 +60,9 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
   classes: Classe[] = []
   anneesAcademiques: AnneeAcademique[] = []
 
+  // Nouveau workflow : bordereaux d'inscription uploadés par l'étudiant
+  bordereauxInscription: Bordereau[] = []
+
   private pollingTimer: any = null
   private readonly POLL_INTERVAL = 15000
 
@@ -73,6 +78,7 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
     private preInscriptionService: PreInscriptionService,
     private classeService: ClasseService,
     private anneeAcademiqueService: AnneeAcademiqueService,
+    private bordereauService: BordereauService,
     private activatedRoute: ActivatedRoute,
     private router: Router) {
     super()
@@ -146,13 +152,22 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
   }
 
   getDemandeInscription(): void {
-    this.loading = true
+    // Le spinner plein écran ne s'affiche QUE lors du premier chargement.
+    // Pendant les rafraîchissements (polling 15s, bouton Vérifier), on ne démonte
+    // pas la vue : sinon les modales ouvertes et le fichier sélectionné dans le
+    // formulaire d'upload sont perdus à chaque cycle.
+    if (!this.demande) {
+      this.loading = true
+    }
     this.demandeInscriptionService.get(this.id!)
       .subscribe({
         next: (res) => {
           this.demande = res
           this.loading = false
           console.log(res)
+          if (this.rolesValue.isApprenant) {
+            this.getBordereauxInscription()
+          }
           this.initSteps()
         },
         error: (err) => {
@@ -165,17 +180,62 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
       })
   }
 
-  initWizardItems(): void {
+  /** Bordereaux d'inscription soumis par l'étudiant (nouveau workflow). */
+  private getBordereauxInscription(): void {
+    this.bordereauService.getAll({ type: 'inscription' }).subscribe({
+      next: (res: any) => {
+        const data = res?.data || res || []
+        this.bordereauxInscription = Array.isArray(data)
+          ? data.filter((b: any) => !b.type || b.type === 'inscription')
+          : []
+        this.initSteps()
+      },
+      error: () => {
+        this.bordereauxInscription = []
+      }
+    })
+  }
+
+  /** Au moins un bordereau d'inscription actif (non rejeté) a été soumis par l'étudiant. */
+  aBordereauInscriptionSoumis(): boolean {
+    return this.bordereauxInscription.some(b => b.statut !== 'rejete')
+  }
+
+  /** Au moins un bordereau d'inscription a été rejeté par le service comptable. */
+  aBordereauInscriptionRejete(): boolean {
+    return this.bordereauxInscription.some(b => b.statut === 'rejete')
+  }
+
+  /** Au moins un bordereau d'inscription a été validé par le cabinet comptable. */
+  aBordereauValide(): boolean {
+    return this.bordereauxInscription.some(b => b.statut === 'valide')
+  }
+
+  /** La saisie ESA est finalisée pour au moins un bordereau. */
+  saisieTerminee(): boolean {
+    return this.bordereauxInscription.some(b => b.statutPaiement === 'finalise')
+  }
+
+  /** La saisie ESA est en cours pour au moins un bordereau. */
+  saisieEnCours(): boolean {
+    return this.bordereauxInscription.some(b => b.statutPaiement === 'saisi')
+  }
+
+initWizardItems(): void {
     this.currentItemSection = 0
 
+    // FORCÉ : l'étape 4 (Paiement — Upload bordereau) est OBLIGATOIRE après les documents
+    // Cette étape ne doit jamais être sautée — elle précède le traitement comptable
+    // Aucun message comité ne doit apparaître à cette étape
     this.wizardItems = [
       { text: "Informations personnelles", icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 0 } },
       { text: "Choix du parcours", icon: "M12 14l9-5-9-5-9 5 9 5zm0 0v6m-6.5-2.5L12 20l6.5-2.5", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 1 } },
       { text: "Documents", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 2 } },
-      { text: "Préinscription", icon: "M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 3 } },
-      { text: "Choix des cours", icon: "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 4 } },
-      { text: "Paiements", icon: "M3 10h18M7 15h2M5 5h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 5 } },
-      { text: "Confirmation bordereau", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 6 } },
+      { text: "Paiement — Upload bordereau", icon: "M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 3 } },
+      { text: "Traitement comptable", icon: "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 4 } },
+      { text: "Saisie ESA Compta", icon: "M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 5 } },
+      { text: "Comité d'orientation", icon: "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 18 7.5 5S4.168 18 7.5 5S4.168 5.477 3 6.253v13C4.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 6 } },
+      { text: "Cours + Validation finale", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 7 } },
     ]
   }
 
@@ -199,7 +259,7 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
       return;
     }
 
-    if (stepIndex < 6) {
+    if (stepIndex < 7) {
       this.currentItemSection = stepIndex + 1
     }
     setTimeout(() => {
@@ -220,13 +280,33 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
       case 0:
       case 1:
       case 2:
-      case 4:
-      case 5:
         return this.getNextRelevantStudentRoute();
       case 3:
-        if (this.demande.preInscription?.statut === EtatPreInscription.VALIDE) {
+        // Étape paiement — upload bordereau : on peut aller au traitement comptable ou choisir les cours
+        if (this.wizardItems[4]?.condition) {
           return this.getNextRelevantStudentRoute();
         }
+        return { route: `/inscription/demandes/${this.demande.id}`, queryParams: { step: 'paiement' } };
+      case 4:
+        // Étape traitement comptable : on peut aller à la saisie ESA
+        if (this.wizardItems[5]?.condition) {
+          return { route: `/inscription/demandes/${this.demande.id}`, queryParams: { step: 'saisie-esa' } };
+        }
+        return this.getNextRelevantStudentRoute();
+      case 5:
+        // Étape saisie ESA Compta : on peut aller au comité
+        if (this.wizardItems[6]?.condition) {
+          return { route: `/inscription/demandes/${this.demande.id}`, queryParams: { step: 'comite' } };
+        }
+        return this.getNextRelevantStudentRoute();
+      case 6:
+        // Étape comité d'orientation : aller à la validation finale
+        if (this.wizardItems[7]?.condition) {
+          return { route: `/inscription/demandes/${this.demande.id}`, queryParams: { step: 'validation' } };
+        }
+        return this.getNextRelevantStudentRoute();
+      case 7:
+        // Dernière étape : pas de navigation
         return null;
       default:
         return null;
@@ -245,16 +325,12 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
       return { route: `/inscription/demandes/${id}`, queryParams: { step: 'documents' } };
     }
 
-    if (this.needsPreInscription()) {
-      return { route: `/inscription/demandes/${id}`, queryParams: { step: 'preinscription' } };
+    if (this.needsPayment()) {
+      return { route: `/inscription/demandes/${id}`, queryParams: { step: 'paiement' } };
     }
 
     if (this.needsCourseSelection()) {
       return { route: `/inscription/demandes/${id}/choix-cours` };
-    }
-
-    if (this.needsPayment()) {
-      return { route: `/inscription/demandes/${id}`, queryParams: { step: 'paiements' } };
     }
 
     if (this.needsValidation()) {
@@ -278,23 +354,17 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
     return dossiersRequis.length > 0 && dossiersUploades.length !== dossiersRequis.length;
   }
 
-  private needsPreInscription(): boolean {
-    if (this.needsDocuments()) return false;
-
-    const pre = this.demande?.preInscription;
-    return !pre || pre.statut !== EtatPreInscription.VALIDE;
-  }
-
   private needsCourseSelection(): boolean {
-    return this.demande?.preInscription?.statut === EtatPreInscription.VALIDE && !this.checkCours();
+    return !this.checkCours();
   }
 
   private needsPayment(): boolean {
-    return !this.checkFraisInscription();
+    // Nouveau workflow : un bordereau d'inscription soumis suffit à passer l'étape paiement.
+    return !this.checkFraisInscription() && !this.aBordereauInscriptionSoumis();
   }
 
   private needsValidation(): boolean {
-    return this.checkFraisInscription() && !this.demande?.dateValidation;
+    return (this.checkFraisInscription() || this.aBordereauInscriptionSoumis()) && !this.demande?.dateValidation;
   }
 
   private getStepIndexFromParam(step: string | null): number | null {
@@ -303,14 +373,22 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
         return 1;
       case 'documents':
         return 2;
-      case 'preinscription':
-        return 3;
-      case 'cours':
-        return 4;
+      case 'paiement':
       case 'paiements':
+        // Étape 4 du wizard : Paiement — Upload bordereau
+        return 3;
+      case 'comptable':
+        // Étape 5 : Traitement comptable
+        return 4;
+      case 'saisie-esa':
+        // Étape 6 : Saisie ESA Compta
         return 5;
-      case 'validation':
+      case 'comite':
+        // Étape 7 : Comité d'orientation
         return 6;
+      case 'validation':
+        // Étape 8 : Cours + Validation finale
+        return 7;
       default:
         return null;
     }
@@ -344,7 +422,8 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
         if (this.currentItemSection < 1) this.currentItemSection = 1
       } else {
         this.parcoursFinal = parcoursFinal?.parcours
-        this.currentItemSection = 2
+        // Ne jamais revenir en arrière : préserve l'étape demandée via ?step=
+        if (this.currentItemSection < 2) this.currentItemSection = 2
         this.wizardItems[2].isBlocked = false
       }
     } else {
@@ -354,7 +433,7 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
     }
 
     // Check: documents (step 2)
-    if (this.currentItemSection >= 2) {
+    if (this.currentItemSection >= 2 && this.currentItemSection <= 3) {
       if (session) {
         const dossiersRequis = session.dossiersInscription || []
         const dossiersUploades = demande.dossiersDemande || []
@@ -369,51 +448,80 @@ export class DetailsDemandePageComponent extends BaseComponentClass implements O
       }
     }
 
-    // Check: préinscription (step 3)
-    if (demande.preInscription != null) {
+    // Étape 3 = Paiement — Upload bordereau (atteinte dès que les documents sont complets).
+    // L'ancien contournement "forcer currentItemSection à 4" est supprimé :
+    // les sections du template sont maintenant alignées sur les indices des étapes.
+
+    // Check: traitement comptable (step 4)
+    // Le cabinet authentifie le bordereau → passe en état 'valide'
+    if (this.currentItemSection >= 3 && this.aBordereauInscriptionSoumis()) {
       this.wizardItems[3].condition = true
-      const statut = demande.preInscription.statut
+    }
 
-      if (statut === EtatPreInscription.VALIDE) {
-        if (this.currentItemSection <= 3) {
-          this.stepMessage = { text: 'Pré-inscription validée ! Choisissez vos cours.', type: 'success' }
-        }
-        this.currentItemSection = 4
-        this.wizardItems[4].isBlocked = false
+    // NOUVEAU FLUX : dès l'authentification du bordereau par le cabinet, le dossier
+    // est transmis au comité d'orientation. La saisie ESA-COMPTA (étape 5) devient
+    // un travail PARALLÈLE : elle n'est plus un passage obligé avant le comité.
+    const bordereauAuthentifie = this.bordereauxInscription.find(b => b.statut === 'valide')
+    const saisieEsaFaite = this.bordereauxInscription.some(b => b.statutPaiement === 'saisi' || b.statutPaiement === 'finalise')
 
-        if (this.checkCours()) {
-          this.currentItemSection = 5
-          this.wizardItems[4].condition = true
+    if (this.currentItemSection >= 4 && bordereauAuthentifie) {
+      this.wizardItems[4].condition = true
 
-          if (this.checkFraisInscription()) {
-            this.currentItemSection = 6
-            this.wizardItems[5].condition = true
+      // Étape 5 (saisie ESA) : débloquée pour consultation ; cochée seulement si
+      // le service comptable a déjà saisi les données.
+      this.wizardItems[5].isBlocked = false
+      if (saisieEsaFaite) this.wizardItems[5].condition = true
 
-            if (demande.dateValidation != null) {
-              this.wizardItems[6].condition = true
-              this.stepMessage = { text: '✅ Inscription validée !', type: 'success' }
-              this.stopPolling()
-            }
-          }
-        }
-      } else if (statut === EtatPreInscription.REJETE) {
-        this.stepMessage = { text: 'Pré-inscription rejetée. Veuillez contacter l\'administration.', type: 'warning' }
-        this.currentItemSection = 3
-      } else {
-        this.stepMessage = { text: 'Dossier soumis — en attente de validation par le comité d\'orientation.', type: 'info' }
-        this.currentItemSection = 3
+      if (!this.demande?.dateValidation && this.currentItemSection < 6) {
+        this.currentItemSection = 6
+        this.wizardItems[6].isBlocked = false
+      }
+      if (!this.demande?.dateValidation) {
+        this.stepMessage = { text: "Dossier transmis au comité d'orientation — en attente de validation.", type: 'info' }
       }
     }
 
-    if (this.currentItemSection === 6 && this.demande?.dateValidation == null && this.checkFraisInscription()) {
-this.stepMessage = { text: 'Paiement reçu. En attente de validation du bordereau.', type: 'info' }
+    // Check: comité d'orientation (step 6)
+    // La validation comité (dateValidation) débloque l'étape finale cours + validation
+    if (this.currentItemSection >= 6) {
+      if (this.demande?.dateValidation) {
+        this.wizardItems[5].condition = true
+        this.wizardItems[6].condition = true
+        this.currentItemSection = 7
+        this.wizardItems[7].isBlocked = false
+      } else if (this.demande?.soumissionComite) {
+        this.wizardItems[6].condition = true
+        this.stepMessage = { text: "Dossier en cours d'examen par le comité.", type: 'info' }
+      }
+    }
+
+    // Check: cours + validation finale (step 7)
+    // La validation comité crée le DossierEtudiant, le matricule final, le CursusApprenant et les cours participants
+    if (this.currentItemSection >= 7) {
+      const hasDossierEtudiant = !!this.demande?.dateValidation
+      if (hasDossierEtudiant) {
+        this.wizardItems[7].condition = true
+        this.stepMessage = { text: '✅ Inscription validée !', type: 'success' }
+        this.stopPolling()
+      } else {
+        this.stepMessage = { text: 'En cours de finalisation...', type: 'info' }
+      }
+    }
+
+    // Bordereau rejeté par la compta : retour à l'étape upload avec un avertissement.
+    if (this.currentItemSection <= 3 && this.aBordereauInscriptionRejete() && !this.aBordereauInscriptionSoumis()) {
+      this.currentItemSection = 3
+      this.wizardItems[3].condition = false
+      this.stepMessage = { text: 'Votre bordereau a été rejeté par le service comptable — veuillez en soumettre un nouveau.', type: 'warning' }
     }
 
     this.autoPoll()
   }
 
   private autoPoll(): void {
-    const pending = [0, 3, 5, 6].includes(this.currentItemSection)
+    // Étapes qui nécessitent un polling continu : infos personnelles, upload bordereau,
+    // traitement comptable, saisie ESA, comité
+    const pending = [0, 3, 4, 5, 6].includes(this.currentItemSection)
     if (pending) {
       this.startPolling()
     } else {
@@ -535,6 +643,22 @@ this.stepMessage = { text: 'Paiement reçu. En attente de validation du borderea
           console.log(err)
         }
       })
+    }
+  }
+
+  async deleteDemandeInscription(): Promise<void> {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette demande d\'inscription ?')) return;
+    try {
+      await this.demandeInscriptionService.delete(this.id!).subscribe({
+        next: () => {
+          this.router.navigate(['/inscription/demandes']);
+        },
+        error: (err) => {
+          console.error('Erreur suppression:', err);
+        }
+      });
+    } catch (err) {
+      console.error('Erreur suppression:', err);
     }
   }
 

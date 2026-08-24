@@ -92,11 +92,14 @@ export class InscriptionPageComponent implements OnInit {
                 }
               },
               error: (err: HttpErrorResponse) => {
-                console.log(err.error)
+                console.log(err?.error)
                 this.disableButton = false
-                this.emailAlreadyUsed = err.error.emailAlreadyUsed
-                this.identifiantAlreadyUsed = err.error.identifiantAlreadyUsed
-                this.nomPrenomsAlreadyUsed = err.error.nomPrenomsAlreadyUsed
+                // err.error peut être undefined (réponse vide du reverse-proxy,
+                // erreur réseau, 502/504…) : accès sécurisé obligatoire, sinon
+                // une TypeError masque le vrai problème et spamme la console.
+                this.emailAlreadyUsed = !!err?.error?.emailAlreadyUsed
+                this.identifiantAlreadyUsed = !!err?.error?.identifiantAlreadyUsed
+                this.nomPrenomsAlreadyUsed = !!err?.error?.nomPrenomsAlreadyUsed
                 if (!this.emailAlreadyUsed && !this.identifiantAlreadyUsed && !this.nomPrenomsAlreadyUsed) {
                   this.error = true
                 }

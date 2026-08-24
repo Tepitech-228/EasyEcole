@@ -57,4 +57,8 @@ export class DemandeInscriptionService {
   batchUpdateStatus(ids: number[], action: 'valider' | 'rejeter', commentaire?: string): Observable<{ success: boolean; count: number }> {
     return this.httpClient.put<{ success: boolean; count: number }>(`${this.SERVICE_URL}/batch/statut`, { ids, action, commentaire });
   }
+
+  delete(id: string): Observable<{ success: boolean; message: string }> {
+    return this.httpClient.delete<{ success: boolean; message: string }>(`${this.SERVICE_URL}/${id}`);
+  }
 }

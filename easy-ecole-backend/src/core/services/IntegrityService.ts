@@ -25,7 +25,12 @@ export class IntegrityService {
       const buffer = await storage.retrieve(document.fichier);
       const currentHash = this.calculateHash(buffer);
       return currentHash === document.integrityHash;
-    } catch {
+    } catch (err) {
+      // Fichier introuvable / illisible : l'intégrité ne peut PAS être confirmée.
+      // Renvoyer false est correct métier, mais la cause doit être traçable
+      // (sinon une panne de stockage passerait pour une altération du document).
+      console.error(`[INTEGRITY] vérification impossible pour le document #${document.id} (${document.fichier}):`,
+        err instanceof Error ? err.message : err);
       return false;
     }
   }

@@ -58,6 +58,60 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
 
   onboardingMode: boolean = false
 
+  // Assistant d'édition du profil apprenant (étapes)
+  readonly etapesProfil: { titre: string }[] = [
+    { titre: 'Informations personnelles' },
+    { titre: 'Diplômes & parcours' },
+    { titre: 'Adresse & contact' },
+    { titre: 'Vos parents' },
+    { titre: 'Personne à prévenir' },
+  ]
+  etapeActuelle: number = 1
+
+  // Champs requis à valider pour passer d'une étape à l'autre
+  private readonly champsParEtape: string[][] = [
+    ['nom', 'prenoms', 'sexe', 'dateNaissance', 'lieuNaissance',
+      'identite.nationalite', 'identite.situationMatrimoniale', 'identite.etatPhysique'],
+    ['periode', 'statutEtudiant'],
+    ['contact', 'adresse.boitePostale', 'adresse.prorietaireBoitePostale', 'adresse.telMobile',
+      'adresse.quartier', 'adresse.ville', 'adresse.pays'],
+    ['informationsParents.nomPrenomsPere', 'informationsParents.professionPere',
+      'informationsParents.nomPrenomsMere', 'informationsParents.professionMere'],
+    ['personnePrevenir.nom', 'personnePrevenir.prenoms', 'personnePrevenir.telMobile',
+      'personnePrevenir.quartier', 'personnePrevenir.ville', 'personnePrevenir.pays'],
+  ]
+
+  get totalEtapes(): number {
+    return this.etapesProfil.length
+  }
+
+  allerEtape(numero: number): void {
+    if (numero >= 1 && numero <= this.totalEtapes) {
+      this.etapeActuelle = numero
+    }
+  }
+
+  etapeSuivante(): void {
+    if (!this.validerEtape(this.etapeActuelle)) return
+    if (this.etapeActuelle < this.totalEtapes) this.etapeActuelle++
+  }
+
+  etapePrecedente(): void {
+    if (this.etapeActuelle > 1) this.etapeActuelle--
+  }
+
+  private validerEtape(numero: number): boolean {
+    let valide = true
+    for (const chemin of (this.champsParEtape[numero - 1] || [])) {
+      const controle = this.profilForm.get(chemin)
+      if (controle && controle.invalid) {
+        controle.markAsTouched()
+        valide = false
+      }
+    }
+    return valide
+  }
+
   constructor(
     private apprenantService: ApprenantService,
     private institutionService: InstitutionService,

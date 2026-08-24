@@ -295,164 +295,37 @@ export default class BordereauController {
             bordereau.valideParId = (req as any).utilisateurId
             bordereau.commentaire = req.body.commentaire ?? null
 
-            const echeance = bordereau.echeance
-
-            if (bordereauType === 'inscription') {
-                await BordereauDossierService.creerDossierEtudiantDepuisBordereau(bordereau, req, transaction)
-            }
-            else if (bordereauType === 'scolarite' && echeance) {
-                const existingQuitus = await Quitus.findOne({ where: { bordereauId: bordereau.id } })
-                if (!existingQuitus) {
-                    const dossier = await DossierEtudiant.findByPk(echeance.dossierEtudiantId, {
-                        include: [DossierEtudiant.associations.utilisateur]
-                    })
-
-                    if (dossier) {
-                        const code = 'QTS-' + IDGenerator.getInstance().generateNumeroPaiement()
-                        const etudiantNom = dossier.utilisateur ? dossier.utilisateur.nom + ' ' + dossier.utilisateur.prenoms : 'Étudiant'
-
-                        const filename = DocumentPDFGenerator.generateQuitus(
-                            bordereau.id,
-                            code,
-                            etudiantNom,
-                            dossier.matricule,
-                            bordereau.montant ?? 0,
-                            new Date(),
-                            "public/inscription/quitus/"
-                        )
-
-                        let quitus = new Quitus()
-                        quitus.bordereauId = bordereau.id
-                        quitus.code = code
-                        quitus.fichierPDF = filename
-                        quitus.statut = 'genere'
-
-                        await quitus.save({ transaction })
-
-                        ArchiveGedService.archiverDepuisFichier({
-                            fichierSource: `public/inscription/quitus/${filename}`,
-                            domaineCode: 'FIN',
-                            typeDocumentCode: 'bordereau',
-                            processusCode: 'BORDEREAU',
-                            processusLibelle: 'Bordereau de paiement',
-                            processusModule: 'finance',
-                            titre: `Quitus scolarité - ${code}`,
-                            dossierGed: 'Bordereaux de paiement',
-                            sourceType: 'genere_application',
-                            confidentialite: 'confidentiel',
-                        }).catch(err => console.error("Erreur archivage quitus scolarite:", err))
-
-                        // Copier le quitus dans le dossier étudiant
-                        try {
-                            if (dossier.matricule) {
-                                const quitusSource = path.resolve(process.cwd(), 'public/inscription/quitus', filename)
-                                if (fs.existsSync(quitusSource)) {
-                                    const demandeQuitus = await DemandeInscription.findOne({
-                                        where: { matricule: dossier.matricule },
-                                        include: [
-                                            { association: DemandeInscription.associations.session, include: [Session.associations.anneeAcademique] },
-                                            { association: DemandeInscription.associations.parcoursChoisis, include: [{ association: ParcoursChoisi.associations.parcours }] },
-                                        ]
-                                    })
-                                    if (demandeQuitus) {
-                                        const pFinal = demandeQuitus.parcoursChoisis?.find(pc => isChoixFinalValue(pc.choixFinal))
-                                        const pData = pFinal?.parcours
-                                        const ne = pData?.niveauEtudeId
-                                            ? await (await import('../models/NiveauEtude')).NiveauEtude.findByPk(pData.niveauEtudeId)
-                                            : null
-                                        const ann = demandeQuitus.session?.anneeAcademique?.libelle || ''
-                                        const parc = pData?.type || pData?.titre || ''
-                                        const niv = ne?.libelle || ''
-
-                                        DossierStorageService.copierFichier(
-                                            quitusSource,
-                                            ann, parc, 'NON_DEFINI', niv, dossier.matricule, 'paiements'
-                                        )
-                                    }
-                                }
-                            }
-                        } catch (quitusMoveError) {
-                            console.error("Erreur copie quitus etudiant:", quitusMoveError)
-                        }
-
-                        if (dossier.utilisateur) {
-                            EmailSender.getInstance().sendQuitusEtMatricule(
-                                dossier.utilisateur.identifiant,
-                                dossier.utilisateur.email,
-                                dossier.matricule
-                            ).catch(err => console.error("Erreur envoi email quitus:", err))
-                        }
-                    }
-                }
-            }
-
-            if (echeance) {
-                echeance.statut = 'paye'
-                echeance.datePaiement = new Date()
-                await echeance.save({ transaction })
-            }
+            // Flux définitif : le cabinet AUTHENTIFIE seulement. La saisie comptable
+            // et l'imputation relèvent d'ESA-COMPTA (FinanceRouter.saisir) ; la
+            // création de l'étudiant (matricule, cursus, cours, carte) est déclenchée
+            // par la validation FINALE du comité (ComiteValidationController).
             await bordereau.save({ transaction })
 
+            // Pipeline d'inscription : dès l'AUTHENTIFICATION du bordereau par le
+            // cabinet, le dossier est transmis au comité d'orientation. La saisie
+            // ESA-COMPTA se déroule en parallèle et ne bloque plus cette transmission.
+            const demande = await DemandeInscription.findOne({
+                where: { utilisateurId: bordereau.utilisateurId },
+                order: [['createdAt', 'DESC']],
+                transaction,
+                lock: transaction.LOCK.UPDATE,
+            })
+            if (demande && (!demande.statutPipeline || ['soumis', 'authentifie'].includes(demande.statutPipeline))) {
+                demande.statutPipeline = 'transmis_comite'
+                demande.soumissionComite = true
+                await demande.save({ transaction })
+            }
+
             // ── Commit de la transaction ──
-            // Rend atomique l'ensemble : verrou bordereau, matricule final, demande,
-            // reponse d'admission, dossier, cursus, participants, échéances, carte de
-            // paiement, quitus. Le 2e appel concurrent, bloqué sur le verrou de ligne,
-            // lit ensuite un bordereau 'valide' → 400 "Bordereau déjà traité" propre.
-            // Les effets de bord suivants (reçu docgen, écriture comptable) restent non
-            // bloquants et s'exécutent hors transaction.
+            // Le 2e appel concurrent, bloqué sur le verrou de ligne, lit ensuite un
+            // bordereau 'valide' → 400 "Bordereau déjà traité" propre.
             await transaction.commit();
-
-            // Reçu de scolarité : paiement effectué à la banque -> génération automatique
-            // du reçu (docgen REC001) dès la validation du bordereau par le cabinet comptable,
-            // puis envoi du PDF par email à l'étudiant. Non bloquant : la validation n'échoue
-            // jamais à cause de la génération ou de l'envoi.
-            if (bordereauType === 'scolarite') {
-                try {
-                    const recu = await DocGenGeneratorService.generer(
-                        {
-                            typeCode: 'REC001',
-                            sourceType: 'bordereau',
-                            sourceId: bordereau.id,
-                            utilisateurId: (req as any).utilisateurId,
-                        },
-                        req
-                    );
-                    const etudiant = bordereau.utilisateur;
-                    if (etudiant?.email) {
-                        await EmailSender.getInstance().sendPdf(
-                            etudiant.email,
-                            `${etudiant.prenoms || ''} ${etudiant.nom || ''}`.trim() || 'étudiant(e)',
-                            `Easy Ecole: Reçu de scolarité ${recu.reference}`,
-                            `<p>Bonjour ${etudiant.prenoms || ''},</p><p>Veuillez trouver ci-joint votre <b>reçu de scolarité</b> (référence ${recu.reference}).</p><p>Cordialement,<br>Easy Ecole</p>`,
-                            recu.filePath,
-                            path.basename(recu.filePath)
-                        );
-                    }
-                } catch (recuError) {
-                    console.error("Erreur génération du reçu de scolarité (non bloquante):", recuError)
-                }
-            }
-
-            try {
-                const compteCreditNumero = bordereauType === 'scolarite' ? '701' : '702'
-                await creerEcritureComptable({
-                    req,
-                    journalCode: 'VEN',
-                    compteDebitNumero: '512',
-                    compteCreditNumero,
-                    montant: bordereau.montant ?? 0,
-                    libelle: `Paiement bordereau #${bordereau.id} - ${bordereauType}`,
-                    reference: bordereau.referenceBancaire ?? `bordereau-${bordereau.id}`,
-                    moduleSource: 'inscription',
-                    referenceModuleId: String(bordereau.id)
-                })
-            } catch (comptaError) {
-                console.error("Erreur écriture comptable (non bloquante):", comptaError)
-            }
 
             return res.status(200).send(bordereau);
         } catch (error) {
-            await transaction.rollback().catch(() => { });
+            // Si le rollback lui-même échoue, la transaction reste ouverte (locks) :
+            // c'est une alerte opérationnelle qui doit être visible immédiatement.
+            await transaction.rollback().catch(rbErr => console.error('[BORDEREAU][validation] ROLLBACK EN ÉCHEC — transaction possiblement orpheline:', rbErr));
             console.error("Erreur validation bordereau:", error);
             return res.status(400).json({ success: false, message: (error as Error).message || "Erreur inconnue" });
         }
@@ -506,14 +379,16 @@ export default class BordereauController {
             return res.status(400).json({ success: false, message: "IDs requis" });
         }
 
-        // Le batch ne permet que le rejet : passer un bordereau à 'valide' en lot ne
-        // déclencherait PAS les effets de bord de validerBordereau (cursus, dossier,
-        // matricule, carte, échéances, compta). La validation doit donc passer par la
-        // validation individuelle : PUT /bordereaux/:id/valider.
+        // Le batch ne permet que le rejet : la validation d'un bordereau d'inscription
+        // déclenche la mise à jour du pipeline (statutPipeline='authentifie') et doit
+        // rester un acte individuel et traçable du cabinet.
+        // Validation individuelle : PUT /bordereaux/:id/valider.
+        // Rappel nouveau workflow : le cabinet authentifie seulement ; la création du
+        // dossier étudiant relève du comité d'orientation, l'imputation d'ESA-COMPTA.
         if (statut === 'valide') {
             return res.status(400).json({
                 success: false,
-                message: "La validation en lot n'est pas autorisée : utilisez la validation individuelle (PUT /bordereaux/:id/valider) pour déclencher les effets de bord (cursus, dossier, matricule, carte, échéances, comptabilité)."
+                message: "La validation en lot n'est pas autorisée : utilisez la validation individuelle (PUT /bordereaux/:id/valider)."
             });
         }
 
@@ -673,179 +548,40 @@ export default class BordereauController {
                 })
             }
 
-            let dossierCree = false
-            let dossier = await DossierEtudiant.findOne({
-                where: { utilisateurId: bordereau.utilisateurId, statut: 'actif' },
-                transaction,
-            })
+            if (typeConstate === 'inscription') {
+                // ── NOUVEAU WORKFLOW ─────────────────────────────────────────
+                // Le cabinet AUTHENTIFIE seulement : constat du type et du montant
+                // constaté, passage du bordereau à 'valide'. La création du dossier
+                // étudiant (matricule final, cursus, cours participants, échéanciers)
+                // est déclenchée par la validation du comité d'orientation
+                // (ComiteValidationController), PAS ici. L'imputation comptable
+                // relève de la saisie ESA-COMPTA (FinanceRouter.saisir), pas ici.
 
-            if (!dossier && typeConstate === 'inscription') {
-                const demande = await DemandeInscription.findOne({
+                // Pipeline d'inscription : dès l'authentification, le dossier est
+                // transmis au comité d'orientation (même comportement que
+                // PUT /bordereaux/:id/valider). Saisie ESA en parallèle.
+                const demandePipeline = await DemandeInscription.findOne({
                     where: { utilisateurId: bordereau.utilisateurId },
-                    include: [
-                        { association: DemandeInscription.associations.utilisateur, include: [{ model: Apprenant, as: 'apprenant' }] },
-                        { association: DemandeInscription.associations.parcoursChoisis, include: [{ association: ParcoursChoisi.associations.parcours }] },
-                        { association: DemandeInscription.associations.cours, include: [{ association: Cours.associations.classe }] },
-                        { association: DemandeInscription.associations.session, include: [Session.associations.fraisScolarite, Session.associations.anneeAcademique] },
-                    ],
                     order: [['createdAt', 'DESC']],
                     transaction,
+                    lock: transaction.LOCK.UPDATE,
                 })
-
-                if (!demande) {
-                    await transaction.rollback()
-                    return res.status(400).json({ success: false, message: "Aucune demande d'inscription trouvée pour créer le dossier" })
+                if (demandePipeline && (!demandePipeline.statutPipeline || ['soumis', 'authentifie'].includes(demandePipeline.statutPipeline))) {
+                    demandePipeline.statutPipeline = 'transmis_comite'
+                    demandePipeline.soumissionComite = true
+                    await demandePipeline.save({ transaction })
                 }
 
-                if (!demande.utilisateur?.apprenant) {
-                    await transaction.rollback()
-                    return res.status(400).json({ success: false, message: "Informations personnelles incomplètes" })
-                }
-
-                const parcoursFinal = getParcoursFinal(demande.parcoursChoisis)
-                if (!parcoursFinal?.parcoursId) {
-                    await transaction.rollback()
-                    return res.status(400).json({ success: false, message: "Aucun parcours final sélectionné" })
-                }
-
-                const parcoursData = parcoursFinal.parcours
-                const classeDerivee = (demande.cours || [])
-                    .find((c: any) => c.classe?.id)
-                    ?.classe ?? null
-
-                if (!classeDerivee || !classeDerivee.id) {
-                    await transaction.rollback()
-                    return res.status(400).json({ success: false, message: "Aucune classe déterminée pour le parcours final" })
-                }
-
-                const anneeLibelle = demande.session?.anneeAcademique?.libelle || new Date().getFullYear().toString()
-                const etablissementId = parcoursData?.etablissementId ?? classeDerivee.etablissementId
-                const etablissement = etablissementId
-                    ? await Etablissement.findByPk(etablissementId, { transaction })
-                    : null
-
-                const MATRICULE_FINAL_REGEX = /^[0-9]+-[A-Z]+[0-9]?[JS]-[0-9]{2}-[A-Z]+$/
-                const matriculeExistant = demande.matricule
-                const estFormatFinal = typeof matriculeExistant === 'string'
-                    && MATRICULE_FINAL_REGEX.test(matriculeExistant)
-
-                let matricule: string
-                if (estFormatFinal) {
-                    matricule = matriculeExistant
-                } else {
-                    const ordre = await DossierEtudiant.count() + 1
-                    const periodeEtudiant = demande.utilisateur?.apprenant?.periode
-                    const typeCoursPeriode: 'jour' | 'soir' = periodeEtudiant === 'matin' ? 'jour' : 'soir'
-                    const parcoursPourMatricule = parcoursData ?? null
-                    if (!parcoursPourMatricule) {
-                        await transaction.rollback()
-                        return res.status(400).json({ success: false, message: "Parcours introuvable pour la génération du matricule" })
-                    }
-                    matricule = IDGenerator.getInstance().generateMatriculeFinal(
-                        parcoursPourMatricule,
-                        anneeLibelle,
-                        classeDerivee,
-                        ordre,
-                        etablissement,
-                        typeCoursPeriode
-                    )
-                    await demande.update({ matricule, dateValidation: new Date() }, { transaction })
-                }
-
-                const demarrage = parcoursFinal.createdAt || demande.createdAt || new Date()
-                dossier = new DossierEtudiant()
-                dossier.utilisateurId = bordereau.utilisateurId
-                dossier.matricule = matricule
-                dossier.codeQR = JSON.stringify({ matricule, utilisateurId: bordereau.utilisateurId })
-                dossier.statut = 'actif'
-                dossier.fraisScolarite = montantConstate
-                dossier.modePaiement = 'mensuel'
-                dossier.nbMensualites = 10
-                dossier.demarrageParcours = demarrage
-                await dossier.save({ transaction })
-                dossierCree = true
-
-                // ── Affectation pédagogique : cursus + cours participants ──────────────
-                const cursusApprenant = new CursusApprenant()
-                cursusApprenant.externe = false
-                cursusApprenant.parcoursId = parcoursData?.id as number
-                cursusApprenant.classeId = classeDerivee?.id as number
-                cursusApprenant.anneeAcademiqueId = demande.session?.anneeAcademiqueId as number
-                cursusApprenant.niveauEtudeId = parcoursData?.niveauEtudeId ?? classeDerivee?.niveauEtudeId ?? null
-                cursusApprenant.utilisateurId = bordereau.utilisateurId
-                cursusApprenant.demandeInscriptionId = demande.id
-                const cursusSauve = await cursusApprenant.save({ transaction })
-
-                const coursValides = (demande.cours ?? []).filter(
-                    (c: any) => c?.DemandeInscriptionCours?.etat === EtatsCoursChoisi.VALIDE
-                )
-                for (const coursChoisi of coursValides as any[]) {
-                    const coursParticipant = new CoursParticipant()
-                    coursParticipant.coursId = coursChoisi.id
-                    coursParticipant.utilisateurId = bordereau.utilisateurId
-                    coursParticipant.cursusApprenantId = cursusSauve.id
-                    await coursParticipant.save({ transaction })
-                }
-
-                const fraisScolariteSession = (demande.session?.fraisScolarite || []).find((f: any) => f.actif) ?? null
-                let grille: any
-
-                if (fraisScolariteSession) {
-                    grille = await TarifService.resoudreParSession(demande.sessionId, transaction)
-                } else {
-                    const niveauEtudeId = parcoursData?.niveauEtudeId ?? classeDerivee.niveauEtudeId
-                    const anneeAcademiqueId = demande.session?.anneeAcademiqueId
-                    if (niveauEtudeId && anneeAcademiqueId && parcoursData?.id) {
-                        grille = await TarifService.resoudreParTriplet(parcoursData.id, niveauEtudeId, anneeAcademiqueId, transaction)
-                    } else {
-                        grille = {
-                            montantInscription: montantConstate,
-                            montantScolarite: 0,
-                            nbMensualites: 10,
-                            fraisBibliotheque: 0,
-                            fraisAssurance: 0,
-                            fraisLogement: 0,
-                            autresFrais: null,
-                            modaliteScolarite: '10x',
-                            source: 'frais_scolarite',
-                        }
-                    }
-                }
-
-                await SnapshotService.appliquer(dossier, grille, transaction)
-
-                await Echeance.destroy({
-                    where: { dossierEtudiantId: dossier.id, type: 'inscription', statut: ['impaye', 'en_retard'] },
-                    transaction,
+                await transaction.commit()
+                return res.status(200).json({
+                    success: true,
+                    data: bordereau,
+                    lettrage: { surplus: montantConstate, lignes: [] },
                 })
-                const echeancesInscription = await GenerateurEcheancierService.generer(
-                    dossier,
-                    bordereau.modalite,
-                    transaction,
-                    montantConstate
-                )
-                const premiereEcheance = echeancesInscription.find(e => e.numeroEcheance === 1)
-                if (premiereEcheance) {
-                    premiereEcheance.statut = 'paye'
-                    premiereEcheance.datePaiement = new Date()
-                    await premiereEcheance.save({ transaction })
-                }
-
-                if (fraisScolariteSession) {
-                    await Echeance.destroy({
-                        where: { dossierEtudiantId: dossier.id, type: 'scolarite', statut: ['impaye', 'en_retard'] },
-                        transaction,
-                    })
-                    await GenerateurEcheancierScolariteService.generer(dossier, fraisScolariteSession, transaction)
-                } else if (grille.montantScolarite && Number(grille.montantScolarite) > 0) {
-                    await GenerateurEcheancierScolariteService.generer(
-                        dossier,
-                        { montant: grille.montantScolarite, modalite: grille.modaliteScolarite } as any,
-                        transaction
-                    )
-                }
             }
 
+            // Bordereaux de scolarité : imputation sur les échéances du dossier
+            // existant (flux historique conservé, hors workflow d'inscription).
             const resultatImputation = await ImputationService.imputerPourUtilisateur(
                 bordereau.id,
                 bordereau.utilisateurId,

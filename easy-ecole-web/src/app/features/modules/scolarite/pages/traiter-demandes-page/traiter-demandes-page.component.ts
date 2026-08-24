@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { DemandeDocument } from 'src/app/data/modules/scolarite/models/DemandeDocument.model';
 import { DemandeDocumentService } from 'src/app/data/modules/scolarite/services/demande-document.service';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
@@ -51,6 +52,12 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
   showRejetModal: boolean = false;
   motifRejet: string = '';
 
+  // Payment collection modal
+  showPaiementModal: boolean = false;
+  paiementMode: string = 'especes';
+  paiementMontant: number = 0;
+  paiementLoadingId: string | null = null;
+
   // Dossier tree nodes
   treeNodes: DossierNode[] = [];
 
@@ -62,7 +69,13 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
 
   // Action individuelle sur une ligne
   itemActions: BatchAction[] = [
-    { label: 'Confirmer le paiement', color: 'green', action: 'confirmerPaiement', icon: 'payments' }
+    { label: 'Visualiser', color: 'gray', action: 'voir', icon: 'visibility' },
+    { label: 'Confirmer le paiement', color: 'green', action: 'confirmerPaiement', icon: 'payments' },
+    { label: 'Préparer', color: 'blue', action: 'preparer', icon: 'edit' },
+    { label: 'Générer', color: 'indigo', action: 'generer', icon: 'picture_as_pdf' },
+    { label: 'Imprimer', color: 'orange', action: 'imprimer', icon: 'print' },
+    { label: 'Remettre', color: 'green', action: 'remettre', icon: 'check_circle' },
+    { label: 'Rejeter', color: 'red', action: 'rejeter', icon: 'close' }
   ];
 
   // Columns for item display
@@ -75,10 +88,8 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
     { key: 'date', label: 'Date' }
   ];
 
-  // Id de la demande dont le paiement est en cours de confirmation
-  paiementLoadingId: string | null = null;
-
   constructor(
+    private router: Router,
     private demandeService: DemandeDocumentService,
     private anneeAcademiqueService: AnneeAcademiqueService,
     private niveauEtudeService: NiveauEtudeService,
@@ -256,18 +267,53 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
   }
 
   onItemAction(event: { item: any; action: string }): void {
-    if (event.action === 'confirmerPaiement') {
-      this.confirmerPaiement(event.item);
+    if (event.action === 'voir') {
+      this.router.navigate(['/scolarite/secretariat/demandes/fiche', event.item.id]);
+    } else if (event.action === 'confirmerPaiement') {
+      this.openPaiementModal(event.item);
+    } else if (event.action === 'preparer') {
+      this.preparerDocument(event.item);
+    } else if (event.action === 'generer') {
+      this.genererDocument(event.item);
+    } else if (event.action === 'imprimer') {
+      this.imprimerDocument(event.item);
+    } else if (event.action === 'remettre') {
+      this.remettreDocument(event.item);
+    } else if (event.action === 'rejeter') {
+      this.selectedIds = [event.item.id];
+      this.showRejetModal = true;
     } else if (event.action === 'valider') {
       if (this.isPaiementBloquant(event.item)) {
         this.errorMessage = 'Paiement requis : cette demande est payante et non réglée. Confirmez d\'abord le paiement.';
         return;
       }
       this.executeBatch('validee', [event.item.id]);
-    } else if (event.action === 'rejeter') {
-      this.selectedIds = [event.item.id];
-      this.showRejetModal = true;
     }
+  }
+
+  openPaiementModal(demande: DemandeDocument): void {
+    if (!demande.id) return;
+    this.paiementMontant = Number(demande.montant) || 0;
+    this.paiementMode = 'especes';
+    this.paiementLoadingId = String(demande.id);
+    this.showPaiementModal = true;
+  }
+
+  submitPaiement(): void {
+    if (!this.paiementLoadingId) return;
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.demandeService.confirmerPaiement(this.paiementLoadingId).subscribe({
+      next: () => {
+        this.showPaiementModal = false;
+        this.paiementLoadingId = null;
+        this.successMessage = 'Paiement confirmé avec succès.';
+        this.loadDemandes();
+      },
+      error: (err) => {
+        this.errorMessage = err?.error?.message || 'Erreur lors de la confirmation du paiement';
+      }
+    });
   }
 
   /** Confirme l'encaissement d'une demande payante (PUT /:id/confirmer-paiement) */
@@ -294,6 +340,58 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
       error: (err) => {
         this.paiementLoadingId = null;
         this.errorMessage = err?.error?.message || 'Erreur lors de la confirmation du paiement';
+      }
+    });
+  }
+
+  preparerDocument(demande: DemandeDocument): void {
+    if (!demande.id) return;
+    this.demandeService.passerEnPreparation(demande.id).subscribe({
+      next: () => {
+        this.successMessage = 'Document mis en préparation.';
+        this.loadDemandes();
+      },
+      error: (err) => {
+        this.errorMessage = err?.error?.message || 'Erreur lors de la préparation';
+      }
+    });
+  }
+
+  genererDocument(demande: DemandeDocument): void {
+    if (!demande.id) return;
+    this.demandeService.genererDocument(demande.id).subscribe({
+      next: () => {
+        this.successMessage = 'Document généré avec succès.';
+        this.loadDemandes();
+      },
+      error: (err) => {
+        this.errorMessage = err?.error?.message || 'Erreur lors de la génération';
+      }
+    });
+  }
+
+  imprimerDocument(demande: DemandeDocument): void {
+    if (!demande.id) return;
+    this.demandeService.confirmerImpression(demande.id).subscribe({
+      next: () => {
+        this.successMessage = 'Impression confirmée.';
+        this.loadDemandes();
+      },
+      error: (err) => {
+        this.errorMessage = err?.error?.message || 'Erreur lors de l\'impression';
+      }
+    });
+  }
+
+  remettreDocument(demande: DemandeDocument): void {
+    if (!demande.id) return;
+    this.demandeService.confirmerRemise(demande.id).subscribe({
+      next: () => {
+        this.successMessage = 'Document remis à l\'étudiant.';
+        this.loadDemandes();
+      },
+      error: (err) => {
+        this.errorMessage = err?.error?.message || 'Erreur lors de la remise';
       }
     });
   }

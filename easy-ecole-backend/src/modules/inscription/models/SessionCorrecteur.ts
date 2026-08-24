@@ -38,7 +38,9 @@ SessionCorrecteur.init({
     allowNull: false
   },
   enseignantId: {
-    type: DataTypes.STRING(36),
+    // ⚠️ Doit correspondre EXACTEMENT à Enseignant.id (INTEGER.UNSIGNED) :
+    // MySQL refuse la FK sinon ("Referencing column ... incompatible").
+    type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false
   },
   createdAt: DataTypes.DATE,

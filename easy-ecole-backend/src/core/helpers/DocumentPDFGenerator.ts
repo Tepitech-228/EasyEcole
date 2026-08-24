@@ -251,6 +251,12 @@ export class DocumentPDFGenerator {
         const stream = fs.createWriteStream(filePath);
         doc.pipe(stream);
 
+        // Les erreurs d'écriture (disque plein, permission...) ne lèvent pas
+        // automatiquement : sans ce handler, l'échec serait silencieux.
+        stream.on('error', (err) => {
+            console.error('[PDF_GENERATION_ERROR]', filePath, err);
+        });
+
         doc.fontSize(20).text('ESA - École Supérieure', { align: 'center' });
         doc.moveDown();
         doc.fontSize(16).text(libelle, { align: 'center' });
@@ -275,6 +281,38 @@ export class DocumentPDFGenerator {
 
         doc.end();
 
+        return filename;
+    }
+
+    /**
+     * Attend la fin effective de l'écriture d'un fichier et vérifie son existence
+     * avec une taille non nulle (le stream de PDFKit est asynchrone : doc.end() ne
+     * garantit pas que le fichier est complet au retour de la fonction).
+     */
+    static async attendreEcritureFichier(filePath: string, timeoutMs: number = 5000): Promise<void> {
+        const debut = Date.now();
+        let derniereTaille = -1;
+        while (Date.now() - debut < timeoutMs) {
+            try {
+                const st = fs.statSync(filePath);
+                if (st.size > 0 && st.size === derniereTaille) return; // taille stable = écriture terminée
+                derniereTaille = st.size;
+            } catch {
+                // fichier pas encore créé — on continue d'attendre
+            }
+            await new Promise(r => setTimeout(r, 50));
+        }
+        throw new Error(`Fichier non écrit après ${timeoutMs}ms : ${filePath}`);
+    }
+
+    /**
+     * Variante fiable de generateDocument : résout uniquement lorsque le PDF est
+     * réellement présent sur disque. À utiliser partout où le succès métier dépend
+     * de la présence effective du fichier.
+     */
+    static async generateDocumentVerifie(demandeId: string | number, libelle: string, outputDir: string): Promise<string> {
+        const filename = DocumentPDFGenerator.generateDocument(demandeId, libelle, outputDir);
+        await DocumentPDFGenerator.attendreEcritureFichier(path.resolve(outputDir, filename));
         return filename;
     }
 

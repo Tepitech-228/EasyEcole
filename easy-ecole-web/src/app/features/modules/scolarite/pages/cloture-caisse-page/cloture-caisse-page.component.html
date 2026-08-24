@@ -1,0 +1,53 @@
+<div class="p-6">
+  <app-header-title title="Clôture de caisse" subtitle="Réconciliation journalière des encaissements"></app-header-title>
+
+  <div class="mb-6">
+    <app-custom-button (click)="ouvrir()" text="Ouvrir une clôture" color="primary"></app-custom-button>
+  </div>
+
+  <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+  <div *ngIf="!loading" class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-3 text-left font-medium text-gray-600">Date</th>
+          <th class="px-4 py-3 text-left font-medium text-gray-600">Caissier</th>
+          <th class="px-4 py-3 text-right font-medium text-gray-600">Théorique</th>
+          <th class="px-4 py-3 text-right font-medium text-gray-600">Réel</th>
+          <th class="px-4 py-3 text-right font-medium text-gray-600">Écart</th>
+          <th class="px-4 py-3 text-center font-medium text-gray-600">Statut</th>
+          <th class="px-4 py-3 text-center font-medium text-gray-600">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <tr *ngFor="let c of clotures" class="hover:bg-gray-50">
+          <td class="px-4 py-3 text-gray-900">{{ c.dateCloture | date:'dd/MM/YYYY' }}</td>
+          <td class="px-4 py-3 text-gray-600">{{ c.caissier?.nom }} {{ c.caissier?.prenoms }}</td>
+          <td class="px-4 py-3 text-right text-gray-900">{{ c.montantTheorique | number:'1.0-0' }}</td>
+          <td class="px-4 py-3 text-right text-gray-900">{{ c.montantReel | number:'1.0-0' }}</td>
+          <td class="px-4 py-3 text-right" [class.text-red-600]="c.ecart !== 0" [class.text-emerald-600]="c.ecart === 0">{{ c.ecart | number:'1.0-0' }}</td>
+          <td class="px-4 py-3 text-center">
+            <span [class.text-amber-600]="c.statut === 'ouverte'" [class.text-emerald-600]="c.statut === 'cloturee'" class="font-medium">
+              {{ c.statut === 'ouverte' ? 'Ouverte' : 'Clôturée' }}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-center">
+            <button *ngIf="c.statut === 'ouverte'" (click)="clotureId = c.id; montantReel = c.montantTheorique" class="text-indigo-600 hover:text-indigo-800">Clôturer</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <app-custom-modal *ngIf="clotureId" title="Clôturer la caisse" subtitle="Saisissez le montant réel compté" (onCloseModal)="clotureId = null" [center]="true" [showModal]="!!clotureId">
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-gray-700 mb-1">Montant réel (FCFA)</label>
+      <input type="number" [(ngModel)]="montantReel" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+    </div>
+    <div class="flex justify-end gap-3">
+      <app-custom-button (click)="clotureId = null" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
+      <app-custom-button (click)="cloturer()" text="Valider la clôture" color="green"></app-custom-button>
+    </div>
+  </app-custom-modal>
+</div>

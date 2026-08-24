@@ -13,6 +13,7 @@ export class DossierInscription extends Model<InferAttributes<DossierInscription
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
+  declare readonly deletedAt: CreationOptional<Date | null>
 
   declare static associations: {
     session: Association<DossierInscription, Session>
@@ -45,6 +46,7 @@ DossierInscription.init({
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
+  deletedAt: DataTypes.DATE,
 }, {
   sequelize: DatabaseConnection.getInstance().sequelize,
   paranoid: true,

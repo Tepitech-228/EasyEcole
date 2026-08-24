@@ -17,6 +17,10 @@ import { ReorientationPageComponent } from './pages/reorientation-page/reorienta
 
 import { DiplomesPageComponent } from './pages/diplomes-page/diplomes-page.component';
 import { DemandesVAEPageComponent } from './pages/demandes-vae-page/demandes-vae-page.component';
+import { DashboardSecretariatPageComponent } from './pages/dashboard-secretariat-page/dashboard-secretariat-page.component';
+import { CaissePageComponent } from './pages/caisse-page/caisse-page.component';
+import { ClotureCaissePageComponent } from './pages/cloture-caisse-page/cloture-caisse-page.component';
+import { FicheDemandePageComponent } from './pages/fiche-demande-page/fiche-demande-page.component';
 
 const routes: Routes = [
   {
@@ -93,6 +97,41 @@ const routes: Routes = [
   {
     path: 'demandes-vae',
     component: DemandesVAEPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'secretariat/dashboard',
+    component: DashboardSecretariatPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'secretariat/caisse',
+    component: CaissePageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'secretariat/cloture-caisse',
+    component: ClotureCaissePageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'secretariat/demandes',
+    component: TraiterDemandesPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'secretariat/demandes/fiche/:id',
+    component: FicheDemandePageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'secretariat/types-documents',
+    component: TraiterDemandesPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'secretariat/journal-caisse',
+    component: TraiterDemandesPageComponent,
     pathMatch: 'full'
   },
   {

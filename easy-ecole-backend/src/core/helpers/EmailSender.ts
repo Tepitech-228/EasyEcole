@@ -18,7 +18,13 @@ function getMailConfig() {
                 console.warn('WARNING: mail.json contains credentials. Move them to .env for security.')
                 return config
             }
-        } catch { }
+        } catch (err: any) {
+            // Fichier absent = cas nominal (config par .env) — silence justifié.
+            // Toute autre anomalie (JSON corrompu...) doit être visible.
+            if (err?.code !== 'MODULE_NOT_FOUND') {
+                console.warn('[MAIL] lecture de config/mail.json impossible:', err?.message || err)
+            }
+        }
     }
     return null
 }

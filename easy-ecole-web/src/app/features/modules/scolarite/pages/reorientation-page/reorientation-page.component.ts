@@ -2,6 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { DemandeReorientation } from 'src/app/data/modules/scolarite/models/DemandeReorientation.model';
 import { DemandeReorientationService } from 'src/app/data/modules/scolarite/services/demande-reorientation.service';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+import { Parcours } from 'src/app/data/modules/inscription/models/Parcours.model';
+import { CursusApprenant } from 'src/app/data/modules/inscription/models/CursusApprenant.model';
+import { ParcoursService } from 'src/app/data/modules/inscription/services/parcours.service';
+import { CursusApprenantService } from 'src/app/data/modules/inscription/services/cursus-apprenant.service';
 
 @Component({
   selector: 'app-reorientation-page',
@@ -17,19 +21,36 @@ export class ReorientationPageComponent extends BaseComponentClass implements On
   successMessage: string = '';
   searchQuery: string = '';
 
-  newItem: any = {
-    cursusApprenantId: '', parcoursActuelId: '', parcoursCibleId: '', motif: ''
-  };
+  parcoursList: Parcours[] = [];
+  cursusList: CursusApprenant[] = [];
+  dataLoaded: boolean = false;
+
+  selectedCursusId: string = '';
+  selectedParcoursCibleId: string = '';
+  motif: string = '';
 
   currentPage: number = 1;
   pageSize: number = 15;
 
-  constructor(private service: DemandeReorientationService) {
+  constructor(
+    private service: DemandeReorientationService,
+    private parcoursService: ParcoursService,
+    private cursusApprenantService: CursusApprenantService
+  ) {
     super();
   }
 
   ngOnInit(): void {
     this.loadItems();
+    this.loadSelects();
+  }
+
+  private loadSelects(): void {
+    this.parcoursService.getAll().subscribe(data => this.parcoursList = data);
+    this.cursusApprenantService.getAll().subscribe({
+      next: (data) => { this.cursusList = data; this.dataLoaded = true; },
+      error: () => this.dataLoaded = true
+    });
   }
 
   get paginatedItems(): DemandeReorientation[] {
@@ -39,6 +60,10 @@ export class ReorientationPageComponent extends BaseComponentClass implements On
 
   get totalPages(): number {
     return Math.ceil(this._items.length / this.pageSize) || 1;
+  }
+
+  get peutSoumettre(): boolean {
+    return !!(this.selectedCursusId && this.selectedParcoursCibleId && this.motif.trim());
   }
 
   loadItems(): void {
@@ -58,13 +83,22 @@ export class ReorientationPageComponent extends BaseComponentClass implements On
   }
 
   createItem(): void {
-    if (!this.newItem.cursusApprenantId || !this.newItem.motif) return;
+    if (!this.peutSoumettre) return;
+    const cursus = this.cursusList.find(c => String(c.id) === String(this.selectedCursusId));
+    const payload: DemandeReorientation = {
+      cursusApprenantId: Number(this.selectedCursusId),
+      parcoursActuelId: Number((cursus as any)?.parcoursId ?? (cursus as any)?.parcours?.id ?? 0),
+      parcoursCibleId: Number(this.selectedParcoursCibleId),
+      motif: this.motif.trim()
+    };
     this.adding = true;
     this.errorMessage = '';
     this.successMessage = '';
-    this.service.create(this.newItem).subscribe({
+    this.service.create(payload).subscribe({
       next: () => {
-        this.newItem = { cursusApprenantId: '', parcoursActuelId: '', parcoursCibleId: '', motif: '' };
+        this.selectedCursusId = '';
+        this.selectedParcoursCibleId = '';
+        this.motif = '';
         this.successMessage = 'Demande soumise avec succès';
         this.adding = false;
         this.loadItems();
@@ -89,9 +123,42 @@ export class ReorientationPageComponent extends BaseComponentClass implements On
 
   filtrer(): void {
     this.currentPage = 1;
+    const q = this.searchQuery.toLowerCase().trim();
     this._items = this.items.filter(s => {
-      return !this.searchQuery || s.motif.toLowerCase().includes(this.searchQuery.toLowerCase());
+      if (!q) return true;
+      return (
+        s.motif?.toLowerCase().includes(q) ||
+        this.etudiantLabel(s).toLowerCase().includes(q) ||
+        this.parcoursTitre(s.parcoursActuelId).toLowerCase().includes(q) ||
+        this.parcoursTitre(s.parcoursCibleId).toLowerCase().includes(q)
+      );
     });
+  }
+
+  // ── Helpers d'affichage ──
+
+  etudiantLabel(s: DemandeReorientation): string {
+    const c = this.cursusList.find(x => String(x.id) === String(s.cursusApprenantId));
+    const u: any = c?.utilisateur;
+    if (u?.nom || u?.prenoms) return `${u.nom ?? ''} ${u.prenoms ?? ''}`.trim();
+    return `Cursus #${s.cursusApprenantId}`;
+  }
+
+  cursusLabel(c: CursusApprenant): string {
+    const u: any = c?.utilisateur;
+    if (u?.nom || u?.prenoms) return `${u.nom ?? ''} ${u.prenoms ?? ''}`.trim();
+    return `Cursus #${c.id}`;
+  }
+
+  parcoursTitre(id: number | undefined | null): string {
+    if (!id) return '—';
+    return this.parcoursList.find(p => String(p.id) === String(id))?.titre || `#${id}`;
+  }
+
+  parcoursActuelDuCursus(cursusId: string | null): number | undefined {
+    if (!cursusId) return undefined;
+    const c: any = this.cursusList.find(x => String(x.id) === String(cursusId));
+    return c?.parcoursId ?? c?.parcours?.id ?? undefined;
   }
 
   getStatutColor(statut: string): string {
@@ -101,6 +168,16 @@ export class ReorientationPageComponent extends BaseComponentClass implements On
       case 'approuvee': return 'green';
       case 'rejetee': return 'red';
       default: return 'gray';
+    }
+  }
+
+  statutLabel(statut: string): string {
+    switch (statut) {
+      case 'soumise': return 'Soumise';
+      case 'etude': return 'En étude';
+      case 'approuvee': return 'Approuvée';
+      case 'rejetee': return 'Rejetée';
+      default: return statut;
     }
   }
 

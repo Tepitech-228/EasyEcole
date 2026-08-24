@@ -25,6 +25,8 @@ export class DemandeInscription {
   declare paiementsInscription?: PaiementInscription[]
   declare dossiersDemande?: DemandeInscriptionDossier[]
   declare coursChoisis?: DemandeInscriptionCours[]
+  /** Vrai une fois le dossier transmis au comité d'orientation (après saisie ESA finalisée). */
+  declare soumissionComite?: boolean
 
   declare readonly createdAt?: Date
   declare readonly updatedAt?: Date

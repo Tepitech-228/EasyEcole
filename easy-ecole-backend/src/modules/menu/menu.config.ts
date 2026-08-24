@@ -143,6 +143,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                     { label: 'Paiements', route: '/inscription/paiements', icon: 'paid', permissionKey: 'menu.finances.paiements', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.APPRENANT, RolesUtilisateur.CAISSIER_BANQUE, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN] },
                     { label: 'Echeances', route: '/inscription/echeances', icon: 'event', permissionKey: 'menu.finances.echeances', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.APPRENANT, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN] },
                     { label: 'Valid. bordereaux', route: '/inscription/validation-bordereaux', icon: 'task_alt', permissionKey: 'menu.finances.validation-bordereaux', allowedRoles: [RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN] },
+                    { label: 'Validation comité', route: '/inscription/comite-validation', icon: 'how_to_reg', permissionKey: 'menu.finances.comite-validation', allowedRoles: [RolesUtilisateur.COMITE_ORIENTATION, RolesUtilisateur.ADMIN] },
                     { label: 'Bordereaux a traiter', route: '/inscription/finance/bordereaux', icon: 'receipt_long', permissionKey: 'menu.finances.bordereaux-a-traiter', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.ADMIN] },
                     { label: 'Types de bordereau', route: '/inscription/finance/types-bordereaux', icon: 'category', permissionKey: 'menu.finances.types-bordereaux', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.ADMIN] },
                     { label: 'Comptabilite', route: '/comptabilite/dashboard', icon: 'account_balance', permissionKey: 'menu.finances.comptabilite', allowedRoles: [RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN] },
@@ -460,6 +461,37 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                 items: [
                     { label: 'Signatures', route: '/docgen/signatures', icon: 'how_to_vote', permissionKey: 'menu.docgen.signatures', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Signature direction', route: '/docgen/signatures/direction', icon: 'how_to_reg', permissionKey: 'menu.docgen.signatures-direction', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                ]
+            },
+        ]
+    },
+    {
+        label: 'Secretariat',
+        icon: 'admin_panel_settings',
+        allowedRoles: [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN],
+        groups: [
+            {
+                label: 'General',
+                icon: 'dashboard',
+                items: [
+                    { label: 'Tableau de bord', route: '/scolarite/secretariat/dashboard', icon: 'dashboard', permissionKey: 'menu.secretariat.dashboard', allowedRoles: [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Caisse', route: '/scolarite/secretariat/caisse', icon: 'payments', permissionKey: 'menu.secretariat.caisse', allowedRoles: [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Cloture caisse', route: '/scolarite/secretariat/cloture-caisse', icon: 'lock', permissionKey: 'menu.secretariat.cloture', allowedRoles: [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                ]
+            },
+            {
+                label: 'Documents',
+                icon: 'description',
+                items: [
+                    { label: 'Demandes', route: '/scolarite/secretariat/demandes', icon: 'receipt_long', permissionKey: 'menu.secretariat.demandes', allowedRoles: [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Types de documents', route: '/scolarite/secretariat/types-documents', icon: 'category', permissionKey: 'menu.secretariat.types-documents', allowedRoles: [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                ]
+            },
+            {
+                label: 'Rapports',
+                icon: 'assessment',
+                items: [
+                    { label: 'Journal caisse', route: '/scolarite/secretariat/journal-caisse', icon: 'book', permissionKey: 'menu.secretariat.journal', allowedRoles: [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                 ]
             },
         ]

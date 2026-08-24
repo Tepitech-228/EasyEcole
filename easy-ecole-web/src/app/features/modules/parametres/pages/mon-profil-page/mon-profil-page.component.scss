@@ -1,0 +1,429 @@
+/* ============================================================
+   MON PROFIL — Redesign moderne avec 3 sections distinctes
+   ============================================================ */
+
+/* Design tokens */
+:root {
+  --profil-section-bg: #ffffff;
+  --profil-section-border: #e5e7eb;
+  --profil-section-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --profil-section-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.03);
+  --profil-accent-personal: #4f46e5;
+  --profil-accent-personal-light: #eef2ff;
+  --profil-accent-diploma: #059669;
+  --profil-accent-diploma-light: #ecfdf5;
+  --profil-accent-contact: #d97706;
+  --profil-accent-contact-light: #fffbeb;
+  --profil-text-primary: #111827;
+  --profil-text-secondary: #6b7280;
+  --profil-text-muted: #9ca3af;
+  --profil-radius: 16px;
+  --profil-spacing: 24px;
+}
+
+/* Container principal */
+.profil-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--profil-spacing);
+}
+
+/* En-tête profil */
+.profil-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--profil-section-border);
+}
+
+.profil-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 16px;
+  object-fit: cover;
+  border: 3px solid var(--profil-section-border);
+  box-shadow: var(--profil-section-shadow);
+  flex-shrink: 0;
+}
+
+.profil-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.profil-header-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--profil-text-primary);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.profil-header-email {
+  font-size: 0.875rem;
+  color: var(--profil-text-secondary);
+  margin: 0;
+}
+
+.profil-header-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+/* Carte section */
+.profil-section {
+  background: var(--profil-section-bg);
+  border: 1px solid var(--profil-section-border);
+  border-radius: var(--profil-radius);
+  box-shadow: var(--profil-section-shadow);
+  padding: var(--profil-spacing);
+  margin-bottom: var(--profil-spacing);
+  transition: box-shadow 0.2s ease;
+}
+
+.profil-section:hover {
+  box-shadow: var(--profil-section-shadow-hover);
+}
+
+/* En-tête de section */
+.profil-section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--profil-section-border);
+}
+
+.profil-section-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.profil-section-icon.personal {
+  background: var(--profil-accent-personal-light);
+  color: var(--profil-accent-personal);
+}
+
+.profil-section-icon.diploma {
+  background: var(--profil-accent-diploma-light);
+  color: var(--profil-accent-diploma);
+}
+
+.profil-section-icon.contact {
+  background: var(--profil-accent-contact-light);
+  color: var(--profil-accent-contact);
+}
+
+.profil-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--profil-text-primary);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.profil-section-subtitle {
+  font-size: 0.8rem;
+  color: var(--profil-text-secondary);
+  margin: 2px 0 0 0;
+  font-weight: 400;
+}
+
+/* Grille de formulaire */
+.profil-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px 24px;
+}
+
+.profil-form-grid .col-full {
+  grid-column: 1 / -1;
+}
+
+.profil-form-grid .col-span-3 {
+  grid-column: span 1;
+}
+
+/* Groupe de champ */
+.profil-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.profil-field-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--profil-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.profil-field-input {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 0.925rem;
+  line-height: 1.5;
+  color: var(--profil-text-primary);
+  background: #f9fafb;
+  border: 1px solid var(--profil-section-border);
+  border-radius: 10px;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.profil-field-input:focus {
+  background: #ffffff;
+  border-color: var(--profil-accent-personal);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+}
+
+.profil-field-input:disabled {
+  background: #f3f4f6;
+  color: var(--profil-text-muted);
+  cursor: not-allowed;
+}
+
+.profil-field-input.error {
+  border-color: #dc2626;
+  background: #fef2f2;
+}
+
+.profil-field-input.error:focus {
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.08);
+}
+
+/* Select */
+.profil-field-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+  padding-right: 40px;
+}
+
+/* Checkbox & Radio */
+.profil-field-radio-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-top: 6px;
+}
+
+.profil-field-radio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.profil-field-radio input[type="radio"],
+.profil-field-radio input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--profil-accent-personal);
+  cursor: pointer;
+}
+
+.profil-field-radio-label {
+  font-size: 0.925rem;
+  color: var(--profil-text-primary);
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Message d'erreur */
+.profil-field-error {
+  font-size: 0.8rem;
+  color: #dc2626;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+/* Sous-section */
+.profil-subsection {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--profil-section-border);
+}
+
+.profil-subsection-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--profil-text-primary);
+  margin: 0 0 14px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profil-subsection-title::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 16px;
+  background: var(--profil-accent-personal);
+  border-radius: 2px;
+}
+
+/* Actions */
+.profil-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--profil-section-border);
+}
+
+/* Alertes */
+.profil-alert {
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.profil-alert.success {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.profil-alert.error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .profil-form-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .profil-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .profil-header-actions {
+    justify-content: center;
+  }
+
+  .profil-section {
+    padding: 16px;
+  }
+
+  .profil-actions {
+    flex-direction: column;
+  }
+
+  .profil-actions button {
+    width: 100%;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .profil-form-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px 20px;
+  }
+}
+
+/* Animation d'apparition */
+.profil-section {
+  animation: profilFadeIn 0.3s ease-out;
+}
+
+@keyframes profilFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Photo upload area */
+.profil-photo-area {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 28px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border-radius: var(--profil-radius);
+  border: 1px solid var(--profil-section-border);
+}
+
+.profil-photo-preview {
+  width: 88px;
+  height: 88px;
+  border-radius: 14px;
+  object-fit: cover;
+  border: 2px solid var(--profil-section-border);
+  box-shadow: var(--profil-section-shadow);
+}
+
+.profil-photo-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profil-photo-hint {
+  font-size: 0.75rem;
+  color: var(--profil-text-muted);
+  margin-top: 4px;
+}
+
+.profil-photo-warning {
+  font-size: 0.8rem;
+  color: #dc2626;
+  margin-top: 4px;
+}
+
+/* Amélioration des inputs existants */
+.profil-field-input::placeholder {
+  color: var(--profil-text-muted);
+  opacity: 0.7;
+}
+
+/* Focus visible pour l'accessibilité */
+.profil-field-input:focus-visible {
+  outline: 2px solid var(--profil-accent-personal);
+  outline-offset: 2px;
+}
+
+/* États de validation */
+.profil-field-input.ng-touched.ng-invalid {
+  border-color: #dc2626;
+  background: #fef2f2;
+}
+
+.profil-field-input.ng-touched.ng-valid {
+  border-color: #059669;
+  background: #ffffff;
+}

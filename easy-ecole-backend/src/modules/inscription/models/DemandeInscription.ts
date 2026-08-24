@@ -18,6 +18,15 @@ import { Etablissement } from "../../etablissement/models/Etablissement";
 export class DemandeInscription extends Model<InferAttributes<DemandeInscription>, InferCreationAttributes<DemandeInscription>> {
   declare id: CreationOptional<number>
   declare matricule: CreationOptional<string>
+  /**
+   * Pipeline d'inscription (flux définitif) :
+   *   soumis → authentifie (cabinet) → saisie_validee / transmis_comite (ESA-COMPTA)
+   *   → valide | correction_demandee | rejete (comité, étape finale).
+   * NULL = dossiers legacy antérieurs au pipeline (traités comme 'soumis').
+   */
+  declare statutPipeline: CreationOptional<'soumis' | 'authentifie' | 'saisie_validee' | 'transmis_comite' | 'valide' | 'correction_demandee' | 'rejete' | null>
+  declare motifPipeline?: CreationOptional<string | null>
+  declare soumissionComite: CreationOptional<boolean>
   declare dateDemande: Date
   declare dateValidation: CreationOptional<Date>
   declare sessionId: ForeignKey<Session['id']>
@@ -67,6 +76,21 @@ DemandeInscription.init({
     type: new DataTypes.STRING,
     allowNull: false
   },
+  statutPipeline: {
+    type: new DataTypes.STRING(30),
+    allowNull: true,
+    defaultValue: null
+  },
+  soumissionComite: {
+    type: DataTypes.BOOLEAN,
+    allowNull: true,
+    defaultValue: false
+  },
+  motifPipeline: {
+    type: new DataTypes.TEXT,
+    allowNull: true,
+    defaultValue: null
+  },
   dateDemande: {
     type: DataTypes.DATE,
     defaultValue: new Date(),
@@ -94,5 +118,9 @@ DemandeInscription.init({
   paranoid: true,
   modelName: MODULE_MODEL_PREFIX + 'DemandeInscription',
   tableName: MODULE_TABLE_PREFIX + 'demandes_inscription',
-  timestamps: true
+  timestamps: true,
+  // Index requis : la FK ins_paiements_inscription.matriculeInscription
+  // référence cette colonne (targetKey 'matricule'). Sans index, la création
+  // de la contrainte échoue sur une base VIERGE (sync production au démarrage).
+  indexes: [{ name: 'idx_demandes_inscription_matricule', fields: ['matricule'] }]
 })

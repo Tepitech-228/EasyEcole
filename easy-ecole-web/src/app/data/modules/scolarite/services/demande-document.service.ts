@@ -63,4 +63,24 @@ export class DemandeDocumentService {
   confirmerPaiementAuto(id: string): Observable<DemandeDocument> {
     return this.httpClient.post<DemandeDocument>(`${this.SERVICE_URL}/${id}/confirmer-paiement-auto`, {});
   }
+
+  passerEnPreparation(id: string): Observable<DemandeDocument> {
+    return this.httpClient.put<DemandeDocument>(`${this.SERVICE_URL}/${id}/preparer`, {});
+  }
+
+  genererDocument(id: string): Observable<DemandeDocument> {
+    return this.httpClient.put<DemandeDocument>(`${this.SERVICE_URL}/${id}/generer`, {});
+  }
+
+  confirmerImpression(id: string): Observable<DemandeDocument> {
+    return this.httpClient.put<DemandeDocument>(`${this.SERVICE_URL}/${id}/imprimer`, {});
+  }
+
+  confirmerRemise(id: string): Observable<DemandeDocument> {
+    return this.httpClient.put<DemandeDocument>(`${this.SERVICE_URL}/${id}/remettre`, {});
+  }
+
+  rejeter(id: string, motif: string): Observable<DemandeDocument> {
+    return this.httpClient.put<DemandeDocument>(`${this.SERVICE_URL}/${id}/rejeter`, { motif });
+  }
 }
