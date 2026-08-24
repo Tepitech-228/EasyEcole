@@ -52,7 +52,11 @@
             </span>
           </td>
           <td class="px-4 py-3 text-center">
-            <button (click)="ouvrirDetail(d)" class="text-indigo-600 hover:text-indigo-800 mr-2">Examiner</button>
+            <button (click)="ouvrirDetail(d)"
+                    class="inline-flex items-center gap-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:border-indigo-300 transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400">
+              <span class="material-symbols-outlined text-base">search</span>
+              Examiner
+            </button>
           </td>
         </tr>
       </tbody>
@@ -143,10 +147,22 @@
 
     <!-- Décision -->
     <div class="border-t pt-4">
-      <div *ngIf="!decisionEnCours" class="flex items-center justify-end gap-x-3">
-        <button (click)="preparerDecision('rejete')" class="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg">Rejeter</button>
-        <button (click)="preparerDecision('correction_demandee')" class="px-4 py-2 text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 rounded-lg">Demander correction</button>
-        <button (click)="preparerDecision('valide')" class="px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg">Valider l'inscription</button>
+      <div *ngIf="!decisionEnCours" class="flex items-center justify-end gap-x-3 pt-1">
+        <button (click)="preparerDecision('rejete')"
+                class="inline-flex items-center gap-x-1.5 px-4 py-2 text-sm font-semibold rounded-lg border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 hover:border-red-300 transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400">
+          <span class="material-symbols-outlined text-base">cancel</span>
+          Rejeter
+        </button>
+        <button (click)="preparerDecision('correction_demandee')"
+                class="inline-flex items-center gap-x-1.5 px-4 py-2 text-sm font-semibold rounded-lg border border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 hover:border-orange-300 transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400">
+          <span class="material-symbols-outlined text-base">edit_note</span>
+          Demander correction
+        </button>
+        <button (click)="preparerDecision('valide')"
+                class="inline-flex items-center gap-x-1.5 px-4 py-2 text-sm font-semibold rounded-lg shadow-sm bg-green-600 text-white hover:bg-green-700 active:bg-green-800 transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400">
+          <span class="material-symbols-outlined text-base">check_circle</span>
+          Valider l'inscription
+        </button>
       </div>
 
       <div *ngIf="decisionEnCours" class="bg-gray-50 rounded-lg p-3">
@@ -160,13 +176,23 @@
           Cette action crée officiellement l'étudiant : matricule définitif, affectation parcours/cours, carte étudiante, puis email officiel.
         </p>
         <div class="flex justify-end gap-x-3">
-          <button (click)="annulerDecision()" class="px-3 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
+          <button (click)="annulerDecision()"
+                  class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-300">
+            Annuler
+          </button>
           <button (click)="confirmerDecision()" [disabled]="processingDecision || (decisionEnCours !== 'valide' && !motifDecision.trim())"
-                  class="px-4 py-2 text-sm font-semibold text-white rounded-lg disabled:opacity-50"
+                  class="inline-flex items-center gap-x-1.5 px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-sm transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2"
                   [class.bg-green-600]="decisionEnCours === 'valide'"
+                  [class.hover:bg-green-700]="decisionEnCours === 'valide'"
                   [class.bg-orange-500]="decisionEnCours === 'correction_demandee'"
-                  [class.bg-red-600]="decisionEnCours === 'rejete'">
-            {{ processingDecision ? 'Traitement...' : 'Confirmer' }}
+                  [class.hover:bg-orange-600]="decisionEnCours === 'correction_demandee'"
+                  [class.bg-red-600]="decisionEnCours === 'rejete'"
+                  [class.hover:bg-red-700]="decisionEnCours === 'rejete'"
+                  [class.focus-visible:ring-green-400]="decisionEnCours === 'valide'"
+                  [class.focus-visible:ring-orange-400]="decisionEnCours === 'correction_demandee'"
+                  [class.focus-visible:ring-red-400]="decisionEnCours === 'rejete'">
+            <span *ngIf="processingDecision" class="material-symbols-outlined text-base animate-spin">autorenew</span>
+            {{ processingDecision ? 'Traitement...' : 'Confirmer la décision' }}
           </button>
         </div>
       </div>
