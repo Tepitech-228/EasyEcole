@@ -16,7 +16,6 @@ import { BordereauxPageComponent } from './pages/bordereaux-page/bordereaux-page
 import { ValidationBordereauxPageComponent } from './pages/validation-bordereaux-page/validation-bordereaux-page.component';
 import { MonDossierPageComponent } from './pages/mon-dossier-page/mon-dossier-page.component';
 import { GestionEcheancesPageComponent } from './pages/gestion-echeances-page/gestion-echeances-page.component';
-import { ComiteOrientationPageComponent } from './pages/comite-orientation-page/comite-orientation-page.component';
 import { ComiteDetailsPageComponent } from './pages/comite-details-page/comite-details-page.component';
 import { ListeDossiersPageComponent } from './pages/liste-dossiers-page/liste-dossiers-page.component';
 import {ListeFraisParcoursPageComponent} from './pages/liste-frais-parcours-page/liste-frais-parcours-page.component';
@@ -221,11 +220,13 @@ const routes: Routes = [
   },
 
   {
+    // Ancienne URL conservée par compatibilité : affiche désormais la page de
+    // validation du pipeline (dossiers transmis_comite).
     path: 'comite-orientation',
     children: [
       {
         path: '',
-        component: ComiteOrientationPageComponent,
+        component: ComiteValidationPageComponent,
         pathMatch: 'full'
       },
       {
