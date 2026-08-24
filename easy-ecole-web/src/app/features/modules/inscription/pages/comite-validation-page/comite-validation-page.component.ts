@@ -29,6 +29,14 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
   successMessage: string = ''
 
   readonly BORDEREAUX_PATH: string = environment.MEDIAS_PATH.INSCRIPTION.BORDEREAUX
+  readonly DOSSIERS_PATH: string = environment.MEDIAS_PATH.INSCRIPTION.DOSSIERS
+
+  // Modale « Dossier étudiant » (données personnelles + documents déposés)
+  selectedEtudiantDossier: any = null
+  showEtudiantModal: boolean = false
+  docPreviewUrl: string | null = null
+  docPreviewIsImage: boolean = false
+  docPreviewNom: string = ''
 
   constructor(
     private comiteService: ComiteValidationService,
@@ -94,6 +102,37 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
     this.detailComplet = null
     this.decisionEnCours = null
     this.motifDecision = ''
+  }
+
+  // ── Modale « Dossier étudiant » ──
+
+  ouvrirDossierEtudiant(d: any): void {
+    this.selectedEtudiantDossier = d
+    this.docPreviewUrl = null
+    this.docPreviewNom = ''
+    this.showEtudiantModal = true
+  }
+
+  fermerDossierEtudiant(): void {
+    this.showEtudiantModal = false
+    this.selectedEtudiantDossier = null
+    this.docPreviewUrl = null
+    this.docPreviewNom = ''
+  }
+
+  getDocEtudiantUrl(fichier: string): string {
+    const token = this.localStorage.get(LocalStorageService.AUTH_TOKEN)
+    let url = this.DOSSIERS_PATH + fichier
+    if (token) url += `?token=${encodeURIComponent(token)}`
+    return url
+  }
+
+  voirDocument(doc: any): void {
+    const fichier = doc?.nomFichier || ''
+    if (!fichier) return
+    this.docPreviewIsImage = this.isImageFile(fichier)
+    this.docPreviewUrl = this.getDocEtudiantUrl(fichier)
+    this.docPreviewNom = fichier
   }
 
   preparerDecision(decision: 'valide' | 'correction_demandee' | 'rejete'): void {
