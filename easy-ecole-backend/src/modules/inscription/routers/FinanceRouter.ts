@@ -382,7 +382,10 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
         await demandePipeline.save({ transaction })
       }
     }
-    }
+
+    // Marquer la saisie ESA comme effectuée (AVANT le commit, dans la transaction)
+    bordereau.statutPaiement = 'saisi'
+    await bordereau.save({ transaction })
 
     await transaction.commit()
 
@@ -467,10 +470,6 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
     } catch (comptaError) {
       console.error("Erreur écriture comptable (non bloquante):", comptaError)
     }
-
-    // Marquer la saisie ESA comme effectuée
-    bordereau.statutPaiement = 'saisi'
-    await bordereau.save({ transaction })
 
     return res.status(200).json({
       success: true,
