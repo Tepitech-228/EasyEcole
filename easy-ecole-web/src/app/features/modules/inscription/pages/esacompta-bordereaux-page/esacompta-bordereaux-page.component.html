@@ -191,7 +191,7 @@
   <div *ngIf="selectedBordereau && selectedBordereau.fichier" class="w-full">
     <div [ngSwitch]="isImageFile(selectedBordereau.fichier)">
       <img *ngSwitchCase="true" [src]="getDocUrl(selectedBordereau.fichier)" class="max-w-full h-auto rounded border border-gray-200">
-      <iframe *ngSwitchDefault [src]="getDocUrl(selectedBordereau.fichier)" class="w-full h-[70vh] rounded border border-gray-200"></iframe>
+      <iframe *ngSwitchDefault [src]="getDocUrlSafe(selectedBordereau.fichier)" class="w-full h-[70vh] rounded border border-gray-200"></iframe>
     </div>
   </div>
   <div *ngIf="!selectedBordereau || !selectedBordereau.fichier" class="text-center text-gray-400 py-8">

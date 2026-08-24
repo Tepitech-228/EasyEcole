@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { Bordereau } from 'src/app/data/modules/inscription/models/Bordereau.model';
 import { TypeOperationBordereau } from 'src/app/data/modules/inscription/models/TypeOperationBordereau.model';
@@ -75,7 +76,8 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     private parcoursService: ParcoursService,
     private sessionService: SessionService,
     private fb: FormBuilder,
-    private localStorage: LocalStorageService
+    private localStorage: LocalStorageService,
+    private sanitizer: DomSanitizer
   ) {
     super()
     this.saisieForm = this.fb.group({
@@ -295,6 +297,15 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
       url += `?token=${encodeURIComponent(token)}`
     }
     return url
+  }
+
+  /**
+   * URL sécurisée pour les contextes "resource URL" (iframe, embed, object).
+   * Angular exige une valeur de confiance explicite (DomSanitizer), sinon
+   * l'erreur "unsafe value used in a resource URL context" est levée.
+   */
+  getDocUrlSafe(fichier: string): SafeResourceUrl {
+    return this.sanitizer.bypassSecurityTrustResourceUrl(this.getDocUrl(fichier))
   }
 
   getTypeOperationLibelle(id: number | string | null | undefined): string {

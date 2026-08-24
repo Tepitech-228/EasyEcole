@@ -267,6 +267,32 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       }
     }
 
+    // Sécurité : pré-inscription posée/validée AVANT toute création de socle
+    // financier — BordereauDossierService exige une pré-inscription VALIDE au
+    // moment de créer le dossier étudiant (idempotent).
+    const demandePipeline = await DemandeInscription.findOne({
+      where: { utilisateurId: bordereau.utilisateurId },
+      order: [['createdAt', 'DESC']],
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    })
+    if (demandePipeline && estPremierBordereau) {
+      const preInscriptionExistante = await PreInscription.findOne({
+        where: { demandeInscriptionId: demandePipeline.id },
+        transaction,
+      })
+      if (!preInscriptionExistante) {
+        await PreInscription.create({
+          demandeInscriptionId: demandePipeline.id,
+          statut: EtatPreInscription.VALIDE,
+          commentaire: "Pré-inscription validée automatiquement lors de la saisie ESA du premier bordereau",
+        }, { transaction })
+      } else if (preInscriptionExistante.statut !== EtatPreInscription.VALIDE) {
+        preInscriptionExistante.statut = EtatPreInscription.VALIDE
+        await preInscriptionExistante.save({ transaction })
+      }
+    }
+
     // Mise à jour des informations financières
     bordereau.montant = montantPaiement
     bordereau.referenceBancaire = req.body.referenceBancaire ?? bordereau.referenceBancaire
@@ -339,31 +365,8 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
     // n'est pas terminée : le comité ne voit pas le dossier (ComiteValidation
     // exige statutPipeline='transmis_comite'). C'est ICI, en FIN de saisie,
     // que la transmission au comité est déclenchée automatiquement.
-
-    // Sécurité : pré-inscription posée/validée avant toute création de socle
-    // financier (idempotent).
-    const demandePipeline = await DemandeInscription.findOne({
-      where: { utilisateurId: bordereau.utilisateurId },
-      order: [['createdAt', 'DESC']],
-      transaction,
-      lock: transaction.LOCK.UPDATE,
-    })
-    if (demandePipeline && estPremierBordereau) {
-      const preInscriptionExistante = await PreInscription.findOne({
-        where: { demandeInscriptionId: demandePipeline.id },
-        transaction,
-      })
-      if (!preInscriptionExistante) {
-        await PreInscription.create({
-          demandeInscriptionId: demandePipeline.id,
-          statut: EtatPreInscription.VALIDE,
-          commentaire: "Pré-inscription validée automatiquement lors de la saisie ESA du premier bordereau",
-        }, { transaction })
-      } else if (preInscriptionExistante.statut !== EtatPreInscription.VALIDE) {
-        preInscriptionExistante.statut = EtatPreInscription.VALIDE
-        await preInscriptionExistante.save({ transaction })
-      }
-    }
+    // (La pré-inscription est posée/validée PLUS HAUT, AVANT la création du
+    // socle financier — voir bloc « Sécurité : pré-inscription ».)
 
     // FIN DE SAISIE ESA : si aucun bordereau non traité ne reste pour cet
     // étudiant (ni 'en_attente', ni 'valide' non encore saisi), le dossier est
