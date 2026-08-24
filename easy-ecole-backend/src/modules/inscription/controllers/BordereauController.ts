@@ -301,9 +301,11 @@ export default class BordereauController {
             // par la validation FINALE du comité (ComiteValidationController).
             await bordereau.save({ transaction })
 
-            // Pipeline d'inscription : dès l'AUTHENTIFICATION du bordereau par le
-            // cabinet, le dossier est transmis au comité d'orientation. La saisie
-            // ESA-COMPTA se déroule en parallèle et ne bloque plus cette transmission.
+            // Pipeline d'inscription (FLUX SÉQUENTIEL) : l'authentification du
+            // bordereau par le cabinet place le dossier en attente de la saisie
+            // ESA-COMPTA ('authentifie'). Le dossier reste BLOQUÉ pour le comité :
+            // c'est la FIN de la saisie ESA (FinanceRouter.saisir) qui déclenche
+            // la transmission automatique au comité d'orientation.
             const demande = await DemandeInscription.findOne({
                 where: { utilisateurId: bordereau.utilisateurId },
                 order: [['createdAt', 'DESC']],
@@ -311,8 +313,8 @@ export default class BordereauController {
                 lock: transaction.LOCK.UPDATE,
             })
             if (demande && (!demande.statutPipeline || ['soumis', 'authentifie'].includes(demande.statutPipeline))) {
-                demande.statutPipeline = 'transmis_comite'
-                demande.soumissionComite = true
+                demande.statutPipeline = 'authentifie'
+                demande.soumissionComite = false
                 await demande.save({ transaction })
             }
 
@@ -557,9 +559,10 @@ export default class BordereauController {
                 // (ComiteValidationController), PAS ici. L'imputation comptable
                 // relève de la saisie ESA-COMPTA (FinanceRouter.saisir), pas ici.
 
-                // Pipeline d'inscription : dès l'authentification, le dossier est
-                // transmis au comité d'orientation (même comportement que
-                // PUT /bordereaux/:id/valider). Saisie ESA en parallèle.
+                // Pipeline d'inscription (FLUX SÉQUENTIEL) : l'authentification par
+                // le cabinet met le dossier en attente de saisie ESA-COMPTA
+                // ('authentifie'), PAS de transmission directe au comité — voir
+                // FinanceRouter.saisir qui transmet en fin de saisie.
                 const demandePipeline = await DemandeInscription.findOne({
                     where: { utilisateurId: bordereau.utilisateurId },
                     order: [['createdAt', 'DESC']],
@@ -567,8 +570,8 @@ export default class BordereauController {
                     lock: transaction.LOCK.UPDATE,
                 })
                 if (demandePipeline && (!demandePipeline.statutPipeline || ['soumis', 'authentifie'].includes(demandePipeline.statutPipeline))) {
-                    demandePipeline.statutPipeline = 'transmis_comite'
-                    demandePipeline.soumissionComite = true
+                    demandePipeline.statutPipeline = 'authentifie'
+                    demandePipeline.soumissionComite = false
                     await demandePipeline.save({ transaction })
                 }
 

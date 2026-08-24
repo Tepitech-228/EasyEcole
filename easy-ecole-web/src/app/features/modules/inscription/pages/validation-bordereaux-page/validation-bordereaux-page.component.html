@@ -178,10 +178,11 @@
         </p>
         <ng-container [ngSwitch]="selectedBordereau.type || selectedBordereau.echeance?.type">
             <div *ngSwitchCase="'inscription'" class="mt-3 p-3 bg-violet-50 border border-violet-200 rounded text-sm text-violet-700">
-                <span class="material-symbols-outlined text-sm align-middle mr-1">gavel</span>
-                Une fois authentifié, le dossier sera <strong>transmis au comité d'orientation</strong>,
+                <span class="material-symbols-outlined text-sm align-middle mr-1">account_balance</span>
+                Une fois authentifié, le dossier passera en <strong>attente de saisie par ESA-COMPTA</strong>.
+                Tant que cette saisie financière n'est pas terminée, le dossier reste bloqué.
+                Il sera ensuite transmis <strong>automatiquement au comité d'orientation</strong>,
                 seul décideur de la création du dossier étudiant (matricule définitif, cursus, cours).
-                La saisie des informations financières reste assurée en parallèle par ESA-COMPTA.
             </div>
             <div *ngSwitchDefault class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
                 <span class="material-symbols-outlined text-sm align-middle mr-1">verified</span>
@@ -249,12 +250,13 @@
             <div *ngSwitchCase="'inscription'">
                 <span class="material-symbols-outlined text-6xl text-violet-500">task_alt</span>
                 <p class="text-sm text-gray-600 mt-4">
-                    Le bordereau a été <strong>authentifié</strong> et le dossier a été
-                    <strong>transmis au comité d'orientation</strong>.
+                    Le bordereau a été <strong>authentifié</strong>. Le dossier est en
+                    <strong>attente de saisie par ESA-COMPTA</strong>.
                 </p>
                 <p class="text-sm text-gray-600 mt-2">
-                    Le comité validera la création du dossier étudiant (matricule définitif, cursus, cours).
-                    La saisie des informations financières se poursuit en parallèle côté ESA-COMPTA.
+                    Dès la fin de la saisie financière, le dossier sera transmis
+                    <strong>automatiquement au comité d'orientation</strong>, qui validera la création
+                    du dossier étudiant (matricule définitif, cursus, cours).
                 </p>
             </div>
             <ng-container *ngSwitchDefault>

@@ -458,26 +458,31 @@ initWizardItems(): void {
       this.wizardItems[3].condition = true
     }
 
-    // NOUVEAU FLUX : dès l'authentification du bordereau par le cabinet, le dossier
-    // est transmis au comité d'orientation. La saisie ESA-COMPTA (étape 5) devient
-    // un travail PARALLÈLE : elle n'est plus un passage obligé avant le comité.
+    // FLUX SÉQUENTIEL : cabinet authentifie (étape 4) → saisie ESA-COMPTA
+    // OBLIGATOIRE (étape 5) → transmission automatique au comité (étape 6).
+    // Le dossier reste BLOQUÉ à l'étape 5 tant que le service comptable n'a pas
+    // terminé sa saisie (côté backend : statutPipeline passe à 'transmis_comite'
+    // uniquement en fin de saisie, FinanceRouter.saisir).
     const bordereauAuthentifie = this.bordereauxInscription.find(b => b.statut === 'valide')
     const saisieEsaFaite = this.bordereauxInscription.some(b => b.statutPaiement === 'saisi' || b.statutPaiement === 'finalise')
 
     if (this.currentItemSection >= 4 && bordereauAuthentifie) {
       this.wizardItems[4].condition = true
 
-      // Étape 5 (saisie ESA) : débloquée pour consultation ; cochée seulement si
-      // le service comptable a déjà saisi les données.
-      this.wizardItems[5].isBlocked = false
-      if (saisieEsaFaite) this.wizardItems[5].condition = true
-
-      if (!this.demande?.dateValidation && this.currentItemSection < 6) {
-        this.currentItemSection = 6
+      // Étape 5 (saisie ESA) : verrouillée tant que la saisie n'est pas faite.
+      this.wizardItems[5].isBlocked = !saisieEsaFaite
+      if (saisieEsaFaite) {
+        this.wizardItems[5].condition = true
         this.wizardItems[6].isBlocked = false
-      }
-      if (!this.demande?.dateValidation) {
-        this.stepMessage = { text: "Dossier transmis au comité d'orientation — en attente de validation.", type: 'info' }
+        if (!this.demande?.dateValidation && this.currentItemSection < 6) {
+          this.currentItemSection = 6
+        }
+        if (!this.demande?.dateValidation) {
+          this.stepMessage = { text: "Saisie comptable terminée — dossier transmis au comité d'orientation.", type: 'info' }
+        }
+      } else if (this.currentItemSection < 6) {
+        this.currentItemSection = 5
+        this.stepMessage = { text: "Bordereau authentifié par le cabinet — en attente de la saisie du service comptable (ESA-COMPTA) avant transmission au comité.", type: 'info' }
       }
     }
 

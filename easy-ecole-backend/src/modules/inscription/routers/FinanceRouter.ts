@@ -1,7 +1,7 @@
 import express from "express"
 import { Request, Response } from "express";
 import path from "path";
-import { FindOptions, InferAttributes } from "sequelize";
+import { FindOptions, InferAttributes, Op } from "sequelize";
 import { Bordereau } from "../models/Bordereau";
 import { Echeance } from "../models/Echeance";
 import { DossierEtudiant } from "../models/DossierEtudiant";
@@ -334,20 +334,19 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       }
     }
 
-    // ── Pipeline d'inscription : NE PLUS TOUCHER ici ──
-    // Depuis le nouveau flux, la transmission au comité d'orientation se fait dès
-    // l'authentification du bordereau par le cabinet (BordereauController.valider /
-    // traiter). La saisie ESA-COMPTA est un travail PARALLÈLE : elle alimente les
-    // données financières (montant constaté, imputation FIFO) sans piloter le
-    // pipeline ni conditionner la validation du comité.
+    // ── Pipeline d'inscription (FLUX SÉQUENTIEL) ──
+    // Le dossier reste BLOQUÉ ('authentifie') tant que la saisie ESA-COMPTA
+    // n'est pas terminée : le comité ne voit pas le dossier (ComiteValidation
+    // exige statutPipeline='transmis_comite'). C'est ICI, en FIN de saisie,
+    // que la transmission au comité est déclenchée automatiquement.
 
-    // Sécurité flux parallèle : si l'ESA saisit AVANT la validation du comité,
-    // creerDossierEtudiantDepuisBordereau exige une pré-inscription validée.
-    // On la pose/valide donc ici si elle n'existe pas encore (idempotent).
+    // Sécurité : pré-inscription posée/validée avant toute création de socle
+    // financier (idempotent).
     const demandePipeline = await DemandeInscription.findOne({
       where: { utilisateurId: bordereau.utilisateurId },
       order: [['createdAt', 'DESC']],
       transaction,
+      lock: transaction.LOCK.UPDATE,
     })
     if (demandePipeline && estPremierBordereau) {
       const preInscriptionExistante = await PreInscription.findOne({
@@ -364,6 +363,25 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
         preInscriptionExistante.statut = EtatPreInscription.VALIDE
         await preInscriptionExistante.save({ transaction })
       }
+    }
+
+    // FIN DE SAISIE ESA : si aucun bordereau non traité ne reste pour cet
+    // étudiant (ni 'en_attente', ni 'valide' non encore saisi), le dossier est
+    // transmis AUTOMATIQUEMENT au comité d'orientation.
+    if (demandePipeline && (!demandePipeline.statutPipeline || ['soumis', 'authentifie'].includes(demandePipeline.statutPipeline))) {
+      const restantsASaisir = await Bordereau.count({
+        where: {
+          utilisateurId: bordereau.utilisateurId,
+          statut: { [Op.in]: ['en_attente', 'valide'] },
+        },
+        transaction,
+      })
+      if (restantsASaisir === 0) {
+        demandePipeline.statutPipeline = 'transmis_comite'
+        demandePipeline.soumissionComite = true
+        await demandePipeline.save({ transaction })
+      }
+    }
     }
 
     await transaction.commit()
