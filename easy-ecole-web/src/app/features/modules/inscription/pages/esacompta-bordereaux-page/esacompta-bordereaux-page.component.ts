@@ -51,6 +51,32 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
 
   saisieForm: FormGroup
 
+  // Répartition obligatoire quand le type d'opération sélectionné est MIXTE
+  composition = { inscription: null as number | null, scolarite: null as number | null }
+
+  /** Type d'opération actuellement sélectionné dans le formulaire de saisie */
+  get typeSelectionne(): TypeOperationBordereau | undefined {
+    const id = this.saisieForm.get('typeOperationId')?.value
+    return this.typesOperations.find(t => String(t.id) === String(id))
+  }
+
+  /** Le type choisi est-il MIXTE ? (répartition par nature exigée) */
+  get estTypeMixte(): boolean {
+    return String((this.typeSelectionne as any)?.code || '').toUpperCase() === 'MIXTE'
+  }
+
+  /** Somme des composantes déclarées pour un bordereau mixte */
+  get compositionSomme(): number {
+    return Math.round(((Number(this.composition.inscription) || 0) + (Number(this.composition.scolarite) || 0)) * 100) / 100
+  }
+
+  /** La répartition est-elle complète et égale au montant constaté ? */
+  get compositionValide(): boolean {
+    if (!this.estTypeMixte) return true
+    const montant = Number(this.saisieForm.get('montantPaiement')?.value || 0)
+    return this.compositionSomme > 0 && Math.abs(this.compositionSomme - montant) < 0.01
+  }
+
   readonly BORDEREAUX_PATH: string = (window as any).__env?.MEDIAS_PATH?.INSCRIPTION?.BORDEREAUX || '/media/inscription/bordereaux/'
 
   searchTerm: string = ''
@@ -213,6 +239,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
 
   openSaisieModal(bordereau: Bordereau): void {
     this.selectedBordereau = bordereau
+    this.composition = { inscription: null, scolarite: null }
     this.saisieForm.reset({
       montantPaiement: bordereau.montant || null,
       referenceBancaire: bordereau.referenceBancaire || '',
@@ -253,10 +280,17 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
 
   onConfirmerSaisie(): void {
     if (this.saisieForm.invalid || !this.selectedBordereau) return
+    if (!this.compositionValide) return
     this.error = false
     this.apiErrorMessage = ''
 
-    const payload = this.saisieForm.value
+    const payload: any = { ...this.saisieForm.value }
+    if (this.estTypeMixte) {
+      payload.composition = [
+        { type: 'inscription', montant: Number(this.composition.inscription) || 0 },
+        { type: 'scolarite', montant: Number(this.composition.scolarite) || 0 },
+      ].filter(c => c.montant > 0)
+    }
     this.bordereauService.saisir(this.selectedBordereau.id!, payload).subscribe({
       next: () => {
         this.closeSaisieModal()

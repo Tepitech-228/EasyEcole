@@ -14,7 +14,13 @@ export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAt
    * moment du traitement → colonnes NULLABLES (le dépôt crée un bordereau sans
    * type ni montant).
    */
-  declare type?: 'inscription' | 'scolarite' | 'rattrapage' | null
+  declare type?: 'inscription' | 'scolarite' | 'rattrapage' | 'mixte' | null
+  /**
+   * Type 'mixte' : répartition déclarée par ESA-COMPTA au moment de la saisie,
+   * sérialisée en JSON (ex : [{"type":"inscription","montant":450000},{"type":"scolarite","montant":30000}]).
+   * La somme des composantes doit être égale au montant constaté.
+   */
+  declare composition?: string | null
   declare echeanceId: ForeignKey<Echeance['id']> | null
   declare utilisateurId: ForeignKey<Utilisateur['id']>
   declare fichier: string
@@ -65,7 +71,12 @@ Bordereau.init({
     allowNull: false
   },
   type: {
-    type: DataTypes.ENUM('inscription', 'scolarite', 'rattrapage'),
+    type: DataTypes.ENUM('inscription', 'scolarite', 'rattrapage', 'mixte'),
+    allowNull: true,
+    defaultValue: null
+  },
+  composition: {
+    type: DataTypes.TEXT,
     allowNull: true,
     defaultValue: null
   },

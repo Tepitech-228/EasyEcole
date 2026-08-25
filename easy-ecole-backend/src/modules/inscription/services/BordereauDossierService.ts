@@ -290,17 +290,20 @@ export class BordereauDossierService {
             where: { dossierEtudiantId: dossier.id, type: 'inscription', statut: ['impaye', 'en_retard'] },
             transaction
         })
-        const echeancesInscription = await GenerateurEcheancierService.generer(
-            dossier,
-            bordereau.modalite,
-            transaction,
-            bordereau.montant ?? undefined
-        )
-        const premiereEcheance = echeancesInscription.find(e => e.numeroEcheance === 1)
-        if (premiereEcheance) {
-            premiereEcheance.statut = 'paye'
-            premiereEcheance.datePaiement = new Date()
-            await premiereEcheance.save({ transaction })
+        // Échéancier d'inscription basé sur les VRAIS frais de la session
+        // (fraisInscription), JAMAIS sur le montant du bordereau : le montant saisi
+        // peut déborder des frais (ex : 480 000 versés pour 450 000 de frais) et
+        // l'excédent doit rester imputable sur la scolarité par l'imputation FIFO
+        // appelée juste après (FinanceRouter.saisir).
+        // Aucun statut 'paye' n'est posé ici : c'est le lettrage FIFO qui solde
+        // l'échéance avec le bon montantPaye (traçabilité BordereauEcheance).
+        if (fraisTotal > 0) {
+            await GenerateurEcheancierService.generer(
+                dossier,
+                bordereau.modalite,
+                transaction,
+                fraisTotal
+            )
         }
 
         if (!options?.pedagogieDifferee) {

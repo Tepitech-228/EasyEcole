@@ -187,8 +187,19 @@ router.post('/bordereaux/:id/imputation-preview', [AuthEsacompta, CheckPermissio
  *               moyenPaiement:
  *                 type: string
  *                 enum: [virement, especes, mobile_money, cheque]
- *               typeOperationId:
- *                 type: integer
+  *               typeOperationId:
+  *                 type: integer
+  *               composition:
+  *                 type: array
+  *                 description: Répartition obligatoire pour un type d'opération MIXTE (somme = montantPaiement)
+  *                 items:
+  *                   type: object
+  *                   properties:
+  *                     type:
+  *                       type: string
+  *                       enum: [inscription, scolarite]
+  *                     montant:
+  *                       type: number
  *               datePaiement:
  *                 type: string
  *                 format: date
@@ -241,18 +252,68 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
     const estPremierBordereau = !dossierExistant
 
     let typeOperationIdEffectif = req.body.typeOperationId ?? bordereau.typeOperationId
-    let typeEffectif = bordereau.type
-    if (estPremierBordereau) {
+    let typeEffectif: any = bordereau.type
+
+    // Résolution du code d'opération choisi (bordereau.type peut encore être NULL
+    // avant la première saisie : le choix réel est le typeOperationId du formulaire).
+    let typeOperationCode: string | null = bordereau.typeOperation?.code?.toUpperCase() ?? null
+    if (!typeOperationCode && typeOperationIdEffectif) {
+      const to = await TypeOperationBordereau.findByPk(typeOperationIdEffectif, { transaction })
+      typeOperationCode = to?.code?.toUpperCase() ?? null
+    }
+    const estMixte = typeEffectif === 'mixte' || typeOperationCode === 'MIXTE'
+
+    if (estPremierBordereau && !estMixte) {
       typeEffectif = 'inscription'
       if (!typeOperationIdEffectif) {
         const typeInscription = await TypeOperationBordereau.findOne({ where: { code: 'INSCRIPTION' }, transaction })
         if (typeInscription) typeOperationIdEffectif = typeInscription.id
       }
     }
+    if (estMixte) {
+      typeEffectif = 'mixte'
+      if (!typeOperationIdEffectif) {
+        const typeMixte = await TypeOperationBordereau.findOne({ where: { code: 'MIXTE' }, transaction })
+        if (typeMixte) typeOperationIdEffectif = typeMixte.id
+      }
+    }
+
+    // ── Validation de la composition (type MIXTE uniquement) ──
+    // Le comptable déclare la répartition du montant constaté par nature de frais.
+    // Chaque composante sera imputée FIFO sur ses propres échéances, sans débordement.
+    let composition: { type: 'inscription' | 'scolarite'; montant: number }[] | null = null
+    if (estMixte) {
+      const raw = req.body.composition
+      if (!Array.isArray(raw) || raw.length === 0) {
+        await transaction.rollback()
+        return res.status(400).json({ success: false, message: "Type Mixte : la répartition est requise (composition [{type:'inscription'|'scolarite', montant}])." })
+      }
+      composition = []
+      for (const c of raw) {
+        const t = String(c?.type || '').toLowerCase()
+        const m = Number(c?.montant)
+        if (!['inscription', 'scolarite'].includes(t)) {
+          await transaction.rollback()
+          return res.status(400).json({ success: false, message: `Type Mixte : nature « ${t} » inconnue (autorisées : inscription, scolarite).` })
+        }
+        if (!Number.isFinite(m) || m <= 0) {
+          await transaction.rollback()
+          return res.status(400).json({ success: false, message: "Type Mixte : chaque composante doit avoir un montant positif." })
+        }
+        composition.push({ type: t as 'inscription' | 'scolarite', montant: Math.round(m * 100) / 100 })
+      }
+      const sommeComposition = Math.round(composition.reduce((s, c) => s + c.montant, 0) * 100) / 100
+      if (Math.abs(sommeComposition - montantPaiement) > 0.01) {
+        await transaction.rollback()
+        return res.status(400).json({ success: false, message: `Type Mixte : la somme de la répartition (${sommeComposition}) doit être égale au montant constaté (${montantPaiement}).` })
+      }
+    }
 
     // NOUVEAU : contrôle « premier bordereau ≥ frais d'inscription »
     // Un premier bordereau dont le montant est inférieur aux frais d'inscription
     // de la session est rejeté purement et simplement à la saisie ESA.
+    // Pour un bordereau MIXTE, c'est la composante 'inscription' de la répartition
+    // qui doit couvrir les frais (le reste étant déclaré en scolarité).
     if (estPremierBordereau) {
       const demande = await DemandeInscription.findOne({
         where: { utilisateurId: bordereau.utilisateurId },
@@ -261,9 +322,12 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       })
       const fraisInscriptionSession = (demande?.session?.fraisInscription || [])
         .reduce((sum, f) => sum + (f.montant || 0), 0)
-      if (montantPaiement < fraisInscriptionSession) {
+      const montantPartInscription = estMixte && composition
+        ? composition.filter(c => c.type === 'inscription').reduce((s, c) => s + c.montant, 0)
+        : montantPaiement
+      if (montantPartInscription < fraisInscriptionSession) {
         await transaction.rollback()
-        return res.status(400).json({ success: false, message: `Montant constaté (${montantPaiement}) inférieur aux frais d'inscription de la session (${fraisInscriptionSession}). Le bordereau doit au minimum couvrir les frais d'inscription.` })
+        return res.status(400).json({ success: false, message: `La part inscription (${montantPartInscription}) est inférieure aux frais d'inscription de la session (${fraisInscriptionSession}). Le premier versement doit au minimum couvrir les frais d'inscription.` })
       }
     }
 
@@ -300,6 +364,7 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
     bordereau.moyenPaiement = req.body.moyenPaiement ?? bordereau.moyenPaiement
     bordereau.typeOperationId = typeOperationIdEffectif
     bordereau.type = typeEffectif ?? null
+    bordereau.composition = estMixte && composition ? JSON.stringify(composition) : null
     bordereau.datePaiement = req.body.datePaiement ? new Date(req.body.datePaiement) : bordereau.datePaiement
     bordereau.commentaire = req.body.commentaire ?? bordereau.commentaire
     bordereau.statut = 'traite'
@@ -314,7 +379,7 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
     // Création du dossier étudiant AVANT l'imputation FIFO : pour un nouvel
     // étudiant, les échéances (inscription + scolarité) doivent exister au
     // moment de la cascade, sinon tout le montant partirait en portefeuille.
-    if (bordereauType === 'inscription') {
+    if (bordereauType === 'inscription' || (bordereauType === 'mixte' && estPremierBordereau)) {
       try {
         await BordereauDossierService.creerDossierEtudiantDepuisBordereau(
           bordereau,
@@ -334,13 +399,22 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       }
     }
 
-    // Imputation FIFO
-    const resultatImputation = await ImputationService.imputerPourUtilisateur(
-      bordereau.id,
-      bordereau.utilisateurId,
-      montantPaiement,
-      transaction
-    )
+    // Imputation : FIFO classique, ou par composition pour un bordereau MIXTE
+    // (chaque nature déclarée est imputée sur ses propres échéances, plafonnée
+    // à son montant — l'excédent éventuel part au portefeuille de crédit).
+    const resultatImputation = (bordereauType === 'mixte' && composition)
+      ? await ImputationService.imputerPourUtilisateurParComposition(
+          bordereau.id,
+          bordereau.utilisateurId,
+          composition!,
+          transaction
+        )
+      : await ImputationService.imputerPourUtilisateur(
+          bordereau.id,
+          bordereau.utilisateurId,
+          montantPaiement,
+          transaction
+        )
 
     if ((bordereauType === 'scolarite' || bordereauType === 'inscription') && bordereau.echeanceId) {
       const echeance = await Echeance.findByPk(bordereau.echeanceId, { transaction })

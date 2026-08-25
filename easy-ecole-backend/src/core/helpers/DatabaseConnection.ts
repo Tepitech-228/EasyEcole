@@ -1,5 +1,6 @@
 import { Dialect, QueryTypes, Sequelize } from "sequelize";
 import { ensureUniqueIndexes } from "./ensureUniqueIndexes";
+import { ensureBordereauFinance } from "./ensureBordereauFinance";
 const env = process.env.NODE_ENV || 'development';
 
 function getDbConfig() {
@@ -202,6 +203,13 @@ export class DatabaseConnection {
                 await ensureUniqueIndexes(this._sequelize);
             } catch (uniqueError: any) {
                 console.warn('Warning (ensureUniqueIndexes):', uniqueError?.message || uniqueError);
+            }
+
+            // --- Migrations légères bordereau MIXTE (ENUM, colonne, type opération) ---
+            try {
+                await ensureBordereauFinance(this._sequelize);
+            } catch (mixteError: any) {
+                console.warn('Warning (ensureBordereauFinance):', mixteError?.message || mixteError);
             }
         } catch (error: any) {
             if (

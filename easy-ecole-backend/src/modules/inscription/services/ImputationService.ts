@@ -41,6 +41,16 @@ export class MontantConstateInvalideError extends Error {
 }
 
 /**
+ * Composante d'un bordereau de type 'mixte' : part du montant constaté
+ * affectée à une nature de frais. La somme des composantes doit être égale
+ * au montant constaté du bordereau.
+ */
+export interface CompositionImputation {
+    type: 'inscription' | 'scolarite'
+    montant: number
+}
+
+/**
  * Service d'imputation en cascade FIFO des bordereaux sur les échéances.
  *
  * Règles métier :
@@ -413,6 +423,107 @@ export class ImputationService {
         return {
             bordereauId,
             montantDisponible: montantConstate,
+            lignes,
+            surplus: reste,
+            portefeuilleCreditId,
+        }
+    }
+
+    /**
+     * Imputation par COMPOSITION (bordereau de type 'mixte').
+     *
+     * Chaque composante déclarée par ESA-COMPTA est imputée séparément :
+     *  - FIFO dateLimite croissante, restreinte aux échéances du TYPE déclaré ;
+     *  - plafonnée au montant DE la composante (pas de débordement d'une nature
+     *    de frais vers l'autre) ;
+     *  - une composante dont les échéances sont déjà soldées (ou inexistantes)
+     *    alimente le portefeuille de crédit, comme un surplus.
+     *
+     * @param bordereauId - ID du bordereau mixte
+     * @param utilisateurId - propriétaire des dossiers
+     * @param composition - répartition [{type, montant}] (somme = montant constaté, validée en amont)
+     * @param transaction - transaction active
+     */
+    static async imputerPourUtilisateurParComposition(
+        bordereauId: number,
+        utilisateurId: number,
+        composition: CompositionImputation[],
+        transaction: Transaction,
+    ): Promise<ResultatImputation> {
+        const montantTotal = Math.round(composition.reduce((s, c) => s + Number(c.montant || 0), 0) * 100) / 100
+        if (!composition.length || !Number.isFinite(montantTotal) || montantTotal <= 0) {
+            throw new MontantConstateInvalideError(montantTotal)
+        }
+
+        const dossiers = await DossierEtudiant.findAll({
+            where: { utilisateurId },
+            transaction,
+        })
+
+        const lignes: LigneLettrage[] = []
+        let reste = 0
+        const registre = new Map<number, Echeance>()
+
+        for (const composante of composition) {
+            if (!Number.isFinite(Number(composante.montant)) || Number(composante.montant) <= 0) continue
+
+            if (dossiers.length === 0) {
+                reste = Math.round((reste + Number(composante.montant)) * 100) / 100
+                continue
+            }
+
+            const dossierIds = dossiers.map(d => d.id)
+            const echeancesDuType = await Echeance.findAll({
+                where: {
+                    dossierEtudiantId: { [Op.in]: dossierIds },
+                    type: composante.type,
+                    statut: ['impaye', 'partiel', 'en_retard'],
+                },
+                order: [['dateLimite', 'ASC'], ['id', 'ASC']],
+                transaction,
+                lock: transaction.LOCK.UPDATE,
+            })
+            for (const e of echeancesDuType) registre.set(e.id, e)
+
+            const { lignes: lignesComposante, reste: resteComposante } =
+                await ImputationService.calculerImputation(echeancesDuType, Number(composante.montant))
+
+            lignes.push(...lignesComposante)
+            reste = Math.round((reste + resteComposante) * 100) / 100
+        }
+
+        // Sauvegardes effectives + lettrages
+        for (const ligne of lignes) {
+            const echeance = registre.get(ligne.echeanceId)
+            if (echeance) {
+                echeance.montantPaye = Math.round((echeance.montantPaye || 0) + ligne.montantImpute)
+                echeance.statut = ligne.statutApres
+                await echeance.save({ transaction })
+                await ImputationService.creerLettrage(bordereauId, echeance.id, ligne.montantImpute, transaction)
+            }
+        }
+
+        // Reste (composantes non consommables) → portefeuille de crédit
+        const dossierCible = dossiers.find(d => d.statut === 'actif') ?? dossiers[0]
+        let portefeuilleCreditId: number | undefined
+
+        if (reste > 0 && dossierCible) {
+            const mouvement = await ImputationService.creerMouvementPortefeuille(
+                dossierCible.id,
+                'credit',
+                reste,
+                reste,
+                bordereauId,
+                null,
+                `Surplus composition bordereau #${bordereauId}`,
+                transaction
+            )
+            portefeuilleCreditId = mouvement.id
+        }
+
+        return {
+            bordereauId,
+            montantDisponible: montantTotal,
             lignes,
             surplus: reste,
             portefeuilleCreditId,
