@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpEvent, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from 'src/environments/environment';
 import { DemandeInscription } from '../models/DemandeInscription.model';
@@ -60,5 +60,17 @@ export class DemandeInscriptionService {
 
   delete(id: string): Observable<{ success: boolean; message: string }> {
     return this.httpClient.delete<{ success: boolean; message: string }>(`${this.SERVICE_URL}/${id}`);
+  }
+
+  updateStatutBoursier(id: string, estBoursier: boolean, fichier?: File | null): Observable<HttpEvent<DemandeInscription>> {
+    const formData = new FormData()
+    formData.append('estBoursier', String(estBoursier))
+    if (fichier) {
+      formData.append('fichier', fichier, fichier.name)
+    }
+    return this.httpClient.patch<DemandeInscription>(`${this.SERVICE_URL}/${id}/statut-boursier`, formData, {
+      reportProgress: true,
+      observe: 'events'
+    })
   }
 }

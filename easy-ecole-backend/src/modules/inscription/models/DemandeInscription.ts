@@ -26,6 +26,8 @@ export class DemandeInscription extends Model<InferAttributes<DemandeInscription
    */
   declare statutPipeline: CreationOptional<'soumis' | 'authentifie' | 'saisie_validee' | 'transmis_comite' | 'valide' | 'correction_demandee' | 'rejete' | null>
   declare motifPipeline?: CreationOptional<string | null>
+  declare estBoursier: CreationOptional<boolean>
+  declare documentBourse: CreationOptional<string | null>
   declare soumissionComite: CreationOptional<boolean>
   declare dateDemande: Date
   declare dateValidation: CreationOptional<Date>
@@ -88,6 +90,16 @@ DemandeInscription.init({
   },
   motifPipeline: {
     type: new DataTypes.TEXT,
+    allowNull: true,
+    defaultValue: null
+  },
+  estBoursier: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  documentBourse: {
+    type: new DataTypes.STRING,
     allowNull: true,
     defaultValue: null
   },

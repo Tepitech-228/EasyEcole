@@ -19,7 +19,7 @@
         <div *ngIf="currentItemSection == 1 && demande!.parcoursChoisis!.length != 0 && demande.reponseInscription == undefined" class="flex justify-end items-center gap-x-8">
             <app-custom-button (click)="showReponseModal = true" text="Terminer"></app-custom-button>
         </div>
-        <div *ngIf="currentItemSection == 6 && demande!.dateValidation == undefined" class="flex justify-end items-center gap-x-8">
+        <div *ngIf="currentItemSection == 7 && demande!.dateValidation == undefined" class="flex justify-end items-center gap-x-8">
             <app-custom-button (click)="openValidationModal()" text="Valider"></app-custom-button>
         </div>
     </div>
@@ -72,13 +72,18 @@
             <app-documents-section [demande]="demande" [rolesValue]="rolesValue" (nextStep)="onStepComplete(2, 'Documents uploadés. Vous pouvez maintenant procéder au paiement.')" (demandeUpdated)="onDemandeUpdated($event)"></app-documents-section>
         </ng-container>
 
-        <!-- Étape 4 : Paiement — Upload bordereau -->
+        <!-- Étape 3 : Statut boursier -->
         <ng-container *ngIf="currentItemSection == 3">
-            <app-paiements-section [demande]="demande" [coursChoisis]="demande!.coursChoisis" [rolesValue]="rolesValue" (nextStep)="onStepComplete(3, 'Bordereau uploadé. En attente de validation du traitement comptable.')"></app-paiements-section>
+            <app-bourse-section [demande]="demande" [rolesValue]="rolesValue" (nextStep)="onStepComplete(3, 'Statut boursier enregistré. Vous pouvez maintenant procéder au paiement.')" (demandeUpdated)="onDemandeUpdated($event)"></app-bourse-section>
+        </ng-container>
+
+        <!-- Étape 4 : Paiement — Upload bordereau -->
+        <ng-container *ngIf="currentItemSection == 4">
+            <app-paiements-section [demande]="demande" [coursChoisis]="demande!.coursChoisis" [rolesValue]="rolesValue" (nextStep)="onStepComplete(4, 'Bordereau uploadé. En attente de validation du traitement comptable.')"></app-paiements-section>
         </ng-container>
 
         <!-- Étape 5 : Traitement comptable -->
-        <ng-container *ngIf="currentItemSection == 4">
+        <ng-container *ngIf="currentItemSection == 5">
             <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-6">
                 <h3 class="text-md font-semibold text-gray-800 dark:text-white">Traitement comptable</h3>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 mb-4">
@@ -111,7 +116,7 @@
         </ng-container>
 
         <!-- Étape 6 : Saisie ESA Compta -->
-        <ng-container *ngIf="currentItemSection == 5">
+        <ng-container *ngIf="currentItemSection == 6">
             <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-6">
                 <h3 class="text-md font-semibold text-gray-800 dark:text-white">Saisie ESA Compta</h3>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 mb-4">
@@ -142,7 +147,7 @@
         </ng-container>
 
         <!-- Étape 7 : Comité d'orientation -->
-        <ng-container *ngIf="currentItemSection == 6">
+        <ng-container *ngIf="currentItemSection == 7">
             <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-6">
                 <h3 class="text-md font-semibold text-gray-800 dark:text-white">Comité d'orientation</h3>
                 <p *ngIf="demande.dateValidation" class="text-sm text-green-700 mt-2">✅ Votre dossier a été validé par le comité d'orientation.</p>
@@ -158,7 +163,7 @@
         </ng-container>
 
         <!-- Étape 8 : Cours + Validation finale -->
-        <ng-container *ngIf="currentItemSection == 7">
+        <ng-container *ngIf="currentItemSection == 8">
             <app-cours-section [demandeId]="demande.id!" [parcours]="parcoursFinal" [coursChoisis]="demande!.coursChoisis" [rolesValue]="rolesValue" (nextStep)="onStepComplete(7, 'Cours sélectionnés.')"></app-cours-section>
 
             <app-validation-section [parcours]="parcoursFinal" [demande]="demande" [coursChoisis]="demande!.coursChoisis" [rolesValue]="rolesValue"></app-validation-section>
@@ -166,7 +171,7 @@
     </ng-container>
 
     <div class="flex justify-end items-end" *ngIf="rolesValue.isInstitution">
-        <div *ngIf="currentItemSection == 6 && demande!.dateValidation == undefined" class="flex justify-end items-center gap-x-8">
+        <div *ngIf="currentItemSection == 7 && demande!.dateValidation == undefined" class="flex justify-end items-center gap-x-8">
             <app-custom-button (click)="deleteDemandeInscription()" text="Supprimer" color="red" [outlined]="true"></app-custom-button>
             <app-custom-button (click)="openValidationModal()" text="Valider"></app-custom-button>
         </div>

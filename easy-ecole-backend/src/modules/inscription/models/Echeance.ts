@@ -19,6 +19,12 @@ export class Echeance extends Model<InferAttributes<Echeance>, InferCreationAttr
   declare datePaiement: CreationOptional<Date | null>
   declare statut: 'impaye' | 'paye' | 'en_retard' | 'partiel'
   declare moisConcerne: CreationOptional<string>
+  /**
+   * Montant initial de l'échéance avant toute réduction de bourse.
+   * Null si aucune bourse n'a été appliquée sur cette échéance.
+   * Permet de restaurer le montant original en cas de suspension/réactivation de bourse.
+   */
+  declare montantOriginal: CreationOptional<number | null>
   declare dossierEtudiant?: NonAttribute<DossierEtudiant>
 
   declare readonly createdAt: CreationOptional<Date>
@@ -78,7 +84,12 @@ Echeance.init({
   },
   moisConcerne: {
     type: new DataTypes.STRING,
-    allowNull: true
+    allowNull: true,
+  },
+  montantOriginal: {
+    type: DataTypes.FLOAT.UNSIGNED,
+    allowNull: true,
+    defaultValue: null,
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

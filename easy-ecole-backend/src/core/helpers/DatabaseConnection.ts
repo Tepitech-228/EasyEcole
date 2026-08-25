@@ -221,6 +221,15 @@ export class DatabaseConnection {
             } catch (refError: any) {
                 console.warn('Warning (ensureReferenceData):', refError?.message || refError);
             }
+
+            // --- Expiration automatique des bourses dépassées ---
+            // Restaure les montants originaux des échéances concernées.
+            try {
+                const { BourseService } = require('../../modules/bourse/services/BourseService');
+                await BourseService.expirerBourses();
+            } catch (bourseError: any) {
+                console.warn('Warning (expirerBourses):', bourseError?.message || bourseError);
+            }
         } catch (error: any) {
             if (
                 error.name === 'SequelizeUnknownConstraintError' ||

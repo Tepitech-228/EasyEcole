@@ -20,6 +20,7 @@ import { PaiementsSectionComponent } from './pages/details-demande-page/paiement
 import { ValidationSectionComponent } from './pages/details-demande-page/validation-section/validation-section.component';
 import { ChoixParcoursPageComponent } from './pages/choix-parcours-page/choix-parcours-page.component';
 import { DocumentsSectionComponent } from './pages/details-demande-page/documents-section/documents-section.component';
+import { BourseSectionComponent } from './pages/details-demande-page/bourse-section/bourse-section.component';
 import { BordereauxPageComponent } from './pages/bordereaux-page/bordereaux-page.component';
 import { ValidationBordereauxPageComponent } from './pages/validation-bordereaux-page/validation-bordereaux-page.component';
 import { MonDossierPageComponent } from './pages/mon-dossier-page/mon-dossier-page.component';
@@ -67,6 +68,7 @@ import { ComiteValidationPageComponent } from './pages/comite-validation-page/co
     ValidationSectionComponent,
     ChoixParcoursPageComponent,
     DocumentsSectionComponent,
+    BourseSectionComponent,
     BordereauxPageComponent,
     ValidationBordereauxPageComponent,
     MonDossierPageComponent,

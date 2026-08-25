@@ -818,6 +818,50 @@ export default class DemandeInscriptionController {
         }
     }
 
+    static async updateStatutBoursier(req: Request, res: Response): Promise<Response> {
+        try {
+            const isApprenant = (req as any).utilisateurRole == RolesUtilisateur.APPRENANT;
+            const where: any = isApprenant
+                ? { id: req.params.id, utilisateurId: (req as any).utilisateurId }
+                : { id: req.params.id };
+
+            const demande = await DemandeInscription.findOne({ where });
+            if (!demande) {
+                return res.status(404).json({ success: false, message: "Demande non trouvée" });
+            }
+
+            const { estBoursier } = req.body;
+            const updates: any = {};
+
+            if (typeof estBoursier === 'boolean') {
+                updates.estBoursier = estBoursier;
+            }
+
+            // Si un fichier a été uploadé via multer → enregistrer le nom
+            const fichier: Express.Multer.File | undefined = (req as any).file;
+            if (fichier) {
+                // Supprimer l'ancien fichier s'il existe
+                if (demande.documentBourse) {
+                    const oldPath = path.resolve('public', 'inscription', 'dossiers', demande.documentBourse);
+                    if (fs.existsSync(oldPath)) {
+                        try { fs.unlinkSync(oldPath); } catch (_) { /* best-effort */ }
+                    }
+                }
+                updates.documentBourse = fichier.filename;
+            }
+
+            if (Object.keys(updates).length === 0) {
+                return res.status(400).json({ success: false, message: "Aucune donnée à mettre à jour" });
+            }
+
+            await demande.update(updates);
+            return res.status(200).json(demande);
+        } catch (error: any) {
+            console.error('[updateStatutBoursier]', error);
+            return res.status(500).json({ success: false, message: "Erreur lors de la mise à jour du statut boursier" });
+        }
+    }
+
     static async getCount(req: Request, res: Response): Promise<Response | null> {
         let options: CountOptions<InferAttributes<DemandeInscription>> = {}
 

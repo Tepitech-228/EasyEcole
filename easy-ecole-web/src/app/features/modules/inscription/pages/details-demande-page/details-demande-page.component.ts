@@ -231,11 +231,12 @@ initWizardItems(): void {
       { text: "Informations personnelles", icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 0 } },
       { text: "Choix du parcours", icon: "M12 14l9-5-9-5-9 5 9 5zm0 0v6m-6.5-2.5L12 20l6.5-2.5", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 1 } },
       { text: "Documents", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 2 } },
-      { text: "Paiement — Upload bordereau", icon: "M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 3 } },
-      { text: "Traitement comptable", icon: "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 4 } },
-      { text: "Saisie ESA Compta", icon: "M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 5 } },
-      { text: "Comité d'orientation", icon: "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 18 7.5 5S4.168 18 7.5 5S4.168 5.477 3 6.253v13C4.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 6 } },
-      { text: "Cours + Validation finale", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 7 } },
+      { text: "Statut boursier", icon: "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 3 } },
+      { text: "Paiement — Upload bordereau", icon: "M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 4 } },
+      { text: "Traitement comptable", icon: "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 5 } },
+      { text: "Saisie ESA Compta", icon: "M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 6 } },
+      { text: "Comité d'orientation", icon: "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 18 7.5 5S4.168 18 7.5 5S4.168 5.477 3 6.253v13C4.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 7 } },
+      { text: "Cours + Validation finale", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", condition: false, incomplete: false, isBlocked: false, action: () => { this.currentItemSection = 8 } },
     ]
   }
 
@@ -244,8 +245,6 @@ initWizardItems(): void {
 
     const nextRoute = this.getNextStudentRoute(stepIndex);
     if (nextRoute) {
-      // Si la navigation pointe vers l'URL courante, Angular l'annule (aucun
-      // rechargement) et l'écran reste figé. On rafraîchit alors la demande.
       const targetUrl = this.router.createUrlTree([nextRoute.route], { queryParams: nextRoute.queryParams });
       if (this.router.url === this.router.serializeUrl(targetUrl)) {
         this.getDemandeInscription();
@@ -259,7 +258,7 @@ initWizardItems(): void {
       return;
     }
 
-    if (stepIndex < 7) {
+    if (stepIndex < 8) {
       this.currentItemSection = stepIndex + 1
     }
     setTimeout(() => {
@@ -282,30 +281,33 @@ initWizardItems(): void {
       case 2:
         return this.getNextRelevantStudentRoute();
       case 3:
-        // Étape paiement — upload bordereau : on peut aller au traitement comptable ou choisir les cours
-        if (this.wizardItems[4]?.condition) {
+        // Étape statut boursier : toujours continuer au paiement
+        return { route: `/inscription/demandes/${this.demande.id}`, queryParams: { step: 'paiement' } };
+      case 4:
+        // Étape paiement — upload bordereau
+        if (this.wizardItems[5]?.condition) {
           return this.getNextRelevantStudentRoute();
         }
         return { route: `/inscription/demandes/${this.demande.id}`, queryParams: { step: 'paiement' } };
-      case 4:
+      case 5:
         // Étape traitement comptable : on peut aller à la saisie ESA
-        if (this.wizardItems[5]?.condition) {
+        if (this.wizardItems[6]?.condition) {
           return { route: `/inscription/demandes/${this.demande.id}`, queryParams: { step: 'saisie-esa' } };
         }
         return this.getNextRelevantStudentRoute();
-      case 5:
+      case 6:
         // Étape saisie ESA Compta : on peut aller au comité
-        if (this.wizardItems[6]?.condition) {
+        if (this.wizardItems[7]?.condition) {
           return { route: `/inscription/demandes/${this.demande.id}`, queryParams: { step: 'comite' } };
         }
         return this.getNextRelevantStudentRoute();
-      case 6:
+      case 7:
         // Étape comité d'orientation : aller à la validation finale
-        if (this.wizardItems[7]?.condition) {
+        if (this.wizardItems[8]?.condition) {
           return { route: `/inscription/demandes/${this.demande.id}`, queryParams: { step: 'validation' } };
         }
         return this.getNextRelevantStudentRoute();
-      case 7:
+      case 8:
         // Dernière étape : pas de navigation
         return null;
       default:
@@ -373,22 +375,24 @@ initWizardItems(): void {
         return 1;
       case 'documents':
         return 2;
+      case 'bourse':
+        return 3;
       case 'paiement':
       case 'paiements':
-        // Étape 4 du wizard : Paiement — Upload bordereau
-        return 3;
-      case 'comptable':
-        // Étape 5 : Traitement comptable
+        // Étape 5 du wizard : Paiement — Upload bordereau
         return 4;
-      case 'saisie-esa':
-        // Étape 6 : Saisie ESA Compta
+      case 'comptable':
+        // Étape 6 : Traitement comptable
         return 5;
-      case 'comite':
-        // Étape 7 : Comité d'orientation
+      case 'saisie-esa':
+        // Étape 7 : Saisie ESA Compta
         return 6;
-      case 'validation':
-        // Étape 8 : Cours + Validation finale
+      case 'comite':
+        // Étape 8 : Comité d'orientation
         return 7;
+      case 'validation':
+        // Étape 9 : Cours + Validation finale
+        return 8;
       default:
         return null;
     }
@@ -422,7 +426,6 @@ initWizardItems(): void {
         if (this.currentItemSection < 1) this.currentItemSection = 1
       } else {
         this.parcoursFinal = parcoursFinal?.parcours
-        // Ne jamais revenir en arrière : préserve l'étape demandée via ?step=
         if (this.currentItemSection < 2) this.currentItemSection = 2
         this.wizardItems[2].isBlocked = false
       }
@@ -433,7 +436,7 @@ initWizardItems(): void {
     }
 
     // Check: documents (step 2)
-    if (this.currentItemSection >= 2 && this.currentItemSection <= 3) {
+    if (this.currentItemSection >= 2 && this.currentItemSection <= 4) {
       if (session) {
         const dossiersRequis = session.dossiersInscription || []
         const dossiersUploades = demande.dossiersDemande || []
@@ -448,64 +451,67 @@ initWizardItems(): void {
       }
     }
 
-    // Étape 3 = Paiement — Upload bordereau (atteinte dès que les documents sont complets).
-    // L'ancien contournement "forcer currentItemSection à 4" est supprimé :
-    // les sections du template sont maintenant alignées sur les indices des étapes.
-
-    // Check: traitement comptable (step 4)
-    // Le cabinet authentifie le bordereau → passe en état 'valide'
-    if (this.currentItemSection >= 3 && this.aBordereauInscriptionSoumis()) {
-      this.wizardItems[3].condition = true
+    // Check: statut boursier (step 3)
+    // L'étape boursier est toujours accessible après les documents.
+    // Elle est considérée comme "condition" dès qu'on a déclaré (boursier ou non).
+    if (this.currentItemSection >= 3 && this.currentItemSection <= 4) {
+      if (this.demande?.estBoursier !== undefined && this.demande?.estBoursier !== null) {
+        this.wizardItems[3].condition = true
+        this.wizardItems[3].isBlocked = false
+        if (this.currentItemSection < 4) this.currentItemSection = 4
+      }
     }
 
-    // FLUX SÉQUENTIEL : cabinet authentifie (étape 4) → saisie ESA-COMPTA
-    // OBLIGATOIRE (étape 5) → transmission automatique au comité (étape 6).
-    // Le dossier reste BLOQUÉ à l'étape 5 tant que le service comptable n'a pas
-    // terminé sa saisie (côté backend : statutPipeline passe à 'transmis_comite'
-    // uniquement en fin de saisie, FinanceRouter.saisir).
+    // Check: traitement comptable (step 5)
+    // Le cabinet authentifie le bordereau → passe en état 'valide'
+    if (this.currentItemSection >= 4 && this.aBordereauInscriptionSoumis()) {
+      this.wizardItems[4].condition = true
+    }
+
+    // FLUX SÉQUENTIEL : cabinet authentifie (étape 5) → saisie ESA-COMPTA
+    // OBLIGATOIRE (étape 6) → transmission automatique au comité (étape 7).
     const bordereauAuthentifie = this.bordereauxInscription.find(b => b.statut === 'valide')
     const saisieEsaFaite = this.bordereauxInscription.some(b => b.statutPaiement === 'saisi' || b.statutPaiement === 'finalise')
 
-    if (this.currentItemSection >= 4 && bordereauAuthentifie) {
-      this.wizardItems[4].condition = true
+    if (this.currentItemSection >= 5 && bordereauAuthentifie) {
+      this.wizardItems[5].condition = true
 
-      // Étape 5 (saisie ESA) : verrouillée tant que la saisie n'est pas faite.
-      this.wizardItems[5].isBlocked = !saisieEsaFaite
+      // Étape 6 (saisie ESA) : verrouillée tant que la saisie n'est pas faite.
+      this.wizardItems[6].isBlocked = !saisieEsaFaite
       if (saisieEsaFaite) {
-        this.wizardItems[5].condition = true
-        this.wizardItems[6].isBlocked = false
-        if (!this.demande?.dateValidation && this.currentItemSection < 6) {
-          this.currentItemSection = 6
+        this.wizardItems[6].condition = true
+        this.wizardItems[7].isBlocked = false
+        if (!this.demande?.dateValidation && this.currentItemSection < 7) {
+          this.currentItemSection = 7
         }
         if (!this.demande?.dateValidation) {
           this.stepMessage = { text: "Saisie comptable terminée — dossier transmis au comité d'orientation.", type: 'info' }
         }
-      } else if (this.currentItemSection < 6) {
-        this.currentItemSection = 5
+      } else if (this.currentItemSection < 7) {
+        this.currentItemSection = 6
         this.stepMessage = { text: "Bordereau authentifié par le cabinet — en attente de la saisie du service comptable (ESA-COMPTA) avant transmission au comité.", type: 'info' }
       }
     }
 
-    // Check: comité d'orientation (step 6)
+    // Check: comité d'orientation (step 7)
     // La validation comité (dateValidation) débloque l'étape finale cours + validation
-    if (this.currentItemSection >= 6) {
+    if (this.currentItemSection >= 7) {
       if (this.demande?.dateValidation) {
-        this.wizardItems[5].condition = true
         this.wizardItems[6].condition = true
-        this.currentItemSection = 7
-        this.wizardItems[7].isBlocked = false
+        this.wizardItems[7].condition = true
+        this.currentItemSection = 8
+        this.wizardItems[8].isBlocked = false
       } else if (this.demande?.soumissionComite) {
-        this.wizardItems[6].condition = true
+        this.wizardItems[7].condition = true
         this.stepMessage = { text: "Dossier en cours d'examen par le comité.", type: 'info' }
       }
     }
 
-    // Check: cours + validation finale (step 7)
-    // La validation comité crée le DossierEtudiant, le matricule final, le CursusApprenant et les cours participants
-    if (this.currentItemSection >= 7) {
+    // Check: cours + validation finale (step 8)
+    if (this.currentItemSection >= 8) {
       const hasDossierEtudiant = !!this.demande?.dateValidation
       if (hasDossierEtudiant) {
-        this.wizardItems[7].condition = true
+        this.wizardItems[8].condition = true
         this.stepMessage = { text: '✅ Inscription validée !', type: 'success' }
         this.stopPolling()
       } else {
@@ -514,9 +520,9 @@ initWizardItems(): void {
     }
 
     // Bordereau rejeté par la compta : retour à l'étape upload avec un avertissement.
-    if (this.currentItemSection <= 3 && this.aBordereauInscriptionRejete() && !this.aBordereauInscriptionSoumis()) {
-      this.currentItemSection = 3
-      this.wizardItems[3].condition = false
+    if (this.currentItemSection <= 4 && this.aBordereauInscriptionRejete() && !this.aBordereauInscriptionSoumis()) {
+      this.currentItemSection = 4
+      this.wizardItems[4].condition = false
       this.stepMessage = { text: 'Votre bordereau a été rejeté par le service comptable — veuillez en soumettre un nouveau.', type: 'warning' }
     }
 
@@ -524,9 +530,9 @@ initWizardItems(): void {
   }
 
   private autoPoll(): void {
-    // Étapes qui nécessitent un polling continu : infos personnelles, upload bordereau,
+    // Étapes qui nécessitent un polling continu : infos personnelles, paiement,
     // traitement comptable, saisie ESA, comité
-    const pending = [0, 3, 4, 5, 6].includes(this.currentItemSection)
+    const pending = [0, 4, 5, 6, 7].includes(this.currentItemSection)
     if (pending) {
       this.startPolling()
     } else {

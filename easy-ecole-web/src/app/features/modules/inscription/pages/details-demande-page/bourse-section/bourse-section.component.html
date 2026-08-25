@@ -1,0 +1,112 @@
+<div class="max-w-2xl mx-auto">
+    <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Statut boursier</h3>
+    <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
+        Êtes-vous bénéficiaire d'une bourse d'études ? Si oui, joignez votre attestation de bourse.
+    </p>
+
+    <!-- Toggle Oui / Non -->
+    <div class="mb-6">
+        <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 block">Statut boursier</label>
+        <div class="flex gap-x-4">
+            <button
+                (click)="onToggle(false)"
+                class="flex-1 py-3 px-4 rounded-lg border-2 text-sm font-medium transition-all duration-200"
+                [class.border-green-500]="!estBoursier"
+                [class.bg-green-50]="!estBoursier"
+                [class.text-green-700]="!estBoursier"
+                [class.border-gray-200]="estBoursier"
+                [class.text-gray-600]="estBoursier"
+                [class.hover:border-gray-300]="estBoursier">
+                Non, je ne suis pas boursier
+            </button>
+            <button
+                (click)="onToggle(true)"
+                class="flex-1 py-3 px-4 rounded-lg border-2 text-sm font-medium transition-all duration-200"
+                [class.border-green-500]="estBoursier"
+                [class.bg-green-50]="estBoursier"
+                [class.text-green-700]="estBoursier"
+                [class.border-gray-200]="!estBoursier"
+                [class.text-gray-600]="!estBoursier"
+                [class.hover:border-gray-300]="!estBoursier">
+                Oui, je suis boursier
+            </button>
+        </div>
+    </div>
+
+    <!-- Upload justificatif (visible si boursier) -->
+    <div *ngIf="estBoursier" class="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+        <div class="flex items-start gap-x-3 mb-4">
+            <svg class="w-5 h-5 text-blue-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+                <p class="text-sm font-medium text-blue-800 dark:text-blue-200">Justificatif de bourse requis</p>
+                <p class="text-xs text-blue-600 dark:text-blue-300 mt-1">
+                    Veuillez téléverser une copie de votre attestation ou notification de bourse (PDF, max 20 Mo).
+                </p>
+            </div>
+        </div>
+
+        <!-- Document déjà uploadé -->
+        <div *ngIf="demande.documentBourse && !fichierSelectionne" class="mb-4 p-3 bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <div class="flex items-center gap-x-2">
+                <img width="20" src="assets/icons/check-badge.svg" alt="ok">
+                <span class="text-sm text-gray-700 dark:text-gray-300">Justificatif de bourse soumis</span>
+            </div>
+            <button (click)="fichierSelectionne = null" class="text-xs text-gray-400 hover:text-gray-600 underline">
+                Remplacer
+            </button>
+        </div>
+
+        <!-- Upload progress -->
+        <div *ngIf="uploading" class="mb-4">
+            <p class="text-sm font-medium text-blue-700 mb-2">Upload en cours... {{ uploadProgress }}%</p>
+            <div class="w-full bg-blue-200 rounded-full h-3">
+                <div class="h-3 rounded-full bg-blue-500 transition-all duration-300" [style.width.%]="uploadProgress"></div>
+            </div>
+        </div>
+
+        <!-- Erreur -->
+        <div *ngIf="error && !uploading" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <p class="text-sm text-red-700">{{ errorMessage }}</p>
+        </div>
+
+        <!-- Sélection de fichier -->
+        <div *ngIf="!demande.documentBourse || fichierSelectionne">
+            <div *ngIf="!fichierSelectionne" class="flex items-center gap-x-3">
+                <button (click)="choisirFichier()"
+                    class="flex items-center gap-x-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <img width="18" src="assets/icons/upload-cloud-fill.svg" alt="upload">
+                    Choisir un fichier PDF
+                </button>
+            </div>
+
+            <div *ngIf="fichierSelectionne" class="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">
+                <div class="flex items-center gap-x-2">
+                    <img width="20" src="assets/icons/file.svg" alt="file">
+                    <span class="text-sm text-gray-700 dark:text-gray-300">{{ fichierSelectionne.name }}</span>
+                    <span class="text-xs text-gray-400">({{ (fichierSelectionne.size / 1024 / 1024).toFixed(1) }} Mo)</span>
+                </div>
+                <button (click)="retirerFichier()" class="text-xs text-red-500 hover:text-red-700 underline">
+                    Retirer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message si non boursier -->
+    <div *ngIf="!estBoursier && demande.estBoursier === false && !demande.documentBourse" class="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <p class="text-sm text-gray-600 dark:text-gray-400">
+            ✅ Vous avez confirmé que vous n'êtes pas boursier. Vous pouvez continuer.
+        </p>
+    </div>
+
+    <!-- Boutons d'action (côté apprenant uniquement) -->
+    <div *ngIf="rolesValue.isApprenant" class="flex justify-end items-center mt-6">
+        <app-custom-button
+            (click)="continuer()"
+            [text]="estBoursier ? 'Enregistrer et continuer' : 'Continuer'"
+            [disabled]="uploading">
+        </app-custom-button>
+    </div>
+</div>

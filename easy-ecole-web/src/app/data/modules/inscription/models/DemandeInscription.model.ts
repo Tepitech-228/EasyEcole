@@ -25,6 +25,10 @@ export class DemandeInscription {
   declare paiementsInscription?: PaiementInscription[]
   declare dossiersDemande?: DemandeInscriptionDossier[]
   declare coursChoisis?: DemandeInscriptionCours[]
+  /** Vrai si l'étudiant déclare être boursier. */
+  declare estBoursier?: boolean
+  /** Chemin du justificatif de bourse (PDF) uploadé par l'étudiant. */
+  declare documentBourse?: string
   /** Vrai une fois le dossier transmis au comité d'orientation (après saisie ESA finalisée). */
   declare soumissionComite?: boolean
 
