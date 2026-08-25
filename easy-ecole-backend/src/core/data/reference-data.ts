@@ -282,6 +282,16 @@ export const REF_PERMISSIONS: RefPermission[] = [
   { key: 'action.finance.bordereau.voir', libelle: 'Consulter les bordereaux financiers', module: 'Finance', type: 'action', parentKey: null },
   { key: 'action.finance.bordereau.imputer', libelle: 'Prévisualiser/imputer un bordereau', module: 'Finance', type: 'action', parentKey: null },
   { key: 'action.finance.bordereau.saisir', libelle: 'Saisir un bordereau financier', module: 'Finance', type: 'action', parentKey: null },
+  // ── BOURSES ──
+  { key: 'menu.bourses', libelle: 'Bourses', module: 'Bourses', type: 'menu', parentKey: null },
+  { key: 'menu.bourses.configurations', libelle: 'Configurations', module: 'Bourses', type: 'menu', parentKey: 'menu.bourses' },
+  { key: 'menu.bourses.attributions', libelle: 'Attributions', module: 'Bourses', type: 'menu', parentKey: 'menu.bourses' },
+  { key: 'action.bourse.configuration.creer', libelle: 'Créer une configuration de bourse', module: 'Bourses', type: 'action', parentKey: 'menu.bourses.configurations' },
+  { key: 'action.bourse.configuration.modifier', libelle: 'Modifier une configuration de bourse', module: 'Bourses', type: 'action', parentKey: 'menu.bourses.configurations' },
+  { key: 'action.bourse.attribution.creer', libelle: 'Attribuer une bourse', module: 'Bourses', type: 'action', parentKey: 'menu.bourses.attributions' },
+  { key: 'action.bourse.attribution.modifier', libelle: 'Modifier une attribution de bourse', module: 'Bourses', type: 'action', parentKey: 'menu.bourses.attributions' },
+  { key: 'action.bourse.attribution.suspendre', libelle: 'Suspendre une bourse', module: 'Bourses', type: 'action', parentKey: 'menu.bourses.attributions' },
+  { key: 'action.bourse.attribution.reactiver', libelle: 'Réactiver une bourse', module: 'Bourses', type: 'action', parentKey: 'menu.bourses.attributions' },
 ]
 
 export const REF_ROLE_PERMISSIONS: RefRolePermission[] = [
@@ -520,4 +530,26 @@ export const REF_ROLE_PERMISSIONS: RefRolePermission[] = [
   { roleNom: 'Comptable', permissionKey: 'action.finance.bordereau.imputer' },
   { roleNom: 'Comptable', permissionKey: 'action.finance.bordereau.saisir' },
   { roleNom: 'Comptable', permissionKey: 'action.finance.bordereau.voir' },
+  // ── BOURSES : Super Admin + Directeur + Comptable ──
+  { roleNom: 'Super Admin', permissionKey: 'menu.bourses' },
+  { roleNom: 'Super Admin', permissionKey: 'menu.bourses.configurations' },
+  { roleNom: 'Super Admin', permissionKey: 'menu.bourses.attributions' },
+  { roleNom: 'Super Admin', permissionKey: 'action.bourse.configuration.creer' },
+  { roleNom: 'Super Admin', permissionKey: 'action.bourse.configuration.modifier' },
+  { roleNom: 'Super Admin', permissionKey: 'action.bourse.attribution.creer' },
+  { roleNom: 'Super Admin', permissionKey: 'action.bourse.attribution.modifier' },
+  { roleNom: 'Super Admin', permissionKey: 'action.bourse.attribution.suspendre' },
+  { roleNom: 'Super Admin', permissionKey: 'action.bourse.attribution.reactiver' },
+  { roleNom: 'Directeur', permissionKey: 'menu.bourses' },
+  { roleNom: 'Directeur', permissionKey: 'menu.bourses.configurations' },
+  { roleNom: 'Directeur', permissionKey: 'menu.bourses.attributions' },
+  { roleNom: 'Directeur', permissionKey: 'action.bourse.configuration.creer' },
+  { roleNom: 'Directeur', permissionKey: 'action.bourse.configuration.modifier' },
+  { roleNom: 'Directeur', permissionKey: 'action.bourse.attribution.creer' },
+  { roleNom: 'Directeur', permissionKey: 'action.bourse.attribution.modifier' },
+  { roleNom: 'Directeur', permissionKey: 'action.bourse.attribution.suspendre' },
+  { roleNom: 'Directeur', permissionKey: 'action.bourse.attribution.reactiver' },
+  { roleNom: 'Comptable', permissionKey: 'menu.bourses' },
+  { roleNom: 'Comptable', permissionKey: 'menu.bourses.configurations' },
+  { roleNom: 'Comptable', permissionKey: 'menu.bourses.attributions' },
 ]

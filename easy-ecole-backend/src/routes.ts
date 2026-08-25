@@ -20,6 +20,7 @@ import ParentRoutes from "./modules/parent/ParentRoutes";
 import EtablissementRoutes from "./modules/etablissement/EtablissementRoutes";
 import DocGenRoutes from "./modules/docgen/DocGenRoutes";
 import QualiteRoutes from "./modules/qualite/QualiteRoutes";
+import BourseRoutes from "./modules/bourse/BourseRoutes";
 import VerificationController from "./modules/docgen/controllers/VerificationController";
 import PublicationNoteRouter from "./modules/inscription/routers/PublicationNoteRouter";
 const router = express.Router();
@@ -50,6 +51,7 @@ router
     .use('/etablissements', EtablissementRoutes)
     .use('/qualite', QualiteRoutes)
     .use('/docgen', DocGenRoutes)
+    .use('/bourses', BourseRoutes)
     .get('/verification/document/:matricule/:reference', VerificationController.verifier)
 
     // Not found
