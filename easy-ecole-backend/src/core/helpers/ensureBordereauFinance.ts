@@ -9,8 +9,31 @@ import { Sequelize } from "sequelize";
  * 2. Colonne `composition` (TEXT NULL) : répartition déclarée par ESA-COMPTA.
  * 3. Type d'opération 'MIXTE' dans ins_types_operations_bordereau (select du
  *    formulaire de saisie ESA-COMPTA alimenté par cette table).
+ * 4. Table `cpt_bordereau_echeance` (lettrages bordereau ↔ échéance) : créée
+ *    si absente — indispensable car la prod ne fait pas de sync et l'imputation
+ *    FIFO y écrit à chaque saisie.
  */
 export async function ensureBordereauFinance(sequelize: Sequelize): Promise<void> {
+    // 0. Table des lettrages (garantie, même en production sans sync)
+    try {
+        await sequelize.query(
+            "CREATE TABLE IF NOT EXISTS `cpt_bordereau_echeance` (" +
+            "`id` INT UNSIGNED NOT NULL AUTO_INCREMENT, " +
+            "`bordereauId` INT UNSIGNED NOT NULL, " +
+            "`echeanceId` INT UNSIGNED NOT NULL, " +
+            "`montantImpute` DECIMAL(12,0) NOT NULL DEFAULT 0, " +
+            "`createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
+            "`updatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, " +
+            "`deletedAt` DATETIME NULL DEFAULT NULL, " +
+            "PRIMARY KEY (`id`), " +
+            "UNIQUE KEY `uq_bordereau_echeance` (`bordereauId`, `echeanceId`), " +
+            "KEY `idx_be_echeance` (`echeanceId`)" +
+            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci"
+        )
+    } catch (err: any) {
+        console.warn('[ensureBordereauFinance] table cpt_bordereau_echeance ignorée:', err?.message)
+    }
+
     // 1. ENUM 'type' += 'mixte'
     try {
         const [cols] = await sequelize.query("SHOW COLUMNS FROM `ins_bordereaux` LIKE 'type'")
