@@ -20,6 +20,7 @@ import { Utilisateur } from '../../modules/auth/models/Utilisateur'
  *   - paiements-page / paiements-section → /api/v1/inscription/paiementsInscription/:id/recu
  *   - paiements-section → /api/v1/inscription/demandesInscription/:id/fiche-paiement
  *   - bordereaux-page / validation-bordereaux-page → /api/v1/inscription/bordereaux/... (affichage média + download)
+ *   - comite-validation-page → /api/v1/inscription/documents/:id/download (pièces justificatives d'inscription)
  *   - deliberation.service.ts → telechargerPV → /api/v1/inscription/deliberations/pv/:filename
  */
 const QUERY_TOKEN_ALLOWED: string[][] = [
@@ -29,8 +30,8 @@ const QUERY_TOKEN_ALLOWED: string[][] = [
     ['/paiementsInscription/', '/recu'],
     ['/demandesInscription/', '/fiche-paiement'],
     ['/inscription/bordereaux/'],
-    ['/deliberations/pv/'],
-]
+    ['/inscription/documents/', '/download'],
+    ['/deliberations/pv/'],]
 
 function isQueryTokenAllowed(originalUrl: string): boolean {
     if (!originalUrl.startsWith('/api/v1')) return false

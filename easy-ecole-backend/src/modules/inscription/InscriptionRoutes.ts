@@ -18,6 +18,7 @@ import { InscriptionComplete } from "../../core/middlewares/InscriptionComplete"
 import PaiementInscriptionRouter from "./routers/PaiementInscriptionRouter";
 import QuitusRouter from "./routers/QuitusRouter";
 import DossierInscriptionRouter from "./routers/DossierInscriptionRouter";
+import DocumentDossierRouter from "./routers/DocumentDossierRouter";
 import AnneeAcademiqueRouter from "./routers/AnneeAcademiqueRouter";
 import CursusApprenantRouter from "./routers/CursusApprenantRouter";
 import SalleDeClasseRouter from "./routers/SalleDeClasseRouter";
@@ -138,6 +139,9 @@ router
     .use('/types-operations-bordereau', [Authenticate], TypeOperationBordereauRouter)
     .use('/finance', [Authenticate], FinanceRouter)
     .use('/comite-validations', [Authenticate], ComiteValidationRouter)
+    // Pièces justificatives d'inscription — service par ID (voir DocumentDossierController),
+    // token JWT accepté en ?token= via la liste blanche de Authenticate
+    .use('/documents', [Authenticate], DocumentDossierRouter)
     .use('/excel', [Authenticate], ExcelRouter)
     // Montages racine — ne serviront que pour les routes qui n'ont pas matché ci-dessus
     .use('/', [Authenticate, InscriptionComplete], PresenceEnseignantRouter)

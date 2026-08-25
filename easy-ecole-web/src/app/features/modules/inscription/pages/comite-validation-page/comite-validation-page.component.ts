@@ -29,7 +29,11 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
   successMessage: string = ''
 
   readonly BORDEREAUX_PATH: string = environment.MEDIAS_PATH.INSCRIPTION.BORDEREAUX
-  readonly DOSSIERS_PATH: string = environment.MEDIAS_PATH.INSCRIPTION.DOSSIERS
+  /**
+   * Endpoint de service des pièces justificatives (streamé par le backend).
+   * La table ins_dossiers_demandes n'a pas d'id : identification par (demandeId, dossierId).
+   */
+  readonly DOCUMENTS_API: string = environment.apiUrl + '/inscription/documents/'
 
   // Modale « Dossier étudiant » (données personnelles + documents déposés)
   selectedEtudiantDossier: any = null
@@ -120,10 +124,10 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
     this.docPreviewNom = ''
   }
 
-  getDocEtudiantUrl(fichier: string): string {
+  getDocEtudiantUrl(doc: any): string {
     const token = this.localStorage.get(LocalStorageService.AUTH_TOKEN)
-    let url = this.DOSSIERS_PATH + fichier
-    if (token) url += `?token=${encodeURIComponent(token)}`
+    let url = `${this.DOCUMENTS_API}download?demandeId=${doc?.demandeId}&dossierId=${doc?.dossierId}`
+    if (token) url += `&token=${encodeURIComponent(token)}`
     return url
   }
 
@@ -131,7 +135,7 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
     const fichier = doc?.nomFichier || ''
     if (!fichier) return
     this.docPreviewIsImage = this.isImageFile(fichier)
-    this.docPreviewUrl = this.getDocEtudiantUrl(fichier)
+    this.docPreviewUrl = this.getDocEtudiantUrl(doc)
     this.docPreviewNom = fichier
   }
 
