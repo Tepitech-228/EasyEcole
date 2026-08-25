@@ -1,6 +1,7 @@
 import { Dialect, QueryTypes, Sequelize } from "sequelize";
 import { ensureUniqueIndexes } from "./ensureUniqueIndexes";
 import { ensureBordereauFinance } from "./ensureBordereauFinance";
+import { ensureReferenceData } from "./ensureReferenceData";
 const env = process.env.NODE_ENV || 'development';
 
 function getDbConfig() {
@@ -210,6 +211,15 @@ export class DatabaseConnection {
                 await ensureBordereauFinance(this._sequelize);
             } catch (mixteError: any) {
                 console.warn('Warning (ensureBordereauFinance):', mixteError?.message || mixteError);
+            }
+
+            // --- Seed automatique du socle autorisations (rôles, permissions,
+            // liaisons rôle↔permission). Garantit menus et accès en prod
+            // (Dokploy) où la base est créée par sync sans données. ---
+            try {
+                await ensureReferenceData(this._sequelize);
+            } catch (refError: any) {
+                console.warn('Warning (ensureReferenceData):', refError?.message || refError);
             }
         } catch (error: any) {
             if (
