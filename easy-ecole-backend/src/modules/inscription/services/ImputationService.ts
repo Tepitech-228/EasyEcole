@@ -235,11 +235,9 @@ export class ImputationService {
     /**
      * Consomme le portefeuille de crédit sur les échéances impayées (FIFO).
      *
-     * Règle métier : le crédit ne sert qu'à solder des échéances ENTIÈRES.
-     * On parcourt les échéances dans l'ordre FIFO ; tant que le solde couvre
-     * le reste à payer de l'échéance courante, elle est soldée ; dès que le
-     * solde devient inférieur, on S'ARRÊTE (pas de paiement partiel via le
-     * portefeuille — la somme dort jusqu'à la prochaine saisie).
+     * Règle métier : le crédit soldera autant d'échéances ENTIÈRES que possible,
+     * dans l'ordre FIFO ; le reliquat éventuel paie PARTIELLEMENT l'échéance
+     * suivante (statut 'partiel') — le portefeuille est alors soldé à zéro.
      */
     static async consommerPortefeuille(
         dossierId: number,
@@ -260,25 +258,25 @@ export class ImputationService {
             const du = ImputationService.resteApayer(echeance)
             if (du <= 0) continue
 
-            // Règle « mensualités entières » : si le solde ne couvre pas
-            // intégralement cette échéance, on s'arrête là.
-            if (reste < du) break
+            // Soldage intégral si possible, sinon paiement partiel final (reliquat)
+            const impute = Math.min(reste, du)
 
-            echeance.montantPaye = echeance.montant
+            echeance.montantPaye = Math.round((echeance.montantPaye || 0) + impute)
             echeance.statut = ImputationService.recalculerStatut(echeance)
             await echeance.save({ transaction })
 
+            const apres = ImputationService.resteApayer(echeance)
             lignes.push({
                 echeanceId: echeance.id,
                 numeroEcheance: echeance.numeroEcheance,
                 type: echeance.type,
                 montantDu: du,
-                montantImpute: du,
-                resteApres: 0,
+                montantImpute: impute,
+                resteApres: apres,
                 statutApres: echeance.statut,
             })
 
-            reste = Math.round((reste - du) * 100) / 100
+            reste = Math.round((reste - impute) * 100) / 100
         }
 
         // Mouvement de consommation

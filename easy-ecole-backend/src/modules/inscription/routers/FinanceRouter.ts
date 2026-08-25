@@ -416,10 +416,9 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
           transaction
         )
 
-    // Consommation automatique du crédit de portefeuille : le surplus disponible
-    // soldera les échéances ENTIÈRES suivantes (FIFO) tant qu'il le permet ;
-    // dès que le solde devient inférieur au reste à payer de l'échéance courante,
-    // il reste en portefeuille en attendant la prochaine saisie.
+    // Consommation automatique du crédit de portefeuille : le solde soldera
+    // autant d'échéances entières que possible (FIFO), puis le reliquat paie
+    // partiellement l'échéance suivante — le portefeuille repart à zéro.
     let consommationPortefeuille: { consomme: number; soldeRestant: number } | null = null
     try {
       consommationPortefeuille = await ImputationService.consommerPortefeuilleUtilisateur(
