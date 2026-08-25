@@ -234,15 +234,20 @@ export class ImputationService {
 
     /**
      * Consomme le portefeuille de crédit sur les échéances impayées (FIFO).
-     * Appelé lors de la validation d'un bordereau quand le portefeuille a un solde.
+     *
+     * Règle métier : le crédit ne sert qu'à solder des échéances ENTIÈRES.
+     * On parcourt les échéances dans l'ordre FIFO ; tant que le solde couvre
+     * le reste à payer de l'échéance courante, elle est soldée ; dès que le
+     * solde devient inférieur, on S'ARRÊTE (pas de paiement partiel via le
+     * portefeuille — la somme dort jusqu'à la prochaine saisie).
      */
     static async consommerPortefeuille(
         dossierId: number,
         transaction: Transaction,
-    ): Promise<{ consomme: number; lignes: LigneLettrage[] }> {
+    ): Promise<{ consomme: number; soldeRestant: number; lignes: LigneLettrage[] }> {
         const solde = await ImputationService.getSoldePortefeuille(dossierId, transaction)
         if (solde <= 0) {
-            return { consomme: 0, lignes: [] }
+            return { consomme: 0, soldeRestant: Math.max(solde, 0), lignes: [] }
         }
 
         let reste = solde
@@ -255,45 +260,62 @@ export class ImputationService {
             const du = ImputationService.resteApayer(echeance)
             if (du <= 0) continue
 
-            const impute = Math.min(reste, du)
-            echeance.montantPaye = Math.round((echeance.montantPaye || 0) + impute)
+            // Règle « mensualités entières » : si le solde ne couvre pas
+            // intégralement cette échéance, on s'arrête là.
+            if (reste < du) break
+
+            echeance.montantPaye = echeance.montant
             echeance.statut = ImputationService.recalculerStatut(echeance)
             await echeance.save({ transaction })
 
-            const apres = ImputationService.resteApayer(echeance)
             lignes.push({
                 echeanceId: echeance.id,
                 numeroEcheance: echeance.numeroEcheance,
                 type: echeance.type,
                 montantDu: du,
-                montantImpute: impute,
-                resteApres: apres,
+                montantImpute: du,
+                resteApres: 0,
                 statutApres: echeance.statut,
             })
 
-            reste = Math.round((reste - impute) * 100) / 100
+            reste = Math.round((reste - du) * 100) / 100
         }
 
         // Mouvement de consommation
         if (lignes.length > 0) {
             const totalImpute = lignes.reduce((s, l) => s + l.montantImpute, 0)
-            const nouveauSolde = Math.round((solde - totalImpute) * 100) / 100
             await ImputationService.creerMouvementPortefeuille(
                 dossierId,
                 'consommation',
                 -totalImpute,
-                nouveauSolde,
+                reste,
                 null,
                 null,
-                'Consommation portefeuille sur échéances',
+                `Consommation portefeuille sur ${lignes.length} échéance(s)`,
                 transaction
             )
         }
 
         return {
-            consomme: solde - reste,
+            consomme: Math.round((solde - reste) * 100) / 100,
+            soldeRestant: reste,
             lignes,
         }
+    }
+
+    /**
+     * Consomme le portefeuille du dossier cible d'un utilisateur
+     * (dossier actif, sinon le plus récent). No-op sans dossier ni crédit.
+     */
+    static async consommerPortefeuilleUtilisateur(
+        utilisateurId: number,
+        transaction: Transaction,
+    ): Promise<{ consomme: number; soldeRestant: number; lignes: LigneLettrage[] }> {
+        const dossier = await ImputationService.resoudreDossierCible(utilisateurId, transaction)
+        if (!dossier) {
+            return { consomme: 0, soldeRestant: 0, lignes: [] }
+        }
+        return ImputationService.consommerPortefeuille(dossier.id, transaction)
     }
 
     /**

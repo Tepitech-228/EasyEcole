@@ -416,6 +416,20 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
           transaction
         )
 
+    // Consommation automatique du crédit de portefeuille : le surplus disponible
+    // soldera les échéances ENTIÈRES suivantes (FIFO) tant qu'il le permet ;
+    // dès que le solde devient inférieur au reste à payer de l'échéance courante,
+    // il reste en portefeuille en attendant la prochaine saisie.
+    let consommationPortefeuille: { consomme: number; soldeRestant: number } | null = null
+    try {
+      consommationPortefeuille = await ImputationService.consommerPortefeuilleUtilisateur(
+        bordereau.utilisateurId,
+        transaction
+      )
+    } catch (consoError: any) {
+      console.error("Consommation portefeuille (non bloquante):", consoError?.message || consoError)
+    }
+
     if ((bordereauType === 'scolarite' || bordereauType === 'inscription') && bordereau.echeanceId) {
       const echeance = await Echeance.findByPk(bordereau.echeanceId, { transaction })
       if (echeance && echeance.statut !== 'paye') {
@@ -551,7 +565,8 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
     return res.status(200).json({
       success: true,
       data: bordereau,
-      lettrage: resultatImputation
+      lettrage: resultatImputation,
+      portefeuille: consommationPortefeuille
     })
   } catch (error: any) {
     await transaction.rollback()
