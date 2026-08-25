@@ -69,12 +69,9 @@ const COMPTES: CompteDemo[] = [
     { role: 'parent', nom: 'Tchala', prenoms: 'Bassirou', identifiant: 'parent1', email: 'parent.tchala@easyecole.tg', contact: '+2280120000001' },
 ];
 
-async function main() {
+export async function seedComptesParRole(seqIn?: any): Promise<void> {
     const { DatabaseConnection } = require('../helpers/DatabaseConnection');
-    const db = DatabaseConnection.getInstance();
-    await db.init();
-    const seq = db.sequelize;
-    await seq.authenticate();
+    const seq = seqIn || DatabaseConnection.getInstance().sequelize;
     require('../../modules/auth/models/_associations');
 
     const AutU = seq.model('AutUtilisateur');
@@ -219,8 +216,20 @@ async function main() {
         console.log(`  ${c.role.padEnd(24)} ${c.identifiant.padEnd(16)} ${c.email.padEnd(34)} ${MOTS_DE_PASSE[c.role]}`);
     }
     console.log('');
-    await seq.close();
-    process.exit(0);
 }
 
-main().catch(err => { console.error('Erreur seed:', err); process.exit(1); });
+// Exécution CLI directe : npx ts-node src/core/scripts/seed-comptes-par-role.ts
+// (invoquée manuellement ou en post-deploy Dokploy). Ne se déclenche PAS quand
+// le module est importé par DatabaseConnection.init().
+if (process.argv[1] && process.argv[1].includes('seed-comptes-par-role')) {
+    (async () => {
+        const { DatabaseConnection } = require('../helpers/DatabaseConnection');
+        const db = DatabaseConnection.getInstance();
+        await db.init();
+        const seq = db.sequelize;
+        await seq.authenticate();
+        await seedComptesParRole(seq);
+        await seq.close();
+        process.exit(0);
+    })().catch(err => { console.error('Erreur seed:', err); process.exit(1); });
+}

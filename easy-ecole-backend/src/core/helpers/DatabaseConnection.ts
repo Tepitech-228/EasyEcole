@@ -222,6 +222,17 @@ export class DatabaseConnection {
                 console.warn('Warning (ensureReferenceData):', refError?.message || refError);
             }
 
+            // --- Seed automatique des comptes administratifs (système) ---
+            // Idempotent (upsert) : recrée/met à jour les comptes au boot,
+            // y compris sur Dokploy après un déploiement frais. Ne bloque pas
+            // le démarrage en cas d'erreur.
+            try {
+                const { seedComptesParRole } = require('../scripts/seed-comptes-par-role');
+                await seedComptesParRole(this._sequelize);
+            } catch (seedErr: any) {
+                console.warn('Warning (seedComptesParRole):', seedErr?.message || seedErr);
+            }
+
             // --- Expiration automatique des bourses dépassées ---
             // Restaure les montants originaux des échéances concernées.
             try {
