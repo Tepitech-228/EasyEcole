@@ -19,11 +19,32 @@ uploads
 
 # Tests / scripts de maintenance (non nécessaires au runtime)
 src/__tests__
-src/core/scripts
 test
 tests
 jest.config.*
 jest.setup.*
+# Scripts temporaires/dev uniquement — le seed prod (seed-comptes-par-role)
+# DOIT rester inclus car l'entrypoint Docker l'exécute au déploiement.
+src/core/scripts/*-temp.ts
+src/core/scripts/check-*
+src/core/scripts/diag-*
+src/core/scripts/debug-*
+src/core/scripts/migrate-*
+src/core/scripts/apply-*
+src/core/scripts/annexe-*
+src/core/scripts/fix-*
+src/core/scripts/reguler-*
+src/core/scripts/seed.ts
+src/core/scripts/seed-accounts.ts
+src/core/scripts/seed-catalogue-*.ts
+src/core/scripts/seed-chat.ts
+src/core/scripts/seed-complet.ts
+src/core/scripts/seed-ged-folders.ts
+src/core/scripts/sync-*
+src/core/scripts/test-*
+src/core/scripts/user-model-*
+src/core/scripts/list-tables.ts
+src/core/scripts/endpoint-audit*
 
 # Documentation
 *.md

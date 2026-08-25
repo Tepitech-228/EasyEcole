@@ -105,6 +105,8 @@ RUN npm ci --omit=dev && npm cache clean --force
 # ---------------------------------------------------------------------------
 COPY --from=build /app/lib ./lib
 COPY index.js ./
+COPY docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
 
 # ---------------------------------------------------------------------------
 # Répertoires d'écriture (montés en volumes nommés dans docker-compose.yml :
@@ -136,9 +138,9 @@ USER node
 EXPOSE 3000
 
 # ---------------------------------------------------------------------------
-# CMD = script npm de production ("start": "node index.js") + argument "0.0.0.0"
-# IMPORTANT : app.ts utilise `process.argv[2] || 'localhost'` comme adresse
-# d'écoute. Sans "0.0.0.0", le serveur n'écouterait que sur loopback et ne
-# serait PAS joignable depuis le conteneur nginx/frontend.
+# CMD = entrypoint lance le seed comptes système puis démarre l'application.
+# Le seed est idempotent : les comptes sont créés s'ils manquent, mis à jour
+# si le rôle a changé, ignorés si déjà correct.
+# IMPORTANT : app.ts utilise `process.argv[2]` comme adresse d'écoute.
 # ---------------------------------------------------------------------------
-CMD ["node", "index.js", "0.0.0.0"]
+CMD ["./docker-entrypoint.sh", "0.0.0.0"]
