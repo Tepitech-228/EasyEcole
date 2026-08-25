@@ -77,6 +77,13 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     return this.compositionSomme > 0 && Math.abs(this.compositionSomme - montant) < 0.01
   }
 
+  /** Écart entre le montant constaté et la répartition déclarée (affiché si non nul) */
+  get compositionEcart(): number {
+    const montant = Number(this.saisieForm.get('montantPaiement')?.value || 0)
+    const ecart = Math.round((montant - this.compositionSomme) * 100) / 100
+    return Object.is(ecart, -0) ? 0 : ecart
+  }
+
   readonly BORDEREAUX_PATH: string = (window as any).__env?.MEDIAS_PATH?.INSCRIPTION?.BORDEREAUX || '/media/inscription/bordereaux/'
 
   searchTerm: string = ''

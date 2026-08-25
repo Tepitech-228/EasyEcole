@@ -166,7 +166,7 @@
            [class.text-red-600]="!compositionValide">
           Total déclaré : {{ compositionSomme | number:'1.0-2' }} FCFA
           — Montant constaté : {{ saisieForm.get('montantPaiement')?.value || 0 | number:'1.0-2' }} FCFA
-          {{ compositionValide ? '✓' : '(écart de ' + ((Number(saisieForm.get('montantPaiement')?.value || 0) - compositionSomme) | number:'1.0-2') + ' FCFA)' }}
+          {{ compositionValide ? '✓' : '(écart de ' + (compositionEcart | number:'1.0-2') + ' FCFA)' }}
         </p>
       </div>
       <div>
