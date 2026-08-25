@@ -43,12 +43,16 @@ interface CompteDemo {
 }
 
 const COMPTES: CompteDemo[] = [
-    // ── Comptes système (emails Gmail de prod) ──
+    // ── Comptes administratifs (emails Gmail de prod, recevant les OTP) ──
+    // Ces 4 comptes sont créés/mis à jour automatiquement au déploiement (Dokploy post-deploy).
+    // L'OTP est envoyé à l'adresse `email` (voir AuthController / OtpService).
     { role: 'admin', nom: 'Admin', prenoms: 'Systeme', identifiant: 'tepitechbuild', email: 'tepitechbuild@gmail.com', contact: '+22890000000' },
-    { role: 'institution', nom: 'Institution', prenoms: 'Direction', identifiant: 'tepitechcorp', email: 'tepitechcorp@gmail.com', contact: '+2280101000001', dateNaissance: '1985-01-01', lieuNaissance: 'Lomé' },
-    { role: 'secretaire', nom: 'Secretaire', prenoms: 'Systeme', identifiant: 'kakashitogo', email: 'kakashitogo@gmail.com', contact: '+2280108000001' },
-    { role: 'esa_compta', nom: 'ESA', prenoms: 'Compta Service', identifiant: 'techpatrice3', email: 'techpatrice3@gmail.com', contact: '+2280110000001' },
-    { role: 'cabinet_comptable', nom: 'Cabinet', prenoms: 'Comptable', identifiant: 'teptek1', email: 'teptek1@gmail.com', contact: '+2280106000001' },
+    { role: 'cabinet_comptable', nom: 'Cabinet', prenoms: 'Comptable', identifiant: 'tepitechcorp', email: 'tepitechcorp@gmail.com', contact: '+2280106000001', dateNaissance: '1985-01-01', lieuNaissance: 'Lomé' },
+    { role: 'esa_compta', nom: 'ESA', prenoms: 'Compta Service', identifiant: 'kakashitogo', email: 'kakashitogo@gmail.com', contact: '+2280110000001' },
+    { role: 'comite_orientation', nom: 'Comite', prenoms: 'Orientation', identifiant: 'histoiregede', email: 'histoiregede@gmail.com', contact: '+2280104000003' },
+    // ── Comptes système complémentaires (rôles toujours actifs) ──
+    { role: 'institution', nom: 'Institution', prenoms: 'Direction', identifiant: 'direction', email: 'direction@easyecole.tg', contact: '+2280101000001', dateNaissance: '1985-01-01', lieuNaissance: 'Lomé' },
+    { role: 'secretaire', nom: 'Secretaire', prenoms: 'Systeme', identifiant: 'secretaire1', email: 'secretaire@easyecole.tg', contact: '+2280108000001' },
     { role: 'enseignant', nom: 'Enseignant', prenoms: 'Systeme', identifiant: 'pacetamol362', email: 'pacetamol362@gmail.com', contact: '+2280102000001', dateNaissance: '1980-05-15', lieuNaissance: 'Lomé' },
 
     // ── Comptes démo additionnels (identifiants easyecole.tg) ──
