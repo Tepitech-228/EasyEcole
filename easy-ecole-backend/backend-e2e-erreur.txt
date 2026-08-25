@@ -1,0 +1,1 @@
+SequelizeDatabaseError: Field 'nom' doesn't have a default valueSequelizeDatabaseError: Field 'dateNaissance' doesn't have a default valueSequelizeUniqueConstraintError: Validation errorTypeError: (intermediate value) is not iterableTypeError: fetch failed

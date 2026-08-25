@@ -14,7 +14,7 @@
 import 'dotenv/config'
 import * as bcrypt from 'bcrypt';
 
-const MOT_DE_PASSE_DEFAUT = process.env.SYSTEM_ACCOUNTS_DEFAULT_PASSWORD || 'Passer@2026!';
+const MOT_DE_PASSE_DEFAUT = process.env.SYSTEM_ACCOUNTS_DEFAULT_PASSWORD || 'Admin@2026!';
 
 // Mots de passe par rôle (tous = MOT_DE_PASSE_DEFAUT en prod, sauf si surchargés par env)
 const MOTS_DE_PASSE: Record<string, string> = {

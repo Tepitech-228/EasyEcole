@@ -103,10 +103,10 @@ export class BordereauDossierService {
         let typeCoursPeriode: 'jour' | 'soir' = 'jour'
         if (!options?.pedagogieDifferee) {
             const periodeEtudiant = demande.utilisateur?.apprenant?.periode
-            if (periodeEtudiant !== 'matin' && periodeEtudiant !== 'soir') {
-                throw new Error("L'étudiant doit renseigner sa période (cours du matin ou du soir) dans ses informations personnelles avant validation")
+            if (periodeEtudiant !== 'matin' && periodeEtudiant !== 'soir' && periodeEtudiant !== 'en_ligne') {
+                throw new Error("L'étudiant doit renseigner sa période (cours du matin, du soir ou en ligne) dans ses informations personnelles avant validation")
             }
-            typeCoursPeriode = periodeEtudiant === 'matin' ? 'jour' : 'soir'
+            typeCoursPeriode = periodeEtudiant === 'soir' ? 'soir' : 'jour'
 
             let reponseInscription = demande.reponseInscription
             if (!reponseInscription) {
@@ -568,10 +568,10 @@ export class BordereauDossierService {
         if (!demande.utilisateur?.apprenant) throw new Error("Informations personnelles incomplètes")
 
         const periodeEtudiant = demande.utilisateur?.apprenant?.periode
-        if (periodeEtudiant !== 'matin' && periodeEtudiant !== 'soir') {
-            throw new Error("L'étudiant doit renseigner sa période (cours du matin ou du soir) dans ses informations personnelles avant validation")
+        if (periodeEtudiant !== 'matin' && periodeEtudiant !== 'soir' && periodeEtudiant !== 'en_ligne') {
+            throw new Error("L'étudiant doit renseigner sa période (cours du matin, du soir ou en ligne) dans ses informations personnelles avant validation")
         }
-        const typeCoursPeriode: 'jour' | 'soir' = periodeEtudiant === 'matin' ? 'jour' : 'soir'
+        const typeCoursPeriode: 'jour' | 'soir' = periodeEtudiant === 'soir' ? 'soir' : 'jour'
 
         if (!demande.reponseInscription) {
             await ReponseInscription.create({
