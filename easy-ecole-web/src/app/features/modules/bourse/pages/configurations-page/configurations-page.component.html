@@ -1,0 +1,160 @@
+<!-- HEADER + ADD BUTTON -->
+<div class="flex justify-between items-start mb-8">
+    <app-header-title title="Configurations de bourses" subtitle="Gérer les types de bourses et leurs pourcentages de prise en charge"></app-header-title>
+    <button (click)="openAddModal()"
+        class="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-md hover:bg-indigo-700 flex items-center gap-x-2">
+        <span class="material-symbols-outlined text-lg">add</span>
+        Nouvelle configuration
+    </button>
+</div>
+
+<!-- SEARCH -->
+<div class="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
+    <div class="p-4 border-b border-gray-100">
+        <input type="text" [(ngModel)]="searchTerm" placeholder="Rechercher une configuration..."
+            class="w-64 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 sm:text-sm">
+    </div>
+
+    <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+    <div class="overflow-x-auto" *ngIf="!loading">
+        <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Taux</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Statut</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Créée le</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            <tr *ngFor="let c of filteredConfigurations" class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{{ c.nom }}</td>
+                <td class="px-6 py-4">
+                    <span [ngClass]="getTypeBadge(c.type)" class="px-2.5 py-0.5 rounded-full text-xs font-medium">
+                        {{ c.type === 'TOTAL' ? 'Totale' : 'Partielle' }}
+                    </span>
+                </td>
+                <td class="px-6 py-4 text-center font-semibold text-gray-900">{{ c.taux }}%</td>
+                <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{{ c.description || '—' }}</td>
+                <td class="px-6 py-4 text-center">
+                    <span [ngClass]="getStatutBadge(c.statut)" class="px-2.5 py-0.5 rounded-full text-xs font-medium">
+                        {{ c.statut === 'ACTIVE' ? 'Active' : 'Inactive' }}
+                    </span>
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-500">{{ c.createdAt | date:'dd/MM/yyyy' }}</td>
+                <td class="px-6 py-4 text-right text-sm space-x-2">
+                    <button (click)="openDetail(c)" class="text-gray-600 hover:text-gray-900 font-medium" title="Consulter">
+                        <span class="material-symbols-outlined text-lg">visibility</span>
+                    </button>
+                    <button (click)="openEditModal(c)" class="text-indigo-600 hover:text-indigo-900 font-medium" title="Modifier">
+                        <span class="material-symbols-outlined text-lg">edit</span>
+                    </button>
+                    <button (click)="toggleStatut(c)" class="font-medium" [ngClass]="c.statut === 'ACTIVE' ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'"
+                        [title]="c.statut === 'ACTIVE' ? 'Désactiver' : 'Activer'">
+                        <span class="material-symbols-outlined text-lg">{{ c.statut === 'ACTIVE' ? 'block' : 'check_circle' }}</span>
+                    </button>
+                </td>
+            </tr>
+            <tr *ngIf="filteredConfigurations.length === 0">
+                <td colspan="7" class="px-6 py-12 text-center text-sm text-gray-500">Aucune configuration trouvée</td>
+            </tr>
+        </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- CREATE/EDIT MODAL -->
+<div *ngIf="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg mx-4">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            {{ editingConfig ? 'Modifier la configuration' : 'Nouvelle configuration de bourse' }}
+        </h3>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nom *</label>
+                <input type="text" [(ngModel)]="formData.nom" placeholder="Ex: Bourse Excellence"
+                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 sm:text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Type *</label>
+                <select [(ngModel)]="formData.type" (ngModelChange)="onTypeChange()"
+                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 sm:text-sm">
+                    <option value="PARTIELLE">Partielle (pourcentage configurable)</option>
+                    <option value="TOTAL">Totale (100%)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Taux (%) {{ formData.type === 'TOTAL' ? '— Fixé à 100%' : '' }}
+                </label>
+                <input type="number" [(ngModel)]="formData.taux" [disabled]="formData.type === 'TOTAL'"
+                    [min]="formData.type === 'PARTIELLE' ? 0.01 : 100" [max]="formData.type === 'PARTIELLE' ? 99.99 : 100"
+                    step="0.5"
+                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 sm:text-sm disabled:bg-gray-100">
+                <p class="mt-1 text-xs text-gray-500" *ngIf="formData.type === 'PARTIELLE'">
+                    Entre 0 et 100 (exclus) — configurable librement
+                </p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea [(ngModel)]="formData.description" rows="3" placeholder="Description optionnelle..."
+                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 sm:text-sm"></textarea>
+            </div>
+        </div>
+        <div class="flex justify-end gap-x-3 mt-6">
+            <button (click)="closeModal()" class="px-4 py-2 text-sm text-gray-600 font-medium">Annuler</button>
+            <button (click)="saveConfiguration()" [disabled]="saving"
+                class="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-md disabled:opacity-50">
+                {{ saving ? 'Enregistrement...' : (editingConfig ? 'Modifier' : 'Créer') }}
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div *ngIf="showDetailModal && detailConfig" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Détail de la configuration</h3>
+        <dl class="space-y-3">
+            <div class="flex justify-between">
+                <dt class="text-sm text-gray-500">Nom</dt>
+                <dd class="text-sm font-medium text-gray-900">{{ detailConfig.nom }}</dd>
+            </div>
+            <div class="flex justify-between">
+                <dt class="text-sm text-gray-500">Type</dt>
+                <dd><span [ngClass]="getTypeBadge(detailConfig.type)" class="px-2.5 py-0.5 rounded-full text-xs font-medium">
+                    {{ detailConfig.type === 'TOTAL' ? 'Bourse totale' : 'Bourse partielle' }}
+                </span></dd>
+            </div>
+            <div class="flex justify-between">
+                <dt class="text-sm text-gray-500">Taux</dt>
+                <dd class="text-sm font-semibold text-gray-900">{{ detailConfig.taux }}%</dd>
+            </div>
+            <div class="flex justify-between">
+                <dt class="text-sm text-gray-500">Statut</dt>
+                <dd><span [ngClass]="getStatutBadge(detailConfig.statut)" class="px-2.5 py-0.5 rounded-full text-xs font-medium">
+                    {{ detailConfig.statut === 'ACTIVE' ? 'Active' : 'Inactive' }}
+                </span></dd>
+            </div>
+            <div class="flex justify-between" *ngIf="detailConfig.description">
+                <dt class="text-sm text-gray-500">Description</dt>
+                <dd class="text-sm text-gray-900">{{ detailConfig.description }}</dd>
+            </div>
+            <div class="flex justify-between">
+                <dt class="text-sm text-gray-500">Créée le</dt>
+                <dd class="text-sm text-gray-900">{{ detailConfig.createdAt | date:'dd/MM/yyyy HH:mm' }}</dd>
+            </div>
+            <div class="flex justify-between">
+                <dt class="text-sm text-gray-500">Modifiée le</dt>
+                <dd class="text-sm text-gray-900">{{ detailConfig.updatedAt | date:'dd/MM/yyyy HH:mm' }}</dd>
+            </div>
+        </dl>
+        <div class="flex justify-end mt-6">
+            <button (click)="closeDetail()" class="px-4 py-2 text-sm text-gray-600 font-medium">Fermer</button>
+        </div>
+    </div>
+</div>

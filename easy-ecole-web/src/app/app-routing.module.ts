@@ -185,6 +185,13 @@ const routes: Routes = [
         canLoad: [AuthGuard]
       },
 
+      // Module "Bourses"
+      {
+        path: 'bourses',
+        loadChildren: () => import('./features/modules/bourse/bourse.module').then(m => m.BourseModule),
+        canLoad: [AuthGuard]
+      },
+
       // Module "Espace Parents"
       {
         path: 'parent',
