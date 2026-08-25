@@ -292,6 +292,9 @@ export const REF_PERMISSIONS: RefPermission[] = [
   { key: 'action.bourse.attribution.modifier', libelle: 'Modifier une attribution de bourse', module: 'Bourses', type: 'action', parentKey: 'menu.bourses.attributions' },
   { key: 'action.bourse.attribution.suspendre', libelle: 'Suspendre une bourse', module: 'Bourses', type: 'action', parentKey: 'menu.bourses.attributions' },
   { key: 'action.bourse.attribution.reactiver', libelle: 'Réactiver une bourse', module: 'Bourses', type: 'action', parentKey: 'menu.bourses.attributions' },
+  // ── BOURSES — CAMPAGNE ──
+  { key: 'menu.bourses.campagne', libelle: 'Campagne de bourses', module: 'Bourses', type: 'menu', parentKey: 'menu.bourses' },
+  { key: 'action.bourse.campagne.creer', libelle: 'Créer une campagne de bourses (attribution en masse)', module: 'Bourses', type: 'action', parentKey: 'menu.bourses.campagne' },
 ]
 
 export const REF_ROLE_PERMISSIONS: RefRolePermission[] = [
@@ -534,22 +537,33 @@ export const REF_ROLE_PERMISSIONS: RefRolePermission[] = [
   { roleNom: 'Super Admin', permissionKey: 'menu.bourses' },
   { roleNom: 'Super Admin', permissionKey: 'menu.bourses.configurations' },
   { roleNom: 'Super Admin', permissionKey: 'menu.bourses.attributions' },
+  { roleNom: 'Super Admin', permissionKey: 'menu.bourses.campagne' },
   { roleNom: 'Super Admin', permissionKey: 'action.bourse.configuration.creer' },
   { roleNom: 'Super Admin', permissionKey: 'action.bourse.configuration.modifier' },
   { roleNom: 'Super Admin', permissionKey: 'action.bourse.attribution.creer' },
   { roleNom: 'Super Admin', permissionKey: 'action.bourse.attribution.modifier' },
   { roleNom: 'Super Admin', permissionKey: 'action.bourse.attribution.suspendre' },
   { roleNom: 'Super Admin', permissionKey: 'action.bourse.attribution.reactiver' },
+  { roleNom: 'Super Admin', permissionKey: 'action.bourse.campagne.creer' },
   { roleNom: 'Directeur', permissionKey: 'menu.bourses' },
   { roleNom: 'Directeur', permissionKey: 'menu.bourses.configurations' },
   { roleNom: 'Directeur', permissionKey: 'menu.bourses.attributions' },
+  { roleNom: 'Directeur', permissionKey: 'menu.bourses.campagne' },
   { roleNom: 'Directeur', permissionKey: 'action.bourse.configuration.creer' },
   { roleNom: 'Directeur', permissionKey: 'action.bourse.configuration.modifier' },
   { roleNom: 'Directeur', permissionKey: 'action.bourse.attribution.creer' },
   { roleNom: 'Directeur', permissionKey: 'action.bourse.attribution.modifier' },
   { roleNom: 'Directeur', permissionKey: 'action.bourse.attribution.suspendre' },
   { roleNom: 'Directeur', permissionKey: 'action.bourse.attribution.reactiver' },
+  { roleNom: 'Directeur', permissionKey: 'action.bourse.campagne.creer' },
   { roleNom: 'Comptable', permissionKey: 'menu.bourses' },
   { roleNom: 'Comptable', permissionKey: 'menu.bourses.configurations' },
   { roleNom: 'Comptable', permissionKey: 'menu.bourses.attributions' },
+  // ── BOURSES CAMPAGNE : Institution ──
+  { roleNom: 'Institution', permissionKey: 'menu.bourses' },
+  { roleNom: 'Institution', permissionKey: 'menu.bourses.configurations' },
+  { roleNom: 'Institution', permissionKey: 'menu.bourses.attributions' },
+  { roleNom: 'Institution', permissionKey: 'menu.bourses.campagne' },
+  { roleNom: 'Institution', permissionKey: 'action.bourse.campagne.creer' },
+  { roleNom: 'Institution', permissionKey: 'action.bourse.attribution.creer' },
 ]

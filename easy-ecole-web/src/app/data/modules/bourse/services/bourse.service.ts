@@ -59,4 +59,24 @@ export class BourseService {
   getResumeFinancier(dossierId: number): Observable<any> {
     return this.http.get<any>(`${this.BASE}/etudiants/${dossierId}/frais`);
   }
+
+  // ── Campagne de bourses ──
+  getEtudiantsEligibles(params?: { search?: string; estBoursier?: string; sansBourse?: string }): Observable<any> {
+    let queryParams: any = {};
+    if (params?.search) queryParams.search = params.search;
+    if (params?.estBoursier) queryParams.estBoursier = params.estBoursier;
+    if (params?.sansBourse) queryParams.sansBourse = params.sansBourse;
+    return this.http.get<any>(`${this.BASE}/campagne/eligibles`, { params: queryParams });
+  }
+
+  bulkAttribuer(data: {
+    configurationId?: number;
+    configData?: { nom: string; type: string; taux: number; description?: string };
+    dateDebut: string;
+    dateFin?: string | null;
+    motif?: string | null;
+    dossierIds: number[];
+  }): Observable<any> {
+    return this.http.post<any>(`${this.BASE}/campagne/attribuer`, data);
+  }
 }

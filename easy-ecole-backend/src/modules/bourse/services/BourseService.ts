@@ -42,7 +42,7 @@ export class BourseService {
      *
      * @returns nombre d'échéances modifiées
      */
-    private static async appliquerBourseSurEcheances(
+    static async appliquerBourseSurEcheances(
         dossierEtudiantId: number,
         taux: number,
     ): Promise<number> {
