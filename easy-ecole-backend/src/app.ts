@@ -114,6 +114,7 @@ app.use('/media/photos/enseignants', express.static(path.resolve('public', 'auth
 app.use('/media/profiles', express.static(path.resolve('public', 'auth', 'profiles')))
 app.use('/media/videos', express.static(path.resolve('public', 'elearning', 'videos')))
 app.use('/media/scolarite/documents', express.static(path.resolve('public', 'scolarite', 'documents')))
+app.use('/media/inscription/bordereaux', express.static(path.resolve('public', 'inscription', 'bordereaux')))
 
 app.get('/logo-esa.png', (req, res) => {
   const filePath = path.resolve('public', 'logo-esa.png')

@@ -125,6 +125,7 @@ RUN mkdir -p \
     /app/public/auth/apprenants/photos \
     /app/public/auth/enseignants/photos \
     /app/public/elearning/videos \
+    /app/public/inscription/bordereaux \
     /app/public/inscription/dossiers \
     /app/storage/cartes \
     /app/storage/docgen \
