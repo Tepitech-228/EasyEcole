@@ -106,7 +106,7 @@ export async function seedComptesParRole(seqIn?: any): Promise<void> {
     const AutA = seq.model('AutApprenant');
     const AutAdrA = seq.model('AutAdresseApprenant');
 
-    console.log('\n═══ 1/5 Comptes utilisateurs (upsert) ═══');
+    console.log('\n═══ 1/6 Comptes utilisateurs (upsert) ═══');
     console.log(`  Mot de passe par défaut : ${MOT_DE_PASSE_DEFAUT.substring(0, 3)}***`);
     let created = 0, updated = 0, skipped = 0;
 
@@ -141,7 +141,7 @@ export async function seedComptesParRole(seqIn?: any): Promise<void> {
 
     console.log(`\n  Total : ${created} créé(s), ${updated} mis à jour, ${skipped} ignoré(s)`);
 
-    console.log('\n═══ 2/5 Profils liés ═══');
+    console.log('\n═══ 2/6 Profils liés ═══');
     const ensureAdresseE = async () => (await AutAdrE.create({ pays: 'Togo', ville: 'Lomé', quartier: 'Centre', boitePostale: 'BP 100', prorietaireBoitePostale: 'Démo', telMobile: '+228000000000' })).id ?? (await AutAdrE.findAll())[0].id;
     const ensureAdresseI = async () => (await AutAdrI.create({ pays: 'Togo', ville: 'Lomé', quartier: 'Centre', boitePostale: 'BP 1500', prorietaireBoitePostale: 'UST', telMobile: '+2280101000001' })).id ?? (await AutAdrI.findAll())[0].id;
     const ensureAdresseC = async () => (await AutAdrC.create({ pays: 'Togo', ville: 'Lomé', quartier: 'Centre', boitePostale: 'BP 105', prorietaireBoitePostale: 'Démo', telMobile: '+228000000000' })).id ?? (await AutAdrC.findAll())[0].id;
@@ -191,7 +191,7 @@ export async function seedComptesParRole(seqIn?: any): Promise<void> {
         }
     }
 
-    console.log('\n═══ 3/5 Réparation des profils orphelins ═══');
+    console.log('\n═══ 3/6 Réparation des profils orphelins ═══');
     const ensOrphelins: any[] = await seq.query(
         `SELECT e.id, e.dateNaissance FROM aut_enseignants e
          LEFT JOIN aut_utilisateurs u ON u.id = e.utilisateurId
@@ -227,7 +227,58 @@ export async function seedComptesParRole(seqIn?: any): Promise<void> {
         if (Number(n[0]?.n) > 0) console.log(`  ⚠ ${n[0].n} profil(s) orphelin(s) dans ${t}`);
     }
 
-    console.log('\n═══ 4/5 Liaison RBAC (aut_user_roles + aut_user_permissions) ═══');
+    console.log('\n═══ 4/6 Données de référence (dropdowns) ═══');
+
+    // 4a. Niveaux d'études (Licence 1-3, Master 1-2)
+    console.log('  → ins_niveaux_etudes');
+    const niveaux = ['Licence 1', 'Licence 2', 'Licence 3', 'Master 1', 'Master 2'];
+    for (const libelle of niveaux) {
+        await seq.query(
+            "INSERT INTO `ins_niveaux_etudes` (`libelle`, `createdAt`, `updatedAt`) " +
+            "VALUES (:libelle, NOW(), NOW()) " +
+            "ON DUPLICATE KEY UPDATE `deletedAt` = NULL",
+            { replacements: { libelle } }
+        );
+    }
+    console.log(`    ✓ ${niveaux.length} niveau(x) d'études vérifié(s)`);
+
+    // 4b. Types de note / évaluation (CC, Devoir, Examen)
+    console.log('  → ins_types_note_evaluation');
+    const typesNote = [
+        { libelle: 'Contrôle Continu', description: 'Évaluation en cours de session', poids: 40, categorie: 'controle_continu' },
+        { libelle: 'Devoir', description: 'Devoir écrit ou pratique', poids: 30, categorie: 'devoir' },
+        { libelle: 'Examen', description: 'Examen final de session', poids: 30, categorie: 'examen' },
+    ];
+    for (const t of typesNote) {
+        await seq.query(
+            "INSERT INTO `ins_types_note_evaluation` (`libelle`, `description`, `poids`, `categorie`, `createdAt`, `updatedAt`) " +
+            "VALUES (:libelle, :description, :poids, :categorie, NOW(), NOW()) " +
+            "ON DUPLICATE KEY UPDATE `deletedAt` = NULL",
+            { replacements: t }
+        );
+    }
+    console.log(`    ✓ ${typesNote.length} type(s) de note vérifié(s)`);
+
+    // 4c. Année académique courante
+    console.log('  → ins_annees_academiques');
+    const anneeActuelle = new Date().getFullYear();
+    const libelleAnnee = `${anneeActuelle}-${anneeActuelle + 1}`;
+    const [existeAnnee]: any[] = await seq.query(
+        "SELECT id FROM `ins_annees_academiques` WHERE `libelle` = :libelle AND deletedAt IS NULL LIMIT 1",
+        { replacements: { libelle: libelleAnnee } }
+    );
+    if ((existeAnnee as any[]).length === 0) {
+        await seq.query(
+            "INSERT INTO `ins_annees_academiques` (`libelle`, `description`, `createdAt`, `updatedAt`) " +
+            "VALUES (:libelle, :description, NOW(), NOW())",
+            { replacements: { libelle: libelleAnnee, description: `Année académique ${libelleAnnee}` } }
+        );
+        console.log(`    ✓ Année académique créée : ${libelleAnnee}`);
+    } else {
+        console.log(`    ✓ Année académique existante : ${libelleAnnee}`);
+    }
+
+    console.log('\n═══ 5/6 Liaison RBAC (aut_user_roles + aut_user_permissions) ═══');
     // Résolution des IDs rôles RBAC
     const [rbacRoleRows]: any[] = await seq.query("SELECT id, nom FROM `aut_roles` WHERE deletedAt IS NULL");
     const rbacRoleIdByName = new Map<string, number>((rbacRoleRows as any[]).map(r => [r.nom, r.id]));
@@ -286,7 +337,7 @@ export async function seedComptesParRole(seqIn?: any): Promise<void> {
     }
     console.log(`\n  RBAC : ${rbacLinked} liaison(s) utilisateur→rôle, ${permsApplied} permission(s) appliquée(s), ${rbacSkipped} ignoré(s)`);
 
-    console.log('\n═══ 5/5 Récapitulatif des comptes ═══');
+    console.log('\n═══ 6/6 Récapitulatif des comptes ═══');
     console.log(`\n  Mot de passe utilisé : ${MOT_DE_PASSE_DEFAUT}\n`);
     console.log('  Rôle                     Identifiant       Email                              Mot de passe');
     console.log('  ──────────────────────── ───────────────── ────────────────────────────────── ──────────────');
