@@ -23,11 +23,38 @@ import QualiteRoutes from "./modules/qualite/QualiteRoutes";
 import BourseRoutes from "./modules/bourse/BourseRoutes";
 import VerificationController from "./modules/docgen/controllers/VerificationController";
 import PublicationNoteRouter from "./modules/inscription/routers/PublicationNoteRouter";
+import { DatabaseConnection } from "./core/helpers/DatabaseConnection";
 const router = express.Router();
 
 router
     .get('', async (req: Request, res: Response) => {
         res.send("Hello world");
+    })
+    /**
+     * Health check endpoint — utilisé par CI/CD et Docker healthcheck.
+     * Vérifie que l'API est démarrée et que la base de données répond.
+     * Aucune authentification requise.
+     */
+    .get('/health', async (req: Request, res: Response) => {
+        const checks: Record<string, string> = { api: 'ok' }
+        let dbOk = false
+        try {
+            const sequelize = DatabaseConnection.getInstance().sequelize
+            await sequelize.query('SELECT 1', { raw: true })
+            dbOk = true
+            checks.database = 'ok'
+        } catch (e: any) {
+            checks.database = `error: ${e.message || 'unknown'}`
+        }
+
+        const status = dbOk ? 200 : 503
+        return res.status(status).json({
+            success: dbOk,
+            status: dbOk ? 'healthy' : 'degraded',
+            checks,
+            uptime: process.uptime(),
+            timestamp: new Date().toISOString(),
+        })
     })
     .use('/auth', AuthRoutes)
     .use('/orientation', OrientationRoutes)
