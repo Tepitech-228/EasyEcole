@@ -192,6 +192,13 @@ const routes: Routes = [
         canLoad: [AuthGuard]
       },
 
+      // Module "Pôle E-Learning" — page d'accueil dédiée aux étudiants en ligne
+      {
+        path: 'pole-elearning',
+        loadChildren: () => import('./features/modules/pole-elearning/pole-elearning.module').then(m => m.PoleElearningModule),
+        canLoad: [AuthGuard, InscriptionCompleteGuard]
+      },
+
       // Module "Espace Parents"
       {
         path: 'parent',

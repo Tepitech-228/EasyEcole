@@ -60,22 +60,29 @@ export class BourseService {
     return this.http.get<any>(`${this.BASE}/etudiants/${dossierId}/frais`);
   }
 
-  // ── Campagne de bourses ──
-  getEtudiantsEligibles(params?: { search?: string; estBoursier?: string; sansBourse?: string }): Observable<any> {
-    let queryParams: any = {};
+  // ── Campagne de bourses (par niveau d'études) ──
+
+  /** Liste les niveaux d'études avec nombre d'étudiants */
+  getNiveaux(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.BASE}/campagne/niveaux`);
+  }
+
+  /** Étudiants d'un niveau donné */
+  getEtudiantsByNiveau(niveauEtudeId: number, params?: { search?: string; estBoursier?: string; sansBourse?: string }): Observable<any> {
+    let queryParams: any = { niveauEtudeId };
     if (params?.search) queryParams.search = params.search;
     if (params?.estBoursier) queryParams.estBoursier = params.estBoursier;
     if (params?.sansBourse) queryParams.sansBourse = params.sansBourse;
     return this.http.get<any>(`${this.BASE}/campagne/eligibles`, { params: queryParams });
   }
 
+  /** Attribution en masse par niveau d'études */
   bulkAttribuer(data: {
-    configurationId?: number;
-    configData?: { nom: string; type: string; taux: number; description?: string };
+    configurationId: number;
+    niveauEtudeId: number;
     dateDebut: string;
     dateFin?: string | null;
     motif?: string | null;
-    dossierIds: number[];
   }): Observable<any> {
     return this.http.post<any>(`${this.BASE}/campagne/attribuer`, data);
   }

@@ -76,7 +76,13 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
 
   private loadUserInfo(): void {
     this.http.get(`${this.API_URL}/auth/utilisateurs/moi`).subscribe({
-      next: (u: any) => this.utilisateur = u,
+      next: (u: any) => {
+        this.utilisateur = u;
+        // Rediriger les étudiants "cours en ligne" vers le Pôle E-Learning
+        if (this.rolesValue.isApprenant && u?.apprenant?.periode === 'en_ligne') {
+          this.router.navigate(['/pole-elearning']);
+        }
+      },
       error: () => {}
     });
   }

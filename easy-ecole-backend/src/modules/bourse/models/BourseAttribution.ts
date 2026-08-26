@@ -3,6 +3,7 @@ import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../BourseModule";
 import { BourseConfiguration } from "./BourseConfiguration";
 import { DossierEtudiant } from "../../inscription/models/DossierEtudiant";
+import { NiveauEtude } from "../../inscription/models/NiveauEtude";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 
 /**
@@ -11,6 +12,9 @@ import { Utilisateur } from "../../auth/models/Utilisateur";
  * Une seule bourse ACTIVE est autorisée par étudiant pour une même année académique.
  * Le taux et le montant sont calculés au moment de l'attribution et stockés
  * pour garantir l'immuabilité historique.
+ *
+ * niveauEtudeId : traçabilité du niveau ciblé (Licence 1, Master 1, etc.)
+ *                 renseigné lors d'une attribution par campagne/promotion.
  *
  * statut :
  *  - ACTIVE    : la bourse est appliquée dans les calculs financiers
@@ -21,6 +25,7 @@ export class BourseAttribution extends Model<InferAttributes<BourseAttribution>,
   declare id: CreationOptional<number>
   declare dossierEtudiantId: ForeignKey<DossierEtudiant['id']>
   declare configurationId: ForeignKey<BourseConfiguration['id']>
+  declare niveauEtudeId: CreationOptional<ForeignKey<NiveauEtude['id'] | null>>
   declare type: 'TOTAL' | 'PARTIELLE'
   declare taux: number                   // snapshot du taux au moment de l'attribution
   declare dateDebut: Date
@@ -34,11 +39,13 @@ export class BourseAttribution extends Model<InferAttributes<BourseAttribution>,
   // Associations eager-loaded
   declare configuration?: NonAttribute<BourseConfiguration>
   declare dossierEtudiant?: NonAttribute<DossierEtudiant>
+  declare niveauEtude?: NonAttribute<NiveauEtude>
   declare validePar?: NonAttribute<Utilisateur>
 
   declare static associations: {
     configuration: Association<BourseAttribution, BourseConfiguration>
     dossierEtudiant: Association<BourseAttribution, DossierEtudiant>
+    niveauEtude: Association<BourseAttribution, NiveauEtude>
     validePar: Association<BourseAttribution, Utilisateur>
   }
 }
@@ -56,6 +63,12 @@ BourseAttribution.init({
   configurationId: {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false
+  },
+  niveauEtudeId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true,
+    defaultValue: null,
+    comment: "Niveau d'études ciblé (L1, M1, etc.) — renseigné lors d'une attribution par campagne"
   },
   type: {
     type: DataTypes.ENUM('TOTAL', 'PARTIELLE'),

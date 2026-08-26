@@ -40,7 +40,7 @@ export class Apprenant {
   declare nombreInscriptions?: number
   declare statutEtudiant?: string
   declare diplomePrepare?: string
-  declare periode?: 'matin' | 'soir'
+  declare periode?: 'matin' | 'soir' | 'en_ligne'
   
   declare readonly createdAt?: Date
   declare readonly updatedAt?: Date

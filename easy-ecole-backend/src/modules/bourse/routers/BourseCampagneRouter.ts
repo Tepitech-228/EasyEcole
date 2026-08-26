@@ -6,12 +6,17 @@ import BourseCampagneController from "../controllers/BourseCampagneController";
 const router = express.Router();
 
 router
-    // ── Liste des étudiants éligibles ──
+    // ── Liste des niveaux d'études ──
+    .get('/niveaux',
+        [Authenticate, CheckPermission('menu.bourses.campagne')],
+        BourseCampagneController.getNiveaux)
+
+    // ── Liste des étudiants éligibles (filtrés par niveau) ──
     .get('/eligibles',
         [Authenticate, CheckPermission('menu.bourses.campagne')],
         BourseCampagneController.getEligibles)
 
-    // ── Attribution en masse ──
+    // ── Attribution en masse par niveau ──
     .post('/attribuer',
         [Authenticate, CheckPermission('action.bourse.campagne.creer')],
         BourseCampagneController.bulkAttribuer)
