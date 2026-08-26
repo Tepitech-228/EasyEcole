@@ -109,15 +109,24 @@ export class RolesPageComponent extends BaseComponentClass implements OnInit {
     return this.rolePermissions.has(permissionId)
   }
 
+  /**
+   * Toggle une permission du rôle et sauvegarde + propage automatiquement
+   */
   togglePermission(permissionId: number, checked: boolean): void {
+    if (!this.selectedRole) return
     if (checked) {
       this.rolePermissions.add(permissionId)
     } else {
       this.rolePermissions.delete(permissionId)
     }
+    this.savePermissions()
   }
 
+  /**
+   * Toggle toutes les permissions d'un module et sauvegarde + propage
+   */
   toggleModule(module: string, checked: boolean): void {
+    if (!this.selectedRole) return
     const permissions = this.allPermissions[module] || []
     for (const perm of permissions) {
       if (checked) {
@@ -126,6 +135,7 @@ export class RolesPageComponent extends BaseComponentClass implements OnInit {
         this.rolePermissions.delete(Number(perm.id))
       }
     }
+    this.savePermissions()
   }
 
   isModuleFullyChecked(module: string): boolean {
@@ -139,6 +149,9 @@ export class RolesPageComponent extends BaseComponentClass implements OnInit {
     return checked.length > 0 && checked.length < permissions.length
   }
 
+  /**
+   * Sauvegarde les permissions du rôle + propage à tous les utilisateurs du rôle
+   */
   savePermissions(): void {
     if (!this.selectedRole) return
     this.saving = true
@@ -154,14 +167,50 @@ export class RolesPageComponent extends BaseComponentClass implements OnInit {
 
     this.roleService.updateRolePermissions(this.selectedRole.id, { permissionIds }).subscribe({
       next: () => {
-        this.saving = false
-        this.toastService.success('Permissions enregistrées')
+        // Propager les permissions modifiées à tous les utilisateurs de ce rôle
+        this.propagerAuxUtilisateurs()
       },
       error: () => {
         this.saving = false
-        this.toastService.error('Erreur')
+        this.toastService.error('Erreur lors de la sauvegarde')
       }
     })
+  }
+
+  /**
+   * Applique les permissions du rôle à chaque utilisateur qui a ce rôle
+   */
+  propagerAuxUtilisateurs(): void {
+    if (!this.selectedRole || this.roleUsers.length === 0) {
+      this.saving = false
+      this.toastService.success('Permissions sauvegardées')
+      return
+    }
+
+    let done = 0
+    const total = this.roleUsers.length
+
+    for (const ru of this.roleUsers) {
+      const userId = ru.utilisateurId || ru.utilisateur?.id
+      if (!userId) { done++; continue }
+
+      this.roleService.appliquerRolePermissions(this.selectedRole.id, userId).subscribe({
+        next: () => {
+          done++
+          if (done >= total) {
+            this.saving = false
+            this.toastService.success(`Permissions sauvegardées et appliquées à ${total} utilisateur(s)`)
+          }
+        },
+        error: () => {
+          done++
+          if (done >= total) {
+            this.saving = false
+            this.toastService.success('Permissions sauvegardées')
+          }
+        }
+      })
+    }
   }
 
   openCreateModal(): void {
@@ -255,8 +304,17 @@ export class RolesPageComponent extends BaseComponentClass implements OnInit {
     if (!this.selectedRole) return
     this.roleService.assignRoleToUser(this.selectedRole.id, user.id).subscribe({
       next: () => {
-        this.loadRoleUsers()
-        this.toastService.success('Utilisateur assigné au rôle')
+        // Appliquer les permissions du rôle au nouvel utilisateur
+        this.roleService.appliquerRolePermissions(this.selectedRole.id, user.id).subscribe({
+          next: () => {
+            this.loadRoleUsers()
+            this.toastService.success('Utilisateur assigné et permissions appliquées')
+          },
+          error: () => {
+            this.loadRoleUsers()
+            this.toastService.success('Utilisateur assigné au rôle')
+          }
+        })
       },
       error: () => this.toastService.error('Erreur')
     })

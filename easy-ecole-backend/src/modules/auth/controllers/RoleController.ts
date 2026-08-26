@@ -162,11 +162,37 @@ export default class RoleController {
         try {
             const { id, utilisateurId } = req.params;
 
+            // 1. Récupérer les permissions du rôle avant suppression
+            const rolePermissions = await RolePermission.findAll({ where: { roleId: id } });
+            const rolePermIds = rolePermissions.map(rp => Number(rp.permissionId));
+
+            // 2. Supprimer le lien rôle↔utilisateur
             await UserRole.destroy({
                 where: { utilisateurId, roleId: id }
             });
 
-            return res.status(200).json({ success: true, message: "Rôle retiré de l'utilisateur" });
+            // 3. Révoquer les permissions qui venaient de ce rôle
+            //    (uniquement si l'utilisateur n'a PAS d'autre rôle qui donne la même permission)
+            const otherRoles = await UserRole.findAll({ where: { utilisateurId, roleId: { [require('sequelize').Op.ne]: id } } });
+            const otherRoleIds = otherRoles.map(ur => Number(ur.roleId));
+
+            if (otherRoleIds.length > 0) {
+                // Vérifier quelles permissions sont encore couvertes par un autre rôle
+                const otherPerms = await RolePermission.findAll({ where: { roleId: otherRoleIds } });
+                const otherPermIds = new Set(otherPerms.map(rp => Number(rp.permissionId)));
+                for (const permId of rolePermIds) {
+                    if (!otherPermIds.has(permId)) {
+                        await UserPermission.destroy({ where: { utilisateurId, permissionId: permId } });
+                    }
+                }
+            } else {
+                // Aucun autre rôle → révoquer toutes les permissions de ce rôle
+                for (const permId of rolePermIds) {
+                    await UserPermission.destroy({ where: { utilisateurId, permissionId: permId } });
+                }
+            }
+
+            return res.status(200).json({ success: true, message: "Rôle retiré et permissions révoquées" });
         } catch (error) {
             return res.status(500).json({ success: false, error });
         }
@@ -185,20 +211,63 @@ export default class RoleController {
         }
     }
 
+    /**
+     * Applique (et synchronise) les permissions d'un rôle à un utilisateur.
+     * - Crée les permissions manquantes
+     * - Révoque celles qui ne sont plus dans le rôle
+     */
     static async appliquerRolePermissions(req: Request, res: Response): Promise<Response> {
         try {
             const { id, utilisateurId } = req.params;
 
+            // 1. Récupérer les permissions actuelles du rôle
             const rolePermissions = await RolePermission.findAll({ where: { roleId: id } });
+            const rolePermissionIds = new Set(rolePermissions.map(rp => Number(rp.permissionId)));
 
-            for (const rp of rolePermissions) {
-                await UserPermission.findOrCreate({
-                    where: { utilisateurId, permissionId: rp.permissionId },
-                    defaults: { utilisateurId, permissionId: rp.permissionId, estActif: true }
-                });
+            // 2. Récupérer les permissions existantes de l'utilisateur
+            const existingUserPerms = await UserPermission.findAll({ where: { utilisateurId } });
+            const existingMap = new Map<number, any>();
+            for (const up of existingUserPerms) {
+                existingMap.set(Number(up.permissionId), up);
             }
 
-            return res.status(200).json({ success: true, message: "Permissions du rôle appliquées à l'utilisateur" });
+            let created = 0, revoked = 0, unchanged = 0;
+
+            // 3. Créer les permissions manquantes + activer celles du rôle
+            for (const permissionId of rolePermissionIds) {
+                const existing = existingMap.get(permissionId);
+                if (existing) {
+                    if (!existing.estActif) {
+                        await existing.update({ estActif: true });
+                        created++;
+                    } else {
+                        unchanged++;
+                    }
+                } else {
+                    await UserPermission.create({
+                        utilisateurId,
+                        permissionId,
+                        estActif: true
+                    } as any);
+                    created++;
+                }
+            }
+
+            // 4. Révoquer les permissions de l'utilisateur qui ne sont plus dans le rôle
+            for (const [permissionId, existing] of existingMap) {
+                if (!rolePermissionIds.has(Number(permissionId)) && existing.estActif) {
+                    await existing.update({ estActif: false });
+                    revoked++;
+                }
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: `Permissions synchronisées : ${created} ajoutée(s), ${revoked} révoquée(s), ${unchanged} inchangée(s)`,
+                created,
+                revoked,
+                unchanged
+            });
         } catch (error) {
             return res.status(500).json({ success: false, error });
         }

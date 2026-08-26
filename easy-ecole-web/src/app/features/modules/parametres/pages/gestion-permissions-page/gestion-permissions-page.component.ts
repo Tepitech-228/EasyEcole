@@ -88,15 +88,24 @@ export class GestionPermissionsPageComponent extends BaseComponentClass implemen
     return this.userPermissions.has(permissionId)
   }
 
+  /**
+   * Toggle une permission individuelle et sauvegarde immédiatement
+   */
   togglePermission(permissionId: number, checked: boolean): void {
+    if (!this.selectedUtilisateur) return
     if (checked) {
       this.userPermissions.add(Number(permissionId))
     } else {
       this.userPermissions.delete(Number(permissionId))
     }
+    this.savePermissions()
   }
 
+  /**
+   * Toggle toutes les permissions d'un module et sauvegarde immédiatement
+   */
   toggleModule(module: string, checked: boolean): void {
+    if (!this.selectedUtilisateur) return
     const permissions = this.permissionsGrouped[module] || []
     for (const perm of permissions) {
       if (checked) {
@@ -105,6 +114,7 @@ export class GestionPermissionsPageComponent extends BaseComponentClass implemen
         this.userPermissions.delete(Number(perm.id))
       }
     }
+    this.savePermissions()
   }
 
   isModuleFullyChecked(module: string): boolean {
@@ -118,6 +128,9 @@ export class GestionPermissionsPageComponent extends BaseComponentClass implemen
     return checked.length > 0 && checked.length < permissions.length
   }
 
+  /**
+   * Sauvegarde automatique — envoie toutes les permissions (cochées + décochées)
+   */
   savePermissions(): void {
     if (!this.selectedUtilisateur) return
     this.saving = true
@@ -135,11 +148,11 @@ export class GestionPermissionsPageComponent extends BaseComponentClass implemen
     this.permissionService.updateUtilisateurPermissions(this.selectedUtilisateur.id, { permissions: permissionsList }).subscribe({
       next: () => {
         this.saving = false
-        this.toastService.success('Permissions enregistrées avec succès')
+        this.toastService.success('Permissions sauvegardées')
       },
       error: () => {
         this.saving = false
-        this.toastService.error('Erreur lors de l\'enregistrement')
+        this.toastService.error('Erreur lors de la sauvegarde')
       }
     })
   }
