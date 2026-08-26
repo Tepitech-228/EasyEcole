@@ -5,6 +5,7 @@ import { Session } from "../models/Session";
 import { DemandeInscription } from "../models/DemandeInscription";
 import { Apprenant } from "../../auth/models/Apprenant";
 import { FraisInscription } from "../models/FraisInscription";
+import { FraisScolarite, estModaliteScolarite } from "../models/FraisScolarite";
 import { DossierInscription } from "../models/DossierInscription";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { AnneeAcademique } from "../models/AnneeAcademique";
@@ -159,6 +160,28 @@ export default class SessionController {
                                 description: dossierData.description,
                                 tailleMax: dossierData.tailleMax,
                                 sessionId: session.id,
+                            }, { transaction: t });
+                        }
+                    }
+                }
+
+                // Frais de scolarité (upsert unique par session)
+                if (req.body.fraisScolarite && typeof req.body.fraisScolarite === 'object') {
+                    const { montant, modalite } = req.body.fraisScolarite;
+                    if (montant !== undefined && montant !== null && Number(montant) > 0) {
+                        const existing = await FraisScolarite.findOne({ where: { sessionId: session.id }, transaction: t });
+                        if (existing) {
+                            await existing.update({
+                                montant: Number(montant),
+                                modalite: estModaliteScolarite(modalite) ? modalite : existing.modalite,
+                                actif: true,
+                            }, { transaction: t });
+                        } else {
+                            await FraisScolarite.create({
+                                sessionId: session.id,
+                                montant: Number(montant),
+                                modalite: estModaliteScolarite(modalite) ? modalite : '10x',
+                                actif: true,
                             }, { transaction: t });
                         }
                     }

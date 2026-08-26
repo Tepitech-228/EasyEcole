@@ -86,12 +86,13 @@
 
 <!-- Modal Ajouter / Modifier -->
 <div *ngIf="showModal"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg mx-4">
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 overflow-y-auto py-8">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl mx-4 my-auto">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">
             {{ editingUser ? 'Modifier l\'utilisateur' : 'Nouvel utilisateur' }}
         </h3>
         <div class="space-y-4">
+            <!-- === Informations de base === -->
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
@@ -137,6 +138,207 @@
                     <option *ngFor="let k of roleKeys" [value]="RolesUtilisateur[k]">{{ roleLabels[RolesUtilisateur[k]]
                         }}</option>
                 </select>
+            </div>
+
+            <!-- === Champs de profil dynamiques === -->
+            <div *ngIf="showProfilFields" class="border-t border-gray-200 pt-4 mt-4">
+                <h4 class="text-sm font-semibold text-gray-800 mb-3">{{ profilSectionTitle }}</h4>
+
+                <!-- Tous les rôles staff (personnel_administratif, caissier, comite, cabinet, RH, esa_compta, secretaire) -->
+                <ng-container *ngIf="isStaff">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fonction</label>
+                            <input type="text" [(ngModel)]="formData.fonction"
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Matricule</label>
+                            <input type="text" [(ngModel)]="formData.matricule"
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mt-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Statut</label>
+                            <select [(ngModel)]="formData.statut"
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                                <option value="Permanent">Permanent</option>
+                                <option value="Contractuel">Contractuel</option>
+                                <option value="Temporaire">Temporaire</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Direction / Service</label>
+                            <input type="text" [(ngModel)]="formData.directionService"
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4 mt-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">CNI</label>
+                            <input type="text" [(ngModel)]="formData.cni"
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Date de naissance</label>
+                            <input type="date" [(ngModel)]="formData.dateNaissance"
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Lieu de naissance</label>
+                            <input type="text" [(ngModel)]="formData.lieuNaissance"
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mt-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Sexe</label>
+                            <select [(ngModel)]="formData.sexe"
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                                <option value="M">Masculin</option>
+                                <option value="F">Féminin</option>
+                                <option value="Autre">Autre</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nationalité</label>
+                            <input type="text" [(ngModel)]="formData.nationalite"
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                        </div>
+                    </div>
+                </ng-container>
+
+                <!-- Enseignant -->
+                <ng-container *ngIf="isEnseignant">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Spécialité</label>
+                            <input type="text" [(ngModel)]="formData.specialite"
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Grade académique</label>
+                            <input type="text" [(ngModel)]="formData.gradeAcademique"
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4 mt-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Matricule</label>
+                            <input type="text" [(ngModel)]="formData.matricule"
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Statut</label>
+                            <select [(ngModel)]="formData.statut"
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                                <option value="Permanent">Permanent</option>
+                                <option value="Contractuel">Contractuel</option>
+                                <option value="Temporaire">Temporaire</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Années d'expérience</label>
+                            <input type="number" [(ngModel)]="formData.anneeExperience" min="0"
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4 mt-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">CNI</label>
+                            <input type="text" [(ngModel)]="formData.cni"
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Date de naissance</label>
+                            <input type="date" [(ngModel)]="formData.dateNaissance"
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Lieu de naissance</label>
+                            <input type="text" [(ngModel)]="formData.lieuNaissance"
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4 mt-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Sexe</label>
+                            <select [(ngModel)]="formData.sexe"
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                                <option value="M">Masculin</option>
+                                <option value="F">Féminin</option>
+                                <option value="Autre">Autre</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nationalité</label>
+                            <input type="text" [(ngModel)]="formData.nationalite"
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Plus haut diplôme</label>
+                            <input type="text" [(ngModel)]="formData.plusHautDiplome"
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                        </div>
+                    </div>
+                </ng-container>
+
+                <!-- Apprenant -->
+                <ng-container *ngIf="isApprenant">
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Date de naissance *</label>
+                            <input type="date" [(ngModel)]="formData.dateNaissance" required
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Lieu de naissance *</label>
+                            <input type="text" [(ngModel)]="formData.lieuNaissance" required
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Sexe *</label>
+                            <select [(ngModel)]="formData.sexe"
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                                <option value="M">Masculin</option>
+                                <option value="F">Féminin</option>
+                                <option value="Autre">Autre</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4 mt-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nationalité</label>
+                            <input type="text" [(ngModel)]="formData.nationalite"
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">CNI</label>
+                            <input type="text" [(ngModel)]="formData.cni"
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Période</label>
+                            <select [(ngModel)]="formData.periode"
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                                <option value="matin">Matin</option>
+                                <option value="soir">Soir</option>
+                                <option value="en_ligne">En ligne</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mt-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Statut étudiant</label>
+                            <select [(ngModel)]="formData.statutEtudiant"
+                                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                                <option value="nouveau">Nouveau</option>
+                                <option value="ancien">Ancien</option>
+                            </select>
+                        </div>
+                    </div>
+                </ng-container>
             </div>
         </div>
         <div class="flex justify-end gap-x-3 mt-6">

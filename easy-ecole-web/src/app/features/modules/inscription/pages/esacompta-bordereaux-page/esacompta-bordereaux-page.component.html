@@ -145,29 +145,51 @@
         </select>
       </div>
 
-      <!-- Répartition obligatoire pour un bordereau MIXTE -->
+      <!-- Répartition auto-calculée pour un bordereau MIXTE -->
       <div *ngIf="estTypeMixte" class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 space-y-3">
-        <p class="text-sm font-semibold text-indigo-900">Répartition du montant mixte *</p>
-        <p class="text-xs text-gray-600">Indiquez la part de chaque nature de frais. La somme doit être égale au montant réellement payé.</p>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-medium text-gray-700 mb-1">Part inscription (FCFA)</label>
-            <input type="number" [(ngModel)]="composition.inscription" [ngModelOptions]="{ standalone: true }" min="0"
-              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+        <p class="text-sm font-semibold text-indigo-900">Répartition automatique (type MIXTE)</p>
+
+        <!-- Loading state -->
+        <div *ngIf="compositionLoading" class="flex items-center gap-2 text-sm text-gray-500 py-2">
+          <span class="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+          Calcul en cours...
+        </div>
+
+        <!-- Résultat auto-calculé -->
+        <div *ngIf="!compositionLoading && compositionPreviewResult?.composition" class="space-y-2">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="bg-white rounded-lg p-3 border border-indigo-100">
+              <p class="text-xs text-gray-500 uppercase font-semibold mb-1">Inscription (d'abord)</p>
+              <p class="text-lg font-bold text-indigo-700">{{ compositionPreviewResult.composition.inscription | number:'1.0-0' }} FCFA</p>
+              <p class="text-xs text-gray-400 mt-1">Reste à payer inscr. : {{ compositionPreviewResult.resteInscription | number:'1.0-0' }} FCFA</p>
+            </div>
+            <div class="bg-white rounded-lg p-3 border border-indigo-100">
+              <p class="text-xs text-gray-500 uppercase font-semibold mb-1">Scolarité (reste)</p>
+              <p class="text-lg font-bold text-indigo-700">{{ compositionPreviewResult.composition.scolarite | number:'1.0-0' }} FCFA</p>
+              <p *ngIf="compositionPreviewResult.composition.scolariteApresBourse !== compositionPreviewResult.composition.scolarite"
+                class="text-xs text-emerald-600 mt-1">Après bourse : {{ compositionPreviewResult.composition.scolariteApresBourse | number:'1.0-0' }} FCFA</p>
+            </div>
           </div>
+          <p class="text-xs text-gray-500">
+            Total déclaré : {{ compositionSomme | number:'1.0-2' }} FCFA
+            — Montant constaté : {{ saisieForm.get('montantPaiement')?.value || 0 | number:'1.0-2' }} FCFA
+            <span class="text-green-600 font-medium">✓ Auto-calculé</span>
+          </p>
+        </div>
+
+        <!-- Badge boursier -->
+        <div *ngIf="bourseInfo" class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-start gap-3">
+          <span class="material-symbols-outlined text-emerald-600 text-lg mt-0.5">school</span>
           <div>
-            <label class="block text-xs font-medium text-gray-700 mb-1">Part scolarité (FCFA)</label>
-            <input type="number" [(ngModel)]="composition.scolarite" [ngModelOptions]="{ standalone: true }" min="0"
-              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            <p class="text-sm font-semibold text-emerald-800">
+              Étudiant boursier — {{ bourseInfo.type === 'TOTAL' ? 'Bourse totale' : 'Bourse partielle (' + bourseInfo.taux + '%)' }}
+            </p>
+            <p class="text-xs text-emerald-700 mt-1">
+              Réduction scolarité : <strong>{{ bourseInfo.reductionScolarite | number:'1.0-0' }} FCFA</strong>
+              ({{ bourseInfo.nom }})
+            </p>
           </div>
         </div>
-        <p class="text-xs"
-           [class.text-green-700]="compositionValide"
-           [class.text-red-600]="!compositionValide">
-          Total déclaré : {{ compositionSomme | number:'1.0-2' }} FCFA
-          — Montant constaté : {{ saisieForm.get('montantPaiement')?.value || 0 | number:'1.0-2' }} FCFA
-          {{ compositionValide ? '✓' : '(écart de ' + (compositionEcart | number:'1.0-2') + ' FCFA)' }}
-        </p>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Date de paiement</label>
@@ -183,7 +205,7 @@
     <app-custom-button (click)="closeSaisieModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
     <div class="flex gap-3">
       <app-custom-button (click)="onPreview()" text="Aperçu imputation" color="blue"></app-custom-button>
-      <app-custom-button (click)="onConfirmerSaisie()" text="Valider et imputer" [disabled]="saisieForm.invalid || !compositionValide" color="green"></app-custom-button>
+      <app-custom-button (click)="onConfirmerSaisie()" text="Valider et imputer" [disabled]="saisieForm.invalid || compositionLoading" color="green"></app-custom-button>
     </div>
   </div>
 </app-custom-modal>

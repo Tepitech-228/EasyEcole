@@ -11,6 +11,7 @@ import { EtatsSession } from 'src/app/data/enums/EtatsSession';
 import { AnneeAcademique } from 'src/app/data/modules/inscription/models/AnneeAcademique.model';
 import { AnneeAcademiqueService } from 'src/app/data/modules/inscription/services/annee-academique.service';
 import { DossierNode, BatchAction } from 'src/app/shared/components/dossier-view/dossier-view.component';
+import { ModaliteFraisScolarite } from 'src/app/data/modules/inscription/models/FraisScolarite.model';
 
 @Component({
   selector: 'app-liste-sessions-page',
@@ -50,6 +51,15 @@ export class ListeSessionsPageComponent extends BaseComponentClass implements On
 
   nouveauxFrais: Array<{ titre: string, montant: number, description: string, fraisDesCours: boolean }> = []
   nouveauxDossiers: Array<{ titre: string, tailleMax: number | null, description: string }> = []
+
+  fraisScolariteMontant: number | null = null
+  fraisScolariteModalite: ModaliteFraisScolarite = '10x'
+
+  readonly modaliteOptions: { value: ModaliteFraisScolarite; label: string }[] = [
+    { value: '1x', label: 'Paiement en 1 fois' },
+    { value: '3x', label: '3 mensualités' },
+    { value: '10x', label: '10 mensualités' },
+  ]
 
   sessionForm: FormGroup = new FormGroup({
     dateDebut: new FormControl(this.TODAY_DATE, [Validators.required]),
@@ -181,6 +191,12 @@ export class ListeSessionsPageComponent extends BaseComponentClass implements On
       session.description = this.sessionForm.get('description')!.value
       session.frais = this.nouveauxFrais
       session.dossiers = this.nouveauxDossiers
+      if (this.fraisScolariteMontant && this.fraisScolariteMontant > 0) {
+        session.fraisScolarite = {
+          montant: this.fraisScolariteMontant,
+          modalite: this.fraisScolariteModalite,
+        }
+      }
 
       this.sessionService.create(session).subscribe({
         next: (res) => {
@@ -232,6 +248,8 @@ export class ListeSessionsPageComponent extends BaseComponentClass implements On
     this.sessionForm.reset()
     this.nouveauxFrais = []
     this.nouveauxDossiers = []
+    this.fraisScolariteMontant = null
+    this.fraisScolariteModalite = '10x'
   }
 
   private getNiveauxEtude(): void {

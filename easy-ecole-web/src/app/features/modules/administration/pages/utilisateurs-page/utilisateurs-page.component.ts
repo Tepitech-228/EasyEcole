@@ -35,7 +35,22 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
     [RolesUtilisateur.RESSOURCES_HUMAINES]: 'Ressources Humaines',
     [RolesUtilisateur.CABINET_COMPTABLE]: 'Cabinet Comptable',
     [RolesUtilisateur.COMITE_ORIENTATION]: "Comité d'Orientation",
+    [RolesUtilisateur.PERSONNEL_ADMINISTRATIF]: 'Personnel Administratif',
+    [RolesUtilisateur.ESA_COMPTA]: 'ESA Compta',
+    [RolesUtilisateur.PARENT]: 'Parent',
+    [RolesUtilisateur.SECRETAIRE]: 'Secrétaire',
   }
+
+  // Rôles staff = tous sauf apprenant, enseignant, parent, admin, institution → profil PersonnelAdministratif
+  private readonly staffRoles = [
+    RolesUtilisateur.PERSONNEL_ADMINISTRATIF,
+    RolesUtilisateur.CAISSIER_BANQUE,
+    RolesUtilisateur.COMITE_ORIENTATION,
+    RolesUtilisateur.CABINET_COMPTABLE,
+    RolesUtilisateur.RESSOURCES_HUMAINES,
+    RolesUtilisateur.ESA_COMPTA,
+    RolesUtilisateur.SECRETAIRE,
+  ]
 
   constructor(
     private utilisateurService: UtilisateurService,
@@ -87,7 +102,16 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
 
   openAddModal(): void {
     this.editingUser = null
-    this.formData = { nom: '', prenoms: '', email: '', identifiant: '', motDePasse: '', role: RolesUtilisateur.APPRENANT, contact: '' }
+    this.formData = {
+      nom: '', prenoms: '', email: '', identifiant: '', motDePasse: '',
+      role: RolesUtilisateur.APPRENANT, contact: '',
+      // Champs profil
+      fonction: '', matricule: '', statut: 'Permanent', directionService: '',
+      cni: '', dateNaissance: '', lieuNaissance: '', sexe: 'M', nationalite: 'Ivoirienne',
+      specialite: '', gradeAcademique: '', fonctionAdministrative: '',
+      anneeExperience: 0, plusHautDiplome: '',
+      statutEtudiant: 'nouveau', periode: 'matin',
+    }
     this.showModal = true
   }
 
@@ -159,6 +183,29 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
         this.toastService.error('Erreur lors de la suppression')
       }
     })
+  }
+
+  get showProfilFields(): boolean {
+    return [RolesUtilisateur.APPRENANT, RolesUtilisateur.ENSEIGNANT, ...this.staffRoles].includes(this.formData.role)
+  }
+
+  get isApprenant(): boolean {
+    return this.formData.role === RolesUtilisateur.APPRENANT
+  }
+
+  get isEnseignant(): boolean {
+    return this.formData.role === RolesUtilisateur.ENSEIGNANT
+  }
+
+  get isStaff(): boolean {
+    return this.staffRoles.includes(this.formData.role)
+  }
+
+  get profilSectionTitle(): string {
+    if (this.isApprenant) return 'Profil Apprenant'
+    if (this.isEnseignant) return 'Profil Enseignant'
+    if (this.isStaff) return 'Profil Personnel'
+    return ''
   }
 
   openPermissions(user: any): void {

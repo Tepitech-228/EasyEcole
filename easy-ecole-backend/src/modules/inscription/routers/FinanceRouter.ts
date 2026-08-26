@@ -157,6 +157,99 @@ router.post('/bordereaux/:id/imputation-preview', [AuthEsacompta, CheckPermissio
 })
 
 /**
+ * POST /bordereaux/:id/composition-preview
+ * Retourne la répartition automatique (inscription d'abord, reste scolarité)
+ * + info bourse de l'étudiant si applicable.
+ * Utile pour afficher un aperçu au comptable AVANT la saisie.
+ */
+router.post('/bordereaux/:id/composition-preview', [AuthEsacompta, CheckPermission('action.finance.bordereau.imputer')], async (req: Request, res: Response) => {
+  try {
+    const bordereau = await Bordereau.findByPk(req.params.id, {
+      include: [
+        { association: Bordereau.associations.echeance, include: [Echeance.associations.dossierEtudiant] },
+        Bordereau.associations.utilisateur
+      ]
+    })
+
+    if (!bordereau) {
+      return res.status(404).json({ success: false, message: "Bordereau non trouvé" })
+    }
+
+    const montant = Number(req.body.montantPaiement || bordereau.montant || 0)
+    if (!Number.isFinite(montant) || montant <= 0) {
+      return res.status(400).json({ success: false, message: "Montant de paiement invalide" })
+    }
+
+    // Frais inscription de la session
+    const demande = await DemandeInscription.findOne({
+      where: { utilisateurId: bordereau.utilisateurId },
+      include: [{ association: DemandeInscription.associations.session, include: [Session.associations.fraisInscription] }],
+    })
+    const fraisInscriptionSession = (demande?.session?.fraisInscription || [])
+      .reduce((sum: number, f: any) => sum + (f.montant || 0), 0)
+
+    // Montant déjà payé en inscription
+    const dossiers = await DossierEtudiant.findAll({ where: { utilisateurId: bordereau.utilisateurId } })
+    let dejaPayeInscription = 0
+    if (dossiers.length > 0) {
+      const echeancesInscription = await Echeance.findAll({
+        where: { dossierEtudiantId: dossiers.map(d => d.id), type: 'inscription' },
+      })
+      dejaPayeInscription = echeancesInscription.reduce((sum, e) => sum + (e.montantPaye || 0), 0)
+    }
+
+    const resteInscription = Math.max(0, fraisInscriptionSession - dejaPayeInscription)
+    const montantInscription = Math.min(montant, resteInscription)
+    const montantScolarite = Math.round((montant - montantInscription) * 100) / 100
+
+    // Bourse de l'étudiant
+    let bourse: any = null
+    if (dossiers.length > 0) {
+      try {
+        const { BourseAttribution } = await import('../../bourse/models/BourseAttribution')
+        const { BourseConfiguration } = await import('../../bourse/models/BourseConfiguration')
+        const attribution = await BourseAttribution.findOne({
+          where: { dossierEtudiantId: dossiers.map(d => d.id), statut: 'ACTIVE' },
+          include: [{ model: BourseConfiguration, as: 'configuration' }],
+        })
+        if (attribution) {
+          bourse = {
+            type: attribution.type,
+            taux: Number(attribution.taux),
+            nom: (attribution as any).configuration?.nom || 'Bourse',
+            reductionScolarite: Math.round(montantScolarite * Number(attribution.taux) / 100 * 100) / 100,
+          }
+        }
+      } catch (e) {
+        // Module bourse non disponible — pas bloquant
+      }
+    }
+
+    // Montant scolarité après réduction bourse (pour info)
+    let montantScolariteApresBourse = montantScolarite
+    if (bourse && bourse.reductionScolarite > 0) {
+      montantScolariteApresBourse = Math.max(0, Math.round((montantScolarite - bourse.reductionScolarite) * 100) / 100)
+    }
+
+    return res.status(200).json({
+      success: true,
+      composition: {
+        inscription: Math.round(montantInscription * 100) / 100,
+        scolarite: montantScolarite,
+        scolariteApresBourse: montantScolariteApresBourse,
+      },
+      fraisInscriptionSession,
+      dejaPayeInscription,
+      resteInscription,
+      bourse,
+    })
+  } catch (error: any) {
+    console.error('Erreur composition-preview:', error)
+    return res.status(500).json({ success: false, message: error.message || 'Erreur interne' })
+  }
+})
+
+/**
  * @openapi
  * /inscription/finance/bordereaux/{id}/saisir:
  *   put:
@@ -211,8 +304,19 @@ router.post('/bordereaux/:id/imputation-preview', [AuthEsacompta, CheckPermissio
  */
 router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.finance.bordereau.saisir')], async (req: Request, res: Response) => {
   const transaction = await DatabaseConnection.getInstance().sequelize.transaction()
+  const _rid = `[SAISIR#${req.params.id}]`
 
   try {
+    console.log(_rid, 'Début saisie — body:', JSON.stringify({
+      montantPaiement: req.body.montantPaiement,
+      referenceBancaire: req.body.referenceBancaire,
+      numeroBordereau: req.body.numeroBordereau,
+      moyenPaiement: req.body.moyenPaiement,
+      typeOperationId: req.body.typeOperationId,
+      datePaiement: req.body.datePaiement,
+      commentaire: req.body.commentaire,
+    }))
+
     let bordereau = await Bordereau.findByPk(req.params.id, {
       transaction,
       lock: transaction.LOCK.UPDATE,
@@ -225,18 +329,23 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
 
     if (!bordereau) {
       await transaction.rollback()
+      console.log(_rid, 'ERREUR 404: Bordereau non trouvé')
       return res.status(404).json({ success: false, message: "Bordereau non trouvé" })
     }
 
+    console.log(_rid, 'Bordereau trouvé — statut:', bordereau.statut, 'type:', bordereau.type, 'utilisateurId:', bordereau.utilisateurId, 'typeOperationId:', bordereau.typeOperationId)
+
     if (bordereau.statut === 'traite') {
       await transaction.rollback()
-      return res.status(400).json({ success: false, message: "Bordereau déjà traité" })
+      console.log(_rid, 'ERREUR 400: Bordereau déjà traité')
+      return res.status(400).json({ success: false, message: "Bordereau déjà traité", details: { statut: bordereau.statut } })
     }
 
     const montantPaiement = Number(req.body.montantPaiement)
     if (!Number.isFinite(montantPaiement) || montantPaiement <= 0) {
       await transaction.rollback()
-      return res.status(400).json({ success: false, message: "Montant de paiement invalide" })
+      console.log(_rid, 'ERREUR 400: Montant invalide — reçu:', req.body.montantPaiement, '→ Number:', montantPaiement)
+      return res.status(400).json({ success: false, message: "Montant de paiement invalide", details: { recu: req.body.montantPaiement, parsed: montantPaiement } })
     }
 
     // ── Règle du PREMIER bordereau de l'étudiant ──
@@ -251,7 +360,7 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
     })
     const estPremierBordereau = !dossierExistant
 
-    let typeOperationIdEffectif = req.body.typeOperationId ?? bordereau.typeOperationId
+    let typeOperationIdEffectif: number | null = req.body.typeOperationId ? Number(req.body.typeOperationId) : (bordereau.typeOperationId ?? null)
     let typeEffectif: any = bordereau.type
 
     // Résolution du code d'opération choisi (bordereau.type peut encore être NULL
@@ -278,56 +387,99 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       }
     }
 
-    // ── Validation de la composition (type MIXTE uniquement) ──
-    // Le comptable déclare la répartition du montant constaté par nature de frais.
-    // Chaque composante sera imputée FIFO sur ses propres échéances, sans débordement.
+    console.log(_rid, 'Contexte:', { estPremierBordereau, estMixte, typeEffectif, typeOperationIdEffectif, typeOperationCode })
+
+    // ── Validation de la composition (type MIXTE) ──
+    // Si le comptable fournit une composition explicite, on la valide.
+    // Sinon, on calcule automatiquement : inscription d'abord (= frais inscription de
+    // la session), puis scolarité pour le reste. Plus besoin de saisie manuelle.
     let composition: { type: 'inscription' | 'scolarite'; montant: number }[] | null = null
     if (estMixte) {
       const raw = req.body.composition
-      if (!Array.isArray(raw) || raw.length === 0) {
-        await transaction.rollback()
-        return res.status(400).json({ success: false, message: "Type Mixte : la répartition est requise (composition [{type:'inscription'|'scolarite', montant}])." })
-      }
-      composition = []
-      for (const c of raw) {
-        const t = String(c?.type || '').toLowerCase()
-        const m = Number(c?.montant)
-        if (!['inscription', 'scolarite'].includes(t)) {
-          await transaction.rollback()
-          return res.status(400).json({ success: false, message: `Type Mixte : nature « ${t} » inconnue (autorisées : inscription, scolarite).` })
+
+      if (Array.isArray(raw) && raw.length > 0) {
+        // Composition explicite fournie par l'utilisateur → validation classique
+        composition = []
+        for (const c of raw) {
+          const t = String(c?.type || '').toLowerCase()
+          const m = Number(c?.montant)
+          if (!['inscription', 'scolarite'].includes(t)) {
+            await transaction.rollback()
+            console.log(_rid, 'ERREUR 400: Type Mixte — nature inconnue:', t)
+            return res.status(400).json({ success: false, message: `Type Mixte : nature « ${t} » inconnue (autorisées : inscription, scolarite).` })
+          }
+          if (!Number.isFinite(m) || m <= 0) {
+            await transaction.rollback()
+            console.log(_rid, 'ERREUR 400: Type Mixte — montant invalide pour', t, ':', m)
+            return res.status(400).json({ success: false, message: "Type Mixte : chaque composante doit avoir un montant positif." })
+          }
+          composition.push({ type: t as 'inscription' | 'scolarite', montant: Math.round(m * 100) / 100 })
         }
-        if (!Number.isFinite(m) || m <= 0) {
+        const sommeComposition = Math.round(composition.reduce((s, c) => s + c.montant, 0) * 100) / 100
+        if (Math.abs(sommeComposition - montantPaiement) > 0.01) {
           await transaction.rollback()
-          return res.status(400).json({ success: false, message: "Type Mixte : chaque composante doit avoir un montant positif." })
+          console.log(_rid, 'ERREUR 400: Type Mixte — somme composition', sommeComposition, '!== montant', montantPaiement)
+          return res.status(400).json({ success: false, message: `Type Mixte : la somme de la répartition (${sommeComposition}) doit être égale au montant constaté (${montantPaiement}).` })
         }
-        composition.push({ type: t as 'inscription' | 'scolarite', montant: Math.round(m * 100) / 100 })
-      }
-      const sommeComposition = Math.round(composition.reduce((s, c) => s + c.montant, 0) * 100) / 100
-      if (Math.abs(sommeComposition - montantPaiement) > 0.01) {
-        await transaction.rollback()
-        return res.status(400).json({ success: false, message: `Type Mixte : la somme de la répartition (${sommeComposition}) doit être égale au montant constaté (${montantPaiement}).` })
+      } else {
+        // ── AUTO-COMPOSITION : inscription d'abord, puis scolarité ──
+        // Récupérer les frais d'inscription de la session
+        const demande = await DemandeInscription.findOne({
+          where: { utilisateurId: bordereau.utilisateurId },
+          include: [{ association: DemandeInscription.associations.session, include: [Session.associations.fraisInscription] }],
+          transaction,
+        })
+        const fraisInscriptionSession = (demande?.session?.fraisInscription || [])
+          .reduce((sum: number, f: any) => sum + (f.montant || 0), 0)
+
+        // Calculer le montant déjà payé en inscription
+        const dossiers = await DossierEtudiant.findAll({
+          where: { utilisateurId: bordereau.utilisateurId },
+          transaction,
+        })
+        let dejaPayeInscription = 0
+        if (dossiers.length > 0) {
+          const echeancesInscription = await Echeance.findAll({
+            where: { dossierEtudiantId: dossiers.map((d: any) => d.id), type: 'inscription' },
+            transaction,
+          })
+          dejaPayeInscription = echeancesInscription.reduce((sum: number, e: any) => sum + (e.montantPaye || 0), 0)
+        }
+
+        const resteInscription = Math.max(0, fraisInscriptionSession - dejaPayeInscription)
+        const montantInscription = Math.min(montantPaiement, resteInscription)
+        const montantScolarite = Math.round((montantPaiement - montantInscription) * 100) / 100
+
+        composition = []
+        if (montantInscription > 0) {
+          composition.push({ type: 'inscription', montant: Math.round(montantInscription * 100) / 100 })
+        }
+        if (montantScolarite > 0) {
+          composition.push({ type: 'scolarite', montant: montantScolarite })
+        }
       }
     }
 
     // NOUVEAU : contrôle « premier bordereau ≥ frais d'inscription »
     // Un premier bordereau dont le montant est inférieur aux frais d'inscription
     // de la session est rejeté purement et simplement à la saisie ESA.
-    // Pour un bordereau MIXTE, c'est la composante 'inscription' de la répartition
-    // qui doit couvrir les frais (le reste étant déclaré en scolarité).
-    if (estPremierBordereau) {
-      const demande = await DemandeInscription.findOne({
+    // Pour un bordereau MIXTE auto-composé, la composition garantit déjà que
+    // inscription = reste à payer. Ce garde-fou ne sert qu'en composition explicite.
+    if (estPremierBordereau && composition && composition.length > 0) {
+      const demandeGuard = await DemandeInscription.findOne({
         where: { utilisateurId: bordereau.utilisateurId },
         include: [{ association: DemandeInscription.associations.session, include: [Session.associations.fraisInscription] }],
         transaction,
       })
-      const fraisInscriptionSession = (demande?.session?.fraisInscription || [])
+      const fraisInscriptionSessionGuard = (demandeGuard?.session?.fraisInscription || [])
         .reduce((sum, f) => sum + (f.montant || 0), 0)
-      const montantPartInscription = estMixte && composition
+      const montantPartInscription = estMixte
         ? composition.filter(c => c.type === 'inscription').reduce((s, c) => s + c.montant, 0)
         : montantPaiement
-      if (montantPartInscription < fraisInscriptionSession) {
+      if (montantPartInscription < fraisInscriptionSessionGuard) {
         await transaction.rollback()
-        return res.status(400).json({ success: false, message: `La part inscription (${montantPartInscription}) est inférieure aux frais d'inscription de la session (${fraisInscriptionSession}). Le premier versement doit au minimum couvrir les frais d'inscription.` })
+        console.log(_rid, 'ERREUR 400: Part inscription', montantPartInscription, '< frais inscription session', fraisInscriptionSessionGuard)
+        return res.status(400).json({ success: false, message: `La part inscription (${montantPartInscription}) est inférieure aux frais d'inscription de la session (${fraisInscriptionSessionGuard}). Le premier versement doit au minimum couvrir les frais d'inscription.` })
       }
     }
 
@@ -358,20 +510,35 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
     }
 
     // Mise à jour des informations financières
+    // Sanitiser les chaînes vides → null (évite les erreurs ENUM et FK)
+    const refBancaire = (req.body.referenceBancaire || '').trim() || null
+    const numBordereau = (req.body.numeroBordereau || '').trim() || null
+    const moyPaiement = (req.body.moyenPaiement || '').trim() || null
+    const datePaiement = req.body.datePaiement ? new Date(req.body.datePaiement) : bordereau.datePaiement
+
+    console.log(_rid, 'Sanitization:', { refBancaire, numBordereau, moyPaiement, datePaiement, typeOperationIdEffectif, typeEffectif })
+
     bordereau.montant = montantPaiement
-    bordereau.referenceBancaire = req.body.referenceBancaire ?? bordereau.referenceBancaire
-    bordereau.numeroBordereau = req.body.numeroBordereau ?? bordereau.numeroBordereau
-    bordereau.moyenPaiement = req.body.moyenPaiement ?? bordereau.moyenPaiement
+    bordereau.referenceBancaire = refBancaire
+    bordereau.numeroBordereau = numBordereau
+    bordereau.moyenPaiement = moyPaiement as any
     bordereau.typeOperationId = typeOperationIdEffectif
     bordereau.type = typeEffectif ?? null
     bordereau.composition = estMixte && composition ? JSON.stringify(composition) : null
-    bordereau.datePaiement = req.body.datePaiement ? new Date(req.body.datePaiement) : bordereau.datePaiement
-    bordereau.commentaire = req.body.commentaire ?? bordereau.commentaire
+    bordereau.datePaiement = datePaiement
+    bordereau.commentaire = (req.body.commentaire || '').trim() || null
     bordereau.statut = 'traite'
     bordereau.dateValidation = bordereau.dateValidation || new Date()
     bordereau.valideParId = bordereau.valideParId || (req as any).utilisateurId
 
-    await bordereau.save({ transaction })
+    try {
+      await bordereau.save({ transaction })
+      console.log(_rid, 'Bordereau sauvegardé avec succès')
+    } catch (saveError: any) {
+      await transaction.rollback()
+      console.log(_rid, 'ERREUR 500: Échec save bordereau:', saveError.message, saveError?.parent?.code)
+      return res.status(500).json({ success: false, message: `Erreur de sauvegarde du bordereau: ${saveError.message}` })
+    }
 
     const typeOperation = bordereau.typeOperation
     const bordereauType = bordereau.type || typeOperation?.code?.toLowerCase() || 'scolarite'
@@ -395,6 +562,7 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
         )
       } catch (dossierError: any) {
         await transaction.rollback()
+        console.log(_rid, 'ERREUR 400: Dossier creation failed:', dossierError.message || dossierError)
         return res.status(400).json({ success: false, message: dossierError.message || 'Erreur lors de la création du dossier étudiant' })
       }
     }
@@ -569,7 +737,7 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
     })
   } catch (error: any) {
     await transaction.rollback()
-    console.error('[saisirBordereau]', error)
+    console.error(_rid, 'ERREUR 500 FATALE:', error.message || error, error.stack?.split('\n').slice(0, 3).join(' | '))
     return res.status(500).json({ success: false, message: error.message || 'Erreur interne du serveur' })
   }
 })

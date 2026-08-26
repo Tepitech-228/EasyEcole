@@ -2,11 +2,27 @@ import { Request, Response } from "express";
 import { CountOptions, FindOptions, InferAttributes, Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Utilisateur } from "../models/Utilisateur";
+import { PersonnelAdministratif } from "../models/PersonnelAdministratif";
+import { Enseignant } from "../models/Enseignant";
+import { Apprenant } from "../models/Apprenant";
 import * as bcrypt from 'bcrypt';
 
 export default class UtilisateurController {
 
     constructor() { }
+
+    private static roleToFonction(role: string): string {
+        const map: { [key: string]: string } = {
+            [RolesUtilisateur.PERSONNEL_ADMINISTRATIF]: 'Personnel Administratif',
+            [RolesUtilisateur.CAISSIER_BANQUE]: 'Caissier Banque',
+            [RolesUtilisateur.COMITE_ORIENTATION]: "Comité d'Orientation",
+            [RolesUtilisateur.CABINET_COMPTABLE]: 'Cabinet Comptable',
+            [RolesUtilisateur.RESSOURCES_HUMAINES]: 'Ressources Humaines',
+            [RolesUtilisateur.ESA_COMPTA]: 'ESA Compta',
+            [RolesUtilisateur.SECRETAIRE]: 'Secrétaire',
+        };
+        return map[role] || role;
+    }
 
     static async getAllUtilisateurs(req: Request, res: Response): Promise<Response> {
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
@@ -123,6 +139,7 @@ export default class UtilisateurController {
             if (!req.body.motDePasse || req.body.motDePasse.length < 6) {
                 return res.status(400).json({ success: false, message: "Mot de passe requis (min 6 caractères)" });
             }
+
             const utilisateur = await Utilisateur.create({
                 nom: req.body.nom,
                 prenoms: req.body.prenoms,
@@ -132,6 +149,67 @@ export default class UtilisateurController {
                 role: req.body.role || RolesUtilisateur.APPRENANT,
                 contact: req.body.contact || null,
             });
+
+            // Création du profil lié selon le rôle
+            // Hors apprenant/enseignant/parent → tous = PersonnelAdministratif (fonction = rôle)
+            const userRole = req.body.role || RolesUtilisateur.APPRENANT;
+            const isStaff =![
+                RolesUtilisateur.PERSONNEL_ADMINISTRATIF,
+                RolesUtilisateur.CAISSIER_BANQUE,
+                RolesUtilisateur.COMITE_ORIENTATION,
+                RolesUtilisateur.CABINET_COMPTABLE,
+                RolesUtilisateur.RESSOURCES_HUMAINES,
+                RolesUtilisateur.ESA_COMPTA,
+                RolesUtilisateur.SECRETAIRE,
+            ].includes(userRole);
+
+            try {
+                if (userRole === RolesUtilisateur.APPRENANT) {
+                    await Apprenant.create({
+                        utilisateurId: utilisateur.id,
+                        dateNaissance: req.body.dateNaissance || new Date(),
+                        lieuNaissance: req.body.lieuNaissance || '',
+                        sexe: req.body.sexe || 'M',
+                        nationalite: req.body.nationalite || 'Ivoirienne',
+                        cni: req.body.cni || null,
+                        statutEtudiant: req.body.statutEtudiant || 'nouveau',
+                        periode: req.body.periode || 'matin',
+                    });
+                } else if (userRole === RolesUtilisateur.ENSEIGNANT) {
+                    await Enseignant.create({
+                        utilisateurId: utilisateur.id,
+                        specialite: req.body.specialite || null,
+                        gradeAcademique: req.body.gradeAcademique || null,
+                        matricule: req.body.matricule || null,
+                        statut: req.body.statut || 'Permanent',
+                        fonctionAdministrative: req.body.fonctionAdministrative || null,
+                        anneeExperience: req.body.anneeExperience || 0,
+                        cni: req.body.cni || null,
+                        dateNaissance: req.body.dateNaissance || null,
+                        lieuNaissance: req.body.lieuNaissance || null,
+                        sexe: req.body.sexe || 'M',
+                        nationalite: req.body.nationalite || 'Ivoirienne',
+                        contact: req.body.contact || null,
+                        plusHautDiplome: req.body.plusHautDiplome || null,
+                    });
+                } else if (isStaff) {
+                    // Tous les rôles staff → profil PersonnelAdministratif, fonction = libellé du rôle
+                    await PersonnelAdministratif.create({
+                        utilisateurId: utilisateur.id,
+                        fonction: req.body.fonction || this.roleToFonction(userRole),
+                        matricule: req.body.matricule || null,
+                        statut: req.body.statut || 'Permanent',
+                        directionService: req.body.directionService || null,
+                        cni: req.body.cni || null,
+                        dateNaissance: req.body.dateNaissance || null,
+                        lieuNaissance: req.body.lieuNaissance || null,
+                        sexe: req.body.sexe || 'M',
+                        nationalite: req.body.nationalite || 'Ivoirienne',
+                    });
+                }
+            } catch (profileError: any) {
+                console.error('Erreur création profil:', profileError?.message);
+            }
 
             return res.status(201).json({ success: true, utilisateur });
         } catch (error) {

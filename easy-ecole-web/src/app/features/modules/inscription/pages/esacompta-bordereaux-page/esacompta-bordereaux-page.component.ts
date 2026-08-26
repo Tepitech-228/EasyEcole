@@ -51,8 +51,11 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
 
   saisieForm: FormGroup
 
-  // Répartition obligatoire quand le type d'opération sélectionné est MIXTE
+  // Répartition auto-calculée quand le type d'opération sélectionné est MIXTE
   composition = { inscription: null as number | null, scolarite: null as number | null }
+  compositionPreviewResult: any = null
+  compositionLoading: boolean = false
+  bourseInfo: any = null
 
   /** Type d'opération actuellement sélectionné dans le formulaire de saisie */
   get typeSelectionne(): TypeOperationBordereau | undefined {
@@ -65,23 +68,12 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     return String((this.typeSelectionne as any)?.code || '').toUpperCase() === 'MIXTE'
   }
 
-  /** Somme des composantes déclarées pour un bordereau mixte */
+  /** Montant de la composition auto-calculée (somme inscription + scolarité) */
   get compositionSomme(): number {
-    return Math.round(((Number(this.composition.inscription) || 0) + (Number(this.composition.scolarite) || 0)) * 100) / 100
-  }
-
-  /** La répartition est-elle complète et égale au montant constaté ? */
-  get compositionValide(): boolean {
-    if (!this.estTypeMixte) return true
-    const montant = Number(this.saisieForm.get('montantPaiement')?.value || 0)
-    return this.compositionSomme > 0 && Math.abs(this.compositionSomme - montant) < 0.01
-  }
-
-  /** Écart entre le montant constaté et la répartition déclarée (affiché si non nul) */
-  get compositionEcart(): number {
-    const montant = Number(this.saisieForm.get('montantPaiement')?.value || 0)
-    const ecart = Math.round((montant - this.compositionSomme) * 100) / 100
-    return Object.is(ecart, -0) ? 0 : ecart
+    if (this.compositionPreviewResult?.composition) {
+      return Math.round((this.compositionPreviewResult.composition.inscription + this.compositionPreviewResult.composition.scolarite) * 100) / 100
+    }
+    return 0
   }
 
   readonly BORDEREAUX_PATH: string = (window as any).__env?.MEDIAS_PATH?.INSCRIPTION?.BORDEREAUX || '/media/inscription/bordereaux/'
@@ -197,6 +189,13 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
 
   onTypeOperationChange(): void {
     this.loadData()
+    // Si on est dans la modale et le type devient MIXTE, charger l'auto-composition
+    if (this.showSaisieModal && this.selectedBordereau && this.estTypeMixte) {
+      this.loadCompositionPreview()
+    } else if (this.showSaisieModal && !this.estTypeMixte) {
+      this.compositionPreviewResult = null
+      this.bourseInfo = null
+    }
   }
 
   // ── Vue dossier-view (design effectifs) ──
@@ -247,6 +246,9 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   openSaisieModal(bordereau: Bordereau): void {
     this.selectedBordereau = bordereau
     this.composition = { inscription: null, scolarite: null }
+    this.compositionPreviewResult = null
+    this.compositionLoading = false
+    this.bourseInfo = null
     this.saisieForm.reset({
       montantPaiement: bordereau.montant || null,
       referenceBancaire: bordereau.referenceBancaire || '',
@@ -257,6 +259,16 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
       commentaire: bordereau.commentaire || ''
     })
     this.showSaisieModal = true
+    // Auto-charger la composition si type MIXTE
+    if (this.estTypeMixte) {
+      this.loadCompositionPreview()
+    }
+    // Réagir aux changements de montant pour recharger l'auto-composition
+    this.saisieForm.get('montantPaiement')?.valueChanges.subscribe(val => {
+      if (this.showSaisieModal && this.estTypeMixte) {
+        this.loadCompositionPreview()
+      }
+    })
   }
 
   closeSaisieModal(): void {
@@ -264,6 +276,35 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     this.selectedBordereau = undefined
     this.error = false
     this.apiErrorMessage = ''
+    this.compositionPreviewResult = null
+    this.bourseInfo = null
+  }
+
+  /**
+   * Charge la répartition auto-calculée (inscription d'abord, reste scolarité)
+   * + info bourse de l'étudiant. Appelé quand le type est MIXTE.
+   */
+  loadCompositionPreview(): void {
+    if (!this.selectedBordereau) return
+    const montant = Number(this.saisieForm.get('montantPaiement')?.value || 0)
+    if (!montant || montant <= 0) return
+
+    this.compositionLoading = true
+    this.bordereauService.compositionPreview(this.selectedBordereau.id!, montant).subscribe({
+      next: (res: any) => {
+        this.compositionPreviewResult = res
+        this.bourseInfo = res.bourse || null
+        // Mettre à jour les champs composition pour le payload
+        this.composition.inscription = res.composition?.inscription || 0
+        this.composition.scolarite = res.composition?.scolarite || 0
+        this.compositionLoading = false
+      },
+      error: (err) => {
+        console.error('Erreur composition preview:', err)
+        this.compositionLoading = false
+        this.compositionPreviewResult = null
+      }
+    })
   }
 
   onPreview(): void {
@@ -278,8 +319,13 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
         this.showPreviewModal = true
       },
       error: (err) => {
-        console.error('Erreur preview:', err)
-        this.apiErrorMessage = err?.error?.message || 'Erreur lors du calcul de l\'imputation'
+        let msg = 'Erreur lors du calcul de l\'imputation'
+        try {
+          if (err?.error?.message) msg = err.error.message
+          else if (err?.message) msg = err.message
+        } catch (_) {}
+        console.error('[ESA-COMPTA] Erreur preview:', msg, '| status:', err?.status)
+        this.apiErrorMessage = msg
         this.error = true
       }
     })
@@ -287,26 +333,48 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
 
   onConfirmerSaisie(): void {
     if (this.saisieForm.invalid || !this.selectedBordereau) return
-    if (!this.compositionValide) return
     this.error = false
     this.apiErrorMessage = ''
 
-    const payload: any = { ...this.saisieForm.value }
-    if (this.estTypeMixte) {
-      payload.composition = [
-        { type: 'inscription', montant: Number(this.composition.inscription) || 0 },
-        { type: 'scolarite', montant: Number(this.composition.scolarite) || 0 },
-      ].filter(c => c.montant > 0)
+    // Pour les types MIXTE, on n'envoie plus de composition manuelle :
+    // le backend calcule automatiquement (inscription d'abord, reste scolarité).
+    const raw = this.saisieForm.value
+    const payload: any = {
+      montantPaiement: raw.montantPaiement,
+      referenceBancaire: (raw.referenceBancaire || '').trim() || null,
+      numeroBordereau: (raw.numeroBordereau || '').trim() || null,
+      moyenPaiement: (raw.moyenPaiement || '').trim() || null,
+      typeOperationId: raw.typeOperationId,
+      datePaiement: raw.datePaiement || null,
+      commentaire: (raw.commentaire || '').trim() || null,
     }
+
+    console.log('[ESA-COMPTA] Payload saisie:', JSON.stringify(payload))
+
     this.bordereauService.saisir(this.selectedBordereau.id!, payload).subscribe({
-      next: () => {
+      next: (res: any) => {
+        console.log('[ESA-COMPTA] Saisie réussie:', res)
         this.closeSaisieModal()
         this.showPreviewModal = false
         this.loadData()
       },
       error: (err) => {
-        console.error('Erreur saisie:', err)
-        this.apiErrorMessage = err?.error?.message || 'Erreur lors de la saisie comptable'
+        // Extraire le message d'erreur depuis toutes les structures possibles
+        let msg = 'Erreur lors de la saisie comptable'
+        try {
+          if (err?.error?.message) {
+            msg = err.error.message
+            if (err.error.details) {
+              msg += ' — ' + JSON.stringify(err.error.details)
+            }
+          } else if (err?.message) {
+            msg = err.message
+          }
+        } catch (_) {
+          msg = `Erreur HTTP ${err?.status || 'inconnu'}`
+        }
+        console.error('[ESA-COMPTA] Erreur saisie:', msg, '| status:', err?.status, '| body:', err?.error)
+        this.apiErrorMessage = msg
         this.error = true
       }
     })

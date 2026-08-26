@@ -9,5 +9,6 @@ export enum RolesUtilisateur {
     ESA_COMPTA = "esa_compta",
     COMITE_ORIENTATION = "comite_orientation",
     ADMIN = "admin",
-    PARENT = "parent"
+    PARENT = "parent",
+    SECRETAIRE = "secretaire"
 }

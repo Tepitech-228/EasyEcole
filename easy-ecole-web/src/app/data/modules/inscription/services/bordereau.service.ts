@@ -41,6 +41,10 @@ export class BordereauService {
     return this.httpClient.post<any>(`${environment.API_MODULES.INSCRIPTION}/finance/bordereaux/${id}/imputation-preview`, { montantPaiement })
   }
 
+  compositionPreview(id: string, montantPaiement: number): Observable<any> {
+    return this.httpClient.post<any>(`${environment.API_MODULES.INSCRIPTION}/finance/bordereaux/${id}/composition-preview`, { montantPaiement })
+  }
+
   saisir(id: string, payload: any): Observable<any> {
     return this.httpClient.put<any>(`${environment.API_MODULES.INSCRIPTION}/finance/bordereaux/${id}/saisir`, payload)
   }

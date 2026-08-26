@@ -84,7 +84,7 @@
         <span class="text-gray-600">Nom complet :</span><span class="text-gray-900 font-medium">{{ selectedDossier.utilisateur?.nom }} {{ selectedDossier.utilisateur?.prenoms }}</span>
         <span class="text-gray-600">Email :</span><span class="text-gray-900">{{ selectedDossier.utilisateur?.email || '---' }}</span>
         <span class="text-gray-600">Contact :</span><span class="text-gray-900">{{ selectedDossier.utilisateur?.contact || '---' }}</span>
-        <span class="text-gray-600">Période :</span><span class="text-gray-900">{{ selectedDossier.utilisateur?.apprenant?.periode === 'soir' ? 'Cours du soir' : (selectedDossier.utilisateur?.apprenant?.periode === 'matin' ? 'Cours du matin' : 'Non renseignée') }}</span>
+        <span class="text-gray-600">Période :</span><span class="text-gray-900">{{ selectedDossier.utilisateur?.apprenant?.periode === 'soir' ? 'Cours du soir' : (selectedDossier.utilisateur?.apprenant?.periode === 'matin' ? 'Cours du matin' : (selectedDossier.utilisateur?.apprenant?.periode === 'en_ligne' ? 'Cours en ligne' : 'Non renseignée')) }}</span>
         <span class="text-gray-600">Préinscription :</span><span class="text-gray-900">{{ selectedDossier.preInscription?.statut || '---' }}</span>
       </div>
     </div>
@@ -227,7 +227,7 @@
       <span class="text-gray-600">Contact :</span>
       <span class="text-gray-900">{{ selectedEtudiantDossier.utilisateur?.contact || '---' }}</span>
       <span class="text-gray-600">Période de cours :</span>
-      <span class="text-gray-900">{{ selectedEtudiantDossier.utilisateur?.apprenant?.periode === 'soir' ? 'Cours du soir' : (selectedEtudiantDossier.utilisateur?.apprenant?.periode === 'matin' ? 'Cours du matin' : 'Non renseignée') }}</span>
+      <span class="text-gray-900">{{ selectedEtudiantDossier.utilisateur?.apprenant?.periode === 'soir' ? 'Cours du soir' : (selectedEtudiantDossier.utilisateur?.apprenant?.periode === 'matin' ? 'Cours du matin' : (selectedEtudiantDossier.utilisateur?.apprenant?.periode === 'en_ligne' ? 'Cours en ligne' : 'Non renseignée')) }}</span>
       <span class="text-gray-600">Parcours final :</span>
       <span class="text-gray-900">{{ getParcoursFinal(selectedEtudiantDossier) }}</span>
       <span class="text-gray-600">Année académique :</span>
