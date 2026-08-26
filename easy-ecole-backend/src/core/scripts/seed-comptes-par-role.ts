@@ -33,6 +33,8 @@ const MOTS_DE_PASSE: Record<string, string> = {
 
 interface CompteDemo {
     role: string;
+    /** Rôle RBAC dans aut_roles (null = pas de mapping RBAC) */
+    roleRbac: string | null;
     nom: string;
     prenoms: string;
     identifiant: string;
@@ -42,31 +44,49 @@ interface CompteDemo {
     lieuNaissance?: string;
 }
 
+/**
+ * Mapping rôle ENUM (aut_utilisateurs.role) → rôle RBAC (aut_roles.nom).
+ * Le seed lie chaque compte à son rôle RBAC dans aut_user_roles.
+ */
+const ROLE_ENUM_TO_RBAC: Record<string, string | null> = {
+    admin: 'Super Admin',
+    institution: 'Directeur',
+    cabinet_comptable: 'Comptable',
+    esa_compta: 'Comptable',
+    comite_orientation: 'Directeur',
+    caissier_banque: 'Comptable',
+    personnel_administratif: 'Directeur',
+    secretaire: 'Directeur',
+    enseignant: 'Enseignant',
+    apprenant: 'Apprenant',
+    parent: 'Parent',
+};
+
 const COMPTES: CompteDemo[] = [
     // ── Comptes administratifs (emails Gmail de prod, recevant les OTP) ──
     // Ces 4 comptes sont créés/mis à jour automatiquement au déploiement (Dokploy post-deploy).
     // L'OTP est envoyé à l'adresse `email` (voir AuthController / OtpService).
-    { role: 'admin', nom: 'Admin', prenoms: 'Systeme', identifiant: 'tepitechbuild', email: 'tepitechbuild@gmail.com', contact: '+22890000000' },
-    { role: 'cabinet_comptable', nom: 'Cabinet', prenoms: 'Comptable', identifiant: 'tepitechcorp', email: 'tepitechcorp@gmail.com', contact: '+2280106000001', dateNaissance: '1985-01-01', lieuNaissance: 'Lomé' },
-    { role: 'esa_compta', nom: 'ESA', prenoms: 'Compta Service', identifiant: 'kakashitogo', email: 'kakashitogo@gmail.com', contact: '+2280110000001' },
-    { role: 'comite_orientation', nom: 'Comite', prenoms: 'Orientation', identifiant: 'histoiregede', email: 'histoiregede@gmail.com', contact: '+2280104000003' },
+    { role: 'admin', roleRbac: ROLE_ENUM_TO_RBAC['admin'], nom: 'Admin', prenoms: 'Systeme', identifiant: 'tepitechbuild', email: 'tepitechbuild@gmail.com', contact: '+22890000000' },
+    { role: 'cabinet_comptable', roleRbac: ROLE_ENUM_TO_RBAC['cabinet_comptable'], nom: 'Cabinet', prenoms: 'Comptable', identifiant: 'tepitechcorp', email: 'tepitechcorp@gmail.com', contact: '+2280106000001', dateNaissance: '1985-01-01', lieuNaissance: 'Lomé' },
+    { role: 'esa_compta', roleRbac: ROLE_ENUM_TO_RBAC['esa_compta'], nom: 'ESA', prenoms: 'Compta Service', identifiant: 'kakashitogo', email: 'kakashitogo@gmail.com', contact: '+2280110000001' },
+    { role: 'comite_orientation', roleRbac: ROLE_ENUM_TO_RBAC['comite_orientation'], nom: 'Comite', prenoms: 'Orientation', identifiant: 'histoiregede', email: 'histoiregede@gmail.com', contact: '+2280104000003' },
     // ── Comptes système complémentaires (rôles toujours actifs) ──
-    { role: 'institution', nom: 'Institution', prenoms: 'Direction', identifiant: 'direction', email: 'direction@easyecole.tg', contact: '+2280101000001', dateNaissance: '1985-01-01', lieuNaissance: 'Lomé' },
-    { role: 'secretaire', nom: 'Secretaire', prenoms: 'Systeme', identifiant: 'secretaire1', email: 'secretaire@easyecole.tg', contact: '+2280108000001' },
-    { role: 'enseignant', nom: 'Enseignant', prenoms: 'Systeme', identifiant: 'pacetamol362', email: 'pacetamol362@gmail.com', contact: '+2280102000001', dateNaissance: '1980-05-15', lieuNaissance: 'Lomé' },
+    { role: 'institution', roleRbac: ROLE_ENUM_TO_RBAC['institution'], nom: 'Institution', prenoms: 'Direction', identifiant: 'direction', email: 'direction@easyecole.tg', contact: '+2280101000001', dateNaissance: '1985-01-01', lieuNaissance: 'Lomé' },
+    { role: 'secretaire', roleRbac: ROLE_ENUM_TO_RBAC['secretaire'], nom: 'Secretaire', prenoms: 'Systeme', identifiant: 'secretaire1', email: 'secretaire@easyecole.tg', contact: '+2280108000001' },
+    { role: 'enseignant', roleRbac: ROLE_ENUM_TO_RBAC['enseignant'], nom: 'Enseignant', prenoms: 'Systeme', identifiant: 'pacetamol362', email: 'pacetamol362@gmail.com', contact: '+2280102000001', dateNaissance: '1980-05-15', lieuNaissance: 'Lomé' },
 
     // ── Comptes démo additionnels (identifiants easyecole.tg) ──
-    { role: 'enseignant', nom: 'Kossi', prenoms: 'Yawo', identifiant: 'prof-maths', email: 'prof.maths@easyecole.tg', contact: '+2280102000002', dateNaissance: '1982-03-10', lieuNaissance: 'Abidjan' },
-    { role: 'enseignant', nom: 'Kossi', prenoms: 'Maria', identifiant: 'prof-info', email: 'prof.maria@easyecole.tg', contact: '+2280102000003', dateNaissance: '1985-07-22', lieuNaissance: 'Bouaké' },
-    { role: 'enseignant', nom: 'Yawo', prenoms: 'Jean', identifiant: 'prof-gestion', email: 'prof.jean@easyecole.tg', contact: '+2280102000004', dateNaissance: '1980-11-15', lieuNaissance: 'Odienné' },
-    { role: 'enseignant', nom: 'Edem', prenoms: 'Ama', identifiant: 'prof-droit', email: 'prof.ama@easyecole.tg', contact: '+2280102000005', dateNaissance: '1988-09-05', lieuNaissance: 'Man' },
-    { role: 'caissier_banque', nom: 'Atsu', prenoms: 'Koffi', identifiant: 'caissier1', email: 'caissier.atsu@easyecole.tg', contact: '+2280103000001', dateNaissance: '1992-06-18', lieuNaissance: 'Abidjan' },
-    { role: 'caissier_banque', nom: 'Komlan', prenoms: 'Ami', identifiant: 'caissier2', email: 'caissier.ami@easyecole.tg', contact: '+2280103000002', dateNaissance: '1990-01-25', lieuNaissance: 'Korhogo' },
-    { role: 'comite_orientation', nom: 'Mensah', prenoms: 'Yao', identifiant: 'comite1', email: 'comite.yao@easyecole.tg', contact: '+2280104000001' },
-    { role: 'comite_orientation', nom: 'Kokou', prenoms: 'Adjo', identifiant: 'comite2', email: 'comite.adjo@easyecole.tg', contact: '+2280104000002' },
-    { role: 'personnel_administratif', nom: 'Koné', prenoms: 'Aminata', identifiant: 'pers-admin1', email: 'pers.admin@easyecole.tg', contact: '+2280107000001' },
-    { role: 'apprenant', nom: 'Tay', prenoms: 'Adjo', identifiant: 'etudiant-demo', email: 'etudiant.demo@etu.ust.ci', contact: '+2280501000001' },
-    { role: 'parent', nom: 'Tchala', prenoms: 'Bassirou', identifiant: 'parent1', email: 'parent.tchala@easyecole.tg', contact: '+2280120000001' },
+    { role: 'enseignant', roleRbac: ROLE_ENUM_TO_RBAC['enseignant'], nom: 'Kossi', prenoms: 'Yawo', identifiant: 'prof-maths', email: 'prof.maths@easyecole.tg', contact: '+2280102000002', dateNaissance: '1982-03-10', lieuNaissance: 'Abidjan' },
+    { role: 'enseignant', roleRbac: ROLE_ENUM_TO_RBAC['enseignant'], nom: 'Kossi', prenoms: 'Maria', identifiant: 'prof-info', email: 'prof.maria@easyecole.tg', contact: '+2280102000003', dateNaissance: '1985-07-22', lieuNaissance: 'Bouaké' },
+    { role: 'enseignant', roleRbac: ROLE_ENUM_TO_RBAC['enseignant'], nom: 'Yawo', prenoms: 'Jean', identifiant: 'prof-gestion', email: 'prof.jean@easyecole.tg', contact: '+2280102000004', dateNaissance: '1980-11-15', lieuNaissance: 'Odienné' },
+    { role: 'enseignant', roleRbac: ROLE_ENUM_TO_RBAC['enseignant'], nom: 'Edem', prenoms: 'Ama', identifiant: 'prof-droit', email: 'prof.ama@easyecole.tg', contact: '+2280102000005', dateNaissance: '1988-09-05', lieuNaissance: 'Man' },
+    { role: 'caissier_banque', roleRbac: ROLE_ENUM_TO_RBAC['caissier_banque'], nom: 'Atsu', prenoms: 'Koffi', identifiant: 'caissier1', email: 'caissier.atsu@easyecole.tg', contact: '+2280103000001', dateNaissance: '1992-06-18', lieuNaissance: 'Abidjan' },
+    { role: 'caissier_banque', roleRbac: ROLE_ENUM_TO_RBAC['caissier_banque'], nom: 'Komlan', prenoms: 'Ami', identifiant: 'caissier2', email: 'caissier.ami@easyecole.tg', contact: '+2280103000002', dateNaissance: '1990-01-25', lieuNaissance: 'Korhogo' },
+    { role: 'comite_orientation', roleRbac: ROLE_ENUM_TO_RBAC['comite_orientation'], nom: 'Mensah', prenoms: 'Yao', identifiant: 'comite1', email: 'comite.yao@easyecole.tg', contact: '+2280104000001' },
+    { role: 'comite_orientation', roleRbac: ROLE_ENUM_TO_RBAC['comite_orientation'], nom: 'Kokou', prenoms: 'Adjo', identifiant: 'comite2', email: 'comite.adjo@easyecole.tg', contact: '+2280104000002' },
+    { role: 'personnel_administratif', roleRbac: ROLE_ENUM_TO_RBAC['personnel_administratif'], nom: 'Koné', prenoms: 'Aminata', identifiant: 'pers-admin1', email: 'pers.admin@easyecole.tg', contact: '+2280107000001' },
+    { role: 'apprenant', roleRbac: ROLE_ENUM_TO_RBAC['apprenant'], nom: 'Tay', prenoms: 'Adjo', identifiant: 'etudiant-demo', email: 'etudiant.demo@etu.ust.ci', contact: '+2280501000001' },
+    { role: 'parent', roleRbac: ROLE_ENUM_TO_RBAC['parent'], nom: 'Tchala', prenoms: 'Bassirou', identifiant: 'parent1', email: 'parent.tchala@easyecole.tg', contact: '+2280120000001' },
 ];
 
 export async function seedComptesParRole(seqIn?: any): Promise<void> {
@@ -86,7 +106,7 @@ export async function seedComptesParRole(seqIn?: any): Promise<void> {
     const AutA = seq.model('AutApprenant');
     const AutAdrA = seq.model('AutAdresseApprenant');
 
-    console.log('\n═══ 1/4 Comptes utilisateurs (upsert) ═══');
+    console.log('\n═══ 1/5 Comptes utilisateurs (upsert) ═══');
     console.log(`  Mot de passe par défaut : ${MOT_DE_PASSE_DEFAUT.substring(0, 3)}***`);
     let created = 0, updated = 0, skipped = 0;
 
@@ -95,11 +115,10 @@ export async function seedComptesParRole(seqIn?: any): Promise<void> {
         let u: any = await AutU.findOne({ where: { email: c.email } });
         if (!u) u = await AutU.findOne({ where: { identifiant: c.identifiant } });
         if (u) {
-            // Vérifier si le compte est un "apprenant" existant → ne pas écraser
+            // Si le compte existant est déjà le bon rôle → mise à jour classique
+            // Si le compte était apprenant et est reclassé → on met à jour (pas de skip)
             if (u.role === 'apprenant' && c.role !== 'apprenant') {
-                console.log(`  ⚠ SKIP ${c.email} : déjà utilisé par un apprenant (#${u.id}) — utilisez un autre email`);
-                skipped++;
-                continue;
+                console.log(`  ↻ Reclassification : ${c.email} de apprenant → ${c.role} (#${u.id})`);
             }
             await u.update({
                 nom: c.nom, prenoms: c.prenoms, identifiant: c.identifiant,
@@ -122,7 +141,7 @@ export async function seedComptesParRole(seqIn?: any): Promise<void> {
 
     console.log(`\n  Total : ${created} créé(s), ${updated} mis à jour, ${skipped} ignoré(s)`);
 
-    console.log('\n═══ 2/4 Profils liés ═══');
+    console.log('\n═══ 2/5 Profils liés ═══');
     const ensureAdresseE = async () => (await AutAdrE.create({ pays: 'Togo', ville: 'Lomé', quartier: 'Centre', boitePostale: 'BP 100', prorietaireBoitePostale: 'Démo', telMobile: '+228000000000' })).id ?? (await AutAdrE.findAll())[0].id;
     const ensureAdresseI = async () => (await AutAdrI.create({ pays: 'Togo', ville: 'Lomé', quartier: 'Centre', boitePostale: 'BP 1500', prorietaireBoitePostale: 'UST', telMobile: '+2280101000001' })).id ?? (await AutAdrI.findAll())[0].id;
     const ensureAdresseC = async () => (await AutAdrC.create({ pays: 'Togo', ville: 'Lomé', quartier: 'Centre', boitePostale: 'BP 105', prorietaireBoitePostale: 'Démo', telMobile: '+228000000000' })).id ?? (await AutAdrC.findAll())[0].id;
@@ -172,7 +191,7 @@ export async function seedComptesParRole(seqIn?: any): Promise<void> {
         }
     }
 
-    console.log('\n═══ 3/4 Réparation des profils orphelins ═══');
+    console.log('\n═══ 3/5 Réparation des profils orphelins ═══');
     const ensOrphelins: any[] = await seq.query(
         `SELECT e.id, e.dateNaissance FROM aut_enseignants e
          LEFT JOIN aut_utilisateurs u ON u.id = e.utilisateurId
@@ -208,7 +227,66 @@ export async function seedComptesParRole(seqIn?: any): Promise<void> {
         if (Number(n[0]?.n) > 0) console.log(`  ⚠ ${n[0].n} profil(s) orphelin(s) dans ${t}`);
     }
 
-    console.log('\n═══ 4/4 Récapitulatif des comptes ═══');
+    console.log('\n═══ 4/5 Liaison RBAC (aut_user_roles + aut_user_permissions) ═══');
+    // Résolution des IDs rôles RBAC
+    const [rbacRoleRows]: any[] = await seq.query("SELECT id, nom FROM `aut_roles` WHERE deletedAt IS NULL");
+    const rbacRoleIdByName = new Map<string, number>((rbacRoleRows as any[]).map(r => [r.nom, r.id]));
+    // Résolution des IDs permissions
+    const [permRows]: any[] = await seq.query("SELECT id, `key` FROM `aut_permissions` WHERE deletedAt IS NULL");
+    const permIdByKey = new Map<string, number>((permRows as any[]).map(p => [p.key, p.id]));
+    // Résolution des liaisons rôle↔permission
+    const [rpRows]: any[] = await seq.query("SELECT roleId, permissionId FROM `aut_role_permissions` WHERE deletedAt IS NULL");
+    const permsByRoleId = new Map<number, Set<number>>();
+    for (const rp of rpRows as any[]) {
+        if (!permsByRoleId.has(rp.roleId)) permsByRoleId.set(rp.roleId, new Set());
+        permsByRoleId.get(rp.roleId)!.add(rp.permissionId);
+    }
+
+    let rbacLinked = 0, rbacSkipped = 0, permsApplied = 0;
+    for (const c of COMPTES) {
+        const u = (c as any)._u;
+        if (!u) continue;
+        const uid = u.id;
+        if (!c.roleRbac) {
+            rbacSkipped++;
+            continue;
+        }
+        const rbacRoleId = rbacRoleIdByName.get(c.roleRbac);
+        if (!rbacRoleId) {
+            console.log(`  ⚠ Rôle RBAC "${c.roleRbac}" introuvable pour ${c.identifiant}`);
+            rbacSkipped++;
+            continue;
+        }
+
+        // 1. Lier l'utilisateur au rôle RBAC (upsert)
+        const [urRes]: any = await seq.query(
+            "INSERT INTO `aut_user_roles` (`utilisateurId`, `roleId`, `createdAt`, `updatedAt`) " +
+            "VALUES (:uid, :roleId, NOW(), NOW()) " +
+            "ON DUPLICATE KEY UPDATE `deletedAt` = NULL",
+            { replacements: { uid, roleId: rbacRoleId } }
+        );
+        if (urRes && (urRes.affectedRows ?? 0) > 0) {
+            rbacLinked++;
+            console.log(`  ✓ ${c.identifiant} → rôle RBAC "${c.roleRbac}"`);
+        }
+
+        // 2. Appliquer les permissions du rôle RBAC dans aut_user_permissions
+        const rolePerms = permsByRoleId.get(rbacRoleId);
+        if (rolePerms) {
+            for (const permissionId of rolePerms) {
+                const [upRes]: any = await seq.query(
+                    "INSERT INTO `aut_user_permissions` (`utilisateurId`, `permissionId`, `estActif`, `createdAt`, `updatedAt`) " +
+                    "VALUES (:uid, :permissionId, 1, NOW(), NOW()) " +
+                    "ON DUPLICATE KEY UPDATE `estActif` = 1, `deletedAt` = NULL",
+                    { replacements: { uid, permissionId } }
+                );
+                if (upRes && (upRes.affectedRows ?? 0) > 0) permsApplied++;
+            }
+        }
+    }
+    console.log(`\n  RBAC : ${rbacLinked} liaison(s) utilisateur→rôle, ${permsApplied} permission(s) appliquée(s), ${rbacSkipped} ignoré(s)`);
+
+    console.log('\n═══ 5/5 Récapitulatif des comptes ═══');
     console.log(`\n  Mot de passe utilisé : ${MOT_DE_PASSE_DEFAUT}\n`);
     console.log('  Rôle                     Identifiant       Email                              Mot de passe');
     console.log('  ──────────────────────── ───────────────── ────────────────────────────────── ──────────────');
