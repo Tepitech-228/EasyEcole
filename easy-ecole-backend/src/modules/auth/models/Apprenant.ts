@@ -17,6 +17,8 @@ export class Apprenant extends Model<InferAttributes<Apprenant>, InferCreationAt
   declare sexe: CreationOptional<'M' | 'F' | 'Autre'>
   declare nationalite: CreationOptional<string>
   declare cni: CreationOptional<string>
+  declare typePieceIdentite: CreationOptional<string>
+  declare numeroPiece: CreationOptional<string>
   declare statutHandicap: CreationOptional<boolean>
   declare natureHandicap: CreationOptional<string>
   declare anneeObtentionBac: CreationOptional<string>
@@ -85,6 +87,14 @@ Apprenant.init({
     defaultValue: 'Ivoirienne'
   },
   cni: {
+    type: new DataTypes.STRING,
+    allowNull: true
+  },
+  typePieceIdentite: {
+    type: new DataTypes.STRING,
+    allowNull: true
+  },
+  numeroPiece: {
     type: new DataTypes.STRING,
     allowNull: true
   },

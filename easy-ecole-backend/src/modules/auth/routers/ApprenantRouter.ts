@@ -82,7 +82,7 @@ router
      *       200:
      *         description: Apprenant mis à jour
      */
-    .put('/', [], ApprenantController.updateApprenant)
+    .put('/', [Authenticate], ApprenantController.updateApprenant)
     /**
      * @openapi
      * /auth/apprenants/photo:

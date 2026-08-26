@@ -53,13 +53,30 @@
     </ol>
 
     <form [formGroup]="profilForm" *ngIf="profilForm">
+        <!-- Résumé des erreurs de validation -->
+        <div *ngIf="erreursEtape.length > 0"
+            class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div class="flex items-start gap-x-3">
+                <svg class="h-5 w-5 text-red-500 mt-0.5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
+                        clip-rule="evenodd" />
+                </svg>
+                <div>
+                    <p class="text-sm font-semibold text-red-800">Veuillez corriger les champs suivants :</p>
+                    <ul class="mt-2 list-disc list-inside text-sm text-red-700">
+                        <li *ngFor="let err of erreursEtape">{{ err }}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
         <!-- Étape 1 : Informations personnelles -->
         <section *ngIf="etapeActuelle === 1" class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
             <h2 class="text-base font-semibold leading-7 text-gray-900 mb-1">Informations personnelles</h2>
             <p class="text-sm text-gray-500 mb-6">Votre identité et votre état civil</p>
             <div class="grid grid-cols-6 gap-x-8 gap-y-6">
                 <div class="col-span-2">
-                    <label for="nom" class="mb-2 block text-sm leading-6 text-gray-600">Nom</label>
+                    <label for="nom" class="mb-2 block text-sm leading-6 text-gray-600">Nom <span class="text-red-600">*</span></label>
                     <input type="text" id="nom" formControlName="nom"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                     <div *ngIf="profilForm.get('nom')!.invalid && (profilForm.get('nom')!.dirty || profilForm.get('nom')!.touched)">
@@ -68,7 +85,7 @@
                     </div>
                 </div>
                 <div class="col-span-2">
-                    <label for="prenoms" class="mb-2 block text-sm leading-6 text-gray-600">Prénoms</label>
+                    <label for="prenoms" class="mb-2 block text-sm leading-6 text-gray-600">Prénoms <span class="text-red-600">*</span></label>
                     <input type="text" id="prenoms" formControlName="prenoms"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                     <div *ngIf="profilForm.get('prenoms')!.invalid && (profilForm.get('prenoms')!.dirty || profilForm.get('prenoms')!.touched)">
@@ -82,14 +99,14 @@
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 bg-gray-100">
                 </div>
                 <div class="col-span-2">
-                    <label for="sexe" class="mb-2 block text-sm leading-6 text-gray-600">Sexe</label>
+                    <label for="sexe" class="mb-2 block text-sm leading-6 text-gray-600">Sexe <span class="text-red-600">*</span></label>
                     <select id="sexe" formControlName="sexe"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                         <option *ngFor="let option of sexeOptions" [value]="option.value">{{ option.label }}</option>
                     </select>
                 </div>
                 <div class="col-span-2">
-                    <label for="dateNaissance" class="mb-2 block text-sm leading-6 text-gray-600">Date de naissance</label>
+                    <label for="dateNaissance" class="mb-2 block text-sm leading-6 text-gray-600">Date de naissance <span class="text-red-600">*</span></label>
                     <input type="date" id="dateNaissance" formControlName="dateNaissance"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                     <div *ngIf="profilForm.get('dateNaissance')!.invalid && (profilForm.get('dateNaissance')!.dirty || profilForm.get('dateNaissance')!.touched)">
@@ -98,7 +115,7 @@
                     </div>
                 </div>
                 <div class="col-span-2">
-                    <label for="lieuNaissance" class="mb-2 block text-sm leading-6 text-gray-600">Lieu de naissance</label>
+                    <label for="lieuNaissance" class="mb-2 block text-sm leading-6 text-gray-600">Lieu de naissance <span class="text-red-600">*</span></label>
                     <input type="text" id="lieuNaissance" formControlName="lieuNaissance"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                     <div *ngIf="profilForm.get('lieuNaissance')!.invalid && (profilForm.get('lieuNaissance')!.dirty || profilForm.get('lieuNaissance')!.touched)">
@@ -112,7 +129,7 @@
             <h2 class="text-base font-semibold leading-7 text-gray-900 mb-6">Identité</h2>
             <div class="grid grid-cols-6 gap-x-8 gap-y-6">
                 <div class="col-span-2">
-                    <label for="nationalite" class="mb-2 block text-sm leading-6 text-gray-600">Nationalité</label>
+                    <label for="nationalite" class="mb-2 block text-sm leading-6 text-gray-600">Nationalité <span class="text-red-600">*</span></label>
                     <input type="text" id="nationalite" formControlName="nationalite"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                     <div *ngIf="profilForm.get('identite.nationalite')!.invalid && (profilForm.get('identite.nationalite')!.dirty || profilForm.get('identite.nationalite')!.touched)">
@@ -136,7 +153,7 @@
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                 </div>
                 <div class="col-span-3">
-                    <label for="situationMatrimoniale" class="mb-2 block text-sm leading-6 text-gray-600">Situation matrimoniale</label>
+                    <label for="situationMatrimoniale" class="mb-2 block text-sm leading-6 text-gray-600">Situation matrimoniale <span class="text-red-600">*</span></label>
                     <select id="situationMatrimoniale" formControlName="situationMatrimoniale"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                         <option [value]="situationsMatrimoniales.CELIBATAIRE">Célibataire</option>
@@ -149,7 +166,7 @@
                     </div>
                 </div>
                 <div class="col-span-3">
-                    <label for="etatPhysique" class="mb-2 block text-sm leading-6 text-gray-600">Etat physique</label>
+                    <label for="etatPhysique" class="mb-2 block text-sm leading-6 text-gray-600">Etat physique <span class="text-red-600">*</span></label>
                     <select id="etatPhysique" formControlName="etatPhysique"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                         <option [value]="etatsPhysique.VALIDE">Valide</option>
@@ -203,12 +220,27 @@
                     </div>
                 </div>
                 <div class="col-span-2">
-                    <label for="cni" class="mb-2 block text-sm leading-6 text-gray-600">N° CNI</label>
-                    <input type="text" id="cni" formControlName="cni"
+                    <label for="typePieceIdentite" class="mb-2 block text-sm leading-6 text-gray-600">Type de pièce d'identité <span class="text-red-600">*</span></label>
+                    <select id="typePieceIdentite" formControlName="typePieceIdentite"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        <option *ngFor="let option of typePieceOptions" [value]="option.value">{{ option.label }}</option>
+                    </select>
+                    <div *ngIf="profilForm.get('typePieceIdentite')!.invalid && (profilForm.get('typePieceIdentite')!.dirty || profilForm.get('typePieceIdentite')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('typePieceIdentite')!.errors?.['required']"
+                            text="Veuillez sélectionner un type de pièce"></app-form-message>
+                    </div>
                 </div>
                 <div class="col-span-2">
-                    <label for="statutEtudiant" class="mb-2 block text-sm leading-6 text-gray-600">Nouveau / Ancien</label>
+                    <label for="numeroPiece" class="mb-2 block text-sm leading-6 text-gray-600">N° de la pièce <span class="text-red-600">*</span></label>
+                    <input type="text" id="numeroPiece" formControlName="numeroPiece" placeholder="Ex: AB123456789"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('numeroPiece')!.invalid && (profilForm.get('numeroPiece')!.dirty || profilForm.get('numeroPiece')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('numeroPiece')!.errors?.['required']"
+                            text="Veuillez saisir le numéro de votre pièce d'identité"></app-form-message>
+                    </div>
+                </div>
+                <div class="col-span-2">
+                    <label for="statutEtudiant" class="mb-2 block text-sm leading-6 text-gray-600">Nouveau / Ancien <span class="text-red-600">*</span></label>
                     <div class="flex items-center py-1 gap-x-4">
                         <div class="flex items-center gap-x-3">
                             <input id="nouveau" formControlName="statutEtudiant" type="radio" value="nouveau"

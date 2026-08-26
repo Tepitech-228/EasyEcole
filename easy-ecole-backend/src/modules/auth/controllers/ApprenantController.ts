@@ -186,9 +186,24 @@ export default class ApprenantController {
                 })
                 .catch((error) => {
                     if (error?.name === 'SequelizeUniqueConstraintError' || error?.parent?.code === 'ER_DUP_ENTRY') {
-                        const champ = Object.keys(error.fields ?? error.original?.fields ?? {})[0] ?? 'champ';
+                        // Extraire le nom du champ depuis la structure de l'erreur Sequelize ou MySQL
+                        const fields = error.fields ?? error.original?.fields ?? error.parent?.fields ?? {};
+                        const keys = Object.keys(fields);
+                        // Si les clés contiennent le nom du constraint composite (ex: 'nom-prenoms'), extraire le premier champ individuel
+                        let champ = keys[0] ?? '';
+                        if (champ && champ.includes('-')) {
+                            champ = champ.split('-')[0];
+                        }
+                        if (!champ || champ === 'undefined') {
+                            // Dernier recours : parser le message SQL MySQL
+                            const sqlMsg = error?.parent?.sqlMessage ?? error?.original?.sqlMessage ?? '';
+                            const match = sqlMsg.match(/for key '([^']+)'/);
+                            champ = match ? match[1].split('.').pop()?.replace(/-/g, ' / ') ?? 'valeur' : 'valeur';
+                        }
+                        console.error('[APPRENANT_409] Champ:', champ, '| Fields:', JSON.stringify(fields), '| Error:', error?.message);
                         return res.status(409).json({ success: false, message: `La valeur saisie pour « ${champ} » est déjà utilisée par un autre enregistrement.` });
                     }
+                    console.error('[APPRENANT_ERR]', error);
                     return res.status(400).json({ success: false, error: error });
                 });
         }

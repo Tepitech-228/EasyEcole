@@ -31,6 +31,8 @@ export class Apprenant {
 
   declare sexe?: string
   declare cni?: string
+  declare typePieceIdentite?: string
+  declare numeroPiece?: string
   declare nationalite?: string
   declare statutHandicap?: boolean
   declare natureHandicap?: string

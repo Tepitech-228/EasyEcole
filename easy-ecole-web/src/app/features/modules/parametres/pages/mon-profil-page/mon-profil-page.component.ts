@@ -50,6 +50,12 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
   situationsMatrimoniales = SituationsMatrimoniales
   etatsPhysique = EtatsPhysique
 
+  readonly typePieceOptions = [
+    { label: 'CNI (Carte Nationale d\'Identité)', value: 'CNI' },
+    { label: 'CE (Carte d\'Étranger)', value: 'CE' },
+    { label: 'Passeport', value: 'PASSEPORT' },
+  ]
+
   readonly sexeOptions = [
     { label: 'Masculin', value: 'M' },
     { label: 'Féminin', value: 'F' },
@@ -57,6 +63,56 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
   ]
 
   onboardingMode: boolean = false
+
+  // Erreurs de validation par étape
+  erreursEtape: string[] = []
+
+  // Labels lisibles des champs pour le résumé d'erreurs
+  private readonly labelsChamps: Record<string, string> = {
+    'nom': 'Nom',
+    'prenoms': 'Prénoms',
+    'sexe': 'Sexe',
+    'dateNaissance': 'Date de naissance',
+    'lieuNaissance': 'Lieu de naissance',
+    'contact': 'Contact',
+    'cni': 'N° CNI',
+    'periode': 'Période',
+    'statutEtudiant': 'Statut (Nouveau / Ancien)',
+    'diplomePrepare': 'Diplôme préparé',
+    'anneeObtentionBac': "Année d'obtention du Bac",
+    'serieBac': 'Série du Bac',
+    'anneePremiereInscription': 'Année de 1ère inscription',
+    'nombreInscriptions': "Nombre d'inscriptions",
+    'identite.nationalite': 'Nationalité',
+    'identite.situationMatrimoniale': 'Situation matrimoniale',
+    'identite.etatPhysique': 'État physique',
+    'identite.ethnie': 'Ethnie',
+    'identite.prefecture': 'Préfecture',
+    'identite.religion': 'Religion',
+    'adresse.boitePostale': 'Boîte postale',
+    'adresse.prorietaireBoitePostale': 'Propriétaire boîte postale',
+    'adresse.telMobile': 'Téléphone mobile',
+    'adresse.telDomicile': 'Téléphone domicile',
+    'adresse.quartier': 'Quartier',
+    'adresse.ville': 'Ville',
+    'adresse.pays': 'Pays',
+    'informationsParents.nomPrenomsPere': 'Nom du père',
+    'informationsParents.professionPere': 'Profession du père',
+    'informationsParents.emailPere': 'Email du père',
+    'informationsParents.nomPrenomsMere': 'Nom de la mère',
+    'informationsParents.professionMere': 'Profession de la mère',
+    'informationsParents.emailMere': 'Email de la mère',
+    'personnePrevenir.nom': 'Nom (personne à prévenir)',
+    'personnePrevenir.prenoms': 'Prénoms (personne à prévenir)',
+    'personnePrevenir.email': 'Email (personne à prévenir)',
+    'personnePrevenir.telMobile': 'Téléphone mobile (personne à prévenir)',
+    'personnePrevenir.quartier': 'Quartier (personne à prévenir)',
+    'personnePrevenir.ville': 'Ville (personne à prévenir)',
+    'personnePrevenir.pays': 'Pays (personne à prévenir)',
+    'personnePrevenir.boitePostale': 'Boîte postale (personne à prévenir)',
+    'typePieceIdentite': 'Type de pièce d\'identité',
+    'numeroPiece': 'N° de la pièce d\'identité',
+  }
 
   // Assistant d'édition du profil apprenant (étapes)
   readonly etapesProfil: { titre: string }[] = [
@@ -72,7 +128,7 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
   private readonly champsParEtape: string[][] = [
     ['nom', 'prenoms', 'sexe', 'dateNaissance', 'lieuNaissance',
       'identite.nationalite', 'identite.situationMatrimoniale', 'identite.etatPhysique'],
-    ['periode', 'statutEtudiant'],
+    ['typePieceIdentite', 'numeroPiece', 'periode', 'statutEtudiant'],
     ['contact', 'adresse.boitePostale', 'adresse.prorietaireBoitePostale', 'adresse.telMobile',
       'adresse.quartier', 'adresse.ville', 'adresse.pays'],
     ['informationsParents.nomPrenomsPere', 'informationsParents.professionPere',
@@ -101,15 +157,37 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
   }
 
   private validerEtape(numero: number): boolean {
+    this.erreursEtape = []
     let valide = true
     for (const chemin of (this.champsParEtape[numero - 1] || [])) {
       const controle = this.profilForm.get(chemin)
       if (controle && controle.invalid) {
         controle.markAsTouched()
         valide = false
+        const label = this.labelsChamps[chemin] ?? chemin
+        if (!this.erreursEtape.includes(label)) {
+          this.erreursEtape.push(label)
+        }
       }
     }
     return valide
+  }
+
+  validerToutesErreurs(): void {
+    this.erreursEtape = []
+    this.profilForm.markAllAsTouched()
+    // Parcourir tous les chemins de toutes les étapes
+    for (const etape of this.champsParEtape) {
+      for (const chemin of etape) {
+        const controle = this.profilForm.get(chemin)
+        if (controle && controle.invalid) {
+          const label = this.labelsChamps[chemin] ?? chemin
+          if (!this.erreursEtape.includes(label)) {
+            this.erreursEtape.push(label)
+          }
+        }
+      }
+    }
   }
 
   constructor(
@@ -279,36 +357,51 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
   }
 
   validerProfilApprenant(): void {
+    this.erreursEtape = []
     this.profilForm.markAllAsTouched()
-    if (this.profilForm.valid) {
-      const formValue = this.profilForm.value
-      const payload: any = {
-        ...formValue,
-        utilisateur: {
-          nom: formValue.nom,
-          prenoms: formValue.prenoms,
-          contact: formValue.contact,
+
+    // Collecter toutes les erreurs de tous les champs
+    for (const etape of this.champsParEtape) {
+      for (const chemin of etape) {
+        const controle = this.profilForm.get(chemin)
+        if (controle && controle.invalid) {
+          const label = this.labelsChamps[chemin] ?? chemin
+          if (!this.erreursEtape.includes(label)) {
+            this.erreursEtape.push(label)
+          }
         }
       }
-      delete payload.nom
-      delete payload.prenoms
-      delete payload.contact
-
-      this.apprenantService.update(payload).subscribe({
-        next: (value) => {
-          this.updateSuccess = true
-          setTimeout(() => { this.updateSuccess = false }, 2000)
-          this.getApprenant()
-          if (this.onboardingMode) {
-            this.router.navigate(['/inscription/onboarding'])
-          }
-        },
-        error: (err: HttpErrorResponse) => {
-          this.updateError = true
-          setTimeout(() => { this.updateError = false }, 2000)
-        }
-      })
     }
+
+    if (this.erreursEtape.length > 0) return
+
+    const formValue = this.profilForm.value
+    const payload: any = {
+      ...formValue,
+      utilisateur: {
+        nom: formValue.nom,
+        prenoms: formValue.prenoms,
+        contact: formValue.contact,
+      }
+    }
+    delete payload.nom
+    delete payload.prenoms
+    delete payload.contact
+
+    this.apprenantService.update(payload).subscribe({
+      next: (value) => {
+        this.updateSuccess = true
+        setTimeout(() => { this.updateSuccess = false }, 2000)
+        this.getApprenant()
+        if (this.onboardingMode) {
+          this.router.navigate(['/inscription/onboarding'])
+        }
+      },
+      error: (err: HttpErrorResponse) => {
+        this.updateError = true
+        setTimeout(() => { this.updateError = false }, 2000)
+      }
+    })
   }
 
   validerProfilInstitution(): void {
@@ -405,6 +498,8 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
         handicapAuditif: new FormControl(this.apprenant?.identite?.handicapAuditif ?? false, [Validators.required]),
       }),
       cni: new FormControl(this.apprenant?.cni ?? null, []),
+      typePieceIdentite: new FormControl(this.apprenant?.typePieceIdentite ?? 'CNI', [Validators.required]),
+      numeroPiece: new FormControl(this.apprenant?.numeroPiece ?? null, [Validators.required]),
       statutHandicap: new FormControl(this.apprenant?.statutHandicap ?? false, []),
       natureHandicap: new FormControl(this.apprenant?.natureHandicap ?? null, []),
       statutEtudiant: new FormControl(this.apprenant?.statutEtudiant ?? 'nouveau', [Validators.required]),
