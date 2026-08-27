@@ -172,11 +172,16 @@ export class BordereauDossierService {
         const parcoursData = parcoursFinalForCursus?.parcours
 
         const classeDerivee = coursDuParcours.find(c => c.classe?.id)?.classe ?? null
-        if (!classeDerivee || !classeDerivee.id) {
+        // Option A : en pédagogie différée (saisie ESA-COMPTA du premier bordereau),
+        // l'absence de classe ne bloque PAS le processus financier : l'étudiant est
+        // créé avec une classe "À affecter", qui sera rattachée plus tard lors de la
+        // finalisation pédagogique (comité). La classe reste obligatoire en validation
+        // complète (affectation définitive).
+        if ((!classeDerivee || !classeDerivee.id) && !options?.pedagogieDifferee) {
             throw new Error("Aucune classe n'a pu être déterminée pour le parcours final")
         }
 
-        const etablissementId = parcoursData?.etablissementId ?? classeDerivee.etablissementId
+        const etablissementId = parcoursData?.etablissementId ?? classeDerivee?.etablissementId
         const etablissement = etablissementId
             ? await Etablissement.findByPk(etablissementId, { transaction })
             : null
@@ -213,13 +218,13 @@ export class BordereauDossierService {
             await paiement.update({ matriculeInscription: matricule }, { transaction })
         }
 
-        const niveauEtudeId = parcoursData?.niveauEtudeId ?? classeDerivee.niveauEtudeId
+        const niveauEtudeId = parcoursData?.niveauEtudeId ?? classeDerivee?.niveauEtudeId
         const niveauEtude = niveauEtudeId
             ? await NiveauEtude.findByPk(niveauEtudeId, { transaction })
             : null
         const parcoursNom = parcoursData?.type || parcoursData?.titre || 'PARCOURS'
         const niveauNom = niveauEtude?.libelle || 'Niveau'
-        const classeNom = classeDerivee.libelle
+        const classeNom = classeDerivee?.libelle ?? 'À affecter'
         const anneeId = demande.session?.anneeAcademiqueId
 
         if (!options?.pedagogieDifferee) {
@@ -260,7 +265,9 @@ export class BordereauDossierService {
                     intituleParcours: parcoursNom,
                     parcoursId: parcoursChoisiFinal?.parcoursId!,
                     niveauEtudeId: niveauEtudeId!,
-                    classeId: classeDerivee.id!,
+                    // En validation complète (non différée), la garde ci-dessus garantit
+                    // que classeDerivee est renseignée : non-null assertion safe.
+                    classeId: classeDerivee!.id!,
                     anneeAcademiqueId: anneeId!,
                     utilisateurId: demande.utilisateurId,
                     demandeInscriptionId: demande.id,
