@@ -85,9 +85,9 @@
       </div>
 
       <div class="flex-1 flex min-h-0">
-        <div class="flex-1 bg-gray-100 p-4">
+        <div class="flex-1 pdf-preview-shell">
           <ng-container *ngIf="pdfPreviewUrl; else noPreview">
-            <embed [src]="pdfPreviewUrl" type="application/pdf" class="w-full h-full rounded-xl shadow-sm" />
+            <embed [src]="pdfPreviewUrl" type="application/pdf" class="pdf-preview-frame" />
           </ng-container>
           <ng-template #noPreview>
             <div class="flex items-center justify-center h-full text-gray-400 text-sm">Aperçu non disponible</div>

@@ -78,8 +78,8 @@
         </div>
 
         <!-- PDF -->
-        <div class="media-pdf" *ngIf="typeMedia(supportActif) === 'pdf'">
-          <iframe [src]="pdfUrl" class="pdf-frame"></iframe>
+        <div class="media-pdf pdf-preview-shell" *ngIf="typeMedia(supportActif) === 'pdf'">
+          <iframe [src]="pdfUrl" title="Support PDF" class="pdf-frame pdf-preview-frame"></iframe>
         </div>
 
         <!-- Document -->

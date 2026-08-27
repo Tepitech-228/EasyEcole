@@ -76,5 +76,7 @@
 
 <!-- Modals -->
 <app-custom-modal *ngIf="selectedDossier && selectedDossierDemande" [title]="selectedDossier.titre!" [subtitle]="selectedDossier.description" (onCloseModal)="closeDossierModal()" [center]="true" [showModal]="showDossierModal">
-    <embed [src]="DOSSIERS_PATH + selectedDossierDemande.nomFichier | safeUrl | async" class="w-full h-full" style="height: 80vh !important;" />
+    <div class="pdf-preview-shell rounded-lg border border-gray-200">
+        <embed [src]="DOSSIERS_PATH + selectedDossierDemande.nomFichier | safeUrl | async" type="application/pdf" class="pdf-preview-frame" />
+    </div>
 </app-custom-modal>

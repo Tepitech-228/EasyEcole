@@ -49,6 +49,7 @@ import { RattrapagePaiementsPageComponent } from './pages/rattrapage-paiements-p
 import { TypesBordereauxPageComponent } from './pages/types-bordereaux-page/types-bordereaux-page.component';
 import { EsacomptaBordereauxPageComponent } from './pages/esacompta-bordereaux-page/esacompta-bordereaux-page.component';
 import { ComiteValidationPageComponent } from './pages/comite-validation-page/comite-validation-page.component';
+import { ChoisirSessionPageComponent } from './pages/choisir-session-page/choisir-session-page.component';
 @NgModule({
   declarations: [
     MonCursusPageComponent,
@@ -94,7 +95,8 @@ ListeClassesPageComponent,
         RattrapagePaiementsPageComponent,
         TypesBordereauxPageComponent,
         EsacomptaBordereauxPageComponent,
-        ComiteValidationPageComponent
+        ComiteValidationPageComponent,
+        ChoisirSessionPageComponent
   ],
   imports: [
     CommonModule,

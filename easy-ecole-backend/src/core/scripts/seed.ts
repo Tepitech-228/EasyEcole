@@ -391,7 +391,7 @@ export async function seed() {
         const infoP = await AutInfoP.create({ nomPrenomsPere: a.pere, professionPere: a.professionPere, nomPrenomsMere: a.mere, professionMere: a.professionMere });
         const [nomPrev, ...prenomsPrev] = a.nomPrevenir.split(' ');
         const persP = await AutPersP.create({ nom: nomPrev, prenoms: prenomsPrev.join(' ') || 'Inconnu', telMobile: a.telPrevenir, quartier: a.quartier, ville: a.ville, pays: 'Côte d\'Ivoire' });
-        await AutA.create({ photo: a.identifiant + '.jpg', dateNaissance: a.dateNais, lieuNaissance: a.lieuNais, sexe: 'M', nationalite: 'Ivoirienne', cni: `CNI-${String(100000 + i)}`, statutHandicap: false, natureHandicap: null, anneeObtentionBac: '2022', serieBac: i % 2 === 0 ? 'C' : 'D', anneePremiereInscription: '2024-2025', nombreInscriptions: 1, statutEtudiant: 'nouveau', diplomePrepare: 'Licence Professionnelle', adresseId: adr.id, identiteId: ident.id, informationsParentsId: infoP.id, personnePrevenirId: persP.id, utilisateurId: u.id });
+        await AutA.create({ photo: a.identifiant + '.jpg', dateNaissance: a.dateNais, lieuNaissance: a.lieuNais, sexe: 'M', nationalite: 'Ivoirienne', cni: `CNI-${String(100000 + i)}`, typePieceIdentite: 'CNI', numeroPiece: `CNI-${String(100000 + i)}`, statutHandicap: false, natureHandicap: null, anneeObtentionBac: '2022', serieBac: i % 2 === 0 ? 'C' : 'D', anneePremiereInscription: '2024-2025', nombreInscriptions: 1, statutEtudiant: 'nouveau', diplomePrepare: 'Licence Professionnelle', adresseId: adr.id, identiteId: ident.id, informationsParentsId: infoP.id, personnePrevenirId: persP.id, utilisateurId: u.id });
     }
 
     // ════════════════════════════════════════════════════

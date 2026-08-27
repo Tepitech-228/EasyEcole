@@ -174,6 +174,27 @@ export class DossierViewComponent {
     return colors + (compact ? ' w-9' : ' px-3');
   }
 
+  actionBackgroundColor(color: string): string {
+    const backgrounds: Record<string, string> = {
+      green: '#059669',
+      red: '#dc2626',
+      blue: '#2563eb',
+      indigo: '#4f46e5',
+      orange: '#f97316',
+      yellow: '#facc15',
+      gray: '#e5e7eb',
+    };
+    return backgrounds[color] || backgrounds.indigo;
+  }
+
+  actionTextColor(color: string): string {
+    return color === 'yellow' || color === 'gray' ? '#1f2937' : '#ffffff';
+  }
+
+  actionBorderColor(color: string): string {
+    return this.actionBackgroundColor(color);
+  }
+
   getNodeIcon(node: DossierNode): string {
     switch (node.type) {
       case 'annee': return 'calendar_month';

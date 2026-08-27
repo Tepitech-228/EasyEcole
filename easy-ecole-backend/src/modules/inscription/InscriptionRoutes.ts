@@ -12,13 +12,11 @@ import PrerequisParcoursChoisiRouter from "./routers/PrerequisParcoursChoisiRout
 import DemandeInscriptionRouter from "./routers/DemandeInscriptionRouter"
 import ReponseInscriptionRouter from "./routers/ReponseInscriptionRouter"
 import FraisInscriptionRouter from "./routers/FraisInscriptionRouter"
-import FraisScolariteRouter from "./routers/FraisScolariteRouter"
 import Authenticate from "../../core/middlewares/Authenticate";
 import { InscriptionComplete } from "../../core/middlewares/InscriptionComplete";
 import PaiementInscriptionRouter from "./routers/PaiementInscriptionRouter";
 import QuitusRouter from "./routers/QuitusRouter";
 import DossierInscriptionRouter from "./routers/DossierInscriptionRouter";
-import DocumentDossierRouter from "./routers/DocumentDossierRouter";
 import AnneeAcademiqueRouter from "./routers/AnneeAcademiqueRouter";
 import CursusApprenantRouter from "./routers/CursusApprenantRouter";
 import SalleDeClasseRouter from "./routers/SalleDeClasseRouter";
@@ -40,9 +38,15 @@ import NoteEvaluationRouter from "./routers/NoteEvaluationRouter";
 import BulletinRouter from "../bulletins/routers/BulletinRouter"
 import DeliberationRouter from "../bulletins/routers/DeliberationRouter"
 import EcheanceRouter from "./routers/EcheanceRouter";
-import PaiementStatutRouter from "./routers/PaiementStatutRouter";
 import BordereauController from "./controllers/BordereauController";
 import BordereauRouter from "./routers/BordereauRouter";
+import FinanceRouter from "./routers/FinanceRouter";
+import TypeOperationBordereauRouter from "./routers/TypeOperationBordereauRouter";
+import ComiteValidationRouter from "./routers/ComiteValidationRouter";
+import PaiementStatutRouter from "./routers/PaiementStatutRouter";
+import FraisScolariteRouter from "./routers/FraisScolariteRouter";
+import DocumentDossierRouter from "./routers/DocumentDossierRouter";
+import RattrapageWorkflowRouter from "./routers/RattrapageWorkflowRouter";
 import DossierEtudiantRouter from "./routers/DossierEtudiantRouter";
 import HierarchyRouter from "./routers/HierarchyRouter";
 import PreInscriptionRouter from "./routers/PreInscriptionRouter";
@@ -58,7 +62,6 @@ import AbsenceRouter from "./routers/AbsenceRouter";
 import EquivalenceRouter from "./routers/EquivalenceRouter";
 import DispenseRouter from "./routers/DispenseRouter";
 import RattrapageRouter from "./routers/RattrapageRouter";
-import RattrapageWorkflowRouter from "./routers/RattrapageWorkflowRouter";
 import AuditNoteRouter from "../bulletins/routers/AuditNoteRouter";
 import EchelleNoteRouter from "../bulletins/routers/EchelleNoteRouter";
 import JuryMembreRouter from "../bulletins/routers/JuryMembreRouter";
@@ -72,9 +75,6 @@ import ExcelRouter from "./routers/ExcelRouter";
 import DashboardController from "./controllers/DashboardController";
 import CoursController from "./controllers/CoursController";
 import DesignationMemoireRouter from "./routers/DesignationMemoireRouter";
-import TypeOperationBordereauRouter from "./routers/TypeOperationBordereauRouter";
-import FinanceRouter from "./routers/FinanceRouter";
-import ComiteValidationRouter from "./routers/ComiteValidationRouter";
 
 const router = express.Router();
 
@@ -100,7 +100,6 @@ router
     .use('/demandesInscription', [Authenticate], DemandeInscriptionRouter)
     .use('/reponsesInscription', [Authenticate], ReponseInscriptionRouter)
     .use('/fraisInscription', [Authenticate], FraisInscriptionRouter)
-    .use('/fraisScolarite', [Authenticate], FraisScolariteRouter)
     .use('/paiementsInscription', [Authenticate], PaiementInscriptionRouter)
     .use('/quitus', [Authenticate], QuitusRouter)
     .use('/dossiersInscription', [Authenticate], DossierInscriptionRouter)
@@ -118,12 +117,13 @@ router
     //    que .use('/', ..., InscriptionComplete) n'intercepte toutes les requêtes.
     .use('/pre-inscriptions', [Authenticate], PreInscriptionRouter)
     .use('/bordereaux', [Authenticate], BordereauRouter)
+    // Routes financières ESA-COMPTA : saisie comptable, imputation, bordereaux à traiter
+    .use('/finance', [Authenticate], FinanceRouter)
+    // Types d'opérations de bordereau
+    .use('/types-operations-bordereau', [Authenticate], TypeOperationBordereauRouter)
+    // Validation finale des dossiers par le comité (comite-validations/dossiers)
+    .use('/comite-validations', [Authenticate], ComiteValidationRouter)
     .use('/hierarchy', [Authenticate], HierarchyRouter)
-    // Statut de paiement étudiant/parent — placé AVANT les montages racine pour
-    // éviter qu'une route générique n'intercepte le chemin, et volontairement sans
-    // InscriptionComplete : un étudiant en situation de blocage doit pouvoir consulter
-    // son statut (la vérification de rôle se fait dans le contrôleur).
-    .use('/paiement', [Authenticate], PaiementStatutRouter)
     .use('/typesNoteEvaluation', [Authenticate], TypeNoteEvaluationRouter)
     .use('/listesNoteEvaluation', [Authenticate], ListeNoteEvaluationRouter)
     .use('/echelles-notes', [Authenticate], EchelleNoteRouter)
@@ -136,13 +136,13 @@ router
     .use('/frais-parcours', [Authenticate], FraisParcoursRouter)
     .use('/reductions-frais', [Authenticate], ReductionFraisRouter)
     .use('/penalites-retard', [Authenticate], PenaliteRetardRouter)
-    .use('/types-operations-bordereau', [Authenticate], TypeOperationBordereauRouter)
-    .use('/finance', [Authenticate], FinanceRouter)
-    .use('/comite-validations', [Authenticate], ComiteValidationRouter)
-    // Pièces justificatives d'inscription — service par ID (voir DocumentDossierController),
-    // token JWT accepté en ?token= via la liste blanche de Authenticate
-    .use('/documents', [Authenticate], DocumentDossierRouter)
     .use('/excel', [Authenticate], ExcelRouter)
+    // Frais de scolarité par session (GET /, GET /session/:sessionId, POST /)
+    .use('/fraisScolarite', [Authenticate], FraisScolariteRouter)
+    // Téléchargement des pièces justificatives d'inscription (documents/download)
+    .use('/documents', [Authenticate, InscriptionComplete], DocumentDossierRouter)
+    // Workflow officiel de rattrapage (sessions, demandes, documents, bordereaux, validation, paiement)
+    .use('/rattrapage-workflow', [Authenticate], RattrapageWorkflowRouter)
     // Montages racine — ne serviront que pour les routes qui n'ont pas matché ci-dessus
     .use('/', [Authenticate, InscriptionComplete], PresenceEnseignantRouter)
     .use('/', [Authenticate, InscriptionComplete], AbsenceCoursRouter)
@@ -153,6 +153,8 @@ router
     .use('/', [Authenticate, InscriptionComplete], BulletinRouter)
     .use('/', [Authenticate, InscriptionComplete], DeliberationRouter)
     .use('/echeances', [Authenticate, InscriptionComplete], EcheanceRouter)
+    // Statut de paiement apprenant/parent (paiement/statut)
+    .use('/paiement', [Authenticate, InscriptionComplete], PaiementStatutRouter)
     .use('/dossiers', [Authenticate, InscriptionComplete], DossierEtudiantRouter)
     .use('/', [Authenticate, InscriptionComplete], PassationRouter)
     .use('/', [Authenticate, InscriptionComplete], SuiviUeRouter)
@@ -161,10 +163,11 @@ router
     .use('/equivalences', [Authenticate, InscriptionComplete], EquivalenceRouter)
     .use('/dispenses', [Authenticate, InscriptionComplete], DispenseRouter)
     .use('/rattrapages', [Authenticate, InscriptionComplete], RattrapageRouter)
-    .use('/rattrapage-workflow', [Authenticate, InscriptionComplete], RattrapageWorkflowRouter)
     .use('/audit-notes', [Authenticate, InscriptionComplete], AuditNoteRouter)
     .use('/designation-memoires', [Authenticate], DesignationMemoireRouter)
     .use('/reinscription', [Authenticate], ReinscriptionRouter)
-    .get('/dashboard', [Authenticate, InscriptionComplete], DashboardController.getDashboard)
+    // Le dashboard reste accessible aux nouveaux étudiants afin qu'ils puissent
+    // consulter les sessions ouvertes et démarrer leur inscription.
+    .get('/dashboard', [Authenticate], DashboardController.getDashboard)
 
 export default router;

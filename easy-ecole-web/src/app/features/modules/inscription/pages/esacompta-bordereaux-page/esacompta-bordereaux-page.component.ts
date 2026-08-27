@@ -15,6 +15,7 @@ import { ParcoursService } from 'src/app/data/modules/inscription/services/parco
 import { SessionService } from 'src/app/data/modules/inscription/services/session.service';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 import { DossierNode, DossierColumn, BatchAction } from 'src/app/shared/components/dossier-view/dossier-view.component';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-esacompta-bordereaux-page',
@@ -35,7 +36,6 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   selectedBordereau?: Bordereau
   showSaisieModal: boolean = false
   showPreviewModal: boolean = false
-  showPdfModal: boolean = false
 
   previewResult: any = null
   error: boolean = false
@@ -89,8 +89,8 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   ]
 
   readonly itemActions: BatchAction[] = [
-    { label: 'Saisir', color: 'indigo', action: 'saisir', icon: 'edit' },
-    { label: 'Voir', color: 'gray', action: 'voir', icon: 'visibility' },
+    { label: 'Traitement', color: 'green', action: 'traitement', icon: 'fact_check' },
+    { label: 'Voir imputation', color: 'blue', action: 'voir-imputation', icon: 'account_tree' },
   ]
 
   constructor(
@@ -239,8 +239,8 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   onItemAction(event: { item: any, action: string }): void {
     const b = event.item?.raw as Bordereau
     if (!b) return
-    if (event.action === 'saisir') this.openSaisieModal(b)
-    else if (event.action === 'voir') this.openPdfModal(b)
+    if (event.action === 'traitement') this.openSaisieModal(b)
+    else if (event.action === 'voir-imputation') this.openImputationPreview(b)
   }
 
   openSaisieModal(bordereau: Bordereau): void {
@@ -331,6 +331,31 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     })
   }
 
+  openImputationPreview(bordereau: Bordereau): void {
+    const montant = Number(bordereau.montant || 0)
+    if (!bordereau.id || !montant || montant <= 0) {
+      this.apiErrorMessage = 'Le montant du bordereau est invalide ou absent.'
+      this.error = true
+      return
+    }
+
+    this.selectedBordereau = bordereau
+    this.error = false
+    this.apiErrorMessage = ''
+    this.bordereauService.imputationPreview(bordereau.id, montant).subscribe({
+      next: (res: any) => {
+        this.previewResult = res.preview || res
+        this.showPreviewModal = true
+      },
+      error: (err) => {
+        const message = err?.error?.message || err?.message || 'Erreur lors du calcul de l\'imputation'
+        this.apiErrorMessage = message
+        this.error = true
+        console.error('[ESA-COMPTA] Erreur aperçu imputation:', message, '| status:', err?.status)
+      }
+    })
+  }
+
   onConfirmerSaisie(): void {
     if (this.saisieForm.invalid || !this.selectedBordereau) return
     this.error = false
@@ -369,11 +394,24 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
             }
           } else if (err?.message) {
             msg = err.message
+          } else if (typeof err === 'string') {
+            msg = err
           }
         } catch (_) {
           msg = `Erreur HTTP ${err?.status || 'inconnu'}`
         }
-        console.error('[ESA-COMPTA] Erreur saisie:', msg, '| status:', err?.status, '| body:', err?.error)
+        // Log détaillé pour diagnostic
+        console.error('[ESA-COMPTA] Erreur saisie:', msg)
+        console.error('[ESA-COMPTA] Erreur complète:', {
+          status: err?.status,
+          statusText: err?.statusText,
+          error: err?.error,
+          message: err?.message,
+          name: err?.name,
+          url: err?.url,
+          type: err?.constructor?.name,
+          raw: err
+        })
         this.apiErrorMessage = msg
         this.error = true
       }
@@ -385,27 +423,12 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     this.previewResult = null
   }
 
-  openPdfModal(bordereau: Bordereau): void {
-    this.selectedBordereau = bordereau
-    this.showPdfModal = true
-  }
-
-  closePdfModal(): void {
-    this.showPdfModal = false
-    this.selectedBordereau = undefined
-  }
-
   isImageFile(fichier: string): boolean {
     return /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(fichier)
   }
 
-  getDocUrl(fichier: string): string {
-    const token = this.localStorage.get(LocalStorageService.AUTH_TOKEN)
-    let url = this.BORDEREAUX_PATH + fichier
-    if (token) {
-      url += `?token=${encodeURIComponent(token)}`
-    }
-    return url
+  getDocUrl(bordereau: Bordereau): string {
+    return `${environment.API_MODULES.INSCRIPTION}/bordereaux/${bordereau.id}/download`
   }
 
   /**
@@ -413,8 +436,8 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
    * Angular exige une valeur de confiance explicite (DomSanitizer), sinon
    * l'erreur "unsafe value used in a resource URL context" est levée.
    */
-  getDocUrlSafe(fichier: string): SafeResourceUrl {
-    return this.sanitizer.bypassSecurityTrustResourceUrl(this.getDocUrl(fichier))
+  getDocUrlSafe(bordereau: Bordereau): SafeResourceUrl {
+    return this.sanitizer.bypassSecurityTrustResourceUrl(this.getDocUrl(bordereau))
   }
 
   getTypeOperationLibelle(id: number | string | null | undefined): string {

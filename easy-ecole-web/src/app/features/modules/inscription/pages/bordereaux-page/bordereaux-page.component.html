@@ -71,7 +71,7 @@
                                     <div *ngIf="bordereau.fichier" (click)="openPdfModal(bordereau)"
                                         class="inline-flex items-center gap-x-2 cursor-pointer group">
                                         <img *ngIf="isImageFile(bordereau.fichier)"
-                                            [src]="getDocUrl(bordereau.fichier)"
+                                            [src]="getBordereauUrl(bordereau)"
                                             class="w-16 h-20 object-cover rounded border border-gray-200 group-hover:border-indigo-400 transition"
                                             alt="Bordereau">
                                         <span *ngIf="!isImageFile(bordereau.fichier)"
@@ -152,16 +152,16 @@
 </app-custom-modal>
 
 <app-custom-modal title="Bordereau" subtitle="Aperçu du fichier" (onCloseModal)="closePdfModal()" [center]="true" [showModal]="showPdfModal" [size]="'full'">
-    <div class="w-full">
+    <div class="w-full pdf-preview-shell">
         <div *ngIf="pdfBordereau && pdfBordereau.fichier" class="flex flex-col items-center">
             <div *ngIf="isImageFile(pdfBordereau.fichier)" class="mb-4">
-                <img [src]="getDocUrl(pdfBordereau.fichier)" alt="Bordereau" class="max-w-full max-h-[calc(100vh-170px)] object-contain rounded border border-gray-200">
+                <img [src]="getBordereauUrl(pdfBordereau)" alt="Bordereau" class="pdf-preview-image">
             </div>
             <div *ngIf="!isImageFile(pdfBordereau.fichier)" class="w-full">
-                <iframe [src]="getDocUrl(pdfBordereau.fichier)" class="w-full h-[calc(100vh-170px)] rounded border border-gray-200"></iframe>
+                <iframe [src]="getBordereauUrl(pdfBordereau)" title="Bordereau de paiement" class="pdf-preview-frame"></iframe>
             </div>
             <div class="mt-4 flex gap-x-4">
-                <a [href]="getDocUrl(pdfBordereau.fichier)" target="_blank" class="inline-flex items-center gap-x-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-500">
+                <a [href]="getBordereauUrl(pdfBordereau)" target="_blank" class="inline-flex items-center gap-x-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-500">
                     Télécharger
                 </a>
             </div>

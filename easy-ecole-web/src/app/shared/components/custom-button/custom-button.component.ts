@@ -13,6 +13,11 @@ export class CustomButtonComponent implements OnInit {
   @HostBinding('class.w-full') @Input() fullWidth: boolean = false
   @Input() outlined: boolean = false
   @Input() color: string = 'primary'
+  @Input() icon?: string
+  @Input() iconPosition: 'left' | 'right' = 'left'
+  @HostBinding('class.btn-validated') get isValidated(): boolean {
+    return this.color === 'green' || this.color === 'emerald';
+  }
 
   constructor() { }
 

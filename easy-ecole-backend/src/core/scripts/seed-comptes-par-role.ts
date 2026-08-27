@@ -185,6 +185,7 @@ export async function seedComptesParRole(seqIn?: any): Promise<void> {
                 await lierOuCreer(AutA, uid, async () => AutA.create({
                     dateNaissance: new Date('2004-05-12'), lieuNaissance: 'Lomé',
                     sexe: 'M', nationalite: 'Togolaise', periode: 'soir', statutEtudiant: 'nouveau',
+                    typePieceIdentite: 'CNI', numeroPiece: 'CNI-2024-001',
                     adresseId: await ensureAdresseA(), utilisateurId: uid,
                 }), 'apprenant');
                 break;

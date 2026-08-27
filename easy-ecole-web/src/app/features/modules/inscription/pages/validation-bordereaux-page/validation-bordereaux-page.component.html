@@ -1,5 +1,10 @@
-<div class="flex justify-between items-start mb-8">
-    <app-header-title title="Validation des bordereaux" subtitle="Vérifier et valider les bordereaux de paiement soumis par les étudiants"></app-header-title>
+<div class="dashboard-surface cabinet-workspace min-h-screen p-4 sm:p-6 lg:p-8">
+<div class="cabinet-workspace-hero flex justify-between items-start mb-8">
+    <div>
+        <p class="dashboard-kicker"><span class="material-symbols-outlined">verified_user</span> Cabinet comptable</p>
+        <app-header-title title="Validation des bordereaux" subtitle="Contrôler, authentifier et orienter les paiements soumis"></app-header-title>
+    </div>
+    <div class="cabinet-workspace-status"><span></span> Contrôle en cours</div>
 </div>
 
 <div *ngIf="successMessage" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
@@ -146,6 +151,7 @@
 <!-- Dossier tree view : la barre d'actions groupées est intégrée au composant
      (affichée dès qu'un élément est coché). includeBatchInRowActions=false évite
      le doublon "Voir le bordereau" / "Rejeter" sur chaque ligne. -->
+<div class="dashboard-surface-card cabinet-table-panel">
 <app-dossier-view
   [nodes]="treeNodes"
   [columns]="itemColumns"
@@ -164,6 +170,7 @@
   (pageChange)="onPageChange($event)"
   (itemAction)="onItemAction($event)">
 </app-dossier-view>
+</div>
 
 <!-- Modal Validation -->
 <app-custom-modal title="Valider le bordereau" subtitle="Confirmer la validation de ce bordereau de paiement" (onCloseModal)="closeValidationModal()" [center]="true" [showModal]="showValidationModal">
@@ -196,6 +203,7 @@
         <app-custom-button (click)="validerBordereau()" text="Valider" color="green"></app-custom-button>
     </div>
 </app-custom-modal>
+</div>
 
 <!-- Modal Rejet -->
 <app-custom-modal title="Rejeter le bordereau" subtitle="Motif du rejet de ce bordereau" (onCloseModal)="closeRejetModal()" [center]="true" [showModal]="showRejetModal">
@@ -212,10 +220,13 @@
 
 <!-- Modal Preview document -->
 <div *ngIf="showPdfModal && pdfBordereau?.fichier" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-[95vw] mx-4 max-h-[95vh] flex flex-col">
-        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-[96vw] mx-4 max-h-[96vh] flex flex-col overflow-hidden">
+        <div class="flex items-center justify-between px-8 py-5 border-b border-gray-200">
             <div>
-                <h3 class="text-lg font-semibold text-gray-900">Bordereau de paiement</h3>
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-indigo-600">description</span>
+                    <h3 class="text-lg font-semibold text-gray-900">Bordereau de paiement</h3>
+                </div>
                 <p class="text-sm text-gray-500">
                     {{ pdfBordereau?.utilisateur?.nom }} {{ pdfBordereau?.utilisateur?.prenoms }}
                     - {{ pdfBordereau?.montant | currency:'XAF' }}
@@ -226,16 +237,17 @@
                 <span class="material-symbols-outlined text-3xl">close</span>
             </button>
         </div>
-        <div class="flex-1 overflow-auto p-6 bg-gray-100 flex items-center justify-center">
+        <div class="flex-1 min-h-0 pdf-preview-shell">
             <img *ngIf="isImageFile(pdfBordereau!.fichier!)"
                 [src]="getBordereauDownloadUrl(pdfBordereau!.id!) | safeUrl | async"
-                class="max-w-full max-h-[calc(95vh-190px)] object-contain rounded shadow"
+                class="pdf-preview-image"
                 alt="Bordereau">
             <iframe *ngIf="!isImageFile(pdfBordereau!.fichier!)"
                 [src]="getBordereauDownloadUrl(pdfBordereau!.id!) | safeUrl | async"
-                class="w-full h-[calc(95vh-190px)] rounded shadow"></iframe>
+                title="Bordereau de paiement"
+                class="pdf-preview-frame"></iframe>
         </div>
-        <div class="flex items-center justify-center gap-x-4 px-6 py-4 border-t border-gray-200">
+        <div class="flex items-center justify-center gap-x-4 px-8 py-5 border-t border-gray-200 bg-white">
             <app-custom-button (click)="closePdfModal(); openValidationModal(pdfBordereau!)" text="Valider" color="green"></app-custom-button>
             <app-custom-button (click)="closePdfModal(); openRejetModal(pdfBordereau!)" text="Rejeter" color="primary"></app-custom-button>
             <app-custom-button (click)="closePdfModal()" text="Fermer" [outlined]="true" color="gray"></app-custom-button>

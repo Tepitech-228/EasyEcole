@@ -155,6 +155,9 @@
                         type="button"
                         [title]="action.label"
                         [attr.aria-label]="action.label"
+                        [style.backgroundColor]="actionBackgroundColor(action.color)"
+                        [style.color]="actionTextColor(action.color)"
+                        [style.borderColor]="actionBorderColor(action.color)"
                         class="inline-flex items-center justify-center gap-1.5 h-9 text-sm font-semibold rounded-md border transition whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-400"
                         [ngClass]="actionClasses(action, useCompactActions(item))">
                         <span *ngIf="action.icon" class="material-symbols-outlined leading-none" [class.text-lg]="useCompactActions(item)" [class.text-base]="!useCompactActions(item)">{{ action.icon }}</span>

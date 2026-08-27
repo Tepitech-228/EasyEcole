@@ -79,7 +79,7 @@ class DashboardController {
         const debutAnnee = new Date(annee, 0, 1);
         const finAnnee = new Date(annee, 11, 31, 23, 59, 59);
 
-        const [totalApprenants, totalEnseignants, sessions, preInscriptions, recentDemandes, demandesParMois] = await Promise.all([
+        const [totalApprenants, totalEnseignants, sessions, preInscriptions, recentDemandes, demandesParMois, cursusActifs] = await Promise.all([
             Apprenant.count(),
             Enseignant.count(),
             DemandeInscription.findAll({ attributes: ['id', 'dateDemande', 'sessionId', 'matricule'] }),
@@ -94,6 +94,10 @@ class DashboardController {
                 where: { dateDemande: { [Op.between]: [debutAnnee, finAnnee] } },
                 group: [fn('MONTH', col('dateDemande'))],
             }),
+            CursusApprenant.findAll({
+                attributes: ['parcoursId'],
+                include: [{ association: CursusApprenant.associations.parcours, attributes: ['titre'] }],
+            }),
         ]);
 
         // 12 valeurs (Jan → Déc) pour le graphique "Pré-inscriptions" du dashboard admin
@@ -102,6 +106,15 @@ class DashboardController {
             const mois = Number(g.dateDemande);
             if (mois >= 1 && mois <= 12) moisCounts[mois - 1] = g.count;
         }
+
+        const etudiantsParFiliereMap = new Map<string, number>();
+        for (const cursus of cursusActifs) {
+            const libelle = cursus.parcours?.titre || cursus.intituleParcours || `Filière ${cursus.parcoursId}`;
+            etudiantsParFiliereMap.set(libelle, (etudiantsParFiliereMap.get(libelle) || 0) + 1);
+        }
+        const etudiantsParFiliere = Array.from(etudiantsParFiliereMap.entries())
+            .map(([filiere, total]) => ({ filiere, total }))
+            .sort((a, b) => b.total - a.total);
 
         return {
             success: true,
@@ -113,6 +126,7 @@ class DashboardController {
                 demandesEnAttente: preInscriptions.length,
                 sessionsOuvertes: sessions.length,
                 demandesParMois: moisCounts,
+                etudiantsParFiliere,
                 recentDemandes: await Promise.all(recentDemandes.map(async (d) => {
                     const u = d.utilisateur;
                     return {
@@ -196,6 +210,7 @@ class DashboardController {
                 { association: CursusApprenant.associations.parcours }
             ],
         });
+        const dossierActif = await DossierEtudiant.findOne({ where: { utilisateurId, statut: 'actif' } });
 
         let agenda: any[] = [];
         let coursIds: number[] = [];
@@ -240,7 +255,7 @@ class DashboardController {
 
         const echeances = await DashboardController.getEcheancesApprenant(utilisateurId);
 
-        return { success: true, role: 'apprenant', data: { agenda, notesRecentes, moyenne, totalPresences, totalCours, progression, echeances } };
+        return { success: true, role: 'apprenant', data: { agenda, notesRecentes, moyenne, totalPresences, totalCours, progression, echeances, inscriptionComplete: Boolean(cursus && dossierActif) } };
     }
 
     /**

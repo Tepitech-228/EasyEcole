@@ -1,0 +1,17 @@
+:host { display: block; }
+
+.cabinet-workspace { color: var(--app-ink); }
+.cabinet-workspace .cabinet-table-panel {
+	overflow: hidden;
+	border-radius: 1rem;
+	box-shadow: var(--app-shadow);
+}
+.cabinet-workspace .bg-white.border.border-gray-200.rounded-lg {
+	border-radius: 1rem;
+	box-shadow: var(--app-shadow);
+}
+.cabinet-workspace .cabinet-workspace-hero h1,
+.cabinet-workspace .cabinet-workspace-hero h2 { letter-spacing: -0.02em; }
+@media (max-width: 640px) {
+	.cabinet-workspace-hero { align-items: flex-start; flex-direction: column; }
+}

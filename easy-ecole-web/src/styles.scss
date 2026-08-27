@@ -48,6 +48,132 @@ body {
 body {
     margin: 0;
     position: relative;
+  background: #f4f7fb;
+}
+
+:root {
+  --app-ink: #10233f;
+  --app-muted: #64748b;
+  --app-line: #e2e8f0;
+  --app-surface: rgba(255, 255, 255, 0.94);
+  --app-blue: #1769aa;
+  --app-teal: #087f8c;
+  --app-shadow: 0 18px 45px rgba(16, 35, 63, 0.08);
+}
+
+.dashboard-surface {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(23, 105, 170, 0.10), transparent 28rem),
+    radial-gradient(circle at 100% 12%, rgba(8, 127, 140, 0.08), transparent 24rem),
+    linear-gradient(135deg, #f8fbff 0%, #f1f5f9 100%);
+}
+
+.dashboard-surface .dashboard-panel,
+.dashboard-surface .dashboard-surface-card {
+  background: var(--app-surface);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  box-shadow: var(--app-shadow);
+  backdrop-filter: blur(12px);
+}
+
+.dashboard-surface .dashboard-panel,
+.dashboard-surface .dashboard-surface-card,
+.dashboard-surface a {
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.dashboard-surface .dashboard-panel:hover,
+.dashboard-surface .dashboard-surface-card:hover,
+.dashboard-surface a:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 52px rgba(16, 35, 63, 0.12);
+}
+
+.dashboard-surface .dashboard-panel:hover {
+  border-color: rgba(23, 105, 170, 0.24);
+}
+
+.dashboard-surface.dashboard-parent-shell,
+.dashboard-surface.dashboard-enseignant-shell,
+.dashboard-surface.dashboard-comptable-shell,
+.dashboard-surface.dashboard-rh-shell {
+  min-height: 100vh;
+  padding: 1rem clamp(1rem, 3vw, 2rem) 2rem;
+}
+
+.dashboard-surface.dashboard-parent-shell > .dashboard-banner,
+.dashboard-surface.dashboard-enseignant-shell > .dashboard-banner,
+.dashboard-surface.dashboard-comptable-shell > .dashboard-banner,
+.dashboard-surface.dashboard-rh-shell > .dashboard-banner {
+  animation: dashboardReveal 420ms ease both;
+}
+
+.dashboard-surface.dashboard-parent-shell .dashboard-action-card,
+.dashboard-surface.dashboard-enseignant-shell .stat-card,
+.dashboard-surface.dashboard-comptable-shell .compta-kpi,
+.dashboard-surface.dashboard-rh-shell .dashboard-stat-card {
+  animation: dashboardReveal 420ms ease both;
+}
+
+.dashboard-surface.dashboard-parent-shell .dashboard-panel,
+.dashboard-surface.dashboard-enseignant-shell .card,
+.dashboard-surface.dashboard-comptable-shell .compta-link,
+.dashboard-surface.dashboard-rh-shell .dashboard-panel {
+  box-shadow: var(--app-shadow);
+}
+
+@media (max-width: 640px) {
+  .dashboard-surface.dashboard-parent-shell,
+  .dashboard-surface.dashboard-enseignant-shell,
+  .dashboard-surface.dashboard-comptable-shell,
+  .dashboard-surface.dashboard-rh-shell {
+    padding: 0.75rem 0.75rem 1.5rem;
+  }
+}
+
+/* Zone commune pour les aperçus de documents et PDF. */
+.pdf-preview-shell {
+  min-height: 420px;
+  padding: 2rem;
+  background: #f9fafb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+}
+
+.pdf-preview-frame {
+  width: 100%;
+  height: calc(100vh - 220px);
+  min-height: 420px;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
+}
+
+.pdf-preview-image {
+  max-width: 100%;
+  max-height: calc(100vh - 220px);
+  object-fit: contain;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
+}
+
+@media (max-width: 640px) {
+  .pdf-preview-shell {
+    padding: 1rem;
+  }
+
+  .pdf-preview-frame {
+    height: calc(100vh - 180px);
+    min-height: 360px;
+  }
+
+  .pdf-preview-image {
+    max-height: calc(100vh - 180px);
+  }
 }
 
 .prerequis-select {
@@ -241,4 +367,49 @@ table.table-bordered {
   .table-responsive table tbody td:last-child {
     border-bottom: none;
   }
+}
+
+/* =============================================
+   BOUTONS VALIDÉS — Vert uniforme
+   ============================================= */
+
+/* Bouton de validation principal (texte "Valider", "Confirmer", etc.) */
+.btn-validated,
+.btn-valider,
+.btn-confirmer,
+button[data-action="validate"],
+button[data-action="confirm"] {
+  background-color: #10b981 !important; /* emerald-500 */
+  color: #ffffff !important;
+  border-color: #059669 !important; /* emerald-600 */
+}
+
+.btn-validated:hover,
+.btn-valider:hover,
+.btn-confirmer:hover,
+button[data-action="validate"]:hover,
+button[data-action="confirm"]:hover {
+  background-color: #059669 !important; /* emerald-600 */
+}
+
+/* Variante outlined */
+.btn-validated.outlined,
+.btn-valider.outlined {
+  background-color: transparent !important;
+  color: #059669 !important;
+  border: 1px solid #10b981 !important;
+}
+
+.btn-validated.outlined:hover,
+.btn-valider.outlined:hover {
+  background-color: #d1fae5 !important; /* emerald-100 */
+}
+
+/* Icônes dans les boutons validés */
+.btn-validated .material-symbols-outlined,
+.btn-valider .material-symbols-outlined,
+.btn-confirmer .material-symbols-outlined,
+button[data-action="validate"] .material-symbols-outlined,
+button[data-action="confirm"] .material-symbols-outlined {
+  color: #ffffff !important;
 }

@@ -1,0 +1,100 @@
+<div class="choisir-session" *ngIf="!loading; else chargement">
+  <div class="choisir-session__header">
+    <div>
+      <h2 class="choisir-session__titre">Choisissez votre session d'inscription</h2>
+      <p class="choisir-session__sous-titre">
+        Sélectionnez la session dans laquelle vous souhaitez démarrer votre inscription.
+      </p>
+    </div>
+    <button type="button" class="btn btn--ghost" (click)="retry()">
+      Rafraîchir
+    </button>
+  </div>
+
+  <!-- Message d'erreur / création en cours -->
+  <div *ngIf="errorMessage" class="choisir-session__alerte">
+    {{ errorMessage }}
+  </div>
+
+  <div *ngIf="creationLoading" class="choisir-session__chargement-creation">
+    <div class="spinner"></div>
+    <span>Création de votre demande d'inscription…</span>
+  </div>
+
+  <!-- Sessions disponibles -->
+  <div *ngIf="sessions.length > 0; else aucuneSession" class="choisir-session__liste">
+    <button
+      type="button"
+      class="carte-session"
+      *ngFor="let session of sessions"
+      (click)="choisirSession(session)"
+      [disabled]="creationLoading"
+    >
+      <div class="carte-session__icone">
+        <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+      </div>
+
+      <div class="carte-session__contenu">
+        <div class="carte-session__titre">
+          {{ getNiveauLibelle(session.niveauEtudeId) || 'Session d\'inscription' }}
+        </div>
+
+        <div class="carte-session__meta">
+          <span *ngIf="getAnneeLibelle(session.anneeAcademiqueId)" class="badge">
+            {{ getAnneeLibelle(session.anneeAcademiqueId) }}
+          </span>
+          <span class="badge badge--statut">
+            {{ getEtatLabel(session) }}
+          </span>
+        </div>
+
+        <div class="carte-session__dates">
+          <div>
+            <span class="libelle">Début</span>
+            <span class="valeur">{{ session.dateDebut | date:'dd MMM yyyy' }}</span>
+          </div>
+          <div>
+            <span class="libelle">Fin</span>
+            <span class="valeur">{{ session.dateFin | date:'dd MMM yyyy' }}</span>
+          </div>
+        </div>
+
+        <p *ngIf="session.description" class="carte-session__description">
+          {{ session.description }}
+        </p>
+      </div>
+
+      <div class="carte-session__action">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+      </div>
+    </button>
+  </div>
+
+  <ng-template #aucuneSession>
+    <div class="choisir-session__vide">
+      <div class="choisir-session__vide-icone">
+        <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </div>
+      <h3>Aucune session ouverte</h3>
+      <p>Aucune session d'inscription n'est disponible pour le moment. Revenez plus tard.</p>
+      <button type="button" class="btn btn--primary" routerLink="/">
+        Retour au tableau de bord
+      </button>
+    </div>
+  </ng-template>
+</div>
+
+<ng-template #chargement>
+  <div class="choisir-session__chargement">
+    <div class="spinner-large"></div>
+    <span>Chargement des sessions…</span>
+  </div>
+</ng-template>

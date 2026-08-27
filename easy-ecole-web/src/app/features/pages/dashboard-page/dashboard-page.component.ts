@@ -136,12 +136,13 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
     return {
       labels: months,
       datasets: [{
-        label: 'Pré-inscriptions',
+        label: 'Inscriptions',
         data: demandes.length ? demandes : months.map(() => 0),
-        backgroundColor: this.createGradient('rgba(59, 130, 246, 0.94)', 'rgba(59, 130, 246, 0.24)', 12),
-        borderColor: '#2563eb',
+        backgroundColor: ['#1769aa', '#1d7bb8', '#258cc0', '#2d9dc7', '#35aebd', '#3bb9a7', '#4bc29b', '#62c88e', '#78cd83', '#8dce7b', '#a5cf75', '#b8cf70'],
+        hoverBackgroundColor: '#087f8c',
+        borderColor: '#ffffff',
         borderWidth: 2,
-        borderRadius: 12,
+        borderRadius: 8,
         borderSkipped: false,
       }]
     };
@@ -160,6 +161,77 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
         borderColor: ['#ffffff', '#ffffff', '#ffffff'],
         borderWidth: 4,
         hoverOffset: 10,
+      }]
+    };
+  }
+
+  get adminResourcesChartData(): any {
+    return {
+      labels: ['Apprenants', 'Enseignants', 'Cours', 'Classes'],
+      datasets: [{
+        label: 'Volume',
+        data: [
+          this.dashboardData.totalApprenants || 0,
+          this.dashboardData.totalEnseignants || 0,
+          this.dashboardData.totalCours || 0,
+          this.dashboardData.totalClasses || 0,
+        ],
+        backgroundColor: ['#1769aa', '#087f8c', '#36a38d', '#e0a11a'],
+        borderRadius: 8,
+        borderSkipped: false,
+        barThickness: 22,
+      }]
+    };
+  }
+
+  get adminPriorityChartData(): any {
+    return {
+      labels: ['Demandes en attente', 'Échéances impayées', 'Sessions ouvertes'],
+      datasets: [{
+        data: [
+          this.dashboardData.demandesEnAttente || 0,
+          this.dashboardData.echeancesImpayees || 0,
+          this.dashboardData.sessionsOuvertes || 0,
+        ],
+        backgroundColor: ['#e0a11a', '#dc5a5a', '#087f8c'],
+        hoverBackgroundColor: ['#c4870d', '#b94343', '#05636d'],
+        borderColor: '#ffffff',
+        borderWidth: 4,
+        hoverOffset: 10,
+      }]
+    };
+  }
+
+  get adminDemandStatusChartData(): any {
+    const demandes = this.dashboardData.recentDemandes || [];
+    const validees = demandes.filter((d: any) => d.preInscription?.statut === 'valide').length;
+    const rejetees = demandes.filter((d: any) => d.preInscription?.statut === 'rejete').length;
+    const enAttente = Math.max(0, demandes.length - validees - rejetees);
+    return {
+      labels: ['Validées', 'En attente', 'Rejetées'],
+      datasets: [{
+        data: [validees, enAttente, rejetees],
+        backgroundColor: ['#087f8c', '#e0a11a', '#dc5a5a'],
+        hoverBackgroundColor: ['#05636d', '#c4870d', '#b94343'],
+        borderColor: '#ffffff',
+        borderWidth: 4,
+        hoverOffset: 10,
+      }]
+    };
+  }
+
+  get adminStudentsByProgramChartData(): any {
+    const programmes = this.dashboardData.etudiantsParFiliere || [];
+    return {
+      labels: programmes.length ? programmes.map((p: any) => p.filiere) : ['Aucune filière'],
+      datasets: [{
+        label: 'Étudiants',
+        data: programmes.length ? programmes.map((p: any) => p.total) : [0],
+        backgroundColor: '#1769aa',
+        hoverBackgroundColor: '#087f8c',
+        borderRadius: 8,
+        borderSkipped: false,
+        barThickness: 20,
       }]
     };
   }
@@ -197,21 +269,7 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
         }
       }
     },
-    elements: {
-      line: {
-        tension: 0.4,
-        borderWidth: 3,
-        borderColor: '#2563eb',
-        backgroundColor: 'rgba(59, 130, 246, 0.16)'
-      },
-      point: {
-        radius: 5,
-        backgroundColor: '#0ea5e9',
-        borderWidth: 2,
-        borderColor: '#ffffff',
-        hoverRadius: 7
-      }
-    }
+    elements: { bar: { borderRadius: 8, borderSkipped: false } }
   };
 
   adminDoughnutOptions: any = {
@@ -243,6 +301,51 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
             return ` ${ctx.label}: ${ctx.parsed} (${pct}%)`;
           }
         }
+      }
+    }
+  };
+
+  adminHorizontalBarOptions: any = {
+    responsive: true,
+    maintainAspectRatio: false,
+    indexAxis: 'y',
+    animation: { duration: 1100, easing: 'easeOutQuart' as any },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#10233f',
+        padding: 12,
+        cornerRadius: 10,
+        displayColors: false,
+        callbacks: { label: (ctx: any) => ` ${ctx.parsed.x} élément(s)` }
+      }
+    },
+    scales: {
+      x: {
+        beginAtZero: true,
+        grid: { color: '#e6edf3', drawBorder: false },
+        ticks: { precision: 0, color: '#64748b', font: { size: 10, family: 'Inter, sans-serif' } }
+      },
+      y: {
+        grid: { display: false },
+        ticks: { color: '#334155', font: { size: 11, weight: '600', family: 'Inter, sans-serif' } }
+      }
+    }
+  };
+
+  adminPriorityChartOptions: any = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '68%',
+    animation: { animateRotate: true, duration: 1200, easing: 'easeOutQuart' as any },
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { padding: 14, usePointStyle: true, pointStyle: 'circle', color: '#475569', font: { size: 11, family: 'Inter, sans-serif' } }
+      },
+      tooltip: {
+        backgroundColor: '#10233f', padding: 12, cornerRadius: 10,
+        callbacks: { label: (ctx: any) => ` ${ctx.label}: ${ctx.parsed}` }
       }
     }
   };

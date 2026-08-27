@@ -110,9 +110,14 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
     return /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(fichier)
   }
 
-  getDocUrl(fichier: string): SafeResourceUrl {
+  getBordereauUrl(bordereau: Bordereau): SafeResourceUrl {
+    // On passe par l'endpoint /bordereaux/:id/download : le backend résout le
+    // fichier quelle que soit son arborescence (nouvelle structure dossier
+    // étudiant public/dossiers/... ou ancien dépôt plat), via le champ
+    // bordereau.fichier stocké en base. On ne concatène plus le chemin
+    // stocké dans l'URL (ce qui provoquait une 404 « Ressource non trouvée »).
     const token = this.localStorage.get(LocalStorageService.AUTH_TOKEN)
-    let url = this.BORDEREAUX_PATH + fichier
+    let url = `${this.BORDEREAUX_PATH}${bordereau.id}/download`
     if (token) {
       url += `?token=${encodeURIComponent(token)}`
     }

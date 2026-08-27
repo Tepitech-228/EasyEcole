@@ -1,12 +1,18 @@
-<div class="p-6">
-  <app-header-title title="Bordereaux à traiter" subtitle="Saisie comptable et imputation des paiements"></app-header-title>
+<div class="dashboard-surface compta-workspace min-h-screen p-4 sm:p-6 lg:p-8">
+  <div class="compta-workspace-hero">
+    <div>
+      <p class="dashboard-kicker"><span class="material-symbols-outlined">account_balance</span> ESA-Compta</p>
+      <app-header-title title="Bordereaux à traiter" subtitle="Saisie comptable et imputation des paiements"></app-header-title>
+    </div>
+    <div class="compta-workspace-status"><span></span> File de traitement active</div>
+  </div>
 
   <div *ngIf="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
     {{ apiErrorMessage || 'Une erreur est survenue' }}
   </div>
 
   <!-- Filtres -->
-  <div class="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+  <div class="dashboard-surface-card compta-filter-panel p-4 mb-6">
     <div class="flex items-center gap-x-2 mb-4">
       <span class="material-symbols-outlined text-gray-500">folder_open</span>
       <span class="text-sm font-medium text-gray-700">Filtrer les bordereaux</span>
@@ -64,7 +70,7 @@
   </div>
 
   <!-- Barre de recherche -->
-  <div class="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+  <div class="dashboard-surface-card compta-search-panel p-4 mb-6">
     <div class="flex items-center gap-x-4">
       <div class="flex-1">
         <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">
@@ -104,9 +110,24 @@
   </app-dossier-view>
 </div>
 
-<!-- Modal Saisie -->
-<app-custom-modal title="Saisie comptable" subtitle="Enregistrer les informations financières" (onCloseModal)="closeSaisieModal()" [center]="true" [showModal]="showSaisieModal">
-  <div *ngIf="selectedBordereau" class="mb-6">
+<!-- Modal Traitement : document et saisie sur le même écran -->
+<app-custom-modal title="Traitement du bordereau" subtitle="Vérifier le justificatif et enregistrer le paiement" (onCloseModal)="closeSaisieModal()" [center]="true" [showModal]="showSaisieModal" [size]="'full'">
+  <div *ngIf="selectedBordereau" class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <section class="min-w-0">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="material-symbols-outlined text-indigo-600">description</span>
+        <h3 class="text-sm font-semibold text-gray-800">Justificatif de paiement</h3>
+      </div>
+      <div class="pdf-preview-shell rounded-lg border border-gray-200">
+        <ng-container *ngIf="selectedBordereau.fichier; else noFile">
+          <img *ngIf="isImageFile(selectedBordereau.fichier)" [src]="getDocUrl(selectedBordereau)" class="pdf-preview-image">
+          <iframe *ngIf="!isImageFile(selectedBordereau.fichier)" [src]="getDocUrlSafe(selectedBordereau)" title="Bordereau de paiement" class="pdf-preview-frame"></iframe>
+        </ng-container>
+        <ng-template #noFile><span class="text-sm text-gray-400">Aucun fichier disponible</span></ng-template>
+      </div>
+    </section>
+
+    <section class="min-w-0">
     <div class="bg-gray-50 rounded-lg p-4 mb-4">
       <p class="text-sm text-gray-600">Étudiant : <strong>{{ selectedBordereau.utilisateur?.nom }} {{ selectedBordereau.utilisateur?.prenoms }}</strong></p>
       <p class="text-sm text-gray-600">Matricule : <strong>{{ selectedBordereau.echeance?.dossierEtudiant?.matricule || '---' }}</strong></p>
@@ -200,6 +221,7 @@
         <textarea rows="3" formControlName="commentaire" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"></textarea>
       </div>
     </form>
+    </section>
   </div>
   <div class="flex items-center justify-between py-3">
     <app-custom-button (click)="closeSaisieModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
@@ -233,15 +255,3 @@
   </div>
 </app-custom-modal>
 
-<!-- Modal PDF -->
-<app-custom-modal title="Bordereau" subtitle="Aperçu du fichier" (onCloseModal)="closePdfModal()" [center]="true" [showModal]="showPdfModal" [size]="'full'">
-  <div *ngIf="selectedBordereau && selectedBordereau.fichier" class="w-full">
-    <div [ngSwitch]="isImageFile(selectedBordereau.fichier)">
-      <img *ngSwitchCase="true" [src]="getDocUrl(selectedBordereau.fichier)" class="max-w-full max-h-[calc(100vh-170px)] object-contain mx-auto rounded border border-gray-200">
-      <iframe *ngSwitchDefault [src]="getDocUrlSafe(selectedBordereau.fichier)" class="w-full h-[calc(100vh-170px)] rounded border border-gray-200"></iframe>
-    </div>
-  </div>
-  <div *ngIf="!selectedBordereau || !selectedBordereau.fichier" class="text-center text-gray-400 py-8">
-    Aucun fichier disponible
-  </div>
-</app-custom-modal>

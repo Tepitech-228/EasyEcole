@@ -6,6 +6,19 @@ module.exports = {
   ],
   purge: [],
   darkMode: false, // or 'media' or 'class'
+  safelist: [
+    // Couleurs dynamiques pour app-custom-button et dossier-view
+    {
+      pattern: /(bg|text|ring|border|hover:bg|hover:text|focus:ring)-(primary|secondary|green|red|indigo|blue|gray|amber|emerald|orange|violet|rose|yellow|white|black)-(50|100|200|300|400|500|600|700|800|900|950)/,
+    },
+    // Classes utilitaires dynamiques
+    'shadow-sm',
+    'shadow-md',
+    'w-9',
+    'px-3',
+    'opacity-100',
+    'opacity-50',
+  ],
   theme: {
     extend: {
       fontFamily: {
