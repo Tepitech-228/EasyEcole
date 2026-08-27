@@ -327,7 +327,7 @@
             <h2 class="text-base font-semibold leading-7 text-gray-900 mb-6">Adresse</h2>
             <div class="grid grid-cols-6 gap-x-8 gap-y-6">
                 <div class="col-span-3">
-                    <label for="boitePostale" class="mb-2 block text-sm leading-6 text-gray-600">Boîte postale</label>
+                    <label for="boitePostale" class="mb-2 block text-sm leading-6 text-gray-600">Boîte postale <span class="text-red-600">*</span></label>
                     <input type="text" id="boitePostale" formControlName="boitePostale"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                     <div *ngIf="profilForm.get('adresse.boitePostale')!.invalid && (profilForm.get('adresse.boitePostale')!.dirty || profilForm.get('adresse.boitePostale')!.touched)">
@@ -337,7 +337,7 @@
                 </div>
                 <div class="col-span-3">
                     <label for="prorietaireBoitePostale" class="mb-2 block text-sm leading-6 text-gray-600">Propriétaire de la boîte
-                        postale</label>
+                        postale <span class="text-red-600">*</span></label>
                     <input type="text" id="prorietaireBoitePostale" formControlName="prorietaireBoitePostale"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                     <div *ngIf="profilForm.get('adresse.prorietaireBoitePostale')!.invalid && (profilForm.get('adresse.prorietaireBoitePostale')!.dirty || profilForm.get('adresse.prorietaireBoitePostale')!.touched)">
@@ -346,7 +346,7 @@
                     </div>
                 </div>
                 <div class="col-span-3">
-                    <label for="telMobile" class="mb-2 block text-sm leading-6 text-gray-600">Téléphone mobile</label>
+                    <label for="telMobile" class="mb-2 block text-sm leading-6 text-gray-600">Téléphone mobile <span class="text-red-600">*</span></label>
                     <input type="text" id="telMobile" formControlName="telMobile"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                     <div *ngIf="profilForm.get('adresse.telMobile')!.invalid && (profilForm.get('adresse.telMobile')!.dirty || profilForm.get('adresse.telMobile')!.touched)">
@@ -360,7 +360,7 @@
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                 </div>
                 <div class="col-span-2">
-                    <label for="quartier" class="mb-2 block text-sm leading-6 text-gray-600">Quartier</label>
+                    <label for="quartier" class="mb-2 block text-sm leading-6 text-gray-600">Quartier <span class="text-red-600">*</span></label>
                     <input type="text" id="quartier" formControlName="quartier"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                     <div *ngIf="profilForm.get('adresse.quartier')!.invalid && (profilForm.get('adresse.quartier')!.dirty || profilForm.get('adresse.quartier')!.touched)">
@@ -369,16 +369,16 @@
                     </div>
                 </div>
                 <div class="col-span-2">
-                    <label for="ville" class="mb-2 block text-sm leading-6 text-gray-600">Ville</label>
+                    <label for="ville" class="mb-2 block text-sm leading-6 text-gray-600">Ville <span class="text-red-600">*</span></label>
                     <input type="text" id="ville" formControlName="ville"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                     <div *ngIf="profilForm.get('adresse.ville')!.invalid && (profilForm.get('adresse.ville')!.dirty || profilForm.get('adresse.ville')!.touched)">
                         <app-form-message *ngIf="profilForm.get('adresse.ville')!.errors?.['required']"
-                            text="Veuillez préciser votre pays"></app-form-message>
+                            text="Veuillez préciser votre ville"></app-form-message>
                     </div>
                 </div>
                 <div class="col-span-2">
-                    <label for="pays" class="mb-2 block text-sm leading-6 text-gray-600">Pays</label>
+                    <label for="pays" class="mb-2 block text-sm leading-6 text-gray-600">Pays <span class="text-red-600">*</span></label>
                     <input type="text" id="pays" formControlName="pays"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                     <div *ngIf="profilForm.get('adresse.pays')!.invalid && (profilForm.get('adresse.pays')!.dirty || profilForm.get('adresse.pays')!.touched)">
