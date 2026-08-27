@@ -26,6 +26,8 @@ import { ChapitreCours } from "./ChapitreCours";
 import { Ressource } from "./Ressource";
 import { FichierRessource } from "./FichierRessource";
 import { Seance } from "./Seance";
+import { Creneau } from "./Creneau";
+import { AffectationSalleClasse } from "./AffectationSalleClasse";
 import { CoursParticipant } from "./CoursParticipant";
 import { Presence } from "./Presence";
 import { PresenceCoursParticipant } from "./PresenceCoursParticipant";
@@ -275,6 +277,42 @@ Seance.belongsTo(Enseignant, { as: 'enseignant', foreignKey: 'enseignantId' })
 // SalleDeClasse - Seance
 SalleDeClasse.hasMany(Seance, { foreignKey: 'salleDeClasseId', as: 'seances' })
 Seance.belongsTo(SalleDeClasse, { as: 'salleDeClasse', foreignKey: 'salleDeClasseId' })
+
+// Creneau - Seance (créneau horaire → séances/affectations)
+Creneau.hasMany(Seance, { foreignKey: 'creneauId', as: 'seances' })
+Seance.belongsTo(Creneau, { as: 'creneau', foreignKey: 'creneauId' })
+
+// Classe (groupe) - Seance
+Classe.hasMany(Seance, { foreignKey: 'classeGroupeId', as: 'seancesClasseGroupe' })
+Seance.belongsTo(Classe, { as: 'classeGroupe', foreignKey: 'classeGroupeId' })
+
+// NiveauEtude - Seance
+NiveauEtude.hasMany(Seance, { foreignKey: 'niveauEtudeId', as: 'seances' })
+Seance.belongsTo(NiveauEtude, { as: 'niveauEtude', foreignKey: 'niveauEtudeId' })
+
+// Parcours - Seance
+Parcours.hasMany(Seance, { foreignKey: 'parcoursId', as: 'seances' })
+Seance.belongsTo(Parcours, { as: 'parcours', foreignKey: 'parcoursId' })
+
+// AnneeAcademique - Seance
+AnneeAcademique.hasMany(Seance, { foreignKey: 'anneeAcademiqueId', as: 'seances' })
+Seance.belongsTo(AnneeAcademique, { as: 'anneeAcademique', foreignKey: 'anneeAcademiqueId' })
+
+// SemestreAcademique - Seance
+SemestreAcademique.hasMany(Seance, { foreignKey: 'semestreAcademiqueId', as: 'seances' })
+Seance.belongsTo(SemestreAcademique, { as: 'semestreAcademique', foreignKey: 'semestreAcademiqueId' })
+
+// AffectationSalleClasse - Salle
+SalleDeClasse.hasMany(AffectationSalleClasse, { foreignKey: 'salleId', as: 'affectationsSallesClasses' })
+AffectationSalleClasse.belongsTo(SalleDeClasse, { as: 'salle', foreignKey: 'salleId' })
+
+// AffectationSalleClasse - Classe
+Classe.hasMany(AffectationSalleClasse, { foreignKey: 'classeId', as: 'affectationsSallesClasses' })
+AffectationSalleClasse.belongsTo(Classe, { as: 'classe', foreignKey: 'classeId' })
+
+// AffectationSalleClasse - AnneeAcademique
+AnneeAcademique.hasMany(AffectationSalleClasse, { foreignKey: 'anneeAcademiqueId', as: 'affectationsSallesClasses' })
+AffectationSalleClasse.belongsTo(AnneeAcademique, { as: 'anneeAcademique', foreignKey: 'anneeAcademiqueId' })
 
 // Cours - ListePresence
 Cours.hasMany(ListePresence, { foreignKey: 'coursId', as: 'listesPresences' })

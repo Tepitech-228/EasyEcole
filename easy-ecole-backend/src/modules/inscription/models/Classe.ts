@@ -5,11 +5,13 @@ import { NiveauEtude } from "./NiveauEtude";
 import { Parcours } from "./Parcours";
 import { CursusApprenant } from "./CursusApprenant";
 import { Etablissement } from "../../etablissement/models/Etablissement";
+import { ClasseOption } from "../../../core/enums/ClasseOption";
 
 export class Classe extends Model<InferAttributes<Classe>, InferCreationAttributes<Classe>> {
   declare id: CreationOptional<number>
   declare libelle: string
   declare description: CreationOptional<string>
+  declare option: CreationOptional<ClasseOption | null>
   declare capaciteMax: CreationOptional<number>
   declare niveauEtudeId: ForeignKey<NiveauEtude['id']>
   declare niveauEtude?: NonAttribute<NiveauEtude>
@@ -44,6 +46,11 @@ Classe.init({
   description: {
     type: new DataTypes.STRING,
     allowNull: true
+  },
+  option: {
+    type: DataTypes.ENUM(ClasseOption.JOUR, ClasseOption.SOIR, ClasseOption.EN_LIGNE),
+    allowNull: true,
+    comment: "Option de la classe : cours du jour, du soir ou en ligne"
   },
   capaciteMax: {
     type: DataTypes.INTEGER.UNSIGNED,

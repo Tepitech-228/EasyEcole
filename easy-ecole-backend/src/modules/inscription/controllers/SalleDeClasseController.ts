@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CountOptions, FindOptions, InferAttributes } from "sequelize";
+import { CountOptions, FindOptions, InferAttributes, Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { SalleDeClasse } from "../models/SalleDeClasse";
 import { Localisation } from "../../immobilisation/models/Localisation";
@@ -38,6 +38,24 @@ export default class SalleDeClasseController {
         }
         if (req.query.etablissementId) {
             where.etablissementId = req.query.etablissementId as string
+        }
+        if (req.query.type) {
+            where.type = req.query.type as string
+        }
+        if (req.query.regime) {
+            where.regime = req.query.regime as string
+        }
+        if (req.query.statut) {
+            where.statut = req.query.statut as string
+        }
+        if (req.query.recherche) {
+            const terme = (req.query.recherche as string).trim();
+            if (terme !== '') {
+                where[Op.or] = [
+                    { libelle: { [Op.like]: `%${terme}%` } },
+                    { code: { [Op.like]: `%${terme}%` } },
+                ];
+            }
         }
         if (Object.keys(where).length > 0) {
             options = {
@@ -104,8 +122,13 @@ export default class SalleDeClasseController {
         }
         else {
             let salledeclasse: SalleDeClasse = new SalleDeClasse();
+            salledeclasse.code = req.body.code ?? null
             salledeclasse.libelle = req.body.libelle
             salledeclasse.description = req.body.description
+            salledeclasse.etage = req.body.etage ?? null
+            salledeclasse.type = req.body.type ?? null
+            salledeclasse.regime = req.body.regime ?? null
+            salledeclasse.statut = req.body.statut ?? null
             salledeclasse.capacite = req.body.capacite
             salledeclasse.equipements = req.body.equipements ? JSON.stringify(req.body.equipements) : null
             salledeclasse.localisationId = req.body.localisationId
@@ -138,8 +161,13 @@ export default class SalleDeClasseController {
         if (salledeclasse != null) {
 
             await salledeclasse.update({
+                code: req.body.code ?? salledeclasse.code,
                 libelle: req.body.libelle ?? salledeclasse.libelle,
                 description: req.body.description ?? salledeclasse.description,
+                etage: req.body.etage ?? salledeclasse.etage,
+                type: req.body.type ?? salledeclasse.type,
+                regime: req.body.regime ?? salledeclasse.regime,
+                statut: req.body.statut ?? salledeclasse.statut,
                 capacite: req.body.capacite ?? salledeclasse.capacite,
                 equipements: req.body.equipements ? JSON.stringify(req.body.equipements) : (req.body.equipements === null ? null : salledeclasse.equipements),
                 localisationId: req.body.localisationId ?? salledeclasse.localisationId,

@@ -24,6 +24,12 @@ export default class SeanceController {
             Seance.associations.cours,
             { association: Seance.associations.enseignant, include: [Enseignant.associations.utilisateur] },
             { association: Seance.associations.salleDeClasse, required: false },
+            { association: Seance.associations.creneau, required: false },
+            { association: Seance.associations.classeGroupe, required: false },
+            { association: Seance.associations.niveauEtude, required: false },
+            { association: Seance.associations.parcours, required: false },
+            { association: Seance.associations.anneeAcademique, required: false },
+            { association: Seance.associations.semestreAcademique, required: false },
         ];
     }
 
@@ -96,6 +102,10 @@ export default class SeanceController {
         const semaineFin = req.query.semaineFin as string;
         const filtreEnseignantId = req.query.enseignantId as string | undefined;
         const filtreClasseId = req.query.classeId as string | undefined;
+        const filtreCreneauId = req.query.creneauId as string | undefined;
+        const filtreRegime = req.query.regime as string | undefined;
+        const filtreAnneeAcademiqueId = req.query.anneeAcademiqueId as string | undefined;
+        const filtreClasseGroupeId = req.query.classeGroupeId as string | undefined;
 
         if (!semaineDebut || !semaineFin) {
             return res.status(400).json({ success: false, message: "Paramètres semaineDebut et semaineFin requis" });
@@ -139,6 +149,18 @@ export default class SeanceController {
             } else {
                 if (filtreEnseignantId) {
                     (options.where as any).enseignantId = filtreEnseignantId;
+                }
+                if (filtreCreneauId) {
+                    (options.where as any).creneauId = filtreCreneauId;
+                }
+                if (filtreRegime) {
+                    (options.where as any).regime = filtreRegime;
+                }
+                if (filtreAnneeAcademiqueId) {
+                    (options.where as any).anneeAcademiqueId = filtreAnneeAcademiqueId;
+                }
+                if (filtreClasseGroupeId) {
+                    (options.where as any).classeGroupeId = filtreClasseGroupeId;
                 }
                 if (filtreClasseId) {
                     const coursDeLaClasse = await Cours.findAll({ where: { classeId: filtreClasseId }, attributes: ['id'] });
@@ -192,6 +214,19 @@ export default class SeanceController {
                             cours: seance.cours,
                             enseignantId: seance.enseignantId,
                             enseignant: seance.enseignant,
+                            regime: seance.regime,
+                            creneauId: seance.creneauId,
+                            creneau: seance.creneau,
+                            classeGroupeId: seance.classeGroupeId,
+                            classeGroupe: seance.classeGroupe,
+                            niveauEtudeId: seance.niveauEtudeId,
+                            niveauEtude: seance.niveauEtude,
+                            parcoursId: seance.parcoursId,
+                            parcours: seance.parcours,
+                            anneeAcademiqueId: seance.anneeAcademiqueId,
+                            anneeAcademique: seance.anneeAcademique,
+                            semestreAcademiqueId: seance.semestreAcademiqueId,
+                            semestreAcademique: seance.semestreAcademique,
                         });
                     }
                     current.setDate(current.getDate() + 1);
@@ -225,6 +260,8 @@ export default class SeanceController {
         const salle = data.salle;
         const enseignantId = data.enseignantId;
         const coursId = data.coursId;
+        const creneauId = data.creneauId;
+        const classeGroupeId = data.classeGroupeId;
 
         const whereOverlap: any = {
             jourSemaine: jourSemaine,
@@ -274,7 +311,37 @@ export default class SeanceController {
             }
         }
 
-        // Class conflict
+        // Créneau conflict : même créneau horaire (temps identique) — renforce la détection basée sur heures
+        if (creneauId) {
+            const creneauConflits = await Seance.findAll({
+                where: { ...whereOverlap, creneauId },
+                include: includes
+            });
+            for (const s of creneauConflits) {
+                conflits.push({
+                    type: 'creneau',
+                    message: `Créneau déjà utilisé : ${s.titre || 'Séance'} le ${s.jourSemaine} de ${s.heureDebut} à ${s.heureFin}`,
+                    seance: s
+                });
+            }
+        }
+
+        // Groupe/classe conflict via classeGroupeId (le groupe = une Classe)
+        if (classeGroupeId) {
+            const groupeConflits = await Seance.findAll({
+                where: { ...whereOverlap, classeGroupeId },
+                include: includes
+            });
+            for (const s of groupeConflits) {
+                conflits.push({
+                    type: 'classe',
+                    message: `Conflit pour le groupe/classe : ${s.titre || 'Séance'} (${s.cours?.intitule || '?'}) de ${s.heureDebut} à ${s.heureFin}`,
+                    seance: s
+                });
+            }
+        }
+
+        // Class conflict (via le cours → classe)
         if (coursId) {
             const cours = await Cours.findByPk(coursId, { attributes: ['classeId'] });
             if (cours && cours.classeId) {
@@ -303,7 +370,7 @@ export default class SeanceController {
     }
 
     static async createSeance(req: Request, res: Response): Promise<Response | null> {
-        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION) {
+        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false, message: "Réservé à l'institution" });
         }
 
@@ -328,6 +395,14 @@ export default class SeanceController {
         seance.coursId = req.body.coursId
         seance.enseignantId = req.body.enseignantId
         seance.salleDeClasseId = req.body.salleDeClasseId || null
+        // Nouveaux champs de la planification
+        seance.regime = req.body.regime ?? null
+        seance.creneauId = req.body.creneauId ?? null
+        seance.classeGroupeId = req.body.classeGroupeId ?? null
+        seance.niveauEtudeId = req.body.niveauEtudeId ?? null
+        seance.parcoursId = req.body.parcoursId ?? null
+        seance.anneeAcademiqueId = req.body.anneeAcademiqueId ?? null
+        seance.semestreAcademiqueId = req.body.semestreAcademiqueId ?? null
 
         await seance.save()
             .then((seance) => {
@@ -341,7 +416,7 @@ export default class SeanceController {
     }
 
     static async updateSeance(req: Request, res: Response): Promise<Response | null> {
-        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION) {
+        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false, message: "Réservé à l'institution" });
         }
 
@@ -368,6 +443,14 @@ export default class SeanceController {
                 coursId: req.body.coursId,
                 enseignantId: req.body.enseignantId,
                 salleDeClasseId: req.body.salleDeClasseId || null,
+                // Nouveaux champs de la planification
+                regime: req.body.regime ?? seance.regime,
+                creneauId: req.body.creneauId ?? seance.creneauId,
+                classeGroupeId: req.body.classeGroupeId ?? seance.classeGroupeId,
+                niveauEtudeId: req.body.niveauEtudeId ?? seance.niveauEtudeId,
+                parcoursId: req.body.parcoursId ?? seance.parcoursId,
+                anneeAcademiqueId: req.body.anneeAcademiqueId ?? seance.anneeAcademiqueId,
+                semestreAcademiqueId: req.body.semestreAcademiqueId ?? seance.semestreAcademiqueId,
             })
                 .then(async (seance) => {
                     return res.status(200).send(seance);
@@ -384,7 +467,7 @@ export default class SeanceController {
     }
 
     static async deleteSeance(req: Request, res: Response): Promise<Response | null> {
-        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION) {
+        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false, message: "Réservé à l'institution" });
         }
 
@@ -409,7 +492,7 @@ export default class SeanceController {
     static async getCount(req: Request, res: Response): Promise<Response | null> {
         let options: CountOptions<InferAttributes<Seance>> = {}
 
-        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION) {
+        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false, message: "Réservé à l'institution" });
         }
 

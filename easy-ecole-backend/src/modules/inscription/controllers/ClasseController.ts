@@ -21,6 +21,12 @@ export default class ClasseController {
         if(req.query.niveauEtudeId) {
             options.where = { niveauEtudeId: req.query.niveauEtudeId as string }
         }
+        if (req.query.parcoursId) {
+            options.where = { ...(options.where ?? {}), parcoursId: req.query.parcoursId as string }
+        }
+        if (req.query.option) {
+            options.where = { ...(options.where ?? {}), option: req.query.option as string }
+        }
 
         try {
             let classes: Classe[];
@@ -70,6 +76,7 @@ export default class ClasseController {
             let classe: Classe = new Classe();
             classe.libelle = req.body.libelle
             classe.description = req.body.description
+            classe.option = req.body.option ?? null
             classe.niveauEtudeId = req.body.niveauEtudeId || null
             classe.parcoursId = req.body.parcoursId || null
 
@@ -124,6 +131,7 @@ export default class ClasseController {
             await classe.update({
                 libelle: req.body.libelle,
                 description: req.body.description,
+                option: req.body.option ?? null,
                 niveauEtudeId: req.body.niveauEtudeId || null,
                 parcoursId: req.body.parcoursId || null,
             })

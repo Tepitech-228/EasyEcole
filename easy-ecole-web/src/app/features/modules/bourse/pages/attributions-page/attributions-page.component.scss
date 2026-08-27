@@ -1,0 +1,24 @@
+:host { display: block; }
+
+.scholarship-page { color: #10233f; }
+.scholarship-hero { padding: 1.35rem 1.5rem; border: 1px solid rgba(23,105,170,.16); border-radius: 1.15rem; background: linear-gradient(120deg,#fff 0%,#eef7fb 100%); box-shadow: 0 16px 40px rgba(16,35,63,.08); }
+.scholarship-kicker { display: flex; align-items: center; gap: .45rem; margin: 0 0 .45rem; color: #087f8c; font-size: .68rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+.scholarship-kicker .material-symbols-outlined { font-size: 1rem; }
+.scholarship-primary-action { background: #1769aa; box-shadow: 0 8px 18px rgba(23,105,170,.22); transition: transform 150ms ease, background 150ms ease, box-shadow 150ms ease; }
+.scholarship-primary-action:hover { background: #12588f; transform: translateY(-1px); box-shadow: 0 12px 24px rgba(23,105,170,.28); }
+.scholarship-rule { box-shadow: 0 10px 24px rgba(180,83,9,.06); }
+.scholarship-panel { box-shadow: 0 16px 36px rgba(16,35,63,.07); }
+.scholarship-panel-title { display: flex; align-items: center; gap: .7rem; margin-bottom: 1rem; }
+.scholarship-panel-title > .material-symbols-outlined { display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: .7rem; background: #e8f3fb; color: #1769aa; }
+.scholarship-panel-title p { margin: 0; color: #10233f; font-size: .9rem; font-weight: 800; }
+.scholarship-panel-title span { display: block; margin-top: .15rem; color: #94a3b8; font-size: .72rem; }
+.scholarship-panel table thead th { background: #102f50; color: #d9e8f4; padding-top: .7rem; padding-bottom: .7rem; font-size: .66rem; letter-spacing: .1em; }
+.scholarship-panel table tbody td { padding-top: .7rem; padding-bottom: .7rem; font-size: .78rem; }
+.scholarship-panel table tbody tr { transition: background-color 150ms ease; }
+.scholarship-panel table tbody tr:hover { background: #f0f8fb; }
+.scholarship-panel input, .scholarship-panel select, .scholarship-panel textarea { border-color: #d5e0ea; border-radius: .65rem; }
+.scholarship-panel input:focus, .scholarship-panel select:focus, .scholarship-panel textarea:focus { border-color: #1769aa; box-shadow: 0 0 0 3px rgba(23,105,170,.12); outline: none; }
+@media (max-width: 640px) {
+	.scholarship-hero { align-items: flex-start; flex-direction: column; gap: 1rem; }
+	.scholarship-primary-action { width: 100%; justify-content: center; }
+}

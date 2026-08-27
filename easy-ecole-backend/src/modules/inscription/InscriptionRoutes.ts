@@ -20,6 +20,8 @@ import DossierInscriptionRouter from "./routers/DossierInscriptionRouter";
 import AnneeAcademiqueRouter from "./routers/AnneeAcademiqueRouter";
 import CursusApprenantRouter from "./routers/CursusApprenantRouter";
 import SalleDeClasseRouter from "./routers/SalleDeClasseRouter";
+import CreneauRouter from "./routers/CreneauRouter";
+import AffectationSalleClasseRouter from "./routers/AffectationSalleClasseRouter";
 import ChapitreCoursRouter from "./routers/ChapitreCoursRouter";
 import RessourceRouter from "./routers/RessourceRouter";
 import FichierRessourceRouter from "./routers/FichierRessourceRouter";
@@ -106,6 +108,8 @@ router
     .use('/anneesAcademiques', [Authenticate], AnneeAcademiqueRouter)
     .use('/cursusApprenant', [Authenticate, InscriptionComplete], CursusApprenantRouter)
     .use('/sallesDeClasse', [Authenticate], SalleDeClasseRouter)
+    .use('/creneaux', [Authenticate], CreneauRouter)
+    .use('/affectations-salles-classes', [Authenticate], AffectationSalleClasseRouter)
     .use('/chapitresCours', [Authenticate, InscriptionComplete], ChapitreCoursRouter)
     .use('/ressources', [Authenticate, InscriptionComplete], RessourceRouter)
     .use('/fichiersRessource', [Authenticate, InscriptionComplete], FichierRessourceRouter)

@@ -1,0 +1,185 @@
+:host {
+	display: block;
+}
+
+.rooms-page {
+	color: #10233f;
+}
+
+.rooms-page > app-header-title {
+	display: block;
+	padding: 1.35rem 1.5rem;
+	border: 1px solid rgba(23, 105, 170, .16);
+	border-radius: 1.15rem;
+	background: linear-gradient(120deg, #fff 0%, #eef7fb 100%);
+	box-shadow: 0 16px 40px rgba(16, 35, 63, .08);
+}
+
+.rooms-page .mt-8.grid > div {
+	border: 1px solid #e2e8f0;
+	border-radius: 1rem;
+	background: rgba(255, 255, 255, .94);
+	box-shadow: 0 14px 32px rgba(16, 35, 63, .07);
+	transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.rooms-page .mt-8.grid > div:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 20px 42px rgba(16, 35, 63, .11);
+}
+
+.rooms-page .mt-8.grid > div:first-child {
+	border-top: 3px solid #1769aa;
+}
+
+.rooms-page .mt-8.grid > div:first-child p:last-child {
+	color: #1769aa;
+	font-size: 2rem;
+}
+
+.rooms-page .mt-8.grid > div:first-child svg {
+	color: #1769aa;
+}
+
+.rooms-filter-panel {
+	padding: 1.25rem;
+	border: 1px solid #dbe5ee;
+	border-radius: 1rem;
+	background: rgba(255, 255, 255, .95);
+	box-shadow: 0 16px 36px rgba(16, 35, 63, .07);
+}
+
+.rooms-filter-panel > .flex {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 1rem;
+	align-items: end;
+}
+
+.rooms-filter-panel > .flex > div:first-child {
+	display: grid;
+	grid-template-columns: repeat(5, minmax(0, 1fr));
+	gap: .75rem;
+}
+
+.rooms-filter-panel select {
+	min-width: 0;
+	min-height: 2.5rem;
+	padding: .55rem .75rem;
+	border: 1px solid #d5e0ea;
+	border-radius: .65rem;
+	background: #f8fafc;
+	color: #334155;
+	font-size: .78rem;
+	box-shadow: none;
+	transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+}
+
+.rooms-filter-panel select:focus {
+	border-color: #1769aa;
+	background: #fff;
+	box-shadow: 0 0 0 3px rgba(23, 105, 170, .12);
+	outline: none;
+}
+
+.rooms-filter-panel > .flex > div:last-child {
+	display: flex;
+	align-items: center;
+	gap: .6rem;
+}
+
+.rooms-filter-panel > .flex > div:last-child a {
+	display: inline-flex;
+	align-items: center;
+	gap: .35rem;
+	min-height: 2.5rem;
+	padding: .55rem .75rem;
+	border: 1px solid #c9e0ee;
+	border-radius: .65rem;
+	background: #eff8fc;
+	color: #1769aa;
+	font-size: .76rem;
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.rooms-filter-panel > .flex > div:last-child a:hover {
+	background: #dff1f8;
+}
+
+.rooms-table-panel {
+	overflow: hidden;
+	border-color: #dbe5ee;
+	box-shadow: 0 18px 42px rgba(16, 35, 63, .08);
+}
+
+.rooms-table-panel table {
+	border-collapse: separate;
+	border-spacing: 0;
+}
+
+.rooms-table-panel thead tr {
+	background: #102f50;
+}
+
+.rooms-table-panel thead th {
+	color: #d9e8f4;
+	font-size: .66rem;
+	letter-spacing: .12em;
+}
+
+.rooms-table-panel tbody tr {
+	transition: background-color 150ms ease, transform 150ms ease;
+}
+
+.rooms-table-panel tbody tr:hover {
+	background: #f0f8fb;
+}
+
+.rooms-table-panel tbody td {
+	border-color: #edf2f7;
+	color: #475569;
+	padding: .65rem .8rem;
+	font-size: .78rem;
+	line-height: 1.25rem;
+}
+
+.rooms-table-panel thead th {
+	padding: .6rem .8rem;
+	line-height: 1rem;
+}
+
+.rooms-table-panel tbody td:first-child > div:first-child {
+	font-size: .8rem;
+}
+
+.rooms-table-panel tbody td:first-child > div:last-child {
+	font-size: .68rem;
+}
+
+.rooms-table-panel tbody td:first-child {
+	color: #10233f;
+	font-weight: 700;
+}
+
+.rooms-table-panel tbody td:last-child app-custom-button {
+	transform: scale(.78);
+	transform-origin: right center;
+}
+
+.rooms-table-panel tbody td:last-child .flex {
+	gap: .15rem;
+}
+
+@media (max-width: 1100px) {
+	.rooms-filter-panel > .flex { grid-template-columns: 1fr; }
+	.rooms-filter-panel > .flex > div:first-child { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+	.rooms-page { padding: .75rem; }
+	.rooms-page .mt-8.grid > div { padding: 1rem; }
+	.rooms-filter-panel > .flex > div:first-child { grid-template-columns: 1fr; }
+	.rooms-filter-panel > .flex > div:last-child { flex-wrap: wrap; }
+	.rooms-table-panel { border-radius: .8rem; }
+}

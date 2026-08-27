@@ -3,6 +3,7 @@ import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { BourseService } from 'src/app/data/modules/bourse/services/bourse.service';
 import { ToastService } from 'src/app/core/services/toast.service';
 import { UtilisateurService } from 'src/app/data/modules/auth/services/utilisateur.service';
+import { DossierEtudiantService } from 'src/app/data/modules/inscription/services/dossier-etudiant.service';
 
 @Component({
   selector: 'app-attributions-bourse-page',
@@ -29,11 +30,13 @@ export class AttributionsPageComponent extends BaseComponentClass implements OnI
   // Financial summary
   showFinanceModal: boolean = false;
   financeDossierId: number | null = null;
+  financeMatricule: string = '';
   financeData: any = null;
 
   constructor(
     private bourseService: BourseService,
     private toastService: ToastService,
+    private dossierEtudiantService: DossierEtudiantService,
   ) { super(); }
 
   ngOnInit(): void {
@@ -55,7 +58,7 @@ export class AttributionsPageComponent extends BaseComponentClass implements OnI
   }
 
   openAttributionModal(): void {
-    this.attributionForm = { dossierEtudiantId: '', configurationId: '', dateDebut: '', dateFin: '', motif: '' };
+    this.attributionForm = { matricule: '', configurationId: '', dateDebut: '', dateFin: '', motif: '' };
     this.showAttributionModal = true;
   }
 
@@ -65,8 +68,8 @@ export class AttributionsPageComponent extends BaseComponentClass implements OnI
   }
 
   saveAttribution(): void {
-    if (!this.attributionForm.dossierEtudiantId) {
-      this.toastService.error('L\'identifiant du dossier étudiant est obligatoire');
+    if (!this.attributionForm.matricule) {
+      this.toastService.error('Le matricule étudiant est obligatoire');
       return;
     }
     if (!this.attributionForm.configurationId) {
@@ -78,23 +81,53 @@ export class AttributionsPageComponent extends BaseComponentClass implements OnI
       return;
     }
 
-    this.saving = true;
-    this.bourseService.attribuerBourse(this.attributionForm.dossierEtudiantId, {
-      configurationId: this.attributionForm.configurationId,
-      dateDebut: this.attributionForm.dateDebut,
-      dateFin: this.attributionForm.dateFin || null,
-      motif: this.attributionForm.motif || null,
-    }).subscribe({
-      next: () => {
-        this.saving = false;
-        this.closeAttributionModal();
-        this.toastService.success('Bourse attribuée avec succès');
-      },
-      error: (err) => {
-        this.saving = false;
-        this.toastService.error(err.error?.message || 'Erreur lors de l\'attribution');
-      }
+    this.findDossierByMatricule(this.attributionForm.matricule, dossierId => {
+      this.saving = true;
+      this.bourseService.attribuerBourse(dossierId, {
+        configurationId: this.attributionForm.configurationId,
+        dateDebut: this.attributionForm.dateDebut,
+        dateFin: this.attributionForm.dateFin || null,
+        motif: this.attributionForm.motif || null,
+      }).subscribe({
+        next: () => {
+          this.saving = false;
+          this.closeAttributionModal();
+          this.toastService.success('Bourse attribuée avec succès');
+        },
+        error: (err) => {
+          this.saving = false;
+          this.toastService.error(err.error?.message || 'Erreur lors de l\'attribution');
+        }
+      });
     });
+  }
+
+  private findDossierByMatricule(value: string, callback: (dossierId: number) => void): void {
+    const matricule = value.trim();
+    if (!matricule) {
+      this.toastService.error('Le matricule est obligatoire');
+      return;
+    }
+    this.dossierEtudiantService.getAllPaginated({ search: matricule, page: 1, limit: 10 }).subscribe({
+      next: (res) => {
+        const dossiers = (res.data || []).filter(d => String(d.matricule || '').toLowerCase() === matricule.toLowerCase());
+        if (dossiers.length === 0 || !dossiers[0].id) {
+          this.toastService.error('Aucun dossier trouvé pour ce matricule');
+          return;
+        }
+        this.financeDossierId = Number(dossiers[0].id);
+        callback(this.financeDossierId);
+      },
+      error: () => this.toastService.error('Impossible de rechercher ce matricule')
+    });
+  }
+
+  loadFinanceResumeByMatricule(): void {
+    this.findDossierByMatricule(this.financeMatricule, id => this.loadFinanceResume(id));
+  }
+
+  openHistoriqueByMatricule(): void {
+    this.findDossierByMatricule(this.financeMatricule, id => this.openHistorique(id));
   }
 
   openHistorique(dossierId: number): void {

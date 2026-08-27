@@ -1,4 +1,4 @@
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="rooms-page dashboard-surface min-h-screen max-w-none px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
   <app-header-title
     title="Salles de classe"
     subtitle="Gérez les salles de classe et leur affectation aux classes et filières">
@@ -18,7 +18,7 @@
     </div>
   </div>
 
-  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+  <div class="rooms-filter-panel mb-6">
     <div class="flex justify-between items-center">
       <div class="flex gap-4">
         <select [(ngModel)]="selectedClasseId" (change)="getSalles()"
@@ -30,6 +30,28 @@
           class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
           <option value="">Toutes les filières</option>
           <option *ngFor="let p of parcoursList" [value]="p.id">{{ p.titre }}</option>
+        </select>
+        <select [(ngModel)]="selectedType" (change)="getSalles()"
+          class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+          <option value="">Tous les types</option>
+          <option value="COURS">Salle de cours</option>
+          <option value="AMPHITHEATRE">Amphithéâtre</option>
+          <option value="LABORATOIRE">Laboratoire</option>
+          <option value="INFORMATIQUE">Salle informatique</option>
+          <option value="AUTRE">Autre</option>
+        </select>
+        <select [(ngModel)]="selectedRegime" (change)="getSalles()"
+          class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+          <option value="">Tous les régimes</option>
+          <option value="JOUR">Jour</option>
+          <option value="SOIR">Soir</option>
+          <option value="JOUR_ET_SOIR">Jour et Soir</option>
+        </select>
+        <select [(ngModel)]="selectedStatut" (change)="getSalles()"
+          class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+          <option value="">Tous les statuts</option>
+          <option value="DISPONIBLE">Disponible</option>
+          <option value="INDISPONIBLE">Indisponible</option>
         </select>
       </div>
       <div class="flex gap-2">
@@ -45,6 +67,46 @@
       <div>
         <label class="block text-xs font-medium text-gray-500 mb-1">Libellé *</label>
         <input [(ngModel)]="formData.libelle" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="Amphi A, Salle 101..." />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Code</label>
+        <input [(ngModel)]="formData.code" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="A-101, AMPHI-A..." />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Étage</label>
+        <input [(ngModel)]="formData.etage" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="RDC, 1er étage..." />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Type</label>
+        <select [(ngModel)]="formData.type" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+          <option value="">Sélectionner</option>
+          <option value="COURS">Salle de cours</option>
+          <option value="AMPHITHEATRE">Amphithéâtre</option>
+          <option value="LABORATOIRE">Laboratoire</option>
+          <option value="INFORMATIQUE">Salle informatique</option>
+          <option value="AUTRE">Autre</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Régime</label>
+        <select [(ngModel)]="formData.regime" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+          <option value="">Sélectionner</option>
+          <option value="JOUR">Jour</option>
+          <option value="SOIR">Soir</option>
+          <option value="JOUR_ET_SOIR">Jour et Soir</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Statut</label>
+        <select [(ngModel)]="formData.statut" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+          <option value="">Sélectionner</option>
+          <option value="DISPONIBLE">Disponible</option>
+          <option value="INDISPONIBLE">Indisponible</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Capacité</label>
+        <input [(ngModel)]="formData.capacite" type="number" min="0" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" placeholder="50" />
       </div>
       <div>
         <label class="block text-xs font-medium text-gray-500 mb-1">Classe</label>
@@ -71,21 +133,43 @@
     </div>
   </div>
 
-  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+  <div class="rooms-table-panel bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
     <div class="overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-100">
         <thead>
           <tr class="bg-gray-50/50">
-            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Libellé</th>
-            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Salle</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Régime</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Statut</th>
+            <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Capacité</th>
             <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Affectation</th>
             <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-50">
           <tr *ngFor="let s of salles; trackBy: trackByFn" class="hover:bg-gray-50/50 transition-colors">
-            <td class="px-5 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ s.libelle }}</td>
-            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-500">{{ s.description || '-' }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm">
+              <div class="font-medium text-gray-900">{{ s.libelle }}</div>
+              <div class="text-xs text-gray-400">{{ s.code ? s.code : '' }}{{ s.code && s.etage ? ' • ' : '' }}{{ s.etage ? 'Étage ' + s.etage : '' }}</div>
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ getTypeLibelle(s.type) }}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm">
+              <ng-container [ngSwitch]="s.regime">
+                <span *ngSwitchCase="'JOUR'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20">Jour</span>
+                <span *ngSwitchCase="'SOIR'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-600/20">Soir</span>
+                <span *ngSwitchCase="'JOUR_ET_SOIR'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-600/20">Jour et Soir</span>
+                <span *ngSwitchDefault class="text-gray-400">-</span>
+              </ng-container>
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm">
+              <ng-container [ngSwitch]="s.statut">
+                <span *ngSwitchCase="'DISPONIBLE'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20">Disponible</span>
+                <span *ngSwitchCase="'INDISPONIBLE'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20">Indisponible</span>
+                <span *ngSwitchDefault class="text-gray-400">-</span>
+              </ng-container>
+            </td>
+            <td class="px-5 py-4 whitespace-nowrap text-right text-sm text-gray-700">{{ s.capacite ?? '-' }}</td>
             <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ getAffectation(s) }}</td>
             <td class="px-5 py-4 whitespace-nowrap text-right">
               <div class="flex items-center justify-end gap-2">

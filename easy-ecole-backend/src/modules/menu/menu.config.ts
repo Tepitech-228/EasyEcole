@@ -51,9 +51,9 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                 label: 'Gestion Bourse',
                 icon: 'school',
                 items: [
-                    { label: 'Configurations', route: '/bourses/configurations', icon: 'school', permissionKey: 'menu.bourses.configurations', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
-                    { label: 'Attributions', route: '/bourses/attributions', icon: 'assignment_ind', permissionKey: 'menu.bourses.attributions', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
-                    { label: 'Campagne de bourses', route: '/bourses/campagne', icon: 'campaign', permissionKey: 'menu.bourses.campagne', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Configurations', route: '/bourses/configurations', icon: 'school', permissionKey: 'menu.bourses.configurations', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN, RolesUtilisateur.COMITE_ORIENTATION] },
+                    { label: 'Attributions', route: '/bourses/attributions', icon: 'assignment_ind', permissionKey: 'menu.bourses.attributions', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN, RolesUtilisateur.COMITE_ORIENTATION] },
+                    { label: 'Campagne de bourses', route: '/bourses/campagne', icon: 'campaign', permissionKey: 'menu.bourses.campagne', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN, RolesUtilisateur.COMITE_ORIENTATION] },
                 ]
             },
             {

@@ -5,13 +5,21 @@ import { Classe } from "./Classe";
 import { Parcours } from "./Parcours";
 import { Localisation } from "../../immobilisation/models/Localisation";
 import { Etablissement } from "../../etablissement/models/Etablissement";
+import { RegimesCours } from "../../../core/enums/RegimesCours";
+import { TypeSalle } from "../../../core/enums/TypeSalle";
+import { StatutSalle } from "../../../core/enums/StatutSalle";
 
 export type EquipementSalle = 'tableau' | 'videoprojecteur' | 'climatisation' | 'ordinateur' | 'wifi' | 'sonorisation' | 'micro' | 'cameras';
 
 export class SalleDeClasse extends Model<InferAttributes<SalleDeClasse>, InferCreationAttributes<SalleDeClasse>> {
   declare id: CreationOptional<number>
+  declare code: CreationOptional<string | null>
   declare libelle: string
   declare description: CreationOptional<string>
+  declare etage: CreationOptional<string | null>
+  declare type: CreationOptional<TypeSalle>
+  declare regime: CreationOptional<RegimesCours>
+  declare statut: CreationOptional<StatutSalle>
   declare capacite: CreationOptional<number>
   declare equipements: CreationOptional<string | null>
   declare localisationId: ForeignKey<Localisation['id'] | null>
@@ -40,6 +48,11 @@ SalleDeClasse.init({
     autoIncrement: true,
     primaryKey: true
   },
+  code: {
+    type: new DataTypes.STRING(50),
+    allowNull: true,
+    comment: "Code unique de la salle (ex: B204)"
+  },
   libelle: {
     type: new DataTypes.STRING,
     allowNull: false
@@ -47,6 +60,29 @@ SalleDeClasse.init({
   description: {
     type: new DataTypes.STRING,
     allowNull: true
+  },
+  etage: {
+    type: new DataTypes.STRING(50),
+    allowNull: true,
+    comment: "Étage de la salle"
+  },
+  type: {
+    type: DataTypes.ENUM(TypeSalle.COURS, TypeSalle.AMPHITHEATRE, TypeSalle.LABORATOIRE, TypeSalle.INFORMATIQUE, TypeSalle.AUTRE),
+    allowNull: true,
+    defaultValue: TypeSalle.COURS,
+    comment: "Type de salle"
+  },
+  regime: {
+    type: DataTypes.ENUM(RegimesCours.JOUR, RegimesCours.SOIR, RegimesCours.JOUR_ET_SOIR),
+    allowNull: true,
+    defaultValue: RegimesCours.JOUR_ET_SOIR,
+    comment: "Régime autorisé (JOUR, SOIR ou les deux)"
+  },
+  statut: {
+    type: DataTypes.ENUM(StatutSalle.DISPONIBLE, StatutSalle.INDISPONIBLE),
+    allowNull: true,
+    defaultValue: StatutSalle.DISPONIBLE,
+    comment: "Disponibilité de la salle"
   },
   capacite: {
     type: DataTypes.INTEGER.UNSIGNED,

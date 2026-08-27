@@ -21,8 +21,11 @@ export class ListeSallesDeClassePageComponent extends BaseComponentClass impleme
   editingId: string | null = null;
   selectedClasseId: string = '';
   selectedParcoursId: string = '';
-  formData: { libelle: string; description: string; classeId: string; parcoursId: string } = {
-    libelle: '', description: '', classeId: '', parcoursId: ''
+  selectedType: string = '';
+  selectedRegime: string = '';
+  selectedStatut: string = '';
+  formData: { code: string; libelle: string; description: string; etage: string; type: string; regime: string; statut: string; capacite: number | null; classeId: string; parcoursId: string } = {
+    code: '', libelle: '', description: '', etage: '', type: '', regime: '', statut: '', capacite: null, classeId: '', parcoursId: ''
   };
 
   constructor(
@@ -41,7 +44,10 @@ export class ListeSallesDeClassePageComponent extends BaseComponentClass impleme
     this.loading = true;
     const classeId = this.selectedClasseId !== '' ? this.selectedClasseId : undefined;
     const parcoursId = this.selectedParcoursId !== '' ? this.selectedParcoursId : undefined;
-    this.salleService.getAll(classeId, parcoursId).subscribe({
+    const type = this.selectedType !== '' ? this.selectedType : undefined;
+    const regime = this.selectedRegime !== '' ? this.selectedRegime : undefined;
+    const statut = this.selectedStatut !== '' ? this.selectedStatut : undefined;
+    this.salleService.getAll(classeId, parcoursId, undefined, type, regime, statut).subscribe({
       next: (res) => { this.salles = res },
       error: () => this.loading = false,
       complete: () => this.loading = false
@@ -52,15 +58,21 @@ export class ListeSallesDeClassePageComponent extends BaseComponentClass impleme
 
   ouvrirFormulaire() {
     this.editingId = null;
-    this.formData = { libelle: '', description: '', classeId: '', parcoursId: '' };
+    this.formData = { code: '', libelle: '', description: '', etage: '', type: '', regime: '', statut: '', capacite: null, classeId: '', parcoursId: '' };
     this.showForm = true;
   }
 
   editerSalle(salle: SalleDeClasse) {
     this.editingId = salle.id;
     this.formData = {
+      code: salle.code || '',
       libelle: salle.libelle || '',
       description: salle.description || '',
+      etage: salle.etage || '',
+      type: salle.type || '',
+      regime: salle.regime || '',
+      statut: salle.statut || '',
+      capacite: salle.capacite ?? null,
       classeId: salle.classeId || '',
       parcoursId: salle.parcoursId || '',
     };
@@ -72,8 +84,14 @@ export class ListeSallesDeClassePageComponent extends BaseComponentClass impleme
   sauvegarder() {
     if (!this.formData.libelle) return;
     const salle = new SalleDeClasse();
+    salle.code = this.formData.code || null;
     salle.libelle = this.formData.libelle;
     salle.description = this.formData.description;
+    salle.etage = this.formData.etage || null;
+    salle.type = (this.formData.type || null) as SalleDeClasse['type'];
+    salle.regime = (this.formData.regime || null) as SalleDeClasse['regime'];
+    salle.statut = (this.formData.statut || null) as SalleDeClasse['statut'];
+    salle.capacite = this.formData.capacite;
     salle.classeId = this.formData.classeId || null;
     salle.parcoursId = this.formData.parcoursId || null;
     if (this.editingId) {
@@ -111,6 +129,34 @@ export class ListeSallesDeClassePageComponent extends BaseComponentClass impleme
   getParcoursTitre(parcoursId?: string | null): string {
     const parcours = this.parcoursList.find(p => p.id === parcoursId);
     return parcours?.titre || '-';
+  }
+
+  getTypeLibelle(type?: string | null): string {
+    switch (type) {
+      case 'COURS': return 'Salle de cours';
+      case 'AMPHITHEATRE': return 'Amphithéâtre';
+      case 'LABORATOIRE': return 'Laboratoire';
+      case 'INFORMATIQUE': return 'Salle informatique';
+      case 'AUTRE': return 'Autre';
+      default: return '-';
+    }
+  }
+
+  getRegimeLibelle(regime?: string | null): string {
+    switch (regime) {
+      case 'JOUR': return 'Jour';
+      case 'SOIR': return 'Soir';
+      case 'JOUR_ET_SOIR': return 'Jour et Soir';
+      default: return '-';
+    }
+  }
+
+  getStatutLibelle(statut?: string | null): string {
+    switch (statut) {
+      case 'DISPONIBLE': return 'Disponible';
+      case 'INDISPONIBLE': return 'Indisponible';
+      default: return '-';
+    }
   }
 
   trackByFn(index: number, item: SalleDeClasse): any { return item.id; }

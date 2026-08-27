@@ -22,8 +22,9 @@ export class ListeClassesPageComponent extends BaseComponentClass implements OnI
   editingId: string | null = null;
   selectedNiveauEtudeId: string = '';
   selectedParcoursId: string = '';
-  formData: { libelle: string; description: string; niveauEtudeId: string; parcoursId: string } = {
-    libelle: '', description: '', niveauEtudeId: '', parcoursId: ''
+  selectedOption: string = '';
+  formData: { libelle: string; description: string; niveauEtudeId: string; parcoursId: string; option: string } = {
+    libelle: '', description: '', niveauEtudeId: '', parcoursId: '', option: ''
   };
 
   constructor(
@@ -51,6 +52,7 @@ export class ListeClassesPageComponent extends BaseComponentClass implements OnI
     this.filteredClasses = this.classes.filter(c => {
       if (this.selectedNiveauEtudeId && c.niveauEtudeId !== this.selectedNiveauEtudeId) return false;
       if (this.selectedParcoursId && c.parcoursId !== this.selectedParcoursId) return false;
+      if (this.selectedOption && c.option !== this.selectedOption) return false;
       return true;
     });
   }
@@ -59,7 +61,7 @@ export class ListeClassesPageComponent extends BaseComponentClass implements OnI
 
   ouvrirFormulaire() {
     this.editingId = null;
-    this.formData = { libelle: '', description: '', niveauEtudeId: '', parcoursId: '' };
+    this.formData = { libelle: '', description: '', niveauEtudeId: '', parcoursId: '', option: '' };
     this.showForm = true;
   }
 
@@ -70,6 +72,7 @@ export class ListeClassesPageComponent extends BaseComponentClass implements OnI
       description: c.description || '',
       niveauEtudeId: c.niveauEtudeId || '',
       parcoursId: c.parcoursId || '',
+      option: c.option || '',
     };
     this.showForm = true;
   }
@@ -78,15 +81,21 @@ export class ListeClassesPageComponent extends BaseComponentClass implements OnI
 
   sauvegarder() {
     if (!this.formData.libelle) return;
+    const data: any = {
+      libelle: this.formData.libelle,
+      description: this.formData.description,
+      niveauEtudeId: this.formData.niveauEtudeId,
+      parcoursId: this.formData.parcoursId,
+      option: (this.formData.option || null) as Classe['option'],
+    };
     if (this.editingId) {
-      const data: any = { ...this.formData };
       data.id = this.editingId;
       this.classeService.update(data).subscribe({
         next: () => { this.fermerFormulaire(); this.getClasses(); },
         error: (err) => console.error(err)
       });
     } else {
-      this.classeService.create(this.formData).subscribe({
+      this.classeService.create(data).subscribe({
         next: () => { this.fermerFormulaire(); this.getClasses(); },
         error: (err) => console.error(err)
       });
@@ -107,5 +116,14 @@ export class ListeClassesPageComponent extends BaseComponentClass implements OnI
   getParcoursTitre(id?: string): string {
     const p = this.parcoursList.find(x => x.id === id);
     return p?.titre || '-';
+  }
+
+  getOptionLibelle(option?: string | null): string {
+    switch (option) {
+      case 'JOUR': return 'Jour';
+      case 'SOIR': return 'Soir';
+      case 'EN_LIGNE': return 'En ligne';
+      default: return '-';
+    }
   }
 }
