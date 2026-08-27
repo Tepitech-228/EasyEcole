@@ -596,9 +596,11 @@ export class BordereauDossierService {
             ? await Cours.findAll({ where: { parcoursId: parcoursFinal.parcoursId }, include: [Cours.associations.classe] })
             : []
         const classeDerivee = coursDuParcours.find(c => c.classe?.id)?.classe ?? null
-        if (!classeDerivee || !classeDerivee.id) {
-            throw new Error("Aucune classe n'a pu être déterminée pour le parcours final")
-        }
+        // Option A (comité) : l'absence de classe ne bloque PAS la validation.
+        // L'étudiant est validé (matricule définitif, dossier actif) avec une classe
+        // "À affecter" ; la création du cursus est reportée tant que la classe n'est
+        // pas affectée (CursusApprenant.classeId étant NOT NULL en base, on ne peut
+        // pas créer un cursus sans classe).
 
         const coursObligatoires = coursDuParcours.filter(c => c.estObligatoire)
         if (coursObligatoires.length > 0) {
@@ -613,7 +615,7 @@ export class BordereauDossierService {
 
         // Matricule définitif (réutilisé si déjà au format final — idempotence).
         const anneeLibelle = demande.session?.anneeAcademique?.libelle || new Date().getFullYear().toString()
-        const etablissementId = parcoursData?.etablissementId ?? classeDerivee.etablissementId
+        const etablissementId = parcoursData?.etablissementId ?? classeDerivee?.etablissementId
         const etablissement = etablissementId ? await Etablissement.findByPk(etablissementId, { transaction }) : null
 
         const MATRICULE_FINAL_REGEX = /^[0-9]+-[A-Z]+[0-9]?[JS]-[0-9]{2}-[A-Z]+$/
@@ -643,11 +645,11 @@ export class BordereauDossierService {
             await dossier.update({ matricule }, { transaction })
         }
 
-        const niveauEtudeId = parcoursData?.niveauEtudeId ?? classeDerivee.niveauEtudeId
+        const niveauEtudeId = parcoursData?.niveauEtudeId ?? classeDerivee?.niveauEtudeId
         const niveauEtude = niveauEtudeId ? await NiveauEtude.findByPk(niveauEtudeId, { transaction }) : null
         const parcoursNom = parcoursData?.type || parcoursData?.titre || 'PARCOURS'
         const niveauNom = niveauEtude?.libelle || 'Niveau'
-        const classeNom = classeDerivee.libelle
+        const classeNom = classeDerivee?.libelle ?? 'À affecter'
         const anneeId = demande.session?.anneeAcademiqueId
 
         try {
@@ -668,36 +670,46 @@ export class BordereauDossierService {
             console.error("Erreur création dossier GED matricule:", gedError)
         }
 
-        const [savedCursus] = await CursusApprenant.findOrCreate({
-            where: { demandeInscriptionId: demande.id },
-            defaults: {
-                externe: false,
-                intituleParcours: parcoursNom,
-                parcoursId: parcoursFinal!.parcoursId!,
-                niveauEtudeId: niveauEtudeId!,
-                classeId: classeDerivee.id!,
-                anneeAcademiqueId: anneeId!,
-                utilisateurId: demande.utilisateurId,
-                demandeInscriptionId: demande.id,
-            },
-            transaction
-        })
+        // Création du cursus conditionnelle : CursusApprenant.classeId est NOT NULL
+        // en base. Si aucune classe n'est encore affectée au parcours, on différe la
+        // création du cursus (et des participants aux cours) : l'étudiant est malgré
+        // tout validé ici, et le cursus sera créé dès son affectation à une classe.
+        let savedCursusId: number | null = null
+        if (classeDerivee && classeDerivee.id) {
+            const [savedCursus] = await CursusApprenant.findOrCreate({
+                where: { demandeInscriptionId: demande.id },
+                defaults: {
+                    externe: false,
+                    intituleParcours: parcoursNom,
+                    parcoursId: parcoursFinal!.parcoursId!,
+                    niveauEtudeId: niveauEtudeId!,
+                    classeId: classeDerivee.id!,
+                    anneeAcademiqueId: anneeId!,
+                    utilisateurId: demande.utilisateurId,
+                    demandeInscriptionId: demande.id,
+                },
+                transaction
+            })
+            savedCursusId = savedCursus.id
 
-        const coursChoisisFinal = await DemandeInscriptionCours.findAll({
-            where: { demandeInscriptionId: demande.id }
-        })
-        for (const coursChoisi of coursChoisisFinal) {
-            if (coursChoisi.etat === EtatsCoursChoisi.VALIDE) {
-                await CoursParticipant.findOrCreate({
-                    where: { utilisateurId: demande.utilisateurId, coursId: coursChoisi.coursId },
-                    defaults: {
-                        utilisateurId: demande.utilisateurId,
-                        coursId: coursChoisi.coursId,
-                        cursusApprenantId: savedCursus.id,
-                    },
-                    transaction
-                })
+            const coursChoisisFinal = await DemandeInscriptionCours.findAll({
+                where: { demandeInscriptionId: demande.id }
+            })
+            for (const coursChoisi of coursChoisisFinal) {
+                if (coursChoisi.etat === EtatsCoursChoisi.VALIDE) {
+                    await CoursParticipant.findOrCreate({
+                        where: { utilisateurId: demande.utilisateurId, coursId: coursChoisi.coursId },
+                        defaults: {
+                            utilisateurId: demande.utilisateurId,
+                            coursId: coursChoisi.coursId,
+                            cursusApprenantId: savedCursus.id,
+                        },
+                        transaction
+                    })
+                }
             }
+        } else {
+            console.warn(`[AffectationPédagogique] Aucune classe affectée au parcours (utilisateur ${utilisateurId}) : cursus reporté.`)
         }
 
         if (dossier) {
