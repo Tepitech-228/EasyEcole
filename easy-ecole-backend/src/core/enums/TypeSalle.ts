@@ -1,0 +1,7 @@
+export enum TypeSalle {
+    COURS = "COURS",
+    AMPHITHEATRE = "AMPHITHEATRE",
+    LABORATOIRE = "LABORATOIRE",
+    INFORMATIQUE = "INFORMATIQUE",
+    AUTRE = "AUTRE",
+}
