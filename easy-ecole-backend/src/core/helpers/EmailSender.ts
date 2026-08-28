@@ -452,7 +452,7 @@ export class EmailSender {
     public sendOtpCode(email: string, code: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
 
-        const formattedCode = `${code.slice(0, 3)}-${code.slice(3, 7)}-${code.slice(7)}`
+        const formattedCode = code
 
         const mailOptions: SendMailOptions = {
             from: `EasyEcole <${this.getUsername()}>`,

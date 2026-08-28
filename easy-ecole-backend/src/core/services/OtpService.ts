@@ -117,8 +117,8 @@ export class OtpService {
   }
 
   private static generateCode(): string {
-    const bytes = crypto.randomBytes(10)
-    return Array.from({ length: 10 }, (_, i) => CHARS[bytes[i] % CHARS.length]).join('')
+    const bytes = crypto.randomBytes(4)
+    return Array.from({ length: 4 }, (_, i) => CHARS[bytes[i] % CHARS.length]).join('')
   }
 
   private static cleanup(): void {

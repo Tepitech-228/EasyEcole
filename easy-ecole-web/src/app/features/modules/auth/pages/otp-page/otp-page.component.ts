@@ -13,7 +13,7 @@ export class OtpPageComponent implements OnInit, OnDestroy {
   maskedEmail: string = ''
   mode: 'connexion' | 'inscription' = 'connexion'
 
-  codeInputs: string[] = Array(10).fill('')
+  codeInputs: string[] = Array(4).fill('')
   private isSubmitting: boolean = false
 
   readonly circleCircumference: number = 2 * Math.PI * 40
@@ -82,7 +82,7 @@ export class OtpPageComponent implements OnInit, OnDestroy {
     switch (this.attemptsMade) {
       case 0:
         return {
-          text: `Un code à 10 caractères a été envoyé à ${this.maskedEmail}. Vérifiez votre boîte de réception et vos spams.`,
+          text: `Un code à 4 caractères a été envoyé à ${this.maskedEmail}. Vérifiez votre boîte de réception et vos spams.`,
           type: 'info',
           icon: 'mail'
         }
@@ -146,7 +146,7 @@ export class OtpPageComponent implements OnInit, OnDestroy {
 
     if (char && /^[A-Z0-9]$/i.test(char)) {
       this.codeInputs[index] = char
-      if (index < 9) {
+      if (index < 3) {
         const next = document.getElementById(`otp-${index + 1}`)
         next?.focus()
       }
@@ -170,7 +170,7 @@ export class OtpPageComponent implements OnInit, OnDestroy {
       const prev = document.getElementById(`otp-${index - 1}`)
       prev?.focus()
     }
-    if (event.key === 'ArrowRight' && index < 9) {
+    if (event.key === 'ArrowRight' && index < 3) {
       const next = document.getElementById(`otp-${index + 1}`)
       next?.focus()
     }
@@ -180,7 +180,7 @@ export class OtpPageComponent implements OnInit, OnDestroy {
   onPaste(event: ClipboardEvent): void {
     event.preventDefault()
     const paste = event.clipboardData?.getData('text').replace(/[^A-Z0-9]/gi, '').toUpperCase()
-    if (paste && paste.length === 10) {
+    if (paste && paste.length === 4) {
       this.codeInputs = paste.split('')
       this.verifyCode()
     }
@@ -215,7 +215,7 @@ export class OtpPageComponent implements OnInit, OnDestroy {
         }
         this.attemptsMade++
         this.attemptsLeft = Math.max(0, this.maxAttempts - this.attemptsMade)
-        this.codeInputs = Array(10).fill('')
+        this.codeInputs = Array(4).fill('')
         this.state = 'idle'
         setTimeout(() => document.getElementById('otp-0')?.focus(), 100)
       }
@@ -228,7 +228,7 @@ export class OtpPageComponent implements OnInit, OnDestroy {
     this.canResend = false
     this.authService.resendOtp(this.email).subscribe({
       next: (res) => {
-        this.codeInputs = Array(10).fill('')
+        this.codeInputs = Array(4).fill('')
         this.timeLeft = 75
         this.state = 'idle'
         this.errorMessage = ''

@@ -45,7 +45,7 @@
         <!-- CODE INPUTS -->
         <div class="inputs-section" *ngIf="state !== 'blocked' && state !== 'success'">
             <div class="code-inputs" [class.shake]="state === 'error'" [class.last-attempt]="isLastAttempt">
-                <div *ngFor="let _ of [].constructor(10); let i = index" class="input-group" [class.group-end]="i === 2 || i === 6">
+                <div *ngFor="let _ of [].constructor(4); let i = index" class="input-group">
                     <input
                         [id]="'otp-' + i"
                         class="otp-input"
