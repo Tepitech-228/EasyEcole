@@ -362,11 +362,25 @@ export class ImputationService {
      * Le surplus est crédité sur le portefeuille du dossier cible (dossier actif
      * ou plus récent). Chaque lettrage est tracée via BordereauEcheance.
      */
+    /**
+     * Impute FIFO sur les échéances impayées/partielles/en_retard des dossiers
+     * d'un utilisateur, triées par dateLimite ↑ (trans-années).
+     *
+     * @param bordereauId - ID du bordereau validé
+     * @param utilisateurId - propriétaire des dossiers
+     * @param montantConstate - montant constaté par le comptable
+     * @param transaction - transaction active
+     * @param type - Restriction à une nature de frais (bordereau de type simple).
+     *               Si fourni, seules les échéances de ce type sont imputées (FIFO).
+     *               L'excédent qui ne trouve pas d'échéance de ce type part au
+     *               portefeuille de crédit (consommé ensuite sur les autres natures).
+     */
     static async imputerPourUtilisateur(
         bordereauId: number,
         utilisateurId: number,
         montantConstate: number,
         transaction: Transaction,
+        type?: 'inscription' | 'scolarite',
     ): Promise<ResultatImputation> {
         if (!Number.isFinite(montantConstate) || montantConstate <= 0) {
             throw new MontantConstateInvalideError(montantConstate)
@@ -387,29 +401,28 @@ export class ImputationService {
         }
 
         const dossierIds = dossiers.map(d => d.id)
-        const inscription = await Echeance.findAll({
-            where: {
-                dossierEtudiantId: { [Op.in]: dossierIds },
-                type: 'inscription',
-                statut: ['impaye', 'partiel', 'en_retard'],
-            },
-            order: [['dateLimite', 'ASC'], ['id', 'ASC']],
-            transaction,
-            lock: transaction.LOCK.UPDATE,
-        })
 
-        const scolarite = await Echeance.findAll({
-            where: {
-                dossierEtudiantId: { [Op.in]: dossierIds },
-                type: 'scolarite',
-                statut: ['impaye', 'partiel', 'en_retard'],
-            },
-            order: [['dateLimite', 'ASC'], ['id', 'ASC']],
-            transaction,
-            lock: transaction.LOCK.UPDATE,
-        })
+        // Bordereau de type SIMPLE → restriction à une seule nature de frais.
+        // On ne charge que les échéances de ce type. Sans restriction, on charge
+        // inscription PUIS scolarité (FIFO trans-natures historique).
+        const statutFilter = ['impaye', 'partiel', 'en_retard'] as const
+        const typeBases: ('inscription' | 'scolarite')[] = type ? [type] : ['inscription', 'scolarite']
 
-        const echeances = [...inscription, ...scolarite]
+        const echeances: Echeance[] = []
+        for (const t of typeBases) {
+            const echeancesDuType = await Echeance.findAll({
+                where: {
+                    dossierEtudiantId: { [Op.in]: dossierIds },
+                    type: t,
+                    statut: statutFilter as any,
+                },
+                order: [['dateLimite', 'ASC'], ['id', 'ASC']],
+                transaction,
+                lock: transaction.LOCK.UPDATE,
+            })
+            echeances.push(...echeancesDuType)
+        }
+
         const { lignes, reste } = await ImputationService.calculerImputation(echeances, montantConstate)
 
         // Sauvegardes effectives
@@ -558,6 +571,7 @@ export class ImputationService {
         utilisateurId: number,
         montantConstate: number,
         transaction?: Transaction,
+        type?: 'inscription' | 'scolarite',
     ): Promise<ResultatImputation> {
         if (!Number.isFinite(montantConstate) || montantConstate <= 0) {
             throw new MontantConstateInvalideError(montantConstate)
@@ -578,27 +592,23 @@ export class ImputationService {
         }
 
         const dossierIds = dossiers.map(d => d.id)
-        const inscription = await Echeance.findAll({
-            where: {
-                dossierEtudiantId: { [Op.in]: dossierIds },
-                type: 'inscription',
-                statut: ['impaye', 'partiel', 'en_retard'],
-            },
-            order: [['dateLimite', 'ASC'], ['id', 'ASC']],
-            transaction,
-        })
+        const statutFilter = ['impaye', 'partiel', 'en_retard'] as const
+        const typeBases: ('inscription' | 'scolarite')[] = type ? [type] : ['inscription', 'scolarite']
 
-        const scolarite = await Echeance.findAll({
-            where: {
-                dossierEtudiantId: { [Op.in]: dossierIds },
-                type: 'scolarite',
-                statut: ['impaye', 'partiel', 'en_retard'],
-            },
-            order: [['dateLimite', 'ASC'], ['id', 'ASC']],
-            transaction,
-        })
+        const echeances: Echeance[] = []
+        for (const t of typeBases) {
+            const echeancesDuType = await Echeance.findAll({
+                where: {
+                    dossierEtudiantId: { [Op.in]: dossierIds },
+                    type: t,
+                    statut: statutFilter as any,
+                },
+                order: [['dateLimite', 'ASC'], ['id', 'ASC']],
+                transaction,
+            })
+            echeances.push(...echeancesDuType)
+        }
 
-        const echeances = [...inscription, ...scolarite]
         const { lignes, reste } = await ImputationService.calculerImputation(echeances, montantConstate)
 
         return {

@@ -201,4 +201,80 @@ describe("ImputationService — priorisation inscription avant scolarite", () =>
     expect(resultat.lignes[1].montantImpute).toBeCloseTo(30000, 2)
     expect(resultat.surplus).toBeCloseTo(0, 2)
   })
+
+  it("type 'inscription' : n'impute QUE sur les échéances d'inscription (la scolarité reste intacte)", async () => {
+    const echeanceInscription1 = creerEcheance({
+      id: 10,
+      type: 'inscription',
+      numeroEcheance: 1,
+      montant: 50000,
+    })
+
+    const echeanceInscription2 = creerEcheance({
+      id: 11,
+      type: 'inscription',
+      numeroEcheance: 2,
+      montant: 60000,
+    })
+
+    const echeanceScolarite1 = creerEcheance({
+      id: 20,
+      type: 'scolarite',
+      numeroEcheance: 1,
+      montant: 60000,
+    })
+
+    mockEcheances = [echeanceInscription1, echeanceScolarite1, echeanceInscription2]
+
+    const resultat = await ImputationService.imputerPourUtilisateur(
+      1,
+      1,
+      70000,
+      mockTransaction as Transaction,
+      'inscription'
+    )
+
+    // Seules les échéances d'inscription sont concernées
+    expect(resultat.lignes.map(l => l.echeanceId)).toEqual([10, 11])
+    expect(resultat.lignes.every(l => l.type === 'inscription')).toBe(true)
+    expect(resultat.lignes[0].montantImpute).toBeCloseTo(50000, 2)
+    expect(resultat.lignes[1].montantImpute).toBeCloseTo(20000, 2)
+    // La scolarité reste à zéro
+    expect(echeanceScolarite1.montantPaye).toBe(0)
+    expect(echeanceScolarite1.statut).toBe('impaye')
+    expect(resultat.surplus).toBeCloseTo(0, 2)
+  })
+
+  it("type 'inscription' soldé : le surplus n'impute pas sur la scolarité mais part au portefeuille", async () => {
+    const echeanceInscription = creerEcheance({
+      id: 10,
+      type: 'inscription',
+      numeroEcheance: 1,
+      montant: 50000,
+      montantPaye: 50000,
+      statut: 'paye',
+    })
+
+    const echeanceScolarite1 = creerEcheance({
+      id: 20,
+      type: 'scolarite',
+      numeroEcheance: 1,
+      montant: 60000,
+    })
+
+    mockEcheances = [echeanceScolarite1, echeanceInscription]
+
+    const resultat = await ImputationService.imputerPourUtilisateur(
+      1,
+      1,
+      70000,
+      mockTransaction as Transaction,
+      'inscription'
+    )
+
+    // Aucune échéance d'inscription imputable → tout part au portefeuille
+    expect(resultat.lignes.length).toBe(0)
+    expect(resultat.surplus).toBeCloseTo(70000, 2)
+    expect(echeanceScolarite1.montantPaye).toBe(0)
+  })
 })

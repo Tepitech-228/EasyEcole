@@ -8,6 +8,8 @@ import { DossierEtudiant } from "../models/DossierEtudiant";
 import { DemandeInscription } from "../models/DemandeInscription";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { TypeOperationBordereau } from "../models/TypeOperationBordereau";
+import { PaiementInscription } from "../models/PaiementInscription";
+import { TypesPaiement } from "../../../core/enums/TypesPaiement";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { AuthEsacompta } from "../../../core/middlewares/AuthEsacompta";
 import CheckPermission from "../../../core/middlewares/CheckPermission";
@@ -20,6 +22,7 @@ import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { EmailSender } from "../../../core/helpers/EmailSender";
 import { DocGenGeneratorService } from "../../docgen/services/DocGenGeneratorService";
 import { creerEcritureComptable } from "../../comptabilite/helpers/ComptabiliteHelper";
+import { nanoid } from "nanoid";
 
 /**
  * Router dédié aux opérations financières ESA-COMPTA.
@@ -144,9 +147,19 @@ router.post('/bordereaux/:id/imputation-preview', [AuthEsacompta, CheckPermissio
       return res.status(400).json({ success: false, message: "Montant de paiement invalide" })
     }
 
+    // Type simple demandé (optionnel) : l'aperçu restreint l'imputation aux
+    // échéances de cette nature, comme le fera la saisie réelle.
+    const typeRequested = String(req.body.type || '').toLowerCase()
+    const imputationType: 'inscription' | 'scolarite' | undefined =
+      typeRequested === 'inscription' || typeRequested === 'frais d\'inscription' ? 'inscription'
+      : typeRequested === 'scolarite' || typeRequested === 'frais de scolarité' ? 'scolarite'
+      : undefined
+
     const resultat = await ImputationService.simulerPourUtilisateur(
       bordereau.utilisateurId,
-      montant
+      montant,
+      undefined,
+      imputationType
     )
 
     return res.status(200).json({ success: true, preview: resultat })
@@ -371,8 +384,9 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       typeOperationCode = to?.code?.toUpperCase() ?? null
     }
     const estMixte = typeEffectif === 'mixte' || typeOperationCode === 'MIXTE'
+    const estScolarite = typeEffectif === 'scolarite' || typeOperationCode === 'SCOLARITE'
 
-    if (estPremierBordereau && !estMixte) {
+    if (estPremierBordereau && !estMixte && !estScolarite) {
       typeEffectif = 'inscription'
       if (!typeOperationIdEffectif) {
         const typeInscription = await TypeOperationBordereau.findOne({ where: { code: 'INSCRIPTION' }, transaction })
@@ -384,6 +398,13 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       if (!typeOperationIdEffectif) {
         const typeMixte = await TypeOperationBordereau.findOne({ where: { code: 'MIXTE' }, transaction })
         if (typeMixte) typeOperationIdEffectif = typeMixte.id
+      }
+    }
+    if (estScolarite) {
+      typeEffectif = 'scolarite'
+      if (!typeOperationIdEffectif) {
+        const typeScolarite = await TypeOperationBordereau.findOne({ where: { code: 'SCOLARITE' }, transaction })
+        if (typeScolarite) typeOperationIdEffectif = typeScolarite.id
       }
     }
 
@@ -570,6 +591,16 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
     // Imputation : FIFO classique, ou par composition pour un bordereau MIXTE
     // (chaque nature déclarée est imputée sur ses propres échéances, plafonnée
     // à son montant — l'excédent éventuel part au portefeuille de crédit).
+    // Pour un type SIMPLE, on restreint l'imputation à la nature choisie :
+    //   - "inscription" → uniquement les échéances d'inscription (FIFO)
+    //   - "scolarite"   → uniquement les échéances de scolarité (FIFO)
+    // Une nature déjà soldée → le montant part au portefeuille, consommé ensuite
+    // FIFO sur les autres natures (consommerPortefeuille ci-dessous).
+    const imputationType: 'inscription' | 'scolarite' | undefined =
+      bordereauType === 'inscription' ? 'inscription'
+      : bordereauType === 'scolarite' ? 'scolarite'
+      : undefined
+
     const resultatImputation = (bordereauType === 'mixte' && composition)
       ? await ImputationService.imputerPourUtilisateurParComposition(
           bordereau.id,
@@ -581,7 +612,8 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
           bordereau.id,
           bordereau.utilisateurId,
           montantPaiement,
-          transaction
+          transaction,
+          imputationType
         )
 
     // Consommation automatique du crédit de portefeuille : le solde soldera
@@ -595,6 +627,35 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       )
     } catch (consoError: any) {
       console.error("Consommation portefeuille (non bloquante):", consoError?.message || consoError)
+    }
+
+    // ── Création de l'écriture de paiement (TOUS les bordereaux) ──
+    // Garantit la traçabilité : chaque bordereau traité génère un PaiementInscription,
+    // même si le type est null ou si le dossier existe déjà.
+    try {
+      const paiementExistant = await PaiementInscription.findOne({
+        where: { description: { [Op.like]: `%bordereau #${bordereau.id}%` } },
+        transaction,
+      })
+      if (!paiementExistant) {
+        const dossierEtudiant = await DossierEtudiant.findOne({
+          where: { utilisateurId: bordereau.utilisateurId },
+          transaction,
+        })
+        const matricule = dossierEtudiant?.matricule ?? `TEMP-${bordereau.utilisateurId}`
+        const paiement = new PaiementInscription()
+        paiement.numero = 'PAY-' + nanoid(10)
+        paiement.datePaiement = bordereau.datePaiement || new Date()
+        paiement.montant = montantPaiement
+        paiement.utilisateurId = bordereau.utilisateurId
+        paiement.matriculeInscription = matricule
+        paiement.description = `Paiement par bordereau #${bordereau.id} (${bordereau.type || 'mixte'})`
+        paiement.type = TypesPaiement.EN_LIGNE
+        await paiement.save({ transaction })
+        console.log(_rid, `Paiement #${paiement.id} créé pour bordereau #${bordereau.id}`)
+      }
+    } catch (paiementError: any) {
+      console.error("Erreur création paiement (non bloquante):", paiementError?.message || paiementError)
     }
 
     if ((bordereauType === 'scolarite' || bordereauType === 'inscription') && bordereau.echeanceId) {
@@ -644,6 +705,45 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
     // Marquer la saisie ESA comme effectuée (AVANT le commit, dans la transaction)
     bordereau.statutPaiement = 'saisi'
     await bordereau.save({ transaction })
+
+    // ── Alerte « double mixte » dans la même session académique ──
+    // Un bordereau « mixte » répartit inscription + scolarité. Si un autre
+    // bordereau mixte a déjà été TRAITÉ pour ce même étudiant dans la même
+    // session, on remonte une alerte au comptable (non bloquante) pour signaler
+    // un éventuel doublon. Un type simple (inscription/scolarité) ne déclenche
+    // pas cette alerte : seule la saisie « mixte » est concernée.
+    const avertissements: string[] = []
+    if (estMixte) {
+      try {
+        const demandeMixte = await DemandeInscription.findOne({
+          where: { utilisateurId: bordereau.utilisateurId },
+          order: [['createdAt', 'DESC']],
+          transaction,
+        })
+        if (demandeMixte?.sessionId) {
+          const autresDemandes = await DemandeInscription.findAll({
+            where: { sessionId: demandeMixte.sessionId },
+            attributes: ['utilisateurId'],
+            transaction,
+          })
+          const autresUtilisateurIds = [...new Set(autresDemandes.map(d => d.utilisateurId))]
+          const mixteDejaTraités = await Bordereau.count({
+            where: {
+              utilisateurId: { [Op.in]: autresUtilisateurIds as number[] },
+              type: 'mixte',
+              statut: 'traite',
+              id: { [Op.ne]: bordereau.id },
+            },
+            transaction,
+          })
+          if (mixteDejaTraités > 0) {
+            avertissements.push('Un bordereau de type « mixte » a déjà été traité pour cet étudiant dans la même session académique. Vérifiez qu\'il ne s\'agit pas d\'un doublon avant de valider.')
+          }
+        }
+      } catch (mixteError) {
+        console.error('Détection double mixte (non bloquante):', mixteError)
+      }
+    }
 
     await transaction.commit()
 
@@ -733,7 +833,8 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       success: true,
       data: bordereau,
       lettrage: resultatImputation,
-      portefeuille: consommationPortefeuille
+      portefeuille: consommationPortefeuille,
+      avertissements
     })
   } catch (error: any) {
     await transaction.rollback()

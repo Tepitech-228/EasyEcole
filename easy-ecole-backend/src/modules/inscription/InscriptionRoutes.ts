@@ -110,6 +110,8 @@ router
     .use('/sallesDeClasse', [Authenticate], SalleDeClasseRouter)
     .use('/creneaux', [Authenticate], CreneauRouter)
     .use('/affectations-salles-classes', [Authenticate], AffectationSalleClasseRouter)
+    .use('/creneaux', [Authenticate], CreneauRouter)
+    .use('/affectations-salles-classes', [Authenticate], AffectationSalleClasseRouter)
     .use('/chapitresCours', [Authenticate, InscriptionComplete], ChapitreCoursRouter)
     .use('/ressources', [Authenticate, InscriptionComplete], RessourceRouter)
     .use('/fichiersRessource', [Authenticate, InscriptionComplete], FichierRessourceRouter)

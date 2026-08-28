@@ -11,6 +11,18 @@
     {{ apiErrorMessage || 'Une erreur est survenue' }}
   </div>
 
+  <div *ngIf="avertissements && avertissements.length" class="bg-amber-100 border border-amber-400 text-amber-800 px-4 py-3 rounded mb-4">
+    <div class="flex items-start gap-2">
+      <span class="material-symbols-outlined">warning</span>
+      <div>
+        <p class="font-semibold">Alerte</p>
+        <ul class="list-disc list-inside mt-1">
+          <li *ngFor="let a of avertissements">{{ a }}</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
   <!-- Filtres -->
   <div class="dashboard-surface-card compta-filter-panel p-4 mb-6">
     <div class="flex items-center gap-x-2 mb-4">

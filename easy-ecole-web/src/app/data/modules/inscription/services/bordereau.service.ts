@@ -37,8 +37,8 @@ export class BordereauService {
     return this.httpClient.get<{ data: Bordereau[], pagination: any }>(`${environment.API_MODULES.INSCRIPTION}/finance/bordereaux-a-traiter`, { params: httpParams });
   }
 
-  imputationPreview(id: string, montantPaiement: number): Observable<any> {
-    return this.httpClient.post<any>(`${environment.API_MODULES.INSCRIPTION}/finance/bordereaux/${id}/imputation-preview`, { montantPaiement })
+  imputationPreview(id: string, montantPaiement: number, type?: string): Observable<any> {
+    return this.httpClient.post<any>(`${environment.API_MODULES.INSCRIPTION}/finance/bordereaux/${id}/imputation-preview`, { montantPaiement, type })
   }
 
   compositionPreview(id: string, montantPaiement: number): Observable<any> {

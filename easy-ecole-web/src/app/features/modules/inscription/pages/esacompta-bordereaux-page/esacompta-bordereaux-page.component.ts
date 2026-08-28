@@ -40,6 +40,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   previewResult: any = null
   error: boolean = false
   apiErrorMessage: string = ''
+  avertissements: string[] = []
 
   selectedAnneeId: string = ''
   selectedNiveauId: string = ''
@@ -342,7 +343,8 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     this.selectedBordereau = bordereau
     this.error = false
     this.apiErrorMessage = ''
-    this.bordereauService.imputationPreview(bordereau.id, montant).subscribe({
+    const typeApercu = this.estTypeMixte ? '' : (this.typeSelectionne?.code || '').toLowerCase()
+    this.bordereauService.imputationPreview(bordereau.id, montant, typeApercu).subscribe({
       next: (res: any) => {
         this.previewResult = res.preview || res
         this.showPreviewModal = true
@@ -379,6 +381,8 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     this.bordereauService.saisir(this.selectedBordereau.id!, payload).subscribe({
       next: (res: any) => {
         console.log('[ESA-COMPTA] Saisie réussie:', res)
+        // Alerte « double mixte » (non bloquante) remontée par le backend
+        this.avertissements = Array.isArray(res?.avertissements) ? res.avertissements : []
         this.closeSaisieModal()
         this.showPreviewModal = false
         this.loadData()
