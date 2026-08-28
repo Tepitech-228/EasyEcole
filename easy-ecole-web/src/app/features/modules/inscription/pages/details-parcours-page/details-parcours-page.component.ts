@@ -310,4 +310,13 @@ export class DetailsParcoursPageComponent extends BaseComponentClass implements 
     this.selectedCours = undefined
   }
 
+  /**
+   * Autorise la gestion des UE (ajout/édition/suppression) pour le rôle
+   * institution ET pour le rôle admin. Le template vérifiait uniquement
+   * `isInstitution`, ce qui masquait le bouton d'ajout d'UE aux admins.
+   */
+  get peutGererUE(): boolean {
+    return this.rolesValue.isInstitution || this.rolesValue.isAdmin
+  }
+
 }
