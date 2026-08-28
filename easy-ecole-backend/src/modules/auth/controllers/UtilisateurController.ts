@@ -6,6 +6,7 @@ import { PersonnelAdministratif } from "../models/PersonnelAdministratif";
 import { Enseignant } from "../models/Enseignant";
 import { Apprenant } from "../models/Apprenant";
 import * as bcrypt from 'bcrypt';
+import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 
 export default class UtilisateurController {
 
@@ -223,21 +224,87 @@ export default class UtilisateurController {
             return res.status(403).json({ success: false, message: "Réservé à l'administration" });
         }
 
-        let utilisateur: Utilisateur | null = await Utilisateur.findOne({ where: { id: req.params.id } });
-        if (utilisateur) {
-            await utilisateur.destroy()
-                .then(() => {
-                    return res.status(200).json({ success: true, message: "Utilisateur supprime" });
-                })
-                .catch((error) => {
-                    return res.status(500).json({ success: false, message: "Erreur lors de la suppression" });
-                });
-        }
-        else {
-            return res.status(404).json({ success: false, message: "Utilisateur non trouve" });
+        const userId = Number(req.params.id);
+        if (!userId || isNaN(userId)) {
+            return res.status(400).json({ success: false, message: "Identifiant utilisateur invalide" });
         }
 
-        return null
+        const requesterId = (req as any).utilisateurId;
+        if (requesterId && Number(requesterId) === userId) {
+            return res.status(400).json({ success: false, message: "Impossible de supprimer votre propre compte" });
+        }
+
+        const sequelize = DatabaseConnection.getInstance().sequelize;
+
+        try {
+            const utilisateur: Utilisateur | null = await Utilisateur.findByPk(userId);
+            if (!utilisateur) {
+                return res.status(404).json({ success: false, message: "Utilisateur non trouve" });
+            }
+
+            // Tables "bloquantes" (NO ACTION / RESTRICT) liées à de la donnée métier
+            // sensible (parents, bourse, réductions, bulletins) : on refuse plutôt que de
+            // détruire silencieusement ces données. Ces cas demandent une purge manuelle.
+            const [blockers]: any = await sequelize.query(
+                `SELECT
+                    (SELECT COUNT(*) FROM par_parents_enfants WHERE parentUtilisateurId = :id) AS parents,
+                    (SELECT COUNT(*) FROM brs_attributions WHERE valideParId = :id) AS attributions,
+                    (SELECT COUNT(*) FROM cpt_reductions_frais WHERE validePar = :id) AS reductions,
+                    (SELECT COUNT(*) FROM ins_bulletins WHERE utilisateurId = :id) AS bulletins,
+                    (SELECT COUNT(*) FROM scol_clotures_caisse_old_v1 WHERE caissier_id = :id) AS clotures`,
+                { replacements: { id: userId } }
+            );
+            const b = blockers[0];
+            if (b && (b.parents || b.attributions || b.reductions || b.bulletins || b.clotures)) {
+                const liens: string[] = [];
+                if (b.parents) liens.push(`${b.parents} lien(s) parent-enfant`);
+                if (b.attributions) liens.push(`${b.attributions} attribution(s) de bourse`);
+                if (b.reductions) liens.push(`${b.reductions} réduction(s) de frais`);
+                if (b.bulletins) liens.push(`${b.bulletins} bulletin(s)`);
+                if (b.clotures) liens.push(`${b.clotures} clôture(s) de caisse (anciennes)`);
+                return res.status(409).json({
+                    success: false,
+                    message: `Suppression impossible : cet utilisateur est lié à des données sensibles (${liens.join(', ')}). Un administrateur doit procéder à une purge manuelle ciblée.`
+                });
+            }
+
+            await sequelize.transaction(async (t) => {
+                const q = (sql: string, opts?: any) => sequelize.query(sql, { ...opts, transaction: t });
+
+                // 1) Profils et leurs dépendances (supprime d'abord les lignes de profil
+                //    pour que leurs enfants en SET NULL soient nettoyés, puis la ligne user).
+                await q(`DELETE FROM aut_user_permissions WHERE utilisateurId = :id`, { replacements: { id: userId } });
+                await q(`DELETE FROM aut_apprenants WHERE utilisateurId = :id`, { replacements: { id: userId } });
+                await q(`DELETE FROM aut_enseignants WHERE utilisateurId = :id`, { replacements: { id: userId } });
+                await q(`DELETE FROM aut_institutions WHERE utilisateurId = :id`, { replacements: { id: userId } });
+                await q(`DELETE FROM aut_caissiers_banque WHERE utilisateurId = :id`, { replacements: { id: userId } });
+                await q(`DELETE FROM aut_comite_orientations WHERE utilisateurId = :id`, { replacements: { id: userId } });
+                await q(`DELETE FROM aut_personnel_administratif WHERE utilisateurId = :id`, { replacements: { id: userId } });
+                await q(`DELETE FROM aut_user_roles WHERE utilisateurId = :id`, { replacements: { id: userId } });
+
+                // 2) Suppression DÉFINITIVE de l'utilisateur (hard delete, ignore le soft delete)
+                const [del]: any = await q(`DELETE FROM aut_utilisateurs WHERE id = :id`, { replacements: { id: userId } });
+                if (!del || del.affectedRows === 0) {
+                    throw new Error('USER_NOT_FOUND');
+                }
+            });
+
+            return res.status(200).json({ success: true, message: "Utilisateur définitivement supprimé" });
+        } catch (error: any) {
+            if (error?.message === 'USER_NOT_FOUND') {
+                return res.status(404).json({ success: false, message: "Utilisateur non trouve" });
+            }
+            // Erreur de clé étrangère (contrainte non couverte par le blocage ci-dessus)
+            const code = error?.original?.code || error?.parent?.code || '';
+            if (code === 'ER_ROW_IS_REFERENCED_2' || code === 'ER_ROW_IS_REFERENCED' || error?.name === 'SequelizeForeignKeyConstraintError') {
+                return res.status(409).json({
+                    success: false,
+                    message: "Suppression impossible : l'utilisateur est référencé par d'autres données métier. L'administrateur doit procéder à une purge manuelle ciblée."
+                });
+            }
+            console.error('Erreur suppression définitive utilisateur:', error?.message);
+            return res.status(500).json({ success: false, message: "Erreur lors de la suppression" });
+        }
     }
 
     static async getCount(req: Request, res: Response): Promise<Response | null> {

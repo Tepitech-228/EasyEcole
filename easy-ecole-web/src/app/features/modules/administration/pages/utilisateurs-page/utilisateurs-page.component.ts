@@ -176,11 +176,12 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
         this.saving = false
         this.closeDeleteModal()
         this.loadUtilisateurs()
-        this.toastService.success('Utilisateur supprimé')
+        this.toastService.success('Utilisateur définitivement supprimé')
       },
-      error: () => {
+      error: (err) => {
         this.saving = false
-        this.toastService.error('Erreur lors de la suppression')
+        this.closeDeleteModal()
+        this.toastService.error(err.error?.message || 'Erreur lors de la suppression')
       }
     })
   }
