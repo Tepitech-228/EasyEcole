@@ -73,3 +73,48 @@ easy-ecole-backend/src/core/scripts/add-designation-memoire.ts
 easy-ecole-backend/src/core/scripts/fix-db-schema.ts
 easy-ecole-backend/src/core/scripts/list-tables.ts
 easy-ecole-backend/src/core/scripts/seed-complet.ts
+
+# Artefacts de dev / diagnostic (sorties build, logs, scripts jetables) — à ne pas versionner
+# Sorties de build / recette / tsc / e2e à la racine
+backend-run-out.txt
+backend-run-seq.txt
+build-exit.txt
+build-front-exit.txt
+build-front2-exit.txt
+dump-err.txt
+e2e-parallele-out.txt
+e2e-parallele-out2.txt
+e2e-parallele-out3.txt
+e2e-parallele-out4.txt
+import-err.txt
+recette-result.txt
+tsc-auto-sync.txt
+tsc-b3.txt
+tsc-broken.txt
+tsc-fix-correcteur.txt
+tsc-fix-matricule.txt
+tsc-out.txt
+tsc-seq-back.txt
+tsc-seq-web.txt
+tsc-w3.txt
+tsc-web-out.txt
+tsc-web-out2.txt
+
+# Scripts batch de diagnostic
+add_column.bat
+check_compil.bat
+easy-ecole-web/run_tsc.bat
+
+# Scripts JS de diagnostic
+easy-ecole-backend/inspect-user.js
+easy-ecole-backend/inspect2.js
+easy-ecole-backend/list-tables.js
+scripts/delete-user.js
+
+# Dossiers temporaires de travail
+scripts-tmp/
+temp-opencode/
+
+# Dumps / seeds SQL de données réelles (potentiellement sensibles)
+dump-easyecole.sql
+seed-reference-prod.sql
