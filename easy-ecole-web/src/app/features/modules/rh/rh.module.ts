@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RhRoutingModule } from './rh-routing.module';
 import { SharedModule } from 'src/app/shared/shared.module';
-import { ChartPanelComponent } from 'src/app/shared/modern-ui/components/chart-panel/chart-panel.component';
+import { ModernUiModule } from 'src/app/shared/modern-ui/modern-ui.module';
 import { DashboardRhPageComponent } from './pages/dashboard-rh-page/dashboard-rh-page.component';
 import { ListeEmployesPageComponent } from './pages/liste-employes-page/liste-employes-page.component';
 import { EmployeDetailsPageComponent } from './pages/employe-details-page/employe-details-page.component';
@@ -34,7 +34,6 @@ import { SoldesCongePageComponent } from './pages/soldes-conge-page/soldes-conge
 @NgModule({
   declarations: [
     DashboardRhPageComponent,
-    ChartPanelComponent,
     ListeEmployesPageComponent,
     EmployeDetailsPageComponent,
     ListeOffresPageComponent,
@@ -66,6 +65,7 @@ import { SoldesCongePageComponent } from './pages/soldes-conge-page/soldes-conge
     CommonModule,
     RhRoutingModule,
     SharedModule,
+    ModernUiModule,
   ]
 })
 export class RhModule { }
