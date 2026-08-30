@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+import { untilDestroyed } from 'src/app/core/utils/take-until-destroy';
 import { environment } from 'src/environments/environment';
+import { ToastService } from 'src/app/core/services/toast.service';
 
 @Component({
   selector: 'app-dashboard-rh-page',
@@ -22,23 +24,49 @@ export class DashboardRhPageComponent extends BaseComponentClass implements OnIn
     { label: 'Paie', desc: 'Gérer bulletins et périodes', link: '/rh/paie', icon: 'payments' },
   ];
   recentActivities: any[] = [];
+  loading: boolean = false;
+  error: string | null = null;
+  chartPayload: any = null;
 
-  constructor(private http: HttpClient) { super() }
+  constructor(
+    private http: HttpClient,
+    private toastService: ToastService
+  ) { super() }
 
   ngOnInit(): void {
-    this.loadDashboard();
+    this.loadDashboard()
   }
 
   loadDashboard() {
-    this.http.get(`${environment.API_URL}/rh/dashboard`).subscribe({
+    this.loading = true
+    this.error = null
+    this.http.get(`${environment.API_URL}/rh/dashboard`).pipe(untilDestroyed(this)).subscribe({
       next: (res: any) => {
         if (res?.data?.totalEmployes) this.stats[0].value = String(res.data.totalEmployes);
         if (res?.data?.totalBulletins) this.stats[1].value = String(res.data.totalBulletins);
         if (res?.data?.totalCandidatures) this.stats[2].value = String(res.data.totalCandidatures);
         if (res?.data?.totalFormations) this.stats[3].value = String(res.data.totalFormations);
         this.recentActivities = res?.data?.recentActivities || [];
+        
+        if (res?.data?.effectifsParDepartement) {
+          const depts = res.data.effectifsParDepartement
+          this.chartPayload = {
+            type: 'doughnut',
+            labels: depts.map((d: any) => d.departement),
+            datasets: [{ label: 'Effectifs', data: depts.map((d: any) => d.effectif) }],
+            colors: ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6']
+          }
+        }
+        
+        this.loading = false
       },
-      error: () => {}
+      error: (err) => {
+        this.loading = false
+        this.error = err.error?.message || 'Erreur lors du chargement'
+        if (this.error) {
+          this.toastService.error(this.error)
+        }
+      }
     });
   }
 }
