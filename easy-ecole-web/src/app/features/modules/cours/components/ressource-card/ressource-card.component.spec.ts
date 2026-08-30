@@ -23,7 +23,7 @@ describe('RessourceCardComponent', () => {
     fixture = TestBed.createComponent(RessourceCardComponent);
     component = fixture.componentInstance;
     component.ressource = new Ressource();
-    component.rolesValue = { isApprenant: false, isInstitution: false, isEnseignant: false, isCaissierBanque: false, isPersonnelAdministratif: false, isRessourcesHumaines: false, isCabinetComptable: false, isEsacompta: false, isComiteOrientation: false, isAdmin: false, isParent: false };
+    component.rolesValue = { isApprenant: false, isInstitution: false, isEnseignant: false, isCaissierBanque: false, isPersonnelAdministratif: false, isRessourcesHumaines: false, isCabinetComptable: false, isEsacompta: false, isComiteOrientation: false, isAdmin: false, isParent: false, isSurveillant: false };
     fixture.detectChanges();
   });
 

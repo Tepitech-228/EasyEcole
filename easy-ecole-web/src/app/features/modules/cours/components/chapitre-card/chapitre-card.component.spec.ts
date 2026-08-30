@@ -23,7 +23,7 @@ describe('ChapitreCardComponent', () => {
     fixture = TestBed.createComponent(ChapitreCardComponent);
     component = fixture.componentInstance;
     component.chapitre = new ChapitreCours();
-    component.rolesValue = { isApprenant: false, isInstitution: false, isEnseignant: false, isCaissierBanque: false, isPersonnelAdministratif: false, isRessourcesHumaines: false, isCabinetComptable: false, isEsacompta: false, isComiteOrientation: false, isAdmin: false, isParent: false };
+    component.rolesValue = { isApprenant: false, isInstitution: false, isEnseignant: false, isCaissierBanque: false, isPersonnelAdministratif: false, isRessourcesHumaines: false, isCabinetComptable: false, isEsacompta: false, isComiteOrientation: false, isAdmin: false, isParent: false, isSurveillant: false };
     fixture.detectChanges();
   });
 
