@@ -26,6 +26,7 @@ import { NotificationGedService } from './modules/ged/services/NotificationGedSe
 import { seedComptabilite } from './modules/comptabilite/seed'
 import { seedParametresFrais } from './modules/comptabilite/seed-parametres-frais'
 import { errorHandler } from './core/middlewares/ErrorHandler'
+import { RedisClient } from './core/cache/RedisClient'
 
 // ── Dernière barrière de diagnostic (cf. audit erreurs silencieuses §28) ──
 // Ces handlers ne remplacent PAS la gestion locale des erreurs : ils garantissent
@@ -104,7 +105,7 @@ const limiter = rateLimit({
 })
 app.use(limiter)
 
-app.use(morgan("dev"))
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'))
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: false, limit: '10mb' }))
 
@@ -121,9 +122,12 @@ app.get('/logo-esa.png', (req, res) => {
   res.sendFile(filePath)
 })
 
-/** Swagger Documentation */
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customCss: `
+/** Swagger Documentation (désactivé en production) */
+const env = process.env.NODE_ENV
+const enableSwagger = process.env.ENABLE_SWAGGER === 'true' || (env !== 'production')
+if (enableSwagger) {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customCss: `
     .swagger-ui .topbar {
       background: #002147 !important;
       border-bottom: 3px solid #FFD100 !important;
@@ -303,6 +307,17 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customSiteTitle: 'ESA-TOGO API Documentation',
   customfavIcon: '/logo-esa.png'
 }))
+} else {
+  app.use('/api-docs', (req, res) => res.status(404).json({ success: false, message: 'Not found' }))
+}
+
+// ── Cache Redis (fail-safe) : démarrage NON bloquant ─────────────────────
+// Si REDIS_URL est renseigné, le cache s'active ; sinon (ou en cas de panne),
+// RedisClient reste sur `enabled=false` et toutes les requêtes retombent sur
+// la base de données. Le boot de l'API ne dépend jamais de Redis.
+RedisClient.getInstance().init().catch(err => {
+    console.warn('[CACHE] init() a échoué, cache désactivé:', err instanceof Error ? err.message : err)
+})
 
 const API_BASE_URL = "/api/v1"
 app.use(API_BASE_URL, router)

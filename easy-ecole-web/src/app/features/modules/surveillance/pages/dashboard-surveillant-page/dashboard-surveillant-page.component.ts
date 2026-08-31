@@ -14,6 +14,10 @@ export class DashboardSurveillantPageComponent extends BaseComponentClass implem
   incidents: DisciplineIncident[] = []
   loading: boolean = false
   error: string | null = null
+  absencesPayload: any = null
+  sanctionsPayload: any = null
+  sanctionsStatutPayload: any = null
+  tendancePayload: any = null
 
   constructor(
     private surveillanceService: SurveillanceService,
@@ -29,8 +33,9 @@ export class DashboardSurveillantPageComponent extends BaseComponentClass implem
     this.loading = true
     this.error = null
     this.surveillanceService.getDashboard().subscribe({
-      next: (res) => {
-        this.dashboard = res
+      next: (res: any) => {
+        this.dashboard = res?.data || res || null
+        this.buildChartPayloads()
         this.loading = false
       },
       error: (err) => {
@@ -41,6 +46,43 @@ export class DashboardSurveillantPageComponent extends BaseComponentClass implem
         }
       }
     })
+  }
+
+  private buildChartPayloads(): void {
+    const charts = this.dashboard?.charts || {};
+    const absencesParType = charts.absencesParType || [];
+    const sanctionsParType = charts.sanctionsParType || [];
+    const sanctionsParStatut = charts.sanctionsParStatut || [];
+    const presencesParJour = this.dashboard?.tendances?.presencesParJour || [];
+
+    if (absencesParType.length) {
+      this.absencesPayload = {
+        type: 'doughnut',
+        labels: absencesParType.map((a: any) => a.type),
+        datasets: [{ label: 'Absences', data: absencesParType.map((a: any) => a.total) }]
+      };
+    }
+    if (sanctionsParType.length) {
+      this.sanctionsPayload = {
+        type: 'bar',
+        labels: sanctionsParType.map((s: any) => s.sanction),
+        datasets: [{ label: 'Sanctions', data: sanctionsParType.map((s: any) => s.total) }]
+      };
+    }
+    if (sanctionsParStatut.length) {
+      this.sanctionsStatutPayload = {
+        type: 'doughnut',
+        labels: sanctionsParStatut.map((s: any) => s.statut),
+        datasets: [{ label: 'Sanctions', data: sanctionsParStatut.map((s: any) => s.total) }]
+      };
+    }
+    if (presencesParJour.length) {
+      this.tendancePayload = {
+        type: 'line',
+        labels: presencesParJour.map((p: any) => p.jour),
+        datasets: [{ label: 'Présences', data: presencesParJour.map((p: any) => p.presences) }]
+      };
+    }
   }
 
   loadDisciplineDuJour(): void {

@@ -44,6 +44,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                     { label: 'Preinscriptions', route: '/inscription/comite-orientation', icon: 'how_to_reg', permissionKey: 'menu.comite-orientation.preinscriptions', allowedRoles: [RolesUtilisateur.COMITE_ORIENTATION, RolesUtilisateur.ADMIN] },
                     { label: 'Mes bordereaux', route: '/inscription/bordereaux', icon: 'receipt_long', permissionKey: 'menu.finances.bordereaux', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
                     { label: 'Mon dossier', route: '/inscription/mon-dossier', icon: 'folder_special', permissionKey: 'menu.inscription.mon-dossier', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
+                    { label: 'Ma réinscription', route: '/inscription/reinscription/planifier', icon: 'how_to_reg', permissionKey: 'menu.inscription.reinscription-planifier', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
                     { label: 'Désignation directeur mémoire', route: '/inscription/designation-memoire', icon: 'menu_book', permissionKey: 'menu.inscription.designation-memoire', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                 ]
             },

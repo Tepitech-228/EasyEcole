@@ -3,6 +3,7 @@ import express from "express"
 import TypeNoteEvaluationController from "../controllers/TypeNoteEvaluationController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
 import CheckPermission from "../../../core/middlewares/CheckPermission";
+import { cache } from "../../../core/middlewares/CacheMiddleware";
 
 const router = express.Router()
 
@@ -17,7 +18,8 @@ const router = express.Router()
  *         description: Liste des types d'évaluation
  */
 router
-    .get('/', TypeNoteEvaluationController.getAllTypesNoteEvaluation)
+    // Référentiel stable → cache Redis 300 s (Authenticate appliqué par le parent)
+    .get('/', [cache(300)], TypeNoteEvaluationController.getAllTypesNoteEvaluation)
 /**
  * @openapi
  * /inscription/typesNoteEvaluation:
@@ -56,7 +58,7 @@ router
  *       404:
  *         description: Type d'évaluation non trouvé
  */
-    .get('/:id', TypeNoteEvaluationController.getTypeNoteEvaluation)
+    .get('/:id', [cache(300)], TypeNoteEvaluationController.getTypeNoteEvaluation)
 /**
  * @openapi
  * /inscription/typesNoteEvaluation/{id}:

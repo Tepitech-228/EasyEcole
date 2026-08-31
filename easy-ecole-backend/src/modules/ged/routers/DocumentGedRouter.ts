@@ -35,8 +35,53 @@ const upload = multer({
             cb(new Error('Seuls les fichiers PDF et TIFF sont acceptés'));
         }
     },
-    limits: { fileSize: 3 * 1024 * 1024 * 1024 }
+    limits: { fileSize: 50 * 1024 * 1024 }
 });
+
+// Vérification des magic bytes (signature fichier) pour empêcher le MIME spoofing.
+function verifierSignatureFichier(filePath: string): boolean {
+    try {
+        const fd = fs.openSync(filePath, 'r');
+        const buffer = Buffer.alloc(8);
+        const bytesRead = fs.readSync(fd, buffer, 0, buffer.length, 0);
+        fs.closeSync(fd);
+        if (bytesRead < 4) return false;
+        const signaturePdf = buffer.subarray(0, 4).equals(Buffer.from('%PDF'));
+        const signatureTiffLe = buffer.subarray(0, 4).equals(Buffer.from([0x49, 0x49, 0x2A, 0x00]));
+        const signatureTiffBe = buffer.subarray(0, 4).equals(Buffer.from([0x4D, 0x4D, 0x00, 0x2A]));
+        return signaturePdf || signatureTiffLe || signatureTiffBe;
+    } catch {
+        return false;
+    }
+}
+
+// Middleware de validation magic bytes monté APRÈS multer (le fichier est déjà écrit sur disque).
+// Supprime le fichier et répond 400 en cas de signature invalide.
+function validerSignatureMulter(req: express.Request, res: express.Response, next: express.NextFunction) {
+    const fichiers: Array<{ path?: string }> = [];
+    if ((req as any).file && (req as any).file.path) fichiers.push((req as any).file);
+    if ((req as any).files) {
+        const files = (req as any).files;
+        const list = Array.isArray(files) ? files : Object.values(files).flat();
+        for (const f of list) {
+            if (f && f.path) fichiers.push(f);
+        }
+    }
+
+    if (fichiers.length === 0) {
+        return next();
+    }
+
+    const invalides = fichiers.filter((f) => !verifierSignatureFichier(f.path!));
+    if (invalides.length > 0) {
+        for (const f of invalides) {
+            try { fs.unlinkSync(f.path!); } catch { /* fichier déjà absent */ }
+        }
+        return res.status(400).json({ success: false, message: 'Signature du fichier invalide (seuls les fichiers PDF et TIFF sont autorisés)' });
+    }
+
+    return next();
+}
 
 const router = express.Router();
 
@@ -67,7 +112,7 @@ router
      *       200:
      *         description: Success
      */
-.post('/', [Authenticate, AuthInstitution, upload.single('fichier')], DocumentGedController.upload)
+.post('/', [Authenticate, AuthInstitution, upload.single('fichier'), validerSignatureMulter], DocumentGedController.upload)
         /**
      * @openapi
      * /batch-upload:
@@ -79,7 +124,7 @@ router
      *       200:
      *         description: Success
      */
-.post('/batch-upload', [Authenticate, AuthInstitution, upload.array('fichiers', 50)], DocumentGedController.uploadBatch)
+.post('/batch-upload', [Authenticate, AuthInstitution, upload.array('fichiers', 50), validerSignatureMulter], DocumentGedController.uploadBatch)
         /**
      * @openapi
      * /:id:
@@ -91,7 +136,7 @@ router
      *       200:
      *         description: Success
      */
-.put('/:id', [Authenticate, AuthInstitution, upload.single('fichier')], DocumentGedController.update)
+.put('/:id', [Authenticate, AuthInstitution, upload.single('fichier'), validerSignatureMulter], DocumentGedController.update)
 
     // Detail & download (with confidentiality check)
         /**

@@ -33,6 +33,9 @@ export class ListeNotesPageComponent extends BaseComponentClass implements OnIni
 
   searchNote?: string
 
+  pageSize = 10
+  currentPage = 1
+
   exportingPvId: string | null = null
   showImportModal: boolean = false
   importingPvId: string | null = null
@@ -118,6 +121,7 @@ export class ListeNotesPageComponent extends BaseComponentClass implements OnIni
         (this.selectedClasse == 'undefined' || value.cours?.classeId == this.selectedClasse) &&
         (this.selectedParcours == 'undefined' || value.cours?.parcoursId == this.selectedParcours)
     })
+    this.currentPage = 1
   }
 
   supprimerFiltres(): void {
@@ -140,6 +144,35 @@ export class ListeNotesPageComponent extends BaseComponentClass implements OnIni
         return coursIntitule.includes(query) || typeLibelle.includes(query)
       })
     }
+    this.currentPage = 1
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this._listesNotes.length / this.pageSize))
+  }
+
+  get pagedListesNotes(): ListeNoteEvaluation[] {
+    if (this.currentPage > this.totalPages) {
+      this.currentPage = this.totalPages
+    }
+    const start = (this.currentPage - 1) * this.pageSize
+    return this._listesNotes.slice(start, start + this.pageSize)
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++
+    }
+  }
+
+  prevPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage--
+    }
+  }
+
+  trackByIndex(index: number): number {
+    return index
   }
 
   moyenneNotes(liste: ListeNoteEvaluation): number {

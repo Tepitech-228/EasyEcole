@@ -2,6 +2,11 @@ const { DatabaseConnection } = require('../helpers/DatabaseConnection');
 const fs = require('fs');
 const path = require('path');
 
+if (process.env.ALLOW_DEV_SCRIPTS !== 'true') {
+    console.error('Ce script de développement est désactivé en production.');
+    process.exit(1);
+}
+
 const fichier = process.argv[2] || '007_pipeline_inscription.sql';
 
 (async () => {

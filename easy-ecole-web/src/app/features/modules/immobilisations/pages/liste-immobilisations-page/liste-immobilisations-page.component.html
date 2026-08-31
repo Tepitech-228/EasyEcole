@@ -65,7 +65,7 @@
 </div>
 <ng-template #listRows>
     <tbody>
-        <ng-container *ngFor="let immo of filteredImmobilisations; index as index">
+        <ng-container *ngFor="let immo of pagedImmobilisations; index as index; trackBy: trackByIndex">
             <tr class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
                 <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2"><div class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ index + 1 }}</div></td>
                 <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2"><div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ immo.nom }}</div></td>
@@ -78,3 +78,14 @@
         </ng-container>
     </tbody>
 </ng-template>
+<div *ngIf="filteredImmobilisations.length > pageSize" class="flex items-center justify-between mt-4">
+    <span class="text-sm text-gray-600">
+        Page {{ currentPage }} / {{ totalPages }} ({{ filteredImmobilisations.length }} éléments)
+    </span>
+    <div class="flex items-center gap-2">
+        <button (click)="prevPage()" [disabled]="currentPage <= 1"
+                class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 shadow-sm text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed">Précédent</button>
+        <button (click)="nextPage()" [disabled]="currentPage >= totalPages"
+                class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 shadow-sm text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed">Suivant</button>
+    </div>
+</div>

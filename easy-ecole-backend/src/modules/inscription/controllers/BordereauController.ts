@@ -435,6 +435,14 @@ export default class BordereauController {
                 return
             }
 
+            // Contrôle de propriété (anti-IDOR) : un apprenant ne peut télécharger
+            // QUE son propre bordereau ; les autres rôles (staff) conservent l'accès total.
+            const role = (req as any).utilisateurRole;
+            if (role === RolesUtilisateur.APPRENANT && bordereau.utilisateurId !== (req as any).utilisateurId) {
+                res.status(404).json({ success: false, message: "Bordereau non trouvé" })
+                return
+            }
+
             // Chercher d'abord dans le nouveau chemin (dossier étudiant), puis dans l'ancien
             let filePath = path.resolve(process.cwd(), bordereau.fichier)
             if (!fs.existsSync(filePath)) {

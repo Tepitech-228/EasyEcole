@@ -7,8 +7,12 @@ jest.mock('../../../modules/inscription/models/Classe', () => {
   Mock.findOne = jest.fn()
   Mock.create = jest.fn()
   Mock.count = jest.fn()
+  Mock.findByPk = jest.fn()
+  Mock.associations = { niveauEtude: 'niveauEtude', parcours: 'parcours' }
   return { Classe: Mock }
 })
+
+jest.mock('../../../core/helpers/DatabaseConnection')
 
 const { Classe } = require('../../../modules/inscription/models/Classe')
 
@@ -36,7 +40,15 @@ describe('ClasseController.getAllClasses', () => {
 
     await ClasseController.getAllClasses(req, res)
 
-    expect(Classe.findAll).toHaveBeenCalledWith({ where: { niveauEtudeId: 'niv1' } })
+    expect(Classe.findAll).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { niveauEtudeId: 'niv1' },
+        include: [
+          { association: 'niveauEtude' },
+          { association: 'parcours' }
+        ]
+      })
+    )
     expect(res.status).toHaveBeenCalledWith(200)
   })
 
@@ -113,6 +125,7 @@ describe('ClasseController.createClasse', () => {
     const mockSave = jest.fn().mockResolvedValue(saved)
     ;(Classe.findOne as jest.Mock).mockResolvedValue(null)
     ;(Classe as jest.Mock).mockReturnValue({ save: mockSave })
+    ;(Classe.findByPk as jest.Mock).mockResolvedValue(saved)
 
     await ClasseController.createClasse(req, res)
 

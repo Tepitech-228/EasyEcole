@@ -11,6 +11,10 @@ import { SessionGed } from './models/SessionGed'
 import { DocumentGed } from './models/DocumentGed'
 import { Utilisateur } from '../auth/models/Utilisateur'
 
+if (process.env.ALLOW_DEV_SCRIPTS !== 'true') {
+    console.error('Ce script de développement est désactivé en production.');
+    process.exit(1);
+}
 
 
 

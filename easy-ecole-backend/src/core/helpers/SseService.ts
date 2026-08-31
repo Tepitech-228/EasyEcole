@@ -9,16 +9,28 @@ interface SseClient {
 class SseService {
   private clients: SseClient[] = [];
   private clientIdCounter: number = 0;
+  private readonly MAX_CLIENTS: number = 200;
+  private activeClients: number = 0;
 
   addClient(utilisateurId: number, res: Response): number {
+    if (this.activeClients >= this.MAX_CLIENTS) return -1;
     const clientId = ++this.clientIdCounter;
     this.clients.push({ id: clientId, utilisateurId, res });
+    this.activeClients++;
     res.on('close', () => this.removeClient(clientId));
     return clientId;
   }
 
   removeClient(clientId: number): void {
+    const before = this.clients.length;
     this.clients = this.clients.filter(c => c.id !== clientId);
+    if (this.clients.length < before) {
+      this.activeClients = Math.max(0, this.activeClients - 1);
+    }
+  }
+
+  get maxClients(): number {
+    return this.MAX_CLIENTS;
   }
 
   sendToUser(utilisateurId: number, event: string, data: any): void {

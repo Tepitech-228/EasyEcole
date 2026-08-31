@@ -223,3 +223,142 @@ export async function ensureUniqueIndexes(sequelize: Sequelize): Promise<EnsureU
     );
     return result;
 }
+
+/**
+ * ============================================================================
+ * ensurePerformanceIndexes — Index NON-UNIQUE recommandés (fiabilité/perf)
+ * ============================================================================
+ * Les colonnes ci-dessous ne sont PAS uniques : elles supportent les filtres
+ * fréquents (crons, listes, agrégations) sans contrainte d'unicité.
+ * Les index sont créés HORS modèles (aucun `indexes:` dans les modèles — le
+ * `sync({ alter: true })` n'émet ainsi aucun ALTER destructeur).
+ *
+ * MySQL ne supportant pas `CREATE INDEX IF NOT EXISTS`, l'idempotence est
+ * assurée par une vérification information_schema préalable (même stratégie
+ * que les index uniques ci-dessus) : un index existant dont les colonnes de
+ * tête couvrent la définition est conservé tel quel.
+ * ============================================================================
+ */
+export interface PerformanceIndexDef {
+    /** Nom de la table MySQL (ex. `ins_seances`) */
+    table: string;
+    /** Suffixe du nom d'index (le nom complet est préfixé par `idx_`) */
+    name: string;
+    /** Colonnes MySQL dans l'ordre de l'index */
+    columns: string[];
+}
+
+/** Nom d'index nominatif (≤ 64 caractères max côté MySQL). */
+export const buildPerformanceIndexName = (def: PerformanceIndexDef): string =>
+    `idx_${def.table}_${def.name}`.slice(0, 64);
+
+export const PERFORMANCE_INDEX_DEFS: readonly PerformanceIndexDef[] = [
+    // ---------- comptabilite : écritures (agrégations par compte débit/crédit) ----------
+    { table: 'cpt_ecritures_comptables', name: 'ecritures_comptables_compte_debit', columns: ['compteDebitId'] },
+    { table: 'cpt_ecritures_comptables', name: 'ecritures_comptables_compte_credit', columns: ['compteCreditId'] },
+    // ---------- inscription : séances (cron RappelSalleCron "chaque minute", filtres fréquents) ----------
+    { table: 'ins_seances', name: 'seances_jour_semaine_dates', columns: ['jourSemaine', 'dateDebut', 'dateFin'] },
+    { table: 'ins_seances', name: 'seances_cours', columns: ['coursId'] },
+    { table: 'ins_seances', name: 'seances_enseignant', columns: ['enseignantId'] },
+    // ---------- inscription : échéances (cron quotidien statut/dateLimite, listes par dossier) ----------
+    { table: 'ins_echeances', name: 'echeances_statut_date_limite', columns: ['statut', 'dateLimite'] },
+    { table: 'ins_echeances', name: 'echeances_dossier', columns: ['dossierEtudiantId'] },
+    // ---------- bulletins : filtre classe/année/semestre (délibérations), recherche par apprenant ----------
+    { table: 'ins_bulletins', name: 'bulletins_classe_annee_semestre', columns: ['classeId', 'anneeAcademiqueId', 'semestre'] },
+    { table: 'ins_bulletins', name: 'bulletins_cursus', columns: ['cursusApprenantId'] },
+    // ---------- listes de notes : filtres fréquents (cours, enseignant, année académique) ----------
+    { table: 'ins_listes_notes_evaluation', name: 'listes_notes_cours', columns: ['coursId'] },
+    { table: 'ins_listes_notes_evaluation', name: 'listes_notes_enseignant', columns: ['enseignantId'] },
+    { table: 'ins_listes_notes_evaluation', name: 'listes_notes_annee', columns: ['anneeAcademiqueId'] },
+];
+
+export interface EnsurePerformanceIndexesResult {
+    /** Index créés (nom complet) */
+    created: string[];
+    /** Index déjà couverts par un index existant (préfixe de colonnes) */
+    alreadyPresent: string[];
+    /** Définitions dont la table n'existe pas encore (ignorées) */
+    tableMissing: string[];
+}
+
+/**
+ * Crée les index {@link PERFORMANCE_INDEX_DEFS} s'ils sont absents.
+ * Idempotent : une seconde exécution ne crée rien. Sûr en dev ET en production.
+ */
+export async function ensurePerformanceIndexes(sequelize: Sequelize): Promise<EnsurePerformanceIndexesResult> {
+    const result: EnsurePerformanceIndexesResult = { created: [], alreadyPresent: [], tableMissing: [] };
+
+    if (PERFORMANCE_INDEX_DEFS.length === 0) {
+        return result;
+    }
+
+    const tables = await sequelize.query(
+        `SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE()`,
+        { type: QueryTypes.SELECT }
+    );
+    const existingTables = new Set<string>((tables as Array<{ TABLE_NAME: string }>).map(t => t.TABLE_NAME));
+
+    // Index existants (uniques ET non-uniques), colonnes dans l'ordre.
+    const stats = await sequelize.query(
+        `SELECT TABLE_NAME, INDEX_NAME, SEQ_IN_INDEX, COLUMN_NAME
+           FROM information_schema.statistics
+          WHERE TABLE_SCHEMA = DATABASE()
+          ORDER BY TABLE_NAME, INDEX_NAME, SEQ_IN_INDEX`,
+        { type: QueryTypes.SELECT }
+    );
+    const existing = new Map<string, Array<string[]>>();
+    const seenIndexes = new Set<string>();
+    for (const row of stats as Array<{ TABLE_NAME: string; INDEX_NAME: string; SEQ_IN_INDEX: number; COLUMN_NAME: string }>) {
+        const key = `${row.TABLE_NAME}.${row.INDEX_NAME}`;
+        const list = existing.get(row.TABLE_NAME) ?? [];
+        if (seenIndexes.has(key)) {
+            list[list.length - 1].push(row.COLUMN_NAME);
+        } else {
+            seenIndexes.add(key);
+            list.push([row.COLUMN_NAME]);
+        }
+        existing.set(row.TABLE_NAME, list);
+    }
+
+    // Un index existant dont les colonnes de tête couvrent la définition suffit.
+    const isCovered = (table: string, columns: string[]): boolean => {
+        const list = existing.get(table);
+        if (!list) return false;
+        return list.some(cols =>
+            columns.length <= cols.length &&
+            columns.every((c, i) => cols[i] === c)
+        );
+    };
+
+    for (const def of PERFORMANCE_INDEX_DEFS) {
+        if (!existingTables.has(def.table)) {
+            result.tableMissing.push(`${def.table} (${def.columns.join(',')})`);
+            continue;
+        }
+        const indexName = buildPerformanceIndexName(def);
+        if (isCovered(def.table, def.columns)) {
+            result.alreadyPresent.push(`${def.table} (${indexName})`);
+            continue;
+        }
+        const colsList = def.columns.map(c => `\`${c}\``).join(', ');
+        try {
+            await sequelize.query(
+                `CREATE INDEX \`${indexName}\` ON \`${def.table}\` (${colsList})`
+            );
+            result.created.push(`${def.table} (${indexName})`);
+        } catch (err: any) {
+            if (err?.parent?.code === 'ER_DUP_KEYNAME') {
+                // Course au boot concurrent ou index créé entre-temps : OK.
+                result.alreadyPresent.push(`${def.table} (${indexName})`);
+            } else {
+                console.warn(`[ensurePerformanceIndexes] erreur ${def.table}:`, err?.message || err);
+                throw err;
+            }
+        }
+    }
+
+    console.log(
+        `[ensurePerformanceIndexes] terminé — créés: ${result.created.length}, déjà présents: ${result.alreadyPresent.length}, tables absentes: ${result.tableMissing.length}`
+    );
+    return result;
+}

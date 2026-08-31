@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { shareReplay } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { AnneeAcademique } from '../models/AnneeAcademique.model';
 
@@ -11,10 +12,19 @@ export class AnneeAcademiqueService {
 
   private readonly SERVICE_URL: string = `${environment.API_MODULES.INSCRIPTION}/anneesAcademiques`
 
+  private cached$: Observable<AnneeAcademique[]> | null = null;
+
   constructor(private httpClient: HttpClient) { }
 
   getAll(): Observable<AnneeAcademique[]> {
-    return this.httpClient.get<AnneeAcademique[]>(`${this.SERVICE_URL}`)
+    if (!this.cached$) {
+      this.cached$ = this.httpClient.get<AnneeAcademique[]>(`${this.SERVICE_URL}`).pipe(shareReplay(1))
+    }
+    return this.cached$;
+  }
+
+  invalidate(): void {
+    this.cached$ = null;
   }
 
   get(id: string): Observable<AnneeAcademique> {

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import fs from "fs";
 import path from "path";
-import { CountOptions, FindOptions, InferAttributes, Op } from "sequelize";
+import { CountOptions, FindOptions, InferAttributes, Op, Transaction } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { PaiementInscription } from "../models/PaiementInscription";
 import { TypesPaiement } from "../../../core/enums/TypesPaiement";
@@ -12,6 +12,7 @@ import { CaissierBanque } from "../../auth/models/CaissierBanque";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { Etablissement } from "../../etablissement/models/Etablissement";
 import { creerEcritureComptable, lettrerEcritures411 } from "../../comptabilite/helpers/ComptabiliteHelper";
+import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MobileMoneyCinetpay } from "../../../core/helpers/MobileMoneyCinetpay";
 import { DocumentPDFGenerator } from "../../../core/helpers/DocumentPDFGenerator";
 import { EmailSender } from "../../../core/helpers/EmailSender";
@@ -109,83 +110,103 @@ export default class PaiementInscriptionController {
             paiementInscription.type = req.body.type ?? TypesPaiement.ESPECE
             paiementInscription.utilisateurId = (req as any).utilisateurId
 
-            await paiementInscription.save()
-                .then(async (paiementInscription) => {
-                    // INSC-1.2: Écriture paiement (Débit 512 / Crédit 411)
-                    await creerEcritureComptable({
-                        req,
-                        journalCode: 'VEN',
-                        compteDebitNumero: '512',
-                        compteCreditNumero: '411',
-                        montant: paiementInscription.montant,
-                        libelle: paiementInscription.description || `Paiement inscription #${paiementInscription.numero}`,
-                        reference: paiementInscription.numero,
-                        moduleSource: 'inscription',
-                        referenceModuleId: String(paiementInscription.id)
-                    })
+            const sequelize = DatabaseConnection.getInstance().sequelize;
+            let transaction: Transaction | null = null;
 
-                    // INSC-1.3: Lettrage automatique des créances 411
-                    await lettrerEcritures411({
-                        referenceModuleId: String(demandeInscription!.id),
-                        paiementId: String(paiementInscription.id),
-                        montant: paiementInscription.montant
-                    })
+            try {
+                // INSC-1 : enregistrement du paiement (dans la transaction)
+                transaction = await sequelize.transaction();
 
-                    const receiptDoc = await DocGenGeneratorService.generer({
-                        typeCode: 'INS007',
-                        sourceType: 'paiement',
-                        sourceId: paiementInscription.id,
-                        utilisateurId: paiementInscription.utilisateurId,
-                        params: {
-                            orientation: 'landscape',
-                            margins: { top: '5mm', right: '5mm', bottom: '5mm', left: '5mm' },
-                        },
-                    });
+                paiementInscription = await paiementInscription.save({ transaction })
 
-                    const receiptFilename = `${receiptDoc.reference}.pdf`;
-                    const baseUrl = `${req.protocol}://${req.get('host')}`;
-                    const receiptUrl = `${baseUrl}/api/v1/inscription/paiementsInscription/${paiementInscription.id}/recu`;
-                    const receiptFilePath = receiptDoc.filePath;
-
-                    if (demandeInscription?.utilisateur?.email) {
-                        const studentEmail = demandeInscription.utilisateur.email;
-                        const studentNameEmail = `${demandeInscription.utilisateur.nom || ''} ${demandeInscription.utilisateur.prenoms || ''}`.trim() || 'Étudiant';
-                        const emailHtml = `<p>Bonjour ${studentNameEmail},</p>
-                            <p>Votre paiement a bien été enregistré. Vous pouvez télécharger votre reçu en cliquant sur le lien ci-dessous :</p>
-                            <p><a href="${receiptUrl}">Télécharger mon reçu</a></p>
-                            <p>Montant payé : ${paiementInscription.montant.toLocaleString('fr-FR')} FC</p>
-                            <p>Référence : ${paiementInscription.numero}</p>
-                            <p>Cordialement,<br/>Easy Ecole</p>`;
-
-                        EmailSender.getInstance().sendMail({
-                            from: `Easy Ecole <${process.env.SMTP_USER || 'no-reply@easyecole.com'}>`,
-                            to: studentEmail,
-                            encoding: 'UTF-8',
-                            subject: 'Reçu de paiement Easy Ecole',
-                            html: emailHtml,
-                            attachments: fs.existsSync(receiptFilePath) ? [{ filename: receiptFilename, path: receiptFilePath }] : []
-                        }).catch(err => console.error('Erreur envoi email reçu paiement :', err));
-                    }
-
-                    ArchiveGedService.archiverDepuisFichier({
-                        fichierSource: receiptFilePath,
-                        domaineCode: 'FIN',
-                        typeDocumentCode: 'bordereau',
-                        processusCode: 'BORDEREAU',
-                        processusLibelle: 'Reçu de paiement',
-                        processusModule: 'finance',
-                        titre: `Reçu paiement inscription - ${paiementInscription.numero}`,
-                        dossierGed: 'Bordereaux de paiement',
-                        sourceType: 'genere_application',
-                        confidentialite: 'confidentiel',
-                        cycleVie: 'courant',
-                    }).catch(err => console.error('Erreur archivage reçu paiement :', err));
-
-                    return res.status(201).json({ ...paiementInscription.toJSON(), receiptUrl, receiptFilename });
+                // INSC-1.2: Écriture paiement (Débit 512 / Crédit 411)
+                await creerEcritureComptable({
+                    req,
+                    journalCode: 'VEN',
+                    compteDebitNumero: '512',
+                    compteCreditNumero: '411',
+                    montant: paiementInscription.montant,
+                    libelle: paiementInscription.description || `Paiement inscription #${paiementInscription.numero}`,
+                    reference: paiementInscription.numero,
+                    moduleSource: 'inscription',
+                    referenceModuleId: String(paiementInscription.id),
+                    transaction
                 })
-                .catch((error) => {
-                    return res.status(400).json({ success: false, error: error });
+
+                // INSC-1.3: Lettrage automatique des créances 411
+                await lettrerEcritures411({
+                    referenceModuleId: String(demandeInscription!.id),
+                    paiementId: String(paiementInscription.id),
+                    montant: paiementInscription.montant,
+                    transaction
+                })
+
+                // Atomicité garantie : paiement + écriture + lettrage validés ensemble.
+                await transaction.commit()
+            } catch (error) {
+                if (transaction) {
+                    await transaction.rollback()
+                        .catch(rollbackError => console.error('Erreur rollback paiement inscription :', rollbackError));
+                }
+                return res.status(400).json({ success: false, error: error });
+            }
+
+            // HORS transaction : génération du reçu (DocGen), envoi email et archivage GED.
+            try {
+                const receiptDoc = await DocGenGeneratorService.generer({
+                    typeCode: 'INS007',
+                    sourceType: 'paiement',
+                    sourceId: paiementInscription.id,
+                    utilisateurId: paiementInscription.utilisateurId,
+                    params: {
+                        orientation: 'landscape',
+                        margins: { top: '5mm', right: '5mm', bottom: '5mm', left: '5mm' },
+                    },
                 });
+
+                const receiptFilename = `${receiptDoc.reference}.pdf`;
+                const baseUrl = `${req.protocol}://${req.get('host')}`;
+                const receiptUrl = `${baseUrl}/api/v1/inscription/paiementsInscription/${paiementInscription.id}/recu`;
+                const receiptFilePath = receiptDoc.filePath;
+
+                if (demandeInscription?.utilisateur?.email) {
+                    const studentEmail = demandeInscription.utilisateur.email;
+                    const studentNameEmail = `${demandeInscription.utilisateur.nom || ''} ${demandeInscription.utilisateur.prenoms || ''}`.trim() || 'Étudiant';
+                    const emailHtml = `<p>Bonjour ${studentNameEmail},</p>
+                        <p>Votre paiement a bien été enregistré. Vous pouvez télécharger votre reçu en cliquant sur le lien ci-dessous :</p>
+                        <p><a href="${receiptUrl}">Télécharger mon reçu</a></p>
+                        <p>Montant payé : ${paiementInscription.montant.toLocaleString('fr-FR')} FC</p>
+                        <p>Référence : ${paiementInscription.numero}</p>
+                        <p>Cordialement,<br/>Easy Ecole</p>`;
+
+                    EmailSender.getInstance().sendMail({
+                        from: `Easy Ecole <${process.env.SMTP_USER || 'no-reply@easyecole.com'}>`,
+                        to: studentEmail,
+                        encoding: 'UTF-8',
+                        subject: 'Reçu de paiement Easy Ecole',
+                        html: emailHtml,
+                        attachments: fs.existsSync(receiptFilePath) ? [{ filename: receiptFilename, path: receiptFilePath }] : []
+                    }).catch(err => console.error('Erreur envoi email reçu paiement :', err));
+                }
+
+                ArchiveGedService.archiverDepuisFichier({
+                    fichierSource: receiptFilePath,
+                    domaineCode: 'FIN',
+                    typeDocumentCode: 'bordereau',
+                    processusCode: 'BORDEREAU',
+                    processusLibelle: 'Reçu de paiement',
+                    processusModule: 'finance',
+                    titre: `Reçu paiement inscription - ${paiementInscription.numero}`,
+                    dossierGed: 'Bordereaux de paiement',
+                    sourceType: 'genere_application',
+                    confidentialite: 'confidentiel',
+                    cycleVie: 'courant',
+                }).catch(err => console.error('Erreur archivage reçu paiement :', err));
+
+                return res.status(201).json({ ...paiementInscription.toJSON(), receiptUrl, receiptFilename });
+            } catch (error) {
+                return res.status(400).json({ success: false, error: error });
+            }
         }
         else {
             return res.status(404).json({ matriculeNotExists: true });
@@ -408,8 +429,18 @@ export default class PaiementInscriptionController {
         paiementInscription.utilisateurId = (req as any).utilisateurId
         paiementInscription.transactionId = transactionId
 
+        const sequelize = DatabaseConnection.getInstance().sequelize;
+        let transaction: Transaction | null = null;
+
         try {
-            await paiementInscription.save()
+            // Atomicité : le save() précède obligatoirement createPayment()
+            // (le paiement en base porte le transactionId CinetPay). L'appel
+            // réseau reste dans la transaction pour garantir que paiement,
+            // écriture comptable et lettrage sont validés ensemble — ou annulés
+            // ensemble en cas d'échec.
+            transaction = await sequelize.transaction();
+
+            await paiementInscription.save({ transaction })
 
             const paymentResult = await cinetpay.createPayment({
                 transactionId,
@@ -423,6 +454,11 @@ export default class PaiementInscriptionController {
             })
 
             if (!paymentResult.success) {
+                // Aucune session CinetPay créée : on annule l'enregistrement local.
+                if (transaction) {
+                    await transaction.rollback()
+                        .catch(rollbackError => console.error('Erreur rollback paiement mobile money :', rollbackError));
+                }
                 return res.status(400).json({ success: false, message: paymentResult.message })
             }
 
@@ -435,14 +471,18 @@ export default class PaiementInscriptionController {
                 libelle: paiementInscription.description || `Paiement mobile money #${paiementInscription.numero}`,
                 reference: paiementInscription.numero,
                 moduleSource: 'inscription',
-                referenceModuleId: String(paiementInscription.id)
+                referenceModuleId: String(paiementInscription.id),
+                transaction
             })
 
             await lettrerEcritures411({
                 referenceModuleId: String(demandeInscription.id),
                 paiementId: String(paiementInscription.id),
-                montant: paiementInscription.montant
+                montant: paiementInscription.montant,
+                transaction
             })
+
+            await transaction.commit()
 
             return res.status(201).json({
                 ...paiementInscription.toJSON(),
@@ -451,6 +491,10 @@ export default class PaiementInscriptionController {
                 status: paymentResult.data?.status,
             })
         } catch (error) {
+            if (transaction) {
+                await transaction.rollback()
+                    .catch(rollbackError => console.error('Erreur rollback paiement mobile money :', rollbackError));
+            }
             console.error('Erreur', error);
             return res.status(500).json({ success: false, message: 'Erreur interne' });
         }

@@ -14,7 +14,12 @@
 import 'dotenv/config'
 import * as bcrypt from 'bcrypt';
 
-const MOT_DE_PASSE_DEFAUT = process.env.SYSTEM_ACCOUNTS_DEFAULT_PASSWORD || 'Admin@2026!';
+// ⚠️ AVERTISSEMENT : le mot de passe en dur ci-dessous est UNIQUEMENT un fallback
+// de développement. Il est TEMPORAIRE et ne doit jamais être utilisé en production.
+// En production, définir impérativement la variable d'environnement
+// SYSTEM_ACCOUNTS_DEFAULT_PASSWORD. Une valeur par défaut aléatoire de secours
+// reste fournie pour ne pas bloquer le seed de dev, mais elle est sans valeur réelle.
+const MOT_DE_PASSE_DEFAUT = process.env.SYSTEM_ACCOUNTS_DEFAULT_PASSWORD || 'TempDevChanger_9f3a2c1e';
 
 // Mots de passe par rôle (tous = MOT_DE_PASSE_DEFAUT en prod, sauf si surchargés par env)
 const MOTS_DE_PASSE: Record<string, string> = {

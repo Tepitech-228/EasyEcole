@@ -15,7 +15,7 @@ const { DatabaseConnection } = require('../helpers/DatabaseConnection');
       { expiresIn: '4h' }
     );
     console.log(`ROLE=${u.role} ID=${u.id} TV=${u.tokenVersion}`);
-    console.log('TOKEN=' + token);
+    // console.log('TOKEN=' + token); // Neutralisé : ne plus exposer le jeton en dur (supression du secret)
   }
   process.exit(0);
 })().catch((e: any) => { console.error('ERR:', e.message); process.exit(1); });

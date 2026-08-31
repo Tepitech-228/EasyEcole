@@ -28,7 +28,8 @@ export default class PermissionController {
 
             return res.status(200).send(grouped);
         } catch (error) {
-            return res.status(500).json({ success: false, error });
+            console.error(error);
+            return res.status(500).json({ success: false, message: 'Erreur interne serveur' });
         }
     }
 
@@ -37,7 +38,8 @@ export default class PermissionController {
             const permissions = await Permission.findAll({ order: [['module', 'ASC'], ['key', 'ASC']] });
             return res.status(200).send(permissions);
         } catch (error) {
-            return res.status(500).json({ success: false, error });
+            console.error(error);
+            return res.status(500).json({ success: false, message: 'Erreur interne serveur' });
         }
     }
 
@@ -57,7 +59,8 @@ export default class PermissionController {
 
             return res.status(200).send(userPermissions);
         } catch (error) {
-            return res.status(500).json({ success: false, error });
+            console.error(error);
+            return res.status(500).json({ success: false, message: 'Erreur interne serveur' });
         }
     }
 
@@ -90,7 +93,8 @@ export default class PermissionController {
 
             return res.status(200).json({ success: true, message: "Permissions mises à jour" });
         } catch (error) {
-            return res.status(500).json({ success: false, error });
+            console.error(error);
+            return res.status(500).json({ success: false, message: 'Erreur interne serveur' });
         }
     }
 
@@ -116,7 +120,8 @@ export default class PermissionController {
 
             return res.status(200).json({ success: true, message: "Permissions copiées" });
         } catch (error) {
-            return res.status(500).json({ success: false, error });
+            console.error(error);
+            return res.status(500).json({ success: false, message: 'Erreur interne serveur' });
         }
     }
 
@@ -140,7 +145,8 @@ export default class PermissionController {
 
             return res.status(200).json({ granted: !!userPermission });
         } catch (error) {
-            return res.status(500).json({ success: false, error });
+            console.error(error);
+            return res.status(500).json({ success: false, message: 'Erreur interne serveur' });
         }
     }
 
@@ -210,7 +216,8 @@ export default class PermissionController {
 
             return res.status(200).send({ permissions: keys, configured });
         } catch (error) {
-            return res.status(500).json({ success: false, error });
+            console.error(error);
+            return res.status(500).json({ success: false, message: 'Erreur interne serveur' });
         }
     }
 }

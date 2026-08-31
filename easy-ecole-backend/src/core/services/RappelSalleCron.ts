@@ -29,12 +29,14 @@ function toTimeString(date: Date): string {
   return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
 }
 
-export class RappelSalleCron {
-  static start(): void {
-    cron.schedule('* * * * *', async () => {
-      try {
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
+let running = false
+
+async function run(): Promise<void> {
+  if (running) return
+  running = true
+  try {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
 
         const seances = await Seance.findAll({
           where: {
@@ -90,8 +92,16 @@ export class RappelSalleCron {
           }
         }
       } catch (error) {
-        console.error('[RappelSalleCron] Erreur lors du traitement:', error)
-      }
+    console.error('RappelSalleCron error:', error)
+  } finally {
+    running = false
+  }
+}
+
+export class RappelSalleCron {
+  static start(): void {
+    cron.schedule('* * * * *', () => {
+      void run()
     })
 
     console.log('[RappelSalleCron] Cron de rappel démarré (chaque minute, fenêtre H-10min)')

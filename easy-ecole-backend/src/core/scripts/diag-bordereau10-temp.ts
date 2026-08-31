@@ -1,5 +1,10 @@
 const { DatabaseConnection } = require('../helpers/DatabaseConnection');
 
+if (process.env.ALLOW_DEV_SCRIPTS !== 'true') {
+    console.error('Ce script de développement est désactivé en production.');
+    process.exit(1);
+}
+
 (async () => {
     const db = DatabaseConnection.getInstance();
     await db.init();

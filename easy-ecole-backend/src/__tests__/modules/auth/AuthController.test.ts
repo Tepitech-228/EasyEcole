@@ -91,20 +91,23 @@ describe('AuthController.login', () => {
     await AuthController.login(req, res)
 
     expect(res.status).toHaveBeenCalledWith(400)
-    expect(res.json).toHaveBeenCalledWith({ message: 'Erreur' })
+    expect(res.json).toHaveBeenCalledWith({ message: 'Identifiants incorrects' })
   })
 
-  it('retourne 200 avec token si identifiants valides', async () => {
+  it('retourne 200 et exige OTP si identifiants valides', async () => {
     const req = mockRequest({ body: { email: 'test@test.com', motDePasse: 'correct' } })
     const res = mockResponse()
     ;(Utilisateur.findOne as jest.Mock).mockResolvedValue({ id: 1, motDePasse: 'hashed', email: 'test@test.com', identifiant: 'user1', role: 'apprenant' })
     ;(bcrypt.compareSync as jest.Mock).mockReturnValue(true)
-    ;(jwt.sign as jest.Mock).mockReturnValue('jwt-token-123')
 
     await AuthController.login(req, res)
 
     expect(res.status).toHaveBeenCalledWith(200)
-    expect(res.json).toHaveBeenCalledWith({ identifiant: 'user1', token: 'jwt-token-123' })
+    expect(res.json).toHaveBeenCalledWith({
+      otpRequired: true,
+      email: 'test@test.com',
+      maskedEmail: 't***t@test.com',
+    })
   })
 
   it('retourne 500 en cas d\'erreur', async () => {
@@ -144,13 +147,18 @@ describe('AuthController.register', () => {
     const req = mockRequest({ body: { identifiant: 'newuser', email: 'new@test.com', nom: 'Test', prenoms: 'User', motDePasse: 'pass123', contact: '123456' } })
     const res = mockResponse()
     ;(Utilisateur.findOne as jest.Mock).mockResolvedValue(null)
-    mockUtilSave.mockResolvedValue({ id: 1, identifiant: 'newuser' })
+    mockUtilSave.mockResolvedValue({ id: 1, identifiant: 'newuser', email: 'new@test.com' })
 
     await AuthController.register(req, res)
 
     expect(mockUtilSave).toHaveBeenCalled()
     expect(res.status).toHaveBeenCalledWith(201)
-    expect(res.send).toHaveBeenCalledWith({ success: true })
+    expect(res.json).toHaveBeenCalledWith({
+      otpRequired: true,
+      email: 'new@test.com',
+      maskedEmail: 'n***w@test.com',
+      mode: 'inscription',
+    })
   })
 
   it('retourne 400 si la sauvegarde échoue', async () => {
@@ -198,14 +206,15 @@ describe('AuthController.registerEnseignant', () => {
 })
 
 describe('AuthController.emailConfirm', () => {
-  it('retourne 404 si token invalide', async () => {
+  it('retourne 400 si token invalide', async () => {
     const req = mockRequest({ query: { token: 'bad-token' } })
     const res = mockResponse()
     ;(jwt.verify as jest.Mock).mockImplementation(() => { throw new Error('invalid') })
 
     await AuthController.emailConfirm(req, res)
 
-    expect(res.status).toHaveBeenCalledWith(404)
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(res.json).toHaveBeenCalledWith({ success: false, message: 'Token invalide ou expiré' })
   })
 
   it('confirme l\'email si token valide', async () => {

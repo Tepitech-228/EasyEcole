@@ -5,6 +5,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { SharedModule } from 'src/app/shared/shared.module';
 import { NgChartsModule } from 'ng2-charts';
 import { FormsModule } from '@angular/forms';
+import { ModernUiModule } from 'src/app/shared/modern-ui/modern-ui.module';
 
 import { DashboardPageComponent } from './dashboard-page.component';
 import { DashboardWidgetComponent } from './widgets/dashboard-widget/dashboard-widget.component';
@@ -33,6 +34,7 @@ import { WidgetPlanningPersonnelComponent } from './widgets/widget-planning-pers
     SharedModule,
     NgChartsModule,
     FormsModule,
+    ModernUiModule,
   ],
   exports: [
     DashboardPageComponent,

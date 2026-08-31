@@ -7,11 +7,29 @@ jest.mock('../../../modules/inscription/models/ParcoursChoisi', () => {
   ParcoursChoisi.create = jest.fn()
   ParcoursChoisi.findAndCountAll = jest.fn()
   ParcoursChoisi.findByPk = jest.fn()
+  ParcoursChoisi.count = jest.fn()
   ParcoursChoisi.associations = { prerequisParcoursChoisis: 'prerequisParcoursChoisis' }
   return { ParcoursChoisi }
 })
 
+jest.mock('../../../core/helpers/DatabaseConnection', () => {
+  const { Sequelize } = require('sequelize')
+  const sequelize = new Sequelize({
+    database: 'easyecole_test',
+    username: 'root',
+    password: '',
+    dialect: 'mysql',
+    host: 'localhost',
+    port: 3306,
+    logging: false,
+  })
+  sequelize.transaction = jest.fn()
+  return { DatabaseConnection: { instance: null, getInstance: jest.fn(() => ({ sequelize })) } }
+})
+
 const { ParcoursChoisi } = require('../../../modules/inscription/models/ParcoursChoisi')
+const { DatabaseConnection } = require('../../../core/helpers/DatabaseConnection')
+const sequelize = DatabaseConnection.getInstance().sequelize
 import Ctrl from '../../../modules/inscription/controllers/ParcoursChoisiController'
 
 beforeEach(() => {
@@ -28,7 +46,7 @@ describe('getAllParcoursChoisis', () => {
     await Ctrl.getAllParcoursChoisis(req, res)
 
     expect(ParcoursChoisi.findAll).toHaveBeenCalled()
-    expect(res.json).toHaveBeenCalledWith(mockData)
+    expect(res.send).toHaveBeenCalledWith(mockData)
   })
 })
 
@@ -37,18 +55,18 @@ describe('getParcoursChoisi', () => {
     const req = mockRequest({ params: { id: '1' } } as any)
     const res = mockResponse()
     const mockData = { id: 1 }
-    ;(ParcoursChoisi.findByPk as jest.Mock).mockResolvedValue(mockData)
+    ;(ParcoursChoisi.findOne as jest.Mock).mockResolvedValue(mockData)
 
     await Ctrl.getParcoursChoisi(req, res)
 
-    expect(ParcoursChoisi.findByPk).toHaveBeenCalledWith('1')
-    expect(res.json).toHaveBeenCalledWith(mockData)
+    expect(ParcoursChoisi.findOne).toHaveBeenCalledWith({ where: { id: '1' } })
+    expect(res.send).toHaveBeenCalledWith(mockData)
   })
 
   it('should return 404 if not found', async () => {
     const req = mockRequest({ params: { id: '999' } } as any)
     const res = mockResponse()
-    ;(ParcoursChoisi.findByPk as jest.Mock).mockResolvedValue(null)
+    ;(ParcoursChoisi.findOne as jest.Mock).mockResolvedValue(null)
 
     await Ctrl.getParcoursChoisi(req, res)
 
@@ -58,7 +76,7 @@ describe('getParcoursChoisi', () => {
 
 describe('createParcoursChoisi', () => {
   it('should return 403 if role is not AP, IN, or AD', async () => {
-    const req = mockRequest({ body: {}, utilisateurRole: 'EN' } as any)
+    const req = mockRequest({ body: {}, utilisateurRole: 'enseignant' } as any)
     const res = mockResponse()
 
     await Ctrl.createParcoursChoisi(req, res)
@@ -66,22 +84,27 @@ describe('createParcoursChoisi', () => {
     expect(res.status).toHaveBeenCalledWith(403)
   })
 
-  it('should return 200 on success for AP role', async () => {
-    const req = mockRequest({ body: { parcoursId: 1 }, utilisateurRole: 'AP' } as any)
+  it('should return 201 on success for AP role', async () => {
+    const mockTransaction = { commit: jest.fn(), rollback: jest.fn() }
+    ;(sequelize.transaction as jest.Mock).mockResolvedValue(mockTransaction)
+    const req = mockRequest({ body: { parcoursId: 1 }, utilisateurRole: 'apprenant' } as any)
     const res = mockResponse()
     ;(ParcoursChoisi.create as jest.Mock).mockResolvedValue({ id: 1 })
 
     await Ctrl.createParcoursChoisi(req, res)
 
-    expect(res.status).toHaveBeenCalledWith(200)
+    expect(sequelize.transaction).toHaveBeenCalled()
+    expect(ParcoursChoisi.create).toHaveBeenCalled()
+    expect(mockTransaction.commit).toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(201)
   })
 })
 
 describe('updateParcoursChoisi', () => {
   it('should return 404 if not found', async () => {
-    const req = mockRequest({ params: { id: '999' }, body: {}, utilisateurRole: 'AP' } as any)
+    const req = mockRequest({ params: { id: '999' }, body: {}, utilisateurRole: 'apprenant' } as any)
     const res = mockResponse()
-    ;(ParcoursChoisi.findByPk as jest.Mock).mockResolvedValue(null)
+    ;(ParcoursChoisi.findOne as jest.Mock).mockResolvedValue(null)
 
     await Ctrl.updateParcoursChoisi(req, res)
 
@@ -89,21 +112,21 @@ describe('updateParcoursChoisi', () => {
   })
 
   it('should return 200 on successful update', async () => {
-    const existing = { id: 1, save: jest.fn() }
-    const req = mockRequest({ params: { id: '1' }, body: { parcoursId: 2 }, utilisateurRole: 'AP' } as any)
+    const mockUpdate = jest.fn().mockResolvedValue({})
+    const req = mockRequest({ params: { id: '1' }, body: { parcoursId: 2 }, utilisateurRole: 'apprenant' } as any)
     const res = mockResponse()
-    ;(ParcoursChoisi.findByPk as jest.Mock).mockResolvedValue(existing)
+    ;(ParcoursChoisi.findOne as jest.Mock).mockResolvedValue({ id: 1, update: mockUpdate })
 
     await Ctrl.updateParcoursChoisi(req, res)
 
-    expect(existing.save).toHaveBeenCalled()
+    expect(mockUpdate).toHaveBeenCalled()
     expect(res.status).toHaveBeenCalledWith(200)
   })
 })
 
 describe('deleteParcoursChoisi', () => {
   it('should return 403 for IN role', async () => {
-    const req = mockRequest({ utilisateurRole: 'IN' } as any)
+    const req = mockRequest({ utilisateurRole: 'institution' } as any)
     const res = mockResponse()
 
     await Ctrl.deleteParcoursChoisi(req, res)
@@ -111,20 +134,21 @@ describe('deleteParcoursChoisi', () => {
     expect(res.status).toHaveBeenCalledWith(403)
   })
 
-  it('should return 403 for AD role', async () => {
-    const req = mockRequest({ utilisateurRole: 'AD' } as any)
+  it('should return 404 if not found for role admin', async () => {
+    const req = mockRequest({ params: { id: '999' }, utilisateurRole: 'admin' } as any)
     const res = mockResponse()
+    ;(ParcoursChoisi.findOne as jest.Mock).mockResolvedValue(null)
 
     await Ctrl.deleteParcoursChoisi(req, res)
 
-    expect(res.status).toHaveBeenCalledWith(403)
+    expect(res.status).toHaveBeenCalledWith(404)
   })
 
   it('should return 200 on success for AP role', async () => {
-    const mockItem = { id: 1, destroy: jest.fn() }
-    const req = mockRequest({ params: { id: '1' }, utilisateurRole: 'AP' } as any)
+    const mockItem = { id: 1, destroy: jest.fn().mockResolvedValue(undefined) }
+    const req = mockRequest({ params: { id: '1' }, utilisateurRole: 'apprenant' } as any)
     const res = mockResponse()
-    ;(ParcoursChoisi.findByPk as jest.Mock).mockResolvedValue(mockItem)
+    ;(ParcoursChoisi.findOne as jest.Mock).mockResolvedValue(mockItem)
 
     await Ctrl.deleteParcoursChoisi(req, res)
 
@@ -135,7 +159,7 @@ describe('deleteParcoursChoisi', () => {
 
 describe('getCount', () => {
   it('should return 403 for AP role', async () => {
-    const req = mockRequest({ utilisateurRole: 'AP' } as any)
+    const req = mockRequest({ utilisateurRole: 'apprenant' } as any)
     const res = mockResponse()
 
     await Ctrl.getCount(req, res)
@@ -144,13 +168,14 @@ describe('getCount', () => {
   })
 
   it('should return count for authorized roles', async () => {
-    const req = mockRequest({ utilisateurRole: 'AD' } as any)
+    const req = mockRequest({ utilisateurRole: 'admin' } as any)
     const res = mockResponse()
-    ;(ParcoursChoisi.findAndCountAll as jest.Mock).mockResolvedValue({ count: 5 })
+    ;(ParcoursChoisi.count as jest.Mock).mockResolvedValue(5)
 
     await Ctrl.getCount(req, res)
 
-    expect(ParcoursChoisi.findAndCountAll).toHaveBeenCalled()
-    expect(res.json).toHaveBeenCalledWith({ count: 5 })
+    expect(ParcoursChoisi.count).toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.json).toHaveBeenCalledWith({ success: true, count: 5 })
   })
 })

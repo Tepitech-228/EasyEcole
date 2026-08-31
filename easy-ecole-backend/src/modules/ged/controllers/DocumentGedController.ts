@@ -1079,7 +1079,8 @@ export default class DocumentGedController {
 
             return res.status(200).json({ success: true, message: "Document supprimé" });
         } catch (error) {
-            return res.status(500).json({ success: false, error });
+            console.error(error);
+            return res.status(500).json({ success: false, message: 'Erreur interne serveur' });
         }
     }
 
@@ -1108,7 +1109,8 @@ export default class DocumentGedController {
 
             return res.status(200).json(document);
         } catch (error) {
-            return res.status(500).json({ success: false, error });
+            console.error(error);
+            return res.status(500).json({ success: false, message: 'Erreur interne serveur' });
         }
     }
 }

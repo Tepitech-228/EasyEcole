@@ -147,7 +147,7 @@ describe('TypeNoteEvaluationController.updateTypeNoteEvaluation', () => {
     const req = mockRequest({ utilisateurRole: 'admin', params: { id: '1' }, body: { libelle: 'Pris' } } as any)
     const res = mockResponse()
     ;(TypeNoteEvaluation.findOne as jest.Mock).mockResolvedValueOnce({ id: 1, libelle: 'Ancien' })
-    ;(TypeNoteEvaluation.findOne as jest.Mock).mockResolvedValueOnce({ id: 2, libelle: 'Pris' })
+    ;(TypeNoteEvaluation.findOne as jest.Mock).mockResolvedValueOnce({ id: 2, libelle: 'pris' })
 
     await TypeNoteEvaluationController.updateTypeNoteEvaluation(req, res)
 
@@ -158,7 +158,8 @@ describe('TypeNoteEvaluationController.updateTypeNoteEvaluation', () => {
     const req = mockRequest({ utilisateurRole: 'admin', params: { id: '1' }, body: { libelle: 'Modifié' } } as any)
     const res = mockResponse()
     const mockUpdate = jest.fn().mockResolvedValue({})
-    ;(TypeNoteEvaluation.findOne as jest.Mock).mockResolvedValue({ id: 1, libelle: 'Ancien', update: mockUpdate })
+    ;(TypeNoteEvaluation.findOne as jest.Mock).mockResolvedValueOnce({ id: 1, libelle: 'Ancien', update: mockUpdate })
+    ;(TypeNoteEvaluation.findOne as jest.Mock).mockResolvedValueOnce(null)
 
     await TypeNoteEvaluationController.updateTypeNoteEvaluation(req, res)
 
@@ -170,7 +171,8 @@ describe('TypeNoteEvaluationController.updateTypeNoteEvaluation', () => {
     const req = mockRequest({ utilisateurRole: 'admin', params: { id: '1' }, body: { libelle: 'Modifié' } } as any)
     const res = mockResponse()
     const mockUpdate = jest.fn().mockRejectedValue(new Error('Validation error'))
-    ;(TypeNoteEvaluation.findOne as jest.Mock).mockResolvedValue({ id: 1, libelle: 'Ancien', update: mockUpdate })
+    ;(TypeNoteEvaluation.findOne as jest.Mock).mockResolvedValueOnce({ id: 1, libelle: 'Ancien', update: mockUpdate })
+    ;(TypeNoteEvaluation.findOne as jest.Mock).mockResolvedValueOnce(null)
 
     await TypeNoteEvaluationController.updateTypeNoteEvaluation(req, res)
 

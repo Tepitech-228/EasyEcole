@@ -2,6 +2,8 @@ import { mockRequest, mockResponse } from '../../helpers/express-mocks'
 
 jest.mock('../../../core/helpers/DatabaseConnection')
 
+jest.mock('../../../core/services/QrTokenService')
+
 jest.mock('../../../modules/inscription/models/PresenceCoursParticipant', () => {
   const Mock: any = jest.fn()
   Mock.findAll = jest.fn()
@@ -71,7 +73,7 @@ describe('PresenceController.createPresence', () => {
     const res = mockResponse()
     await PresenceController.createPresence(mockRequest({ utilisateurRole: 'institution', body: { date: '2026-01-01' } } as any), res)
     expect(res.status).toHaveBeenCalledWith(400)
-    expect(res.json).toHaveBeenCalledWith({ alreadyExists: true })
+    expect(res.json).toHaveBeenCalledWith({ success: false, alreadyExists: true })
   })
   it('crée et retourne 201', async () => {
     ;(Presence.findOne as jest.Mock).mockResolvedValue(null)

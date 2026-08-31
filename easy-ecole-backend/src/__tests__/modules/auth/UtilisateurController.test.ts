@@ -1,16 +1,26 @@
 import { mockRequest, mockResponse } from '../../helpers/express-mocks'
 import UtilisateurController from '../../../modules/auth/controllers/UtilisateurController'
 
-const mockUpdate = jest.fn()
-const mockDestroy = jest.fn()
+jest.mock('../../../core/helpers/DatabaseConnection', () => ({
+  DatabaseConnection: {
+    getInstance: jest.fn().mockReturnValue({
+      sequelize: {
+        query: jest.fn().mockResolvedValue([{}, []]),
+        transaction: jest.fn().mockImplementation((fn: any) => fn({})),
+      },
+    }),
+  },
+}))
 
 jest.mock('../../../modules/auth/models/Utilisateur', () => {
   const mockFindOne = jest.fn()
   const mockFindAll = jest.fn()
+  const mockFindByPk = jest.fn()
   const mockCount = jest.fn()
   const MockUtilisateur: any = jest.fn()
   MockUtilisateur.findOne = mockFindOne
   MockUtilisateur.findAll = mockFindAll
+  MockUtilisateur.findByPk = mockFindByPk
   MockUtilisateur.count = mockCount
 
   MockUtilisateur.associations = {
@@ -21,6 +31,18 @@ jest.mock('../../../modules/auth/models/Utilisateur', () => {
 
   return { Utilisateur: MockUtilisateur }
 })
+
+jest.mock('../../../modules/auth/models/Enseignant', () => ({
+  Enseignant: { create: jest.fn() },
+}))
+
+jest.mock('../../../modules/auth/models/Apprenant', () => ({
+  Apprenant: { create: jest.fn() },
+}))
+
+jest.mock('../../../modules/auth/models/PersonnelAdministratif', () => ({
+  PersonnelAdministratif: { create: jest.fn() },
+}))
 
 const { Utilisateur } = require('../../../modules/auth/models/Utilisateur')
 
@@ -159,7 +181,7 @@ describe('UtilisateurController.deleteUtilisateur', () => {
   it('retourne 404 si utilisateur introuvable', async () => {
     const req = mockRequest({ utilisateurRole: 'institution', params: { id: '999' } } as any)
     const res = mockResponse()
-    ;(Utilisateur.findOne as jest.Mock).mockResolvedValue(null)
+    ;(Utilisateur.findByPk as jest.Mock).mockResolvedValue(null)
 
     await UtilisateurController.deleteUtilisateur(req, res)
 
@@ -169,13 +191,13 @@ describe('UtilisateurController.deleteUtilisateur', () => {
   it('supprime et retourne 200', async () => {
     const req = mockRequest({ utilisateurRole: 'institution', params: { id: '1' } } as any)
     const res = mockResponse()
-    mockDestroy.mockResolvedValue(undefined)
-    ;(Utilisateur.findOne as jest.Mock).mockResolvedValue({ id: 1, destroy: mockDestroy })
+    ;(Utilisateur.findByPk as jest.Mock).mockResolvedValue({ id: 1 })
 
     await UtilisateurController.deleteUtilisateur(req, res)
 
-    expect(mockDestroy).toHaveBeenCalled()
+    expect(Utilisateur.findByPk).toHaveBeenCalledWith(1)
     expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.json).toHaveBeenCalledWith({ success: true, message: 'Utilisateur définitivement supprimé' })
   })
 })
 

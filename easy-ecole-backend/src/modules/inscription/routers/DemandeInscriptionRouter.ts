@@ -7,6 +7,7 @@ import { customAlphabet } from 'nanoid'
 import DemandeInscriptionController from "../controllers/DemandeInscriptionController"
 import { AuthApprenant } from "../../../core/middlewares/AuthApprenant";
 import { AuthComiteOrientation } from "../../../core/middlewares/AuthComiteOrientation";
+import { validerEmail, validerIdentifiantX } from "../../../core/validators/validators";
 
 const router = express.Router()
 
@@ -75,7 +76,7 @@ router
  *       201:
  *         description: Demande d'inscription créée
  */
-    .post('/', [], DemandeInscriptionController.createDemandeInscription)
+    .post('/', [validerEmail, validerIdentifiantX], DemandeInscriptionController.createDemandeInscription)
 
 /**
  * @openapi

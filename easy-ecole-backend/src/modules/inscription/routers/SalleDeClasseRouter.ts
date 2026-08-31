@@ -3,6 +3,7 @@ import express from "express"
 import SalleDeClasseController from "../controllers/SalleDeClasseController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
 import CheckPermission from "../../../core/middlewares/CheckPermission";
+import { cache } from "../../../core/middlewares/CacheMiddleware";
 
 const router = express.Router()
 
@@ -36,7 +37,8 @@ const router = express.Router()
  *         description: Liste des salles de classe
  */
 router
-    .get('/', SalleDeClasseController.getAllSallesDeClasse)
+    // Référentiel stable → cache Redis 300 s (Authenticate appliqué par le parent)
+    .get('/', [cache(300)], SalleDeClasseController.getAllSallesDeClasse)
 /**
  * @openapi
  * /inscription/sallesDeClasse:
@@ -75,7 +77,7 @@ router
  *       404:
  *         description: Salle de classe non trouvée
  */
-    .get('/:id', SalleDeClasseController.getSalleDeClasse)
+    .get('/:id', [cache(300)], SalleDeClasseController.getSalleDeClasse)
 /**
  * @openapi
  * /inscription/sallesDeClasse/{id}:

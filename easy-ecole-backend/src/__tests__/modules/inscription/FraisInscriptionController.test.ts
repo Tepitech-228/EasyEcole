@@ -84,13 +84,18 @@ describe('FraisInscriptionController.createFraisInscription', () => {
     expect(res.status).toHaveBeenCalledWith(403)
   })
 
-  it('retourne 403 si ENSEIGNANT', async () => {
-    const req = mockRequest({ utilisateurRole: 'enseignant' } as any)
+  it('crée aussi si le rôle est ENSEIGNANT (pas de restriction INSTITUTION)', async () => {
+    const req = mockRequest({ utilisateurRole: 'enseignant', body: { titre: 'Nouveau', sessionId: 's1' } } as any)
     const res = mockResponse()
+    const saved = { id: 1, titre: 'Nouveau' }
+    const mockSave = jest.fn().mockResolvedValue(saved)
+    ;(FraisInscription.findOne as jest.Mock).mockResolvedValue(null)
+    ;(FraisInscription as jest.Mock).mockReturnValue({ save: mockSave })
 
     await FraisInscriptionController.createFraisInscription(req, res)
 
-    expect(res.status).toHaveBeenCalledWith(403)
+    expect(mockSave).toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(201)
   })
 
   it('retourne 400 si doublon', async () => {
@@ -167,7 +172,8 @@ describe('FraisInscriptionController.updateFraisInscription', () => {
     const req = mockRequest({ utilisateurRole: 'admin', params: { id: '1' }, body: { titre: 'Modifié' } } as any)
     const res = mockResponse()
     const mockUpdate = jest.fn().mockResolvedValue({})
-    ;(FraisInscription.findOne as jest.Mock).mockResolvedValue({ id: 1, titre: 'Ancien', update: mockUpdate })
+    ;(FraisInscription.findOne as jest.Mock).mockResolvedValueOnce({ id: 1, titre: 'Ancien', sessionId: 's1', update: mockUpdate })
+    ;(FraisInscription.findOne as jest.Mock).mockResolvedValueOnce(null)
 
     await FraisInscriptionController.updateFraisInscription(req, res)
 
@@ -179,7 +185,8 @@ describe('FraisInscriptionController.updateFraisInscription', () => {
     const req = mockRequest({ utilisateurRole: 'admin', params: { id: '1' }, body: { titre: 'Modifié' } } as any)
     const res = mockResponse()
     const mockUpdate = jest.fn().mockRejectedValue(new Error('Validation error'))
-    ;(FraisInscription.findOne as jest.Mock).mockResolvedValue({ id: 1, titre: 'Ancien', update: mockUpdate })
+    ;(FraisInscription.findOne as jest.Mock).mockResolvedValueOnce({ id: 1, titre: 'Ancien', sessionId: 's1', update: mockUpdate })
+    ;(FraisInscription.findOne as jest.Mock).mockResolvedValueOnce(null)
 
     await FraisInscriptionController.updateFraisInscription(req, res)
 

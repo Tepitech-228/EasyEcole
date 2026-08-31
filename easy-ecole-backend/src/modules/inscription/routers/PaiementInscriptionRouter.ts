@@ -3,6 +3,7 @@ import express from "express"
 import PaiementInscriptionController from "../controllers/PaiementInscriptionController"
 import { AuthCaissierBanque } from "../../../core/middlewares/AuthCaissierBanque";
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
+import { validerMontant, validerIdentifiantX } from "../../../core/validators/validators";
 
 const router = express.Router()
 
@@ -34,7 +35,7 @@ router
  *       201:
  *         description: Paiement créé
  */
-    .post('/', PaiementInscriptionController.createPaiementInscription)
+    .post('/', [validerMontant, validerIdentifiantX], PaiementInscriptionController.createPaiementInscription)
 /**
  * @openapi
  * /inscription/paiementsInscription/{id}:
@@ -126,7 +127,7 @@ router
      *       201:
      *         description: Paiement créé avec URL de paiement
      */
-    .post('/mobile-money', PaiementInscriptionController.createMobileMoneyPayment)
+    .post('/mobile-money', [validerMontant, validerIdentifiantX], PaiementInscriptionController.createMobileMoneyPayment)
     /**
      * @openapi
      * /inscription/paiementsInscription/mobile-money/{transactionId}:

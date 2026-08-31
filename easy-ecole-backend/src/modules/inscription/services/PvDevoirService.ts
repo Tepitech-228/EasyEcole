@@ -234,13 +234,36 @@ export class PvDevoirService {
       </tr>`
     }
 
-    const rowsHtml = participants.map((p: any, idx: number) => ligneCellules(p, idx)).join('')
+    // Nombre de lignes (réelles + vides) que le PV classique affiche.
     const minLignes = Math.max(participants.length + 2, 15)
-    const lignesVides = Array.from({ length: Math.max(minLignes - participants.length, 0) }, (_, i) =>
-      `<tr><td class="center">${participants.length + i + 1}</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`
-    ).join('')
+    const nbLignesVides = Math.max(minLignes - participants.length, 0)
 
-    const logoDataUri = DocGenLogoService.getLogoDataUri()
+    // En-tête de tableau répété (une fois par bloc de page).
+    const theadInner = `<tr>
+        <th style="width: 5%;">N°</th>
+        <th style="width: 30%;">NOM ET PRENOMS</th>
+        <th style="width: 8%;">SEXE</th>
+        <th style="width: 12%;">CONTACT</th>
+        <th style="width: 15%;">REF CNI/CE/PASS</th>
+        <th style="width: 10%;">SIGN</th>
+        <th style="width: 10%;">NOTE</th>
+      </tr>`
+
+    // Nombre de lignes par bloc : choisi pour tenir sur une page A4 portrait.
+    // Chaque bloc devient une table SÉPARÉE avec son propre <thead> et un saut
+    // de page avant lui. L'en-tête est ainsi reproduit en haut de chaque page.
+    const LIGNES_PAR_PAGE = 22
+    const lignesReelles: string[] = participants.map((p: any, idx: number) => ligneCellules(p, idx))
+    const lignesVidesArr: string[] = Array.from({ length: nbLignesVides }, (_, i) =>
+      `<tr><td class="center">${participants.length + i + 1}</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`
+    )
+    const toutesLignes: string[] = [...lignesReelles, ...lignesVidesArr]
+    const blocsTable: string[] = []
+    for (let start = 0; start < toutesLignes.length; start += LIGNES_PAR_PAGE) {
+      const groupe = toutesLignes.slice(start, start + LIGNES_PAR_PAGE).join('')
+      const sautPage = start > 0 ? ' style="break-before: page; page-break-before: always;"' : ''
+      blocsTable.push(`<table${sautPage} class="pv-table"><thead>${theadInner}</thead><tbody>${groupe}</tbody></table>`)
+    }
 
     return `<!DOCTYPE html>
 <html lang="fr">
@@ -259,6 +282,11 @@ export class PvDevoirService {
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
     .info-item { line-height: 1.6; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+    /* Répète l'en-tête du tableau sur chaque page (rendu PDF Chromium/Puppeteer).
+       IMPORTANT : pas de break-inside: avoid sur les lignes tr - il empêche
+       Chromium de répéter le thead quand le tableau déborde (bug documenté). */
+    thead { display: table-header-group; }
+    tfoot { display: table-footer-group; }
     th, td { border: 1px solid #000; padding: 6px; text-align: left; }
     th { background-color: #f2f2f2; text-align: center; }
     .center { text-align: center; }
@@ -272,15 +300,11 @@ export class PvDevoirService {
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      ${logoDataUri ? `<img src="${logoDataUri}" alt="Logo" class="header-logo">` : ''}
-      <div class="header-text">
-        <h1>${nomEtablissement.toUpperCase()}</h1>
-        <p>Agréments officiels : N°2010/022/METFP/CAB/SG/SE-CPO &amp; N°2011/013/METFP/CAB/SG/SE-CPO</p>
-        <p>Agréé par le ministère de l'Enseignement Supérieur et de la Recherche par l'Arrêté N°040/MESR/SG/DES</p>
-        <p><strong>ACCREDITATION CAMES</strong></p>
-      </div>
-    </div>
+    <!-- L'en-tête institutionnel (logo + UST + agréments + CAMES) est désormais
+         répété automatiquement sur chaque page par PdfGeneratorService
+         (displayHeaderFooter / headerTemplate). Il n'est donc plus injecté
+         manuellement ici, pour éviter une double entête sur la page 1. -->
+    <div style="margin-top: 8px;"></div>
 
     <div class="doc-title">PROCES-VERBAL DU DEVOIR</div>
     <div class="center" style="font-size: 18px; font-weight: bold; margin-bottom: 15px;">${parcours?.titre || ''} — ${classe?.libelle || ''}</div>
@@ -299,23 +323,7 @@ export class PvDevoirService {
       </div>
     </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th style="width: 5%;">N°</th>
-          <th style="width: 30%;">NOM ET PRENOMS</th>
-          <th style="width: 8%;">SEXE</th>
-          <th style="width: 12%;">CONTACT</th>
-          <th style="width: 15%;">REF CNI/CE/PASS</th>
-          <th style="width: 10%;">SIGN</th>
-          <th style="width: 10%;">NOTE</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${rowsHtml}
-        ${lignesVides}
-      </tbody>
-    </table>
+    ${blocsTable.join('')}
 
     <div class="section-box">
       <div class="section-title">DEVOIR</div>

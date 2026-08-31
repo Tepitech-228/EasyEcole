@@ -5,6 +5,7 @@ jest.mock('../../../modules/inscription/models/Cours', () => {
   Cours.findAll = jest.fn()
   Cours.findOne = jest.fn()
   Cours.create = jest.fn()
+  Cours.count = jest.fn()
   Cours.findAndCountAll = jest.fn()
   Cours.findByPk = jest.fn()
   Cours.associations = {
@@ -12,10 +13,27 @@ jest.mock('../../../modules/inscription/models/Cours', () => {
     enseignant: 'enseignant',
     parcours: 'parcours',
     chapitresCours: 'chapitresCours',
-    seances: 'seances'
+    seances: 'seances',
+    ecues: 'ecues'
   }
   return { Cours }
 })
+
+jest.mock('../../../modules/inscription/models/Parcours', () => ({
+  Parcours: {
+    associations: {
+      niveauEtude: 'niveauEtude'
+    }
+  }
+}))
+
+jest.mock('../../../modules/auth/models/Enseignant', () => ({
+  Enseignant: {
+    associations: {
+      utilisateur: 'utilisateur'
+    }
+  }
+}))
 
 const { Cours } = require('../../../modules/inscription/models/Cours')
 import Ctrl from '../../../modules/inscription/controllers/CoursController'
@@ -26,7 +44,7 @@ beforeEach(() => {
 
 describe('getAllCours', () => {
   it('should return all cours with includes for AD role', async () => {
-    const req = mockRequest({ utilisateur: { role: 'AD' } })
+    const req = mockRequest({ utilisateurRole: 'admin' } as any)
     const res = mockResponse()
     const mockData = [{ id: 1 }]
     ;(Cours.findAll as jest.Mock).mockResolvedValue(mockData)
@@ -36,17 +54,18 @@ describe('getAllCours', () => {
     expect(Cours.findAll).toHaveBeenCalledWith(
       expect.objectContaining({
         include: [
-          { association: 'classe' },
-          { association: 'enseignant', include: [{ association: 'utilisateur' }] },
-          { association: 'parcours', include: [{ association: 'niveauEtude' }] }
+          'classe',
+          { association: 'enseignant', include: ['utilisateur'] },
+          { association: 'parcours', include: ['niveauEtude'] },
+          'ecues'
         ]
       })
     )
-    expect(res.json).toHaveBeenCalledWith(mockData)
+    expect(res.send).toHaveBeenCalledWith(mockData)
   })
 
   it('should filter by enseignant.utilisateurId for EN role', async () => {
-    const req = mockRequest({ utilisateur: { role: 'EN', id: 5 } })
+    const req = mockRequest({ utilisateurRole: 'enseignant', utilisateurId: 5 } as any)
     const res = mockResponse()
     ;(Cours.findAll as jest.Mock).mockResolvedValue([])
 
@@ -55,20 +74,20 @@ describe('getAllCours', () => {
     expect(Cours.findAll).toHaveBeenCalledWith(
       expect.objectContaining({
         include: [
-          { association: 'classe' },
+          'classe',
           {
             association: 'enseignant',
-            include: [{ association: 'utilisateur' }],
             where: { utilisateurId: 5 }
           },
-          { association: 'parcours', include: [{ association: 'niveauEtude' }] }
+          { association: 'parcours', include: ['niveauEtude'] },
+          'ecues'
         ]
       })
     )
   })
 
   it('should support parcoursId filter', async () => {
-    const req = mockRequest({ query: { parcoursId: '3' }, utilisateur: { role: 'AD' } })
+    const req = mockRequest({ query: { parcoursId: '3' }, utilisateurRole: 'admin' } as any)
     const res = mockResponse()
     ;(Cours.findAll as jest.Mock).mockResolvedValue([])
 
@@ -76,11 +95,12 @@ describe('getAllCours', () => {
 
     expect(Cours.findAll).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { parcoursId: 3 },
+        where: { parcoursId: '3' },
         include: [
-          { association: 'classe' },
-          { association: 'enseignant', include: [{ association: 'utilisateur' }] },
-          { association: 'parcours', include: [{ association: 'niveauEtude' }] }
+          'classe',
+          { association: 'enseignant', include: ['utilisateur'] },
+          { association: 'parcours', include: ['niveauEtude'] },
+          'ecues'
         ]
       })
     )
@@ -89,31 +109,33 @@ describe('getAllCours', () => {
 
 describe('getCours', () => {
   it('should return cours with full includes for AP/IN role', async () => {
-    const req = mockRequest({ params: { id: '1' }, utilisateur: { role: 'AP' } })
+    const req = mockRequest({ params: { id: '1' }, utilisateurRole: 'apprenant' } as any)
     const res = mockResponse()
     const mockData = { id: 1 }
-    ;(Cours.findByPk as jest.Mock).mockResolvedValue(mockData)
+    ;(Cours.findOne as jest.Mock).mockResolvedValue(mockData)
 
     await Ctrl.getCours(req, res)
 
-    expect(Cours.findByPk).toHaveBeenCalledWith(
-      '1',
+    expect(Cours.findOne).toHaveBeenCalledWith(
       expect.objectContaining({
+        where: { id: '1' },
         include: [
-          { association: 'chapitresCours' },
-          { association: 'seances' },
-          { association: 'enseignant' },
-          { association: 'parcours' }
+          'classe',
+          'chapitresCours',
+          'seances',
+          'enseignant',
+          'ecues',
+          { association: 'parcours', include: ['niveauEtude'] }
         ]
       })
     )
-    expect(res.json).toHaveBeenCalledWith(mockData)
+    expect(res.send).toHaveBeenCalledWith(mockData)
   })
 
   it('should return 404 if not found', async () => {
-    const req = mockRequest({ params: { id: '999' } })
+    const req = mockRequest({ params: { id: '999' }, utilisateurRole: 'admin' } as any)
     const res = mockResponse()
-    ;(Cours.findByPk as jest.Mock).mockResolvedValue(null)
+    ;(Cours.findOne as jest.Mock).mockResolvedValue(null)
 
     await Ctrl.getCours(req, res)
 
@@ -123,7 +145,7 @@ describe('getCours', () => {
 
 describe('createCours', () => {
   it('should return 403 for AP role', async () => {
-    const req = mockRequest({ utilisateur: { role: 'AP' } })
+    const req = mockRequest({ utilisateurRole: 'apprenant' } as any)
     const res = mockResponse()
 
     await Ctrl.createCours(req, res)
@@ -132,7 +154,7 @@ describe('createCours', () => {
   })
 
   it('should return 400 if duplicate {code, parcoursId} exists', async () => {
-    const req = mockRequest({ body: { code: 'C001', parcoursId: 1 }, utilisateur: { role: 'AD' } })
+    const req = mockRequest({ body: { code: 'C001', parcoursId: 1 }, utilisateurRole: 'admin' } as any)
     const res = mockResponse()
     ;(Cours.findOne as jest.Mock).mockResolvedValue({ id: 1 })
 
@@ -143,20 +165,20 @@ describe('createCours', () => {
   })
 
   it('should return 200 on successful creation', async () => {
-    const req = mockRequest({ body: { code: 'C002', parcoursId: 1 }, utilisateur: { role: 'AD' } })
+    const req = mockRequest({ body: { code: 'C002', parcoursId: 1 }, utilisateurRole: 'admin' } as any)
     const res = mockResponse()
     ;(Cours.findOne as jest.Mock).mockResolvedValue(null)
     ;(Cours.create as jest.Mock).mockResolvedValue({ id: 1 })
 
     await Ctrl.createCours(req, res)
 
-    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.status).toHaveBeenCalledWith(201)
   })
 })
 
 describe('updateCours', () => {
   it('should return 403 for AP role', async () => {
-    const req = mockRequest({ utilisateur: { role: 'AP' } })
+    const req = mockRequest({ utilisateurRole: 'apprenant' } as any)
     const res = mockResponse()
 
     await Ctrl.updateCours(req, res)
@@ -165,9 +187,9 @@ describe('updateCours', () => {
   })
 
   it('should return 404 if not found', async () => {
-    const req = mockRequest({ params: { id: '999' }, body: {}, utilisateur: { role: 'AD' } })
+    const req = mockRequest({ params: { id: '999' }, body: {}, utilisateurRole: 'admin' } as any)
     const res = mockResponse()
-    ;(Cours.findByPk as jest.Mock).mockResolvedValue(null)
+    ;(Cours.findOne as jest.Mock).mockResolvedValue(null)
 
     await Ctrl.updateCours(req, res)
 
@@ -175,21 +197,23 @@ describe('updateCours', () => {
   })
 
   it('should return 200 on successful update', async () => {
-    const existing = { id: 1, save: jest.fn() }
-    const req = mockRequest({ params: { id: '1' }, body: { code: 'C003' }, utilisateur: { role: 'AD' } })
+    const mockUpdate = jest.fn().mockResolvedValue({})
+    const existing = { id: 1, code: 'C001', update: mockUpdate }
+    const req = mockRequest({ params: { id: '1' }, body: { code: 'C003' }, utilisateurRole: 'admin' } as any)
     const res = mockResponse()
-    ;(Cours.findByPk as jest.Mock).mockResolvedValue(existing)
+    ;(Cours.findOne as jest.Mock).mockResolvedValueOnce(existing)
+    ;(Cours.findOne as jest.Mock).mockResolvedValueOnce(null)
 
     await Ctrl.updateCours(req, res)
 
-    expect(existing.save).toHaveBeenCalled()
+    expect(mockUpdate).toHaveBeenCalled()
     expect(res.status).toHaveBeenCalledWith(200)
   })
 })
 
 describe('deleteCours', () => {
   it('should return 403 for AP role', async () => {
-    const req = mockRequest({ utilisateur: { role: 'AP' } })
+    const req = mockRequest({ utilisateurRole: 'apprenant' } as any)
     const res = mockResponse()
 
     await Ctrl.deleteCours(req, res)
@@ -198,9 +222,9 @@ describe('deleteCours', () => {
   })
 
   it('should return 404 if not found', async () => {
-    const req = mockRequest({ params: { id: '999' }, utilisateur: { role: 'AD' } })
+    const req = mockRequest({ params: { id: '999' }, utilisateurRole: 'admin' } as any)
     const res = mockResponse()
-    ;(Cours.findByPk as jest.Mock).mockResolvedValue(null)
+    ;(Cours.findOne as jest.Mock).mockResolvedValue(null)
 
     await Ctrl.deleteCours(req, res)
 
@@ -208,10 +232,10 @@ describe('deleteCours', () => {
   })
 
   it('should return 200 on successful deletion', async () => {
-    const mockCours = { id: 1, destroy: jest.fn() }
-    const req = mockRequest({ params: { id: '1' }, utilisateur: { role: 'AD' } })
+    const mockCours = { id: 1, destroy: jest.fn().mockResolvedValue(undefined) }
+    const req = mockRequest({ params: { id: '1' }, utilisateurRole: 'admin' } as any)
     const res = mockResponse()
-    ;(Cours.findByPk as jest.Mock).mockResolvedValue(mockCours)
+    ;(Cours.findOne as jest.Mock).mockResolvedValue(mockCours)
 
     await Ctrl.deleteCours(req, res)
 
@@ -222,7 +246,7 @@ describe('deleteCours', () => {
 
 describe('getCount', () => {
   it('should return 403 for AP role', async () => {
-    const req = mockRequest({ utilisateur: { role: 'AP' } })
+    const req = mockRequest({ utilisateurRole: 'apprenant' } as any)
     const res = mockResponse()
 
     await Ctrl.getCount(req, res)
@@ -231,13 +255,13 @@ describe('getCount', () => {
   })
 
   it('should return count for authorized roles', async () => {
-    const req = mockRequest({ utilisateur: { role: 'AD' } })
+    const req = mockRequest({ utilisateurRole: 'admin' } as any)
     const res = mockResponse()
-    ;(Cours.findAndCountAll as jest.Mock).mockResolvedValue({ count: 5 })
+    ;(Cours.count as jest.Mock).mockResolvedValue(5)
 
     await Ctrl.getCount(req, res)
 
-    expect(Cours.findAndCountAll).toHaveBeenCalled()
-    expect(res.json).toHaveBeenCalledWith({ count: 5 })
+    expect(Cours.count).toHaveBeenCalled()
+    expect(res.json).toHaveBeenCalledWith({ success: true, count: 5 })
   })
 })

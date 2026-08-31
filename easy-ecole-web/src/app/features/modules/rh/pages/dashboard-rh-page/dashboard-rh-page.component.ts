@@ -26,7 +26,8 @@ export class DashboardRhPageComponent extends BaseComponentClass implements OnIn
   recentActivities: any[] = [];
   loading: boolean = false;
   error: string | null = null;
-  chartPayload: any = null;
+  departementPayload: any = null;
+  statutPayload: any = null;
 
   constructor(
     private http: HttpClient,
@@ -47,15 +48,23 @@ export class DashboardRhPageComponent extends BaseComponentClass implements OnIn
         if (res?.data?.totalCandidatures) this.stats[2].value = String(res.data.totalCandidatures);
         if (res?.data?.totalFormations) this.stats[3].value = String(res.data.totalFormations);
         this.recentActivities = res?.data?.recentActivities || [];
-        
-        if (res?.data?.effectifsParDepartement) {
-          const depts = res.data.effectifsParDepartement
-          this.chartPayload = {
+
+        const charts = res?.data?.charts || {};
+        const parDepartement = charts.employesParDepartement || [];
+        if (parDepartement.length) {
+          this.departementPayload = {
+            type: 'bar',
+            labels: parDepartement.map((d: any) => d.departement),
+            datasets: [{ label: 'Employés', data: parDepartement.map((d: any) => d.total) }]
+          };
+        }
+        const parStatut = charts.employesParStatut || [];
+        if (parStatut.length) {
+          this.statutPayload = {
             type: 'doughnut',
-            labels: depts.map((d: any) => d.departement),
-            datasets: [{ label: 'Effectifs', data: depts.map((d: any) => d.effectif) }],
-            colors: ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6']
-          }
+            labels: parStatut.map((s: any) => s.statut),
+            datasets: [{ label: 'Employés', data: parStatut.map((s: any) => s.total) }]
+          };
         }
         
         this.loading = false

@@ -9,6 +9,7 @@ import { ParentEdtComponent } from './pages/parent-edt/parent-edt.component';
 import { ParentPaiementsComponent } from './pages/parent-paiements/parent-paiements.component';
 import { ParentDocumentsComponent } from './pages/parent-documents/parent-documents.component';
 import { ParentRoutingModule } from './parent-routing.module';
+import { ModernUiModule } from 'src/app/shared/modern-ui/modern-ui.module';
 
 @NgModule({
   declarations: [
@@ -25,6 +26,7 @@ import { ParentRoutingModule } from './parent-routing.module';
     FormsModule,
     ReactiveFormsModule,
     ParentRoutingModule,
+    ModernUiModule,
   ]
 })
 export class ParentModule { }

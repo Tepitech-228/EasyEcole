@@ -1,4 +1,10 @@
 ﻿import { DatabaseConnection } from "../helpers/DatabaseConnection"
+
+if (process.env.ALLOW_DEV_SCRIPTS !== 'true') {
+    console.error('Ce script de développement est désactivé en production.');
+    process.exit(1);
+}
+
 async function main() {
     const db = DatabaseConnection.getInstance().sequelize
     const [u]: any = await db.query("SHOW COLUMNS FROM `aut_utilisateurs`")

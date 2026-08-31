@@ -5,13 +5,13 @@ import { PermissionService } from "../../modules/ged/services/PermissionService"
 export const AuthConfidentiality = async (req: Request, res: Response, next: Function) => {
   try {
     const documentId = req.params.id;
-    if (!documentId) return next();
+    if (!documentId) return res.status(400).json({ success: false, message: "Document non trouvé" });
 
     const document = await DocumentGed.findByPk(documentId, {
       attributes: ["id", "confidentialityLevel", "uploaderId", "processusGenerateurId", "domainId"]
     });
 
-    if (!document) return next();
+    if (!document) return res.status(404).json({ success: false, message: "Document non trouvé" });
 
     const userId = (req as any).utilisateurId;
 

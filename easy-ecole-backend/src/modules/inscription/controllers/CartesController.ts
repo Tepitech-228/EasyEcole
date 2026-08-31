@@ -44,7 +44,8 @@ export default class CartesController {
         },
       });
     } catch (error) {
-      return res.status(500).json({ success: false, error: String(error) });
+      console.error(error);
+      return res.status(500).json({ success: false, message: 'Erreur interne serveur' });
     }
   }
 }

@@ -36,6 +36,7 @@ export const environment = {
     REPORTING: apiUrl + '/reporting',
     GED: apiUrl + '/ged',
     BOURSE: apiUrl + '/bourses',
+    SURVEILLANCE: apiUrl + '/surveillance',
   },
   MEDIAS_PATH: {
     AUTH: {

@@ -3,6 +3,7 @@ import express from "express"
 import ParcoursController from "../controllers/ParcoursController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
 import CheckPermission from "../../../core/middlewares/CheckPermission";
+import { cache } from "../../../core/middlewares/CacheMiddleware";
 
 const router = express.Router()
 
@@ -17,7 +18,8 @@ const router = express.Router()
  *         description: Liste des parcours
  */
 router
-    .get('/', ParcoursController.getAllParcours)
+    // Référentiel stable → cache Redis 300 s (Authenticate appliqué par le parent)
+    .get('/', [cache(300)], ParcoursController.getAllParcours)
 /**
  * @openapi
  * /inscription/parcours:
@@ -56,7 +58,7 @@ router
  *       404:
  *         description: Parcours non trouvé
  */
-    .get('/:id', ParcoursController.getParcours)
+    .get('/:id', [cache(300)], ParcoursController.getParcours)
 /**
  * @openapi
  * /inscription/parcours/{id}:

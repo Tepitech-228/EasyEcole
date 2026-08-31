@@ -4,6 +4,7 @@ import CoursController from "../controllers/CoursController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
 import CheckPermission from "../../../core/middlewares/CheckPermission";
 import { InscriptionComplete } from "../../../core/middlewares/InscriptionComplete";
+import { cache } from "../../../core/middlewares/CacheMiddleware";
 
 const router = express.Router()
 
@@ -20,7 +21,8 @@ const router = express.Router()
  *         description: Liste des cours
  */
 router
-    .get('/', CoursController.getAllCours)
+    // Référentiel stable → cache Redis 300 s (liste)
+    .get('/', [cache(300)], CoursController.getAllCours)
 
 /**
  * @openapi
@@ -88,7 +90,7 @@ router
  *       200:
  *         description: Cours trouvé
  */
-    .get('/:id', CoursController.getCours)
+    .get('/:id', [cache(300)], CoursController.getCours)
 
 /**
  * @openapi

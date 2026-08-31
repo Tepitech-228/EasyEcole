@@ -1,10 +1,11 @@
 # =============================================================================
 # EasyEcole — Docker Compose (déploiement production : Ubuntu + Dokploy)
 #
-# 3 services :
+# 4 services :
 #   - db       : MySQL 8.0 (base de données, volume persistant mysql_data)
 #   - backend  : API Express/Node (build local, volume uploads -> /app/public,
 #                volume storage -> /app/storage)
+#   - redis    : Redis 7 (cache réponse API, fail-safe, volume redis_data)
 #   - frontend : nginx servant le build Angular + proxy /api -> backend:3000
 #
 # PORTS :
@@ -75,6 +76,10 @@ services:
     # Variables d'environnement : injectées par Dokploy (onglet "Environment"
     # du projet). DB_HOST DOIT valoir `db` (nom du service), PAS localhost.
     # (Ancien `env_file: .env` supprimé : Dokploy ne lit pas de fichier .env.)
+    # REDIS_URL : valeur par défaut vers le service cache ; toute valeur saisie
+    # dans Dokploy (${REDIS_URL}) la remplace sans toucher à ce fichier.
+    environment:
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
     depends_on:
       db:
         condition: service_healthy
@@ -96,7 +101,26 @@ services:
       start_period: 40s
 
   # ---------------------------------------------------------------------------
-  # 3) FRONTEND nginx (build Angular + proxy)
+  # 3) CACHE REDIS 7 (cache réponse middleware `cache()` — fail-safe)
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: easyecole-redis
+    restart: unless-stopped
+    # Persistance AOF (survie au redémarrage) + limite mémoire avec politique
+    # d'éviction LRU globale (les clés cache peuvent être purgées sous charge).
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # ---------------------------------------------------------------------------
+  # 4) FRONTEND nginx (build Angular + proxy)
   # ---------------------------------------------------------------------------
   frontend:
     build: ./easy-ecole-web
@@ -119,3 +143,5 @@ volumes:
   uploads:
   # Cartes étudiantes et documents générés (/app/storage)
   storage:
+  # Persistance du cache Redis (fichiers AOF dans /data)
+  redis_data:

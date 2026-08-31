@@ -4,6 +4,8 @@ import { Message } from "../models/Message";
 import { ParticipantSalon } from "../models/ParticipantSalon";
 import { JWT_SECRET } from "../../../core/config/jwt";
 
+const presenceOnline = new Set<number>();
+
 export const setupChatSocket = (io: SocketIOServer): void => {
 
     io.use((socket, next) => {
@@ -122,14 +124,21 @@ export const setupChatSocket = (io: SocketIOServer): void => {
         });
 
         socket.on('user:online', (data: { utilisateurId: number }) => {
+            presenceOnline.add(data.utilisateurId);
             io.emit('presence', { utilisateurId: data.utilisateurId, online: true });
         });
 
         socket.on('user:offline', (data: { utilisateurId: number }) => {
+            presenceOnline.delete(data.utilisateurId);
             io.emit('presence', { utilisateurId: data.utilisateurId, online: false });
         });
 
         socket.on('disconnect', () => {
+            const utilisateurId = (socket as any).utilisateurId;
+            if (utilisateurId != null) {
+                presenceOnline.delete(utilisateurId);
+                io.emit('presence', { utilisateurId, online: false });
+            }
             console.log(`Utilisateur déconnecté du chat: ${socket.id}`);
         });
 

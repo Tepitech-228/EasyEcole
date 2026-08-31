@@ -26,7 +26,12 @@ export default class UtilisateurController {
     }
 
     static async getAllUtilisateurs(req: Request, res: Response): Promise<Response> {
-        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
+        const rolesAutorises: RolesUtilisateur[] = [
+            RolesUtilisateur.ADMIN,
+            RolesUtilisateur.INSTITUTION,
+            RolesUtilisateur.SECRETAIRE,
+        ];
+        if (!rolesAutorises.includes((req as any).utilisateurRole)) {
             return res.status(403).json({ success: false })
         }
 
@@ -63,6 +68,10 @@ export default class UtilisateurController {
     }
 
     static async updateUtilisateur(req: Request, res: Response): Promise<Response | null> {
+        if ((req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
+            return res.status(403).json({ success: false })
+        }
+
         let options: FindOptions<InferAttributes<Utilisateur>> = { where: { id: (req as any).utilisateurId } }
 
         let utilisateur: Utilisateur | null = await Utilisateur.findOne(options);
@@ -114,7 +123,7 @@ export default class UtilisateurController {
             if (req.body.identifiant !== undefined) updateData.identifiant = req.body.identifiant;
             if (req.body.contact !== undefined) updateData.contact = req.body.contact;
             if (req.body.role !== undefined) updateData.role = req.body.role;
-            if (req.body.motDePasse) updateData.motDePasse = bcrypt.hashSync(req.body.motDePasse, 10);
+            if (req.body.motDePasse) updateData.motDePasse = bcrypt.hashSync(req.body.motDePasse, 12);
 
             await utilisateur.update(updateData);
             return res.status(200).json({ success: true, message: "Utilisateur mis à jour" });
@@ -146,7 +155,7 @@ export default class UtilisateurController {
                 prenoms: req.body.prenoms,
                 email: req.body.email,
                 identifiant: req.body.identifiant,
-                motDePasse: bcrypt.hashSync(req.body.motDePasse, 10),
+                motDePasse: bcrypt.hashSync(req.body.motDePasse, 12),
                 role: req.body.role || RolesUtilisateur.APPRENANT,
                 contact: req.body.contact || null,
             });
@@ -310,7 +319,12 @@ export default class UtilisateurController {
     static async getCount(req: Request, res: Response): Promise<Response | null> {
         let options: CountOptions<InferAttributes<Utilisateur>> = {}
 
-        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
+        const rolesAutorises: RolesUtilisateur[] = [
+            RolesUtilisateur.ADMIN,
+            RolesUtilisateur.INSTITUTION,
+            RolesUtilisateur.SECRETAIRE,
+        ];
+        if (!rolesAutorises.includes((req as any).utilisateurRole)) {
             return res.status(403).json({ success: false })
         }
 

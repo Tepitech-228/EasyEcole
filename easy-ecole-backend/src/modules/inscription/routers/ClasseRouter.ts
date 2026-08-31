@@ -3,6 +3,7 @@ import express from "express"
 import ClasseController from "../controllers/ClasseController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
 import CheckPermission from "../../../core/middlewares/CheckPermission";
+import { cache } from "../../../core/middlewares/CacheMiddleware";
 
 const router = express.Router()
 
@@ -19,7 +20,8 @@ const router = express.Router()
  *         description: Liste des classes
  */
 router
-    .get('/', ClasseController.getAllClasses)
+    // Référentiel stable → cache Redis 300 s (Authenticate appliqué par le parent)
+    .get('/', [cache(300)], ClasseController.getAllClasses)
 
 /**
  * @openapi
@@ -59,7 +61,7 @@ router
  *       200:
  *         description: Classe trouvée
  */
-    .get('/:id', ClasseController.getClasse)
+    .get('/:id', [cache(300)], ClasseController.getClasse)
 
 /**
  * @openapi

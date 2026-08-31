@@ -1,5 +1,5 @@
 import { Request } from "express";
-import { Op, Transaction } from "sequelize";
+import { Op, Transaction, literal } from "sequelize";
 import { EcritureComptable } from "../models/EcritureComptable";
 import { JournalComptable } from "../models/JournalComptable";
 import { Compte } from "../models/Compte";
@@ -143,6 +143,41 @@ export async function creerEcritureComptable(params: CreerEcritureParams): Promi
 }
 
 /**
+ * Calcule le solde d'un compte en base via une agrégation SQL (SUM).
+ * Solde = SUM(montant en débit) - SUM(montant en crédit)
+ *
+ * Fonction unique privée réutilisée par les différentes copies du calcul de solde,
+ * afin d'éviter de charger toutes les écritures en RAM.
+ *
+ * @param where - Filtres (validee, compte débit/crédit, date, exercice...) identiques à l'appelant
+ * @param compteId - Compte dont on calcule le solde
+ */
+async function calculerSoldeCompte(where: any, compteId: number | string): Promise<number> {
+  const numCompteId = Number(compteId);
+
+  const [res] = await EcritureComptable.findAll({
+    attributes: [
+      [
+        literal(`
+          SUM(
+            CASE
+              WHEN \`compteDebitId\` = ${numCompteId} THEN \`montant\`
+              WHEN \`compteCreditId\` = ${numCompteId} THEN -\`montant\`
+              ELSE 0
+            END
+          )
+        `),
+        'solde'
+      ]
+    ],
+    where,
+    raw: true
+  }) as unknown as Array<{ solde: number | string | null }>;
+
+  return Number(res?.solde) || 0;
+}
+
+/**
  * Calcule le solde d'un compte à une date donnée (pour le bilan)
  * Solde = SUM(montant en débit) - SUM(montant en crédit)
  */
@@ -157,15 +192,7 @@ export async function getSoldeCompteAtDate(compteId: number | string, date: stri
   };
   if (exerciceId) where.exerciceId = exerciceId;
 
-  const ecritures = await EcritureComptable.findAll({ where });
-
-  let solde = 0;
-  for (const e of ecritures) {
-    if (Number(e.compteDebitId) === Number(compteId)) solde += e.montant;
-    if (Number(e.compteCreditId) === Number(compteId)) solde -= e.montant;
-  }
-
-  return solde;
+  return calculerSoldeCompte(where, compteId);
 }
 
 /**
@@ -185,15 +212,7 @@ export async function getSoldeCompteSurPeriode(compteId: number | string, dateDe
   };
   if (exerciceId) where.exerciceId = exerciceId;
 
-  const ecritures = await EcritureComptable.findAll({ where });
-
-  let solde = 0;
-  for (const e of ecritures) {
-    if (Number(e.compteDebitId) === Number(compteId)) solde += e.montant;
-    if (Number(e.compteCreditId) === Number(compteId)) solde -= e.montant;
-  }
-
-  return solde;
+  return calculerSoldeCompte(where, compteId);
 }
 
 /**
