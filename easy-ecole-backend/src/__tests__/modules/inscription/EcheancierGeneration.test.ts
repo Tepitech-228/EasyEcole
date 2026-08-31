@@ -4,10 +4,12 @@ import { GenerateurEcheancierScolariteService } from '../../../modules/inscripti
 import { VerificationPaiementService } from '../../../modules/inscription/services/VerificationPaiementService'
 
 jest.mock('../../../modules/inscription/models/DossierEtudiant', () => {
-  const Mock: any = jest.fn()
-  Mock.findOne = jest.fn()
-  Mock.associations = { echeances: 'echeances' }
-  return { DossierEtudiant: Mock }
+  return {
+    DossierEtudiant: {
+      findOne: jest.fn(),
+      associations: { echeances: 'echeances' }
+    }
+  }
 })
 
 const { DossierEtudiant } = require('../../../modules/inscription/models/DossierEtudiant')
