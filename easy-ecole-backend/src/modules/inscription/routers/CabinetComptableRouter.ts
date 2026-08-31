@@ -1,5 +1,5 @@
 import express from "express";
-import { CabinetComptableDashboardController } from "./CabinetComptableController";
+import { CabinetComptableDashboardController } from "../controllers/CabinetComptableController";
 import { AuthCabinetComptable } from "../../../core/middlewares/AuthCabinetComptable";
 import CheckPermission from "../../../core/middlewares/CheckPermission";
 
