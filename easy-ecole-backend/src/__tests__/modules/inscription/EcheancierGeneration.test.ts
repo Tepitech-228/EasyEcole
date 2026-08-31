@@ -3,7 +3,16 @@ import { GenerateurEcheancierService } from '../../../modules/inscription/servic
 import { GenerateurEcheancierScolariteService } from '../../../modules/inscription/services/GenerateurEcheancierScolariteService'
 import { VerificationPaiementService } from '../../../modules/inscription/services/VerificationPaiementService'
 
-describe('échéanciers d’inscription et de scolarité', () => {
+jest.mock('../../../modules/inscription/models/DossierEtudiant', () => {
+  const Mock: any = jest.fn()
+  Mock.findOne = jest.fn()
+  Mock.associations = { echeances: 'echeances' }
+  return { DossierEtudiant: Mock }
+})
+
+const { DossierEtudiant } = require('../../../modules/inscription/models/DossierEtudiant')
+
+describe('échéanciers d\'inscription et de scolarité', () => {
   const originalSave = Echeance.prototype.save
 
   beforeEach(() => {
@@ -11,13 +20,14 @@ describe('échéanciers d’inscription et de scolarité', () => {
       this.id = this.id ?? 1
       return this
     }
+    ;(DossierEtudiant.findOne as jest.Mock).mockResolvedValue(null)
   })
 
   afterEach(() => {
     Echeance.prototype.save = originalSave
   })
 
-  it('décale la première échéance d’inscription au mois suivant la validation', async () => {
+  it('décale la première échéance d\'inscription au mois suivant la validation', async () => {
     const dossier = { id: 42, montant: 3000 } as any
     const echeances = await GenerateurEcheancierService.generer(dossier, '3x', undefined, 3000)
 
@@ -44,7 +54,7 @@ describe('échéanciers d’inscription et de scolarité', () => {
     expect(monthDelta).toBe(1)
   })
 
-  it('n’impose pas le menu de régularisation si l’étudiant n’a pas encore de dossier', async () => {
+  it('n\'impose pas le menu de régularisation si l\'étudiant n\'a pas encore de dossier', async () => {
     const result = await VerificationPaiementService.verifierPaiement(999999)
 
     expect(result.statut).toBe('vert')
