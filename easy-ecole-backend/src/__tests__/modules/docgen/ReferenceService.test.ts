@@ -11,10 +11,19 @@ jest.mock('../../../modules/docgen/models/DocGenReference', () => ({
   }
 }))
 
+jest.mock('../../../modules/docgen/models/DocGenType', () => ({
+  DocGenType: {
+    findByPk: jest.fn(),
+    associations: {}
+  }
+}))
+
 import { ReferenceService } from '../../../modules/docgen/services/ReferenceService'
 import { DocGenReference } from '../../../modules/docgen/models/DocGenReference'
+import { DocGenType } from '../../../modules/docgen/models/DocGenType'
 
 const mockFindOrCreate = DocGenReference.findOrCreate as jest.Mock
+const mockFindByPk = DocGenType.findByPk as jest.Mock
 
 describe('ReferenceService', () => {
   let mockRefSave: jest.Mock
@@ -22,13 +31,15 @@ describe('ReferenceService', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockRefSave = jest.fn().mockResolvedValue(undefined)
+    // Aucun type en base : le service retombe sur String(typeId) comme code.
+    mockFindByPk.mockResolvedValue(null)
   })
 
-  it('génère une référence au format DOC-ANNEE-TYPEID-XXXX', async () => {
+  it('génère une référence au format ESA-ANNEE-TYPEID-XXXX', async () => {
     mockFindOrCreate.mockResolvedValue([{ compteur: 0, save: mockRefSave }])
     const annee = new Date().getFullYear()
     const ref = await ReferenceService.generer(1)
-    expect(ref).toMatch(new RegExp(`^DOC-${annee}-1-0001$`))
+    expect(ref).toMatch(new RegExp(`^ESA-${annee}-1-0001$`))
     expect(mockRefSave).toHaveBeenCalled()
   })
 
