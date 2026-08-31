@@ -1,0 +1,39 @@
+<div class="dashboard-surface compta-workspace min-h-screen p-4 sm:p-6 lg:p-8">
+  <div class="compta-workspace-hero">
+    <div>
+      <p class="dashboard-kicker"><span class="material-symbols-outlined">account_balance">RÉFÉRENCES BANCAIRES</p>
+      <app-header-title title="Références bancaires saisies" subtitle="Historique des références bancaires enregistrées"></app-header-title>
+    </div>
+  </div>
+  <div class="dashboard-surface-card p-4 mb-6">
+    <input type="text" [(ngModel)]="searchTerm" placeholder="Rechercher par étudiant ou référence..." class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm">
+  </div>
+  <div *ngIf="loading" class="flex items-center justify-center py-12">
+    <span class="material-symbols-outlined animate-spin text-3xl text-indigo-500">progress_activity</span>
+  </div>
+  <div *ngIf="!loading && referencesFiltres.length === 0" class="bg-white rounded-lg border border-gray-200 p-8 text-center">
+    <p class="text-gray-500 text-sm">Aucune référence bancaire</p>
+  </div>
+  <div *ngIf="!loading && referencesFiltres.length > 0" class="dashboard-surface-card overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bordereau</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Étudiant</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Référence</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Montant</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        <tr *ngFor="let r of referencesFiltres" class="hover:bg-gray-50">
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">BRD-{{ r.id }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ r.utilisateur?.nom }} {{ r.utilisateur?.prenoms }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-indigo-600">{{ r.referenceBancaire }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ formatCurrency(r.montant) }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ r.dateValidation | date:'dd/MM/yyyy' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

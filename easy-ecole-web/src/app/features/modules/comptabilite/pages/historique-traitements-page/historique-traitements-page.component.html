@@ -1,0 +1,41 @@
+<div class="dashboard-surface compta-workspace min-h-screen p-4 sm:p-6 lg:p-8">
+  <div class="compta-workspace-hero">
+    <div>
+      <p class="dashboard-kicker"><span class="material-symbols-outlined">history</span> HISTORIQUE</p>
+      <app-header-title title="Historique des traitements" subtitle="Vos actions de validation et rejet"></app-header-title>
+    </div>
+  </div>
+  <div class="dashboard-surface-card p-4 mb-6">
+    <input type="text" [(ngModel)]="searchTerm" placeholder="Rechercher..." class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm">
+  </div>
+  <div *ngIf="loading" class="flex items-center justify-center py-12">
+    <span class="material-symbols-outlined animate-spin text-3xl text-indigo-500">progress_activity</span>
+  </div>
+  <div *ngIf="!loading && traitementsFiltres.length === 0" class="bg-white rounded-lg border border-gray-200 p-8 text-center">
+    <p class="text-gray-500 text-sm">Aucun traitement</p>
+  </div>
+  <div *ngIf="!loading && traitementsFiltres.length > 0" class="dashboard-surface-card overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bordereau</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Étudiant</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Commentaire</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        <tr *ngFor="let t of traitementsFiltres" class="hover:bg-gray-50">
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">BRD-{{ t.id }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ t.utilisateur?.nom }} {{ t.utilisateur?.prenoms }}</td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span class="px-2 py-1 rounded-full text-xs font-medium" [class]="getStatutColor(t.statut)">{{ getStatutLabel(t.statut) }}</span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ t.dateValidation | date:'dd/MM/yyyy' }}</td>
+          <td class="px-6 py-4 text-sm text-gray-500">{{ t.commentaire || '---' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

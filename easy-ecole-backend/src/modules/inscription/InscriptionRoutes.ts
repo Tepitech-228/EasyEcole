@@ -43,6 +43,7 @@ import DeliberationRouter from "../bulletins/routers/DeliberationRouter"
 import EcheanceRouter from "./routers/EcheanceRouter";
 import BordereauController from "./controllers/BordereauController";
 import BordereauRouter from "./routers/BordereauRouter";
+import CabinetComptableRouter from "./routers/CabinetComptableRouter";
 import FinanceRouter from "./routers/FinanceRouter";
 import TypeOperationBordereauRouter from "./routers/TypeOperationBordereauRouter";
 import ComiteValidationRouter from "./routers/ComiteValidationRouter";
@@ -125,6 +126,8 @@ router
     .use('/bordereaux', [Authenticate], BordereauRouter)
     // Routes financières ESA-COMPTA : saisie comptable, imputation, bordereaux à traiter
     .use('/finance', [Authenticate], FinanceRouter)
+    // Cabinet comptable : vérification et validation des bordereaux
+    .use('/cabinet-comptable', [Authenticate], CabinetComptableRouter)
     // Types d'opérations de bordereau
     .use('/types-operations-bordereau', [Authenticate], TypeOperationBordereauRouter)
     // Validation finale des dossiers par le comité (comite-validations/dossiers)

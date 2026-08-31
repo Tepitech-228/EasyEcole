@@ -1,0 +1,130 @@
+<div class="dashboard-surface compta-workspace min-h-screen p-4 sm:p-6 lg:p-8">
+  <div class="compta-workspace-hero">
+    <div>
+      <p class="dashboard-kicker"><span class="material-symbols-outlined">pending_actions</span> À TRAITER</p>
+      <app-header-title title="Bordereaux à vérifier" subtitle="Consultez, vérifiez et validez les bordereaux de paiement"></app-header-title>
+    </div>
+  </div>
+
+  <div *ngIf="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+    {{ apiErrorMessage }}
+  </div>
+
+  <!-- Search -->
+  <div class="dashboard-surface-card p-4 mb-6">
+    <div class="flex items-center gap-x-4">
+      <div class="flex-1">
+        <input type="text" [(ngModel)]="searchTerm" placeholder="Rechercher par étudiant ou matricule..."
+          class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+      </div>
+      <div class="bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-200 rounded-md px-4 py-2.5 text-center">
+        <p class="text-xs text-orange-600 font-semibold">À TRAITER</p>
+        <p class="text-lg font-bold text-orange-600">{{ bordereauxFiltres.length }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="flex items-center justify-center py-12">
+    <span class="material-symbols-outlined animate-spin text-3xl text-indigo-500">progress_activity</span>
+    <span class="ml-2 text-gray-500">Chargement...</span>
+  </div>
+
+  <!-- Empty state -->
+  <div *ngIf="!loading && bordereauxFiltres.length === 0" class="bg-white rounded-lg border border-gray-200 p-8 text-center">
+    <span class="material-symbols-outlined text-4xl text-gray-300">inbox</span>
+    <p class="text-gray-500 text-sm mt-2">Aucun bordereau à traiter</p>
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!loading && bordereauxFiltres.length > 0" class="dashboard-surface-card overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bordereau</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Étudiant</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+          <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        <tr *ngFor="let b of bordereauxFiltres" class="hover:bg-gray-50">
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">BRD-{{ b.id }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+            {{ b.utilisateur?.nom }} {{ b.utilisateur?.prenoms }}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ formatCurrency(b.montant) }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ b.dateSoumission | date:'dd/MM/yyyy' }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-right">
+            <button (click)="openVerification(b)" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-sm font-medium transition">
+              <span class="material-symbols-outlined text-sm">visibility</span>
+              Vérifier
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Verification Modal -->
+<div *ngIf="showVerificationModal && selectedBordereau" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+  <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+    <div class="p-6 border-b border-gray-200">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-gray-900">Vérification du bordereau</h3>
+        <button (click)="closeVerification()" class="text-gray-400 hover:text-gray-600">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="p-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Document preview -->
+        <div>
+          <p class="text-sm font-medium text-gray-700 mb-2">Justificatif de paiement</p>
+          <div class="border border-gray-200 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center min-h-[200px]">
+            <span class="material-symbols-outlined text-4xl text-gray-300">description</span>
+          </div>
+          <a [href]="getDocUrl(selectedBordereau)" target="_blank" class="mt-2 inline-flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-800">
+            <span class="material-symbols-outlined text-sm">download</span>
+            Télécharger
+          </a>
+        </div>
+
+        <!-- Info -->
+        <div class="space-y-3">
+          <div>
+            <p class="text-xs text-gray-500 uppercase">Étudiant</p>
+            <p class="text-sm font-medium text-gray-900">{{ selectedBordereau.utilisateur?.nom }} {{ selectedBordereau.utilisateur?.prenoms }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500 uppercase">Matricule</p>
+            <p class="text-sm font-medium text-gray-900">{{ selectedBordereau.echeance?.dossierEtudiant?.matricule || '---' }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500 uppercase">Montant déclaré</p>
+            <p class="text-sm font-medium text-gray-900">{{ formatCurrency(selectedBordereau.montant) }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500 uppercase">Date de soumission</p>
+            <p class="text-sm font-medium text-gray-900">{{ selectedBordereau.dateSoumission | date:'dd/MM/yyyy' }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-6 border-t border-gray-200 flex items-center justify-between">
+      <button (click)="onRejeter('Bordereau non authentique')" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 font-medium transition">
+        <span class="material-symbols-outlined text-sm">cancel</span>
+        Rejeter
+      </button>
+      <button (click)="onValider()" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 font-medium transition">
+        <span class="material-symbols-outlined text-sm">check_circle</span>
+        Authentique
+      </button>
+    </div>
+  </div>
+</div>

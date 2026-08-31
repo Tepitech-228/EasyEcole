@@ -1,17 +1,12 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { DashboardComptablePageComponent } from './pages/dashboard-comptable-page/dashboard-comptable-page.component';
-import { PlanComptablePageComponent } from './pages/plan-comptable-page/plan-comptable-page.component';
-import { BalancePageComponent } from './pages/balance-page/balance-page.component';
-import { GrandLivrePageComponent } from './pages/grand-livre-page/grand-livre-page.component';
-import { EcrituresPageComponent } from './pages/ecritures-page/ecritures-page.component';
-import { ComptesBancairesPageComponent } from './pages/comptes-bancaires-page/comptes-bancaires-page.component';
-import { RelevesBancairesPageComponent } from './pages/releves-bancaires-page/releves-bancaires-page.component';
-import { RapprochementPageComponent } from './pages/rapprochement-page/rapprochement-page.component';
-import { ExercicesPageComponent } from './pages/exercices-page/exercices-page.component';
-import { BilanPageComponent } from './pages/bilan-page/bilan-page.component';
-import { CompteResultatPageComponent } from './pages/compte-resultat-page/compte-resultat-page.component';
-import { ParametresFraisPageComponent } from './pages/parametres-frais-page/parametres-frais-page.component';
+import { DashboardCabinetPageComponent } from './pages/dashboard-cabinet-page/dashboard-cabinet-page.component';
+import { BordereauxATraiterPageComponent } from './pages/bordereaux-a-traiter-page/bordereaux-a-traiter-page.component';
+import { BordereauxValidesPageComponent } from './pages/bordereaux-valides-page/bordereaux-valides-page.component';
+import { BordereauxRejetesPageComponent } from './pages/bordereaux-rejetes-page/bordereaux-rejetes-page.component';
+import { BordereauxAnomaliesPageComponent } from './pages/bordereaux-anomalies-page/bordereaux-anomalies-page.component';
+import { ReferencesBancairesPageComponent } from './pages/references-bancaires-page/references-bancaires-page.component';
+import { HistoriqueTraitementsPageComponent } from './pages/historique-traitements-page/historique-traitements-page.component';
 
 const routes: Routes = [
   {
@@ -21,62 +16,37 @@ const routes: Routes = [
   },
   {
     path: 'dashboard',
-    component: DashboardComptablePageComponent,
+    component: DashboardCabinetPageComponent,
     pathMatch: 'full'
   },
   {
-    path: 'plan-comptable',
-    component: PlanComptablePageComponent,
+    path: 'bordereaux/a-traiter',
+    component: BordereauxATraiterPageComponent,
     pathMatch: 'full'
   },
   {
-    path: 'balance',
-    component: BalancePageComponent,
+    path: 'bordereaux/valides',
+    component: BordereauxValidesPageComponent,
     pathMatch: 'full'
   },
   {
-    path: 'grand-livre',
-    component: GrandLivrePageComponent,
+    path: 'bordereaux/rejetes',
+    component: BordereauxRejetesPageComponent,
     pathMatch: 'full'
   },
   {
-    path: 'ecritures',
-    component: EcrituresPageComponent,
+    path: 'bordereaux/anomalies',
+    component: BordereauxAnomaliesPageComponent,
     pathMatch: 'full'
   },
   {
-    path: 'comptes-bancaires',
-    component: ComptesBancairesPageComponent,
+    path: 'references-bancaires',
+    component: ReferencesBancairesPageComponent,
     pathMatch: 'full'
   },
   {
-    path: 'releves-bancaires',
-    component: RelevesBancairesPageComponent,
-    pathMatch: 'full'
-  },
-  {
-    path: 'rapprochement',
-    component: RapprochementPageComponent,
-    pathMatch: 'full'
-  },
-  {
-    path: 'exercices',
-    component: ExercicesPageComponent,
-    pathMatch: 'full'
-  },
-  {
-    path: 'bilan',
-    component: BilanPageComponent,
-    pathMatch: 'full'
-  },
-  {
-    path: 'compte-resultat',
-    component: CompteResultatPageComponent,
-    pathMatch: 'full'
-  },
-  {
-    path: 'parametres-frais',
-    component: ParametresFraisPageComponent,
+    path: 'historique',
+    component: HistoriqueTraitementsPageComponent,
     pathMatch: 'full'
   },
 ];
