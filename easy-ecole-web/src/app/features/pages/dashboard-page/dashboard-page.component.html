@@ -48,49 +48,83 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <div class="dashboard-panel dashboard-kpi-card blue">
-          <div class="flex items-center justify-between mb-3">
-            <span class="dashboard-card-label">Étudiants</span>
-            <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
-              <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            </div>
-          </div>
-          <p class="dashboard-card-number">{{ dashboardData.totalApprenants || 0 }}</p>
-          <p class="dashboard-card-trend positive">+{{ dashboardData.demandesEnAttente || 0 }} en attente</p>
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+        <div class="kpi-gradient-card kpi-indigo">
+          <span class="material-symbols-outlined kpi-icon">school</span>
+          <p class="kpi-label">Étudiants</p>
+          <p class="kpi-value">{{ dashboardData.totalApprenants || 0 }}</p>
         </div>
-
-        <div class="dashboard-panel dashboard-kpi-card green">
-          <div class="flex items-center justify-between mb-3">
-            <span class="dashboard-card-label">Enseignants</span>
-            <div class="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center">
-              <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
-            </div>
-          </div>
-          <p class="dashboard-card-number">{{ dashboardData.totalEnseignants || 0 }}</p>
-          <p class="dashboard-card-trend neutral">Personnel enregistré</p>
+        <div class="kpi-gradient-card kpi-emerald">
+          <span class="material-symbols-outlined kpi-icon">person</span>
+          <p class="kpi-label">Enseignants</p>
+          <p class="kpi-value">{{ dashboardData.totalEnseignants || 0 }}</p>
         </div>
-
-        <div class="dashboard-panel dashboard-kpi-card purple">
-          <div class="flex items-center justify-between mb-3">
-            <span class="dashboard-card-label">Sessions</span>
-            <div class="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center">
-              <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-            </div>
-          </div>
-          <p class="dashboard-card-number">{{ dashboardData.sessionsOuvertes || 0 }}</p>
-          <p class="dashboard-card-trend positive">/ {{ dashboardData.totalSessions || 0 }} au total</p>
+        <div class="kpi-gradient-card kpi-purple">
+          <span class="material-symbols-outlined kpi-icon">class</span>
+          <p class="kpi-label">Classes</p>
+          <p class="kpi-value">{{ dashboardData.totalClasses || 0 }}</p>
         </div>
+        <div class="kpi-gradient-card kpi-sky">
+          <span class="material-symbols-outlined kpi-icon">menu_book</span>
+          <p class="kpi-label">Cours</p>
+          <p class="kpi-value">{{ dashboardData.totalCours || 0 }}</p>
+        </div>
+        <div class="kpi-gradient-card kpi-amber">
+          <span class="material-symbols-outlined kpi-icon">pending_actions</span>
+          <p class="kpi-label">En attente</p>
+          <p class="kpi-value">{{ dashboardData.demandesEnAttente || 0 }}</p>
+        </div>
+        <div class="kpi-gradient-card kpi-rose">
+          <span class="material-symbols-outlined kpi-icon">assignment_late</span>
+          <p class="kpi-label">Impayés</p>
+          <p class="kpi-value">{{ dashboardData.echeancesImpayees || 0 }}</p>
+        </div>
+      </div>
 
-        <div class="dashboard-panel dashboard-kpi-card amber">
-          <div class="flex items-center justify-between mb-3">
-            <span class="dashboard-card-label">À traiter</span>
-            <div class="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center">
-              <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            </div>
+      <!-- System Monitoring (CPU/RAM) -->
+      <div class="dashboard-panel dashboard-panel--premium mb-8" *ngIf="dashboardData.system">
+        <div class="chart-card-header mb-4">
+          <div>
+            <h3 class="chart-card-title">
+              <span class="material-symbols-outlined text-base mr-2">monitoring</span>
+              Performances Système
+            </h3>
+            <p class="chart-card-subtitle">État du serveur en temps réel</p>
           </div>
-          <p class="dashboard-card-number text-amber-600">{{ dashboardData.demandesEnAttente || 0 }}</p>
-          <p class="dashboard-card-trend warning">Demandes en attente</p>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 rounded-full text-xs font-semibold">
+            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+            En ligne
+          </span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div class="bg-gray-50 rounded-xl p-4 text-center">
+            <div class="text-2xl font-bold text-indigo-600">{{ dashboardData.system.cpuCount }}</div>
+            <div class="text-xs text-gray-500 mt-1">Cœurs CPU</div>
+          </div>
+          <div class="bg-gray-50 rounded-xl p-4 text-center">
+            <div class="text-2xl font-bold" [class.text-green-600]="dashboardData.system.memUsagePercent < 70" [class.text-amber-600]="dashboardData.system.memUsagePercent >= 70 && dashboardData.system.memUsagePercent < 85" [class.text-red-600]="dashboardData.system.memUsagePercent >= 85">
+              {{ dashboardData.system.memUsagePercent }}%
+            </div>
+            <div class="text-xs text-gray-500 mt-1">RAM utilisée</div>
+          </div>
+          <div class="bg-gray-50 rounded-xl p-4 text-center">
+            <div class="text-2xl font-bold text-blue-600">{{ dashboardData.system.memUsed }}/{{ dashboardData.system.memTotal }} Go</div>
+            <div class="text-xs text-gray-500 mt-1">Mémoire</div>
+          </div>
+          <div class="bg-gray-50 rounded-xl p-4 text-center">
+            <div class="text-2xl font-bold" [class.text-green-600]="dashboardData.system.loadAvg1m < dashboardData.system.cpuCount" [class.text-red-600]="dashboardData.system.loadAvg1m >= dashboardData.system.cpuCount">
+              {{ dashboardData.system.loadAvg1m }}
+            </div>
+            <div class="text-xs text-gray-500 mt-1">Charge (1m)</div>
+          </div>
+          <div class="bg-gray-50 rounded-xl p-4 text-center">
+            <div class="text-2xl font-bold text-cyan-600">{{ dashboardData.system.platform }}</div>
+            <div class="text-xs text-gray-500 mt-1">OS</div>
+          </div>
+          <div class="bg-gray-50 rounded-xl p-4 text-center">
+            <div class="text-2xl font-bold text-emerald-600">{{ dashboardData.system.uptime }}h</div>
+            <div class="text-xs text-gray-500 mt-1">Uptime</div>
+          </div>
         </div>
       </div>
 
@@ -290,6 +324,28 @@
         </div>
       </div>
 
+      <!-- Graphiques dynamiques (données backend institution/admin) -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <ng-container *ngIf="institutionEtudiantsFilierePayload">
+          <app-chart-panel
+            title="Étudiants par filière"
+            subtitle="Répartition des inscrits par parcours"
+            [payload]="institutionEtudiantsFilierePayload"
+            [height]="300"
+            accent="#7c3aed">
+          </app-chart-panel>
+        </ng-container>
+        <ng-container *ngIf="institutionPreInscriptionsPayload">
+          <app-chart-panel
+            title="Pré-inscriptions par mois"
+            subtitle="Volume des demandes enregistrées"
+            [payload]="institutionPreInscriptionsPayload"
+            [height]="300"
+            accent="#2563eb">
+          </app-chart-panel>
+        </ng-container>
+      </div>
+
       <div class="flex items-center gap-3 pb-10">
         <a routerLink="/inscription/classes" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-gray-700 text-sm font-semibold rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
@@ -314,23 +370,15 @@
   <!-- ==================== ENSEIGNANT DASHBOARD ==================== -->
   <ng-container *ngIf="!loading && rolesValue.isEnseignant">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 pt-6">
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Cours auj.</p>
-          <p class="text-2xl sm:text-3xl font-bold text-emerald-600">{{ dashboardData.agenda?.length || 0 }}</p>
-        </div>
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Notes à saisir</p>
-          <p class="text-2xl sm:text-3xl font-bold text-amber-600">{{ dashboardData.notesASaisir?.length || 0 }}</p>
-        </div>
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Cours</p>
-          <p class="text-2xl sm:text-3xl font-bold text-blue-600">{{ dashboardData.totalCours || 0 }}</p>
-        </div>
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Étudiants</p>
-          <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ dashboardData.totalApprenants || 0 }}</p>
-        </div>
+      <app-dashboard-header title="Mon tableau de bord"
+        [subtitle]="'Vue d\'ensemble de votre activité pédagogique'"
+        [sessionLabel]="'Session en cours'"></app-dashboard-header>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 my-6">
+        <app-kpi-card label="Cours aujourd'hui" [value]="dashboardData.agenda?.length || 0" icon="event_available" color="#059669"></app-kpi-card>
+        <app-kpi-card label="Notes à saisir" [value]="dashboardData.notesASaisir?.length || 0" icon="rate_review" color="#d97706"></app-kpi-card>
+        <app-kpi-card label="Cours" [value]="dashboardData.totalCours || 0" icon="menu_book" color="#2563eb"></app-kpi-card>
+        <app-kpi-card label="Étudiants" [value]="dashboardData.totalApprenants || 0" icon="groups" color="#7c3aed"></app-kpi-card>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -457,32 +505,51 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Notes</p>
-          <p class="text-2xl sm:text-3xl font-bold text-blue-600">{{ dashboardData.notesRecentes?.length || 0 }}</p>
-        </div>
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Moyenne</p>
-          <p class="text-2xl sm:text-3xl font-bold text-emerald-600">{{ dashboardData.moyenne || '—' }}</p>
-        </div>
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Cours</p>
-          <p class="text-2xl sm:text-3xl font-bold text-amber-600">{{ dashboardData.totalCours || 0 }}</p>
-        </div>
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Présences</p>
-          <p class="text-2xl sm:text-3xl font-bold text-green-600">{{ dashboardData.totalPresences || '—' }}</p>
-        </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 my-6">
+        <app-kpi-card label="Notes récentes" [value]="dashboardData.notesRecentes?.length || 0" icon="grade" color="#2563eb"></app-kpi-card>
+        <app-kpi-card label="Moyenne" [value]="dashboardData.moyenne || '—'" icon="trending_up" color="#059669"></app-kpi-card>
+        <app-kpi-card label="Cours" [value]="dashboardData.totalCours || 0" icon="menu_book" color="#d97706"></app-kpi-card>
+        <app-kpi-card label="Présences" [value]="dashboardData.totalPresences || '—'" icon="fact_check" color="#16a34a"></app-kpi-card>
       </div>
 
-      <div *ngIf="dashboardData.inscriptionComplete !== false" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <h3 class="text-base font-semibold text-gray-900 mb-4">Mes notes récentes</h3>
-          <div class="h-56">
-            <canvas baseChart [data]="apprenantBarData" [options]="apprenantBarOptions" type="bar"></canvas>
-          </div>
-        </div>
+      <!-- Rangée de graphiques dynamiques (données backend `charts`) -->
+      <div *ngIf="charts && (apprenantNotesRepartitionPayload || apprenantMoyenneParCoursPayload || apprenantCreditsPayload)" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
+        <ng-container *ngIf="apprenantNotesRepartitionPayload">
+          <app-chart-panel
+            title="Répartition des notes"
+            subtitle="Valides vs non validées"
+            [payload]="apprenantNotesRepartitionPayload"
+            [height]="260"
+            accent="#10b981">
+          </app-chart-panel>
+        </ng-container>
+        <ng-container *ngIf="apprenantMoyenneParCoursPayload">
+          <app-chart-panel
+            title="Moyenne par matière"
+            subtitle="Moyennes /20 par cours"
+            [payload]="apprenantMoyenneParCoursPayload"
+            [height]="260"
+            accent="#2563eb">
+          </app-chart-panel>
+        </ng-container>
+        <ng-container *ngIf="apprenantCreditsPayload">
+          <app-chart-panel
+            title="Crédits ECTS par semestre"
+            subtitle="ECTS validés par période"
+            [payload]="apprenantCreditsPayload"
+            [height]="260"
+            accent="#059669">
+          </app-chart-panel>
+        </ng-container>
+      </div>
+      <!-- État vide gracieux si le backend n'a pas renvoyé de `charts` -->
+      <div *ngIf="charts && !apprenantNotesRepartitionPayload && !apprenantMoyenneParCoursPayload && !apprenantCreditsPayload"
+           class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6 text-center">
+        <span class="material-symbols-outlined text-4xl text-gray-300">insights</span>
+        <p class="mt-2 text-sm text-gray-400">Aucun indicateur graphique disponible pour le moment.</p>
+      </div>
+
+      <div *ngIf="dashboardData.inscriptionComplete !== false" class="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-6">
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
           <h3 class="text-base font-semibold text-gray-900 mb-4">Mes demandes d'inscription</h3>
           <div *ngIf="demandesEnCours.length > 0" class="space-y-3">
@@ -677,52 +744,83 @@
 
   <!-- ==================== ESA-COMPTA DASHBOARD ==================== -->
   <ng-container *ngIf="!loading && rolesValue.isEsacompta">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 pt-6 pb-10">
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <div class="dashboard-panel dashboard-kpi-card blue">
-          <span class="dashboard-card-label">Paiements</span>
-          <p class="dashboard-card-number">{{ dashboardData.totalPaiements || 0 }}</p>
-          <p class="dashboard-card-trend neutral">Enregistrés</p>
+    <div class="esa-dashboard max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 pt-6 pb-10">
+      <app-dashboard-header
+        title="Tableau de bord ESA-Compta"
+        subtitle="Traiter les bordereaux et suivre les imputations financières"
+        [sessionLabel]="'Session en cours'"
+        icon="account_balance"
+        accent="#10b981">
+      </app-dashboard-header>
+
+      <div class="esa-kpi-grid grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-4 gap-4 my-6">
+        <app-kpi-card label="Bordereaux à traiter" [value]="dashboardData.bordereauxATraiter ?? 0" icon="fact_check" color="#059669"></app-kpi-card>
+        <app-kpi-card label="Bordereaux validés" [value]="dashboardData.bordereauxValides || 0" icon="verified" color="#2563eb"></app-kpi-card>
+        <app-kpi-card label="En attente" [value]="dashboardData.bordereauxEnAttente ?? 0" icon="pending_actions" color="#d97706"></app-kpi-card>
+        <app-kpi-card label="Rejetés" [value]="dashboardData.bordereauxRejetes || 0" icon="block" color="#ef4444"></app-kpi-card>
+        <app-kpi-card label="Montant validé" [value]="esaMontantValide" unit="F" icon="payments" color="#10b981"></app-kpi-card>
+        <app-kpi-card label="Montant en attente" [value]="esaMontantEnAttente" unit="F" icon="hourglass_top" color="#d97706"></app-kpi-card>
+        <app-kpi-card label="Doublons réf." [value]="dashboardData.doublonsReferences || 0" icon="content_copy" color="#8b5cf6" [inverse]="true"></app-kpi-card>
+        <app-kpi-card label="Taux de traitement" [value]="dashboardData.tauxTraitement ?? 0" unit="%" icon="sync_alt" color="#0891b2" [progress]="dashboardData.tauxTraitement ?? 0"></app-kpi-card>
+      </div>
+
+      <!-- Graphiques finance dynamiques (données backend `charts`) -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div class="lg:col-span-1" *ngIf="esaMontantsParStatutPayload">
+          <app-chart-panel
+            title="Montants validés / en attente / rejetés"
+            subtitle="Imputations par statut"
+            [payload]="esaMontantsParStatutPayload"
+            [height]="300"
+            accent="#0ea5e9">
+          </app-chart-panel>
         </div>
-        <div class="dashboard-panel dashboard-kpi-card green">
-          <span class="dashboard-card-label">Bordereaux</span>
-          <p class="dashboard-card-number">{{ dashboardData.totalBordereaux || 0 }}</p>
-          <p class="dashboard-card-trend neutral">À contrôler</p>
+        <div class="lg:col-span-1" *ngIf="esaParBanquePayload">
+          <app-chart-panel
+            title="Paiements par banque"
+            subtitle="Montants imputés par établissement"
+            [payload]="esaParBanquePayload"
+            [height]="300"
+            accent="#4f46e5">
+          </app-chart-panel>
         </div>
-        <div class="dashboard-panel dashboard-kpi-card amber">
-          <span class="dashboard-card-label">À traiter</span>
-          <p class="dashboard-card-number">{{ dashboardData.demandesEnAttente || 0 }}</p>
-          <p class="dashboard-card-trend warning">En attente</p>
-        </div>
-        <div class="dashboard-panel dashboard-kpi-card purple">
-          <span class="dashboard-card-label">Impayés</span>
-          <p class="dashboard-card-number">{{ dashboardData.echeancesImpayees || 0 }}</p>
-          <p class="dashboard-card-trend warning">À surveiller</p>
+        <div class="lg:col-span-1" *ngIf="esaRepartitionModesPayload">
+          <app-chart-panel
+            title="Répartition par mode de paiement"
+            subtitle="Canaux de règlement"
+            [payload]="esaRepartitionModesPayload"
+            [height]="300"
+            accent="#10b981">
+          </app-chart-panel>
         </div>
       </div>
-      <div class="dashboard-panel dashboard-chart-panel dashboard-panel--premium">
+
+      <div class="esa-action-panel dashboard-panel dashboard-panel--premium">
         <div class="chart-card-header">
           <div>
             <h3 class="chart-card-title">Espace ESA-Compta</h3>
             <p class="chart-card-subtitle">Traiter les bordereaux et suivre les imputations</p>
           </div>
-          <a routerLink="/inscription/finance/bordereaux" class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+          <a routerLink="/inscription/finance/bordereaux" class="esa-btn-primary inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white">
             <span class="material-symbols-outlined text-base">fact_check</span>
             Ouvrir la file de traitement
           </a>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <a routerLink="/inscription/finance/bordereaux" class="dashboard-surface-card rounded-xl p-4 text-center hover:border-emerald-300">
+        <div class="esa-action-grid grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <a routerLink="/inscription/finance/bordereaux" class="esa-action-card rounded-xl p-5 text-center">
             <span class="material-symbols-outlined text-3xl text-emerald-600">receipt_long</span>
             <p class="mt-2 text-sm font-semibold text-slate-900">Bordereaux à traiter</p>
+            <p class="text-xs text-slate-500 mt-1">File d'attente</p>
           </a>
-          <a routerLink="/comptabilite/dashboard" class="dashboard-surface-card rounded-xl p-4 text-center hover:border-blue-300">
+          <a routerLink="/comptabilite/dashboard" class="esa-action-card rounded-xl p-5 text-center">
             <span class="material-symbols-outlined text-3xl text-blue-600">account_balance</span>
             <p class="mt-2 text-sm font-semibold text-slate-900">Comptabilité générale</p>
+            <p class="text-xs text-slate-500 mt-1">Grand livre</p>
           </a>
-          <a routerLink="/inscription/paiements" class="dashboard-surface-card rounded-xl p-4 text-center hover:border-amber-300">
-            <span class="material-symbols-outlined text-3xl text-amber-600">payments</span>
-            <p class="mt-2 text-sm font-semibold text-slate-900">Suivi des paiements</p>
+          <a routerLink="/inscription/finance/suivi-echeances" class="esa-action-card rounded-xl p-5 text-center">
+            <span class="material-symbols-outlined text-3xl text-amber-600">account_balance_wallet</span>
+            <p class="mt-2 text-sm font-semibold text-slate-900">Suivi des échéances</p>
+            <p class="text-xs text-slate-500 mt-1">Par étudiant</p>
           </a>
         </div>
       </div>
@@ -749,6 +847,28 @@
           <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Impayés</p>
           <p class="text-2xl sm:text-3xl font-bold text-red-600">{{ dashboardData.echeancesImpayees || 0 }}</p>
         </div>
+      </div>
+
+      <!-- Graphiques finance dynamiques (données backend `charts`) -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <ng-container *ngIf="comptableTresoreriePayload">
+          <app-chart-panel
+            title="Trésorerie : encaissements vs dépenses"
+            subtitle="Évolution mensuelle des flux"
+            [payload]="comptableTresoreriePayload"
+            [height]="300"
+            accent="#0891b2">
+          </app-chart-panel>
+        </ng-container>
+        <ng-container *ngIf="comptableRepartitionModesPayload">
+          <app-chart-panel
+            title="Répartition par mode de paiement"
+            subtitle="Montants encaissés par canal"
+            [payload]="comptableRepartitionModesPayload"
+            [height]="300"
+            accent="#10b981">
+          </app-chart-panel>
+        </ng-container>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-10">
@@ -806,21 +926,25 @@
   <ng-container *ngIf="!loading && rolesValue.isComiteOrientation">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 pt-6">
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <div class="rounded-2xl p-5 bg-gradient-to-br from-indigo-500 to-indigo-700 text-white">
-          <p class="text-xs font-semibold text-indigo-100 uppercase tracking-wider mb-1">Demandes total</p>
-          <p class="text-2xl sm:text-3xl font-bold">{{ dashboardData.totalDemandes || 0 }}</p>
+        <div class="kpi-gradient-card kpi-indigo">
+          <span class="material-symbols-outlined kpi-icon">folder_open</span>
+          <p class="kpi-label">Demandes total</p>
+          <p class="kpi-value">{{ dashboardData.totalDemandes || 0 }}</p>
         </div>
-        <div class="rounded-2xl p-5 bg-gradient-to-br from-amber-400 to-orange-600 text-white">
-          <p class="text-xs font-semibold text-amber-100 uppercase tracking-wider mb-1">En attente</p>
-          <p class="text-2xl sm:text-3xl font-bold">{{ dashboardData.enAttente || 0 }}</p>
+        <div class="kpi-gradient-card kpi-amber">
+          <span class="material-symbols-outlined kpi-icon">pending_actions</span>
+          <p class="kpi-label">En attente</p>
+          <p class="kpi-value">{{ dashboardData.enAttente || 0 }}</p>
         </div>
-        <div class="rounded-2xl p-5 bg-gradient-to-br from-emerald-400 to-green-600 text-white">
-          <p class="text-xs font-semibold text-emerald-100 uppercase tracking-wider mb-1">Validées</p>
-          <p class="text-2xl sm:text-3xl font-bold">{{ dashboardData.validees || 0 }}</p>
+        <div class="kpi-gradient-card kpi-emerald">
+          <span class="material-symbols-outlined kpi-icon">verified</span>
+          <p class="kpi-label">Validées</p>
+          <p class="kpi-value">{{ dashboardData.validees || 0 }}</p>
         </div>
-        <div class="rounded-2xl p-5 bg-gradient-to-br from-red-400 to-rose-600 text-white">
-          <p class="text-xs font-semibold text-red-100 uppercase tracking-wider mb-1">Rejetées</p>
-          <p class="text-2xl sm:text-3xl font-bold">{{ dashboardData.rejetees || 0 }}</p>
+        <div class="kpi-gradient-card kpi-rose">
+          <span class="material-symbols-outlined kpi-icon">block</span>
+          <p class="kpi-label">Rejetées</p>
+          <p class="kpi-value">{{ dashboardData.rejetees || 0 }}</p>
         </div>
       </div>
 
@@ -840,7 +964,7 @@
           <div class="chart-card-header">
             <div>
               <h3 class="chart-card-title">Demandes récentes</h3>
-              <p class="chart-card-subtitle">Activité du comité d’orientation</p>
+              <p class="chart-card-subtitle">Activité du comité d'orientation</p>
             </div>
           </div>
           <div *ngIf="dashboardData.demandesRecentes?.length" class="space-y-3">
@@ -878,8 +1002,23 @@
     </div>
   </ng-container>
 
+  <!-- ==================== SURVEILLANT ==================== -->
+  <ng-container *ngIf="!loading && rolesValue.isSurveillant">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 pt-6 pb-10">
+      <div class="dashboard-panel dashboard-panel--premium p-8 text-center">
+        <span class="material-symbols-outlined text-5xl text-indigo-500 mb-4">security</span>
+        <h2 class="text-xl font-bold text-gray-900 mb-2">Espace surveillant</h2>
+        <p class="text-sm text-gray-500 mb-6">Accédez au tableau de bord de surveillance : présences, absences et discipline.</p>
+        <a routerLink="/surveillance" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition-colors">
+          <span class="material-symbols-outlined text-lg">monitoring</span>
+          Ouvrir le tableau de bord
+        </a>
+      </div>
+    </div>
+  </ng-container>
+
   <!-- ==================== DEFAULT DASHBOARD (fallback) ==================== -->
-  <ng-container *ngIf="!loading && !rolesValue.isAdmin && !rolesValue.isInstitution && !rolesValue.isEnseignant && !rolesValue.isApprenant && !rolesValue.isRessourcesHumaines && !rolesValue.isCaissierBanque && !rolesValue.isCabinetComptable && !rolesValue.isEsacompta && !rolesValue.isComiteOrientation">
+  <ng-container *ngIf="!loading && !rolesValue.isAdmin && !rolesValue.isInstitution && !rolesValue.isEnseignant && !rolesValue.isApprenant && !rolesValue.isRessourcesHumaines && !rolesValue.isCaissierBanque && !rolesValue.isCabinetComptable && !rolesValue.isEsacompta && !rolesValue.isComiteOrientation && !rolesValue.isSurveillant && !rolesValue.isParent">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 pt-6 pb-10">
       <app-widget-agenda></app-widget-agenda>
     </div>

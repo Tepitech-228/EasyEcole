@@ -50,6 +50,8 @@ import { TypesBordereauxPageComponent } from './pages/types-bordereaux-page/type
 import { EsacomptaBordereauxPageComponent } from './pages/esacompta-bordereaux-page/esacompta-bordereaux-page.component';
 import { ComiteValidationPageComponent } from './pages/comite-validation-page/comite-validation-page.component';
 import { ChoisirSessionPageComponent } from './pages/choisir-session-page/choisir-session-page.component';
+import { PlanifierReinscriptionPageComponent } from './pages/planifier-reinscription-page/planifier-reinscription-page.component';
+import { SuiviEcheancesPageComponent } from './pages/suivi-echeances-page/suivi-echeances-page.component';
 @NgModule({
   declarations: [
     MonCursusPageComponent,
@@ -96,7 +98,9 @@ ListeClassesPageComponent,
         TypesBordereauxPageComponent,
         EsacomptaBordereauxPageComponent,
         ComiteValidationPageComponent,
-        ChoisirSessionPageComponent
+        ChoisirSessionPageComponent,
+        PlanifierReinscriptionPageComponent,
+        SuiviEcheancesPageComponent
   ],
   imports: [
     CommonModule,

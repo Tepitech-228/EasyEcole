@@ -1,0 +1,18 @@
+.suivi-compta-workspace app-dossier-view {
+	display: block;
+	overflow: hidden;
+	border-radius: 1rem;
+	box-shadow: var(--app-shadow);
+}
+
+.suivi-legend {
+	border-left: 4px solid var(--app-teal);
+}
+
+@media (max-width: 640px) {
+	.compta-workspace-hero {
+		align-items: flex-start;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+}

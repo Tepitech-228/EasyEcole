@@ -43,3 +43,40 @@
 @media (max-width: 640px) {
 	.compta-workspace-hero { align-items: flex-start; flex-direction: column; }
 }
+
+/* ── Correctif « PDF qui bouge » dans le modal de traitement ──────────────
+   La colonne de gauche (justificatif) doit occuper TOUTE la hauteur de la
+   grille et son contenu (iframe/image) rester borné dans la zone visible du
+   modal. Sans cela, toute variation de hauteur de la colonne formulaire
+   (panneau MIXTE, erreurs, bandeau) décale / recentre le PDF. */
+:host ::ng-deep .compta-workspace .grid.xl\:grid-cols-2,
+:host ::ng-deep .grid.xl\:grid-cols-2 {
+	align-items: stretch;
+}
+
+:host ::ng-deep .pdf-preview-shell {
+	height: 100%;
+	min-height: 480px;
+	max-height: calc(100vh - 220px);
+	align-items: flex-start;
+	justify-content: flex-start;
+}
+
+:host ::ng-deep .pdf-preview-frame,
+:host ::ng-deep .pdf-preview-image {
+	height: 100%;
+	max-height: calc(100vh - 240px);
+	width: 100%;
+	display: block;
+}
+
+@media (max-width: 1280px) {
+	:host ::ng-deep .pdf-preview-shell {
+		min-height: 420px;
+		max-height: calc(100vh - 200px);
+	}
+	:host ::ng-deep .pdf-preview-frame,
+	:host ::ng-deep .pdf-preview-image {
+		max-height: calc(100vh - 220px);
+	}
+}

@@ -111,6 +111,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
       referenceBancaire: [''],
       numeroBordereau: [''],
       moyenPaiement: [''],
+      banque: [''],
       typeOperationId: ['', Validators.required],
       datePaiement: [''],
       commentaire: ['']
@@ -122,6 +123,12 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     { value: 'especes', label: 'Espèces' },
     { value: 'mobile_money', label: 'Mobile Money' },
     { value: 'cheque', label: 'Chèque' }
+  ]
+
+  readonly banquesOptions: { value: string; label: string }[] = [
+    { value: 'ecobank', label: 'ECOBANK' },
+    { value: 'ib_bank', label: 'IB BANK' },
+    { value: 'orabank', label: 'ORABANK' }
   ]
 
   ngOnInit(): void {
@@ -255,6 +262,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
       referenceBancaire: bordereau.referenceBancaire || '',
       numeroBordereau: bordereau.numeroBordereau || '',
       moyenPaiement: bordereau.moyenPaiement || '',
+      banque: (bordereau as any).banque || '',
       typeOperationId: bordereau.typeOperationId || '',
       datePaiement: bordereau.datePaiement ? new Date(bordereau.datePaiement).toISOString().split('T')[0] : '',
       commentaire: bordereau.commentaire || ''
@@ -371,6 +379,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
       referenceBancaire: (raw.referenceBancaire || '').trim() || null,
       numeroBordereau: (raw.numeroBordereau || '').trim() || null,
       moyenPaiement: (raw.moyenPaiement || '').trim() || null,
+      banque: (raw.banque || '').trim() || null,
       typeOperationId: raw.typeOperationId,
       datePaiement: raw.datePaiement || null,
       commentaire: (raw.commentaire || '').trim() || null,

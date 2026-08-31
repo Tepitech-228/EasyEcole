@@ -23,12 +23,35 @@ import { EmailSender } from "../../../core/helpers/EmailSender";
 import { DocGenGeneratorService } from "../../docgen/services/DocGenGeneratorService";
 import { creerEcritureComptable } from "../../comptabilite/helpers/ComptabiliteHelper";
 import { nanoid } from "nanoid";
+import { validerMontant } from "../../../core/validators/validators";
+import { SuiviEcheancesController } from "../controllers/SuiviEcheancesController";
 
 /**
  * Router dédié aux opérations financières ESA-COMPTA.
  * Monté sous /inscription/finance dans InscriptionRoutes.ts.
  */
 const router = express.Router();
+
+/**
+ * @openapi
+ * /inscription/finance/suivi-echeances:
+ *   get:
+ *     tags: [Finance]
+ *     summary: Suivi des échéances par étudiant (arbre année → filière → niveau → classe, avec total dû/payé/reste et statut de ligne)
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: query
+ *         name: anneeAcademiqueId
+ *         schema:
+ *           type: integer
+ *         description: Filtre optionnel sur une année académique
+ *     responses:
+ *       200:
+ *         description: Arbre du suivi des échéances
+ *       403:
+ *         description: Accès réservé à ESA-COMPTA
+ */
+router.get('/suivi-echeances', [AuthEsacompta, CheckPermission('action.finance.bordereau.voir')], SuiviEcheancesController.getSuivi);
 
 /**
  * @openapi
@@ -315,7 +338,7 @@ router.post('/bordereaux/:id/composition-preview', [AuthEsacompta, CheckPermissi
  *       200:
  *         description: Bordereau traité avec imputation
  */
-router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.finance.bordereau.saisir')], async (req: Request, res: Response) => {
+router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.finance.bordereau.saisir'), validerMontant], async (req: Request, res: Response) => {
   const transaction = await DatabaseConnection.getInstance().sequelize.transaction()
   const _rid = `[SAISIR#${req.params.id}]`
 
@@ -325,6 +348,7 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       referenceBancaire: req.body.referenceBancaire,
       numeroBordereau: req.body.numeroBordereau,
       moyenPaiement: req.body.moyenPaiement,
+      banque: req.body.banque,
       typeOperationId: req.body.typeOperationId,
       datePaiement: req.body.datePaiement,
       commentaire: req.body.commentaire,
@@ -535,14 +559,20 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
     const refBancaire = (req.body.referenceBancaire || '').trim() || null
     const numBordereau = (req.body.numeroBordereau || '').trim() || null
     const moyPaiement = (req.body.moyenPaiement || '').trim() || null
+    const banque = ((req.body.banque || '') as string).trim() || null
     const datePaiement = req.body.datePaiement ? new Date(req.body.datePaiement) : bordereau.datePaiement
 
-    console.log(_rid, 'Sanitization:', { refBancaire, numBordereau, moyPaiement, datePaiement, typeOperationIdEffectif, typeEffectif })
+    // Whitelist des banques partenaires (enum) : toute valeur hors liste → null
+    const BANQUES_VALIDES = ['ecobank', 'ib_bank', 'orabank']
+    const banqueValide = banque && BANQUES_VALIDES.includes(banque) ? banque : null
+
+    console.log(_rid, 'Sanitization:', { refBancaire, numBordereau, moyPaiement, banque: banqueValide, datePaiement, typeOperationIdEffectif, typeEffectif })
 
     bordereau.montant = montantPaiement
     bordereau.referenceBancaire = refBancaire
     bordereau.numeroBordereau = numBordereau
     bordereau.moyenPaiement = moyPaiement as any
+    bordereau.banque = banqueValide as any
     bordereau.typeOperationId = typeOperationIdEffectif
     bordereau.type = typeEffectif ?? null
     bordereau.composition = estMixte && composition ? JSON.stringify(composition) : null

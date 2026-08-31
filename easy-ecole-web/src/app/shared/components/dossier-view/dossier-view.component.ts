@@ -214,6 +214,9 @@ export class DossierViewComponent {
       case 'validee': case 'valide': return 'green';
       case 'rejetee': case 'rejete': return 'red';
       case 'delivree': return 'blue';
+      case 'probleme': return 'red';
+      case 'partiel': return 'orange';
+      case 'regle': return 'green';
       default: return 'gray';
     }
   }
@@ -222,5 +225,20 @@ export class DossierViewComponent {
   toNumber(value: any): number {
     const n = Number(value);
     return Number.isFinite(n) ? n : 0;
+  }
+
+  /**
+   * Classe de couleur de fond d'une ligne d'item, pilotée par le champ
+   * `rowClass` (ou `statut`) porté par l'item.
+   * - 'probleme'/'red'    → ligne rouge (étudiant pas en règle)
+   * - 'partiel'/'orange'  → ligne orange (paiement partiel en cours)
+   * - tout autre/absent   → aucune coloration
+   */
+  getRowClass(item: any): string {
+    if (!item) return '';
+    const value = item.rowClass ?? item.statut;
+    if (value === 'probleme' || value === 'red') return 'bg-red-50';
+    if (value === 'partiel' || value === 'orange') return 'bg-orange-50';
+    return '';
   }
 }

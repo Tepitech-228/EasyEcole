@@ -38,6 +38,7 @@ export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAt
   declare typeOperationId: CreationOptional<ForeignKey<TypeOperationBordereau['id']> | null>
   declare numeroBordereau: CreationOptional<string | null>
   declare moyenPaiement: CreationOptional<'virement' | 'especes' | 'mobile_money' | 'cheque' | null>
+  declare banque: CreationOptional<'ecobank' | 'ib_bank' | 'orabank' | null>
   declare echeance?: NonAttribute<Echeance>
   declare utilisateur?: NonAttribute<Utilisateur>
   declare validePar?: NonAttribute<Utilisateur>
@@ -154,6 +155,15 @@ Bordereau.init({
   },
   moyenPaiement: {
     type: DataTypes.ENUM('virement', 'especes', 'mobile_money', 'cheque'),
+    allowNull: true,
+    defaultValue: null
+  },
+  /**
+   * Banque émettrice de l'opération de paiement, saisie par ESA-COMPTA lors du
+   * traitement du bordereau. Enum limité aux banques partenaires.
+   */
+  banque: {
+    type: DataTypes.ENUM('ecobank', 'ib_bank', 'orabank'),
     allowNull: true,
     defaultValue: null
   },

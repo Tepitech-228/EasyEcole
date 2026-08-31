@@ -115,7 +115,7 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-200 bg-white">
-                <tr *ngFor="let item of node.items" class="hover:bg-gray-50 transition">
+                <tr *ngFor="let item of node.items" [class]="getRowClass(item) ? ('transition ' + getRowClass(item)) : 'hover:bg-gray-50 transition'">
                   <td class="px-3 py-2">
                     <input
                       type="checkbox"
@@ -126,6 +126,7 @@
                   <td *ngFor="let col of columns" class="px-3 py-2 text-sm text-gray-700">
                     <ng-container [ngSwitch]="col.key">
                       <app-custom-badge *ngSwitchCase="'statut'" [text]="item[col.key]" [color]="getBadgeColor(item[col.key])"></app-custom-badge>
+                      <app-custom-badge *ngSwitchCase="'statutSuivi'" [text]="item.statut || item[col.key]" [color]="getBadgeColor(item.statutKey || item[col.key])"></app-custom-badge>
                       <ng-container *ngSwitchCase="'typeDocument'">
                         <span>{{ item.typeDocument?.libelle || item[col.key] || '—' }}</span>
                       </ng-container>

@@ -1,0 +1,73 @@
+<div class="dashboard-surface suivi-compta-workspace min-h-screen p-4 sm:p-6 lg:p-8">
+  <div class="compta-workspace-hero">
+    <div>
+      <p class="dashboard-kicker"><span class="material-symbols-outlined">account_balance_wallet</span> ESA-Compta</p>
+      <app-header-title title="Suivi des échéances par étudiant"
+        subtitle="Parcours &gt; Filière &gt; Niveau &gt; Classe — état des paiements (dû / payé / reste à payer)"></app-header-title>
+    </div>
+    <button type="button" (click)="retry()" [disabled]="loading"
+      class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition disabled:opacity-50">
+      <span class="material-symbols-outlined">refresh</span> Actualiser
+    </button>
+  </div>
+
+  <div *ngIf="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+    {{ apiErrorMessage || 'Une erreur est survenue' }}
+  </div>
+
+  <!-- Résumé -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6" *ngIf="!loading && !error">
+    <div class="dashboard-surface-card p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Étudiants</p>
+      <p class="text-2xl font-bold text-gray-800 mt-1">{{ nbEtudiants }}</p>
+    </div>
+    <div class="dashboard-surface-card p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">En règle</p>
+      <p class="text-2xl font-bold text-emerald-600 mt-1">{{ nbRegle }}</p>
+    </div>
+    <div class="dashboard-surface-card p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Paiement partiel</p>
+      <p class="text-2xl font-bold text-orange-500 mt-1">{{ nbPartiel }}</p>
+    </div>
+    <div class="dashboard-surface-card p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">En problème</p>
+      <p class="text-2xl font-bold text-red-600 mt-1">{{ nbProbleme }}</p>
+    </div>
+  </div>
+
+  <!-- Légende des couleurs -->
+  <div class="dashboard-surface-card suivi-legend p-4 mb-6" *ngIf="!loading && !error">
+    <div class="flex items-center gap-x-6 flex-wrap gap-y-2">
+      <span class="text-xs font-semibold text-gray-600 uppercase tracking-wider mr-2">Code couleur :</span>
+      <span class="inline-flex items-center gap-2">
+        <span class="inline-block w-4 h-4 rounded bg-red-100 border border-red-300"></span>
+        <span class="text-sm text-gray-700">Rouge — pas en règle (échéance en retard / impayée échue)</span>
+      </span>
+      <span class="inline-flex items-center gap-2">
+        <span class="inline-block w-4 h-4 rounded bg-orange-100 border border-orange-300"></span>
+        <span class="text-sm text-gray-700">Orange — paiement partiel en cours</span>
+      </span>
+      <span class="inline-flex items-center gap-2">
+        <span class="inline-block w-4 h-4 rounded bg-white border border-gray-300"></span>
+        <span class="text-sm text-gray-700">Blanc — en règle</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Arbre du suivi -->
+  <app-dossier-view
+    *ngIf="!loading && !error"
+    [nodes]="treeNodes"
+    [columns]="columns"
+    [loading]="loading"
+    [renderItemActions]="false">
+  </app-dossier-view>
+
+  <div *ngIf="loading" class="dashboard-surface-card p-6 text-center text-gray-500">
+    Chargement du suivi des échéances…
+  </div>
+
+  <div *ngIf="!loading && !error && nbEtudiants === 0" class="dashboard-surface-card p-6 text-center text-gray-500">
+    Aucun étudiant à suivre.
+  </div>
+</div>

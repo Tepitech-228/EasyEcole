@@ -37,6 +37,23 @@ export class BordereauService {
     return this.httpClient.get<{ data: Bordereau[], pagination: any }>(`${environment.API_MODULES.INSCRIPTION}/finance/bordereaux-a-traiter`, { params: httpParams });
   }
 
+  /**
+   * Arbre du suivi des échéances par étudiant (écran ESA-COMPTA) :
+   * Année → Filière (parcours) → Niveau → Classe (salles) → étudiants.
+   * Chaque étudiant porte totalDu / totalPaye / resteApayer / statut / echeances.
+   */
+  getSuiviEcheances(params?: any): Observable<any[]> {
+    let httpParams = new HttpParams();
+    if (params) {
+      Object.keys(params).forEach(key => {
+        if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
+          httpParams = httpParams.set(key, String(params[key]));
+        }
+      });
+    }
+    return this.httpClient.get<any[]>(`${environment.API_MODULES.INSCRIPTION}/finance/suivi-echeances`, { params: httpParams });
+  }
+
   imputationPreview(id: string, montantPaiement: number, type?: string): Observable<any> {
     return this.httpClient.post<any>(`${environment.API_MODULES.INSCRIPTION}/finance/bordereaux/${id}/imputation-preview`, { montantPaiement, type })
   }

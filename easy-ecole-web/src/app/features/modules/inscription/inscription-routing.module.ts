@@ -27,8 +27,7 @@ import { ListeSallesDeClassePageComponent } from './pages/liste-salles-de-classe
 import {ListeClassesPageComponent} from './pages/liste-classes-page/liste-classes-page.component';
 import { CartesPageComponent } from './pages/cartes-page/cartes-page.component';
 import { GestionSemestresPageComponent } from './pages/gestion-semestres-page/gestion-semestres-page.component';
-import { ImportExportExcelPageComponent } from './pages/import-export-excel-page/import-export-excel-page.component';
-import { DesignationMemoirePageComponent } from './pages/designation-memoire-page/designation-memoire-page.component';
+import { ImportExportExcelPageComponent } from './pages/import-export-excel-page/import-export-excel-page.component';import { DesignationMemoirePageComponent } from './pages/designation-memoire-page/designation-memoire-page.component';
 import { ApprenantGuard } from 'src/app/core/guards/apprenant.guard';
 import { RattrapageSessionsPageComponent } from './pages/rattrapage-sessions-page/rattrapage-sessions-page.component';
 import { RattrapageComitePageComponent } from './pages/rattrapage-comite-page/rattrapage-comite-page.component';
@@ -37,7 +36,9 @@ import { RattrapagePaiementsPageComponent } from './pages/rattrapage-paiements-p
 import { TypesBordereauxPageComponent } from './pages/types-bordereaux-page/types-bordereaux-page.component';
 import { EsacomptaBordereauxPageComponent } from './pages/esacompta-bordereaux-page/esacompta-bordereaux-page.component';
 import { ComiteValidationPageComponent } from './pages/comite-validation-page/comite-validation-page.component';
+import { SuiviEcheancesPageComponent } from './pages/suivi-echeances-page/suivi-echeances-page.component';
 import { ChoisirSessionPageComponent } from './pages/choisir-session-page/choisir-session-page.component';
+import { PlanifierReinscriptionPageComponent } from './pages/planifier-reinscription-page/planifier-reinscription-page.component';
 
 const routes: Routes = [
   {
@@ -292,9 +293,20 @@ const routes: Routes = [
     pathMatch: 'full'
   },
   {
+    path: 'finance/suivi-echeances',
+    component: SuiviEcheancesPageComponent,
+    pathMatch: 'full'
+  },
+  {
     path: 'comite-validation',
     component: ComiteValidationPageComponent,
     pathMatch: 'full'
+  },
+  {
+    path: 'reinscription/planifier',
+    component: PlanifierReinscriptionPageComponent,
+    pathMatch: 'full',
+    canActivate: [ApprenantGuard]
   },
 ];
 
