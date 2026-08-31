@@ -23,7 +23,8 @@ export class Bordereau {
   declare typeOperationId?: number | null
   declare typeOperation?: TypeOperationBordereau
   declare numeroBordereau?: string | null
-  declare moyenPaiement?: 'virement' | 'especes' | 'mobile_money' | 'cheque' | null
+  declare moyenPaiement?: 'virement' | 'especes' | 'mobile_money' | 'cheque' | 'autre' | 'depot_banque' | null
+  declare banque?: 'ib_bank' | 'ecobank' | 'orabank' | null
   declare echeance?: Echeance
   declare utilisateur?: Utilisateur
   declare validePar?: Utilisateur
