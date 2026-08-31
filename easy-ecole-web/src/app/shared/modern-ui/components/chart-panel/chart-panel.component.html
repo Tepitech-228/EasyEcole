@@ -1,0 +1,43 @@
+<div class="chart-panel card border-0 shadow-sm h-100" [style.borderTop]="'3px solid ' + accent">
+  <div class="card-header bg-white border-0 d-flex align-items-center justify-content-between py-3">
+    <div class="chart-panel__header-info">
+      <h6 class="mb-0 fw-semibold text-dark" [style.color]="accent">{{ title }}</h6>
+      <small class="text-muted" *ngIf="subtitle">{{ subtitle }}</small>
+    </div>
+    <div class="chart-panel__actions">
+      <button class="chart-action-btn" type="button" title="Actualiser" (click)="onRefresh()">
+        <i class="material-symbols-outlined">refresh</i>
+      </button>
+      <button class="chart-action-btn" type="button" title="Exporter" (click)="onExport()">
+        <i class="material-symbols-outlined">download</i>
+      </button>
+      <div class="chart-panel__dropdown" #dropdownRef>
+        <button class="chart-action-btn" type="button" title="Plus d'options" (click)="toggleDropdown()">
+          <i class="material-symbols-outlined">more_vert</i>
+        </button>
+        <div class="chart-panel__dropdown-menu" *ngIf="showDropdown" [class.show]="showDropdown">
+          <a class="chart-panel__dropdown-item" href="javascript:void(0)" (click)="onRefresh()">
+            <i class="material-symbols-outlined">refresh</i>
+            <span>Actualiser</span>
+          </a>
+          <a class="chart-panel__dropdown-item" href="javascript:void(0)" (click)="onExport()">
+            <i class="material-symbols-outlined">download</i>
+            <span>Exporter</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-body pt-0" [style.height.px]="height">
+    <div class="chart-panel__canvas" [style.height.px]="height">
+      <canvas baseChart
+        [type]="internalType"
+        [datasets]="innerDatasets"
+        [labels]="innerLabels"
+        [options]="options"
+        [legend]="innerDatasets.length > 1">
+      </canvas>
+    </div>
+  </div>
+</div>
