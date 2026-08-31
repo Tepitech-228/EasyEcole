@@ -1,104 +1,241 @@
 <div class="dashboard-surface dashboard-comptable-shell">
-  <div class="dashboard-banner compta-banner">
-    <div class="flex items-center justify-between flex-wrap gap-4">
-      <div>
-        <p class="dashboard-kicker">Comptabilité</p>
-        <app-header-title title="" subtitle="Tableau de bord comptable OHADA"></app-header-title>
-      </div>
-      <div *ngIf="exercices.length > 0" class="flex items-center gap-2 rounded-full bg-white/15 px-3 py-2 backdrop-blur-sm">
-        <label class="text-sm text-white/80 font-medium">Exercice :</label>
-        <select (change)="onExerciceChange($event)" class="border border-white/20 rounded-xl px-3 py-2 text-sm bg-white/10 text-white focus:ring-2 focus:ring-white/20 focus:border-white/30">
-          <option *ngFor="let ex of exercices" [value]="ex.id" [selected]="ex.actif" class="text-gray-900">
+
+  <!-- ─── Header ─── -->
+  <header class="cc-header">
+    <div class="cc-header__left">
+      <span class="cc-header__kicker">ESA-Compta</span>
+      <h1 class="cc-header__title">Tableau de bord</h1>
+      <p class="cc-header__subtitle">Suivi des opérations comptables</p>
+    </div>
+    <div class="cc-header__right" *ngIf="exercices.length > 0">
+      <div class="cc-filter">
+        <span class="cc-filter__label">
+          <mat-icon class="cc-filter__icon">calendar_today</mat-icon>
+          Exercice
+        </span>
+        <select (change)="onExerciceChange($event)" class="cc-filter__select">
+          <option *ngFor="let ex of exercices" [value]="ex.id" [selected]="ex.actif">
             {{ ex.libelle }}
           </option>
         </select>
       </div>
     </div>
+  </header>
+
+  <!-- ─── Onglets ─── -->
+  <nav class="cc-tabs" aria-label="Navigation comptabilité">
+    <a routerLink="/comptabilite/dashboard" class="cc-tab cc-tab--active">Tableau de bord</a>
+    <a routerLink="/comptabilite/plan-comptable" class="cc-tab">Plan comptable</a>
+    <a routerLink="/comptabilite/balance" class="cc-tab">Balance</a>
+    <a routerLink="/comptabilite/grand-livre" class="cc-tab">Grand livre</a>
+    <a routerLink="/comptabilite/ecritures" class="cc-tab">Écritures</a>
+    <a routerLink="/comptabilite/bilan" class="cc-tab">Bilan</a>
+    <a routerLink="/comptabilite/compte-resultat" class="cc-tab">Compte de résultat</a>
+    <a routerLink="/comptabilite/exercices" class="cc-tab">Exercices</a>
+    <a *ngIf="rolesValue.isAdmin" routerLink="/comptabilite/parametres-frais" class="cc-tab">Paramètres frais</a>
+    <a routerLink="/comptabilite/comptes-bancaires" class="cc-tab">Banques</a>
+  </nav>
+
+  <!-- ─── Loading skeleton ─── -->
+  <div *ngIf="loading" class="cc-kpi-grid">
+    <div *ngFor="let i of [1,2,3,4]" class="cc-skeleton-card">
+      <div class="cc-skeleton-icon"></div>
+      <div class="cc-skeleton-lines">
+        <div class="cc-skeleton-line cc-skeleton-line--short"></div>
+        <div class="cc-skeleton-line cc-skeleton-line--long"></div>
+        <div class="cc-skeleton-line cc-skeleton-line--medium"></div>
+      </div>
+    </div>
   </div>
 
-  <div class="mb-8 flex flex-wrap gap-1 bg-gray-100 p-1 rounded-xl w-fit">
-    <a routerLink="/comptabilite/dashboard" class="dashboard-tab active">Dashboard</a>
-    <a routerLink="/comptabilite/plan-comptable" class="dashboard-tab">Plan comptable</a>
-    <a routerLink="/comptabilite/balance" class="dashboard-tab">Balance</a>
-    <a routerLink="/comptabilite/grand-livre" class="dashboard-tab">Grand livre</a>
-    <a routerLink="/comptabilite/ecritures" class="dashboard-tab">Écritures</a>
-    <a routerLink="/comptabilite/bilan" class="dashboard-tab">Bilan</a>
-    <a routerLink="/comptabilite/compte-resultat" class="dashboard-tab">Compte de résultat</a>
-    <a routerLink="/comptabilite/exercices" class="dashboard-tab">Exercices</a>
-    <a *ngIf="rolesValue.isAdmin" routerLink="/comptabilite/parametres-frais" class="dashboard-tab">Paramètres des frais</a>
-    <a routerLink="/comptabilite/comptes-bancaires" class="dashboard-tab">Banques</a>
-  </div>
-
-  <div *ngIf="loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-pulse">
-    <div *ngFor="let i of [1,2,3,4]" class="bg-white rounded-2xl p-6 border border-gray-200 h-32"></div>
-  </div>
-
+  <!-- ─── Contenu principal ─── -->
   <div *ngIf="!loading">
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <div class="compta-kpi blue">
-        <div class="flex items-center justify-between mb-4">
-          <div class="bg-white/20 rounded-lg p-2"><svg class="w-6 h-6" fill="currentColor" viewBox="0 -960 960 960"><path d="M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520h200L520-800v200Z"/></svg></div>
-          <span class="text-3xl font-bold">{{ nbComptes }}</span>
+
+    <!-- KPI — Ligne 1 : indicateurs clés -->
+    <section class="cc-section" aria-label="Indicateurs clés">
+      <h2 class="cc-section__title">Indicateurs clés</h2>
+      <div class="cc-kpi-grid">
+
+        <div class="cc-kpi cc-kpi--blue">
+          <div class="cc-kpi__accent"></div>
+          <div class="cc-kpi__body">
+            <div class="cc-kpi__head">
+              <div class="cc-kpi__icon cc-kpi__icon--blue">
+                <mat-icon>account_balance</mat-icon>
+              </div>
+              <span class="cc-kpi__label">Plan comptable</span>
+            </div>
+            <span class="cc-kpi__value">{{ nbComptes }}</span>
+            <span class="cc-kpi__detail">{{ formatMontant(totalActif) }} au total</span>
+          </div>
         </div>
-        <p class="text-sm text-blue-100">Plan comptable</p>
-        <p class="text-lg font-semibold">{{ formatMontant(totalActif) }} actif</p>
-      </div>
 
-      <div class="compta-kpi cyan">
-        <div class="flex items-center justify-between mb-4">
-          <div class="bg-white/20 rounded-lg p-2"><svg class="w-6 h-6" fill="currentColor" viewBox="0 -960 960 960"><path d="m80-200 160-320 160 160 200-360 280 520H80Z"/></svg></div>
-          <span class="text-3xl font-bold">{{ formatMontant(totalProduits) }}</span>
+        <div class="cc-kpi cc-kpi--emerald">
+          <div class="cc-kpi__accent"></div>
+          <div class="cc-kpi__body">
+            <div class="cc-kpi__head">
+              <div class="cc-kpi__icon cc-kpi__icon--emerald">
+                <mat-icon>trending_up</mat-icon>
+              </div>
+              <span class="cc-kpi__label">Produits</span>
+            </div>
+            <span class="cc-kpi__value">{{ formatMontant(totalProduits) }}</span>
+            <span class="cc-kpi__detail">{{ formatMontant(totalProduits - totalCharges) }} résultat net</span>
+          </div>
         </div>
-        <p class="text-sm text-cyan-100">Produits</p>
-        <p class="text-lg font-semibold">{{ formatMontant(totalProduits - totalCharges) }} résultat</p>
-      </div>
 
-      <div class="compta-kpi emerald">
-        <div class="flex items-center justify-between mb-4">
-          <div class="bg-white/20 rounded-lg p-2"><svg class="w-6 h-6" fill="currentColor" viewBox="0 -960 960 960"><path d="M200-80q-33 0-56.5-23.5T120-160v-520q0-33 23.5-56.5T200-760h40v-40q0-33 23.5-56.5T320-880h320q33 0 56.5 23.5T720-800v40h40q33 0 56.5 23.5T840-680v520q0 33-23.5 56.5T760-80H200Zm0-80h560v-520H200v520Zm120-400h320v-40H320v40Zm0 160h320v-80H320v80Z"/></svg></div>
-          <span class="text-3xl font-bold">{{ formatMontant(totalCharges) }}</span>
+        <div class="cc-kpi cc-kpi--amber">
+          <div class="cc-kpi__accent"></div>
+          <div class="cc-kpi__body">
+            <div class="cc-kpi__head">
+              <div class="cc-kpi__icon cc-kpi__icon--amber">
+                <mat-icon>receipt_long</mat-icon>
+              </div>
+              <span class="cc-kpi__label">Charges</span>
+            </div>
+            <span class="cc-kpi__value">{{ formatMontant(totalCharges) }}</span>
+            <span class="cc-kpi__detail">{{ nbEcritures }} écritures comptabilisées</span>
+          </div>
         </div>
-        <p class="text-sm text-emerald-100">Charges</p>
-        <p class="text-lg font-semibold">{{ nbEcritures }} écritures</p>
-      </div>
 
-      <div class="compta-kpi violet">
-        <div class="flex items-center justify-between mb-4">
-          <div class="bg-white/20 rounded-lg p-2"><svg class="w-6 h-6" fill="currentColor" viewBox="0 -960 960 960"><path d="M480-80q-82 0-155-31.5t-127.5-86Q143-252 111.5-325T80-480q0-83 31.5-155.5t86-127Q252-817 325-848.5T480-880q83 0 155.5 31.5t127 86q54.5 54.5 86 127T880-480q0 82-31.5 155t-86 127.5q-54.5 54.5-127 86T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-80q-100 0-170-70t-70-170q0-100 70-170t170-70q100 0 170 70t70 170q0 100-70 170t-170 70Zm0-80q66 0 113-47t47-113q0-66-47-113t-113-47q-66 0-113 47t-47 113q0 66 47 113t113 47Z"/></svg></div>
-          <span class="text-3xl font-bold">{{ formatMontant(totalPassif) }}</span>
+        <div class="cc-kpi cc-kpi--violet">
+          <div class="cc-kpi__accent"></div>
+          <div class="cc-kpi__body">
+            <div class="cc-kpi__head">
+              <div class="cc-kpi__icon cc-kpi__icon--violet">
+                <mat-icon>account_tree</mat-icon>
+              </div>
+              <span class="cc-kpi__label">Passif</span>
+            </div>
+            <span class="cc-kpi__value">{{ formatMontant(totalPassif) }}</span>
+            <span class="cc-kpi__detail">{{ formatMontant(totalActif - totalPassif) }} situation nette</span>
+          </div>
         </div>
-        <p class="text-sm text-violet-100">Passif</p>
-        <p class="text-lg font-semibold">{{ formatMontant(totalActif - totalPassif) }} nette</p>
-      </div>
-    </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-      <a routerLink="/comptabilite/plan-comptable" class="compta-link blue"><div class="icon"><svg ...></svg></div><div><p>Plan comptable</p><span>{{ nbComptes }} comptes</span></div></a>
-      <a routerLink="/comptabilite/balance" class="compta-link green"><div class="icon"><svg ...></svg></div><div><p>Balance</p><span>Vue d'ensemble</span></div></a>
-      <a routerLink="/comptabilite/grand-livre" class="compta-link amber"><div class="icon"><svg ...></svg></div><div><p>Grand livre</p><span>Par compte</span></div></a>
-      <a routerLink="/comptabilite/ecritures" class="compta-link rose"><div class="icon"><svg ...></svg></div><div><p>Écritures</p><span>{{ nbEcritures }} entrées</span></div></a>
-    </div>
-
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm">
-      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-        <h3 class="font-semibold text-gray-900">Dernières écritures</h3>
-        <a routerLink="/comptabilite/ecritures" class="text-sm text-blue-600 hover:underline">Voir tout</a>
       </div>
-      <div class="divide-y divide-gray-100">
-        <div *ngIf="dernieresEcritures.length === 0" class="px-6 py-8 text-center text-sm text-gray-500">Aucune écriture</div>
-        <div *ngFor="let e of dernieresEcritures" class="px-6 py-3.5 flex items-center justify-between hover:bg-gray-50">
-          <div class="flex items-center gap-4">
-            <span class="text-xs font-mono font-semibold text-gray-400">{{ e.numeroEcriture }}</span>
-            <div>
-              <p class="text-sm font-medium text-gray-900">{{ e.libelle }}</p>
-              <p class="text-xs text-gray-500">{{ e.dateEcriture | date:'dd/MM/yyyy' }}</p>
+    </section>
+
+    <!-- KPI — Ligne 2 : Situation financière -->
+    <section class="cc-section" aria-label="Situation financière">
+      <h2 class="cc-section__title">Situation financière</h2>
+      <div class="cc-kpi-grid cc-kpi-grid--2">
+
+        <div class="cc-kpi-wide cc-kpi-wide--blue">
+          <div class="cc-kpi-wide__icon">
+            <mat-icon>account_balance_wallet</mat-icon>
+          </div>
+          <div class="cc-kpi-wide__body">
+            <span class="cc-kpi-wide__label">Total Actif</span>
+            <span class="cc-kpi-wide__value">{{ formatMontant(totalActif) }}</span>
+          </div>
+          <div class="cc-kpi-wide__bar">
+            <div class="cc-kpi-wide__bar-fill cc-kpi-wide__bar-fill--blue"
+                 [style.width.%]="totalActif + totalPassif > 0 ? (totalActif / (totalActif + totalPassif)) * 100 : 0"></div>
+          </div>
+        </div>
+
+        <div class="cc-kpi-wide cc-kpi-wide--rose">
+          <div class="cc-kpi-wide__icon">
+            <mat-icon>monetization_on</mat-icon>
+          </div>
+          <div class="cc-kpi-wide__body">
+            <span class="cc-kpi-wide__label">Total Passif</span>
+            <span class="cc-kpi-wide__value">{{ formatMontant(totalPassif) }}</span>
+          </div>
+          <div class="cc-kpi-wide__bar">
+            <div class="cc-kpi-wide__bar-fill cc-kpi-wide__bar-fill--rose"
+                 [style.width.%]="totalActif + totalPassif > 0 ? (totalPassif / (totalActif + totalPassif)) * 100 : 0"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Accès rapides -->
+    <section class="cc-section" aria-label="Accès rapides">
+      <h2 class="cc-section__title">Accès rapides</h2>
+      <div class="cc-shortcuts-grid">
+        <a routerLink="/comptabilite/plan-comptable" class="cc-shortcut cc-shortcut--blue">
+          <div class="cc-shortcut__icon">
+            <mat-icon>menu_book</mat-icon>
+          </div>
+          <div class="cc-shortcut__text">
+            <span class="cc-shortcut__title">Plan comptable</span>
+            <span class="cc-shortcut__meta">{{ nbComptes }} comptes</span>
+          </div>
+          <mat-icon class="cc-shortcut__arrow">chevron_right</mat-icon>
+        </a>
+        <a routerLink="/comptabilite/balance" class="cc-shortcut cc-shortcut--emerald">
+          <div class="cc-shortcut__icon">
+            <mat-icon>balance</mat-icon>
+          </div>
+          <div class="cc-shortcut__text">
+            <span class="cc-shortcut__title">Balance</span>
+            <span class="cc-shortcut__meta">Vue d'ensemble</span>
+          </div>
+          <mat-icon class="cc-shortcut__arrow">chevron_right</mat-icon>
+        </a>
+        <a routerLink="/comptabilite/grand-livre" class="cc-shortcut cc-shortcut--amber">
+          <div class="cc-shortcut__icon">
+            <mat-icon>auto_stories</mat-icon>
+          </div>
+          <div class="cc-shortcut__text">
+            <span class="cc-shortcut__title">Grand livre</span>
+            <span class="cc-shortcut__meta">Détail par compte</span>
+          </div>
+          <mat-icon class="cc-shortcut__arrow">chevron_right</mat-icon>
+        </a>
+        <a routerLink="/comptabilite/ecritures" class="cc-shortcut cc-shortcut--violet">
+          <div class="cc-shortcut__icon">
+            <mat-icon>edit_note</mat-icon>
+          </div>
+          <div class="cc-shortcut__text">
+            <span class="cc-shortcut__title">Écritures</span>
+            <span class="cc-shortcut__meta">{{ nbEcritures }} entrées</span>
+          </div>
+          <mat-icon class="cc-shortcut__arrow">chevron_right</mat-icon>
+        </a>
+      </div>
+    </section>
+
+    <!-- Dernières écritures -->
+    <section class="cc-section" aria-label="Dernières écritures">
+      <div class="cc-card">
+        <div class="cc-card__header">
+          <div class="cc-card__header-left">
+            <mat-icon class="cc-card__header-icon">history</mat-icon>
+            <h3 class="cc-card__title">Dernières écritures</h3>
+          </div>
+          <a routerLink="/comptabilite/ecritures" class="cc-card__link">
+            Voir tout
+            <mat-icon class="cc-card__link-icon">arrow_forward</mat-icon>
+          </a>
+        </div>
+        <div class="cc-card__body">
+          <div *ngIf="dernieresEcritures.length === 0" class="cc-empty">
+            <mat-icon class="cc-empty__icon">receipt_long</mat-icon>
+            <p class="cc-empty__text">Aucune écriture enregistrée</p>
+          </div>
+          <div *ngFor="let e of dernieresEcritures; let last = last"
+               class="cc-entry"
+               [class.cc-entry--last]="last">
+            <div class="cc-entry__status">
+              <span class="cc-entry__dot"></span>
+            </div>
+            <div class="cc-entry__content">
+              <div class="cc-entry__row">
+                <span class="cc-entry__ref">{{ e.numeroEcriture }}</span>
+                <span class="cc-entry__amount">{{ (e.montant || 0) | currency:'XAF':'symbol':'1.0-0' }}</span>
+              </div>
+              <div class="cc-entry__row cc-entry__row--sub">
+                <span class="cc-entry__label">{{ e.libelle }}</span>
+                <span class="cc-entry__date">{{ e.dateEcriture | date:'dd/MM/yyyy' }}</span>
+              </div>
             </div>
           </div>
-          <div class="text-right">
-            <span class="text-sm font-semibold text-gray-900">{{ (e.montant || 0) | currency:'XAF':'symbol':'1.0-0' }}</span>
-          </div>
         </div>
       </div>
-    </div>
+    </section>
+
   </div>
 </div>

@@ -110,14 +110,15 @@ body {
 
 .dashboard-surface.dashboard-parent-shell .dashboard-action-card,
 .dashboard-surface.dashboard-enseignant-shell .stat-card,
-.dashboard-surface.dashboard-comptable-shell .compta-kpi,
+.dashboard-surface.dashboard-comptable-shell .cc-kpi,
 .dashboard-surface.dashboard-rh-shell .dashboard-stat-card {
   animation: dashboardReveal 420ms ease both;
 }
 
 .dashboard-surface.dashboard-parent-shell .dashboard-panel,
 .dashboard-surface.dashboard-enseignant-shell .card,
-.dashboard-surface.dashboard-comptable-shell .compta-link,
+.dashboard-surface.dashboard-comptable-shell .cc-shortcut,
+.dashboard-surface.dashboard-comptable-shell .cc-card,
 .dashboard-surface.dashboard-rh-shell .dashboard-panel {
   box-shadow: var(--app-shadow);
 }
