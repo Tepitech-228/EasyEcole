@@ -3,6 +3,7 @@ import express from "express"
 import MatierePrerequisController from "../controllers/MatierePrerequisController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution"
 import CheckPermission from "../../../core/middlewares/CheckPermission"
+import { cache } from "../../../core/middlewares/CacheMiddleware"
 
 const router = express.Router()
 
@@ -19,7 +20,8 @@ const router = express.Router()
  *         description: Liste des matières prérequis
  */
 router
-    .get('/', MatierePrerequisController.getAllMatieresPrerequis)
+    // Référentiel stable → cache Redis 300 s (Authenticate appliqué par le parent)
+    .get('/', [cache(300)], MatierePrerequisController.getAllMatieresPrerequis)
 
 /**
  * @openapi
@@ -59,7 +61,7 @@ router
  *       200:
  *         description: Matière prérequis trouvée
  */
-    .get('/:id', MatierePrerequisController.getMatierePrerequis)
+    .get('/:id', [cache(300)], MatierePrerequisController.getMatierePrerequis)
 
 /**
  * @openapi

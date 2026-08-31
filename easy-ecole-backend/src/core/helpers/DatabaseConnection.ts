@@ -1,5 +1,5 @@
 import { Dialect, QueryTypes, Sequelize } from "sequelize";
-import { ensureUniqueIndexes } from "./ensureUniqueIndexes";
+import { ensureUniqueIndexes, ensurePerformanceIndexes } from "./ensureUniqueIndexes";
 import { ensureBordereauFinance } from "./ensureBordereauFinance";
 import { ensureReferenceData } from "./ensureReferenceData";
 const env = process.env.NODE_ENV || 'development';
@@ -62,12 +62,15 @@ export class DatabaseConnection {
             })(),
             define: {
                 underscored: false,
+                // NOTE : collation utf8mb3 héritée (obsolète, limitée à 3 octets/char).
+                // NE PAS basculer dynamiquement en utf8mb4 ici (risqué, volatile avec sync).
+                // L'upgrade vers utf8mb4 devra être réalisée par migration manuelle.
                 collate: 'utf8mb3_general_ci',
             },
             pool: {
                 max: 20,
                 min: 5,
-                acquire: 30000,
+                acquire: 20000,
                 idle: 10000
             }
         });
@@ -90,26 +93,33 @@ export class DatabaseConnection {
             await this._sequelize.authenticate();
             console.log('Database connected successfully');
 
-            // Nettoyer les orphelins AVANT de syncer les tables rattrapage
-            try {
-                await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
-                
-                // Supprimer les RattrapageInscription avec coursParticipantId orpheline
-                await this._sequelize.query(`
-                    DELETE FROM ins_rattrapages_inscriptions 
-                    WHERE coursParticipantId IS NOT NULL 
-                    AND coursParticipantId NOT IN (SELECT id FROM ins_cours_participants)
-                `);
-                
-                // Supprimer les RattrapageDocumentDepose avec rattrapageInscriptionId orpheline
-                await this._sequelize.query(`
-                    DELETE FROM ins_rattrapage_documents_deposes 
-                    WHERE rattrapageInscriptionId NOT IN (SELECT id FROM ins_rattrapages_inscriptions)
-                `);
+            // Nettoyer les orphelins AVANT de syncer les tables rattrapage.
+            // La purge ne supprime QUE les enregistrements dont la clé étrangère
+            // pointe vers une ligne inexistante (véritables orphelins) : elle est
+            // donc sûre et idempotente. Elle reste ACTIVE par défaut, mais peut
+            // être désactivée en production (grosse base) via
+            // DISABLE_BOOT_ORPHAN_PURGE=true pour éviter le scan DELETE à chaque boot.
+            if (process.env.DISABLE_BOOT_ORPHAN_PURGE !== 'true') {
+                try {
+                    await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
 
-                await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
-            } catch (cleanupError: any) {
-                console.warn('Warning (rattrapage cleanup):', cleanupError?.message || cleanupError);
+                    // Supprimer les RattrapageInscription avec coursParticipantId orpheline
+                    await this._sequelize.query(`
+                        DELETE FROM ins_rattrapages_inscriptions 
+                        WHERE coursParticipantId IS NOT NULL 
+                        AND coursParticipantId NOT IN (SELECT id FROM ins_cours_participants)
+                    `);
+
+                    // Supprimer les RattrapageDocumentDepose avec rattrapageInscriptionId orpheline
+                    await this._sequelize.query(`
+                        DELETE FROM ins_rattrapage_documents_deposes 
+                        WHERE rattrapageInscriptionId NOT IN (SELECT id FROM ins_rattrapages_inscriptions)
+                    `);
+
+                    await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
+                } catch (cleanupError: any) {
+                    console.warn('Warning (rattrapage cleanup):', cleanupError?.message || cleanupError);
+                }
             }
 
             // Sync ciblé frais/rattrapage : réservé au développement (en production,
@@ -204,6 +214,14 @@ export class DatabaseConnection {
                 await ensureUniqueIndexes(this._sequelize);
             } catch (uniqueError: any) {
                 console.warn('Warning (ensureUniqueIndexes):', uniqueError?.message || uniqueError);
+            }
+
+            // --- Index NON-UNIQUE recommandés (filtres fréquents / agrégations) ---
+            // Idempotents, hors modèles (aucun ALTER déclenché par le sync).
+            try {
+                await ensurePerformanceIndexes(this._sequelize);
+            } catch (perfError: any) {
+                console.warn('Warning (ensurePerformanceIndexes):', perfError?.message || perfError);
             }
 
             // --- Migrations légères bordereau MIXTE (ENUM, colonne, type opération) ---

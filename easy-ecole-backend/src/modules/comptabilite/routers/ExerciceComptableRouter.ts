@@ -1,5 +1,7 @@
 import express from "express"
 import ExerciceComptableController from "../controllers/ExerciceComptableController"
+import Authenticate from "../../../core/middlewares/Authenticate"
+import { AuthEsacompta } from "../../../core/middlewares/AuthEsacompta"
 
 const router = express.Router()
 
@@ -16,7 +18,7 @@ const router = express.Router()
  *         description: Liste des exercices comptables
  */
 router
-  .get('/', ExerciceComptableController.getAll)
+  .get('/', [Authenticate, AuthEsacompta], ExerciceComptableController.getAll)
 
 /**
  * @openapi
@@ -32,7 +34,7 @@ router
  *       404:
  *         description: Aucun exercice actif
  */
-  .get('/en-cours', ExerciceComptableController.getEnCours)
+  .get('/en-cours', [Authenticate, AuthEsacompta], ExerciceComptableController.getEnCours)
 
 /**
  * @openapi
@@ -54,7 +56,7 @@ router
  *       404:
  *         description: Exercice non trouvé
  */
-  .get('/:id', ExerciceComptableController.getById)
+  .get('/:id', [Authenticate, AuthEsacompta], ExerciceComptableController.getById)
 
 /**
  * @openapi
@@ -92,7 +94,7 @@ router
  *       400:
  *         description: Erreur de validation
  */
-  .post('/', ExerciceComptableController.create)
+  .post('/', [Authenticate, AuthEsacompta], ExerciceComptableController.create)
 
 /**
  * @openapi
@@ -135,6 +137,6 @@ router
  *       404:
  *         description: Exercice non trouvé
  */
-  .put('/:id', ExerciceComptableController.update)
+  .put('/:id', [Authenticate, AuthEsacompta], ExerciceComptableController.update)
 
 export default router

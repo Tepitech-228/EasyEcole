@@ -1,0 +1,29 @@
+<div class="kpi-card card border-0 shadow-sm h-100" [style.background]="'linear-gradient(135deg, ' + color + '0f, #ffffff 55%)'">
+  <div class="card-body d-flex align-items-start justify-content-between">
+    <div class="kpi-card__content">
+      <span class="kpi-card__label text-uppercase text-muted small fw-semibold">{{ label }}</span>
+      <div class="kpi-card__value d-flex align-items-baseline mt-1">
+        <span class="display-6 fw-bold text-dark" style="font-size: 1.9rem;">{{ value }}</span>
+        <span class="ms-2 text-muted small fw-medium" *ngIf="unit">{{ unit }}</span>
+      </div>
+      <div class="d-flex align-items-center mt-2">
+        <span *ngIf="trend !== 0" class="kpi-card__trend badge d-inline-flex align-items-center gap-1"
+              [ngClass]="trendClass()">
+          <i class="material-symbols-outlined d-inline-flex align-items-center" style="font-size:15px">{{ trendSymbol() }}</i>
+          {{ trend > 0 ? '+' : '' }}{{ trend }}%
+        </span>
+        <span *ngIf="trend === 0" class="kpi-card__trend text-muted small">stable</span>
+        <mat-progress-bar *ngIf="progress > 0" class="kpi-card__progress ms-3"
+          mode="determinate"
+          [value]="progress"
+          [color]="'primary'">
+        </mat-progress-bar>
+      </div>
+    </div>
+    <div class="kpi-card__icon d-flex align-items-center justify-content-center rounded-3"
+         [style.background]="color + '1a'"
+         [style.color]="color">
+      <i class="material-symbols-outlined">{{ icon }}</i>
+    </div>
+  </div>
+</div>

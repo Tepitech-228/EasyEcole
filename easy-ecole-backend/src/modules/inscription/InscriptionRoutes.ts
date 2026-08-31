@@ -13,6 +13,7 @@ import DemandeInscriptionRouter from "./routers/DemandeInscriptionRouter"
 import ReponseInscriptionRouter from "./routers/ReponseInscriptionRouter"
 import FraisInscriptionRouter from "./routers/FraisInscriptionRouter"
 import Authenticate from "../../core/middlewares/Authenticate";
+import { cache } from "../../core/middlewares/CacheMiddleware";
 import { InscriptionComplete } from "../../core/middlewares/InscriptionComplete";
 import PaiementInscriptionRouter from "./routers/PaiementInscriptionRouter";
 import QuitusRouter from "./routers/QuitusRouter";
@@ -80,8 +81,7 @@ import DesignationMemoireRouter from "./routers/DesignationMemoireRouter";
 
 const router = express.Router();
 
-// Route publique pour téléchargement (sans Authenticate)
-router.get('/bordereaux/:id/download', BordereauController.downloadBordereau)
+router.get('/bordereaux/:id/download', [Authenticate], BordereauController.downloadBordereau)
 
 // Route publique pour vérification de carte (sans Authenticate)
 router.get('/cartes/verifier/:code', CartesController.verifier)
@@ -174,6 +174,7 @@ router
     .use('/reinscription', [Authenticate], ReinscriptionRouter)
     // Le dashboard reste accessible aux nouveaux étudiants afin qu'ils puissent
     // consulter les sessions ouvertes et démarrer leur inscription.
-    .get('/dashboard', [Authenticate], DashboardController.getDashboard)
+    // (lecture agrégée coûteuse → cache Redis 30 s, clé par utilisateur)
+    .get('/dashboard', [Authenticate, cache(30)], DashboardController.getDashboard)
 
 export default router;

@@ -14,12 +14,14 @@ import ExerciceComptableRouter from "./routers/ExerciceComptableRouter"
 import EtatsFinanciersRouter from "./routers/EtatsFinanciersRouter"
 import ParametreFraisRouter from "./routers/ParametreFraisRouter"
 import Authenticate from "../../core/middlewares/Authenticate"
+import { cache } from "../../core/middlewares/CacheMiddleware"
 import ComptabiliteDashboardController from "./controllers/ComptabiliteDashboardController"
 
 const router = express.Router()
 
 router
-  .get('/dashboard', [Authenticate], ComptabiliteDashboardController.getDashboard)
+  // Lecture agrégée coûteuse → cache Redis 30 s (clé par utilisateur)
+  .get('/dashboard', [Authenticate, cache(30)], ComptabiliteDashboardController.getDashboard)
   .use('/comptes', [Authenticate], CompteRouter)
   .use('/journaux', [Authenticate], JournalComptableRouter)
   .use('/ecritures', [Authenticate], EcritureComptableRouter)

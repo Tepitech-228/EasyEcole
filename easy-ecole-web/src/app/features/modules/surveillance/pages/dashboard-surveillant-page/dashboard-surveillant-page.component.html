@@ -1,0 +1,184 @@
+<div class="dashboard-surface dashboard-surveillant-shell">
+  <div class="dashboard-banner surveillant-banner">
+    <div class="flex items-center justify-between flex-wrap gap-4">
+      <div>
+        <p class="dashboard-kicker">Surveillance</p>
+        <h1 class="text-2xl font-bold text-white">Tableau de bord Surveillant</h1>
+      </div>
+      <button (click)="refresh()"
+        class="px-4 py-2 bg-white/20 text-white text-sm font-medium rounded-lg hover:bg-white/30 backdrop-blur-sm flex items-center gap-x-2">
+        <span class="material-symbols-outlined text-lg">refresh</span>
+        Actualiser
+      </button>
+    </div>
+  </div>
+
+  <ng-container *ngIf="!loading && !error; else loadingState">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-500">Présences</p>
+            <p class="text-3xl font-bold text-gray-900 mt-1">{{ dashboard?.totalPresences ?? '--' }}</p>
+          </div>
+          <div class="p-3 bg-green-50 rounded-full">
+            <span class="material-symbols-outlined text-green-600 text-2xl">check_circle</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-500">Absences</p>
+            <p class="text-3xl font-bold text-gray-900 mt-1">{{ dashboard?.totalAbsences ?? '--' }}</p>
+          </div>
+          <div class="p-3 bg-red-50 rounded-full">
+            <span class="material-symbols-outlined text-red-600 text-2xl">cancel</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-500">Retards</p>
+            <p class="text-3xl font-bold text-gray-900 mt-1">{{ dashboard?.totalRetards ?? '--' }}</p>
+          </div>
+          <div class="p-3 bg-yellow-50 rounded-full">
+            <span class="material-symbols-outlined text-yellow-600 text-2xl">schedule</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-500">Taux de présence</p>
+            <p class="text-3xl font-bold text-gray-900 mt-1">{{ dashboard?.tauxPresence != null ? (dashboard!.tauxPresence! | number:'1.0-0') + '%' : '--%' }}</p>
+          </div>
+          <div class="p-3 bg-indigo-50 rounded-full">
+            <span class="material-symbols-outlined text-indigo-600 text-2xl">insights</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-500">Séances aujourd'hui</p>
+            <p class="text-3xl font-bold text-gray-900 mt-1">{{ dashboard?.seancesAuj ?? '--' }}</p>
+          </div>
+          <div class="p-3 bg-sky-50 rounded-full">
+            <span class="material-symbols-outlined text-sky-600 text-2xl">event</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-500">Sanctions du jour</p>
+            <p class="text-3xl font-bold text-gray-900 mt-1">{{ dashboard?.sanctionsAuj ?? '--' }}</p>
+          </div>
+          <div class="p-3 bg-purple-50 rounded-full">
+            <span class="material-symbols-outlined text-purple-600 text-2xl">gavel</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-500">Absences non justifiées</p>
+            <p class="text-3xl font-bold text-gray-900 mt-1">{{ dashboard?.absencesNonJustifiees ?? '--' }}</p>
+          </div>
+          <div class="p-3 bg-orange-50 rounded-full">
+            <span class="material-symbols-outlined text-orange-600 text-2xl">fact_check</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-500">Pointages du jour</p>
+            <p class="text-3xl font-bold text-gray-900 mt-1">{{ dashboard?.pointagesAuj ?? '--' }}</p>
+          </div>
+          <div class="p-3 bg-teal-50 rounded-full">
+            <span class="material-symbols-outlined text-teal-600 text-2xl">schedule</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <p class="text-sm text-gray-500 mb-1">Répartition des absences</p>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Absences par type</h3>
+        <div class="h-72">
+          <app-chart-panel [payload]="absencesPayload"></app-chart-panel>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <p class="text-sm text-gray-500 mb-1">Tendance</p>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Présences (7 derniers jours)</h3>
+        <div class="h-72">
+          <app-chart-panel [payload]="tendancePayload"></app-chart-panel>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <p class="text-sm text-gray-500 mb-1">Discipline</p>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Sanctions par type</h3>
+        <div class="h-72">
+          <app-chart-panel [payload]="sanctionsPayload"></app-chart-panel>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <p class="text-sm text-gray-500 mb-1">Discipline</p>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Sanctions par statut</h3>
+        <div class="h-72">
+          <app-chart-panel [payload]="sanctionsStatutPayload"></app-chart-panel>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">Discipline du jour</h3>
+      <div class="space-y-4" *ngIf="incidents.length > 0; else noIncidents">
+          <div *ngFor="let incident of incidents" class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+            <div class="flex-1">
+              <div class="flex items-center gap-x-2 mb-1">
+                <span class="text-sm font-medium text-gray-900">{{ incident.apprenantPrenoms }} {{ incident.apprenantNom }}</span>
+                <span class="text-xs text-gray-500">{{ incident.classe }}</span>
+              </div>
+              <p class="text-sm text-gray-600">{{ incident.description }}</p>
+              <div class="flex items-center gap-x-2 mt-2">
+                <span class="text-xs px-2 py-0.5 rounded-full font-medium" [ngClass]="getGraviteClass(incident.gravite || 'mineure')">
+                  {{ getGraviteLabel(incident.gravite || 'mineure') }}
+                </span>
+                <span class="text-xs px-2 py-0.5 rounded-full font-medium" [ngClass]="getStatutClass(incident.statut || 'ouvert')">
+                  {{ getStatutLabel(incident.statut || 'ouvert') }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ng-template #noIncidents>
+          <div class="text-center py-8 text-sm text-gray-500">Aucun incident de discipline aujourd'hui</div>
+        </ng-template>
+      </div>
+  </ng-container>
+
+  <ng-template #loadingState>
+    <div class="flex flex-col items-center justify-center py-16">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+      <p class="text-sm text-gray-500">Chargement du tableau de bord...</p>
+    </div>
+  </ng-template>
+</div>

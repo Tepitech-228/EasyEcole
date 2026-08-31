@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReportingService } from 'src/app/data/modules/reporting/services/reporting.service';
+import { untilDestroyed } from 'src/app/core/utils/take-until-destroy';
 
 @Component({
   selector: 'app-dashboard-global-page',
@@ -27,7 +28,7 @@ chartPaiementsLabels: string[] = [];
   constructor(private reporting: ReportingService) {}
 
   ngOnInit(): void {
-    this.reporting.getDashboard().subscribe({
+    this.reporting.getDashboard().pipe(untilDestroyed(this)).subscribe({
       next: (res: any) => {
         this.data = res;
         this.chartEffectifs = res?.effectifsParMois || [];

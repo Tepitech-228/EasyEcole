@@ -3,6 +3,7 @@ import express from "express"
 import SessionController from "../controllers/SessionController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
 import CheckPermission from "../../../core/middlewares/CheckPermission";
+import { cache } from "../../../core/middlewares/CacheMiddleware";
 
 const router = express.Router()
 
@@ -17,7 +18,8 @@ const router = express.Router()
  *         description: Liste des sessions
  */
 router
-    .get('/', SessionController.getAllSessions)
+    // Référentiel stable → cache Redis 300 s (Authenticate appliqué par le parent)
+    .get('/', [cache(300)], SessionController.getAllSessions)
 /**
  * @openapi
  * /inscription/sessions:
@@ -56,7 +58,7 @@ router
  *       404:
  *         description: Session non trouvée
  */
-    .get('/:id', SessionController.getSession)
+    .get('/:id', [cache(300)], SessionController.getSession)
 /**
  * @openapi
  * /inscription/sessions/{id}:

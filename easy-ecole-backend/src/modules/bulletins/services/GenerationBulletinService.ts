@@ -1,4 +1,4 @@
-import { Transaction } from "sequelize";
+import { Op, Transaction } from "sequelize";
 import { Bulletin } from "../models/Bulletin";
 import { LigneBulletin } from "../models/LigneBulletin";
 import { CursusApprenant } from "../../inscription/models/CursusApprenant";
@@ -31,6 +31,11 @@ export interface UeBulletinResult {
 export interface BulletinGenerationResult {
   bulletin: Bulletin
   ues: UeBulletinResult[]
+}
+
+interface ListeEvalGroup {
+  liste: ListeNoteEvaluation;
+  notesParParticipant: Map<number, number>;
 }
 
 export class GenerationBulletinService {
@@ -106,17 +111,87 @@ export class GenerationBulletinService {
     const reglesMap = new Map(regles.map(r => [r.type, r.valeur]));
     const noteMinimale = parseFloat(reglesMap.get('note_minimale') || '10');
 
-    for (const cursus of cursusList) {
-      const existant = await Bulletin.findOne({
-        where: { cursusApprenantId: cursus.id, semestre, anneeAcademiqueId }
-      });
-      if (existant) continue;
+    // ---- Optimisation N+1 : pré-chargement groupé des données de notes ----
+    // On charge en O(quelques requêtes) toutes les données nécessaires aux calculs :
+    //   1. Toutes les inscriptions de cours (CoursParticipant) de TOUS les étudiants de la classe.
+    //   2. Toutes les ListesNoteEvaluation (avec type + notes) de TOUS les cours du semestre.
+    //   3. Tous les bulletins existants de la classe/semestre (pour le contrôle de redondance).
+    // Ces données sont ensuite regroupées dans des Maps et réutilisées en O(1) dans les boucles,
+    // au lieu de relancer une requête par (étudiant x UE x MCC).
+    const cursusIds = cursusList.map(c => Number(c.id));
 
-      const coursParticipants = await CoursParticipant.findAll({
-        where: { cursusApprenantId: cursus.id },
-        attributes: ['id', 'coursId']
-      });
-      const coursParticipantMap = new Map(coursParticipants.map(cp => [String(cp.coursId), Number(cp.id)]));
+    const coursIdsMcc: number[] = [];
+    for (const ue of ues) {
+      const mccs = (ue as any).mccs || [];
+      for (const mcc of mccs) {
+        const cours = (mcc as any).cours;
+        if (cours && cours.id != null) {
+          coursIdsMcc.push(Number(String(cours.id)));
+        }
+      }
+    }
+    const coursIdsUniques = Array.from(new Set(coursIdsMcc));
+
+    const [tousCoursParticipants, listesEval, bulletinsDejaExistants] = await Promise.all([
+      CoursParticipant.findAll({
+        where: { cursusApprenantId: { [Op.in]: cursusIds } },
+        attributes: ['id', 'coursId', 'cursusApprenantId']
+      }),
+      ListeNoteEvaluation.findAll({
+        where: { coursId: { [Op.in]: coursIdsUniques }, anneeAcademiqueId },
+        include: [
+          { association: ListeNoteEvaluation.associations.typeNoteEvaluation },
+          { association: ListeNoteEvaluation.associations.notesEvaluation }
+        ]
+      }),
+      Bulletin.findAll({
+        where: { cursusApprenantId: { [Op.in]: cursusIds }, semestre, anneeAcademiqueId },
+        attributes: ['cursusApprenantId']
+      })
+    ]);
+
+    const coursParticipantParCursus = new Map<number, Map<string, number>>();
+    for (const cp of tousCoursParticipants) {
+      const pid = Number(cp.cursusApprenantId);
+      const pidCours = Number(cp.coursId);
+      let m = coursParticipantParCursus.get(pid);
+      if (!m) {
+        m = new Map<string, number>();
+        coursParticipantParCursus.set(pid, m);
+      }
+      m.set(String(pidCours), Number(cp.id));
+    }
+
+    const cursusAvecBulletinExistant = new Set(
+      bulletinsDejaExistants
+        .map(b => Number((b as any).cursusApprenantId))
+        .filter((v): v is number => v != null)
+    );
+
+    const listesParCours = new Map<number, ListeEvalGroup[]>();
+    for (const liste of listesEval) {
+      if (liste.coursId == null) continue;
+      const coursIdNum = Number(String(liste.coursId));
+      const notesParParticipant = new Map<number, number>();
+      for (const n of (liste.notesEvaluation || [])) {
+        if (n.coursParticipantId == null) continue;
+        const pid = Number(n.coursParticipantId);
+        if (!notesParParticipant.has(pid)) {
+          notesParParticipant.set(pid, Number(n.note));
+        }
+      }
+      let arr = listesParCours.get(coursIdNum);
+      if (!arr) {
+        arr = [];
+        listesParCours.set(coursIdNum, arr);
+      }
+      arr.push({ liste, notesParParticipant });
+    }
+
+    for (const cursus of cursusList) {
+      if (cursusAvecBulletinExistant.has(Number(cursus.id))) continue;
+
+      const coursParticipantMap = coursParticipantParCursus.get(Number(cursus.id)) || new Map<string, number>();
 
       const resultatsUe: UeBulletinResult[] = [];
       let sommeProduitECTS = 0;
@@ -142,16 +217,18 @@ export class GenerationBulletinService {
           if (!coursParticipantId) continue;
 
           const coursIdNum = Number(String(cours.id));
-          const moyenne = await GenerationBulletinService.calculerMoyenneCours(
-            coursIdNum, anneeAcademiqueId, coursParticipantId
+          const listesDuCours = listesParCours.get(coursIdNum) || [];
+
+          const moyenne = GenerationBulletinService.calculerMoyenneCours(
+            listesDuCours, coursParticipantId
           );
 
-          const moyenneCC = await GenerationBulletinService.calculerMoyenneCC(
-            coursIdNum, anneeAcademiqueId, coursParticipantId
+          const moyenneCC = GenerationBulletinService.calculerMoyenneCC(
+            listesDuCours, coursParticipantId
           );
 
-          const { noteDevoir, noteExamen } = await GenerationBulletinService.calculerNotesDevoirExamen(
-            coursIdNum, anneeAcademiqueId, coursParticipantId
+          const { noteDevoir, noteExamen } = GenerationBulletinService.calculerNotesDevoirExamen(
+            listesDuCours, coursParticipantId
           );
 
           lignesBulletin.push({
@@ -230,31 +307,18 @@ export class GenerationBulletinService {
     return results;
   }
 
-  private static async calculerMoyenneCours(
-    coursId: number,
-    anneeAcademiqueId: number,
+  private static calculerMoyenneCours(
+    listesDuCours: ListeEvalGroup[],
     coursParticipantId: number
-  ): Promise<number> {
-    const listesEval = await ListeNoteEvaluation.findAll({
-      where: { coursId, anneeAcademiqueId },
-      include: [
-        { association: ListeNoteEvaluation.associations.typeNoteEvaluation },
-        {
-          association: ListeNoteEvaluation.associations.notesEvaluation,
-          where: { coursParticipantId },
-          required: false
-        }
-      ]
-    });
-
+  ): number {
     let sommePonderee = 0;
     let sommePoids = 0;
 
-    for (const evalList of listesEval) {
-      if (evalList.notesEvaluation?.length) {
-        const note = Number(evalList.notesEvaluation[0].note);
+    for (const g of listesDuCours) {
+      if (g.notesParParticipant.has(coursParticipantId)) {
+        const note = g.notesParParticipant.get(coursParticipantId) as number;
         if (note == null) continue;
-        const poids = Number(evalList.poidsTypeNoteEvaluation) || 0;
+        const poids = Number(g.liste.poidsTypeNoteEvaluation) || 0;
         if (poids > 0) {
           sommePonderee += note * poids;
           sommePoids += poids;
@@ -267,31 +331,18 @@ export class GenerationBulletinService {
       : 0;
   }
 
-  private static async calculerMoyenneCC(
-    coursId: number,
-    anneeAcademiqueId: number,
+  private static calculerMoyenneCC(
+    listesDuCours: ListeEvalGroup[],
     coursParticipantId: number
-  ): Promise<number | null> {
-    const listesEval = await ListeNoteEvaluation.findAll({
-      where: { coursId, anneeAcademiqueId },
-      include: [
-        { association: ListeNoteEvaluation.associations.typeNoteEvaluation },
-        {
-          association: ListeNoteEvaluation.associations.notesEvaluation,
-          where: { coursParticipantId },
-          required: false
-        }
-      ]
-    });
-
+  ): number | null {
     const notesPonderees: { note: number; poids: number }[] = [];
 
-    for (const evalList of listesEval) {
-      if (evalList.notesEvaluation?.length) {
-        const note = Number(evalList.notesEvaluation[0].note);
+    for (const g of listesDuCours) {
+      if (g.notesParParticipant.has(coursParticipantId)) {
+        const note = g.notesParParticipant.get(coursParticipantId) as number;
         if (note == null) continue;
-        const poids = Number(evalList.poidsTypeNoteEvaluation) || 0;
-        const categorie = (evalList as any).typeNoteEvaluation?.categorie;
+        const poids = Number(g.liste.poidsTypeNoteEvaluation) || 0;
+        const categorie = (g.liste as any).typeNoteEvaluation?.categorie;
 
         if (categorie === 'controle_continu' && poids > 0) {
           notesPonderees.push({ note, poids });
@@ -306,31 +357,18 @@ export class GenerationBulletinService {
     return Math.round((somme / sommeP) * 100) / 100;
   }
 
-  private static async calculerNotesDevoirExamen(
-    coursId: number,
-    anneeAcademiqueId: number,
+  private static calculerNotesDevoirExamen(
+    listesDuCours: ListeEvalGroup[],
     coursParticipantId: number
-  ): Promise<{ noteDevoir: number | null; noteExamen: number | null }> {
-    const listesEval = await ListeNoteEvaluation.findAll({
-      where: { coursId, anneeAcademiqueId },
-      include: [
-        { association: ListeNoteEvaluation.associations.typeNoteEvaluation },
-        {
-          association: ListeNoteEvaluation.associations.notesEvaluation,
-          where: { coursParticipantId },
-          required: false
-        }
-      ]
-    });
-
+  ): { noteDevoir: number | null; noteExamen: number | null } {
     let noteDevoir: number | null = null;
     let noteExamen: number | null = null;
 
-    for (const evalList of listesEval) {
-      if (evalList.notesEvaluation?.length) {
-        const note = Number(evalList.notesEvaluation[0].note);
+    for (const g of listesDuCours) {
+      if (g.notesParParticipant.has(coursParticipantId)) {
+        const note = g.notesParParticipant.get(coursParticipantId) as number;
         if (note == null) continue;
-        const categorie = (evalList as any).typeNoteEvaluation?.categorie;
+        const categorie = (g.liste as any).typeNoteEvaluation?.categorie;
 
         if (categorie === 'devoir') {
           noteDevoir = note;

@@ -62,6 +62,38 @@ jest.mock('../../../modules/comptabilite/helpers/ComptabiliteHelper', () => ({
   lettrerEcritures411: jest.fn().mockResolvedValue(true)
 }))
 
+jest.mock('../../../core/helpers/DatabaseConnection', () => {
+  const { Sequelize } = require('sequelize')
+  const transaction = {
+    commit: jest.fn().mockResolvedValue(undefined),
+    rollback: jest.fn().mockResolvedValue(undefined)
+  }
+  const sequelize = new Sequelize('easyecole', 'root', null, {
+    dialect: 'mysql',
+    host: 'localhost',
+    port: 3307,
+    logging: false
+  })
+  sequelize.transaction = jest.fn().mockResolvedValue(transaction)
+  return {
+    DatabaseConnection: {
+      getInstance: () => ({ sequelize })
+    }
+  }
+})
+
+jest.mock('../../../modules/docgen/services/DocGenGeneratorService', () => ({
+  DocGenGeneratorService: {
+    generer: jest.fn().mockResolvedValue({ reference: 'SUB-0001', filePath: 'storage/docgen/SUB-0001.pdf' })
+  }
+}))
+
+jest.mock('../../../core/services/ArchiveGedService', () => ({
+  ArchiveGedService: {
+    archiverDepuisFichier: jest.fn().mockResolvedValue({})
+  }
+}))
+
 const { PaiementInscription } = require('../../../modules/inscription/models/PaiementInscription')
 const { DemandeInscription } = require('../../../modules/inscription/models/DemandeInscription')
 const { creerEcritureComptable, lettrerEcritures411 } = require('../../../modules/comptabilite/helpers/ComptabiliteHelper')
@@ -97,7 +129,7 @@ describe('createPaiementInscription', () => {
 
   it('crée un paiement et une écriture comptable 512/411 (INSC-1.2)', async () => {
     const mockDemande = { id: 42, matricule: 'MAT-001' }
-    const mockSavedPaiement = {
+    const basePaiement = {
       id: 100,
       numero: 'PAY-0001',
       matriculeInscription: 'MAT-001',
@@ -107,6 +139,7 @@ describe('createPaiementInscription', () => {
       type: TypesPaiement.ESPECE,
       utilisateurId: 1
     }
+    const mockSavedPaiement = { ...basePaiement, toJSON: () => basePaiement }
     const mockSave = jest.fn().mockResolvedValue(mockSavedPaiement)
 
     ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue(mockDemande)
@@ -115,6 +148,8 @@ describe('createPaiementInscription', () => {
     const req = mockRequest({
       utilisateurRole: RolesUtilisateur.INSTITUTION,
       utilisateurId: 1,
+      protocol: 'http',
+      get: jest.fn().mockReturnValue('localhost'),
       body: { matriculeInscription: 'MAT-001', montant: 50000, description: 'Paiement test' }
     } as any)
     const res = mockResponse()
@@ -136,20 +171,35 @@ describe('createPaiementInscription', () => {
       })
     )
 
-    // INSC-1.3: Vérifier que le lettrage est appelé
-    expect(lettrerEcritures411).toHaveBeenCalledWith({
-      referenceModuleId: '42',
-      paiementId: '100',
-      montant: 50000
-    })
+    // INSC-1.3: Vérifier que le lettrage est appelé (dans la transaction)
+    expect(lettrerEcritures411).toHaveBeenCalledWith(
+      expect.objectContaining({
+        referenceModuleId: '42',
+        paiementId: '100',
+        montant: 50000,
+        transaction: expect.any(Object)
+      })
+    )
 
     expect(res.status).toHaveBeenCalledWith(201)
-    expect(res.send).toHaveBeenCalledWith(mockSavedPaiement)
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 100,
+        numero: 'PAY-0001',
+        matriculeInscription: 'MAT-001',
+        montant: 50000,
+        description: 'Paiement test',
+        type: TypesPaiement.ESPECE,
+        utilisateurId: 1,
+        receiptUrl: expect.any(String),
+        receiptFilename: 'SUB-0001.pdf'
+      })
+    )
   })
 
   it('crée un paiement pour CAISSIER_BANQUE avec type EN_LIGNE', async () => {
     const mockDemande = { id: 42, matricule: 'MAT-001' }
-    const mockSavedPaiement = {
+    const basePaiementEnLigne = {
       id: 100,
       numero: 'PAY-0001',
       matriculeInscription: 'MAT-001',
@@ -159,6 +209,7 @@ describe('createPaiementInscription', () => {
       type: TypesPaiement.EN_LIGNE,
       utilisateurId: 5
     }
+    const mockSavedPaiement = { ...basePaiementEnLigne, toJSON: () => basePaiementEnLigne }
     const mockSave = jest.fn().mockResolvedValue(mockSavedPaiement)
 
     ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue(mockDemande)
@@ -167,6 +218,8 @@ describe('createPaiementInscription', () => {
     const req = mockRequest({
       utilisateurRole: RolesUtilisateur.CAISSIER_BANQUE,
       utilisateurId: 5,
+      protocol: 'http',
+      get: jest.fn().mockReturnValue('localhost'),
       body: { matriculeInscription: 'MAT-001', montant: 30000, description: 'Paiement en ligne' }
     } as any)
     const res = mockResponse()
@@ -175,11 +228,20 @@ describe('createPaiementInscription', () => {
 
     expect(creerEcritureComptable).toHaveBeenCalledWith(
       expect.objectContaining({
-        compteCreditNumero: '411'
+        compteCreditNumero: '411',
+        transaction: expect.any(Object)
       })
     )
     expect(lettrerEcritures411).toHaveBeenCalled()
     expect(res.status).toHaveBeenCalledWith(201)
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 100,
+        utilisateurId: 5,
+        receiptUrl: expect.any(String),
+        receiptFilename: 'SUB-0001.pdf'
+      })
+    )
   })
 
   it('retourne 400 si la sauvegarde échoue', async () => {

@@ -17,6 +17,12 @@ export default class SseController {
 
     const clientId = SseService.addClient(utilisateurId, res);
 
+    if (clientId === -1) {
+      try { res.status(503).end(); }
+      catch { /* réponse déjà fermée */ }
+      return;
+    }
+
     const keepAlive = setInterval(() => {
       try { res.write(':keepalive\n\n'); }
       catch { clearInterval(keepAlive); }

@@ -125,7 +125,9 @@ class ParentController {
                         where: { noteEvaluationId: { [Op.in]: noteIds.map(n => n.id) }, type: { [Op.ne]: 'present' } }
                     });
                 }
-            } catch { }
+            } catch (error) {
+                console.error('ParentController: getDashboard (totalAbsences)', error);
+            }
 
             let nextSeance = null;
             if (cursus && (cursus as any).classe) {
@@ -165,7 +167,9 @@ class ParentController {
                             };
                         }
                     }
-                } catch { }
+                } catch (error) {
+                    console.error('ParentController: getDashboard (nextSeance)', error);
+                }
             }
 
             return res.json({

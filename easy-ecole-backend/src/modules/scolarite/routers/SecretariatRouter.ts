@@ -6,13 +6,15 @@ import RecuCaisseController from "../controllers/RecuCaisseController"
 import ClotureCaisseController from "../controllers/ClotureCaisseController"
 import Authenticate from "../../../core/middlewares/Authenticate"
 import { AuthSecretariat } from "../../../core/middlewares/AuthSecretariat"
+import { cache } from "../../../core/middlewares/CacheMiddleware"
 
 const router = express.Router()
 
 router.use(Authenticate)
 
-router.get('/dashboard/stats', [AuthSecretariat], SecretariatDashboardController.getStats)
-router.get('/dashboard/activity', [AuthSecretariat], SecretariatDashboardController.getRecentActivity)
+// Lectures agrégées coûteuses → cache Redis 60 s (clé par utilisateur)
+router.get('/dashboard/stats', [AuthSecretariat, cache(60)], SecretariatDashboardController.getStats)
+router.get('/dashboard/activity', [AuthSecretariat, cache(60)], SecretariatDashboardController.getRecentActivity)
 
 router.get('/demandesDocument', [AuthSecretariat], DemandeDocumentController.getAllDemandesDocument)
 router.get('/demandesDocument/:id', [AuthSecretariat], DemandeDocumentController.getDemandeDocument)

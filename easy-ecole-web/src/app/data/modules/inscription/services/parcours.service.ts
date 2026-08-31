@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { shareReplay } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { Parcours } from '../models/Parcours.model';
 
@@ -11,11 +12,23 @@ export class ParcoursService {
 
   private readonly SERVICE_URL: string = `${environment.API_MODULES.INSCRIPTION}/parcours`
 
+  private cached$: Observable<Parcours[]> | null = null;
+
   constructor(private httpClient: HttpClient) { }
 
   getAll(niveauEtudeId?: number | string): Observable<Parcours[]> {
-    const params = niveauEtudeId != null ? { niveauEtudeId: String(niveauEtudeId) } : undefined
-    return this.httpClient.get<Parcours[]>(`${this.SERVICE_URL}`, { params })
+    if (niveauEtudeId != null) {
+      const params = { niveauEtudeId: String(niveauEtudeId) }
+      return this.httpClient.get<Parcours[]>(`${this.SERVICE_URL}`, { params })
+    }
+    if (!this.cached$) {
+      this.cached$ = this.httpClient.get<Parcours[]>(`${this.SERVICE_URL}`).pipe(shareReplay(1))
+    }
+    return this.cached$;
+  }
+
+  invalidate(): void {
+    this.cached$ = null;
   }
 
   get(id: string): Observable<Parcours> {

@@ -1,6 +1,7 @@
 import express from "express";
 import DashboardGedController from "../controllers/DashboardGedController";
 import Authenticate from "../../../core/middlewares/Authenticate";
+import { cache } from "../../../core/middlewares/CacheMiddleware";
 
 const router = express.Router();
 
@@ -16,7 +17,7 @@ router
      *       200:
      *         description: Success
      */
-.get('/', [Authenticate], DashboardGedController.global)
+.get('/', [Authenticate, cache(60)], DashboardGedController.global)
         /**
      * @openapi
      * /par-domaine:
@@ -28,7 +29,7 @@ router
      *       200:
      *         description: Success
      */
-.get('/par-domaine', [Authenticate], DashboardGedController.parDomaine)
+.get('/par-domaine', [Authenticate, cache(60)], DashboardGedController.parDomaine)
         /**
      * @openapi
      * /recent:
@@ -40,6 +41,6 @@ router
      *       200:
      *         description: Success
      */
-.get('/recent', [Authenticate], DashboardGedController.recentActivity);
+.get('/recent', [Authenticate, cache(60)], DashboardGedController.recentActivity);
 
 export default router;

@@ -65,11 +65,15 @@ function filterMenuByPermissions(
 const ENTREES_REGULARISATION_PAIEMENT: ReadonlySet<string> = new Set([
     'menu.finances.bordereaux',
     'menu.finances.paiements',
+    // La réinscription est NON BLOQUANTE par la dette (règle LMD) : l'entrée
+    // doit rester visible même en statut 'rouge' pour permettre de planifier.
+    'menu.inscription.reinscription-planifier',
 ]);
 
 const ROUTES_REGULARISATION_PAIEMENT: ReadonlySet<string> = new Set([
     '/inscription/bordereaux',
     '/inscription/paiements',
+    '/inscription/reinscription/planifier',
 ]);
 
 export function filtrerMenuPourRegularisation(menu: MenuPoleConfig[]): MenuPoleConfig[] {

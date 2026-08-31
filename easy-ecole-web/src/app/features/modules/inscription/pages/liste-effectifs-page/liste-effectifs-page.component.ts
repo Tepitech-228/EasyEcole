@@ -14,6 +14,7 @@ import { environment } from 'src/environments/environment';
 import { DossierNode, DossierColumn, BatchAction } from 'src/app/shared/components/dossier-view/dossier-view.component';
 import { FilterValue } from 'src/app/shared/components/filters-annee-niveau-parcours/filters-annee-niveau-parcours.component';
 import { combineLatest } from 'rxjs';
+import { untilDestroyed } from 'src/app/core/utils/take-until-destroy';
 import { ExcelService } from 'src/app/data/modules/inscription/services/excel.service';
 import { ExcelImportDialogComponent } from 'src/app/shared/components/excel-import-dialog/excel-import-dialog.component';
 
@@ -78,12 +79,16 @@ export class ListeEffectifsPageComponent extends BaseComponentClass implements O
   }
 
   ngOnInit(): void {
+    this.chargerDonnees();
+  }
+
+  private chargerDonnees(): void {
     combineLatest([
       this.anneeAcademiqueService.getAll(),
       this.niveauEtudeService.getAll(),
       this.parcoursService.getAll(),
       this.classeService.getAll()
-    ]).subscribe({
+    ]).pipe(untilDestroyed(this)).subscribe({
       next: ([annees, niveaux, parcours, classes]) => {
         this.annees = annees
         this.niveaux = niveaux
@@ -158,7 +163,7 @@ export class ListeEffectifsPageComponent extends BaseComponentClass implements O
 
   onBatchAction(event: { action: string, ids: number[] }): void {
     for (const id of event.ids) {
-      this.cursusApprenantService.update({ id: String(id), externe: false } as any).subscribe({
+      this.cursusApprenantService.update({ id: String(id), externe: false } as any).pipe(untilDestroyed(this)).subscribe({
         error: (err) => console.log(err)
       })
     }
@@ -179,7 +184,7 @@ export class ListeEffectifsPageComponent extends BaseComponentClass implements O
     if (this.selectedClasseId) params.classeId = this.selectedClasseId
     if (this.searchTerm.trim()) params.search = this.searchTerm.trim()
 
-    this.cursusApprenantService.getAllPaginated(params).subscribe({
+    this.cursusApprenantService.getAllPaginated(params).pipe(untilDestroyed(this)).subscribe({
       next: (res) => {
         this.effectifs = res.data
         this.page = res.pagination.page
@@ -289,7 +294,7 @@ export class ListeEffectifsPageComponent extends BaseComponentClass implements O
   }
 
   onDownloadTemplate(): void {
-    this.excelService.downloadApprenantTemplate().subscribe({
+    this.excelService.downloadApprenantTemplate().pipe(untilDestroyed(this)).subscribe({
       next: (blob) => ExcelService.downloadBlob(blob, 'template-apprenants.xlsx'),
       error: (err) => console.error('Erreur téléchargement template', err),
     });
@@ -300,7 +305,7 @@ export class ListeEffectifsPageComponent extends BaseComponentClass implements O
   }
 
   onExportApprenants(): void {
-    this.excelService.exportApprenants().subscribe({
+    this.excelService.exportApprenants().pipe(untilDestroyed(this)).subscribe({
       next: (blob) => ExcelService.downloadBlob(blob, 'apprenants.xlsx'),
       error: (err) => console.error('Erreur export apprenants', err),
     });
@@ -311,6 +316,6 @@ export class ListeEffectifsPageComponent extends BaseComponentClass implements O
   }
 
   private refreshData(): void {
-    this.ngOnInit();
+    this.chargerDonnees();
   }
 }

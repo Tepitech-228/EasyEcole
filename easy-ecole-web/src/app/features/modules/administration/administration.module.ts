@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AdministrationRoutingModule } from './administration-routing.module';
 import { SharedModule } from 'src/app/shared/shared.module';
+import { DashboardAdminPageComponent } from './pages/dashboard-admin-page/dashboard-admin-page.component';
 import { QrCodesPageComponent } from './pages/qr-codes-page/qr-codes-page.component';
 import { EnseignantQrCodesPageComponent } from './pages/enseignant-qr-codes-page/enseignant-qr-codes-page.component';
 import { UtilisateursPageComponent } from './pages/utilisateurs-page/utilisateurs-page.component';
@@ -12,6 +13,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 
 @NgModule({
   declarations: [
+    DashboardAdminPageComponent,
     QrCodesPageComponent,
     EnseignantQrCodesPageComponent,
     UtilisateursPageComponent,

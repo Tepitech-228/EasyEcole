@@ -21,6 +21,11 @@ function step(msg: string) {
     console.log(`\n────────── ${msg} ──────────`);
 }
 
+if (process.env.ALLOW_DEV_SCRIPTS !== 'true') {
+    console.error('Ce script de développement est désactivé en production.');
+    process.exit(1);
+}
+
 (async () => {
     require('dotenv').config({ path: require('path').resolve(process.cwd(), '.env') });
     const db = DatabaseConnection.getInstance();

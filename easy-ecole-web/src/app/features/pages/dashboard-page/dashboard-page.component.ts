@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+import { untilDestroyed } from 'src/app/core/utils/take-until-destroy';
 import { Session } from 'src/app/data/modules/inscription/models/Session.model';
 import { EtatsSession } from 'src/app/data/enums/EtatsSession';
 import { environment } from 'src/environments/environment';
@@ -54,7 +55,7 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
 
   private loadDashboard(): void {
     this.loading = true;
-    this.http.get(`${this.API_URL}/inscription/dashboard`).subscribe({
+    this.http.get(`${this.API_URL}/inscription/dashboard`).pipe(untilDestroyed(this)).subscribe({
       next: (res: any) => {
         this.dashboardData = res?.data || {};
         this.loading = false;
@@ -64,7 +65,7 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
   }
 
   private loadSessions(): void {
-    this.http.get(`${this.API_URL}/inscription/sessions`).subscribe({
+    this.http.get(`${this.API_URL}/inscription/sessions`).pipe(untilDestroyed(this)).subscribe({
       next: (res: any) => {
         this.sessions = (Array.isArray(res) ? res : []).filter(
           (s: any) => Session.getEtat(s.dateDebut, s.dateFin) === EtatsSession.OUVERTE
@@ -75,7 +76,7 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
   }
 
   private loadUserInfo(): void {
-    this.http.get(`${this.API_URL}/auth/utilisateurs/moi`).subscribe({
+    this.http.get(`${this.API_URL}/auth/utilisateurs/moi`).pipe(untilDestroyed(this)).subscribe({
       next: (u: any) => {
         this.utilisateur = u;
         // Rediriger les étudiants "cours en ligne" vers le Pôle E-Learning
@@ -89,7 +90,7 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
 
   private loadMesDemandes(): void {
     if (!this.rolesValue?.isApprenant) return;
-    this.http.get(`${this.API_URL}/inscription/demandesInscription`).subscribe({
+    this.http.get(`${this.API_URL}/inscription/demandesInscription`).pipe(untilDestroyed(this)).subscribe({
       next: (res: any) => {
         const demandes = Array.isArray(res) ? res : (res?.data || []);
         this.demandesCompletes = demandes.filter((d: any) =>
@@ -106,7 +107,7 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
   faireDemandeInscription(): void {
     if (!this.sessions.length) return;
     const body = { dateDemande: new Date(), sessionId: this.sessions[this.currentSession].id };
-    this.http.post(`${this.API_URL}/inscription/demandesInscription`, body).subscribe({
+    this.http.post(`${this.API_URL}/inscription/demandesInscription`, body).pipe(untilDestroyed(this)).subscribe({
       next: (res: any) => this.router.navigate(['/inscription/demandes', res.id]),
       error: (err: HttpErrorResponse) => {
         if (err.error?.alreadySignUp) {
@@ -668,6 +669,186 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
       y: { grid: { color: '#f1f5f9', drawBorder: false }, min: 0, max: 20, ticks: { stepSize: 5, font: { size: 10 }, color: '#94a3b8' } }
     }
   };
+
+  // ─── Dynamic charts (payload modern-ui) ────────────────
+  /** Occupe le sous-objet `charts` renvoyé par le backend `/inscription/dashboard`. */
+  get charts(): any {
+    return this.dashboardData?.charts || {};
+  }
+
+  // ─── Apprenant : répartition des notes (doughnut) ─────
+  get apprenantNotesRepartitionPayload(): any {
+    const r = this.charts?.notesRepartition;
+    if (!r) return null;
+    return {
+      type: 'doughnut',
+      labels: ['Validées', 'Non validées'],
+      datasets: [{ label: 'Notes', data: [r.validees || 0, r.nonValidees || 0] }],
+      colors: ['#10b981', '#ef4444'],
+    };
+  }
+
+  // ─── Apprenant : moyenne par cours (barres) ───────────
+  get apprenantMoyenneParCoursPayload(): any {
+    const list = this.charts?.moyenneParCours;
+    if (!Array.isArray(list) || list.length === 0) return null;
+    return {
+      type: 'bar',
+      labels: list.map((c: any) => c.cours || 'Matière'),
+      datasets: [{ label: 'Moyenne /20', data: list.map((c: any) => Number(c.moyenne) || 0) }],
+      colors: list.map((_, i: number) => i % 2 ? '#0ea5e9' : '#2563eb'),
+    };
+  }
+
+  // ─── Apprenant : crédits ECTS par semestre (progression) ─
+  get apprenantCreditsPayload(): any {
+    const list = this.charts?.credits;
+    if (!Array.isArray(list) || list.length === 0) return null;
+    return {
+      type: 'horizontalBar',
+      labels: list.map((c: any) => c.libelle || 'Semestre'),
+      datasets: [{
+        label: `ECTS validés (${this.charts?.totalNotes ?? 0} notes)`,
+        data: list.map((c: any) => Number(c.valides) || 0),
+      }],
+      colors: list.map((_, i: number) => ['#10b981', '#059669', '#047857'][i % 3]),
+    };
+  }
+
+  // ─── ESA-COMPTA : montants par statut (area) ─────────
+  get esaMontantsParStatutPayload(): any {
+    const s = this.charts?.montantsParStatut;
+    if (s) {
+      return {
+        type: 'area',
+        labels: ['Validé', 'En attente', 'Rejeté'],
+        datasets: [
+          { label: 'Montant (FCFA)', data: [s.valide || 0, s.attente || 0, s.rejete || 0] },
+        ],
+        colors: ['#10b981'],
+      };
+    }
+    // Repli : série temporelle par mois si disponible.
+    const parMois = this.charts?.parMois;
+    if (Array.isArray(parMois) && parMois.length) {
+      const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+      const labels = parMois.slice(0, 12).map((_, i) => months[i] || '');
+      return {
+        type: 'area',
+        labels,
+        datasets: [{ label: 'Montants par mois (FCFA)', data: parMois }],
+        colors: ['#0ea5e9'],
+      };
+    }
+    // Repli final : indicateurs plats disponibles du backend.
+    if (this.dashboardData && (this.dashboardData.montantValide !== undefined || this.dashboardData.montantEnAttente !== undefined)) {
+      return {
+        type: 'area',
+        labels: ['Validé', 'En attente', 'Rejeté'],
+        datasets: [{
+          label: 'Montant (FCFA)',
+          data: [
+            this.dashboardData.montantValide || 0,
+            this.dashboardData.montantEnAttente || 0,
+            this.dashboardData.montantRejete || 0,
+          ],
+        }],
+        colors: ['#10b981'],
+      };
+    }
+    return null;
+  }
+
+  // ─── ESA-COMPTA : paiements par banque (barres horizontales) ─
+  get esaParBanquePayload(): any {
+    const list = this.charts?.parBanque;
+    if (!Array.isArray(list) || list.length === 0) return null;
+    return {
+      type: 'horizontalBar',
+      labels: list.map((b: any) => b.banque || 'Banque'),
+      datasets: [{ label: 'Montant (FCFA)', data: list.map((b: any) => Number(b.montant) || 0) }],
+      colors: list.map((_, i: number) => ['#4f46e5', '#8b5cf6', '#6366f1', '#06b6d4', '#0891b2'][i % 5]),
+    };
+  }
+
+  // ─── ESA-COMPTA : répartition modes (doughnut) ────────
+  get esaRepartitionModesPayload(): any {
+    const list = this.charts?.repartitionModes;
+    if (!Array.isArray(list) || list.length === 0) return null;
+    return {
+      type: 'doughnut',
+      labels: list.map((m: any) => m.mode || 'Mode'),
+      datasets: [{ label: 'Montant', data: list.map((m: any) => Number(m.montant) || 0) }],
+      colors: ['#10b981', '#0ea5e9', '#f59e0b', '#8b5cf6', '#ef4444', '#6366f1'],
+    };
+  }
+
+  // ─── ESA-COMPTA : montants affichés (formatés) ────────
+  get esaMontantValide(): string {
+    return Number(this.dashboardData?.montantValide || 0).toLocaleString('fr-FR');
+  }
+
+  get esaMontantEnAttente(): string {
+    return Number(this.dashboardData?.montantEnAttente || 0).toLocaleString('fr-FR');
+  }
+
+  // ─── COMPTABLE : trésorerie (area) ────────────────────
+  get comptableTresoreriePayload(): any {
+    const enc = this.charts?.encaissementsParMois;
+    const dep = this.charts?.depensesParMois;
+    const labels = this.charts?.moisLabels;
+    if (!Array.isArray(enc) || !Array.isArray(dep)) return null;
+    const mois = (Array.isArray(labels) && labels.length) ? labels : enc.map((_, i) => `M${i + 1}`);
+    return {
+      type: 'area',
+      labels: mois,
+      datasets: [
+        { label: 'Encaissements', data: enc },
+        { label: 'Dépenses', data: dep },
+      ],
+      colors: ['#10b981', '#ef4444'],
+    };
+  }
+
+  // ─── COMPTABLE : répartition modes (doughnut) ─────────
+  get comptableRepartitionModesPayload(): any {
+    const list = this.charts?.repartitionModes;
+    if (!Array.isArray(list) || list.length === 0) return null;
+    return {
+      type: 'doughnut',
+      labels: list.map((m: any) => m.mode || 'Mode'),
+      datasets: [{ label: 'Montant', data: list.map((m: any) => Number(m.montant) || 0) }],
+      colors: ['#10b981', '#0ea5e9', '#f59e0b', '#8b5cf6', '#ef4444', '#6366f1'],
+    };
+  }
+
+  // ─── INSTITUTION : étudiants par filière (barres horizontales) ─
+  get institutionEtudiantsFilierePayload(): any {
+    const list = this.dashboardData?.etudiantsParFiliere;
+    if (!Array.isArray(list) || list.length === 0) return null;
+    return {
+      type: 'horizontalBar',
+      labels: list.map((f: any) => f.filiere || 'Filière'),
+      datasets: [{ label: 'Étudiants', data: list.map((f: any) => Number(f.total) || 0) }],
+      colors: list.map((_, i: number) => ['#7c3aed', '#6d28d9', '#8b5cf6', '#a78bfa', '#c4b5fd', '#2563eb'][i % 6]),
+    };
+  }
+
+  // ─── INSTITUTION : pré-inscriptions par mois (barres) ─
+  get institutionPreInscriptionsPayload(): any {
+    const demandes = this.dashboardData?.demandesParMois;
+    const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+    const data = Array.isArray(demandes) ? demandes : [];
+    const labels = this.dashboardData?.moisLabels && (this.dashboardData.moisLabels as string[]).length
+      ? (this.dashboardData.moisLabels as string[])
+      : months;
+    return {
+      type: 'bar',
+      labels: data.length ? labels.slice(0, data.length) : months,
+      datasets: [{ label: 'Pré-inscriptions', data: data.length ? data : months.map(() => 0) }],
+      colors: data.length ? labels.slice(0, data.length).map((_: any, i: number) => ['#7c3aed', '#8b5cf6', '#6d28d9', '#a78bfa'][i % 4]) : months.map(() => '#7c3aed'),
+    };
+  }
 
   // ─── Helpers ───────────────────────────────────────────
   private createGradient(start: string, end: string, count: number): string[] {

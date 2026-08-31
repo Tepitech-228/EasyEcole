@@ -167,7 +167,8 @@ describe('DossierInscriptionController.updateDossierInscription', () => {
     const req = mockRequest({ utilisateurRole: 'admin', params: { id: '1' }, body: { titre: 'Modifié' } } as any)
     const res = mockResponse()
     const mockUpdate = jest.fn().mockResolvedValue({})
-    ;(DossierInscription.findOne as jest.Mock).mockResolvedValue({ id: 1, titre: 'Ancien', update: mockUpdate })
+    ;(DossierInscription.findOne as jest.Mock).mockResolvedValueOnce({ id: 1, titre: 'Ancien', sessionId: 's1', update: mockUpdate })
+    ;(DossierInscription.findOne as jest.Mock).mockResolvedValueOnce(null)
 
     await DossierInscriptionController.updateDossierInscription(req, res)
 
@@ -179,7 +180,8 @@ describe('DossierInscriptionController.updateDossierInscription', () => {
     const req = mockRequest({ utilisateurRole: 'admin', params: { id: '1' }, body: { titre: 'Modifié' } } as any)
     const res = mockResponse()
     const mockUpdate = jest.fn().mockRejectedValue(new Error('Validation error'))
-    ;(DossierInscription.findOne as jest.Mock).mockResolvedValue({ id: 1, titre: 'Ancien', update: mockUpdate })
+    ;(DossierInscription.findOne as jest.Mock).mockResolvedValueOnce({ id: 1, titre: 'Ancien', sessionId: 's1', update: mockUpdate })
+    ;(DossierInscription.findOne as jest.Mock).mockResolvedValueOnce(null)
 
     await DossierInscriptionController.updateDossierInscription(req, res)
 

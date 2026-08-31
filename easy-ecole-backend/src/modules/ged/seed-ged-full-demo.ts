@@ -13,6 +13,11 @@ import { RegistreCourrier } from './models/RegistreCourrier'
 import { ProcessusGenerateur } from './models/ProcessusGenerateur'
 import RolePermission from './models/RolePermission'
 
+if (process.env.ALLOW_DEV_SCRIPTS !== 'true') {
+    console.error('Ce script de développement est désactivé en production.');
+    process.exit(1);
+}
+
 function ensureDir(p: string) { if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true }) }
 
 function makeTinyPdfBuffer(label: string): Buffer {

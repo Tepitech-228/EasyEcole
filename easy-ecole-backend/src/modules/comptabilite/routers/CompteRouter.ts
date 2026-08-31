@@ -1,5 +1,7 @@
 import express from "express"
 import CompteController from "../controllers/CompteController"
+import Authenticate from "../../../core/middlewares/Authenticate"
+import { AuthEsacompta } from "../../../core/middlewares/AuthEsacompta"
 
 const router = express.Router()
 
@@ -16,7 +18,7 @@ const router = express.Router()
  *         description: Liste des comptes comptables
  */
 router
-  .get('/', CompteController.getAllComptes)
+  .get('/', [Authenticate, AuthEsacompta], CompteController.getAllComptes)
 
 /**
  * @openapi
@@ -36,7 +38,7 @@ router
  *       200:
  *         description: Comptes trouvés
  */
-  .get('/classe/:classe', CompteController.getComptesByClasse)
+  .get('/classe/:classe', [Authenticate, AuthEsacompta], CompteController.getComptesByClasse)
 
 /**
  * @openapi
@@ -56,7 +58,7 @@ router
  *       200:
  *         description: Compte comptable trouvé
  */
-  .get('/:id', CompteController.getCompte)
+  .get('/:id', [Authenticate, AuthEsacompta], CompteController.getCompte)
 
 /**
  * @openapi
@@ -76,7 +78,7 @@ router
  *       201:
  *         description: Compte comptable créé
  */
-  .post('/', CompteController.createCompte)
+  .post('/', [Authenticate, AuthEsacompta], CompteController.createCompte)
 
 /**
  * @openapi
@@ -102,6 +104,6 @@ router
  *       200:
  *         description: Compte comptable mis à jour
  */
-  .put('/:id', CompteController.updateCompte)
+  .put('/:id', [Authenticate, AuthEsacompta], CompteController.updateCompte)
 
 export default router

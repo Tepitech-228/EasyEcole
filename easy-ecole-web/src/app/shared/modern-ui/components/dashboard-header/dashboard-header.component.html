@@ -1,0 +1,21 @@
+<div class="dashboard-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+  <div class="d-flex align-items-center gap-3">
+    <div class="dashboard-header__icon d-flex align-items-center justify-content-center rounded-3"
+         [style.background]="accent + '1a'"
+         [style.color]="accent">
+      <i class="material-symbols-outlined">{{ icon }}</i>
+    </div>
+    <div>
+      <h4 class="mb-0 fw-bold text-dark">{{ title }}</h4>
+      <span class="text-muted small" *ngIf="subtitle">{{ subtitle }}</span>
+    </div>
+  </div>
+  <div *ngIf="sessionLabel" class="d-flex align-items-center gap-2">
+    <span class="badge rounded-pill px-3 py-2 d-inline-flex align-items-center gap-2"
+          [style.background]="accent + '14'"
+          [style.color]="accent">
+      <i class="material-symbols-outlined" style="font-size:16px">calendar_month</i>
+      {{ sessionLabel }}
+    </span>
+  </div>
+</div>

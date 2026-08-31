@@ -27,6 +27,9 @@ export class DocumentPDFGenerator {
 
         const stream = fs.createWriteStream(filePath);
         doc.pipe(stream);
+        stream.on('error', (err) => {
+            console.error('[PDF_GENERATION_ERROR]', filePath, err);
+        });
 
         doc.fontSize(22).text('ESA - École Supérieure', { align: 'center' });
         doc.moveDown(0.5);
@@ -94,6 +97,9 @@ export class DocumentPDFGenerator {
 
         const stream = fs.createWriteStream(filePath);
         doc.pipe(stream);
+        stream.on('error', (err) => {
+            console.error('[PDF_GENERATION_ERROR]', filePath, err);
+        });
 
         doc.fontSize(22).text('ESA - École Supérieure', { align: 'center' });
         doc.moveDown(0.5);
@@ -184,6 +190,9 @@ export class DocumentPDFGenerator {
 
         const stream = fs.createWriteStream(filePath);
         doc.pipe(stream);
+        stream.on('error', (err) => {
+            console.error('[PDF_GENERATION_ERROR]', filePath, err);
+        });
 
         if (logoPath && fs.existsSync(logoPath)) {
             const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
@@ -420,6 +429,9 @@ export class DocumentPDFGenerator {
 
         const stream = fs.createWriteStream(filePath);
         doc.pipe(stream);
+        stream.on('error', (err) => {
+            console.error('[PDF_GENERATION_ERROR]', filePath, err);
+        });
 
         doc.fontSize(22).text('ESA - École Supérieure', { align: 'center' });
         doc.moveDown(0.5);

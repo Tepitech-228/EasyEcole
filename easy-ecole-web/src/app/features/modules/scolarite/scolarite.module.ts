@@ -4,6 +4,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ScolariteRoutingModule } from './scolarite-routing.module';
 import { SharedModule } from 'src/app/shared/shared.module';
+import { ModernUiModule } from 'src/app/shared/modern-ui/modern-ui.module';
 import { FullCalendarModule } from '@fullcalendar/angular';
 import { DemandesDocumentsPageComponent } from './pages/demandes-documents-page/demandes-documents-page.component';
 import { TraiterDemandesPageComponent } from './pages/traiter-demandes-page/traiter-demandes-page.component';
@@ -52,6 +53,7 @@ import { FicheDemandePageComponent } from './pages/fiche-demande-page/fiche-dema
     CommonModule,
     ScolariteRoutingModule,
     SharedModule,
+    ModernUiModule,
     FormsModule,
     ReactiveFormsModule,
     FullCalendarModule

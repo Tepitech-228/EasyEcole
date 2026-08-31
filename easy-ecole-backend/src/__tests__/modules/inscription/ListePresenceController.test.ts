@@ -5,11 +5,52 @@ jest.mock('../../../modules/inscription/models/ListePresence', () => {
   ListePresence.findAll = jest.fn()
   ListePresence.findOne = jest.fn()
   ListePresence.create = jest.fn()
+  ListePresence.count = jest.fn()
   ListePresence.findAndCountAll = jest.fn()
   ListePresence.findByPk = jest.fn()
   ListePresence.associations = { cours: 'cours', enseignant: 'enseignant', presences: 'presences' }
   return { ListePresence }
 })
+
+jest.mock('../../../modules/inscription/models/Cours', () => ({
+  Cours: {
+    associations: {
+      classe: 'classe',
+      enseignant: 'enseignant',
+      parcours: 'parcours'
+    }
+  }
+}))
+
+jest.mock('../../../modules/auth/models/Enseignant', () => ({
+  Enseignant: {
+    associations: {
+      utilisateur: 'utilisateur'
+    }
+  }
+}))
+
+jest.mock('../../../modules/inscription/models/Parcours', () => ({
+  Parcours: {
+    associations: {
+      niveauEtude: 'niveauEtude'
+    }
+  }
+}))
+
+jest.mock('../../../modules/inscription/models/Presence', () => ({
+  Presence: {
+    associations: {
+      presencesCoursParticipants: 'presencesCoursParticipants'
+    }
+  }
+}))
+
+jest.mock('../../../modules/inscription/models/CoursParticipant', () => ({
+  CoursParticipant: {
+    findAll: jest.fn()
+  }
+}))
 
 const { ListePresence } = require('../../../modules/inscription/models/ListePresence')
 import Ctrl from '../../../modules/inscription/controllers/ListePresenceController'
@@ -33,16 +74,16 @@ describe('getAllListesPresences', () => {
           {
             association: 'cours',
             include: [
-              { association: 'classe' },
-              { association: 'enseignant', include: [{ association: 'utilisateur' }] },
-              { association: 'parcours', include: [{ association: 'niveauEtude' }] }
+              'classe',
+              { association: 'enseignant', include: ['utilisateur'] },
+              { association: 'parcours', include: ['niveauEtude'] }
             ]
           },
-          { association: 'enseignant', include: [{ association: 'utilisateur' }] }
+          { association: 'enseignant', include: ['utilisateur'] }
         ]
       })
     )
-    expect(res.json).toHaveBeenCalledWith(mockData)
+    expect(res.send).toHaveBeenCalledWith(mockData)
   })
 })
 
@@ -51,34 +92,33 @@ describe('getListePresence', () => {
     const req = mockRequest({ params: { id: '1' } })
     const res = mockResponse()
     const mockData = { id: 1 }
-    ;(ListePresence.findByPk as jest.Mock).mockResolvedValue(mockData)
+    ;(ListePresence.findOne as jest.Mock).mockResolvedValue(mockData)
 
     await Ctrl.getListePresence(req, res)
 
-    expect(ListePresence.findByPk).toHaveBeenCalledWith(
-      '1',
+    expect(ListePresence.findOne).toHaveBeenCalledWith(
       expect.objectContaining({
+        where: { id: '1' },
         include: [
           {
             association: 'cours',
             include: [
-              { association: 'classe' },
-              { association: 'enseignant', include: [{ association: 'utilisateur' }] },
-              { association: 'parcours', include: [{ association: 'niveauEtude' }] }
+              'classe',
+              { association: 'enseignant', include: ['utilisateur'] },
+              { association: 'parcours', include: ['niveauEtude'] }
             ]
           },
-          { association: 'enseignant', include: [{ association: 'utilisateur' }] },
-          { association: 'presences', include: [{ association: 'presencesCoursParticipants' }] }
+          { association: 'presences', include: ['presencesCoursParticipants'] }
         ]
       })
     )
-    expect(res.json).toHaveBeenCalledWith(mockData)
+    expect(res.send).toHaveBeenCalledWith(mockData)
   })
 
   it('should return 404 if not found', async () => {
     const req = mockRequest({ params: { id: '999' } })
     const res = mockResponse()
-    ;(ListePresence.findByPk as jest.Mock).mockResolvedValue(null)
+    ;(ListePresence.findOne as jest.Mock).mockResolvedValue(null)
 
     await Ctrl.getListePresence(req, res)
 
@@ -88,7 +128,7 @@ describe('getListePresence', () => {
 
 describe('createListePresence', () => {
   it('should return 403 if role is not IN or EN', async () => {
-    const req = mockRequest({ body: {}, utilisateur: { role: 'AP' } })
+    const req = mockRequest({ body: {}, utilisateurRole: 'apprenant' } as any)
     const res = mockResponse()
 
     await Ctrl.createListePresence(req, res)
@@ -97,31 +137,35 @@ describe('createListePresence', () => {
   })
 
   it('should return 400 with alreadyExists if duplicate titre', async () => {
-    const req = mockRequest({ body: { titre: 'Liste 1' }, utilisateur: { role: 'IN' } })
+    const req = mockRequest({ body: { titre: 'Liste 1' }, utilisateurRole: 'institution' } as any)
     const res = mockResponse()
     ;(ListePresence.findOne as jest.Mock).mockResolvedValue({ id: 1 })
 
     await Ctrl.createListePresence(req, res)
 
     expect(res.status).toHaveBeenCalledWith(400)
-    expect(res.json).toHaveBeenCalledWith({ alreadyExists: true })
+    expect(res.json).toHaveBeenCalledWith({ success: false, alreadyExists: true })
   })
 
-  it('should return 200 on success', async () => {
-    const req = mockRequest({ body: { titre: 'Nouvelle Liste' }, utilisateur: { role: 'IN' } })
+  it('should return 201 on success', async () => {
+    const req = mockRequest({ body: { titre: 'Nouvelle Liste' }, utilisateurRole: 'institution' } as any)
     const res = mockResponse()
+    const saved = { id: 1, titre: 'Nouvelle Liste' }
+    const mockSave = jest.fn().mockResolvedValue(saved)
     ;(ListePresence.findOne as jest.Mock).mockResolvedValue(null)
-    ;(ListePresence.create as jest.Mock).mockResolvedValue({ id: 1 })
+    ;(ListePresence as jest.Mock).mockReturnValue({ save: mockSave })
 
     await Ctrl.createListePresence(req, res)
 
-    expect(res.status).toHaveBeenCalledWith(200)
+    expect(mockSave).toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(201)
+    expect(res.send).toHaveBeenCalledWith(saved)
   })
 })
 
 describe('updateListePresence', () => {
   it('should return 403 if role is not IN or EN', async () => {
-    const req = mockRequest({ utilisateur: { role: 'AP' } })
+    const req = mockRequest({ utilisateurRole: 'apprenant' } as any)
     const res = mockResponse()
 
     await Ctrl.updateListePresence(req, res)
@@ -130,9 +174,9 @@ describe('updateListePresence', () => {
   })
 
   it('should return 404 if not found', async () => {
-    const req = mockRequest({ params: { id: '999' }, body: {}, utilisateur: { role: 'IN' } })
+    const req = mockRequest({ params: { id: '999' }, body: {}, utilisateurRole: 'institution' } as any)
     const res = mockResponse()
-    ;(ListePresence.findByPk as jest.Mock).mockResolvedValue(null)
+    ;(ListePresence.findOne as jest.Mock).mockResolvedValue(null)
 
     await Ctrl.updateListePresence(req, res)
 
@@ -140,21 +184,23 @@ describe('updateListePresence', () => {
   })
 
   it('should return 200 on successful update', async () => {
-    const existing = { id: 1, save: jest.fn() }
-    const req = mockRequest({ params: { id: '1' }, body: { titre: 'Updated' }, utilisateur: { role: 'IN' } })
+    const mockUpdate = jest.fn().mockResolvedValue({})
+    const existing = { id: 1, titre: 'Ancien', update: mockUpdate }
+    const req = mockRequest({ params: { id: '1' }, body: { titre: 'Updated' }, utilisateurRole: 'institution' } as any)
     const res = mockResponse()
-    ;(ListePresence.findByPk as jest.Mock).mockResolvedValue(existing)
+    ;(ListePresence.findOne as jest.Mock).mockResolvedValueOnce(existing)
+    ;(ListePresence.findOne as jest.Mock).mockResolvedValueOnce(null)
 
     await Ctrl.updateListePresence(req, res)
 
-    expect(existing.save).toHaveBeenCalled()
+    expect(mockUpdate).toHaveBeenCalled()
     expect(res.status).toHaveBeenCalledWith(200)
   })
 })
 
 describe('deleteListePresence', () => {
   it('should return 403 if role is not IN or EN', async () => {
-    const req = mockRequest({ utilisateur: { role: 'AP' } })
+    const req = mockRequest({ utilisateurRole: 'apprenant' } as any)
     const res = mockResponse()
 
     await Ctrl.deleteListePresence(req, res)
@@ -163,9 +209,9 @@ describe('deleteListePresence', () => {
   })
 
   it('should return 404 if not found', async () => {
-    const req = mockRequest({ params: { id: '999' }, utilisateur: { role: 'IN' } })
+    const req = mockRequest({ params: { id: '999' }, utilisateurRole: 'institution' } as any)
     const res = mockResponse()
-    ;(ListePresence.findByPk as jest.Mock).mockResolvedValue(null)
+    ;(ListePresence.findOne as jest.Mock).mockResolvedValue(null)
 
     await Ctrl.deleteListePresence(req, res)
 
@@ -173,10 +219,10 @@ describe('deleteListePresence', () => {
   })
 
   it('should return 200 on successful deletion', async () => {
-    const mockItem = { id: 1, destroy: jest.fn() }
-    const req = mockRequest({ params: { id: '1' }, utilisateur: { role: 'IN' } })
+    const mockItem = { id: 1, destroy: jest.fn().mockResolvedValue(undefined) }
+    const req = mockRequest({ params: { id: '1' }, utilisateurRole: 'institution' } as any)
     const res = mockResponse()
-    ;(ListePresence.findByPk as jest.Mock).mockResolvedValue(mockItem)
+    ;(ListePresence.findOne as jest.Mock).mockResolvedValue(mockItem)
 
     await Ctrl.deleteListePresence(req, res)
 
@@ -187,7 +233,7 @@ describe('deleteListePresence', () => {
 
 describe('getCount', () => {
   it('should return 403 if role is not IN or EN', async () => {
-    const req = mockRequest({ utilisateur: { role: 'AP' } })
+    const req = mockRequest({ utilisateurRole: 'apprenant' } as any)
     const res = mockResponse()
 
     await Ctrl.getCount(req, res)
@@ -196,12 +242,13 @@ describe('getCount', () => {
   })
 
   it('should return count for IN role', async () => {
-    const req = mockRequest({ utilisateur: { role: 'IN' } })
+    const req = mockRequest({ utilisateurRole: 'institution' } as any)
     const res = mockResponse()
-    ;(ListePresence.findAndCountAll as jest.Mock).mockResolvedValue({ count: 3 })
+    ;(ListePresence.count as jest.Mock).mockResolvedValue(3)
 
     await Ctrl.getCount(req, res)
 
-    expect(res.json).toHaveBeenCalledWith({ count: 3 })
+    expect(ListePresence.count).toHaveBeenCalled()
+    expect(res.json).toHaveBeenCalledWith({ success: true, count: 3 })
   })
 })

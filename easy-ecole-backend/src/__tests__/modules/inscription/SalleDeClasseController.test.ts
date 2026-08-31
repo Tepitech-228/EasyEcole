@@ -7,6 +7,7 @@ jest.mock('../../../modules/inscription/models/SalleDeClasse', () => {
   Mock.findOne = jest.fn()
   Mock.create = jest.fn()
   Mock.count = jest.fn()
+  Mock.associations = { localisation: 'localisation', classe: 'classe', parcours: 'parcours', etablissement: 'etablissement' }
   return { SalleDeClasse: Mock }
 })
 
@@ -36,7 +37,20 @@ describe('SalleDeClasseController.getAllSallesDeClasse', () => {
 
     await SalleDeClasseController.getAllSallesDeClasse(req, res)
 
-    expect(SalleDeClasse.findAll).toHaveBeenCalledWith({ where: { classeId: 'cl1' } })
+    expect(SalleDeClasse.findAll).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { classeId: 'cl1' },
+        include: [
+          {
+            association: 'localisation',
+            include: [{ association: 'batiment', include: [{ association: 'site' }] }]
+          },
+          { association: 'classe' },
+          { association: 'parcours' },
+          { association: 'etablissement' }
+        ]
+      })
+    )
     expect(res.status).toHaveBeenCalledWith(200)
   })
 

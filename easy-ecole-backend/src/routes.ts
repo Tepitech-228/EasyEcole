@@ -21,6 +21,7 @@ import EtablissementRoutes from "./modules/etablissement/EtablissementRoutes";
 import DocGenRoutes from "./modules/docgen/DocGenRoutes";
 import QualiteRoutes from "./modules/qualite/QualiteRoutes";
 import BourseRoutes from "./modules/bourse/BourseRoutes";
+import SurveillantRoutes from "./modules/surveillance/routers/SurveillantRouter";
 import VerificationController from "./modules/docgen/controllers/VerificationController";
 import PublicationNoteRouter from "./modules/inscription/routers/PublicationNoteRouter";
 import { DatabaseConnection } from "./core/helpers/DatabaseConnection";
@@ -79,6 +80,7 @@ router
     .use('/qualite', QualiteRoutes)
     .use('/docgen', DocGenRoutes)
     .use('/bourses', BourseRoutes)
+    .use('/surveillance', SurveillantRoutes)
     .get('/verification/document/:matricule/:reference', VerificationController.verifier)
 
     // Not found

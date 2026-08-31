@@ -29,12 +29,14 @@ import RhPrestataireRouter from "./routers/RhPrestataireRouter"
 import RhIndemnitePrestataireRouter from "./routers/RhIndemnitePrestataireRouter"
 import RhDemandeCongeRouter from "./routers/RhDemandeCongeRouter"
 import Authenticate from "../../core/middlewares/Authenticate";
+import { cache } from "../../core/middlewares/CacheMiddleware";
 import RhDashboardController from "./controllers/RhDashboardController";
 
 const router = express.Router();
 
 router
-    .get('/dashboard', [Authenticate], RhDashboardController.getDashboard)
+    // Lecture agrégée coûteuse → cache Redis 60 s (clé par utilisateur)
+    .get('/dashboard', [Authenticate, cache(60)], RhDashboardController.getDashboard)
     .use('/departements', [Authenticate], RhDepartementRouter)
     .use('/types-contrat', [Authenticate], RhTypeContratRouter)
     .use('/postes', [Authenticate], RhPosteRouter)

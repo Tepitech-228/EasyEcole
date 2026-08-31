@@ -15,6 +15,8 @@ export class ListeImmobilisationsPageComponent extends BaseComponentClass implem
     loading = false
     searchTerm = ''
     filterEtat = ''
+    pageSize = 10
+    currentPage = 1
 
     constructor(
         private router: Router,
@@ -66,6 +68,38 @@ export class ListeImmobilisationsPageComponent extends BaseComponentClass implem
         }
 
         return list
+    }
+
+    get totalPages(): number {
+        return Math.max(1, Math.ceil(this.filteredImmobilisations.length / this.pageSize))
+    }
+
+    get pagedImmobilisations(): Immobilisation[] {
+        if (this.currentPage > this.totalPages) {
+            this.currentPage = this.totalPages
+        }
+        const start = (this.currentPage - 1) * this.pageSize
+        return this.filteredImmobilisations.slice(start, start + this.pageSize)
+    }
+
+    nextPage(): void {
+        if (this.currentPage < this.totalPages) {
+            this.currentPage++
+        }
+    }
+
+    prevPage(): void {
+        if (this.currentPage > 1) {
+            this.currentPage--
+        }
+    }
+
+    goToPage(page: number): void {
+        this.currentPage = page
+    }
+
+    trackByIndex(index: number): number {
+        return index
     }
 
     etatBadge(etat: string): string {

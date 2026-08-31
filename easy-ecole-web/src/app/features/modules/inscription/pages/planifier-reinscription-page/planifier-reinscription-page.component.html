@@ -1,0 +1,148 @@
+<div class="flex min-h-screen">
+  <div class="flex-1 p-6 md:p-8">
+    <div class="max-w-4xl mx-auto">
+
+      <h1 class="text-2xl font-bold text-gray-900 mb-1">Planifier ma réinscription</h1>
+      <p class="text-sm text-gray-500 mb-6">
+        Étudiant déjà inscrit · passage en année supérieure — réutilisation de vos informations, aucune ressaisie.
+      </p>
+
+      <!-- Messages -->
+      <div *ngIf="successMessage" class="mb-4 p-3 rounded-md bg-green-50 text-green-800 text-sm">
+        {{ successMessage }}
+      </div>
+      <div *ngIf="errorMessage" class="mb-4 p-3 rounded-md bg-red-50 text-red-700 text-sm">
+        {{ errorMessage }}
+      </div>
+
+      <div *ngIf="loading" class="text-gray-500 text-sm py-8 text-center">Chargement de votre situation…</div>
+
+      <!-- Etat non étudiant -->
+      <div *ngIf="!loading && eligibilite && !dejaInscrit"
+           class="p-6 bg-yellow-50 border border-yellow-200 rounded-lg text-gray-700">
+        <p class="font-semibold text-yellow-800 mb-1">Réinscription indisponible</p>
+        <p class="text-sm">Vous n'êtes pas encore inscrit(e) dans un cursus. Ce service est réservé aux étudiants déjà inscrits qui passent en année supérieure.</p>
+      </div>
+
+      <ng-container *ngIf="!loading && eligibilite && dejaInscrit">
+
+        <!-- ÉTAPE 1 : Vérification & résumé étudiant (lecture seule) -->
+        <div *ngIf="etape === 'verification'" class="space-y-4">
+          <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Votre situation</h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <div class="text-gray-500">Matricule</div>
+                <div class="font-medium text-gray-900">{{ matricule }}</div>
+              </div>
+              <div>
+                <div class="text-gray-500">Parcours</div>
+                <div class="font-medium text-gray-900">{{ parcoursLabel }}</div>
+              </div>
+              <div>
+                <div class="text-gray-500">Niveau</div>
+                <div class="font-medium text-gray-900">{{ niveauLabel }}</div>
+              </div>
+              <div>
+                <div class="text-gray-500">Classe</div>
+                <div class="font-medium text-gray-900">{{ classeLabel }}</div>
+              </div>
+              <div>
+                <div class="text-gray-500">Année académique</div>
+                <div class="font-medium text-gray-900">{{ anneeLabel }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dette : affichée, non bloquante (règle LMD) -->
+          <div [class]="soldeDette > 0 ? 'bg-orange-50 border-orange-200' : 'bg-green-50 border-green-200'"
+               class="rounded-lg border p-6">
+            <h3 class="font-semibold text-gray-900 mb-2">Solde financier</h3>
+            <p class="text-sm text-gray-600">
+              <span *ngIf="soldeDette > 0">
+                Solde restant : <strong class="text-orange-700">{{ formatMontant(soldeDette) }}</strong>.
+                Cette dette est <strong>affichée</strong> mais <strong>ne bloque pas</strong> votre réinscription.
+                Le solde complet sera exigé pour la validation de votre diplôme (Licence L3 / Master / Doctorat).
+              </span>
+              <span *ngIf="soldeDette <= 0">Vous êtes à jour de vos frais. Aucune dette restante.</span>
+            </p>
+          </div>
+
+          <div class="flex justify-end">
+            <button (click)="surSession()"
+                    class="px-5 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-md hover:bg-indigo-700">
+              Continuer → Choisir la session
+            </button>
+          </div>
+        </div>
+
+        <!-- ÉTAPE 2 : Choix de la session & planification -->
+        <div *ngIf="etape === 'session'" class="space-y-4">
+          <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Session de réinscription</h2>
+            <p class="text-sm text-gray-500 mb-4">Sélectionnez la session (année académique) vers laquelle vous planifiez votre réinscription.</p>
+
+            <div class="space-y-2">
+              <label *ngFor="let s of sessionsOuvertes"
+                     class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                <input type="radio" [value]="s.id" [(ngModel)]="sessionSelectionneeId" class="accent-indigo-600">
+                <div>
+                  <div class="font-medium text-gray-900">{{ s.anneeAcademique?.libelle || ('Session du ' + (s.dateDebut | date:'dd/MM/yyyy')) }}</div>
+                  <div class="text-xs text-gray-500" *ngIf="s.description">{{ s.description }}</div>
+                </div>
+              </label>
+              <div *ngIf="sessionsOuvertes.length === 0" class="text-sm text-gray-500">
+                Aucune session de réinscription ouverte pour le moment.
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-between">
+            <button (click)="etape = 'verification'"
+                    class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 font-medium">← Retour</button>
+            <button (click)="planifier()" [disabled]="submitting"
+                    class="px-5 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-md hover:bg-indigo-700 disabled:opacity-50">
+              {{ submitting ? 'Planification…' : 'Planifier ma réinscription' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- ÉTAPE 3 : Suivi -->
+        <div *ngIf="etape === 'suivi'" class="space-y-4">
+          <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Suivi de vos planifications</h2>
+            <div *ngIf="planifications.length === 0" class="text-sm text-gray-500">Vous n'avez aucune planification active.</div>
+
+            <div *ngFor="let p of planifications" class="border rounded-lg p-4 mb-3">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="font-medium text-gray-900">{{ p.parcours?.titre || p.intituleParcours || 'Parcours' }}</div>
+                  <div class="text-xs text-gray-500">Année : {{ p.anneeAcademique?.libelle || '—' }} · Niveau : {{ p.niveauEtude?.libelle || '—' }}</div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="px-2 py-1 rounded-full text-xs font-medium"
+                        [class]="'bg-' + getStatutColor(p.statutReinscription) + '-100 text-' + getStatutColor(p.statutReinscription) + '-700'">
+                    {{ getStatutLabel(p.statutReinscription) }}
+                  </span>
+                  <button *ngIf="p.statutReinscription === 'en_attente'" (click)="annulerPlanification(p.id)"
+                          class="text-xs text-red-600 hover:text-red-800 font-medium">Annuler</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-between">
+            <button (click)="etape = 'verification'"
+                    class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 font-medium">← Retour à ma situation</button>
+            <button (click)="etape = 'session'"
+                    class="px-5 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-md hover:bg-indigo-700">
+              Ajouter une planification
+            </button>
+          </div>
+        </div>
+
+      </ng-container>
+
+    </div>
+  </div>
+</div>

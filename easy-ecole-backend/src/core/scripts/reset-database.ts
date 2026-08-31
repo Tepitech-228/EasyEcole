@@ -1,4 +1,5 @@
 import { Sequelize } from "sequelize";
+if (process.env.ALLOW_DEV_SCRIPTS !== 'true') { console.error('Script de dev désactivé en production'); process.exit(1); }
 const env = process.env.NODE_ENV || 'development';
 const config = require('../config/sequelize.json')[env];
 

@@ -17,7 +17,7 @@ export default (key: string) => {
 
             const permission = await Permission.findOne({ where: { key } })
             if (!permission) {
-                return next()
+                return res.status(403).json({ success: false, message: "Permission introuvable" })
             }
 
             // Check direct user permissions

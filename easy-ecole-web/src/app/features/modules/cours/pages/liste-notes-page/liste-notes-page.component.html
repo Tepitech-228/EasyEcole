@@ -55,7 +55,7 @@
             </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-            <tr *ngFor="let liste of _listesNotes" class="hover:bg-gray-50">
+            <tr *ngFor="let liste of pagedListesNotes; trackBy: trackByIndex" class="hover:bg-gray-50">
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {{ liste.cours?.code }} — {{ liste.cours?.intitule }}
                 </td>
@@ -108,6 +108,18 @@
             </tr>
         </tbody>
     </table>
+</div>
+
+<div *ngIf="_listesNotes.length > pageSize" class="w-full flex items-center justify-between mt-4">
+    <span class="text-sm text-gray-600">
+        Page {{ currentPage }} / {{ totalPages }} ({{ _listesNotes.length }} éléments)
+    </span>
+    <div class="flex items-center gap-2">
+        <button (click)="prevPage()" [disabled]="currentPage <= 1"
+                class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 shadow-sm text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed">Précédent</button>
+        <button (click)="nextPage()" [disabled]="currentPage >= totalPages"
+                class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 shadow-sm text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed">Suivant</button>
+    </div>
 </div>
 
 <app-custom-modal title="Importer un PV rempli" [showModal]="showImportModal" (onCloseModal)="closeImportModal()">

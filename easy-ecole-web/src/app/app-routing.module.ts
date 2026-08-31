@@ -205,6 +205,13 @@ const routes: Routes = [
         loadChildren: () => import('./features/modules/parent/parent.module').then(m => m.ParentModule),
         canLoad: [AuthGuard]
       },
+
+      // Module "Surveillance"
+      {
+        path: 'surveillance',
+        loadChildren: () => import('./features/modules/surveillance/surveillance.module').then(m => m.SurveillanceModule),
+        canLoad: [AuthGuard]
+      },
     ]
   },
 

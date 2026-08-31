@@ -3,6 +3,7 @@ import express from "express"
 import NiveauEtudeController from "../controllers/NiveauEtudeController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution"
 import CheckPermission from "../../../core/middlewares/CheckPermission"
+import { cache } from "../../../core/middlewares/CacheMiddleware"
 
 const router = express.Router()
 
@@ -19,7 +20,8 @@ const router = express.Router()
  *         description: Liste des niveaux d'étude
  */
 router
-    .get('/', NiveauEtudeController.getAllNiveauxEtude)
+    // Référentiel stable → cache Redis 300 s (Authenticate appliqué par le parent)
+    .get('/', [cache(300)], NiveauEtudeController.getAllNiveauxEtude)
 
 /**
  * @openapi
@@ -59,7 +61,7 @@ router
  *       200:
  *         description: Niveau d'étude trouvé
  */
-    .get('/:id', NiveauEtudeController.getNiveauEtude)
+    .get('/:id', [cache(300)], NiveauEtudeController.getNiveauEtude)
 
 /**
  * @openapi
