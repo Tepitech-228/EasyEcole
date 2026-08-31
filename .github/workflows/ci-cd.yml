@@ -147,7 +147,7 @@ jobs:
         run: npx tsc --noEmit --project tsconfig.app.json
 
       - name: '[CI] Build frontend production'
-        run: ng build --configuration production
+        run: npx ng build --configuration production
         env:
           NODE_OPTIONS: '--openssl-legacy-provider --max-old-space-size=3072'
           NG_CLI_ANALYTICS: 'false'
