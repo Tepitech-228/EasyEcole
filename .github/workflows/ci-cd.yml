@@ -58,6 +58,24 @@ jobs:
       run:
         working-directory: easy-ecole-backend
 
+    # Service MySQL pour les tests Jest qui accedent a une vraie base
+    # (ex: VerificationPaiementService / EcheancierGeneration). Sans base,
+    # Sequelize leve SequelizeConnectionRefusedError sur ces suites.
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ''
+          MYSQL_DATABASE: easyecole_test
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -uroot --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
     steps:
       - name: '[CI] Checkout'
         uses: actions/checkout@v4
