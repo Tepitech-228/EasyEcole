@@ -1,35 +1,166 @@
-<div class="dashboard-surface compta-workspace min-h-screen p-4 sm:p-6 lg:p-8">
-  <div class="compta-workspace-hero">
-    <div>
-      <p class="dashboard-kicker"><span class="material-symbols-outlined">account_balance</span> ESA-Compta</p>
-      <app-header-title title="Bordereaux à traiter" subtitle="Saisie comptable et imputation des paiements"></app-header-title>
+<div class="dashboard-surface esa-compta-workspace min-h-screen p-4 sm:p-6 lg:p-8">
+  <!-- Hero Header -->
+  <div class="esa-compta-hero">
+    <div class="esa-compta-hero-content">
+      <div class="esa-compta-hero-brand">
+        <div class="esa-compta-hero-icon">
+          <span class="material-symbols-outlined">account_balance</span>
+        </div>
+        <div>
+          <p class="esa-compta-hero-kicker">ESA-Compta</p>
+          <h1 class="esa-compta-hero-title">Cabinet Comptable</h1>
+          <p class="esa-compta-hero-subtitle">Vérification et validation des bordereaux de paiement</p>
+        </div>
+      </div>
+      <div class="esa-compta-hero-status">
+        <span class="esa-compta-hero-status-dot"></span>
+        Service actif
+      </div>
     </div>
-    <div class="compta-workspace-status"><span></span> File de traitement active</div>
   </div>
 
-  <div *ngIf="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-    {{ apiErrorMessage || 'Une erreur est survenue' }}
+  <!-- Alerts -->
+  <div *ngIf="error" class="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-r-lg mb-4 shadow-sm">
+    <div class="flex items-center gap-2">
+      <span class="material-symbols-outlined">error</span>
+      <span>{{ apiErrorMessage || 'Une erreur est survenue' }}</span>
+    </div>
   </div>
 
-  <div *ngIf="avertissements && avertissements.length" class="bg-amber-100 border border-amber-400 text-amber-800 px-4 py-3 rounded mb-4">
+  <div *ngIf="avertissements && avertissements.length" class="bg-amber-50 border-l-4 border-amber-500 text-amber-800 px-4 py-3 rounded-r-lg mb-4 shadow-sm">
     <div class="flex items-start gap-2">
       <span class="material-symbols-outlined">warning</span>
       <div>
-        <p class="font-semibold">Alerte</p>
-        <ul class="list-disc list-inside mt-1">
+        <p class="font-semibold">Alertes</p>
+        <ul class="list-disc list-inside mt-1 text-sm">
           <li *ngFor="let a of avertissements">{{ a }}</li>
         </ul>
       </div>
     </div>
   </div>
 
-  <!-- Filtres -->
-  <div class="dashboard-surface-card compta-filter-panel p-4 mb-6">
-    <div class="flex items-center gap-x-2 mb-4">
-      <span class="material-symbols-outlined text-gray-500">folder_open</span>
-      <span class="text-sm font-medium text-gray-700">Filtrer les bordereaux</span>
+  <!-- KPI Cards -->
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+    <div class="esa-kpi-card esa-kpi-card--blue">
+      <div class="esa-kpi-icon">
+        <span class="material-symbols-outlined">receipt_long</span>
+      </div>
+      <div class="esa-kpi-content">
+        <p class="esa-kpi-value">{{ bordereaux.length }}</p>
+        <p class="esa-kpi-label">Total</p>
+      </div>
+    </div>
+    <div class="esa-kpi-card esa-kpi-card--orange">
+      <div class="esa-kpi-icon">
+        <span class="material-symbols-outlined">pending_actions</span>
+      </div>
+      <div class="esa-kpi-content">
+        <p class="esa-kpi-value">{{ enAttenteCount }}</p>
+        <p class="esa-kpi-label">À traiter</p>
+      </div>
+    </div>
+    <div class="esa-kpi-card esa-kpi-card--green">
+      <div class="esa-kpi-icon">
+        <span class="material-symbols-outlined">check_circle</span>
+      </div>
+      <div class="esa-kpi-content">
+        <p class="esa-kpi-value">{{ validesCount }}</p>
+        <p class="esa-kpi-label">Validés</p>
+      </div>
+    </div>
+    <div class="esa-kpi-card esa-kpi-card--red">
+      <div class="esa-kpi-icon">
+        <span class="material-symbols-outlined">cancel</span>
+      </div>
+      <div class="esa-kpi-content">
+        <p class="esa-kpi-value">{{ rejetesCount }}</p>
+        <p class="esa-kpi-label">Rejetés</p>
+      </div>
+    </div>
+    <div class="esa-kpi-card esa-kpi-card--yellow">
+      <div class="esa-kpi-icon">
+        <span class="material-symbols-outlined">warning</span>
+      </div>
+      <div class="esa-kpi-content">
+        <p class="esa-kpi-value">{{ anomaliesCount }}</p>
+        <p class="esa-kpi-label">Anomalies</p>
+      </div>
+    </div>
+    <div class="esa-kpi-card esa-kpi-card--purple">
+      <div class="esa-kpi-icon">
+        <span class="material-symbols-outlined">account_balance</span>
+      </div>
+      <div class="esa-kpi-content">
+        <p class="esa-kpi-value">{{ referencesCount }}</p>
+        <p class="esa-kpi-label">Réf. saisies</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <!-- Status Distribution Chart -->
+    <div class="esa-chart-card">
+      <div class="esa-chart-header">
+        <h3 class="esa-chart-title">Répartition par statut</h3>
+        <span class="material-symbols-outlined text-gray-400">pie_chart</span>
+      </div>
+      <div class="esa-chart-body">
+        <div class="esa-chart-container">
+          <div class="esa-pie-chart">
+            <div class="esa-pie-segment esa-pie-segment--green" [style.height.%]="getPercent(validesCount)"></div>
+            <div class="esa-pie-segment esa-pie-segment--orange" [style.height.%]="getPercent(enAttenteCount)"></div>
+            <div class="esa-pie-segment esa-pie-segment--red" [style.height.%]="getPercent(rejetesCount)"></div>
+            <div class="esa-pie-segment esa-pie-segment--yellow" [style.height.%]="getPercent(anomaliesCount)"></div>
+          </div>
+          <div class="esa-chart-legend">
+            <div class="esa-legend-item">
+              <span class="esa-dot esa-dot--green"></span>
+              <span>Validés ({{ validesCount }})</span>
+            </div>
+            <div class="esa-legend-item">
+              <span class="esa-dot esa-dot--orange"></span>
+              <span>À traiter ({{ enAttenteCount }})</span>
+            </div>
+            <div class="esa-legend-item">
+              <span class="esa-dot esa-dot--red"></span>
+              <span>Rejetés ({{ rejetesCount }})</span>
+            </div>
+            <div class="esa-legend-item">
+              <span class="esa-dot esa-dot--yellow"></span>
+              <span>Anomalies ({{ anomaliesCount }})</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
+    <!-- Payment Methods Chart -->
+    <div class="esa-chart-card">
+      <div class="esa-chart-header">
+        <h3 class="esa-chart-title">Moyens de paiement</h3>
+        <span class="material-symbols-outlined text-gray-400">bar_chart</span>
+      </div>
+      <div class="esa-chart-body">
+        <div class="esa-bar-chart">
+          <div class="esa-bar-item" *ngFor="let stat of paymentStats">
+            <div class="esa-bar-label">{{ stat.label }}</div>
+            <div class="esa-bar-track">
+              <div class="esa-bar-fill" [style.width.%]="stat.percent" [class]="'esa-bar-fill--' + stat.color"></div>
+            </div>
+            <div class="esa-bar-value">{{ stat.count }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtres -->
+  <div class="dashboard-surface-card esa-filter-panel p-4 mb-6">
+    <div class="flex items-center gap-x-2 mb-4">
+      <span class="material-symbols-outlined text-gray-500">filter_list</span>
+      <span class="text-sm font-medium text-gray-700">Filtrer les bordereaux</span>
+    </div>
     <div class="grid grid-cols-1 md:grid-cols-4 gap-x-4 gap-y-3">
       <div>
         <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">
@@ -42,7 +173,6 @@
           <option *ngFor="let a of annees" [value]="a.id">{{ a.libelle }}</option>
         </select>
       </div>
-
       <div>
         <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">
           <span class="material-symbols-outlined text-sm align-text-bottom mr-1">school</span>
@@ -54,7 +184,6 @@
           <option *ngFor="let n of niveauxFiltres" [value]="n.id">{{ n.libelle }}</option>
         </select>
       </div>
-
       <div>
         <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">
           <span class="material-symbols-outlined text-sm align-text-bottom mr-1">route</span>
@@ -66,7 +195,6 @@
           <option *ngFor="let p of parcoursFiltres" [value]="p.id">{{ p.titre || '' }}</option>
         </select>
       </div>
-
       <div>
         <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">
           <span class="material-symbols-outlined text-sm align-text-bottom mr-1">receipt</span>
@@ -81,31 +209,27 @@
     </div>
   </div>
 
-  <!-- Barre de recherche -->
-  <div class="dashboard-surface-card compta-search-panel p-4 mb-6">
+  <!-- Search Bar -->
+  <div class="dashboard-surface-card esa-search-panel p-4 mb-6">
     <div class="flex items-center gap-x-4">
       <div class="flex-1">
-        <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">
-          <span class="material-symbols-outlined text-sm align-text-bottom mr-1">search</span>
-          Rechercher un bordereau
-        </label>
-        <input type="text" [(ngModel)]="searchTerm"
-          placeholder="Étudiant, matricule..."
+        <input type="text" [(ngModel)]="searchTerm" placeholder="Rechercher par étudiant ou matricule..."
           class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
       </div>
-      <div class="flex-shrink-0 pt-6">
-        <div class="bg-gradient-to-r from-indigo-50 to-indigo-100 border border-indigo-200 rounded-md px-4 py-2.5 text-center">
-          <p class="text-xs text-indigo-600 font-semibold">TOTAL</p>
-          <p class="text-lg font-bold text-indigo-600">{{ bordereauxFiltres.length }}</p>
-          <p class="text-xs text-indigo-500">bordereau(x)</p>
+      <div class="flex-shrink-0">
+        <div class="bg-gradient-to-r from-indigo-500 to-blue-600 rounded-lg px-4 py-2.5 text-center text-white">
+          <p class="text-xs font-semibold opacity-80">À TRAITER</p>
+          <p class="text-xl font-bold">{{ bordereauxFiltres.length }}</p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Tableau des bordereaux -->
-  <div *ngIf="!loading && bordereauxFiltres.length === 0" class="bg-white rounded-lg border border-gray-200 p-8 text-center">
-    <p class="text-gray-500 text-sm">Aucun bordereau à traiter</p>
+  <!-- Table -->
+  <div *ngIf="!loading && bordereauxFiltres.length === 0" class="bg-white rounded-xl border border-gray-200 p-12 text-center shadow-sm">
+    <span class="material-symbols-outlined text-6xl text-gray-200">inbox</span>
+    <p class="text-gray-500 text-base mt-4">Aucun bordereau à traiter</p>
+    <p class="text-gray-400 text-sm mt-1">Les nouveaux bordereaux apparaîtront ici</p>
   </div>
 
   <app-dossier-view *ngIf="!loading && bordereauxFiltres.length > 0"
@@ -122,7 +246,7 @@
   </app-dossier-view>
 </div>
 
-<!-- Modal Traitement : document et saisie sur le même écran -->
+<!-- Modal Traitement -->
 <app-custom-modal title="Traitement du bordereau" subtitle="Vérifier le justificatif et enregistrer le paiement" (onCloseModal)="closeSaisieModal()" [center]="true" [showModal]="showSaisieModal" [size]="'full'">
   <div *ngIf="selectedBordereau" class="grid grid-cols-1 xl:grid-cols-2 gap-6">
     <section class="min-w-0">
@@ -138,25 +262,26 @@
         <ng-template #noFile><span class="text-sm text-gray-400">Aucun fichier disponible</span></ng-template>
       </div>
     </section>
-
     <section class="min-w-0">
-    <div class="bg-gray-50 rounded-lg p-4 mb-4">
-      <p class="text-sm text-gray-600">Étudiant : <strong>{{ selectedBordereau.utilisateur?.nom }} {{ selectedBordereau.utilisateur?.prenoms }}</strong></p>
-      <p class="text-sm text-gray-600">Matricule : <strong>{{ selectedBordereau.echeance?.dossierEtudiant?.matricule || '---' }}</strong></p>
-      <p class="text-sm text-gray-600">Montant bordereau : <strong>{{ formatCurrency(selectedBordereau.montant) }}</strong></p>
-    </div>
-
-    <form [formGroup]="saisieForm" class="space-y-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Montant réellement payé *</label>
-        <input type="number" formControlName="montantPaiement" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+      <div class="bg-gray-50 rounded-lg p-4 mb-4">
+        <p class="text-sm text-gray-600">Étudiant : <strong>{{ selectedBordereau.utilisateur?.nom }} {{ selectedBordereau.utilisateur?.prenoms }}</strong></p>
+        <p class="text-sm text-gray-600">Matricule : <strong>{{ selectedBordereau.echeance?.dossierEtudiant?.matricule || '---' }}</strong></p>
+        <p class="text-sm text-gray-600">Montant bordereau : <strong>{{ formatCurrency(selectedBordereau.montant) }}</strong></p>
       </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Référence bancaire</label>
-        <input type="text" formControlName="referenceBancaire" placeholder="Référence de l'opération bancaire..."
-          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-      </div>
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <form [formGroup]="saisieForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Montant réellement payé *</label>
+          <input type="number" formControlName="montantPaiement" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Référence bancaire</label>
+          <input type="text" formControlName="referenceBancaire" placeholder="Référence de l'opération bancaire..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Numéro du bordereau</label>
+            <input type="text" formControlName="numeroBordereau" placeholder="N° bordereau banque..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+          </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Moyen de paiement</label>
             <select formControlName="moyenPaiement" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
@@ -164,6 +289,8 @@
               <option *ngFor="let m of moyensPaiementOptions" [value]="m.value">{{ m.label }}</option>
             </select>
           </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Banque</label>
             <select formControlName="banque" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
@@ -171,70 +298,43 @@
               <option *ngFor="let b of banquesOptions" [value]="b.value">{{ b.label }}</option>
             </select>
           </div>
-        </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Type d'opération *</label>
-        <select formControlName="typeOperationId" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-          <option value="">-- Sélectionner --</option>
-          <option *ngFor="let t of typesOperations" [value]="t.id">{{ t.libelle }}</option>
-        </select>
-      </div>
-
-      <!-- Répartition auto-calculée pour un bordereau MIXTE -->
-      <div *ngIf="estTypeMixte" class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 space-y-3">
-        <p class="text-sm font-semibold text-indigo-900">Répartition automatique (type MIXTE)</p>
-
-        <!-- Loading state -->
-        <div *ngIf="compositionLoading" class="flex items-center gap-2 text-sm text-gray-500 py-2">
-          <span class="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-          Calcul en cours...
-        </div>
-
-        <!-- Résultat auto-calculé -->
-        <div *ngIf="!compositionLoading && compositionPreviewResult?.composition" class="space-y-2">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div class="bg-white rounded-lg p-3 border border-indigo-100">
-              <p class="text-xs text-gray-500 uppercase font-semibold mb-1">Inscription (d'abord)</p>
-              <p class="text-lg font-bold text-indigo-700">{{ compositionPreviewResult.composition.inscription | number:'1.0-0' }} FCFA</p>
-              <p class="text-xs text-gray-400 mt-1">Reste à payer inscr. : {{ compositionPreviewResult.resteInscription | number:'1.0-0' }} FCFA</p>
-            </div>
-            <div class="bg-white rounded-lg p-3 border border-indigo-100">
-              <p class="text-xs text-gray-500 uppercase font-semibold mb-1">Scolarité (reste)</p>
-              <p class="text-lg font-bold text-indigo-700">{{ compositionPreviewResult.composition.scolarite | number:'1.0-0' }} FCFA</p>
-              <p *ngIf="compositionPreviewResult.composition.scolariteApresBourse !== compositionPreviewResult.composition.scolarite"
-                class="text-xs text-emerald-600 mt-1">Après bourse : {{ compositionPreviewResult.composition.scolariteApresBourse | number:'1.0-0' }} FCFA</p>
-            </div>
-          </div>
-          <p class="text-xs text-gray-500">
-            Total déclaré : {{ compositionSomme | number:'1.0-2' }} FCFA
-            — Montant constaté : {{ saisieForm.get('montantPaiement')?.value || 0 | number:'1.0-2' }} FCFA
-            <span class="text-green-600 font-medium">✓ Auto-calculé</span>
-          </p>
-        </div>
-
-        <!-- Badge boursier -->
-        <div *ngIf="bourseInfo" class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-start gap-3">
-          <span class="material-symbols-outlined text-emerald-600 text-lg mt-0.5">school</span>
           <div>
-            <p class="text-sm font-semibold text-emerald-800">
-              Étudiant boursier — {{ bourseInfo.type === 'TOTAL' ? 'Bourse totale' : 'Bourse partielle (' + bourseInfo.taux + '%)' }}
-            </p>
-            <p class="text-xs text-emerald-700 mt-1">
-              Réduction scolarité : <strong>{{ bourseInfo.reductionScolarite | number:'1.0-0' }} FCFA</strong>
-              ({{ bourseInfo.nom }})
-            </p>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Date de paiement</label>
+            <input type="date" formControlName="datePaiement" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
           </div>
         </div>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Date de paiement</label>
-        <input type="date" formControlName="datePaiement" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Commentaire</label>
-        <textarea rows="3" formControlName="commentaire" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"></textarea>
-      </div>
-    </form>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Type d'opération *</label>
+          <select formControlName="typeOperationId" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            <option value="">-- Sélectionner --</option>
+            <option *ngFor="let t of typesOperations" [value]="t.id">{{ t.libelle }}</option>
+          </select>
+        </div>
+        <!-- Répartition auto-calculée pour un bordereau MIXTE -->
+        <div *ngIf="estTypeMixte" class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 space-y-3">
+          <p class="text-sm font-semibold text-indigo-900">Répartition automatique (type MIXTE)</p>
+          <div *ngIf="compositionLoading" class="flex items-center gap-2 text-sm text-gray-500 py-2">
+            <span class="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+            Calcul en cours...
+          </div>
+          <div *ngIf="!compositionLoading && compositionPreviewResult?.composition" class="space-y-2">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div class="bg-white rounded-lg p-3 border border-indigo-100">
+                <p class="text-xs text-gray-500 uppercase font-semibold mb-1">Inscription (d'abord)</p>
+                <p class="text-lg font-bold text-indigo-700">{{ compositionPreviewResult.composition.inscription | number:'1.0-0' }} FCFA</p>
+              </div>
+              <div class="bg-white rounded-lg p-3 border border-indigo-100">
+                <p class="text-xs text-gray-500 uppercase font-semibold mb-1">Scolarité (reste)</p>
+                <p class="text-lg font-bold text-indigo-700">{{ compositionPreviewResult.composition.scolarite | number:'1.0-0' }} FCFA</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Commentaire</label>
+          <textarea rows="3" formControlName="commentaire" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"></textarea>
+        </div>
+      </form>
     </section>
   </div>
   <div class="flex items-center justify-between py-3">
@@ -268,4 +368,3 @@
     <app-custom-button (click)="closePreviewModal()" text="Fermer"></app-custom-button>
   </div>
 </app-custom-modal>
-
