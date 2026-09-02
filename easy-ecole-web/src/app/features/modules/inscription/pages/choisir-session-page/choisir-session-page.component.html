@@ -21,12 +21,39 @@
     <span>Création de votre demande d'inscription…</span>
   </div>
 
+  <div *ngIf="niveaux.length > 0" class="choisir-session__filtres" aria-label="Filtres par parcours">
+    <button
+      type="button"
+      *ngFor="let filtre of parcoursFilters"
+      class="choisir-session__filtre"
+      [class.is-active]="selectedParcours === filtre.key"
+      (click)="selectedParcours = filtre.key; selectedFiliereId = 'all'"
+    >
+      {{ filtre.label }}
+    </button>
+  </div>
+
+  <div *ngIf="filieresDisponibles.length > 0" class="choisir-session__filiere-filter">
+    <label for="filiereFilter" class="choisir-session__filiere-label">Filière / parcours</label>
+    <select
+      id="filiereFilter"
+      class="choisir-session__filiere-select"
+      [(ngModel)]="selectedFiliereId"
+      (change)="onParcoursFilterChange()"
+    >
+      <option value="all">Toutes les filières</option>
+      <option *ngFor="let parcours of filieresDisponibles" [value]="parcours.id">
+        {{ parcours.titre || 'Parcours' }}
+      </option>
+    </select>
+  </div>
+
   <!-- Sessions disponibles -->
-  <div *ngIf="sessions.length > 0; else aucuneSession" class="choisir-session__liste">
+  <div *ngIf="filteredSessions.length > 0; else aucuneSession" class="choisir-session__liste">
     <button
       type="button"
       class="carte-session"
-      *ngFor="let session of sessions"
+      *ngFor="let session of filteredSessions"
       (click)="choisirSession(session)"
       [disabled]="creationLoading"
     >
@@ -83,8 +110,14 @@
             d="M6 18L18 6M6 6l12 12"/>
         </svg>
       </div>
-      <h3>Aucune session ouverte</h3>
-      <p>Aucune session d'inscription n'est disponible pour le moment. Revenez plus tard.</p>
+      <h3>
+        {{ selectedParcours === 'all' ? 'Aucune session ouverte' : 'Aucune session pour ce parcours' }}
+      </h3>
+      <p>
+        {{ selectedParcours === 'all'
+          ? "Aucune session d'inscription n'est disponible pour le moment. Revenez plus tard."
+          : 'Aucune session ouverte n\'est disponible pour ce parcours pour le moment.' }}
+      </p>
       <button type="button" class="btn btn--primary" routerLink="/">
         Retour au tableau de bord
       </button>

@@ -48,15 +48,33 @@ export async function ensureBordereauFinance(sequelize: Sequelize): Promise<void
         console.warn('[ensureBordereauFinance] ENUM type ignoré:', err?.message)
     }
 
-    // 2. Colonne composition
+    // 2. Colonnes de paiement / bordereau (compatibilité base existante)
     try {
         const [compCols] = await sequelize.query("SHOW COLUMNS FROM `ins_bordereaux` LIKE 'composition'")
         if (!(compCols as any[]).length) {
             await sequelize.query("ALTER TABLE `ins_bordereaux` ADD COLUMN `composition` TEXT NULL")
             console.log('[ensureBordereauFinance] colonne ins_bordereaux.composition créée')
         }
+
+        const [numeroCols] = await sequelize.query("SHOW COLUMNS FROM `ins_bordereaux` LIKE 'numeroBordereau'")
+        if (!(numeroCols as any[]).length) {
+            await sequelize.query("ALTER TABLE `ins_bordereaux` ADD COLUMN `numeroBordereau` VARCHAR(100) NULL DEFAULT NULL")
+            console.log('[ensureBordereauFinance] colonne ins_bordereaux.numeroBordereau créée')
+        }
+
+        const [moyenCols] = await sequelize.query("SHOW COLUMNS FROM `ins_bordereaux` LIKE 'moyenPaiement'")
+        if (!(moyenCols as any[]).length) {
+            await sequelize.query("ALTER TABLE `ins_bordereaux` ADD COLUMN `moyenPaiement` ENUM('virement','especes','mobile_money','cheque','autre','depot_banque') NULL DEFAULT NULL")
+            console.log('[ensureBordereauFinance] colonne ins_bordereaux.moyenPaiement créée')
+        }
+
+        const [banqueCols] = await sequelize.query("SHOW COLUMNS FROM `ins_bordereaux` LIKE 'banque'")
+        if (!(banqueCols as any[]).length) {
+            await sequelize.query("ALTER TABLE `ins_bordereaux` ADD COLUMN `banque` ENUM('ib_bank','ecobank','orabank') NULL DEFAULT NULL")
+            console.log('[ensureBordereauFinance] colonne ins_bordereaux.banque créée')
+        }
     } catch (err: any) {
-        console.warn('[ensureBordereauFinance] colonne composition ignorée:', err?.message)
+        console.warn('[ensureBordereauFinance] colonnes paiement ignorées:', err?.message)
     }
 
     // 3. Type d'opération MIXTE

@@ -6,8 +6,10 @@ import { Session } from 'src/app/data/modules/inscription/models/Session.model';
 import { EtatsSession } from 'src/app/data/enums/EtatsSession';
 import { NiveauEtude } from 'src/app/data/modules/inscription/models/NiveauEtude.model';
 import { AnneeAcademique } from 'src/app/data/modules/inscription/models/AnneeAcademique.model';
+import { Parcours } from 'src/app/data/modules/inscription/models/Parcours.model';
 import { NiveauEtudeService } from 'src/app/data/modules/inscription/services/niveau-etude.service';
 import { AnneeAcademiqueService } from 'src/app/data/modules/inscription/services/annee-academique.service';
+import { ParcoursService } from 'src/app/data/modules/inscription/services/parcours.service';
 import { environment } from 'src/environments/environment';
 
 /**
@@ -33,6 +35,17 @@ export class ChoisirSessionPageComponent extends BaseComponentClass implements O
   sessions: Session[] = []
   niveaux: NiveauEtude[] = []
   annees: AnneeAcademique[] = []
+  parcoursList: Parcours[] = []
+
+  selectedParcours: 'all' | 'licence' | 'master' | 'doctorat' = 'all'
+  selectedFiliereId: string = 'all'
+
+  readonly parcoursFilters = [
+    { key: 'all', label: 'Tous' },
+    { key: 'licence', label: 'Licence' },
+    { key: 'master', label: 'Master' },
+    { key: 'doctorat', label: 'Doctorat' }
+  ] as const
 
   // Demandes d'inscription de l'apprenant (pour ne pas en recréer une deux fois)
   mesDemandes: any[] = []
@@ -47,12 +60,14 @@ export class ChoisirSessionPageComponent extends BaseComponentClass implements O
     private http: HttpClient,
     private niveauEtudeService: NiveauEtudeService,
     private anneeAcademiqueService: AnneeAcademiqueService,
+    private parcoursService: ParcoursService,
   ) {
     super()
   }
 
   ngOnInit(): void {
     this.loadAnneesEtNiveaux()
+    this.loadParcours()
     this.loadSessions()
     this.loadMesDemandes()
   }
@@ -66,6 +81,26 @@ export class ChoisirSessionPageComponent extends BaseComponentClass implements O
       next: (annees) => this.annees = annees,
       error: () => {}
     });
+  }
+
+  private loadParcours(): void {
+    this.parcoursService.getAll().subscribe({
+      next: (parcours) => {
+        this.parcoursList = parcours || []
+        if (this.selectedFiliereId !== 'all') {
+          const selectedParcours = this.parcoursList.find(p => String(p.id) === String(this.selectedFiliereId))
+          if (selectedParcours && selectedParcours.niveauEtudeId) {
+            const level = this.getParcoursFilterKey(this.getNiveauLibelle(String(selectedParcours.niveauEtudeId)))
+            if (level !== 'all') {
+              this.selectedParcours = level
+            }
+          }
+        }
+      },
+      error: () => {
+        this.parcoursList = []
+      }
+    })
   }
 
   private loadSessions(): void {
@@ -99,9 +134,63 @@ export class ChoisirSessionPageComponent extends BaseComponentClass implements O
     return Session.getEtat(s.dateDebut, s.dateFin) === EtatsSession.OUVERTE ? 'Ouverte' : 'Fermée'
   }
 
+  get filteredSessions(): Session[] {
+    return this.sessions.filter((session: Session) => {
+      const niveauLibelle = this.getNiveauLibelle(session.niveauEtudeId)
+      const parcoursKey = this.getParcoursFilterKey(niveauLibelle)
+
+      if (this.selectedParcours !== 'all' && parcoursKey !== this.selectedParcours) {
+        return false
+      }
+
+      if (this.selectedFiliereId !== 'all') {
+        const selectedParcours = this.parcoursList.find(p => String(p.id) === String(this.selectedFiliereId))
+        if (!selectedParcours) return false
+        const selectedNiveauId = selectedParcours.niveauEtudeId ? String(selectedParcours.niveauEtudeId) : null
+        if (!selectedNiveauId) return false
+        return String(session.niveauEtudeId) === selectedNiveauId
+      }
+
+      return true
+    })
+  }
+
+  get filieresDisponibles(): Parcours[] {
+    const niveauxFiltres = this.parcoursList.filter((parcours) => {
+      const niveauLibelle = this.getNiveauLibelle(String(parcours.niveauEtudeId || ''))
+      if (this.selectedParcours === 'all') return true
+      return this.getParcoursFilterKey(niveauLibelle) === this.selectedParcours
+    })
+
+    return niveauxFiltres.sort((a, b) => (a.titre || '').localeCompare(b.titre || ''))
+  }
+
+  onParcoursFilterChange(): void {
+    if (this.selectedFiliereId !== 'all') {
+      const selectedParcours = this.parcoursList.find(p => String(p.id) === String(this.selectedFiliereId))
+      if (selectedParcours && selectedParcours.niveauEtudeId) {
+        const niveauKey = this.getParcoursFilterKey(this.getNiveauLibelle(String(selectedParcours.niveauEtudeId)))
+        if (niveauKey !== 'all') {
+          this.selectedParcours = niveauKey
+        }
+      }
+    }
+  }
+
   getNiveauLibelle(id: string): string {
     if (!id) return ''
     return this.niveaux.find(n => String(n.id) === String(id))?.libelle || ''
+  }
+
+  getParcoursFilterKey(libelle?: string): 'all' | 'licence' | 'master' | 'doctorat' {
+    const normalized = (libelle || '').trim().toLowerCase()
+
+    if (!normalized) return 'all'
+    if (normalized.includes('doctorat')) return 'doctorat'
+    if (normalized.includes('master')) return 'master'
+    if (normalized.includes('licence')) return 'licence'
+
+    return 'all'
   }
 
   getAnneeLibelle(id: string): string {

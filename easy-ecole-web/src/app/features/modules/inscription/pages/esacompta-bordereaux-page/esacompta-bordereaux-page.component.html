@@ -8,15 +8,52 @@
         </div>
         <div>
           <p class="esa-compta-hero-kicker">ESA-Compta</p>
-          <h1 class="esa-compta-hero-title">Cabinet Comptable</h1>
-          <p class="esa-compta-hero-subtitle">Vérification et validation des bordereaux de paiement</p>
+          <h1 class="esa-compta-hero-title">Accueil comptabilité</h1>
+          <p class="esa-compta-hero-subtitle">Suivi des paiements, validation des bordereaux et traitement comptable</p>
         </div>
       </div>
-      <div class="esa-compta-hero-status">
-        <span class="esa-compta-hero-status-dot"></span>
-        Service actif
+      <div class="esa-compta-hero-meta">
+        <div class="esa-compta-hero-status">
+          <span class="esa-compta-hero-status-dot"></span>
+          Service actif
+        </div>
+        <a routerLink="/comptabilite/dashboard" class="esa-compta-hero-action">
+          <span class="material-symbols-outlined">open_in_new</span>
+          Comptabilité
+        </a>
       </div>
     </div>
+  </div>
+
+  <div class="esa-home-actions grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+    <a routerLink="/inscription/finance/bordereaux" class="esa-home-action-card esa-home-action-card--green">
+      <span class="material-symbols-outlined">receipt_long</span>
+      <div>
+        <p class="esa-home-action-label">Bordereaux</p>
+        <h3>{{ enAttenteCount }} à traiter</h3>
+      </div>
+    </a>
+    <a routerLink="/comptabilite/dashboard" class="esa-home-action-card esa-home-action-card--blue">
+      <span class="material-symbols-outlined">bar_chart</span>
+      <div>
+        <p class="esa-home-action-label">Indicateurs</p>
+        <h3>Tableau de bord</h3>
+      </div>
+    </a>
+    <a routerLink="/inscription/paiements" class="esa-home-action-card esa-home-action-card--amber">
+      <span class="material-symbols-outlined">payments</span>
+      <div>
+        <p class="esa-home-action-label">Paiements</p>
+        <h3>Suivi rapide</h3>
+      </div>
+    </a>
+    <a routerLink="/inscription/finance/types-bordereaux" class="esa-home-action-card esa-home-action-card--purple">
+      <span class="material-symbols-outlined">tune</span>
+      <div>
+        <p class="esa-home-action-label">Paramètres</p>
+        <h3>Types de bordereaux</h3>
+      </div>
+    </a>
   </div>
 
   <!-- Alerts -->

@@ -31,6 +31,30 @@ async function main() {
     }
   }
 
+  // Add moyenPaiement column
+  try {
+    await sequelize.query(`ALTER TABLE \`${TABLE_NAME}\` ADD COLUMN \`moyenPaiement\` ENUM('virement','especes','mobile_money','cheque','autre','depot_banque') NULL DEFAULT NULL AFTER \`numeroBordereau\``);
+    console.log(`  ✓ Column \`moyenPaiement\` added successfully`);
+  } catch (error: any) {
+    if (error?.parent?.code === 'ER_DUP_FIELDNAME') {
+      console.log(`  - Column \`moyenPaiement\` already exists, skipping`);
+    } else {
+      console.warn('  ⚠ moyenPaiement warning:', error.message);
+    }
+  }
+
+  // Add banque column
+  try {
+    await sequelize.query(`ALTER TABLE \`${TABLE_NAME}\` ADD COLUMN \`banque\` ENUM('ib_bank','ecobank','orabank') NULL DEFAULT NULL AFTER \`moyenPaiement\``);
+    console.log(`  ✓ Column \`banque\` added successfully`);
+  } catch (error: any) {
+    if (error?.parent?.code === 'ER_DUP_FIELDNAME') {
+      console.log(`  - Column \`banque\` already exists, skipping`);
+    } else {
+      console.warn('  ⚠ banque warning:', error.message);
+    }
+  }
+
   // Add foreign key for typeOperationId
   try {
     await sequelize.query(`ALTER TABLE \`${TABLE_NAME}\` ADD CONSTRAINT \`fk_bordereau_type_operation\` FOREIGN KEY (\`typeOperationId\`) REFERENCES \`ins_types_operations_bordereau\`(\`id\`) ON DELETE SET NULL ON UPDATE CASCADE`);
