@@ -33,7 +33,17 @@
       </thead>
       <tbody class="divide-y divide-gray-100">
         <tr *ngFor="let d of dossiers" class="hover:bg-gray-50">
-          <td class="px-4 py-3 text-gray-900 font-medium">{{ d.utilisateur?.nom }} {{ d.utilisateur?.prenoms }}</td>
+          <td class="px-4 py-3 text-gray-900 font-medium">
+            <div class="flex items-center gap-x-2">
+              <span>{{ d.utilisateur?.nom }} {{ d.utilisateur?.prenoms }}</span>
+              <span *ngIf="estReinscription(d)"
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700"
+                    title="Dossier de réinscription">Réinscription</span>
+              <span *ngIf="!estReinscription(d)"
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-700"
+                    title="Première inscription">1ère inscription</span>
+            </div>
+          </td>
           <td class="px-4 py-3 text-gray-600">{{ getParcoursFinal(d) }}</td>
           <td class="px-4 py-3 text-gray-600">{{ getAnnee(d) }}</td>
           <td class="px-4 py-3 text-center text-gray-600">{{ nbDocuments(d) }}</td>
@@ -86,6 +96,21 @@
         <span class="text-gray-600">Contact :</span><span class="text-gray-900">{{ selectedDossier.utilisateur?.contact || '---' }}</span>
         <span class="text-gray-600">Période :</span><span class="text-gray-900">{{ selectedDossier.utilisateur?.apprenant?.periode === 'soir' ? 'Cours du soir' : (selectedDossier.utilisateur?.apprenant?.periode === 'matin' ? 'Cours du matin' : (selectedDossier.utilisateur?.apprenant?.periode === 'en_ligne' ? 'Cours en ligne' : 'Non renseignée')) }}</span>
         <span class="text-gray-600">Préinscription :</span><span class="text-gray-900">{{ selectedDossier.preInscription?.statut || '---' }}</span>
+      </div>
+    </div>
+
+    <!-- Badge type de demande + points de contrôle -->
+    <div class="mb-5">
+      <div [class]="'rounded-lg p-3 text-sm ' + (estReinscription(selectedDossier) ? 'bg-blue-50 border border-blue-200' : 'bg-green-50 border border-green-200')">
+        <p class="font-semibold mb-1"
+           [class.text-blue-800]="estReinscription(selectedDossier)"
+           [class.text-green-800]="!estReinscription(selectedDossier)">
+          🔵 {{ libelleTypeDemande(selectedDossier) }}
+        </p>
+        <p class="text-xs text-gray-600 mb-1">Points de contrôle à vérifier :</p>
+        <ul class="text-xs text-gray-700 list-disc list-inside">
+          <li *ngFor="let pc of pointsControle(selectedDossier)">{{ pc }}</li>
+        </ul>
       </div>
     </div>
 

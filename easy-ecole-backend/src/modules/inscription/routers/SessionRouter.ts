@@ -41,6 +41,21 @@ router
     .post('/', [AuthInstitution, CheckPermission('action.inscription.session.creer')], SessionController.createSession)
 /**
  * @openapi
+ * /inscription/sessions/statistics/count:
+ *   get:
+ *     tags: [Sessions]
+ *     summary: Retourne le nombre total de sessions
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Nombre de sessions
+ */
+    // ⚠️ IMPORTANT : cette route DOIT être déclarée AVANT /:id
+    // sinon Express la捕获 par le paramètre dynamique :id et retourne 404.
+    .get('/statistics/count', [AuthInstitution], SessionController.getCount)
+/**
+ * @openapi
  * /inscription/sessions/{id}:
  *   get:
  *     tags: [Sessions]
@@ -95,18 +110,5 @@ router
  *         description: Session non trouvée
  */
     .delete('/:id', [AuthInstitution, CheckPermission('action.inscription.session.supprimer')], SessionController.deleteSession)
-/**
- * @openapi
- * /inscription/sessions/statistics/count:
- *   get:
- *     tags: [Sessions]
- *     summary: Retourne le nombre total de sessions
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Nombre de sessions
- */
-    .get('/statistics/count', [AuthInstitution], SessionController.getCount)
 
 export default router

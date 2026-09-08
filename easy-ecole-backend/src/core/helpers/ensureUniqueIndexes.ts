@@ -99,6 +99,7 @@ export const UNIQUE_INDEX_DEFS: readonly UniqueIndexDef[] = [
     { table: 'ins_classes', column: 'libelle' },
     { table: 'ins_annees_academiques', column: 'libelle' },
     { table: 'ins_absences', column: 'noteEvaluationId' },
+    { table: 'ins_types_operations_bordereau', column: 'code' },
     // ---------- elearning ----------
     { table: 'elearning_salons', column: 'codeInvitation' },
     // ---------- docgen ----------
@@ -109,6 +110,7 @@ export const UNIQUE_INDEX_DEFS: readonly UniqueIndexDef[] = [
     { table: 'ged_document_types', column: 'code' },
     { table: 'ged_processus', column: 'code' },
     { table: 'ged_domains', column: 'code' },
+    { table: 'brs_configurations', column: 'nom' },
     // ---------- immobilisation ----------
     { table: 'imm_departement', column: 'nom' },
     { table: 'imm_localisation', column: 'code' },
@@ -117,6 +119,8 @@ export const UNIQUE_INDEX_DEFS: readonly UniqueIndexDef[] = [
     // ---------- scolarite ----------
     { table: 'scol_types_document', column: 'libelle' },
     { table: 'scol_diplomes', column: 'numeroDiplome' },
+    { table: 'scol_demandes_document', column: 'numeroDemande' },
+    { table: 'scol_recus_caisse', column: 'numero' },
     // ---------- orientation ----------
     { table: 'ori_parcours', column: 'titre' },
     { table: 'ori_niveaux_etudes', column: 'libelle' },
@@ -134,6 +138,24 @@ export const UNIQUE_INDEX_DEFS: readonly UniqueIndexDef[] = [
     // ---------- achats ----------
     { table: 'ach_categories', column: 'nom' },
 ];
+
+async function ensureUserPermissionCompositeIndex(sequelize: Sequelize): Promise<void> {
+    try {
+        await sequelize.query(`
+            DELETE p1 FROM aut_user_permissions p1
+            INNER JOIN aut_user_permissions p2
+                ON p1.utilisateurId = p2.utilisateurId
+               AND p1.permissionId = p2.permissionId
+               AND p1.id > p2.id
+        `);
+        await sequelize.query(
+            'CREATE UNIQUE INDEX `uq_aut_user_permissions_user_permission` ON `aut_user_permissions` (`utilisateurId`, `permissionId`)'
+        );
+    } catch (err: any) {
+        const code = err?.parent?.code;
+        if (code !== 'ER_DUP_KEYNAME' && code !== 'ER_NO_SUCH_TABLE') throw err;
+    }
+}
 
 /** Nom d'index nominatif (± 64 caractères max côté MySQL). */
 export const buildIndexName = (table: string, column: string): string =>
@@ -161,6 +183,8 @@ export async function ensureUniqueIndexes(sequelize: Sequelize): Promise<EnsureU
     if (UNIQUE_INDEX_DEFS.length === 0) {
         return result;
     }
+
+    await ensureUserPermissionCompositeIndex(sequelize);
 
     // 1. Tables existantes (une table absente est simplement ignorée :
     //    l'installation fraîche / le sync la créera avant un futur boot).

@@ -47,6 +47,29 @@ export default class UtilisateurController {
         }
     }
 
+    /**
+     * GET /auth/utilisateurs/moi — Retourne l'utilisateur courant (celui dont le token est porteur).
+     * Route explicite pour éviter la collision avec GET /:id qui interprèterait "moi" comme un identifiant.
+     */
+    static async getMoi(req: Request, res: Response): Promise<Response> {
+        const utilisateurId = (req as any).utilisateurId;
+
+        try {
+            const utilisateur: Utilisateur | null = await Utilisateur.findByPk(utilisateurId, {
+                attributes: ['id', 'nom', 'prenoms', 'identifiant', 'email', 'role', 'contact', 'photoDeProfil'],
+                include: [Utilisateur.associations.apprenant, Utilisateur.associations.institution, Utilisateur.associations.caissierBanque]
+            });
+
+            if (!utilisateur) {
+                return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
+            }
+
+            return res.status(200).json(utilisateur);
+        } catch (error) {
+            return res.status(500).json({ success: false, message: "Erreur interne du serveur" });
+        }
+    }
+
     static async getUtilisateur(req: Request, res: Response): Promise<Response> {
         let options: FindOptions<InferAttributes<Utilisateur>> = {}
         options = { 

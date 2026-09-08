@@ -5,6 +5,9 @@ import { RolePermission } from '../../modules/auth/models/RolePermission'
 import { UserRole } from '../../modules/auth/models/UserRole'
 import { RolesUtilisateur } from '../enums/RolesUtilisateur'
 
+const permissionCache = new Map<string, { id: number; expiresAt: number }>()
+const PERMISSION_CACHE_TTL_MS = 5 * 60 * 1000
+
 export default (key: string) => {
     return async (req: Request, res: Response, next: Function) => {
         try {
@@ -15,25 +18,32 @@ export default (key: string) => {
                 return next()
             }
 
-            const permission = await Permission.findOne({ where: { key } })
-            if (!permission) {
+            const now = Date.now()
+            const cachedPermission = permissionCache.get(key)
+            const permissionId = cachedPermission && cachedPermission.expiresAt > now
+                ? cachedPermission.id
+                : (await Permission.findOne({ where: { key }, attributes: ['id'] }))?.id
+            if (!permissionId) {
                 return res.status(403).json({ success: false, message: "Permission introuvable" })
             }
+            permissionCache.set(key, { id: Number(permissionId), expiresAt: now + PERMISSION_CACHE_TTL_MS })
 
-            // Check direct user permissions
-            const userPermission = await UserPermission.findOne({
-                where: { utilisateurId, permissionId: permission.id, estActif: true }
-            })
+            const [userPermission, userRoles] = await Promise.all([
+                UserPermission.findOne({
+                    where: { utilisateurId, permissionId, estActif: true },
+                    attributes: ['id'],
+                }),
+                UserRole.findAll({ where: { utilisateurId }, attributes: ['roleId'] }),
+            ])
             if (userPermission) {
                 return next()
             }
 
-            // Check role permissions
-            const userRoles = await UserRole.findAll({ where: { utilisateurId } })
             if (userRoles.length > 0) {
                 const roleIds = userRoles.map(ur => ur.roleId)
                 const rolePermission = await RolePermission.findOne({
-                    where: { roleId: roleIds, permissionId: permission.id }
+                    where: { roleId: roleIds, permissionId },
+                    attributes: ['id'],
                 })
                 if (rolePermission) {
                     return next()

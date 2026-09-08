@@ -5,7 +5,6 @@ import { BaseLayoutComponent } from './features/layout/layouts/base-layout/base-
 import { AuthGuard } from './core/guards/auth.guard';
 import { InscriptionCompleteGuard } from './core/guards/inscription-complete.guard';
 import { NotFoundPageComponent } from './features/pages/not-found-page/not-found-page.component';
-import { DashboardPageComponent } from './features/pages/dashboard-page/dashboard-page.component';
 
 const routes: Routes = [
   { path: 'test', redirectTo: '', pathMatch: 'full' },
@@ -33,7 +32,8 @@ const routes: Routes = [
         children: [
           {
             path: '',
-            component: DashboardPageComponent,
+            loadChildren: () => import('./features/pages/dashboard-page/dashboard-page.module').then(m => m.DashboardPageModule),
+            canLoad: [AuthGuard],
             pathMatch: 'full',
           }
         ]

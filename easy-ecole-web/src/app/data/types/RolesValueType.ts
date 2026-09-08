@@ -10,5 +10,6 @@ export type RolesValueType = {
     isComiteOrientation: boolean
     isAdmin: boolean
     isParent: boolean
+    isSecretaire: boolean
     isSurveillant: boolean
 }

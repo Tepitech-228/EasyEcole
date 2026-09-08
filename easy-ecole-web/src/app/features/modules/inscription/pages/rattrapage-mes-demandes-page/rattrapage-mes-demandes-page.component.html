@@ -55,6 +55,25 @@
     </div>
 </div>
 
+<!-- ==================== Demande sans session (orpheline) ==================== -->
+<div class="mb-10">
+    <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-5 flex flex-wrap items-center justify-between gap-4">
+        <div>
+            <p class="text-sm font-semibold text-indigo-900">Aucune session ouverte ne vous convient ?</p>
+            <p class="text-sm text-indigo-700 mt-1">
+                Vous pouvez déposer une demande de rattrapage <b>sans session</b> : sélectionnez vos UE non validées
+                et la période concernée. Les 3 pièces fixes sont alors exigées, et votre demande sera rattachée
+                automatiquement à la session de la période lors de son ouverture.
+            </p>
+        </div>
+        <button (click)="openSansSessionModal()" type="button"
+            class="inline-flex items-center gap-x-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors">
+            <span class="material-symbols-outlined text-sm">add_task</span>
+            Déposer une demande sans session
+        </button>
+    </div>
+</div>
+
 <!-- ==================== Mes demandes ==================== -->
 <div>
     <h2 class="text-lg font-semibold text-gray-900 mb-4">Suivi de mes demandes</h2>
@@ -72,7 +91,15 @@
             <!-- En-tête de la demande -->
             <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-gray-100">
                 <div>
-                    <p class="text-sm font-semibold text-gray-900">{{ demande.rattrapageSession?.libelle || ('Session #' + demande.rattrapageSessionId) }}</p>
+                    <p class="text-sm font-semibold text-gray-900">
+                        <ng-container *ngIf="!estDemandeSansSession(demande)">
+                            {{ demande.rattrapageSession?.libelle || ('Session #' + demande.rattrapageSessionId) }}
+                        </ng-container>
+                        <ng-container *ngIf="estDemandeSansSession(demande)">
+                            Demande sans session
+                            <span *ngIf="demande.periode" class="text-xs font-normal text-gray-400"> — Période : {{ demande.periode }}</span>
+                        </ng-container>
+                    </p>
                     <p class="text-xs text-gray-500">
                         Soumise le {{ (demande.createdAt | date: 'dd MMM yyyy') || '---' }}
                     </p>
@@ -104,31 +131,63 @@
                 <div>
                     <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Documents requis</p>
                     <div class="flex flex-col gap-2">
-                        <div *ngFor="let docRequis of getDocumentsRequis(demande)"
-                            class="flex items-center justify-between gap-2 p-2 rounded-lg border"
-                            [class.border-green-200]="documentDejaDepose(demande, docRequis.id)"
-                            [class.bg-green-50]="documentDejaDepose(demande, docRequis.id)"
-                            [class.border-gray-200]="!documentDejaDepose(demande, docRequis.id)">
-                            <div class="flex items-center gap-2 min-w-0">
-                                <span class="material-symbols-outlined text-sm"
-                                    [class.text-green-600]="documentDejaDepose(demande, docRequis.id)"
-                                    [class.text-gray-400]="!documentDejaDepose(demande, docRequis.id)">
-                                    {{ documentDejaDepose(demande, docRequis.id) ? 'check_circle' : 'upload_file' }}
-                                </span>
-                                <span class="text-sm text-gray-700 truncate">{{ docRequis.libelle }}</span>
-                                <span *ngIf="docRequis.obligatoire" class="text-xs text-red-500">*</span>
+                        <!-- Demande SANS session → 3 pièces fixes -->
+                        <ng-container *ngIf="estDemandeSansSession(demande)">
+                            <div *ngFor="let piece of piecesFixes"
+                                class="flex items-center justify-between gap-2 p-2 rounded-lg border"
+                                [class.border-green-200]="documentFixeDejaDepose(demande, piece.code)"
+                                [class.bg-green-50]="documentFixeDejaDepose(demande, piece.code)"
+                                [class.border-gray-200]="!documentFixeDejaDepose(demande, piece.code)">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="material-symbols-outlined text-sm"
+                                        [class.text-green-600]="documentFixeDejaDepose(demande, piece.code)"
+                                        [class.text-gray-400]="!documentFixeDejaDepose(demande, piece.code)">
+                                        {{ documentFixeDejaDepose(demande, piece.code) ? 'check_circle' : 'upload_file' }}
+                                    </span>
+                                    <span class="text-sm text-gray-700 truncate">{{ piece.libelle }}</span>
+                                    <span class="text-xs text-red-500">*</span>
+                                </div>
+                                <button *ngIf="!documentFixeDejaDepose(demande, piece.code)"
+                                    (click)="uploaderPieceFixe(demande, piece.code)" type="button"
+                                    class="shrink-0 inline-flex items-center gap-x-1 px-2.5 py-1 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors">
+                                    Téléverser
+                                </button>
+                                <span *ngIf="documentFixeDejaDepose(demande, piece.code)"
+                                    class="shrink-0 text-xs text-green-700">Déposé</span>
                             </div>
-                            <button *ngIf="!documentDejaDepose(demande, docRequis.id)"
-                                (click)="uploaderDocument(demande, docRequis.id!)" type="button"
-                                class="shrink-0 inline-flex items-center gap-x-1 px-2.5 py-1 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors">
-                                Téléverser
-                            </button>
-                            <span *ngIf="documentDejaDepose(demande, docRequis.id)"
-                                class="shrink-0 text-xs text-green-700">Déposé</span>
-                        </div>
-                        <p *ngIf="getDocumentsRequis(demande).length === 0" class="text-sm text-gray-400">
-                            Aucun document requis pour cette session.
-                        </p>
+                            <p *ngIf="piecesFixes.length === 0" class="text-sm text-gray-400">
+                                Les pièces fixes d'une demande sans session ne sont pas disponibles ici.
+                            </p>
+                        </ng-container>
+
+                        <!-- Demande avec session → pièces de session -->
+                        <ng-container *ngIf="!estDemandeSansSession(demande)">
+                            <div *ngFor="let docRequis of getDocumentsRequis(demande)"
+                                class="flex items-center justify-between gap-2 p-2 rounded-lg border"
+                                [class.border-green-200]="documentDejaDepose(demande, docRequis.id)"
+                                [class.bg-green-50]="documentDejaDepose(demande, docRequis.id)"
+                                [class.border-gray-200]="!documentDejaDepose(demande, docRequis.id)">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="material-symbols-outlined text-sm"
+                                        [class.text-green-600]="documentDejaDepose(demande, docRequis.id)"
+                                        [class.text-gray-400]="!documentDejaDepose(demande, docRequis.id)">
+                                        {{ documentDejaDepose(demande, docRequis.id) ? 'check_circle' : 'upload_file' }}
+                                    </span>
+                                    <span class="text-sm text-gray-700 truncate">{{ docRequis.libelle }}</span>
+                                    <span *ngIf="docRequis.obligatoire" class="text-xs text-red-500">*</span>
+                                </div>
+                                <button *ngIf="!documentDejaDepose(demande, docRequis.id)"
+                                    (click)="uploaderDocument(demande, docRequis.id!)" type="button"
+                                    class="shrink-0 inline-flex items-center gap-x-1 px-2.5 py-1 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors">
+                                    Téléverser
+                                </button>
+                                <span *ngIf="documentDejaDepose(demande, docRequis.id)"
+                                    class="shrink-0 text-xs text-green-700">Déposé</span>
+                            </div>
+                            <p *ngIf="getDocumentsRequis(demande).length === 0" class="text-sm text-gray-400">
+                                Aucun document requis pour cette session.
+                            </p>
+                        </ng-container>
                     </div>
                 </div>
             </div>
@@ -195,5 +254,49 @@
         <app-custom-button (click)="closeSoumissionModal()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
         <app-custom-button [disabled]="uploading || !soumissionPossible" (click)="soumettreDemande()"
             [text]="uploading ? 'Envoi...' : 'Soumettre'"></app-custom-button>
+    </div>
+</app-custom-modal>
+
+<!-- // Modal demande sans session -->
+<app-custom-modal
+    title="Demande de rattrapage sans session"
+    subtitle="Sélectionnez vos UE non validées et la période concernée — 3 pièces fixes seront exigées"
+    (onCloseModal)="closeSansSessionModal()" [center]="true" [showModal]="showSansSessionModal">
+    <div *ngIf="loadingSansSession" class="flex justify-center py-8">
+        <app-loading-spinner></app-loading-spinner>
+    </div>
+
+    <ng-container *ngIf="!loadingSansSession">
+        <div class="mb-6">
+            <span class="mb-2 block text-sm text-gray-400">Période concernée *</span>
+            <input type="text" [(ngModel)]="periodeSansSession" placeholder="Ex: 2026-2027"
+                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+        </div>
+
+        <div class="mb-6">
+            <span class="mb-2 block text-sm text-gray-400">UE non validées *</span>
+            <p *ngIf="uesProposees.length === 0" class="text-sm text-gray-400 mb-2">
+                Aucune UE préalablement déclarée. Saisissez-en manuellement ci-dessous (séparées par des virgules).
+            </p>
+            <div *ngIf="uesProposees.length > 0" class="flex flex-col gap-2 max-h-56 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                <label *ngFor="let ue of uesProposees"
+                    class="flex items-center gap-2 p-2 rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input type="checkbox" [checked]="uesSelectionnees.has(ue.code)"
+                        (change)="toggleUe(ue.code)" class="h-4 w-4 text-indigo-600 rounded">
+                    <span class="text-sm text-gray-700">{{ ue.libelle || ue.code }}</span>
+                </label>
+            </div>
+            <div class="mt-2">
+                <span class="mb-2 block text-sm text-gray-400">Saisie manuelle (si nécessaire)</span>
+                <input type="text" [(ngModel)]="uesManuelles" placeholder="Ex: UE Méthodologie, UE Anglais L2"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+        </div>
+    </ng-container>
+
+    <div class="flex items-center justify-between py-3">
+        <app-custom-button (click)="closeSansSessionModal()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
+        <app-custom-button [disabled]="uploading || !demandeSansSessionPossible" (click)="soumettreDemandeSansSession()"
+            [text]="uploading ? 'Envoi...' : 'Créer la demande'"></app-custom-button>
     </div>
 </app-custom-modal>

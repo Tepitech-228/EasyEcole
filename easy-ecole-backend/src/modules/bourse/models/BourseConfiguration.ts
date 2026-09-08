@@ -31,8 +31,7 @@ BourseConfiguration.init({
   },
   nom: {
     type: new DataTypes.STRING(150),
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   type: {
     type: DataTypes.ENUM('TOTAL', 'PARTIELLE'),

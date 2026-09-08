@@ -33,6 +33,14 @@ function parseJsonField(value: any): any {
 
 const UPLOAD_DIR = GED_CONFIG.UPLOAD_DIR;
 
+function resolveFolderPath(folderId: unknown): string | null {
+    const value = String(folderId ?? '');
+    if (!/^\d+$/.test(value) || Number(value) <= 0) return null;
+    const root = path.resolve(process.cwd(), UPLOAD_DIR);
+    const folderPath = path.resolve(root, value);
+    return folderPath.startsWith(`${root}${path.sep}`) ? folderPath : null;
+}
+
 export default class DocumentGedController {
 
     static async getAll(req: Request, res: Response): Promise<Response> {
@@ -196,7 +204,11 @@ export default class DocumentGedController {
             const folderId = req.body.folderId;
             let finalFilename = file.filename;
             if (folderId) {
-                const folderPath = path.resolve(process.cwd(), UPLOAD_DIR, String(folderId));
+                const folderPath = resolveFolderPath(folderId);
+                if (!folderPath) {
+                    fs.unlinkSync(file.path);
+                    return res.status(400).json({ success: false, message: "folderId invalide" });
+                }
                 if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath, { recursive: true });
                 const oldPath = path.resolve(process.cwd(), UPLOAD_DIR, file.filename);
                 const newPath = path.resolve(folderPath, file.filename);
@@ -353,7 +365,11 @@ export default class DocumentGedController {
             for (const file of files) {
                 let finalFilename = file.filename;
                 if (folderId) {
-                    const folderPath = path.resolve(process.cwd(), UPLOAD_DIR, String(folderId));
+                    const folderPath = resolveFolderPath(folderId);
+                    if (!folderPath) {
+                        fs.unlinkSync(file.path);
+                        return res.status(400).json({ success: false, message: "folderId invalide" });
+                    }
                     if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath, { recursive: true });
                     const oldPath = path.resolve(process.cwd(), UPLOAD_DIR, file.filename);
                     const newPath = path.resolve(folderPath, file.filename);

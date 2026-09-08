@@ -1,0 +1,18 @@
+.monitoring-page { padding: 24px; max-width: 1440px; margin: 0 auto; color: #172033; }
+.monitoring-page__toolbar { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin: 18px 0; color: #64748b; font-size: 13px; }
+.monitoring-page__live-dot { width: 9px; height: 9px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 4px #d1fae5; }
+.monitoring-page__loading { min-height: 280px; display: grid; place-items: center; align-content: center; gap: 12px; color: #64748b; }
+.monitoring-page__spinner { width: 28px; height: 28px; border: 3px solid #dbeafe; border-top-color: #2563eb; border-radius: 50%; animation: monitoring-spin .8s linear infinite; }
+.monitoring-page__hero { display: flex; align-items: center; gap: 28px; padding: 22px; background: linear-gradient(135deg, #eff6ff, #f8fafc); border: 1px solid #dbeafe; border-radius: 10px; }
+.monitoring-page__summary h2 { margin: 0 0 8px; font-size: 24px; }
+.monitoring-page__summary p { color: #64748b; margin: 0 0 14px; }
+.monitoring-page__kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin: 20px 0; }
+.monitoring-page__modules { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.monitoring-module { padding: 18px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 4px 16px rgba(15, 23, 42, .05); }
+.monitoring-module__heading { display: flex; justify-content: space-between; gap: 12px; }
+.monitoring-module h3 { margin: 0; font-size: 16px; }
+.monitoring-module p { color: #64748b; font-size: 13px; margin: 5px 0 16px; }
+.monitoring-module__bar { height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+.monitoring-module__bar span { display: block; height: 100%; background: #2563eb; border-radius: 4px; }
+@keyframes monitoring-spin { to { transform: rotate(360deg); } }
+@media (max-width: 640px) { .monitoring-page { padding: 16px; } .monitoring-page__hero { align-items: flex-start; flex-direction: column; } }

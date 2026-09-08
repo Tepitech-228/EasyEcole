@@ -13,17 +13,34 @@ export class ReferenceService {
    */
   static async generer(domainCode: string, shortCode: string, year: number): Promise<string> {
     const seq = DatabaseConnection.getInstance().sequelize;
-    
-    // Atomic UPSERT + increment using Sequelize
-    const [counter] = await ReferenceCounter.findOrCreate({
-      where: { domainCode, year },
-      defaults: { domainCode, year, lastSequence: 0 }
-    });
+    const transaction = await seq.transaction();
 
-    await counter.increment('lastSequence', { by: 1 });
-    await counter.reload();
+    try {
+      await seq.query(`
+        INSERT INTO ged_reference_counters
+          (domainCode, year, lastSequence, createdAt, updatedAt)
+        VALUES (:domainCode, :year, 1, NOW(), NOW())
+        ON DUPLICATE KEY UPDATE
+          lastSequence = lastSequence + 1,
+          updatedAt = NOW()
+      `, {
+        replacements: { domainCode, year },
+        transaction,
+      });
 
-    const seqStr = String(counter.lastSequence).padStart(5, '0');
-    return `${domainCode}-${shortCode}-${year}-${seqStr}`;
+      const counter = await ReferenceCounter.findOne({
+        where: { domainCode, year },
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+      if (!counter) throw new Error('Compteur de référence introuvable après incrément');
+
+      await transaction.commit();
+      const seqStr = String(counter.lastSequence).padStart(5, '0');
+      return `${domainCode}-${shortCode}-${year}-${seqStr}`;
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   }
 }

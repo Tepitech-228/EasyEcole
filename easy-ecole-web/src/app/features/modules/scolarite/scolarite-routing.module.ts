@@ -21,11 +21,18 @@ import { DashboardSecretariatPageComponent } from './pages/dashboard-secretariat
 import { CaissePageComponent } from './pages/caisse-page/caisse-page.component';
 import { ClotureCaissePageComponent } from './pages/cloture-caisse-page/cloture-caisse-page.component';
 import { FicheDemandePageComponent } from './pages/fiche-demande-page/fiche-demande-page.component';
+import { EncaissementDemandePageComponent } from './pages/encaissement-demande-page/encaissement-demande-page.component';
+import { MesDocumentsPageComponent } from './pages/mes-documents-page/mes-documents-page.component';
 
 const routes: Routes = [
   {
     path: 'demandes-documents',
     component: DemandesDocumentsPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'mes-documents',
+    component: MesDocumentsPageComponent,
     pathMatch: 'full'
   },
   {
@@ -107,6 +114,11 @@ const routes: Routes = [
   {
     path: 'secretariat/caisse',
     component: CaissePageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'secretariat/encaissement',
+    component: EncaissementDemandePageComponent,
     pathMatch: 'full'
   },
   {

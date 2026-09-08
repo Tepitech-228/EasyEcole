@@ -84,12 +84,33 @@ export class RattrapageWorkflowService {
     return this.httpClient.get<any[]>(`${this.SERVICE_URL}/documents-requis/${sessionId}`)
   }
 
+  /** GET /documents-requis-fixes — les 3 pièces fixes d'une demande sans session. */
+  getDocumentsRequisFixes(): Observable<{ code: string; libelle: string }[]> {
+    return this.httpClient.get<{ code: string; libelle: string }[]>(`${this.SERVICE_URL}/documents-requis-fixes`)
+  }
+
+  /** GET /ues-non-validees — UE déjà déclarées par l'étudiant (pré-remplissage). */
+  getUesNonValidees(): Observable<{ id: string; code: string; libelle: string; sessionId: number | null; statutDemande: string }[]> {
+    return this.httpClient.get<{ id: string; code: string; libelle: string; sessionId: number | null; statutDemande: string }[]>(`${this.SERVICE_URL}/ues-non-validees`)
+  }
+
   // ---------------------------------------------------------------------------
   // Demandes (APPRENANT : soumission + lectures ; COMITE/ADMIN/INSTITUTION/CABINET : toutes)
   // ---------------------------------------------------------------------------
 
-  /** POST /demandes — soumet une demande de rattrapage (session ouverte, 1 demande/étudiant/session). */
-  createDemande(body: { rattrapageSessionId: number; motifEtudiant?: string; creneauSouhaite?: string }): Observable<RattrapageInscriptionWorkflow> {
+  /**
+   * POST /demandes — soumet une demande de rattrapage.
+   * Deux modes :
+   *  - avec session : `rattrapageSessionId` (session ouverte, 1 demande/étudiant/session) ;
+   *  - SANS session (orpheline) : `periode` + `uesDemandees` (rattachée à la session de la période à sa création).
+   */
+  createDemande(body: {
+    rattrapageSessionId?: number;
+    uesDemandees?: (string | { id?: string; code?: string; libelle?: string })[];
+    periode?: string;
+    motifEtudiant?: string;
+    creneauSouhaite?: string;
+  }): Observable<RattrapageInscriptionWorkflow> {
     return this.httpClient.post<RattrapageInscriptionWorkflow>(`${this.SERVICE_URL}/demandes`, body)
   }
 
@@ -134,11 +155,14 @@ export class RattrapageWorkflowService {
 
   /**
    * POST /demandes/:id/documents — téléverse une pièce justificative.
-   * Multipart : champ 'fichier' + 'documentRequisId'. Fichier PDF, 20 Mo max.
+   * Multipart : champ 'fichier' + 'documentRequisId' (demande avec session)
+   *            OU champ 'fichier' + 'codeDocument' (demande SANS session → 3 pièces fixes).
+   * Fichier PDF, 20 Mo max.
    */
-  uploadDocument(demandeId: number, documentRequisId: number, fichier: File): Observable<RattrapageInscriptionWorkflow> {
+  uploadDocument(demandeId: number, options: { documentRequisId?: number; codeDocument?: string }, fichier: File): Observable<RattrapageInscriptionWorkflow> {
     const formData: FormData = new FormData()
-    formData.append('documentRequisId', String(documentRequisId))
+    if (options.documentRequisId) formData.append('documentRequisId', String(options.documentRequisId))
+    if (options.codeDocument) formData.append('codeDocument', options.codeDocument)
     formData.append('fichier', fichier, fichier.name)
     return this.httpClient.post<RattrapageInscriptionWorkflow>(`${this.SERVICE_URL}/demandes/${demandeId}/documents`, formData)
   }

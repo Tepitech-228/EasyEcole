@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CountOptions, FindOptions, InferAttributes } from "sequelize";
+import { CountOptions, FindOptions, InferAttributes, Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { DemandeDocument } from "../models/DemandeDocument";
 import { TypeDocument } from "../models/TypeDocument";
@@ -11,6 +11,7 @@ import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
 import DemandeDocumentPaiementService from "../services/DemandeDocumentPaiementService";
 import { SecretariatWorkflowService, ErreurWorkflow } from "../services/SecretariatWorkflowService";
 import { Utilisateur } from "../../auth/models/Utilisateur";
+import { RecuCaisse } from "../models/RecuCaisse";
 
 export default class DemandeDocumentController {
 
@@ -43,7 +44,9 @@ export default class DemandeDocumentController {
                 where,
                 include: [
                     { model: TypeDocument, as: 'typeDocument' },
-                    { model: DocumentDelivre, as: 'documentDelivre' }
+                    { model: DocumentDelivre, as: 'documentDelivre' },
+                    { model: Utilisateur, as: 'etudiant' },
+                    { model: RecuCaisse, as: 'recuCaisse', required: false }
                 ],
                 order,
                 limit,
@@ -222,6 +225,97 @@ export default class DemandeDocumentController {
         }
 
         return null
+    }
+
+    /**
+     * GET /scolarite/mes-documents
+     * Liste les documents de l'étudiant connecté avec informations enrichies :
+     * - statut de paiement
+     * - référence du reçu de caisse
+     * - fichier PDF généré
+     * - disponibilité du téléchargement
+     */
+    static async getMesDocuments(req: Request, res: Response): Promise<Response> {
+        const utilisateurId = (req as any).utilisateurId;
+        const role = (req as any).utilisateurRole;
+
+        if (role !== RolesUtilisateur.APPRENANT && role !== RolesUtilisateur.INSTITUTION && role !== RolesUtilisateur.ADMIN) {
+            return res.status(403).json({ success: false });
+        }
+
+        try {
+            const where: any = {};
+            // L'étudiant ne voit que ses propres demandes
+            if (role === RolesUtilisateur.APPRENANT) {
+                where.etudiantId = utilisateurId;
+            }
+            // Exclure les demandes rejetées et annulées par défaut
+            where.statut = { [Op.notIn]: ['rejetee', 'annulee'] };
+
+            const demandes = await DemandeDocument.findAll({
+                where,
+                include: [
+                    { model: TypeDocument, as: 'typeDocument' },
+                    { model: DocumentDelivre, as: 'documentDelivre' },
+                    {
+                        model: RecuCaisse,
+                        as: 'recuCaisse',
+                        required: false
+                    }
+                ],
+                order: [['createdAt', 'DESC']]
+            });
+
+            // Enrichir chaque demande avec des indicateurs d'interface
+            const result = demandes.map(d => {
+                const montant = Number(d.montant) || 0;
+                const estPayable = montant > 0 && d.source === 'demande_etudiant';
+                const estTelechargeable = !!d.fichierPDF || !!d.documentDelivre?.fichierPDF;
+                const estImprimable = ['document_pret', 'paye'].includes(d.statut || '') && estTelechargeable;
+                const estEnAttentePaiement = estPayable && !d.fraisPayes;
+
+                return {
+                    id: d.id,
+                    typeDocument: d.typeDocument ? {
+                        id: d.typeDocument.id,
+                        libelle: d.typeDocument.libelle,
+                        categorie: d.typeDocument.categorie
+                    } : null,
+                    statut: d.statut,
+                    montant,
+                    source: d.source,
+                    date: d.date,
+                    // Paiement
+                    estPayable,
+                    fraisPayes: !!d.fraisPayes,
+                    modePaiement: d.modePaiement,
+                    datePaiement: d.datePaiement,
+                    // Reçu de caisse
+                    recuCaisse: (d as any).recuCaisse ? {
+                        id: (d as any).recuCaisse.id,
+                        numero: (d as any).recuCaisse.numero,
+                        montant: (d as any).recuCaisse.montant,
+                        fichierPDF: (d as any).recuCaisse.fichierPDF
+                    } : null,
+                    // Document généré
+                    fichierPDF: d.fichierPDF,
+                    dateGeneration: d.dateGeneration,
+                    documentDelivre: d.documentDelivre ? {
+                        fichierPDF: d.documentDelivre.fichierPDF,
+                        dateDelivrance: (d.documentDelivre as any).dateDelivrance
+                    } : null,
+                    // Indicateurs UI
+                    estTelechargeable,
+                    estImprimable,
+                    estEnAttentePaiement
+                };
+            });
+
+            return res.status(200).json(result);
+        } catch (error) {
+            console.error('[DEMANDE_DOC][getMesDocuments]', error);
+            return res.status(500).json({ success: false, error });
+        }
     }
 
     static async getCount(req: Request, res: Response): Promise<Response | null> {

@@ -1,0 +1,227 @@
+<div class="reinscription-wizard">
+
+  <div class="wizard-header">
+    <h1>Ma réinscription</h1>
+    <p class="subtitle">Réinscription annuelle via le circuit de validation complet (Cabinet → ESA Compta → Comité)</p>
+  </div>
+
+  <!-- Barre de progression -->
+  <div class="wizard-progress" *ngIf="dejaInscrit && etape > 1 && etape < 5">
+    <div class="progress-track">
+      <div class="progress-fill" [style.width.%]="largeurProgression()"></div>
+    </div>
+    <div class="progress-labels">
+      <span [class.active]="etape === 1">Ma réinscription</span>
+      <span [class.active]="etape === 2">Documents</span>
+      <span [class.active]="etape === 3">Bordereau</span>
+      <span [class.active]="etape === 4">Récapitulatif</span>
+      <span [class.active]="etape === 5">Suivi</span>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="wizard-loader">Chargement...</div>
+
+  <div *ngIf="errorMessage" class="alert alert-error" [innerHTML]="errorMessage"></div>
+  <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+
+  <ng-container *ngIf="!loading && eligibilite">
+
+    <!-- ══════════════ ÉTAPE 1 : Ma réinscription ══════════════ -->
+    <div *ngIf="etape === 1" class="step step-welcome">
+      <div *ngIf="!dejaInscrit" class="empty-state">
+        <p>Vous n'êtes pas encore inscrit(e) dans un cursus : la réinscription n'est pas disponible.</p>
+        <button class="btn btn-primary" (click)="versPremiereInscription()">Faire ma 1ère inscription</button>
+      </div>
+
+      <div *ngIf="dejaInscrit" class="welcome-card">
+        <h2>Votre situation actuelle</h2>
+        <div class="infos-grid">
+          <div class="info-item"><span class="label">Matricule</span><span class="value">{{ matricule }}</span></div>
+          <div class="info-item"><span class="label">Parcours</span><span class="value">{{ parcoursLabel }}</span></div>
+          <div class="info-item"><span class="label">Niveau</span><span class="value">{{ niveauLabel }}</span></div>
+          <div class="info-item"><span class="label">Classe</span><span class="value">{{ classeLabel }}</span></div>
+          <div class="info-item"><span class="label">Année académique</span><span class="value">{{ anneeLabel }}</span></div>
+          <div class="info-item info-warning">
+            <span class="label">Solde à régulariser</span>
+            <span class="value">{{ formatMontant(soldeDette) }}</span>
+          </div>
+        </div>
+
+        <p class="notice">
+          Règle LMD : le solde des frais est <strong>affiché</strong> mais n'est <strong>pas bloquant</strong>
+          pour la réinscription d'année en année. Il sera exigé à la validation du diplôme.
+        </p>
+
+        <div *ngIf="sessionCible" class="session-target">
+          <strong>Session cible :</strong> {{ sessionCible.anneeAcademique?.libelle || 'Nouvelle année' }}
+          <span *ngIf="sessionCible.description">— {{ sessionCible.description }}</span>
+        </div>
+
+        <div class="ocr-zone">
+          <h3>Vos informations personnelles</h3>
+          <p class="muted">
+            Pré-remplies automatiquement par OCR depuis vos pièces, puis à compléter / corriger / valider.
+          </p>
+          <button class="btn btn-outline btn-sm" (click)="preRemplirInfos()" [disabled]="ocrEnCours">
+            {{ ocrEnCours ? 'Extraction en cours…' : 'Pré-remplir par OCR' }}
+          </button>
+          <div class="infos-grid mt-2">
+            <div class="info-item"><label>Nom</label><input class="form-control" [(ngModel)]="infos.nom" /></div>
+            <div class="info-item"><label>Prénoms</label><input class="form-control" [(ngModel)]="infos.prenoms" /></div>
+            <div class="info-item"><label>Date de naissance</label><input class="form-control" type="date" [(ngModel)]="infos.dateNaissance" /></div>
+            <div class="info-item"><label>Lieu de naissance</label><input class="form-control" [(ngModel)]="infos.lieuNaissance" /></div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-lg" (click)="passerEtape2()">Faire ma réinscription →</button>
+      </div>
+    </div>
+
+    <!-- ══════════════ ÉTAPE 2 : Documents à fournir ══════════════ -->
+    <div *ngIf="etape === 2" class="step step-documents">
+      <h2>Documents à fournir</h2>
+      <p>Veuillez téléverser les <strong>6 pièces obligatoires</strong> de votre dossier de réinscription.</p>
+
+      <div class="doc-list">
+        <div *ngFor="let d of documentsRequis" class="doc-item" [class.has-file]="!!documents[d.code]">
+          <div class="doc-info">
+            <div class="doc-check" [class.ok]="!!documents[d.code]">{{ documents[d.code] ? '✓' : '○' }}</div>
+            <div>
+              <div class="doc-libelle">{{ d.libelle }}</div>
+              <div class="doc-filename" *ngIf="nomDocument(d.code)">{{ nomDocument(d.code) }}</div>
+            </div>
+          </div>
+          <label class="btn btn-outline btn-sm">
+            {{ documents[d.code] ? 'Changer' : 'Choisir le fichier' }}
+            <input type="file" accept=".pdf,.jpg,.jpeg,.png" style="display:none"
+                   (change)="surDocument(d.code, $event)">
+          </label>
+        </div>
+      </div>
+
+      <div class="step-actions">
+        <button class="btn btn-outline" (click)="etape = 1">← Retour</button>
+        <button class="btn btn-primary" [disabled]="!documentsComplets" (click)="etape = 3">Suivant : Bordereau →</button>
+      </div>
+    </div>
+
+    <!-- ══════════════ ÉTAPE 3 : Bordereau de paiement ══════════════ -->
+    <div *ngIf="etape === 3" class="step step-bordereau">
+      <h2>Bordereau de paiement</h2>
+      <p>Téléversez la preuve de versement des frais de réinscription (bordereau REINSCRIPTION).</p>
+
+      <div class="bordereau-box" [class.has-file]="bordereau">
+        <div class="doc-check" [class.ok]="bordereau">{{ bordereau ? '✓' : '○' }}</div>
+        <div class="doc-libelle">Bordereau de réinscription</div>
+        <div class="doc-filename" *ngIf="bordereau">{{ bordereau.name }}</div>
+        <label class="btn btn-outline btn-sm">
+          {{ bordereau ? 'Changer' : 'Choisir le fichier' }}
+          <input type="file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" (change)="surBordereau($event)">
+        </label>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Montant (FCFA)</label>
+          <input type="number" [(ngModel)]="montant" placeholder="Ex : 450000">
+        </div>
+        <div class="form-group">
+          <label>Référence bancaire</label>
+          <input type="text" [(ngModel)]="referenceBancaire" placeholder="Numéro de référence du versement">
+        </div>
+        <div class="form-group">
+          <label>Modalité</label>
+          <select [(ngModel)]="modalite">
+            <option value="1x">Unique (1x)</option>
+            <option value="3x">3 versements (3x)</option>
+            <option value="10x">10 versements (10x)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="step-actions">
+        <button class="btn btn-outline" (click)="etape = 2">← Retour</button>
+        <button class="btn btn-primary" [disabled]="!bordereauPret" (click)="allonsRecapitulatif()">Récapitulatif →</button>
+      </div>
+    </div>
+
+    <!-- ══════════════ ÉTAPE 4 : Récapitulatif & confirmation ══════════════ -->
+    <div *ngIf="etape === 4" class="step step-recap">
+      <h2>Récapitulatif &amp; confirmation</h2>
+
+      <div class="recap-section">
+        <h3>Cursus réutilisé</h3>
+        <p>
+          <strong>{{ parcoursLabel }}</strong> — Niveau {{ niveauLabel }} — {{ classeLabel }}
+          <span *ngIf="anneeLabel"> — {{ anneeLabel }}</span>
+          <span class="separator">|</span> Matricule : <strong>{{ matricule }}</strong>
+        </p>
+        <p *ngIf="sessionSelectionnee">
+          <strong>Session cible :</strong> {{ sessionSelectionnee.anneeAcademique?.libelle || sessionSelectionnee.description || 'Nouvelle année' }}
+        </p>
+      </div>
+
+      <div class="recap-section">
+        <h3>Documents déposés (6)</h3>
+        <ul class="recap-list">
+          <li *ngFor="let d of documentsRequis" class="ok">{{ d.libelle }} <span class="file">— {{ nomDocument(d.code) }}</span></li>
+        </ul>
+      </div>
+
+      <div class="recap-section">
+        <h3>Bordereau de paiement</h3>
+        <ul class="recap-list">
+          <li class="ok">Bordereau — {{ bordereau?.name || '—' }}
+            <span *ngIf="montant"> — {{ formatMontant(montant) }}</span>
+            <span *ngIf="referenceBancaire"> — Réf. {{ referenceBancaire }}</span>
+            <span *ngIf="modalite"> — {{ modalite }}</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="step-actions">
+        <button class="btn btn-outline" (click)="etape = 3">← Retour</button>
+        <button class="btn btn-primary btn-lg" [disabled]="submitting" (click)="soumettre()">
+          {{ submitting ? 'Soumission en cours...' : 'Confirmer la soumission' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- ══════════════ ÉTAPE 5 : Suivi du dossier ══════════════ -->
+    <div *ngIf="etape === 5" class="step step-suivi">
+      <h2>Suivi de votre dossier</h2>
+
+      <div *ngIf="resultat" class="success-banner">
+        <p>Votre dossier de réinscription a été <strong>soumis avec succès</strong>.</p>
+        <p *ngIf="resultat.matricule">Matricule : <strong>{{ resultat.matricule }}</strong></p>
+        <p>Il part maintenant à la validation du <strong>cabinet comptable</strong>, puis de l'ESA Compta, et enfin du comité d'orientation.</p>
+      </div>
+
+      <!-- Timeline pipeline -->
+      <div class="pipeline-timeline">
+        <div *ngFor="let s of statutsPipeline()" class="pipeline-step" [class.done]="s.done" [class.active]="s.active" [class.warning]="s.kind === 'warning'" [class.danger]="s.kind === 'danger'">
+          <div class="pipeline-dot"></div>
+          <div class="pipeline-label">{{ s.label }}</div>
+        </div>
+      </div>
+
+      <div class="recap-section" *ngIf="planifications.length">
+        <h3>Planification(s) de réinscription</h3>
+        <ul class="recap-list">
+          <li *ngFor="let p of planifications">
+            {{ p.parcours?.titre || p.intituleParcours || 'Cursus' }}
+            <span class="badge" [style.background-color]="getStatutReinscriptionColor(p.statutReinscription)">
+              {{ getStatutReinscriptionLabel(p.statutReinscription) }}
+            </span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="step-actions">
+        <button class="btn btn-outline" (click)="recommencer()">Nouvelle réinscription</button>
+      </div>
+    </div>
+
+  </ng-container>
+
+</div>

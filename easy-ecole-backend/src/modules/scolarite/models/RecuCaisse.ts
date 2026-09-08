@@ -34,8 +34,7 @@ RecuCaisse.init({
     },
     numero: {
         type: new DataTypes.STRING(40),
-        allowNull: false,
-        unique: true
+        allowNull: false
     },
     demandeDocumentId: {
         type: DataTypes.INTEGER.UNSIGNED,

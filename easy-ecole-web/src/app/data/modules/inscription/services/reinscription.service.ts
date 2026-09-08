@@ -29,7 +29,12 @@ export class ReinscriptionService {
     return this.httpClient.get<any>(`${this.SERVICE_URL}/eligibilite`)
   }
 
-  /** POST /planifier — crée la planification (en_attente). */
+  /** POST /soumettre — soumet un dossier de réinscription complet (6 documents + bordereau) dans le pipeline. */
+  soumettre(formData: FormData): Observable<any> {
+    return this.httpClient.post<any>(`${this.SERVICE_URL}/soumettre`, formData)
+  }
+
+  /** GET /planifier — crée la planification (en_attente). */
   creerPlanification(body: { sessionId: number; classeId?: number; niveauEtudeId?: number; anneeAcademiqueId?: number }): Observable<any> {
     return this.httpClient.post<any>(`${this.SERVICE_URL}/planifier`, body)
   }

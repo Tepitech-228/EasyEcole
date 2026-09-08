@@ -678,28 +678,8 @@
   <!-- ==================== ESA-COMPTA DASHBOARD ==================== -->
   <ng-container *ngIf="!loading && rolesValue.isEsacompta">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 pt-6 pb-10">
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <div class="dashboard-panel dashboard-kpi-card blue">
-          <span class="dashboard-card-label">Paiements</span>
-          <p class="dashboard-card-number">{{ dashboardData.totalPaiements || 0 }}</p>
-          <p class="dashboard-card-trend neutral">Enregistrés</p>
-        </div>
-        <div class="dashboard-panel dashboard-kpi-card green">
-          <span class="dashboard-card-label">Bordereaux</span>
-          <p class="dashboard-card-number">{{ dashboardData.totalBordereaux || 0 }}</p>
-          <p class="dashboard-card-trend neutral">À contrôler</p>
-        </div>
-        <div class="dashboard-panel dashboard-kpi-card amber">
-          <span class="dashboard-card-label">À traiter</span>
-          <p class="dashboard-card-number">{{ dashboardData.demandesEnAttente || 0 }}</p>
-          <p class="dashboard-card-trend warning">En attente</p>
-        </div>
-        <div class="dashboard-panel dashboard-kpi-card purple">
-          <span class="dashboard-card-label">Impayés</span>
-          <p class="dashboard-card-number">{{ dashboardData.echeancesImpayees || 0 }}</p>
-          <p class="dashboard-card-trend warning">À surveiller</p>
-        </div>
-      </div>
+      <!-- KPI + graphiques bordereaux (détachés de /inscription/finance/bordereaux) -->
+      <app-widget-bordereaux-kpi class="block mb-8"></app-widget-bordereaux-kpi>
       <div class="dashboard-panel dashboard-chart-panel dashboard-panel--premium">
         <div class="chart-card-header">
           <div>
@@ -840,7 +820,7 @@
           <div class="chart-card-header">
             <div>
               <h3 class="chart-card-title">Demandes récentes</h3>
-              <p class="chart-card-subtitle">Activité du comité d’orientation</p>
+              <p class="chart-card-subtitle">Activité du comité d'orientation</p>
             </div>
           </div>
           <div *ngIf="dashboardData.demandesRecentes?.length" class="space-y-3">
@@ -863,7 +843,7 @@
 
       <div class="flex items-center gap-3 pb-10">
         <a routerLink="/orientation" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-gray-700 text-sm font-semibold rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 00-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           Voir les demandes
         </a>
         <a routerLink="/inscription/comite-validation" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-gray-700 text-sm font-semibold rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
@@ -871,15 +851,30 @@
           Dossiers transmis au comité
         </a>
         <a routerLink="/inscription/rattrapage/comite" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-gray-700 text-sm font-semibold rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 00-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           Rattrapage — Comité
         </a>
       </div>
     </div>
   </ng-container>
 
+  <!-- ==================== SECRETAIRE DASHBOARD ==================== -->
+  <ng-container *ngIf="!loading && rolesValue.isSecretaire">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 pt-6 pb-10">
+      <div class="text-center py-12">
+        <span class="material-symbols-outlined text-6xl text-blue-600 mb-4">assignment_ind</span>
+        <h2 class="text-xl font-bold text-gray-900 mb-2">Espace Secrétariat</h2>
+        <p class="text-sm text-gray-500 mb-6">Vous êtes redirigé vers votre tableau de bord…</p>
+        <a routerLink="/scolarite/secretariat/dashboard" class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors">
+          <span class="material-symbols-outlined text-base">dashboard</span>
+          Accéder au tableau de bord
+        </a>
+      </div>
+    </div>
+  </ng-container>
+
   <!-- ==================== DEFAULT DASHBOARD (fallback) ==================== -->
-  <ng-container *ngIf="!loading && !rolesValue.isAdmin && !rolesValue.isInstitution && !rolesValue.isEnseignant && !rolesValue.isApprenant && !rolesValue.isRessourcesHumaines && !rolesValue.isCaissierBanque && !rolesValue.isCabinetComptable && !rolesValue.isEsacompta && !rolesValue.isComiteOrientation">
+  <ng-container *ngIf="!loading && !rolesValue.isAdmin && !rolesValue.isInstitution && !rolesValue.isEnseignant && !rolesValue.isApprenant && !rolesValue.isRessourcesHumaines && !rolesValue.isCaissierBanque && !rolesValue.isCabinetComptable && !rolesValue.isEsacompta && !rolesValue.isComiteOrientation && !rolesValue.isSecretaire">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 pt-6 pb-10">
       <app-widget-agenda></app-widget-agenda>
     </div>

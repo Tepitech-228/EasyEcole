@@ -498,6 +498,7 @@ import { RattrapageSession } from "./RattrapageSession";
 import { RattrapageSessionClasse } from "./RattrapageSessionClasse";
 import { RattrapageDocumentRequis } from "./RattrapageDocumentRequis";
 import { RattrapageDocumentDepose } from "./RattrapageDocumentDepose";
+import { DocumentRequisNiveau } from "./DocumentRequisNiveau";
 
 // RattrapageSession - AnneeAcademique
 AnneeAcademique.hasMany(RattrapageSession, { foreignKey: 'anneeAcademiqueId', as: 'rattrapagesSessions' })

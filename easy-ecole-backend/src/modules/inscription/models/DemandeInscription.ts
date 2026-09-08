@@ -19,6 +19,13 @@ export class DemandeInscription extends Model<InferAttributes<DemandeInscription
   declare id: CreationOptional<number>
   declare matricule: CreationOptional<string>
   /**
+   * Type de demande : 'inscription' (1ère inscription) ou 'reinscription'.
+   * Permet au comité d'afficher le badge 1ère/réinscription et de filtrer
+   * sans recalculer depuis `DossierEtudiant.nombreInscriptions`.
+   * NULL = legacy (traité comme 'inscription').
+   */
+  declare typeDemande: CreationOptional<'inscription' | 'reinscription' | null>
+  /**
    * Pipeline d'inscription (flux définitif) :
    *   soumis → authentifie (cabinet) → saisie_validee / transmis_comite (ESA-COMPTA)
    *   → valide | correction_demandee | rejete (comité, étape finale).
@@ -77,6 +84,11 @@ DemandeInscription.init({
   matricule: {
     type: new DataTypes.STRING,
     allowNull: false
+  },
+  typeDemande: {
+    type: new DataTypes.STRING(20),
+    allowNull: true,
+    defaultValue: 'inscription'
   },
   statutPipeline: {
     type: new DataTypes.STRING(30),

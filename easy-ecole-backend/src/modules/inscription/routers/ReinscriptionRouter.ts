@@ -1,7 +1,38 @@
 import express from "express"
+import multer from "multer"
+import * as path from "path"
+import * as fs from "fs"
+
 import ReinscriptionController from "../controllers/ReinscriptionController"
 
 const router = express.Router()
+
+// Stockage des fichiers de réinscription (6 documents + bordereau de paiement)
+const storage = multer.diskStorage({
+    destination: (req, file, callback) => {
+        const dir = "public/inscription/reinscription/dossiers/"
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true })
+        }
+        callback(null, dir)
+    },
+    filename: (req, file, callback) => {
+        const ext = path.extname(file.originalname) || '.pdf'
+        const name = require('crypto').randomBytes(16).toString('hex') + ext
+        callback(null, name)
+    },
+})
+const upload = multer({ storage })
+
+const REINSCRIPTION_FIELDS = [
+    { name: 'demande_dg', maxCount: 1 },
+    { name: 'autorisation_provisoire', maxCount: 1 },
+    { name: 'releves_notes', maxCount: 1 },
+    { name: 'cni', maxCount: 1 },
+    { name: 'quitus_bordereaux_annee', maxCount: 1 },
+    { name: 'bordereau_nouvelle_annee', maxCount: 1 },
+    { name: 'bordereau', maxCount: 1 },
+]
 
 /**
  * @openapi
@@ -28,6 +59,40 @@ router.get('/peut-se-reinscrire', ReinscriptionController.peutSeReinscrire)
  *         description: Éligibilité
  */
 router.get('/eligibilite', ReinscriptionController.getEligibilite)
+
+/**
+ * @openapi
+ * /inscription/reinscription/soumettre:
+ *   post:
+ *     tags: [Réinscription]
+ *     summary: Soumet un dossier de réinscription complet (6 documents + bordereau) dans le pipeline
+ *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [sessionId]
+ *             properties:
+ *               sessionId: { type: string }
+ *               classeId: { type: string }
+ *               niveauEtudeId: { type: string }
+ *               montant: { type: number }
+ *               referenceBancaire: { type: string }
+ *               modalite: { type: string }
+ *               demande_dg: { type: string, format: binary }
+ *               autorisation_provisoire: { type: string, format: binary }
+ *               releves_notes: { type: string, format: binary }
+ *               cni: { type: string, format: binary }
+ *               quitus_bordereaux_annee: { type: string, format: binary }
+ *               bordereau_nouvelle_annee: { type: string, format: binary }
+ *               bordereau: { type: string, format: binary }
+ *     responses:
+ *       201:
+ *         description: Dossier de réinscription créé
+ */
+router.post('/soumettre', upload.fields(REINSCRIPTION_FIELDS), ReinscriptionController.soumettre)
 
 /**
  * @openapi

@@ -11,6 +11,7 @@ export class Parcours extends Model<InferAttributes<Parcours>, InferCreationAttr
   declare titre: string
   declare description: CreationOptional<string>
   declare type: CreationOptional<string>
+  declare grade: CreationOptional<string | null>
   declare niveauEtudeId: ForeignKey<NiveauEtude['id']>
   declare niveauEtude?: NonAttribute<NiveauEtude>
   declare etablissementId: ForeignKey<Etablissement['id'] | null>
@@ -46,6 +47,11 @@ Parcours.init({
   type: {
     type: DataTypes.ENUM('LICENCE', 'MASTER', 'DOCTORAT', 'BTS', 'MBA'),
     allowNull: true
+  },
+  grade: {
+    type: DataTypes.STRING(100),
+    allowNull: true,
+    comment: "Grade associé au parcours (ex: Licence Professionnelle, Doctorat). Niveau supérieur dans l'arborescence parcours -> grade -> filière."
   },
   niveauEtudeId: {
     type: DataTypes.INTEGER.UNSIGNED,

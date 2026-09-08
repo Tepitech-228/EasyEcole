@@ -12,23 +12,12 @@ import { DetailsParcoursPageComponent } from './pages/details-parcours-page/deta
 import { ListeSessionsPageComponent } from './pages/liste-sessions-page/liste-sessions-page.component';
 import { DetailsSessionPageComponent } from './pages/details-session-page/details-session-page.component';
 import { NouveauParcoursPageComponent } from './pages/nouveau-parcours-page/nouveau-parcours-page.component';
-import { DetailsDemandePageComponent } from './pages/details-demande-page/details-demande-page.component';
-import { InfosSectionComponent } from './pages/details-demande-page/infos-section/infos-section.component';
-import { ChoixParcoursSectionComponent } from './pages/details-demande-page/choix-parcours-section/choix-parcours-section.component';
-import { CoursSectionComponent } from './pages/details-demande-page/cours-section/cours-section.component';
-import { PaiementsSectionComponent } from './pages/details-demande-page/paiements-section/paiements-section.component';
-import { ValidationSectionComponent } from './pages/details-demande-page/validation-section/validation-section.component';
-import { ChoixParcoursPageComponent } from './pages/choix-parcours-page/choix-parcours-page.component';
-import { DocumentsSectionComponent } from './pages/details-demande-page/documents-section/documents-section.component';
-import { BourseSectionComponent } from './pages/details-demande-page/bourse-section/bourse-section.component';
 import { BordereauxPageComponent } from './pages/bordereaux-page/bordereaux-page.component';
 import { ValidationBordereauxPageComponent } from './pages/validation-bordereaux-page/validation-bordereaux-page.component';
 import { MonDossierPageComponent } from './pages/mon-dossier-page/mon-dossier-page.component';
 import { GestionEcheancesPageComponent } from './pages/gestion-echeances-page/gestion-echeances-page.component';
 import { FormsModule } from '@angular/forms';
 import { ComiteDetailsPageComponent } from './pages/comite-details-page/comite-details-page.component';
-import { PreInscriptionSectionComponent } from './pages/details-demande-page/pre-inscription-section/pre-inscription-section.component';
-import { ChoixCoursPageComponent } from './pages/choix-cours-page/choix-cours-page.component';
 import { ListeDossiersPageComponent } from './pages/liste-dossiers-page/liste-dossiers-page.component';
 import { ListeFraisParcoursPageComponent } from './pages/liste-frais-parcours-page/liste-frais-parcours-page.component';
 import { HierarchyPageComponent } from './pages/hierarchy/hierarchy-page.component';
@@ -50,6 +39,8 @@ import { TypesBordereauxPageComponent } from './pages/types-bordereaux-page/type
 import { EsacomptaBordereauxPageComponent } from './pages/esacompta-bordereaux-page/esacompta-bordereaux-page.component';
 import { ComiteValidationPageComponent } from './pages/comite-validation-page/comite-validation-page.component';
 import { ChoisirSessionPageComponent } from './pages/choisir-session-page/choisir-session-page.component';
+import { ReinscriptionWizardPageComponent } from './pages/reinscription-wizard-page/reinscription-wizard-page.component';
+import { InscriptionWizardPageComponent } from './pages/inscription-wizard-page/inscription-wizard-page.component';
 @NgModule({
   declarations: [
     MonCursusPageComponent,
@@ -61,22 +52,11 @@ import { ChoisirSessionPageComponent } from './pages/choisir-session-page/choisi
     ListeDemandesPageComponent,
     ListeSessionsPageComponent,
     DetailsSessionPageComponent,
-    DetailsDemandePageComponent,
-    InfosSectionComponent,
-    ChoixParcoursSectionComponent,
-    CoursSectionComponent,
-    PaiementsSectionComponent,
-    ValidationSectionComponent,
-    ChoixParcoursPageComponent,
-    DocumentsSectionComponent,
-    BourseSectionComponent,
     BordereauxPageComponent,
     ValidationBordereauxPageComponent,
     MonDossierPageComponent,
     GestionEcheancesPageComponent,
     ComiteDetailsPageComponent,
-    PreInscriptionSectionComponent,
-      ChoixCoursPageComponent,
       ListeDossiersPageComponent,
       ListeFraisParcoursPageComponent,
      HierarchyPageComponent,
@@ -96,7 +76,9 @@ ListeClassesPageComponent,
         TypesBordereauxPageComponent,
         EsacomptaBordereauxPageComponent,
         ComiteValidationPageComponent,
-        ChoisirSessionPageComponent
+        ChoisirSessionPageComponent,
+        ReinscriptionWizardPageComponent,
+        InscriptionWizardPageComponent
   ],
   imports: [
     CommonModule,

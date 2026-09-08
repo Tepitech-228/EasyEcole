@@ -6,7 +6,7 @@ import * as fr from '@angular/common/locales/fr';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { SharedModule } from './shared/shared.module';
-import { HTTP_INTERCEPTORS } from '@angular/common/http';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { TokenInterceptorService } from './core/interceptors/token-interceptor.service';
 import { ProgressInterceptorService } from './core/interceptors/progress-interceptor.service';
 import { ErrorInterceptorService } from './core/interceptors/error-interceptor.service';
@@ -24,6 +24,7 @@ import { DashboardPageModule } from './features/pages/dashboard-page/dashboard-p
   imports: [
     BrowserModule,
     AppRoutingModule,
+    HttpClientModule,
 
     // Modules
     SharedModule,

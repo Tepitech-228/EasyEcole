@@ -1,0 +1,16 @@
+<div class="period-filter">
+  <div class="period-filter__group">
+    <button *ngFor="let p of periods"
+            class="period-filter__btn"
+            [class.period-filter__btn--active]="isCurrent(p)"
+            (click)="selectPeriod(p)">
+      {{ p.label }}
+    </button>
+  </div>
+
+  <div *ngIf="currentPeriod.key === 'custom'" class="period-filter__custom">
+    <input type="date" [(ngModel)]="currentPeriod.from" (ngModelChange)="onCustomChange()">
+    <span>—</span>
+    <input type="date" [(ngModel)]="currentPeriod.to" (ngModelChange)="onCustomChange()">
+  </div>
+</div>

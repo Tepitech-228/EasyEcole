@@ -13,7 +13,8 @@ import { RattrapageDocumentRequis } from "./RattrapageDocumentRequis";
 export class RattrapageDocumentDepose extends Model<InferAttributes<RattrapageDocumentDepose>, InferCreationAttributes<RattrapageDocumentDepose>> {
   declare id: CreationOptional<number>
   declare rattrapageInscriptionId: ForeignKey<RattrapageInscription['id']>
-  declare documentRequisId: ForeignKey<RattrapageDocumentRequis['id']>
+  declare documentRequisId: ForeignKey<RattrapageDocumentRequis['id']> | null
+  declare codeDocument: CreationOptional<string | null>
   declare fichier: string
 
   declare rattrapageInscription?: NonAttribute<RattrapageInscription>
@@ -40,7 +41,12 @@ RattrapageDocumentDepose.init({
   },
   documentRequisId: {
     type: DataTypes.INTEGER.UNSIGNED,
-    allowNull: false
+    allowNull: true
+  },
+  codeDocument: {
+    type: DataTypes.STRING(60),
+    allowNull: true,
+    comment: "Code de la pièce fixe (autorisation_provisoire | quitus_bordereaux | bordereau_rattrapage) pour les demandes sans session"
   },
   fichier: {
     type: DataTypes.STRING(500),

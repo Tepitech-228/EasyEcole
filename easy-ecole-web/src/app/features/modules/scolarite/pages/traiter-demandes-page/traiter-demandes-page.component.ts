@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { DemandeDocument } from 'src/app/data/modules/scolarite/models/DemandeDocument.model';
 import { DemandeDocumentService } from 'src/app/data/modules/scolarite/services/demande-document.service';
+import { RecuCaisseService } from 'src/app/data/modules/scolarite/services/recu-caisse.service';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { AnneeAcademiqueService } from 'src/app/data/modules/inscription/services/annee-academique.service';
 import { NiveauEtudeService } from 'src/app/data/modules/inscription/services/niveau-etude.service';
@@ -63,19 +64,20 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
 
   // Batch actions
   batchActions: BatchAction[] = [
-    { label: 'Valider la sélection', color: 'green', action: 'valider', icon: 'check' },
-    { label: 'Rejeter la sélection', color: 'red', action: 'rejeter', icon: 'close' }
+    { label: 'Valider la sélection', color: 'green', action: 'valider', icon: 'verified' },
+    { label: 'Rejeter la sélection', color: 'red', action: 'rejeter', icon: 'block' }
   ];
 
   // Action individuelle sur une ligne
   itemActions: BatchAction[] = [
-    { label: 'Visualiser', color: 'gray', action: 'voir', icon: 'visibility' },
-    { label: 'Confirmer le paiement', color: 'green', action: 'confirmerPaiement', icon: 'payments' },
-    { label: 'Préparer', color: 'blue', action: 'preparer', icon: 'edit' },
-    { label: 'Générer', color: 'indigo', action: 'generer', icon: 'picture_as_pdf' },
+    { label: 'Visualiser', color: 'gray', action: 'voir', icon: 'pageview' },
+    { label: 'Confirmer le paiement', color: 'green', action: 'confirmerPaiement', icon: 'paid' },
+    { label: 'Valider', color: 'blue', action: 'valider', icon: 'verified' },
+    { label: 'Préparer', color: 'blue', action: 'preparer', icon: 'inventory_2' },
+    { label: 'Générer', color: 'indigo', action: 'generer', icon: 'description' },
     { label: 'Imprimer', color: 'orange', action: 'imprimer', icon: 'print' },
-    { label: 'Remettre', color: 'green', action: 'remettre', icon: 'check_circle' },
-    { label: 'Rejeter', color: 'red', action: 'rejeter', icon: 'close' }
+    { label: 'Remettre', color: 'green', action: 'remettre', icon: 'handshake' },
+    { label: 'Rejeter', color: 'red', action: 'rejeter', icon: 'block' }
   ];
 
   // Columns for item display
@@ -91,6 +93,7 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
   constructor(
     private router: Router,
     private demandeService: DemandeDocumentService,
+    private recuCaisseService: RecuCaisseService,
     private anneeAcademiqueService: AnneeAcademiqueService,
     private niveauEtudeService: NiveauEtudeService,
     private parcoursService: ParcoursService,
@@ -221,6 +224,25 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
     return Number(demande.montant) > 0 && !demande.fraisPayes;
   }
 
+  /**
+   * Matrice des actions visibles par ligne selon le statut de la demande.
+   * Limite à 3 actions visibles max par ligne (sinon passage en boutons icônes).
+   */
+  canShowItemAction(item: any, action: string): boolean {
+    const statut = item?.statut;
+    switch (action) {
+      case 'voir': return true;
+      case 'confirmerPaiement': return this.isPaiementBloquant(item);
+      case 'valider': return !this.isPaiementBloquant(item) && ['soumise', 'en_attente_paiement'].includes(statut);
+      case 'preparer': return ['paye', 'validee'].includes(statut);
+      case 'generer': return statut === 'en_preparation';
+      case 'imprimer': return statut === 'document_pret';
+      case 'remettre': return statut === 'document_pret';
+      case 'rejeter': return !['document_pret', 'remise', 'rejetee', 'annulee', 'validee', 'delivree'].includes(statut);
+      default: return false;
+    }
+  }
+
   onBatchAction(event: { action: string; ids: number[] }): void {
     if (event.action === 'rejeter' && event.ids.length > 0) {
       this.showRejetModal = true;
@@ -303,11 +325,11 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
     if (!this.paiementLoadingId) return;
     this.errorMessage = '';
     this.successMessage = '';
-    this.demandeService.confirmerPaiement(this.paiementLoadingId).subscribe({
+    this.recuCaisseService.collecterPaiement(this.paiementLoadingId, this.paiementMode, this.paiementMontant).subscribe({
       next: () => {
         this.showPaiementModal = false;
         this.paiementLoadingId = null;
-        this.successMessage = 'Paiement confirmé avec succès.';
+        this.successMessage = 'Encaissement confirmé : reçu de caisse généré, demande marquée payée.';
         this.loadDemandes();
       },
       error: (err) => {
@@ -411,6 +433,11 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
       case 'validee': return 'Validée';
       case 'rejetee': return 'Rejetée';
       case 'delivree': return 'Délivrée';
+      case 'paye': return 'Payée';
+      case 'en_preparation': return 'En préparation';
+      case 'document_pret': return 'Document prêt';
+      case 'remise': return 'Remise';
+      case 'en_attente_paiement': return 'En attente de paiement';
       default: return statut;
     }
   }
@@ -421,6 +448,11 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
       case 'validee': return 'blue';
       case 'rejetee': return 'red';
       case 'delivree': return 'green';
+      case 'paye': return 'green';
+      case 'en_preparation': return 'blue';
+      case 'document_pret': return 'indigo';
+      case 'remise': return 'green';
+      case 'en_attente_paiement': return 'orange';
       default: return 'gray';
     }
   }

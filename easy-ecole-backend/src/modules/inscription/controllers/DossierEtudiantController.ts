@@ -473,7 +473,13 @@ export default class DossierEtudiantController {
 
     static async getDossierComplet(req: Request, res: Response): Promise<Response> {
         try {
-            const dossier = await DossierEtudiant.findByPk(req.params.id, {
+            let where: { id: string; utilisateurId?: number } = { id: req.params.id };
+            if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
+                where.utilisateurId = (req as any).utilisateurId;
+            }
+
+            const dossier = await DossierEtudiant.findOne({
+                where,
                 include: [
                     {
                         association: DossierEtudiant.associations.utilisateur,

@@ -14,7 +14,7 @@ export class ApprenantService {
   constructor(private httpClient: HttpClient) { }
 
   get(id?: string): Observable<Apprenant> {
-    return this.httpClient.get<Apprenant>(`${this.SERVICE_URL}/${id}`)
+    return this.httpClient.get<Apprenant>(`${this.SERVICE_URL}/${id || 'me'}`)
   }
 
   update(apprenant: any): Observable<any> {

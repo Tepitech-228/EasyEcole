@@ -19,8 +19,7 @@ TypeOperationBordereau.init({
   },
   code: {
     type: new DataTypes.STRING(50),
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   libelle: {
     type: new DataTypes.STRING(100),

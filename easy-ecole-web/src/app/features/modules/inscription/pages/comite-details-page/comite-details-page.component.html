@@ -33,6 +33,13 @@
             <p class="text-sm text-gray-900 mt-0.5">{{ demande.session?.description || 'Non définie' }}</p>
           </div>
         </div>
+        <div *ngIf="demande.typeDemande" class="mt-4 inline-flex items-center gap-x-2 px-3 py-1 rounded-full text-xs font-semibold"
+             [class.bg-blue-50]="estReinscription(demande)"
+             [class.text-blue-700]="estReinscription(demande)"
+             [class.bg-green-50]="!estReinscription(demande)"
+             [class.text-green-700]="!estReinscription(demande)">
+          <span>{{ estReinscription(demande) ? '🔵' : '🟢' }} {{ libelleTypeDemande(demande) }}</span>
+        </div>
       </div>
 
       <!-- Parcours choisis -->

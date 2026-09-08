@@ -1,0 +1,7 @@
+.monitoring-section { padding: 24px; max-width: 1440px; margin: 0 auto; color: #172033; }
+.monitoring-section__loading { min-height: 280px; display: grid; place-items: center; align-content: center; gap: 12px; color: #64748b; }
+.monitoring-section__spinner { width: 28px; height: 28px; border: 3px solid #dbeafe; border-top-color: #2563eb; border-radius: 50%; animation: monitoring-section-spin .8s linear infinite; }
+.monitoring-section__ready { margin-top: 24px; padding: 28px; border: 1px solid #dbeafe; border-radius: 10px; background: #f8fafc; }
+.monitoring-section__ready h2 { margin: 18px 0 8px; }
+.monitoring-section__ready p { margin: 0; color: #64748b; }
+@keyframes monitoring-section-spin { to { transform: rotate(360deg); } }

@@ -32,77 +32,86 @@ async function run(): Promise<void> {
   if (running) return
   running = true
   try {
+    const BATCH_SIZE = 500
+    const NOTIFICATION_CONCURRENCY = 20
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const todayStr = toDateOnlyString(today)
 
     // (a) Échéances impayées dont dateLimite < aujourd'hui
-    const echeancesImpayees = await Echeance.findAll({
-      where: {
-        statut: 'impaye',
-        dateLimite: { [Op.lt]: todayStr },
-      },
-    })
-
-    if (echeancesImpayees.length === 0) {
-      console.log('[RappelEcheanceCron] Aucune échéance impayée arrivée à échéance ce jour')
-      return
-    }
-
-    // Passage en 'en_retard'
-    const echeanceIds = echeancesImpayees.map((e) => e.id)
-    await Echeance.update(
-      { statut: 'en_retard' },
-      { where: { id: { [Op.in]: echeanceIds } } }
-    )
-
-    // (b) Notification par dossier étudiant concerné
-    const dossierIds: number[] = [
-      ...new Set(
-        echeancesImpayees
-          .map((e) => e.dossierEtudiantId)
-          .filter((id): id is number => id != null)
-      ),
-    ]
-
+    let totalEcheances = 0
     let nbNotifications = 0
-    if (dossierIds.length > 0) {
+    let batch: Echeance[] = []
+
+    do {
+      batch = await Echeance.findAll({
+        where: {
+          statut: 'impaye',
+          dateLimite: { [Op.lt]: todayStr },
+        },
+        order: [['id', 'ASC']],
+        limit: BATCH_SIZE,
+      })
+
+      if (batch.length === 0) break
+
+      const echeanceIds = batch.map((e) => e.id)
+      await Echeance.update(
+        { statut: 'en_retard' },
+        { where: { id: { [Op.in]: echeanceIds }, statut: 'impaye' } }
+      )
+      totalEcheances += batch.length
+
+      const echeancesParDossier = new Map<number, Echeance[]>()
+      for (const echeance of batch) {
+        if (echeance.dossierEtudiantId == null) continue
+        const dossierEcheances = echeancesParDossier.get(echeance.dossierEtudiantId) || []
+        dossierEcheances.push(echeance)
+        echeancesParDossier.set(echeance.dossierEtudiantId, dossierEcheances)
+      }
+
+      const dossierIds = [...echeancesParDossier.keys()]
       const dossiers = await DossierEtudiant.findAll({
         where: { id: { [Op.in]: dossierIds } },
         attributes: ['id', 'utilisateurId'],
       })
 
-      for (const dossier of dossiers) {
-        if (!dossier.utilisateurId) continue
+      const notifications = dossiers
+        .filter((dossier) => dossier.utilisateurId)
+        .map((dossier) => {
+          const echeancesDossier = echeancesParDossier.get(dossier.id) || []
+          const montantTotal = echeancesDossier.reduce((sum, e) => sum + (e.montant || 0), 0)
+          const derniereDateStr = echeancesDossier
+            .map((e) => dateOnlyToString(e.dateLimite))
+            .sort()
+            .pop() || todayStr
+          return {
+            utilisateurId: dossier.utilisateurId as number,
+            message: `Échéance de ${montantTotal} FCFA arrivée à échéance le ${formatDateFr(derniereDateStr)}`,
+          }
+        })
 
-        const echeancesDossier = echeancesImpayees.filter(
-          (e) => e.dossierEtudiantId === dossier.id
-        )
-        const montantTotal = echeancesDossier.reduce(
-          (sum, e) => sum + (e.montant || 0),
-          0
-        )
-        // Date limite la plus récente parmi les échéances du dossier
-        const derniereDateStr =
-          echeancesDossier.map((e) => dateOnlyToString(e.dateLimite)).sort().pop() ||
-          todayStr
-
-        const message = `Échéance de ${montantTotal} FCFA arrivée à échéance le ${formatDateFr(derniereDateStr)}`
-
-        await NotificationHelper.envoyerNotification(
-          dossier.utilisateurId,
+      for (let index = 0; index < notifications.length; index += NOTIFICATION_CONCURRENCY) {
+        const groupe = notifications.slice(index, index + NOTIFICATION_CONCURRENCY)
+        await Promise.all(groupe.map((notification) => NotificationHelper.envoyerNotification(
+          notification.utilisateurId,
           'echeance_retard',
           'Échéance arrivée à échéance',
-          message,
+          notification.message,
           undefined,
           false
-        )
-        nbNotifications += 1
+        )))
+        nbNotifications += groupe.length
       }
+    } while (batch.length === BATCH_SIZE)
+
+    if (totalEcheances === 0) {
+      console.log('[RappelEcheanceCron] Aucune échéance impayée arrivée à échéance ce jour')
+      return
     }
 
     console.log(
-      `[RappelEcheanceCron] ${echeancesImpayees.length} échéance(s) passée(s) en 'en_retard', ${nbNotifications} notification(s) envoyée(s)`
+      `[RappelEcheanceCron] ${totalEcheances} échéance(s) passée(s) en 'en_retard', ${nbNotifications} notification(s) envoyée(s)`
     )
   } catch (error) {
     console.error('[RappelEcheanceCron] Erreur lors du traitement:', error)

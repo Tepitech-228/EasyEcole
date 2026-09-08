@@ -33,6 +33,7 @@ router.delete('/typesDocument/:id', [AuthSecretariat], DocumentController.delete
 router.get('/recusCaisse', [AuthSecretariat], RecuCaisseController.getAll)
 router.get('/recusCaisse/:id', [AuthSecretariat], RecuCaisseController.getById)
 router.get('/recusCaisse/:id/print', [AuthSecretariat], RecuCaisseController.print)
+router.get('/recusCaisse/:id/download', [AuthSecretariat], RecuCaisseController.download)
 router.post('/recusCaisse/collecter', [AuthSecretariat], RecuCaisseController.collecterPaiement)
 router.get('/journalCaisse', [AuthSecretariat], RecuCaisseController.getJournalCaisse)
 

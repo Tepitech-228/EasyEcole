@@ -379,6 +379,30 @@ router
    *         description: Liste des documents requis
    */
   .get('/documents-requis/:sessionId', RattrapageWorkflowController.documentsRequisSession)
+  /**
+   * @openapi
+   * /inscription/rattrapage-workflow/documents-requis-fixes:
+   *   get:
+   *     tags: [Rattrapage Workflow]
+   *     summary: Les 3 pièces fixes d'une demande de rattrapage sans session
+   *     security: [{ bearerAuth: [] }]
+   *     responses:
+   *       200:
+   *         description: Liste des 3 pièces fixes (code + libellé)
+   */
+  .get('/documents-requis-fixes', RattrapageWorkflowController.documentsRequisFixes)
+  /**
+   * @openapi
+   * /inscription/rattrapage-workflow/ues-non-validees:
+   *   get:
+   *     tags: [Rattrapage Workflow]
+   *     summary: UE déjà demandées en rattrapage par l'étudiant (pré-remplissage)
+   *     security: [{ bearerAuth: [] }]
+   *     responses:
+   *       200:
+   *         description: Liste des UE non validées déclarées
+   */
+  .get('/ues-non-validees', RattrapageWorkflowController.uesNonValidees)
 
 // Gestion dédiée des erreurs multer (taille, type, champ inattendu) → 400 explicite
 // (même pattern que DossierInscriptionRouter).

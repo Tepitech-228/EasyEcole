@@ -396,8 +396,12 @@ export default class DeliberationController {
 
   async telechargerPV(req: Request, res: Response) {
     try {
-      const filename = req.params.filename;
-      const filePath = path.join(process.cwd(), 'uploads', 'pv', filename);
+      const filename = path.basename(req.params.filename);
+      const pvDirectory = path.resolve(process.cwd(), 'uploads', 'pv');
+      const filePath = path.resolve(pvDirectory, filename);
+      if (filePath !== path.join(pvDirectory, filename) || filename !== req.params.filename) {
+        return res.status(400).json({ message: 'Nom de fichier invalide' });
+      }
       if (!fs.existsSync(filePath)) {
         return res.status(404).json({ message: 'Fichier non trouvÃ©' });
       }

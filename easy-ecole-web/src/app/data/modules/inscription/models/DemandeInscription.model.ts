@@ -29,6 +29,8 @@ export class DemandeInscription {
   declare estBoursier?: boolean
   /** Chemin du justificatif de bourse (PDF) uploadé par l'étudiant. */
   declare documentBourse?: string
+  /** Type de demande : 'inscription' (1ère) | 'reinscription'. Permet le badge comité. */
+  declare typeDemande?: 'inscription' | 'reinscription'
   /** Vrai une fois le dossier transmis au comité d'orientation (après saisie ESA finalisée). */
   declare soumissionComite?: boolean
 

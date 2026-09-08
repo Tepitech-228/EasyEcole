@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { DemandeDocument, VerifierAccesDemandeDocument } from '../models/DemandeDocument.model';
+import { DemandeDocument, VerifierAccesDemandeDocument, MesDocumentItem } from '../models/DemandeDocument.model';
 
 @Injectable({ providedIn: 'root' })
 export class DemandeDocumentService {
@@ -82,5 +82,10 @@ export class DemandeDocumentService {
 
   rejeter(id: string, motif: string): Observable<DemandeDocument> {
     return this.httpClient.put<DemandeDocument>(`${this.SERVICE_URL}/${id}/rejeter`, { motif });
+  }
+
+  /** Liste enrichie des documents de l'étudiant connecté */
+  getMesDocuments(): Observable<MesDocumentItem[]> {
+    return this.httpClient.get<MesDocumentItem[]>(`${this.SERVICE_URL}/mes-documents`);
   }
 }

@@ -187,6 +187,39 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
     return map[d || ''] || (d || '---')
   }
 
+  // ── Badge 1ère inscription / Réinscription ──
+
+  estReinscription(d: any): boolean {
+    return !!d?.estReinscription || d?.typeDemande === 'reinscription'
+  }
+
+  libelleTypeDemande(d: any): string {
+    return this.estReinscription(d) ? 'Réinscription' : '1ère inscription'
+  }
+
+  get pointsControleReinscription(): string[] {
+    return [
+      'Demande adressée au Directeur Général',
+      'Autorisation provisoire d\u2019inscription',
+      'Relevés de notes obtenus',
+      'Carte d\u2019identité nationale',
+      'Quitus définitif et bordereaux de l\u2019année écoulée',
+      'Bordereau d\u2019inscription de la nouvelle année'
+    ]
+  }
+
+  get pointsControlePremiere(): string[] {
+    return [
+      'Pièces classiques du nouvel étudiant (CNI, relevés, diplômes)',
+      'Autorisation / préinscription validée',
+      'Bordereau d\u2019inscription'
+    ]
+  }
+
+  pointsControle(d: any): string[] {
+    return this.estReinscription(d) ? this.pointsControleReinscription : this.pointsControlePremiere
+  }
+
   getDocUrl(fichier: string): string {
     const token = this.localStorage.get(LocalStorageService.AUTH_TOKEN)
     let url = this.BORDEREAUX_PATH + fichier

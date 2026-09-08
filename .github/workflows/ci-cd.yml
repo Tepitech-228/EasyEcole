@@ -94,7 +94,7 @@ jobs:
         run: npx tsc --noEmit
 
       - name: '[CI] Tests backend (Jest)'
-        run: npm test -- --passWithNoTests --forceExit
+        run: npm test -- --forceExit
         env:
           NODE_ENV: test
           JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-test-secret-key-not-for-production' }}

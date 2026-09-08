@@ -39,6 +39,7 @@ services:
     image: mysql:8.0
     container_name: easyecole-db
     restart: unless-stopped
+    mem_limit: 1g
     environment:
       # Mot de passe root MySQL (à remplacer dans .env)
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
@@ -56,6 +57,31 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # 1b) SAUVEGARDE MYSQL
+  # ---------------------------------------------------------------------------
+  mysql-backup:
+    image: mysql:8.0
+    container_name: easyecole-mysql-backup
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-easyecole}
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+    volumes:
+      - mysql_backups:/backups/mysql
+      - uploads:/data/uploads:ro
+      - storage:/data/storage:ro
+      - ./scripts/mysql-backup.sh:/usr/local/bin/mysql-backup.sh:ro
+    entrypoint: ["/bin/sh", "/usr/local/bin/mysql-backup.sh"]
+    depends_on:
+      db:
+        condition: service_healthy
     # ⚠️ CONFLICT PORT 3306 : si un MySQL natif tourne déjà sur le serveur
     # Windows, NE PAS exposer le port de ce conteneur sur l'hôte.
     # Décommentez uniquement si vous avez besoin d'y accéder depuis l'hôte
@@ -73,6 +99,8 @@ services:
     build: ./easy-ecole-backend
     container_name: easyecole-backend
     restart: unless-stopped
+    mem_limit: 2g
+    shm_size: 1g
     # Variables d'environnement : injectées par Dokploy (onglet "Environment"
     # du projet). DB_HOST DOIT valoir `db` (nom du service), PAS localhost.
     # (Ancien `env_file: .env` supprimé : Dokploy ne lit pas de fichier .env.)
@@ -101,12 +129,39 @@ services:
       start_period: 40s
 
   # ---------------------------------------------------------------------------
+  # 2b) WORKERS BullMQ (OCR, PDF, import Excel)
+  # ---------------------------------------------------------------------------
+  worker:
+    build: ./easy-ecole-backend
+    container_name: easyecole-worker
+    restart: unless-stopped
+    mem_limit: 2g
+    shm_size: 1g
+    entrypoint: ["node", "lib/core/workers/index.js"]
+    environment:
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-easyecole}
+      DB_USER: ${DB_USER:-easyecole_app}
+      DB_PASS: ${DB_PASS}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - uploads:/app/public
+      - storage:/app/storage
+
+  # ---------------------------------------------------------------------------
   # 3) CACHE REDIS 7 (cache réponse middleware `cache()` — fail-safe)
   # ---------------------------------------------------------------------------
   redis:
     image: redis:7-alpine
     container_name: easyecole-redis
     restart: unless-stopped
+    mem_limit: 256m
     # Persistance AOF (survie au redémarrage) + limite mémoire avec politique
     # d'éviction LRU globale (les clés cache peuvent être purgées sous charge).
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
@@ -126,6 +181,7 @@ services:
     build: ./easy-ecole-web
     container_name: easyecole-frontend
     restart: unless-stopped
+    mem_limit: 256m
     ports:
       # Port HTTP public de l'application. À adapter (ex: "8080:80") si le
       # port 80 est déjà occupé sur le serveur Windows.
@@ -145,3 +201,5 @@ volumes:
   storage:
   # Persistance du cache Redis (fichiers AOF dans /data)
   redis_data:
+  # Dumps compressés MySQL ; monter ce volume vers un stockage externe en prod.
+  mysql_backups:
