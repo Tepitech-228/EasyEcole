@@ -9,7 +9,7 @@ const controller = new DeliberationController();
 
 router.get('/deliberations', [Authenticate], controller.getAll.bind(controller));
 router.get('/deliberations/stats', [Authenticate], controller.getStatistiques.bind(controller));
-router.get('/deliberations/pv/:filename', [Authenticate], controller.telechargerPV.bind(controller));
+router.get('/deliberations/pv/:filename', [Authenticate, CheckPermission('action.evaluation.deliberation.telecharger-pv')], controller.telechargerPV.bind(controller));
 router.get('/deliberations/:id', [Authenticate], controller.getOne.bind(controller));
 router.get('/deliberations/:id/historique', [Authenticate], controller.getHistorique.bind(controller));
 router.get('/deliberations/:id/suggestions', [Authenticate], controller.calculerSuggestions.bind(controller));

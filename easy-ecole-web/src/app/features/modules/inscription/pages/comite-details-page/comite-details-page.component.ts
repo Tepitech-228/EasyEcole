@@ -66,6 +66,16 @@ export class ComiteDetailsPageComponent extends BaseComponentClass implements On
     }
   }
 
+  // ── Badge 1ère inscription / Réinscription ──
+
+  estReinscription(d: any): boolean {
+    return d?.typeDemande === 'reinscription' || d?.estReinscription === true
+  }
+
+  libelleTypeDemande(d: any): string {
+    return this.estReinscription(d) ? 'Réinscription' : '1ère inscription'
+  }
+
   ouvrirModalValider(): void {
     this.actionEnCours = 'valider'
     this.commentaireReponse = undefined

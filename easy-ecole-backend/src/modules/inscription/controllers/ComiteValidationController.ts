@@ -69,8 +69,20 @@ export default class ComiteValidationController {
                 })
                 : []
 
+            // nombreInscriptions par utilisateur → badge 1ère/réinscription
+            const dossiersEtudiant = utilisateurIds.length
+                ? await DossierEtudiant.findAll({ where: { utilisateurId: { [Op.in]: utilisateurIds as any } } })
+                : []
+            const nombreInscriptionsParUser = new Map<number, number>()
+            for (const d of dossiersEtudiant) {
+                nombreInscriptionsParUser.set(Number(d.utilisateurId), d.nombreInscriptions ?? 1)
+            }
+
             const data = demandes.map(demande => ({
                 ...demande.get({ plain: true }),
+                estReinscription: (demande.typeDemande === 'reinscription') ||
+                    (nombreInscriptionsParUser.get(Number(demande.utilisateurId)) ?? 1) > 1,
+                nombreInscriptions: nombreInscriptionsParUser.get(Number(demande.utilisateurId)) ?? 1,
                 bordereaux: bordereaux
                     .filter((b: any) => Number(b.utilisateurId) === Number(demande.utilisateurId))
                     .map((b: any) => b.get({ plain: true })),
@@ -124,6 +136,9 @@ export default class ComiteValidationController {
             return res.status(200).json({
                 data: {
                     ...demande.get({ plain: true }),
+                    estReinscription: (demande.typeDemande === 'reinscription') ||
+                        (dossiersEtudiant[0]?.nombreInscriptions ?? 1) > 1,
+                    nombreInscriptions: dossiersEtudiant[0]?.nombreInscriptions ?? 1,
                     bordereaux: bordereaux.map((b: any) => b.get({ plain: true })),
                     dossierEtudiant: dossiersEtudiant[0]?.get({ plain: true }) ?? null,
                     echeances,

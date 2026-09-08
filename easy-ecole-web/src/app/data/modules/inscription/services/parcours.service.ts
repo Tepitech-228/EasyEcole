@@ -35,6 +35,24 @@ export class ParcoursService {
     return this.httpClient.get<Parcours>(`${this.SERVICE_URL}/${id}`)
   }
 
+  /**
+   * Arborescence parcours → grade → filière (PHASE 1 du wizard d'inscription).
+   * Structure retournée : [{ type, grades: [{ grade, filieres: Parcours[] }] }]
+   *
+   * @param params  Filtres optionnels :
+   *   - sessionId     : ID d'une session → filtre par le niveauEtudeId de cette session
+   *   - niveauEtudeId : filtrer directement par niveau d'étude
+   *   - type          : filtrer par cycle (LICENCE, MASTER, BTS, MBA, DOCTORAT)
+   */
+  getArborescence(params?: { sessionId?: string; niveauEtudeId?: string; type?: string }): Observable<any> {
+    const httpParams: any = {}
+    if (params?.sessionId) httpParams.sessionId = params.sessionId
+    if (params?.niveauEtudeId) httpParams.niveauEtudeId = params.niveauEtudeId
+    if (params?.type) httpParams.type = params.type
+    const options = Object.keys(httpParams).length ? { params: httpParams } : {}
+    return this.httpClient.get<any>(`${this.SERVICE_URL}/arborescence`, options)
+  }
+
   create(parcours: Parcours): Observable<Parcours> {
     return this.httpClient.post<Parcours>(`${this.SERVICE_URL}`, parcours)
   }

@@ -28,8 +28,10 @@ export class SecretariatWorkflowService {
     }
 
     static async passerEnPreparation(demande: DemandeDocument, utilisateurId: number | null): Promise<DemandeDocument> {
-        if (demande.statut !== 'paye') {
-            throw new ErreurWorkflow('STATUT_INVALIDE', "La demande doit être payée avant préparation");
+        if (demande.statut !== 'paye' && demande.statut !== 'validee') {
+            // 'validee' est accepté pour compatibilité avec la validation de masse (PUT /batch/statut) :
+            // une demande validée en masse est déjà payée ou gratuite, donc légitimement prête à la préparation.
+            throw new ErreurWorkflow('STATUT_INVALIDE', "La demande doit être payée ou validée avant préparation");
         }
         const transaction = await DatabaseConnection.getInstance().sequelize.transaction();
         try {

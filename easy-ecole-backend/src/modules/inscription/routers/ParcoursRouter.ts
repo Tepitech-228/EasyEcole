@@ -41,6 +41,17 @@ router
     .post('/', [AuthInstitution, CheckPermission('action.inscription.parcours.creer')], ParcoursController.createParcours)
 /**
  * @openapi
+ * /inscription/parcours/arborescence:
+ *   get:
+ *     tags: [Parcours]
+ *     summary: Arborescence parcours → grade → filière (wizard inscription)
+ *     responses:
+ *       200:
+ *         description: Arborescence parcours/grade/filière
+ */
+    .get('/arborescence', [cache(300)], ParcoursController.getArborescence)
+/**
+ * @openapi
  * /inscription/parcours/{id}:
  *   get:
  *     tags: [Parcours]

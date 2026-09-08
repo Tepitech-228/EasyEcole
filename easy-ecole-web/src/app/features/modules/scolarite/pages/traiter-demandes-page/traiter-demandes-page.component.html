@@ -32,6 +32,10 @@
         <option value="validee">Validée</option>
         <option value="rejetee">Rejetée</option>
         <option value="delivree">Délivrée</option>
+        <option value="paye">Payée</option>
+        <option value="en_preparation">En préparation</option>
+        <option value="document_pret">Document prêt</option>
+        <option value="remise">Remise</option>
       </select>
     </div>
   </div>
@@ -52,6 +56,8 @@
     [batchActions]="batchActions"
     [itemActions]="itemActions"
     [renderItemActions]="true"
+    [includeBatchInRowActions]="false"
+    [canShowItemAction]="canShowItemAction"
     [loading]="loading"
     [totalItems]="totalItems"
     [currentPage]="currentPage"

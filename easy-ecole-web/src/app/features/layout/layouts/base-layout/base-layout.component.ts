@@ -1,7 +1,8 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { NavigationEnd, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { AuthService } from 'src/app/data/modules/auth/services/auth.service';
 import { PanierParcoursChoisiService } from 'src/app/data/modules/orientation/services/panier-parcours-choisi.service';
@@ -38,7 +39,7 @@ export class BaseLayoutComponent extends BaseComponentClass implements OnInit, O
   statutPaiementMessage: string = ''
   echeancesEnRetard: number = 0
   montantRestant?: number
-  private statutPaiementTimer: ReturnType<typeof setInterval> | null = null
+  private statutPaiementNavigationSub: Subscription | null = null
 
   /** Routes de régularisation sur lesquelles le bandeau de blocage est masqué. */
   private readonly REGULARISATION_ROUTES: string[] = ['/inscription/paiements', '/inscription/bordereaux']
@@ -73,17 +74,16 @@ export class BaseLayoutComponent extends BaseComponentClass implements OnInit, O
     this.subscribeToSse()
     if (this.rolesValue.isApprenant || this.rolesValue.isParent) {
       this.refreshStatutPaiement()
-      this.statutPaiementTimer = setInterval(() => this.refreshStatutPaiement(), 60000)
+      this.statutPaiementNavigationSub = this.router.events.pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd)
+      ).subscribe(() => this.refreshStatutPaiement())
     }
   }
 
   ngOnDestroy(): void {
     this.notifSub?.unsubscribe()
     this.notifCountSub?.unsubscribe()
-    if (this.statutPaiementTimer) {
-      clearInterval(this.statutPaiementTimer)
-      this.statutPaiementTimer = null
-    }
+    this.statutPaiementNavigationSub?.unsubscribe()
   }
 
   /**

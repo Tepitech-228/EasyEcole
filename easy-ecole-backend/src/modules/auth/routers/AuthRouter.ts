@@ -10,6 +10,22 @@ import Authenticate from "../../../core/middlewares/Authenticate";
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
 import CheckPermission from "../../../core/middlewares/CheckPermission";
 
+const ALLOWED_IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp']);
+const BANNED_EXTENSIONS = new Set(['.svg', '.html', '.htm', '.xml', '.xhtml']);
+const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 Mo
+
+const MIME_TO_EXT: Record<string, string> = {
+    'image/jpeg': '.jpg',
+    'image/png': '.png',
+    'image/gif': '.gif',
+    'image/webp': '.webp',
+};
+
+function getNormalizedExtension(mimetype: string): string {
+    return MIME_TO_EXT[mimetype] || '.jpg';
+}
+
 const resendOtpLimiter = rateLimit({
   windowMs: 30000,
   max: 1,
@@ -42,16 +58,31 @@ const storage = multer.diskStorage({
         if(!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true })
         }
-
         callback(null, dir)
     },
     filename: (req, file, callback) => {
         const nanoid = customAlphabet('1234567890abcdef', 50)
-        const ext = path.extname(file.originalname)
+        const ext = getNormalizedExtension(file.mimetype)
         callback(null, nanoid() + ext)
     },
 })
-const upload = multer({ storage: storage })
+const upload = multer({
+    storage: storage,
+    fileFilter: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase()
+        if (BANNED_EXTENSIONS.has(ext)) {
+            return cb(null, false)
+        }
+        if (!ALLOWED_IMAGE_EXTENSIONS.has(ext)) {
+            return cb(null, false)
+        }
+        if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
+            return cb(null, false)
+        }
+        cb(null, true)
+    },
+    limits: { fileSize: MAX_FILE_SIZE },
+})
 
 /**
  * @openapi

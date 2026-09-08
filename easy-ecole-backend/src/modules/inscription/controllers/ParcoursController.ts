@@ -62,6 +62,7 @@ export default class ParcoursController {
             parcours.titre = req.body.titre
             parcours.description = req.body.description
             parcours.type = req.body.type
+            parcours.grade = req.body.grade != null ? String(req.body.grade).trim() : null
             parcours.niveauEtudeId = req.body.niveauEtudeId
 
             await parcours.save()
@@ -96,6 +97,7 @@ export default class ParcoursController {
                     titre: req.body.titre,
                     description: req.body.description,
                     type: req.body.type,
+                    grade: req.body.grade != null ? String(req.body.grade).trim() : null,
                     niveauEtudeId: req.body.niveauEtudeId,
                 })
                     .then(async (parcours) => {
@@ -138,6 +140,85 @@ export default class ParcoursController {
         }
 
         return null
+    }
+
+    /**
+     * Arborescence pour la PHASE 1 du wizard d'inscription :
+     * Parcours (cycle) -> Grades -> Filières.
+     * Retourne une structure groupée par type (LICENCE/MASTER/...) puis grade,
+     * avec les filières (Parcours.titre) disponibles à chaque niveau.
+     *
+     * Filtres query :
+     *   - type      : filtrer par cycle (LICENCE, MASTER, BTS, MBA, DOCTORAT)
+     *   - grade     : filtrer par grade (ex : "Licence 1", "Master 2")
+     *   - sessionId : ID d'une session → déduit le niveauEtudeId et filtre les
+     *                 parcours dont le niveauEtudeId correspond à celui de la
+     *                 session (permet de n'afficher que les filières du cycle
+     *                 correspondant à la session choisie).
+     *   - niveauEtudeId : filtrer directement par niveau d'étude
+     */
+    static async getArborescence(req: Request, res: Response): Promise<Response | null> {
+        try {
+            const filtres: any = {}
+            if (req.query.type) filtres.type = req.query.type as string
+            if (req.query.grade) filtres.grade = req.query.grade as string
+
+            // ── Filtrage par sessionId ──────────────────────────────────────
+            // Si un sessionId est fourni, on résout le niveauEtudeId de la
+            // session et on filtre les parcours dont le niveauEtudeId ou le
+            // type correspond au cycle de cette session.
+            if (req.query.sessionId) {
+                try {
+                    const { Session } = require('../models/Session')
+                    const session = await Session.findByPk(req.query.sessionId as string)
+                    if (session && session.niveauEtudeId) {
+                        filtres.niveauEtudeId = session.niveauEtudeId
+                    }
+                } catch (_e) {
+                    // Si la session n'est pas trouvée, on ignore le filtre
+                }
+            }
+
+            // ── Filtrage direct par niveauEtudeId ───────────────────────────
+            if (req.query.niveauEtudeId && !filtres.niveauEtudeId) {
+                filtres.niveauEtudeId = req.query.niveauEtudeId as string
+            }
+
+            const parcoursList: Parcours[] = await Parcours.findAll({
+                where: filtres,
+                order: [['type', 'ASC'], ['titre', 'ASC']],
+                include: [Parcours.associations.niveauEtude]
+            })
+
+            // Parcours (types) distincts, dans un ordre stable
+            const types = Array.from(new Set(parcoursList.map(p => p.type).filter(Boolean))) as string[]
+
+            const arborescence = types.map((type) => {
+                const deType = parcoursList.filter(p => p.type === type)
+                // Grades distincts pour ce type (ordre d'apparition)
+                const grades: string[] = []
+                const gradeMap: Record<string, any[]> = {}
+                for (const p of deType) {
+                    const g = (p.grade || '').trim() || 'Sans grade'
+                    if (!grades.includes(g)) grades.push(g)
+                    if (!gradeMap[g]) gradeMap[g] = []
+                    gradeMap[g].push({
+                        id: p.id,
+                        titre: p.titre,
+                        type: p.type,
+                        grade: p.grade || null,
+                        niveauEtudeId: p.niveauEtudeId,
+                        niveauEtude: p.niveauEtude || null
+                    })
+                }
+                return { type, grades: grades.map(grade => ({ grade, filieres: gradeMap[grade] })) }
+            })
+
+            return res.status(200).json({ success: true, data: arborescence })
+        } catch (error) {
+            console.error('Erreur getArborescence', error)
+            return res.status(500).json({ success: false, message: 'Erreur interne' })
+        }
     }
 
     static async getCount(req: Request, res: Response): Promise<Response | null> {

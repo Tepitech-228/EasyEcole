@@ -37,13 +37,13 @@ export class HistoriqueTraitementsPageComponent extends BaseComponentClass imple
     const q = this.searchTerm.toLowerCase().trim();
     if (!q) return this.traitements;
     return this.traitements.filter(t => {
-      const etudiant = ${t.utilisateur?.nom ?? ''} .toLowerCase();
+      const etudiant = `${t.utilisateur?.nom ?? ''}`.toLowerCase();
       return etudiant.includes(q);
     });
   }
 
   getStatutLabel(statut: string): string {
-    const map: any = { 'valide': 'Validé', 'rejete': 'Rejeté', 'traite': 'Traité' };
+    const map: any = { 'valide': 'Validï¿½', 'rejete': 'Rejetï¿½', 'traite': 'Traitï¿½' };
     return map[statut] || statut;
   }
 

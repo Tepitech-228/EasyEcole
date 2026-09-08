@@ -1,9 +1,13 @@
 import { Request, Response } from "express";
 import { RecuCaisse } from "../models/RecuCaisse";
 import { DemandeDocument } from "../models/DemandeDocument";
+import { TypeDocument } from "../models/TypeDocument";
+import { Utilisateur } from "../../auth/models/Utilisateur";
 import { SecretariatService } from "../services/SecretariatService";
 import { JournalCaisse } from "../models/JournalCaisse";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
+import { RecuCaisseGeneratorService } from "../services/RecuCaisseGeneratorService";
+import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 
 export default class RecuCaisseController {
 
@@ -90,6 +94,28 @@ export default class RecuCaisseController {
     }
   }
 
+  /**
+   * GET /recusCaisse/:id/download
+   * Télécharge le PDF du reçu de caisse.
+   */
+  static async download(req: Request, res: Response): Promise<Response> {
+    try {
+      const recu = await RecuCaisse.findByPk(req.params.id);
+      if (!recu) return res.status(404).json({ success: false, message: "Reçu non trouvé" });
+
+      const filePath = RecuCaisseGeneratorService.telechargerRecu(recu);
+      if (!filePath) {
+        return res.status(404).json({ success: false, message: "PDF non disponible. Le fichier est en cours de génération." });
+      }
+
+      res.download(filePath, `RCU-${recu.numero}.pdf`);
+      return res;
+    } catch (error) {
+      console.error('[SECRETARIAT][RecuCaisse][download]', error);
+      return res.status(500).json({ success: false, code: 'INTERNAL_ERROR', message: "Erreur lors du téléchargement" });
+    }
+  }
+
   static async getJournalCaisse(req: Request, res: Response): Promise<Response> {
     try {
       const { dateDebut, dateFin } = req.query;
@@ -128,7 +154,7 @@ export default class RecuCaisseController {
 
   static async collecterPaiement(req: Request, res: Response): Promise<Response> {
     const utilisateurId = (req as any).utilisateurId;
-    const { demandeId, modePaiement, montant } = req.body;
+    const { demandeId, modePaiement, montant, referencePaiement } = req.body;
 
     // ── Validation des entrées ──
     if (!demandeId || !modePaiement || montant === undefined || montant === null) {
@@ -144,7 +170,12 @@ export default class RecuCaisseController {
     }
 
     try {
-      const demande: DemandeDocument | null = await DemandeDocument.findByPk(demandeId);
+      const demande: DemandeDocument | null = await DemandeDocument.findByPk(demandeId, {
+        include: [
+          { model: TypeDocument, as: 'typeDocument' },
+          { model: Utilisateur, as: 'etudiant' }
+        ]
+      });
       if (!demande) {
         return res.status(404).json({ success: false, code: 'DEMANDE_NOT_FOUND', message: "Demande non trouvée" });
       }
@@ -177,7 +208,10 @@ export default class RecuCaisseController {
           datePaiement: new Date(),
           modePaiement,
           numeroRecu,
-          statut: 'paye'
+          statut: 'paye',
+          recuCaisseId: recu.id,
+          caissierId: utilisateurId,
+          referencePaiement: referencePaiement || null
         }, { transaction });
 
         await JournalCaisse.create({
@@ -188,10 +222,25 @@ export default class RecuCaisseController {
           montant: montantNum
         }, { transaction });
 
+        await transaction.commit();
+
+        // Journal d'audit hors transaction (évite le deadlock sur le verrou X)
         await SecretariatService.logAction('PAIEMENT_ENCAISSE', utilisateurId, demande.id, `Reçu ${numeroRecu} — ${montantNum} FCFA`);
 
-        await transaction.commit();
-        return res.status(201).json(recu);
+        // Génération asynchrone du PDF du reçu (non bloquante)
+        RecuCaisseGeneratorService.genererRecu(recu).catch(err => {
+          console.error('[SECRETARIAT][collecterPaiement] Erreur génération PDF RCU:', err);
+        });
+
+        // Recharger avec associations pour la réponse
+        const recuComplet = await RecuCaisse.findByPk(recu.id, {
+          include: [
+            { association: RecuCaisse.associations.demandeDocument, include: [{ association: DemandeDocument.associations.typeDocument }] },
+            { association: RecuCaisse.associations.caissier }
+          ]
+        });
+
+        return res.status(201).json(recuComplet || recu);
       } catch (error) {
         await transaction.rollback().catch(rbErr => console.error('[SECRETARIAT][collecterPaiement] rollback échoué:', rbErr));
         throw error;

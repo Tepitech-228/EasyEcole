@@ -6,10 +6,18 @@ const env = process.env.NODE_ENV || 'development';
 
 function getDbConfig() {
     if (process.env.DB_HOST && process.env.DB_NAME) {
+        const username = process.env.DB_USER || 'root';
+        const password = process.env.DB_PASS || null;
+        if (env === 'production' && username === 'root' && process.env.ALLOW_DB_ROOT !== 'true') {
+            throw new Error('Production database must use a dedicated DB_USER; set ALLOW_DB_ROOT=true only as an emergency exception.')
+        }
+        if (env === 'production' && !password) {
+            throw new Error('DB_PASS is required in production.')
+        }
         return {
             database: process.env.DB_NAME,
-            username: process.env.DB_USER || 'root',
-            password: process.env.DB_PASS || null,
+            username,
+            password,
             options: {
                 dialect: process.env.DB_DIALECT || 'mysql',
                 host: process.env.DB_HOST,
@@ -68,10 +76,10 @@ export class DatabaseConnection {
                 collate: 'utf8mb3_general_ci',
             },
             pool: {
-                max: 20,
-                min: 5,
-                acquire: 20000,
-                idle: 10000
+                max: parseInt(process.env.DB_POOL_MAX || '50', 10),
+                min: parseInt(process.env.DB_POOL_MIN || '5', 10),
+                acquire: parseInt(process.env.DB_POOL_ACQUIRE_MS || '20000', 10),
+                idle: parseInt(process.env.DB_POOL_IDLE_MS || '10000', 10)
             }
         });
     }
@@ -99,7 +107,7 @@ export class DatabaseConnection {
             // donc sûre et idempotente. Elle reste ACTIVE par défaut, mais peut
             // être désactivée en production (grosse base) via
             // DISABLE_BOOT_ORPHAN_PURGE=true pour éviter le scan DELETE à chaque boot.
-            if (process.env.DISABLE_BOOT_ORPHAN_PURGE !== 'true') {
+            if (process.env.DISABLE_BOOT_ORPHAN_PURGE !== 'false') {
                 try {
                     await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
 
@@ -135,10 +143,12 @@ export class DatabaseConnection {
                     const { RattrapageDocumentDepose } = require('../../modules/inscription/models/RattrapageDocumentDepose');
                     const { RattrapageDocumentRequis } = require('../../modules/inscription/models/RattrapageDocumentRequis');
                     const { RattrapageSessionClasse } = require('../../modules/inscription/models/RattrapageSessionClasse');
+                    const { DocumentRequisNiveau } = require('../../modules/inscription/models/DocumentRequisNiveau');
 
                     for (const model of [
                         FraisScolarite, RattrapageInscription, RattrapageSession,
-                        RattrapageDocumentDepose, RattrapageDocumentRequis, RattrapageSessionClasse
+                        RattrapageDocumentDepose, RattrapageDocumentRequis, RattrapageSessionClasse,
+                        DocumentRequisNiveau
                     ]) {
                         try {
                             await model.sync({ alter: true });
@@ -180,7 +190,7 @@ export class DatabaseConnection {
                 }
 
                 await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
-            } else if (process.env.DB_SYNC_ON_BOOT !== 'false') {
+            } else if (process.env.DB_SYNC_ON_BOOT === 'true') {
                 // Déploiement (Dokploy/Docker) : ce projet n'a PAS de migrations
                 // Sequelize ; le schéma est historiquement créé par le sync alter
                 // du développement. COMPORTEMENT PAR DÉFAUT en production :

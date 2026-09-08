@@ -2,6 +2,7 @@ import path from 'path';
 import fs from 'fs';
 import { DocGenCachet } from '../models/DocGenCachet';
 import { DocGenLogoService } from './DocGenLogoService';
+import { getPuppeteerBrowser } from '../../../core/services/PuppeteerBrowserPool';
 
 // Hauteur (et marge) à réserver pour l'en-tête institutionnel répété sur chaque page.
 const HEADER_HEIGHT_MM = 48;
@@ -17,14 +18,11 @@ export class PdfGeneratorService {
     /** Désactive le header institutionnel global (ex. documents qui gèrent leur propre en-tête). */
     disableHeader?: boolean;
   }): Promise<Buffer> {
-    const puppeteer = await this.getPuppeteer();
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
-    });
+    const browser = await getPuppeteerBrowser();
 
+    let page: any;
     try {
-      const page = await browser.newPage();
+      page = await browser.newPage();
 
       const finalHtml = await this.applyOverlays(html, options?.ecoleNom || 'ESA');
       await page.setContent(finalHtml, { waitUntil: 'networkidle0' as any });
@@ -69,7 +67,7 @@ export class PdfGeneratorService {
 
       return Buffer.from(pdf);
     } finally {
-      await browser.close();
+      await page?.close();
     }
   }
 
@@ -121,15 +119,6 @@ export class PdfGeneratorService {
       <div style="width:100%; font-family:Arial,Helvetica,sans-serif; font-size:9px; color:#333; text-align:center; padding:4px 0 0 0; border-top:1px solid #ccc;">
         ESA — LE LABEL DES DIPLOMES DE QUALITE &nbsp;·&nbsp; <span class="pageNumber"></span> / <span class="totalPages"></span>
       </div>`;
-  }
-
-  private static async getPuppeteer(): Promise<any> {
-    try {
-      const mod = await import('puppeteer');
-      return (mod as any).default ?? mod;
-    } catch (error) {
-      throw new Error('Puppeteer is not available in this environment: ' + (error as Error).message);
-    }
   }
 
   private static async applyOverlays(html: string, ecoleNom: string): Promise<string> {

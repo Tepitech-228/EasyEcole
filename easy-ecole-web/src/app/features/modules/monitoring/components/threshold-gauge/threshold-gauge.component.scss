@@ -1,0 +1,49 @@
+.threshold-gauge {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+
+  &__svg {
+    width: 100px;
+    height: 100px;
+  }
+
+  &__center {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  &__value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  &__unit {
+    font-size: 0.625rem;
+    color: #9ca3af;
+    text-transform: uppercase;
+  }
+
+  &__level {
+    font-size: 0.625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  &__label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-align: center;
+    margin-top: 4px;
+  }
+}

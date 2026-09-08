@@ -12,6 +12,8 @@ router
     .get('/', [Authenticate], UtilisateurController.getAllUtilisateurs)
     /** POST /auth/utilisateurs — Créer un utilisateur (admin/institution) */
     .post('/', [Authenticate], UtilisateurController.adminCreateUtilisateur)
+    /** GET /auth/utilisateurs/moi — Retourne l'utilisateur courant (basé sur le token JWT) */
+    .get('/moi', [Authenticate], UtilisateurController.getMoi)
     /** GET /auth/utilisateurs/:id — Obtenir un utilisateur par ID */
     .get('/:id', [Authenticate], UtilisateurController.getUtilisateur)
     /** PUT /auth/utilisateurs/:id — Modifier un utilisateur (admin/institution) */

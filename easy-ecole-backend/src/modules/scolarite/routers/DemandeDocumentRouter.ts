@@ -1,6 +1,7 @@
 import express from "express"
 
 import DemandeDocumentController from "../controllers/DemandeDocumentController"
+import { AuthSecretariat } from "../../../core/middlewares/AuthSecretariat"
 
 const router = express.Router()
 
@@ -16,6 +17,17 @@ router
      *         description: Liste des demandes
      */
     .get('/', DemandeDocumentController.getAllDemandesDocument)
+    /**
+     * @openapi
+     * /scolarite/demandesDocument/mes-documents:
+     *   get:
+     *     tags: [Demandes de documents]
+     *     summary: Liste les documents de l'étudiant connecté avec informations enrichies
+     *     responses:
+     *       200:
+     *         description: Liste des documents avec statut de paiement et disponibilité
+     */
+    .get('/mes-documents', DemandeDocumentController.getMesDocuments)
     /**
      * @openapi
      * /scolarite/demandesDocument:
@@ -36,7 +48,7 @@ router
      *         description: Demande créée
      */
     .post('/', DemandeDocumentController.createDemandeDocument)
-    .put('/batch/statut', DemandeDocumentController.batchStatut)
+     .put('/batch/statut', [AuthSecretariat], DemandeDocumentController.batchStatut)
     /**
      * @openapi
      * /scolarite/demandesDocument/{id}:
@@ -157,24 +169,109 @@ router
      *       200:
      *         description: Paiement en ligne confirmé et écriture comptable générée
      */
-    .post('/:id/confirmer-paiement-auto', DemandeDocumentController.confirmerPaiementAutoDemandeDocument)
-    /**
-     * @openapi
-     * /scolarite/demandesDocument/{id}:
-     *   delete:
-     *     tags: [Demandes de documents]
-     *     summary: Supprime une demande
-     *     parameters:
-     *       - in: path
-     *         name: id
-     *         required: true
-     *         schema:
-     *           type: string
-     *     responses:
-     *       200:
-     *         description: Demande supprimée
-     */
-    .delete('/:id', DemandeDocumentController.deleteDemandeDocument)
+     .post('/:id/confirmer-paiement-auto', DemandeDocumentController.confirmerPaiementAutoDemandeDocument)
+     /**
+      * @openapi
+      * /scolarite/demandesDocument/{id}/preparer:
+      *   put:
+      *     tags: [Demandes de documents]
+      *     summary: Prépare une demande de document pour le traitement secrétariat
+      *     parameters:
+      *       - in: path
+      *         name: id
+      *         required: true
+      *         schema:
+      *           type: string
+      *     responses:
+      *       200:
+      *         description: Demande préparée
+      */
+     .put('/:id/preparer', DemandeDocumentController.preparerDocument)
+     /**
+      * @openapi
+      * /scolarite/demandesDocument/{id}/generer:
+      *   put:
+      *     tags: [Demandes de documents]
+      *     summary: Génère le document PDF de la demande
+      *     parameters:
+      *       - in: path
+      *         name: id
+      *         required: true
+      *         schema:
+      *           type: string
+      *     responses:
+      *       200:
+      *         description: Document généré
+      */
+     .put('/:id/generer', DemandeDocumentController.genererDocument)
+     /**
+      * @openapi
+      * /scolarite/demandesDocument/{id}/imprimer:
+      *   put:
+      *     tags: [Demandes de documents]
+      *     summary: Confirme l'impression du document
+      *     parameters:
+      *       - in: path
+      *         name: id
+      *         required: true
+      *         schema:
+      *           type: string
+      *     responses:
+      *       200:
+      *         description: Impression confirmée
+      */
+     .put('/:id/imprimer', DemandeDocumentController.imprimerDocument)
+     /**
+      * @openapi
+      * /scolarite/demandesDocument/{id}/remettre:
+      *   put:
+      *     tags: [Demandes de documents]
+      *     summary: Remet le document à l'étudiant
+      *     parameters:
+      *       - in: path
+      *         name: id
+      *         required: true
+      *         schema:
+      *           type: string
+      *     responses:
+      *       200:
+      *         description: Document remis
+      */
+     .put('/:id/remettre', DemandeDocumentController.remettreDocument)
+     /**
+      * @openapi
+      * /scolarite/demandesDocument/{id}/rejeter:
+      *   put:
+      *     tags: [Demandes de documents]
+      *     summary: Rejette une demande de document
+      *     parameters:
+      *       - in: path
+      *         name: id
+      *         required: true
+      *         schema:
+      *           type: string
+      *     responses:
+      *       200:
+      *         description: Demande rejetée
+      */
+     .put('/:id/rejeter', DemandeDocumentController.rejeterDemande)
+     /**
+      * @openapi
+      * /scolarite/demandesDocument/{id}:
+      *   delete:
+      *     tags: [Demandes de documents]
+      *     summary: Supprime une demande
+      *     parameters:
+      *       - in: path
+      *         name: id
+      *         required: true
+      *         schema:
+      *           type: string
+      *     responses:
+      *       200:
+      *         description: Demande supprimée
+      */
+     .delete('/:id', DemandeDocumentController.deleteDemandeDocument)
     /**
      * @openapi
      * /scolarite/demandesDocument/statistics/count:

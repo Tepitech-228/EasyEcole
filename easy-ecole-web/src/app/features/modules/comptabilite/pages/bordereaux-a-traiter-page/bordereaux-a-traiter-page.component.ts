@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { BordereauService } from 'src/app/data/modules/inscription/services/bordereau.service';
 import { Bordereau } from 'src/app/data/modules/inscription/models/Bordereau.model';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-bordereaux-a-traiter-page',

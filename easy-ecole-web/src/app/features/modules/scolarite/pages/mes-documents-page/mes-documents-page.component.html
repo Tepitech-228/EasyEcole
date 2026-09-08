@@ -1,0 +1,117 @@
+<div class="page-container">
+  <app-header-title title="Mes documents" subtitle="Consultez et téléchargez vos documents administratifs"></app-header-title>
+
+  <app-custom-alert *ngIf="errorMessage" [show]="true" [title]="errorMessage" type="danger" [inline]="true"></app-custom-alert>
+  <app-custom-alert *ngIf="successMessage" [show]="true" [title]="successMessage" type="success" [inline]="true"></app-custom-alert>
+
+  <!-- Stats rapides -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-icon text-purple-600 bg-purple-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ documents.length }}</p>
+        <p class="stat-label">Total</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon text-green-600 bg-green-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ countPrets }}</p>
+        <p class="stat-label">Prêts</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon text-orange-600 bg-orange-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </span>
+      <div>
+        <p class="stat-value">{{ countEnAttente }}</p>
+        <p class="stat-label">En attente paiement</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtres -->
+  <div class="card mb-6">
+    <div class="card-body">
+      <div class="flex items-center gap-4">
+        <div class="flex gap-2">
+          <button (click)="filterStatut = 'all'; filtrer()" class="filter-btn" [class.active]="filterStatut === 'all'">Tous</button>
+          <button (click)="filterStatut = 'auto'; filtrer()" class="filter-btn" [class.active]="filterStatut === 'auto'">Automatiques</button>
+          <button (click)="filterStatut = 'paye'; filtrer()" class="filter-btn" [class.active]="filterStatut === 'paye'">Payés</button>
+          <button (click)="filterStatut = 'en_attente'; filtrer()" class="filter-btn" [class.active]="filterStatut === 'en_attente'">En attente</button>
+          <button (click)="filterStatut = 'pret'; filtrer()" class="filter-btn" [class.active]="filterStatut === 'pret'">Prêts</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Liste des documents -->
+  <div class="card">
+    <div class="card-body p-0">
+      <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+      <div *ngIf="!loading && documentsFiltered.length === 0" class="empty-state">
+        <img class="h-40" src="assets/images/selection-pana.svg" alt="no data">
+        <p class="text-gray-500">Aucun document trouvé</p>
+      </div>
+
+      <div *ngFor="let doc of documentsFiltered" class="doc-card">
+        <div class="doc-card-left">
+          <div class="doc-icon" [style.background-color]="statutColor(doc.statut) + '15'" [style.color]="statutColor(doc.statut)">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+          <div class="doc-info">
+            <h3 class="doc-title">{{ doc.typeDocument?.libelle || 'Document' }}</h3>
+            <p class="doc-meta">
+              <span *ngIf="doc.date">Demandé le {{ doc.date | date:'dd/MM/yyyy' }}</span>
+              <span *ngIf="doc.source === 'automatique'" class="doc-badge-auto">Automatique</span>
+            </p>
+            
+            <!-- Statut de paiement -->
+            <div *ngIf="doc.estPayable" class="doc-payment-status">
+              <span *ngIf="doc.fraisPayes" class="text-green-600">✅ Payé — {{ doc.montant | number:'1.0-0' }} FCFA</span>
+              <span *ngIf="!doc.fraisPayes" class="text-orange-600">⏳ En attente de paiement — {{ doc.montant | number:'1.0-0' }} FCFA</span>
+            </div>
+
+            <!-- Reçu de caisse -->
+            <div *ngIf="doc.recuCaisse" class="doc-recu">
+              <span class="text-gray-500 text-sm">Reçu : {{ doc.recuCaisse.numero }}</span>
+              <button *ngIf="doc.recuCaisse.id" (click)="telechargerRecu(doc)" class="link-btn text-sm">
+                📥 Reçu PDF
+              </button>
+            </div>
+
+            <!-- Date de génération -->
+            <p *ngIf="doc.dateGeneration" class="text-xs text-gray-400 mt-1">
+              Généré le {{ doc.dateGeneration | date:'dd/MM/yyyy HH:mm' }}
+            </p>
+          </div>
+        </div>
+
+        <div class="doc-card-right">
+          <app-custom-badge [text]="statutLabel(doc.statut)" [color]="statutColor(doc.statut)"></app-custom-badge>
+
+          <!-- Bouton télécharger le document -->
+          <app-custom-button 
+            *ngIf="doc.estTelechargeable"
+            (click)="telechargerDocument(doc)" 
+            text="📥 Télécharger" 
+            color="primary">
+          </app-custom-button>
+
+          <!-- Indicateur en attente -->
+          <span *ngIf="doc.estEnAttentePaiement" class="doc-waiting">
+            Allez à la caisse du secrétariat
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

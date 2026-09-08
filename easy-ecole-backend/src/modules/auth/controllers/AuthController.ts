@@ -59,7 +59,9 @@ export default class AuthController {
       if (bcrypt.compareSync(req.body.motDePasse, utilisateur.motDePasse)) {
         try {
           const code = OtpService.generate(utilisateur.email)
-          console.log(`[DEV OTP] Code pour ${utilisateur.email}: ${code}`)
+          if (process.env.NODE_ENV !== 'production') {
+            console.log(`[DEV OTP] Code pour ${utilisateur.email}: ${code}`)
+          }
           await EmailSender.getInstance().sendOtpCode(utilisateur.email, code)
         } catch (otpError: any) {
           if (otpError.message?.includes('bloqué')) {
@@ -107,6 +109,9 @@ export default class AuthController {
       .then(async (utilisateur) => {
         try {
           const code = OtpService.generate(utilisateur.email)
+          if (process.env.NODE_ENV !== 'production') {
+            console.log(`[DEV OTP] Code pour ${utilisateur.email}: ${code}`)
+          }
           await EmailSender.getInstance().sendOtpCode(utilisateur.email, code)
         } catch (err) {
           console.error('Erreur envoi OTP inscription:', err)
@@ -200,6 +205,9 @@ export default class AuthController {
 
     try {
       const code = OtpService.resend(email)
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[DEV OTP] Code pour ${email}: ${code}`)
+      }
       await EmailSender.getInstance().sendOtpCode(email, code)
     } catch (err: any) {
       return res.status(423).json({ error: 'account_blocked', message: err.message })

@@ -27,6 +27,7 @@ import { seedComptabilite } from './modules/comptabilite/seed'
 import { seedParametresFrais } from './modules/comptabilite/seed-parametres-frais'
 import { errorHandler } from './core/middlewares/ErrorHandler'
 import { RedisClient } from './core/cache/RedisClient'
+import Authenticate from './core/middlewares/Authenticate'
 
 // ── Dernière barrière de diagnostic (cf. audit erreurs silencieuses §28) ──
 // Ces handlers ne remplacent PAS la gestion locale des erreurs : ils garantissent
@@ -36,6 +37,7 @@ process.on('unhandledRejection', (reason: any) => {
 });
 process.on('uncaughtException', (err: Error) => {
     console.error('[UNCAUGHT_EXCEPTION]', new Date().toISOString(), `${err.message}\n${err.stack}`);
+  process.exit(1);
 });
 
 // Tests
@@ -114,7 +116,7 @@ app.use('/media/photos/apprenants', express.static(path.resolve('public', 'auth'
 app.use('/media/photos/enseignants', express.static(path.resolve('public', 'auth', 'enseignants', 'photos')))
 app.use('/media/profiles', express.static(path.resolve('public', 'auth', 'profiles')))
 app.use('/media/videos', express.static(path.resolve('public', 'elearning', 'videos')))
-app.use('/media/scolarite/documents', express.static(path.resolve('public', 'scolarite', 'documents')))
+app.use('/media/scolarite/documents', Authenticate, express.static(path.resolve('public', 'scolarite', 'documents')))
 app.use('/media/inscription/bordereaux', express.static(path.resolve('public', 'inscription', 'bordereaux')))
 
 app.get('/logo-esa.png', (req, res) => {

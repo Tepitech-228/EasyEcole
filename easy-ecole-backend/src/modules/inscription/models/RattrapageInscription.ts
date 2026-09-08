@@ -40,6 +40,10 @@ export class RattrapageInscription extends Model<InferAttributes<RattrapageInscr
   declare dateValidationComite: CreationOptional<Date | null> // date de la décision du comité
   declare bordereauId: ForeignKey<Bordereau['id']> | null // bordereau de paiement des frais téléversé par l'étudiant
 
+  // Rattrapage à la demande — UE choisies par l'étudiant + période de rattachement
+  declare uesDemandees: CreationOptional<any[] | null> // liste des UE/matières non validées choisies (JSON)
+  declare periode: CreationOptional<string | null> // période (ex: année académique) pour le rattachement à une future session
+
   declare coursParticipant?: NonAttribute<CoursParticipant>
   declare cours?: NonAttribute<Cours>
   declare sessionExamen?: NonAttribute<SessionExamen>
@@ -169,6 +173,14 @@ RattrapageInscription.init({
   },
   bordereauId: {
     type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
+  },
+  uesDemandees: {
+    type: DataTypes.JSON,
+    allowNull: true
+  },
+  periode: {
+    type: DataTypes.STRING(120),
     allowNull: true
   },
   createdAt: DataTypes.DATE,

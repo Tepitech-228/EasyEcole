@@ -3,6 +3,7 @@ import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { TypeDocument } from "./TypeDocument";
 import { DocumentDelivre } from "./DocumentDelivre";
+import { RecuCaisse } from "./RecuCaisse";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../ScolariteModule";
 
 export class DemandeDocument extends Model<InferAttributes<DemandeDocument>, InferCreationAttributes<DemandeDocument>> {
@@ -24,6 +25,9 @@ export class DemandeDocument extends Model<InferAttributes<DemandeDocument>, Inf
   declare datePaiement: CreationOptional<Date | null>
   declare modePaiement: CreationOptional<'especes' | 'mobile_money' | 'autre' | null>
   declare numeroRecu: CreationOptional<string | null>
+  declare referencePaiement: CreationOptional<string | null>
+  declare recuCaisseId: CreationOptional<number | null>
+  declare caissierId: CreationOptional<number | null>
   declare datePreparation: CreationOptional<Date | null>
   declare dateGeneration: CreationOptional<Date | null>
   declare fichierPDF: CreationOptional<string | null>
@@ -35,6 +39,8 @@ export class DemandeDocument extends Model<InferAttributes<DemandeDocument>, Inf
   declare etudiant?: NonAttribute<Utilisateur>
   declare typeDocument?: NonAttribute<TypeDocument>
   declare documentDelivre?: NonAttribute<DocumentDelivre>
+  declare recuCaisse?: NonAttribute<RecuCaisse>
+  declare caissier?: NonAttribute<Utilisateur>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -43,6 +49,8 @@ export class DemandeDocument extends Model<InferAttributes<DemandeDocument>, Inf
     etudiant: Association<DemandeDocument, Utilisateur>
     typeDocument: Association<DemandeDocument, TypeDocument>
     documentDelivre: Association<DemandeDocument, DocumentDelivre>
+    recuCaisse: Association<DemandeDocument, RecuCaisse>
+    caissier: Association<DemandeDocument, Utilisateur>
   };
 }
 
@@ -105,8 +113,7 @@ DemandeDocument.init({
   },
   numeroDemande: {
     type: new DataTypes.STRING(40),
-    allowNull: true,
-    unique: true
+    allowNull: true
   },
   datePaiement: { type: DataTypes.DATE, allowNull: true },
   modePaiement: {
@@ -116,6 +123,21 @@ DemandeDocument.init({
   numeroRecu: {
     type: new DataTypes.STRING(40),
     allowNull: true
+  },
+  referencePaiement: {
+    type: new DataTypes.STRING(100),
+    allowNull: true,
+    comment: "N° chèque, référence mobile money, etc."
+  },
+  recuCaisseId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true,
+    references: { model: 'scol_recus_caisse', key: 'id' }
+  },
+  caissierId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true,
+    references: { model: 'aut_utilisateurs', key: 'id' }
   },
   datePreparation: { type: DataTypes.DATE, allowNull: true },
   dateGeneration: { type: DataTypes.DATE, allowNull: true },

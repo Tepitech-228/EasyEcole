@@ -82,11 +82,11 @@ class DashboardController {
         const debutAnnee = new Date(annee, 0, 1);
         const finAnnee = new Date(annee, 11, 31, 23, 59, 59);
 
-        const [totalApprenants, totalEnseignants, sessions, preInscriptions, recentDemandes, demandesParMois, cursusActifs, totalClasses, totalCours, totalPaiements, echeancesImpayees] = await Promise.all([
+        const [totalApprenants, totalEnseignants, totalSessions, demandesEnAttente, recentDemandes, demandesParMois, cursusActifs, totalClasses, totalCours, totalPaiements, echeancesImpayees] = await Promise.all([
             Apprenant.count(),
             Enseignant.count(),
-            DemandeInscription.findAll({ attributes: ['id', 'dateDemande', 'sessionId', 'matricule'] }),
-            PreInscription.findAll({ where: { statut: 'en_attente' }, attributes: ['id'] }),
+            DemandeInscription.count(),
+            PreInscription.count({ where: { statut: 'en_attente' } }),
             DemandeInscription.findAll({
                 order: [['dateDemande', 'DESC']],
                 limit: 5,
@@ -142,9 +142,9 @@ class DashboardController {
                 totalCours,
                 totalPaiements,
                 echeancesImpayees,
-                totalSessions: sessions.length,
-                demandesEnAttente: preInscriptions.length,
-                sessionsOuvertes: sessions.length,
+                totalSessions,
+                demandesEnAttente,
+                sessionsOuvertes: totalSessions,
                 demandesParMois: moisCounts,
                 etudiantsParFiliere,
                 recentDemandes: await Promise.all(recentDemandes.map(async (d) => {
@@ -521,39 +521,52 @@ class DashboardController {
 
         const encaisseParMois = await PaiementInscription.findAll({
             where: { datePaiement: { [Op.between]: [debut, fin] } },
-            attributes: ['datePaiement', 'montant'],
+            attributes: [
+                [fn('MONTH', col('datePaiement')), 'mois'],
+                [fn('SUM', col('montant')), 'total'],
+            ],
+            group: [fn('MONTH', col('datePaiement'))],
             raw: true,
         });
 
         const parMois: number[] = Array(12).fill(0);
         for (const p of encaisseParMois as any[]) {
-            const d = new Date(p.datePaiement);
-            const m = d.getMonth();
-            if (m >= 0 && m <= 11) parMois[m] += Number(p.montant) || 0;
+            const mois = Number(p.mois) - 1;
+            if (mois >= 0 && mois <= 11) parMois[mois] = Number(p.total) || 0;
         }
 
         const impayeesParMois = await Echeance.findAll({
-            where: { statut: { [Op.in]: ['impaye', 'en_retard'] } },
-            attributes: ['dateLimite', 'montant'],
+            where: {
+                statut: { [Op.in]: ['impaye', 'en_retard'] },
+                dateLimite: { [Op.between]: [debut, fin] },
+            },
+            attributes: [
+                [fn('MONTH', col('dateLimite')), 'mois'],
+                [fn('SUM', col('montant')), 'total'],
+            ],
+            group: [fn('MONTH', col('dateLimite'))],
             raw: true,
         });
         const depensesParMois: number[] = Array(12).fill(0);
         for (const e of impayeesParMois as any[]) {
-            const d = new Date(String(e.dateLimite).slice(0, 10));
-            const m = d.getMonth();
-            if (!isNaN(m) && m >= 0 && m <= 11) depensesParMois[m] += Number(e.montant) || 0;
+            const mois = Number(e.mois) - 1;
+            if (mois >= 0 && mois <= 11) depensesParMois[mois] = Number(e.total) || 0;
         }
 
         // Répartition par moyen de paiement (bordereaux)
         const parMode = await Bordereau.findAll({
             where: { moyenPaiement: { [Op.ne]: null } },
-            attributes: ['moyenPaiement', 'montant'],
+            attributes: [
+                'moyenPaiement',
+                [fn('SUM', col('montant')), 'total'],
+            ],
+            group: ['moyenPaiement'],
             raw: true,
         });
         const modeMap = new Map<string, number>();
         for (const b of parMode as any[]) {
             const k = b.moyenPaiement || 'Autre';
-            modeMap.set(k, (modeMap.get(k) || 0) + (Number(b.montant) || 0));
+            modeMap.set(k, Number(b.total) || 0);
         }
         const repartitionModes = Array.from(modeMap.entries()).map(([mode, montant]) => ({ mode, montant }));
 

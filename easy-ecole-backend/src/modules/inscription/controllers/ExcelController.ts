@@ -16,6 +16,7 @@ import { SalleDeClasse } from "../models/SalleDeClasse";
 import { SemestreAcademique } from "../models/SemestreAcademique";
 import { ParentEnfant } from "../../parent/models/ParentEnfant";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
+import { QUEUE_NAMES, QueueService } from "../../../core/queue/QueueService";
 
 // ---------------------------------------------------------------------------
 //  UTILITIES
@@ -234,6 +235,35 @@ export default class ExcelController {
    * POST /excel/ue/import
    * Importe des UE depuis un fichier Excel.
    */
+  static async importUeAsync(req: Request, res: Response): Promise<Response> {
+    if (!req.file) return res.status(400).json({ success: false, message: "Aucun fichier fourni" });
+
+    try {
+      const job = await QueueService.getInstance().add(
+        QUEUE_NAMES.EXCEL_IMPORT,
+        { filePath: req.file.path, importType: 'ue', utilisateurId: (req as any).utilisateurId },
+      );
+      return res.status(202).json({ success: true, status: 'queued', jobId: job.id });
+    } catch (error: any) {
+      fs.unlink(req.file.path, () => {});
+      return res.status(503).json({ success: false, message: 'File Excel indisponible' });
+    }
+  }
+
+  static async importEnseignantsAsync(req: Request, res: Response): Promise<Response> {
+    if (!req.file) return res.status(400).json({ success: false, message: "Aucun fichier fourni" });
+    try {
+      const job = await QueueService.getInstance().add(
+        QUEUE_NAMES.EXCEL_IMPORT,
+        { filePath: req.file.path, importType: 'enseignants', utilisateurId: (req as any).utilisateurId },
+      );
+      return res.status(202).json({ success: true, status: 'queued', jobId: job.id });
+    } catch (error: any) {
+      fs.unlink(req.file.path, () => {});
+      return res.status(503).json({ success: false, message: 'File Excel indisponible' });
+    }
+  }
+
   static async importUe(req: Request, res: Response): Promise<Response> {
     if (!req.file) return res.status(400).json({ success: false, message: "Aucun fichier fourni" });
 

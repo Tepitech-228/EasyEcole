@@ -3,7 +3,7 @@ import { Op } from "sequelize";
 import { Compte } from "../models/Compte";
 import { EcritureComptable } from "../models/EcritureComptable";
 import { ExerciceComptable } from "../models/ExerciceComptable";
-import { getSoldeCompteAtDate, getSoldeCompteSurPeriode } from "../helpers/ComptabiliteHelper";
+import { getSoldeCompteAtDate, getSoldeCompteSurPeriode, getSoldesComptesAtDate } from "../helpers/ComptabiliteHelper";
 import PDFDocument from "pdfkit";
 import ExcelJS from "exceljs";
 
@@ -33,13 +33,13 @@ export default class EtatsFinanciersController {
       const passif: any[] = [];
       let totalActif = 0;
       let totalPassif = 0;
+      const soldes = await getSoldesComptesAtDate(
+        date,
+        exerciceId ? Number(exerciceId) : undefined
+      );
 
       for (const compte of comptes) {
-        const solde = await getSoldeCompteAtDate(
-          compte.id,
-          date,
-          exerciceId ? Number(exerciceId) : undefined
-        );
+        const solde = soldes.get(Number(compte.id)) || 0;
 
         if (solde === 0) continue;
 

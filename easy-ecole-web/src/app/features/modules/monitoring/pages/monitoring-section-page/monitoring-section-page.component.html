@@ -1,0 +1,12 @@
+<main class="monitoring-section">
+  <app-dashboard-header [title]="title" subtitle="Indicateurs et diagnostics de la plateforme" icon="monitoring"></app-dashboard-header>
+  <section *ngIf="loading" class="monitoring-section__loading" aria-live="polite">
+    <div class="monitoring-section__spinner"></div><p>Collecte des données en cours...</p>
+  </section>
+  <app-monitoring-empty-state *ngIf="!loading && !hasData" title="Données indisponibles" message="Aucune donnée exploitable n'est disponible pour cette vue."></app-monitoring-empty-state>
+  <section *ngIf="!loading && hasData" class="monitoring-section__ready">
+    <app-monitoring-health-badge status="ok"></app-monitoring-health-badge>
+    <h2>{{ title }}</h2>
+    <p>Les données sont disponibles. Les tableaux détaillés et graphiques seront alimentés par l'API de monitoring.</p>
+  </section>
+</main>

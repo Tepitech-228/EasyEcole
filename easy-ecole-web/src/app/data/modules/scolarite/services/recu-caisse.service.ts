@@ -29,8 +29,15 @@ export class RecuCaisseService {
     return this.httpClient.get(`${this.SERVICE_URL}/${id}/print`, { responseType: 'text' });
   }
 
-  collecterPaiement(demandeId: string, modePaiement: string, montant: number): Observable<any> {
-    return this.httpClient.post<any>(`${this.SERVICE_URL}/collecter`, { demandeId, modePaiement, montant });
+  /** Télécharge le PDF du reçu de caisse */
+  download(id: string): Observable<Blob> {
+    return this.httpClient.get(`${this.SERVICE_URL}/${id}/download`, { responseType: 'blob' });
+  }
+
+  collecterPaiement(demandeId: string, modePaiement: string, montant: number, referencePaiement?: string): Observable<any> {
+    const body: any = { demandeId, modePaiement, montant };
+    if (referencePaiement) body.referencePaiement = referencePaiement;
+    return this.httpClient.post<any>(`${this.SERVICE_URL}/collecter`, body);
   }
 
   getJournalCaisse(params?: any): Observable<any> {

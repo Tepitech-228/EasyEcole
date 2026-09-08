@@ -1,8 +1,5 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { ChoixParcoursPageComponent } from './pages/choix-parcours-page/choix-parcours-page.component';
-import { ChoixCoursPageComponent } from './pages/choix-cours-page/choix-cours-page.component';
-import { DetailsDemandePageComponent } from './pages/details-demande-page/details-demande-page.component';
 import { DetailsParcoursPageComponent } from './pages/details-parcours-page/details-parcours-page.component';
 import { DetailsSessionPageComponent } from './pages/details-session-page/details-session-page.component';
 import { ListeCoursPageComponent } from './pages/liste-cours-page/liste-cours-page.component';
@@ -38,6 +35,8 @@ import { TypesBordereauxPageComponent } from './pages/types-bordereaux-page/type
 import { EsacomptaBordereauxPageComponent } from './pages/esacompta-bordereaux-page/esacompta-bordereaux-page.component';
 import { ComiteValidationPageComponent } from './pages/comite-validation-page/comite-validation-page.component';
 import { ChoisirSessionPageComponent } from './pages/choisir-session-page/choisir-session-page.component';
+import { ReinscriptionWizardPageComponent } from './pages/reinscription-wizard-page/reinscription-wizard-page.component';
+import { InscriptionWizardPageComponent } from './pages/inscription-wizard-page/inscription-wizard-page.component';
 
 const routes: Routes = [
   {
@@ -116,21 +115,12 @@ const routes: Routes = [
         path: ':id',
         children: [
           {
+            // Wizard de 1ère inscription (refonte) : parcours → grade → filière →
+            // documents → informations (pré-remplissage OCR) → récapitulatif → statut.
             path: '',
-            component: DetailsDemandePageComponent,
-            pathMatch: 'full'
-          },
-
-          {
-            path: 'choix-parcours',
-            component: ChoixParcoursPageComponent,
-            pathMatch: 'full'
-          },
-
-          {
-            path: 'choix-cours',
-            component: ChoixCoursPageComponent,
-            pathMatch: 'full'
+            component: InscriptionWizardPageComponent,
+            pathMatch: 'full',
+            canActivate: [ApprenantGuard]
           },
         ]
       },
@@ -295,6 +285,13 @@ const routes: Routes = [
     path: 'comite-validation',
     component: ComiteValidationPageComponent,
     pathMatch: 'full'
+  },
+  {
+    // Wizard de réinscription (distinct du wizard de 1ère inscription).
+    path: 'reinscription/wizard',
+    component: ReinscriptionWizardPageComponent,
+    pathMatch: 'full',
+    canActivate: [ApprenantGuard]
   },
 ];
 

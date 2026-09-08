@@ -63,6 +63,7 @@ router.get("/ue/template", ExcelController.downloadUeTemplate)
  *     summary: Importer des UE depuis un fichier Excel
  */
 router.post("/ue/import", upload.single("fichier"), ExcelController.importUe)
+router.post("/ue/import-async", upload.single("fichier"), ExcelController.importUeAsync)
 
 /**
  * @openapi
@@ -94,6 +95,7 @@ router.get("/enseignants/template", ExcelController.downloadEnseignantTemplate)
  *     summary: Importer des enseignants depuis un fichier Excel
  */
 router.post("/enseignants/import", upload.single("fichier"), ExcelController.importEnseignants)
+router.post("/enseignants/import-async", upload.single("fichier"), ExcelController.importEnseignantsAsync)
 
 /**
  * @openapi

@@ -37,13 +37,15 @@ export class ChoisirSessionPageComponent extends BaseComponentClass implements O
   annees: AnneeAcademique[] = []
   parcoursList: Parcours[] = []
 
-  selectedParcours: 'all' | 'licence' | 'master' | 'doctorat' = 'all'
+  selectedParcours: 'all' | 'licence' | 'master' | 'mba' | 'bts' | 'doctorat' = 'all'
   selectedFiliereId: string = 'all'
 
   readonly parcoursFilters = [
     { key: 'all', label: 'Tous' },
     { key: 'licence', label: 'Licence' },
     { key: 'master', label: 'Master' },
+    { key: 'mba', label: 'MBA' },
+    { key: 'bts', label: 'BTS' },
     { key: 'doctorat', label: 'Doctorat' }
   ] as const
 
@@ -182,11 +184,13 @@ export class ChoisirSessionPageComponent extends BaseComponentClass implements O
     return this.niveaux.find(n => String(n.id) === String(id))?.libelle || ''
   }
 
-  getParcoursFilterKey(libelle?: string): 'all' | 'licence' | 'master' | 'doctorat' {
+  getParcoursFilterKey(libelle?: string): 'all' | 'licence' | 'master' | 'mba' | 'bts' | 'doctorat' {
     const normalized = (libelle || '').trim().toLowerCase()
 
     if (!normalized) return 'all'
     if (normalized.includes('doctorat')) return 'doctorat'
+    if (normalized.includes('mba')) return 'mba'
+    if (normalized.includes('bts')) return 'bts'
     if (normalized.includes('master')) return 'master'
     if (normalized.includes('licence')) return 'licence'
 
@@ -210,7 +214,9 @@ export class ChoisirSessionPageComponent extends BaseComponentClass implements O
     // 1) Une demande existe déjà pour cette session → on continue le wizard
     const existante = this.findDemandeForSession(session.id)
     if (existante && existante.id) {
-      this.router.navigate(['/inscription/demandes', existante.id])
+      this.router.navigate(['/inscription/demandes', existante.id], {
+        queryParams: { sessionId: session.id, niveauEtudeId: session.niveauEtudeId }
+      })
       return
     }
 
@@ -222,7 +228,9 @@ export class ChoisirSessionPageComponent extends BaseComponentClass implements O
       next: (res: any) => {
         this.creationLoading = false
         if (res && res.id) {
-          this.router.navigate(['/inscription/demandes', res.id])
+          this.router.navigate(['/inscription/demandes', res.id], {
+            queryParams: { sessionId: session.id, niveauEtudeId: session.niveauEtudeId }
+          })
         } else {
           this.router.navigate(['/inscription/demandes'])
         }

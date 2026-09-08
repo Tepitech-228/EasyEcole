@@ -5,6 +5,7 @@ import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { untilDestroyed } from 'src/app/core/utils/take-until-destroy';
 import { Session } from 'src/app/data/modules/inscription/models/Session.model';
 import { EtatsSession } from 'src/app/data/enums/EtatsSession';
+import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 import { environment } from 'src/environments/environment';
 
 interface ProchaineEcheance {
@@ -47,10 +48,47 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
   ) { super(); }
 
   ngOnInit(): void {
-    this.loadDashboard();
-    this.loadSessions();
-    this.loadUserInfo();
-    this.loadMesDemandes();
+    // Au tout premier chargement qui suit la connexion (reload après vérification
+    // OTP), le jeton peut ne pas encore être recopié dans le localStorage au moment
+    // où ce composant tire ses données. Lancer les requêtes sans token produisait
+    // des 401 « No access token provided » → dashboard à 0 partout. On diffère le
+    // chargement jusqu'à ce qu'un jeton soit disponible (avec garde-fou temporel).
+    this.whenTokenReady(() => {
+      this.loadDashboard();
+      this.loadSessions();
+      this.loadUserInfo();
+      this.loadMesDemandes();
+    });
+  }
+
+  /**
+   * Attend que le jeton d'authentification soit présent avant d'exécuter `cb`.
+   * Récupération | undefined : le jeton arrive généralement quelques ms après le
+   * premier bootstrap ; on attend qu'il existe, avec un échec silencieux après
+   * ~1,5 s pour ne pas bloquer l'interface indéfiniment (dans ce cas les gardes
+   * de route redirigeront déjà l'utilisateur vers la connexion).
+   */
+  private whenTokenReady(cb: () => void): void {
+    const token = localStorage.getItem(LocalStorageService.AUTH_TOKEN);
+    if (token) {
+      cb();
+      return;
+    }
+    // Pas encore de jeton (course au démarrage) : on attend qu'il apparaisse
+    // (jusqu'à ~5 s). Au-delà, on tente quand même le chargement : s'il n'y a
+    // réellement aucune session, les gardes de route redirigeront vers la
+    // connexion, et l'intercepteur ne déconnecte plus à tort.
+    let attempts = 0;
+    const timer = setInterval(() => {
+      attempts++;
+      if (localStorage.getItem(LocalStorageService.AUTH_TOKEN)) {
+        clearInterval(timer);
+        cb();
+      } else if (attempts >= 50) {
+        clearInterval(timer);
+        cb();
+      }
+    }, 100);
   }
 
   private loadDashboard(): void {
@@ -82,6 +120,10 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
         // Rediriger les étudiants "cours en ligne" vers le Pôle E-Learning
         if (this.rolesValue.isApprenant && u?.apprenant?.periode === 'en_ligne') {
           this.router.navigate(['/pole-elearning']);
+        }
+        // Rediriger les secrétaires vers leur tableau de bord
+        if (this.rolesValue.isSecretaire) {
+          this.router.navigate(['/scolarite/secretariat/dashboard']);
         }
       },
       error: () => {}
@@ -919,7 +961,7 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
 
   // ─── Unified Banner Config ───────────────────────────
   get bannerConfig(): { title: string; subtitle: string; avatar: boolean } {
-    const { isAdmin, isInstitution, isEnseignant, isApprenant, isRessourcesHumaines, isCaissierBanque, isCabinetComptable, isComiteOrientation } = this.rolesValue;
+    const { isAdmin, isInstitution, isEnseignant, isApprenant, isRessourcesHumaines, isCaissierBanque, isCabinetComptable, isEsacompta, isComiteOrientation, isSecretaire } = this.rolesValue;
     const prenoms = this.utilisateur?.prenoms || '';
     const year = this.currentYear;
 
@@ -958,9 +1000,19 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
       subtitle: `${year} · Finance et comptabilité`,
       avatar: false
     };
+    if (isEsacompta) return {
+      title: `Bonjour ${prenoms || 'Comptable'}`,
+      subtitle: `${year} · Traitement des bordereaux et paiements`,
+      avatar: false
+    };
     if (isComiteOrientation) return {
       title: `Bonjour ${prenoms || 'Orientation'}`,
       subtitle: `${year} · Suivi des inscriptions`,
+      avatar: false
+    };
+    if (isSecretaire) return {
+      title: `Bonjour ${prenoms || 'Secrétaire'}`,
+      subtitle: `${year} · Secrétariat et demandes de documents`,
       avatar: false
     };
     return {
@@ -972,7 +1024,7 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
 
   // ─── Banner Background CSS ──────────────────────────
   get bannerBackground(): string {
-    const { isAdmin, isInstitution, isEnseignant, isApprenant, isRessourcesHumaines, isCaissierBanque, isCabinetComptable, isComiteOrientation } = this.rolesValue;
+    const { isAdmin, isInstitution, isEnseignant, isApprenant, isRessourcesHumaines, isCaissierBanque, isCabinetComptable, isEsacompta, isComiteOrientation, isSecretaire } = this.rolesValue;
 
     if (isAdmin)       return 'linear-gradient(135deg, #2563eb, #1d4ed8, #3730a3)';
     if (isInstitution) return 'linear-gradient(135deg, #7c3aed, #6d28d9, #581c87)';
@@ -981,7 +1033,9 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
     if (isRessourcesHumaines) return 'linear-gradient(135deg, #db2777, #be185d, #9d174d)';
     if (isCaissierBanque)     return 'linear-gradient(135deg, #16a34a, #15803d, #065f46)';
     if (isCabinetComptable)   return 'linear-gradient(135deg, #0891b2, #0e7490, #1e40af)';
+    if (isEsacompta)          return 'linear-gradient(135deg, #0891b2, #0e7490, #1e40af)';
     if (isComiteOrientation)  return 'linear-gradient(135deg, #4f46e5, #4338ca, #1e40af)';
+    if (isSecretaire)         return 'linear-gradient(135deg, #002147, #003366, #004d99)';
     return 'linear-gradient(135deg, #374151, #111827)';
   }
 }

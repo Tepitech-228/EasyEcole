@@ -16,6 +16,7 @@ import { RhContratEnseignant } from '../../rh/models/RhContratEnseignant';
 import { RhFicheEvaluation } from '../../rh/models/RhFicheEvaluation';
 import { RhPrestationEnseignant } from '../../rh/models/RhPrestationEnseignant';
 import { Bordereau } from '../../inscription/models/Bordereau';
+import { Op } from 'sequelize';
 
 interface GenerateParams {
   typeCode: string;
@@ -208,6 +209,26 @@ async function resolveReleveNotes(params: GenerateParams): Promise<ResolvedData>
     ]
   });
 
+  const enseignantIds = new Set<number>();
+  for (const cursus of cursusList as any[]) {
+    for (const participant of cursus.coursParticipants || []) {
+      for (const note of participant.notesEvaluation || []) {
+        const enseignantId = note.listeNoteEvaluation?.enseignantId;
+        if (enseignantId) enseignantIds.add(Number(enseignantId));
+      }
+    }
+  }
+  const enseignants = enseignantIds.size > 0
+    ? await Enseignant.findAll({
+      where: { id: { [Op.in]: [...enseignantIds] } },
+      include: [{ association: 'utilisateur' }],
+    })
+    : [];
+  const enseignantsNoms = new Map<number, string>(enseignants.map((enseignant: any) => {
+    const utilisateur = enseignant.utilisateur;
+    return [Number(enseignant.id), utilisateur ? `${utilisateur.nom} ${utilisateur.prenoms}` : ''];
+  }));
+
   const etudiants = await Promise.all(cursusList.map(async (cursus: any) => {
     const coursParticipants = cursus.coursParticipants || [];
     const unitesMap = new Map<string, any>();
@@ -234,7 +255,7 @@ async function resolveReleveNotes(params: GenerateParams): Promise<ResolvedData>
       for (const note of notes) {
         unite.notes.push(note.note);
         const enseignantNom = note.listeNoteEvaluation?.enseignantId
-          ? await getEnseignantNom(note.listeNoteEvaluation.enseignantId)
+          ? enseignantsNoms.get(Number(note.listeNoteEvaluation.enseignantId)) || ''
           : '';
         unite.matieres.push({
           nom: note.listeNoteEvaluation?.cours?.intitule || cp.cours.intitule,

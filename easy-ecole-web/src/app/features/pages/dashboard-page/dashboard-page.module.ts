@@ -1,7 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { HttpClientModule } from '@angular/common/http';
 import { SharedModule } from 'src/app/shared/shared.module';
 import { NgChartsModule } from 'ng2-charts';
 import { FormsModule } from '@angular/forms';
@@ -15,6 +14,7 @@ import { WidgetNotesASaisirComponent } from './widgets/widget-notes-a-saisir/wid
 import { WidgetDocumentsComponent } from './widgets/widget-documents/widget-documents.component';
 import { WidgetProchainCoursComponent } from './widgets/widget-prochain-cours/widget-prochain-cours.component';
 import { WidgetPlanningPersonnelComponent } from './widgets/widget-planning-personnel/widget-planning-personnel.component';
+import { WidgetBordereauxKpiComponent } from './widgets/widget-bordereaux-kpi/widget-bordereaux-kpi.component';
 
 @NgModule({
   declarations: [
@@ -26,15 +26,18 @@ import { WidgetPlanningPersonnelComponent } from './widgets/widget-planning-pers
     WidgetDocumentsComponent,
     WidgetProchainCoursComponent,
     WidgetPlanningPersonnelComponent,
+    WidgetBordereauxKpiComponent,
   ],
   imports: [
     CommonModule,
     RouterModule,
-    HttpClientModule,
     SharedModule,
     NgChartsModule,
     FormsModule,
     ModernUiModule,
+    RouterModule.forChild([
+      { path: '', component: DashboardPageComponent },
+    ]),
   ],
   exports: [
     DashboardPageComponent,

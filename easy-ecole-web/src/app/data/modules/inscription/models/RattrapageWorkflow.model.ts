@@ -51,6 +51,7 @@ export class RattrapageDocumentDepose {
   declare demandeId?: number;
   declare documentRequisId?: number;
   declare documentRequis?: RattrapageDocumentRequis;
+  declare codeDocument?: string;
   declare fichier?: string;
   declare nomOriginal?: string;
   declare taille?: number;
@@ -79,6 +80,8 @@ export class RattrapageInscriptionWorkflow {
   declare motifRejet?: string | null;
   declare motifEtudiant?: string | null;
   declare creneauSouhaite?: string | null;
+  declare periode?: string | null;
+  declare uesDemandees?: any[] | null;
   declare montant?: number | null;
   declare statutPaiement?: StatutPaiementRattrapage | null;
   declare statut?: string | null;

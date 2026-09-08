@@ -8,8 +8,8 @@
         </div>
         <div>
           <p class="esa-compta-hero-kicker">ESA-Compta</p>
-          <h1 class="esa-compta-hero-title">Accueil comptabilité</h1>
-          <p class="esa-compta-hero-subtitle">Suivi des paiements, validation des bordereaux et traitement comptable</p>
+          <h1 class="esa-compta-hero-title">Bordereaux à imputer</h1>
+          <p class="esa-compta-hero-subtitle">Saisie comptable et imputation des bordereaux de paiement</p>
         </div>
       </div>
       <div class="esa-compta-hero-meta">
@@ -76,121 +76,7 @@
     </div>
   </div>
 
-  <!-- KPI Cards -->
-  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-    <div class="esa-kpi-card esa-kpi-card--blue">
-      <div class="esa-kpi-icon">
-        <span class="material-symbols-outlined">receipt_long</span>
-      </div>
-      <div class="esa-kpi-content">
-        <p class="esa-kpi-value">{{ bordereaux.length }}</p>
-        <p class="esa-kpi-label">Total</p>
-      </div>
-    </div>
-    <div class="esa-kpi-card esa-kpi-card--orange">
-      <div class="esa-kpi-icon">
-        <span class="material-symbols-outlined">pending_actions</span>
-      </div>
-      <div class="esa-kpi-content">
-        <p class="esa-kpi-value">{{ enAttenteCount }}</p>
-        <p class="esa-kpi-label">À traiter</p>
-      </div>
-    </div>
-    <div class="esa-kpi-card esa-kpi-card--green">
-      <div class="esa-kpi-icon">
-        <span class="material-symbols-outlined">check_circle</span>
-      </div>
-      <div class="esa-kpi-content">
-        <p class="esa-kpi-value">{{ validesCount }}</p>
-        <p class="esa-kpi-label">Validés</p>
-      </div>
-    </div>
-    <div class="esa-kpi-card esa-kpi-card--red">
-      <div class="esa-kpi-icon">
-        <span class="material-symbols-outlined">cancel</span>
-      </div>
-      <div class="esa-kpi-content">
-        <p class="esa-kpi-value">{{ rejetesCount }}</p>
-        <p class="esa-kpi-label">Rejetés</p>
-      </div>
-    </div>
-    <div class="esa-kpi-card esa-kpi-card--yellow">
-      <div class="esa-kpi-icon">
-        <span class="material-symbols-outlined">warning</span>
-      </div>
-      <div class="esa-kpi-content">
-        <p class="esa-kpi-value">{{ anomaliesCount }}</p>
-        <p class="esa-kpi-label">Anomalies</p>
-      </div>
-    </div>
-    <div class="esa-kpi-card esa-kpi-card--purple">
-      <div class="esa-kpi-icon">
-        <span class="material-symbols-outlined">account_balance</span>
-      </div>
-      <div class="esa-kpi-content">
-        <p class="esa-kpi-value">{{ referencesCount }}</p>
-        <p class="esa-kpi-label">Réf. saisies</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Charts Row -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-    <!-- Status Distribution Chart -->
-    <div class="esa-chart-card">
-      <div class="esa-chart-header">
-        <h3 class="esa-chart-title">Répartition par statut</h3>
-        <span class="material-symbols-outlined text-gray-400">pie_chart</span>
-      </div>
-      <div class="esa-chart-body">
-        <div class="esa-chart-container">
-          <div class="esa-pie-chart">
-            <div class="esa-pie-segment esa-pie-segment--green" [style.height.%]="getPercent(validesCount)"></div>
-            <div class="esa-pie-segment esa-pie-segment--orange" [style.height.%]="getPercent(enAttenteCount)"></div>
-            <div class="esa-pie-segment esa-pie-segment--red" [style.height.%]="getPercent(rejetesCount)"></div>
-            <div class="esa-pie-segment esa-pie-segment--yellow" [style.height.%]="getPercent(anomaliesCount)"></div>
-          </div>
-          <div class="esa-chart-legend">
-            <div class="esa-legend-item">
-              <span class="esa-dot esa-dot--green"></span>
-              <span>Validés ({{ validesCount }})</span>
-            </div>
-            <div class="esa-legend-item">
-              <span class="esa-dot esa-dot--orange"></span>
-              <span>À traiter ({{ enAttenteCount }})</span>
-            </div>
-            <div class="esa-legend-item">
-              <span class="esa-dot esa-dot--red"></span>
-              <span>Rejetés ({{ rejetesCount }})</span>
-            </div>
-            <div class="esa-legend-item">
-              <span class="esa-dot esa-dot--yellow"></span>
-              <span>Anomalies ({{ anomaliesCount }})</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Payment Methods Chart -->
-    <div class="esa-chart-card">
-      <div class="esa-chart-header">
-        <h3 class="esa-chart-title">Moyens de paiement</h3>
-        <span class="material-symbols-outlined text-gray-400">bar_chart</span>
-      </div>
-      <div class="esa-chart-body">
-        <div class="esa-bar-chart">
-          <div class="esa-bar-item" *ngFor="let stat of paymentStats">
-            <div class="esa-bar-label">{{ stat.label }}</div>
-            <div class="esa-bar-track">
-              <div class="esa-bar-fill" [style.width.%]="stat.percent" [class]="'esa-bar-fill--' + stat.color"></div>
-            </div>
-            <div class="esa-bar-value">{{ stat.count }}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- KPI et graphiques déplacés sur l'interface d'accueil (dashboard ESA-Compta) -->
 
   <!-- Filtres -->
   <div class="dashboard-surface-card esa-filter-panel p-4 mb-6">

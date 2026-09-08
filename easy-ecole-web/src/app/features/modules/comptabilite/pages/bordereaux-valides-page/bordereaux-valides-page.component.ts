@@ -29,7 +29,7 @@ export class BordereauxValidesPageComponent extends BaseComponentClass implement
     const q = this.searchTerm.toLowerCase().trim();
     if (!q) return this.bordereaux;
     return this.bordereaux.filter(b => {
-      const etudiant = ${b.utilisateur?.nom ?? ''} .toLowerCase();
+      const etudiant = `${b.utilisateur?.nom ?? ''}`.toLowerCase();
       return etudiant.includes(q);
     });
   }

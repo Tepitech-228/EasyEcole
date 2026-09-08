@@ -52,15 +52,8 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
 
   saisieForm: FormGroup
 
-  // KPIs
+  // KPI (à traiter — affiché sur la carte d'accès rapide)
   enAttenteCount = 0
-  validesCount = 0
-  rejetesCount = 0
-  anomaliesCount = 0
-  referencesCount = 0
-
-  // Payment stats for chart
-  paymentStats: { label: string; count: number; percent: number; color: string }[] = []
 
   // Répartition auto-calculée quand le type d'opération sélectionné est MIXTE
   composition = { inscription: null as number | null, scolarite: null as number | null }
@@ -150,33 +143,6 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
 
   private calculateKPIs(): void {
     this.enAttenteCount = this.bordereaux.filter(b => b.statut === 'en_attente').length
-    this.validesCount = this.bordereaux.filter(b => b.statut === 'valide').length
-    this.rejetesCount = this.bordereaux.filter(b => b.statut === 'rejete').length
-    this.anomaliesCount = this.bordereaux.filter(b => b.statut === 'en_saisie_comptable').length
-    this.referencesCount = this.bordereaux.filter(b => b.referenceBancaire).length
-
-    // Payment method stats
-    const total = this.bordereaux.length || 1
-    const virement = this.bordereaux.filter(b => b.moyenPaiement === 'virement').length
-    const especes = this.bordereaux.filter(b => b.moyenPaiement === 'especes').length
-    const mobile = this.bordereaux.filter(b => b.moyenPaiement === 'mobile_money').length
-    const cheque = this.bordereaux.filter(b => b.moyenPaiement === 'cheque').length
-    const depot = this.bordereaux.filter(b => b.moyenPaiement === 'depot_banque').length
-    const autre = this.bordereaux.filter(b => b.moyenPaiement === 'autre').length
-
-    this.paymentStats = [
-      { label: 'Virement', count: virement, percent: Math.round((virement / total) * 100), color: 'blue' },
-      { label: 'Espèces', count: especes, percent: Math.round((especes / total) * 100), color: 'green' },
-      { label: 'Mobile Money', count: mobile, percent: Math.round((mobile / total) * 100), color: 'purple' },
-      { label: 'Chèque', count: cheque, percent: Math.round((cheque / total) * 100), color: 'orange' },
-      { label: 'Dépôt banque', count: depot, percent: Math.round((depot / total) * 100), color: 'indigo' },
-      { label: 'Autres', count: autre, percent: Math.round((autre / total) * 100), color: 'gray' },
-    ].filter(s => s.count > 0)
-  }
-
-  getPercent(value: number): number {
-    const total = this.bordereaux.length || 1
-    return Math.round((value / total) * 100)
   }
 
   private loadData(): void {

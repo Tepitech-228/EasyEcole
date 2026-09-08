@@ -1,5 +1,5 @@
 import { Request } from "express";
-import { Op, Transaction, literal } from "sequelize";
+import { Op, QueryTypes, Transaction, literal } from "sequelize";
 import { EcritureComptable } from "../models/EcritureComptable";
 import { JournalComptable } from "../models/JournalComptable";
 import { Compte } from "../models/Compte";
@@ -193,6 +193,28 @@ export async function getSoldeCompteAtDate(compteId: number | string, date: stri
   if (exerciceId) where.exerciceId = exerciceId;
 
   return calculerSoldeCompte(where, compteId);
+}
+
+export async function getSoldesComptesAtDate(date: string, exerciceId?: number | string): Promise<Map<number, number>> {
+  const exerciceFilter = exerciceId ? ' AND exerciceId = :exerciceId' : '';
+  const rows = await EcritureComptable.sequelize!.query<{ compteId: number; solde: number | string }>(`
+    SELECT compteId, SUM(solde) AS solde
+    FROM (
+      SELECT compteDebitId AS compteId, montant AS solde
+      FROM cpt_ecritures_comptables
+      WHERE validee = 1 AND dateComptable <= :date ${exerciceFilter}
+      UNION ALL
+      SELECT compteCreditId AS compteId, -montant AS solde
+      FROM cpt_ecritures_comptables
+      WHERE validee = 1 AND dateComptable <= :date ${exerciceFilter}
+    ) mouvements
+    GROUP BY compteId
+  `, {
+    type: QueryTypes.SELECT,
+    replacements: { date, ...(exerciceId ? { exerciceId } : {}) }
+  });
+
+  return new Map(rows.map((row) => [Number(row.compteId), Number(row.solde) || 0]));
 }
 
 /**

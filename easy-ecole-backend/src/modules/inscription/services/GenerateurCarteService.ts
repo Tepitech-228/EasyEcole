@@ -1,6 +1,7 @@
 import QRCode from 'qrcode';
 import path from 'path';
 import fs from 'fs';
+import { getPuppeteerBrowser } from '../../../core/services/PuppeteerBrowserPool';
 import { Etablissement } from '../../etablissement/models/Etablissement';
 import { QrTokenService } from '../../../core/services/QrTokenService';
 
@@ -98,13 +99,10 @@ export class GenerateurCarteService {
     if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
     const outputPath = path.join(outputDir, filename);
 
-    const { default: puppeteer } = await import('puppeteer');
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+    const browser = await getPuppeteerBrowser();
+    let page: any;
     try {
-      const page = await browser.newPage();
+      page = await browser.newPage();
       await page.setContent(html, { waitUntil: 'networkidle0' as any });
       await page.pdf({
         path: outputPath,
@@ -114,7 +112,7 @@ export class GenerateurCarteService {
         margin: { top: 0, bottom: 0, left: 0, right: 0 },
       });
     } finally {
-      await browser.close();
+      await page?.close();
     }
 
     return `storage/cartes/${filename}`;

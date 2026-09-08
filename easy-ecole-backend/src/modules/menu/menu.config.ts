@@ -461,6 +461,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                 icon: 'receipt_long',
                 items: [
                     { label: 'Demandes docs', route: '/scolarite/demandes-documents', icon: 'description', permissionKey: 'menu.scolarite.demandes-docs', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
+                    { label: 'Mes documents', route: '/scolarite/mes-documents', icon: 'folder_open', permissionKey: 'menu.scolarite.mes-documents', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
                     { label: 'Traiter demandes', route: '/scolarite/traiter-demandes', icon: 'fact_check', permissionKey: 'menu.scolarite.traiter-demandes', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Demandes VAE', route: '/scolarite/demandes-vae', icon: 'verified', permissionKey: 'menu.scolarite.demandes-vae', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                 ]
@@ -477,7 +478,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
     },
     {
         label: 'Secretariat',
-        icon: 'admin_panel_settings',
+        icon: 'manage_accounts',
         allowedRoles: [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN],
         groups: [
             {
@@ -485,8 +486,9 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                 icon: 'dashboard',
                 items: [
                     { label: 'Tableau de bord', route: '/scolarite/secretariat/dashboard', icon: 'dashboard', permissionKey: 'menu.secretariat.dashboard', allowedRoles: [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Encaissement', route: '/scolarite/secretariat/encaissement', icon: 'payments', permissionKey: 'menu.secretariat.encaissement', allowedRoles: [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Caisse', route: '/scolarite/secretariat/caisse', icon: 'payments', permissionKey: 'menu.secretariat.caisse', allowedRoles: [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
-                    { label: 'Cloture caisse', route: '/scolarite/secretariat/cloture-caisse', icon: 'lock', permissionKey: 'menu.secretariat.cloture', allowedRoles: [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Cloture caisse', route: '/scolarite/secretariat/cloture-caisse', icon: 'security', permissionKey: 'menu.secretariat.cloture', allowedRoles: [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                 ]
             },
             {

@@ -1,0 +1,16 @@
+<div class="threshold-gauge" [style.border-color]="color">
+  <svg viewBox="0 0 100 100" class="threshold-gauge__svg">
+    <circle cx="50" cy="50" r="40" fill="none" stroke="#e5e7eb" stroke-width="8" />
+    <circle cx="50" cy="50" r="40" fill="none" [style.stroke]="color"
+            stroke-width="8" stroke-linecap="round"
+            [attr.stroke-dasharray]="strokeDasharray"
+            transform="rotate(-90 50 50)"
+            [style.stroke-dashoffset]="circumference" />
+  </svg>
+  <div class="threshold-gauge__center">
+    <span class="threshold-gauge__value" [style.color]="color">{{ value }}</span>
+    <span class="threshold-gauge__unit">{{ unit }}</span>
+    <span class="threshold-gauge__level" [style.color]="color">{{ levelLabel }}</span>
+  </div>
+  <div *ngIf="label" class="threshold-gauge__label">{{ label }}</div>
+</div>

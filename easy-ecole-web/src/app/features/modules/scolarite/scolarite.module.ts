@@ -26,6 +26,8 @@ import { DashboardSecretariatPageComponent } from './pages/dashboard-secretariat
 import { CaissePageComponent } from './pages/caisse-page/caisse-page.component';
 import { ClotureCaissePageComponent } from './pages/cloture-caisse-page/cloture-caisse-page.component';
 import { FicheDemandePageComponent } from './pages/fiche-demande-page/fiche-demande-page.component';
+import { EncaissementDemandePageComponent } from './pages/encaissement-demande-page/encaissement-demande-page.component';
+import { MesDocumentsPageComponent } from './pages/mes-documents-page/mes-documents-page.component';
 
 @NgModule({
   declarations: [
@@ -47,7 +49,9 @@ import { FicheDemandePageComponent } from './pages/fiche-demande-page/fiche-dema
     DashboardSecretariatPageComponent,
     CaissePageComponent,
     ClotureCaissePageComponent,
-    FicheDemandePageComponent
+    FicheDemandePageComponent,
+    EncaissementDemandePageComponent,
+    MesDocumentsPageComponent
   ],
   imports: [
     CommonModule,

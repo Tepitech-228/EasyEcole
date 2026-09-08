@@ -29,6 +29,9 @@ export interface DemandeDocument {
   datePaiement?: Date;
   modePaiement?: string;
   numeroRecu?: string;
+  referencePaiement?: string;
+  recuCaisseId?: number;
+  caissierId?: number;
   datePreparation?: Date;
   dateGeneration?: Date;
   fichierPDF?: string;
@@ -48,4 +51,32 @@ export interface VerifierAccesDemandeDocument {
   montant: number;
   fraisPayes: boolean;
   source: SourceDemandeDocument;
+}
+
+/**
+ * Réponse de GET /scolarite/demandesDocument/mes-documents
+ * Liste enrichie des documents pour l'étudiant.
+ */
+export interface MesDocumentItem {
+  id: number;
+  typeDocument: { id: number; libelle: string; categorie: string } | null;
+  statut: string;
+  montant: number;
+  source: SourceDemandeDocument;
+  date: Date;
+  // Paiement
+  estPayable: boolean;
+  fraisPayes: boolean;
+  modePaiement?: string;
+  datePaiement?: Date;
+  // Reçu de caisse
+  recuCaisse: { id: number; numero: string; montant: number; fichierPDF?: string } | null;
+  // Document généré
+  fichierPDF?: string;
+  dateGeneration?: Date;
+  documentDelivre: { fichierPDF?: string; dateDelivrance?: Date } | null;
+  // Indicateurs UI
+  estTelechargeable: boolean;
+  estImprimable: boolean;
+  estEnAttentePaiement: boolean;
 }

@@ -51,10 +51,12 @@ import PaiementStatutRouter from "./routers/PaiementStatutRouter";
 import FraisScolariteRouter from "./routers/FraisScolariteRouter";
 import DocumentDossierRouter from "./routers/DocumentDossierRouter";
 import RattrapageWorkflowRouter from "./routers/RattrapageWorkflowRouter";
+import DocumentRequisNiveauRouter from "./routers/DocumentRequisNiveauRouter";
 import DossierEtudiantRouter from "./routers/DossierEtudiantRouter";
 import HierarchyRouter from "./routers/HierarchyRouter";
 import PreInscriptionRouter from "./routers/PreInscriptionRouter";
 import ReinscriptionRouter from "./routers/ReinscriptionRouter";
+import OcrRouter from "./routers/OcrRouter";
 import CartesController from "./controllers/CartesController";
 
 import EcueRouter from "./routers/EcueRouter";
@@ -152,6 +154,8 @@ router
     .use('/documents', [Authenticate, InscriptionComplete], DocumentDossierRouter)
     // Workflow officiel de rattrapage (sessions, demandes, documents, bordereaux, validation, paiement)
     .use('/rattrapage-workflow', [Authenticate], RattrapageWorkflowRouter)
+    // Référentiel des documents obligatoires par niveau (géré par l'administration)
+    .use('/documents-requis-niveau', [Authenticate], DocumentRequisNiveauRouter)
     // Montages racine — ne serviront que pour les routes qui n'ont pas matché ci-dessus
     .use('/', [Authenticate, InscriptionComplete], PresenceEnseignantRouter)
     .use('/', [Authenticate, InscriptionComplete], AbsenceCoursRouter)
@@ -175,6 +179,8 @@ router
     .use('/audit-notes', [Authenticate, InscriptionComplete], AuditNoteRouter)
     .use('/designation-memoires', [Authenticate], DesignationMemoireRouter)
     .use('/reinscription', [Authenticate], ReinscriptionRouter)
+    // Extraction OCR/ICR des informations personnelles (pré-remplissage wizard)
+    .use('/ocr', [Authenticate], OcrRouter)
     // Le dashboard reste accessible aux nouveaux étudiants afin qu'ils puissent
     // consulter les sessions ouvertes et démarrer leur inscription.
     // (lecture agrégée coûteuse → cache Redis 30 s, clé par utilisateur)

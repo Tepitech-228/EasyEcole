@@ -12,6 +12,8 @@ import { RattrapageInscription } from "../models/RattrapageInscription";
 import { Bordereau } from "../models/Bordereau";
 import { AnneeAcademique } from "../models/AnneeAcademique";
 import { ParametreFrais } from "../../comptabilite/models/ParametreFrais";
+import { EmailSender } from "../../../core/helpers/EmailSender";
+import { Utilisateur } from "../../auth/models/Utilisateur";
 
 /**
  * Workflow officiel de rattrapage (sessions, demandes étudiantes, comité, paiement).
@@ -52,6 +54,25 @@ export default class RattrapageWorkflowController {
 
   /** Répertoire relatif (cwd) où les justificatifs de rattrapage sont stockés. */
   private static readonly CHEMIN_RATTRAPAGE = 'public/inscription/rattrapage'
+
+  /**
+   * Les 3 pièces obligatoires d'une demande de rattrapage (quand la demande est
+   * créée sans session, on utilise ce référentiel fixe ; sinon on utilise les
+   * pièces paramétrées sur la session).
+   *  - autorisation_provisoire : copie de l'autorisation provisoire d'inscription
+   *  - quitus_bordereaux       : quitus définitif + bordereaux de l'année concernée
+   *  - bordereau_rattrapage    : bordereau d'inscription aux rattrapages
+   */
+  private static readonly DOCUMENTS_RATTRAPAGE: Array<{ code: string; libelle: string }> = [
+    { code: 'autorisation_provisoire', libelle: 'Autorisation provisoire d\u2019inscription' },
+    { code: 'quitus_bordereaux', libelle: 'Quitus définitif + bordereaux de l\u2019année concernée' },
+    { code: 'bordereau_rattrapage', libelle: 'Bordereau d\u2019inscription aux rattrapages' },
+  ]
+
+  /** Referentiel des 3 pièces fixes, exposé tel quel. */
+  private static getDocumentsRattrapageFixes() {
+    return RattrapageWorkflowController.DOCUMENTS_RATTRAPAGE
+  }
 
   /** Includes standard d'une session de rattrapage (classes + documents requis). */
   private static includesSession(avecInscriptions = false) {
@@ -223,6 +244,11 @@ export default class RattrapageWorkflowController {
         updateData.statut = body.statut
       }
 
+      // Dépendance fonctionnelle : à l'ouverture d'une session, on rattache
+      // automatiquement les demandes orphelines (créées SANS session) dont la
+      // période correspond au libellé/période de la session.
+      const ouvertureSession = updateData.statut === 'ouverte' && session.statut !== 'ouverte'
+
       if (Object.keys(updateData).length > 0) {
         await session.update(updateData, { transaction })
       }
@@ -253,6 +279,14 @@ export default class RattrapageWorkflowController {
             { transaction }
           )
         }
+      }
+
+      if (ouvertureSession) {
+        await RattrapageWorkflowController.rattacherDemandesOrphelines(
+          session.id,
+          [session.libelle, session.description].filter(Boolean).join('|'),
+          transaction
+        )
       }
 
       await transaction.commit()
@@ -326,25 +360,39 @@ export default class RattrapageWorkflowController {
     }
 
     const body = req.body || {}
-    const rattrapageSessionId = Number(body.rattrapageSessionId)
-    if (!Number.isInteger(rattrapageSessionId) || rattrapageSessionId <= 0) {
-      return res.status(400).json({ success: false, message: 'rattrapageSessionId est requis' })
+    const rattrapageSessionId = body.rattrapageSessionId ? Number(body.rattrapageSessionId) : null
+
+    // Les UE/matières non validées que l'étudiant souhaite rattraper (JSON).
+    let uesDemandees: any[] | null = null
+    if (Array.isArray(body.uesDemandees)) {
+      uesDemandees = body.uesDemandees.map((u: any) =>
+        (typeof u === 'string' ? u : (u?.id ?? u?.code ?? u?.libelle ?? String(u)))).slice(0, 50)
+    }
+    const periode = typeof body.periode === 'string' && body.periode.trim() ? body.periode.trim() : null
+
+    // Une demande peut être créée SANS session (demande orpheline) : elle sera
+    // rattachée à la session de rattrapage de la période lors de sa création.
+    if (rattrapageSessionId != null && (!Number.isInteger(rattrapageSessionId) || rattrapageSessionId <= 0)) {
+      return res.status(400).json({ success: false, message: 'rattrapageSessionId invalide' })
     }
 
     try {
-      const session = await RattrapageSession.findByPk(rattrapageSessionId)
-      if (!session) return res.status(404).json({ success: false, message: 'Session de rattrapage introuvable' })
-      // Garde-fou métier : seules les sessions « ouvertes » acceptent des demandes.
-      if (session.statut !== 'ouverte') {
-        return res.status(400).json({ success: false, message: 'La session de rattrapage n\'est pas ouverte aux demandes' })
-      }
-
-      // Une seule demande par étudiant pour une même session.
-      const existante = await RattrapageInscription.findOne({
-        where: { demandePar: req.utilisateurId, rattrapageSessionId },
-      })
-      if (existante) {
-        return res.status(400).json({ success: false, message: 'Vous avez déjà soumis une demande pour cette session de rattrapage' })
+      if (rattrapageSessionId != null) {
+        const session = await RattrapageSession.findByPk(rattrapageSessionId)
+        if (!session) return res.status(404).json({ success: false, message: 'Session de rattrapage introuvable' })
+        // Garde-fou métier : seules les sessions « ouvertes » acceptent des demandes.
+        if (session.statut !== 'ouverte') {
+          return res.status(400).json({ success: false, message: 'La session de rattrapage n\'est pas ouverte aux demandes' })
+        }
+        // Une seule demande par étudiant pour une même session.
+        const existante = await RattrapageInscription.findOne({
+          where: { demandePar: req.utilisateurId, rattrapageSessionId },
+        })
+        if (existante) {
+          return res.status(400).json({ success: false, message: 'Vous avez déjà soumis une demande pour cette session de rattrapage' })
+        }
+      } else if (!periode) {
+        return res.status(400).json({ success: false, message: 'Fournissez une session ou une période pour la demande de rattrapage' })
       }
 
       // NB : coursParticipantId / coursId ne s'appliquent pas aux demandes de session
@@ -354,7 +402,9 @@ export default class RattrapageWorkflowController {
         statut: 'inscrit',
         statutDemande: 'en_attente',
         statutPaiement: 'impaye',
-        rattrapageSessionId,
+        rattrapageSessionId: rattrapageSessionId != null ? rattrapageSessionId : null,
+        uesDemandees,
+        periode,
         motifEtudiant: typeof body.motifEtudiant === 'string' ? body.motifEtudiant : null,
         creneauSouhaite: typeof body.creneauSouhaite === 'string' ? body.creneauSouhaite : null,
         demandePar: req.utilisateurId,
@@ -383,10 +433,16 @@ export default class RattrapageWorkflowController {
       return res.status(400).json({ success: false, message: 'Fichier requis (champ multipart \'fichier\')' })
     }
 
-    const documentRequisId = Number(req.body?.documentRequisId)
-    if (!Number.isInteger(documentRequisId) || documentRequisId <= 0) {
-      RattrapageWorkflowController.nettoyerFichier(fichier.path)
-      return res.status(400).json({ success: false, message: 'documentRequisId est requis' })
+    const documentRequisIdBody = req.body?.documentRequisId
+    const codeDocument = typeof req.body?.codeDocument === 'string' ? req.body.codeDocument.trim() : null
+    let documentRequisId: number | null = null
+
+    if (documentRequisIdBody != null && String(documentRequisIdBody).trim() !== '') {
+      documentRequisId = Number(documentRequisIdBody)
+      if (!Number.isInteger(documentRequisId) || documentRequisId <= 0) {
+        RattrapageWorkflowController.nettoyerFichier(fichier.path)
+        return res.status(400).json({ success: false, message: 'documentRequisId invalide' })
+      }
     }
 
     try {
@@ -400,17 +456,31 @@ export default class RattrapageWorkflowController {
         return res.status(403).json({ success: false, message: 'Vous n\'êtes pas le propriétaire de cette demande' })
       }
 
-      // Garde-fou : le justificatif doit appartenir à la session de la demande.
-      if (!demande.rattrapageSessionId) {
-        RattrapageWorkflowController.nettoyerFichier(fichier.path)
-        return res.status(400).json({ success: false, message: 'La demande n\'est rattachée à aucune session de rattrapage' })
-      }
-      const documentRequis = await RattrapageDocumentRequis.findOne({
-        where: { id: documentRequisId, rattrapageSessionId: demande.rattrapageSessionId },
-      })
-      if (!documentRequis) {
-        RattrapageWorkflowController.nettoyerFichier(fichier.path)
-        return res.status(400).json({ success: false, message: 'Le document requis n\'appartient pas à la session de cette demande' })
+      // Deux cas :
+      //  1) Demande rattachée à une session → la pièce doit appartenir à la session.
+      //  2) Demande sans session (3 pièces fixes) → codeDocument parmi le référentiel fixe.
+      if (demande.rattrapageSessionId) {
+        if (!documentRequisId) {
+          RattrapageWorkflowController.nettoyerFichier(fichier.path)
+          return res.status(400).json({ success: false, message: 'documentRequisId est requis pour une demande rattachée à une session' })
+        }
+        const documentRequis = await RattrapageDocumentRequis.findOne({
+          where: { id: documentRequisId, rattrapageSessionId: demande.rattrapageSessionId },
+        })
+        if (!documentRequis) {
+          RattrapageWorkflowController.nettoyerFichier(fichier.path)
+          return res.status(400).json({ success: false, message: 'Le document requis n\'appartient pas à la session de cette demande' })
+        }
+      } else {
+        const codesFixes = RattrapageWorkflowController.DOCUMENTS_RATTRAPAGE.map((d) => d.code)
+        if (!codeDocument || !codesFixes.includes(codeDocument)) {
+          RattrapageWorkflowController.nettoyerFichier(fichier.path)
+          return res.status(400).json({
+            success: false,
+            message: 'codeDocument est requis (pièces fixes) pour une demande sans session',
+            codes: codesFixes,
+          })
+        }
       }
 
       // Chemin relatif (cwd) : resolvable via path.resolve(process.cwd(), fichier).
@@ -418,7 +488,8 @@ export default class RattrapageWorkflowController {
 
       await RattrapageDocumentDepose.create({
         rattrapageInscriptionId: demande.id,
-        documentRequisId,
+        documentRequisId: documentRequisId ?? null,
+        codeDocument: demande.rattrapageSessionId ? null : (codeDocument || null),
         fichier: cheminRelatif,
       })
 
@@ -446,14 +517,18 @@ export default class RattrapageWorkflowController {
 
     const where: any = {
       source: 'demande_etudiant',
-      rattrapageSessionId: { [Op.ne]: null },
     }
 
     if (role === RolesUtilisateur.APPRENANT) {
       where.demandePar = req.utilisateurId
     } else if (RattrapageWorkflowController.ROLE_VISION_TOTAL.includes(role)) {
       if (req.query.statutDemande) where.statutDemande = req.query.statutDemande
-      if (req.query.rattrapageSessionId) where.rattrapageSessionId = Number(req.query.rattrapageSessionId)
+      // Filtre optionnel par session ; sans ce filtre, les demandes orphelines
+      // (sans session) sont également listées (visible au comité pour aiguillage).
+      if (req.query.rattrapageSessionId) {
+        const sid = Number(req.query.rattrapageSessionId)
+        where.rattrapageSessionId = Number.isInteger(sid) && sid > 0 ? sid : { [Op.ne]: null }
+      }
     } else {
       return res.status(403).json({ success: false, message: 'Accès réservé aux étudiants ou au comité' })
     }
@@ -588,6 +663,18 @@ export default class RattrapageWorkflowController {
         motifRejet: null,
       })
 
+      const dest = await RattrapageWorkflowController.emailDemandeur(demande)
+      if (dest) {
+        await RattrapageWorkflowController.notifier(
+          'Easy Ecole: Demande de rattrapage validée',
+          `<p>Bonjour <b>${dest.prenoms} ${dest.nom},</b></p>
+           <p>Votre demande de rattrapage a été <b>validée</b> par le comité.</p>
+           <p>Vous pouvez maintenant déposer votre bordereau de paiement depuis votre espace pour finaliser votre inscription aux épreuves de rattrapage.</p>
+           <p>Cordialement,<br>Easy Ecole</p>`,
+          dest
+        )
+      }
+
       const full = await RattrapageInscription.findByPk(demande.id, {
         include: RattrapageWorkflowController.includesDemande(),
       })
@@ -619,6 +706,19 @@ export default class RattrapageWorkflowController {
         motifRejet: motif,
         dateValidationComite: new Date(),
       })
+
+      const dest = await RattrapageWorkflowController.emailDemandeur(demande)
+      if (dest) {
+        await RattrapageWorkflowController.notifier(
+          'Easy Ecole: Demande de rattrapage rejetée',
+          `<p>Bonjour <b>${dest.prenoms} ${dest.nom},</b></p>
+           <p>Votre demande de rattrapage a été <b>rejetée</b> par le comité.</p>
+           <p><b>Motif :</b> ${motif}</p>
+           <p>Pour plus d'informations, veuillez contacter l'établissement.</p>
+           <p>Cordialement,<br>Easy Ecole</p>`,
+          dest
+        )
+      }
 
       const full = await RattrapageInscription.findByPk(demande.id, {
         include: RattrapageWorkflowController.includesDemande(),
@@ -778,6 +878,18 @@ export default class RattrapageWorkflowController {
       const full = await RattrapageInscription.findByPk(demande.id, {
         include: RattrapageWorkflowController.includesDemande(),
       })
+
+      const dest = await RattrapageWorkflowController.emailDemandeur(demande)
+      if (dest) {
+        await RattrapageWorkflowController.notifier(
+          'Easy Ecole: Inscription définitive au rattrapage',
+          `<p>Bonjour <b>${dest.prenoms} ${dest.nom},</b></p>
+           <p>Votre paiement a été <b>confirmé</b> : vous êtes désormais inscrit(e) aux épreuves de rattrapage.</p>
+           <p>Cordialement,<br>Easy Ecole</p>`,
+          dest
+        )
+      }
+
       return res.status(200).json({ success: true, data: full })
     } catch (error) {
       await transaction.rollback()
@@ -804,6 +916,136 @@ export default class RattrapageWorkflowController {
     } catch (error) {
       console.error('[documentsRequisSession rattrapage-workflow]', error)
       return res.status(500).json({ success: false, message: 'Erreur interne du serveur' })
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // DEMANDES SANS SESSION (pièces fixes) + UE non validées
+  // ─────────────────────────────────────────────────────────────
+
+  /** GET /rattrapage-workflow/documents-requis-fixes — les 3 pièces fixes (demande sans session). */
+  static async documentsRequisFixes(_req: Request, res: Response): Promise<Response> {
+    const role = _req.utilisateurRole
+    if (!role) return res.status(403).json({ success: false, message: 'Accès refusé' })
+    return res.status(200).json({ success: true, data: RattrapageWorkflowController.getDocumentsRattrapageFixes() })
+  }
+
+  /**
+   * GET /rattrapage-workflow/ues-non-validees — UE déjà déclarées par l'étudiant
+   * sur ses demandes de rattrapage (source='demande_etudiant').
+   *
+   * NOTE PRODUIT : le calcul « fiable » des UE réellement NON VALIDÉES (à partir
+   * des notes/validations académiques) dépend d'un référentiel UE/notes non encore
+   * branché sur ce module. En attendant cette décision produit, cet endpoint expose
+   * les UE précédemment demandées par l'étudiant pour pré-remplir le formulaire.
+   */
+  static async uesNonValidees(req: Request, res: Response): Promise<Response> {
+    const role = req.utilisateurRole
+    if (role !== RolesUtilisateur.APPRENANT) {
+      return res.status(403).json({ success: false, message: 'Accès réservé aux étudiants' })
+    }
+
+    try {
+      const demandes = await RattrapageInscription.findAll({
+        where: { demandePar: req.utilisateurId, source: 'demande_etudiant' },
+        attributes: ['uesDemandees', 'rattrapageSessionId', 'statutDemande'],
+        order: [['createdAt', 'DESC']],
+        raw: true,
+      })
+
+      const vus = new Set<string>()
+      const ues: Array<{ id: string; code: string; libelle: string; sessionId: number | null; statutDemande: string }> = []
+
+      for (const d of demandes as any[]) {
+        const liste: any[] = Array.isArray(d.uesDemandees) ? d.uesDemandees : []
+        for (const u of liste) {
+          const code = typeof u === 'string' ? u : (u?.code ?? u?.id ?? u?.libelle ?? String(u))
+          if (!code || vus.has(String(code))) continue
+          vus.add(String(code))
+          ues.push({
+            id: String(code),
+            code: String(code),
+            libelle: typeof u === 'string' ? u : (u?.libelle ?? String(code)),
+            sessionId: d.rattrapageSessionId ?? null,
+            statutDemande: d.statutDemande ?? 'en_attente',
+          })
+        }
+      }
+
+      return res.status(200).json({ success: true, data: ues })
+    } catch (error) {
+      console.error('[uesNonValidees rattrapage-workflow]', error)
+      return res.status(500).json({ success: false, message: 'Erreur interne du serveur' })
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // AIDE INTERNE — rattachement des demandes orphelines + e-mails
+  // ─────────────────────────────────────────────────────────────
+
+  /**
+   * Rattache une demande orpheline (sans session) à la session dont la période
+   * correspond à periodeLibelle. Les demandes déjà rattachées ou déjà payées sont
+   * ignorées. Exécuté dans la transaction de la session (ouvre).
+   */
+  private static async rattacherDemandesOrphelines(
+    sessionId: number,
+    periodeLibelle: string,
+    transaction: any
+  ): Promise<number> {
+    if (!periodeLibelle) return 0
+
+    const candidats = await RattrapageInscription.findAll({
+      where: {
+        source: 'demande_etudiant',
+        rattrapageSessionId: { [Op.eq]: null },
+        statutPaiement: { [Op.ne]: 'paye' },
+      },
+      transaction,
+    })
+
+    // Règle de correspondance douce : la période de la demande est contenue dans
+    // le libellé/période de la session (ou réciproquement), en ignorant la casse.
+    const plateau = periodeLibelle.toLowerCase()
+    const rattaches: number[] = []
+    for (const demande of candidats) {
+      const p = (demande.periode || '').toLowerCase()
+      if (p && (plateau.includes(p) || p.includes(plateau))) {
+        rattaches.push(demande.id)
+      }
+    }
+
+    if (rattaches.length > 0) {
+      await RattrapageInscription.update(
+        { rattrapageSessionId: sessionId },
+        { where: { id: rattaches, rattrapageSessionId: null }, transaction }
+      )
+    }
+    return rattaches.length
+  }
+
+  /** Résout l'e-mail de l'étudiant propriétaire d'une demande (via l'association demandeur). */
+  private static async emailDemandeur(demande: RattrapageInscription): Promise<{ email: string; prenoms: string; nom: string } | null> {
+    if (!demande.demandePar) return null
+    const user = await Utilisateur.findByPk(demande.demandePar, { attributes: ['id', 'email', 'prenoms', 'nom'] })
+    if (!user || !user.email) return null
+    return { email: user.email, prenoms: user.prenoms || '', nom: user.nom || '' }
+  }
+
+  /** Envoi non bloquant d'un e-mail (échec journalisé, jamais bloquant). */
+  private static async notifier(sujet: string, html: string, destinataire: { email: string; prenoms: string; nom: string }) {
+    const sender = EmailSender.getInstance()
+    if (!sender.isConfigured()) return
+    try {
+      await sender.sendMail({
+        from: 'Easy Ecole <easy.ecole@technologybusiness-tb.com>',
+        to: destinataire.email,
+        encoding: 'UTF-8',
+        subject: sujet,
+        html,
+      })
+    } catch (error) {
+      console.error(`[rattrapage-workflow][email] échec → ${destinataire.email}:`, error)
     }
   }
 }

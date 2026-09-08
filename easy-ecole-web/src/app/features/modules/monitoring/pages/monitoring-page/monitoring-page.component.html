@@ -1,0 +1,53 @@
+<main class="monitoring-page">
+  <app-dashboard-header
+    title="Monitoring système"
+    subtitle="État de santé de la plateforme et de ses traitements"
+    icon="monitoring">
+  </app-dashboard-header>
+
+  <section class="monitoring-page__toolbar" aria-label="Actualisation du monitoring">
+    <span class="monitoring-page__live-dot" aria-hidden="true"></span>
+    <span>Actualisation automatique toutes les 60 secondes</span>
+    <span *ngIf="overview?.collectedAt">Dernière collecte : {{ overview?.collectedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+  </section>
+
+  <section *ngIf="loading" class="monitoring-page__loading" aria-live="polite">
+    <div class="monitoring-page__spinner"></div>
+    <p>Chargement des indicateurs de santé...</p>
+  </section>
+
+  <app-monitoring-empty-state
+    *ngIf="!loading && error"
+    title="Données de monitoring indisponibles"
+    message="Les indicateurs seront affichés dès que le service de collecte sera disponible.">
+  </app-monitoring-empty-state>
+
+  <ng-container *ngIf="!loading && !error && overview as data">
+    <section class="monitoring-page__hero">
+      <app-monitoring-score-gauge [value]="data.globalScore" label="Score santé global"></app-monitoring-score-gauge>
+      <div class="monitoring-page__summary">
+        <h2>Vue générale</h2>
+        <p>Les composants techniques sont surveillés depuis la dernière collecte.</p>
+        <app-monitoring-health-badge [status]="data.modules[0]?.status || 'unknown'"></app-monitoring-health-badge>
+      </div>
+    </section>
+
+    <section class="monitoring-page__kpis">
+      <app-kpi-card *ngFor="let metric of (data.metrics || [])"
+        [label]="metric.label" [value]="metric.value" [unit]="metric.unit || ''"
+        [trend]="metric.trend || 0" [icon]="metric.icon || 'insights'"
+        [color]="metric.color || '#2563eb'"></app-kpi-card>
+    </section>
+
+    <section class="monitoring-page__modules">
+      <article class="monitoring-module" *ngFor="let module of data.modules; trackBy: trackById">
+        <div class="monitoring-module__heading">
+          <div><h3>{{ module.label }}</h3><p>{{ module.message || 'État collecté' }}</p></div>
+          <app-monitoring-health-badge [status]="module.status"></app-monitoring-health-badge>
+        </div>
+        <div class="monitoring-module__bar"><span [style.width.%]="module.score"></span></div>
+        <strong>{{ module.score }}/100</strong>
+      </article>
+    </section>
+  </ng-container>
+</main>

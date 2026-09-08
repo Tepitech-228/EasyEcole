@@ -1,0 +1,48 @@
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+
+  &__icon {
+    font-size: 3rem;
+    color: #9ca3af;
+    margin-bottom: 1rem;
+  }
+
+  &__title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #374151;
+    margin: 0 0 0.5rem;
+  }
+
+  &__message {
+    font-size: 0.875rem;
+    color: #9ca3af;
+    margin: 0 0 1.5rem;
+    max-width: 400px;
+  }
+
+  &__btn {
+    padding: 8px 24px;
+    border: 1px solid #4f46e5;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #4f46e5;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: #4f46e5;
+      color: #ffffff;
+    }
+  }
+}

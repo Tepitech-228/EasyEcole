@@ -6,6 +6,8 @@ import { RattrapageWorkflowService } from 'src/app/data/modules/inscription/serv
 
 const TAILLE_MAX_FICHIER = 20 * 1024 * 1024; // 20 Mo
 
+interface PieceFixeRattrapage { code: string; libelle: string }
+
 @Component({
   selector: 'app-rattrapage-mes-demandes-page',
   templateUrl: './rattrapage-mes-demandes-page.component.html',
@@ -27,6 +29,15 @@ export class RattrapageMesDemandesPageComponent extends BaseComponentClass imple
   sessionSelectionnee?: RattrapageSession
   motifEtudiant: string = ''
   creneauSouhaite: string = ''
+
+  // Modal demande SANS session (orpheline, 3 pièces fixes + liste UE)
+  showSansSessionModal: boolean = false
+  periodeSansSession: string = ''
+  uesProposees: { id: string; code: string; libelle: string; sessionId: number | null; statutDemande: string }[] = []
+  uesSelectionnees: Set<string> = new Set()
+  uesManuelles: string = ''
+  piecesFixes: PieceFixeRattrapage[] = []
+  loadingSansSession: boolean = false
 
   constructor(
     private router: Router,
@@ -126,6 +137,141 @@ export class RattrapageMesDemandesPageComponent extends BaseComponentClass imple
   }
 
   // ---------------------------------------------------------------------------
+  // Demande SANS session (orpheline) : UE non validées + période + 3 pièces fixes
+  // ---------------------------------------------------------------------------
+
+  openSansSessionModal(): void {
+    this.showSansSessionModal = true
+    this.periodeSansSession = ''
+    this.uesProposees = []
+    this.uesSelectionnees = new Set()
+    this.uesManuelles = ''
+    this.piecesFixes = []
+    this.loadingSansSession = true
+
+    this.rattrapageWorkflowService.getUesNonValidees().subscribe({
+      next: (ues) => { this.uesProposees = ues; this.loadingSansSession = false },
+      error: (err) => {
+        console.error('Erreur chargement UE non validées:', err)
+        this.uesProposees = []
+        this.loadingSansSession = false
+      }
+    })
+
+    this.rattrapageWorkflowService.getDocumentsRequisFixes().subscribe({
+      next: (pieces) => { this.piecesFixes = pieces },
+      error: (err) => {
+        console.error('Erreur chargement pièces fixes:', err)
+        this.piecesFixes = []
+      }
+    })
+  }
+
+  closeSansSessionModal(): void {
+    this.showSansSessionModal = false
+    this.periodeSansSession = ''
+    this.uesSelectionnees = new Set()
+  }
+
+  toggleUe(code: string): void {
+    if (this.uesSelectionnees.has(code)) this.uesSelectionnees.delete(code)
+    else this.uesSelectionnees.add(code)
+  }
+
+  get demandeSansSessionPossible(): boolean {
+    const uesFinales = this.uesFinales()
+    return this.periodeSansSession.trim().length > 0 && uesFinales.length > 0
+  }
+
+  /** Fusionne les UE cochées et celles saisies manuellement (séparées par des virgules). */
+  uesFinales(): string[] {
+    const manuelles = this.uesManuelles.split(',')
+      .map((u) => u.trim())
+      .filter((u) => u.length > 0)
+    return Array.from(new Set([...Array.from(this.uesSelectionnees), ...manuelles]))
+  }
+
+  soumettreDemandeSansSession(): void {
+    const uesFinales = this.uesFinales()
+    if (!this.demandeSansSessionPossible || uesFinales.length === 0) return
+    this.uploading = true
+    this.errorMessage = ''
+
+    this.rattrapageWorkflowService.createDemande({
+      periode: this.periodeSansSession.trim(),
+      uesDemandees: uesFinales,
+      motifEtudiant: this.motifEtudiant.trim() || undefined,
+      creneauSouhaite: this.creneauSouhaite.trim() || undefined
+    }).subscribe({
+      next: () => {
+        this.uploading = false
+        this.successMessage = 'Demande de rattrapage créée. Téléversez les 3 pièces obligatoires.'
+        this.closeSansSessionModal()
+        setTimeout(() => { this.successMessage = '' }, 6000)
+        this.loadMesDemandes()
+      },
+      error: (err) => {
+        console.error('Erreur création demande sans session:', err)
+        this.uploading = false
+        this.errorMessage = err?.error?.message || err?.message || 'Erreur lors de la création de la demande'
+        setTimeout(() => { this.errorMessage = '' }, 6000)
+      }
+    })
+  }
+
+  estDemandeSansSession(demande: RattrapageInscriptionWorkflow): boolean {
+    return !demande.rattrapageSessionId && !demande.rattrapageSession
+  }
+
+  documentFixeDejaDepose(demande: RattrapageInscriptionWorkflow, code: string): boolean {
+    return (demande.documentsDeposes || []).some((d) => String(d.codeDocument) === String(code))
+  }
+
+  uploaderPieceFixe(demande: RattrapageInscriptionWorkflow, code: string): void {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'application/pdf,.pdf'
+    input.onchange = () => {
+      const fichier = input.files && input.files.length > 0 ? input.files[0] : null
+      if (!fichier) return
+
+      const estPdf = fichier.type === 'application/pdf'
+        || fichier.type === 'application/x-pdf'
+        || fichier.type === 'application/octet-stream'
+        || fichier.type === ''
+      if (!estPdf || !fichier.name.toLowerCase().endsWith('.pdf')) {
+        this.errorMessage = `"${fichier.name}" n'est pas un fichier PDF valide.`
+        setTimeout(() => { this.errorMessage = '' }, 5000)
+        return
+      }
+      if (fichier.size > TAILLE_MAX_FICHIER) {
+        this.errorMessage = `Le fichier "${fichier.name}" dépasse la taille maximale de 20 Mo.`
+        setTimeout(() => { this.errorMessage = '' }, 5000)
+        return
+      }
+      if (!demande.id) return
+
+      this.uploading = true
+      this.errorMessage = ''
+      this.rattrapageWorkflowService.uploadDocument(demande.id, { codeDocument: code }, fichier).subscribe({
+        next: () => {
+          this.uploading = false
+          this.successMessage = 'Pièce fixe téléversée avec succès.'
+          setTimeout(() => { this.successMessage = '' }, 4000)
+          this.loadMesDemandes()
+        },
+        error: (err) => {
+          console.error('Erreur upload pièce fixe:', err)
+          this.uploading = false
+          this.errorMessage = err?.error?.message || err?.message || 'Erreur lors du téléversement de la pièce'
+          setTimeout(() => { this.errorMessage = '' }, 6000)
+        }
+      })
+    }
+    input.click()
+  }
+
+  // ---------------------------------------------------------------------------
   // Suivi des documents requis
   // ---------------------------------------------------------------------------
 
@@ -168,7 +314,7 @@ export class RattrapageMesDemandesPageComponent extends BaseComponentClass imple
 
       this.uploading = true
       this.errorMessage = ''
-      this.rattrapageWorkflowService.uploadDocument(demande.id, documentRequisId, fichier).subscribe({
+      this.rattrapageWorkflowService.uploadDocument(demande.id, { documentRequisId }, fichier).subscribe({
         next: () => {
           this.uploading = false
           this.successMessage = 'Pièce justificative téléversée avec succès.'
