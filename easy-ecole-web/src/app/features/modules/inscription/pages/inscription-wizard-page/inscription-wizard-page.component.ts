@@ -319,7 +319,8 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
 
   /**
    * Charge les documents requis pour une session donnée (documents de session uniquement).
-   * Utilisé lors de l'auto-sélection depuis la route.
+   * Les dossiers d'inscription ne sont inclus QUE par l'endpoint détail
+   * (GET /sessions/:id), pas par la liste — on appelle donc le détail.
    */
   private chargerDocumentsSession(session: any): void {
     const dossiersSession: Array<{ id: string; titre: string; description?: string; obligatoire?: boolean }> =
@@ -333,21 +334,25 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.documentsRequis = dossiersSession
   }
 
+  /** Recharge le détail de la session pour récupérer ses dossiers d'inscription. */
+  private chargerDocumentsSessionParId(sessionId: number): void {
+    this.sessionService.get(String(sessionId)).subscribe({
+      next: (session: any) => {
+        this.chargerDocumentsSession(session)
+      },
+      error: () => {
+        this.errorMessage = 'Impossible de charger les documents de la session sélectionnée.'
+      }
+    })
+  }
+
   surChoixSession(event: any): void {
     const id = event?.target?.value
     if (!id) return
     this.sessionSelectionneeId = Number(id)
-    const session = this.sessions.find((s) => String(s.id) === String(id))
-    // Documents définis à la CRÉATION de la session (système en place)
-    const dossiersSession: Array<{ id: string; titre: string; description?: string; obligatoire?: boolean }> =
-      (session?.dossiersInscription || []).map((d: any) => ({
-        id: String(d.id),
-        titre: d.titre,
-        description: d.description,
-        obligatoire: true
-      }))
-    this.documents = {}
-    this.documentsRequis = dossiersSession
+    // Documents définis à la CRÉATION de la session (système en place),
+    // disponibles uniquement via le détail de la session.
+    this.chargerDocumentsSessionParId(Number(id))
   }
 
   surDocument(cle: string, event: any): void {
@@ -388,7 +393,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   }
 
   /** Un document est le bordereau de paiement si son intitulé contient « bordereau ». */
-  private estBordereau(d: { id: string; titre: string }): boolean {
+  estBordereau(d: { id: string; titre: string }): boolean {
     return /bordereau/i.test(d.titre)
   }
 
@@ -592,10 +597,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     // Si une session est déjà sélectionnée (auto-depuis la route), recharger
     // les documents requis pour cette session avec le grade maintenant choisi.
     if (this.sessionSelectionneeId && this.documentsRequis.length === 0) {
-      const session = this.sessions.find((s) => String(s.id) === String(this.sessionSelectionneeId))
-      if (session) {
-        this.chargerDocumentsSession(session)
-      }
+      this.chargerDocumentsSessionParId(this.sessionSelectionneeId)
     }
   }
 
@@ -743,10 +745,18 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.etape = 5
   }
 
+  /** Arrête la soumission en cas d'échec d'upload (plus d'erreur silencieuse). */
+  private echouerSoumission(message: string): void {
+    this.submitting = false
+    this.errorMessage = message
+  }
+
   /**
    * Téléverse les documents de session (pièces requises) puis le bordereau,
    * rattachés à la demande d'inscription passée en paramètre.
    * Le bordereau suit le pipeline Cabinet → ESA-Compta → Comité (BordereauService).
+   * En cas d'échec d'un téléversement, on arrête (pas de continuation silencieuse
+   * ni de « dossier soumis » abusif).
    */
   private finaliserFichiers(demandeId: string): void {
     const dossierDocs: Array<{ dossierId: string; fichier: File }> = []
@@ -773,7 +783,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
             televerserSuivant(index + 1)
           }
         },
-        error: () => televerserSuivant(index + 1)
+        error: () => this.echouerSoumission('L\'un des documents n\'a pas pu être téléversé. Veuillez réessayer.')
       })
     }
 
@@ -790,7 +800,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     formData.append('type', 'inscription')
     this.bordereauService.upload(formData).subscribe({
       next: () => this.finaliserSoumission(),
-      error: () => this.finaliserSoumission()
+      error: () => this.echouerSoumission('Le bordereau de paiement n\'a pas pu être téléversé. Veuillez réessayer.')
     })
   }
 

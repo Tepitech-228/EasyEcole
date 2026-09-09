@@ -148,7 +148,14 @@ export class ErrorInterceptorService implements HttpInterceptor {
         } else if (!req.url.includes('/auth/login')) {
           // Notification par défaut : les composants qui gèrent déjà error: localement
           // afficheront leur propre message ; on évite ici les erreurs critiques muettes.
-          this.toast.error(message);
+          // Un 403 (accès refusé) est notifié en ORANGE (warning) puisqu'il s'agit d'un
+          // refus d'accès, pas d'une panne : plus visible que le succès vert, moins
+          // alarmiste que le rouge (réservé aux vraies erreurs).
+          if (err.status === 403) {
+            this.toast.warning(message);
+          } else {
+            this.toast.error(message);
+          }
         }
 
         return throwError(() => err);
