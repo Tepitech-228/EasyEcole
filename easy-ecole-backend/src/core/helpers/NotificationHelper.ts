@@ -2,6 +2,7 @@ import { Notification } from "../../modules/elearning/models/Notification";
 import { EmailSender } from "./EmailSender";
 import { Utilisateur } from "../../modules/auth/models/Utilisateur";
 import SseService from "./SseService";
+import { NotificationChannelService } from "./NotificationChannelService";
 
 export class NotificationHelper {
 
@@ -32,8 +33,10 @@ export class NotificationHelper {
                 lu: false
             });
 
+            const user = await Utilisateur.findByPk(utilisateurId, { attributes: ['id', 'contact', 'email'] });
+            if (user) await NotificationChannelService.envoyer(user, `${titre}: ${message}`);
+
             if (envoyerEmail) {
-                const user = await Utilisateur.findByPk(utilisateurId);
                 if (user?.email) {
                     const emailSender = EmailSender.getInstance();
                     await emailSender.sendMail({
@@ -97,6 +100,14 @@ export class NotificationHelper {
                     }
                 }
             }
+
+            const usersForChannels = await Utilisateur.findAll({
+                where: { id: utilisateurIds },
+                attributes: ['id', 'contact']
+            });
+            await Promise.all(usersForChannels.map(user =>
+                NotificationChannelService.envoyer(user, `${titre}: ${message}`)
+            ));
         } catch (error) {
             console.error(`[NotificationHelper] Erreur envoi notifications multiples:`, error);
         }

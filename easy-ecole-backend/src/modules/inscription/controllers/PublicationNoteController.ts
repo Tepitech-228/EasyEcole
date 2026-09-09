@@ -9,6 +9,9 @@ import { Utilisateur } from "../../auth/models/Utilisateur";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { EmailSender } from "../../../core/helpers/EmailSender";
 import { SemestreProgressionService } from "../../../core/services/SemestreProgressionService";
+import { NotificationHelper } from "../../../core/helpers/NotificationHelper";
+import { ParentEnfant } from "../../parent/models/ParentEnfant";
+import { Apprenant } from "../../auth/models/Apprenant";
 
 export default class PublicationNoteController {
 
@@ -93,6 +96,17 @@ export default class PublicationNoteController {
 
             for (const participant of participants) {
                 const user = (participant as any).utilisateur;
+                const apprenant = user?.id ? await Apprenant.findOne({ where: { utilisateurId: user.id }, attributes: ['id'] }) : null;
+                if (apprenant) {
+                    const parents = await ParentEnfant.findAll({ where: { apprenantId: apprenant.id }, attributes: ['parentUtilisateurId'] });
+                    await NotificationHelper.envoyerNotificationMultiples(
+                        parents.map(parent => Number(parent.parentUtilisateurId)),
+                        'note_publiee',
+                        'Nouvelle note publiée',
+                        `Une note de ${coursIntitule} est disponible pour votre enfant.`,
+                        false
+                    );
+                }
                 if (user?.email) {
                     const noteRecord = notes.find((n: any) => n.coursParticipantId === participant.id);
                     const noteValue = noteRecord?.note ?? null;

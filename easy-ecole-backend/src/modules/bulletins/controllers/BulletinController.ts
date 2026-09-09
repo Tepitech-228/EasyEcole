@@ -10,6 +10,7 @@ import { EchelleNote } from "../models/EchelleNote";
 import { SemestresParcours } from "../../../core/enums/SemestresParcours";
 import { SemestreProgressionService } from "../../../core/services/SemestreProgressionService";
 import { logger } from "../../../core/helpers/Logger";
+import { RattrapageInscription } from "../../inscription/models/RattrapageInscription";
 
 let echellesCache: { noteMin: number; mention: string }[] | null = null;
 async function getEchelles(): Promise<{ noteMin: number; mention: string }[]> {
@@ -395,6 +396,14 @@ export default class BulletinController {
         order: [['datePublication', 'DESC']]
       });
       if (!bulletin) return res.status(404).json({ message: 'Aucun bulletin publiÃ© trouvÃ©' });
+      const rattrapageEffectue = await RattrapageInscription.count({
+        where: {
+          demandePar: utilisateurId,
+          noteRattrapage: { [Op.ne]: null },
+          statut: 'valide'
+        }
+      });
+      (bulletin as any).setDataValue('aFaitRattrapage', rattrapageEffectue > 0);
       return res.json(bulletin);
     } catch (error) {
       logger.error('Erreur relevÃ©:', error);

@@ -14,6 +14,11 @@ import { NoteEvaluation } from "../models/NoteEvaluation";
 import { CoursParticipant } from "../models/CoursParticipant";
 import { PresenceCoursParticipant } from "../models/PresenceCoursParticipant";
 import { Presence } from "../models/Presence";
+import { RhEmploye } from "../../rh/models/RhEmploye";
+import { RhContratEnseignant } from "../../rh/models/RhContratEnseignant";
+import { Pointage } from "../models/Pointage";
+import { Apprenant } from "../../auth/models/Apprenant";
+import { ParentEnfant } from "../../parent/models/ParentEnfant";
 
 export default class SeanceController {
 
@@ -212,6 +217,7 @@ export default class SeanceController {
                             description: seance.description,
                             coursId: seance.coursId,
                             cours: seance.cours,
+                            volumeHoraire: (seance as any).cours?.volumeHoraire ?? null,
                             enseignantId: seance.enseignantId,
                             enseignant: seance.enseignant,
                             regime: seance.regime,
@@ -238,6 +244,134 @@ export default class SeanceController {
             console.error('[Planning] Erreur lors de la récupération du planning:', error);
             return res.status(500).json({ success: false, message: 'Erreur lors de la récupération du planning', error });
         }
+    }
+
+    /** Volume prévu, consommé et restant par UE pour le pilotage SG. */
+    static async getVolumesHoraires(req: Request, res: Response): Promise<Response> {
+        try {
+            const coursWhere: any = {}
+            if (req.query.coursId) coursWhere.id = req.query.coursId
+            if (req.query.classeId) coursWhere.classeId = req.query.classeId
+            const cours = await Cours.findAll({ where: coursWhere, attributes: ['id', 'code', 'intitule', 'volumeHoraire'] })
+            const result = await Promise.all(cours.map(async (ue) => {
+                const seances = await Seance.findAll({ where: { coursId: ue.id }, attributes: ['enseignantId', 'jourSemaine', 'dateDebut', 'dateFin', 'heureDebut', 'heureFin'] })
+                const consomme = await SeanceController.heuresEffectuees(seances)
+                const prevu = Number(ue.volumeHoraire || 0)
+                return {
+                    coursId: ue.id,
+                    code: ue.code,
+                    intitule: ue.intitule,
+                    volumeHoraire: prevu,
+                    volumeConsomme: Math.round(consomme * 100) / 100,
+                    volumeRestant: Math.max(0, Math.round((prevu - consomme) * 100) / 100),
+                    depassement: consomme > prevu && prevu > 0
+                }
+            }))
+            return res.status(200).json(result)
+        } catch (error) {
+            return res.status(500).json({ success: false, message: 'Erreur lors du calcul des volumes horaires' })
+        }
+    }
+
+    /** Suivi SG des prestataires : contrat mensuel, heures planifiées et pointages. */
+    static async getVolumesEnseignants(req: Request, res: Response): Promise<Response> {
+        try {
+            const month = String(req.query.mois || new Date().toISOString().slice(0, 7))
+            const semestre = req.query.semestre ? String(req.query.semestre) : null
+            const debut = `${month}-01`
+            const fin = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).toISOString().slice(0, 10)
+            const seances = await Seance.findAll({
+                where: { dateDebut: { [Op.lte]: fin }, dateFin: { [Op.gte]: debut } },
+                include: [{ association: Seance.associations.enseignant, include: [Enseignant.associations.utilisateur] }, { association: Seance.associations.cours }]
+            })
+            const result = new Map<number, any>()
+            for (const seance of seances) {
+                if (semestre && String((seance as any).cours?.semestre) !== semestre) continue
+                const enseignant = (seance as any).enseignant
+                if (!enseignant) continue
+                const utilisateurId = Number(enseignant.utilisateurId)
+                const current = result.get(utilisateurId) || { enseignantId: enseignant.id, utilisateurId, nom: enseignant.utilisateur ? `${enseignant.utilisateur.prenoms} ${enseignant.utilisateur.nom}` : '', heuresPlanifiees: 0, heuresEffectuees: 0, seances: 0, seancesPointees: 0 }
+                const heures = await SeanceController.heuresEffectuees([seance])
+                current.heuresPlanifiees += SeanceController.dureeEnHeures(seance.heureDebut, seance.heureFin)
+                current.heuresEffectuees += heures
+                current.seances++
+                if (heures > 0) current.seancesPointees++
+                result.set(utilisateurId, current)
+            }
+            const rows = await Promise.all(Array.from(result.values()).map(async row => {
+                const employe = await RhEmploye.findOne({ where: { utilisateurId: row.utilisateurId } })
+                const contrat = employe ? await RhContratEnseignant.findOne({ where: { employeId: employe.id, statut: 'actif' }, order: [['dateDebut', 'DESC']] }) : null
+                const contratHeures = Number(contrat?.volumeHoraireMensuel || 0)
+                return { ...row, heuresPlanifiees: Math.round(row.heuresPlanifiees * 100) / 100, heuresEffectuees: Math.round(row.heuresEffectuees * 100) / 100, volumeHoraireMensuel: contratHeures, heuresRestantes: Math.max(0, Math.round((contratHeures - row.heuresEffectuees) * 100) / 100), pointages: row.seancesPointees, absences: Math.max(0, row.seances - row.seancesPointees) }
+            }))
+            return res.status(200).json({ mois: month, semestre, data: rows })
+        } catch (error) {
+            return res.status(500).json({ success: false, message: 'Erreur lors du suivi horaire des enseignants' })
+        }
+    }
+
+    /** Séances commencées sans pointage enseignant : suivi SG en temps réel. */
+    static async getRetardsEnseignants(req: Request, res: Response): Promise<Response> {
+        try {
+            const now = new Date()
+            const today = now.toISOString().split('T')[0]
+            const heure = now.toTimeString().split(' ')[0]
+            const seances = await Seance.findAll({
+                where: { dateDebut: { [Op.lte]: today }, dateFin: { [Op.gte]: today }, heureDebut: { [Op.lte]: heure } },
+                include: [{ association: Seance.associations.cours }, { association: Seance.associations.enseignant, include: [Enseignant.associations.utilisateur] }]
+            })
+            const pointages = await (await import('../models/Pointage')).Pointage.findAll({ where: { date: today }, attributes: ['utilisateurId', 'heureArrivee'] })
+            const pointagesParUtilisateur = new Map(pointages.map(p => [Number(p.utilisateurId), p]))
+            const result = seances.map(seance => {
+                const utilisateurId = Number((seance as any).enseignant?.utilisateur?.id)
+                const pointage = pointagesParUtilisateur.get(utilisateurId)
+                const fin = String(seance.heureFin)
+                const statut = pointage ? 'pointe' : (heure > fin ? 'absent' : 'en_retard')
+                return { seanceId: seance.id, cours: (seance as any).cours?.intitule, enseignant: (seance as any).enseignant?.utilisateur, heureDebut: seance.heureDebut, heureFin: seance.heureFin, statut }
+            }).filter(item => item.statut !== 'pointe')
+            return res.status(200).json(result)
+        } catch (error) {
+            return res.status(500).json({ success: false, message: 'Erreur lors du suivi des retards' })
+        }
+    }
+
+    private static dureeEnHeures(debut: any, fin: any): number {
+        const toMinutes = (value: any) => {
+            const parts = String(value).slice(0, 5).split(':').map(Number)
+            return parts[0] * 60 + parts[1]
+        }
+        return Math.max(0, (toMinutes(fin) - toMinutes(debut)) / 60)
+    }
+
+    /** Compte uniquement le chevauchement d'une séance avec un pointage QR complet. */
+    private static async heuresEffectuees(seances: any[]): Promise<number> {
+        if (!seances.length) return 0
+        const dates = seances.flatMap(seance => [new Date(seance.dateDebut), new Date(seance.dateFin)])
+        const debut = new Date(Math.min(...dates.map(date => date.getTime()))).toISOString().slice(0, 10)
+        const fin = new Date(Math.max(...dates.map(date => date.getTime()))).toISOString().slice(0, 10)
+        const utilisateurIds = Array.from(new Set(seances.map(seance => Number(seance.enseignant?.utilisateurId || seance.enseignantId)).filter(Boolean)))
+        const pointages = await Pointage.findAll({ where: { utilisateurId: { [Op.in]: utilisateurIds }, date: { [Op.between]: [debut, fin] } }, attributes: ['utilisateurId', 'date', 'heureArrivee', 'heureDepart'] })
+        const index = new Map(pointages.map(pointage => [`${pointage.utilisateurId}|${new Date(pointage.date).toISOString().slice(0, 10)}`, pointage]))
+        let total = 0
+        for (const seance of seances) {
+            for (const date = new Date(seance.dateDebut); date <= new Date(seance.dateFin); date.setUTCDate(date.getUTCDate() + 1)) {
+                const jour = String(((date.getUTCDay() + 6) % 7) + 1)
+                if (jour !== String(seance.jourSemaine)) continue
+                const cle = `${seance.enseignant?.utilisateurId || seance.enseignantId}|${date.toISOString().slice(0, 10)}`
+                const pointage = index.get(cle) as any
+                if (pointage?.heureArrivee && pointage?.heureDepart) {
+                    const debutEffectif = Math.max(SeanceController.minutes(pointage.heureArrivee), SeanceController.minutes(seance.heureDebut))
+                    const finEffective = Math.min(SeanceController.minutes(pointage.heureDepart), SeanceController.minutes(seance.heureFin))
+                    if (finEffective > debutEffectif) total += (finEffective - debutEffectif) / 60
+                }
+            }
+        }
+        return total
+    }
+
+    private static minutes(value: any): number {
+        const [heures, minutes] = String(value).slice(0, 5).split(':').map(Number)
+        return heures * 60 + minutes
     }
 
     static async checkConflits(req: Request, res: Response): Promise<Response> {
@@ -452,18 +586,47 @@ export default class SeanceController {
                 anneeAcademiqueId: req.body.anneeAcademiqueId ?? seance.anneeAcademiqueId,
                 semestreAcademiqueId: req.body.semestreAcademiqueId ?? seance.semestreAcademiqueId,
             })
-                .then(async (seance) => {
-                    return res.status(200).send(seance);
-                })
-                .catch((error) => {
-                    return res.status(400).json({ success: false, error: error });
-                });
+            await SeanceController.notifierModification(seance)
+            return res.status(200).send(seance)
         }
         else {
             return res.status(404).json({ success: false, message: "Seance non trouvée" });
         }
 
         return null
+    }
+
+    private static async notifierModification(seance: Seance): Promise<void> {
+        const full = await Seance.findByPk(seance.id, {
+            include: [
+                { association: Seance.associations.cours },
+                { association: Seance.associations.enseignant, include: [Enseignant.associations.utilisateur] }
+            ]
+        })
+        const userIds = new Set<number>()
+        const enseignantUtilisateurId = Number((full as any)?.enseignant?.utilisateur?.id)
+        if (enseignantUtilisateurId) userIds.add(enseignantUtilisateurId)
+        const classeId = Number((full as any)?.cours?.classeId)
+        if (classeId) {
+            const cursus = await CursusApprenant.findAll({ where: { classeId }, attributes: ['utilisateurId'] })
+            for (const item of cursus) {
+                userIds.add(Number(item.utilisateurId))
+                const apprenant = await Apprenant.findOne({ where: { utilisateurId: item.utilisateurId }, attributes: ['id'] })
+                if (apprenant) {
+                    const parents = await ParentEnfant.findAll({ where: { apprenantId: apprenant.id }, attributes: ['parentUtilisateurId'] })
+                    parents.forEach(parent => userIds.add(Number(parent.parentUtilisateurId)))
+                }
+            }
+        }
+        if (userIds.size) {
+            await NotificationHelper.envoyerNotificationMultiples(
+                Array.from(userIds),
+                'edt_modifie',
+                'Emploi du temps modifié',
+                `La séance ${(full as any)?.cours?.intitule || full?.titre || ''} a été modifiée. Consultez votre planning.`,
+                false
+            )
+        }
     }
 
     static async deleteSeance(req: Request, res: Response): Promise<Response | null> {
@@ -562,6 +725,11 @@ export default class SeanceController {
 
             const enseignantIds = enseignantsNotifications.map(e => e.id);
             const etudiantIds = etudiantsNotifications.map(e => e.id);
+            const apprenants = await Apprenant.findAll({ where: { utilisateurId: { [Op.in]: etudiantIds } }, attributes: ['id', 'utilisateurId'] });
+            const parents = apprenants.length
+                ? await ParentEnfant.findAll({ where: { apprenantId: { [Op.in]: apprenants.map(a => a.id) } }, attributes: ['parentUtilisateurId'] })
+                : [];
+            const parentIds = Array.from(new Set(parents.map(parent => Number(parent.parentUtilisateurId))));
 
             if (enseignantIds.length > 0) {
                 await NotificationHelper.envoyerNotificationMultiples(
@@ -583,11 +751,22 @@ export default class SeanceController {
                 );
             }
 
+            if (parentIds.length > 0) {
+                await NotificationHelper.envoyerNotificationMultiples(
+                    parentIds,
+                    'edt_publie',
+                    'Emploi du temps publié',
+                    'L’emploi du temps de votre enfant a été publié ou mis à jour. Consultez son planning.',
+                    false
+                );
+            }
+
             return res.status(200).json({
                 success: true,
                 message: 'Emploi du temps publié avec succès',
                 enseignantsNotifies: enseignantIds.length,
-                etudiantsNotifies: etudiantIds.length
+                etudiantsNotifies: etudiantIds.length,
+                parentsNotifies: parentIds.length
             });
         } catch (error) {
             return res.status(500).json({ success: false, error });

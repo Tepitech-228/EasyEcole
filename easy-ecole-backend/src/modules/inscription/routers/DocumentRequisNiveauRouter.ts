@@ -18,7 +18,7 @@ const router = express.Router()
  *         name: niveau
  *         schema:
  *           type: string
- *         description: Niveau (ex: LICENCE 1, MASTER) — optionnel
+ *         description: "Niveau (ex: LICENCE 1, MASTER) — optionnel"
  *     responses:
  *       200:
  *         description: Liste des documents requis

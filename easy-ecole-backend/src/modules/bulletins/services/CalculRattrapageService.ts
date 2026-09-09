@@ -5,6 +5,7 @@ import { LigneBulletin } from "../models/LigneBulletin";
 import { Cours } from "../../inscription/models/Cours";
 import { Mcc } from "../../inscription/models/Mcc";
 import { RegleEvaluation } from "../../inscription/models/RegleEvaluation";
+import { EchelleNote } from "../models/EchelleNote";
 
 export interface RetakeGrade {
   coursId: number
@@ -117,6 +118,15 @@ export class CalculRattrapageService {
         ? Math.round((sommeMoyennesPonderees / sommeCoefficients) * 100) / 100
         : 0;
 
+          const echelles = await EchelleNote.findAll({
+            where: { estActive: true },
+            order: [['noteMin', 'DESC']],
+            attributes: ['noteMin', 'mention'],
+            raw: true,
+            transaction: t
+          });
+          const mention = echelles.find(e => moyenneGenerale >= Number(e.noteMin))?.mention || 'Insuffisant';
+
       let decision: string;
       let motif: string;
 
@@ -134,7 +144,8 @@ export class CalculRattrapageService {
       await bulletin.update({
         moyenneGenerale,
         totalCredits,
-        creditsValides
+            creditsValides,
+            mention
       }, { transaction: t });
 
       await t.commit();

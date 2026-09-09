@@ -41,6 +41,10 @@
             <div>
               <h3 class="text-base font-bold">{{ getSemestre(b.semestre) }}</h3>
               <p class="text-xs text-blue-200">{{ b.anneeAcademique?.libelle }}</p>
+              <span *ngIf="b.aFaitRattrapage"
+                    class="inline-flex mt-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-semibold">
+                Note(s) de rattrapage intégrée(s)
+              </span>
             </div>
           </div>
           <div class="text-right">

@@ -20,6 +20,7 @@ import { Notification } from "../../elearning/models/Notification";
 import { Bordereau } from "../models/Bordereau";
 import { ParametreFrais } from "../../comptabilite/models/ParametreFrais";
 import { creerEcritureComptable } from "../../comptabilite/helpers/ComptabiliteHelper";
+import { CalculRattrapageService } from "../../bulletins/services/CalculRattrapageService";
 
 export type DocumentRequisRattrapage = {
   id: number;
@@ -421,6 +422,31 @@ export default class RattrapageController {
           statut: item.noteRattrapage != null ? 'valide' : rattrapage.statut,
           corrigePar: utilisateurId ?? null
         });
+
+        // Une note de rattrapage validée remplace la note insuffisante du
+        // bulletin correspondant et recalcule sa moyenne générale/mention.
+        if (item.noteRattrapage != null && rattrapage.coursParticipantId && rattrapage.sessionExamenId) {
+          const coursParticipant = await CoursParticipant.findByPk(rattrapage.coursParticipantId);
+          const sessionExamen = await SessionExamen.findByPk(rattrapage.sessionExamenId);
+          const cursus = coursParticipant?.cursusApprenantId
+            ? await CursusApprenant.findByPk(coursParticipant.cursusApprenantId)
+            : null;
+          const bulletin = cursus && sessionExamen
+            ? await Bulletin.findOne({
+                where: {
+                  cursusApprenantId: cursus.id,
+                  semestre: sessionExamen.semestre,
+                }
+              })
+            : null;
+
+          if (bulletin) {
+            await CalculRattrapageService.calculerRattrapage(bulletin.id, [{
+              coursId: Number(rattrapage.coursId),
+              newNote: Number(item.noteRattrapage),
+            }]);
+          }
+        }
 
         results.push(rattrapage);
       }
