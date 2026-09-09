@@ -275,4 +275,18 @@ export default class EnseignantController {
 
         return null
     }
+
+    static async getQrCode(req: Request, res: Response): Promise<Response | null> {
+        const { fileName } = req.params;
+        const dir = path.resolve(process.cwd(), 'storage', 'qr-codes', 'enseignants');
+        const filePath = path.join(dir, fileName);
+
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ success: false, message: 'QR code non trouvé' });
+        }
+
+        res.setHeader('Content-Type', 'image/png');
+        res.sendFile(filePath);
+        return null;
+    }
 }

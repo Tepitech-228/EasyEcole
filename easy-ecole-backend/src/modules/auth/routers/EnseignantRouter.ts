@@ -131,6 +131,7 @@ router
      *         description: Non autorisé
      */
     .post('/qr-codes/generate', [AuthInstitution, CheckPermission('action.administration.enseignant.generer-qr')], EnseignantController.generateQrCodes)
+    .get('/qr-codes/:fileName', EnseignantController.getQrCode)
     /**
      * @openapi
      * /auth/enseignants:

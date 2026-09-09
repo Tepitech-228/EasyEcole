@@ -19,6 +19,20 @@ const ROLES_POINTAGE = [
   RolesUtilisateur.COMITE_ORIENTATION,
 ];
 
+const ROLES_POINTAGE_SCAN = [
+  RolesUtilisateur.ENSEIGNANT,
+  RolesUtilisateur.INSTITUTION,
+  RolesUtilisateur.ADMIN,
+  RolesUtilisateur.RESSOURCES_HUMAINES,
+  RolesUtilisateur.PERSONNEL_ADMINISTRATIF,
+  RolesUtilisateur.SECRETAIRE,
+  RolesUtilisateur.CAISSIER_BANQUE,
+  RolesUtilisateur.SURVEILLANT,
+  RolesUtilisateur.COMITE_ORIENTATION,
+  RolesUtilisateur.CABINET_COMPTABLE,
+  RolesUtilisateur.ESA_COMPTA,
+];
+
 export default class PointageController {
 
     constructor() { }
@@ -150,10 +164,7 @@ export default class PointageController {
 
     static async pointerArriveeByScan(req: Request, res: Response): Promise<Response | null> {
         const role = (req as any).utilisateurRole;
-        if (role != RolesUtilisateur.ENSEIGNANT &&
-            role != RolesUtilisateur.INSTITUTION &&
-            role != RolesUtilisateur.ADMIN &&
-            role != RolesUtilisateur.RESSOURCES_HUMAINES) {
+        if (!ROLES_POINTAGE_SCAN.includes(role)) {
             return res.status(403).json({ success: false, message: "Rôle non autorisé" })
         }
 
@@ -205,10 +216,7 @@ export default class PointageController {
 
     static async pointerDepartByScan(req: Request, res: Response): Promise<Response | null> {
         const role = (req as any).utilisateurRole;
-        if (role != RolesUtilisateur.ENSEIGNANT &&
-            role != RolesUtilisateur.INSTITUTION &&
-            role != RolesUtilisateur.ADMIN &&
-            role != RolesUtilisateur.RESSOURCES_HUMAINES) {
+        if (!ROLES_POINTAGE_SCAN.includes(role)) {
             return res.status(403).json({ success: false, message: "Rôle non autorisé" })
         }
 

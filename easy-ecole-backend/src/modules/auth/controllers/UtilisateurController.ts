@@ -7,6 +7,12 @@ import { Enseignant } from "../models/Enseignant";
 import { Apprenant } from "../models/Apprenant";
 import * as bcrypt from 'bcrypt';
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
+import { IDGenerator } from "../../../core/helpers/IDGenerator";
+import { Etablissement } from "../../etablissement/models/Etablissement";
+import { QrTokenService } from "../../../core/services/QrTokenService";
+import QRCode from "qrcode";
+import * as path from "path";
+import * as fs from "fs";
 
 export default class UtilisateurController {
 
@@ -21,6 +27,7 @@ export default class UtilisateurController {
             [RolesUtilisateur.RESSOURCES_HUMAINES]: 'Ressources Humaines',
             [RolesUtilisateur.ESA_COMPTA]: 'ESA Compta',
             [RolesUtilisateur.SECRETAIRE]: 'Secrétaire',
+            [RolesUtilisateur.SURVEILLANT]: 'Surveillant',
         };
         return map[role] || role;
     }
@@ -186,7 +193,7 @@ export default class UtilisateurController {
             // Création du profil lié selon le rôle
             // Hors apprenant/enseignant/parent → tous = PersonnelAdministratif (fonction = rôle)
             const userRole = req.body.role || RolesUtilisateur.APPRENANT;
-            const isStaff =![
+            const isStaff = [
                 RolesUtilisateur.PERSONNEL_ADMINISTRATIF,
                 RolesUtilisateur.CAISSIER_BANQUE,
                 RolesUtilisateur.COMITE_ORIENTATION,
@@ -194,6 +201,7 @@ export default class UtilisateurController {
                 RolesUtilisateur.RESSOURCES_HUMAINES,
                 RolesUtilisateur.ESA_COMPTA,
                 RolesUtilisateur.SECRETAIRE,
+                RolesUtilisateur.SURVEILLANT,
             ].includes(userRole);
 
             try {
@@ -209,36 +217,148 @@ export default class UtilisateurController {
                         periode: req.body.periode || 'matin',
                     });
                 } else if (userRole === RolesUtilisateur.ENSEIGNANT) {
-                    await Enseignant.create({
-                        utilisateurId: utilisateur.id,
-                        specialite: req.body.specialite || null,
-                        gradeAcademique: req.body.gradeAcademique || null,
-                        matricule: req.body.matricule || null,
-                        statut: req.body.statut || 'Permanent',
-                        fonctionAdministrative: req.body.fonctionAdministrative || null,
-                        anneeExperience: req.body.anneeExperience || 0,
-                        cni: req.body.cni || null,
-                        dateNaissance: req.body.dateNaissance || null,
-                        lieuNaissance: req.body.lieuNaissance || null,
-                        sexe: req.body.sexe || 'M',
-                        nationalite: req.body.nationalite || 'Ivoirienne',
-                        contact: req.body.contact || null,
-                        plusHautDiplome: req.body.plusHautDiplome || null,
-                    });
+                    let matricule = req.body.matricule || null
+
+                    if (!matricule) {
+                        const etabId = (req as any).etablissementId || req.body.etablissementId || null
+                        let etablissement: Etablissement | null = null
+                        if (etabId) {
+                            etablissement = await Etablissement.findByPk(etabId)
+                        }
+                        const etabCode = IDGenerator.deriveEtablissementCode(etablissement)
+                        const siteCode = IDGenerator.deriveSiteCode(etablissement)
+                        const matiereCode = IDGenerator.deriveMatiereCode(req.body.specialite)
+                        const prefix = `${etabCode}-${matiereCode}-${siteCode}-`
+                        const count = await Enseignant.count({ where: { matricule: { [Op.like]: prefix + '%' } } as any })
+                        matricule = IDGenerator.generateMatricule(etabCode, matiereCode, siteCode, count + 1)
+                    }
+
+                    const MAX_RETRIES = 5
+                    let enseignant: Enseignant | null = null
+                    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+                        try {
+                            enseignant = await Enseignant.create({
+                                utilisateurId: utilisateur.id,
+                                specialite: req.body.specialite || null,
+                                gradeAcademique: req.body.gradeAcademique || null,
+                                matricule: matricule,
+                                statut: req.body.statut || 'Permanent',
+                                fonctionAdministrative: req.body.fonctionAdministrative || null,
+                                anneeExperience: req.body.anneeExperience || 0,
+                                cni: req.body.cni || null,
+                                dateNaissance: req.body.dateNaissance || null,
+                                lieuNaissance: req.body.lieuNaissance || null,
+                                sexe: req.body.sexe || 'M',
+                                nationalite: req.body.nationalite || 'Ivoirienne',
+                                contact: req.body.contact || null,
+                                plusHautDiplome: req.body.plusHautDiplome || null,
+                            });
+                            break
+                        } catch (createErr: any) {
+                            const errCode = createErr?.parent?.code || createErr?.original?.code || ''
+                            const errName = createErr?.name || ''
+                            if ((errCode === 'ER_DUP_ENTRY' || errName === 'SequelizeUniqueConstraintError') && attempt < MAX_RETRIES - 1) {
+                                const etabId = (req as any).etablissementId || req.body.etablissementId || null
+                                let etablissement: Etablissement | null = null
+                                if (etabId) {
+                                    etablissement = await Etablissement.findByPk(etabId)
+                                }
+                                const etabCode = IDGenerator.deriveEtablissementCode(etablissement)
+                                const siteCode = IDGenerator.deriveSiteCode(etablissement)
+                                const matiereCode = IDGenerator.deriveMatiereCode(req.body.specialite)
+                                const prefix = `${etabCode}-${matiereCode}-${siteCode}-`
+                                const cnt = await Enseignant.count({ where: { matricule: { [Op.like]: prefix + '%' } } as any })
+                                matricule = IDGenerator.generateMatricule(etabCode, matiereCode, siteCode, cnt + 1)
+                                continue
+                            }
+                            throw createErr
+                        }
+                    }
+
+                    try {
+                        const dir: string = path.resolve(process.cwd(), 'storage', 'qr-codes', 'enseignants')
+                        if (!fs.existsSync(dir)) { fs.mkdirSync(dir, { recursive: true }) }
+                        const userId = String(utilisateur.id)
+                        const qrData = QrTokenService.signer(utilisateur.id)
+                        const fileName = `${userId}.png`
+                        const filePath = path.join(dir, fileName)
+                        await QRCode.toFile(filePath, qrData, {
+                            type: 'png', width: 400, margin: 4,
+                            errorCorrectionLevel: 'Q',
+                            color: { dark: '#000000', light: '#ffffff' }
+                        })
+                        if (enseignant) { await enseignant.update({ qrCode: fileName }) }
+                    } catch (qrError) { console.error('Erreur génération QR enseignant:', qrError) }
+
                 } else if (isStaff) {
-                    // Tous les rôles staff → profil PersonnelAdministratif, fonction = libellé du rôle
-                    await PersonnelAdministratif.create({
-                        utilisateurId: utilisateur.id,
-                        fonction: req.body.fonction || this.roleToFonction(userRole),
-                        matricule: req.body.matricule || null,
-                        statut: req.body.statut || 'Permanent',
-                        directionService: req.body.directionService || null,
-                        cni: req.body.cni || null,
-                        dateNaissance: req.body.dateNaissance || null,
-                        lieuNaissance: req.body.lieuNaissance || null,
-                        sexe: req.body.sexe || 'M',
-                        nationalite: req.body.nationalite || 'Ivoirienne',
-                    });
+                    let matricule = req.body.matricule || null
+
+                    if (!matricule) {
+                        const etabId = (req as any).etablissementId || req.body.etablissementId || null
+                        let etablissement: Etablissement | null = null
+                        if (etabId) {
+                            etablissement = await Etablissement.findByPk(etabId)
+                        }
+                        const etabCode = IDGenerator.deriveEtablissementCode(etablissement)
+                        const siteCode = IDGenerator.deriveSiteCode(etablissement)
+                        const serviceCode = IDGenerator.deriveServiceCode(req.body.directionService, userRole)
+                        const prefix = `${etabCode}-${serviceCode}-${siteCode}-`
+                        const count = await PersonnelAdministratif.count({ where: { matricule: { [Op.like]: prefix + '%' } } as any })
+                        matricule = IDGenerator.generateMatricule(etabCode, serviceCode, siteCode, count + 1)
+                    }
+
+                    const MAX_RETRIES = 5
+                    let personnel: PersonnelAdministratif | null = null
+                    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+                        try {
+                            personnel = await PersonnelAdministratif.create({
+                                utilisateurId: utilisateur.id,
+                                fonction: req.body.fonction || this.roleToFonction(userRole),
+                                matricule: matricule,
+                                statut: req.body.statut || 'Permanent',
+                                directionService: req.body.directionService || null,
+                                cni: req.body.cni || null,
+                                dateNaissance: req.body.dateNaissance || null,
+                                lieuNaissance: req.body.lieuNaissance || null,
+                                sexe: req.body.sexe || 'M',
+                                nationalite: req.body.nationalite || 'Ivoirienne',
+                            });
+                            break
+                        } catch (createErr: any) {
+                            const errCode = createErr?.parent?.code || createErr?.original?.code || ''
+                            const errName = createErr?.name || ''
+                            if ((errCode === 'ER_DUP_ENTRY' || errName === 'SequelizeUniqueConstraintError') && attempt < MAX_RETRIES - 1) {
+                                const etabId = (req as any).etablissementId || req.body.etablissementId || null
+                                let etablissement: Etablissement | null = null
+                                if (etabId) {
+                                    etablissement = await Etablissement.findByPk(etabId)
+                                }
+                                const etabCode = IDGenerator.deriveEtablissementCode(etablissement)
+                                const siteCode = IDGenerator.deriveSiteCode(etablissement)
+                                const serviceCode = IDGenerator.deriveServiceCode(req.body.directionService, userRole)
+                                const prefix = `${etabCode}-${serviceCode}-${siteCode}-`
+                                const cnt = await PersonnelAdministratif.count({ where: { matricule: { [Op.like]: prefix + '%' } } as any })
+                                matricule = IDGenerator.generateMatricule(etabCode, serviceCode, siteCode, cnt + 1)
+                                continue
+                            }
+                            throw createErr
+                        }
+                    }
+
+                    try {
+                        const dir: string = path.resolve(process.cwd(), 'storage', 'qr-codes', 'personnel')
+                        if (!fs.existsSync(dir)) { fs.mkdirSync(dir, { recursive: true }) }
+                        const userId = String(utilisateur.id)
+                        const qrData = QrTokenService.signer(utilisateur.id)
+                        const fileName = `${userId}.png`
+                        const filePath = path.join(dir, fileName)
+                        await QRCode.toFile(filePath, qrData, {
+                            type: 'png', width: 400, margin: 4,
+                            errorCorrectionLevel: 'Q',
+                            color: { dark: '#000000', light: '#ffffff' }
+                        })
+                        if (personnel) { await personnel.update({ qrCode: fileName }) }
+                    } catch (qrError) { console.error('Erreur génération QR personnel:', qrError) }
                 }
             } catch (profileError: any) {
                 console.error('Erreur création profil:', profileError?.message);

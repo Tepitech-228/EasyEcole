@@ -257,6 +257,7 @@ const ALL_PERMISSIONS: Array<{ key: string; libelle: string; module: string; typ
     { key: 'action.administration.enseignant.inscrire', libelle: 'Inscrire un enseignant', module: 'Administration', type: 'action', parentKey: 'menu.administration.utilisateurs' },
     { key: 'action.administration.enseignant.generer-qr', libelle: 'Générer QR code enseignant', module: 'Administration', type: 'action', parentKey: 'menu.administration.qr-codes' },
     { key: 'action.administration.enseignant.supprimer', libelle: 'Supprimer un enseignant', module: 'Administration', type: 'action', parentKey: 'menu.administration.utilisateurs' },
+    { key: 'action.administration.personnel.generer-qr', libelle: 'Générer les QR codes du personnel administratif', module: 'Administration', type: 'action', parentKey: 'menu.administration.qr-codes' },
 
     { key: 'menu.etablissements', libelle: 'Etablissements', module: 'Inscription', type: 'menu', parentKey: 'menu.inscription' },
     { key: 'action.etablissement.creer', libelle: 'Creer un etablissement', module: 'Inscription', type: 'action', parentKey: 'menu.etablissements' },

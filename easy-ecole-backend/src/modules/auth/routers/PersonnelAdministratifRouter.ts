@@ -6,6 +6,7 @@ import { customAlphabet } from 'nanoid'
 import PersonnelAdministratifController from "../controllers/PersonnelAdministratifController"
 import Authenticate from "../../../core/middlewares/Authenticate"
 import { AuthAdmin } from "../../../core/middlewares/AuthAdmin"
+import { AuthInstitution } from "../../../core/middlewares/AuthInstitution"
 import CheckPermission from "../../../core/middlewares/CheckPermission"
 
 const ALLOWED_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp'])
@@ -40,6 +41,8 @@ router
     .get('/:id', [Authenticate], PersonnelAdministratifController.get)
     .put('/', [Authenticate], upload.single('photo'), PersonnelAdministratifController.update)
     .put('/photo', [Authenticate], upload.single('photo'), PersonnelAdministratifController.updatePhoto)
+    .post('/qr-codes/generate', [Authenticate, AuthInstitution, CheckPermission('action.administration.personnel.generer-qr')], PersonnelAdministratifController.generateQRs)
+    .get('/qr-codes/:fileName', PersonnelAdministratifController.getQrCode)
     .delete('/:id', [Authenticate, AuthAdmin], PersonnelAdministratifController.delete)
 
 export default router

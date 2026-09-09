@@ -2,6 +2,7 @@ import { customAlphabet } from 'nanoid'
 import { Parcours } from '../../modules/inscription/models/Parcours'
 import { Classe } from '../../modules/inscription/models/Classe'
 import { Etablissement } from '../../modules/etablissement/models/Etablissement'
+import { RolesUtilisateur } from '../enums/RolesUtilisateur'
 
 export class IDGenerator {
     private static instance: IDGenerator
@@ -134,7 +135,7 @@ export class IDGenerator {
         return nanoid()
     }
 
-    private static deriveSiteCode(etablissement: Etablissement | null): string {
+    public static deriveSiteCode(etablissement: Etablissement | null): string {
         if (!etablissement) return 'ST'
 
         const nom = etablissement.nom?.toLowerCase() || ''
@@ -147,6 +148,87 @@ export class IDGenerator {
 
         const nanoid = customAlphabet(IDGenerator.UPPER_ALPHABETS, 2)
         return nanoid()
+    }
+
+    private static removeAccents(str: string): string {
+        return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    }
+
+    public static deriveEtablissementCode(etablissement: { nom?: string | null } | null): string {
+        if (!etablissement?.nom) return 'ETB'
+        const nom = IDGenerator.removeAccents(etablissement.nom).toUpperCase().replace(/[^A-Z\s]/g, '').trim()
+        if (!nom) return 'ETB'
+        const mots = nom.split(/\s+/).filter(m => m.length > 0)
+        if (mots.length === 1 && mots[0].length <= 6) return mots[0]
+        if (mots.length >= 2) {
+            const code = mots.map(m => m[0]).join('').slice(0, 6)
+            return code || 'ETB'
+        }
+        return mots[0].slice(0, 6) || 'ETB'
+    }
+
+    public static deriveMatiereCode(specialite: string | null | undefined): string {
+        if (!specialite) return 'GEN'
+        const s = IDGenerator.removeAccents(specialite.trim().toLowerCase())
+        if (!s) return 'GEN'
+        if (s.includes('math')) return 'MATH'
+        if (s.includes('physique')) return 'PHY'
+        if (s.includes('chimie')) return 'CHI'
+        if (s.includes('svt') || s.includes('biologie') || s.includes('bio')) return 'BIO'
+        if (s.includes('informatique') || s.includes('ntic') || s.includes('programmation')) return 'INF'
+        if (s.includes('francais') || s.includes('lettres')) return 'FRA'
+        if (s.includes('anglais') || s.includes('english')) return 'ANG'
+        if (s.includes('espagnol')) return 'ESP'
+        if (s.includes('allemand')) return 'ALL'
+        if (s.includes('philosophie')) return 'PHI'
+        if (s.includes('histoire')) return 'HGE'
+        if (s.includes('geographie')) return 'GEO'
+        if (s.includes('eps') || s.includes('sport')) return 'EPS'
+        if (s.includes('gestion') || s.includes('management')) return 'GES'
+        if (s.includes('comptab') || s.includes('finance')) return 'CPT'
+        if (s.includes('economie') || s.includes('eco')) return 'ECO'
+        if (s.includes('droit')) return 'DRO'
+        if (s.includes('marketing') || s.includes('commerce') || s.includes('mkt')) return 'MKT'
+        if (s.includes('communication') || s.includes('journalisme')) return 'COM'
+        if (s.includes('genie civil')) return 'GCI'
+        if (s.includes('genie electrique') || s.includes('electronique')) return 'GEE'
+        if (s.includes('genie mecanique') || s.includes('agro')) return 'GME'
+        const fallback = s.replace(/[^a-z]/g, '').slice(0, 4)
+        return fallback || 'GEN'
+    }
+
+    public static deriveServiceCode(directionService: string | null | undefined, role?: string): string {
+        if (directionService) {
+            const s = IDGenerator.removeAccents(directionService.trim().toLowerCase())
+            if (s.includes('cabinet') || s.includes('direction')) return 'CAB'
+            if (s.includes('esa') || s.includes('ecole')) return 'ESA'
+            if (s.includes('comptab') || s.includes('cabinet_comptable')) return 'CPT'
+            if (s.includes('rh') || s.includes('ressources humaines') || s.includes('personnel')) return 'RH'
+            if (s.includes('secretariat') || s.includes('sec')) return 'SEC'
+            if (s.includes('scolarite')) return 'SCO'
+            if (s.includes('tresorerie') || s.includes('caisse') || s.includes('caissier')) return 'TRE'
+            if (s.includes('orientation')) return 'CO'
+            if (s.includes('surveillance')) return 'SUR'
+            if (s.includes('informatique') || s.includes('digital')) return 'INF'
+        }
+        if (role) {
+            const roleMap: Record<string, string> = {
+                [RolesUtilisateur.PERSONNEL_ADMINISTRATIF]: 'ADM',
+                [RolesUtilisateur.RESSOURCES_HUMAINES]: 'RH',
+                [RolesUtilisateur.CABINET_COMPTABLE]: 'CAB',
+                [RolesUtilisateur.ESA_COMPTA]: 'CPT',
+                [RolesUtilisateur.COMITE_ORIENTATION]: 'CO',
+                [RolesUtilisateur.CAISSIER_BANQUE]: 'TRE',
+                [RolesUtilisateur.SECRETAIRE]: 'SEC',
+                [RolesUtilisateur.SURVEILLANT]: 'SUR',
+            }
+            if (roleMap[role]) return roleMap[role]
+        }
+        return 'ADM'
+    }
+
+    public static generateMatricule(etablissementCode: string, categorieCode: string, siteCode: string, ordre: number): string {
+        return `${etablissementCode}-${categorieCode}-${siteCode}-${String(ordre).padStart(4, '0')}`
     }
 
     public generateNumeroPaiement(): string {

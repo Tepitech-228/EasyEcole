@@ -9,6 +9,11 @@ import { Enseignant } from "../models/Enseignant";
 import { IDGenerator } from "../../../core/helpers/IDGenerator";
 import { JWT_SECRET } from "../../../core/config/jwt";
 import { OtpService } from "../../../core/services/OtpService";
+import { Etablissement } from "../../etablissement/models/Etablissement";
+import { QrTokenService } from "../../../core/services/QrTokenService";
+import QRCode from "qrcode";
+import * as path from "path";
+import * as fs from "fs";
 
 function masquerEmail(email: string): string {
   const [local, domaine] = email.split('@')
@@ -246,26 +251,89 @@ export default class AuthController {
 
 await utilisateur.save()
         .then(async (utilisateur) => {
-          await Enseignant.create({
-            utilisateurId: utilisateur.id,
-            cni: req.body.cni,
-            matricule: req.body.matricule,
-            sexe: req.body.sexe,
-            dateNaissance: req.body.dateNaissance,
-            nationalite: req.body.nationalite,
-            plusHautDiplome: req.body.plusHautDiplome,
-            gradeAcademique: req.body.gradeAcademique,
-            statut: req.body.statut,
-            specialite: req.body.specialite,
-            heureTheoriqueAnnuelle: req.body.heureTheoriqueAnnuelle,
-            heureReelleAnnuelle: req.body.heureReelleAnnuelle,
-            fonctionAdministrative: req.body.fonctionAdministrative,
-            statutHandicap: req.body.statutHandicap,
-            natureHandicap: req.body.natureHandicap,
-            anneeExperience: req.body.anneeExperience,
-            nifOtr: req.body.nifOtr,
-            contact: req.body.utilisateur.contact
-          })
+          let matricule = req.body.matricule || null
+
+          if (!matricule) {
+            const etabId = (req as any).etablissementId || null
+            let etablissement: Etablissement | null = null
+            if (etabId) {
+              etablissement = await Etablissement.findByPk(etabId)
+            }
+            const etabCode = IDGenerator.deriveEtablissementCode(etablissement)
+            const siteCode = IDGenerator.deriveSiteCode(etablissement)
+            const matiereCode = IDGenerator.deriveMatiereCode(req.body.specialite)
+            const prefix = `${etabCode}-${matiereCode}-${siteCode}-`
+            const count = await Enseignant.count({ where: { matricule: { [Op.like]: prefix + '%' } } as any })
+            matricule = IDGenerator.generateMatricule(etabCode, matiereCode, siteCode, count + 1)
+          }
+
+          const MAX_RETRIES = 5
+          let enseignant: Enseignant | null = null
+          for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+            try {
+              enseignant = await Enseignant.create({
+                utilisateurId: utilisateur.id,
+                cni: req.body.cni,
+                matricule: matricule,
+                sexe: req.body.sexe,
+                dateNaissance: req.body.dateNaissance,
+                nationalite: req.body.nationalite,
+                plusHautDiplome: req.body.plusHautDiplome,
+                gradeAcademique: req.body.gradeAcademique,
+                statut: req.body.statut,
+                specialite: req.body.specialite,
+                heureTheoriqueAnnuelle: req.body.heureTheoriqueAnnuelle,
+                heureReelleAnnuelle: req.body.heureReelleAnnuelle,
+                fonctionAdministrative: req.body.fonctionAdministrative,
+                statutHandicap: req.body.statutHandicap,
+                natureHandicap: req.body.natureHandicap,
+                anneeExperience: req.body.anneeExperience,
+                nifOtr: req.body.nifOtr,
+                contact: req.body.utilisateur.contact
+              })
+              break
+            } catch (createErr: any) {
+              const code = createErr?.parent?.code || createErr?.original?.code || ''
+              const name = createErr?.name || ''
+              if ((code === 'ER_DUP_ENTRY' || name === 'SequelizeUniqueConstraintError') && attempt < MAX_RETRIES - 1) {
+                const etabId = (req as any).etablissementId || null
+                let etablissement: Etablissement | null = null
+                if (etabId) {
+                  etablissement = await Etablissement.findByPk(etabId)
+                }
+                const etabCode = IDGenerator.deriveEtablissementCode(etablissement)
+                const siteCode = IDGenerator.deriveSiteCode(etablissement)
+                const matiereCode = IDGenerator.deriveMatiereCode(req.body.specialite)
+                const prefix = `${etabCode}-${matiereCode}-${siteCode}-`
+                const count = await Enseignant.count({ where: { matricule: { [Op.like]: prefix + '%' } } as any })
+                matricule = IDGenerator.generateMatricule(etabCode, matiereCode, siteCode, count + 1)
+                continue
+              }
+              throw createErr
+            }
+          }
+
+          try {
+            const dir: string = path.resolve(process.cwd(), 'storage', 'qr-codes', 'enseignants')
+            if (!fs.existsSync(dir)) {
+              fs.mkdirSync(dir, { recursive: true })
+            }
+            const userId = String(utilisateur.id)
+            const qrData = QrTokenService.signer(utilisateur.id)
+            const fileName = `${userId}.png`
+            const filePath = path.join(dir, fileName)
+            await QRCode.toFile(filePath, qrData, {
+              type: 'png', width: 400, margin: 4,
+              errorCorrectionLevel: 'Q',
+              color: { dark: '#000000', light: '#ffffff' }
+            })
+            if (enseignant) {
+              await enseignant.update({ qrCode: fileName })
+            }
+          } catch (qrError) {
+            console.error('Erreur génération QR enseignant:', qrError)
+          }
+
           EmailSender.getInstance().sendMessageInscriptionEnseignant(utilisateur.identifiant, tempPassword, utilisateur.email)
           return res.status(201).send({ success: true });
         })

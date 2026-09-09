@@ -17,7 +17,9 @@ const DEFAULT_ROLES = [
 ];
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
-    'Super Admin': [],
+    'Super Admin': [
+        'action.administration.personnel.generer-qr',
+    ],
     'Directeur': [
         'menu.tableau-de-bord',
         'menu.inscription', 'menu.inscription.sessions', 'menu.inscription.parcours',
@@ -68,6 +70,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
         'action.scolarite.discipline.sanctionner',
         'action.finances.paiement.enregistrer', 'action.finances.paiement.annuler',
         'action.rh.employe.creer', 'action.rh.employe.modifier', 'action.rh.paie.generer',
+        'action.administration.personnel.generer-qr',
     ],
     'Comptable': [
         'menu.tableau-de-bord',

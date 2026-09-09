@@ -8,6 +8,7 @@ export class PersonnelAdministratif extends Model<InferAttributes<PersonnelAdmin
   declare id: CreationOptional<number>
   declare utilisateurId: ForeignKey<Utilisateur['id']>
   declare matricule: CreationOptional<string>
+  declare qrCode: CreationOptional<string | null>
   declare statut: CreationOptional<string>
   declare fonction: string
   declare directionService: CreationOptional<string>
@@ -46,6 +47,10 @@ PersonnelAdministratif.init({
     allowNull: false
   },
   matricule: {
+    type: new DataTypes.STRING,
+    allowNull: true
+  },
+  qrCode: {
     type: new DataTypes.STRING,
     allowNull: true
   },

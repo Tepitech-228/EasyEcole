@@ -1,9 +1,13 @@
 import { Request, Response } from "express";
-import { CountOptions, FindOptions, InferAttributes } from "sequelize";
+import { CountOptions, FindOptions, InferAttributes, Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { PersonnelAdministratif } from "../models/PersonnelAdministratif";
 import { AdresseEnseignant } from "../models/AdresseEnseignant";
 import { Utilisateur } from "../models/Utilisateur";
+import * as path from "path";
+import * as fs from "fs";
+import QRCode from "qrcode";
+import { QrTokenService } from "../../../core/services/QrTokenService";
 
 export default class PersonnelAdministratifController {
 
@@ -129,6 +133,74 @@ export default class PersonnelAdministratifController {
         }
 
         return res.status(400).json({ success: false })
+    }
+
+    static async generateQRs(req: Request, res: Response): Promise<Response | null> {
+        const dir: string = path.resolve(process.cwd(), 'storage', 'qr-codes', 'personnel')
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true })
+        }
+
+        try {
+            const whereClause: any = { matricule: { [Op.ne]: null } }
+            if (req.body.personnelId) {
+                whereClause.id = req.body.personnelId
+            }
+
+            const personnels: PersonnelAdministratif[] = await PersonnelAdministratif.findAll({
+                where: whereClause,
+                include: [PersonnelAdministratif.associations.utilisateur]
+            })
+
+            const errors: string[] = []
+            let success = 0
+
+            for (const personnel of personnels) {
+                if (!personnel.utilisateur) continue
+
+                const userId = String(personnel.utilisateur.id)
+                const qrData = QrTokenService.signer(Number(personnel.utilisateur.id))
+                const fileName = `${userId}.png`
+                const filePath = path.join(dir, fileName)
+
+                try {
+                    await QRCode.toFile(filePath, qrData, {
+                        type: 'png',
+                        width: 400,
+                        margin: 4,
+                        errorCorrectionLevel: 'Q',
+                        color: {
+                            dark: '#000000',
+                            light: '#ffffff'
+                        }
+                    })
+
+                    await personnel.update({ qrCode: fileName })
+                    success++
+                } catch (qrError: any) {
+                    errors.push(`personnelId=${personnel.id}: ${qrError?.message || qrError}`)
+                }
+            }
+
+            return res.status(200).json({ total: personnels.length, success, errors })
+        } catch (error) {
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
+        }
+    }
+
+    static async getQrCode(req: Request, res: Response): Promise<Response | null> {
+        const { fileName } = req.params;
+        const dir = path.resolve(process.cwd(), 'storage', 'qr-codes', 'personnel');
+        const filePath = path.join(dir, fileName);
+
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ success: false, message: 'QR code non trouvé' });
+        }
+
+        res.setHeader('Content-Type', 'image/png');
+        res.sendFile(filePath);
+        return null;
     }
 
     static async delete(req: Request, res: Response): Promise<Response | null> {
