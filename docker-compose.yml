@@ -108,10 +108,19 @@ services:
     # dans Dokploy (${REDIS_URL}) la remplace sans toucher à ce fichier.
     environment:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      # Chemins pour le runner de migrations SQL exécuté au startup
+      # (volume mounts ci-dessous : dossier migrations/ + runner scripts/).
+      BACKEND_DIR: /app
+      MIGRATIONS_DIR: /app/migrations
     depends_on:
       db:
         condition: service_healthy
     volumes:
+      # Migrations SQL : applicateur incrémental exécuté par docker-entrypoint.sh
+      # AVANT le démarrage de l'API (fichiers idempotents, suivi schema_migrations).
+      # Le volume mount suit le pattern existant de mysql-backup (scripts/).
+      - ./migrations:/app/migrations:ro
+      - ./scripts/apply-migrations.cjs:/app/scripts/apply-migrations.cjs:ro
       # Fichiers uploadés (multer, GED, dossiers, docgen, photos…) :
       # /app/public dans le conteneur (chemin relatif à process.cwd()).
       - uploads:/app/public

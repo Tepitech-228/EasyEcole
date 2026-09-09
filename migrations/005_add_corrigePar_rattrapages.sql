@@ -7,25 +7,18 @@
 -- notes (saveNotes, ligne ~187).
 -- La colonne est absente des bases recette/production, ce qui provoque
 -- ER_BAD_FIELD_ERROR (errno 1054) / "Unknown column 'corrigePar'" sur :
---   - GET /api/v1/inscription/rattrapages            (getAll)
---   - GET /api/v1/inscription/rattrapages/demandes   (getDemandes)
+--   - GET /api/v1/inscription/rattrapages              (getAll)
+--   - GET /api/v1/inscription/rattrapages/demandes     (getDemandes)
 --   - GET /api/v1/inscription/rattrapages/mes-demandes (getMesDemandes, apprenant valide)
+-- Idempotent : ne fait rien si la colonne existe déjà.
 -- =============================================================================
 
--- Base cible : définie dans easy-ecole-backend/.env (DB_NAME=easyecole, DB_PORT=3306).
--- Ajuster le nom si la base recette/production diffère.
-USE `easyecole`;
-
--- Ajout de la colonne (NULL autorisé pour ne pas casser les lignes existantes)
-ALTER TABLE `ins_rattrapages_inscriptions`
-    ADD COLUMN `corrigePar` VARCHAR(36) NULL
-    COMMENT 'Identifiant de l''utilisateur (enseignant/institution) ayant corrigé le rattrapage';
-
--- =============================================================================
--- Vérification
--- =============================================================================
--- SELECT column_name, data_type, is_nullable, column_comment
--- FROM information_schema.columns
--- WHERE table_schema = DATABASE()
---   AND table_name = 'ins_rattrapages_inscriptions'
---   AND column_name = 'corrigePar';
+-- 1. Colonne corrigePar (NULL autorisé pour ne pas casser les lignes existantes)
+SET @colExists := (
+  SELECT COUNT(*) FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ins_rattrapages_inscriptions' AND COLUMN_NAME = 'corrigePar'
+);
+SET @sql := IF(@colExists = 0,
+  'ALTER TABLE `ins_rattrapages_inscriptions` ADD COLUMN `corrigePar` VARCHAR(36) NULL COMMENT ''Identifiant de l''''utilisateur (enseignant/institution) ayant corrigé le rattrapage''',
+  'SELECT ''colonne corrigePar deja presente''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;

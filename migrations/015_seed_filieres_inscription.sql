@@ -347,6 +347,19 @@ INSERT INTO `ins_parcours` (`titre`, `type`, `grade`, `niveauEtudeId`, `createdA
 ('Technologies alimentaires et biologiques',                         'BTS', 'BTS 2', @id_bts2, NOW(), NOW());
 
 -- ─────────────────────────────────────────────────────────────────────────────
+-- 8. DÉDUPLICATION FINALE — rend la migration IDEMPOTENTE
+--    Garde le plus petit id par (titre, type, grade) ; toute re-exécution de ce
+--    fichier aboutit au même état final (pas de doublons de filières).
+-- ─────────────────────────────────────────────────────────────────────────────
+DELETE d
+FROM `ins_parcours` d
+JOIN `ins_parcours` k
+  ON d.`titre` = k.`titre`
+ AND d.`type` = k.`type`
+ AND d.`grade` = k.`grade`
+ AND d.`id` > k.`id`;
+
+-- ─────────────────────────────────────────────────────────────────────────────
 -- Résumé : 111 (LICENCE) + 74 (MASTER) + 4 (MBA) + 58 (BTS) = 247 lignes
 -- Chaque filière existe en double/triple selon le nombre de grades du cycle.
 -- ─────────────────────────────────────────────────────────────────────────────

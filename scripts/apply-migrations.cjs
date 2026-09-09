@@ -25,9 +25,13 @@
  */
 const path = require('path')
 const fs = require('fs')
+// Racine : repo cloné en local, ou /app dans le conteneur backend (Docker).
+// BACKEND_DIR / MIGRATIONS_DIR permettent d'exécuter le runner DEPUIS le
+// conteneur backend (mount en volume des dossiers migrations/ et scripts/),
+// tout en gardant les valeurs par défaut pour une exécution locale.
 const root = path.resolve(__dirname, '..')
-const backend = path.join(root, 'easy-ecole-backend')
-const migrationsDir = path.join(root, 'migrations')
+const backend = process.env.BACKEND_DIR || path.join(root, 'easy-ecole-backend')
+const migrationsDir = process.env.MIGRATIONS_DIR || path.join(root, 'migrations')
 
 // dotenv + mysql2 du backend (présents dans node_modules du repo)
 require(path.join(backend, 'node_modules/dotenv')).config({ path: path.join(backend, '.env') })
