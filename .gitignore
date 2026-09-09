@@ -118,3 +118,11 @@ temp-opencode/
 # Dumps / seeds SQL de données réelles (potentiellement sensibles)
 dump-easyecole.sql
 seed-reference-prod.sql
+
+# Artefacts E2E / OCR / diagnostic temporaires (jamais versionnés)
+easy-ecole-backend/e2e-*.cjs
+easy-ecole-backend/*.traineddata
+easy-ecole-backend/gen-token-*.js
+easy-ecole-backend/tmp-*.ts
+easy-ecole-backend/tsc_output*.txt
+test-reports/
