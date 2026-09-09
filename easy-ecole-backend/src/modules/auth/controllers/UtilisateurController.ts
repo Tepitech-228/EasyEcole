@@ -283,7 +283,7 @@ export default class UtilisateurController {
                     (SELECT COUNT(*) FROM brs_attributions WHERE valideParId = :id) AS attributions,
                     (SELECT COUNT(*) FROM cpt_reductions_frais WHERE validePar = :id) AS reductions,
                     (SELECT COUNT(*) FROM ins_bulletins WHERE utilisateurId = :id) AS bulletins,
-                    (SELECT COUNT(*) FROM scol_clotures_caisse_old_v1 WHERE caissier_id = :id) AS clotures`,
+                    (SELECT COUNT(*) FROM scol_clotures_caisse WHERE caissier_id = :id) AS clotures`,
                 { replacements: { id: userId } }
             );
             const b = blockers[0];
