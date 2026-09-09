@@ -2,9 +2,9 @@ import { Job, Queue, QueueOptions } from 'bullmq';
 import Redis from 'ioredis';
 
 export const QUEUE_NAMES = {
-  OCR: 'easyecole:ocr',
-  PDF: 'easyecole:pdf',
-  EXCEL_IMPORT: 'easyecole:excel-import',
+  OCR: 'easyecole-ocr',
+  PDF: 'easyecole-pdf',
+  EXCEL_IMPORT: 'easyecole-excel-import',
 } as const;
 
 export type QueueName = typeof QUEUE_NAMES[keyof typeof QUEUE_NAMES];
