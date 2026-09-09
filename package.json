@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "concurrently -n BACKEND,FRONTEND -c blue,green \"npm run dev --prefix easy-ecole-backend\" \"npm start --prefix easy-ecole-web\"",
     "backend": "npm run dev --prefix easy-ecole-backend",
-    "frontend": "npm start --prefix easy-ecole-web"
+    "frontend": "npm start --prefix easy-ecole-web",
+    "test:all": "node scripts/run-all-tests.cjs"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

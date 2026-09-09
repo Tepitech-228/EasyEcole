@@ -2,6 +2,22 @@
 
 Ce document décrit les commandes de validation du projet EasyEcole.
 
+## Commande unique
+
+Depuis la racine `D:\EasyEcole`, lancer :
+
+```powershell
+npm run test:all
+```
+
+Cette commande enchaîne les types et builds backend/frontend, les tests unitaires
+Jest/Karma, Cypress et les scripts E2E backend. Elle continue après un échec afin
+de produire un bilan complet. Le rapport horodaté est écrit dans `test-reports/`.
+
+Prérequis : le backend doit écouter sur `http://localhost:3000` et le frontend sur
+`http://localhost:4200` pour les tests E2E. Les variables JWT Cypress doivent être
+définies si les specs authentifiées sont exécutées.
+
 ## 1. Prérequis
 
 Ouvrir deux terminaux :

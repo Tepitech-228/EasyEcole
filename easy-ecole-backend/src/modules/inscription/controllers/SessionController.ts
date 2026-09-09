@@ -95,6 +95,22 @@ export default class SessionController {
             return res.status(403).json({ success: false })
         }
 
+        const { dateDebut, dateFin, anneeAcademiqueId, niveauEtudeId, description } = req.body ?? {};
+
+        // ── Validation métier explicite → 400 avec message lisible ──
+        if (!dateDebut || !dateFin) {
+            return res.status(400).json({ success: false, message: "Les dates de début et de fin de session sont obligatoires" });
+        }
+        if (isNaN(new Date(dateDebut).getTime()) || isNaN(new Date(dateFin).getTime())) {
+            return res.status(400).json({ success: false, message: "Les dates de session sont invalides" });
+        }
+        if (new Date(dateFin) <= new Date(dateDebut)) {
+            return res.status(400).json({ success: false, message: "La date de fin doit être postérieure à la date de début" });
+        }
+        if (anneeAcademiqueId == null || anneeAcademiqueId === '') {
+            return res.status(400).json({ success: false, message: "L'année académique est obligatoire" });
+        }
+
         const sequelize = DatabaseConnection.getInstance().sequelize;
 
         try {
@@ -209,43 +225,67 @@ export default class SessionController {
             }
 
             return res.status(201).send(session);
-        } catch (error) {
-            return res.status(400).json({ success: false, error: error });
+        } catch (error: any) {
+            // Journaliser systématiquement : un 400 opaque sans log serveur rend
+            // toute erreur réelle (DB, association…) indétectable côté prod.
+            console.error('[SessionController.createSession] Erreur:', error);
+            const errName = error?.name || '';
+            if (errName === 'SequelizeValidationError' || errName === 'SequelizeUniqueConstraintError') {
+                const detail = error?.errors?.[0]?.message;
+                return res.status(400).json({
+                    success: false,
+                    message: typeof detail === 'string' ? detail : 'Données de session invalides',
+                });
+            }
+            return res.status(500).json({ success: false, message: "Erreur interne lors de la création de la session" });
         }
     }
 
     static async updateSession(req: Request, res: Response): Promise<Response | null> {
-        let options: FindOptions<InferAttributes<Session>> = {}
-        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
-            return res.status(403).json({ success: false })
-        }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
-            options = { where: { id: req.params.id } }
-        }
+        try {
+            let options: FindOptions<InferAttributes<Session>> = {}
+            if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
+                return res.status(403).json({ success: false })
+            }
+            else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
+                options = { where: { id: req.params.id } }
+            }
 
-        //TODO:: Vérifier s'il n'y a pas d'inscription en cours pour cette session
+            //TODO:: Vérifier s'il n'y a pas d'inscription en cours pour cette session
 
-        let session: Session | null = await Session.findOne(options);
-        if (session != null) {
+            let session: Session | null = await Session.findOne(options);
+            if (session != null) {
 
-            await session.update({
-                dateDebut: req.body.dateDebut,
-                dateFin: req.body.dateFin,
-                anneeAcademiqueId: req.body.anneeAcademiqueId,
-                niveauEtudeId: req.body.niveauEtudeId,
-            })
-                .then(async (session) => {
-                    return res.status(200).send(session);
+                await session.update({
+                    dateDebut: req.body.dateDebut,
+                    dateFin: req.body.dateFin,
+                    anneeAcademiqueId: req.body.anneeAcademiqueId,
+                    niveauEtudeId: req.body.niveauEtudeId,
                 })
-                .catch((error) => {
-                    return res.status(400).json({ success: false, error: error });
-                });
-        }
-        else {
-            return res.status(404).json({ success: false, message: "Session non trouvée" });
-        }
+                    .then(async (session) => {
+                        return res.status(200).send(session);
+                    })
+                    .catch((error: any) => {
+                        console.error('[SessionController.updateSession] Erreur:', error);
+                        const errName = error?.name || '';
+                        if (errName === 'SequelizeValidationError' || errName === 'SequelizeUniqueConstraintError') {
+                            return res.status(400).json({
+                                success: false,
+                                message: error?.errors?.[0]?.message || 'Données de session invalides',
+                            });
+                        }
+                        return res.status(500).json({ success: false, message: "Erreur interne lors de la mise à jour de la session" });
+                    });
+            }
+            else {
+                return res.status(404).json({ success: false, message: "Session non trouvée" });
+            }
 
-        return null
+            return null
+        } catch (error: any) {
+            console.error('[SessionController.updateSession] Erreur:', error);
+            return res.status(500).json({ success: false, message: "Erreur interne lors de la mise à jour de la session" });
+        }
     }
 
     static async deleteSession(req: Request, res: Response): Promise<Response | null> {
