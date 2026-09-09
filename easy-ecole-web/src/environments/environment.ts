@@ -56,6 +56,7 @@ export const environment = {
   },
   QR_CODES_PATH: apiUrl + "/auth/apprenants/qr-codes/",
   QR_CODES_ENSEIGNANTS_PATH: apiUrl + "/auth/enseignants/qr-codes/",
+  QR_CODES_PERSONNEL_PATH: apiUrl + "/auth/personnelAdministratif/qr-codes/",
   QR_CODE_VERIFIER_PATH: apiUrl + "/inscription/cartes/verifier/"
 };
 

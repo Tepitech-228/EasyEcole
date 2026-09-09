@@ -3,6 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { DashboardAdminPageComponent } from './pages/dashboard-admin-page/dashboard-admin-page.component';
 import { QrCodesPageComponent } from './pages/qr-codes-page/qr-codes-page.component';
 import { EnseignantQrCodesPageComponent } from './pages/enseignant-qr-codes-page/enseignant-qr-codes-page.component';
+import { PersonnelQrCodesPageComponent } from './pages/personnel-qr-codes-page/personnel-qr-codes-page.component';
 import { UtilisateursPageComponent } from './pages/utilisateurs-page/utilisateurs-page.component';
 import { RolesPageComponent } from './pages/roles-page/roles-page.component';
 import { AuditLogsPageComponent } from './pages/audit-logs-page/audit-logs-page.component';
@@ -13,6 +14,7 @@ const routes: Routes = [
   { path: 'dashboard', component: DashboardAdminPageComponent },
   { path: 'qr-codes', component: QrCodesPageComponent },
   { path: 'qr-codes-enseignants', component: EnseignantQrCodesPageComponent },
+  { path: 'qr-codes-personnel', component: PersonnelQrCodesPageComponent },
   { path: 'cartes', redirectTo: '/inscription/cartes', pathMatch: 'full' },
   { path: 'utilisateurs', component: UtilisateursPageComponent },
   { path: 'roles', component: RolesPageComponent },

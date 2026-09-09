@@ -4,6 +4,7 @@ export class PersonnelAdministratif {
   declare id?: string
   declare photo?: string
   declare matricule?: string
+  declare qrCode?: string
   declare dateNaissance?: Date
   declare lieuNaissance?: string
   declare sexe?: string

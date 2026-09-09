@@ -25,6 +25,10 @@ export class PersonnelAdministratifService {
     return this.httpClient.put<PersonnelAdministratif>(`${this.SERVICE_URL}/`, personnel)
   }
 
+  generateQRs(): Observable<{ total: number; success: number; errors: any[] }> {
+    return this.httpClient.post<{ total: number; success: number; errors: any[] }>(`${this.SERVICE_URL}/qr-codes/generate`, {})
+  }
+
   updatePhoto(photo: File, personnelId?: string): Observable<any> {
     let formData: FormData = new FormData()
     formData.append('photo', photo, photo.name)
