@@ -26,6 +26,22 @@ export class ListeEnseignantsPageComponent extends BaseComponentClass implements
     nom: new FormControl(null, [Validators.required]),
     prenoms: new FormControl(null, [Validators.required]),
     contact: new FormControl(null, [Validators.required]),
+    cni: new FormControl(null),
+    matricule: new FormControl(null),
+    sexe: new FormControl(null),
+    dateNaissance: new FormControl(null),
+    nationalite: new FormControl(null),
+    plusHautDiplome: new FormControl(null),
+    gradeAcademique: new FormControl(null),
+    statut: new FormControl(null),
+    specialite: new FormControl(null),
+    heureTheoriqueAnnuelle: new FormControl(null),
+    heureReelleAnnuelle: new FormControl(null),
+    fonctionAdministrative: new FormControl(null),
+    statutHandicap: new FormControl(null),
+    natureHandicap: new FormControl(null),
+    anneeExperience: new FormControl(null),
+    nifOtr: new FormControl(null),
   })
 
   constructor(
@@ -68,6 +84,23 @@ export class ListeEnseignantsPageComponent extends BaseComponentClass implements
       enseignant.utilisateur.nom = this.enseignantForm.get('nom')!.value ?? new Date()
       enseignant.utilisateur.prenoms = this.enseignantForm.get('prenoms')!.value
       enseignant.utilisateur.contact = this.enseignantForm.get('contact')!.value
+
+      enseignant.cni = this.enseignantForm.get('cni')!.value ?? null
+      enseignant.matricule = this.enseignantForm.get('matricule')!.value ?? null
+      enseignant.sexe = this.enseignantForm.get('sexe')!.value ?? null
+      enseignant.dateNaissance = this.enseignantForm.get('dateNaissance')!.value ?? null
+      enseignant.nationalite = this.enseignantForm.get('nationalite')!.value ?? null
+      enseignant.plusHautDiplome = this.enseignantForm.get('plusHautDiplome')!.value ?? null
+      enseignant.gradeAcademique = this.enseignantForm.get('gradeAcademique')!.value ?? null
+      enseignant.statut = this.enseignantForm.get('statut')!.value ?? null
+      enseignant.specialite = this.enseignantForm.get('specialite')!.value ?? null
+      enseignant.heureTheoriqueAnnuelle = this.enseignantForm.get('heureTheoriqueAnnuelle')!.value !== '' && this.enseignantForm.get('heureTheoriqueAnnuelle')!.value != null ? Number(this.enseignantForm.get('heureTheoriqueAnnuelle')!.value) : undefined
+      enseignant.heureReelleAnnuelle = this.enseignantForm.get('heureReelleAnnuelle')!.value !== '' && this.enseignantForm.get('heureReelleAnnuelle')!.value != null ? Number(this.enseignantForm.get('heureReelleAnnuelle')!.value) : undefined
+      enseignant.fonctionAdministrative = this.enseignantForm.get('fonctionAdministrative')!.value ?? null
+      enseignant.statutHandicap = this.enseignantForm.get('statutHandicap')!.value === true || this.enseignantForm.get('statutHandicap')!.value === 'true' ? true : false
+      enseignant.natureHandicap = this.enseignantForm.get('natureHandicap')!.value ?? null
+      enseignant.anneeExperience = this.enseignantForm.get('anneeExperience')!.value !== '' && this.enseignantForm.get('anneeExperience')!.value != null ? Number(this.enseignantForm.get('anneeExperience')!.value) : undefined
+      enseignant.nifOtr = this.enseignantForm.get('nifOtr')!.value ?? null
 
       this.authService.registerEnseignant(enseignant).subscribe({
         next: (res) => {

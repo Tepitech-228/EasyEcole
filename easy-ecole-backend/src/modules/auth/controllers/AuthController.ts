@@ -244,12 +244,31 @@ export default class AuthController {
     utilisateur.contact = req.body.utilisateur.contact;
     utilisateur.role = RolesUtilisateur.ENSEIGNANT
 
-    await utilisateur.save()
-      .then(async (utilisateur) => {
-        await Enseignant.create({ utilisateurId: utilisateur.id })
-        EmailSender.getInstance().sendMessageInscriptionEnseignant(utilisateur.identifiant, tempPassword, utilisateur.email)
-        return res.status(201).send({ success: true });
-      })
+await utilisateur.save()
+        .then(async (utilisateur) => {
+          await Enseignant.create({
+            utilisateurId: utilisateur.id,
+            cni: req.body.cni,
+            matricule: req.body.matricule,
+            sexe: req.body.sexe,
+            dateNaissance: req.body.dateNaissance,
+            nationalite: req.body.nationalite,
+            plusHautDiplome: req.body.plusHautDiplome,
+            gradeAcademique: req.body.gradeAcademique,
+            statut: req.body.statut,
+            specialite: req.body.specialite,
+            heureTheoriqueAnnuelle: req.body.heureTheoriqueAnnuelle,
+            heureReelleAnnuelle: req.body.heureReelleAnnuelle,
+            fonctionAdministrative: req.body.fonctionAdministrative,
+            statutHandicap: req.body.statutHandicap,
+            natureHandicap: req.body.natureHandicap,
+            anneeExperience: req.body.anneeExperience,
+            nifOtr: req.body.nifOtr,
+            contact: req.body.utilisateur.contact
+          })
+          EmailSender.getInstance().sendMessageInscriptionEnseignant(utilisateur.identifiant, tempPassword, utilisateur.email)
+          return res.status(201).send({ success: true });
+        })
       .catch((error) => {
         return res.status(400).json({ success: false, message: "Erreur lors de l'inscription de l'enseignant" });
       });

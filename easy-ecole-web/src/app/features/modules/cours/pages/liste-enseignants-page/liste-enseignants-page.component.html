@@ -118,7 +118,7 @@
                 <span class="mb-2 block text-sm text-gray-400">Nom</span>
                 <input type="text" id="nom" formControlName="nom" placeholder="Saisir le nom ici..."
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-    
+     
                 <div
                     *ngIf="enseignantForm.get('nom')!.invalid && (enseignantForm.get('nom')!.dirty || enseignantForm.get('nom')!.touched)">
                     <app-form-message *ngIf="enseignantForm.get('nom')!.errors?.['required']"
@@ -129,7 +129,7 @@
                 <span class="mb-2 block text-sm text-gray-400">Prénoms</span>
                 <input type="text" id="prenoms" formControlName="prenoms" placeholder="Saisir les prénoms ici..."
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-    
+     
                 <div
                     *ngIf="enseignantForm.get('prenoms')!.invalid && (enseignantForm.get('prenoms')!.dirty || enseignantForm.get('prenoms')!.touched)">
                     <app-form-message *ngIf="enseignantForm.get('prenoms')!.errors?.['required']"
@@ -146,6 +146,111 @@
                     <app-form-message *ngIf="enseignantForm.get('contact')!.errors?.['required']"
                         text="Veuillez saisir le contact"></app-form-message>
                 </div>
+            </div>
+        </div>
+        <span class="mb-2 block text-sm text-gray-400">Identité</span>
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="md:col-span-3 col-span-full">
+                <label for="cni" class="mb-2 block text-sm leading-6 text-gray-600">N° de CNI</label>
+                <input type="text" id="cni" formControlName="cni" placeholder="Saisir le N° de CNI ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="md:col-span-3 col-span-full">
+                <label for="matricule" class="mb-2 block text-sm leading-6 text-gray-600">N° Matricule</label>
+                <input type="text" id="matricule" formControlName="matricule" placeholder="Saisir le N° Matricule ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="md:col-span-3 col-span-full">
+                <label for="sexe" class="mb-2 block text-sm leading-6 text-gray-600">Sexe</label>
+                <select id="sexe" formControlName="sexe" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option value="">Sélectionner le sexe</option>
+                    <option value="M">Masculin</option>
+                    <option value="F">Féminin</option>
+                    <option value="Autre">Autre</option>
+                </select>
+            </div>
+            <div class="md:col-span-3 col-span-full">
+                <label for="dateNaissance" class="mb-2 block text-sm leading-6 text-gray-600">Date de naissance</label>
+                <input type="date" id="dateNaissance" formControlName="dateNaissance" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="md:col-span-3 col-span-full">
+                <label for="nationalite" class="mb-2 block text-sm leading-6 text-gray-600">Nationalité</label>
+                <input type="text" id="nationalite" formControlName="nationalite" placeholder="Saisir la nationalité ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+        </div>
+        <span class="mb-2 block text-sm text-gray-400">Diplôme et situation professionnelle</span>
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="md:col-span-3 col-span-full">
+                <label for="plusHautDiplome" class="mb-2 block text-sm leading-6 text-gray-600">Diplôme le plus élevé</label>
+                <input type="text" id="plusHautDiplome" formControlName="plusHautDiplome" placeholder="Saisir le diplôme ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="md:col-span-3 col-span-full">
+                <label for="gradeAcademique" class="mb-2 block text-sm leading-6 text-gray-600">Grade universitaire</label>
+                <input type="text" id="gradeAcademique" formControlName="gradeAcademique" placeholder="Saisir le grade ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="md:col-span-3 col-span-full">
+                <label for="statut" class="mb-2 block text-sm leading-6 text-gray-600">Statut</label>
+                <select id="statut" formControlName="statut" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option value="">Sélectionner le statut</option>
+                    <option value="Permanent">Permanent</option>
+                    <option value="Vacataire">Vacataire</option>
+                    <option value="Contractuel">Contractuel</option>
+                </select>
+            </div>
+            <div class="md:col-span-3 col-span-full">
+                <label for="specialite" class="mb-2 block text-sm leading-6 text-gray-600">Spécialité</label>
+                <input type="text" id="specialite" formControlName="specialite" placeholder="Saisir la spécialité ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="md:col-span-3 col-span-full">
+                <label for="fonctionAdministrative" class="mb-2 block text-sm leading-6 text-gray-600">Fonction administrative</label>
+                <input type="text" id="fonctionAdministrative" formControlName="fonctionAdministrative" placeholder="Saisir la fonction administrative ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+        </div>
+        <span class="mb-2 block text-sm text-gray-400">Charges d'enseignement</span>
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="md:col-span-3 col-span-full">
+                <label for="heureTheoriqueAnnuelle" class="mb-2 block text-sm leading-6 text-gray-600">Heures de cours théorique / an</label>
+                <input type="number" id="heureTheoriqueAnnuelle" formControlName="heureTheoriqueAnnuelle" min="0" step="1" placeholder="Saisir le nombre d'heures ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="md:col-span-3 col-span-full">
+                <label for="heureReelleAnnuelle" class="mb-2 block text-sm leading-6 text-gray-600">Heures de cours réalisé / an</label>
+                <input type="number" id="heureReelleAnnuelle" formControlName="heureReelleAnnuelle" min="0" step="1" placeholder="Saisir le nombre d'heures ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="md:col-span-3 col-span-full">
+                <label for="anneeExperience" class="mb-2 block text-sm leading-6 text-gray-600">Nombre d'années d'expérience dans l'enseignement</label>
+                <input type="number" id="anneeExperience" formControlName="anneeExperience" min="0" step="1" placeholder="Saisir le nombre d'années ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+        </div>
+        <span class="mb-2 block text-sm text-gray-400">Handicap</span>
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="md:col-span-3 col-span-full">
+                <label for="statutHandicap" class="mb-2 block text-sm leading-6 text-gray-600">Présence de handicap</label>
+                <select id="statutHandicap" formControlName="statutHandicap" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option value="">Sélectionner</option>
+                    <option value="false">Non</option>
+                    <option value="true">Oui</option>
+                </select>
+            </div>
+            <div class="md:col-span-3 col-span-full" *ngIf="enseignantForm.get('statutHandicap')!.value === true">
+                <label for="natureHandicap" class="mb-2 block text-sm leading-6 text-gray-600">Nature du handicap</label>
+                <input type="text" id="natureHandicap" formControlName="natureHandicap" placeholder="Saisir la nature du handicap ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+        </div>
+        <span class="mb-2 block text-sm text-gray-400">Situation fiscale</span>
+        <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="md:col-span-3 col-span-full">
+                <label for="nifOtr" class="mb-2 block text-sm leading-6 text-gray-600">NIF/OTR</label>
+                <input type="text" id="nifOtr" formControlName="nifOtr" placeholder="Saisir le NIF/OTR ici..."
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
             </div>
         </div>
     </form>
