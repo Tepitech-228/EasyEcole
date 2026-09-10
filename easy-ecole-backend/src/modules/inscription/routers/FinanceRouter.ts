@@ -539,6 +539,23 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
 
     console.log(_rid, 'Sanitization:', { refBancaire, numBordereau, moyPaiement, datePaiement, typeOperationIdEffectif, typeEffectif })
 
+    // Contrôle anti-doublon : vérifier qu'une référence/numéro n'est pas déjà utilisée par un autre bordereau
+    if (refBancaire !== null || numBordereau !== null) {
+      const whereClause: any = { id: { [Op.ne]: bordereau.id }, deletedAt: null };
+      const orConditions: any[] = [];
+      if (refBancaire !== null) orConditions.push({ referenceBancaire: refBancaire });
+      if (numBordereau !== null) orConditions.push({ numeroBordereau: numBordereau });
+      if (orConditions.length > 0) {
+        whereClause[Op.or] = orConditions;
+        const doublon = await Bordereau.findOne({ where: whereClause, transaction });
+        if (doublon) {
+          await transaction.rollback();
+          console.log(_rid, 'ERREUR 400: Double saisie — référence/numéro déjà utilisé');
+          return res.status(400).json({ success: false, message: "Ce bordereau est déjà traité", details: { referenceBancaire: refBancaire, numeroBordereau: numBordereau } });
+        }
+      }
+    }
+
     bordereau.montant = montantPaiement
     bordereau.referenceBancaire = refBancaire
     bordereau.numeroBordereau = numBordereau

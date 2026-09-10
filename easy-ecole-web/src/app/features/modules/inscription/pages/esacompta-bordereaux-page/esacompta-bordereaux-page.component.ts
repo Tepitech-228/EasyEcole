@@ -16,6 +16,7 @@ import { SessionService } from 'src/app/data/modules/inscription/services/sessio
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 import { DossierNode, DossierColumn, BatchAction } from 'src/app/shared/components/dossier-view/dossier-view.component';
 import { environment } from 'src/environments/environment';
+import { ToastService } from 'src/app/core/services/toast.service';
 
 @Component({
   selector: 'app-esacompta-bordereaux-page',
@@ -106,7 +107,8 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     private sessionService: SessionService,
     private fb: FormBuilder,
     private localStorage: LocalStorageService,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private toastService: ToastService
   ) {
     super()
     this.saisieForm = this.fb.group({
@@ -423,6 +425,13 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
         } catch (_) {
           msg = `Erreur HTTP ${err?.status || 'inconnu'}`
         }
+
+        // Cas spécifique : bordereau déjà traité → popup orange (toast warning)
+        if (msg.includes('Ce bordereau est déjà traité')) {
+          this.toastService.warning('Ce bordereau est déjà traité')
+          return
+        }
+
         // Log détaillé pour diagnostic
         console.error('[ESA-COMPTA] Erreur saisie:', msg)
         console.error('[ESA-COMPTA] Erreur complète:', {
@@ -451,7 +460,12 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   }
 
   getDocUrl(bordereau: Bordereau): string {
-    return `${environment.API_MODULES.INSCRIPTION}/bordereaux/${bordereau.id}/download`
+    const token = this.localStorage.get(LocalStorageService.AUTH_TOKEN)
+    let url = `${environment.API_MODULES.INSCRIPTION}/bordereaux/${bordereau.id}/download`
+    if (token) {
+      url += `?token=${encodeURIComponent(token)}`
+    }
+    return url
   }
 
   /**
