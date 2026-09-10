@@ -29,7 +29,7 @@ export class CoursStatutService {
 
     const coursList = await Cours.findAll({
       where: {
-        classeId: cursus.classeId,
+        ...(cursus.classeId ? { classeId: cursus.classeId } : {}),
         parcoursId: cursus.parcoursId
       }
     });

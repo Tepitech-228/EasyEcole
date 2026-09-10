@@ -22,7 +22,7 @@ export class CursusApprenant extends Model<InferAttributes<CursusApprenant>, Inf
   declare parcours?: NonAttribute<Parcours>
   declare niveauEtudeId: ForeignKey<NiveauEtude['id']>
   declare niveauEtude?: NonAttribute<NiveauEtude>
-  declare classeId: ForeignKey<Classe['id']>
+  declare classeId: ForeignKey<Classe['id'] | null>
   declare classe?: NonAttribute<Classe>
   declare anneeAcademiqueId: ForeignKey<AnneeAcademique['id']>
   declare anneeAcademique?: NonAttribute<AnneeAcademique>
@@ -77,7 +77,7 @@ CursusApprenant.init({
   },
   classeId: {
     type: DataTypes.INTEGER.UNSIGNED,
-    allowNull: false
+    allowNull: true
   },
   anneeAcademiqueId: {
     type: DataTypes.INTEGER.UNSIGNED,

@@ -670,28 +670,32 @@ export class BordereauDossierService {
             console.error("Erreur création dossier GED matricule:", gedError)
         }
 
-        // Création du cursus conditionnelle : CursusApprenant.classeId est NOT NULL
-        // en base. Si aucune classe n'est encore affectée au parcours, on différe la
-        // création du cursus (et des participants aux cours) : l'étudiant est malgré
-        // tout validé ici, et le cursus sera créé dès son affectation à une classe.
+        // Création systématique du cursus : l'étudiant DOIT avoir son cursus
+        // (parcours + niveau + année) à la validation finale, même si aucune
+        // classe n'est encore affectée (classeId = null, à mettre à jour
+        // lors de l'affectation pédagogique ultérieure).
         let savedCursusId: number | null = null
-        if (classeDerivee && classeDerivee.id) {
-            const [savedCursus] = await CursusApprenant.findOrCreate({
-                where: { demandeInscriptionId: demande.id },
-                defaults: {
-                    externe: false,
-                    intituleParcours: parcoursNom,
-                    parcoursId: parcoursFinal!.parcoursId!,
-                    niveauEtudeId: niveauEtudeId!,
-                    classeId: classeDerivee.id!,
-                    anneeAcademiqueId: anneeId!,
-                    utilisateurId: demande.utilisateurId,
-                    demandeInscriptionId: demande.id,
-                },
-                transaction
-            })
-            savedCursusId = savedCursus.id
+        const [savedCursus] = await CursusApprenant.findOrCreate({
+            where: { demandeInscriptionId: demande.id },
+            defaults: {
+                externe: false,
+                intituleParcours: parcoursNom,
+                parcoursId: parcoursFinal!.parcoursId!,
+                niveauEtudeId: niveauEtudeId!,
+                classeId: classeDerivee?.id ?? null,
+                anneeAcademiqueId: anneeId!,
+                utilisateurId: demande.utilisateurId,
+                demandeInscriptionId: demande.id,
+            },
+            transaction
+        })
+        savedCursusId = savedCursus.id
 
+        if (!classeDerivee?.id) {
+            console.info(`[AffectationPédagogique] Cursus créé sans classe affectée (utilisateur ${utilisateurId}) : à affecter ultérieurement.`)
+        }
+
+        if (savedCursusId) {
             const coursChoisisFinal = await DemandeInscriptionCours.findAll({
                 where: { demandeInscriptionId: demande.id }
             })
@@ -708,8 +712,6 @@ export class BordereauDossierService {
                     })
                 }
             }
-        } else {
-            console.warn(`[AffectationPédagogique] Aucune classe affectée au parcours (utilisateur ${utilisateurId}) : cursus reporté.`)
         }
 
         if (dossier) {
