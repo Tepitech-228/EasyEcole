@@ -44,6 +44,10 @@ jest.mock('../../../modules/auth/models/PersonnelAdministratif', () => ({
   PersonnelAdministratif: { create: jest.fn() },
 }))
 
+jest.mock('../../../modules/etablissement/models/Etablissement', () => ({
+  Etablissement: { findByPk: jest.fn(), count: jest.fn() },
+}))
+
 const { Utilisateur } = require('../../../modules/auth/models/Utilisateur')
 
 beforeEach(() => {
@@ -198,6 +202,41 @@ describe('UtilisateurController.deleteUtilisateur', () => {
     expect(Utilisateur.findByPk).toHaveBeenCalledWith(1)
     expect(res.status).toHaveBeenCalledWith(200)
     expect(res.json).toHaveBeenCalledWith({ success: true, message: 'Utilisateur définitivement supprimé' })
+  })
+
+  it('utilise le bon nom de colonne pour vérifier les clôtures de caisse', async () => {
+    const req = mockRequest({ utilisateurRole: 'institution', params: { id: '42' }, utilisateurId: 99 } as any)
+    const res = mockResponse()
+    const sequelizeQuery = jest.fn()
+      .mockResolvedValueOnce([[{ parents: 0, attributions: 0, reductions: 0, bulletins: 0, clotures: 0 }], []])
+      .mockResolvedValueOnce([[], []])
+      .mockResolvedValueOnce([[], []])
+      .mockResolvedValueOnce([[], []])
+      .mockResolvedValueOnce([[], []])
+      .mockResolvedValueOnce([[], []])
+      .mockResolvedValueOnce([[], []])
+      .mockResolvedValueOnce([[], []])
+      .mockResolvedValueOnce([[], []])
+      .mockResolvedValueOnce([[], []])
+      .mockResolvedValueOnce([[], []])
+      .mockResolvedValueOnce([[], []])
+      .mockResolvedValueOnce([[], []])
+      .mockResolvedValueOnce([[], []])
+      .mockResolvedValueOnce([[], []])
+      .mockResolvedValueOnce([[], []])
+      .mockResolvedValueOnce([[], []])
+    ;(Utilisateur.findByPk as jest.Mock).mockResolvedValue({ id: 42 })
+
+    const { DatabaseConnection } = require('../../../core/helpers/DatabaseConnection')
+    const original = DatabaseConnection.getInstance().sequelize.query
+    DatabaseConnection.getInstance().sequelize.query = sequelizeQuery
+
+    await UtilisateurController.deleteUtilisateur(req, res)
+
+    expect(sequelizeQuery).toHaveBeenCalledWith(expect.stringContaining('scol_clotures_caisse WHERE caissierId = :id'), expect.any(Object))
+    expect(res.status).toHaveBeenCalledWith(200)
+
+    DatabaseConnection.getInstance().sequelize.query = original
   })
 })
 
