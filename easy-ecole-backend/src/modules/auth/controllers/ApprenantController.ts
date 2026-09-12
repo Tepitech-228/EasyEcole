@@ -100,7 +100,7 @@ export default class ApprenantController {
         let apprenant: Apprenant | null = await Apprenant.findOne(options);
 
         if (apprenant != null) {
-            return res.status(400).json({ success: false, message: "Apprenant déjà existant" });
+            return res.status(400).json({ success: false, message: "Apprenant dÃ©jÃ  existant" });
         }
         else {
             await Apprenant.create({
@@ -146,40 +146,73 @@ export default class ApprenantController {
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
             options = { where: { utilisateurId: (req as any).utilisateurId } }
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
+        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
             options = { where: { utilisateurId: req.body.utilisateurId } }
         }
 
         let apprenant: Apprenant | null = await Apprenant.findOne(options);
         req.body.utilisateurId = (req as any).utilisateurRole == RolesUtilisateur.APPRENANT ? (req as any).utilisateurId : req.body.utilisateurId
-        console.log((req as any).utilisateurId)
+
+        /**
+         * Angular Reactive Forms envoient `null` pour chaque contrôle vide.
+         * Sequelize passe ces valeurs à MySQL qui rejette les NOT NULL.
+         * On filtre donc les valeurs nulles / undefined avant chaque update.
+         */
+        const stripNulls = (obj: any): any => {
+            if (!obj || typeof obj !== 'object') return obj
+            const out: any = {}
+            for (const [k, v] of Object.entries(obj)) {
+                if (v !== null && v !== undefined) out[k] = v
+            }
+            return out
+        }
 
         if (apprenant != null) {
-            await apprenant.update({
-                dateNaissance: req.body.dateNaissance,
-                lieuNaissance: req.body.lieuNaissance,
-                sexe: req.body.sexe,
-                nationalite: req.body.nationalite,
-                cni: req.body.cni,
-                statutHandicap: req.body.statutHandicap,
-                natureHandicap: req.body.natureHandicap,
-                anneeObtentionBac: req.body.anneeObtentionBac,
-                serieBac: req.body.serieBac,
-                anneePremiereInscription: req.body.anneePremiereInscription,
-                nombreInscriptions: req.body.nombreInscriptions,
-                statutEtudiant: req.body.statutEtudiant,
-                periode: req.body.periode,
-                diplomePrepare: req.body.diplomePrepare,
-            })
+            // Construire dynamiquement le payload d'update pour le modèle Apprenant
+            // en n'incluant que les champs présents (Angular envoie null pour les vides)
+            const apprenantFields = [
+                'dateNaissance', 'lieuNaissance', 'sexe', 'nationalite', 'cni',
+                'typePieceIdentite', 'numeroPiece', 'statutHandicap', 'natureHandicap',
+                'anneeObtentionBac', 'serieBac', 'anneePremiereInscription',
+                'nombreInscriptions', 'statutEtudiant', 'periode', 'diplomePrepare'
+            ]
+            const apprenantUpdates: any = {}
+            for (const f of apprenantFields) {
+                if (req.body[f] != null) apprenantUpdates[f] = req.body[f]
+            }
+
+            await apprenant.update(apprenantUpdates)
                 .then(async (apprenant) => {
-                    await AdresseApprenant.update(req.body.adresse, { where: { apprenantId: apprenant.id } })
-                    await IdentiteApprenant.update(req.body.identite, { where: { apprenantId: apprenant.id } })
-                    await InformationsParentsApprenant.update(req.body.informationsParents, { where: { apprenantId: apprenant.id } })
-                    await InformationsSalarieApprenant.update(req.body.informationsSalarie, { where: { apprenantId: apprenant.id } })
-                    await PersonnePrevenirApprenant.update(req.body.personnePrevenir, { where: { apprenantId: apprenant.id } })
+                    // Updates des sous-modèles — on strip les nulls et on ignore
+                    // les objets vides pour éviter les erreurs NOT NULL
+                    const nestedUpdates: { data: any; model: any; label: string }[] = [
+                        { data: req.body.adresse,             model: AdresseApprenant,             label: 'adresse' },
+                        { data: req.body.identite,             model: IdentiteApprenant,            label: 'identité' },
+                        { data: req.body.informationsParents,  model: InformationsParentsApprenant, label: 'infos-parents' },
+                        { data: req.body.informationsSalarie,   model: InformationsSalarieApprenant, label: 'infos-salarie' },
+                        { data: req.body.personnePrevenir,     model: PersonnePrevenirApprenant,    label: 'personne-prevenir' },
+                    ]
+
+                    for (const { data, model, label } of nestedUpdates) {
+                        const cleaned = stripNulls(data ?? {})
+                        if (Object.keys(cleaned).length > 0) {
+                            try {
+                                await model.update(cleaned, { where: { apprenantId: apprenant.id } })
+                            } catch (e: any) {
+                                console.warn(`[APPRENANT_UPDATE] Sous-modèle ${label} non mis à jour :`, e?.message || e)
+                            }
+                        }
+                    }
 
                     if (apprenant.utilisateurId && req.body.utilisateur) {
-                        await Utilisateur.update(req.body.utilisateur, { where: { id: apprenant.utilisateurId } })
+                        const cleanedUser = stripNulls(req.body.utilisateur)
+                        if (Object.keys(cleanedUser).length > 0) {
+                            try {
+                                await Utilisateur.update(cleanedUser, { where: { id: apprenant.utilisateurId } })
+                            } catch (e: any) {
+                                console.warn('[APPRENANT_UPDATE] Utilisateur non mis à jour :', e?.message || e)
+                            }
+                        }
                     }
 
                     return res.status(200).send(apprenant);
@@ -208,26 +241,25 @@ export default class ApprenantController {
                 });
         }
         else {
+            // ————————————————————————— CREATE path (même logique de stripNulls) —————————
+            const apprenantFields = [
+                'dateNaissance', 'lieuNaissance', 'sexe', 'nationalite', 'cni',
+                'typePieceIdentite', 'numeroPiece', 'statutHandicap', 'natureHandicap',
+                'anneeObtentionBac', 'serieBac', 'anneePremiereInscription',
+                'nombreInscriptions', 'statutEtudiant', 'periode', 'diplomePrepare'
+            ]
+            const apprenantUpdates: any = {}
+            for (const f of apprenantFields) {
+                if (req.body[f] != null) apprenantUpdates[f] = req.body[f]
+            }
+
             await Apprenant.create({
-                dateNaissance: req.body.dateNaissance,
-                lieuNaissance: req.body.lieuNaissance,
-                sexe: req.body.sexe,
-                nationalite: req.body.nationalite,
-                cni: req.body.cni,
-                statutHandicap: req.body.statutHandicap,
-                natureHandicap: req.body.natureHandicap,
-                anneeObtentionBac: req.body.anneeObtentionBac,
-                serieBac: req.body.serieBac,
-                anneePremiereInscription: req.body.anneePremiereInscription,
-                nombreInscriptions: req.body.nombreInscriptions,
-                statutEtudiant: req.body.statutEtudiant,
-                periode: req.body.periode,
-                diplomePrepare: req.body.diplomePrepare,
-                adresse: req.body.adresse,
-                identite: req.body.identite,
-                informationsParents: req.body.informationsParents,
-                informationsSalarie: req.body.informationsSalarie,
-                personnePrevenir: req.body.personnePrevenir,
+                ...apprenantUpdates,
+                adresse: stripNulls(req.body.adresse) || undefined,
+                identite: stripNulls(req.body.identite) || undefined,
+                informationsParents: stripNulls(req.body.informationsParents) || undefined,
+                informationsSalarie: stripNulls(req.body.informationsSalarie) || undefined,
+                personnePrevenir: stripNulls(req.body.personnePrevenir) || undefined,
                 utilisateurId: req.body.utilisateurId
             }, {
                 include: [
@@ -253,76 +285,70 @@ export default class ApprenantController {
         return null
     }
 
+
     static async updatePhoto(req: Request, res: Response): Promise<Response | null> {
         let options: FindOptions<InferAttributes<Apprenant>> = {}
-        const role = (req as any).utilisateurRole
 
-        if (role == RolesUtilisateur.APPRENANT) {
-            options = { where: { utilisateurId: (req as any).utilisateurId } }
-        } else {
-            const apprenantId = req.params.apprenantId || req.body.apprenantId
-            if (!apprenantId) {
-                return res.status(400).json({ success: false, message: "apprenantId requis" })
+        if (req.params.apprenantId) {
+            if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole != RolesUtilisateur.ADMIN) {
+                return res.status(403).json({ success: false })
             }
-            options = { where: { id: apprenantId } }
+            options = { where: { id: req.params.apprenantId } }
+        }
+        else if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
+            options = { where: { utilisateurId: (req as any).utilisateurId } }
+        }
+        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
+            options = { where: { utilisateurId: req.body.utilisateurId } }
         }
 
         let files: any = req.files
         if (files && files['photo']) {
-            let photo: Express.Multer.File | undefined = (files['photo'])[0] as Express.Multer.File | undefined
+            const photo: Express.Multer.File | undefined = files['photo'][0] as Express.Multer.File | undefined
 
             if (photo) {
-                const photoFilename = photo.filename
-                let apprenant: Apprenant | null = await Apprenant.findOne(options);
+                const apprenant: Apprenant | null = await Apprenant.findOne(options)
                 if (apprenant != null) {
-                    await apprenant.update({ photo: photoFilename })
+                    await apprenant.update({ photo: photo.filename })
                         .then(async () => {
-                            return res.status(200).json({ success: true, photo: photoFilename });
+                            return res.status(200).json({ success: true })
                         })
                         .catch((error) => {
-                            return res.status(400).json({ success: false, error: error });
-                        });
+                            return res.status(400).json({ success: false, error: error })
+                        })
 
                     return null
                 }
                 else {
-                    return res.status(404).json({ success: false, message: "Apprenant non trouvé" });
+                    return res.status(404).json({ success: false, message: "Apprenant non trouvé" })
                 }
             }
-            else {
-                return res.status(400).json({ success: false });
-            }
         }
-        else {
-            return res.status(400).json({ success: false });
-        }
+
+        return res.status(400).json({ success: false })
     }
 
     static async deleteApprenant(req: Request, res: Response): Promise<Response | null> {
-        let options: FindOptions<InferAttributes<Apprenant>> = {}
-        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
-            return res.status(403).json({ success: false })
-        }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
-            options = { where: { id: req.params.id } }
+        const apprenantIds = req.body.apprenantIds ?? req.body.ids ?? (req.body.apprenantId ? [req.body.apprenantId] : [])
+
+        if (!Array.isArray(apprenantIds) || apprenantIds.length === 0) {
+            return res.status(400).json({ success: false, message: "Aucun apprenant sélectionné" })
         }
 
-        let apprenant: Apprenant | null = await Apprenant.findOne({ where: { id: req.params.id } });
-        if (apprenant) {
-            await apprenant.destroy()
-                .then(() => {
-                    return res.status(200).json({ success: true, message: "Apprenant supprimé" });
-                })
-                .catch((error) => {
-                    console.error('Erreur', error);
-                    return res.status(500).json({ success: false, message: 'Erreur interne' });
-                });
-        }
-        else {
-            return res.status(404).json({ success: false, message: "Apprenant non trouvé" });
-        }
+        try {
+            const deletedCount = await Apprenant.destroy({
+                where: {
+                    id: {
+                        [Op.in]: apprenantIds
+                    }
+                }
+            })
 
-        return null
+            return res.status(200).json({ success: true, count: deletedCount, message: "Apprenant(s) supprimé(s)" })
+        } catch (error) {
+            console.error('Erreur', error)
+            return res.status(500).json({ success: false, message: 'Erreur interne' })
+        }
     }
 
     static async generateQrCodes(req: Request, res: Response): Promise<Response | null> {
@@ -339,18 +365,7 @@ export default class ApprenantController {
 
             const apprenants: Apprenant[] = await Apprenant.findAll({
                 where: whereClause,
-                include: [{
-                    association: Apprenant.associations.utilisateur,
-                    include: [{
-                        association: 'cursusApprenant' as any,
-                        include: [
-                            { association: 'parcours' as any },
-                            { association: 'classe' as any },
-                            { association: 'anneeAcademique' as any },
-                            { association: 'demandeInscription' as any }
-                        ]
-                    }]
-                }]
+                include: [Apprenant.associations.utilisateur]
             })
 
             const results: { apprenantId: string, userId: string, qrCode: string }[] = []
@@ -358,81 +373,64 @@ export default class ApprenantController {
             for (const apprenant of apprenants) {
                 if (!apprenant.utilisateur) continue
 
-                try {
-                    const user = apprenant.utilisateur
-                    const qrData = QrTokenService.signer(Number(user.id))
+                const userId = String(apprenant.utilisateur.id)
+                const qrData = QrTokenService.signer(Number(apprenant.utilisateur.id))
+                const fileName = `${userId}.png`
+                const filePath = path.join(dir, fileName)
 
-                    const baseName = `${user.id}`;
-                    let fileName = `${baseName}.png`;
-                    let filePath = path.join(dir, fileName);
-
-                    if (fs.existsSync(filePath)) {
-                        try { fs.unlinkSync(filePath) } catch (_) {
-                            fileName = `${baseName}_${Date.now()}.png`;
-                            filePath = path.join(dir, fileName);
-                        }
+                await QRCode.toFile(filePath, qrData, {
+                    type: 'png',
+                    width: 400,
+                    margin: 4,
+                    errorCorrectionLevel: 'Q',
+                    color: {
+                        dark: '#000000',
+                        light: '#ffffff'
                     }
+                })
 
-                    await QRCode.toFile(filePath, qrData, {
-                        type: 'png',
-                        width: 400,
-                        margin: 4,
-                        errorCorrectionLevel: 'Q',
-                        color: {
-                            dark: '#000000',
-                            light: '#ffffff'
-                        }
-                    })
+                await apprenant.update({ qrCode: fileName })
 
-                    await apprenant.update({ qrCode: fileName })
-
-                    results.push({
-                        apprenantId: apprenant.id,
-                        userId: String(user.id),
-                        qrCode: fileName
-                    })
-                } catch (apprenantError: any) {
-                    console.error(`QR code skip for apprenant ${apprenant.utilisateur?.id}: ${apprenantError.code || apprenantError.message}`)
-                }
+                results.push({
+                    apprenantId: apprenant.id,
+                    userId: userId,
+                    qrCode: fileName
+                })
             }
 
             return res.status(200).json({ success: true, data: results })
         } catch (error) {
-            console.error('Erreur', error);
-            return res.status(500).json({ success: false, message: 'Erreur interne' });
+            console.error('Erreur', error)
+            return res.status(500).json({ success: false, message: 'Erreur interne' })
         }
     }
 
     static async getCount(req: Request, res: Response): Promise<Response | null> {
         let options: CountOptions<InferAttributes<Apprenant>> = {}
 
-        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
-            return res.status(403).json({ success: false })
-        }
-
         await Apprenant.count(options)
             .then((value) => {
-                return res.status(200).json({ success: true, count: value });
+                return res.status(200).json({ success: true, count: value })
             })
             .catch((error) => {
-                console.error('Erreur', error);
-                return res.status(500).json({ success: false, message: 'Erreur interne' });
-            });
+                console.error('Erreur', error)
+                return res.status(500).json({ success: false, message: 'Erreur interne' })
+            })
 
         return null
     }
 
     static async getQrCode(req: Request, res: Response): Promise<Response | null> {
-        const { fileName } = req.params;
-        const dir = path.resolve(process.cwd(), 'storage', 'qr-codes', 'apprenants');
-        const filePath = path.join(dir, fileName);
+        const { fileName } = req.params
+        const dir = path.resolve(process.cwd(), 'storage', 'qr-codes', 'apprenants')
+        const filePath = path.join(dir, fileName)
 
         if (!fs.existsSync(filePath)) {
-            return res.status(404).json({ success: false, message: 'QR code non trouvé' });
+            return res.status(404).json({ success: false, message: 'QR code non trouvé' })
         }
 
-        res.setHeader('Content-Type', 'image/png');
-        res.sendFile(filePath);
-        return null;
+        res.setHeader('Content-Type', 'image/png')
+        res.sendFile(filePath)
+        return null
     }
 }
