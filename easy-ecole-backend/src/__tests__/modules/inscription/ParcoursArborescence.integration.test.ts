@@ -1,6 +1,8 @@
 import 'dotenv/config'
 import { startIntegrationServer, getJSON, IntegrationServer } from '../../helpers/integration-server'
 
+const describeIntegration = process.env.RUN_INTEGRATION_TESTS === 'true' ? describe : describe.skip
+
 /**
  * Tests d'intégration — GET /api/v1/inscription/parcours/arborescence
  *
@@ -8,7 +10,7 @@ import { startIntegrationServer, getJSON, IntegrationServer } from '../../helper
  * MariaDB locale), ce qui valide bout en bout le filtrage par session / niveau
  * utilisé par la PHASE 1 du wizard d'inscription.
  */
-describe('Integration — Parcours arborescence (API réelle)', () => {
+describeIntegration('Integration — Parcours arborescence (API réelle)', () => {
   let srv: IntegrationServer
 
   beforeAll(async () => {

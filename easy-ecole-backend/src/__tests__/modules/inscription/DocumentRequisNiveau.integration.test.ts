@@ -1,6 +1,8 @@
 import 'dotenv/config'
 import { startIntegrationServer, getJSON, IntegrationServer } from '../../helpers/integration-server'
 
+const describeIntegration = process.env.RUN_INTEGRATION_TESTS === 'true' ? describe : describe.skip
+
 /**
  * Tests d'intégration — GET /api/v1/inscription/documents-requis-niveau
  *
@@ -11,7 +13,7 @@ import { startIntegrationServer, getJSON, IntegrationServer } from '../../helper
  * Convention : le backend transforme le paramètre `niveau` en uppercase
  * avant de requêter la table `ins_document_requis_niveau`.
  */
-describe('Integration — Documents requis par niveau (API réelle)', () => {
+describeIntegration('Integration — Documents requis par niveau (API réelle)', () => {
   let srv: IntegrationServer
 
   beforeAll(async () => {
