@@ -117,28 +117,44 @@ jobs:
             console.log('numTotalTests:', r.numTotalTests);
             console.log('numPassedTests:', r.numPassedTests);
             console.log('numFailedTests:', r.numFailedTests);
+            const failed = [];
             for (const tr of r.testResults) {
               if (tr.status === 'failed') {
-                console.log('\n=== FAILED SUITE:', tr.name, '===');
                 for (const a of tr.assertionResults) {
                   if (a.status === 'failed') {
-                    console.log('  FAIL:', a.fullName);
-                    for (const m of (a.failureMessages || [])) {
-                      console.log('    ', m.split('\n').slice(0,5).join('\n    '));
-                    }
+                    failed.push({suite: tr.name, test: a.fullName, messages: a.failureMessages || []});
                   }
                 }
               }
             }
+            if (failed.length > 0) {
+              console.log('\\n=== FAILED TESTS (' + failed.length + ') ===');
+              for (const f of failed) {
+                console.log('SUITE:', f.suite);
+                console.log('TEST:', f.test);
+                for (const m of f.messages) {
+                  console.log('  ERROR:', m.split('\\n').slice(0, 10).join('\\n  '));
+                }
+                console.log('---');
+              }
+              require('fs').writeFileSync('failed-tests-output.txt', JSON.stringify(failed.map(f => ({suite: f.suite, test: f.test, msg: f.messages[0]?.substring(0, 500)})), null, 2));
+              process.exit(1);
+            }
           "
+          exit_code=$?
+          if [ $exit_code -eq 1 ] && [ -f failed-tests-output.txt ]; then
+            sed 's/^/::error ::/' failed-tests-output.txt
+          fi
+          exit $exit_code
 
       - name: '[CI] Upload test results'
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: easy-ecole-backend/test-results.json
-          retention-days: 1
+          path: |
+            easy-ecole-backend/test-results.json
+            easy-ecole-backend/failed-tests-output.txt
 
       - name: '[CI] Build backend (Babel -> lib/)'
         run: npm run build
