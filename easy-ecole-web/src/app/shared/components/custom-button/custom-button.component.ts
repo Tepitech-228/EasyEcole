@@ -8,15 +8,26 @@ import { Component, HostBinding, Input, OnInit } from '@angular/core';
 export class CustomButtonComponent implements OnInit {
 
   @Input() disabled: boolean = false
+  @Input() loading: boolean = false
   @Input() link?: string
   @Input() text!: string
   @HostBinding('class.w-full') @Input() fullWidth: boolean = false
   @Input() outlined: boolean = false
   @Input() color: string = 'primary'
+  @HostBinding('class.btn-gradient') get isGradient(): boolean {
+    return !this.outlined && (this.color === 'primary' || this.color === '');
+  }
   @Input() icon?: string
   @Input() iconPosition: 'left' | 'right' = 'left'
   @HostBinding('class.btn-validated') get isValidated(): boolean {
     return this.color === 'green' || this.color === 'emerald';
+  }
+  @HostBinding('class.opacity-50') get isDisabledOrLoading(): boolean {
+    return this.disabled || this.loading;
+  }
+
+  get isDisabled(): boolean {
+    return this.disabled || this.loading;
   }
 
   constructor() { }
