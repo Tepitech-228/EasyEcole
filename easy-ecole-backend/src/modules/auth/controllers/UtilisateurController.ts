@@ -23,9 +23,9 @@ export default class UtilisateurController {
             [RolesUtilisateur.PERSONNEL_ADMINISTRATIF]: 'Personnel Administratif',
             [RolesUtilisateur.CAISSIER_BANQUE]: 'Caissier Banque',
             [RolesUtilisateur.COMITE_ORIENTATION]: "Comité d'Orientation",
-            [RolesUtilisateur.CABINET_COMPTABLE]: 'Cabinet Comptable',
+            [RolesUtilisateur.CABINET_COMPTABLE]: 'Audit',
             [RolesUtilisateur.RESSOURCES_HUMAINES]: 'Ressources Humaines',
-            [RolesUtilisateur.ESA_COMPTA]: 'ESA Compta',
+            [RolesUtilisateur.ESA_COMPTA]: 'Service Recouvrement',
             [RolesUtilisateur.SECRETAIRE]: 'Secrétaire',
             [RolesUtilisateur.SURVEILLANT]: 'Surveillant',
         };
@@ -395,25 +395,34 @@ export default class UtilisateurController {
             }
 
             // Tables "bloquantes" (NO ACTION / RESTRICT) liées à de la donnée métier
-            // sensible (parents, bourse, réductions, bulletins) : on refuse plutôt que de
+            // sensible (parents, bourse, réductions, bulletins, caisse) : on refuse plutôt que de
             // détruire silencieusement ces données. Ces cas demandent une purge manuelle.
-            const [blockers]: any = await sequelize.query(
-                `SELECT
-                    (SELECT COUNT(*) FROM par_parents_enfants WHERE parentUtilisateurId = :id) AS parents,
-                    (SELECT COUNT(*) FROM brs_attributions WHERE valideParId = :id) AS attributions,
-                    (SELECT COUNT(*) FROM cpt_reductions_frais WHERE validePar = :id) AS reductions,
-                    (SELECT COUNT(*) FROM ins_bulletins WHERE utilisateurId = :id) AS bulletins,
-                    (SELECT COUNT(*) FROM scol_clotures_caisse WHERE caissierId = :id) AS clotures`,
-                { replacements: { id: userId } }
-            );
-            const b = blockers[0];
-            if (b && (b.parents || b.attributions || b.reductions || b.bulletins || b.clotures)) {
-                const liens: string[] = [];
-                if (b.parents) liens.push(`${b.parents} lien(s) parent-enfant`);
-                if (b.attributions) liens.push(`${b.attributions} attribution(s) de bourse`);
-                if (b.reductions) liens.push(`${b.reductions} réduction(s) de frais`);
-                if (b.bulletins) liens.push(`${b.bulletins} bulletin(s)`);
-                if (b.clotures) liens.push(`${b.clotures} clôture(s) de caisse (anciennes)`);
+            // Chaque vérification est isolée pour supporter les bases où certaines tables
+            // n'existent pas encore (sync différé, module non déployé, etc.).
+            const blockersChecks: { sql: string; label: string }[] = [
+                { sql: 'SELECT COUNT(*) AS cnt FROM par_parents_enfants WHERE parentUtilisateurId = :id', label: 'lien(s) parent-enfant' },
+                { sql: 'SELECT COUNT(*) AS cnt FROM brs_attributions WHERE valideParId = :id', label: 'attribution(s) de bourse' },
+                { sql: 'SELECT COUNT(*) AS cnt FROM cpt_reductions_frais WHERE validePar = :id', label: 'réduction(s) de frais' },
+                { sql: 'SELECT COUNT(*) AS cnt FROM ins_bulletins WHERE utilisateurId = :id', label: 'bulletin(s)' },
+                { sql: 'SELECT COUNT(*) AS cnt FROM scol_clotures_caisse WHERE caissierId = :id', label: 'clôture(s) de caisse (anciennes)' },
+                { sql: 'SELECT COUNT(*) AS cnt FROM scol_recus_caisse WHERE caissierId = :id', label: 'reçu(s) de caisse' },
+            ];
+
+            const liens: string[] = [];
+            for (const check of blockersChecks) {
+                try {
+                    const [rows]: any = await sequelize.query(check.sql, { replacements: { id: userId } });
+                    const count = rows?.[0]?.cnt || 0;
+                    if (count > 0) {
+                        liens.push(`${count} ${check.label}`);
+                    }
+                } catch (err: any) {
+                    // Table manquante ou erreur de lecture : on ignore silencieusement
+                    console.warn(`[deleteUtilisateur] Bloquant ignoré (${check.label}):`, err?.message || err);
+                }
+            }
+
+            if (liens.length > 0) {
                 return res.status(409).json({
                     success: false,
                     message: `Suppression impossible : cet utilisateur est lié à des données sensibles (${liens.join(', ')}). Un administrateur doit procéder à une purge manuelle ciblée.`
@@ -448,7 +457,8 @@ export default class UtilisateurController {
             }
             // Erreur de clé étrangère (contrainte non couverte par le blocage ci-dessus)
             const code = error?.original?.code || error?.parent?.code || '';
-            if (code === 'ER_ROW_IS_REFERENCED_2' || code === 'ER_ROW_IS_REFERENCED' || error?.name === 'SequelizeForeignKeyConstraintError') {
+            const codeNum = Number(error?.original?.errno || error?.parent?.errno || error?.original?.code || error?.parent?.code || 0);
+            if (code === 'ER_ROW_IS_REFERENCED_2' || code === 'ER_ROW_IS_REFERENCED' || codeNum === 1451 || codeNum === 1217 || error?.name === 'SequelizeForeignKeyConstraintError') {
                 return res.status(409).json({
                     success: false,
                     message: "Suppression impossible : l'utilisateur est référencé par d'autres données métier. L'administrateur doit procéder à une purge manuelle ciblée."
