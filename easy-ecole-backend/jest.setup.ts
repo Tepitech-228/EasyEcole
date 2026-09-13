@@ -102,15 +102,18 @@ const noopSequelize: any = {
   Sequelize: { Model, DataTypes },
 }
 
-jest.mock('./src/core/helpers/DatabaseConnection', () => ({
-  DatabaseConnection: {
-    getInstance: jest.fn().mockReturnValue({
-      sequelize: noopSequelize,
-      close: jest.fn(),
-      sync: jest.fn().mockResolvedValue(undefined),
-    }),
-  },
-}))
+jest.mock('./src/core/helpers/DatabaseConnection', () => {
+  console.log('[jest.setup] DatabaseConnection mock factory invoked')
+  return {
+    DatabaseConnection: {
+      getInstance: jest.fn().mockReturnValue({
+        sequelize: noopSequelize,
+        close: jest.fn(),
+        sync: jest.fn().mockResolvedValue(undefined),
+      }),
+    },
+  }
+})
 
 // Mock integration-server: les tests d'intégration sont skippés en CI
 // (RUN_INTEGRATION_TESTS != 'true'), mais leurs import-time side effects
