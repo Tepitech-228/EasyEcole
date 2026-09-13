@@ -94,7 +94,7 @@ jobs:
         run: npx tsc --noEmit
 
       - name: '[CI] Tests backend (Jest)'
-        run: npm test -- --forceExit
+        run: npm test -- --forceExit --json --outputFile=test-results.json 2>&1 || true
         env:
           NODE_ENV: test
           JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-test-secret-key-not-for-production' }}
@@ -104,6 +104,42 @@ jobs:
           DB_USER: root
           DB_PASS: ''
           CORS_ORIGIN: http://localhost:4200
+
+      - name: '[CI] Check test results'
+        if: always()
+        run: |
+          echo "=== Test suites summary ==="
+          node -e "
+            const r = require('./easy-ecole-backend/test-results.json');
+            console.log('numTotalTestSuites:', r.numTotalTestSuites);
+            console.log('numPassedTestSuites:', r.numPassedTestSuites);
+            console.log('numFailedTestSuites:', r.numFailedTestSuites);
+            console.log('numTotalTests:', r.numTotalTests);
+            console.log('numPassedTests:', r.numPassedTests);
+            console.log('numFailedTests:', r.numFailedTests);
+            for (const tr of r.testResults) {
+              if (tr.status === 'failed') {
+                console.log('\\n=== FAILED SUITE:', tr.name, '===');
+                for (const a of tr.assertionResults) {
+                  if (a.status === 'failed') {
+                    console.log('  FAIL:', a.fullName);
+                    for (const m of (a.failureMessages || [])) {
+                      console.log('    ', m.split('\\n').slice(0,5).join('\\n    '));
+                    }
+                  }
+                }
+              }
+            }
+          "
+          false || true
+
+      - name: '[CI] Upload test results'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: easy-ecole-backend/test-results.json
+          retention-days: 1
 
       - name: '[CI] Build backend (Babel -> lib/)'
         run: npm run build
