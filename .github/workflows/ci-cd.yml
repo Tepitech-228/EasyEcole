@@ -94,7 +94,7 @@ jobs:
         run: npx tsc --noEmit
 
       - name: '[CI] Tests backend (Jest)'
-        run: npm test -- --forceExit --json --outputFile=test-results.json 2>&1 || true
+        run: npm test -- --forceExit --json --outputFile=test-results.json
         env:
           NODE_ENV: test
           JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-test-secret-key-not-for-production' }}
@@ -110,7 +110,7 @@ jobs:
         run: |
           echo "=== Test suites summary ==="
           node -e "
-            const r = require('./easy-ecole-backend/test-results.json');
+            const r = require('./test-results.json');
             console.log('numTotalTestSuites:', r.numTotalTestSuites);
             console.log('numPassedTestSuites:', r.numPassedTestSuites);
             console.log('numFailedTestSuites:', r.numFailedTestSuites);
@@ -119,19 +119,18 @@ jobs:
             console.log('numFailedTests:', r.numFailedTests);
             for (const tr of r.testResults) {
               if (tr.status === 'failed') {
-                console.log('\\n=== FAILED SUITE:', tr.name, '===');
+                console.log('\n=== FAILED SUITE:', tr.name, '===');
                 for (const a of tr.assertionResults) {
                   if (a.status === 'failed') {
                     console.log('  FAIL:', a.fullName);
                     for (const m of (a.failureMessages || [])) {
-                      console.log('    ', m.split('\\n').slice(0,5).join('\\n    '));
+                      console.log('    ', m.split('\n').slice(0,5).join('\n    '));
                     }
                   }
                 }
               }
             }
           "
-          false || true
 
       - name: '[CI] Upload test results'
         if: always()
