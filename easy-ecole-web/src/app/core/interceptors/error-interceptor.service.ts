@@ -93,7 +93,7 @@ export class ErrorInterceptorService implements HttpInterceptor {
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     return next.handle(req).pipe(
       catchError((err: HttpErrorResponse) => {
-        const backendMessage: string = err?.error?.message || err?.error?.error || '';
+        const backendMessage: string = err?.error?.message || err?.error?.error || (err?.error?.alreadySignUp ? 'Vous avez déjà une demande d\'inscription pour cette session.' : '');
         const message = backendMessage || ErrorInterceptorService.MESSAGES[err.status] || `Erreur ${err.status}`;
 
         console.error(`[HTTP_ERROR] ${req.method} ${req.urlWithParams} → ${err.status}`, {

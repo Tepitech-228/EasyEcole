@@ -1,3 +1,4 @@
+import { ToastService } from 'src/app/core/services/toast.service';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpEventType } from '@angular/common/http';
@@ -100,7 +101,8 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     private bordereauService: BordereauService,
     private dossierInscriptionService: DossierInscriptionService,
     private apprenantService: ApprenantService,
-    private wizardStore: InscriptionWizardStoreService
+    private wizardStore: InscriptionWizardStoreService,
+    private toastService: ToastService
   ) {
     super()
     if (!this.rolesValue.isApprenant) {
@@ -682,6 +684,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
       error: (err) => {
         this.submitting = false
         if (err?.error?.alreadySignUp) {
+          this.toastService.warning('Vous avez déjà une demande d\'inscription pour cette session.');
           this.demandeInscriptionService.getAll().subscribe({
             next: (res) => {
               const existingDemande = res.data.find((d) => {
@@ -709,6 +712,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
             }
           })
         } else {
+          this.toastService.error(err?.error?.message || 'Erreur lors de la soumission du dossier.');
           this.errorMessage = err?.error?.message || 'Erreur lors de la soumission du dossier.'
         }
       }
@@ -755,10 +759,12 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     for (const requis of this.documentsRequis) {
       const fichier = this.documents[requis.id]
       if (!fichier) continue
+      // Tout document requis (bordereau inclus) doit être rattaché à la demande
+      // (ins_dossiers_demandes) pour satisfaire la garde de saisie ESA-COMPTA.
+      dossierDocs.push({ dossierId: requis.id, fichier })
+      // Le bordereau est EN PLUS envoyé au pipeline comptable (ins_bordereaux).
       if (this.estBordereau(requis)) {
         bordereauFichier = fichier
-      } else {
-        dossierDocs.push({ dossierId: requis.id, fichier })
       }
     }
 

@@ -167,7 +167,9 @@ export class ImpayesPageComponent extends BaseComponentClass implements OnInit {
         this.semestres = res.semestres || [];
         this.total = res.pagination?.total || 0;
         this.totalPages = res.pagination?.totalPages || 0;
-        this.applyFilters();
+        // TODO: le filtrage client est effectué par le getter treeNodes (buildTreeNodes),
+        // et les filtres sont déjà transmis au serveur via params.
+        // Suppression de cet appel pour casser la boucle infinie loadImpayes → applyFilters → loadImpayes.
         this.loading = false;
       },
       error: () => {

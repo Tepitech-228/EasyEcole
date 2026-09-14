@@ -63,6 +63,10 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   compositionLoading = false
   bourseInfo: any = null
 
+  /** SafeResourceUrl mémorisé pour le bordereau sélectionné — évite la boucle infinie
+   * causée par bypassSecurityTrustResourceUrl() qui crée un nouvel objet à chaque évaluation */
+  private selectedBordereauSafeUrl: SafeResourceUrl | null = null
+
   /** Type d'opération actuellement sélectionné dans le formulaire de saisie */
   get typeSelectionne(): TypeOperationBordereau | undefined {
     const id = this.saisieForm.get('typeOperationId')?.value
@@ -359,6 +363,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
 
   openSaisieModal(bordereau: Bordereau): void {
     this.selectedBordereau = bordereau
+    this.selectedBordereauSafeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.getDocUrl(bordereau))
     this.composition = { inscription: null, scolarite: null }
     this.compositionPreviewResult = null
     this.compositionLoading = false
@@ -389,6 +394,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   closeSaisieModal(): void {
     this.showSaisieModal = false
     this.selectedBordereau = undefined
+    this.selectedBordereauSafeUrl = null
     this.error = false
     this.apiErrorMessage = ''
     this.compositionPreviewResult = null
@@ -455,6 +461,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     }
 
     this.selectedBordereau = bordereau
+    this.selectedBordereauSafeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.getDocUrl(bordereau))
     this.error = false
     this.apiErrorMessage = ''
     const typeApercu = this.estTypeMixte ? '' : (this.typeSelectionne?.code || '').toLowerCase()
@@ -566,8 +573,13 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
    * URL sécurisée pour les contextes "resource URL" (iframe, embed, object).
    * Angular exige une valeur de confiance explicite (DomSanitizer), sinon
    * l'erreur "unsafe value used in a resource URL context" est levée.
+   * Mémoïsation : retourne le SafeResourceUrl calculé pour le selectedBordereau
+   * courant sans créer de nouvel objet à chaque évaluation du template.
    */
   getDocUrlSafe(bordereau: Bordereau): SafeResourceUrl {
+    if (this.selectedBordereau && this.selectedBordereau.id === bordereau.id && this.selectedBordereauSafeUrl) {
+      return this.selectedBordereauSafeUrl
+    }
     return this.sanitizer.bypassSecurityTrustResourceUrl(this.getDocUrl(bordereau))
   }
 

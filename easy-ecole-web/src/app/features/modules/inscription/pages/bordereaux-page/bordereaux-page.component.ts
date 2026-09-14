@@ -49,6 +49,7 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
   }
 
   getBordereaux(): void {
+    this.clearUrlCache()
     this.bordereauService.getAll().subscribe({
       next: (res: any) => {
         this.bordereaux = res.data || res
@@ -58,6 +59,10 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
       }
     })
   }
+
+  /** Cache de SafeResourceUrl par ID de bordereau — évite de créer un nouvel objet
+   * à chaque évaluation du template (ce qui provoquerait une boucle de requêtes HTTP) */
+  private urlCache = new Map<string, SafeResourceUrl>()
 
   get filteredBordereaux(): Bordereau[] {
     return this.bordereaux.filter(bordereau => {
@@ -116,12 +121,27 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
     // étudiant public/dossiers/... ou ancien dépôt plat), via le champ
     // bordereau.fichier stocké en base. On ne concatène plus le chemin
     // stocké dans l'URL (ce qui provoquait une 404 « Ressource non trouvée »).
+    if (bordereau.id) {
+      const cached = this.urlCache.get(bordereau.id)
+      if (cached) return cached
+    }
+
     const token = this.localStorage.get(LocalStorageService.AUTH_TOKEN)
     let url = `${this.BORDEREAUX_PATH}${bordereau.id}/download`
     if (token) {
       url += `?token=${encodeURIComponent(token)}`
     }
-    return this.sanitizer.bypassSecurityTrustResourceUrl(url)
+    const safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url)
+    if (bordereau.id) {
+      this.urlCache.set(bordereau.id, safeUrl)
+    }
+    return safeUrl
+  }
+
+  /** Vide le cache des URLs sécurisées (à appeler après rechargement des données
+   * si le token d'authentification a pu changer entre-temps) */
+  private clearUrlCache(): void {
+    this.urlCache.clear()
   }
 
   openPdfModal(bordereau: Bordereau): void {
