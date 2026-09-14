@@ -325,7 +325,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
                 return {
                   type: 'etudiant' as const,
                   label: etudiantLabel,
-                  expanded: false,
+                  expanded: true,
                   items: group.items.map(b => this.bordereauToItem(b)),
                 }
               })
