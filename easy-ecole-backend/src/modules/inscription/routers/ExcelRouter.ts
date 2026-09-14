@@ -32,12 +32,12 @@ const storage = multer.diskStorage({
 const upload = multer({
     storage,
     fileFilter: (req, file, callback) => {
-        const allowed = [".xlsx", ".xls"]
+        const allowed = [".xlsx", ".xls", ".docx"]
         const ext = path.extname(file.originalname).toLowerCase()
         if (allowed.includes(ext)) {
             callback(null, true)
         } else {
-            callback(new Error("Seuls les fichiers Excel (.xlsx, .xls) sont acceptés"))
+            callback(new Error("Seuls les fichiers Excel (.xlsx, .xls) ou Word (.docx) sont acceptés"))
         }
     },
 })
@@ -54,6 +54,7 @@ const upload = multer({
  *     summary: Télécharger le template Excel pour l'import des UE
  */
 router.get("/ue/template", ExcelController.downloadUeTemplate)
+// router.get("/ue/template-word", ExcelController.downloadUeWordTemplate)
 
 /**
  * @openapi
@@ -73,6 +74,7 @@ router.post("/ue/import-async", upload.single("fichier"), ExcelController.import
  *     summary: Exporter toutes les UE au format Excel
  */
 router.get("/ue/export", ExcelController.exportUe)
+// router.get("/ue/export-word", ExcelController.exportUeWord)
 
 // ========================================================================
 //  ENSEIGNANTS

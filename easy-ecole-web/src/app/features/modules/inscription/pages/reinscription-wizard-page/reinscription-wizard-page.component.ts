@@ -346,7 +346,7 @@ export class ReinscriptionWizardPageComponent extends BaseComponentClass impleme
     const statut = this.resultat?.statutPipeline || 'soumis'
     const steps = [
       { key: 'soumis', label: 'Soumis' },
-      { key: 'authentifie', label: 'Authentifié (cabinet)' },
+      { key: 'authentifie', label: 'Authentifié (Audit)' },
       { key: 'transmis_comite', label: 'Transmis au comité' },
       { key: 'valide', label: 'Validé' }
     ]

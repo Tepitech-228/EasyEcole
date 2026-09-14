@@ -15,7 +15,7 @@ import { TypeDocumentService } from 'src/app/data/modules/scolarite/services/typ
  * Page « Génération de documents » (route /docgen/generer) — gérée par le secrétaire.
  *
  * Onglet 1 — Reçus de scolarité : liste d'attente des bordereaux de scolarité
- *           validés par le cabinet comptable. Le secrétaire génère le reçu
+ *           validés par l'Audit. Le secrétaire génère le reçu
  *           (PDF + envoi par mail) ou une copie physique imprimable.
  * Onglet 2 — Attestations & documents : demandes de documents payantes des
  *           étudiants (frais paramétrés) — paiement en caisse puis délivrance.
@@ -91,7 +91,7 @@ export class GenerateDocumentPageComponent extends BaseComponentClass implements
     });
   }
 
-  /** Liste d'attente : bordereaux de scolarité validés par le cabinet comptable. */
+  /** Liste d'attente : bordereaux de scolarité validés par l'Audit. */
   loadRecus(): void {
     this.recusLoading = true;
     this.errorMessage = '';

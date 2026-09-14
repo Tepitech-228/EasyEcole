@@ -28,7 +28,7 @@ export class ChatPageComponent implements OnInit {
     ADMIN: 'Administrateurs',
     CAISSIER_BANQUE: 'Caissier/Banque',
     RESSOURCES_HUMAINES: 'Ressources Humaines',
-    CABINET_COMPTABLE: 'Cabinet Comptable',
+    CABINET_COMPTABLE: 'Audit',
     COMITE_ORIENTATION: "Comité d'Orientation"
   };
 

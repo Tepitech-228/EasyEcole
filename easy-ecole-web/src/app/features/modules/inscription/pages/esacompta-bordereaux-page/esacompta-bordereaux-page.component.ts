@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
@@ -53,7 +54,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
 
   saisieForm: FormGroup
 
-  // KPI (à traiter — affiché sur la carte d'accès rapide)
+  // KPI (onglet actif)
   enAttenteCount = 0
 
   // Répartition auto-calculée quand le type d'opération sélectionné est MIXTE
@@ -85,20 +86,55 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
 
   searchTerm: string = ''
 
-  readonly columns: DossierColumn[] = [
-    { key: 'etudiant', label: 'Étudiant' },
-    { key: 'matricule', label: 'Matricule', width: '130px' },
-    { key: 'typeOperation', label: 'Type' },
-    { key: 'montantBordereau', label: 'Montant', width: '150px' },
-    { key: 'date', label: 'Date dépôt', width: '150px' },
-  ]
+  /** Statut porté par l'URL (lire dans ngOnInit) */
+  activeStatut: string = ''
 
-  readonly itemActions: BatchAction[] = [
-    { label: 'Traitement', color: 'green', action: 'traitement', icon: 'fact_check' },
-    { label: 'Voir imputation', color: 'blue', action: 'voir-imputation', icon: 'account_tree' },
-  ]
+  /** Mapping statut URL → libellé affiché (sans dependance à statutTabs) */
+  private readonly statutLabels: Record<string, string> = {
+    'valide,en_saisie_comptable': 'À imputer',
+    'en_attente': 'En attente',
+    'traite': 'Traités',
+    'rejete': 'Rejetés',
+  }
+
+  /** Titre dynamique basé sur le statut de la route */
+  get titrePage(): string {
+    return `Bordereaux ${this.statutLabels[this.activeStatut] || 'À imputer'}`
+  }
+
+  /** Colonnes adaptées à l'onglet actif : on ajoute « Statut » uniquement pour l'onglet mixte */
+  get columns(): DossierColumn[] {
+    const base: DossierColumn[] = [
+      { key: 'etudiant', label: 'Étudiant' },
+      { key: 'matricule', label: 'Matricule', width: '130px' },
+      { key: 'typeOperation', label: 'Type' },
+      { key: 'montantBordereau', label: 'Montant', width: '150px' },
+      { key: 'date', label: 'Date dépôt', width: '150px' },
+    ]
+    if (this.activeStatut === 'valide,en_saisie_comptable') {
+      return [...base, { key: 'statut', label: 'Statut', width: '120px' }]
+    }
+    return base
+  }
+
+  /** Actions disponibles selon l'onglet actif */
+  get itemActionsCourantes(): BatchAction[] {
+    if (this.activeStatut === 'valide,en_saisie_comptable') {
+      return [
+        { label: 'Traitement', color: 'green', action: 'traitement', icon: 'fact_check' },
+        { label: 'Voir imputation', color: 'blue', action: 'voir-imputation', icon: 'account_tree' },
+      ]
+    }
+    if (this.activeStatut === 'traite') {
+      return [
+        { label: 'Voir imputation', color: 'blue', action: 'voir-imputation', icon: 'account_tree' },
+      ]
+    }
+    return []
+  }
 
   constructor(
+    private route: ActivatedRoute,
     private bordereauService: BordereauService,
     private typeService: TypeOperationBordereauService,
     private anneeService: AnneeAcademiqueService,
@@ -139,17 +175,18 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   ]
 
   ngOnInit(): void {
+    this.activeStatut = this.route.snapshot.data['statut'] || 'valide,en_saisie_comptable'
     this.loadData()
     this.loadSelects()
   }
 
   private calculateKPIs(): void {
-    this.enAttenteCount = this.bordereaux.filter(b => b.statut === 'en_attente').length
+    this.enAttenteCount = this.bordereaux.length
   }
 
   private loadData(): void {
     this.loading = true
-    const params: any = { page: 1, limit: 50 }
+    const params: any = { page: 1, limit: 50, statut: this.activeStatut }
     if (this.selectedAnneeId) params.anneeAcademiqueId = this.selectedAnneeId
     if (this.selectedNiveauId) params.niveauEtudeId = this.selectedNiveauId
     if (this.selectedParcoursId) params.parcoursId = this.selectedParcoursId
@@ -224,31 +261,88 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     const q = this.searchTerm.toLowerCase().trim()
     if (!q) return this.bordereaux
     return this.bordereaux.filter(b => {
-      const etudiant = `${b.utilisateur?.nom ?? ''} ${b.utilisateur?.prenoms ?? ''}`.toLowerCase()
+      const etudiant = `${(b as any).demandeInscription?.utilisateur?.nom ?? b.utilisateur?.nom ?? ''} ${(b as any).demandeInscription?.utilisateur?.prenoms ?? b.utilisateur?.prenoms ?? ''}`.toLowerCase()
       const matricule = (b.echeance?.dossierEtudiant?.matricule || '').toLowerCase()
       return etudiant.includes(q) || matricule.includes(q)
     })
   }
 
+  /**
+   * Arbre hiérarchique : Année académique → Niveau → Parcours → Étudiant → items(bordereaux)
+   * Les libellés proviennent de la donnée embarquée dans b.demandeInscription (fallback fourni).
+   */
   get treeNodes(): DossierNode[] {
-    const groupes: { [key: string]: any[] } = {}
+    const groups: { [key: string]: any } = {}
+
     for (const b of this.bordereauxFiltres) {
-      const cle = this.getTypeOperationLibelle(b.typeOperationId ?? null)
-      ;(groupes[cle] = groupes[cle] || []).push(b)
+      const di = (b as any).demandeInscription
+
+      // Année
+      const anneeLibelle: string = di?.session?.anneeAcademique?.libelle || 'Sans année'
+      // Niveau
+      const niveauLibelle: string = di?.session?.niveauEtude?.libelle || 'Sans niveau'
+      // Parcours : chercher choixFinal === true
+      const parcoursChoisis: any[] = di?.parcoursChoisis || []
+      let parcoursLibelle: string = 'Sans parcours'
+      if (parcoursChoisis.length > 0) {
+        const choix = parcoursChoisis.find((p: any) => p.choixFinal === true)
+        parcoursLibelle = choix?.parcours?.titre || parcoursChoisis[0]?.parcours?.titre || 'Sans parcours'
+      }
+
+      const anneeKey = anneeLibelle
+      const niveauKey = `${anneeLibelle}||${niveauLibelle}`
+      const parcoursKey = `${anneeLibelle}||${niveauLibelle}||${parcoursLibelle}`
+      const etudiantLabel = b.utilisateur ? `${b.utilisateur.nom} ${b.utilisateur.prenoms}` : 'Étudiant inconnu'
+      const etudiantKey = `${parcoursKey}||${etudiantLabel}`
+
+      if (!groups[anneeKey]) groups[anneeKey] = {}
+      if (!groups[anneeKey][niveauKey]) groups[anneeKey][niveauKey] = {}
+      if (!groups[anneeKey][niveauKey][parcoursKey]) groups[anneeKey][niveauKey][parcoursKey] = {}
+      if (!groups[anneeKey][niveauKey][parcoursKey][etudiantKey]) {
+        groups[anneeKey][niveauKey][parcoursKey][etudiantKey] = { items: [] }
+      }
+      groups[anneeKey][niveauKey][parcoursKey][etudiantKey].items.push(b)
     }
-    return Object.entries(groupes).map(([type, liste]) => ({
-      type: 'item' as const,
-      label: type,
+
+    return Object.entries(groups).map(([anneeKey, niveaux]: [string, any]) => ({
+      type: 'annee' as const,
+      label: anneeKey,
       expanded: true,
-      items: liste.map(b => this.bordereauToItem(b)),
+      children: Object.entries(niveaux).map(([niveauKey, parcs]: [string, any]) => {
+        const niveauLibelle = niveauKey.split('||')[1] || niveauKey
+        return {
+          type: 'niveau' as const,
+          label: niveauLibelle,
+          expanded: true,
+          children: Object.entries(parcs).map(([parcoursKey, etudiants]: [string, any]) => {
+            const parcoursLibelle = parcoursKey.split('||')[2] || parcoursKey
+            return {
+              type: 'parcours' as const,
+              label: parcoursLibelle,
+              expanded: true,
+              children: Object.entries(etudiants).map(([etudiantKey, group]: [string, any]) => {
+                const etudiantLabel = etudiantKey.split('||').pop() || 'Étudiant inconnu'
+                return {
+                  type: 'etudiant' as const,
+                  label: etudiantLabel,
+                  expanded: false,
+                  items: group.items.map(b => this.bordereauToItem(b)),
+                }
+              })
+            }
+          })
+        }
+      })
     }))
   }
 
   private bordereauToItem(b: Bordereau): any {
+    const di = (b as any).demandeInscription
     return {
       id: b.id,
       raw: b,
-      etudiant: b.utilisateur ? `${b.utilisateur.nom} ${b.utilisateur.prenoms}` : '—',
+      statut: this.getStatutLabel(b.statut || ''),
+      etudiant: b.utilisateur ? `${b.utilisateur.nom} ${b.utilisateur.prenoms}` : 'Étudiant inconnu',
       matricule: b.echeance?.dossierEtudiant?.matricule || '—',
       typeOperation: this.getTypeOperationLibelle(b.typeOperationId ?? null),
       montantBordereau: this.formatCurrency(b.montant),

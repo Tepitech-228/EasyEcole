@@ -35,6 +35,7 @@ export class Cours extends Model<InferAttributes<Cours>, InferCreationAttributes
   declare seances?: Seance[]
   declare demandesInscription?: DemandeInscription[]
   declare ecues?: Ecue[]
+  declare categorieUe: CreationOptional<'MINEURE' | 'MAJEURE' | 'LIBRE' | null>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -113,6 +114,10 @@ Cours.init({
   coefficient: {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: true,
+  },
+  categorieUe: {
+    type: DataTypes.ENUM('MINEURE','MAJEURE','LIBRE'),
+    allowNull: true
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

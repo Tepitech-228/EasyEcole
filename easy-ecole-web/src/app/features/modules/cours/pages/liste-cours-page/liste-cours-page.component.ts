@@ -14,6 +14,8 @@ import { CursusApprenant } from 'src/app/data/modules/inscription/models/CursusA
 import { CursusApprenantService } from 'src/app/data/modules/inscription/services/cursus-apprenant.service';
 import { Parcours } from 'src/app/data/modules/inscription/models/Parcours.model';
 import { ParcoursService } from 'src/app/data/modules/inscription/services/parcours.service';
+import { Enseignant } from 'src/app/data/modules/auth/models/Enseignant.model';
+import { EnseignantService } from 'src/app/data/modules/auth/services/enseignant.service';
 
 @Component({
   selector: 'app-liste-cours-page',
@@ -29,6 +31,7 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
   _niveauxEtude: NiveauEtude[] = []
   parcours: Parcours[] = []
   _parcours: Parcours[] = []
+  enseignants: Enseignant[] = []
 
   selectedNiveauEtude: string = 'undefined'
   selectedParcours: string = 'undefined'
@@ -45,6 +48,9 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
     description: new FormControl(null, []),
     objectifs: new FormControl(null, []),
     estObligatoire: new FormControl(false, []),
+    volumeHoraire: new FormControl(null, []),
+    coefficient: new FormControl(null, []),
+    categorieUe: new FormControl(null, []),
     parcoursId: new FormControl(null, [Validators.required]),
     ecues: new FormArray([]),
   })
@@ -56,10 +62,12 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
     private ecueService: EcueService,
     private cursusApprenantService: CursusApprenantService,
     private parcoursService: ParcoursService,
+    private enseignantService: EnseignantService,
   ) {
     super()
     this.getNiveauxEtude()
     this.getParcours()
+    this.getEnseignants()
 
     if (this.rolesValue.isApprenant) {
       this.getCoursChoisis()
@@ -79,6 +87,11 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
       libelle: new FormControl(null, [Validators.required]),
       creditEcts: new FormControl(null, []),
       coefficient: new FormControl(null, []),
+      cmHoraire: new FormControl(null, []),
+      tdTpHoraire: new FormControl(null, []),
+      tpeHoraire: new FormControl(null, []),
+      type: new FormControl(null, []),
+      enseignantId: new FormControl(null, []),
     }))
   }
 
@@ -109,6 +122,9 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
       cours.objectifs = this.nouveauCoursForm.get('objectifs')!.value
       cours.estObligatoire = this.nouveauCoursForm.get('estObligatoire')!.value
       cours.parcoursId = this.nouveauCoursForm.get('parcoursId')!.value
+      cours.volumeHoraire = this.nouveauCoursForm.get('volumeHoraire')!.value
+      cours.coefficient = this.nouveauCoursForm.get('coefficient')!.value
+      cours.categorieUe = this.nouveauCoursForm.get('categorieUe')!.value
 
       const ecuesSaisis = this.ecuesFormArray.value.filter((e: any) => e.code && e.libelle)
 
@@ -125,6 +141,11 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
             ecue.libelle = e.libelle
             ecue.creditEcts = e.creditEcts
             ecue.coefficient = e.coefficient || 1
+            ecue.cmHoraire = e.cmHoraire
+            ecue.tdTpHoraire = e.tdTpHoraire
+            ecue.tpeHoraire = e.tpeHoraire
+            ecue.type = e.type
+            ecue.enseignantId = e.enseignantId
             ecue.coursId = res.id
             return this.ecueService.create(ecue)
           })
@@ -245,5 +266,24 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
           },
         }
       )
+  }
+
+  getEnseignants(): void {
+    this.enseignantService.getAll().subscribe({
+      next: (res) => this.enseignants = Array.isArray(res) ? res : [],
+      error: () => this.enseignants = []
+    })
+  }
+
+  get coursGroupesParNiveauParcours(): { niveau: string; parcours: string; cours: Cours[] }[] {
+    const groupes = new Map<string, { niveau: string; parcours: string; cours: Cours[] }>()
+    for (const cours of this._cours) {
+      const niveau = cours.parcours?.niveauEtude?.libelle || 'Niveau non renseigné'
+      const parcours = `${cours.parcours?.type ? cours.parcours.type + ' — ' : ''}${cours.parcours?.titre || 'Parcours non renseigné'}`
+      const key = `${niveau}::${parcours}`
+      if (!groupes.has(key)) groupes.set(key, { niveau, parcours, cours: [] })
+      groupes.get(key)!.cours.push(cours)
+    }
+    return Array.from(groupes.values()).sort((a, b) => a.niveau.localeCompare(b.niveau) || a.parcours.localeCompare(b.parcours))
   }
 }

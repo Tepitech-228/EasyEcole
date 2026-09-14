@@ -827,7 +827,7 @@ export default class RattrapageWorkflowController {
   static async confirmerPaiement(req: Request, res: Response): Promise<Response> {
     const role = req.utilisateurRole
     if (!role || !RattrapageWorkflowController.ROLE_PAIEMENT.includes(role)) {
-      return res.status(403).json({ success: false, message: 'Confirmation de paiement réservée au cabinet comptable ou à l\'administration' })
+      return res.status(403).json({ success: false, message: 'Confirmation de paiement réservée à l\'Audit ou à l\'administration' })
     }
 
     const transaction = await DatabaseConnection.getInstance().sequelize.transaction()

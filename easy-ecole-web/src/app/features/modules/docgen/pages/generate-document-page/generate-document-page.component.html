@@ -45,7 +45,7 @@
       <span>ℹ️</span>
       <p>
         Liste d'attente : étudiants dont le bordereau de frais de scolarité a été chargé et
-        <strong>validé par le cabinet comptable</strong>. Cliquez sur « Générer le reçu » : le
+         <strong>validé par l'Audit</strong>. Cliquez sur « Générer le reçu » : le
         reçu est généré au format officiel et <strong>envoyé par mail</strong> à l'étudiant.
         L'étudiant peut demander une copie physique que vous générez ici.
       </p>
@@ -65,7 +65,7 @@
 
       <div *ngIf="!recusLoading && recus.length === 0" class="p-8 text-center">
         <p class="text-sm text-gray-400">Aucun bordereau de scolarité validé en attente.</p>
-        <p class="text-xs text-gray-300 mt-1">Les étudiants ayant chargé un bordereau validé par le cabinet comptable apparaîtront ici.</p>
+        <p class="text-xs text-gray-300 mt-1">        Les étudiants ayant chargé un bordereau validé par l'Audit apparaîtront ici.</p>
       </div>
 
       <div *ngIf="!recusLoading && recus.length > 0" class="overflow-x-auto">

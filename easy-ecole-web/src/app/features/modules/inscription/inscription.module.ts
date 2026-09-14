@@ -41,6 +41,7 @@ import { ComiteValidationPageComponent } from './pages/comite-validation-page/co
 import { ChoisirSessionPageComponent } from './pages/choisir-session-page/choisir-session-page.component';
 import { ReinscriptionWizardPageComponent } from './pages/reinscription-wizard-page/reinscription-wizard-page.component';
 import { InscriptionWizardPageComponent } from './pages/inscription-wizard-page/inscription-wizard-page.component';
+import { ImpayesPageComponent } from './pages/impayes-page/impayes-page.component';
 @NgModule({
   declarations: [
     MonCursusPageComponent,
@@ -78,7 +79,8 @@ ListeClassesPageComponent,
         ComiteValidationPageComponent,
         ChoisirSessionPageComponent,
         ReinscriptionWizardPageComponent,
-        InscriptionWizardPageComponent
+        InscriptionWizardPageComponent,
+    ImpayesPageComponent
   ],
   imports: [
     CommonModule,

@@ -37,6 +37,7 @@ import { ComiteValidationPageComponent } from './pages/comite-validation-page/co
 import { ChoisirSessionPageComponent } from './pages/choisir-session-page/choisir-session-page.component';
 import { ReinscriptionWizardPageComponent } from './pages/reinscription-wizard-page/reinscription-wizard-page.component';
 import { InscriptionWizardPageComponent } from './pages/inscription-wizard-page/inscription-wizard-page.component';
+import { ImpayesPageComponent } from './pages/impayes-page/impayes-page.component';
 
 const routes: Routes = [
   {
@@ -277,8 +278,29 @@ const routes: Routes = [
     pathMatch: 'full'
   },
   {
+    path: 'finance/bordereaux/en-attente',
+    component: EsacomptaBordereauxPageComponent,
+    data: { statut: 'en_attente' }
+  },
+  {
+    path: 'finance/bordereaux/traites',
+    component: EsacomptaBordereauxPageComponent,
+    data: { statut: 'traite' }
+  },
+  {
+    path: 'finance/bordereaux/rejetes',
+    component: EsacomptaBordereauxPageComponent,
+    data: { statut: 'rejete' }
+  },
+  {
     path: 'finance/bordereaux',
     component: EsacomptaBordereauxPageComponent,
+    pathMatch: 'full',
+    data: { statut: 'valide,en_saisie_comptable' }
+  },
+  {
+    path: 'finance/irreguliers',
+    component: ImpayesPageComponent,
     pathMatch: 'full'
   },
   {
@@ -292,6 +314,12 @@ const routes: Routes = [
     component: ReinscriptionWizardPageComponent,
     pathMatch: 'full',
     canActivate: [ApprenantGuard]
+  },
+  {
+    // Alias lisible pour l'accès direct depuis le menu ou un favori.
+    path: 'reinscription/planifier',
+    redirectTo: 'reinscription/wizard',
+    pathMatch: 'full'
   },
 ];
 

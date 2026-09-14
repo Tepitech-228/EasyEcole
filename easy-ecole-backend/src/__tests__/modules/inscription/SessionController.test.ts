@@ -133,6 +133,10 @@ describe('createSession', () => {
     const req = mockRequest({
       body: {
         libelle: 'Session 2025',
+        dateDebut: '2025-01-01',
+        dateFin: '2025-12-31',
+        anneeAcademiqueId: 1,
+        niveauEtudeId: 2,
         frais: [{ titre: 'Frais Inscription', montant: 50000 }],
         dossiers: [{ titre: 'Dossier Inscription' }]
       },

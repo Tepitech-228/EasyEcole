@@ -366,6 +366,38 @@
   text-align: center;
 }
 
+/* Barre d'onglets de statut */
+.tab-status-btn {
+  cursor: pointer;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
+  transition: all 0.2s ease;
+  font-family: inherit;
+
+  &:hover {
+    border-color: #6366f1;
+    color: #4338ca;
+    background: #eef2ff;
+  }
+}
+
+.tab-status-active {
+  background: #4f46e5 !important;
+  color: #ffffff !important;
+  border-color: #4f46e5 !important;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+
+  .tab-status-count {
+    background: rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+  }
+}
+
+.tab-status-inactive {
+  background: #ffffff;
+}
+
 /* Filter & Search */
 .esa-filter-panel {
   border-radius: 1rem;

@@ -683,7 +683,7 @@
       <div class="dashboard-panel dashboard-chart-panel dashboard-panel--premium">
         <div class="chart-card-header">
           <div>
-            <h3 class="chart-card-title">Espace ESA-Compta</h3>
+             <h3 class="chart-card-title">Espace Service Recouvrement</h3>
             <p class="chart-card-subtitle">Traiter les bordereaux et suivre les imputations</p>
           </div>
           <a routerLink="/inscription/finance/bordereaux" class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
@@ -711,72 +711,19 @@
 
   <!-- ==================== COMPTABLE DASHBOARD ==================== -->
   <ng-container *ngIf="!loading && rolesValue.isCabinetComptable">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 pt-6">
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 pt-6 pb-10">
+      <div class="grid grid-cols-3 sm:grid-cols-3 gap-4 mb-8">
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Paiements</p>
-          <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ dashboardData.totalPaiements || 0 }}</p>
-        </div>
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Bordereaux</p>
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Bordereaux reçus</p>
           <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ dashboardData.totalBordereaux || 0 }}</p>
         </div>
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Montant total</p>
-          <p class="text-2xl sm:text-3xl font-bold text-cyan-600">{{ (dashboardData.montantTotal || 0) | number }} F</p>
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Authentifiés</p>
+          <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ dashboardData.valides || 0 }}</p>
         </div>
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Impayés</p>
-          <p class="text-2xl sm:text-3xl font-bold text-red-600">{{ dashboardData.echeancesImpayees || 0 }}</p>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-10">
-        <div class="dashboard-panel dashboard-chart-panel dashboard-panel--premium">
-          <div class="chart-card-header">
-            <div>
-              <h3 class="chart-card-title">Rapport de paiement</h3>
-              <p class="chart-card-subtitle">Suivi des échéances payées et impayées</p>
-            </div>
-          </div>
-          <div class="h-64 flex items-center justify-center">
-            <canvas baseChart [data]="comptableDoughnutData" [options]="comptableDoughnutOptions" type="doughnut"></canvas>
-          </div>
-        </div>
-        <div class="dashboard-panel dashboard-chart-panel dashboard-panel--premium">
-          <div class="chart-card-header">
-            <div>
-              <h3 class="chart-card-title">Actions rapides</h3>
-              <p class="chart-card-subtitle">Accès comptable prioritaire</p>
-            </div>
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <a routerLink="/comptabilite" class="flex flex-col items-center gap-2 p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors text-blue-700">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-              <span class="text-sm font-medium">Comptabilité</span>
-            </a>
-            <a routerLink="/inscription/paiements" class="flex flex-col items-center gap-2 p-4 rounded-xl bg-green-50 hover:bg-green-100 transition-colors text-green-700">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
-              <span class="text-sm font-medium">Paiements</span>
-            </a>
-            <a routerLink="/inscription/rattrapage/paiements" class="flex flex-col items-center gap-2 p-4 rounded-xl bg-amber-50 hover:bg-amber-100 transition-colors text-amber-700">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-              <span class="text-sm font-medium">Rattrapage</span>
-            </a>
-          </div>
-        </div>
-      </div>
-      <div class="grid grid-cols-1 pb-10">
-        <div class="dashboard-panel dashboard-chart-panel dashboard-panel--premium">
-          <div class="chart-card-header">
-            <div>
-              <h3 class="chart-card-title">Volume financier</h3>
-              <p class="chart-card-subtitle">Comparaison des paiements, bordereaux et impayés</p>
-            </div>
-          </div>
-          <div class="h-72">
-            <canvas baseChart [data]="comptableBarData" [options]="comptableBarOptions" type="bar"></canvas>
-          </div>
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Rejetés</p>
+          <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ dashboardData.rejetes || 0 }}</p>
         </div>
       </div>
     </div>

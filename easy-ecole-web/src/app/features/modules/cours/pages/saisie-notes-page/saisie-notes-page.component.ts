@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Location } from '@angular/common';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { environment } from 'src/environments/environment';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { CoursParticipant } from 'src/app/data/modules/inscription/models/CoursParticipant.model';
@@ -40,12 +41,15 @@ export class SaisieNotesPageComponent extends BaseComponentClass implements OnIn
   selectedFile: File | null = null
   importResult: PvImportResult | null = null
   importError: string | null = null
+  pdfPreviewUrl: SafeResourceUrl | null = null
+  private pdfObjectUrl: string | null = null
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private http: HttpClient,
     private location: Location,
+    private sanitizer: DomSanitizer,
     private listeNoteEvaluationService: ListeNoteEvaluationService,
     private coursService: CoursService,
     private pvEvaluationService: PvEvaluationService) {
@@ -237,6 +241,19 @@ export class SaisieNotesPageComponent extends BaseComponentClass implements OnIn
     const file = event.target?.files?.[0]
     if (file) {
       this.selectedFile = file
+      this.setPdfPreview(file)
+    }
+  }
+
+  private setPdfPreview(file: File): void {
+    if (this.pdfObjectUrl) {
+      URL.revokeObjectURL(this.pdfObjectUrl)
+      this.pdfObjectUrl = null
+    }
+    this.pdfPreviewUrl = null
+    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+      this.pdfObjectUrl = URL.createObjectURL(file)
+      this.pdfPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.pdfObjectUrl)
     }
   }
 
@@ -249,7 +266,6 @@ export class SaisieNotesPageComponent extends BaseComponentClass implements OnIn
 
   closeImportModal(): void {
     this.showImportModal = false
-    this.selectedFile = null
     this.importResult = null
     this.importError = null
   }
@@ -266,6 +282,7 @@ export class SaisieNotesPageComponent extends BaseComponentClass implements OnIn
         this.importResult = result
         this.importingPv = false
         if (result.success) {
+          this.showImportModal = false
           this.loadEvaluation(this.evaluation!.id!)
         }
       },
@@ -274,5 +291,14 @@ export class SaisieNotesPageComponent extends BaseComponentClass implements OnIn
         this.importError = err.error?.message || 'Erreur lors de l\'import du fichier'
       }
     })
+  }
+
+  clearImportedPv(): void {
+    this.selectedFile = null
+    this.importResult = null
+    this.importError = null
+    if (this.pdfObjectUrl) URL.revokeObjectURL(this.pdfObjectUrl)
+    this.pdfObjectUrl = null
+    this.pdfPreviewUrl = null
   }
 }

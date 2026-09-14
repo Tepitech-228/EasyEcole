@@ -3,7 +3,7 @@ import { Subject } from 'rxjs';
 
 export interface Toast {
   id: number
-  type: 'success' | 'warning' | 'error'
+  type: 'success' | 'warning' | 'error' | 'info'
   message: string
 }
 
@@ -28,6 +28,11 @@ export class ToastService {
   /** Notification d'avertissement (orange) — ex. accès refusé (403). */
   warning(message: string): void {
     this.toasts.next({ id: ++this.counter, type: 'warning', message })
+  }
+
+  /** Notification info (bleue) */
+  info(message: string): void {
+    this.toasts.next({ id: ++this.counter, type: 'info', message })
   }
 
 }

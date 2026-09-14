@@ -58,7 +58,8 @@
   </div>
 
   <!-- Notes table -->
-  <div *ngIf="!loading && participants.length > 0" class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+  <div *ngIf="!loading && participants.length > 0" class="notes-workspace">
+    <div class="notes-panel bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
     <div class="overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-50">
         <thead>
@@ -118,6 +119,23 @@
         {{ publishing ? 'Publication...' : 'Publier les notes' }}
       </button>
     </div>
+  </div>
+
+    <aside class="pv-preview-panel" *ngIf="selectedFile">
+      <div class="pv-preview-panel__header">
+        <div>
+          <h2 class="text-sm font-semibold text-gray-900">PV importé</h2>
+          <p class="text-xs text-gray-500 truncate max-w-xs">{{ selectedFile.name }}</p>
+        </div>
+        <button type="button" (click)="clearImportedPv()" class="text-xs font-medium text-gray-500 hover:text-red-600">Retirer</button>
+      </div>
+      <div *ngIf="pdfPreviewUrl" class="pv-preview-panel__viewer">
+        <iframe [src]="pdfPreviewUrl" title="Aperçu du PV PDF"></iframe>
+      </div>
+      <div *ngIf="!pdfPreviewUrl" class="pv-preview-panel__empty">
+        L’aperçu est disponible uniquement pour un PDF. Les notes importées restent visibles à gauche.
+      </div>
+    </aside>
   </div>
 
   <!-- Import Modal -->

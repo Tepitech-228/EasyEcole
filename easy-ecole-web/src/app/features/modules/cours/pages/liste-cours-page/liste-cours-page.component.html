@@ -1,6 +1,18 @@
 <div class="flex justify-between items-start gap-x-8 mb-8">
     <app-header-title title="Unités d'enseignements" subtitle="Consulter la liste des UE proposées"></app-header-title>
     <div class="flex justify-end items-center">
+        <a routerLink="/inscription/import-export-excel" [queryParams]="{ type: 'ue', tab: 'import' }"
+            *ngIf="rolesValue.isInstitution || rolesValue.isAdmin"
+            class="mr-3 inline-flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100">
+            <span class="material-symbols-outlined text-base">upload_file</span>
+            Importer UE/ECUE
+        </a>
+        <a routerLink="/inscription/import-export-excel" [queryParams]="{ type: 'ue', tab: 'export' }"
+            *ngIf="rolesValue.isInstitution || rolesValue.isAdmin"
+            class="mr-3 inline-flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">
+            <span class="material-symbols-outlined text-base">download</span>
+            Exporter UE/ECUE
+        </a>
         <app-custom-button (click)="openNouveauCoursModal()" *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" text="Nouveau cours"></app-custom-button>
     </div>
 </div>
@@ -15,8 +27,8 @@
 
         <select *ngIf="rolesValue.isApprenant || rolesValue.isInstitution || rolesValue.isEnseignant || rolesValue.isAdmin" [(ngModel)]="selectedParcours" (change)="filtrerCours()"
             class="block rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
-            <option [value]="'undefined'">Filter par parcours...</option>
-            <option *ngFor="let parcours of _parcours" [value]="parcours.id">{{ parcours.titre }}</option>
+            <option [value]="'undefined'">Filtrer par cycle / filière...</option>
+            <option *ngFor="let parcours of _parcours" [value]="parcours.id">{{ parcours.type || 'Cycle non renseigné' }} — {{ parcours.titre }}</option>
         </select>
     </div>
     <div class="flex md:flex-row flex-col gap-4">
@@ -25,8 +37,22 @@
 </div>
 
 <div class="w-full flex justify-between items-center mb-8">
-    <div class="grid 2xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-2 md:grid-cols-2 grid-cols-1 w-full gap-x-12 gap-y-4">
-        <app-cours-card *ngFor="let cours of _cours" [cours]="cours"></app-cours-card>
+    <div class="w-full space-y-10">
+        <section *ngFor="let groupe of coursGroupesParNiveauParcours" class="course-group w-full">
+            <div class="course-group__header">
+                <div class="min-w-0">
+                    <span class="course-group__level">{{ groupe.niveau }}</span>
+                    <h2 class="course-group__title">{{ groupe.parcours }}</h2>
+                </div>
+                <span class="course-group__count">{{ groupe.cours.length }} UE</span>
+            </div>
+            <div class="course-group__grid grid 2xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-2 md:grid-cols-2 grid-cols-1 gap-x-6 gap-y-6">
+                <app-cours-card *ngFor="let cours of groupe.cours" [cours]="cours"></app-cours-card>
+            </div>
+        </section>
+        <div *ngIf="coursGroupesParNiveauParcours.length === 0" class="text-center py-12 text-sm text-gray-500">
+            Aucune UE ne correspond aux filtres sélectionnés.
+        </div>
     </div>
 </div>
 
@@ -71,6 +97,23 @@
                     <option [value]="null" disabled>Sélectionner un parcours</option>
                     <option *ngFor="let p of _parcours" [value]="p.id">{{ p.titre }}</option>
                 </select>
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Catégorie UE</span>
+                <select formControlName="categorieUe" class="block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 sm:text-sm">
+                    <option [ngValue]="null">Non classée</option>
+                    <option value="MAJEURE">Majeure</option>
+                    <option value="MINEURE">Mineure</option>
+                    <option value="LIBRE">Libre</option>
+                </select>
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Total présentiel</span>
+                <input type="number" min="0" formControlName="volumeHoraire" class="block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 sm:text-sm">
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Coefficient UE</span>
+                <input type="number" min="0" step="0.5" formControlName="coefficient" class="block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 sm:text-sm">
             </div>
             <div class="col-span-full">
                 <span class="mb-2 block text-sm text-gray-400">Description (facultative)</span>
@@ -129,6 +172,11 @@
                             <input type="number" formControlName="coefficient" placeholder="Ex: 2"
                                 class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                         </div>
+                        <div class="col-span-2"><span class="mb-1 block text-xs text-gray-400">CM</span><input type="number" min="0" formControlName="cmHoraire" class="block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 sm:text-sm"></div>
+                        <div class="col-span-2"><span class="mb-1 block text-xs text-gray-400">TD/TP</span><input type="number" min="0" formControlName="tdTpHoraire" class="block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 sm:text-sm"></div>
+                        <div class="col-span-2"><span class="mb-1 block text-xs text-gray-400">TPE</span><input type="number" min="0" formControlName="tpeHoraire" class="block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 sm:text-sm"></div>
+                        <div class="col-span-2"><span class="mb-1 block text-xs text-gray-400">Type</span><select formControlName="type" class="block w-full py-1.5 text-sm text-gray-900 ring-1 ring-inset ring-gray-300"><option [ngValue]="null">—</option><option value="F">F</option><option value="T">T</option><option value="S">S</option><option value="C">C</option><option value="L">L</option><option value="M">M</option></select></div>
+                        <div class="col-span-4"><span class="mb-1 block text-xs text-gray-400">Enseignant ECUE</span><select formControlName="enseignantId" class="block w-full py-1.5 text-sm text-gray-900 ring-1 ring-inset ring-gray-300"><option [ngValue]="null">Non affecté</option><option *ngFor="let enseignant of enseignants" [value]="enseignant.id">{{ enseignant.utilisateur?.prenoms }} {{ enseignant.utilisateur?.nom }}</option></select></div>
                         <div class="col-span-1 flex justify-end pt-6">
                             <button type="button" (click)="supprimerEcue(i)"
                                 class="text-gray-400 hover:text-red-600 text-lg leading-none">×</button>

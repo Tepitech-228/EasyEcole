@@ -1,12 +1,15 @@
-<a *ngIf="cours" [routerLink]="['./' + cours.id]" class="block mb-8">
-    <div id="card" class="w-full h-full bg-white shadow-sm ring-1 ring-gray-200 rounded-lg overflow-hidden">
-        <img class="w-full object-cover object-center" style="aspect-ratio: 16 / 9 !important;"
+<a *ngIf="cours" [routerLink]="['./' + cours.id]" class="course-card block h-full">
+    <div id="card" class="course-card__body w-full h-full bg-white shadow-sm ring-1 ring-gray-200 rounded-lg overflow-hidden">
+        <div class="course-card__image-wrap">
+        <img class="course-card__image w-full object-cover object-center" style="aspect-ratio: 16 / 9 !important;"
             [src]="'assets/images/blank-card-picture.jpg'"
             alt="img">
-        <div class="py-4 px-4">
-            <div class="text-md font-semibold text-gray-900 line-clamp-2">{{ cours.code }} - {{ cours.intitule }} - {{ cours.parcours?.id }}</div>
+        <span *ngIf="cours.categorieUe" class="course-card__badge">{{ cours.categorieUe }}</span>
+        </div>
+        <div class="course-card__content py-4 px-4">
+            <div class="course-card__title text-md font-semibold text-gray-900 line-clamp-2">{{ cours.code }} - {{ cours.intitule }}</div>
     
-            <div class="mt-4 space-y-2">
+            <div class="course-card__meta mt-4 space-y-2">
                 <div *ngIf="cours.parcours?.niveauEtude" class="flex items-center text-secondary">
                     <img src="assets/icons/student.svg" alt="icon">
                     <div class="px-2 text-sm">{{ cours.parcours?.niveauEtude?.libelle ?? '---' }}</div>

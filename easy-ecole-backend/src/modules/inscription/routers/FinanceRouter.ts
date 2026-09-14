@@ -13,16 +13,22 @@ import { TypesPaiement } from "../../../core/enums/TypesPaiement";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { AuthEsacompta } from "../../../core/middlewares/AuthEsacompta";
 import CheckPermission from "../../../core/middlewares/CheckPermission";
+import Authenticate from "../../../core/middlewares/Authenticate";
 import { ImputationService, ResultatImputation } from "../services/ImputationService";
 import { GenererNotificationImputation } from "../services/NotificationImputationService";
 import { EtatPreInscription, PreInscription } from "../models/PreInscription";
 import { Session } from "../models/Session";
+import { AnneeAcademique } from "../models/AnneeAcademique";
+import { NiveauEtude } from "../models/NiveauEtude";
+import { Parcours } from "../models/Parcours";
+import { ParcoursChoisi } from "../models/ParcoursChoisi";
 import { BordereauDossierService } from "../services/BordereauDossierService";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { EmailSender } from "../../../core/helpers/EmailSender";
 import { DocGenGeneratorService } from "../../docgen/services/DocGenGeneratorService";
 import { creerEcritureComptable } from "../../comptabilite/helpers/ComptabiliteHelper";
 import { nanoid } from "nanoid";
+import FinanceEcheanceController from "../controllers/FinanceEcheanceController";
 
 /**
  * Router dédié aux opérations financières ESA-COMPTA.
@@ -35,8 +41,31 @@ const router = express.Router();
  * /inscription/finance/bordereaux-a-traiter:
  *   get:
  *     tags: [Finance]
- *     summary: Liste des bordereaux validés par le cabinet, en attente de saisie comptable
+ *     summary: Liste des bordereaux validés par l'Audit, en attente de saisie comptable
  *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: query
+ *         name: statut
+ *         description: Filtrer par statut, valeurs multiples séparées par des virgules
+ *         schema:
+ *           type: string
+ *           enum: [en_attente, valide, en_saisie_comptable, traite, rejete]
+ *       - in: query
+ *         name: anneeAcademiqueId
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: niveauEtudeId
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: parcoursId
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: typeOperationId
+ *         schema:
+ *           type: integer
  *     responses:
  *       200:
  *         description: Liste des bordereaux
@@ -57,7 +86,18 @@ router.get('/bordereaux-a-traiter', [AuthEsacompta, CheckPermission('action.fina
       order: [['dateValidation', 'ASC']]
     }
 
-    const statutsRecherches = ['valide', 'en_saisie_comptable']
+    let statutsRecherches: string[];
+    const statutQuery = req.query.statut as string | string[] | undefined;
+    if (!statutQuery) {
+      statutsRecherches = ['valide', 'en_saisie_comptable'];
+    } else {
+      const raw: string = Array.isArray(statutQuery) ? statutQuery.join(',') : statutQuery;
+      const valides = ['en_attente', 'valide', 'en_saisie_comptable', 'traite', 'rejete'];
+      statutsRecherches = raw.split(',').map((s: string) => s.trim()).filter((s: string) => valides.includes(s));
+      if (statutsRecherches.length === 0) {
+        return res.status(400).json({ success: false, message: "Statut(s) de bordereau invalide(s)" });
+      }
+    }
     options.where = { statut: statutsRecherches as any }
 
     if (req.query.anneeAcademiqueId || req.query.niveauEtudeId || req.query.parcoursId) {
@@ -96,6 +136,42 @@ router.get('/bordereaux-a-traiter', [AuthEsacompta, CheckPermission('action.fina
     }
 
     const { rows, count: total } = await Bordereau.findAndCountAll({ ...options, limit, offset });
+
+    // Enrichissement : ajouter le contexte DemandeInscription pour chaque bordereau
+    const utilisateurIds: number[] = [...new Set(rows.map(b => b.utilisateurId as number))];
+    if (utilisateurIds.length > 0) {
+      const demandes = await DemandeInscription.findAll({
+        where: { utilisateurId: { [Op.in]: utilisateurIds } },
+        order: [['createdAt', 'DESC']],
+        include: [
+          {
+            association: DemandeInscription.associations.session,
+            include: [
+              { association: Session.associations.anneeAcademique },
+              { association: Session.associations.niveauEtude }
+            ]
+          },
+          {
+            association: DemandeInscription.associations.parcoursChoisis,
+            where: { choixFinal: true },
+            include: [
+              { association: ParcoursChoisi.associations.parcours }
+            ]
+          }
+        ]
+      });
+
+      const demandeMap = new Map<number, DemandeInscription>();
+      for (const d of demandes) {
+        if (!demandeMap.has(d.utilisateurId!)) {
+          demandeMap.set(d.utilisateurId!, d);
+        }
+      }
+
+      for (const bordereau of rows) {
+        (bordereau as any).dataValues.demandeInscription = demandeMap.get(bordereau.utilisateurId!) || null;
+      }
+    }
 
     return res.status(200).json({
       data: rows,
@@ -859,5 +935,51 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
     return res.status(500).json({ success: false, message: error.message || 'Erreur interne du serveur' })
   }
 })
+
+/**
+ * @openapi
+ * /inscription/finance/irreguliers:
+ *   get:
+ *     tags: [Finance]
+ *     summary: Étudiants en situation irrégulière (échéances non soldées)
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: query
+ *         name: anneeAcademiqueId
+ *         schema: { type: integer }
+ *       - in: query
+ *         name: cycle
+ *         schema: { type: string, enum: [LICENCE, MASTER, DOCTORAT, BTS, MBA] }
+ *       - in: query
+ *         name: parcoursId
+ *         schema: { type: integer }
+ *       - in: query
+ *         name: niveauEtudeId
+ *         schema: { type: integer }
+ *       - in: query
+ *         name: semestreId
+ *         schema: { type: integer }
+ *       - in: query
+ *         name: classeId
+ *         schema: { type: integer }
+ *       - in: query
+ *         name: mois
+ *         schema: { type: integer, minimum: 1, maximum: 12 }
+ *         description: Filtrer par mois non soldé (moisConcerne)
+ *       - in: query
+ *         name: search
+ *         schema: { type: string }
+ *         description: Recherche par nom ou matricule
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Liste des étudiants en situation irrégulière
+ */
+    .get('/irreguliers', [Authenticate, CheckPermission('menu.finances.impayes')], FinanceEcheanceController.getEtudiantsIrreguliers)
 
 export default router

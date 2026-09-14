@@ -27,7 +27,7 @@ export class DemandeInscription extends Model<InferAttributes<DemandeInscription
   declare typeDemande: CreationOptional<'inscription' | 'reinscription' | null>
   /**
    * Pipeline d'inscription (flux définitif) :
-   *   soumis → authentifie (cabinet) → saisie_validee / transmis_comite (ESA-COMPTA)
+   *   soumis → authentifie (Audit) → saisie_validee / transmis_comite (SERVICE RECOUVREMENT)
    *   → valide | correction_demandee | rejete (comité, étape finale).
    * NULL = dossiers legacy antérieurs au pipeline (traités comme 'soumis').
    */

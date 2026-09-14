@@ -7,8 +7,8 @@
           <span class="material-symbols-outlined">account_balance</span>
         </div>
         <div>
-          <p class="esa-compta-hero-kicker">ESA-Compta</p>
-          <h1 class="esa-compta-hero-title">Bordereaux à imputer</h1>
+           <p class="esa-compta-hero-kicker">Service Recouvrement</p>
+          <h1 class="esa-compta-hero-title">{{ titrePage }}</h1>
           <p class="esa-compta-hero-subtitle">Saisie comptable et imputation des bordereaux de paiement</p>
         </div>
       </div>
@@ -76,10 +76,8 @@
     </div>
   </div>
 
-  <!-- KPI et graphiques déplacés sur l'interface d'accueil (dashboard ESA-Compta) -->
-
   <!-- Filtres -->
-  <div class="dashboard-surface-card esa-filter-panel p-4 mb-6">
+  <div class="dashboard-surface-card esa-filter-panel p-4 mb-4">
     <div class="flex items-center gap-x-2 mb-4">
       <span class="material-symbols-outlined text-gray-500">filter_list</span>
       <span class="text-sm font-medium text-gray-700">Filtrer les bordereaux</span>
@@ -132,7 +130,7 @@
     </div>
   </div>
 
-  <!-- Search Bar -->
+  <!-- Filtres -->
   <div class="dashboard-surface-card esa-search-panel p-4 mb-6">
     <div class="flex items-center gap-x-4">
       <div class="flex-1">
@@ -155,18 +153,19 @@
     <p class="text-gray-400 text-sm mt-1">Les nouveaux bordereaux apparaîtront ici</p>
   </div>
 
-  <app-dossier-view *ngIf="!loading && bordereauxFiltres.length > 0"
-    [nodes]="treeNodes"
-    [columns]="columns"
-    [itemActions]="itemActions"
-    [renderItemActions]="true"
-    [loading]="false"
-    [totalItems]="bordereauxFiltres.length"
-    [currentPage]="1"
-    [totalPages]="1"
-    [pageSize]="50"
-    (itemAction)="onItemAction($event)">
-  </app-dossier-view>
+   <app-dossier-view *ngIf="!loading && bordereauxFiltres.length > 0"
+     [nodes]="treeNodes"
+     [columns]="columns"
+     [itemActions]="itemActionsCourantes"
+     [renderItemActions]="true"
+     [loading]="false"
+     [totalItems]="bordereauxFiltres.length"
+     [currentPage]="1"
+     [totalPages]="1"
+     [pageSize]="50"
+     [clickToExpand]="true"
+     (itemAction)="onItemAction($event)">
+   </app-dossier-view>
 </div>
 
 <!-- Modal Traitement -->

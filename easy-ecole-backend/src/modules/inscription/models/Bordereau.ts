@@ -10,7 +10,7 @@ export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAt
   declare id: CreationOptional<number>
   /**
    * Refonte du flux bordereaux (Phase 0) : l'étudiant ne fait plus que l'UPLOAD
-   * du fichier. Le type et le montant sont saisis par le cabinet comptable au
+   * du fichier. Le type et le montant sont saisis par l'Audit au
    * moment du traitement → colonnes NULLABLES (le dépôt crée un bordereau sans
    * type ni montant).
    */

@@ -102,7 +102,12 @@
     <div class="w-full mb-8">
         <app-details-section text="UE">
             <div *ngIf="peutGererUE" class="relative">
-                <div>
+                <div class="flex items-center gap-3">
+                    <a routerLink="/inscription/import-export-excel" [queryParams]="{ type: 'ue' }"
+                        class="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-50">
+                        <span class="material-symbols-outlined text-base">upload_file</span>
+                        Importer UE / ECUE
+                    </a>
                     <button (click)="showNouveauCoursModal = true"
                         class="p-1 rounded focus:ring-1 focus:ring-gray-300">
                         <img src="assets/icons/add.svg" alt="add">
@@ -292,6 +297,26 @@
                 <span class="mb-2 block text-sm text-gray-400">Coefficient</span>
                 <input type="number" min="0" step="0.5" id="coefficient" formControlName="coefficient" placeholder="Saisir le coefficient..."
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Catégorie de l'UE</span>
+                <select formControlName="categorieUe"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm">
+                    <option [ngValue]="null">Non classée</option>
+                    <option value="MAJEURE">Majeure</option>
+                    <option value="MINEURE">Mineure</option>
+                    <option value="LIBRE">Libre</option>
+                </select>
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Catégorie de l'UE</span>
+                <select formControlName="categorieUe"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm">
+                    <option [ngValue]="null">Non classée</option>
+                    <option value="MAJEURE">Majeure</option>
+                    <option value="MINEURE">Mineure</option>
+                    <option value="LIBRE">Libre</option>
+                </select>
             </div>
             <div class="col-span-full">
                 <span class="mb-2 block text-sm text-gray-400">Objectifs</span>

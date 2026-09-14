@@ -181,7 +181,7 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
       'correction_demandee': 'Correction demandée',
       'rejete': 'Rejeté',
       'transmis_comite': 'En attente du comité',
-      'authentifie': 'Authentifié (cabinet)',
+      'authentifie': 'Authentifié (Audit)',
       'soumis': 'Soumis'
     }
     return map[d || ''] || (d || '---')

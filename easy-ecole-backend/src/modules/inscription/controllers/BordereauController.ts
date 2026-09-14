@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+﻿import { Request, Response } from "express";
 import { FindOptions, InferAttributes } from "sequelize";
 import fs from "fs";
 import path from "path";
@@ -295,14 +295,14 @@ export default class BordereauController {
             bordereau.valideParId = (req as any).utilisateurId
             bordereau.commentaire = req.body.commentaire ?? null
 
-            // Flux définitif : le cabinet AUTHENTIFIE seulement. La saisie comptable
+            // Flux définitif : l'Audit AUTHENTIFIE seulement. La saisie comptable
             // et l'imputation relèvent d'ESA-COMPTA (FinanceRouter.saisir) ; la
             // création de l'étudiant (matricule, cursus, cours, carte) est déclenchée
             // par la validation FINALE du comité (ComiteValidationController).
             await bordereau.save({ transaction })
 
             // Pipeline d'inscription (FLUX SÉQUENTIEL) : l'authentification du
-            // bordereau par le cabinet place le dossier en attente de la saisie
+            // bordereau par l'Audit place le dossier en attente de la saisie
             // ESA-COMPTA ('authentifie'). Le dossier reste BLOQUÉ pour le comité :
             // c'est la FIN de la saisie ESA (FinanceRouter.saisir) qui déclenche
             // la transmission automatique au comité d'orientation.
@@ -383,9 +383,9 @@ export default class BordereauController {
 
         // Le batch ne permet que le rejet : la validation d'un bordereau d'inscription
         // déclenche la mise à jour du pipeline (statutPipeline='authentifie') et doit
-        // rester un acte individuel et traçable du cabinet.
+        // rester un acte individuel et traçable de l'Audit.
         // Validation individuelle : PUT /bordereaux/:id/valider.
-        // Rappel nouveau workflow : le cabinet authentifie seulement ; la création du
+        // Rappel nouveau workflow : l'Audit authentifie seulement ; la création du
         // dossier étudiant relève du comité d'orientation, l'imputation d'ESA-COMPTA.
         if (statut === 'valide') {
             return res.status(400).json({
@@ -560,7 +560,7 @@ export default class BordereauController {
 
             if (typeConstate === 'inscription') {
                 // ── NOUVEAU WORKFLOW ─────────────────────────────────────────
-                // Le cabinet AUTHENTIFIE seulement : constat du type et du montant
+                // L'Audit AUTHENTIFIE seulement : constat du type et du montant
                 // constaté, passage du bordereau à 'valide'. La création du dossier
                 // étudiant (matricule final, cursus, cours participants, échéanciers)
                 // est déclenchée par la validation du comité d'orientation
@@ -568,7 +568,7 @@ export default class BordereauController {
                 // relève de la saisie ESA-COMPTA (FinanceRouter.saisir), pas ici.
 
                 // Pipeline d'inscription (FLUX SÉQUENTIEL) : l'authentification par
-                // le cabinet met le dossier en attente de saisie ESA-COMPTA
+                // l'Audit met le dossier en attente de saisie SERVICE RECOUVREMENT
                 // ('authentifie'), PAS de transmission directe au comité — voir
                 // FinanceRouter.saisir qui transmet en fin de saisie.
                 const demandePipeline = await DemandeInscription.findOne({

@@ -1,9 +1,13 @@
 import { Request, Response } from "express";
 import ExcelJS from "exceljs";
+import mammoth from "mammoth";
+import * as cheerio from "cheerio";
+import { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun, WidthType } from "docx";
 import * as fs from "fs";
 import * as bcrypt from "bcrypt";
 import { Op } from "sequelize";
 import { Cours } from "../models/Cours";
+import { Ecue } from "../models/Ecue";
 import { Parcours } from "../models/Parcours";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { Utilisateur } from "../../auth/models/Utilisateur";
@@ -157,6 +161,152 @@ function applyDataStyle(row: ExcelJS.Row): void {
   });
 }
 
+// ---------------------------------------------------------------------------
+//  FONCTIONS UTILITAIRES DE PARSING
+// ---------------------------------------------------------------------------
+
+function normalizeText(text: string): string {
+  return text.replace(/\u00A0/g, ' ').replace(/\u2013/g, '-').replace(/\u2019/g, "'").replace(/\s+/g, ' ').trim();
+}
+
+function parseCellRef(ref: string): { row: number; col: number } | null {
+  const match = ref.match(/^([A-Z]+)(\d+)$/);
+  if (!match) return null;
+  return { row: parseInt(match[2], 10), col: 0 };
+}
+
+function columnLetterToIndex(letter: string): number {
+  let col = 0;
+  for (let i = 0; i < letter.length; i++) col = col * 26 + (letter.charCodeAt(i) - 64);
+  return col;
+}
+
+function isPartOfMerge(ws: ExcelJS.Worksheet, row: number, col: number, masterCells: Set<string>): boolean {
+  if (!ws.model.merges) return false;
+  for (const mergeStr of ws.model.merges as string[]) {
+    const parts = mergeStr.split(':');
+    if (parts.length !== 2) continue;
+    const from = parseCellRef(parts[0]);
+    const to = parseCellRef(parts[1]);
+    if (!from || !to) continue;
+    const fromCol = columnLetterToIndex(parts[0].replace(/\d+/, ''));
+    const toCol = columnLetterToIndex(parts[1].replace(/\d+/, ''));
+    if (row >= from.row && row <= to.row && col >= fromCol && col <= toCol) {
+      if (row !== from.row || col !== fromCol) return true;
+    }
+  }
+  return false;
+}
+
+function detectFormat(headerRow: string[]): 'A' | 'B' {
+  const hasCodeDeL = headerRow.some(h => h.toUpperCase().includes('CODE DE L'));
+  const hasContenus = headerRow.some(h => h.toUpperCase().includes('CONTENUS DES ENSEIGNEMENTS'));
+  const hasIntituleDes = headerRow.some(h => h.toUpperCase().includes('INTITULE DES ENSEIGNEMENTS'));
+  const hasMatiere = headerRow.some(h => h.toUpperCase().includes('MATIERE'));
+  const hasUnite = headerRow.some(h => h.toUpperCase().includes('UNITE D\'ENSEIGNEMENT'));
+  if (hasCodeDeL && hasContenus) return 'A';
+  if (hasCodeDeL && (hasIntituleDes || hasMatiere || hasUnite)) return 'B';
+  if (hasCodeDeL) return 'B';
+  return 'A';
+}
+
+async function lireTableauWord(filePath: string): Promise<string[][]> {
+  const result = await mammoth.convertToHtml({ path: filePath });
+  const $ = cheerio.load(result.value);
+  const table = $('table').first();
+  if (table.length === 0) throw new Error("Impossible de trouver un tableau dans le document Word");
+
+  const rawRows: { cells: { text: string; rowspan: number; colspan: number }[] }[] = [];
+  table.find('tr').each((_i, el) => {
+    const cells: { text: string; rowspan: number; colspan: number }[] = [];
+    $(el).find('td, th').each((_j, cell) => {
+      const cellEl = $(cell);
+      let text = cellEl.text().replace(/\s+/g, ' ').trim()
+        .replace(/\u00A0/g, ' ').replace(/\u2013/g, '-').replace(/\u2019/g, "'");
+      cells.push({ text, rowspan: parseInt(cellEl.attr('rowspan') || '1', 10), colspan: parseInt(cellEl.attr('colspan') || '1', 10) });
+    });
+    if (cells.length > 0) rawRows.push({ cells });
+  });
+  if (rawRows.length < 2) throw new Error("Le document Word doit contenir un tableau avec une ligne d'en-têtes et au moins une ligne de données");
+
+  const headerCols = rawRows[0].cells.reduce((sum, c) => sum + c.colspan, 0);
+  const matrix: string[][] = [];
+  const activeRowspans: { text: string; remaining: number }[] = [];
+
+  for (const rawRow of rawRows) {
+    const row: string[] = new Array(headerCols).fill('');
+    let col = 0;
+    for (let c = 0; c < headerCols; c++) {
+      if (c < activeRowspans.length && activeRowspans[c].remaining > 0) {
+        row[c] = activeRowspans[c].text;
+        activeRowspans[c].remaining--;
+        if (activeRowspans[c].remaining <= 0) activeRowspans[c] = { text: '', remaining: 0 };
+      }
+    }
+    for (const cell of rawRow.cells) {
+      while (col < headerCols && row[col] !== '') { col++; }
+      if (col >= headerCols) break;
+      row[col] = cell.text;
+      if (cell.rowspan > 1) {
+        for (let c = col; c < col + cell.colspan && c < headerCols; c++) {
+          while (activeRowspans.length <= c) activeRowspans.push({ text: '', remaining: 0 });
+          activeRowspans[c] = { text: cell.text, remaining: cell.rowspan - 1 };
+        }
+      }
+      for (let c = 1; c < cell.colspan && col + c < headerCols; c++) row[col + c] = '';
+      col += cell.colspan;
+    }
+    for (let c = col; c < headerCols; c++) {
+      if (c < activeRowspans.length && activeRowspans[c].remaining > 0) {
+        row[c] = activeRowspans[c].text;
+        activeRowspans[c].remaining--;
+        if (activeRowspans[c].remaining <= 0) activeRowspans[c] = { text: '', remaining: 0 };
+      }
+    }
+    matrix.push(row);
+  }
+  return matrix;
+}
+
+async function lireTableauExcel(filePath: string): Promise<string[][]> {
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.readFile(filePath);
+  const ws = wb.getWorksheet("UE");
+  if (!ws) throw new Error("Feuille 'UE' introuvable dans le fichier Excel");
+
+  const matrix: string[][] = [];
+  const rowCount = ws.rowCount;
+  const colCount = ws.columnCount || 11;
+
+  const masterCells: Set<string> = new Set();
+  if (ws.model.merges) {
+    for (const mergeStr of ws.model.merges as string[]) {
+      const parts = mergeStr.split(':');
+      if (parts.length !== 2) continue;
+      const from = parseCellRef(parts[0]);
+      if (!from) continue;
+      masterCells.add(`${from.row}-${columnLetterToIndex(parts[0].replace(/\d+/, ''))}`);
+    }
+  }
+
+  for (let i = 1; i <= rowCount; i++) {
+    const row = ws.getRow(i);
+    const cells: string[] = [];
+    for (let j = 1; j <= colCount; j++) {
+      const cell = row.getCell(j);
+      const key = `${i}-${j}`;
+      let val: any = cell.value;
+      if (!masterCells.has(key) && val !== undefined && val !== null && val !== '') {
+        if (isPartOfMerge(ws, i, j, masterCells)) val = undefined;
+      }
+      cells.push(val ? String(val).replace(/\s+/g, ' ').trim() : '');
+    }
+    if (cells.some(c => c !== '')) matrix.push(cells);
+  }
+  if (matrix.length < 2) throw new Error("Le fichier Excel doit contenir un tableau avec au moins une ligne d'en-têtes et une ligne de données");
+  return matrix;
+}
+
 // ===========================================================================
 //  CONTROLLER
 // ===========================================================================
@@ -264,96 +414,154 @@ export default class ExcelController {
     }
   }
 
-  static async importUe(req: Request, res: Response): Promise<Response> {
+    static async importUe(req: Request, res: Response): Promise<Response> {
     if (!req.file) return res.status(400).json({ success: false, message: "Aucun fichier fourni" });
 
-    const results: { code?: string; intitule?: string; statut: string; message: string }[] = [];
+    const results: { code?: string; intitule?: string; ecueCode?: string; statut: string; message: string }[] = [];
     const filePath = req.file.path;
+    const isWord = /\.docx$/i.test(req.file.originalname);
 
     try {
-      const wb = new ExcelJS.Workbook();
-      await wb.xlsx.readFile(filePath);
-      const ws = wb.getWorksheet("UE");
-      if (!ws) return res.status(400).json({ success: false, message: "Feuille 'UE' introuvable dans le fichier" });
+      const matrix = isWord ? await lireTableauWord(filePath) : await lireTableauExcel(filePath);
+      if (matrix.length < 2) return res.status(400).json({ success: false, message: "Le fichier ne contient pas de données suffisantes" });
 
-      const rowCount = ws.rowCount;
-      let imported = 0, errors = 0;
+      const format = detectFormat(matrix[0]);
+      const semestre = (req.body.semestre as string) || 'semestre1';
+      const parcoursTitre = (req.body.parcoursTitre as string) || '';
+      let imported = 0, errors = 0, ignored = 0;
+      const ignoredRows: { ligne: number; raison: string }[] = [];
 
-      for (let i = 2; i <= rowCount; i++) {
-        const row = ws.getRow(i);
-        const code = row.getCell(1)?.toString()?.trim();
-        const intitule = row.getCell(2)?.toString()?.trim();
-        const credit = parseInt(row.getCell(3)?.toString()) || 0;
-        const creditEcts = parseInt(row.getCell(4)?.toString()) || 0;
-        const semestre = row.getCell(5)?.toString()?.trim() || null;
-        const coefficient = parseInt(row.getCell(6)?.toString()) || 0;
-        const volumeHoraire = parseInt(row.getCell(7)?.toString()) || 0;
-        const estObligatoireRaw = row.getCell(8)?.toString()?.trim()?.toUpperCase();
-        const estObligatoire = estObligatoireRaw === "O" || estObligatoireRaw === "OUI" || estObligatoireRaw === "YES";
-        const objectifs = row.getCell(9)?.toString()?.trim() || null;
-        const parcoursTitre = row.getCell(10)?.toString()?.trim();
-        const enseignantEmail = row.getCell(11)?.toString()?.trim() || null;
-
-        if (!code || !intitule || !parcoursTitre) {
-          errors++;
-          results.push({ code, intitule, statut: "erreur", message: "Code, intitulé et parcours sont obligatoires" });
-          continue;
-        }
-
-        try {
-          const parcours = await resolveParcours(parcoursTitre);
-          if (!parcours) {
+      if (format === 'A') {
+        const headerRow = matrix[0].map(c => c.toUpperCase());
+        const col = (label: string, fallback: number): number => {
+          const idx = headerRow.findIndex(v => v.includes(label));
+          return idx >= 0 ? idx + 1 : fallback;
+        };
+        for (let i = 1; i < matrix.length; i++) {
+          const row = matrix[i];
+          const code = row[col('CODE DE L', 1) - 1] || '';
+          const intitule = row[col('INTITULE DE L', 2) - 1] || '';
+          const parcours = parcoursTitre || row[col('INTITULE DE L', 2)];
+          if (!code || !intitule || !parcours) {
             errors++;
-            results.push({ code, intitule, statut: "erreur", message: `Parcours "${parcoursTitre}" introuvable` });
+            results.push({ code, intitule, statut: "erreur", message: "Code, intitulé et parcours sont obligatoires" });
             continue;
           }
-
-          let enseignantId = null;
-          if (enseignantEmail) {
-            const ens = await resolveEnseignant(enseignantEmail);
-            if (!ens) {
-              errors++;
-              results.push({ code, intitule, statut: "erreur", message: `Enseignant "${enseignantEmail}" introuvable` });
-              continue;
-            }
-            enseignantId = ens.id;
-          }
-
-          const [cours, created] = await Cours.findOrCreate({
-            where: { code, parcoursId: parcours.id },
-            defaults: {
-              code,
-              intitule,
-              parcoursId: parcours.id,
-              credit,
-              creditEcts,
-              semestre: semestre || undefined,
-              coefficient,
-              volumeHoraire,
-              estObligatoire,
-              objectifs,
-              enseignantId,
-            },
-          } as any);
-
-          if (!created) {
-            await cours.update({
-              intitule, credit, creditEcts,
-              semestre: semestre || undefined,
-              coefficient,
-              volumeHoraire, estObligatoire, objectifs, enseignantId,
+          try {
+            const p = await resolveParcours(parcours);
+            if (!p) { errors++; results.push({ code, intitule, statut: "erreur", message: `Parcours "${parcours}" introuvable` }); continue; }
+            const credit = parseInt(row[col('CREDIT', 10) - 1] || '0') || 0;
+            const creditEcts = credit || parseFloat(row[col('CREDIT', 10) - 1] || '0') || 0;
+            const cmHoraire = parseInt(row[col('CM', 5) - 1] || '0') || 0;
+            const tdTpHoraire = parseInt(row[col('TD/TP', 6) - 1] || '0') || 0;
+            const tpeHoraire = parseInt(row[col('TPE', 7) - 1] || '0') || 0;
+            const ecueType = (row[col('TYPE', 4) - 1] || '').toUpperCase() || null;
+            const [cours, created] = await Cours.findOrCreate({
+              where: { code, parcoursId: p.id },
+              defaults: { code, intitule, parcoursId: p.id, credit, creditEcts, semestre: semestre || undefined, coefficient: credit, volumeHoraire: cmHoraire + tdTpHoraire, estObligatoire: true, objectifs: null, enseignantId: null, categorieUe: null },
             } as any);
-          }
-
-          imported++;
-          results.push({ code, intitule, statut: "succès", message: created ? "Créé" : "Mis à jour" });
-        } catch (err: any) {
-          errors++;
-          results.push({ code, intitule, statut: "erreur", message: err.message });
+            if (!created) await cours.update({ intitule, credit, creditEcts, semestre: semestre || undefined, coefficient: credit, volumeHoraire: cmHoraire + tdTpHoraire, estObligatoire: true, objectifs: null, enseignantId: null, categorieUe: null } as any);
+            const ecueCode = row[col('CONTENUS DES ENSEIGNEMENTS', 3) - 1] || `${code}-${i}`;
+            const ecueLibelle = row[col('CONTENUS DES ENSEIGNEMENTS', 3) - 1] || intitule;
+            if (ecueCode) {
+              const [ecue, ecueCreated] = await Ecue.findOrCreate({ where: { code: ecueCode, coursId: cours.id }, defaults: { code: ecueCode, libelle: ecueLibelle, coursId: cours.id, creditEcts, cmHoraire, tdTpHoraire, tpeHoraire, type: ['F', 'T', 'S', 'C', 'L', 'M'].includes(ecueType || '') ? ecueType : null, enseignantId: null } as any });
+              if (!ecueCreated) await ecue.update({ libelle: ecueLibelle, creditEcts, cmHoraire, tdTpHoraire, tpeHoraire, type: ecueType, enseignantId: null } as any);
+            }
+            imported++;
+            results.push({ code, intitule, ecueCode, statut: "succès", message: created ? "Créé" : "Mis à jour" });
+          } catch (err: any) { errors++; results.push({ code, intitule, statut: "erreur", message: err.message }); }
         }
+      } else {
+        // FORMAT B
+        let currentCategorieUe: 'MINEURE' | 'MAJEURE' | 'LIBRE' | null = null;
+        let blockUeCode = '';
+        let blockUeIntitule = '';
+        let blockEcueData: Array<{ ecueCode: string; ecueLibelle: string; cmHoraire: number; tdTpHoraire: number; tpeHoraire: number; creditEcts: number; type: string | null }> = [];
+
+        if (!parcoursTitre) return res.status(400).json({ success: false, message: "Le parcours (parcoursTitre) est obligatoire pour le Format B" });
+        const parcours = await resolveParcours(parcoursTitre);
+        if (!parcours) return res.status(400).json({ success: false, message: `Parcours "${parcoursTitre}" introuvable` });
+        const parcoursId = parcours.id;
+
+        const parseMatiereCell = (cellValue: string): { ecueCode: string; ecueLibelle: string } | null => {
+          const text = normalizeText(cellValue).trim();
+          if (!text) return null;
+          const match = text.match(/^(\d+)\.([A-Z0-9]+)\s*:\s*(.+)$/i);
+          if (match) return { ecueCode: match[2].trim(), ecueLibelle: match[3].trim() };
+          const match2 = text.match(/^([A-Z0-9]+)\s*:\s*(.+)$/i);
+          if (match2) return { ecueCode: match2[1].trim(), ecueLibelle: match2[2].trim() };
+          return null;
+        };
+
+        const flushBlock = async (): Promise<void> => {
+          if (!blockUeCode) return;
+          try {
+            const creditSum = blockEcueData.reduce((s, e) => s + e.creditEcts, 0);
+            const volumeSum = blockEcueData.reduce((s, e) => s + e.cmHoraire + e.tdTpHoraire, 0);
+            const [cours, created] = await Cours.findOrCreate({
+              where: { code: blockUeCode, parcoursId },
+              defaults: { code: blockUeCode, intitule: blockUeIntitule, parcoursId, credit: creditSum || null, creditEcts: creditSum || null, semestre: semestre || undefined, coefficient: creditSum || null, volumeHoraire: volumeSum || null, estObligatoire: true, objectifs: null, enseignantId: null, categorieUe: currentCategorieUe },
+            } as any);
+            if (!created) await cours.update({ intitule: blockUeIntitule, credit: creditSum || null, creditEcts: creditSum || null, semestre: semestre || undefined, coefficient: creditSum || null, volumeHoraire: volumeSum || null, estObligatoire: true, objectifs: null, enseignantId: null, categorieUe: currentCategorieUe } as any);
+            for (const ed of blockEcueData) {
+              const [ecue, ecueCreated] = await Ecue.findOrCreate({ where: { code: ed.ecueCode, coursId: cours.id }, defaults: { code: ed.ecueCode, libelle: ed.ecueLibelle, coursId: cours.id, creditEcts: ed.creditEcts, cmHoraire: ed.cmHoraire, tdTpHoraire: ed.tdTpHoraire, tpeHoraire: ed.tpeHoraire, type: ed.type, enseignantId: null } as any });
+              if (!ecueCreated) await ecue.update({ libelle: ed.ecueLibelle, creditEcts: ed.creditEcts, cmHoraire: ed.cmHoraire, tdTpHoraire: ed.tdTpHoraire, tpeHoraire: ed.tpeHoraire, type: ed.type, enseignantId: null } as any);
+              imported++;
+              results.push({ code: blockUeCode, intitule: blockUeIntitule, ecueCode: ed.ecueCode, statut: "succès", message: ecueCreated ? "Créé" : "Mis à jour" });
+            }
+          } catch (err: any) { console.error(`Erreur flush block UE ${blockUeCode}:`, err.message); }
+          blockEcueData = [];
+        };
+
+        for (let i = 2; i < matrix.length; i++) {
+          const row = matrix[i];
+          const isSection = row.some(c => { const t = normalizeText(c).toUpperCase(); return t.includes('UNITES D\'ENSEIGNEMENT MINEURES') || t.includes('UNITES D\'ENSEIGNEMENT MAJEURES') || t.includes('UNITES D\'ENSEIGNEMENT LIBRES'); });
+          if (isSection) { await flushBlock(); const ts = row.map(c => normalizeText(c).toUpperCase()).join(' '); if (ts.includes('MINEURES')) currentCategorieUe = 'MINEURE'; else if (ts.includes('MAJEURES')) currentCategorieUe = 'MAJEURE'; else if (ts.includes('LIBRES')) currentCategorieUe = 'LIBRE'; ignored++; ignoredRows.push({ ligne: i + 1, raison: `Section: ${currentCategorieUe}` }); continue; }
+          if (row.some(c => normalizeText(c).toUpperCase().startsWith('TOTAL SEMESTRE'))) { await flushBlock(); ignored++; ignoredRows.push({ ligne: i + 1, raison: 'Total semestre' }); continue; }
+
+          const cellCodeUE = normalizeText(row[0] || '');
+          const cellIntituleUE = normalizeText(row[1] || '');
+          const cellMatiere = normalizeText(row[2] || '');
+          const cellType = normalizeText(row[3] || '');
+          const cellCM = normalizeText(row[4] || '');
+          const cellTD = normalizeText(row[5] || '');
+          const cellTPE = normalizeText(row[6] || '');
+          const cellCredit = normalizeText(row[9] || '');
+          if (!cellCodeUE && !cellMatiere) continue;
+
+          const isNewBlock = cellCodeUE !== '' && cellCodeUE !== blockUeCode;
+          const isRowspanContinuation = cellCodeUE === '' && cellMatiere !== '';
+          const isUeWithoutMatiere = cellCodeUE !== '' && cellMatiere === '';
+          const isSameUeNewMatiere = cellCodeUE !== '' && cellCodeUE === blockUeCode && cellMatiere !== '';
+
+          if (isNewBlock || isUeWithoutMatiere) {
+            await flushBlock();
+            blockUeCode = cellCodeUE;
+            blockUeIntitule = cellIntituleUE || cellCodeUE;
+            if (isUeWithoutMatiere) {
+              const cmH = parseInt(cellCM) || 0, tdT = parseInt(cellTD) || 0, tpe = parseInt(cellTPE) || 0, cr = parseInt(cellCredit) || 0;
+              const et = cellType.toUpperCase() || null;
+              const vt = ['F', 'T', 'S', 'C', 'L', 'M'].includes(et || '') ? et : null;
+              blockEcueData.push({ ecueCode: cellCodeUE, ecueLibelle: cellIntituleUE || cellCodeUE, cmHoraire: cmH, tdTpHoraire: tdT, tpeHoraire: tpe, creditEcts: cr, type: vt });
+            } else {
+              const parsed = parseMatiereCell(cellMatiere);
+              const cmH = parseInt(cellCM) || 0, tdT = parseInt(cellTD) || 0, tpe = parseInt(cellTPE) || 0, cr = parseInt(cellCredit) || 0;
+              const et = cellType.toUpperCase() || null;
+              const vt = ['F', 'T', 'S', 'C', 'L', 'M'].includes(et || '') ? et : null;
+              if (parsed) blockEcueData.push({ ecueCode: parsed.ecueCode, ecueLibelle: parsed.ecueLibelle, cmHoraire: cmH, tdTpHoraire: tdT, tpeHoraire: tpe, creditEcts: cr, type: vt });
+            }
+          } else if (isRowspanContinuation || isSameUeNewMatiere) {
+            const parsed = parseMatiereCell(cellMatiere);
+            const cmH = parseInt(cellCM) || 0, tdT = parseInt(cellTD) || 0, tpe = parseInt(cellTPE) || 0, cr = parseInt(cellCredit) || 0;
+            const et = cellType.toUpperCase() || null;
+            const vt = ['F', 'T', 'S', 'C', 'L', 'M'].includes(et || '') ? et : null;
+            if (parsed) blockEcueData.push({ ecueCode: parsed.ecueCode, ecueLibelle: parsed.ecueLibelle, cmHoraire: cmH, tdTpHoraire: tdT, tpeHoraire: tpe, creditEcts: cr, type: vt });
+          }
+        }
+        await flushBlock();
       }
 
-      return res.status(200).json({ success: true, importedCount: imported, errorCount: errors, details: results });
+      return res.status(200).json({ success: true, importedCount: imported, errorCount: errors, ignoredCount: ignored, details: results, ignoredRows: ignoredRows.length > 0 ? ignoredRows : undefined });
     } catch (error: any) {
       console.error("Erreur import UE:", error);
       return res.status(500).json({ success: false, message: error.message });

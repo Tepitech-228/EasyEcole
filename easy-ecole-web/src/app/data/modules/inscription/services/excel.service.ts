@@ -27,16 +27,26 @@ export class ExcelService {
     return this.http.get(`${EXCEL_BASE}/ue/template`, { responseType: 'blob' });
   }
 
+  downloadUeWordTemplate(): Observable<Blob> {
+    return this.http.get(`${EXCEL_BASE}/ue/template-word`, { responseType: 'blob' });
+  }
+
   /** Importer des UE depuis un fichier Excel */
-  importUe(file: File): Observable<ExcelImportResult> {
+  importUe(file: File, parcoursTitre?: string, semestre?: string): Observable<ExcelImportResult> {
     const formData = new FormData();
     formData.append('fichier', file);
+    if (parcoursTitre) formData.append('parcoursTitre', parcoursTitre);
+    if (semestre) formData.append('semestre', semestre);
     return this.http.post<ExcelImportResult>(`${EXCEL_BASE}/ue/import`, formData);
   }
 
   /** Exporter les UE au format Excel */
   exportUe(): Observable<Blob> {
     return this.http.get(`${EXCEL_BASE}/ue/export`, { responseType: 'blob' });
+  }
+
+  exportUeWord(): Observable<Blob> {
+    return this.http.get(`${EXCEL_BASE}/ue/export-word`, { responseType: 'blob' });
   }
 
   // ========================================================================

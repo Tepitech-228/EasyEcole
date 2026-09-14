@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { ExcelService, ExcelImportResult } from 'src/app/data/modules/inscription/services/excel.service';
 import { ParcoursService } from 'src/app/data/modules/inscription/services/parcours.service';
@@ -9,8 +9,8 @@ import { SalleDeClasseService } from 'src/app/data/modules/inscription/services/
 import { AnneeAcademiqueService } from 'src/app/data/modules/inscription/services/annee-academique.service';
 import { RolesUtilisateur } from 'src/app/data/enums/RolesUtilisateur';
 
-export type ExportType = 'etudiants' | 'enseignants' | 'utilisateurs';
-export type ImportType = 'etudiants' | 'enseignants' | 'utilisateurs';
+export type ExportType = 'ue' | 'etudiants' | 'enseignants' | 'utilisateurs';
+export type ImportType = 'ue' | 'etudiants' | 'enseignants' | 'utilisateurs';
 
 @Component({
   selector: 'app-import-export-excel-page',
@@ -21,8 +21,14 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
   activeTab: 'export' | 'import' = 'export';
 
   exportType: ExportType = 'etudiants';
+  exportFormat: 'xlsx' | 'docx' = 'xlsx';
   importType: ImportType = 'utilisateurs';
+  importFormat: 'xlsx' | 'docx' = 'xlsx';
   selectedImportRole: string = RolesUtilisateur.APPRENANT;
+  selectedImportParcoursId: string = '';
+  selectedImportSemestre = '';
+  parcoursLoading = false;
+  parcoursLoadError = false;
 
   exportFilters = {
     parcoursId: null as number | null,
@@ -48,12 +54,14 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
   successMessage: string | null = null;
 
   readonly exportTypes = [
+    { value: 'ue' as ExportType, label: 'UE et ECUE' },
     { value: 'etudiants' as ExportType, label: 'Étudiants' },
     { value: 'enseignants' as ExportType, label: 'Enseignants' },
     { value: 'utilisateurs' as ExportType, label: 'Utilisateurs par rôle' }
   ];
 
   readonly importTypes = [
+    { value: 'ue' as ImportType, label: 'UE et ECUE' },
     { value: 'etudiants' as ImportType, label: 'Étudiants' },
     { value: 'enseignants' as ImportType, label: 'Enseignants' },
     { value: 'utilisateurs' as ImportType, label: 'Utilisateurs par rôle' }
@@ -78,6 +86,7 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
     private classeService: ClasseService,
     private salleService: SalleDeClasseService,
     private anneeService: AnneeAcademiqueService,
+    private activatedRoute: ActivatedRoute,
     private router: Router
   ) {
     super();
@@ -85,12 +94,24 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
 
   ngOnInit(): void {
     this.loadReferenceData();
+    this.activatedRoute.queryParams.subscribe(params => {
+      if (params['type'] === 'ue') {
+        this.importType = 'ue';
+        this.activeTab = params['tab'] === 'export' ? 'export' : 'import';
+        this.exportType = 'ue';
+      }
+    });
   }
 
   loadReferenceData(): void {
+    this.parcoursLoading = true;
     this.parcoursService.getAll().subscribe({
-      next: (res: any) => { this.parcoursList = res.data || res; },
-      error: () => {}
+      next: (res: any) => {
+        this.parcoursList = Array.isArray(res) ? res : (Array.isArray(res?.data) ? res.data : []);
+        this.parcoursLoading = false;
+        this.parcoursLoadError = this.parcoursList.length === 0;
+      },
+      error: () => { this.parcoursList = []; this.parcoursLoading = false; this.parcoursLoadError = true; }
     });
     this.niveauService.getAll().subscribe({
       next: (res: any) => { this.niveauxList = res.data || res; },
@@ -116,7 +137,11 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
 
     let download$: any;
 
-    if (this.exportType === 'etudiants') {
+    if (this.exportType === 'ue' && this.exportFormat === 'docx') {
+      download$ = this.excelService.exportUeWord();
+    } else if (this.exportType === 'ue') {
+      download$ = this.excelService.exportUe();
+    } else if (this.exportType === 'etudiants') {
       download$ = this.excelService.exportApprenantsFiltres(this.exportFilters);
     } else if (this.exportType === 'enseignants') {
       download$ = this.excelService.exportEnseignantsFiltres({
@@ -134,7 +159,7 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
                     this.exportType === 'enseignants' ? 'enseignants' :
                     `utilisateurs-${this.selectedImportRole}`;
         const timestamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
-        ExcelService.downloadBlob(blob, `export-${ext}-${timestamp}.xlsx`);
+        ExcelService.downloadBlob(blob, `export-${ext}-${timestamp}.${this.exportType === 'ue' && this.exportFormat === 'docx' ? 'docx' : 'xlsx'}`);
         this.successMessage = 'Export généré et téléchargé avec succès.';
       },
       error: () => {
@@ -150,7 +175,10 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
     let download$: any;
     let filename: string;
 
-    if (this.importType === 'etudiants') {
+    if (this.importType === 'ue') {
+      download$ = this.importFormat === 'docx' ? this.excelService.downloadUeWordTemplate() : this.excelService.downloadUeTemplate();
+      filename = `template-ue-ecue.${this.importFormat}`;
+    } else if (this.importType === 'etudiants') {
       download$ = this.excelService.downloadApprenantTemplate();
       filename = 'template-apprenants.xlsx';
     } else if (this.importType === 'enseignants') {
@@ -212,7 +240,15 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
 
     let import$: any;
 
-    if (this.importType === 'etudiants') {
+    if (this.importType === 'ue') {
+      const parcours = this.parcoursList.find(item => String(item.id) === this.selectedImportParcoursId);
+      if (!parcours) {
+        this.importing = false;
+        this.errorMessage = 'Sélectionnez le parcours auquel rattacher la maquette UE/ECUE.';
+        return;
+      }
+      import$ = this.excelService.importUe(this.selectedFile, parcours?.titre, this.selectedImportSemestre);
+    } else if (this.importType === 'etudiants') {
       import$ = this.excelService.importApprenants(this.selectedFile);
     } else if (this.importType === 'enseignants') {
       import$ = this.excelService.importEnseignants(this.selectedFile);
@@ -248,6 +284,7 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
 
   getImportFileTypeLabel(): string {
     switch (this.importType) {
+      case 'ue': return 'UE et ECUE';
       case 'etudiants': return 'Étudiants';
       case 'enseignants': return 'Enseignants';
       default: return 'Utilisateurs (' + (this.rolesList.find(r => r.value === this.selectedImportRole)?.label || this.selectedImportRole) + ')';

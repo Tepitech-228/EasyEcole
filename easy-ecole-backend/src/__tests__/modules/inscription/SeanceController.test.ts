@@ -18,6 +18,7 @@ jest.mock('../../../modules/inscription/models/Seance', () => {
   const Mock: any = jest.fn(() => ({ save: jest.fn().mockResolvedValue(undefined) }))
   Mock.findAll = jest.fn()
   Mock.findOne = jest.fn()
+  Mock.findByPk = jest.fn()
   Mock.create = jest.fn()
   Mock.findAndCountAll = jest.fn()
   Mock.associations = { cours: 'cours', enseignant: 'enseignant', salleDeClasse: 'salleDeClasse' }

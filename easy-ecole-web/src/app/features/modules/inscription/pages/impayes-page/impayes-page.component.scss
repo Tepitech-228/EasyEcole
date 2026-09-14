@@ -1,0 +1,40 @@
+:host {
+  display: block;
+}
+
+:host ::ng-deep .material-symbols-outlined {
+  font-family: 'Material Symbols Outlined', sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+}
+
+::ng-deep .app-dossier-view .app-dossier-view {
+  border: none;
+  border-radius: 0;
+}
+
+::ng-deep .app-dossier-view .app-dossier-view .divide-y > div:last-child {
+  border-bottom: none;
+}
+
+/* Style spécifique pour la page impayés */
+.impayes-page {
+  .statut-badge-impaye {
+    background-color: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+  }
+
+  .statut-badge-partiel {
+    background-color: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fde68a;
+  }
+
+  .statut-badge-en-retard {
+    background-color: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+  }
+}

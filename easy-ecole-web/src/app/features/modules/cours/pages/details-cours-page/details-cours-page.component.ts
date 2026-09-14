@@ -18,6 +18,8 @@ import { SeanceService } from 'src/app/data/modules/inscription/services/seance.
 import { FullCalendarComponent } from '@fullcalendar/angular';
 import { JoursSemaine } from 'src/app/data/enums/JoursSemaine';
 import { ChapitreCours } from 'src/app/data/modules/inscription/models/ChapitreCours.model';
+import { Enseignant } from 'src/app/data/modules/auth/models/Enseignant.model';
+import { EnseignantService } from 'src/app/data/modules/auth/services/enseignant.service';
 
 @Component({
   selector: 'app-details-cours-page',
@@ -42,6 +44,7 @@ export class DetailsCoursPageComponent extends BaseComponentClass implements OnI
   ]
 
   ecues: Ecue[] = []
+  enseignants: Enseignant[] = []
   showEcueModal: boolean = false
   editingEcueId?: string
   ecueForm: FormGroup = new FormGroup({
@@ -49,6 +52,11 @@ export class DetailsCoursPageComponent extends BaseComponentClass implements OnI
     libelle: new FormControl(null, [Validators.required]),
     creditEcts: new FormControl(null, []),
     coefficient: new FormControl(null, []),
+    cmHoraire: new FormControl(null, []),
+    tdTpHoraire: new FormControl(null, []),
+    tpeHoraire: new FormControl(null, []),
+    type: new FormControl(null, []),
+    enseignantId: new FormControl(null, []),
   })
 
   selectedDate?: Date
@@ -80,6 +88,7 @@ export class DetailsCoursPageComponent extends BaseComponentClass implements OnI
   constructor(
     private coursService: CoursService,
     private ecueService: EcueService,
+    private enseignantService: EnseignantService,
     private seanceService: SeanceService,
     private activatedRoute: ActivatedRoute,
     private router: Router) {
@@ -87,6 +96,7 @@ export class DetailsCoursPageComponent extends BaseComponentClass implements OnI
     this.id = this.activatedRoute.snapshot.paramMap.get("id") as string
     this.getCours()
     this.getEcues()
+    this.getEnseignants()
     this.initCalendar()
   }
 
@@ -170,6 +180,18 @@ export class DetailsCoursPageComponent extends BaseComponentClass implements OnI
       )
   }
 
+  getEnseignants(): void {
+    this.enseignantService.getAll().subscribe({
+      next: (res) => this.enseignants = Array.isArray(res) ? res : [],
+      error: () => this.enseignants = []
+    })
+  }
+
+  nomEnseignant(ecue: Ecue): string {
+    const utilisateur = ecue.enseignant?.utilisateur
+    return utilisateur ? `${utilisateur.prenoms || ''} ${utilisateur.nom || ''}`.trim() : 'Non affecté'
+  }
+
   openEcueModal(ecue?: Ecue): void {
     if (ecue) {
       this.editingEcueId = ecue.id
@@ -178,6 +200,11 @@ export class DetailsCoursPageComponent extends BaseComponentClass implements OnI
         libelle: ecue.libelle,
         creditEcts: ecue.creditEcts,
         coefficient: ecue.coefficient,
+        cmHoraire: ecue.cmHoraire,
+        tdTpHoraire: ecue.tdTpHoraire,
+        tpeHoraire: ecue.tpeHoraire,
+        type: ecue.type,
+        enseignantId: ecue.enseignantId,
       })
     } else {
       this.editingEcueId = undefined
@@ -200,6 +227,11 @@ export class DetailsCoursPageComponent extends BaseComponentClass implements OnI
     ecue.libelle = this.ecueForm.get('libelle')!.value
     ecue.creditEcts = this.ecueForm.get('creditEcts')!.value
     ecue.coefficient = this.ecueForm.get('coefficient')!.value
+    ecue.cmHoraire = this.ecueForm.get('cmHoraire')!.value
+    ecue.tdTpHoraire = this.ecueForm.get('tdTpHoraire')!.value
+    ecue.tpeHoraire = this.ecueForm.get('tpeHoraire')!.value
+    ecue.type = this.ecueForm.get('type')!.value
+    ecue.enseignantId = this.ecueForm.get('enseignantId')!.value
     ecue.coursId = this.id
 
     const request = this.editingEcueId

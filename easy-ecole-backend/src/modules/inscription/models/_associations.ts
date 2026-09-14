@@ -428,6 +428,10 @@ Mcc.belongsTo(Cours, { as: 'cours', foreignKey: 'coursId' })
 Cours.hasMany(Ecue, { foreignKey: 'coursId', as: 'ecues' })
 Ecue.belongsTo(Cours, { as: 'cours', foreignKey: 'coursId' })
 
+// Ecue - Enseignant
+Ecue.belongsTo(Enseignant, { as: 'enseignant', foreignKey: 'enseignantId' })
+Enseignant.hasMany(Ecue, { foreignKey: 'enseignantId', as: 'ecues' })
+
 // Mcc - Ecue
 Ecue.hasMany(Mcc, { foreignKey: 'ecueId', as: 'mccs' })
 Mcc.belongsTo(Ecue, { as: 'ecue', foreignKey: 'ecueId' })

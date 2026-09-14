@@ -19,8 +19,9 @@
 
     <div class="divide-y divide-gray-100">
       <div *ngFor="let node of nodes; let i = index; let isLast = last" class="select-none">
-        <div class="flex items-center gap-2 hover:bg-gray-50 transition cursor-pointer relative"
-             [style.paddingLeft.px]="level * 20 + 12">
+         <div class="flex items-center gap-2 hover:bg-gray-50 transition cursor-pointer relative"
+              [style.paddingLeft.px]="level * 20 + 12"
+              (click)="onNodeClick(node)">
 
           <!-- Tree connector lines -->
           <div class="absolute left-0 top-0 bottom-0" *ngIf="level > 0">
@@ -47,11 +48,12 @@
           <div class="w-5 flex-shrink-0" *ngIf="!node.children?.length && !node.items?.length"></div>
 
           <!-- Checkbox -->
-          <input
-            type="checkbox"
-            [checked]="node.selected"
-            (change)="toggleSelect(node)"
-            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 flex-shrink-0">
+           <input
+             type="checkbox"
+             [checked]="node.selected"
+             (change)="toggleSelect(node)"
+             (click)="$event.stopPropagation()"
+             class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 flex-shrink-0">
 
           <!-- Icon -->
           <span class="material-symbols-outlined text-lg flex-shrink-0"
@@ -60,8 +62,9 @@
                 [class.text-green-600]="node.type === 'parcours'"
                 [class.text-violet-500]="node.type === 'classe'"
                 [class.text-orange-500]="node.type === 'salle'"
-                [class.text-blue-500]="node.type === 'etudiant'"
-                [class.text-gray-400]="node.type === 'item'">
+                 [class.text-blue-500]="node.type === 'etudiant'"
+                 [class.text-gray-400]="node.type === 'item'"
+                 [class.text-blue-400]="node.type === 'semestre'">
             {{ getNodeIcon(node) }}
           </span>
 

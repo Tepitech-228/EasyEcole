@@ -577,6 +577,7 @@ export const modelSchemas = {
       enseignantId: { type: 'integer' },
       volumeHoraire: { type: 'integer', nullable: true },
       coefficient: { type: 'integer', nullable: true },
+      categorieUe: { type: 'string', enum: ['MINEURE', 'MAJEURE', 'LIBRE'], nullable: true },
     }
   },
   CoursEnLigne: {
@@ -1108,6 +1109,11 @@ export const modelSchemas = {
       creditEcts: { type: 'integer', nullable: true },
       coefficient: { type: 'integer', nullable: true },
       coursId: { type: 'integer' },
+      cmHoraire: { type: 'integer', nullable: true },
+      tdTpHoraire: { type: 'integer', nullable: true },
+      tpeHoraire: { type: 'integer', nullable: true },
+      type: { type: 'string', enum: ['F', 'T', 'S', 'C', 'L', 'M'], nullable: true },
+      enseignantId: { type: 'integer', nullable: true },
     }
   },
   Engagement: {

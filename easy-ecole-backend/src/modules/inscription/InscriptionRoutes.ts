@@ -156,6 +156,11 @@ router
     .use('/rattrapage-workflow', [Authenticate], RattrapageWorkflowRouter)
     // Référentiel des documents obligatoires par niveau (géré par l'administration)
     .use('/documents-requis-niveau', [Authenticate], DocumentRequisNiveauRouter)
+    // Routes d'onboarding : elles doivent passer avant les montages racine
+    // protégés par InscriptionComplete.
+    .use('/paiement', [Authenticate], PaiementStatutRouter)
+    .use('/ocr', [Authenticate], OcrRouter)
+    .get('/dashboard', [Authenticate, cache(30)], DashboardController.getDashboard)
     // Montages racine — ne serviront que pour les routes qui n'ont pas matché ci-dessus
     .use('/', [Authenticate, InscriptionComplete], PresenceEnseignantRouter)
     .use('/', [Authenticate, InscriptionComplete], AbsenceCoursRouter)
@@ -166,8 +171,6 @@ router
     .use('/', [Authenticate, InscriptionComplete], BulletinRouter)
     .use('/', [Authenticate, InscriptionComplete], DeliberationRouter)
     .use('/echeances', [Authenticate, InscriptionComplete], EcheanceRouter)
-    // Statut de paiement apprenant/parent (paiement/statut)
-    .use('/paiement', [Authenticate, InscriptionComplete], PaiementStatutRouter)
     .use('/dossiers', [Authenticate, InscriptionComplete], DossierEtudiantRouter)
     .use('/', [Authenticate, InscriptionComplete], PassationRouter)
     .use('/', [Authenticate, InscriptionComplete], SuiviUeRouter)
@@ -179,11 +182,5 @@ router
     .use('/audit-notes', [Authenticate, InscriptionComplete], AuditNoteRouter)
     .use('/designation-memoires', [Authenticate], DesignationMemoireRouter)
     .use('/reinscription', [Authenticate], ReinscriptionRouter)
-    // Extraction OCR/ICR des informations personnelles (pré-remplissage wizard)
-    .use('/ocr', [Authenticate], OcrRouter)
-    // Le dashboard reste accessible aux nouveaux étudiants afin qu'ils puissent
-    // consulter les sessions ouvertes et démarrer leur inscription.
-    // (lecture agrégée coûteuse → cache Redis 30 s, clé par utilisateur)
-    .get('/dashboard', [Authenticate, cache(30)], DashboardController.getDashboard)
 
 export default router;

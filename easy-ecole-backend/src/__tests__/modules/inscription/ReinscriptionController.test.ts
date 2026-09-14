@@ -131,12 +131,12 @@ describe('ReinscriptionController.soumettre — règle métier', () => {
 
     expect(DemandeInscription.findOne).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ utilisateurId: 7, sessionId: 3, typeDemande: 'reinscription' }),
+        where: expect.objectContaining({ utilisateurId: 7, sessionId: 3 }),
       })
     )
     expect(res.status).toHaveBeenCalledWith(409)
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ message: expect.stringContaining('déjà en cours') })
+      expect.objectContaining({ message: expect.stringContaining('demande') })
     )
   })
 

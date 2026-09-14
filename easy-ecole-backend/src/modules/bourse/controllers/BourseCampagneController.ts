@@ -17,7 +17,7 @@ import { BourseService } from "../services/BourseService";
  *  2. GET  /bourses/campagne/eligibles?niveauEtudeId=X → étudiants d'un niveau donné
  *  3. POST /bourses/campagne/attribuer → attribution en masse à un niveau entier
  *
- * ESA COMPTA peut :
+ * SERVICE RECOUVREMENT peut :
  *  - Choisir une configuration existante (pas de création inline — c'est réservé Admin/Directeur)
  *  - Définir la durée (dateDebut / dateFin)
  *  - Sélectionner un niveau d'études (L1, M1, etc.)
@@ -265,7 +265,7 @@ export default class BourseCampagneController {
      * Attribution en masse de bourses PAR NIVEAU D'ÉTUDES.
      *
      * Body :
-     *  - configurationId : number (obligatoire — ESA COMPTA ne crée pas de configs)
+     *  - configurationId : number (obligatoire — SERVICE RECOUVREMENT ne crée pas de configs)
      *  - niveauEtudeId : number (obligatoire — L1, M1, etc.)
      *  - dateDebut : string (ISO date)
      *  - dateFin : string | null (ISO date)

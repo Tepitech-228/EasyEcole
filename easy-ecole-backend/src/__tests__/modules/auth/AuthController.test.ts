@@ -11,6 +11,11 @@ jest.mock('bcrypt', () => ({
   hashSync: jest.fn(),
 }))
 
+jest.mock('qrcode', () => ({
+  __esModule: true,
+  default: { toFile: jest.fn().mockResolvedValue(undefined) },
+}))
+
 const mockUtilSave = jest.fn()
 const mockUtilUpdate = jest.fn()
 
@@ -24,7 +29,11 @@ jest.mock('../../../modules/auth/models/Utilisateur', () => {
 })
 
 jest.mock('../../../modules/auth/models/Enseignant', () => ({
-  Enseignant: { create: jest.fn() },
+  Enseignant: { create: jest.fn(), count: jest.fn() },
+}))
+
+jest.mock('../../../modules/etablissement/models/Etablissement', () => ({
+  Etablissement: { findByPk: jest.fn() },
 }))
 
 jest.mock('../../../core/helpers/EmailSender', () => ({
@@ -42,6 +51,10 @@ jest.mock('../../../core/helpers/IDGenerator', () => ({
     getInstance: jest.fn().mockReturnValue({
       generateMotDePasseUtilisateur: jest.fn().mockReturnValue('TempPass123!'),
     }),
+    deriveEtablissementCode: jest.fn().mockReturnValue('ESA'),
+    deriveSiteCode: jest.fn().mockReturnValue('SIE'),
+    deriveMatiereCode: jest.fn().mockReturnValue('GEN'),
+    generateMatricule: jest.fn().mockReturnValue('ESA-GEN-SIE-0001'),
   },
 }))
 
@@ -192,14 +205,15 @@ describe('AuthController.registerEnseignant', () => {
     })
     const res = mockResponse()
     ;(Utilisateur.findOne as jest.Mock).mockResolvedValue(null)
-    ;(Enseignant.create as jest.Mock).mockResolvedValue({ id: 1 })
+    ;(Enseignant.count as jest.Mock).mockResolvedValue(0)
+    ;(Enseignant.create as jest.Mock).mockResolvedValue({ id: 1, update: jest.fn().mockResolvedValue(undefined) })
     ;(bcrypt.hashSync as jest.Mock).mockReturnValue('hashed-temp-pass')
     mockUtilSave.mockResolvedValue({ id: 1 })
 
     await AuthController.registerEnseignant(req, res)
 
     expect(mockUtilSave).toHaveBeenCalled()
-    expect(Enseignant.create).toHaveBeenCalledWith({ utilisateurId: 1 })
+    expect(Enseignant.create).toHaveBeenCalledWith(expect.objectContaining({ utilisateurId: 1, matricule: 'ESA-GEN-SIE-0001' }))
     expect(res.status).toHaveBeenCalledWith(201)
     expect(res.send).toHaveBeenCalledWith({ success: true })
   })

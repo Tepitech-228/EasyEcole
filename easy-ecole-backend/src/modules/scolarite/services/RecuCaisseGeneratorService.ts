@@ -11,7 +11,7 @@ const STORAGE_DIR = 'storage/recus-caisse';
 
 /**
  * Génère le PDF du Reçu de Caisse Unique (RCU) au format ESA.
- * - Deux exemplaires : original (étudiant) + copie (ESA-Compta)
+ * - Deux exemplaires : original (étudiant) + copie (Service Recouvrement)
  * - Design : bordure bleue #2b6cb0, en-tête ESA, tableau de détails, signature comptable
  */
 export class RecuCaisseGeneratorService {

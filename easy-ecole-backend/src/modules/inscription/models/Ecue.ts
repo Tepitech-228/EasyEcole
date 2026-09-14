@@ -1,6 +1,7 @@
 ﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
+import { Enseignant } from "../../auth/models/Enseignant";
 import { Cours } from "./Cours";
 
 export class Ecue extends Model<InferAttributes<Ecue>, InferCreationAttributes<Ecue>> {
@@ -10,8 +11,14 @@ export class Ecue extends Model<InferAttributes<Ecue>, InferCreationAttributes<E
   declare creditEcts: CreationOptional<number | null>
   declare coefficient: CreationOptional<number | null>
   declare coursId: ForeignKey<Cours['id']>
+  declare cmHoraire: CreationOptional<number | null>
+  declare tdTpHoraire: CreationOptional<number | null>
+  declare tpeHoraire: CreationOptional<number | null>
+  declare type: CreationOptional<'F' | 'T' | 'S' | 'C' | 'L' | 'M' | null>
+  declare enseignantId: ForeignKey<Enseignant['id'] | null>
 
   declare cours?: NonAttribute<Cours>
+  declare enseignant?: NonAttribute<Enseignant>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -19,6 +26,7 @@ export class Ecue extends Model<InferAttributes<Ecue>, InferCreationAttributes<E
 
   declare static associations: {
     cours: Association<Ecue, Cours>
+    enseignant: Association<Ecue, Enseignant>
   }
 }
 
@@ -48,6 +56,26 @@ Ecue.init({
   coursId: {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false
+  },
+  cmHoraire: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
+  },
+  tdTpHoraire: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
+  },
+  tpeHoraire: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
+  },
+  type: {
+    type: DataTypes.ENUM('F','T','S','C','L','M'),
+    allowNull: true
+  },
+  enseignantId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

@@ -37,6 +37,10 @@
         <select [(ngModel)]="exportType" class="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white">
           <option *ngFor="let t of exportTypes" [value]="t.value">{{ t.label }}</option>
         </select>
+        <select *ngIf="exportType === 'ue'" [(ngModel)]="exportFormat" class="ml-3 border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white">
+          <option value="xlsx">Excel (.xlsx)</option>
+          <option value="docx">Word (.docx)</option>
+        </select>
       </div>
 
       <!-- Filtres pour Étudiants -->
@@ -135,6 +139,10 @@
         <select [(ngModel)]="importType" (change)="importTypeChanged()" class="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white">
           <option *ngFor="let t of importTypes" [value]="t.value">{{ t.label }}</option>
         </select>
+        <select *ngIf="importType === 'ue'" [(ngModel)]="importFormat" class="ml-3 border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white">
+          <option value="xlsx">Excel (.xlsx)</option>
+          <option value="docx">Word (.docx)</option>
+        </select>
       </div>
 
       <div *ngIf="importType === 'utilisateurs'" class="mb-6">
@@ -144,7 +152,50 @@
         </select>
       </div>
 
-      <div class="flex items-center gap-4 mb-6">
+      <!-- Sélections pour UE -->
+      <div *ngIf="importType === 'ue'" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Cycle et filière / parcours de la maquette</label>
+          <select [(ngModel)]="selectedImportParcoursId" [disabled]="parcoursLoading || parcoursList.length === 0" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white disabled:bg-gray-100 disabled:cursor-not-allowed">
+            <option value="">{{ parcoursLoading ? 'Chargement des parcours…' : 'Sélectionner un parcours' }}</option>
+            <option *ngFor="let p of parcoursList" [value]="p.id">{{ p.type || 'Cycle non renseigné' }} — {{ p.titre }}</option>
+          </select>
+          <p *ngIf="parcoursLoadError && !parcoursLoading" class="mt-1 text-xs text-red-600">Aucun parcours chargé. Vérifiez que le backend est démarré et rechargez la page.</p>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Semestre de la maquette</label>
+          <select [(ngModel)]="selectedImportSemestre" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white">
+            <option value="">Détecter ou choisir</option>
+            <option value="semestre1">Semestre 1</option><option value="semestre2">Semestre 2</option>
+            <option value="semestre3">Semestre 3</option><option value="semestre4">Semestre 4</option>
+            <option value="semestre5">Semestre 5</option><option value="semestre6">Semestre 6</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Rappel de sélection de parcours -->
+      <div *ngIf="!importResult && importType === 'ue' && !selectedImportParcoursId" class="mb-4">
+        <app-custom-alert title="Sélectionnez un parcours avant l'import." type="warning" [inline]="true"></app-custom-alert>
+      </div>
+
+      <!-- Zone de dépôt de fichier -->
+      <div class="mb-6">
+        <div (click)="openFilePicker()" (dragover)="onDragOver($event)" (drop)="onDrop($event)"
+          class="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-gray-50/50 transition-colors">
+          <input type="file" id="fileInput" accept=".xlsx,.xls,.docx" (change)="onFileSelected($event)" class="hidden">
+          <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16V8m0 0l-3 3m3-3l3 3m3-3h5a2 2 0 012 2v10a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h5"></path>
+          </svg>
+          <p class="mt-4 text-sm text-gray-600">
+            <span class="font-semibold">Cliquez pour sélectionner</span> ou glissez-déposez votre fichier ici
+          </p>
+          <p class="mt-1 text-xs text-gray-400">Formats : .xlsx, .xls ou .docx. Votre fichier maquette (2 lignes d'en-tête : CODE DE L'UE / INTITULE DES ENSEIGNEMENTS, colonnes TYPE/CM/TD-TP/TPE/TOTAL/TOTAL PRESENTIEL/CREDIT/ENSEIGNANT) sera analysé pour créer automatiquement les UE et chacun de leurs ECUE. Les sections MINEURES/MAJEURES/LIBRES et la ligne TOTAL SEMESTRE sont gérées automatiquement. La colonne ENSEIGNANT n'est pas encore importée (les enseignants seront rattachés plus tard).</p>
+          <p *ngIf="selectedFile" class="mt-2 text-sm text-gray-700 font-medium">{{ selectedFile.name }}</p>
+        </div>
+      </div>
+
+      <!-- Boutons d'action -->
+      <div class="flex flex-wrap items-center gap-4 mb-6">
         <button (click)="telechargerTemplate()"
           class="inline-flex items-center px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-xl transition-colors">
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -152,28 +203,22 @@
           </svg>
           Télécharger le template
         </button>
-      </div>
-
-      <div (click)="openFilePicker()" (dragover)="onDragOver($event)" (drop)="onDrop($event)"
-        class="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-gray-50/50 transition-colors">
-        <input type="file" id="fileInput" accept=".xlsx,.xls" (change)="onFileSelected($event)" class="hidden">
-        <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16V8m0 0l-3 3m3-3l3 3m3-3h5a2 2 0 012 2v10a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h5"></path>
-        </svg>
-        <p class="mt-4 text-sm text-gray-600">
-          <span class="font-semibold">Cliquez pour sélectionner</span> ou glissez-déposez votre fichier Excel ici
-        </p>
-        <p class="mt-1 text-xs text-gray-400">Formats supportés : .xlsx, .xls</p>
-        <p *ngIf="selectedFile" class="mt-2 text-sm text-gray-700 font-medium">{{ selectedFile.name }}</p>
-      </div>
-
-      <div class="mt-6 flex items-center justify-between">
-        <button (click)="importer()"
-          [disabled]="!selectedFile || importing"
-          class="inline-flex items-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+        <button type="button" (click)="importer()"
+          [disabled]="importing"
+          class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed">
+          <span class="material-symbols-outlined text-base">upload_file</span>
           <span *ngIf="importing">Importation en cours…</span>
-          <span *ngIf="!importing">Importer</span>
+          <span *ngIf="!importing">Importer la maquette</span>
         </button>
+      </div>
+
+      <!-- Info fichier -->
+      <div class="mt-6 flex flex-col gap-3 rounded-xl border border-emerald-100 bg-emerald-50/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="text-sm text-emerald-900">
+          <strong *ngIf="selectedFile">Fichier prêt :</strong>
+          <span *ngIf="selectedFile"> {{ selectedFile.name }}</span>
+          <span *ngIf="!selectedFile">Sélectionnez un fichier pour activer l'import.</span>
+        </div>
         <button *ngIf="selectedFile"
           (click)="resetImport()"
           class="text-sm text-gray-500 hover:text-gray-700 font-medium">
@@ -205,7 +250,7 @@
               <tr class="bg-gray-50/50">
                 <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">#</th>
                 <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Statut</th>
-                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Email</th>
+                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">{{ importType === 'ue' ? 'Ligne/Référence' : 'Email' }}</th>
                 <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Message</th>
               </tr>
             </thead>
@@ -218,7 +263,7 @@
                     {{ detail.statut }}
                   </span>
                 </td>
-                <td class="px-4 py-3 text-sm text-gray-700">{{ detail.email || '—' }}</td>
+                <td class="px-4 py-3 text-sm text-gray-700">{{ importType === 'ue' ? (detail.code ?? detail.ligne ?? i + 1) : (detail.email || '—') }}</td>
                 <td class="px-4 py-3 text-sm text-gray-700">{{ detail.message }}</td>
               </tr>
             </tbody>

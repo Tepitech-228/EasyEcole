@@ -33,6 +33,7 @@ export class Cours {
 
   declare volumeHoraire?: number
   declare coefficient?: number
+  declare categorieUe?: 'MINEURE' | 'MAJEURE' | 'LIBRE'
 
   declare readonly createdAt?: Date
   declare readonly updatedAt?: Date

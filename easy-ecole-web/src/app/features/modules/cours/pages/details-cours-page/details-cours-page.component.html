@@ -12,6 +12,9 @@
                     <img src="assets/icons/category-light.svg" alt="icon">
                     <div class="px-2 text-sm">{{ cours.classe ? cours.classe.libelle : '---' }}</div>
                 </div>
+                <span *ngIf="cours.categorieUe" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-indigo-50 text-indigo-700">
+                    UE {{ cours.categorieUe | lowercase }}
+                </span>
             </div>
         </app-header-title>
         <div class="flex justify-end items-center gap-x-4">
@@ -181,6 +184,11 @@
                             <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">Libellé</th>
                             <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">Crédits ECTS</th>
                             <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">Coefficient</th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">CM</th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">TD/TP</th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">TPE</th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">Type</th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">Enseignant</th>
                             <th *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-right">Actions</th>
                         </tr>
                     </thead>
@@ -190,6 +198,11 @@
                             <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.libelle }}</td>
                             <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.creditEcts ?? '—' }}</td>
                             <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.coefficient ?? '1' }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.cmHoraire ?? '—' }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.tdTpHoraire ?? '—' }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.tpeHoraire ?? '—' }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600 font-medium">{{ ecue.type ?? '—' }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{{ nomEnseignant(ecue) }}</td>
                             <td *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" class="px-4 py-3 text-sm text-right whitespace-nowrap">
                                 <button (click)="openEcueModal(ecue)" class="text-indigo-600 hover:text-indigo-800 mr-4 font-medium">Modifier</button>
                                 <button (click)="supprimerEcue(ecue)" class="text-red-600 hover:text-red-800 font-medium">Supprimer</button>
@@ -389,6 +402,38 @@
                 <span class="mb-2 block text-sm text-gray-400">Coefficient</span>
                 <input type="number" formControlName="coefficient" placeholder="Ex: 2"
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <div class="col-span-2">
+                <span class="mb-2 block text-sm text-gray-400">CM</span>
+                <input type="number" formControlName="cmHoraire" min="0" placeholder="0"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm">
+            </div>
+            <div class="col-span-2">
+                <span class="mb-2 block text-sm text-gray-400">TD / TP</span>
+                <input type="number" formControlName="tdTpHoraire" min="0" placeholder="0"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm">
+            </div>
+            <div class="col-span-2">
+                <span class="mb-2 block text-sm text-gray-400">TPE</span>
+                <input type="number" formControlName="tpeHoraire" min="0" placeholder="0"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm">
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Type</span>
+                <select formControlName="type" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm">
+                    <option [ngValue]="null">Sélectionner</option>
+                    <option value="F">F</option><option value="T">T</option><option value="S">S</option>
+                    <option value="C">C</option><option value="L">L</option><option value="M">M</option>
+                </select>
+            </div>
+            <div class="col-span-3">
+                <span class="mb-2 block text-sm text-gray-400">Enseignant</span>
+                <select formControlName="enseignantId" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm">
+                    <option [ngValue]="null">Non affecté</option>
+                    <option *ngFor="let enseignant of enseignants" [value]="enseignant.id">
+                        {{ enseignant.utilisateur?.prenoms }} {{ enseignant.utilisateur?.nom }}
+                    </option>
+                </select>
             </div>
         </div>
     </form>

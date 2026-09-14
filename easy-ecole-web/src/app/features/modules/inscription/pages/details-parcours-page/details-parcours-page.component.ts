@@ -56,6 +56,7 @@ export class DetailsParcoursPageComponent extends BaseComponentClass implements 
     semestre: new FormControl(null, [Validators.required]),
     volumeHoraire: new FormControl(null, []),
     coefficient: new FormControl(null, []),
+    categorieUe: new FormControl(null, []),
   })
   readonly semestresParcours = SemestresParcours
 
@@ -176,6 +177,7 @@ export class DetailsParcoursPageComponent extends BaseComponentClass implements 
       cours.objectifs = this.coursForm.get('objectifs')!.value
       cours.volumeHoraire = this.coursForm.get('volumeHoraire')!.value
       cours.coefficient = this.coursForm.get('coefficient')!.value
+      cours.categorieUe = this.coursForm.get('categorieUe')!.value
 
       this.coursService.create(cours).subscribe({
         next: (res) => {
@@ -216,6 +218,7 @@ export class DetailsParcoursPageComponent extends BaseComponentClass implements 
       cours.objectifs = this.coursForm.get('objectifs')!.value
       cours.volumeHoraire = this.coursForm.get('volumeHoraire')!.value
       cours.coefficient = this.coursForm.get('coefficient')!.value
+      cours.categorieUe = this.coursForm.get('categorieUe')!.value
 
       this.coursService.update(cours).subscribe({
         next: (res) => {
@@ -289,6 +292,7 @@ export class DetailsParcoursPageComponent extends BaseComponentClass implements 
     this.coursForm.get('objectifs')!.setValue(this.selectedCours?.objectifs)
     this.coursForm.get('volumeHoraire')!.setValue(this.selectedCours?.volumeHoraire)
     this.coursForm.get('coefficient')!.setValue(this.selectedCours?.coefficient)
+    this.coursForm.get('categorieUe')!.setValue(this.selectedCours?.categorieUe)
 
     this.showEditerCoursModal = true
   }

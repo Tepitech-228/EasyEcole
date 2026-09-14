@@ -42,7 +42,7 @@ export default class DesignationMemoireController {
 
     static async getAll(req: Request, res: Response): Promise<Response> {
         if (!DesignationMemoireController.hasAccesLectureComplet(req) && !DesignationMemoireController.estApprenant(req)) {
-            return res.status(403).json({ success: false, message: "Accès réservé à l'administration, au comité d'orientation, au cabinet comptable et aux apprenants concernés" });
+            return res.status(403).json({ success: false, message: "Accès réservé à l'administration, au comité d'orientation, à l'Audit et aux apprenants concernés" });
         }
 
         const page = Math.max(1, parseInt(String(req.query.page)) || 1);
@@ -89,7 +89,7 @@ export default class DesignationMemoireController {
 
     static async getById(req: Request, res: Response): Promise<Response> {
         if (!DesignationMemoireController.hasAccesLectureComplet(req) && !DesignationMemoireController.estApprenant(req)) {
-            return res.status(403).json({ success: false, message: "Accès réservé à l'administration, au comité d'orientation, au cabinet comptable et aux apprenants concernés" });
+            return res.status(403).json({ success: false, message: "Accès réservé à l'administration, au comité d'orientation, à l'Audit et aux apprenants concernés" });
         }
 
         const id = Number(req.params.id);

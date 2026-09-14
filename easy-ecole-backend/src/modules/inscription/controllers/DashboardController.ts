@@ -483,98 +483,20 @@ class DashboardController {
     }
 
     private static async getComptableDashboard() {
-        const [totalPaiements, totalBordereaux, totalEcheances, echeancesImpayees, montantTotal] = await Promise.all([
-            PaiementInscription.count(),
+        const [totalBordereaux, valides, rejetes] = await Promise.all([
             Bordereau.count(),
-            Echeance.count(),
-            Echeance.count({ where: { statut: 'impaye' } }),
-            PaiementInscription.sum('montant'),
+            Bordereau.count({ where: { statut: 'valide' } }),
+            Bordereau.count({ where: { statut: 'rejete' } }),
         ]);
-
-        // ── Données graphiques « type finance » (CABINET_COMPTABLE) ─────────
-        const charts = await DashboardController.getComptableFinanceCharts();
 
         return {
             success: true,
             role: 'comptable',
             data: {
-                totalPaiements,
                 totalBordereaux,
-                totalEcheances,
-                echeancesImpayees,
-                montantTotal: montantTotal || 0,
-                charts,
+                valides,
+                rejetes,
             }
-        };
-    }
-
-    /**
-     * Séries « type finance » pour le dashboard CABINET_COMPTABLE.
-     * - encaissementsParMois : montant encaissé par mois (courbe de trésorerie / finance).
-     * - repartitionModes    : montants par moyen de paiement (doughnut).
-     * - fluxRecettesDepenses : recettes encaissées vs échéances impayées par mois (barres).
-     */
-    private static async getComptableFinanceCharts(): Promise<any> {
-        const annee = new Date().getFullYear();
-        const debut = new Date(annee, 0, 1);
-        const fin = new Date(annee, 11, 31, 23, 59, 59);
-
-        const encaisseParMois = await PaiementInscription.findAll({
-            where: { datePaiement: { [Op.between]: [debut, fin] } },
-            attributes: [
-                [fn('MONTH', col('datePaiement')), 'mois'],
-                [fn('SUM', col('montant')), 'total'],
-            ],
-            group: [fn('MONTH', col('datePaiement'))],
-            raw: true,
-        });
-
-        const parMois: number[] = Array(12).fill(0);
-        for (const p of encaisseParMois as any[]) {
-            const mois = Number(p.mois) - 1;
-            if (mois >= 0 && mois <= 11) parMois[mois] = Number(p.total) || 0;
-        }
-
-        const impayeesParMois = await Echeance.findAll({
-            where: {
-                statut: { [Op.in]: ['impaye', 'en_retard'] },
-                dateLimite: { [Op.between]: [debut, fin] },
-            },
-            attributes: [
-                [fn('MONTH', col('dateLimite')), 'mois'],
-                [fn('SUM', col('montant')), 'total'],
-            ],
-            group: [fn('MONTH', col('dateLimite'))],
-            raw: true,
-        });
-        const depensesParMois: number[] = Array(12).fill(0);
-        for (const e of impayeesParMois as any[]) {
-            const mois = Number(e.mois) - 1;
-            if (mois >= 0 && mois <= 11) depensesParMois[mois] = Number(e.total) || 0;
-        }
-
-        // Répartition par moyen de paiement (bordereaux)
-        const parMode = await Bordereau.findAll({
-            where: { moyenPaiement: { [Op.ne]: null } },
-            attributes: [
-                'moyenPaiement',
-                [fn('SUM', col('montant')), 'total'],
-            ],
-            group: ['moyenPaiement'],
-            raw: true,
-        });
-        const modeMap = new Map<string, number>();
-        for (const b of parMode as any[]) {
-            const k = b.moyenPaiement || 'Autre';
-            modeMap.set(k, Number(b.total) || 0);
-        }
-        const repartitionModes = Array.from(modeMap.entries()).map(([mode, montant]) => ({ mode, montant }));
-
-        return {
-            encaissementsParMois: parMois,
-            depensesParMois: impayeesParMois.length ? depensesParMois : [],
-            moisLabels: ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'],
-            repartitionModes,
         };
     }
 

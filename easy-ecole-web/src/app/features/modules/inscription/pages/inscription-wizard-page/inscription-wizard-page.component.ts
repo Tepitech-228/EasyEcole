@@ -33,7 +33,7 @@ interface FiliereSelection {
  *            OCR branché via un service d'extraction extensible ; sans moteur
  *            configuré, un formulaire vierge à compléter est proposé)
  *  ÉTAPE 4 : récapitulatif + soumission
- *  ÉTAPE 5 : statut d'inscription (pipeline : soumis → authentifié (cabinet)
+ *  ÉTAPE 5 : statut d'inscription (pipeline : soumis → authentifié (Audit)
  *            → transmis comité → validé) ; en cas de correction comptable,
  *            l'étape concernée passe en orange + notification mail.
  */
@@ -638,7 +638,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   /**
    * Soumission du dossier = demande d'autorisation provisoire d'inscription.
    * NOTE : le chargement du bordereau suit ici le même parcours déjà établi
-   * (pipeline Cabinet → ESA-Compta → Comité).
+   * (pipeline Audit → Service Recouvrement → Comité).
    *
    * On réutilise les endpoints existants de la 1ère inscription (non-régression) :
    *   1) POST /demandes-inscription            → crée la demande (demande d'autorisation)
@@ -691,30 +691,21 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
               })
 
               if (existingDemande) {
-                const parcoursChoisi = new ParcoursChoisi()
-                parcoursChoisi.parcoursId = String(this.filiereChoisie!.id)
-                parcoursChoisi.demandeInscriptionId = existingDemande.id!
-                parcoursChoisi.choixFinal = true
-
-                this.parcoursChoisiService.create(parcoursChoisi).subscribe({
-                  next: () => {
-                    this.finaliserFichiers(existingDemande.id!)
-                  },
-                  error: (err) => {
-                    this.submitting = false
-                    this.errorMessage = err?.error?.message || 'La demande a été créée mais le parcours n\'a pas pu être rattaché.'
-                    this.etape = 5
-                    this.resultat = { statutPipeline: 'soumis' }
-                  }
-                })
+                this.errorMessage = 'Une demande existe déjà pour cette session. Vous pouvez suivre son avancement depuis vos demandes.'
+                this.etape = 5
+                this.resultat = { statutPipeline: 'soumis', demandeId: existingDemande.id }
               } else {
                 this.errorMessage = 'Vous avez déjà une demande pour cette session.'
                 this.submitting = false
+                this.etape = 5
+                this.resultat = { statutPipeline: 'soumis' }
               }
             },
             error: () => {
               this.submitting = false
               this.errorMessage = 'Vous avez déjà une demande pour cette session.'
+              this.etape = 5
+              this.resultat = { statutPipeline: 'soumis' }
             }
           })
         } else {
@@ -754,7 +745,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   /**
    * Téléverse les documents de session (pièces requises) puis le bordereau,
    * rattachés à la demande d'inscription passée en paramètre.
-   * Le bordereau suit le pipeline Cabinet → ESA-Compta → Comité (BordereauService).
+   * Le bordereau suit le pipeline Audit → Service Recouvrement → Comité (BordereauService).
    * En cas d'échec d'un téléversement, on arrête (pas de continuation silencieuse
    * ni de « dossier soumis » abusif).
    */
@@ -824,7 +815,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     const statut = this.resultat?.statutPipeline || 'soumis'
     const steps = [
       { key: 'soumis', label: 'Soumis' },
-      { key: 'authentifie', label: 'Authentifié (cabinet)' },
+      { key: 'authentifie', label: 'Authentifié (Audit)' },
       { key: 'transmis_comite', label: 'Transmis au comité' },
       { key: 'valide', label: 'Validé' }
     ]

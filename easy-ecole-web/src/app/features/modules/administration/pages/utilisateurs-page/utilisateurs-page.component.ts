@@ -33,10 +33,10 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
     [RolesUtilisateur.ENSEIGNANT]: 'Enseignant',
     [RolesUtilisateur.CAISSIER_BANQUE]: 'Caissier Banque',
     [RolesUtilisateur.RESSOURCES_HUMAINES]: 'Ressources Humaines',
-    [RolesUtilisateur.CABINET_COMPTABLE]: 'Cabinet Comptable',
+    [RolesUtilisateur.CABINET_COMPTABLE]: 'Audit',
     [RolesUtilisateur.COMITE_ORIENTATION]: "Comité d'Orientation",
     [RolesUtilisateur.PERSONNEL_ADMINISTRATIF]: 'Personnel Administratif',
-    [RolesUtilisateur.ESA_COMPTA]: 'ESA Compta',
+    [RolesUtilisateur.ESA_COMPTA]: 'Service Recouvrement',
     [RolesUtilisateur.PARENT]: 'Parent',
     [RolesUtilisateur.SECRETAIRE]: 'Secrétaire',
   }

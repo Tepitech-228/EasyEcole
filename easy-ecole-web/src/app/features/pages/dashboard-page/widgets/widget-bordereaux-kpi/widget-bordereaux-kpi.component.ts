@@ -10,7 +10,7 @@ interface PaymentStat {
 }
 
 /**
- * Widget d'accueil « ESA-Compta » : KPI + graphiques de suivi des bordereaux.
+ * Widget d'accueil « Service Recouvrement » : KPI + graphiques de suivi des bordereaux.
  * Auto-alimenté via BordereauService.getAImputer() — mêmes données (et mêmes
  * calculs) que la page de traitement /inscription/finance/bordereaux.
  */

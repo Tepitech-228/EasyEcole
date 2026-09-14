@@ -98,7 +98,7 @@ router
      * /inscription/bordereaux/{id}/valider:
      *   put:
      *     tags: [Bordereaux]
-     *     summary: Valide un bordereau (cabinet comptable uniquement)
+     *     summary: Valide un bordereau (Audit uniquement)
      *     security: [{ bearerAuth: [] }]
      *     parameters:
      *       - in: path
@@ -125,7 +125,7 @@ router
      * /inscription/bordereaux/{id}/rejeter:
      *   put:
      *     tags: [Bordereaux]
-     *     summary: Rejette un bordereau (cabinet comptable uniquement)
+     *     summary: Rejette un bordereau (Audit uniquement)
      *     security: [{ bearerAuth: [] }]
      *     parameters:
      *       - in: path
@@ -154,7 +154,7 @@ router
      * /inscription/bordereaux/{id}/traiter:
      *   put:
      *     tags: [Bordereaux]
-     *     summary: Traite un bordereau (cabinet comptable) — saisie type/montant constaté + cascade FIFO
+     *     summary: Traite un bordereau (Audit) — saisie type/montant constaté + cascade FIFO
      *     security: [{ bearerAuth: [] }]
      *     parameters:
      *       - in: path

@@ -254,7 +254,7 @@ export default class ReinscriptionController {
      * (GED), puis crée le bordereau de paiement REINSCRIPTION. Aucun nouveau
      * `DossierEtudiant` n'est créé : on réutilise l'existant (règle réinscription).
      *
-     * Le pipeline (Cabinet → ESA Compta → Comité) fonctionne ensuite tel quel :
+     * Le pipeline (Audit → Service Recouvrement → Comité) fonctionne ensuite tel quel :
      * `BordereauController.validerBordereau` retrouve la dernière demande de
      * l'utilisateur (la notre) et la fait passer de 'soumis' à 'authentifie'.
      *
@@ -390,7 +390,7 @@ export default class ReinscriptionController {
                     matricule: demande.matricule,
                     statutPipeline: 'soumis',
                     bordereauId: bordereau.id,
-                    message: "Dossier de réinscription soumis avec succès. Il part à la validation du cabinet comptable.",
+                    message: "Dossier de réinscription soumis avec succès. Il part à la validation de l'Audit.",
                 })
             } catch (error) {
                 await transaction.rollback()

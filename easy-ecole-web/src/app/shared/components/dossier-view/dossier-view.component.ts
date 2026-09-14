@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 export interface DossierNode {
-  type: 'annee' | 'niveau' | 'parcours' | 'classe' | 'salle' | 'etudiant' | 'item';
+  type: 'annee' | 'niveau' | 'parcours' | 'semestre' | 'classe' | 'salle' | 'etudiant' | 'item';
   label: string;
   subtitle?: string;
   id?: string;
@@ -45,6 +45,12 @@ export class DossierViewComponent {
   @Input() itemActions: BatchAction[] = [];
   @Input() level: number = 0;
   /**
+   * Quand `true`, un clic sur la ligne d'un nœud bascule son état `expanded`
+   * (si le nœud possède des children ou des items). Les pages qui ne veulent
+   * pas ce comportement laissent la valeur par défaut `false`.
+   */
+  @Input() clickToExpand: boolean = false;
+  /**
    * Comportement historique : les batchActions sont aussi affichées sur chaque
    * ligne (fusionnées avec itemActions). Mettre à false quand la page définit
    * déjà toutes ses actions par ligne dans itemActions, afin d'éviter les
@@ -69,6 +75,17 @@ export class DossierViewComponent {
   toggleExpand(node: DossierNode): void {
     node.expanded = !node.expanded;
     this.toggleNode.emit(node);
+  }
+
+  /**
+   * Gestion du clic sur la ligne d'un nœud.
+   * Si `clickToExpand` est vrai ET que le nœud a des enfants ou des items,
+   * on bascule `expanded`. Sinon on ne fait rien (comportement préservé).
+   */
+  onNodeClick(node: DossierNode): void {
+    if (this.clickToExpand && (node.children?.length || node.items?.length)) {
+      this.toggleExpand(node);
+    }
   }
 
   toggleSelect(node: DossierNode): void {
@@ -200,7 +217,7 @@ export class DossierViewComponent {
       case 'annee': return 'calendar_month';
       case 'niveau': return 'school';
       case 'parcours': return 'route';
-      case 'classe': return 'meeting_room';
+      case 'semestre': return 'schedule';
       case 'salle': return 'door_front';
       case 'etudiant': return 'person';
       case 'item': return 'description';
@@ -214,6 +231,9 @@ export class DossierViewComponent {
       case 'validee': case 'valide': return 'green';
       case 'rejetee': case 'rejete': return 'red';
       case 'delivree': return 'blue';
+      case 'impaye': return 'red';
+      case 'partiel': return 'orange';
+      case 'en_retard': return 'red';
       default: return 'gray';
     }
   }
