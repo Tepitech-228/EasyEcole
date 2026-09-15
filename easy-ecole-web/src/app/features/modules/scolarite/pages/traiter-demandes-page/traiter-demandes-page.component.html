@@ -40,15 +40,6 @@
     </div>
   </div>
 
-  <!-- Batch toolbar -->
-  <app-batch-toolbar
-    [selectedCount]="selectedIds.length"
-    [actions]="batchActions"
-    [loading]="batchLoading"
-    (action)="onBatchAction({ action: $event, ids: selectedIds })"
-    (deselectAll)="selectedIds = []">
-  </app-batch-toolbar>
-
   <!-- Dossier tree view -->
   <app-dossier-view
     [nodes]="treeNodes"

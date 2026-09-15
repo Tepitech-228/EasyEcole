@@ -49,6 +49,8 @@ router
      */
     .post('/', DemandeDocumentController.createDemandeDocument)
      .put('/batch/statut', [AuthSecretariat], DemandeDocumentController.batchStatut)
+    .get('/autorisations-provisoires', [AuthSecretariat], DemandeDocumentController.getAutorisationsProvisoires)
+    .get('/autorisations-provisoires/:id/download', [AuthSecretariat], DemandeDocumentController.telechargerAutorisationProvisoire)
     /**
      * @openapi
      * /scolarite/demandesDocument/{id}:

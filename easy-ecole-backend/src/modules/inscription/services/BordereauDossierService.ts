@@ -33,6 +33,9 @@ import { nombreEcheances } from "../services/GenerateurEcheancierSessionService"
 import { SnapshotService } from "../services/SnapshotService";
 import { TarifService } from "../services/TarifService";
 import { TypesPaiement } from "../../../core/enums/TypesPaiement";
+import { DemandeDocument } from "../../scolarite/models/DemandeDocument";
+import { TypeDocument } from "../../scolarite/models/TypeDocument";
+import { DocGenGeneratorService } from "../../docgen/services/DocGenGeneratorService";
 import path from "path";
 import fs from "fs";
 
@@ -690,6 +693,64 @@ export class BordereauDossierService {
             transaction
         })
         savedCursusId = savedCursus.id
+
+        // L'autorisation provisoire est un livrable gratuit de la finalisation.
+        // La recherche préalable rend l'opération idempotente en cas de reprise.
+        const [typeAutorisation] = await TypeDocument.findOrCreate({
+            where: { libelle: "Autorisation provisoire d'inscription" },
+            defaults: {
+                libelle: "Autorisation provisoire d'inscription",
+                frais: 0,
+                categorie: 'inscription',
+                paiementObligatoire: false,
+                generationAuto: true,
+                actif: true,
+            },
+            transaction,
+        });
+        const autorisationExistante = await DemandeDocument.findOne({
+            where: {
+                etudiantId: demande.utilisateurId,
+                typeDocumentId: typeAutorisation.id,
+                source: 'automatique',
+            },
+            transaction,
+        });
+        if (!autorisationExistante) {
+            try {
+                const autorisation = await DocGenGeneratorService.generer({
+                    typeCode: 'API001',
+                    sourceType: 'cursus_apprenant',
+                    sourceId: savedCursus.id,
+                    utilisateurId: Number((req as any).utilisateurId),
+                    params: {
+                        demandeInscriptionId: demande.id,
+                        cursusApprenantId: savedCursus.id,
+                        etudiantId: demande.utilisateurId,
+                        anneeAcademiqueId: anneeId,
+                        parcoursId: parcoursFinal?.parcoursId,
+                        niveauEtudeId,
+                    },
+                }, req);
+                await DemandeDocument.create({
+                    etudiantId: demande.utilisateurId,
+                    typeDocumentId: typeAutorisation.id,
+                    statut: 'document_pret',
+                    fraisPayes: true,
+                    source: 'automatique',
+                    montant: 0,
+                    parcoursId: parcoursFinal?.parcoursId ?? null,
+                    niveauEtudeId: niveauEtudeId ?? null,
+                    classeId: classeDerivee?.id ?? null,
+                    anneeAcademiqueId: anneeId ?? null,
+                    numeroDemande: autorisation.reference,
+                    dateGeneration: new Date(),
+                    fichierPDF: autorisation.filePath,
+                } as any, { transaction });
+            } catch (docGenError) {
+                console.error("[AffectationPédagogique] Erreur génération autorisation provisoire (non bloquante):", docGenError);
+            }
+        }
 
         if (!classeDerivee?.id) {
             console.info(`[AffectationPédagogique] Cursus créé sans classe affectée (utilisateur ${utilisateurId}) : à affecter ultérieurement.`)

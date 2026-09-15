@@ -28,6 +28,8 @@ import { ClotureCaissePageComponent } from './pages/cloture-caisse-page/cloture-
 import { FicheDemandePageComponent } from './pages/fiche-demande-page/fiche-demande-page.component';
 import { EncaissementDemandePageComponent } from './pages/encaissement-demande-page/encaissement-demande-page.component';
 import { MesDocumentsPageComponent } from './pages/mes-documents-page/mes-documents-page.component';
+import { TypesDocumentsPageComponent } from './pages/types-documents-page/types-documents-page.component';
+import { AutorisationsProvisoiresPageComponent } from './pages/autorisations-provisoires-page/autorisations-provisoires-page.component';
 
 @NgModule({
   declarations: [
@@ -51,7 +53,9 @@ import { MesDocumentsPageComponent } from './pages/mes-documents-page/mes-docume
     ClotureCaissePageComponent,
     FicheDemandePageComponent,
     EncaissementDemandePageComponent,
-    MesDocumentsPageComponent
+    MesDocumentsPageComponent,
+    TypesDocumentsPageComponent,
+    AutorisationsProvisoiresPageComponent
   ],
   imports: [
     CommonModule,

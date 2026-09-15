@@ -23,6 +23,8 @@ import { ClotureCaissePageComponent } from './pages/cloture-caisse-page/cloture-
 import { FicheDemandePageComponent } from './pages/fiche-demande-page/fiche-demande-page.component';
 import { EncaissementDemandePageComponent } from './pages/encaissement-demande-page/encaissement-demande-page.component';
 import { MesDocumentsPageComponent } from './pages/mes-documents-page/mes-documents-page.component';
+import { TypesDocumentsPageComponent } from './pages/types-documents-page/types-documents-page.component';
+import { AutorisationsProvisoiresPageComponent } from './pages/autorisations-provisoires-page/autorisations-provisoires-page.component';
 
 const routes: Routes = [
   {
@@ -138,12 +140,17 @@ const routes: Routes = [
   },
   {
     path: 'secretariat/types-documents',
-    component: TraiterDemandesPageComponent,
+    component: TypesDocumentsPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'secretariat/autorisations-provisoires',
+    component: AutorisationsProvisoiresPageComponent,
     pathMatch: 'full'
   },
   {
     path: 'secretariat/journal-caisse',
-    component: TraiterDemandesPageComponent,
+    component: CaissePageComponent,
     pathMatch: 'full'
   },
   {

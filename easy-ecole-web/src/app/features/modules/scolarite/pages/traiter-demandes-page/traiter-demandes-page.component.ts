@@ -71,13 +71,8 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
   // Action individuelle sur une ligne
   itemActions: BatchAction[] = [
     { label: 'Visualiser', color: 'gray', action: 'voir', icon: 'pageview' },
-    { label: 'Confirmer le paiement', color: 'green', action: 'confirmerPaiement', icon: 'paid' },
-    { label: 'Valider', color: 'blue', action: 'valider', icon: 'verified' },
-    { label: 'Préparer', color: 'blue', action: 'preparer', icon: 'inventory_2' },
     { label: 'Générer', color: 'indigo', action: 'generer', icon: 'description' },
-    { label: 'Imprimer', color: 'orange', action: 'imprimer', icon: 'print' },
-    { label: 'Remettre', color: 'green', action: 'remettre', icon: 'handshake' },
-    { label: 'Rejeter', color: 'red', action: 'rejeter', icon: 'block' }
+    { label: 'Imprimer', color: 'orange', action: 'imprimer', icon: 'print' }
   ];
 
   // Columns for item display

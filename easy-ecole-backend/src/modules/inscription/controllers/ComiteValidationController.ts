@@ -14,6 +14,7 @@ import { ParcoursChoisi } from "../models/ParcoursChoisi";
 import { BordereauDossierService } from "../services/BordereauDossierService";
 import { EtatPreInscription, PreInscription } from "../models/PreInscription";
 
+const STATUTS_COMITE = ['transmis_comite', 'authentifie']
 const PIPELINE_COMITE = 'transmis_comite'
 
 const inclureTout = () => [
@@ -39,7 +40,7 @@ export default class ComiteValidationController {
 
     /**
      * GET /comite-validations/dossiers
-     * Liste les dossiers transmis au comité (statutPipeline = 'transmis_comite').
+     * Liste les dossiers transmis au comité (statutPipeline = 'transmis_comite' ou 'authentifie').
      * ?tous=true → retourne tous les dossiers du pipeline (historique).
      */
     static async listerDossiers(req: Request, res: Response): Promise<Response> {
@@ -51,7 +52,7 @@ export default class ComiteValidationController {
 
             const where: any = req.query.tous === 'true'
                 ? { statutPipeline: { [Op.ne]: null } }
-                : { statutPipeline: PIPELINE_COMITE }
+                : { statutPipeline: { [Op.in]: STATUTS_COMITE } }
 
             const demandes = await DemandeInscription.findAll({
                 where,
@@ -185,7 +186,7 @@ export default class ComiteValidationController {
                 await transaction.rollback()
                 return res.status(404).json({ success: false, message: "Dossier non trouvé" })
             }
-            if (demande.statutPipeline !== PIPELINE_COMITE) {
+            if (!STATUTS_COMITE.includes(demande.statutPipeline as string)) {
                 await transaction.rollback()
                 return res.status(400).json({ success: false, message: "Ce dossier n'est pas en attente de validation du comité" })
             }

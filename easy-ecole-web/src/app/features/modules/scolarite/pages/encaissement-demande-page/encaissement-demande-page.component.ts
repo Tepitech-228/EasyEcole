@@ -54,7 +54,7 @@ export class EncaissementDemandePageComponent extends BaseComponentClass impleme
   // Actions disponibles par ligne
   itemActions: BatchAction[] = [
     { label: 'Encaisser', color: 'green', action: 'encaisser', icon: 'payments' },
-    { label: 'Générer le reçu', color: 'indigo', action: 'genererRecu', icon: 'picture_as_pdf' }
+    { label: 'Reçu', color: 'blue', action: 'genererRecu', icon: 'receipt_long' }
   ];
 
   // Colonnes du tableau de feuilles

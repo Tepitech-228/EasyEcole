@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import ExcelJS from "exceljs";
 import mammoth from "mammoth";
 import * as cheerio from "cheerio";
-import { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun, WidthType } from "docx";
+import * as path from "path";
 import * as fs from "fs";
 import * as bcrypt from "bcrypt";
 import { Op } from "sequelize";
@@ -21,6 +21,7 @@ import { SemestreAcademique } from "../models/SemestreAcademique";
 import { ParentEnfant } from "../../parent/models/ParentEnfant";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { QUEUE_NAMES, QueueService } from "../../../core/queue/QueueService";
+import { Document, Paragraph, Table, TableRow, TableCell, TableBorders, TextRun, AlignmentType, VerticalAlign, WidthType, VerticalMerge, GridSpan, Packer, TableLayoutType } from "docx";
 
 // ---------------------------------------------------------------------------
 //  UTILITIES
@@ -28,6 +29,11 @@ import { QUEUE_NAMES, QueueService } from "../../../core/queue/QueueService";
 
 const TEMP_DIR = "public/excel/";
 if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
+
+const WORD_TEMPLATE_PATHS: Record<string, string> = {
+  "master-gc": "master-pro-gc-esa-2025.docx",
+  "licence-act": "licence-pro-act-esa-2025.docx",
+};
 
 /** Genère un mot de passe temporaire aléatoire */
 function generateTempPassword(): string {
@@ -166,7 +172,7 @@ function applyDataStyle(row: ExcelJS.Row): void {
 // ---------------------------------------------------------------------------
 
 function normalizeText(text: string): string {
-  return text.replace(/\u00A0/g, ' ').replace(/\u2013/g, '-').replace(/\u2019/g, "'").replace(/\s+/g, ' ').trim();
+  return text.replace(/\u00A0/g, ' ').replace(/\u2013/g, '-').replace(/[\u2018\u2019]/g, "'").replace(/\s+/g, ' ').trim();
 }
 
 function parseCellRef(ref: string): { row: number; col: number } | null {
@@ -210,61 +216,54 @@ function detectFormat(headerRow: string[]): 'A' | 'B' {
   return 'A';
 }
 
-async function lireTableauWord(filePath: string): Promise<string[][]> {
+export async function lireTableauWord(filePath: string): Promise<string[][]> {
   const result = await mammoth.convertToHtml({ path: filePath });
   const $ = cheerio.load(result.value);
-  const table = $('table').first();
-  if (table.length === 0) throw new Error("Impossible de trouver un tableau dans le document Word");
+  if ($('table').length === 0) throw new Error("Impossible de trouver un tableau dans le document Word");
 
-  const rawRows: { cells: { text: string; rowspan: number; colspan: number }[] }[] = [];
-  table.find('tr').each((_i, el) => {
-    const cells: { text: string; rowspan: number; colspan: number }[] = [];
-    $(el).find('td, th').each((_j, cell) => {
-      const cellEl = $(cell);
-      let text = cellEl.text().replace(/\s+/g, ' ').trim()
-        .replace(/\u00A0/g, ' ').replace(/\u2013/g, '-').replace(/\u2019/g, "'");
-      cells.push({ text, rowspan: parseInt(cellEl.attr('rowspan') || '1', 10), colspan: parseInt(cellEl.attr('colspan') || '1', 10) });
-    });
-    if (cells.length > 0) rawRows.push({ cells });
-  });
-  if (rawRows.length < 2) throw new Error("Le document Word doit contenir un tableau avec une ligne d'en-têtes et au moins une ligne de données");
-
-  const headerCols = rawRows[0].cells.reduce((sum, c) => sum + c.colspan, 0);
   const matrix: string[][] = [];
-  const activeRowspans: { text: string; remaining: number }[] = [];
+  $('table').each((_tableIndex, table) => {
+    const rawRows: { cells: { text: string; rowspan: number; colspan: number }[] }[] = [];
+    $(table).find('tr').each((_i, el) => {
+      const cells: { text: string; rowspan: number; colspan: number }[] = [];
+      $(el).find('td, th').each((_j, cell) => {
+        const cellEl = $(cell);
+        const text = normalizeText(cellEl.text());
+        cells.push({ text, rowspan: parseInt(cellEl.attr('rowspan') || '1', 10), colspan: parseInt(cellEl.attr('colspan') || '1', 10) });
+      });
+      if (cells.length > 0) rawRows.push({ cells });
+    });
+    if (rawRows.length < 2) return;
 
-  for (const rawRow of rawRows) {
-    const row: string[] = new Array(headerCols).fill('');
-    let col = 0;
-    for (let c = 0; c < headerCols; c++) {
-      if (c < activeRowspans.length && activeRowspans[c].remaining > 0) {
-        row[c] = activeRowspans[c].text;
-        activeRowspans[c].remaining--;
-        if (activeRowspans[c].remaining <= 0) activeRowspans[c] = { text: '', remaining: 0 };
+    // The two-level header has 10 visible cells, while data rows have 11.
+    // Keeping the maximum width prevents the teacher column from shifting data.
+    const headerCols = Math.max(11, ...rawRows.map(row => row.cells.reduce((sum, cell) => sum + cell.colspan, 0)));
+    const activeRowspans: { text: string; remaining: number }[] = [];
+    for (const rawRow of rawRows) {
+      const row: string[] = new Array(headerCols).fill('');
+      let col = 0;
+      for (const cell of rawRow.cells) {
+        while (col < headerCols && row[col] !== '') col++;
+        if (col >= headerCols) break;
+        row[col] = cell.text;
+        if (cell.rowspan > 1) {
+          for (let offset = 0; offset < cell.colspan && col + offset < headerCols; offset++) {
+            activeRowspans[col + offset] = { text: cell.text, remaining: cell.rowspan - 1 };
+          }
+        }
+        for (let offset = 1; offset < cell.colspan && col + offset < headerCols; offset++) row[col + offset] = '';
+        col += cell.colspan;
       }
-    }
-    for (const cell of rawRow.cells) {
-      while (col < headerCols && row[col] !== '') { col++; }
-      if (col >= headerCols) break;
-      row[col] = cell.text;
-      if (cell.rowspan > 1) {
-        for (let c = col; c < col + cell.colspan && c < headerCols; c++) {
-          while (activeRowspans.length <= c) activeRowspans.push({ text: '', remaining: 0 });
-          activeRowspans[c] = { text: cell.text, remaining: cell.rowspan - 1 };
+      for (let index = 0; index < headerCols; index++) {
+        if (!row[index] && activeRowspans[index]?.remaining > 0) {
+          row[index] = activeRowspans[index].text;
+          activeRowspans[index].remaining--;
         }
       }
-      for (let c = 1; c < cell.colspan && col + c < headerCols; c++) row[col + c] = '';
-      col += cell.colspan;
+      matrix.push(row);
     }
-    for (let c = col; c < headerCols; c++) {
-      if (c < activeRowspans.length && activeRowspans[c].remaining > 0) {
-        row[c] = activeRowspans[c].text;
-        activeRowspans[c].remaining--;
-        if (activeRowspans[c].remaining <= 0) activeRowspans[c] = { text: '', remaining: 0 };
-      }
-    }
-    matrix.push(row);
-  }
+  });
+  if (matrix.length < 1) throw new Error("Le document Word doit contenir au moins un tableau");
   return matrix;
 }
 
@@ -423,13 +422,25 @@ export default class ExcelController {
 
     try {
       const matrix = isWord ? await lireTableauWord(filePath) : await lireTableauExcel(filePath);
-      if (matrix.length < 2) return res.status(400).json({ success: false, message: "Le fichier ne contient pas de données suffisantes" });
+      if (matrix.length < 1) return res.status(400).json({ success: false, message: "Le fichier ne contient aucun tableau exploitable" });
 
       const format = detectFormat(matrix[0]);
-      const semestre = (req.body.semestre as string) || 'semestre1';
+      const semestreDemande = (req.body.semestre as string) || '';
       const parcoursTitre = (req.body.parcoursTitre as string) || '';
       let imported = 0, errors = 0, ignored = 0;
       const ignoredRows: { ligne: number; raison: string }[] = [];
+      const hasImportableData = matrix.slice(1).some(row => {
+        const text = row.map(cell => normalizeText(cell)).join(' ').toUpperCase();
+        return text.length > 0
+          && !text.includes('CODE DE L')
+          && !text.includes('CONTENUS DES ENSEIGNEMENTS')
+          && text !== 'UE ECUE'
+          && !text.includes("UNITES D'ENSEIGNEMENT")
+          && !text.includes('TOTAL SEMESTRE');
+      });
+      if (!hasImportableData) {
+        return res.status(200).json({ success: true, importedCount: 0, errorCount: 0, ignoredCount: matrix.length - 1, details: [], message: "Maquette vide importée" });
+      }
 
       if (format === 'A') {
         const headerRow = matrix[0].map(c => c.toUpperCase());
@@ -458,9 +469,9 @@ export default class ExcelController {
             const ecueType = (row[col('TYPE', 4) - 1] || '').toUpperCase() || null;
             const [cours, created] = await Cours.findOrCreate({
               where: { code, parcoursId: p.id },
-              defaults: { code, intitule, parcoursId: p.id, credit, creditEcts, semestre: semestre || undefined, coefficient: credit, volumeHoraire: cmHoraire + tdTpHoraire, estObligatoire: true, objectifs: null, enseignantId: null, categorieUe: null },
+              defaults: { code, intitule, parcoursId: p.id, credit, creditEcts, semestre: semestreDemande || 'semestre1', coefficient: credit, volumeHoraire: cmHoraire + tdTpHoraire, estObligatoire: true, objectifs: null, enseignantId: null, categorieUe: null },
             } as any);
-            if (!created) await cours.update({ intitule, credit, creditEcts, semestre: semestre || undefined, coefficient: credit, volumeHoraire: cmHoraire + tdTpHoraire, estObligatoire: true, objectifs: null, enseignantId: null, categorieUe: null } as any);
+            if (!created) await cours.update({ intitule, credit, creditEcts, semestre: semestreDemande || 'semestre1', coefficient: credit, volumeHoraire: cmHoraire + tdTpHoraire, estObligatoire: true, objectifs: null, enseignantId: null, categorieUe: null } as any);
             const ecueCode = row[col('CONTENUS DES ENSEIGNEMENTS', 3) - 1] || `${code}-${i}`;
             const ecueLibelle = row[col('CONTENUS DES ENSEIGNEMENTS', 3) - 1] || intitule;
             if (ecueCode) {
@@ -476,12 +487,26 @@ export default class ExcelController {
         let currentCategorieUe: 'MINEURE' | 'MAJEURE' | 'LIBRE' | null = null;
         let blockUeCode = '';
         let blockUeIntitule = '';
+        let blockSemestre = '';
         let blockEcueData: Array<{ ecueCode: string; ecueLibelle: string; cmHoraire: number; tdTpHoraire: number; tpeHoraire: number; creditEcts: number; type: string | null }> = [];
 
         if (!parcoursTitre) return res.status(400).json({ success: false, message: "Le parcours (parcoursTitre) est obligatoire pour le Format B" });
         const parcours = await resolveParcours(parcoursTitre);
         if (!parcours) return res.status(400).json({ success: false, message: `Parcours "${parcoursTitre}" introuvable` });
         const parcoursId = parcours.id;
+
+        const detectSemestre = (text: string): string | null => {
+          const match = normalizeText(text).match(/(?:TOTAL\s+)?SEMESTRE\s*([1-6])/i);
+          return match ? `semestre${match[1]}` : null;
+        };
+
+        const detectNextSemestre = (rowIndex: number): string => {
+          for (let index = rowIndex; index < matrix.length; index++) {
+            const detected = detectSemestre(matrix[index].join(' '));
+            if (detected) return detected;
+          }
+          return semestreDemande || 'semestre1';
+        };
 
         const parseMatiereCell = (cellValue: string): { ecueCode: string; ecueLibelle: string } | null => {
           const text = normalizeText(cellValue).trim();
@@ -500,9 +525,9 @@ export default class ExcelController {
             const volumeSum = blockEcueData.reduce((s, e) => s + e.cmHoraire + e.tdTpHoraire, 0);
             const [cours, created] = await Cours.findOrCreate({
               where: { code: blockUeCode, parcoursId },
-              defaults: { code: blockUeCode, intitule: blockUeIntitule, parcoursId, credit: creditSum || null, creditEcts: creditSum || null, semestre: semestre || undefined, coefficient: creditSum || null, volumeHoraire: volumeSum || null, estObligatoire: true, objectifs: null, enseignantId: null, categorieUe: currentCategorieUe },
+              defaults: { code: blockUeCode, intitule: blockUeIntitule, parcoursId, credit: creditSum || null, creditEcts: creditSum || null, semestre: blockSemestre || semestreDemande || 'semestre1', coefficient: creditSum || null, volumeHoraire: volumeSum || null, estObligatoire: true, objectifs: null, enseignantId: null, categorieUe: currentCategorieUe },
             } as any);
-            if (!created) await cours.update({ intitule: blockUeIntitule, credit: creditSum || null, creditEcts: creditSum || null, semestre: semestre || undefined, coefficient: creditSum || null, volumeHoraire: volumeSum || null, estObligatoire: true, objectifs: null, enseignantId: null, categorieUe: currentCategorieUe } as any);
+            if (!created) await cours.update({ intitule: blockUeIntitule, credit: creditSum || null, creditEcts: creditSum || null, semestre: blockSemestre || semestreDemande || 'semestre1', coefficient: creditSum || null, volumeHoraire: volumeSum || null, estObligatoire: true, objectifs: null, enseignantId: null, categorieUe: currentCategorieUe } as any);
             for (const ed of blockEcueData) {
               const [ecue, ecueCreated] = await Ecue.findOrCreate({ where: { code: ed.ecueCode, coursId: cours.id }, defaults: { code: ed.ecueCode, libelle: ed.ecueLibelle, coursId: cours.id, creditEcts: ed.creditEcts, cmHoraire: ed.cmHoraire, tdTpHoraire: ed.tdTpHoraire, tpeHoraire: ed.tpeHoraire, type: ed.type, enseignantId: null } as any });
               if (!ecueCreated) await ecue.update({ libelle: ed.ecueLibelle, creditEcts: ed.creditEcts, cmHoraire: ed.cmHoraire, tdTpHoraire: ed.tdTpHoraire, tpeHoraire: ed.tpeHoraire, type: ed.type, enseignantId: null } as any);
@@ -517,16 +542,30 @@ export default class ExcelController {
           const row = matrix[i];
           const isSection = row.some(c => { const t = normalizeText(c).toUpperCase(); return t.includes('UNITES D\'ENSEIGNEMENT MINEURES') || t.includes('UNITES D\'ENSEIGNEMENT MAJEURES') || t.includes('UNITES D\'ENSEIGNEMENT LIBRES'); });
           if (isSection) { await flushBlock(); const ts = row.map(c => normalizeText(c).toUpperCase()).join(' '); if (ts.includes('MINEURES')) currentCategorieUe = 'MINEURE'; else if (ts.includes('MAJEURES')) currentCategorieUe = 'MAJEURE'; else if (ts.includes('LIBRES')) currentCategorieUe = 'LIBRE'; ignored++; ignoredRows.push({ ligne: i + 1, raison: `Section: ${currentCategorieUe}` }); continue; }
-          if (row.some(c => normalizeText(c).toUpperCase().startsWith('TOTAL SEMESTRE'))) { await flushBlock(); ignored++; ignoredRows.push({ ligne: i + 1, raison: 'Total semestre' }); continue; }
+          const rowSemestre = detectSemestre(row.join(' '));
+          if (rowSemestre && row.map(c => normalizeText(c).toUpperCase()).join(' ').includes('TOTAL')) {
+            await flushBlock();
+            ignored++;
+            ignoredRows.push({ ligne: i + 1, raison: `Total ${rowSemestre}` });
+            continue;
+          }
+          const rowHeaderText = row.map(c => normalizeText(c).toUpperCase()).join(' ');
+          if (rowHeaderText.includes('CODE DE L') || rowHeaderText.includes('CONTENUS DES ENSEIGNEMENTS') || rowHeaderText === 'UE ECUE') {
+            continue;
+          }
 
-          const cellCodeUE = normalizeText(row[0] || '');
-          const cellIntituleUE = normalizeText(row[1] || '');
-          const cellMatiere = normalizeText(row[2] || '');
-          const cellType = normalizeText(row[3] || '');
-          const cellCM = normalizeText(row[4] || '');
-          const cellTD = normalizeText(row[5] || '');
-          const cellTPE = normalizeText(row[6] || '');
-          const cellCredit = normalizeText(row[9] || '');
+          const normalizedRow = row.map(cell => normalizeText(cell || ''));
+          const typeIndex = normalizedRow.findIndex(cell => /^[FTSCLM]$/i.test(cell));
+          const isContinuationCode = /^\d+\.[A-Z0-9]+\s*:/i.test(normalizedRow[0]);
+          const cellCodeUE = isContinuationCode ? '' : normalizedRow[0];
+          const cellIntituleUE = isContinuationCode ? '' : normalizedRow[1];
+          const cellMatiere = isContinuationCode ? normalizedRow[0] : normalizedRow[2];
+          const metricStart = typeIndex >= 0 ? typeIndex + 1 : 4;
+          const cellType = typeIndex >= 0 ? normalizedRow[typeIndex] : '';
+          const cellCM = normalizedRow[metricStart] || '';
+          const cellTD = normalizedRow[metricStart + 1] || '';
+          const cellTPE = normalizedRow[metricStart + 2] || '';
+          const cellCredit = normalizedRow[metricStart + 5] || normalizedRow[9] || '';
           if (!cellCodeUE && !cellMatiere) continue;
 
           const isNewBlock = cellCodeUE !== '' && cellCodeUE !== blockUeCode;
@@ -538,18 +577,14 @@ export default class ExcelController {
             await flushBlock();
             blockUeCode = cellCodeUE;
             blockUeIntitule = cellIntituleUE || cellCodeUE;
-            if (isUeWithoutMatiere) {
-              const cmH = parseInt(cellCM) || 0, tdT = parseInt(cellTD) || 0, tpe = parseInt(cellTPE) || 0, cr = parseInt(cellCredit) || 0;
-              const et = cellType.toUpperCase() || null;
-              const vt = ['F', 'T', 'S', 'C', 'L', 'M'].includes(et || '') ? et : null;
-              blockEcueData.push({ ecueCode: cellCodeUE, ecueLibelle: cellIntituleUE || cellCodeUE, cmHoraire: cmH, tdTpHoraire: tdT, tpeHoraire: tpe, creditEcts: cr, type: vt });
-            } else {
-              const parsed = parseMatiereCell(cellMatiere);
-              const cmH = parseInt(cellCM) || 0, tdT = parseInt(cellTD) || 0, tpe = parseInt(cellTPE) || 0, cr = parseInt(cellCredit) || 0;
-              const et = cellType.toUpperCase() || null;
-              const vt = ['F', 'T', 'S', 'C', 'L', 'M'].includes(et || '') ? et : null;
-              if (parsed) blockEcueData.push({ ecueCode: parsed.ecueCode, ecueLibelle: parsed.ecueLibelle, cmHoraire: cmH, tdTpHoraire: tdT, tpeHoraire: tpe, creditEcts: cr, type: vt });
-            }
+            blockSemestre = detectNextSemestre(i);
+            const parsed = parseMatiereCell(cellMatiere);
+            const cmH = parseInt(cellCM) || 0, tdT = parseInt(cellTD) || 0, tpe = parseInt(cellTPE) || 0, cr = parseInt(cellCredit) || 0;
+            const et = cellType.toUpperCase() || null;
+            const vt = ['F', 'T', 'S', 'C', 'L', 'M'].includes(et || '') ? et : null;
+            blockEcueData.push(parsed
+              ? { ecueCode: parsed.ecueCode, ecueLibelle: parsed.ecueLibelle, cmHoraire: cmH, tdTpHoraire: tdT, tpeHoraire: tpe, creditEcts: cr, type: vt }
+              : { ecueCode: blockUeCode, ecueLibelle: blockUeIntitule || blockUeCode, cmHoraire: cmH, tdTpHoraire: tdT, tpeHoraire: tpe, creditEcts: cr, type: vt });
           } else if (isRowspanContinuation || isSameUeNewMatiere) {
             const parsed = parseMatiereCell(cellMatiere);
             const cmH = parseInt(cellCM) || 0, tdT = parseInt(cellTD) || 0, tpe = parseInt(cellTPE) || 0, cr = parseInt(cellCredit) || 0;
@@ -630,6 +665,253 @@ export default class ExcelController {
       return res.status(200).end();
     } catch (error: any) {
       console.error("Erreur export UE:", error);
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  /**
+   * GET /excel/ue/export-word
+   * Exporte les UE/ECUE dans la structure de tableau des maquettes ESA, rempli avec les données réelles.
+   * Query: parcoursTitre (obligatoire).
+   */
+  static async exportUeWord(req: Request, res: Response): Promise<Response> {
+    try {
+      const parcoursTitre = String(req.query.parcoursTitre || req.query.modele || "").trim();
+      if (!parcoursTitre) {
+        return res.status(400).json({ success: false, message: "parcoursTitre requis" });
+      }
+
+      const parcours = await resolveParcours(parcoursTitre);
+      if (!parcours) {
+        return res.status(404).json({ success: false, message: `Parcours "${parcoursTitre}" introuvable` });
+      }
+      const parcoursId = parcours.id;
+
+      const coursList = await Cours.findAll({
+        where: { parcoursId },
+        include: [
+          { association: Cours.associations.ecues, order: [["code", "ASC"]] },
+          { association: Cours.associations.parcours, attributes: ["titre", "type", "grade"] },
+        ],
+      }) as any;
+
+      if (coursList.length === 0) {
+        return res.status(404).json({ success: false, message: `Aucun UE trouvé pour le parcours "${parcoursTitre}"` });
+      }
+
+      const typeLabel = parcours.type ? `${parcours.type} ${parcours.grade || ""}`.trim() : parcours.type || "";
+      const firstCours = coursList[0];
+      const annee = (firstCours as any).annee || new Date().getFullYear().toString();
+      const title = `${typeLabel} – ${annee}`;
+      const slug = `${parcours.type?.toLowerCase() || "master"}-${parcoursTitre.toLowerCase().replace(/[^a-z0-9]/g, "-")}`;
+
+      // Helpers
+      const thinBorder = {
+        top: { style: "single" as any, size: 4, color: "999999" },
+        bottom: { style: "single" as any, size: 4, color: "999999" },
+        left: { style: "single" as any, size: 4, color: "999999" },
+        right: { style: "single" as any, size: 4, color: "999999" },
+        insideH: { style: "single" as any, size: 4, color: "999999" },
+        insideV: { style: "single" as any, size: 4, color: "999999" },
+      };
+
+      const makeHeaderCell = (text: string, colSpan: number = 1, isMerged = false): TableCell => {
+        const para = new Paragraph({
+          children: [new TextRun({ text, bold: true, size: 9, font: "Calibri" })],
+          alignment: AlignmentType.CENTER,
+          verticalAlign: VerticalAlign.CENTER,
+        } as any);
+        const opts: Record<string, any> = {
+          children: [para],
+          borders: thinBorder,
+          shading: { fill: "1E40AF" },
+        };
+        if (colSpan > 1) opts.gridSpan = new GridSpan(colSpan);
+        if (isMerged) opts.verticalMerge = new VerticalMerge({ merge: "continue" } as any);
+        return new TableCell(opts as any);
+      };
+
+      const makeDataCell = (text: string, vMerge?: VerticalMerge): TableCell => {
+        const para = new Paragraph({
+          children: [new TextRun({ text, size: 9, font: "Calibri" })],
+          alignment: AlignmentType.CENTER,
+          verticalAlign: VerticalAlign.CENTER,
+        } as any);
+        const opts: Record<string, any> = {
+          children: [para],
+          borders: thinBorder,
+        };
+        if (vMerge) opts.verticalMerge = vMerge;
+        return new TableCell(opts as any);
+      };
+
+      const makeSectionCell = (text: string): TableCell => {
+        const para = new Paragraph({
+          children: [new TextRun({ text, bold: true, size: 10, font: "Calibri" })],
+          alignment: AlignmentType.CENTER,
+          verticalAlign: VerticalAlign.CENTER,
+        } as any);
+        return new TableCell({
+          gridSpan: new GridSpan(11),
+          children: [para],
+          borders: thinBorder,
+          shading: { fill: "D9E2F3" },
+        } as any);
+      };
+
+      // Construire le document
+      const children: any[] = [];
+
+      children.push(new Paragraph({
+        children: [new TextRun({ text: title, bold: true, size: 18, font: "Calibri" })],
+        alignment: AlignmentType.CENTER,
+      }));
+      children.push(new Paragraph({
+        children: [new TextRun({ text: `${parcours.titre} — ${annee}`, size: 12, font: "Calibri" })],
+        alignment: AlignmentType.CENTER,
+      }));
+      children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
+
+      // Regrouper par semestre
+      const semMap: Record<string, any[]> = {};
+      for (const cours of coursList) {
+        const s: string = cours.semestre || "semestre1";
+        if (!semMap[s]) semMap[s] = [];
+        semMap[s].push(cours);
+      }
+      const sortedSemestres = Object.keys(semMap).sort((a: string, b: string) => {
+        return parseInt(a.replace("semestre", "")) - parseInt(b.replace("semestre", ""));
+      });
+
+      for (const sem of sortedSemestres) {
+        const coursInSem = semMap[sem];
+        const mineures = coursInSem.filter((c: any) => c.categorieUe === "MINEURE").sort((a: any, b: any) => a.code.localeCompare(b.code));
+        const majeures = coursInSem.filter((c: any) => c.categorieUe === "MAJEURE").sort((a: any, b: any) => a.code.localeCompare(b.code));
+        const libres = coursInSem.filter((c: any) => c.categorieUe === "LIBRE").sort((a: any, b: any) => a.code.localeCompare(b.code));
+
+        const allSections = [
+          ...mineures.map(c => ({ data: c, section: "UNITES D'ENSEIGNEMENT MINEURES" })),
+          ...majeures.map(c => ({ data: c, section: "UNITES D'ENSEIGNEMENT MAJEURES" })),
+          ...libres.map(c => ({ data: c, section: "UNITES D'ENSEIGNEMENT LIBRES" })),
+        ];
+
+        const rows: TableRow[] = [];
+
+        // Header level 1
+        rows.push(new TableRow({
+          children: [
+            makeHeaderCell("CODE DE L'UE"),
+            makeHeaderCell("CONTENUS DES ENSEIGNEMENTS", 2),
+            makeHeaderCell("TYPE"),
+            makeHeaderCell("CM"),
+            makeHeaderCell("TD/TP"),
+            makeHeaderCell("TPE"),
+            makeHeaderCell("TOTAL"),
+            makeHeaderCell("TOTAL PRESENTIEL"),
+            makeHeaderCell("CREDIT"),
+            makeHeaderCell("ENSEIGNANT/QUALIFICATION/STATUT"),
+          ],
+        }));
+
+        // Header level 2
+        rows.push(new TableRow({
+          children: [
+            makeHeaderCell(""),
+            makeHeaderCell("UE"),
+            makeHeaderCell("ECUE"),
+            makeHeaderCell("TYPE"),
+            makeHeaderCell("CM"),
+            makeHeaderCell("TD/TP"),
+            makeHeaderCell("TPE"),
+            makeHeaderCell("TOTAL"),
+            makeHeaderCell("TOTAL PRESENTIEL"),
+            makeHeaderCell("CREDIT"),
+            makeHeaderCell("ENSEIGNANT/QUALIFICATION/STATUT"),
+          ],
+        }));
+
+        let prevSection = "";
+        for (const { data: cours, section } of allSections) {
+          if (section !== prevSection) {
+            rows.push(new TableRow({ children: [makeSectionCell(section)] }));
+            prevSection = section;
+          }
+
+          const ecues = cours.ecues || [];
+          if (ecues.length === 0) {
+            rows.push(new TableRow({
+              children: [
+                makeDataCell(cours.code),
+                makeDataCell(cours.intitule),
+                makeDataCell(""), makeDataCell(""), makeDataCell(""),
+                makeDataCell(""), makeDataCell(""), makeDataCell(""),
+                makeDataCell(String(cours.credit || "")), makeDataCell(""),
+              ],
+            }));
+          } else {
+            const ueVM = ecues.length > 1 ? new VerticalMerge({ merge: "restart" } as any) : undefined;
+            rows.push(new TableRow({
+              children: [
+                makeDataCell(cours.code, ueVM),
+                makeDataCell(cours.intitule, ueVM),
+                makeDataCell(ecues[0].type || ""),
+                makeDataCell(String(ecues[0].cmHoraire || "")),
+                makeDataCell(String(ecues[0].tdTpHoraire || "")),
+                makeDataCell(String(ecues[0].tpeHoraire || "")),
+                makeDataCell(String((ecues[0].cmHoraire || 0) + (ecues[0].tdTpHoraire || 0) + (ecues[0].tpeHoraire || 0))),
+                makeDataCell(String((ecues[0].cmHoraire || 0) + (ecues[0].tdTpHoraire || 0) + (ecues[0].tpeHoraire || 0))),
+                makeDataCell(String(ecues[0].creditEcts || "")),
+                makeDataCell(""),
+              ],
+            }));
+            for (let i = 1; i < ecues.length; i++) {
+              const vmCont = new VerticalMerge({ merge: "continue" } as any);
+              rows.push(new TableRow({
+                children: [
+                  makeDataCell("", vmCont),
+                  makeDataCell("", vmCont),
+                  makeDataCell(ecues[i].type || ""),
+                  makeDataCell(String(ecues[i].cmHoraire || "")),
+                  makeDataCell(String(ecues[i].tdTpHoraire || "")),
+                  makeDataCell(String(ecues[i].tpeHoraire || "")),
+                  makeDataCell(String((ecues[i].cmHoraire || 0) + (ecues[i].tdTpHoraire || 0) + (ecues[i].tpeHoraire || 0))),
+                  makeDataCell(String((ecues[i].cmHoraire || 0) + (ecues[i].tdTpHoraire || 0) + (ecues[i].tpeHoraire || 0))),
+                  makeDataCell(String(ecues[i].creditEcts || "")),
+                  makeDataCell(""),
+                ],
+              }));
+            }
+          }
+        }
+
+        const semNum = sem.replace("semestre", "");
+        rows.push(new TableRow({
+          children: [makeDataCell(`TOTAL SEMESTRE ${semNum}`)],
+        }));
+
+        const table = new Table({
+          rows,
+          width: { size: 100, type: WidthType.PERCENTAGE },
+          layout: TableLayoutType.FIXED,
+          borders: thinBorder,
+        });
+
+        children.push(table);
+        children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
+      }
+
+      const doc = new Document({
+        sections: [{ properties: {}, children }],
+      });
+
+      const buffer = await Packer.toBuffer(doc);
+      const filename = `maquette-${slug}.docx`;
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      return res.status(200).send(buffer);
+
+    } catch (error: any) {
+      console.error("Erreur export Word UE:", error);
       return res.status(500).json({ success: false, message: error.message });
     }
   }

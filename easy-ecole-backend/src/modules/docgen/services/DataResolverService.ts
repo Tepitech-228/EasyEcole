@@ -383,16 +383,43 @@ async function resolveDecision(params: GenerateParams): Promise<ResolvedData> {
 
 async function resolveAutorisationProvisoire(params: GenerateParams): Promise<ResolvedData> {
   const etablissement = await getEtablissementInfo();
-  const demandeId = params.sourceId || params.cursusApprenantId;
-  if (!demandeId) return { etablissement, etudiants: [] };
+  let demandeId = (params as any).demandeInscriptionId || (params as any).demandeId;
+  
+  // Si on a un cursusApprenantId ou si sourceId pointe vers un CursusApprenant
+  if (!demandeId && (params.cursusApprenantId || (params as any).sourceType === 'cursus_apprenant')) {
+    const cursusId = params.cursusApprenantId || params.sourceId;
+    if (cursusId) {
+      const cursus = await CursusApprenant.findByPk(cursusId);
+      if (cursus) {
+        demandeId = (cursus as any).demandeInscriptionId;
+      }
+    }
+  }
+  
+  // Si pas encore trouvé, on teste sourceId comme potentiel demandeId
+  if (!demandeId && params.sourceId) {
+    demandeId = params.sourceId;
+  }
 
-  const demande = await DemandeInscription.findByPk(demandeId, {
-    include: [
-      { association: 'utilisateur', include: [{ association: 'apprenant' }] },
-      { association: 'parcoursChoisis', include: [{ association: 'parcours' }] },
-      { association: 'session', include: [{ association: 'anneeAcademique' }] },
-    ]
-  });
+  const includeRelations = [
+    { association: 'utilisateur', include: [{ association: 'apprenant' }] },
+    { association: 'parcoursChoisis', include: [{ association: 'parcours' }] },
+    { association: 'session', include: [{ association: 'anneeAcademique' }] },
+  ];
+
+  let demande: any = null;
+  if (demandeId) {
+    demande = await DemandeInscription.findByPk(demandeId, { include: includeRelations });
+  }
+
+  // Repli par etudiantId si la demande n'a pas été trouvée par ID direct
+  if (!demande && params.etudiantId) {
+    demande = await DemandeInscription.findOne({
+      where: { utilisateurId: params.etudiantId },
+      order: [['createdAt', 'DESC']],
+      include: includeRelations,
+    });
+  }
 
   if (!demande) return { etablissement, etudiants: [] };
 

@@ -286,7 +286,7 @@
     <div *ngIf="docPreviewUrl" class="mt-2 pdf-preview-shell rounded-lg border border-gray-200">
       <p class="text-xs text-gray-500 mb-1 truncate">Aperçu : {{ docPreviewNom }}</p>
       <img *ngIf="docPreviewIsImage" [src]="docPreviewUrl" alt="{{ docPreviewNom }}" class="pdf-preview-image">
-      <iframe *ngIf="!docPreviewIsImage" [src]="docPreviewUrl | safeUrl | async" title="Document de l'étudiant" class="pdf-preview-frame"></iframe>
+      <iframe *ngIf="!docPreviewIsImage" [src]="docPreviewUrl" title="Document de l'étudiant" class="pdf-preview-frame"></iframe>
     </div>
   </div>
 

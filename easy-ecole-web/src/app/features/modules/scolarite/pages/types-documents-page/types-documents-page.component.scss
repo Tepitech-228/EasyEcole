@@ -1,0 +1,95 @@
+.types-documents-page {
+  min-height: calc(100vh - 4rem);
+  max-width: 1200px;
+  background: linear-gradient(135deg, #f8fbff 0%, #f8fafc 55%, #ffffff 100%);
+  border-radius: 18px;
+}
+
+.toolbar,
+.table-card,
+.modal-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  margin: 1.25rem 0;
+  border-left: 4px solid #2563eb;
+}
+
+.eyebrow { margin: 0 0 .25rem; color: #2563eb; font-size: .7rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+h2 { margin: 0; color: #111827; font-size: 1.1rem; font-weight: 700; }
+.muted { margin: .35rem 0 0; color: #6b7280; font-size: .85rem; }
+
+.primary-action,
+.secondary-action,
+.icon-action,
+.close-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem;
+  border-radius: 9px;
+  font-size: .82rem;
+  font-weight: 700;
+  transition: .15s ease;
+}
+.primary-action { padding: .65rem .9rem; color: #fff; background: #2563eb; border: 1px solid #2563eb; }
+.primary-action:hover { background: #1d4ed8; }
+.primary-action:disabled { opacity: .55; cursor: not-allowed; }
+.secondary-action { padding: .65rem .9rem; color: #374151; background: #f3f4f6; border: 1px solid #d1d5db; }
+.secondary-action:hover { background: #e5e7eb; }
+.primary-action:focus-visible,
+.secondary-action:focus-visible,
+.icon-action:focus-visible,
+.close-action:focus-visible,
+.field-input:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, .22);
+  outline-offset: 2px;
+}
+
+.table-card { overflow: hidden; }
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+th { padding: .85rem 1.25rem; color: #64748b; background: #f1f5f9; font-size: .7rem; letter-spacing: .08em; text-align: left; text-transform: uppercase; }
+td { padding: 1rem 1.25rem; color: #374151; border-top: 1px solid #eaf0f6; }
+tr:hover td { background: #f8fbff; }
+.actions-heading, td:last-child { text-align: right; }
+.document-cell { display: flex; align-items: center; gap: .65rem; color: #111827; font-weight: 600; }
+.document-icon { color: #2563eb; font-size: 1.25rem; }
+.fee-badge { display: inline-flex; padding: .3rem .55rem; color: #047857; background: #ecfdf5; border-radius: 999px; font-weight: 700; }
+.row-actions { display: flex; justify-content: flex-end; gap: .4rem; }
+.icon-action, .close-action { width: 2.15rem; height: 2.15rem; border: 1px solid; }
+.edit-action { color: #2563eb; background: #eff6ff; border-color: #bfdbfe; }
+.delete-action { color: #dc2626; background: #fef2f2; border-color: #fecaca; }
+.close-action { color: #6b7280; background: #f9fafb; border-color: #e5e7eb; }
+.icon-action:hover, .close-action:hover { filter: brightness(.96); transform: translateY(-1px); }
+.empty-state { display: flex; flex-direction: column; align-items: center; gap: .4rem; padding: 3rem 1rem; color: #6b7280; text-align: center; }
+.empty-icon { color: #93c5fd; font-size: 2rem; }
+.notice { margin: 1rem 0; padding: .75rem 1rem; border-radius: 9px; font-size: .85rem; }
+.notice-error { color: #991b1b; background: #fef2f2; border: 1px solid #fecaca; }
+.notice-success { color: #166534; background: #f0fdf4; border: 1px solid #bbf7d0; }
+.modal-backdrop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(15, 23, 42, .45); }
+.modal-card { width: min(100%, 30rem); padding: 1.4rem; }
+.modal-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
+.field-label { display: block; margin: 1rem 0 .35rem; color: #374151; font-size: .78rem; font-weight: 700; }
+.field-input { width: 100%; padding: .65rem .75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: .875rem; }
+.field-input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, .12); }
+.modal-actions { display: flex; justify-content: flex-end; gap: .65rem; margin-top: 1.5rem; }
+
+@media (max-width: 640px) {
+  .types-documents-page { padding: 1rem; border-radius: 0; }
+  .toolbar { align-items: stretch; flex-direction: column; }
+  .primary-action { width: 100%; }
+  th, td { padding: .75rem .8rem; }
+  th:nth-child(2), td:nth-child(2) { white-space: nowrap; }
+  .document-cell { min-width: 13rem; }
+  .modal-card { padding: 1.1rem; }
+}

@@ -43,6 +43,7 @@ export class DossierViewComponent {
   @Input() pageSize: number = 20;
   @Input() renderItemActions: boolean = false;
   @Input() itemActions: BatchAction[] = [];
+  @Input() actionsNoWrap: boolean = false;
   @Input() level: number = 0;
   /**
    * Quand `true`, un clic sur la ligne d'un nœud bascule son état `expanded`

@@ -54,7 +54,7 @@ const upload = multer({
  *     summary: Télécharger le template Excel pour l'import des UE
  */
 router.get("/ue/template", ExcelController.downloadUeTemplate)
-// router.get("/ue/template-word", ExcelController.downloadUeWordTemplate)
+router.get("/ue/template-word", ExcelController.exportUeWord)
 
 /**
  * @openapi
@@ -74,7 +74,7 @@ router.post("/ue/import-async", upload.single("fichier"), ExcelController.import
  *     summary: Exporter toutes les UE au format Excel
  */
 router.get("/ue/export", ExcelController.exportUe)
-// router.get("/ue/export-word", ExcelController.exportUeWord)
+router.get("/ue/export-word", ExcelController.exportUeWord)
 
 // ========================================================================
 //  ENSEIGNANTS

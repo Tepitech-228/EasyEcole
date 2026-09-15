@@ -22,6 +22,8 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
 
   exportType: ExportType = 'etudiants';
   exportFormat: 'xlsx' | 'docx' = 'xlsx';
+  exportWordModele = 'master-gc';
+  exportParcoursId: string = '';
   importType: ImportType = 'utilisateurs';
   importFormat: 'xlsx' | 'docx' = 'xlsx';
   selectedImportRole: string = RolesUtilisateur.APPRENANT;
@@ -111,7 +113,15 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
         this.parcoursLoading = false;
         this.parcoursLoadError = this.parcoursList.length === 0;
       },
-      error: () => { this.parcoursList = []; this.parcoursLoading = false; this.parcoursLoadError = true; }
+      error: (err: any) => {
+        this.parcoursList = [];
+        this.parcoursLoading = false;
+        this.parcoursLoadError = true;
+        if (err?.status === 401) {
+          this.errorMessage = 'Votre session a expiré. Reconnectez-vous pour charger les parcours.';
+          this.router.navigate(['/auth/connexion']);
+        }
+      }
     });
     this.niveauService.getAll().subscribe({
       next: (res: any) => { this.niveauxList = res.data || res; },
@@ -138,7 +148,9 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
     let download$: any;
 
     if (this.exportType === 'ue' && this.exportFormat === 'docx') {
-      download$ = this.excelService.exportUeWord();
+      const parcours = this.parcoursList.find(item => String(item.id) === this.exportParcoursId);
+      const parcoursTitre = parcours?.titre || undefined;
+      download$ = this.excelService.exportUeWord(this.exportWordModele, parcoursTitre);
     } else if (this.exportType === 'ue') {
       download$ = this.excelService.exportUe();
     } else if (this.exportType === 'etudiants') {
@@ -242,12 +254,15 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
 
     if (this.importType === 'ue') {
       const parcours = this.parcoursList.find(item => String(item.id) === this.selectedImportParcoursId);
-      if (!parcours) {
+      if (!parcours && this.selectedFile.name.toLowerCase().endsWith('.docx')) {
+        import$ = this.excelService.importUe(this.selectedFile, undefined, this.selectedImportSemestre);
+      } else if (!parcours) {
         this.importing = false;
         this.errorMessage = 'Sélectionnez le parcours auquel rattacher la maquette UE/ECUE.';
         return;
+      } else {
+        import$ = this.excelService.importUe(this.selectedFile, parcours?.titre, this.selectedImportSemestre);
       }
-      import$ = this.excelService.importUe(this.selectedFile, parcours?.titre, this.selectedImportSemestre);
     } else if (this.importType === 'etudiants') {
       import$ = this.excelService.importApprenants(this.selectedFile);
     } else if (this.importType === 'enseignants') {

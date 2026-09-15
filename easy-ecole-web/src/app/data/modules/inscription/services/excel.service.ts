@@ -45,8 +45,12 @@ export class ExcelService {
     return this.http.get(`${EXCEL_BASE}/ue/export`, { responseType: 'blob' });
   }
 
-  exportUeWord(): Observable<Blob> {
-    return this.http.get(`${EXCEL_BASE}/ue/export-word`, { responseType: 'blob' });
+  exportUeWord(modele?: string, parcoursTitre?: string): Observable<Blob> {
+    let params = modele ? new HttpParams().set('modele', modele) : undefined;
+    if (parcoursTitre) {
+      params = params ? params.set('parcoursTitre', parcoursTitre) : new HttpParams().set('parcoursTitre', parcoursTitre);
+    }
+    return this.http.get(`${EXCEL_BASE}/ue/export-word`, { params, responseType: 'blob' });
   }
 
   // ========================================================================

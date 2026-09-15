@@ -394,6 +394,45 @@ export default class UtilisateurController {
                 return res.status(404).json({ success: false, message: "Utilisateur non trouve" });
             }
 
+            if (utilisateur.role === RolesUtilisateur.APPRENANT) {
+                await sequelize.transaction(async (t) => {
+                    const q = (sql: string, replacements: any = {}) => sequelize.query(sql, { replacements, transaction: t });
+                    const [demandes]: any = await q('SELECT id FROM ins_demandes_inscription WHERE utilisateurId = :id', { id: userId });
+                    const [cursus]: any = await q('SELECT id FROM ins_cursus_apprenants WHERE utilisateurId = :id', { id: userId });
+                    const demandeIds = demandes.map((row: any) => row.id);
+                    const cursusIds = cursus.map((row: any) => row.id);
+
+                    if (cursusIds.length > 0) {
+                        await q('DELETE FROM ins_cours_participants WHERE cursusApprenantId IN (:ids)', { ids: cursusIds });
+                        await q('DELETE FROM ins_equivalences WHERE cursusApprenantId IN (:ids)', { ids: cursusIds });
+                        await q('DELETE FROM ins_dispenses WHERE cursusApprenantId IN (:ids)', { ids: cursusIds });
+                        await q('DELETE FROM ins_designation_memoires WHERE cursusApprenantId IN (:ids)', { ids: cursusIds });
+                    }
+                    if (demandeIds.length > 0) {
+                        await q('DELETE FROM ins_prerequis_parcours_choisis WHERE parcoursChoisiId IN (SELECT id FROM ins_parcours_choisis WHERE demandeInscriptionId IN (:ids))', { ids: demandeIds });
+                        await q('DELETE FROM ins_parcours_choisis WHERE demandeInscriptionId IN (:ids)', { ids: demandeIds });
+                        await q('DELETE FROM ins_cours_choisis WHERE demandeInscriptionId IN (:ids)', { ids: demandeIds });
+                        await q('DELETE FROM ins_reponses_inscription WHERE demandeInscriptionId IN (:ids)', { ids: demandeIds });
+                        await q('DELETE FROM ins_pre_inscriptions WHERE demandeInscriptionId IN (:ids)', { ids: demandeIds });
+                        await q('DELETE FROM ins_dossiers_demandes WHERE demandeId IN (:ids)', { ids: demandeIds });
+                    }
+                    await q('DELETE FROM scol_documents_delivres WHERE demandeId IN (SELECT id FROM scol_demandes_document WHERE etudiantId = :id)', { id: userId });
+                    await q('DELETE FROM scol_journal_caisse WHERE demandeDocumentId IN (SELECT id FROM scol_demandes_document WHERE etudiantId = :id)', { id: userId });
+                    await q('DELETE FROM scol_recus_caisse WHERE demandeDocumentId IN (SELECT id FROM scol_demandes_document WHERE etudiantId = :id)', { id: userId });
+                    await q('DELETE FROM scol_demandes_document WHERE etudiantId = :id', { id: userId });
+                    await q('DELETE FROM ins_cursus_apprenants WHERE utilisateurId = :id', { id: userId });
+                    await q('DELETE FROM ins_demandes_inscription WHERE utilisateurId = :id', { id: userId });
+                    await q('DELETE FROM ins_paiements_inscription WHERE utilisateurId = :id', { id: userId });
+                    await q('DELETE FROM ins_bordereaux WHERE utilisateurId = :id', { id: userId });
+                    await q('DELETE FROM ins_dossiers_etudiants WHERE utilisateurId = :id', { id: userId });
+                    await q('DELETE FROM aut_apprenants WHERE utilisateurId = :id', { id: userId });
+                    await q('DELETE FROM aut_user_permissions WHERE utilisateurId = :id', { id: userId });
+                    await q('DELETE FROM aut_user_roles WHERE utilisateurId = :id', { id: userId });
+                    await q('DELETE FROM aut_utilisateurs WHERE id = :id', { id: userId });
+                });
+                return res.status(200).json({ success: true, message: "Apprenant et données liées définitivement supprimés" });
+            }
+
             // Tables "bloquantes" (NO ACTION / RESTRICT) liées à de la donnée métier
             // sensible (parents, bourse, réductions, bulletins, caisse) : on refuse plutôt que de
             // détruire silencieusement ces données. Ces cas demandent une purge manuelle.

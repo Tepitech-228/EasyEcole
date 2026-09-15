@@ -91,21 +91,33 @@ async function main() {
         if (!(await tableExists(seq, t))) throw new Error(`Table ${t} absente — exécuter migrations/009_secretariat.sql`);
     }
 
-    // 4. Catalogue de démonstration (si vide)
-    const [count]: any[] = await seq.query('SELECT COUNT(*) AS n FROM scol_types_document');
-    if (Number(count[0].n) === 0) {
-        await seq.query(`INSERT INTO scol_types_document (libelle, frais, categorie, delaiTraitement, paiementObligatoire, generationAuto, actif, createdAt, updatedAt) VALUES
-            ('Attestation de scolarité', 1000, 'Scolarité', 24, 1, 1, 1, NOW(), NOW()),
-            ('Certificat de scolarité', 1000, 'Scolarité', 24, 1, 1, 1, NOW(), NOW()),
-            ('Relevé de notes', 2000, 'Évaluations', 48, 1, 1, 1, NOW(), NOW()),
-            ('Attestation de réussite', 2500, 'Examens', 48, 1, 1, 1, NOW(), NOW()),
-            ('Certificat de réussite', 2500, 'Examens', 48, 1, 1, 1, NOW(), NOW()),
-            ('Attestation de diplôme', 5000, 'Diplômes', 72, 1, 1, 1, NOW(), NOW()),
-            ('Duplicata de carte étudiant', 3000, 'Cartes', 24, 1, 1, 1, NOW(), NOW()),
-            ('Attestation de transfert', 4000, 'Administratif', 48, 1, 1, 1, NOW(), NOW()),
-            ('Autre document administratif', 1500, 'Administratif', 24, 1, 1, 1, NOW(), NOW())`);
-        console.log('✓ catalogue types de documents seedé (9)');
+    // 4. Catalogue des templates ESA officiels (idempotent)
+    const typesOfficiels = [
+        ['Autorisation provisoire d\'inscription', 0, 'Admissions', 0, 0, 1],
+        ['Attestation d\'admissibilité', 0, 'Admissions', 24, 0, 1],
+        ['Autorisation de soutenance', 0, 'Soutenance', 48, 0, 1],
+        ['Autorisation de délivrance de diplôme', 0, 'Diplômes', 72, 0, 1],
+        ['Autorisation de délivrance de diplôme de Master', 0, 'Diplômes', 72, 0, 1],
+        ['Fiche d\'engagement (2ème année BTS)', 0, 'Inscriptions', 24, 0, 0],
+        ['Fiche de dépôt de mémoire définitif', 0, 'Soutenance', 24, 0, 0],
+        ['Rapport de validation de mémoire', 0, 'Soutenance', 48, 0, 0],
+        ['Pièces à fournir pour autorisation d\'inscription', 0, 'Inscriptions', 24, 0, 0],
+        ['Pièces à fournir pour la demande d\'admissibilité (Licence)', 0, 'Admissions', 24, 0, 0],
+        ['Pièces à fournir pour la demande d\'admissibilité (Master)', 0, 'Admissions', 24, 0, 0],
+        ['Pièces à fournir pour la demande d\'autorisation de soutenance (Licence)', 0, 'Soutenance', 24, 0, 0],
+        ['Pièces à fournir pour la demande d\'autorisation de soutenance (Master)', 0, 'Soutenance', 24, 0, 0],
+        ['Pièces à fournir pour la demande de délivrance de diplôme (Licence)', 0, 'Diplômes', 24, 0, 0],
+        ['Pièces à fournir pour la demande de délivrance de diplôme (Master)', 0, 'Diplômes', 24, 0, 0],
+    ];
+    for (const [libelle, frais, categorie, delai, paiementObligatoire, generationAuto] of typesOfficiels) {
+        await seq.query(
+            `INSERT INTO scol_types_document (libelle, frais, categorie, delaiTraitement, paiementObligatoire, generationAuto, actif, createdAt, updatedAt)
+             SELECT :libelle, :frais, :categorie, :delai, :paiementObligatoire, :generationAuto, 1, NOW(), NOW()
+             WHERE NOT EXISTS (SELECT 1 FROM scol_types_document WHERE libelle = :libelle)`,
+            { replacements: { libelle, frais, categorie, delai, paiementObligatoire, generationAuto } },
+        );
     }
+    console.log(`✓ catalogue templates ESA vérifié (${typesOfficiels.length} types officiels)`);
 
     console.log('\nMigration 009 secretariat terminée ✔');
     process.exit(0);

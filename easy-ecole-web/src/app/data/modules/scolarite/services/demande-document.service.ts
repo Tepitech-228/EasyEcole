@@ -88,4 +88,12 @@ export class DemandeDocumentService {
   getMesDocuments(): Observable<MesDocumentItem[]> {
     return this.httpClient.get<MesDocumentItem[]>(`${this.SERVICE_URL}/mes-documents`);
   }
+
+  getAutorisationsProvisoires(): Observable<{ data: DemandeDocument[], pagination: any }> {
+    return this.httpClient.get<{ data: DemandeDocument[], pagination: any }>(`${this.SERVICE_URL}/autorisations-provisoires`);
+  }
+
+  downloadAutorisationProvisoire(id: string | number): Observable<Blob> {
+    return this.httpClient.get(`${this.SERVICE_URL}/autorisations-provisoires/${id}/download`, { responseType: 'blob' });
+  }
 }

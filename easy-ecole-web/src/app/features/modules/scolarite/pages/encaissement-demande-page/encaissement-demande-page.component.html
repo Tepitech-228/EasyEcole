@@ -53,7 +53,11 @@
             placeholder="Rechercher par étudiant, matricule, numéro de demande..."
             class="search-input">
         </div>
-        <app-custom-button (click)="loadDemandes()" text="Actualiser" color="gray" [outlined]="true"></app-custom-button>
+        <button type="button" (click)="loadDemandes()"
+          class="inline-flex h-10 items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-700 transition-colors hover:border-blue-300 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1">
+          <span class="material-symbols-outlined text-[18px]">refresh</span>
+          Actualiser
+        </button>
       </div>
     </div>
   </div>
@@ -63,6 +67,7 @@
     [nodes]="treeNodes"
     [columns]="itemColumns"
     [itemActions]="itemActions"
+    [actionsNoWrap]="true"
     [renderItemActions]="true"
     [includeBatchInRowActions]="false"
     [canShowItemAction]="canShowAction.bind(this)"
@@ -145,7 +150,7 @@
     <div class="flex gap-4 justify-center">
       <app-custom-button
         (click)="telechargerRecu(dernierRecu.id)"
-        text="📥 Télécharger le reçu"
+        text="Télécharger le reçu"
         color="primary">
       </app-custom-button>
     </div>

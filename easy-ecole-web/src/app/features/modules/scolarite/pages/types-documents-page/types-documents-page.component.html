@@ -1,0 +1,84 @@
+<div class="page-container types-documents-page">
+  <app-header-title title="Types de documents" subtitle="Configurez les documents proposés aux étudiants et leurs frais"></app-header-title>
+
+  <div *ngIf="errorMessage" class="notice notice-error">{{ errorMessage }}</div>
+  <div *ngIf="successMessage" class="notice notice-success">{{ successMessage }}</div>
+
+  <section class="toolbar">
+    <div>
+      <p class="eyebrow">Paramétrage du secrétariat</p>
+      <h2>Documents disponibles</h2>
+      <p class="muted">Les types actifs apparaissent dans le formulaire de demande étudiant.</p>
+    </div>
+    <button type="button" class="primary-action" (click)="openCreate()">
+      <span class="material-symbols-outlined">add</span>
+      Nouveau document
+    </button>
+  </section>
+
+  <section class="table-card">
+    <div *ngIf="loading" class="empty-state">Chargement des types de documents...</div>
+    <div *ngIf="!loading && types.length === 0" class="empty-state">
+      <span class="material-symbols-outlined empty-icon">description</span>
+      <strong>Aucun type de document</strong>
+      <span>Créez le premier document disponible à la demande.</span>
+    </div>
+    <div *ngIf="!loading && types.length > 0" class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Document</th>
+            <th>Frais</th>
+            <th class="actions-heading">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let type of types">
+            <td>
+              <div class="document-cell">
+                <span class="document-icon material-symbols-outlined">description</span>
+                <span>{{ type.libelle }}</span>
+              </div>
+            </td>
+            <td><span class="fee-badge">{{ formatFrais(type.frais) }}</span></td>
+            <td>
+              <div class="row-actions">
+                <button type="button" class="icon-action edit-action" (click)="openEdit(type)" title="Modifier" aria-label="Modifier">
+                  <span class="material-symbols-outlined">edit</span>
+                </button>
+                <button type="button" class="icon-action delete-action" (click)="remove(type)" title="Supprimer" aria-label="Supprimer">
+                  <span class="material-symbols-outlined">delete</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div *ngIf="formOpen" class="modal-backdrop" (click)="closeForm()">
+    <section class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow">Configuration</p>
+          <h2>{{ editingId ? 'Modifier le document' : 'Nouveau document' }}</h2>
+        </div>
+        <button type="button" class="close-action" (click)="closeForm()" aria-label="Fermer">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <label class="field-label" for="document-label">Libellé du document</label>
+      <input id="document-label" class="field-input" [(ngModel)]="form.libelle" placeholder="Ex. Attestation de scolarité">
+      <label class="field-label" for="document-fee">Frais en FCFA</label>
+      <input id="document-fee" class="field-input" type="number" min="0" [(ngModel)]="form.frais" placeholder="0 pour un document gratuit">
+      <div class="modal-actions">
+        <button type="button" class="secondary-action" (click)="closeForm()">Annuler</button>
+        <button type="button" class="primary-action" [disabled]="saving" (click)="save()">
+          <span class="material-symbols-outlined">save</span>
+          {{ saving ? 'Enregistrement...' : 'Enregistrer' }}
+        </button>
+      </div>
+    </section>
+  </div>
+</div>

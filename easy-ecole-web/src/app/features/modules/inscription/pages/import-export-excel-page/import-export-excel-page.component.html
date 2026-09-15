@@ -41,6 +41,18 @@
           <option value="xlsx">Excel (.xlsx)</option>
           <option value="docx">Word (.docx)</option>
         </select>
+        <select *ngIf="exportType === 'ue' && exportFormat === 'docx'" [(ngModel)]="exportWordModele" aria-label="Maquette Licence ou Master" class="ml-3 border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white">
+          <option value="licence-act">Maquette Licence</option>
+          <option value="master-gc">Maquette Master</option>
+        </select>
+        <div *ngIf="exportType === 'ue' && exportFormat === 'docx'" class="mt-3">
+          <label class="block text-xs font-medium text-gray-600 mb-1">Parcours (pour document rempli)</label>
+          <select [(ngModel)]="exportParcoursId" [disabled]="parcoursLoading || parcoursList.length === 0" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white disabled:bg-gray-100 disabled:cursor-not-allowed">
+            <option value="">Sélectionner un parcours</option>
+            <option *ngFor="let p of parcoursList" [value]="p.id">{{ p.titre }}</option>
+          </select>
+          <p *ngIf="parcoursLoadError && !parcoursLoading" class="mt-1 text-xs text-red-600">Impossible de charger les parcours pour l'export.</p>
+        </div>
       </div>
 
       <!-- Filtres pour Étudiants -->
@@ -160,7 +172,7 @@
             <option value="">{{ parcoursLoading ? 'Chargement des parcours…' : 'Sélectionner un parcours' }}</option>
             <option *ngFor="let p of parcoursList" [value]="p.id">{{ p.type || 'Cycle non renseigné' }} — {{ p.titre }}</option>
           </select>
-          <p *ngIf="parcoursLoadError && !parcoursLoading" class="mt-1 text-xs text-red-600">Aucun parcours chargé. Vérifiez que le backend est démarré et rechargez la page.</p>
+          <p *ngIf="parcoursLoadError && !parcoursLoading && !errorMessage" class="mt-1 text-xs text-red-600">Aucun parcours chargé. Vérifiez que le backend est démarré et rechargez la page.</p>
         </div>
         <div>
           <label class="block text-xs font-medium text-gray-600 mb-1">Semestre de la maquette</label>
@@ -199,16 +211,22 @@
         <button (click)="telechargerTemplate()"
           class="inline-flex items-center px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-xl transition-colors">
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 012 2h12a2 2 0 012-2v-2M7 10l5 5 5-5"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 012 2h12a2 2 0 01-2 2v-2M7 10l5 5 5-5"></path>
           </svg>
           Télécharger le template
         </button>
         <button type="button" (click)="importer()"
           [disabled]="importing"
-          class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed">
+          class="inline-flex min-w-[190px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60">
           <span class="material-symbols-outlined text-base">upload_file</span>
           <span *ngIf="importing">Importation en cours…</span>
           <span *ngIf="!importing">Importer la maquette</span>
+        </button>
+        <button *ngIf="selectedFile || importResult"
+          (click)="resetImport()"
+          class="inline-flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-200">
+          <span class="material-symbols-outlined text-base">restart_alt</span>
+          Réinitialiser
         </button>
       </div>
 

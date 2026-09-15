@@ -500,6 +500,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                 icon: 'description',
                 items: [
                     { label: 'Demandes', route: '/scolarite/secretariat/demandes', icon: 'receipt_long', permissionKey: 'menu.secretariat.demandes', allowedRoles: [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Autorisations provisoires', route: '/scolarite/secretariat/autorisations-provisoires', icon: 'verified', permissionKey: 'menu.secretariat.autorisations-provisoires', allowedRoles: [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Types de documents', route: '/scolarite/secretariat/types-documents', icon: 'category', permissionKey: 'menu.secretariat.types-documents', allowedRoles: [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                 ]
             },

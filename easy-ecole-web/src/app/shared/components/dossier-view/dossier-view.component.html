@@ -151,7 +151,9 @@
                     </ng-container>
                   </td>
                   <td *ngIf="renderItemActions" class="px-3 py-2">
-                    <div class="flex flex-wrap items-center justify-end gap-1.5 max-w-[420px] ml-auto">
+                    <div class="flex items-center justify-end gap-1.5 ml-auto"
+                      [style.flex-wrap]="actionsNoWrap ? 'nowrap' : 'wrap'"
+                      [style.max-width]="actionsNoWrap ? 'none' : '420px'">
                       <button
                         *ngFor="let action of visibleActions(item)"
                         (click)="itemAction.emit({ item, action: action.action }); $event.stopPropagation()"

@@ -1,0 +1,41 @@
+<div class="page-container autorisations-page">
+  <app-header-title title="Autorisations provisoires d'inscription" subtitle="Documents gratuits générés après l'attribution du matricule définitif"></app-header-title>
+
+  <app-custom-alert *ngIf="errorMessage" [show]="true" [title]="errorMessage" type="danger" [inline]="true"></app-custom-alert>
+
+  <app-filters-annee-niveau-parcours
+    [annees]="annees"
+    [niveaux]="niveaux"
+    [parcoursList]="parcoursList"
+    [sessions]="sessions"
+    [loading]="!dataLoaded"
+    [showResultCount]="true"
+    [resultCount]="totalItems"
+    [resultLabel]="'autorisation(s)'"
+    (filterChange)="onFilterChange($event)">
+  </app-filters-annee-niveau-parcours>
+
+  <section class="page-intro">
+    <div>
+      <p class="eyebrow">Inscription finalisée</p>
+      <h2>Autorisations à imprimer</h2>
+      <p>Consultation par année académique, parcours / filière et étudiant.</p>
+    </div>
+    <div class="count-badge"><strong>{{ totalItems }}</strong><span>document(s)</span></div>
+  </section>
+
+  <app-dossier-view
+    [nodes]="nodes"
+    [columns]="columns"
+    [itemActions]="itemActions"
+    [renderItemActions]="true"
+    [includeBatchInRowActions]="false"
+    [canShowItemAction]="canShowAction.bind(this)"
+    [actionsNoWrap]="true"
+    [loading]="loading"
+    [totalItems]="totalItems"
+    [currentPage]="1"
+    [totalPages]="1"
+    (itemAction)="onItemAction($event)">
+  </app-dossier-view>
+</div>

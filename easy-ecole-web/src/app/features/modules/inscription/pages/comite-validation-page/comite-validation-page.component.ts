@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 import { DossierComite, ComiteValidationService } from 'src/app/data/modules/inscription/services/comite-validation.service';
@@ -38,13 +39,14 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
   // Modale « Dossier étudiant » (données personnelles + documents déposés)
   selectedEtudiantDossier: any = null
   showEtudiantModal: boolean = false
-  docPreviewUrl: string | null = null
+  docPreviewUrl: SafeResourceUrl | null = null
   docPreviewIsImage: boolean = false
   docPreviewNom: string = ''
 
   constructor(
     private comiteService: ComiteValidationService,
-    private localStorage: LocalStorageService
+    private localStorage: LocalStorageService,
+    private sanitizer: DomSanitizer
   ) {
     super()
   }
@@ -135,7 +137,8 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
     const fichier = doc?.nomFichier || ''
     if (!fichier) return
     this.docPreviewIsImage = this.isImageFile(fichier)
-    this.docPreviewUrl = this.getDocEtudiantUrl(doc)
+    const url = this.getDocEtudiantUrl(doc)
+    this.docPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url)
     this.docPreviewNom = fichier
   }
 

@@ -12,6 +12,8 @@ import DemandeDocumentPaiementService from "../services/DemandeDocumentPaiementS
 import { SecretariatWorkflowService, ErreurWorkflow } from "../services/SecretariatWorkflowService";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { RecuCaisse } from "../models/RecuCaisse";
+import * as fs from "fs";
+import * as path from "path";
 
 export default class DemandeDocumentController {
 
@@ -65,6 +67,64 @@ export default class DemandeDocumentController {
         } catch (error) {
             return res.status(500).json({ success: false, error })
         }
+    }
+
+    static async getAutorisationsProvisoires(req: Request, res: Response): Promise<Response> {
+        try {
+            const type = await TypeDocument.findOne({ where: { libelle: "Autorisation provisoire d'inscription" } });
+            if (!type) return res.status(200).json({ data: [], pagination: { total: 0, page: 1, totalPages: 0 } });
+            const autorisations = await DemandeDocument.findAll({
+                where: { typeDocumentId: type.id, source: 'automatique' },
+                include: [{ association: DemandeDocument.associations.etudiant, attributes: ['id', 'nom', 'prenoms', 'identifiant'] }],
+                order: [['createdAt', 'DESC']],
+            });
+            const utilisateurIds = autorisations.map(demande => demande.etudiantId);
+            const cursus = utilisateurIds.length > 0
+                ? await CursusApprenant.findAll({
+                    where: { utilisateurId: { [Op.in]: utilisateurIds } },
+                    include: [
+                        CursusApprenant.associations.demandeInscription,
+                        CursusApprenant.associations.parcours,
+                        CursusApprenant.associations.anneeAcademique,
+                    ],
+                })
+                : [];
+            const demandes = autorisations
+                .map(demande => {
+                    const cursusEtudiant = cursus.find(item =>
+                        Number(item.utilisateurId) === Number(demande.etudiantId)
+                        && (!demande.anneeAcademiqueId || Number(item.anneeAcademiqueId) === Number(demande.anneeAcademiqueId))
+                        && (!demande.parcoursId || Number(item.parcoursId) === Number(demande.parcoursId))
+                        );
+                    if (!cursusEtudiant) return null;
+                    const demandeInscription = cursusEtudiant.demandeInscription as any;
+                    return {
+                        ...demande.toJSON(),
+                        matricule: demandeInscription?.matricule || null,
+                        parcoursLibelle: (cursusEtudiant as any).parcours?.titre || cursusEtudiant.intituleParcours,
+                        anneeLibelle: (cursusEtudiant as any).anneeAcademique?.libelle || null,
+                    };
+                })
+                .filter(Boolean);
+            return res.status(200).json({ data: demandes, pagination: { total: demandes.length, page: 1, totalPages: 1 } });
+        } catch (error) {
+            return res.status(500).json({ success: false, message: "Erreur lors du chargement des autorisations provisoires" });
+        }
+    }
+
+    static async telechargerAutorisationProvisoire(req: Request, res: Response): Promise<Response> {
+        const demande = await DemandeDocument.findByPk(req.params.id);
+        if (!demande || demande.source !== 'automatique' || !demande.fichierPDF) {
+            return res.status(404).json({ success: false, message: "Autorisation provisoire introuvable" });
+        }
+        const fichier = path.resolve(demande.fichierPDF);
+        if (!fs.existsSync(fichier)) return res.status(404).json({ success: false, message: "Fichier PDF indisponible" });
+        return new Promise<Response>((resolve, reject) => {
+            res.download(fichier, `autorisation-provisoire-${demande.numeroDemande || demande.id}.pdf`, (error) => {
+                if (error) reject(error);
+                else resolve(res);
+            });
+        });
     }
 
     static async getDemandeDocument(req: Request, res: Response): Promise<Response> {
