@@ -12,6 +12,9 @@ import { ExercicesPageComponent } from './pages/exercices-page/exercices-page.co
 import { BilanPageComponent } from './pages/bilan-page/bilan-page.component';
 import { CompteResultatPageComponent } from './pages/compte-resultat-page/compte-resultat-page.component';
 import { ParametresFraisPageComponent } from './pages/parametres-frais-page/parametres-frais-page.component';
+import { DashboardCabinetPageComponent } from './pages/dashboard-cabinet-page/dashboard-cabinet-page.component';
+import { ReferencesBancairesPageComponent } from './pages/references-bancaires-page/references-bancaires-page.component';
+import { HistoriqueTraitementsPageComponent } from './pages/historique-traitements-page/historique-traitements-page.component';
 
 const routes: Routes = [
   {
@@ -77,6 +80,21 @@ const routes: Routes = [
   {
     path: 'parametres-frais',
     component: ParametresFraisPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'cabinet',
+    component: DashboardCabinetPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'references-bancaires',
+    component: ReferencesBancairesPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'historique-traitements',
+    component: HistoriqueTraitementsPageComponent,
     pathMatch: 'full'
   },
 ];

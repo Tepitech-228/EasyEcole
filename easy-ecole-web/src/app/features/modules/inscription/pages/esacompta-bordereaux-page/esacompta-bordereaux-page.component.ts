@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { Bordereau } from 'src/app/data/modules/inscription/models/Bordereau.model';
@@ -18,6 +18,7 @@ import { LocalStorageService } from 'src/app/core/services/local-storage.service
 import { DossierNode, DossierColumn, BatchAction } from 'src/app/shared/components/dossier-view/dossier-view.component';
 import { environment } from 'src/environments/environment';
 import { ToastService } from 'src/app/core/services/toast.service';
+import { Observable, of } from 'rxjs';
 
 @Component({
   selector: 'app-esacompta-bordereaux-page',
@@ -126,12 +127,12 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     if (this.activeStatut === 'valide,en_saisie_comptable') {
       return [
         { label: 'Traitement', color: 'green', action: 'traitement', icon: 'fact_check' },
-        { label: 'Voir imputation', color: 'blue', action: 'voir-imputation', icon: 'account_tree' },
+        { label: 'Voir état traitement', color: 'blue', action: 'voir-imputation', icon: 'account_tree' },
       ]
     }
     if (this.activeStatut === 'traite') {
       return [
-        { label: 'Voir imputation', color: 'blue', action: 'voir-imputation', icon: 'account_tree' },
+        { label: 'Voir état traitement', color: 'blue', action: 'voir-imputation', icon: 'account_tree' },
       ]
     }
     return []
@@ -153,14 +154,40 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     super()
     this.saisieForm = this.fb.group({
       montantPaiement: [null, [Validators.required, Validators.min(1)]],
-      referenceBancaire: [''],
-      numeroBordereau: [''],
+      referenceBancaire: ['', Validators.required, this.verificateurUnicite('referenceBancaire')],
+      numeroBordereau: ['', Validators.required, this.verificateurUnicite('numeroBordereau')],
       moyenPaiement: [''],
       banque: [''],
       typeOperationId: ['', Validators.required],
-      datePaiement: [''],
+      datePaiement: ['', Validators.required],
       commentaire: ['']
     })
+  }
+
+  private uniciteCheck: any = null
+
+  verificateurUnicite(champ: 'referenceBancaire' | 'numeroBordereau') {
+    return (control: AbstractControl): Observable<ValidationErrors | null> => {
+      const valeur = (control.value || '').trim()
+      if (!valeur) return of(null)
+      if (this.uniciteCheck) clearTimeout(this.uniciteCheck)
+      return new Observable<ValidationErrors | null>((subscriber) => {
+        this.uniciteCheck = setTimeout(() => {
+          const params: any = { [champ]: valeur }
+          if (this.selectedBordereau?.id) params.excludeId = this.selectedBordereau.id
+          this.bordereauService.verifierUnicite(params).subscribe({
+            next: (res: any) => {
+              subscriber.next(res?.unique ? null : { unicite: true })
+              subscriber.complete()
+            },
+            error: () => {
+              subscriber.next(null)
+              subscriber.complete()
+            }
+          })
+        }, 300)
+      })
+    }
   }
 
   readonly moyensPaiementOptions: { value: string; label: string }[] = [
@@ -440,7 +467,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
         this.showPreviewModal = true
       },
       error: (err) => {
-        let msg = 'Erreur lors du calcul de l\'imputation'
+        let msg = 'Erreur lors du calcul du traitement'
         try {
           if (err?.error?.message) msg = err.error.message
           else if (err?.message) msg = err.message
@@ -471,10 +498,10 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
         this.showPreviewModal = true
       },
       error: (err) => {
-        const message = err?.error?.message || err?.message || 'Erreur lors du calcul de l\'imputation'
+        const message = err?.error?.message || err?.message || 'Erreur lors du calcul du traitement'
         this.apiErrorMessage = message
         this.error = true
-        console.error('[ESA-COMPTA] Erreur aperçu imputation:', message, '| status:', err?.status)
+        console.error('[ESA-COMPTA] Erreur aperçu traitement:', message, '| status:', err?.status)
       }
     })
   }

@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { Bordereau } from "../../inscription/models/Bordereau";
+import { QueryTypes } from "sequelize";
 
 export class CabinetComptableDashboardController {
 
@@ -16,6 +17,66 @@ export class CabinetComptableDashboardController {
                 where: { referenceBancaire: { $ne: null } as any }
             });
 
+            // Requêtes chartes en parallèle avec try/catch individuel
+            const parStatutPromise = (async () => {
+                try {
+                    const [rows] = await Bordereau.sequelize!.query(
+                        "SELECT statut, COUNT(*) AS nombre FROM ins_bordereaux GROUP BY statut",
+                        { type: QueryTypes.SELECT }
+                    );
+                    return rows as { statut: string; nombre: number }[];
+                } catch (error) {
+                    console.error('[CabinetDashboard parStatut]', error);
+                    return [];
+                }
+            })();
+
+            const evolutionSixMoisPromise = (async () => {
+                try {
+                    const [rows] = await Bordereau.sequelize!.query(
+                        "SELECT DATE_FORMAT(dateSoumission, '%Y-%m') AS mois, COUNT(*) AS nombre FROM ins_bordereaux WHERE dateSoumission >= DATE_FORMAT(CURDATE(), '%Y-%m-01') - INTERVAL 5 MONTH GROUP BY DATE_FORMAT(dateSoumission, '%Y-%m') ORDER BY mois ASC",
+                        { type: QueryTypes.SELECT }
+                    );
+                    return rows as { mois: string; nombre: number }[];
+                } catch (error) {
+                    console.error('[CabinetDashboard evolutionSixMois]', error);
+                    return [];
+                }
+            })();
+
+            const parMoyenPaiementPromise = (async () => {
+                try {
+                    const [rows] = await Bordereau.sequelize!.query(
+                        "SELECT moyenPaiement, COUNT(*) AS nombre FROM ins_bordereaux WHERE moyenPaiement IS NOT NULL GROUP BY moyenPaiement",
+                        { type: QueryTypes.SELECT }
+                    );
+                    return rows as { moyenPaiement: string; nombre: number }[];
+                } catch (error) {
+                    console.error('[CabinetDashboard parMoyenPaiement]', error);
+                    return [];
+                }
+            })();
+
+            const parBanquePromise = (async () => {
+                try {
+                    const [rows] = await Bordereau.sequelize!.query(
+                        "SELECT banque, COUNT(*) AS nombre FROM ins_bordereaux WHERE banque IS NOT NULL GROUP BY banque",
+                        { type: QueryTypes.SELECT }
+                    );
+                    return rows as { banque: string; nombre: number }[];
+                } catch (error) {
+                    console.error('[CabinetDashboard parBanque]', error);
+                    return [];
+                }
+            })();
+
+            const [parStatut, evolutionSixMois, parMoyenPaiement, parBanque] = await Promise.all([
+                parStatutPromise,
+                evolutionSixMoisPromise,
+                parMoyenPaiementPromise,
+                parBanquePromise
+            ]);
+
             return res.status(200).json({
                 success: true,
                 data: {
@@ -28,7 +89,13 @@ export class CabinetComptableDashboardController {
                     avecReference,
                     tauxValidation: total > 0 ? Math.round((valides / total) * 100) : 0,
                     tauxRejet: total > 0 ? Math.round((rejetes / total) * 100) : 0,
-                    tauxReference: total > 0 ? Math.round((avecReference / total) * 100) : 0
+                    tauxReference: total > 0 ? Math.round((avecReference / total) * 100) : 0,
+                    charts: {
+                        parStatut,
+                        evolutionSixMois,
+                        parMoyenPaiement,
+                        parBanque
+                    }
                 }
             });
         } catch (error) {

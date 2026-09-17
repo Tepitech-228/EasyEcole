@@ -17,7 +17,7 @@
   </div>
 
   <div *ngIf="!loading && !error">
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
       <div class="dashboard-surface-card p-4">
         <div class="flex items-center justify-between">
           <div>
@@ -27,6 +27,19 @@
           </div>
           <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
             <span class="material-symbols-outlined text-blue-600">receipt_long</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-surface-card p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs text-gray-500 uppercase font-semibold">En attente</p>
+            <p class="text-2xl font-bold text-amber-500 mt-1">{{ dashboardData?.enAttente }}</p>
+            <p class="text-xs text-gray-400 mt-1">Ce mois</p>
+          </div>
+          <div class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+            <span class="material-symbols-outlined text-amber-500">pending</span>
           </div>
         </div>
       </div>
@@ -56,6 +69,59 @@
           </div>
         </div>
       </div>
+
+      <div class="dashboard-surface-card p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs text-gray-500 uppercase font-semibold">En saisie comptable</p>
+            <p class="text-2xl font-bold text-indigo-600 mt-1">{{ dashboardData?.enSaisieComptable }}</p>
+            <p class="text-xs text-gray-400 mt-1">Ce mois</p>
+          </div>
+          <div class="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
+            <span class="material-symbols-outlined text-indigo-600">edit_document</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-surface-card p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs text-gray-500 uppercase font-semibold">Traités</p>
+            <p class="text-2xl font-bold text-green-800 mt-1">{{ dashboardData?.traites }}</p>
+            <p class="text-xs text-gray-400 mt-1">Ce mois</p>
+          </div>
+          <div class="w-12 h-12 rounded-full bg-green-200 flex items-center justify-center">
+            <span class="material-symbols-outlined text-green-800">task_alt</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Graphiques -->
+    <div *ngIf="statutsPayload" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <app-chart-panel
+        title="Répartition par statut"
+        subtitle="Distribution des bordereaux"
+        [payload]="statutsPayload">
+      </app-chart-panel>
+
+      <app-chart-panel
+        title="Évolution des bordereaux"
+        subtitle="6 derniers mois"
+        [payload]="evolutionPayload">
+      </app-chart-panel>
+
+      <app-chart-panel
+        title="Moyens de paiement"
+        subtitle="Répartition par mode de règlement"
+        [payload]="moyensPayload">
+      </app-chart-panel>
+
+      <app-chart-panel
+        title="Répartition par banque"
+        subtitle="Bordereaux par établissement bancaire"
+        [payload]="banquesPayload">
+      </app-chart-panel>
     </div>
   </div>
 </div>

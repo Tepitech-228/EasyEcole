@@ -190,6 +190,61 @@ router.get('/bordereaux-a-traiter', [AuthEsacompta, CheckPermission('action.fina
 
 /**
  * @openapi
+ * /inscription/finance/bordereaux/verifier-unicite:
+ *   get:
+ *     summary: Vérifie qu'une référence bancaire / un numéro de bordereau n'est pas déjà utilisé par un autre bordereau
+ *     tags: [Finance]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: query
+ *         name: referenceBancaire
+ *         schema: { type: string }
+ *       - in: query
+ *         name: numeroBordereau
+ *         schema: { type: string }
+ *       - in: query
+ *         name: excludeId
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: { success, unique, conflit? }
+ *       400:
+ *         description: Paramètre manquant
+ */
+router.get('/bordereaux/verifier-unicite', [AuthEsacompta, CheckPermission('action.finance.bordereau.saisir')], async (req: Request, res: Response) => {
+  try {
+    const referenceBancaire = typeof req.query.referenceBancaire === 'string' ? req.query.referenceBancaire.trim() : ''
+    const numeroBordereau = typeof req.query.numeroBordereau === 'string' ? req.query.numeroBordereau.trim() : ''
+    const excludeId = req.query.excludeId ? Number(req.query.excludeId) : null
+
+    if (!referenceBancaire && !numeroBordereau) {
+      return res.status(400).json({ success: false, message: 'Renseignez une référence bancaire ou un numéro de bordereau.' })
+    }
+
+    const whereClause: any = { deletedAt: null }
+    const orConditions: any[] = []
+    if (referenceBancaire) orConditions.push({ referenceBancaire })
+    if (numeroBordereau) orConditions.push({ numeroBordereau })
+    if (excludeId && !isNaN(excludeId)) whereClause.id = { [Op.ne]: excludeId }
+    whereClause[Op.or] = orConditions
+
+    const existant = await Bordereau.findOne({ where: whereClause, attributes: ['id', 'referenceBancaire', 'numeroBordereau'] })
+    if (!existant) {
+      return res.json({ success: true, unique: true })
+    }
+
+    const conflit = referenceBancaire && existant.referenceBancaire === referenceBancaire
+      ? { champ: 'referenceBancaire', valeur: existant.referenceBancaire }
+      : { champ: 'numeroBordereau', valeur: existant.numeroBordereau }
+    return res.json({ success: true, unique: false, conflit })
+  } catch (error: any) {
+    console.error('[Finance] verifier-unicite ERREUR:', error?.message)
+    return res.status(500).json({ success: false, message: "Erreur de vérification d'unicité." })
+  }
+})
+
+/**
+ * @openapi
  * /inscription/finance/bordereaux/{id}/imputation-preview:
  *   post:
  *     tags: [Finance]

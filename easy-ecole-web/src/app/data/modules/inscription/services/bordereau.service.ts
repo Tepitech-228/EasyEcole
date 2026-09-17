@@ -41,6 +41,16 @@ export class BordereauService {
     return this.httpClient.post<any>(`${environment.API_MODULES.INSCRIPTION}/finance/bordereaux/${id}/imputation-preview`, { montantPaiement, type })
   }
 
+  verifierUnicite(params: any): Observable<any> {
+    let httpParams = new HttpParams();
+    Object.keys(params).forEach(key => {
+      if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
+        httpParams = httpParams.set(key, String(params[key]));
+      }
+    });
+    return this.httpClient.get<any>(`${environment.API_MODULES.INSCRIPTION}/finance/bordereaux/verifier-unicite`, { params: httpParams });
+  }
+
   compositionPreview(id: string, montantPaiement: number): Observable<any> {
     return this.httpClient.post<any>(`${environment.API_MODULES.INSCRIPTION}/finance/bordereaux/${id}/composition-preview`, { montantPaiement })
   }

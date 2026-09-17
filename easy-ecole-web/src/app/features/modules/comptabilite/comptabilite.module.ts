@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ComptabiliteRoutingModule } from './comptabilite-routing.module';
 import { SharedModule } from 'src/app/shared/shared.module';
 import { MaterialModule } from 'src/app/shared/modern-ui/material.module';
+import { ModernUiModule } from 'src/app/shared/modern-ui/modern-ui.module';
 import { DashboardComptablePageComponent } from './pages/dashboard-comptable-page/dashboard-comptable-page.component';
 import { PlanComptablePageComponent } from './pages/plan-comptable-page/plan-comptable-page.component';
 import { BalancePageComponent } from './pages/balance-page/balance-page.component';
@@ -16,6 +17,9 @@ import { ExercicesPageComponent } from './pages/exercices-page/exercices-page.co
 import { ParametresFraisPageComponent } from './pages/parametres-frais-page/parametres-frais-page.component';
 import { BilanPageComponent } from './pages/bilan-page/bilan-page.component';
 import { CompteResultatPageComponent } from './pages/compte-resultat-page/compte-resultat-page.component';
+import { DashboardCabinetPageComponent } from './pages/dashboard-cabinet-page/dashboard-cabinet-page.component';
+import { ReferencesBancairesPageComponent } from './pages/references-bancaires-page/references-bancaires-page.component';
+import { HistoriqueTraitementsPageComponent } from './pages/historique-traitements-page/historique-traitements-page.component';
 
 @NgModule({
   declarations: [
@@ -31,6 +35,9 @@ import { CompteResultatPageComponent } from './pages/compte-resultat-page/compte
     BilanPageComponent,
     CompteResultatPageComponent,
     ParametresFraisPageComponent,
+    DashboardCabinetPageComponent,
+    ReferencesBancairesPageComponent,
+    HistoriqueTraitementsPageComponent,
   ],
   imports: [
     CommonModule,
@@ -38,6 +45,7 @@ import { CompteResultatPageComponent } from './pages/compte-resultat-page/compte
     ComptabiliteRoutingModule,
     SharedModule,
     MaterialModule,
+    ModernUiModule,
   ]
 })
 export class ComptabiliteModule { }
