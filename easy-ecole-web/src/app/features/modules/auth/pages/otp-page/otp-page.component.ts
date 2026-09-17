@@ -18,8 +18,8 @@ export class OtpPageComponent implements OnInit, OnDestroy {
 
   readonly circleCircumference: number = 2 * Math.PI * 40
 
-  timeLeft: number = 75
-  totalTime: number = 75
+  timeLeft: number = 300
+  totalTime: number = 300
   private timerInterval: any
 
   canResend: boolean = false
@@ -54,7 +54,9 @@ export class OtpPageComponent implements OnInit, OnDestroy {
 
   get timerText(): string {
     const s = Math.max(0, Math.ceil(this.timeLeft))
-    return `${s}s`
+    const min = Math.floor(s / 60)
+    const sec = s % 60
+    return min > 0 ? `${min}:${String(sec).padStart(2, '0')}` : `${s}s`
   }
 
   get statusConfig(): { text: string; type: string; icon: string } {
@@ -229,7 +231,7 @@ export class OtpPageComponent implements OnInit, OnDestroy {
     this.authService.resendOtp(this.email).subscribe({
       next: (res) => {
         this.codeInputs = Array(4).fill('')
-        this.timeLeft = 75
+        this.timeLeft = 300
         this.state = 'idle'
         this.errorMessage = ''
         this.startTimer()

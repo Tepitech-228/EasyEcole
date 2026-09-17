@@ -469,7 +469,7 @@ export class EmailSender {
                     <div style="background: #1F4E79; border-radius: 8px; padding: 20px; margin: 20px 0;">
                         <span style="font-family: 'Courier New', monospace; font-size: 28px; font-weight: bold; letter-spacing: 6px; color: #fff;">${formattedCode}</span>
                     </div>
-                    <p style="font-size: 14px; color: #666; margin: 0;">Ce code expire dans <strong>75 secondes</strong>.</p>
+                    <p style="font-size: 14px; color: #666; margin: 0;">Ce code expire dans <strong>5 minutes</strong>.</p>
                     <p style="font-size: 13px; color: #999; margin: 15px 0 0 0;">Si vous n'etes pas à l'origine de cette demande, ignorez cet email.</p>
                 </div>
                 <div style="text-align: center; padding: 15px; color: #999; font-size: 12px;">EasyEcole - Gestion Scolaire &copy; ${new Date().getFullYear()}</div>

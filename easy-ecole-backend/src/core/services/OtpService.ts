@@ -16,7 +16,7 @@ type VerifyResult =
   | { success: false; reason: 'incorrect'; attemptsLeft: number }
 
 const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
-const OTP_TTL = 75000
+const OTP_TTL = 300000 // 5 minutes
 const RESEND_COOLDOWN = 30000
 const MAX_ATTEMPTS = 5
 const BLOCK_DURATION = 600000
