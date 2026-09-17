@@ -1,0 +1,81 @@
+<style>
+  /* ═══════════ DESIGN ESA — FICHE D'ENGAGEMENT (OFFICIEL) ═══════════ */
+  @page { size: A4 portrait; margin: 8mm 10mm; }
+  *, *::before, *::after { box-sizing: border-box; }
+  .doc-page { background-color: #ffffff; width: 100%; color: #1a1a1a; font-size: 8.5pt; line-height: 1.45; }
+  .frame { border: 3px solid #002147; padding: 12px; position: relative; display: flex; flex-direction: column; justify-content: space-between; min-height: 255mm; overflow: hidden; }
+  .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 65%; max-width: 400px; opacity: 0.05; z-index: 0; pointer-events: none; }
+  .content-wrapper { position: relative; z-index: 1; }
+  .header-table { width: 100%; border-collapse: collapse; border-bottom: 2px solid #002147; padding-bottom: 4px; margin-bottom: 4px; }
+  .header-table td { vertical-align: middle; }
+  .logo-img { max-height: 60px; width: auto; object-fit: contain; }
+  .school-info { text-align: right; font-size: 8pt; color: #333; line-height: 1.2; }
+  .banner-accent { height: 3px; background-color: #D4AF37; margin-bottom: 8px; }
+  .doc-title { text-align: center; margin: 6px 0 4px; }
+  .doc-title h1 { font-size: 13pt; color: #002147; text-transform: uppercase; letter-spacing: 0.5px; margin: 0; padding-bottom: 3px; border-bottom: 2px solid #D4AF37; display: inline-block; }
+  .ref-number { text-align: center; font-size: 8pt; font-weight: bold; color: #002147; margin-bottom: 8px; }
+  .dotted-line { border-bottom: 1px dotted #333; display: inline-block; min-width: 100px; }
+  .value { font-weight: bold; color: #002147; }
+  .content-body { margin: 6px 0; text-align: justify; }
+  .content-body p { margin: 8px 0; }
+  .notice-box { background-color: rgba(240, 244, 248, 0.85); border: 1px solid #002147; padding: 6px; margin: 6px 0; font-size: 7.5pt; }
+  .footer-table { width: 100%; margin-top: 10px; border-collapse: collapse; position: relative; z-index: 1; }
+  .footer-table td { vertical-align: top; }
+  .date-cell { font-style: italic; font-size: 8pt; }
+  .sign-cell { text-align: center; }
+  .sign-title { font-weight: bold; font-size: 8pt; color: #002147; margin-bottom: 35px; }
+  .sign-sub { font-size: 7.5pt; color: #444; line-height: 1.1; }
+  .doc-meta { text-align: center; margin-top: 8px; font-size: 7pt; color: #999; }
+</style>
+
+<div class="doc-page">
+  <div class="frame">
+    <img src="{{LOGO_DATA_URI}}" alt="" class="watermark">
+
+    <div class="content-wrapper">
+      <table class="header-table">
+        <tr>
+          <td><img src="{{LOGO_DATA_URI}}" alt="Logo ESA" class="logo-img"></td>
+          <td class="school-info">
+            <strong>{{etablissement.nom}}</strong><br>
+            Direction Académique
+          </td>
+        </tr>
+      </table>
+      <div class="banner-accent"></div>
+
+      <div class="doc-title">
+        <h1>Fiche d'Engagement</h1>
+      </div>
+      <div class="ref-number">(portant inscription en 2ème Année de BTS sous réserve de régulariser le parcours avant inscription en Licence Semestre 5 &amp; 6)</div>
+
+      <div class="content-body" style="line-height: 1.5; text-align: justify;">
+        <p>Je soussigné (e) <strong>M/ Mlle/Mme :</strong> <span class="dotted-line" style="width: 65%;">{{etudiant.nom}} {{etudiant.prenom}}</span>,<br>
+        désireux(se) de m'inscrire en Deuxième Année de la Filière <span class="dotted-line" style="width: 40%;">{{etudiant.filiere}}</span> Promotion <span class="dotted-line" style="width: 12%;">{{etudiant.promotion}}</span>, m'engage devant la Direction Générale et le Comité d'Orientation et d'Équivalence de l'Ecole Supérieure des Affaires (ESA) ;</p>
+
+        <p>&bull; qu'en cas d'échec à l'examen du BTS, de régulariser mon parcours de formation par la reprise des unités d'enseignements prescrites en Licence 1/ BTS 1, Semestre 1 &amp; 2 de la Filière <span class="dotted-line" style="width: 35%;">{{etudiant.filiere}}</span> à l'Ecole Supérieure des Affaires (ESA) ;</p>
+
+        <p>&bull; qu'en cas de réussite à l'examen du BTS, de régulariser mon parcours de formation par la reprise des Unités d'enseignement de Licence 1 / BTS 1, Semestre 1 &amp; 2 non validés avant toute poursuite de la formation en Licence 3, Semestre 5 &amp; 6 à l'ESA ;</p>
+
+        <p>&bull; qu'à ne présenter mon dossier devant la commission de reconnaissance et d'homologation de diplômes qu'après avoir validé les 180 crédits du parcours Licence.</p>
+
+        <div class="notice-box" style="margin-top: 20px;">
+          <strong>AVERTISSEMENT :</strong><br>
+          En cas de réussite à l'examen du BTS, la poursuite de la formation à l'Ecole Supérieure des Affaires (ESA) est conditionnée par une autorisation d'inscription délivrée par le Comité d'Orientation et d'Equivalence.<br>
+          La Direction Générale de l'Ecole Supérieure des Affaires (ESA), décline toute responsabilité en cas de non-respect de cet engagement.
+        </div>
+      </div>
+
+      <table class="footer-table" style="margin-top: 30px;">
+        <tr>
+          <td class="date-cell">Fait à Lomé, le {{dateEdition}}</td>
+          <td class="sign-cell" style="width: 60%;">
+            <div class="sign-title">Signature précédée de la mention « lu et approuvé »</div>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="doc-meta">Document généré le {{dateGeneration}} — Réf : {{reference}}</div>
+</div>
