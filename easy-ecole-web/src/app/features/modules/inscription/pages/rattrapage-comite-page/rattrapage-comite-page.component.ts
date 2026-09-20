@@ -1,10 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
-import { RattrapageInscriptionWorkflow } from 'src/app/data/modules/inscription/models/RattrapageWorkflow.model';
-import { RattrapageWorkflowService } from 'src/app/data/modules/inscription/services/rattrapage-workflow.service';
+import { RattrapageComiteService, RattrapageComiteDemande, Quorum, VoteComite, MembreComite } from 'src/app/data/modules/inscription/services/rattrapage-comite.service';
 
-type FiltreComite = 'en_attente' | 'valide' | 'rejete';
+const QUORUM_VIDE: Quorum = {
+  totalMembres: 0, votesCount: 0, valides: 0, restants: 0,
+  aVote: false, estUnanime: false, estRejete: false
+}
+
+type FiltreComite = 'en_attente' | 'valide' | 'rejete' | 'correction_demandee';
 
 @Component({
   selector: 'app-rattrapage-comite-page',
@@ -13,23 +17,27 @@ type FiltreComite = 'en_attente' | 'valide' | 'rejete';
 })
 export class RattrapageComitePageComponent extends BaseComponentClass implements OnInit {
 
-  demandes: RattrapageInscriptionWorkflow[] = []
+  demandes: RattrapageComiteDemande[] = []
   loading: boolean = false
   errorMessage: string = ''
   successMessage: string = ''
   activeFiltre: FiltreComite = 'en_attente'
 
-  // Modal rejet
-  showRejetModal: boolean = false
-  demandeSelectionnee?: RattrapageInscriptionWorkflow
-  motifRejet: string = ''
+  // Détail / modal
+  demandeSelectionnee?: RattrapageComiteDemande
+  detailComplet?: RattrapageComiteDemande
+  membres: MembreComite[] = []
+  showDetailModal: boolean = false
+  loadingDetail: boolean = false
 
-  // Modal validation
-  showValidationModal: boolean = false
+  // Décision en cours
+  decisionEnCours: 'valide' | 'correction_demandee' | 'rejete' | null = null
+  motifDecision: string = ''
+  processingDecision: boolean = false
 
   constructor(
     private router: Router,
-    private rattrapageWorkflowService: RattrapageWorkflowService
+    private rattrapageComiteService: RattrapageComiteService
   ) {
     super()
     if (!this.rolesValue.isComiteOrientation && !this.rolesValue.isAdmin && !this.rolesValue.isInstitution) {
@@ -44,9 +52,9 @@ export class RattrapageComitePageComponent extends BaseComponentClass implements
   loadDemandes(): void {
     this.loading = true
     this.errorMessage = ''
-    this.rattrapageWorkflowService.getDemandes().subscribe({
-      next: (demandes) => {
-        this.demandes = demandes
+    this.rattrapageComiteService.listerDemandes().subscribe({
+      next: (res) => {
+        this.demandes = res.data || []
         this.loading = false
       },
       error: (err) => {
@@ -61,7 +69,7 @@ export class RattrapageComitePageComponent extends BaseComponentClass implements
     this.activeFiltre = filtre
   }
 
-  get filteredDemandes(): RattrapageInscriptionWorkflow[] {
+  get filteredDemandes(): RattrapageComiteDemande[] {
     return this.demandes.filter((d) => (d.statutDemande || 'en_attente') === this.activeFiltre)
   }
 
@@ -77,81 +85,210 @@ export class RattrapageComitePageComponent extends BaseComponentClass implements
     return this.demandes.filter((d) => d.statutDemande === 'rejete').length
   }
 
+  get nbCorrectionDemandee(): number {
+    return this.demandes.filter((d) => d.statutDemande === 'correction_demandee').length
+  }
+
   // ---------------------------------------------------------------------------
-  // Validation / rejet
+  // Helpers Quorum collégial
   // ---------------------------------------------------------------------------
 
-  openValidationModal(demande: RattrapageInscriptionWorkflow): void {
+  getQuorum(d?: RattrapageComiteDemande | null): Quorum {
+    return ((d ?? this.detailComplet)?.quorum) || QUORUM_VIDE
+  }
+
+  getQuorumLabel(d?: RattrapageComiteDemande | null): string {
+    const q = this.getQuorum(d)
+    if (q.totalMembres === 0) return '---'
+    if (q.estUnanime) return `Unanimité (${q.valides}/${q.totalMembres})`
+    if (q.estRejete) return `Rejeté (${q.votesCount}/${q.totalMembres})`
+    return `${q.votesCount}/${q.totalMembres} votés — reste ${q.restants}`
+  }
+
+  getQuorumBadgeClass(d?: RattrapageComiteDemande | null): string {
+    const q = this.getQuorum(d)
+    if (q.estUnanime) return 'bg-green-100 text-green-800'
+    if (q.estRejete) return 'bg-red-100 text-red-800'
+    return 'bg-orange-100 text-orange-800'
+  }
+
+  getMembreVoteBadge(m: MembreComite | null): { label: string; cls: string } {
+    if (!m?.vote) return { label: 'En attente', cls: 'bg-gray-100 text-gray-600' }
+    switch (m.vote?.decision) {
+      case 'valide': return { label: 'Valide', cls: 'bg-green-100 text-green-800' }
+      case 'rejete': return { label: 'Rejeté', cls: 'bg-red-100 text-red-800' }
+      case 'correction_demandee': return { label: 'Correction', cls: 'bg-orange-100 text-orange-800' }
+      default: return { label: 'En attente', cls: 'bg-gray-100 text-gray-600' }
+    }
+  }
+
+  aDejaVote(): boolean {
+    return this.getQuorum(this.detailComplet).aVote
+  }
+
+  peutVoter(): boolean {
+    const q = this.getQuorum(this.detailComplet)
+    return !q.estUnanime && !q.estRejete
+  }
+
+  messageEtatQuorum(): string {
+    const q = this.getQuorum(this.detailComplet)
+    if (q.estRejete) return 'Dossier rejeté (veto)'
+    if (q.estUnanime) return 'Unanimité atteinte'
+    return `En attente de ${q.restants} vote(s)`
+  }
+
+  getQuorumProgressClass(): string {
+    const q = this.getQuorum(this.detailComplet)
+    if (q.totalMembres === 0) return 'bg-gray-200'
+    const pct = Math.round((q.valides / q.totalMembres) * 100)
+    if (q.estUnanime) return 'bg-green-500'
+    if (q.estRejete) return 'bg-red-500'
+    return pct >= 50 ? 'bg-orange-500' : 'bg-gray-400'
+  }
+
+  getValiderTooltip(): string {
+    const q = this.getQuorum(this.detailComplet)
+    if (q.estRejete) return 'Dossier déjà rejeté'
+    if (this.aDejaVote()) return 'Vous avez déjà voté'
+    if (!q.estUnanime) {
+      return `Votre vote "valide" sera enregistré. Finalisation à l'unanimité — encore ${q.restants} vote(s) manquant(s)`
+    }
+    return ''
+  }
+
+  // ---------------------------------------------------------------------------
+  // Modale détail
+  // ---------------------------------------------------------------------------
+
+  ouvrirDetail(d: RattrapageComiteDemande): void {
+    this.demandeSelectionnee = d
+    this.detailComplet = undefined
+    this.showDetailModal = true
+    this.loadingDetail = true
+    this.membres = []
+    this.rattrapageComiteService.detailDemande(d.id!).subscribe({
+      next: (res) => {
+        this.detailComplet = res.data.demande
+        this.membres = res.data.membres || []
+        this.loadingDetail = false
+      },
+      error: () => { this.loadingDetail = false }
+    })
+  }
+
+  fermerDetail(): void {
+    this.showDetailModal = false
+    this.demandeSelectionnee = undefined
+    this.detailComplet = undefined
+    this.membres = []
+    this.decisionEnCours = null
+    this.motifDecision = ''
+  }
+
+  // ---------------------------------------------------------------------------
+  // Décisions (3 options)
+  // ---------------------------------------------------------------------------
+
+  preparerDecision(decision: 'valide' | 'correction_demandee' | 'rejete'): void {
+    this.decisionEnCours = decision
+    this.motifDecision = ''
+  }
+
+  annulerDecision(): void {
+    this.decisionEnCours = null
+    this.motifDecision = ''
+  }
+
+  confirmerDecision(): void {
+    if (!this.demandeSelectionnee?.id || !this.decisionEnCours) return
+    if (this.decisionEnCours !== 'valide' && !this.motifDecision.trim()) return
+
+    this.processingDecision = true
+    this.rattrapageComiteService.decider(this.demandeSelectionnee.id, this.decisionEnCours, this.motifDecision.trim()).subscribe({
+      next: (res) => {
+        this.processingDecision = false
+        this.successMessage = this.decisionEnCours === 'valide'
+          ? 'Demande validée par le comité.'
+          : `Décision enregistrée (« ${this.libelleDecision(this.decisionEnCours)} ») et notifiée à l'étudiant.`
+        this.fermerDetail()
+        this.loadDemandes()
+        setTimeout(() => this.successMessage = '', 5000)
+      },
+      error: (err) => {
+        console.error('Erreur décision:', err)
+        this.errorMessage = err?.error?.message || 'Erreur lors de l\'enregistrement de la décision'
+        this.processingDecision = false
+        setTimeout(() => { this.errorMessage = '' }, 5000)
+      }
+    })
+  }
+
+  libelleDecision(d: string | null | undefined): string {
+    const map: any = {
+      'valide': 'Validée',
+      'correction_demandee': 'Correction demandée',
+      'rejete': 'Rejetée',
+    }
+    return map[d || ''] || (d || '---')
+  }
+
+  // ---------------------------------------------------------------------------
+  // Modal validation (ancienne interface rapide)
+  // ---------------------------------------------------------------------------
+
+  openValidationModal(demande: RattrapageComiteDemande): void {
     this.demandeSelectionnee = demande
-    this.showValidationModal = true
+    this.showDetailModal = true
+    this.preparerDecision('valide')
   }
 
   closeValidationModal(): void {
-    this.showValidationModal = false
+    this.showDetailModal = false
     this.demandeSelectionnee = undefined
+    this.decisionEnCours = null
+    this.motifDecision = ''
   }
 
   validerDemande(): void {
-    const demande = this.demandeSelectionnee
-    if (!demande?.id) return
-
-    this.rattrapageWorkflowService.validerDemande(demande.id).subscribe({
-      next: () => {
-        this.successMessage = 'Demande validée. L\'étudiant peut désormais déposer son bordereau de paiement.'
-        this.closeValidationModal()
-        setTimeout(() => { this.successMessage = '' }, 5000)
-        this.loadDemandes()
-      },
-      error: (err) => {
-        console.error('Erreur validation demande:', err)
-        this.errorMessage = err?.error?.message || err?.message || 'Erreur lors de la validation de la demande'
-        setTimeout(() => { this.errorMessage = '' }, 5000)
-      }
-    })
+    if (!this.demandeSelectionnee?.id) return
+    this.preparerDecision('valide')
   }
 
-  openRejetModal(demande: RattrapageInscriptionWorkflow): void {
+  // ---------------------------------------------------------------------------
+  // Modal rejet (ancienne interface rapide)
+  // ---------------------------------------------------------------------------
+
+  openRejetModal(demande: RattrapageComiteDemande): void {
     this.demandeSelectionnee = demande
-    this.motifRejet = ''
-    this.showRejetModal = true
+    this.motifDecision = ''
+    this.decisionEnCours = 'rejete'
+    this.showDetailModal = true
   }
 
   closeRejetModal(): void {
-    this.showRejetModal = false
+    this.showDetailModal = false
     this.demandeSelectionnee = undefined
-    this.motifRejet = ''
+    this.decisionEnCours = null
+    this.motifDecision = ''
   }
 
   get rejetPossible(): boolean {
-    return this.motifRejet.trim().length > 0
+    return this.motifDecision.trim().length > 0
   }
 
   rejeterDemande(): void {
-    const demande = this.demandeSelectionnee
-    if (!demande?.id || !this.rejetPossible) return
-
-    this.rattrapageWorkflowService.rejeterDemande(demande.id, this.motifRejet.trim()).subscribe({
-      next: () => {
-        this.successMessage = 'Demande rejetée'
-        this.closeRejetModal()
-        setTimeout(() => { this.successMessage = '' }, 4000)
-        this.loadDemandes()
-      },
-      error: (err) => {
-        console.error('Erreur rejet demande:', err)
-        this.errorMessage = err?.error?.message || err?.message || 'Erreur lors du rejet de la demande'
-        setTimeout(() => { this.errorMessage = '' }, 5000)
-      }
-    })
+    if (!this.demandeSelectionnee?.id || !this.rejetPossible) return
+    this.confirmerDecision()
   }
 
   // ---------------------------------------------------------------------------
   // Téléchargement des pièces (BLOB)
   // ---------------------------------------------------------------------------
 
-  telechargerDocument(demande: RattrapageInscriptionWorkflow, documentDeposeId: number): void {
+  telechargerDocument(demande: RattrapageComiteDemande, documentDeposeId: number): void {
     if (!demande.id) return
-    this.rattrapageWorkflowService.telechargerDocument(demande.id, documentDeposeId).subscribe({
+    this.rattrapageComiteService.telechargerDocument(demande.id, documentDeposeId).subscribe({
       next: (blob) => {
         const url = window.URL.createObjectURL(blob)
         window.open(url, '_blank')
@@ -169,22 +306,22 @@ export class RattrapageComitePageComponent extends BaseComponentClass implements
   // Helpers d'affichage
   // ---------------------------------------------------------------------------
 
-  getEtudiantLabel(demande: RattrapageInscriptionWorkflow): string {
+  getEtudiantLabel(demande: RattrapageComiteDemande): string {
     const u = demande.utilisateur
     if (!u) return `#${demande.demandePar ?? demande.id}`
     const nom = [u.nom, u.prenoms].filter(Boolean).join(' ')
     return nom.trim() || `#${demande.demandePar ?? demande.id}`
   }
 
-  getSessionLabel(demande: RattrapageInscriptionWorkflow): string {
+  getSessionLabel(demande: RattrapageComiteDemande): string {
     return demande.rattrapageSession?.libelle || `Session #${demande.rattrapageSessionId}`
   }
 
-  getDocumentsDeposesCount(demande: RattrapageInscriptionWorkflow): number {
+  getDocumentsDeposesCount(demande: RattrapageComiteDemande): number {
     return (demande.documentsDeposes || []).length
   }
 
-  getDocumentsRequisCount(demande: RattrapageInscriptionWorkflow): number {
+  getDocumentsRequisCount(demande: RattrapageComiteDemande): number {
     return (demande.documentsRequis || []).length
   }
 
@@ -192,6 +329,7 @@ export class RattrapageComitePageComponent extends BaseComponentClass implements
     switch (statut) {
       case 'valide': return 'green'
       case 'rejete': return 'red'
+      case 'correction_demandee': return 'orange'
       default: return 'yellow'
     }
   }
@@ -200,6 +338,7 @@ export class RattrapageComitePageComponent extends BaseComponentClass implements
     switch (statut) {
       case 'valide': return 'Validée'
       case 'rejete': return 'Rejetée'
+      case 'correction_demandee': return 'Correction demandée'
       default: return 'En attente'
     }
   }

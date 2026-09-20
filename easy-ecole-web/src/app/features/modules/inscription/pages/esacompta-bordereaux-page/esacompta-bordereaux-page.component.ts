@@ -36,7 +36,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   loading = true
   dataLoaded = false
 
-  selectedBordereau?: Bordereau
+  selectedBordereau?: any
   showSaisieModal = false
   showPreviewModal = false
 
@@ -619,6 +619,46 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   formatCurrency(value: number | undefined | null): string {
     if (value == null) return '---'
     return new Intl.NumberFormat('fr-FR').format(value) + ' FCFA'
+  }
+
+  /** Libellé de l'année académique depuis demandeInscription */
+  getAnneeLibelle(b: any): string {
+    if (!b?.demandeInscription?.session?.anneeAcademique?.libelle) return '—'
+    return b.demandeInscription.session.anneeAcademique.libelle
+  }
+
+  /** Libellé du niveau d'étude depuis demandeInscription */
+  getNiveauLibelle(b: any): string {
+    if (!b?.demandeInscription?.session?.niveauEtude?.libelle) return '—'
+    return b.demandeInscription.session.niveauEtude.libelle
+  }
+
+  /** Libellé du parcours choisi (choixFinal=true) depuis demandeInscription */
+  getParcoursLibelle(b: any): string {
+    if (!b?.demandeInscription?.parcoursChoisis?.length) return '—'
+    const choix = b.demandeInscription.parcoursChoisis.find((p: any) => p.choixFinal === true)
+    return choix?.parcours?.titre || b.demandeInscription.parcoursChoisis[0]?.parcours?.titre || '—'
+  }
+
+  /** Libellé de la filière (type du parcours) depuis demandeInscription */
+  getFiliereLibelle(b: any): string {
+    if (!b?.demandeInscription?.parcoursChoisis?.length) return '—'
+    const choix = b.demandeInscription.parcoursChoisis.find((p: any) => p.choixFinal === true)
+    if (!choix?.parcours) return '—'
+    return choix.parcours.type || choix.parcours.titre || '—'
+  }
+
+  /** Période cours (matin/soir/en_ligne) depuis apprenant */
+  getOptionCours(b: any): string {
+    if (!b?.demandeInscription?.utilisateur?.apprenant?.periode) return '—'
+    return b.demandeInscription.utilisateur.apprenant.periode
+  }
+
+  /** Traduit la période en libellé humain */
+  getPeriodeLibelle(periode: string | null | undefined): string {
+    if (!periode) return '—'
+    const map: Record<string, string> = { matin: 'Jour', soir: 'Soir', en_ligne: 'En ligne' }
+    return map[periode] || periode
   }
 
   getStatutLabel(statut: string): string {

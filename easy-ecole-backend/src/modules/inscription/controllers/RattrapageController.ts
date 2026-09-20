@@ -406,13 +406,26 @@ export default class RattrapageController {
         const rattrapage = await RattrapageInscription.findByPk(item.id);
         if (!rattrapage) continue;
 
+        // NEW: Garde-fou : rejeter si la date limite de saisie est dépassée
+        if (rattrapage.dateGradingDeadline) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0); // Normaliser à minuit pour la comparaison
+          const deadline = new Date(rattrapage.dateGradingDeadline);
+          deadline.setHours(0, 0, 0, 0); // Normaliser à minuit
+          if (today > deadline) {
+            return res.status(400).json({ success: false, message: "La date limite de saisie des notes est dépassée" });
+          }
+        }
+
         // Garde-fou : seul l'enseignant DÉSIGNÉ correcteur (par l'institution) saisit les notes
         if (role === RolesUtilisateur.ENSEIGNANT) {
-          if (!rattrapage.enseignantId || String(rattrapage.enseignantId) !== String(enseignantConnecteId)) {
+          // Vérifier que l'enseignant connecté est bien celui assigné à l'enseignantGradientId
+          if (!rattrapage.enseignantGradientId || String(rattrapage.enseignantGradientId) !== String(enseignantConnecteId)) {
             return res.status(403).json({ success: false, message: "Vous ne pouvez saisir que les notes des copies qui vous ont été désignées comme correcteur par l'institution" });
           }
         }
 
+        // Keep the existing payment enforcement
         if (rattrapage.source === 'demande_etudiant' && rattrapage.statutPaiement === 'impaye' && item.noteRattrapage != null) {
           return res.status(400).json({ success: false, message: "Paiement requis avant validation du rattrapage" });
         }
@@ -723,6 +736,23 @@ export default class RattrapageController {
 
       const { dateRattrapage, heureDebut, heureFin, salle, enseignantId } = req.body;
 
+      // Auto-set dateGradingDeadline: session date + 3 jours (mercredi)
+      let gradingDeadline: Date | null = null;
+      if (dateRattrapage) {
+        const sessionDate = new Date(dateRattrapage);
+        // Ajouter 3 jours pour avoir le mercredi
+        gradingDeadline = new Date(sessionDate);
+        gradingDeadline.setDate(sessionDate.getDate() + 3);
+        // S'assurer que c'est bien un mercredi (ajuster si nécessaire)
+        const day = gradingDeadline.getDay(); // 0=dimanche, 1=lundi, ..., 4=jeudi, 3=mercredi
+        if (day !== 3) {
+          // Si on n'est pas mercredi, ajuster vers le mercredi suivant
+          const diff = (3 - day + 7) % 7;
+          gradingDeadline = new Date(gradingDeadline);
+          gradingDeadline.setDate(gradingDeadline.getDate() + diff);
+        }
+      }
+
       if (enseignantId) {
         const enseignantUser = await Utilisateur.findByPk(enseignantId);
         if (!enseignantUser || enseignantUser.role != RolesUtilisateur.ENSEIGNANT) {
@@ -736,7 +766,9 @@ export default class RattrapageController {
         heureFin: heureFin || null,
         salle: salle || null,
         enseignantId: enseignantId || null,
-        statut: 'convoque'
+        enseignantGradientId: enseignantId || null,
+        statut: 'convoque',
+        dateGradingDeadline: gradingDeadline,
       });
 
       const full = await RattrapageInscription.findByPk(rattrapage.id, {

@@ -3,6 +3,32 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 
+export interface Quorum {
+  totalMembres: number
+  votesCount: number
+  valides: number
+  restants: number
+  aVote: boolean
+  estUnanime: boolean
+  estRejete: boolean
+}
+
+export interface VoteComite {
+  membreId?: number
+  decision: 'valide' | 'correction_demandee' | 'rejete' | null
+  motif?: string | null
+  dateVote?: string | null
+}
+
+export interface MembreComite {
+  id?: number
+  nom?: string
+  prenoms?: string
+  identifiant?: string
+  email?: string
+  vote: VoteComite | null
+}
+
 export interface DossierComite {
   id?: number
   statutPipeline?: string | null
@@ -18,6 +44,9 @@ export interface DossierComite {
   bordereaux?: any[]
   dossierEtudiant?: any | null
   echeances?: any[]
+  quorum?: Quorum
+  votes?: VoteComite[]
+  membres?: MembreComite[]
 }
 
 @Injectable({

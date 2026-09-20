@@ -64,7 +64,12 @@ export class BordereauxATraiterPageComponent extends BaseComponentClass implemen
 
   onValider(): void {
     if (!this.selectedBordereau) return;
-    this.bordereauService.valider(this.selectedBordereau.id!).subscribe({
+    const b = this.selectedBordereau;
+    this.bordereauService.valider(b.id!, {
+      referenceBancaire: b.referenceBancaire || '',
+      numeroBordereau: b.numeroBordereau || '',
+      datePaiement: b.datePaiement ? new Date(b.datePaiement).toISOString().split('T')[0] : '',
+    }).subscribe({
       next: () => {
         this.closeVerification();
         this.loadBordereaux();

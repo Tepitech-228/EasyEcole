@@ -7,6 +7,7 @@ import { Echeance } from "../models/Echeance";
 import { DossierEtudiant } from "../models/DossierEtudiant";
 import { DemandeInscription } from "../models/DemandeInscription";
 import { Utilisateur } from "../../auth/models/Utilisateur";
+import { Apprenant } from "../../auth/models/Apprenant";
 import { TypeOperationBordereau } from "../models/TypeOperationBordereau";
 import { PaiementInscription } from "../models/PaiementInscription";
 import { TypesPaiement } from "../../../core/enums/TypesPaiement";
@@ -29,6 +30,7 @@ import { DocGenGeneratorService } from "../../docgen/services/DocGenGeneratorSer
 import { creerEcritureComptable } from "../../comptabilite/helpers/ComptabiliteHelper";
 import { nanoid } from "nanoid";
 import FinanceEcheanceController from "../controllers/FinanceEcheanceController";
+import SituationFinanciereController from "../controllers/SituationFinanciereController";
 
 /**
  * Router dédié aux opérations financières ESA-COMPTA.
@@ -156,6 +158,14 @@ router.get('/bordereaux-a-traiter', [AuthEsacompta, CheckPermission('action.fina
             where: { choixFinal: true },
             include: [
               { association: ParcoursChoisi.associations.parcours }
+            ]
+          },
+          {
+            association: DemandeInscription.associations.utilisateur,
+            include: [
+              {
+                association: Utilisateur.associations.apprenant
+              }
             ]
           }
         ]
@@ -663,9 +673,12 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
 
     // Mise à jour des informations financières
     // Sanitiser les chaînes vides → null (évite les erreurs ENUM et FK)
-    const refBancaire = (req.body.referenceBancaire || '').trim() || null
-    const numBordereau = (req.body.numeroBordereau || '').trim() || null
-    const moyPaiement = (req.body.moyenPaiement || '').trim() || null
+    // Si ESA n'envoie pas de valeur mais que Cabinet a déjà renseigné
+    // referenceBancaire/numeroBordereau, on conserve la valeur existante
+    // (pré-remplissage automatique côté ESA-COMPTA après validation Cabinet).
+    const refBancaire = (req.body.referenceBancaire || '').trim() || bordereau.referenceBancaire || null;
+    const numBordereau = (req.body.numeroBordereau || '').trim() || bordereau.numeroBordereau || null;
+    const moyPaiement = (req.body.moyenPaiement || '').trim() || null;
     const datePaiement = req.body.datePaiement ? new Date(req.body.datePaiement) : bordereau.datePaiement
 
     console.log(_rid, 'Sanitization:', { refBancaire, numBordereau, moyPaiement, datePaiement, typeOperationIdEffectif, typeEffectif })
@@ -1035,6 +1048,20 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
  *       200:
  *         description: Liste des étudiants en situation irrégulière
  */
-    .get('/irreguliers', [Authenticate, CheckPermission('menu.finances.impayes')], FinanceEcheanceController.getEtudiantsIrreguliers)
+     .get('/irreguliers', [Authenticate, CheckPermission('menu.finances.impayes')], FinanceEcheanceController.getEtudiantsIrreguliers)
+
+    /**
+     * GET /inscription/finance/situation-financiere
+     * Liste paginée des étudiants avec leur situation financière.
+     * Access: ESA_COMPTA, CABINET_COMPTABLE, INSTITUTION, ADMIN
+     */
+    .get('/situation-financiere', [Authenticate, CheckPermission('menu.finances.situation-financiere')], SituationFinanciereController.getSituation)
+
+    /**
+     * GET /inscription/finance/situation-financiere/:utilisateurId
+     * Détail de la situation financière d'un étudiant.
+     * Access: ESA_COMPTA, CABINET_COMPTABLE, INSTITUTION, ADMIN
+     */
+    .get('/situation-financiere/:utilisateurId', [Authenticate, CheckPermission('menu.finances.situation-financiere')], SituationFinanciereController.getSituationDetail)
 
 export default router

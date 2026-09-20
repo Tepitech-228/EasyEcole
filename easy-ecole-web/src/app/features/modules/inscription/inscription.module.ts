@@ -42,6 +42,7 @@ import { ChoisirSessionPageComponent } from './pages/choisir-session-page/choisi
 import { ReinscriptionWizardPageComponent } from './pages/reinscription-wizard-page/reinscription-wizard-page.component';
 import { InscriptionWizardPageComponent } from './pages/inscription-wizard-page/inscription-wizard-page.component';
 import { ImpayesPageComponent } from './pages/impayes-page/impayes-page.component';
+import { SituationFinancierePageComponent } from './pages/situation-financiere-page/situation-financiere-page.component';
 @NgModule({
   declarations: [
     MonCursusPageComponent,
@@ -80,7 +81,8 @@ ListeClassesPageComponent,
         ChoisirSessionPageComponent,
         ReinscriptionWizardPageComponent,
         InscriptionWizardPageComponent,
-    ImpayesPageComponent
+    ImpayesPageComponent,
+    SituationFinancierePageComponent
   ],
   imports: [
     CommonModule,

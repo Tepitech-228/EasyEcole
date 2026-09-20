@@ -38,6 +38,7 @@ import { ChoisirSessionPageComponent } from './pages/choisir-session-page/choisi
 import { ReinscriptionWizardPageComponent } from './pages/reinscription-wizard-page/reinscription-wizard-page.component';
 import { InscriptionWizardPageComponent } from './pages/inscription-wizard-page/inscription-wizard-page.component';
 import { ImpayesPageComponent } from './pages/impayes-page/impayes-page.component';
+import { SituationFinancierePageComponent } from './pages/situation-financiere-page/situation-financiere-page.component';
 
 const routes: Routes = [
   {
@@ -299,14 +300,30 @@ const routes: Routes = [
     data: { statut: 'valide,en_saisie_comptable' }
   },
   {
+    path: 'finance/situation-financiere',
+    component: SituationFinancierePageComponent,
+    pathMatch: 'full'
+  },
+  {
     path: 'finance/irreguliers',
     component: ImpayesPageComponent,
     pathMatch: 'full'
   },
   {
+    // Route principale et détail par id (comité validation)
     path: 'comite-validation',
-    component: ComiteValidationPageComponent,
-    pathMatch: 'full'
+    children: [
+      {
+        path: '',
+        component: ComiteValidationPageComponent,
+        pathMatch: 'full'
+      },
+      {
+        path: ':id',
+        component: ComiteDetailsPageComponent,
+        pathMatch: 'full'
+      }
+    ]
   },
   {
     // Wizard de réinscription (distinct du wizard de 1ère inscription).

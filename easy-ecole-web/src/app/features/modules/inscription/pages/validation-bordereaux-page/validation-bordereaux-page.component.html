@@ -198,9 +198,68 @@
             </div>
         </ng-container>
     </div>
+
+    <!-- Formulaire de validation avec champs obligatoires -->
+    <form [formGroup]="validationForm" (ngSubmit)="validerBordereau()" class="space-y-4 mb-4">
+        <!-- Référence bancaire -->
+        <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wider">
+                Référence bancaire <span class="text-red-500">*</span>
+            </label>
+            <input type="text" formControlName="referenceBancaire"
+                class="w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                [class.border-red-500]="validationForm.get('referenceBancaire')?.invalid && validationForm.get('referenceBancaire')?.touched">
+            <p *ngIf="validationForm.get('referenceBancaire')?.hasError('required') && validationForm.get('referenceBancaire')?.touched" class="text-xs text-red-500 mt-1">
+                <span class="material-symbols-outlined text-xs align-middle mr-0.5">error</span> Champ requis
+            </p>
+            <p *ngIf="validationForm.get('referenceBancaire')?.hasError('unicite') && validationForm.get('referenceBancaire')?.touched" class="text-xs text-red-500 mt-1">
+                <span class="material-symbols-outlined text-xs align-middle mr-0.5">error</span> Cette référence bancaire est déjà utilisée
+            </p>
+        </div>
+
+        <!-- Numéro de bordereau -->
+        <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wider">
+                Numéro de bordereau <span class="text-red-500">*</span>
+            </label>
+            <input type="text" formControlName="numeroBordereau"
+                class="w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                [class.border-red-500]="validationForm.get('numeroBordereau')?.invalid && validationForm.get('numeroBordereau')?.touched">
+            <p *ngIf="validationForm.get('numeroBordereau')?.hasError('required') && validationForm.get('numeroBordereau')?.touched" class="text-xs text-red-500 mt-1">
+                <span class="material-symbols-outlined text-xs align-middle mr-0.5">error</span> Champ requis
+            </p>
+            <p *ngIf="validationForm.get('numeroBordereau')?.hasError('unicite') && validationForm.get('numeroBordereau')?.touched" class="text-xs text-red-500 mt-1">
+                <span class="material-symbols-outlined text-xs align-middle mr-0.5">error</span> Ce numéro de bordereau est déjà utilisé
+            </p>
+        </div>
+
+        <!-- Date de paiement -->
+        <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wider">
+                Date de paiement <span class="text-red-500">*</span>
+            </label>
+            <input type="date" formControlName="datePaiement" [max]="todayDate"
+                class="w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                [class.border-red-500]="validationForm.get('datePaiement')?.invalid && validationForm.get('datePaiement')?.touched">
+            <p *ngIf="validationForm.get('datePaiement')?.hasError('required') && validationForm.get('datePaiement')?.touched" class="text-xs text-red-500 mt-1">
+                <span class="material-symbols-outlined text-xs align-middle mr-0.5">error</span> Champ requis
+            </p>
+        </div>
+
+        <!-- Commentaire optionnel -->
+        <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wider">
+                Commentaire <span class="text-gray-400">(optionnel)</span>
+            </label>
+            <textarea rows="3" formControlName="commentaire"
+                class="w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                placeholder="Commentaire facultatif..."></textarea>
+        </div>
+    </form>
+
     <div class="flex items-center justify-between py-3">
         <app-custom-button (click)="closeValidationModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
-        <app-custom-button (click)="validerBordereau()" text="Valider" color="green"></app-custom-button>
+        <app-custom-button (click)="validerBordereau()" text="Valider" color="green" [disabled]="validationForm.invalid"></app-custom-button>
     </div>
 </app-custom-modal>
 </div>

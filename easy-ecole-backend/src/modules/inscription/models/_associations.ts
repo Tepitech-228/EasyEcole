@@ -17,6 +17,7 @@ import { FraisScolarite } from "./FraisScolarite";
 import { PaiementInscription } from "./PaiementInscription";
 import { DossierInscription } from "./DossierInscription";
 import { DemandeInscriptionDossier } from "./DemandeInscriptionDossier";
+import { ComiteVote } from "./ComiteVote";
 import { CursusApprenant } from "./CursusApprenant";
 import { AnneeAcademique } from "./AnneeAcademique";
 import { SalleDeClasse } from "./SalleDeClasse";
@@ -204,6 +205,14 @@ DossierInscription.hasMany(DemandeInscriptionDossier, { foreignKey: 'dossierId',
 DemandeInscriptionDossier.belongsTo(DossierInscription, { foreignKey: 'dossierId', as: 'dossierInscription' });
 DemandeInscription.hasMany(DemandeInscriptionDossier, { foreignKey: 'demandeId', as: 'dossiersDemande' });
 DemandeInscriptionDossier.belongsTo(DemandeInscription, { foreignKey: 'demandeId', as: 'demandeInscription' });
+
+// DemandeInscription - ComiteVote
+DemandeInscription.hasMany(ComiteVote, { foreignKey: 'demandeInscriptionId', as: 'comiteVotes' });
+ComiteVote.belongsTo(DemandeInscription, { foreignKey: 'demandeInscriptionId', as: 'demandeInscription' });
+
+// Utilisateur - ComiteVote (membre du comité)
+Utilisateur.hasMany(ComiteVote, { foreignKey: 'membreId', as: 'comiteVotes' });
+ComiteVote.belongsTo(Utilisateur, { foreignKey: 'membreId', as: 'membre' });
 
 // CursusApprenant - Utilisateur
 Utilisateur.hasMany(CursusApprenant, { foreignKey: 'utilisateurId', as: 'cursusApprenant' })
@@ -502,6 +511,7 @@ import { RattrapageSession } from "./RattrapageSession";
 import { RattrapageSessionClasse } from "./RattrapageSessionClasse";
 import { RattrapageDocumentRequis } from "./RattrapageDocumentRequis";
 import { RattrapageDocumentDepose } from "./RattrapageDocumentDepose";
+import { RattrapageComiteVote } from "./RattrapageComiteVote";
 import { DocumentRequisNiveau } from "./DocumentRequisNiveau";
 
 // RattrapageSession - AnneeAcademique
@@ -533,6 +543,18 @@ RattrapageDocumentDepose.belongsTo(RattrapageInscription, { as: 'rattrapageInscr
 // RattrapageDocumentRequis - RattrapageDocumentDepose
 RattrapageDocumentRequis.hasMany(RattrapageDocumentDepose, { foreignKey: 'documentRequisId', as: 'documentsDeposes', onDelete: 'CASCADE' })
 RattrapageDocumentDepose.belongsTo(RattrapageDocumentRequis, { as: 'documentRequis', foreignKey: 'documentRequisId', onDelete: 'CASCADE' })
+
+// RattrapageInscription - RattrapageComiteVote (validation collégiale)
+RattrapageInscription.hasMany(RattrapageComiteVote, { foreignKey: 'rattrapageInscriptionId', as: 'comiteVotes', onDelete: 'CASCADE' })
+RattrapageComiteVote.belongsTo(RattrapageInscription, { as: 'rattrapageInscription', foreignKey: 'rattrapageInscriptionId', onDelete: 'CASCADE' })
+
+// Utilisateur - RattrapageComiteVote (membre du comité)
+Utilisateur.hasMany(RattrapageComiteVote, { foreignKey: 'membreId', as: 'comiteVotesRattrapage' })
+RattrapageComiteVote.belongsTo(Utilisateur, { foreignKey: 'membreId', as: 'membreRattrapage' })
+
+// RattrapageInscription - Enseignant (enseignantGradientId : correcteur assigné pour la session)
+Enseignant.hasMany(RattrapageInscription, { foreignKey: 'enseignantGradientId', as: 'rattrapagesEnseignant' })
+RattrapageInscription.belongsTo(Enseignant, { as: 'enseignantGradient', foreignKey: 'enseignantGradientId' })
 
 // SessionCorrecteur — correcteurs désignés par cours pour une session de rattrapage
 import { SessionCorrecteur } from "./SessionCorrecteur";

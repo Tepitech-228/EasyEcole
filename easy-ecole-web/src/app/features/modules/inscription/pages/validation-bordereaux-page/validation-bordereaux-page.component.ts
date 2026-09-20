@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { combineLatest } from 'rxjs';
+import { combineLatest, Observable, of } from 'rxjs';
+import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
+import { ToastService } from 'src/app/core/services/toast.service';
 import { AnneeAcademique } from 'src/app/data/modules/inscription/models/AnneeAcademique.model';
 import { Bordereau } from 'src/app/data/modules/inscription/models/Bordereau.model';
 import { NiveauEtude } from 'src/app/data/modules/inscription/models/NiveauEtude.model';
@@ -22,16 +24,22 @@ import { DossierNode, BatchAction } from 'src/app/shared/components/dossier-view
 })
 export class ValidationBordereauxPageComponent extends BaseComponentClass implements OnInit {
 
-   error: boolean = false
-   successMessage: string = ''
-   apiErrorMessage: string = ''
+  error: boolean = false
+  successMessage: string = ''
+  apiErrorMessage: string = ''
 
-    showValidationModal: boolean = false
-    showRejetModal: boolean = false
-    showPdfModal: boolean = false
-    pdfBordereau?: Bordereau
-    successResult: { type: 'inscription' | 'scolarite' | 'rattrapage', matricule?: string, codeQuitus?: string } | null = null
-    showSuccessModal: boolean = false
+  showValidationModal: boolean = false
+  showRejetModal: boolean = false
+  showPdfModal: boolean = false
+  pdfBordereau?: Bordereau
+  successResult: { type: 'inscription' | 'scolarite' | 'rattrapage', matricule?: string, codeQuitus?: string } | null = null
+  showSuccessModal: boolean = false
+
+  validationForm: FormGroup
+  private uniciteCheck: any = null
+
+  /** Date d'aujourd'hui au format YYYY-MM-DD pour la constrainte max du input date */
+  todayDate: string = new Date().toISOString().split('T')[0]
 
   bordereauxEnAttente: Bordereau[] = []
   selectedBordereau?: Bordereau
@@ -98,9 +106,41 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
     private niveauEtudeService: NiveauEtudeService,
     private parcoursService: ParcoursService,
     private sessionService: SessionService,
-    private localStorage: LocalStorageService
+    private localStorage: LocalStorageService,
+    private fb: FormBuilder,
+    private toastService: ToastService
   ) {
     super()
+    this.validationForm = this.fb.group({
+      referenceBancaire: ['', [Validators.required], [this.verificateurUnicite('referenceBancaire')]],
+      numeroBordereau: ['', [Validators.required], [this.verificateurUnicite('numeroBordereau')]],
+      datePaiement: ['', [Validators.required]],
+      commentaire: ['']
+    })
+  }
+
+  /** Vérificateur d'unicité asynchrone avec debounce 300ms (inspiré d'ESA-COMPTA) */
+  verificateurUnicite(champ: 'referenceBancaire' | 'numeroBordereau') {
+    return (control: AbstractControl): Observable<ValidationErrors | null> => {
+      const valeur = (control.value || '').trim()
+      if (!valeur) return of(null)
+      if (this.uniciteCheck) clearTimeout(this.uniciteCheck)
+      return new Observable<ValidationErrors | null>((subscriber) => {
+        this.uniciteCheck = setTimeout(() => {
+          const params: any = { [champ]: valeur, excludeId: this.selectedBordereau?.id }
+          this.bordereauService.verifierUniciteCabinet(params).subscribe({
+            next: (res: any) => {
+              subscriber.next(res?.unique ? null : { unicite: true })
+              subscriber.complete()
+            },
+            error: () => {
+              subscriber.next(null)
+              subscriber.complete()
+            }
+          })
+        }, 300)
+      })
+    }
   }
 
   ngOnInit(): void {
@@ -240,13 +280,28 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
       this.error = false
       this.apiErrorMessage = ''
 
-      this.bordereauService.valider(bordereauId!).subscribe({
+      // Validation du formulaire
+      if (this.validationForm.invalid) {
+        this.validationForm.markAllAsTouched()
+        return
+      }
+
+      const raw = this.validationForm.value
+      const payload = {
+        referenceBancaire: raw.referenceBancaire.trim(),
+        numeroBordereau: raw.numeroBordereau.trim(),
+        datePaiement: raw.datePaiement,
+        commentaire: raw.commentaire?.trim() || undefined
+      }
+
+      this.bordereauService.valider(bordereauId!, payload).subscribe({
         next: () => {
           this.getBordereauxEnAttente()
           this.closeValidationModal()
 
           this.successResult = { type: type || 'scolarite' }
           this.showSuccessModal = true
+          this.toastService.success('Le bordereau a été authentifié avec succès')
         },
         error: (err) => {
           console.error('Erreur validation bordereau:', err)
@@ -406,12 +461,22 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   // Modals
   openValidationModal(bordereau: Bordereau): void {
     this.selectedBordereau = bordereau
+    this.error = false
+    this.apiErrorMessage = ''
+    // Pré-remplir le formulaire avec les valeurs existantes du bordereau (si déjà saisies)
+    this.validationForm.reset({
+      referenceBancaire: bordereau.referenceBancaire || '',
+      numeroBordereau: bordereau.numeroBordereau || '',
+      datePaiement: bordereau.datePaiement ? new Date(bordereau.datePaiement).toISOString().split('T')[0] : '',
+      commentaire: bordereau.commentaire || ''
+    })
     this.showValidationModal = true
   }
 
   closeValidationModal(): void {
     this.showValidationModal = false
     this.selectedBordereau = undefined
+    this.validationForm.reset()
   }
 
   openRejetModal(bordereau: Bordereau): void {

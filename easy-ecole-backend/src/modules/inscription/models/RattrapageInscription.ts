@@ -8,6 +8,8 @@ import { Utilisateur } from "../../auth/models/Utilisateur";
 import { Bordereau } from "./Bordereau";
 import { RattrapageSession } from "./RattrapageSession";
 import { RattrapageDocumentDepose } from "./RattrapageDocumentDepose";
+import { RattrapageComiteVote } from "./RattrapageComiteVote";
+import { Enseignant } from "../../auth/models/Enseignant";
 
 export class RattrapageInscription extends Model<InferAttributes<RattrapageInscription>, InferCreationAttributes<RattrapageInscription>> {
   declare id: CreationOptional<number>
@@ -44,6 +46,12 @@ export class RattrapageInscription extends Model<InferAttributes<RattrapageInscr
   declare uesDemandees: CreationOptional<any[] | null> // liste des UE/matières non validées choisies (JSON)
   declare periode: CreationOptional<string | null> // période (ex: année académique) pour le rattachement à une future session
 
+  // NEW: Grading deadline for rattrapage (auto-set to session date + 3 days)
+  declare dateGradingDeadline: CreationOptional<Date | null>
+  
+  // NEW: Teacher assigned to grade this session (for enforcement in saveNotes)
+  declare enseignantGradientId: CreationOptional<number | null> // FK to Enseignant.id
+
   declare coursParticipant?: NonAttribute<CoursParticipant>
   declare cours?: NonAttribute<Cours>
   declare sessionExamen?: NonAttribute<SessionExamen>
@@ -52,6 +60,8 @@ export class RattrapageInscription extends Model<InferAttributes<RattrapageInscr
   declare rattrapageSession?: NonAttribute<RattrapageSession>
   declare bordereauDepose?: NonAttribute<Bordereau>
   declare documentsDeposes?: NonAttribute<RattrapageDocumentDepose[]>
+  declare comiteVotes?: NonAttribute<RattrapageComiteVote[]>
+  declare enseignantGradient?: NonAttribute<Enseignant>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -66,6 +76,8 @@ export class RattrapageInscription extends Model<InferAttributes<RattrapageInscr
     rattrapageSession: Association<RattrapageInscription, RattrapageSession>
     bordereauDepose: Association<RattrapageInscription, Bordereau>
     documentsDeposes: Association<RattrapageInscription, RattrapageDocumentDepose>
+    comiteVotes: Association<RattrapageInscription, RattrapageComiteVote>
+    enseignantGradient: Association<RattrapageInscription, Enseignant>
   }
 }
 
@@ -181,6 +193,14 @@ RattrapageInscription.init({
   },
   periode: {
     type: DataTypes.STRING(120),
+    allowNull: true
+  },
+  dateGradingDeadline: {
+    type: DataTypes.DATEONLY,
+    allowNull: true
+  },
+  enseignantGradientId: {
+    type: DataTypes.INTEGER.UNSIGNED,
     allowNull: true
   },
   createdAt: DataTypes.DATE,

@@ -46,11 +46,13 @@ import BordereauRouter from "./routers/BordereauRouter";
 import CabinetComptableRouter from "./routers/CabinetComptableRouter";
 import FinanceRouter from "./routers/FinanceRouter";
 import TypeOperationBordereauRouter from "./routers/TypeOperationBordereauRouter";
-import ComiteValidationRouter from "./routers/ComiteValidationRouter";
+import ComiteValidationRouter from "./routers/ComiteValidationRouter"
+import ComiteMembreRouter from "./routers/ComiteMembreRouter";
 import PaiementStatutRouter from "./routers/PaiementStatutRouter";
 import FraisScolariteRouter from "./routers/FraisScolariteRouter";
 import DocumentDossierRouter from "./routers/DocumentDossierRouter";
 import RattrapageWorkflowRouter from "./routers/RattrapageWorkflowRouter";
+import RattrapageComiteRouter from "./routers/RattrapageComiteRouter";
 import DocumentRequisNiveauRouter from "./routers/DocumentRequisNiveauRouter";
 import DossierEtudiantRouter from "./routers/DossierEtudiantRouter";
 import HierarchyRouter from "./routers/HierarchyRouter";
@@ -134,6 +136,8 @@ router
     .use('/types-operations-bordereau', [Authenticate], TypeOperationBordereauRouter)
     // Validation finale des dossiers par le comité (comite-validations/dossiers)
     .use('/comite-validations', [Authenticate], ComiteValidationRouter)
+    // Administration des membres du comité (admin/comite-membres)
+    .use('/admin/comite-membres', [Authenticate], ComiteMembreRouter)
     .use('/hierarchy', [Authenticate], HierarchyRouter)
     .use('/typesNoteEvaluation', [Authenticate], TypeNoteEvaluationRouter)
     .use('/listesNoteEvaluation', [Authenticate], ListeNoteEvaluationRouter)
@@ -152,6 +156,8 @@ router
     .use('/fraisScolarite', [Authenticate], FraisScolariteRouter)
     // Téléchargement des pièces justificatives d'inscription (documents/download)
     .use('/documents', [Authenticate, InscriptionComplete], DocumentDossierRouter)
+    // Routes de vote du comité pour rattrapages
+    .use('/rattrapage-comite', [Authenticate], RattrapageComiteRouter)
     // Workflow officiel de rattrapage (sessions, demandes, documents, bordereaux, validation, paiement)
     .use('/rattrapage-workflow', [Authenticate], RattrapageWorkflowRouter)
     // Référentiel des documents obligatoires par niveau (géré par l'administration)

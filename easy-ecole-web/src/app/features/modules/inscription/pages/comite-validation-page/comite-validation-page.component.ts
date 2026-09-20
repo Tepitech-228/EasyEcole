@@ -2,8 +2,13 @@ import { Component, OnInit } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
-import { DossierComite, ComiteValidationService } from 'src/app/data/modules/inscription/services/comite-validation.service';
+import { ComiteValidationService, DossierComite, Quorum } from 'src/app/data/modules/inscription/services/comite-validation.service';
 import { environment } from 'src/environments/environment';
+
+const QUORUM_VIDE: Quorum = {
+  totalMembres: 0, votesCount: 0, valides: 0, restants: 0,
+  aVote: false, estUnanime: false, estRejete: false
+}
 
 @Component({
   selector: 'app-comite-validation-page',
@@ -12,15 +17,15 @@ import { environment } from 'src/environments/environment';
 })
 export class ComiteValidationPageComponent extends BaseComponentClass implements OnInit {
 
-  dossiers: (DossierComite & { bordereaux?: any[] })[] = []
+  dossiers: DossierComite[] = []
   loading: boolean = true
   error: boolean = false
   apiErrorMessage: string = ''
 
   afficherTous: boolean = false
 
-  selectedDossier: any = null
-  detailComplet: any = null
+  selectedDossier: DossierComite | null = null
+  detailComplet: DossierComite | null = null
   showDetailModal: boolean = false
   loadingDetail: boolean = false
 
@@ -91,15 +96,86 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
     return new Intl.NumberFormat('fr-FR').format(montants.reduce((a: number, b: number) => a + b, 0)) + ' FCFA'
   }
 
-  ouvrirDetail(d: any): void {
+  ouvrirDetail(d: DossierComite): void {
     this.selectedDossier = d
     this.detailComplet = null
     this.showDetailModal = true
     this.loadingDetail = true
+    if (d.id === undefined) return
     this.comiteService.detailDossier(d.id).subscribe({
       next: (res) => { this.detailComplet = res.data; this.loadingDetail = false },
       error: () => { this.loadingDetail = false }
     })
+  }
+
+  // ── Helpers Quorum collégial ──
+
+  getQuorum(d?: DossierComite | null): Quorum {
+    return ((d ?? this.detailComplet)?.quorum) || QUORUM_VIDE
+  }
+
+  getQuorumLabel(d?: DossierComite | null): string {
+    const q = this.getQuorum(d)
+    if (q.totalMembres === 0) return '---'
+    if (q.estUnanime) return `Unanimité (${q.valides}/${q.totalMembres})`
+    if (q.estRejete) return `Rejeté (${q.votesCount}/${q.totalMembres})`
+    return `${q.votesCount}/${q.totalMembres} votés — reste ${q.restants}`
+  }
+
+  getQuorumBadgeClass(d?: DossierComite | null): string {
+    const q = this.getQuorum(d)
+    if (q.estUnanime) return 'bg-green-100 text-green-800'
+    if (q.estRejete) return 'bg-red-100 text-red-800'
+    return 'bg-orange-100 text-orange-800'
+  }
+
+  getMembreVoteBadge(m: any): { label: string; cls: string } {
+    if (!m?.vote) return { label: 'En attente', cls: 'bg-gray-100 text-gray-600' }
+    switch (m.vote.decision) {
+      case 'valide': return { label: 'Valide', cls: 'bg-green-100 text-green-800' }
+      case 'rejete': return { label: 'Rejeté', cls: 'bg-red-100 text-red-800' }
+      case 'correction_demandee': return { label: 'Correction', cls: 'bg-orange-100 text-orange-800' }
+      default: return { label: 'En attente', cls: 'bg-gray-100 text-gray-600' }
+    }
+  }
+
+  isVoteValide(m: any): boolean {
+    return m?.vote?.decision === 'valide'
+  }
+
+  aDejaVote(): boolean {
+    return this.getQuorum(this.detailComplet).aVote
+  }
+
+  peutVoter(): boolean {
+    const q = this.getQuorum(this.detailComplet)
+    return !q.estUnanime && !q.estRejete
+  }
+
+  messageEtatQuorum(): string {
+    const q = this.getQuorum(this.detailComplet)
+    if (q.estRejete) return 'Dossier rejeté (veto)'
+    if (q.estUnanime) return 'Unanimité atteinte'
+    return `En attente de ${q.restants} vote(s)`
+  }
+
+  getQuorumProgressClass(): string {
+    const q = this.getQuorum(this.detailComplet)
+    if (q.totalMembres === 0) return 'bg-gray-200'
+    const pct = Math.round((q.valides / q.totalMembres) * 100)
+    if (q.estUnanime) return 'bg-green-500'
+    if (q.estRejete) return 'bg-red-500'
+    return pct >= 50 ? 'bg-orange-500' : 'bg-gray-400'
+  }
+
+  getValiderTooltip(): string {
+    const q = this.getQuorum(this.detailComplet)
+    if (q.estRejete) return 'Dossier déjà rejeté'
+    if (this.aDejaVote()) return 'Vous avez déjà voté'
+    if (!q.estUnanime) {
+      return `Votre vote "valide" sera enregistré. Finalisation à l'unanimité — encore ${q.restants} vote(s) manquant(s)`
+    }
+    return ''
   }
 
   fermerDetail(): void {

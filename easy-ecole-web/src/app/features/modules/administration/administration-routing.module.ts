@@ -8,6 +8,7 @@ import { UtilisateursPageComponent } from './pages/utilisateurs-page/utilisateur
 import { RolesPageComponent } from './pages/roles-page/roles-page.component';
 import { AuditLogsPageComponent } from './pages/audit-logs-page/audit-logs-page.component';
 import { ConfigurationPageComponent } from './pages/configuration-page/configuration-page.component';
+import { ComiteMembresPageComponent } from './pages/comite-membres-page/comite-membres-page.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -20,6 +21,7 @@ const routes: Routes = [
   { path: 'roles', component: RolesPageComponent },
   { path: 'audit-logs', component: AuditLogsPageComponent },
   { path: 'configuration', component: ConfigurationPageComponent },
+  { path: 'comite-membres', component: ComiteMembresPageComponent },
   {
     path: 'monitoring',
     loadChildren: () => import('../monitoring/monitoring.module').then(m => m.MonitoringModule),

@@ -1,5 +1,5 @@
 ﻿import { Request, Response } from "express";
-import { FindOptions, InferAttributes } from "sequelize";
+import { FindOptions, InferAttributes, Op } from "sequelize";
 import fs from "fs";
 import path from "path";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
@@ -290,10 +290,52 @@ export default class BordereauController {
                 return res.status(400).json({ success: false, message: "Échéance associée introuvable" });
             }
 
+            // ── Validation des 3 champs obligatoires (référence bancaire, numéro de bordereau, date de paiement) ──
+            const refBancaire = typeof req.body.referenceBancaire === 'string' ? req.body.referenceBancaire.trim() : '';
+            const numBordereau = typeof req.body.numeroBordereau === 'string' ? req.body.numeroBordereau.trim() : '';
+            const datePaiementStr = typeof req.body.datePaiement === 'string' ? req.body.datePaiement : '';
+
+            if (!refBancaire) {
+                await transaction.rollback();
+                return res.status(400).json({ success: false, message: "referenceBancaire requis" });
+            }
+            if (!numBordereau) {
+                await transaction.rollback();
+                return res.status(400).json({ success: false, message: "numeroBordereau requis" });
+            }
+            if (!datePaiementStr) {
+                await transaction.rollback();
+                return res.status(400).json({ success: false, message: "datePaiement requise" });
+            }
+            const datePaiement = new Date(datePaiementStr);
+            if (isNaN(datePaiement.getTime())) {
+                await transaction.rollback();
+                return res.status(400).json({ success: false, message: "datePaiement invalide" });
+            }
+
+            // ── Contrôle d'unicité (identique à FinanceRouter) : éviter un doublon sur référence/numéro ──
+            const whereClause: any = { id: { [Op.ne]: bordereau.id }, deletedAt: null };
+            const orConditions: any[] = [];
+            if (refBancaire) orConditions.push({ referenceBancaire: refBancaire });
+            if (numBordereau) orConditions.push({ numeroBordereau: numBordereau });
+            if (orConditions.length > 0) {
+                whereClause[Op.or] = orConditions;
+                const doublon = await Bordereau.findOne({ where: whereClause, transaction });
+                if (doublon) {
+                    await transaction.rollback();
+                    return res.status(400).json({ success: false, message: "Ce bordereau est déjà traité", details: { referenceBancaire: refBancaire, numeroBordereau: numBordereau } });
+                }
+            }
+
             bordereau.statut = 'valide'
             bordereau.dateValidation = new Date()
             bordereau.valideParId = (req as any).utilisateurId
             bordereau.commentaire = req.body.commentaire ?? null
+
+            // ── Persistance des 3 champs bancaires (pré-remplissage ESA-COMPTA) ──
+            bordereau.referenceBancaire = refBancaire
+            bordereau.numeroBordereau = numBordereau
+            bordereau.datePaiement = datePaiement
 
             // Flux définitif : l'Audit AUTHENTIFIE seulement. La saisie comptable
             // et l'imputation relèvent d'ESA-COMPTA (FinanceRouter.saisir) ; la
@@ -520,7 +562,47 @@ export default class BordereauController {
 
             bordereau.type = typeConstate
             bordereau.montant = montantConstate
-            bordereau.referenceBancaire = req.body.referenceBancaire ?? bordereau.referenceBancaire
+
+            // ── Validation des 3 champs obligatoires pour traiterBordereau ──
+            const refBancaire = typeof req.body.referenceBancaire === 'string' ? req.body.referenceBancaire.trim() : '';
+            const numBordereau = typeof req.body.numeroBordereau === 'string' ? req.body.numeroBordereau.trim() : '';
+            const datePaiementStr = typeof req.body.datePaiement === 'string' ? req.body.datePaiement : '';
+
+            if (!refBancaire) {
+                await transaction.rollback();
+                return res.status(400).json({ success: false, message: "referenceBancaire requis" });
+            }
+            if (!numBordereau) {
+                await transaction.rollback();
+                return res.status(400).json({ success: false, message: "numeroBordereau requis" });
+            }
+            if (!datePaiementStr) {
+                await transaction.rollback();
+                return res.status(400).json({ success: false, message: "datePaiement requise" });
+            }
+            const datePaiement = new Date(datePaiementStr);
+            if (isNaN(datePaiement.getTime())) {
+                await transaction.rollback();
+                return res.status(400).json({ success: false, message: "datePaiement invalide" });
+            }
+
+            // ── Contrôle d'unicité (identique à FinanceRouter) : éviter un doublon sur référence/numéro ──
+            const whereClause: any = { id: { [Op.ne]: bordereau.id }, deletedAt: null };
+            const orConditions: any[] = [];
+            if (refBancaire) orConditions.push({ referenceBancaire: refBancaire });
+            if (numBordereau) orConditions.push({ numeroBordereau: numBordereau });
+            if (orConditions.length > 0) {
+                whereClause[Op.or] = orConditions;
+                const doublon = await Bordereau.findOne({ where: whereClause, transaction });
+                if (doublon) {
+                    await transaction.rollback();
+                    return res.status(400).json({ success: false, message: "Ce bordereau est déjà traité", details: { referenceBancaire: refBancaire, numeroBordereau: numBordereau } });
+                }
+            }
+
+            bordereau.referenceBancaire = refBancaire;
+            bordereau.numeroBordereau = numBordereau;
+            bordereau.datePaiement = datePaiement;
             bordereau.statut = 'valide'
             bordereau.dateValidation = new Date()
             bordereau.valideParId = (req as any).utilisateurId

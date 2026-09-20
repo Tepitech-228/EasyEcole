@@ -152,7 +152,8 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                 items: [
                     { label: 'Paiements', route: '/inscription/paiements', icon: 'paid', permissionKey: 'menu.finances.paiements', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.APPRENANT, RolesUtilisateur.CAISSIER_BANQUE, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN] },
                      { label: 'Echeances', route: '/inscription/echeances', icon: 'event', permissionKey: 'menu.finances.echeances', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.APPRENANT, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN] },
-                     { label: 'Situation irrégulière', route: '/inscription/finance/irreguliers', icon: 'warning', permissionKey: 'menu.finances.impayes', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN] },
+                      { label: 'Situation irrégulière', route: '/inscription/finance/irreguliers', icon: 'warning', permissionKey: 'menu.finances.impayes', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN] },
+                      { label: 'Situation financière', route: '/inscription/finance/situation-financiere', icon: 'account_balance', permissionKey: 'menu.finances.situation-financiere', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                      { label: 'Valid. bordereaux', route: '/inscription/validation-bordereaux', icon: 'task_alt', permissionKey: 'menu.finances.validation-bordereaux', allowedRoles: [RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN] },
                     { label: 'Validation comité', route: '/inscription/comite-validation', icon: 'how_to_reg', permissionKey: 'menu.finances.comite-validation', allowedRoles: [RolesUtilisateur.COMITE_ORIENTATION, RolesUtilisateur.ADMIN] },
                      { label: 'Bordereaux à imputer', route: '/inscription/finance/bordereaux', icon: 'receipt_long', permissionKey: 'menu.finances.bordereaux-a-traiter', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.ADMIN] },
@@ -418,6 +419,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                     { label: 'QR Codes', route: '/administration/qr-codes', icon: 'qr_code', permissionKey: 'menu.administration.qr-codes', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Journal audit', route: '/administration/audit-logs', icon: 'fact_check', permissionKey: 'menu.administration.journal-audit', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Configuration', route: '/administration/configuration', icon: 'tune', permissionKey: 'menu.administration.configuration', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Membres du comité', route: '/administration/comite-membres', icon: 'group', permissionKey: 'menu.administration.comite-membres', allowedRoles: [RolesUtilisateur.ADMIN] },
                 ]
             },
             {

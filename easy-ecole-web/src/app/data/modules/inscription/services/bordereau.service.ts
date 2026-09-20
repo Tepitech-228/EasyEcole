@@ -51,6 +51,16 @@ export class BordereauService {
     return this.httpClient.get<any>(`${environment.API_MODULES.INSCRIPTION}/finance/bordereaux/verifier-unicite`, { params: httpParams });
   }
 
+  verifierUniciteCabinet(params: any): Observable<any> {
+    let httpParams = new HttpParams();
+    Object.keys(params).forEach(key => {
+      if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
+        httpParams = httpParams.set(key, String(params[key]));
+      }
+    });
+    return this.httpClient.get<any>(`${this.SERVICE_URL}/verifier-unicite`, { params: httpParams });
+  }
+
   compositionPreview(id: string, montantPaiement: number): Observable<any> {
     return this.httpClient.post<any>(`${environment.API_MODULES.INSCRIPTION}/finance/bordereaux/${id}/composition-preview`, { montantPaiement })
   }
@@ -67,8 +77,8 @@ export class BordereauService {
     return this.httpClient.post<Bordereau>(`${this.SERVICE_URL}`, formData)
   }
 
-  valider(id: string, commentaire?: string): Observable<Bordereau> {
-    return this.httpClient.put<Bordereau>(`${this.SERVICE_URL}/${id}/valider`, { commentaire })
+  valider(id: string, payload: { referenceBancaire: string; numeroBordereau: string; datePaiement: string; commentaire?: string }): Observable<Bordereau> {
+    return this.httpClient.put<Bordereau>(`${this.SERVICE_URL}/${id}/valider`, payload)
   }
 
   rejeter(id: string, commentaire: string): Observable<Bordereau> {
@@ -85,5 +95,34 @@ export class BordereauService {
 
   batchRejeter(ids: number[], commentaire: string): Observable<{ success: boolean; count: number }> {
     return this.httpClient.put<{ success: boolean; count: number }>(`${this.SERVICE_URL}/batch/statut`, { ids, statut: 'rejete', commentaire });
+  }
+
+  /**
+   * GET /inscription/finance/situation-financiere
+   * Liste paginée des étudiants avec leur situation financière complète.
+   */
+  getSituationFinanciere(params?: any): Observable<{ data: any[], pagination: any }> {
+    let httpParams = new HttpParams();
+    if (params) {
+      Object.keys(params).forEach(key => {
+        if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
+          httpParams = httpParams.set(key, String(params[key]));
+        }
+      });
+    }
+    return this.httpClient.get<{ data: any[], pagination: any }>(
+      `${environment.API_MODULES.INSCRIPTION}/finance/situation-financiere`,
+      { params: httpParams }
+    );
+  }
+
+  /**
+   * GET /inscription/finance/situation-financiere/:utilisateurId
+   * Détail complet de la situation financière d'un étudiant.
+   */
+  getSituationDetail(utilisateurId: string): Observable<any> {
+    return this.httpClient.get<any>(
+      `${environment.API_MODULES.INSCRIPTION}/finance/situation-financiere/${utilisateurId}`
+    );
   }
 }

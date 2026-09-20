@@ -23,6 +23,7 @@ export class Utilisateur extends Model<InferAttributes<Utilisateur>, InferCreati
   declare etablissementId: ForeignKey<Etablissement['id'] | null>
   declare etablissement?: NonAttribute<Etablissement>
   declare dateVerificationEmail: CreationOptional<Date>
+  declare deletedAt: CreationOptional<Date | null>
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
 
@@ -88,11 +89,9 @@ Utilisateur.init({
     allowNull: true
   },
   etablissementId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
-  dateVerificationEmail: {
-    type: DataTypes.DATE,
-    allowNull: true
-  },
-  createdAt: DataTypes.DATE,
+  dateVerificationEmail: { type: DataTypes.DATE, allowNull: true },
+  deletedAt: { type: DataTypes.DATE, allowNull: true },
+  createdAt: { type: DataTypes.DATE, allowNull: true },
   updatedAt: DataTypes.DATE,
 }, {
   sequelize: DatabaseConnection.getInstance().sequelize,
