@@ -46,9 +46,12 @@ export class ReorientationPageComponent extends BaseComponentClass implements On
   }
 
   private loadSelects(): void {
-    this.parcoursService.getAll().subscribe(data => this.parcoursList = data);
+    this.parcoursService.getAll().subscribe({
+      next: (data: any) => this.parcoursList = Array.isArray(data) ? data : (data?.data || []),
+      error: () => this.parcoursList = []
+    });
     this.cursusApprenantService.getAll().subscribe({
-      next: (data) => { this.cursusList = data; this.dataLoaded = true; },
+      next: (data: any) => { this.cursusList = Array.isArray(data) ? data : (data?.data || []); this.dataLoaded = true; },
       error: () => this.dataLoaded = true
     });
   }

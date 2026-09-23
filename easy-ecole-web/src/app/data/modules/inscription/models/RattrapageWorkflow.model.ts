@@ -1,14 +1,61 @@
 import { Utilisateur } from "../../auth/models/Utilisateur.model";
 
+export interface Quorum {
+  totalMembres: number
+  votesCount: number
+  valides: number
+  restants: number
+  aVote: boolean
+  estUnanime: boolean
+  estRejete: boolean
+}
+
+export interface VoteComite {
+  membreId?: number
+  decision: 'valide' | 'correction_demandee' | 'rejete' | null
+  motif?: string | null
+  dateVote?: string | null
+  membre?: any
+}
+
+export interface MembreComite {
+  id?: number
+  nom?: string
+  prenoms?: string
+  identifiant?: string
+  email?: string
+  vote: VoteComite | null
+}
+
 /**
  * Statuts possibles d'une session de rattrapage (workflow officiel B-front).
  */
 export type StatutRattrapageSession = 'preparation' | 'ouverte' | 'cloturee';
 
 /**
+ * Statut d'un planning de samedi de rattrapage.
+ */
+export type StatutPlanningRattrapage = 'planifie' | 'prof_designe' | 'annule';
+
+/**
+ * Planning d'un samedi de rattrapage (généré automatiquement par le back).
+ */
+export interface RattrapagePlanning {
+  id?: number;
+  dateSamedi?: string;
+  heureDebut?: string;
+  heureFin?: string;
+  salleId?: number;
+  classeId?: number;
+  statut?: StatutPlanningRattrapage;
+  enseignantId?: number;
+  enseignant?: any;
+}
+
+/**
  * Statuts possibles d'une demande de rattrapage soumise par l'apprenant.
  */
-export type StatutDemandeRattrapage = 'en_attente' | 'valide' | 'rejete';
+export type StatutDemandeRattrapage = 'en_attente' | 'valide' | 'rejete' | 'correction_demandee';
 
 /**
  * Statuts de paiement du bordereau de rattrapage.
@@ -41,6 +88,7 @@ export class RattrapageSession {
   /** Classes / filières concernées, renvoyées par l'API sous forme `[{ classe: { id, libelle } }]`. */
   declare classes?: { classe: { id: number | string; libelle: string } }[];
   declare documentsRequis?: RattrapageDocumentRequis[];
+  declare planning?: RattrapagePlanning[];
 }
 
 /**
@@ -93,6 +141,9 @@ export class RattrapageInscriptionWorkflow {
   declare utilisateur?: Utilisateur;
   declare documentsDeposes?: RattrapageDocumentDepose[];
   declare documentsRequis?: RattrapageDocumentRequis[];
+  declare quorum?: Quorum;
+  declare votes?: VoteComite[];
+  declare membres?: MembreComite[];
 
   declare readonly createdAt?: Date;
   declare readonly updatedAt?: Date;

@@ -191,14 +191,14 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
       download$ = this.importFormat === 'docx' ? this.excelService.downloadUeWordTemplate() : this.excelService.downloadUeTemplate();
       filename = `template-ue-ecue.${this.importFormat}`;
     } else if (this.importType === 'etudiants') {
-      download$ = this.excelService.downloadApprenantTemplate();
-      filename = 'template-apprenants.xlsx';
+      download$ = this.importFormat === 'docx' ? this.excelService.downloadApprenantWordTemplate() : this.excelService.downloadApprenantTemplate();
+      filename = `template-apprenants.${this.importFormat}`;
     } else if (this.importType === 'enseignants') {
-      download$ = this.excelService.downloadEnseignantTemplate();
-      filename = 'template-enseignants.xlsx';
+      download$ = this.importFormat === 'docx' ? this.excelService.downloadEnseignantWordTemplate() : this.excelService.downloadEnseignantTemplate();
+      filename = `template-enseignants.${this.importFormat}`;
     } else {
-      download$ = this.excelService.downloadUtilisateurTemplate(this.selectedImportRole);
-      filename = `template-utilisateurs-${this.selectedImportRole}.xlsx`;
+      download$ = this.importFormat === 'docx' ? this.excelService.downloadUtilisateurWordTemplate(this.selectedImportRole) : this.excelService.downloadUtilisateurTemplate(this.selectedImportRole);
+      filename = `template-utilisateurs-${this.selectedImportRole}.${this.importFormat}`;
     }
 
     download$.subscribe({
@@ -213,7 +213,14 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
   }
 
   onFileSelected(event: any): void {
-    this.selectedFile = event.target.files[0] as File;
+    const file = event.target.files[0] as File;
+    this.selectedFile = file;
+    if (file) {
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      if (ext === 'docx') {
+        this.importFormat = 'docx';
+      }
+    }
     this.importResult = null;
     this.errorMessage = null;
     this.successMessage = null;
@@ -223,7 +230,14 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
     event.preventDefault();
     event.stopPropagation();
     if (event.dataTransfer && event.dataTransfer.files.length > 0) {
-      this.selectedFile = event.dataTransfer.files[0];
+      const file = event.dataTransfer.files[0];
+      this.selectedFile = file;
+      if (file) {
+        const ext = file.name.split('.').pop()?.toLowerCase();
+        if (ext === 'docx') {
+          this.importFormat = 'docx';
+        }
+      }
       this.importResult = null;
       this.errorMessage = null;
       this.successMessage = null;
@@ -303,6 +317,15 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
       case 'etudiants': return 'Étudiants';
       case 'enseignants': return 'Enseignants';
       default: return 'Utilisateurs (' + (this.rolesList.find(r => r.value === this.selectedImportRole)?.label || this.selectedImportRole) + ')';
+    }
+  }
+
+  getImportAcceptLabel(): string {
+    switch (this.importType) {
+      case 'ue': return 'Maquette UE/ECUE';
+      case 'etudiants': return 'Fichier Apprenants';
+      case 'enseignants': return 'Fichier Enseignants';
+      default: return 'Fichier Utilisateurs';
     }
   }
 

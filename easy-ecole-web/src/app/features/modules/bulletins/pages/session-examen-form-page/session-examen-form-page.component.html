@@ -42,19 +42,25 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <!-- Classe -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1.5">Classe (ID)</label>
-          <input type="number" formControlName="classeId"
-                 class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600 placeholder:text-gray-400"
-                 placeholder="Ex: 1">
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">Classe</label>
+          <select formControlName="classeId"
+                  class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600">
+            <option [ngValue]="null" disabled>Sélectionner une classe</option>
+            <option *ngFor="let c of classes" [ngValue]="c.id">{{ c.libelle || c.code || 'Classe #' + c.id }}</option>
+          </select>
+          <p *ngIf="loadingClasses" class="mt-1 text-xs text-gray-400">Chargement...</p>
           <p *ngIf="submitted && form.get('classeId')?.errors?.['required']" class="mt-1 text-xs text-blue-600">Ce champ est requis</p>
         </div>
 
         <!-- Année académique -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1.5">Année académique (ID)</label>
-          <input type="number" formControlName="anneeAcademiqueId"
-                 class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600 placeholder:text-gray-400"
-                 placeholder="Ex: 1">
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">Année académique</label>
+          <select formControlName="anneeAcademiqueId"
+                  class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600">
+            <option [ngValue]="null" disabled>Sélectionner une année</option>
+            <option *ngFor="let a of anneesAcademiques" [ngValue]="a.id">{{ a.libelle || a.annee || 'Année #' + a.id }}</option>
+          </select>
+          <p *ngIf="loadingAnnees" class="mt-1 text-xs text-gray-400">Chargement...</p>
           <p *ngIf="submitted && form.get('anneeAcademiqueId')?.errors?.['required']" class="mt-1 text-xs text-blue-600">Ce champ est requis</p>
         </div>
       </div>

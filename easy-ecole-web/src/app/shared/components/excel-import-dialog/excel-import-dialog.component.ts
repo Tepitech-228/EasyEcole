@@ -9,9 +9,9 @@ import { ExcelService, ExcelImportResult } from 'src/app/data/modules/inscriptio
 export class ExcelImportDialogComponent {
 
   /** Titre affiché dans la modale */
-  @Input() title: string = 'Import Excel';
+  @Input() title: string = 'Import Excel / Word';
   /** Sous-titre */
-  @Input() subtitle: string = 'Sélectionnez un fichier Excel (.xlsx) à importer';
+  @Input() subtitle: string = 'Sélectionnez un fichier Excel (.xlsx) ou Word (.docx) à importer';
   /** Nom du template à télécharger */
   @Input() templateFilename: string = 'template.xlsx';
   /** Couleur du thème (indigo, blue, green, etc.) */
@@ -53,8 +53,8 @@ export class ExcelImportDialogComponent {
     if (input.files && input.files.length > 0) {
       const file = input.files[0];
       const ext = file.name.split('.').pop()?.toLowerCase();
-      if (ext !== 'xlsx' && ext !== 'xls') {
-        this.error = 'Seuls les fichiers Excel (.xlsx, .xls) sont acceptés.';
+      if (ext !== 'xlsx' && ext !== 'xls' && ext !== 'docx') {
+        this.error = 'Seuls les fichiers Excel (.xlsx, .xls) ou Word (.docx) sont acceptés.';
         this.selectedFile = null;
         return;
       }

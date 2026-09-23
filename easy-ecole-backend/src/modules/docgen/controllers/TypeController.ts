@@ -25,7 +25,11 @@ export default class TypeController {
 
   static async create(req: Request, res: Response): Promise<Response> {
     try {
-      const existing = await DocGenType.findOne({ where: { code: req.body.code } });
+      const { code, libelle, categorie, moduleSource } = req.body || {};
+      if (!code || !libelle || !categorie || !moduleSource) {
+        return res.status(400).json({ success: false, message: 'Champs requis: code, libelle, categorie, moduleSource' });
+      }
+      const existing = await DocGenType.findOne({ where: { code } });
       if (existing) return res.status(400).json({ success: false, message: 'Ce code existe déjà' });
       const type = await DocGenType.create(req.body);
       return res.status(201).json(type);

@@ -344,7 +344,90 @@ router
    *       200:
    *         description: Demande rejetée
    */
-  .put('/demandes/:id/rejeter', RattrapageWorkflowController.rejeterDemande)
+   .get('/demandes/:id/votes', RattrapageWorkflowController.listerVotes)
+  /**
+   * @openapi
+   * /inscription/rattrapage-workflow/sessions/{id}/planning:
+   *   put:
+   *     tags: [Rattrapage Workflow]
+   *     summary: Modifier un créneau de rattrapage (heure/salle) (ADMIN/INSTITUTION)
+   *     security: [{ bearerAuth: [] }]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema: { type: string }
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               entries:
+   *                 type: array
+   *                 items:
+   *                   type: object
+   *                   properties:
+   *                     id: { type: number }
+   *                     heureDebut: { type: string, format: time }
+   *                     heureFin: { type: string, format: time }
+   *                     salleId: { type: number }
+   *     responses:
+   *       200:
+   *         description: Créneaux mis à jour
+   */
+  .put('/sessions/:id/planning', RattrapageWorkflowController.editPlanning)
+  /**
+   * @openapi
+   * /inscription/rattrapage-workflow/planning/{id}/enseignant:
+   *   post:
+   *     tags: [Rattrapage Workflow]
+   *     summary: Désigner un enseignant à un créneau (INSTITUTION/ADMIN)
+   *     security: [{ bearerAuth: [] }]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema: { type: string }
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [enseignantId, ueId ou ecueId]
+   *             properties:
+   *               enseignantId: { type: number }
+   *               ueId: { type: number }
+   *               ecueId: { type: number }
+   *     responses:
+   *       201:
+   *         description: Enseignant désigné
+   */
+  .post('/planning/:id/enseignant', RattrapageWorkflowController.designerEnseignant)
+  /**
+   * @openapi
+   * /inscription/rattrapage-workflow/notes:
+   *   post:
+   *     tags: [Rattrapage Workflow]
+   *     summary: L'enseignant désigné saisit des notes de rattrapage
+   *     security: [{ bearerAuth: [] }]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               planningId: { type: number }
+   *               rattrapageNoteId: { type: number }
+   *               note_rattrapage: { type: number }
+   *     responses:
+   *       201:
+   *         description: Notes créées ou mises à jour
+   */
+  .post('/notes', RattrapageWorkflowController.saisirNote)
   /**
    * @openapi
    * /inscription/rattrapage-workflow/demandes/{id}/confirmer-paiement:

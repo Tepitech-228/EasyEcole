@@ -146,12 +146,12 @@
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
       <h2 class="text-lg font-semibold text-gray-900 mb-4">Importer des données</h2>
 
-      <div class="mb-6">
+<div class="mb-6">
         <label class="block text-xs font-medium text-gray-600 mb-1">Type d'import</label>
         <select [(ngModel)]="importType" (change)="importTypeChanged()" class="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white">
           <option *ngFor="let t of importTypes" [value]="t.value">{{ t.label }}</option>
         </select>
-        <select *ngIf="importType === 'ue'" [(ngModel)]="importFormat" class="ml-3 border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white">
+        <select [(ngModel)]="importFormat" class="ml-3 border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white">
           <option value="xlsx">Excel (.xlsx)</option>
           <option value="docx">Word (.docx)</option>
         </select>
@@ -208,13 +208,13 @@
 
       <!-- Boutons d'action -->
       <div class="flex flex-wrap items-center gap-4 mb-6">
-        <button (click)="telechargerTemplate()"
-          class="inline-flex items-center px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-xl transition-colors">
-          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 012 2h12a2 2 0 01-2 2v-2M7 10l5 5 5-5"></path>
-          </svg>
-          Télécharger le template
-        </button>
+<button (click)="telechargerTemplate()"
+           class="inline-flex items-center px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-xl transition-colors">
+           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 012 2h12a2 2 0 01-2 2v-2M7 10l5 5 5-5"></path>
+           </svg>
+           Télécharger le template ({{ importFormat }})
+         </button>
         <button type="button" (click)="importer()"
           [disabled]="importing"
           class="inline-flex min-w-[190px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60">

@@ -39,6 +39,7 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
   searchCours?: string
 
   showNouveauCoursModal: boolean = false
+  editingCours: Cours | null = null
   nouveauCoursForm: FormGroup = new FormGroup({
     code: new FormControl(null, [Validators.required]),
     intitule: new FormControl(null, [Validators.required]),
@@ -100,19 +101,43 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
   }
 
   openNouveauCoursModal(): void {
+    this.editingCours = null
     this.nouveauCoursForm.reset()
+    this.ecuesFormArray.clear()
+    this.nouveauCoursForm.get('estObligatoire')!.setValue(false)
+    this.showNouveauCoursModal = true
+  }
+
+  openEditCoursModal(cours: Cours): void {
+    this.editingCours = cours
+    this.nouveauCoursForm.patchValue({
+      code: cours.code,
+      intitule: cours.intitule,
+      credit: cours.credit,
+      creditEcts: cours.creditEcts,
+      semestre: cours.semestre,
+      description: cours.description,
+      objectifs: cours.objectifs,
+      estObligatoire: cours.estObligatoire || false,
+      volumeHoraire: cours.volumeHoraire,
+      coefficient: cours.coefficient,
+      categorieUe: cours.categorieUe,
+      parcoursId: cours.parcoursId,
+    })
     this.ecuesFormArray.clear()
     this.showNouveauCoursModal = true
   }
 
   closeNouveauCoursModal(): void {
     this.showNouveauCoursModal = false
+    this.editingCours = null
   }
 
   ajouterCours(): void {
     this.nouveauCoursForm.markAllAsTouched()
     if (this.nouveauCoursForm.valid) {
-      const cours = new Cours()
+      const isEdit = !!this.editingCours
+      const cours = isEdit ? this.editingCours! : new Cours()
       cours.code = this.nouveauCoursForm.get('code')!.value
       cours.intitule = this.nouveauCoursForm.get('intitule')!.value
       cours.credit = this.nouveauCoursForm.get('credit')!.value
@@ -128,41 +153,51 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
 
       const ecuesSaisis = this.ecuesFormArray.value.filter((e: any) => e.code && e.libelle)
 
-      this.coursService.create(cours).subscribe({
+      const obs = isEdit ? this.coursService.update(cours) : this.coursService.create(cours)
+      obs.subscribe({
         next: (res) => {
-          if (ecuesSaisis.length === 0) {
-            this.router.navigate(['/cours/cours/' + res.id])
+          if (!isEdit && ecuesSaisis.length === 0) {
+            this.closeNouveauCoursModal()
+            this.getCours()
             return
           }
-
-          const observables = ecuesSaisis.map((e: any) => {
-            const ecue = new Ecue()
-            ecue.code = e.code
-            ecue.libelle = e.libelle
-            ecue.creditEcts = e.creditEcts
-            ecue.coefficient = e.coefficient || 1
-            ecue.cmHoraire = e.cmHoraire
-            ecue.tdTpHoraire = e.tdTpHoraire
-            ecue.tpeHoraire = e.tpeHoraire
-            ecue.type = e.type
-            ecue.enseignantId = e.enseignantId
-            ecue.coursId = res.id
-            return this.ecueService.create(ecue)
-          })
-
-          forkJoin(observables).subscribe({
-            next: () => this.router.navigate(['/cours/cours/' + res.id]),
-            error: (err) => {
-              console.log(err)
-              this.router.navigate(['/cours/cours/' + res.id])
-            },
-          })
+          if (!isEdit) {
+            const observables = ecuesSaisis.map((e: any) => {
+              const ecue = new Ecue()
+              ecue.code = e.code
+              ecue.libelle = e.libelle
+              ecue.creditEcts = e.creditEcts
+              ecue.coefficient = e.coefficient || 1
+              ecue.cmHoraire = e.cmHoraire
+              ecue.tdTpHoraire = e.tdTpHoraire
+              ecue.tpeHoraire = e.tpeHoraire
+              ecue.type = e.type
+              ecue.enseignantId = e.enseignantId
+              ecue.coursId = res.id
+              return this.ecueService.create(ecue)
+            })
+            forkJoin(observables).subscribe({
+              next: () => { this.closeNouveauCoursModal(); this.getCours(); },
+              error: (err) => { console.log(err); this.closeNouveauCoursModal(); this.getCours(); },
+            })
+          } else {
+            this.closeNouveauCoursModal()
+            this.getCours()
+          }
         },
         error: (err: HttpErrorResponse) => {
           console.log(err)
         },
       })
     }
+  }
+
+  supprimerCours(cours: Cours): void {
+    if (!cours.id || !confirm(`Supprimer le cours "${cours.code} - ${cours.intitule}" ?`)) return
+    this.coursService.delete(String(cours.id)).subscribe({
+      next: () => this.getCours(),
+      error: (err) => console.log(err)
+    })
   }
 
   ngOnInit(): void {

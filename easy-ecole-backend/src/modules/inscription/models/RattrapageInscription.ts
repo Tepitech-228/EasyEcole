@@ -10,6 +10,7 @@ import { RattrapageSession } from "./RattrapageSession";
 import { RattrapageDocumentDepose } from "./RattrapageDocumentDepose";
 import { RattrapageComiteVote } from "./RattrapageComiteVote";
 import { Enseignant } from "../../auth/models/Enseignant";
+import { RattrapagePlanning } from "./RattrapagePlanning";
 
 export class RattrapageInscription extends Model<InferAttributes<RattrapageInscription>, InferCreationAttributes<RattrapageInscription>> {
   declare id: CreationOptional<number>
@@ -52,6 +53,9 @@ export class RattrapageInscription extends Model<InferAttributes<RattrapageInscr
   // NEW: Teacher assigned to grade this session (for enforcement in saveNotes)
   declare enseignantGradientId: CreationOptional<number | null> // FK to Enseignant.id
 
+  // NEW: Planning assignment after committee validation
+  declare planningId: CreationOptional<number | null> // FK to RattrapagePlanning
+
   declare coursParticipant?: NonAttribute<CoursParticipant>
   declare cours?: NonAttribute<Cours>
   declare sessionExamen?: NonAttribute<SessionExamen>
@@ -62,6 +66,7 @@ export class RattrapageInscription extends Model<InferAttributes<RattrapageInscr
   declare documentsDeposes?: NonAttribute<RattrapageDocumentDepose[]>
   declare comiteVotes?: NonAttribute<RattrapageComiteVote[]>
   declare enseignantGradient?: NonAttribute<Enseignant>
+  declare planning?: NonAttribute<RattrapagePlanning>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -78,6 +83,7 @@ export class RattrapageInscription extends Model<InferAttributes<RattrapageInscr
     documentsDeposes: Association<RattrapageInscription, RattrapageDocumentDepose>
     comiteVotes: Association<RattrapageInscription, RattrapageComiteVote>
     enseignantGradient: Association<RattrapageInscription, Enseignant>
+    planning: Association<RattrapageInscription, RattrapagePlanning>
   }
 }
 
@@ -199,11 +205,15 @@ RattrapageInscription.init({
     type: DataTypes.DATEONLY,
     allowNull: true
   },
-  enseignantGradientId: {
-    type: DataTypes.INTEGER.UNSIGNED,
-    allowNull: true
-  },
-  createdAt: DataTypes.DATE,
+   enseignantGradientId: {
+     type: DataTypes.INTEGER.UNSIGNED,
+     allowNull: true
+   },
+   planningId: {
+     type: DataTypes.INTEGER.UNSIGNED,
+     allowNull: true
+   },
+   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
   deletedAt: DataTypes.DATE,
 }, {

@@ -204,15 +204,40 @@ function isPartOfMerge(ws: ExcelJS.Worksheet, row: number, col: number, masterCe
   return false;
 }
 
-function detectFormat(headerRow: string[]): 'A' | 'B' {
-  const hasCodeDeL = headerRow.some(h => h.toUpperCase().includes('CODE DE L'));
-  const hasContenus = headerRow.some(h => h.toUpperCase().includes('CONTENUS DES ENSEIGNEMENTS'));
-  const hasIntituleDes = headerRow.some(h => h.toUpperCase().includes('INTITULE DES ENSEIGNEMENTS'));
-  const hasMatiere = headerRow.some(h => h.toUpperCase().includes('MATIERE'));
-  const hasUnite = headerRow.some(h => h.toUpperCase().includes('UNITE D\'ENSEIGNEMENT'));
+function detectFormat(matrix: string[][]): 'A' | 'B' {
+  const row0 = matrix[0] || [];
+  const row1 = matrix[1] || [];
+
+  const hasCodeDeL = row0.some(h => h.toUpperCase().includes('CODE DE L'));
+  const hasContenus = row0.some(h => h.toUpperCase().includes('CONTENUS DES ENSEIGNEMENTS'));
+  const hasIntituleDes = row0.some(h => h.toUpperCase().includes('INTITULE DES ENSEIGNEMENTS'));
+  const hasMatiere = row0.some(h => h.toUpperCase().includes('MATIERE'));
+  const hasUnite = row0.some(h => h.toUpperCase().includes('UNITE D\'ENSEIGNEMENT'));
+
+  // Maquettes ESA à 2 lignes d'en-tête : ligne 2 contient UE + ECUE (robuste aux espaces)
+  const norm = (s: string) => s.toUpperCase().replace(/\s+/g, '').trim();
+  const hasUeEcueSplit = (() => {
+    for (let r = 1; r < Math.min(4, matrix.length); r++) {
+      const row = matrix[r] || [];
+      const hasUe = row.some(h => norm(h) === 'UE');
+      const hasEcue = row.some(h => norm(h) === 'ECUE');
+      if (hasUe && hasEcue) return true;
+    }
+    return false;
+  })();
+
+  // Ligne 1 contient TYPE ou TYPES + TOTAL PRESENTIEL -> Format B (robuste à TOTALPRESENTIEL collé par mammoth)
+  const hasTypeVariant = row0.some(h => norm(h).includes('TYPE'));
+  const hasTotalPresentiel = row0.some(h => norm(h).includes('TOTALPRESENTIEL'));
+
+  if (hasUeEcueSplit || (hasTypeVariant && hasTotalPresentiel)) return 'B';
+
+  // Tests existants pour Format A (template simple Code/Intitulé)
   if (hasCodeDeL && hasContenus) return 'A';
   if (hasCodeDeL && (hasIntituleDes || hasMatiere || hasUnite)) return 'B';
   if (hasCodeDeL) return 'B';
+
+  // Fallback pour template simple
   return 'A';
 }
 
@@ -267,6 +292,28 @@ export async function lireTableauWord(filePath: string): Promise<string[][]> {
   return matrix;
 }
 
+/**
+ * Lit un tableau Word simple (1 ligne d'en-tête + données) sans logique de fusions complexes.
+ * Retourne une matrice string[][] où chaque ligne est un tableau de cellules textuelles.
+ * Utilisée pour les imports Enseignants, Apprenants, Utilisateurs qui ont des tableaux simples.
+ */
+export async function lireTableauWordSimple(filePath: string): Promise<string[][]> {
+  const result = await mammoth.convertToHtml({ path: filePath });
+  const $ = cheerio.load(result.value);
+  if ($('table').length === 0) throw new Error("Impossible de trouver un tableau dans le document Word");
+
+  const matrix: string[][] = [];
+  $('table').first().find('tr').each((_i, el) => {
+    const cells: string[] = [];
+    $(el).find('td, th').each((_j, cell) => {
+      cells.push(normalizeText($(cell).text()));
+    });
+    if (cells.some(c => c !== '')) matrix.push(cells);
+  });
+  if (matrix.length < 1) throw new Error("Le document Word doit contenir au moins un tableau");
+  return matrix;
+}
+
 async function lireTableauExcel(filePath: string): Promise<string[][]> {
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.readFile(filePath);
@@ -304,6 +351,38 @@ async function lireTableauExcel(filePath: string): Promise<string[][]> {
   }
   if (matrix.length < 2) throw new Error("Le fichier Excel doit contenir un tableau avec au moins une ligne d'en-têtes et une ligne de données");
   return matrix;
+}
+
+/**
+ * Crée un document Word (.docx) simple avec un tableau ayant les colonnes indiquées.
+ * Utilisé pour les templates Word d'import.
+ */
+async function createWordTemplate(headers: string[], title: string): Promise<Buffer> {
+  const headerCells = headers.map(h => new TableCell({
+    children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, size: 9, font: "Calibri" })] }), ],
+    borders: { top: { style: "single", size: 4, color: "999999" }, bottom: { style: "single", size: 4, color: "999999" }, left: { style: "single", size: 4, color: "999999" }, right: { style: "single", size: 4, color: "999999" } },
+    shading: { fill: "1E40AF" },
+  }));
+
+  const table = new Table({
+    rows: [new TableRow({ children: headerCells })],
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    layout: TableLayoutType.FIXED,
+    borders: { top: { style: "single", size: 4, color: "999999" }, bottom: { style: "single", size: 4, color: "999999" }, left: { style: "single", size: 4, color: "999999" }, right: { style: "single", size: 4, color: "999999" } },
+  });
+
+  const doc = new Document({
+    sections: [{
+      properties: {},
+      children: [
+        new Paragraph({ children: [new TextRun({ text: title, bold: true, size: 16, font: "Calibri" })], alignment: AlignmentType.CENTER }),
+        new Paragraph({ children: [], spacing: { after: 200 } }),
+        table,
+      ],
+    }],
+  });
+
+  return Packer.toBuffer(doc);
 }
 
 // ===========================================================================
@@ -424,7 +503,7 @@ export default class ExcelController {
       const matrix = isWord ? await lireTableauWord(filePath) : await lireTableauExcel(filePath);
       if (matrix.length < 1) return res.status(400).json({ success: false, message: "Le fichier ne contient aucun tableau exploitable" });
 
-      const format = detectFormat(matrix[0]);
+      const format = detectFormat(matrix);
       const semestreDemande = (req.body.semestre as string) || '';
       const parcoursTitre = (req.body.parcoursTitre as string) || '';
       let imported = 0, errors = 0, ignored = 0;
@@ -511,7 +590,7 @@ export default class ExcelController {
         const parseMatiereCell = (cellValue: string): { ecueCode: string; ecueLibelle: string } | null => {
           const text = normalizeText(cellValue).trim();
           if (!text) return null;
-          const match = text.match(/^(\d+)\.([A-Z0-9]+)\s*:\s*(.+)$/i);
+          const match = text.match(/^(\d+)[\.\-]([A-Z0-9]+)\s*:\s*(.+)$/i);
           if (match) return { ecueCode: match[2].trim(), ecueLibelle: match[3].trim() };
           const match2 = text.match(/^([A-Z0-9]+)\s*:\s*(.+)$/i);
           if (match2) return { ecueCode: match2[1].trim(), ecueLibelle: match2[2].trim() };
@@ -550,13 +629,13 @@ export default class ExcelController {
             continue;
           }
           const rowHeaderText = row.map(c => normalizeText(c).toUpperCase()).join(' ');
-          if (rowHeaderText.includes('CODE DE L') || rowHeaderText.includes('CONTENUS DES ENSEIGNEMENTS') || rowHeaderText === 'UE ECUE') {
+          if (rowHeaderText.includes('CODE DE L') || rowHeaderText.includes('CONTENUS DES ENSEIGNEMENTS') || rowHeaderText === 'UE ECUE' || rowHeaderText.includes('TYPE') || rowHeaderText.includes('TOTAL PRESENTIEL')) {
             continue;
           }
 
           const normalizedRow = row.map(cell => normalizeText(cell || ''));
           const typeIndex = normalizedRow.findIndex(cell => /^[FTSCLM]$/i.test(cell));
-          const isContinuationCode = /^\d+\.[A-Z0-9]+\s*:/i.test(normalizedRow[0]);
+          const isContinuationCode = /^\d+[\.\-][A-Z0-9]+\s*:/i.test(normalizedRow[0]);
           const cellCodeUE = isContinuationCode ? '' : normalizedRow[0];
           const cellIntituleUE = isContinuationCode ? '' : normalizedRow[1];
           const cellMatiere = isContinuationCode ? normalizedRow[0] : normalizedRow[2];
@@ -916,14 +995,14 @@ export default class ExcelController {
     }
   }
 
-  // ========================================================================
-  //  ENSEIGNANTS — Import / Export / Template
-  // ========================================================================
+// ========================================================================
+//  ENSEIGNANTS — Import / Export / Template
+// ========================================================================
 
-  /**
-   * GET /excel/enseignants/template
-   */
-  static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Response> {
+/**
+ * GET /excel/enseignants/template
+ */
+static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Response> {
     try {
       const wb = new ExcelJS.Workbook();
       wb.creator = "EasyEcole";
@@ -971,31 +1050,63 @@ export default class ExcelController {
   }
 
   /**
-   * POST /excel/enseignants/import
-   */
+ * GET /excel/enseignants/template-word
+ * Télécharge un template Word pour l'import des enseignants.
+ */
+  static async downloadEnseignantWordTemplate(req: Request, res: Response): Promise<Response> {
+    try {
+      const headers = ["Nom", "Prénoms", "Email", "Identifiant", "Contact", "Fonction", "Date naissance (JJ/MM/AAAA)", "Lieu naissance"];
+      const buffer = await createWordTemplate(headers, "Template Enseignants");
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+      res.setHeader("Content-Disposition", "attachment; filename=\"template-enseignants.docx\"");
+      return res.status(200).send(buffer);
+    } catch (error) {
+      console.error("Erreur template Word enseignants:", error);
+      return res.status(500).json({ success: false, message: "Erreur lors de la génération du template Word" });
+    }
+  }
+
+  /**
+    * POST /excel/enseignants/import
+    * Supporte .xlsx et .docx.
+    */
   static async importEnseignants(req: Request, res: Response): Promise<Response> {
     if (!req.file) return res.status(400).json({ success: false, message: "Aucun fichier fourni" });
     const filePath = req.file.path;
     const results: { email?: string; statut: string; message: string; motDePasse?: string }[] = [];
+    const isWord = /\.docx$/i.test(req.file.originalname);
 
     try {
-      const wb = new ExcelJS.Workbook();
-      await wb.xlsx.readFile(filePath);
-      const ws = wb.getWorksheet("Enseignants");
-      if (!ws) return res.status(400).json({ success: false, message: "Feuille 'Enseignants' introuvable" });
+      let rows: string[][];
+      if (isWord) {
+        rows = await lireTableauWordSimple(filePath);
+      } else {
+        const wb = new ExcelJS.Workbook();
+        await wb.xlsx.readFile(filePath);
+        const ws = wb.getWorksheet("Enseignants");
+        if (!ws) return res.status(400).json({ success: false, message: "Feuille 'Enseignants' introuvable" });
+        rows = [];
+        for (let i = 2; i <= ws.rowCount; i++) {
+          const row = ws.getRow(i);
+          const cells: string[] = [];
+          for (let j = 1; j <= 8; j++) cells.push(row.getCell(j)?.toString()?.trim() || '');
+          if (cells.some(c => c !== '')) rows.push(cells);
+        }
+      }
+      if (rows.length < 1) return res.status(400).json({ success: false, message: "Le fichier ne contient aucune ligne exploitable" });
 
       let imported = 0, errors = 0;
 
-      for (let i = 2; i <= ws.rowCount; i++) {
-        const row = ws.getRow(i);
-        const nom = row.getCell(1)?.toString()?.trim();
-        const prenoms = row.getCell(2)?.toString()?.trim();
-        const email = row.getCell(3)?.toString()?.trim();
-        const identifiant = row.getCell(4)?.toString()?.trim();
-        const contact = row.getCell(5)?.toString()?.trim() || null;
-        const fonction = row.getCell(6)?.toString()?.trim() || null;
-        const dateNaissance = parseExcelDate(row.getCell(7)?.value);
-        const lieuNaissance = row.getCell(8)?.toString()?.trim() || null;
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const nom = row[0] || '';
+        const prenoms = row[1] || '';
+        const email = row[2] || '';
+        const identifiant = row[3] || '';
+        const contact = row[4] || null;
+        const fonction = row[5] || null;
+        const dateNaissance = parseExcelDate(row[6]);
+        const lieuNaissance = row[7] || null;
 
         if (!nom || !prenoms || !email || !identifiant) {
           errors++;
@@ -1013,10 +1124,8 @@ export default class ExcelController {
 
           const tempPassword = generateTempPassword();
           const utilisateur = await Utilisateur.create({
-            nom,
-            prenoms,
-            email: email!,
-            identifiant: identifiant!,
+            nom, prenoms,
+            email: email!, identifiant: identifiant!,
             contact: contact || '',
             motDePasse: bcrypt.hashSync(tempPassword, 12),
             role: RolesUtilisateur.ENSEIGNANT,
@@ -1171,33 +1280,65 @@ export default class ExcelController {
   }
 
   /**
-   * POST /excel/apprenants/import
-   * Crée l'utilisateur + l'apprenant + la demande d'inscription liée à la session/parcours.
-   */
+ * GET /excel/apprenants/template-word
+ * Télécharge un template Word pour l'import des apprenants.
+ */
+  static async downloadApprenantWordTemplate(req: Request, res: Response): Promise<Response> {
+    try {
+      const headers = ["Nom", "Prénoms", "Email", "Identifiant", "Contact", "Date naissance (JJ/MM/AAAA)", "Lieu naissance", "Session (titre)", "Parcours (titre)"];
+      const buffer = await createWordTemplate(headers, "Template Apprenants");
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+      res.setHeader("Content-Disposition", "attachment; filename=\"template-apprenants.docx\"");
+      return res.status(200).send(buffer);
+    } catch (error) {
+      console.error("Erreur template Word apprenants:", error);
+      return res.status(500).json({ success: false, message: "Erreur lors de la génération du template Word" });
+    }
+  }
+
+  /**
+    * POST /excel/apprenants/import
+    * Crée l'utilisateur + l'apprenant + la demande d'inscription liée à la session/parcours.
+    * Supporte .xlsx et .docx.
+    */
   static async importApprenants(req: Request, res: Response): Promise<Response> {
     if (!req.file) return res.status(400).json({ success: false, message: "Aucun fichier fourni" });
     const filePath = req.file.path;
     const results: { email?: string; statut: string; message: string; motDePasse?: string }[] = [];
+    const isWord = /\.docx$/i.test(req.file.originalname);
 
     try {
-      const wb = new ExcelJS.Workbook();
-      await wb.xlsx.readFile(filePath);
-      const ws = wb.getWorksheet("Apprenants");
-      if (!ws) return res.status(400).json({ success: false, message: "Feuille 'Apprenants' introuvable" });
+      let rows: string[][];
+      if (isWord) {
+        rows = await lireTableauWordSimple(filePath);
+      } else {
+        const wb = new ExcelJS.Workbook();
+        await wb.xlsx.readFile(filePath);
+        const ws = wb.getWorksheet("Apprenants");
+        if (!ws) return res.status(400).json({ success: false, message: "Feuille 'Apprenants' introuvable" });
+        rows = [];
+        for (let i = 2; i <= ws.rowCount; i++) {
+          const row = ws.getRow(i);
+          const cells: string[] = [];
+          for (let j = 1; j <= 9; j++) cells.push(row.getCell(j)?.toString()?.trim() || '');
+          if (cells.some(c => c !== '')) rows.push(cells);
+        }
+      }
+      if (rows.length < 1) return res.status(400).json({ success: false, message: "Le fichier ne contient aucune ligne exploitable" });
 
       let imported = 0, errors = 0;
 
-      for (let i = 2; i <= ws.rowCount; i++) {
-        const row = ws.getRow(i);
-        const nom = row.getCell(1)?.toString()?.trim();
-        const prenoms = row.getCell(2)?.toString()?.trim();
-        const email = row.getCell(3)?.toString()?.trim();
-        const identifiant = row.getCell(4)?.toString()?.trim();
-        const contact = row.getCell(5)?.toString()?.trim() || null;
-        const dateNaissance = parseExcelDate(row.getCell(6)?.value);
-        const lieuNaissance = row.getCell(7)?.toString()?.trim();
-        const sessionTitre = row.getCell(8)?.toString()?.trim();
-        const parcoursTitre = row.getCell(9)?.toString()?.trim();
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const nom = row[0] || '';
+        const prenoms = row[1] || '';
+        const email = row[2] || '';
+        const identifiant = row[3] || '';
+        const contact = row[4] || null;
+        const dateNaissance = parseExcelDate(row[5]);
+        const lieuNaissance = row[6] || null;
+        const sessionTitre = row[7] || '';
+        const parcoursTitre = row[8] || '';
 
         if (!nom || !prenoms || !email || !identifiant || !dateNaissance || !lieuNaissance || !sessionTitre || !parcoursTitre) {
           errors++;
@@ -1237,10 +1378,8 @@ export default class ExcelController {
           // 4. Créer utilisateur
           const tempPassword = generateTempPassword();
           const utilisateur = await Utilisateur.create({
-            nom,
-            prenoms,
-            email: email!,
-            identifiant: identifiant!,
+            nom, prenoms,
+            email: email!, identifiant: identifiant!,
             contact: contact || '',
             motDePasse: bcrypt.hashSync(tempPassword, 12),
             role: RolesUtilisateur.APPRENANT,
@@ -1662,12 +1801,50 @@ export default class ExcelController {
     }
   }
 
+/**
+ * GET /excel/utilisateurs/template-word?role=...
+ * Télécharge un template Word pour l'import d'utilisateurs par rôle.
+ */
+  static async downloadUtilisateurWordTemplate(req: Request, res: Response): Promise<Response> {
+    try {
+      const rawRole = (req.query.role as string | undefined)?.trim();
+      const role = rawRole ? normalizeRole(rawRole) : null;
+      if (rawRole && !role) {
+        return res.status(400).json({
+          success: false,
+          message: `Rôle invalide. Valeurs acceptées : ${Object.values(RolesUtilisateur).join(", ")}`,
+        });
+      }
+
+      const roleFinal = role ?? RolesUtilisateur.ADMIN;
+      const headers = ["Nom", "Prénoms", "Email", "Téléphone", "Identifiant", "Mot de passe (optionnel)"];
+
+      let extraHeaders: string[] = [];
+      if (roleFinal === RolesUtilisateur.PARENT) {
+        extraHeaders = ["Matricule enfant (optionnel)"];
+      } else if (roleFinal === RolesUtilisateur.APPRENANT || roleFinal === RolesUtilisateur.ENSEIGNANT) {
+        extraHeaders = ["Date naissance (JJ/MM/AAAA)", "Lieu naissance"];
+        if (roleFinal === RolesUtilisateur.ENSEIGNANT) extraHeaders.push("Fonction / Spécialité");
+      } else {
+        extraHeaders = ["Statut (actif/inactif)"];
+      }
+
+      const buffer = await createWordTemplate([...headers, ...extraHeaders], `Template Utilisateurs — ${ROLE_LABELS[roleFinal] ?? roleFinal}`);
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+      res.setHeader("Content-Disposition", `attachment; filename="template-utilisateurs.docx"`);
+      return res.status(200).send(buffer);
+    } catch (error) {
+      console.error("Erreur template Word utilisateurs:", error);
+      return res.status(500).json({ success: false, message: "Erreur lors de la génération du template Word" });
+    }
+  }
+
   /**
-   * GET /excel/utilisateurs/export?role=...
-   * Exporte tous les utilisateurs, filtrés par rôle si fourni.
-   * Si le rôle a une table associée (Apprenant, Enseignant, ...), les infos
-   * du profil sont incluses. Sans rôle : tous les utilisateurs.
-   */
+    * GET /excel/utilisateurs/export?role=...
+    * Exporte tous les utilisateurs, filtrés par rôle si fourni.
+    * Si le rôle a une table associée (Apprenant, Enseignant, ...), les infos
+    * du profil sont incluses. Sans rôle : tous les utilisateurs.
+    */
   static async exportUtilisateursParRole(req: Request, res: Response): Promise<Response> {
     try {
       const rawRole = (req.query.role as string | undefined)?.trim();
@@ -1804,11 +1981,11 @@ export default class ExcelController {
   }
 
   /**
-   * POST /excel/utilisateurs/import?role=...
-   * Importe des utilisateurs depuis un fichier Excel (template par rôle).
-   * Crée automatiquement le compte Utilisateur (mot de passe généré si absent).
-   * Retourne un rapport par ligne : { success, importedCount, errorCount, details }.
-   */
+    * POST /excel/utilisateurs/import?role=...
+    * Importe des utilisateurs depuis un fichier Excel (.xlsx) ou Word (.docx).
+    * Crée automatiquement le compte Utilisateur (mot de passe généré si absent).
+    * Retourne un rapport par ligne : { success, importedCount, errorCount, details }.
+    */
   static async importUtilisateursParRole(req: Request, res: Response): Promise<Response> {
     if (!req.file) return res.status(400).json({ success: false, message: "Aucun fichier fourni" });
 
@@ -1823,35 +2000,48 @@ export default class ExcelController {
 
     const filePath = req.file.path;
     const results: { ligne: number; email?: string; statut: string; message: string; motDePasse?: string }[] = [];
+    const isWord = /\.docx$/i.test(req.file.originalname);
 
     try {
-      const wb = new ExcelJS.Workbook();
-      await wb.xlsx.readFile(filePath);
-
-      const sheetName = ROLE_SHEET_NAMES[role] ?? "Utilisateurs";
-      let ws = wb.getWorksheet(sheetName);
-      if (!ws) ws = wb.worksheets[0]; // fallback : première feuille
-      if (!ws) return res.status(400).json({ success: false, message: "Aucune feuille de calcul trouvée dans le fichier" });
+      let rows: string[][];
+      if (isWord) {
+        rows = await lireTableauWordSimple(filePath);
+      } else {
+        const wb = new ExcelJS.Workbook();
+        await wb.xlsx.readFile(filePath);
+        const sheetName = ROLE_SHEET_NAMES[role] ?? "Utilisateurs";
+        let ws = wb.getWorksheet(sheetName);
+        if (!ws) ws = wb.worksheets[0]; // fallback : première feuille
+        if (!ws) return res.status(400).json({ success: false, message: "Aucune feuille de calcul trouvée dans le fichier" });
+        rows = [];
+        for (let i = 2; i <= ws.rowCount; i++) {
+          const row = ws.getRow(i);
+          const cells: string[] = [];
+          for (let j = 1; j <= 9; j++) cells.push(row.getCell(j)?.toString()?.trim() || '');
+          if (cells.some(c => c !== '')) rows.push(cells);
+        }
+      }
+      if (rows.length < 1) return res.status(400).json({ success: false, message: "Le fichier ne contient aucune ligne exploitable" });
 
       let imported = 0, errors = 0;
 
-      for (let i = 2; i <= ws.rowCount; i++) {
-        const row = ws.getRow(i);
-        const nom = row.getCell(1)?.toString()?.trim();
-        const prenoms = row.getCell(2)?.toString()?.trim();
-        const email = row.getCell(3)?.toString()?.trim();
-        const telephone = row.getCell(4)?.toString()?.trim() || null;
-        const identifiant = row.getCell(5)?.toString()?.trim();
-        const motDePasseSaisi = row.getCell(6)?.toString()?.trim() || null;
-        const col7 = row.getCell(7)?.toString()?.trim() || null; // statut | dateNaissance | matricule enfant
-        const col8 = row.getCell(8)?.toString()?.trim() || null; // lieuNaissance
-        const col9 = row.getCell(9)?.toString()?.trim() || null; // fonction
+      for (let idx = 0; idx < rows.length; idx++) {
+        const row = rows[idx];
+        const nom = row[0] || '';
+        const prenoms = row[1] || '';
+        const email = row[2] || '';
+        const telephone = row[3] || null;
+        const identifiant = row[4] || '';
+        const motDePasseSaisi = row[5] || null;
+        const col7 = row[6] || null; // statut | dateNaissance | matricule enfant
+        const col8 = row[7] || null; // lieuNaissance
+        const col9 = row[8] || null; // fonction
 
         if (!nom && !prenoms && !email && !identifiant) continue; // ligne vide
 
         if (!nom || !prenoms || !email || !identifiant) {
           errors++;
-          results.push({ ligne: i, email, statut: "erreur", message: "Nom, prénoms, email et identifiant sont obligatoires" });
+          results.push({ ligne: idx + 1, email, statut: "erreur", message: "Nom, prénoms, email et identifiant sont obligatoires" });
           continue;
         }
 
@@ -1876,14 +2066,14 @@ export default class ExcelController {
             }
             if (!dossier || !apprenantEnfant) {
               errors++;
-              results.push({ ligne: i, email, statut: "erreur", message: `Matricule enfant "${col7}" introuvable ou non rattaché à un apprenant` });
+              results.push({ ligne: idx + 1, email, statut: "erreur", message: `Matricule enfant "${col7}" introuvable ou non rattaché à un apprenant` });
               continue;
             }
           }
 
           if (role === RolesUtilisateur.APPRENANT && (!dateNaissance || !lieuNaissance)) {
             errors++;
-            results.push({ ligne: i, email, statut: "erreur", message: "Date naissance et lieu naissance sont obligatoires pour un apprenant" });
+            results.push({ ligne: idx + 1, email, statut: "erreur", message: "Date naissance et lieu naissance sont obligatoires pour un apprenant" });
             continue;
           }
 
@@ -1891,7 +2081,7 @@ export default class ExcelController {
           const existant = await Utilisateur.findOne({ where: { email } });
           if (existant) {
             errors++;
-            results.push({ ligne: i, email, statut: "erreur", message: "Cet email est déjà utilisé" });
+            results.push({ ligne: idx + 1, email, statut: "erreur", message: "Cet email est déjà utilisé" });
             continue;
           }
 
@@ -1939,7 +2129,7 @@ export default class ExcelController {
 
           imported++;
           results.push({
-            ligne: i,
+            ligne: idx + 1,
             email,
             statut: "succès",
             message: "Compte créé",
@@ -1947,7 +2137,7 @@ export default class ExcelController {
           });
         } catch (err: any) {
           errors++;
-          results.push({ ligne: i, email, statut: "erreur", message: err.message });
+          results.push({ ligne: idx + 1, email, statut: "erreur", message: err.message });
         }
       }
 

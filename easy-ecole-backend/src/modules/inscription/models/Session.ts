@@ -14,6 +14,7 @@ export class Session extends Model<InferAttributes<Session>, InferCreationAttrib
   declare dateDebut: Date
   declare dateFin: Date
   declare description: CreationOptional<string>
+  declare statut: CreationOptional<'ouverte' | 'cloturee'>
   declare anneeAcademiqueId: ForeignKey<AnneeAcademique['id']>
   declare anneeAcademique?: NonAttribute<AnneeAcademique>
   declare niveauEtudeId: ForeignKey<NiveauEtude['id']>
@@ -56,6 +57,11 @@ Session.init({
   description: {
     type: new DataTypes.STRING,
     allowNull: true
+  },
+  statut: {
+    type: DataTypes.ENUM('ouverte', 'cloturee'),
+    allowNull: false,
+    defaultValue: 'ouverte'
   },
   niveauEtudeId: {
     type: DataTypes.INTEGER.UNSIGNED,

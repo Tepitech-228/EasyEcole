@@ -32,8 +32,12 @@ export default class TemplateController {
 
   static async create(req: Request, res: Response): Promise<Response> {
     try {
+      const { typeId, libelle, contenu } = req.body || {};
+      if (!typeId || !libelle || !contenu) {
+        return res.status(400).json({ success: false, message: 'Champs requis: typeId, libelle, contenu' });
+      }
       const lastVersion = await DocGenTemplate.findOne({
-        where: { typeId: req.body.typeId },
+        where: { typeId },
         order: [['version', 'DESC']]
       });
       const template = await DocGenTemplate.create({

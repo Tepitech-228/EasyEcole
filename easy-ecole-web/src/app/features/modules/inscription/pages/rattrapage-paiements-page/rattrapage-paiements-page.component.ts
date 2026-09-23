@@ -39,8 +39,8 @@ export class RattrapagePaiementsPageComponent extends BaseComponentClass impleme
     this.loading = true
     this.errorMessage = ''
     this.rattrapageWorkflowService.getDemandes().subscribe({
-      next: (demandes) => {
-        this.demandes = demandes
+      next: (res) => {
+        this.demandes = res?.data || []
         this.loading = false
       },
       error: (err) => {

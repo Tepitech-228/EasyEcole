@@ -169,22 +169,15 @@ export class BordereauDossierService {
             throw new Error("Les frais d'inscription ne sont pas entièrement payés")
         }
 
-        const parcoursFinalForCursus = getParcoursFinal(demande.parcoursChoisis)
+        const parcoursFinalForCursus: any = getParcoursFinal(demande.parcoursChoisis)
 
         const anneeLibelle = demande.session?.anneeAcademique?.libelle || new Date().getFullYear().toString()
-        const parcoursData = parcoursFinalForCursus?.parcours
+        const parcoursData: any = parcoursFinalForCursus?.parcours
 
-        const classeDerivee = coursDuParcours.find(c => c.classe?.id)?.classe ?? null
-        // Option A : en pédagogie différée (saisie ESA-COMPTA du premier bordereau),
-        // l'absence de classe ne bloque PAS le processus financier : l'étudiant est
-        // créé avec une classe "À affecter", qui sera rattachée plus tard lors de la
-        // finalisation pédagogique (comité). La classe reste obligatoire en validation
-        // complète (affectation définitive).
-        if ((!classeDerivee || !classeDerivee.id) && !options?.pedagogieDifferee) {
-            throw new Error("Aucune classe n'a pu être déterminée pour le parcours final")
-        }
+        // Classe bannie du matricule : on ne cherche plus la classe, uniquement la filière
+        const classeDerivee: any = null
 
-        const etablissementId = parcoursData?.etablissementId ?? classeDerivee?.etablissementId
+        const etablissementId = parcoursData?.etablissementId
         const etablissement = etablissementId
             ? await Etablissement.findByPk(etablissementId, { transaction })
             : null
@@ -268,9 +261,7 @@ export class BordereauDossierService {
                     intituleParcours: parcoursNom,
                     parcoursId: parcoursChoisiFinal?.parcoursId!,
                     niveauEtudeId: niveauEtudeId!,
-                    // En validation complète (non différée), la garde ci-dessus garantit
-                    // que classeDerivee est renseignée : non-null assertion safe.
-                    classeId: classeDerivee!.id!,
+                    classeId: (classeDerivee as any)?.id ?? null,
                     anneeAcademiqueId: anneeId!,
                     utilisateurId: demande.utilisateurId,
                     demandeInscriptionId: demande.id,

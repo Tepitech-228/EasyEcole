@@ -9,11 +9,20 @@ import { RattrapageSessionClasse } from "../models/RattrapageSessionClasse";
 import { RattrapageDocumentRequis } from "../models/RattrapageDocumentRequis";
 import { RattrapageDocumentDepose } from "../models/RattrapageDocumentDepose";
 import { RattrapageInscription } from "../models/RattrapageInscription";
+import { RattrapageComiteVote } from "../models/RattrapageComiteVote";
+import { RattrapagePlanning } from "../models/RattrapagePlanning";
+import { RattrapageEnseignant } from "../models/RattrapageEnseignant";
+import { RattrapageNote } from "../models/RattrapageNote";
 import { Bordereau } from "../models/Bordereau";
 import { AnneeAcademique } from "../models/AnneeAcademique";
 import { ParametreFrais } from "../../comptabilite/models/ParametreFrais";
 import { EmailSender } from "../../../core/helpers/EmailSender";
 import { Utilisateur } from "../../auth/models/Utilisateur";
+import { Classe } from "../models/Classe";
+import { Enseignant } from "../../auth/models/Enseignant";
+import { Cours } from "../models/Cours";
+import { CursusApprenant } from "../models/CursusApprenant"
+import { DossierEtudiant } from "../models/DossierEtudiant";
 
 /**
  * Workflow officiel de rattrapage (sessions, demandes étudiantes, comité, paiement).
@@ -83,6 +92,8 @@ export default class RattrapageWorkflowController {
       { association: RattrapageSession.associations.classes, include: [{ association: RattrapageSessionClasse.associations.classe }], required: false },
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       { association: RattrapageSession.associations.documentsRequis, required: false },
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      { association: RattrapageSession.associations.planning, required: false },
     ]
     if (avecInscriptions) {
       includes.push({ association: RattrapageSession.associations.inscriptions, required: false })
@@ -177,6 +188,7 @@ export default class RattrapageWorkflowController {
         }
       }
 
+      // Pièces justificatives requises
       if (documentsRequis.length > 0) {
         await RattrapageDocumentRequis.bulkCreate(
           documentsRequis.map((doc: any, index: number) => ({
@@ -187,6 +199,28 @@ export default class RattrapageWorkflowController {
           })),
           { transaction }
         )
+      }
+
+      // Auto-génération des créneaux samedi pour chaque classe entre dateDebut et dateFin
+      if (session.dateDebut && session.dateFin && classesId.length > 0) {
+        const samedis = RattrapageSession.genererSamedis(session.dateDebut, session.dateFin)
+        const planningEntries = []
+        for (const classeId of classesId) {
+          for (const samedi of samedis) {
+            planningEntries.push({
+              rattrapageSessionId: session.id,
+              classeId,
+              dateSamedi: samedi,
+              heureDebut: '08:00:00',
+              heureFin: '12:00:00',
+              salleId: null,
+              statut: 'programme' as const,
+            })
+          }
+        }
+        if (planningEntries.length > 0) {
+          await RattrapagePlanning.bulkCreate(planningEntries, { transaction })
+        }
       }
 
       await transaction.commit()
@@ -281,6 +315,31 @@ export default class RattrapageWorkflowController {
         }
       }
 
+      // Régénération du planning samedi si dates ou classes modifiées
+      if (body.dateDebut !== undefined || body.dateFin !== undefined || classesId !== null) {
+        await RattrapagePlanning.destroy({ where: { rattrapageSessionId: session.id }, transaction })
+        if (session.dateDebut && session.dateFin && classesId && classesId.length > 0) {
+          const samedis = RattrapageSession.genererSamedis(session.dateDebut, session.dateFin)
+          const planningEntries = []
+          for (const classeId of classesId) {
+            for (const samedi of samedis) {
+              planningEntries.push({
+                rattrapageSessionId: session.id,
+                classeId,
+                dateSamedi: samedi,
+                heureDebut: '08:00:00',
+                heureFin: '12:00:00',
+                salleId: null,
+                statut: 'programme' as const,
+              })
+            }
+          }
+          if (planningEntries.length > 0) {
+            await RattrapagePlanning.bulkCreate(planningEntries, { transaction })
+          }
+        }
+      }
+
       if (ouvertureSession) {
         await RattrapageWorkflowController.rattacherDemandesOrphelines(
           session.id,
@@ -298,6 +357,55 @@ export default class RattrapageWorkflowController {
     } catch (error) {
       await transaction.rollback()
       console.error('[modifierSession rattrapage-workflow]', error)
+      return res.status(500).json({ success: false, message: 'Erreur interne du serveur' })
+    }
+  }
+
+  /** PUT /rattrapage-workflow/sessions/:id/planning — édition heure/salle par samedi (ADMIN/INSTITUTION). */
+  static async editPlanning(req: Request, res: Response): Promise<Response> {
+    const role = req.utilisateurRole
+    if (!role || (!RattrapageWorkflowController.ROLE_ADMIN_SESSION.includes(role))) {
+      return res.status(403).json({ success: false, message: 'Édition du planning réservée à l\'administration' })
+    }
+
+    const sessionId = Number(req.params.id)
+    if (!Number.isInteger(sessionId) || sessionId <= 0) {
+      return res.status(400).json({ success: false, message: 'sessionId invalide' })
+    }
+
+    const body = req.body || {}
+    const entries: Array<{ id: number; heureDebut?: string; heureFin?: string; salleId?: number | null }> = Array.isArray(body.entries)
+      ? body.entries
+      : []
+
+    const transaction = await DatabaseConnection.getInstance().sequelize.transaction()
+    try {
+      for (const entry of entries) {
+        if (!Number.isInteger(entry.id) || entry.id <= 0) continue
+        const updateData: any = {}
+        if (typeof entry.heureDebut === 'string') updateData.heureDebut = entry.heureDebut
+        if (typeof entry.heureFin === 'string') updateData.heureFin = entry.heureFin
+        if (entry.salleId === null || entry.salleId === undefined || (Number.isInteger(entry.salleId) && (entry.salleId as number) > 0)) {
+          updateData.salleId = entry.salleId ?? null
+        }
+        if (Object.keys(updateData).length > 0) {
+          await RattrapagePlanning.update(updateData, { where: { id: entry.id, rattrapageSessionId: sessionId }, transaction })
+        }
+      }
+
+      await transaction.commit()
+
+      const planning = await RattrapagePlanning.findAll({
+        where: { rattrapageSessionId: sessionId },
+        include: [{ association: RattrapagePlanning.associations.classe, attributes: ['id', 'libelle', 'code'] }],
+        order: [['dateSamedi', 'ASC']],
+        transaction,
+      })
+
+      return res.status(200).json({ success: true, data: planning })
+    } catch (error) {
+      await transaction.rollback()
+      console.error('[editPlanning rattrapage-workflow]', error)
       return res.status(500).json({ success: false, message: 'Erreur interne du serveur' })
     }
   }
@@ -384,12 +492,24 @@ export default class RattrapageWorkflowController {
         if (session.statut !== 'ouverte') {
           return res.status(400).json({ success: false, message: 'La session de rattrapage n\'est pas ouverte aux demandes' })
         }
-        // Une seule demande par étudiant pour une même session.
+        // Garde-fou : 1 demande par étudiant/semaine/session (lundi 00:00 → dimanche 23:59)
+        const aujourdhui = new Date()
+        const lundi = new Date(aujourdhui)
+        lundi.setDate(lundi.getDate() - lundi.getDay() + 1) // lundi = jour de la semaine courante
+        lundi.setHours(0, 0, 0, 0)
+        const dimanche = new Date(lundi)
+        dimanche.setDate(dimanche.getDate() + 6)
+        dimanche.setHours(23, 59, 59, 999)
+        // Une seule demande par étudiant pour une même session DANS la semaine en cours
         const existante = await RattrapageInscription.findOne({
-          where: { demandePar: req.utilisateurId, rattrapageSessionId },
+          where: {
+            demandePar: req.utilisateurId,
+            rattrapageSessionId,
+            createdAt: { [Op.gte]: lundi, [Op.lte]: dimanche }
+          }
         })
         if (existante) {
-          return res.status(400).json({ success: false, message: 'Vous avez déjà soumis une demande pour cette session de rattrapage' })
+          return res.status(400).json({ success: false, message: 'Une demande déjà déposée cette semaine pour cette session' })
         }
       } else if (!periode) {
         return res.status(400).json({ success: false, message: 'Fournissez une session ou une période pour la demande de rattrapage' })
@@ -546,7 +666,7 @@ export default class RattrapageWorkflowController {
     }
   }
 
-  /** GET /rattrapage-workflow/demandes/:id — détail d'une demande (propriétaire ou comité). */
+  /** GET /rattrapage-workflow/demandes/:id — détail d'une demande (propriétaire ou comité) avec quorum/votes/membres. */
   static async detailDemande(req: Request, res: Response): Promise<Response> {
     const role = req.utilisateurRole
     if (!role) return res.status(403).json({ success: false, message: 'Accès refusé' })
@@ -561,7 +681,47 @@ export default class RattrapageWorkflowController {
       if (!estProprietaire && !RattrapageWorkflowController.ROLE_VISION_TOTAL.includes(role)) {
         return res.status(403).json({ success: false, message: 'Accès refusé' })
       }
-      return res.status(200).json({ success: true, data: demande })
+
+      let quorum: any = null
+      let votesPlain: any[] = []
+      let membresPlain: any[] = []
+      if (RattrapageWorkflowController.ROLE_COMITE.includes(role)) {
+        const totalMembres = await Utilisateur.count({
+          where: { role: RolesUtilisateur.COMITE_ORIENTATION, deletedAt: null },
+        })
+        const votes = await RattrapageComiteVote.findAll({
+          where: { rattrapageInscriptionId: demande.id },
+          include: [{ association: RattrapageComiteVote.associations.membre, attributes: ['id', 'nom', 'prenoms', 'identifiant', 'email'] }],
+          order: [['createdAt', 'DESC']],
+        })
+        votesPlain = votes.map(v => {
+          const plain: any = v.get({ plain: true })
+          return { ...plain, membre: plain.membre ? plain.membre.get({ plain: true }) : null }
+        })
+        membresPlain = (await Utilisateur.findAll({
+          where: { role: RolesUtilisateur.COMITE_ORIENTATION, deletedAt: null },
+          attributes: ['id', 'nom', 'prenoms', 'identifiant', 'email'],
+        })).map(m => {
+          const vote = votes.find((v: any) => v.membreId === m.id)
+          return { ...m.get({ plain: true }), vote: vote ? vote.get({ plain: true }) : null }
+        })
+        const votesCount = votesPlain.length
+        const valides = votesPlain.filter((v: any) => v.decision === 'valide').length
+        const aRejete = votesPlain.some((v: any) => v.decision === 'rejete')
+        const aCorrection = votesPlain.some((v: any) => v.decision === 'correction_demandee')
+        const restants = totalMembres - votesCount
+        const aVote = votesPlain.some((v: any) => v.membreId === req.utilisateurId)
+        quorum = {
+          totalMembres, votesCount, valides, restants, aVote,
+          estUnanime: votesCount > 0 && !aRejete && !aCorrection && valides === totalMembres,
+          estRejete: aRejete || demande.statutDemande === 'rejete',
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: { demande, quorum, votes: votesPlain, membres: membresPlain }
+      })
     } catch (error) {
       console.error('[detailDemande rattrapage-workflow]', error)
       return res.status(500).json({ success: false, message: 'Erreur interne du serveur' })
@@ -646,46 +806,261 @@ export default class RattrapageWorkflowController {
   // 3. DÉCISION DU COMITÉ (valider / rejeter)
   // ─────────────────────────────────────────────────────────────
 
-  /** PUT /rattrapage-workflow/demandes/:id/valider — valide la demande (débloque le paiement côté front). */
+  /** PUT /rattrapage-workflow/demandes/:id/valider — valide la demande (enregistre vote + unanimité). */
   static async validerDemande(req: Request, res: Response): Promise<Response> {
     const role = req.utilisateurRole
     if (!role || !RattrapageWorkflowController.ROLE_COMITE.includes(role)) {
       return res.status(403).json({ success: false, message: 'Validation réservée au comité' })
     }
 
+    const transaction = await DatabaseConnection.getInstance().sequelize.transaction()
     try {
-      const demande = await RattrapageInscription.findByPk(req.params.id)
-      if (!demande) return res.status(404).json({ success: false, message: 'Demande de rattrapage introuvable' })
+      const demande = await RattrapageInscription.findByPk(req.params.id, { transaction, lock: transaction.LOCK.UPDATE })
+      if (!demande) {
+        await transaction.rollback()
+        return res.status(404).json({ success: false, message: 'Demande de rattrapage introuvable' })
+      }
 
-      await demande.update({
-        statutDemande: 'valide',
-        dateValidationComite: new Date(),
-        motifRejet: null,
+      if (demande.statutDemande === 'rejete') {
+        await transaction.rollback()
+        return res.status(400).json({ success: false, message: 'Demande déjà rejetée' })
+      }
+      if (demande.statutDemande === 'valide') {
+        await transaction.rollback()
+        return res.status(400).json({ success: false, message: 'Demande déjà validée' })
+      }
+
+      const voteExistant = await RattrapageComiteVote.findOne({
+        where: { rattrapageInscriptionId: demande.id, membreId: req.utilisateurId },
+        transaction,
+      })
+      if (voteExistant) {
+        await transaction.rollback()
+        return res.status(400).json({ success: false, message: 'Vous avez déjà voté' })
+      }
+
+      const totalMembres = await Utilisateur.count({
+        where: { role: RolesUtilisateur.COMITE_ORIENTATION, deletedAt: null },
+        transaction,
+      })
+      if (totalMembres === 0) {
+        await transaction.rollback()
+        return res.status(400).json({ success: false, message: 'Aucun membre du comité configuré' })
+      }
+
+      await RattrapageComiteVote.create({
+        rattrapageInscriptionId: demande.id,
+        membreId: req.utilisateurId,
+        decision: 'valide',
+      }, { transaction })
+
+      const votesValides = await RattrapageComiteVote.count({
+        where: { rattrapageInscriptionId: demande.id, decision: 'valide' },
+        transaction,
       })
 
-      const dest = await RattrapageWorkflowController.emailDemandeur(demande)
-      if (dest) {
-        await RattrapageWorkflowController.notifier(
-          'Easy Ecole: Demande de rattrapage validée',
-          `<p>Bonjour <b>${dest.prenoms} ${dest.nom},</b></p>
-           <p>Votre demande de rattrapage a été <b>validée</b> par le comité.</p>
-           <p>Vous pouvez maintenant déposer votre bordereau de paiement depuis votre espace pour finaliser votre inscription aux épreuves de rattrapage.</p>
-           <p>Cordialement,<br>Easy Ecole</p>`,
-          dest
-        )
-      }
+if (votesValides === totalMembres) {
+         // Auto-affectation au prochain samedi disponible pour chaque filière de l'étudiant
+         // Si 2 filières auraient le même samedi, on décale sur des samedis distincts
+         if (!demande.rattrapageSessionId) {
+           await transaction.rollback()
+           return res.status(400).json({ success: false, message: 'La demande n\'est pas rattachée à une session' })
+         }
+
+          // Récupérer les classes (filières) de l'étudiant via CursusApprenant
+          if (!demande.demandePar) {
+            await transaction.rollback()
+            return res.status(400).json({ success: false, message: 'Demande sans propriétaire' })
+          }
+          const cursusApprenants = await CursusApprenant.findAll({
+            where: { utilisateurId: demande.demandePar! },
+            attributes: ['classeId'],
+            transaction,
+          })
+         const classeIds: number[] = cursusApprenants
+           .map((c) => c.classeId)
+           .filter((id): id is number => id !== null && id !== undefined)
+
+         if (classeIds.length === 0) {
+           await transaction.rollback()
+           return res.status(400).json({ success: false, message: 'Aucune classe trouvée pour cet étudiant' })
+         }
+
+         // Récupérer tous les plannings disponibles (dateSamedi >= aujourd'hui) pour la session
+         const aujourdHui = new Date()
+         aujourdHui.setHours(0, 0, 0, 0)
+         const disponibles = await RattrapagePlanning.findAll({
+           where: {
+             rattrapageSessionId: demande.rattrapageSessionId,
+             dateSamedi: { [Op.gte]: aujourdHui },
+             statut: 'programme' // Seulement les plannings encore disponibles
+           },
+           order: [['dateSamedi', 'ASC'], ['classeId', 'ASC']],
+           transaction,
+         })
+
+         if (disponibles.length === 0) {
+           await transaction.rollback()
+           return res.status(400).json({ success: false, message: 'Aucun samedi disponible' })
+         }
+
+         // Assigner des plannings distincts aux filières (éviter les samedis dupliqués quand possible)
+         const affectations: { filiereId: number; planningId: number; dateSamedi: Date }[] = []
+         const datesUtilisees = new Set<string>()
+         let planningIndex = 0
+
+         // Trier les filières de l'étudiant (pour avoir un ordre déterministe)
+         const filieresTriees = [...classeIds].sort()
+
+         for (const filiereId of filieresTriees) {
+           // Chercher le premier planning disponible pour cette filière dont la date n'est pas encore utilisée
+           let assigned = false
+           for (let i = planningIndex; i < disponibles.length; i++) {
+             const planning = disponibles[i]
+             const dateStr = planning.dateSamedi.toISOString().split('T')[0]
+             if (planning.classeId === filiereId && !datesUtilisees.has(dateStr)) {
+               affectations.push({
+                 filiereId: filiereId,
+                 planningId: planning.id,
+                 dateSamedi: planning.dateSamedi
+               })
+               datesUtilisees.add(dateStr)
+               planningIndex = i + 1
+               assigned = true
+               break
+             }
+           }
+           // Si pas de planning spécifique pour cette filière disponible avec une date inédite,
+           // prendre le premier planning disponible (peut entraîner un samedi dupliqué)
+           if (!assigned) {
+             for (let i = planningIndex; i < disponibles.length; i++) {
+               const planning = disponibles[i]
+               if (!datesUtilisees.has(planning.dateSamedi.toISOString().split('T')[0])) {
+                 affectations.push({
+                   filiereId: filiereId,
+                   planningId: planning.id,
+                   dateSamedi: planning.dateSamedi
+                 })
+                 datesUtilisees.add(planning.dateSamedi.toISOString().split('T')[0])
+                 planningIndex = i + 1
+                 assigned = true
+                 break
+               }
+             }
+           }
+           // Si toujours rien, prendre le premier disponible restant (forçage)
+           if (!assigned && planningIndex < disponibles.length) {
+             const planning = disponibles[planningIndex]
+             affectations.push({
+               filiereId: filiereId,
+               planningId: planning.id,
+               dateSamedi: planning.dateSamedi
+             })
+             datesUtilisees.add(planning.dateSamedi.toISOString().split('T')[0])
+             planningIndex++
+           }
+         }
+
+         if (affectations.length === 0) {
+           await transaction.rollback()
+           return res.status(400).json({ success: false, message: 'Impossible d\'affecter un planning' })
+         }
+
+         // Mettre à jour la demande avec le premier planning assigné (pour compatibilité arrière)
+         // et stocker l'information complète dans un champ dédié si nécessaire à l'avenir
+         await demande.update({
+           statutDemande: 'valide',
+           dateValidationComite: new Date(),
+           motifRejet: null,
+           planningId: affectations[0].planningId, // Premier planning pour compatibilité
+         }, { transaction })
+
+// Mettre à jour le statut des plannings assignés à 'convoque'
+          for (const aff of affectations) {
+            await RattrapagePlanning.update(
+              { statut: 'convoque' },
+              { where: { id: aff.planningId }, transaction }
+            )
+          }
+
+          // Fix E2E bugs: incrémenter nombreInscriptions du DossierEtudiant
+          // et poser statutReinscription='confirme' sur le CursusApprenant actuel.
+           const dossierEtudiant = await DossierEtudiant.findOne({
+            where: { utilisateurId: demande.demandePar! },
+            transaction,
+          })
+          if (dossierEtudiant) {
+            await dossierEtudiant.update({
+              nombreInscriptions: (dossierEtudiant.nombreInscriptions ?? 1) + 1,
+            }, { transaction })
+          }
+
+           const cursusActuel = await CursusApprenant.findOne({
+            where: { utilisateurId: demande.demandePar!, statutReinscription: { [Op.in]: ['en_attente', null] } as any },
+            order: [['createdAt', 'DESC']],
+            transaction,
+          })
+          if (cursusActuel) {
+            await cursusActuel.update({
+              statutReinscription: 'confirme',
+              dateReinscription: new Date(),
+            }, { transaction })
+          }
+        }
+      await transaction.commit()
+
+      const [votes, membres] = await Promise.all([
+        RattrapageComiteVote.findAll({
+          where: { rattrapageInscriptionId: demande.id },
+          include: [{ association: RattrapageComiteVote.associations.membre, attributes: ['id', 'nom', 'prenoms', 'identifiant', 'email'] }],
+          order: [['createdAt', 'DESC']],
+        }),
+        Utilisateur.findAll({
+          where: { role: RolesUtilisateur.COMITE_ORIENTATION, deletedAt: null },
+          attributes: ['id', 'nom', 'prenoms', 'identifiant', 'email'],
+        }),
+      ])
+
+      const votesPlain = votes.map(v => {
+        const plain: any = v.get({ plain: true })
+        return { ...plain, membre: plain.membre ? plain.membre.get({ plain: true }) : null }
+      })
+
+      const membresPlain = membres.map(m => {
+        const vote = votes.find((v: any) => v.membreId === m.id)
+        return { ...m.get({ plain: true }), vote: vote ? vote.get({ plain: true }) : null }
+      })
+
+      const votesCount = votesPlain.length
+      const valides = votesPlain.filter((v: any) => v.decision === 'valide').length
+      const aRejete = votesPlain.some((v: any) => v.decision === 'rejete')
+      const aCorrection = votesPlain.some((v: any) => v.decision === 'correction_demandee')
+      const restants = totalMembres - votesCount
+      const aVote = votesPlain.some((v: any) => v.membreId === req.utilisateurId)
+      const estUnanime = votesCount > 0 && !aRejete && !aCorrection && valides === totalMembres
+      const estRejete = aRejete || demande.statutDemande === 'rejete'
 
       const full = await RattrapageInscription.findByPk(demande.id, {
         include: RattrapageWorkflowController.includesDemande(),
       })
-      return res.status(200).json({ success: true, data: full })
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          demande: full,
+          quorum: { totalMembres, votesCount, valides, restants, aVote, estUnanime, estRejete },
+          votes: votesPlain,
+          membres: membresPlain,
+        }
+      })
     } catch (error) {
+      await transaction.rollback()
       console.error('[validerDemande rattrapage-workflow]', error)
       return res.status(500).json({ success: false, message: 'Erreur interne du serveur' })
     }
   }
 
-  /** PUT /rattrapage-workflow/demandes/:id/rejeter — rejette avec motif obligatoire. */
+  /** PUT /rattrapage-workflow/demandes/:id/rejeter — rejette avec motif (enregistre vote = veto). */
   static async rejeterDemande(req: Request, res: Response): Promise<Response> {
     const role = req.utilisateurRole
     if (!role || !RattrapageWorkflowController.ROLE_COMITE.includes(role)) {
@@ -697,14 +1072,83 @@ export default class RattrapageWorkflowController {
       return res.status(400).json({ success: false, message: 'Le motif de rejet est requis' })
     }
 
+    const transaction = await DatabaseConnection.getInstance().sequelize.transaction()
     try {
-      const demande = await RattrapageInscription.findByPk(req.params.id)
-      if (!demande) return res.status(404).json({ success: false, message: 'Demande de rattrapage introuvable' })
+      const demande = await RattrapageInscription.findByPk(req.params.id, { transaction, lock: transaction.LOCK.UPDATE })
+      if (!demande) {
+        await transaction.rollback()
+        return res.status(404).json({ success: false, message: 'Demande de rattrapage introuvable' })
+      }
+
+      if (demande.statutDemande === 'rejete') {
+        await transaction.rollback()
+        return res.status(400).json({ success: false, message: 'Demande déjà rejetée' })
+      }
+      if (demande.statutDemande === 'valide') {
+        await transaction.rollback()
+        return res.status(400).json({ success: false, message: 'Demande déjà validée' })
+      }
+
+      const voteExistant = await RattrapageComiteVote.findOne({
+        where: { rattrapageInscriptionId: demande.id, membreId: req.utilisateurId },
+        transaction,
+      })
+      if (voteExistant) {
+        await transaction.rollback()
+        return res.status(400).json({ success: false, message: 'Vous avez déjà voté' })
+      }
+
+      const totalMembres = await Utilisateur.count({
+        where: { role: RolesUtilisateur.COMITE_ORIENTATION, deletedAt: null },
+        transaction,
+      })
+
+      await RattrapageComiteVote.create({
+        rattrapageInscriptionId: demande.id,
+        membreId: req.utilisateurId,
+        decision: 'rejete',
+        motif,
+      }, { transaction })
 
       await demande.update({
         statutDemande: 'rejete',
         motifRejet: motif,
         dateValidationComite: new Date(),
+      }, { transaction })
+
+      await transaction.commit()
+
+      const [votes, membres] = await Promise.all([
+        RattrapageComiteVote.findAll({
+          where: { rattrapageInscriptionId: demande.id },
+          include: [{ association: RattrapageComiteVote.associations.membre, attributes: ['id', 'nom', 'prenoms', 'identifiant', 'email'] }],
+          order: [['createdAt', 'DESC']],
+        }),
+        Utilisateur.findAll({
+          where: { role: RolesUtilisateur.COMITE_ORIENTATION, deletedAt: null },
+          attributes: ['id', 'nom', 'prenoms', 'identifiant', 'email'],
+        }),
+      ])
+
+      const votesPlain = votes.map(v => {
+        const plain: any = v.get({ plain: true })
+        return { ...plain, membre: plain.membre ? plain.membre.get({ plain: true }) : null }
+      })
+
+      const membresPlain = membres.map(m => {
+        const vote = votes.find((v: any) => v.membreId === m.id)
+        return { ...m.get({ plain: true }), vote: vote ? vote.get({ plain: true }) : null }
+      })
+
+      const votesCount = votesPlain.length
+      const valides = votesPlain.filter((v: any) => v.decision === 'valide').length
+      const restants = totalMembres - votesCount
+      const aVote = votesPlain.some((v: any) => v.membreId === req.utilisateurId)
+      const estUnanime = false
+      const estRejete = true
+
+      const full = await RattrapageInscription.findByPk(demande.id, {
+        include: RattrapageWorkflowController.includesDemande(),
       })
 
       const dest = await RattrapageWorkflowController.emailDemandeur(demande)
@@ -720,12 +1164,81 @@ export default class RattrapageWorkflowController {
         )
       }
 
-      const full = await RattrapageInscription.findByPk(demande.id, {
-        include: RattrapageWorkflowController.includesDemande(),
+      return res.status(200).json({
+        success: true,
+        data: {
+          demande: full,
+          quorum: { totalMembres, votesCount, valides, restants, aVote, estUnanime, estRejete },
+          votes: votesPlain,
+          membres: membresPlain,
+        }
       })
-      return res.status(200).json({ success: true, data: full })
     } catch (error) {
+      await transaction.rollback()
       console.error('[rejeterDemande rattrapage-workflow]', error)
+      return res.status(500).json({ success: false, message: 'Erreur interne du serveur' })
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // VOTES DU COMITÉ
+  // ─────────────────────────────────────────────────────────────
+
+  /** GET /rattrapage-workflow/demandes/:id/votes — liste des votes + quorum + membres. */
+  static async listerVotes(req: Request, res: Response): Promise<Response> {
+    const role = req.utilisateurRole
+    if (!role || !RattrapageWorkflowController.ROLE_COMITE.includes(role)) {
+      return res.status(403).json({ success: false, message: 'Accès refusé' })
+    }
+
+    try {
+      const demande = await RattrapageInscription.findByPk(req.params.id)
+      if (!demande) {
+        return res.status(404).json({ success: false, message: 'Demande de rattrapage introuvable' })
+      }
+
+      const totalMembres = await Utilisateur.count({
+        where: { role: RolesUtilisateur.COMITE_ORIENTATION, deletedAt: null },
+      })
+
+      const votes = await RattrapageComiteVote.findAll({
+        where: { rattrapageInscriptionId: req.params.id },
+        include: [{ association: RattrapageComiteVote.associations.membre, attributes: ['id', 'nom', 'prenoms', 'identifiant', 'email'] }],
+        order: [['createdAt', 'DESC']],
+      })
+
+      const votesPlain = votes.map(v => {
+        const plain: any = v.get({ plain: true })
+        return { ...plain, membre: plain.membre ? plain.membre.get({ plain: true }) : null }
+      })
+
+      const membresPlain = (await Utilisateur.findAll({
+        where: { role: RolesUtilisateur.COMITE_ORIENTATION, deletedAt: null },
+        attributes: ['id', 'nom', 'prenoms', 'identifiant', 'email'],
+      })).map(m => {
+        const vote = votes.find((v: any) => v.membreId === m.id)
+        return { ...m.get({ plain: true }), vote: vote ? vote.get({ plain: true }) : null }
+      })
+
+      const votesCount = votesPlain.length
+      const valides = votesPlain.filter((v: any) => v.decision === 'valide').length
+      const aRejete = votesPlain.some((v: any) => v.decision === 'rejete')
+      const aCorrection = votesPlain.some((v: any) => v.decision === 'correction_demandee')
+      const restants = totalMembres - votesCount
+      const aVote = votesPlain.some((v: any) => v.membreId === req.utilisateurId)
+      const estUnanime = votesCount > 0 && !aRejete && !aCorrection && valides === totalMembres
+      const estRejete = aRejete || demande.statutDemande === 'rejete'
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          votes: votesPlain,
+          membres: membresPlain,
+          quorum: { totalMembres, votesCount, valides, restants, aVote, estUnanime, estRejete },
+        }
+      })
+    } catch (error) {
+      console.error('[listerVotes rattrapage-workflow]', error)
       return res.status(500).json({ success: false, message: 'Erreur interne du serveur' })
     }
   }
@@ -895,6 +1408,337 @@ export default class RattrapageWorkflowController {
       await transaction.rollback()
       console.error('[confirmerPaiement rattrapage-workflow]', error)
       return res.status(500).json({ success: false, message: 'Erreur interne du serveur' })
+    }
+  }
+
+    // ─────────────────────────────────────────────────────────────
+  // DÉSIGNATION DES ENSEIGNANTS À UN PLANNING (institution seule)
+  // ─────────────────────────────────────────────────────────────
+
+  /** POST /rattrapage-workflow/planning/:id/enseignant — désigne un enseignant à un samedi spécifique (institution/admin). */
+  static async designerEnseignant(req: Request, res: Response): Promise<Response> {
+    const role = req.utilisateurRole
+    if (!role || (![RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN].includes(role))) {
+      return res.status(403).json({ success: false, message: 'Désignation d\'un enseignant réservée à l\'institution ou à l\'administration' })
+    }
+
+    const planningId = Number(req.params.id)
+    if (!Number.isInteger(planningId) || planningId <= 0) {
+      return res.status(400).json({ success: false, message: 'planningId invalide' })
+    }
+
+    const { enseignantId, ueId, ecueId } = req.body || {}
+    if (!enseignantId || (!ueId && !ecueId)) {
+      return res.status(400).json({ success: false, message: 'enseignantId, et au moins ueId ou ecueId sont requis' })
+    }
+
+    const transaction = await DatabaseConnection.getInstance().sequelize.transaction()
+    try {
+      const planning = await RattrapagePlanning.findByPk(planningId, { transaction })
+      if (!planning) {
+        await transaction.rollback()
+        return res.status(404).json({ success: false, message: 'Créneau de rattrapage introuvable' })
+      }
+      if (planning.statut !== 'programme') {
+        await transaction.rollback()
+        return res.status(400).json({ success: false, message: `Seul le statut 'programme' permet une désignation (actuel : ${planning.statut})` })
+      }
+
+      // Vérifier unicité : même planning + enseignant (si ueId/ecueId sont optionnels)
+      if (ueId && ecueId) {
+        const exist = await RattrapageEnseignant.findOne({
+          where: { rattrapagePlanningId: planningId, enseignantId, ueId, ecueId },
+          transaction,
+        })
+        if (exist) {
+          await transaction.rollback()
+          return res.status(400).json({ success: false, message: 'Cet enseignant est déjà désigné pour cette UE/ECUE ce samedi' })
+        }
+      } else if (ueId) {
+        const exist = await RattrapageEnseignant.findOne({
+          where: { rattrapagePlanningId: planningId, enseignantId, ueId },
+          transaction,
+        })
+        if (exist) {
+          await transaction.rollback()
+          return res.status(400).json({ success: false, message: 'Cet enseignant est déjà désigné pour cette UE ce samedi' })
+        }
+      } else if (ecueId) {
+        const exist = await RattrapageEnseignant.findOne({
+          where: { rattrapagePlanningId: planningId, enseignantId, ecueId },
+          transaction,
+        })
+        if (exist) {
+          await transaction.rollback()
+          return res.status(400).json({ success: false, message: 'Cet enseignant est déjà désigné pour cette ECUE ce samedi' })
+        }
+      }
+
+      await RattrapageEnseignant.create({
+        rattrapagePlanningId: planningId,
+        enseignantId,
+        ueId: ueId ?? null,
+        ecueId: ecueId ?? null,
+        statut: 'programme' as const,
+      }, { transaction })
+
+      // Mettre à jour le planning en statut 'convoque' pour indiquer qu'un enseignant est assigné
+      await planning.update({ statut: 'convoque' }, { transaction })
+
+      await transaction.commit()
+
+      const enseignantAssign = await RattrapageEnseignant.findOne({
+        where: { rattrapagePlanningId: planningId, enseignantId },
+        include: [{ association: RattrapageEnseignant.associations.enseignant, attributes: ['id', 'nom', 'prenoms', 'identifiant'] }],
+      })
+
+      return res.status(201).json({
+        success: true,
+        message: 'Enseignant désigné avec succès',
+        data: {
+          planning: {
+            id: planning.id,
+            dateSamedi: planning.dateSamedi,
+            heureDebut: planning.heureDebut,
+            heureFin: planning.heureFin,
+            salleId: planning.salleId,
+            statut: planning.statut,
+            classeId: planning.classeId,
+          },
+          enseignantAssign:
+            enseignantAssign?.get({ plain: true }) as any,
+        },
+      })
+    } catch (error) {
+      await transaction.rollback()
+      console.error('[designerEnseignant rattrapage-workflow]', error)
+      return res.status(500).json({ success: false, message: 'Erreur interne du serveur' })
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Saisie des notes (apprenant -> prof)
+  // ─────────────────────────────────────────────────────────────
+
+  /** POST /rattrapage-workflow/notes — l\'enseignant désigné saisit sa note de rattrapage. */
+  static async saisirNote(req: Request, res: Response): Promise<Response> {
+    const role = req.utilisateurRole
+    if (role !== RolesUtilisateur.ENSEIGNANT) {
+      return res.status(403).json({ success: false, message: 'Saisie de notes réservée aux enseignants' })
+    }
+
+    const body = req.body || {}
+    const rattrapageNoteId = body.rattrapageNoteId ? Number(body.rattrapageNoteId) : null
+    const planningId = body.planningId ? Number(body.planningId) : null
+    const note_rattrapage = body.note_rattrapage
+
+    if (!note_rattrapage && rattrapageNoteId == null) {
+      return res.status(400).json({ success: false, message: 'note_rattrapage est requis, ou rattrapageNoteId' })
+    }
+
+    const transaction = await DatabaseConnection.getInstance().sequelize.transaction()
+    try {
+      let enseignantPlanning: any = null
+      let planning: any = null
+
+      if (rattrapageNoteId != null && Number.isInteger(rattrapageNoteId) && rattrapageNoteId > 0) {
+        // Modification d\'une note existante : vérifier propriété enseignant via RattrapageEnseignant
+        enseignantPlanning = await RattrapageEnseignant.findOne({
+          where: { id: rattrapageNoteId },
+          include: [{ association: RattrapageEnseignant.associations.enseignant, attributes: ['id'] }],
+          transaction,
+        })
+        if (!enseignantPlanning) {
+          await transaction.rollback()
+          return res.status(404).json({ success: false, message: 'Enregistrement de note introuvable' })
+        }
+        if (enseignantPlanning.enseignantId !== req.utilisateurId) {
+          await transaction.rollback()
+          return res.status(403).json({ success: false, message: 'Vous n\'êtes pas l\'enseignant désigné pour ce créneau' })
+        }
+        planning = await RattrapagePlanning.findByPk(enseignantPlanning.rattrapagePlanningId, { transaction })
+      } else if (planningId != null && Number.isInteger(planningId) && planningId > 0) {
+        // Nouveau : vérifier que l\'enseignant est désigné via RattrapageEnseignant (réutiliser l\'id de l\'enseignant)
+        enseignantPlanning = await RattrapageEnseignant.findOne({
+          where: { rattrapagePlanningId: planningId, enseignantId: req.utilisateurId },
+          transaction,
+        })
+        if (!enseignantPlanning) {
+          await transaction.rollback()
+          return res.status(403).json({ success: false, message: 'Vous n\'êtes pas désigné comme enseignant pour ce créneau' })
+        }
+        planning = await RattrapagePlanning.findByPk(planningId, { transaction })
+      } else {
+        await transaction.rollback()
+        return res.status(400).json({ success: false, message: 'planningId ou rattrapageNoteId doit être fourni' })
+      }
+
+      if (!planning || planning.statut !== 'convoque') {
+        await transaction.rollback()
+        return res.status(400).json({ success: false, message: 'Créneau non convoqué pour la saisie de notes' })
+      }
+
+      if (rattrapageNoteId != null && Number.isInteger(rattrapageNoteId) && rattrapageNoteId > 0) {
+        // Mise à jour d\'une note existante (pas de modification de note_originale)
+        const existing = await RattrapageNote.findByPk(rattrapageNoteId, { transaction })
+        if (!existing) {
+          await transaction.rollback()
+          return res.status(404).json({ success: false, message: 'Note de rattrapage introuvable' })
+        }
+        await existing.update({ note_rattrapage, saisiPar: req.utilisateurId }, { transaction })
+        const updated = await RattrapageNote.findByPk(rattrapageNoteId, {
+          include: [
+            { association: RattrapageNote.associations.rattrapageInscription },
+            { association: RattrapageNote.associations.ue, attributes: ['id', 'code', 'libelle'] },
+          ],
+          transaction,
+        })
+        await transaction.commit()
+        return res.status(200).json({ success: true, message: 'Note mise à jour', data: updated })
+      } else {
+        // Nouvelle note de rattrapage : trouver la inscription via planning -> classe -> session
+        const planningClasseId = planning.classeId
+        const planningSession = await RattrapageSession.findOne({
+          where: { id: planning.rattrapageSessionId },
+          include: [{ association: RattrapageSession.associations.inscriptions, attributes: ['id', 'demandePar', 'ueId'] }],
+          transaction,
+        })
+        if (!planningSession) {
+          await transaction.rollback()
+          return res.status(404).json({ success: false, message: 'Session introuvable' })
+        }
+
+        // Trouver les apprenants de la filière (classe) pour ce cours (ueId/ecueId de la désignation)
+        // NOTE: RattrapageInscription n'a pas de champ ueId/ecueId — filtrage par session uniquement (TODO: filtrer par UE si besoin)
+        const inscriptionIds: number[] = []
+        if (enseignantPlanning.ueId) {
+          const apprenants = await RattrapageInscription.findAll({
+            where: {
+              rattrapageSessionId: planning.rattrapageSessionId,
+              statutPaiement: 'paye',
+            },
+            attributes: ['id'],
+            transaction,
+          })
+          inscriptionIds.push(...apprenants.map(a => a.id))
+        } else if (enseignantPlanning.ecueId) {
+          const apprenants = await RattrapageInscription.findAll({
+            where: {
+              rattrapageSessionId: planning.rattrapageSessionId,
+              statutPaiement: 'paye',
+            },
+            attributes: ['id'],
+            transaction,
+          })
+          inscriptionIds.push(...apprenants.map(a => a.id))
+        } else {
+          // Sans UE/ECUE, on suppose tous les inscrits à la session
+          const apprenants = await RattrapageInscription.findAll({
+            where: {
+              rattrapageSessionId: planning.rattrapageSessionId,
+              statutPaiement: 'paye',
+            },
+            attributes: ['id'],
+            transaction,
+          })
+          inscriptionIds.push(...apprenants.map(a => a.id))
+        }
+
+        if (inscriptionIds.length === 0) {
+          await transaction.rollback()
+          return res.status(400).json({ success: false, message: 'Aucun apprenant éligible trouvé pour cette filière/cours' })
+        }
+
+        // Pour chaque inscrit, créer une note avec note_originale = null (sera remplie plus tard si note_originale existe)
+        const notesCreate = inscriptionIds.map(insId => ({
+          rattrapageInscriptionId: insId,
+          etudiantId: (planningSession.inscriptions?.find((i: any) => i.id === insId)?.demandePar ?? undefined) as any,
+          ueId: enseignantPlanning.ueId ?? null,
+          note_originale: null as any,
+          note_rattrapage: note_rattrapage,
+          saisiPar: req.utilisateurId,
+          statut: 'programme' as const,
+        }))
+        const created = await RattrapageNote.bulkCreate(notesCreate, { transaction })
+        await transaction.commit()
+        return res.status(201).json({ success: true, message: 'Notes créées', data: created })
+      }
+    } catch (error) {
+      await transaction.rollback()
+      console.error('[saisirNote rattrapage-workflow]', error)
+      return res.status(500).json({ success: false, message: 'Erreur interne du serveur' })
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Affectation automatique après validation comité
+  // ─────────────────────────────────────────────────────────────
+
+  /** API interne — appelée depuis ComiteValidationController après qu\'un comité valide unanimement une demande. */
+  private static async affecterApresValidation(demandeId: number, transaction: any): Promise<void> {
+    // Récupérer la demande avec ses sessions (peut être orpheline ou rattachée)
+    const demande = await RattrapageInscription.findByPk(demandeId, {
+      include: [{ association: RattrapageInscription.associations.rattrapageSession, include: [{ association: RattrapageSession.associations.planning }] }],
+      transaction,
+    })
+    if (!demande || demande.statutPaiement !== 'paye') return
+
+    const sessionId = demande.rattrapageSessionId
+    if (!sessionId) return
+
+    // Collecter toutes les filières (classes) de la session via planning
+    const planningItems = await RattrapagePlanning.findAll({
+      where: { rattrapageSessionId: sessionId },
+      include: [{ association: RattrapagePlanning.associations.classe }],
+      transaction,
+    })
+    const filieres = planningItems.map(p => p.classeId).filter((id): id is number => !!id)
+    if (filieres.length === 0) return
+
+    // Filtrer les planning avec statut 'programme' (disponibles)
+    const disponibles = planningItems.filter(p => p.statut === 'programme')
+    if (disponibles.length === 0) return
+
+    // Sélectionner jusqu'à len(filieres) samedis distincts (si besoin)
+    // Simple : affecter un par filière, mais si 2 filieres même samedi, décaler sur 2 samedis distincts
+    const affectations: any[] = []
+    const usedDates = new Set<string>()
+
+    for (const filiereId of filieres) {
+      // Trier disponibles par date croissante
+      const dispoForFiliere = disponibles
+        .filter(p => p.classeId === filiereId)
+        .sort((a, b) => new Date(a.dateSamedi).getTime() - new Date(b.dateSamedi).getTime())
+
+      let assigned: any = null
+      for (const p of dispoForFiliere) {
+        if (!usedDates.has(String(p.dateSamedi))) {
+          assigned = p
+          usedDates.add(String(p.dateSamedi))
+          break
+        }
+      }
+      if (!assigned) {
+        // Pas de samedi disponible pour cette filière, décaler sur le prochain
+        for (const p of dispoForFiliere) {
+          if (!usedDates.has(String(p.dateSamedi))) {
+            assigned = p
+            usedDates.add(String(p.dateSamedi))
+            break
+          }
+        }
+      }
+      if (assigned) {
+        affectations.push({ planningId: assigned.id, filiereId, dateSamedi: assigned.dateSamedi })
+      }
+    }
+
+    if (affectations.length > 0) {
+      // Mettre à jour le statut du planning (optionnel)
+      for (const a of affectations) {
+        await RattrapagePlanning.update({ statut: 'convoque' }, { where: { id: a.planningId }, transaction })
+        // Note : un enseignant doit encore être désigné plus tard (manuellement)
+      }
     }
   }
 

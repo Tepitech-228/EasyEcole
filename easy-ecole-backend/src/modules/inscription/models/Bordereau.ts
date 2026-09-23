@@ -14,7 +14,7 @@ export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAt
    * moment du traitement → colonnes NULLABLES (le dépôt crée un bordereau sans
    * type ni montant).
    */
-  declare type?: 'inscription' | 'scolarite' | 'rattrapage' | 'mixte' | null
+  declare type?: 'inscription' | 'reinscription' | 'scolarite' | 'rattrapage' | 'mixte' | null
   /**
    * Type 'mixte' : répartition déclarée par ESA-COMPTA au moment de la saisie,
    * sérialisée en JSON (ex : [{"type":"inscription","montant":450000},{"type":"scolarite","montant":30000}]).

@@ -6,6 +6,8 @@ import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { SessionExamenService } from '../../services/session-examen.service';
 import { RattrapageService } from '../../services/rattrapage.service';
 import { CoursService } from 'src/app/data/modules/inscription/services/cours.service';
+import { ClasseService } from 'src/app/data/modules/inscription/services/classe.service';
+import { AnneeAcademiqueService } from 'src/app/data/modules/inscription/services/annee-academique.service';
 
 @Component({
   selector: 'app-session-examen-form-page',
@@ -30,6 +32,11 @@ export class SessionExamenFormPageComponent extends BaseComponentClass implement
   correcteurs: { coursId: number; enseignantId: string }[] = [];
   loadingCours = false;
 
+  classes: any[] = [];
+  anneesAcademiques: any[] = [];
+  loadingClasses = false;
+  loadingAnnees = false;
+
   private subs: Subscription[] = [];
 
   constructor(
@@ -38,7 +45,9 @@ export class SessionExamenFormPageComponent extends BaseComponentClass implement
     private router: Router,
     private service: SessionExamenService,
     private rattrapageService: RattrapageService,
-    private coursService: CoursService
+    private coursService: CoursService,
+    private classeService: ClasseService,
+    private anneeAcademiqueService: AnneeAcademiqueService
   ) {
     super();
     this.form = this.fb.group({
@@ -55,6 +64,8 @@ export class SessionExamenFormPageComponent extends BaseComponentClass implement
   }
 
   ngOnInit(): void {
+    this.chargerClasses();
+    this.chargerAnneesAcademiques();
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.isEditMode = true;
@@ -78,6 +89,28 @@ export class SessionExamenFormPageComponent extends BaseComponentClass implement
     this.subs.push(
       this.form.get('classeId')!.valueChanges.subscribe(() => this.surChangementTypeOuClasse())
     );
+  }
+
+  private chargerClasses(): void {
+    this.loadingClasses = true;
+    this.classeService.getAll().subscribe({
+      next: (res: any) => {
+        this.classes = Array.isArray(res) ? res : (res?.data || []);
+        this.loadingClasses = false;
+      },
+      error: () => { this.classes = []; this.loadingClasses = false; }
+    });
+  }
+
+  private chargerAnneesAcademiques(): void {
+    this.loadingAnnees = true;
+    this.anneeAcademiqueService.getAll().subscribe({
+      next: (res: any) => {
+        this.anneesAcademiques = Array.isArray(res) ? res : (res?.data || []);
+        this.loadingAnnees = false;
+      },
+      error: () => { this.anneesAcademiques = []; this.loadingAnnees = false; }
+    });
   }
 
   ngOnDestroy(): void {

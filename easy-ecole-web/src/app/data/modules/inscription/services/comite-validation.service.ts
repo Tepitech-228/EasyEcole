@@ -33,6 +33,8 @@ export interface DossierComite {
   id?: number
   statutPipeline?: string | null
   motifPipeline?: string | null
+  typeDemande?: string | null
+  estReinscription?: boolean | null
   utilisateurId?: number
   utilisateur?: any
   session?: any

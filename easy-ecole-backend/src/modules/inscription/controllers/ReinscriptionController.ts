@@ -13,7 +13,31 @@ import { DemandeInscriptionDossier } from "../models/DemandeInscriptionDossier";
 import { DossierInscription } from "../models/DossierInscription";
 import { Bordereau } from "../models/Bordereau";
 import { TypeOperationBordereau } from "../models/TypeOperationBordereau";
+import { AnneeAcademique } from "../models/AnneeAcademique";
+import { NiveauEtude } from "../models/NiveauEtude";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
+
+/**
+ * Extrait le numéro de niveau depuis le libellé d'un NiveauEtude
+ * (ex: "LICENCE 1" → 1, "MASTER 2" → 2, "DOCTORAT 3" → 3).
+ * Retourne null si le format n'est pas reconnu.
+ */
+function extraireNumeroNiveau(libelle: string): number | null {
+    const match = libelle.match(/(\d+)\s*$/)
+    return match ? parseInt(match[1], 10) : null
+}
+
+function incrementerLibelleNiveau(libelle: string): string {
+    const match = libelle.match(/^(.*?)(\d+)(\s*)$/)
+    if (match) {
+        const prefix = match[1]
+        const num = parseInt(match[2], 10)
+        const suffix = match[3] || ''
+        return `${prefix}${num + 1}${suffix}`
+    }
+    // Fallback : on ajoute +1 à la fin
+    return `${libelle} (N+1)`
+}
 
 /**
  * Les 6 pièces obligatoires du dossier de réinscription (step 2 du wizard).
@@ -138,6 +162,153 @@ export default class ReinscriptionController {
         } catch (error) {
             await transaction.rollback()
             console.error('[peutSeReinscrire]', error)
+            return res.status(500).json({ success: false, message: 'Erreur interne du serveur' })
+        }
+    }
+
+    /**
+     * GET /reinscription/prochaine
+     * Vérifie que la session N est clôturée, puis calcule et retourne
+     * la prochaine session de réinscription (N+1) avec le niveau+1
+     * (même parcours, annéeAcademique+1).
+     *
+     * Règle : Réinscription = Année N+1 UNIQUEMENT si session N clôturée/terminée.
+     * Si session N non clôturée → 403 + message "Session en cours".
+     */
+    static async getProchaineSession(req: Request, res: Response): Promise<Response> {
+        const role = (req as any).utilisateurRole
+        const userId = (req as any).utilisateurId
+
+        if (role !== RolesUtilisateur.APPRENANT) {
+            return res.status(403).json({ success: false, message: "Accès réservé aux étudiants" })
+        }
+
+        try {
+            // 1) Trouver le dernier CursusApprenant de l'étudiant
+            const cursusActuel = await CursusApprenant.findOne({
+                where: { utilisateurId: userId },
+                order: [['createdAt', 'DESC']],
+                include: [
+                    CursusApprenant.associations.parcours,
+                    CursusApprenant.associations.niveauEtude,
+                    CursusApprenant.associations.anneeAcademique,
+                ],
+            })
+
+            if (!cursusActuel) {
+                return res.status(400).json({ success: false, message: "Aucun cursus actuel trouvé. La réinscription nécessite un cursus en cours." })
+            }
+
+            // 2) Récupérer la Session du cursus actuel via l'année académique
+            const session = await Session.findOne({
+                where: { anneeAcademiqueId: cursusActuel.anneeAcademiqueId },
+                include: [Session.associations.anneeAcademique],
+            })
+            if (!session) {
+                return res.status(400).json({ success: false, message: "Session associée au cursus introuvable." })
+            }
+
+            // 3) Vérifier que la session N est clôturée
+            const sessionEstCloturee = session.statut === 'cloturee' || session.dateFin < new Date()
+            if (!sessionEstCloturee) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Session en cours. La réinscription N+1 n'est possible qu'après la clôture de la session en cours.",
+                    sessionActuelle: {
+                        id: session.id,
+                        dateDebut: session.dateDebut,
+                        dateFin: session.dateFin,
+                        statut: session.statut,
+                    },
+                })
+            }
+
+            // 4) Calculer le niveau N+1 (même parcours, annéeAcademique+1)
+            const niveauActuel = cursusActuel.niveauEtude
+            const parcoursActuel = cursusActuel.parcours
+            const anneeActuelle = cursusActuel.anneeAcademique
+
+            if (!niveauActuel || !parcoursActuel || !anneeActuelle) {
+                return res.status(400).json({ success: false, message: "Informations incomplètes sur le cursus actuel (parcours/niveau/année)." })
+            }
+
+            const numNiveauActuel = extraireNumeroNiveau(niveauActuel.libelle)
+            if (numNiveauActuel === null) {
+                return res.status(400).json({ success: false, message: `Impossible de déterminer le niveau depuis le libellé : "${niveauActuel.libelle}".` })
+            }
+
+            const nouveauNiveauLibelle = incrementerLibelleNiveau(niveauActuel.libelle)
+
+            // Chercher le NiveauEtude N+1 (même type/grade que le parcours)
+            const niveauSup = await NiveauEtude.findOne({
+                where: { libelle: nouveauNiveauLibelle },
+            })
+
+            // Chercher l'Année Académique N+1 (annéeActuelle.libelle "2024-2025" → "2025-2026")
+            const anneeActuelleLibelle = anneeActuelle.libelle
+            const anneeMatch = anneeActuelleLibelle.match(/^(\d{4})-(\d{4})$/)
+            const anneeSupLibelle = anneeMatch ? `${Number(anneeMatch[2]) + 1}-${Number(anneeMatch[1]) + 1}`.slice(0, 9) : `${Number(anneeMatch?.[1] || anneeActuelleLibelle.slice(0, 4)) + 1}-${Number(anneeMatch?.[2] || '2025') + 1}`
+
+            const anneeSup = await AnneeAcademique.findOne({
+                where: { libelle: anneeSupLibelle },
+            })
+
+            // Chercher la prochaine session ouverte pour le N+1 (la session à venir)
+            const prochaineSessionOuverte = await Session.findOne({
+                where: {
+                    anneeAcademiqueId: anneeSup?.id,
+                    niveauEtudeId: niveauSup?.id,
+                    dateDebut: { [Op.gte]: new Date() },
+                },
+                order: [['dateDebut', 'ASC']],
+                include: [Session.associations.anneeAcademique],
+            })
+
+            return res.status(200).json({
+                success: true,
+                prochaineSession: prochaineSessionOuverte ? {
+                    id: prochaineSessionOuverte.id,
+                    dateDebut: prochaineSessionOuverte.dateDebut,
+                    dateFin: prochaineSessionOuverte.dateFin,
+                    description: prochaineSessionOuverte.description,
+                    statut: prochaineSessionOuverte.statut,
+                    anneeAcademique: prochaineSessionOuverte.anneeAcademique ? {
+                        id: prochaineSessionOuverte.anneeAcademique.id,
+                        libelle: prochaineSessionOuverte.anneeAcademique.libelle,
+                    } : null,
+                } : null,
+                filiere: parcoursActuel.type || parcoursActuel.titre,
+                parcours: parcoursActuel,
+                niveauActuel: {
+                    id: niveauActuel.id,
+                    libelle: niveauActuel.libelle,
+                },
+                niveauProchain: {
+                    id: niveauSup?.id || null,
+                    libelle: nouveauNiveauLibelle,
+                    // Le niveau N+1 n'existe pas encore dans la DB → créé à la validation
+                    aCreer: !niveauSup,
+                },
+                anneeActuelle: {
+                    id: anneeActuelle.id,
+                    libelle: anneeActuelle.libelle,
+                },
+                anneeProchaine: {
+                    id: anneeSup?.id || null,
+                    libelle: anneeSupLibelle,
+                    aCreer: !anneeSup,
+                },
+                cursusActuel: {
+                    id: cursusActuel.id,
+                    parcoursId: cursusActuel.parcoursId,
+                    niveauEtudeId: cursusActuel.niveauEtudeId,
+                    anneeAcademiqueId: cursusActuel.anneeAcademiqueId,
+                },
+                sessionVerifieeCloturee: true,
+                message: `Session N (${session.statut}/${session.dateFin.toISOString().slice(0, 10)}) clôturée. Réinscription N+1 disponible.`,
+            })
+        } catch (error) {
+            console.error('[getProchaineSession]', error)
             return res.status(500).json({ success: false, message: 'Erreur interne du serveur' })
         }
     }
@@ -370,7 +541,7 @@ export default class ReinscriptionController {
                 // 3) Bordereau de paiement REINSCRIPTION
                 const typeReinscription = await TypeOperationBordereau.findOne({ where: { code: 'REINSCRIPTION' } })
                 const bordereau = await Bordereau.create({
-                    type: 'inscription',
+                    type: 'reinscription',
                     typeOperationId: typeReinscription?.id ?? null,
                     utilisateurId: userId,
                     fichier: bordereauFile.filename,

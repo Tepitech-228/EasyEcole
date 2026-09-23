@@ -34,7 +34,7 @@
             <p class="text-sm text-gray-900 mt-0.5">{{ dossier.session?.description || 'Non définie' }}</p>
           </div>
         </div>
-        <div *ngIf="dossier.typeDemande" class="mt-4 inline-flex items-center gap-x-2 px-3 py-1 rounded-full text-xs font-semibold"
+        <div *ngIf="dossier?.typeDemande" class="mt-4 inline-flex items-center gap-x-2 px-3 py-1 rounded-full text-xs font-semibold"
              [class.bg-blue-50]="estReinscription(dossier)"
              [class.text-blue-700]="estReinscription(dossier)"
              [class.bg-green-50]="!estReinscription(dossier)"
@@ -148,8 +148,8 @@
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Statut</h3>
         <div class="flex items-center gap-x-2 mb-4">
           <app-custom-badge
-            [className]="getStatutBadgeClass(dossier.statutPipeline)"
-            [text]="libelleDecision(dossier.statutPipeline)">
+            [className]="getStatutBadgeClass(dossier.statutPipeline ?? undefined)"
+            [text]="libelleDecision(dossier.statutPipeline ?? undefined)">
           </app-custom-badge>
         </div>
         <div *ngIf="dossier.preInscription?.dateTraitement" class="text-xs text-gray-500">

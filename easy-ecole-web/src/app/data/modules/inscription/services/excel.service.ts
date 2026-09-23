@@ -62,7 +62,12 @@ export class ExcelService {
     return this.http.get(`${EXCEL_BASE}/enseignants/template`, { responseType: 'blob' });
   }
 
-  /** Importer des enseignants depuis un fichier Excel */
+  /** Télécharger le template Word d'import des enseignants */
+  downloadEnseignantWordTemplate(): Observable<Blob> {
+    return this.http.get(`${EXCEL_BASE}/enseignants/template-word`, { responseType: 'blob' });
+  }
+
+  /** Importer des enseignants depuis un fichier Excel ou Word */
   importEnseignants(file: File): Observable<ExcelImportResult> {
     const formData = new FormData();
     formData.append('fichier', file);
@@ -83,7 +88,12 @@ export class ExcelService {
     return this.http.get(`${EXCEL_BASE}/apprenants/template`, { responseType: 'blob' });
   }
 
-  /** Importer des apprenants depuis un fichier Excel */
+  /** Télécharger le template Word d'import des apprenants */
+  downloadApprenantWordTemplate(): Observable<Blob> {
+    return this.http.get(`${EXCEL_BASE}/apprenants/template-word`, { responseType: 'blob' });
+  }
+
+  /** Importer des apprenants depuis un fichier Excel ou Word */
   importApprenants(file: File): Observable<ExcelImportResult> {
     const formData = new FormData();
     formData.append('fichier', file);
@@ -148,7 +158,16 @@ export class ExcelService {
     return this.http.get(`${EXCEL_BASE}/utilisateurs/template`, { params, responseType: 'blob' });
   }
 
-  /** Importer des utilisateurs par rôle depuis un fichier Excel */
+  /** Télécharger le template Word d'import d'utilisateurs par rôle */
+  downloadUtilisateurWordTemplate(role?: string): Observable<Blob> {
+    let params: HttpParams | undefined;
+    if (role) {
+      params = new HttpParams().set('role', role);
+    }
+    return this.http.get(`${EXCEL_BASE}/utilisateurs/template-word`, { params, responseType: 'blob' });
+  }
+
+  /** Importer des utilisateurs par rôle depuis un fichier Excel ou Word */
   importUtilisateursParRole(file: File, role?: string): Observable<ExcelImportResult> {
     const formData = new FormData();
     formData.append('fichier', file);

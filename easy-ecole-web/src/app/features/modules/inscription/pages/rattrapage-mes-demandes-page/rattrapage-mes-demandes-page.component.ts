@@ -71,8 +71,8 @@ export class RattrapageMesDemandesPageComponent extends BaseComponentClass imple
   loadMesDemandes(): void {
     this.loadingDemandes = true
     this.rattrapageWorkflowService.getDemandes().subscribe({
-      next: (demandes) => {
-        this.mesDemandes = demandes
+      next: (res) => {
+        this.mesDemandes = res?.data || []
         this.loadingDemandes = false
       },
       error: (err) => {

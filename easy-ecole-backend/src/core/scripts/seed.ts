@@ -23,6 +23,8 @@ export async function seed() {
     require('../../modules/stage/models/_associations');
     require('../../modules/stock/models/_associations');
     require('../../modules/immobilisation/models/_associations');
+    require('../../modules/inscription/models/RattrapageDocumentDepose');
+    require('../../modules/inscription/models/RattrapageComiteVote');
     require('../../modules/bulletins/models/_associations');
     require('../../modules/bulletins/models/EchelleNote');
     require('../../modules/bulletins/models/AuditNote');
@@ -1416,6 +1418,30 @@ export async function seed() {
             console.log('  ✓ Établissement par défaut existe déjà');
         }
     } catch (e: any) { console.warn('  ⚠ Établissement ignoré:', e.message); }
+
+    // ════════════════════════════════════════════════════
+    //  RATTRAPAGE — Pièces obligatoires (C1)
+    // ════════════════════════════════════════════════════
+    console.log('\n── RATTRAPAGE ──');
+    try {
+        const { RattrapageDocumentRequis } = require('../../modules/inscription/models/RattrapageDocumentRequis');
+        const { RattrapageSession } = require('../../modules/inscription/models/RattrapageSession');
+        const M = (name: string) => sequelize.model(name);
+        const RattrapageSessionM = M('InsRattrapageSession');
+        const RattrapageDocumentRequisM = M('InsRattrapageDocumentRequis');
+
+        // 3 pièces obligatoires pour toute demande de rattrapage
+        const docsObligatoires = [
+            { libelle: 'Autorisation provisoire d\'inscription', obligatoire: true, ordre: 1 },
+            { libelle: 'Quitus + bordereaux de l\'année académique', obligatoire: true, ordre: 2 },
+            { libelle: 'Bordereau de frais de rattrapage', obligatoire: true, ordre: 3 },
+        ];
+
+        for (const doc of docsObligatoires) {
+            await safeCreate(RattrapageDocumentRequisM, doc, ['libelle']);
+        }
+        console.log('  ✓ 3 pièces obligatoires rattrapage créées');
+    } catch (e: any) { console.warn('  ⚠ Pièces rattrapage ignorées:', e.message); }
 
     console.log('\n═══════════════════════════════════════════');
     console.log('  SEED TERMINÉ — UST');

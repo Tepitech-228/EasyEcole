@@ -1,8 +1,22 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
-import { RattrapageInscriptionWorkflow, RattrapageSession } from '../models/RattrapageWorkflow.model';
+import { RattrapageInscriptionWorkflow, RattrapageSession, RattrapagePlanning, Quorum, VoteComite, MembreComite } from '../models/RattrapageWorkflow.model';
+
+export interface DetailDemandeResponse {
+  demande: RattrapageInscriptionWorkflow;
+  quorum: Quorum;
+  votes: VoteComite[];
+  membres: MembreComite[];
+}
+
+export interface ListerVotesResponse {
+  votes: VoteComite[];
+  membres: MembreComite[];
+  quorum: Quorum;
+}
 
 /**
  * Service front du workflow officiel de rattrapage.
@@ -79,6 +93,16 @@ export class RattrapageWorkflowService {
     return this.httpClient.get<RattrapageSession>(`${this.SERVICE_URL}/sessions/${id}`)
   }
 
+  /** GET /sessions/:id/planning — liste des plannings d'une session. */
+  getPlanning(sessionId: number): Observable<RattrapagePlanning[]> {
+    return this.httpClient.get<RattrapagePlanning[]>(`${this.SERVICE_URL}/sessions/${sessionId}/planning`)
+  }
+
+  /** PUT /planning/:id/designer — désigne un professeur sur un planning. */
+  designerProf(planningId: number, enseignantId: number): Observable<RattrapagePlanning> {
+    return this.httpClient.put<RattrapagePlanning>(`${this.SERVICE_URL}/planning/${planningId}/designer`, { enseignantId })
+  }
+
   /** GET /documents-requis/:sessionId — liste des pièces d'une session. */
   getDocumentsRequis(sessionId: number): Observable<any[]> {
     return this.httpClient.get<any[]>(`${this.SERVICE_URL}/documents-requis/${sessionId}`)
@@ -119,7 +143,7 @@ export class RattrapageWorkflowService {
    * APPRENANT : ses demandes ; COMITE/ADMIN/INSTITUTION/CABINET_COMPTABLE : toutes (filtres query).
    * Include : documentsDeposes (avec documentRequis), documentsRequis, utilisateur, rattrapageSession, bordereauDepose.
    */
-  getDemandes(params?: { statutDemande?: string; rattrapageSessionId?: number | string }): Observable<RattrapageInscriptionWorkflow[]> {
+  getDemandes(params?: { statutDemande?: string; rattrapageSessionId?: number | string }): Observable<{ success: boolean; data: RattrapageInscriptionWorkflow[] }> {
     let httpParams = new HttpParams()
     if (params) {
       if (params.statutDemande) httpParams = httpParams.set('statutDemande', params.statutDemande)
@@ -127,26 +151,44 @@ export class RattrapageWorkflowService {
         httpParams = httpParams.set('rattrapageSessionId', String(params.rattrapageSessionId))
       }
     }
-    return this.httpClient.get<RattrapageInscriptionWorkflow[]>(`${this.SERVICE_URL}/demandes`, { params: httpParams })
+    return this.httpClient.get<{ success: boolean; data: RattrapageInscriptionWorkflow[] }>(`${this.SERVICE_URL}/demandes`, { params: httpParams })
   }
 
-  /** GET /demandes/:id — détail d'une demande. */
-  getDemande(id: number): Observable<RattrapageInscriptionWorkflow> {
-    return this.httpClient.get<RattrapageInscriptionWorkflow>(`${this.SERVICE_URL}/demandes/${id}`)
+  /** GET /demandes/:id — détail d'une demande avec quorum, votes et membres. */
+  getDemande(id: number): Observable<DetailDemandeResponse> {
+    return this.httpClient.get<{ success: boolean; data: DetailDemandeResponse }>(`${this.SERVICE_URL}/demandes/${id}`).pipe(
+      map(res => res.data)
+    )
   }
 
   // ---------------------------------------------------------------------------
   // Actions comité (COMITE_ORIENTATION / ADMIN / INSTITUTION)
   // ---------------------------------------------------------------------------
 
-  /** PUT /demandes/:id/valider — valide la demande de rattrapage. */
-  validerDemande(id: number): Observable<RattrapageInscriptionWorkflow> {
-    return this.httpClient.put<RattrapageInscriptionWorkflow>(`${this.SERVICE_URL}/demandes/${id}/valider`, {})
+  /** PUT /demandes/:id/valider — valide la demande (enregistre vote + unanimité). */
+  validerDemande(id: number): Observable<DetailDemandeResponse> {
+    return this.httpClient.put<{ success: boolean; data: DetailDemandeResponse }>(`${this.SERVICE_URL}/demandes/${id}/valider`, {}).pipe(
+      map(res => res.data)
+    )
   }
 
-  /** PUT /demandes/:id/rejeter — rejette la demande avec un motif obligatoire. */
-  rejeterDemande(id: number, motif: string): Observable<RattrapageInscriptionWorkflow> {
-    return this.httpClient.put<RattrapageInscriptionWorkflow>(`${this.SERVICE_URL}/demandes/${id}/rejeter`, { motif })
+  /** PUT /demandes/:id/rejeter — rejette avec motif (enregistre vote = veto). */
+  rejeterDemande(id: number, motif: string): Observable<DetailDemandeResponse> {
+    return this.httpClient.put<{ success: boolean; data: DetailDemandeResponse }>(`${this.SERVICE_URL}/demandes/${id}/rejeter`, { motif }).pipe(
+      map(res => res.data)
+    )
+  }
+
+  /** GET /demandes/:id/votes — lister les votes d'une demande. */
+  listerVotes(id: number): Observable<ListerVotesResponse> {
+    return this.httpClient.get<{ success: boolean; data: ListerVotesResponse }>(`${this.SERVICE_URL}/demandes/${id}/votes`).pipe(
+      map(res => res.data)
+    )
+  }
+
+  /** GET /utilisateurs/comite — membres actifs du comité (COMITE_ORIENTATION). */
+  getMembresComite(): Observable<MembreComite[]> {
+    return this.httpClient.get<MembreComite[]>(`${this.SERVICE_URL}/utilisateurs/comite`)
   }
 
   // ---------------------------------------------------------------------------

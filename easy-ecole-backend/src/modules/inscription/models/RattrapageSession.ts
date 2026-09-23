@@ -5,6 +5,9 @@ import { AnneeAcademique } from "./AnneeAcademique";
 import { RattrapageSessionClasse } from "./RattrapageSessionClasse";
 import { RattrapageDocumentRequis } from "./RattrapageDocumentRequis";
 import { RattrapageInscription } from "./RattrapageInscription";
+import { RattrapagePlanning } from "./RattrapagePlanning";
+import { Classe } from "./Classe";
+import { SalleDeClasse } from "./SalleDeClasse";
 
 /**
  * Session de rattrapage (workflow officiel) :
@@ -25,6 +28,7 @@ export class RattrapageSession extends Model<InferAttributes<RattrapageSession>,
   declare classes?: NonAttribute<RattrapageSessionClasse[]>
   declare documentsRequis?: NonAttribute<RattrapageDocumentRequis[]>
   declare inscriptions?: NonAttribute<RattrapageInscription[]>
+  declare planning?: NonAttribute<RattrapagePlanning[]>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -35,6 +39,27 @@ export class RattrapageSession extends Model<InferAttributes<RattrapageSession>,
     classes: Association<RattrapageSession, RattrapageSessionClasse>
     documentsRequis: Association<RattrapageSession, RattrapageDocumentRequis>
     inscriptions: Association<RattrapageSession, RattrapageInscription>
+    planning: Association<RattrapageSession, RattrapagePlanning>
+  }
+
+  /**
+   * Génère tous les samedis entre dateDebut et dateFin (inclus).
+   * Retourne un tableau de dates Day.js ou Date.
+   */
+  static genererSamedis(dateDebut: Date, dateFin: Date): Date[] {
+    const samedis: Date[] = []
+    const debut = new Date(dateDebut)
+    const fin = new Date(dateFin)
+    // Trouver le premier samedi >= dateDebut
+    const current = new Date(debut)
+    while (current.getDay() !== 6) {
+      current.setDate(current.getDate() + 1)
+    }
+    while (current <= fin) {
+      samedis.push(new Date(current))
+      current.setDate(current.getDate() + 7)
+    }
+    return samedis
   }
 }
 

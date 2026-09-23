@@ -50,6 +50,18 @@ import { Echeance } from "./Echeance";
 import { Bordereau } from "./Bordereau";
 import { SemestreAcademique } from "./SemestreAcademique";
 import { TypeOperationBordereau } from "./TypeOperationBordereau";
+import { RattrapageSession } from "./RattrapageSession";
+import { RattrapageSessionClasse } from "./RattrapageSessionClasse";
+import { RattrapageDocumentRequis } from "./RattrapageDocumentRequis";
+import { RattrapageDocumentDepose } from "./RattrapageDocumentDepose";
+import { RattrapageComiteVote } from "./RattrapageComiteVote";
+import { RattrapageInscription } from "./RattrapageInscription";
+import { RattrapagePlanning } from "./RattrapagePlanning";
+import { RattrapageEnseignant } from "./RattrapageEnseignant";
+import { RattrapageNote } from "./RattrapageNote";
+import { SessionCorrecteur } from "./SessionCorrecteur";
+import { PublicationNote } from "./PublicationNote";
+import { DesignationMemoire } from "./DesignationMemoire";
 import { initBulletinAssociations } from "../../bulletins/models/_associations";
 
 // Cours - Parcours
@@ -486,7 +498,6 @@ Utilisateur.hasMany(Dispense, { foreignKey: 'validePar', as: 'dispensesValidees'
 Dispense.belongsTo(Utilisateur, { as: 'valideParUtilisateur', foreignKey: 'validePar' })
 
 // RattrapageInscription
-import { RattrapageInscription } from "./RattrapageInscription";
 
 CoursParticipant.hasMany(RattrapageInscription, { foreignKey: 'coursParticipantId', as: 'rattrapagesInscription' })
 RattrapageInscription.belongsTo(CoursParticipant, { as: 'coursParticipant', foreignKey: 'coursParticipantId' })
@@ -507,13 +518,6 @@ RattrapageInscription.belongsTo(Bordereau, { foreignKey: 'paiementId', as: 'bord
 
 // ---- Rattrapage : workflow officiel (session, classes, pièces justificatives, comité) ----
 
-import { RattrapageSession } from "./RattrapageSession";
-import { RattrapageSessionClasse } from "./RattrapageSessionClasse";
-import { RattrapageDocumentRequis } from "./RattrapageDocumentRequis";
-import { RattrapageDocumentDepose } from "./RattrapageDocumentDepose";
-import { RattrapageComiteVote } from "./RattrapageComiteVote";
-import { DocumentRequisNiveau } from "./DocumentRequisNiveau";
-
 // RattrapageSession - AnneeAcademique
 AnneeAcademique.hasMany(RattrapageSession, { foreignKey: 'anneeAcademiqueId', as: 'rattrapagesSessions' })
 RattrapageSession.belongsTo(AnneeAcademique, { as: 'anneeAcademique', foreignKey: 'anneeAcademiqueId' })
@@ -527,6 +531,9 @@ RattrapageSessionClasse.belongsTo(Classe, { as: 'classe', foreignKey: 'classeId'
 // RattrapageSession - Pièces justificatives requises
 RattrapageSession.hasMany(RattrapageDocumentRequis, { foreignKey: 'rattrapageSessionId', as: 'documentsRequis', onDelete: 'CASCADE' })
 RattrapageDocumentRequis.belongsTo(RattrapageSession, { as: 'rattrapageSession', foreignKey: 'rattrapageSessionId', onDelete: 'CASCADE' })
+
+// RattrapageInscription - RattrapagePlanning (affectation après validation comité)
+RattrapageInscription.belongsTo(RattrapagePlanning, { as: 'planning', foreignKey: 'planningId', onDelete: 'SET NULL' })
 
 // RattrapageInscription - RattrapageSession
 RattrapageSession.hasMany(RattrapageInscription, { foreignKey: 'rattrapageSessionId', as: 'inscriptions' })
@@ -550,14 +557,57 @@ RattrapageComiteVote.belongsTo(RattrapageInscription, { as: 'rattrapageInscripti
 
 // Utilisateur - RattrapageComiteVote (membre du comité)
 Utilisateur.hasMany(RattrapageComiteVote, { foreignKey: 'membreId', as: 'comiteVotesRattrapage' })
-RattrapageComiteVote.belongsTo(Utilisateur, { foreignKey: 'membreId', as: 'membreRattrapage' })
+RattrapageComiteVote.belongsTo(Utilisateur, { foreignKey: 'membreId', as: 'membre' })
 
 // RattrapageInscription - Enseignant (enseignantGradientId : correcteur assigné pour la session)
-Enseignant.hasMany(RattrapageInscription, { foreignKey: 'enseignantGradientId', as: 'rattrapagesEnseignant' })
+Enseignant.hasMany(RattrapageInscription, { foreignKey: 'enseignantGradientId', as: 'rattrapagesInscriptionEnseignant' })
 RattrapageInscription.belongsTo(Enseignant, { as: 'enseignantGradient', foreignKey: 'enseignantGradientId' })
 
+// Rattrapage - Planning, Enseignant, Note
+RattrapageSession.hasMany(RattrapagePlanning, { foreignKey: 'rattrapageSessionId', as: 'planning', onDelete: 'CASCADE' })
+RattrapagePlanning.belongsTo(RattrapageSession, { as: 'rattrapageSession', foreignKey: 'rattrapageSessionId', onDelete: 'CASCADE' })
+
+// RattrapagePlanning - Classe (filière concernée par ce samedi)
+Classe.hasMany(RattrapagePlanning, { foreignKey: 'classeId', as: 'planningRattrapage' })
+RattrapagePlanning.belongsTo(Classe, { as: 'classe', foreignKey: 'classeId', onDelete: 'CASCADE' })
+
+// RattrapagePlanning - SalleDeClasse
+SalleDeClasse.hasMany(RattrapagePlanning, { foreignKey: 'salleId', as: 'planningRattrapage' })
+RattrapagePlanning.belongsTo(SalleDeClasse, { as: 'salle', foreignKey: 'salleId', onDelete: 'SET NULL' })
+
+// RattrapagePlanning - Enseignant (désignation professeur par créneau)
+RattrapagePlanning.hasMany(RattrapageEnseignant, { foreignKey: 'rattrapagePlanningId', as: 'enseignants', onDelete: 'CASCADE' })
+RattrapageEnseignant.belongsTo(RattrapagePlanning, { as: 'rattrapagePlanning', foreignKey: 'rattrapagePlanningId', onDelete: 'CASCADE' })
+
+// Enseignant - RattrapageEnseignant
+Enseignant.hasMany(RattrapageEnseignant, { foreignKey: 'enseignantId', as: 'rattrapagesEnseignant' })
+RattrapageEnseignant.belongsTo(Enseignant, { as: 'enseignant', foreignKey: 'enseignantId', onDelete: 'CASCADE' })
+
+// Cours (UE) - RattrapageEnseignant
+Cours.hasMany(RattrapageEnseignant, { foreignKey: 'ueId', as: 'rattrapagesEnseignantUe' })
+RattrapageEnseignant.belongsTo(Cours, { as: 'ue', foreignKey: 'ueId', onDelete: 'SET NULL' })
+
+// Cours (ECUE) - RattrapageEnseignant
+Cours.hasMany(RattrapageEnseignant, { foreignKey: 'ecueId', as: 'rattrapagesEnseignantEcue' })
+RattrapageEnseignant.belongsTo(Cours, { as: 'ecue', foreignKey: 'ecueId', onDelete: 'SET NULL' })
+
+// RattrapageInscription - Note (historique notes rattrapage)
+RattrapageInscription.hasMany(RattrapageNote, { foreignKey: 'rattrapageInscriptionId', as: 'notes', onDelete: 'CASCADE' })
+RattrapageNote.belongsTo(RattrapageInscription, { as: 'rattrapageInscription', foreignKey: 'rattrapageInscriptionId', onDelete: 'CASCADE' })
+
+// Utilisateur (étudiant) - RattrapageNote
+Utilisateur.hasMany(RattrapageNote, { foreignKey: 'etudiantId', as: 'rattrapageNotes' })
+RattrapageNote.belongsTo(Utilisateur, { as: 'etudiant', foreignKey: 'etudiantId', onDelete: 'CASCADE' })
+
+// Cours (UE) - RattrapageNote
+Cours.hasMany(RattrapageNote, { foreignKey: 'ueId', as: 'rattrapageNotes' })
+RattrapageNote.belongsTo(Cours, { as: 'ue', foreignKey: 'ueId', onDelete: 'SET NULL' })
+
+// Utilisateur (enseignant saisiPar) - RattrapageNote
+Utilisateur.hasMany(RattrapageNote, { foreignKey: 'saisiPar', as: 'notesSaisiesRattrapage' })
+RattrapageNote.belongsTo(Utilisateur, { as: 'saisiParUser', foreignKey: 'saisiPar', onDelete: 'SET NULL' })
+
 // SessionCorrecteur — correcteurs désignés par cours pour une session de rattrapage
-import { SessionCorrecteur } from "./SessionCorrecteur";
 
 SessionExamen.hasMany(SessionCorrecteur, { foreignKey: 'sessionExamenId', as: 'correcteurs' })
 SessionCorrecteur.belongsTo(SessionExamen, { as: 'sessionExamen', foreignKey: 'sessionExamenId' })
@@ -565,9 +615,6 @@ Cours.hasMany(SessionCorrecteur, { foreignKey: 'coursId', as: 'correcteursSessio
 SessionCorrecteur.belongsTo(Cours, { as: 'cours', foreignKey: 'coursId' })
 Enseignant.hasMany(SessionCorrecteur, { foreignKey: 'enseignantId', as: 'correcteursSession' })
 SessionCorrecteur.belongsTo(Enseignant, { as: 'enseignant', foreignKey: 'enseignantId' })
-
-import { PublicationNote } from "./PublicationNote";
-import { DesignationMemoire } from "./DesignationMemoire";
 
 // PublicationNote - ListeNoteEvaluation
 ListeNoteEvaluation.hasMany(PublicationNote, { foreignKey: 'listeNoteEvaluationId', as: 'publicationsNotes' })

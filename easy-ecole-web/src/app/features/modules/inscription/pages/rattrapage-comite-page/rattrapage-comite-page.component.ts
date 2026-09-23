@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
-import { RattrapageComiteService, RattrapageComiteDemande, Quorum, VoteComite, MembreComite } from 'src/app/data/modules/inscription/services/rattrapage-comite.service';
+import { RattrapageWorkflowService } from 'src/app/data/modules/inscription/services/rattrapage-workflow.service';
+import { RattrapageInscriptionWorkflow, Quorum, VoteComite, MembreComite } from 'src/app/data/modules/inscription/models/RattrapageWorkflow.model';
 
 const QUORUM_VIDE: Quorum = {
   totalMembres: 0, votesCount: 0, valides: 0, restants: 0,
@@ -17,15 +18,15 @@ type FiltreComite = 'en_attente' | 'valide' | 'rejete' | 'correction_demandee';
 })
 export class RattrapageComitePageComponent extends BaseComponentClass implements OnInit {
 
-  demandes: RattrapageComiteDemande[] = []
+  demandes: RattrapageInscriptionWorkflow[] = []
   loading: boolean = false
   errorMessage: string = ''
   successMessage: string = ''
   activeFiltre: FiltreComite = 'en_attente'
 
   // Détail / modal
-  demandeSelectionnee?: RattrapageComiteDemande
-  detailComplet?: RattrapageComiteDemande
+  demandeSelectionnee?: RattrapageInscriptionWorkflow
+  detailComplet?: RattrapageInscriptionWorkflow
   membres: MembreComite[] = []
   showDetailModal: boolean = false
   loadingDetail: boolean = false
@@ -37,7 +38,7 @@ export class RattrapageComitePageComponent extends BaseComponentClass implements
 
   constructor(
     private router: Router,
-    private rattrapageComiteService: RattrapageComiteService
+    private rattrapageWorkflowService: RattrapageWorkflowService
   ) {
     super()
     if (!this.rolesValue.isComiteOrientation && !this.rolesValue.isAdmin && !this.rolesValue.isInstitution) {
@@ -52,9 +53,9 @@ export class RattrapageComitePageComponent extends BaseComponentClass implements
   loadDemandes(): void {
     this.loading = true
     this.errorMessage = ''
-    this.rattrapageComiteService.listerDemandes().subscribe({
+    this.rattrapageWorkflowService.getDemandes().subscribe({
       next: (res) => {
-        this.demandes = res.data || []
+        this.demandes = res?.data || []
         this.loading = false
       },
       error: (err) => {
@@ -69,7 +70,7 @@ export class RattrapageComitePageComponent extends BaseComponentClass implements
     this.activeFiltre = filtre
   }
 
-  get filteredDemandes(): RattrapageComiteDemande[] {
+  get filteredDemandes(): RattrapageInscriptionWorkflow[] {
     return this.demandes.filter((d) => (d.statutDemande || 'en_attente') === this.activeFiltre)
   }
 
@@ -93,11 +94,11 @@ export class RattrapageComitePageComponent extends BaseComponentClass implements
   // Helpers Quorum collégial
   // ---------------------------------------------------------------------------
 
-  getQuorum(d?: RattrapageComiteDemande | null): Quorum {
+  getQuorum(d?: RattrapageInscriptionWorkflow | null): Quorum {
     return ((d ?? this.detailComplet)?.quorum) || QUORUM_VIDE
   }
 
-  getQuorumLabel(d?: RattrapageComiteDemande | null): string {
+  getQuorumLabel(d?: RattrapageInscriptionWorkflow | null): string {
     const q = this.getQuorum(d)
     if (q.totalMembres === 0) return '---'
     if (q.estUnanime) return `Unanimité (${q.valides}/${q.totalMembres})`
@@ -105,7 +106,7 @@ export class RattrapageComitePageComponent extends BaseComponentClass implements
     return `${q.votesCount}/${q.totalMembres} votés — reste ${q.restants}`
   }
 
-  getQuorumBadgeClass(d?: RattrapageComiteDemande | null): string {
+  getQuorumBadgeClass(d?: RattrapageInscriptionWorkflow | null): string {
     const q = this.getQuorum(d)
     if (q.estUnanime) return 'bg-green-100 text-green-800'
     if (q.estRejete) return 'bg-red-100 text-red-800'
@@ -161,16 +162,16 @@ export class RattrapageComitePageComponent extends BaseComponentClass implements
   // Modale détail
   // ---------------------------------------------------------------------------
 
-  ouvrirDetail(d: RattrapageComiteDemande): void {
+  ouvrirDetail(d: RattrapageInscriptionWorkflow): void {
     this.demandeSelectionnee = d
     this.detailComplet = undefined
     this.showDetailModal = true
     this.loadingDetail = true
     this.membres = []
-    this.rattrapageComiteService.detailDemande(d.id!).subscribe({
+    this.rattrapageWorkflowService.getDemande(d.id!).subscribe({
       next: (res) => {
-        this.detailComplet = res.data.demande
-        this.membres = res.data.membres || []
+        this.detailComplet = res.demande
+        this.membres = res.membres || []
         this.loadingDetail = false
       },
       error: () => { this.loadingDetail = false }
@@ -205,7 +206,10 @@ export class RattrapageComitePageComponent extends BaseComponentClass implements
     if (this.decisionEnCours !== 'valide' && !this.motifDecision.trim()) return
 
     this.processingDecision = true
-    this.rattrapageComiteService.decider(this.demandeSelectionnee.id, this.decisionEnCours, this.motifDecision.trim()).subscribe({
+    const serviceCall = this.decisionEnCours === 'valide'
+      ? this.rattrapageWorkflowService.validerDemande(this.demandeSelectionnee.id!)
+      : this.rattrapageWorkflowService.rejeterDemande(this.demandeSelectionnee.id!, this.motifDecision.trim())
+    serviceCall.subscribe({
       next: (res) => {
         this.processingDecision = false
         this.successMessage = this.decisionEnCours === 'valide'
@@ -237,7 +241,7 @@ export class RattrapageComitePageComponent extends BaseComponentClass implements
   // Modal validation (ancienne interface rapide)
   // ---------------------------------------------------------------------------
 
-  openValidationModal(demande: RattrapageComiteDemande): void {
+  openValidationModal(demande: RattrapageInscriptionWorkflow): void {
     this.demandeSelectionnee = demande
     this.showDetailModal = true
     this.preparerDecision('valide')
@@ -259,7 +263,7 @@ export class RattrapageComitePageComponent extends BaseComponentClass implements
   // Modal rejet (ancienne interface rapide)
   // ---------------------------------------------------------------------------
 
-  openRejetModal(demande: RattrapageComiteDemande): void {
+  openRejetModal(demande: RattrapageInscriptionWorkflow): void {
     this.demandeSelectionnee = demande
     this.motifDecision = ''
     this.decisionEnCours = 'rejete'
@@ -286,9 +290,9 @@ export class RattrapageComitePageComponent extends BaseComponentClass implements
   // Téléchargement des pièces (BLOB)
   // ---------------------------------------------------------------------------
 
-  telechargerDocument(demande: RattrapageComiteDemande, documentDeposeId: number): void {
+  telechargerDocument(demande: RattrapageInscriptionWorkflow, documentDeposeId: number): void {
     if (!demande.id) return
-    this.rattrapageComiteService.telechargerDocument(demande.id, documentDeposeId).subscribe({
+    this.rattrapageWorkflowService.telechargerDocument(demande.id, documentDeposeId).subscribe({
       next: (blob) => {
         const url = window.URL.createObjectURL(blob)
         window.open(url, '_blank')
@@ -306,22 +310,22 @@ export class RattrapageComitePageComponent extends BaseComponentClass implements
   // Helpers d'affichage
   // ---------------------------------------------------------------------------
 
-  getEtudiantLabel(demande: RattrapageComiteDemande): string {
+  getEtudiantLabel(demande: RattrapageInscriptionWorkflow): string {
     const u = demande.utilisateur
     if (!u) return `#${demande.demandePar ?? demande.id}`
     const nom = [u.nom, u.prenoms].filter(Boolean).join(' ')
     return nom.trim() || `#${demande.demandePar ?? demande.id}`
   }
 
-  getSessionLabel(demande: RattrapageComiteDemande): string {
+  getSessionLabel(demande: RattrapageInscriptionWorkflow): string {
     return demande.rattrapageSession?.libelle || `Session #${demande.rattrapageSessionId}`
   }
 
-  getDocumentsDeposesCount(demande: RattrapageComiteDemande): number {
+  getDocumentsDeposesCount(demande: RattrapageInscriptionWorkflow): number {
     return (demande.documentsDeposes || []).length
   }
 
-  getDocumentsRequisCount(demande: RattrapageComiteDemande): number {
+  getDocumentsRequisCount(demande: RattrapageInscriptionWorkflow): number {
     return (demande.documentsRequis || []).length
   }
 

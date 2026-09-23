@@ -12,6 +12,7 @@ export class Etablissement {
   declare logo?: string
   declare devise?: string
   declare anneeScolaireCourante?: string
+  declare site?: string
   declare actif?: boolean
 
   declare readonly createdAt?: Date

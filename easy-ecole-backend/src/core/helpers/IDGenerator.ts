@@ -59,13 +59,13 @@ export class IDGenerator {
     public generateMatriculeFinal(
         parcours: Parcours | null,
         anneeScolaire: string,
-        classe: Classe | null,
+        _classe: Classe | null,
         ordre: number,
         etablissement: Etablissement | null,
         typeCours: 'jour' | 'soir' = 'jour'
     ): string {
-        const filiereCode = IDGenerator.deriveFiliereCode(parcours, classe)
-        const anneeEtude = IDGenerator.deriveAnneeEtude(classe, parcours)
+        const filiereCode = IDGenerator.deriveFiliereCode(parcours)
+        const anneeEtude = IDGenerator.deriveAnneeEtude(parcours)
         const typeCoursCode = typeCours === 'jour' ? 'J' : 'S'
         const anneeAcademique = anneeScolaire.replace(/[^0-9]/g, '').slice(-2)
         const siteCode = IDGenerator.deriveSiteCode(etablissement)
@@ -73,12 +73,22 @@ export class IDGenerator {
         return `${ordre}-${filiereCode}${anneeEtude}${typeCoursCode}-${anneeAcademique}-${siteCode}`
     }
 
-    private static deriveFiliereCode(parcours: Parcours | null, classe: Classe | null): string {
+    private static deriveFiliereCode(parcours: Parcours | null, _classe?: Classe | null): string {
         if (!parcours) return 'GEN'
 
         const titre = parcours.titre?.toUpperCase() || ''
 
-        if (titre.includes('INFORMATIQUE') || titre.includes('INFO')) return 'INF'
+        if (titre.includes('GÉNIE LOGICIEL') || titre.includes('GENIE LOGICIEL')) return 'GL'
+        if (titre.includes('GÉNIE') || titre.includes('GENIE')) {
+            if (titre.includes('CIVIL')) return 'GCI'
+            if (titre.includes('ÉLECTRIQUE') || titre.includes('ELECTRIQUE')) return 'GEE'
+            return 'GEN'
+        }
+        if (titre.includes('INFORMATIQUE')) {
+            if (titre.includes('GESTION')) return 'IG'
+            return 'IG'
+        }
+        if (titre.includes('INFO')) return 'IG'
         if (titre.includes('GESTION') || titre.includes('MANAGEMENT')) return 'GES'
         if (titre.includes('COMPTABILITÉ') || titre.includes('COMPTABILITE') || titre.includes('FINANCE')) return 'CPT'
         if (titre.includes('ÉCONOMIE') || titre.includes('ECONOMIE')) return 'ECO'
@@ -89,36 +99,11 @@ export class IDGenerator {
         if (titre.includes('GÉNIE ÉLECTRIQUE') || titre.includes('GENIE ELECTRIQUE')) return 'GEE'
         if (titre.includes('SCIENCES')) return 'SCI'
 
-        if (classe) {
-            const classeLibelle = classe.libelle?.toUpperCase() || ''
-            if (classeLibelle.includes('INF')) return 'INF'
-            if (classeLibelle.includes('GES')) return 'GES'
-            if (classeLibelle.includes('CPT')) return 'CPT'
-            if (classeLibelle.includes('ECO')) return 'ECO'
-            if (classeLibelle.includes('DRO')) return 'DRO'
-            if (classeLibelle.includes('MKT')) return 'MKT'
-            if (classeLibelle.includes('COM')) return 'COM'
-            if (classeLibelle.includes('GCI')) return 'GCI'
-            if (classeLibelle.includes('GEE')) return 'GEE'
-        }
-
         const typeAbb = IDGenerator.FILIERE_TYPE_ABBREVIATIONS[parcours.type] || parcours.type?.slice(0, 2) || 'GN'
         return typeAbb
     }
 
-    private static deriveAnneeEtude(classe: Classe | null, parcours: Parcours | null): string {
-        if (classe?.niveauEtude?.libelle) {
-            const libelle = classe.niveauEtude.libelle.toUpperCase()
-            if (libelle.includes('LICENCE 1') || libelle.includes('L1')) return '1'
-            if (libelle.includes('LICENCE 2') || libelle.includes('L2')) return '2'
-            if (libelle.includes('LICENCE 3') || libelle.includes('L3')) return '3'
-            if (libelle.includes('MASTER 1') || libelle.includes('M1')) return '4'
-            if (libelle.includes('MASTER 2') || libelle.includes('M2')) return '5'
-            if (libelle.includes('DOCTORAT') || libelle.includes('DOCT')) return '6'
-            if (libelle.includes('BTS 1') || libelle.includes('BTS1')) return '1'
-            if (libelle.includes('BTS 2') || libelle.includes('BTS2')) return '2'
-        }
-
+    private static deriveAnneeEtude(parcours: Parcours | null): string {
         if (parcours?.niveauEtude?.libelle) {
             const libelle = parcours.niveauEtude.libelle.toUpperCase()
             if (libelle.includes('LICENCE 1') || libelle.includes('L1')) return '1'
@@ -137,17 +122,19 @@ export class IDGenerator {
 
     public static deriveSiteCode(etablissement: Etablissement | null): string {
         if (!etablissement) return 'ST'
-
-        const nom = etablissement.nom?.toLowerCase() || ''
-        const ville = etablissement.ville?.toLowerCase() || ''
-
-        if (ville.includes('abidjan') || nom.includes('principal')) return 'ST'
-        if (ville.includes('bouaké') || ville.includes('bouake') || nom.includes('annexe')) return 'ANN'
-        if (ville.includes('korhogo') || nom.includes('centre')) return 'CTR'
-        if (nom.includes('campus')) return 'CAM'
-
-        const nanoid = customAlphabet(IDGenerator.UPPER_ALPHABETS, 2)
-        return nanoid()
+        // Site = premières lettres du champ site si renseigné, sinon nom/ville
+        const raw = ((etablissement as any).site || etablissement.nom || (etablissement as any).ville || '').trim()
+        if (!raw) return 'ST'
+        const normalized = IDGenerator.removeAccents(raw).toUpperCase().replace(/[^A-Z0-9\s\-_]/g, ' ')
+        const words = normalized.split(/[\s\-_]+/).filter(Boolean)
+        if (words.length === 0) return 'ST'
+        if (words.length === 1) {
+            // Un seul mot : 2 premières lettres (ex: "Annexe" -> AN, "Centre" -> CE)
+            return words[0].slice(0, 2)
+        }
+        // Plusieurs mots : 1ère lettre de chaque mot, max 3 (ex: "Super Taco" -> ST, "Super Taco Annexe" -> STA)
+        const code = words.map(w => w[0]).join('').slice(0, 3)
+        return code.slice(0, 2) // garder 2 lettres comme dans l'exemple ST
     }
 
     private static removeAccents(str: string): string {

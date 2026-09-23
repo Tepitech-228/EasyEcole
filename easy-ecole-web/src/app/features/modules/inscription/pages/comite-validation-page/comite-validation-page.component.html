@@ -175,7 +175,7 @@
         <div class="max-h-32 overflow-y-auto border border-gray-100 rounded">
           <table class="min-w-full text-xs">
             <tbody class="divide-y divide-gray-100">
-              <tr *ngFor="let e of detailComplet.echeances">
+              <tr *ngFor="let e of (detailComplet?.echeances || [])">
                 <td class="px-2 py-1 text-gray-600">{{ e.type === 'inscription' ? 'Inscription' : 'Scolarité' }} — Éch. {{ e.numeroEcheance }}</td>
                 <td class="px-2 py-1 text-right text-gray-700">{{ formatMontant(e.montant) }}</td>
                 <td class="px-2 py-1 text-right text-gray-700">{{ formatMontant(e.montantPaye || 0) }} payé</td>

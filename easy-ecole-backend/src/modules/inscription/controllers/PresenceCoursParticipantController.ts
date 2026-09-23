@@ -57,8 +57,12 @@ export default class PresenceCoursParticipantController {
     }
 
     static async getPresenceCoursParticipant(req: Request, res: Response): Promise<Response> {
+        const coursParticipantId = (req.body as any)?.coursParticipantId ?? (req.query as any)?.coursParticipantId
+        if (!coursParticipantId) {
+            return res.status(400).json({ success: false, message: "coursParticipantId requis (body ou query)" });
+        }
         let options: FindOptions<InferAttributes<PresenceCoursParticipant>> = {}
-        options = { where: { presenceId: req.params.id, coursParticipantId: req.body.coursParticipantId }, include: [PresenceCoursParticipant.associations.presence, PresenceCoursParticipant.associations.coursParticipant] }
+        options = { where: { presenceId: req.params.id, coursParticipantId }, include: [PresenceCoursParticipant.associations.presence, PresenceCoursParticipant.associations.coursParticipant] }
 
         try {
             const presenceCoursParticipant: PresenceCoursParticipant | null = await PresenceCoursParticipant.findOne(options);

@@ -147,7 +147,7 @@
 <!-- Modale détail avec vote collégial -->
 <app-custom-modal title="Examen de la demande"
     subtitle="Détail et vote collégial"
-    (onCloseModal)="fermerDetail()" [center]="true" [showModal]="showDetailModal" [size]="'xl'">
+    (onCloseModal)="fermerDetail()" [center]="true" [showModal]="showDetailModal" [size]="'lg'">
     <app-loading-spinner *ngIf="loadingDetail"></app-loading-spinner>
 
     <div *ngIf="!loadingDetail && demandeSelectionnee">
@@ -284,7 +284,7 @@
                     </button>
                     <button (click)="confirmerDecision()" [disabled]="processingDecision || (decisionEnCours !== 'valide' && !motifDecision.trim())"
                             class="inline-flex items-center gap-x-1.5 px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-sm transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2"
-                            [class.bg-green-60]="decisionEnCours === 'valide'"
+                            [class.bg-green-600]="decisionEnCours === 'valide'"
                             [class.hover:bg-green-700]="decisionEnCours === 'valide'"
                             [class.bg-orange-500]="decisionEnCours === 'correction_demandee'"
                             [class.hover:bg-orange-600]="decisionEnCours === 'correction_demandee'"

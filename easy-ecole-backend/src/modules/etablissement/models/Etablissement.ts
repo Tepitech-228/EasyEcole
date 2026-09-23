@@ -16,6 +16,7 @@ export class Etablissement extends Model<InferAttributes<Etablissement>, InferCr
   declare logo: CreationOptional<string>
   declare devise: CreationOptional<string>
   declare anneeScolaireCourante: CreationOptional<string>
+  declare site: CreationOptional<string>
   declare actif: CreationOptional<boolean>
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -35,6 +36,7 @@ Etablissement.init({
   logo: { type: DataTypes.STRING, allowNull: true },
   devise: { type: DataTypes.STRING(10), defaultValue: 'FCFA' },
   anneeScolaireCourante: { type: DataTypes.STRING(20), allowNull: true },
+  site: { type: DataTypes.STRING(100), allowNull: true },
   actif: { type: DataTypes.BOOLEAN, defaultValue: true },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

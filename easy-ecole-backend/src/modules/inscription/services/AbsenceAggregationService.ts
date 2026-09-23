@@ -32,18 +32,21 @@ export interface AbsenceDetail {
 export class AbsenceAggregationService {
 
   static async getAbsencesByCursus(cursusApprenantId: number, coursId?: number): Promise<AbsenceDetail[]> {
+    if (!Number.isFinite(cursusApprenantId)) return [];
     const where: any = {};
     if (coursId) {
       const cpIds = await CoursParticipant.findAll({
         where: { cursusApprenantId, coursId },
         attributes: ['id']
       });
+      if (cpIds.length === 0) return [];
       where.coursParticipantId = { [Op.in]: cpIds.map(c => c.id) };
     } else {
       const cpIds = await CoursParticipant.findAll({
         where: { cursusApprenantId },
         attributes: ['id']
       });
+      if (cpIds.length === 0) return [];
       where.coursParticipantId = { [Op.in]: cpIds.map(c => c.id) };
     }
 

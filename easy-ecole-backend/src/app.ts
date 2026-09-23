@@ -22,6 +22,7 @@ import { PermissionSeed } from './modules/auth/seed/PermissionSeed'
 import { RoleSeed } from './modules/auth/seed/RoleSeed'
 import { RappelSalleCron } from './core/services/RappelSalleCron'
 import { RappelEcheanceCron } from './core/services/RappelEcheanceCron'
+import { RappelNotesExamenCron } from './core/services/RappelNotesExamenCron'
 import { NotificationGedService } from './modules/ged/services/NotificationGedService'
 import { seedComptabilite } from './modules/comptabilite/seed'
 import { seedParametresFrais } from './modules/comptabilite/seed-parametres-frais'
@@ -100,10 +101,11 @@ app.set('trust proxy', 1)
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 2000,
+  max: process.env.NODE_ENV === 'test' ? 100000 : 10000,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, message: 'Trop de requêtes, réessayez plus tard' }
+  message: { success: false, message: 'Trop de requêtes, réessayez plus tard' },
+  skip: (req) => req.path === '/api/v1/health' || req.path === '/health',
 })
 app.use(limiter)
 
@@ -363,6 +365,9 @@ server.on("listening", async () => {
 
     // Start cron for overdue échéance reminders
     RappelEcheanceCron.start();
+
+    // Start cron for notes d'examen en retard (SG/DG, 08h00, 14j)
+    RappelNotesExamenCron.start();
 
     // Check DUA expirations on startup
     try {

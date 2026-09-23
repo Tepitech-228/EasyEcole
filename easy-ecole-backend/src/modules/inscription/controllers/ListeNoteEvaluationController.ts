@@ -138,6 +138,16 @@ export default class ListeNoteEvaluationController {
         try {
             let listeNoteEvaluation: ListeNoteEvaluation = new ListeNoteEvaluation();
             listeNoteEvaluation.date = req.body.date
+            // Deadline SG : 14 jours après la date d'examen pour les listes de type examen
+            try {
+              const type = await TypeNoteEvaluation.findByPk(req.body.typeNoteEvaluationId);
+              const isExamen = type && (String(type.categorie).toLowerCase() === 'examen' || String(type.libelle).toLowerCase().includes('examen'));
+              if (isExamen && req.body.date) {
+                const d = new Date(req.body.date);
+                d.setDate(d.getDate() + 14);
+                (listeNoteEvaluation as any).dateLimiteSaisie = d;
+              }
+            } catch {}
             listeNoteEvaluation.heureDebut = req.body.heureDebut
             listeNoteEvaluation.heureFin = req.body.heureFin
             listeNoteEvaluation.commentaire = req.body.commentaire

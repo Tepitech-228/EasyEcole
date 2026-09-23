@@ -11,6 +11,7 @@ import { AnneeAcademique } from "./AnneeAcademique";
 export class ListeNoteEvaluation extends Model<InferAttributes<ListeNoteEvaluation>, InferCreationAttributes<ListeNoteEvaluation>> {
   declare id: CreationOptional<number>
   declare date: Date
+  declare dateLimiteSaisie: CreationOptional<Date | null>
   declare heureDebut: Date
   declare heureFin: Date
   declare commentaire: CreationOptional<string>
@@ -54,6 +55,11 @@ ListeNoteEvaluation.init({
   date: {
     type: DataTypes.DATEONLY,
     allowNull: true
+  },
+  dateLimiteSaisie: {
+    type: DataTypes.DATEONLY,
+    allowNull: true,
+    comment: 'Deadline saisie notes (examen +14j) pour alertes SG/DG'
   },
   heureDebut: {
     type: DataTypes.TIME,

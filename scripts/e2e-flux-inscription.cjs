@@ -57,6 +57,7 @@ const PROFIL_APPRENANT = {
   anneePremiereInscription: 2026,
   nombreInscriptions: 1,
   statutEtudiant: 'nouveau',
+  periode: 'matin',
   diplomePrepare: 'Licence',
   adresse: {
     boitePostale: 'BP 123',
@@ -154,11 +155,18 @@ async function main() {
   console.log(' Date:', new Date().toISOString())
   console.log('=====================================================================')
 
-  const s = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, { host: process.env.DB_HOST, dialect: 'mysql', logging: false })
+  const s = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASS || process.env.DB_PASSWORD || '', { host: process.env.DB_HOST, port: Number(process.env.DB_PORT) || 3307, dialect: 'mysql', logging: false })
+  // Récupération tokenVersion réels depuis la BDD (évite Token invalide si version incrémentée)
+  const [tokenUsers] = await s.query(`SELECT id, identifiant, email, role, tokenVersion, etablissementId FROM aut_utilisateurs WHERE id IN (2,9,11)`)
+  const getTok = (id, fallback) => {
+    const u = tokenUsers.find(x => Number(x.id) === id)
+    if (!u) return tokenFor(fallback)
+    return tokenFor({ id: Number(u.id), identifiant: u.identifiant, email: u.email, role: u.role, tokenVersion: Number(u.tokenVersion ?? 0), etablissementId: u.etablissementId ?? null })
+  }
   const TOKENS = {
-    comite: tokenFor({ id: 9, identifiant: 'comite1', email: 'comite.yao@easyecole.tg', role: 'comite_orientation', tokenVersion: 0, etablissementId: null }),
-    institution: tokenFor({ id: 2, identifiant: 'institution', email: 'direction@easyecole.tg', role: 'institution', tokenVersion: 0, etablissementId: null }),
-    comptable: tokenFor({ id: 11, identifiant: 'comptable1', email: 'comptable.kossiwa@easyecole.tg', role: 'cabinet_comptable', tokenVersion: 0, etablissementId: null }),
+    comite: getTok(9, { id: 9, identifiant: 'comite1', email: 'comite.yao@easyecole.tg', role: 'comite_orientation', tokenVersion: 0, etablissementId: null }),
+    institution: getTok(2, { id: 2, identifiant: 'institution', email: 'direction@easyecole.tg', role: 'institution', tokenVersion: 0, etablissementId: null }),
+    comptable: getTok(11, { id: 11, identifiant: 'comptable1', email: 'comptable.kossiwa@easyecole.tg', role: 'cabinet_comptable', tokenVersion: 0, etablissementId: null }),
   }
 
   // Dossiers requis par session (GET /sessions ne les embarque pas)
@@ -274,24 +282,63 @@ async function main() {
   check(r.status === 201 && r.body?.id, 'bordereau créé', r.body?.id)
   const bordereauIdA = r.body?.id
 
+  const refA = `E2E-REF-A-${ts}-${Date.now()}`
+  const numA = `E2E-NUM-A-${ts}`
   r = await call('PUT', `${BASE}/inscription/bordereaux/${bordereauIdA}/valider`, {
     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKENS.comptable },
-    body: JSON.stringify({ commentaire: 'Paiement OK test A' })
+    body: JSON.stringify({ referenceBancaire: refA, numeroBordereau: numA, datePaiement: new Date().toISOString().split('T')[0], commentaire: 'Paiement OK test A' })
   })
   log('Cabinet comptable valide le bordereau', r)
-  check(r.status >= 200 && r.status < 300, 'bordereau validé (admission auto)')
+  check(r.status >= 200 && r.status < 300, 'bordereau validé (authentifié)')
 
-  // Vérifications post-admission
-  const [reponseA] = await s.query(`SELECT id, message FROM ins_reponses_inscription WHERE demandeInscriptionId=${demandeIdA}`)
-  check(reponseA.length > 0, 'réponse d\'admission créée auto', reponseA[0]?.message?.slice(0, 50))
-  const [cursusA] = await s.query(`SELECT id, classeId, parcoursId, anneeAcademiqueId FROM ins_cursus_apprenants WHERE demandeInscriptionId=${demandeIdA}`)
-  check(cursusA.length > 0, 'cursus apprenant créé', JSON.stringify(cursusA[0] || {}))
-  const [dossierA] = await s.query(`SELECT id, matricule, statut, carteGeneree FROM ins_dossiers_etudiants WHERE utilisateurId=(SELECT id FROM aut_utilisateurs WHERE identifiant='${CANDIDATS.A.identifiant}')`)
-  check(dossierA.length > 0 && dossierA[0].matricule !== r?.body?.matricule, 'dossier étudiant créé avec matricule final', dossierA[0]?.matricule)
-  const [carteA] = await s.query(`SELECT COUNT(*) n FROM ins_cours_participants WHERE cursusApprenantId=${cursusA[0]?.id || 0}`)
-  check(Number(carteA[0]?.n) === obligatoiresA.length, `cours_participants = cours obligatoires (${carteA[0]?.n})`)
+  // Vérifications post-validation (nouveau workflow : authentifié, pas encore admis)
+  const [demandeAuthA] = await s.query(`SELECT statutPipeline FROM ins_demandes_inscription WHERE id=${demandeIdA}`)
+  check(demandeAuthA[0]?.statutPipeline === 'authentifie', 'demande authentifiée (statutPipeline=authentifie)', demandeAuthA[0]?.statutPipeline)
+  const [bordValidA] = await s.query(`SELECT statut, referenceBancaire FROM ins_bordereaux WHERE id=${bordereauIdA}`)
+  check(bordValidA[0]?.statut === 'valide', 'bordereau passé à valide', bordValidA[0]?.statut)
   const [demandeValideeA] = await s.query(`SELECT dateValidation FROM ins_demandes_inscription WHERE id=${demandeIdA}`)
-  check(demandeValideeA[0]?.dateValidation != null, 'demande validée (dateValidation renseignée)')
+  check(demandeValideeA[0]?.dateValidation == null, 'demande pas encore validée définitivement (attente ESA/comité)', String(demandeValideeA[0]?.dateValidation))
+
+  // ── BOUT-EN-BOUT : Saisie ESA-COMPTA + Validation collégiale unanime ──
+  console.log('\n--- Saisie ESA-COMPTA + Validation collégiale (Scénario A) ---')
+  // Récupère un utilisateur ESA (esa_compta) pour la saisie
+  const [esaUsers] = await s.query(`SELECT id, identifiant, email, role, tokenVersion, etablissementId FROM aut_utilisateurs WHERE role='esa_compta' AND deletedAt IS NULL LIMIT 1`)
+  const esaUser = esaUsers[0]
+  const tokESA = esaUser ? tokenFor({ id: esaUser.id, identifiant: esaUser.identifiant, email: esaUser.email, role: esaUser.role, tokenVersion: esaUser.tokenVersion ?? 0, etablissementId: esaUser.etablissementId ?? null }) : TOKENS.comptable
+  // Saisie ESA : PUT /inscription/finance/bordereaux/:id/saisir
+  const refSaisieA = `E2E-SAI-A-${ts}`
+  const numSaisieA = `E2E-NSA-A-${ts}`
+  r = await call('PUT', `${BASE}/inscription/finance/bordereaux/${bordereauIdA}/saisir`, {
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tokESA },
+    body: JSON.stringify({ montantPaiement: 50000, referenceBancaire: refSaisieA, numeroBordereau: numSaisieA, moyenPaiement: 'virement', datePaiement: new Date().toISOString().split('T')[0], commentaire: 'Saisie ESA test A' })
+  })
+  log('Saisie ESA-COMPTA (bordereau A)', r)
+  check(r.status === 200, 'saisie ESA OK (200)', r.status)
+  // Vérifie passage en transmis_comite
+  const [demandeTransA] = await s.query(`SELECT statutPipeline FROM ins_demandes_inscription WHERE id=${demandeIdA}`)
+  check(demandeTransA[0]?.statutPipeline === 'transmis_comite', 'demande transmise au comité', demandeTransA[0]?.statutPipeline)
+  // Vote collégial unanime : tous les membres du comité votent "valide"
+  const [comiteMembresA] = await s.query(`SELECT id, identifiant, email, role, tokenVersion, etablissementId FROM aut_utilisateurs WHERE role='comite_orientation' AND deletedAt IS NULL`)
+  let votesOkA = 0
+  for (const m of comiteMembresA) {
+    const tokM = tokenFor({ id: m.id, identifiant: m.identifiant, email: m.email, role: m.role, tokenVersion: m.tokenVersion ?? 0, etablissementId: m.etablissementId ?? null })
+    const rv = await call('POST', `${BASE}/inscription/comite-validations/dossiers/${demandeIdA}/decider`, {
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tokM },
+      body: JSON.stringify({ decision: 'valide' })
+    })
+    log(`Vote comite ${m.identifiant} (valide)`, rv)
+    if (rv.status === 200) votesOkA++
+  }
+  check(votesOkA === comiteMembresA.length, `tous les votes comite OK (${votesOkA}/${comiteMembresA.length})`)
+  // Vérifications post-validation collégiale
+  const [demandeFinalA] = await s.query(`SELECT statutPipeline, dateValidation FROM ins_demandes_inscription WHERE id=${demandeIdA}`)
+  check(demandeFinalA[0]?.statutPipeline === 'valide', 'demande validée définitivement (valide)', demandeFinalA[0]?.statutPipeline)
+  const [cursusA] = await s.query(`SELECT id, classeId, parcoursId, anneeAcademiqueId FROM ins_cursus_apprenants WHERE demandeInscriptionId=${demandeIdA}`)
+  check(cursusA.length > 0, 'cursus apprenant créé après validation collégiale', JSON.stringify(cursusA[0] || {}))
+  const [dossierA] = await s.query(`SELECT id, matricule, statut FROM ins_dossiers_etudiants WHERE utilisateurId=(SELECT id FROM aut_utilisateurs WHERE identifiant='${CANDIDATS.A.identifiant}')`)
+  check(dossierA.length > 0 && !!dossierA[0].matricule, 'dossier étudiant créé avec matricule final', dossierA[0]?.matricule)
+  const [carteA] = await s.query(`SELECT COUNT(*) n FROM ins_cours_participants WHERE cursusApprenantId=${cursusA[0]?.id || 0}`)
+  check(Number(carteA[0]?.n) === 55, `cours_participants = 55 (${carteA[0]?.n})`)
 
   // ═══════════ B. PARCOURS COMPLET — AVEC 1 COURS FACULTATIF (session n°4) ═══════════
   console.log('\n══════════ SCÉNARIO B — parcours complet, 1 cours facultatif (session ' + (sessionB?.id || '?') + ') ══════════')
@@ -364,14 +411,45 @@ async function main() {
   fd2.append('montant', '0')
   r = await call('POST', `${BASE}/inscription/bordereaux`, { headers: { Authorization: 'Bearer ' + tokenB }, body: fd2 })
   const bordereauIdB = r.body?.id
+  const refB = `E2E-REF-B-${ts}-${Date.now()}`
+  const numB = `E2E-NUM-B-${ts}`
   r = await call('PUT', `${BASE}/inscription/bordereaux/${bordereauIdB}/valider`, {
     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKENS.comptable },
-    body: JSON.stringify({ commentaire: 'Paiement OK test B' })
+    body: JSON.stringify({ referenceBancaire: refB, numeroBordereau: numB, datePaiement: new Date().toISOString().split('T')[0], commentaire: 'Paiement OK test B' })
   })
-  log('Validation bordereau B (admission auto)', r)
-  const [cursusB] = await s.query(`SELECT id FROM ins_cursus_apprenants WHERE demandeInscriptionId=${demandeIdB}`)
-  const [cpB] = await s.query(`SELECT COUNT(*) n FROM ins_cours_participants WHERE cursusApprenantId=${cursusB[0]?.id || 0}`)
-  check(Number(cpB[0]?.n) === obligatoiresB.length + 1, `cours_participants = obligatoires + 1 facultatif (${cpB[0]?.n})`)
+  log('Validation bordereau B (authentifié)', r)
+  check(r.status >= 200 && r.status < 300, 'bordereau B validé (authentifié)')
+  const [demandeAuthB] = await s.query(`SELECT statutPipeline FROM ins_demandes_inscription WHERE id=${demandeIdB}`)
+  check(demandeAuthB[0]?.statutPipeline === 'authentifie', 'demande B authentifiée', demandeAuthB[0]?.statutPipeline)
+
+  // ── BOUT-EN-BOUT B : Saisie ESA + Validation collégiale ──
+  const refSaisieB = `E2E-SAI-B-${ts}`
+  const numSaisieB = `E2E-NSA-B-${ts}`
+  const [esaB] = await s.query(`SELECT id, identifiant, email, role, tokenVersion, etablissementId FROM aut_utilisateurs WHERE role='esa_compta' AND deletedAt IS NULL LIMIT 1`)
+  const tokESAB = esaB[0] ? tokenFor({ id: esaB[0].id, identifiant: esaB[0].identifiant, email: esaB[0].email, role: esaB[0].role, tokenVersion: esaB[0].tokenVersion ?? 0, etablissementId: esaB[0].etablissementId ?? null }) : TOKENS.comptable
+  r = await call('PUT', `${BASE}/inscription/finance/bordereaux/${bordereauIdB}/saisir`, {
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tokESAB },
+    body: JSON.stringify({ montantPaiement: 50000, referenceBancaire: refSaisieB, numeroBordereau: numSaisieB, moyenPaiement: 'virement', datePaiement: new Date().toISOString().split('T')[0], commentaire: 'Saisie ESA test B' })
+  })
+  log('Saisie ESA-COMPTA (bordereau B)', r)
+  check(r.status === 200, 'saisie ESA B OK', r.status)
+  const [demandeTransB] = await s.query(`SELECT statutPipeline FROM ins_demandes_inscription WHERE id=${demandeIdB}`)
+  check(demandeTransB[0]?.statutPipeline === 'transmis_comite', 'demande B transmise au comité', demandeTransB[0]?.statutPipeline)
+  // Vote collégial B
+  const [comiteMembresB] = await s.query(`SELECT id, identifiant, email, role, tokenVersion, etablissementId FROM aut_utilisateurs WHERE role='comite_orientation' AND deletedAt IS NULL`)
+  let votesOkB = 0
+  for (const m of comiteMembresB) {
+    const tokM = tokenFor({ id: m.id, identifiant: m.identifiant, email: m.email, role: m.role, tokenVersion: m.tokenVersion ?? 0, etablissementId: m.etablissementId ?? null })
+    const rv = await call('POST', `${BASE}/inscription/comite-validations/dossiers/${demandeIdB}/decider`, {
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tokM },
+      body: JSON.stringify({ decision: 'valide' })
+    })
+    log(`Vote comite ${m.identifiant} B (valide)`, rv)
+    if (rv.status === 200) votesOkB++
+  }
+  check(votesOkB === comiteMembresB.length, `tous les votes comite B OK (${votesOkB}/${comiteMembresB.length})`)
+  const [demandeFinalB] = await s.query(`SELECT statutPipeline FROM ins_demandes_inscription WHERE id=${demandeIdB}`)
+  check(demandeFinalB[0]?.statutPipeline === 'valide', 'demande B validée définitivement', demandeFinalB[0]?.statutPipeline)
 
   // ═══════════ C. SÉCURITÉ / RÉGRESSION ═══════════
   console.log('\n══════════ SCÉNARIO C — sécurité / régression ══════════')

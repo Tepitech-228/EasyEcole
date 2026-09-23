@@ -59,8 +59,11 @@ export default class DocumentController {
   static async generate(req: Request, res: Response): Promise<Response> {
     try {
       const { typeCode, sourceType, sourceId, metadata, envoyerMail, ...params } = req.body;
+      if (!typeCode || typeof typeCode !== 'string' || !typeCode.trim()) {
+        return res.status(400).json({ success: false, message: 'typeCode est requis' });
+      }
 
-      const type = await DocGenType.findOne({ where: { code: typeCode } });
+      const type = await DocGenType.findOne({ where: { code: typeCode.trim() } });
       if (!type) return res.status(404).json({ success: false, message: 'Type non trouvé' });
 
       const template = await DocGenTemplate.findOne({ where: { typeId: type.id, isDefault: true } });

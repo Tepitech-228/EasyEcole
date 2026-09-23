@@ -73,6 +73,11 @@ export default class DemandeInscriptionController {
             where.utilisateurId = (req as any).utilisateurId;
         }
 
+        // Filtre par typeDemande (ex: ?type=reinscription)
+        if (req.query.type === 'reinscription') {
+            where.typeDemande = 'reinscription'
+        }
+
         const sessionWhere: any = {};
         if (req.query.anneeAcademiqueId) sessionWhere.anneeAcademiqueId = req.query.anneeAcademiqueId;
         if (req.query.niveauEtudeId) sessionWhere.niveauEtudeId = req.query.niveauEtudeId;

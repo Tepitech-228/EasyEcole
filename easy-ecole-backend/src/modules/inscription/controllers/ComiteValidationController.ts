@@ -15,6 +15,25 @@ import { BordereauDossierService } from "../services/BordereauDossierService";
 import { EtatPreInscription, PreInscription } from "../models/PreInscription";
 import { ComiteVote } from "../models/ComiteVote";
 import { Utilisateur } from "../../auth/models/Utilisateur";
+import { CursusApprenant } from "../models/CursusApprenant";
+import { NiveauEtude } from "../models/NiveauEtude";
+import { AnneeAcademique } from "../models/AnneeAcademique";
+
+/**
+ * Extrait le numéro de niveau depuis le libellé (ex: "LICENCE 1" → 1).
+ */
+function extraireNumeroNiveau(libelle: string): number | null {
+    const match = libelle.match(/(\d+)\s*$/)
+    return match ? parseInt(match[1], 10) : null
+}
+
+function incrementerLibelleNiveau(libelle: string): string {
+    const match = libelle.match(/^(.*?)(\d+)(\s*)$/)
+    if (match) {
+        return `${match[1]}${parseInt(match[2], 10) + 1}${match[3] || ''}`
+    }
+    return `${libelle} (N+1)`
+}
 
 const STATUTS_COMITE = ['transmis_comite', 'authentifie']
 const PIPELINE_COMITE = 'transmis_comite'
@@ -326,7 +345,7 @@ export default class ComiteValidationController {
                 await transaction.commit()
 
                 // Email de rejet (non bloquant)
-                this.envoyerEmailRejet(demande.utilisateurId, motif)
+                ComiteValidationController.envoyerEmailRejet(demande.utilisateurId, motif)
 
                 return res.status(200).json({
                     success: true,
@@ -355,7 +374,7 @@ export default class ComiteValidationController {
                 await transaction.commit()
 
                 // Email de correction (non bloquant)
-                this.envoyerEmailCorrection(demande.utilisateurId, motif)
+                ComiteValidationController.envoyerEmailCorrection(demande.utilisateurId, motif)
 
                 return res.status(200).json({
                     success: true,
@@ -432,10 +451,90 @@ export default class ComiteValidationController {
                 demande.statutPipeline = 'valide'
                 demande.motifPipeline = null
                 await demande.save({ transaction })
+
+                // ══════════════════════════════════════════════════════════════
+                // CRÉATION DU CURSUS N+1 POUR RÉINSCRIPTION
+                // Si la demande est de type 'reinscription', après validation
+                // unanime du comité, on crée automatiquement un nouveau
+                // CursusApprenant pour le niveau supérieur (N+1), même parcours,
+                // année académique +1, classeId=null (à affecter plus tard).
+                // L'ancien cursus (niveau N) est conservé (historisation).
+                // ══════════════════════════════════════════════════════════════
+                if (demande.typeDemande === 'reinscription') {
+                    const cursusActuel = await CursusApprenant.findOne({
+                        where: { demandeInscriptionId: demande.id },
+                        include: [
+                            CursusApprenant.associations.parcours,
+                            CursusApprenant.associations.niveauEtude,
+                            CursusApprenant.associations.anneeAcademique,
+                        ],
+                        transaction,
+                    })
+
+                    if (cursusActuel && cursusActuel.parcours && cursusActuel.niveauEtude && cursusActuel.anneeAcademique) {
+                        const nouveauNiveauLibelle = incrementerLibelleNiveau(cursusActuel.niveauEtude.libelle)
+                        const anneeActuelleLibelle = cursusActuel.anneeAcademique.libelle
+                        const anneeMatch = anneeActuelleLibelle.match(/^(\d{4})-(\d{4})$/)
+                        const anneeSupLibelle = anneeMatch
+                            ? `${Number(anneeMatch[2]) + 1}-${Number(anneeMatch[1]) + 1}`
+                            : `${Number(anneeActuelleLibelle.slice(0, 4)) + 1}-${Number(anneeActuelleLibelle.slice(5)) + 1}`
+
+                        // Recherche ou création du NiveauEtude N+1
+                        let niveauSup = await NiveauEtude.findOne({ where: { libelle: nouveauNiveauLibelle }, transaction })
+                        if (!niveauSup) {
+                            // Si le niveau N+1 n'existe pas encore, on le crée
+                            niveauSup = await NiveauEtude.create({
+                                libelle: nouveauNiveauLibelle,
+                            }, { transaction })
+                        }
+
+                        // Recherche ou création de l'AnnéeAcadémique N+1
+                        let anneeSup = await AnneeAcademique.findOne({ where: { libelle: anneeSupLibelle }, transaction })
+                        if (!anneeSup) {
+                            anneeSup = await AnneeAcademique.create({
+                                libelle: anneeSupLibelle,
+                                description: `Année académique ${anneeSupLibelle}`,
+                            }, { transaction })
+                        }
+
+                        // Vérification qu'aucun CursusApprenant N+1 n'existe déjà
+                        const doublonNPlus1 = await CursusApprenant.findOne({
+                            where: {
+                                utilisateurId: demande.utilisateurId,
+                                parcoursId: cursusActuel.parcoursId,
+                                niveauEtudeId: niveauSup.id,
+                                anneeAcademiqueId: anneeSup.id,
+                            },
+                            transaction,
+                        })
+
+                        if (!doublonNPlus1) {
+                            await CursusApprenant.create({
+                                externe: cursusActuel.externe,
+                                etablissementId: cursusActuel.etablissementId,
+                                intituleParcours: cursusActuel.intituleParcours,
+                                parcoursId: cursusActuel.parcoursId,
+                                niveauEtudeId: niveauSup.id,
+                                classeId: null, // Classe à affecter ultérieurement
+                                anneeAcademiqueId: anneeSup.id,
+                                demandeInscriptionId: demande.id,
+                                utilisateurId: demande.utilisateurId,
+                                statutReinscription: 'confirme',
+                                dateReinscription: new Date(),
+                            }, { transaction })
+                        }
+                        // Incrémente nombreInscriptions du dossier étudiant (BUG 2)
+                        const dossierReins = await DossierEtudiant.findOne({ where: { utilisateurId: demande.utilisateurId }, transaction })
+                        if (dossierReins) {
+                            await dossierReins.update({ nombreInscriptions: (dossierReins.nombreInscriptions ?? 1) + 1 }, { transaction })
+                        }
+                    }
+                }
+
                 await transaction.commit()
 
                 // Email de validation UNIQUEMENT à l'unanimité
-                this.envoyerEmailValidation(demande.utilisateurId, matriculeFinal)
+                ComiteValidationController.envoyerEmailValidation(demande.utilisateurId, matriculeFinal)
 
                 return res.status(200).json({
                     success: true,

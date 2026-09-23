@@ -28,6 +28,7 @@ export class EcolePageComponent extends BaseComponentClass implements OnInit {
     pays: new FormControl(''),
     devise: new FormControl('FCFA'),
     anneeScolaireCourante: new FormControl(''),
+    site: new FormControl('', [Validators.required]),
   })
 
   constructor(
@@ -56,6 +57,7 @@ export class EcolePageComponent extends BaseComponentClass implements OnInit {
             pays: etablissement.pays ?? '',
             devise: etablissement.devise ?? 'FCFA',
             anneeScolaireCourante: etablissement.anneeScolaireCourante ?? '',
+            site: (etablissement as any).site ?? '',
           })
         }
         this.loading = false
@@ -82,6 +84,7 @@ export class EcolePageComponent extends BaseComponentClass implements OnInit {
       pays: this.ecoleForm.get('pays')!.value,
       devise: this.ecoleForm.get('devise')!.value || 'FCFA',
       anneeScolaireCourante: this.ecoleForm.get('anneeScolaireCourante')!.value,
+      site: this.ecoleForm.get('site')!.value,
     }
 
     const request = payload.id

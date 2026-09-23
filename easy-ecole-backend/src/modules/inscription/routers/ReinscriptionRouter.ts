@@ -36,6 +36,21 @@ const REINSCRIPTION_FIELDS = [
 
 /**
  * @openapi
+ * /inscription/reinscription/prochaine:
+ *   get:
+ *     tags: [Réinscription]
+ *     summary: Vérifie la session N clôturée et propose la réinscription N+1
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: Prochaine session disponible pour réinscription
+ *       403:
+ *         description: Session en cours - réinscription bloquée
+ */
+router.get('/prochaine', ReinscriptionController.getProchaineSession)
+
+/**
+ * @openapi
  * /inscription/reinscription/peut-se-reinscrire:
  *   get:
  *     tags: [Réinscription]

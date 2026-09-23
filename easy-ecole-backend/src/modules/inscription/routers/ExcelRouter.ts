@@ -91,6 +91,15 @@ router.get("/enseignants/template", ExcelController.downloadEnseignantTemplate)
 
 /**
  * @openapi
+ * /inscription/excel/enseignants/template-word:
+ *   get:
+ *     tags: [Excel Import/Export]
+ *     summary: Télécharger le template Word pour l'import des enseignants
+ */
+router.get("/enseignants/template-word", ExcelController.downloadEnseignantWordTemplate)
+
+/**
+ * @openapi
  * /inscription/excel/enseignants/import:
  *   post:
  *     tags: [Excel Import/Export]
@@ -120,6 +129,15 @@ router.get("/enseignants/export", ExcelController.exportEnseignants)
  *     summary: Télécharger le template Excel pour l'import des apprenants
  */
 router.get("/apprenants/template", ExcelController.downloadApprenantTemplate)
+
+/**
+ * @openapi
+ * /inscription/excel/apprenants/template-word:
+ *   get:
+ *     tags: [Excel Import/Export]
+ *     summary: Télécharger le template Word pour l'import des apprenants
+ */
+router.get("/apprenants/template-word", ExcelController.downloadApprenantWordTemplate)
 
 /**
  * @openapi
@@ -178,6 +196,20 @@ router.get("/enseignants/export/filtres", ExcelController.exportEnseignantsFiltr
  *         description: Rôle ciblé (institution, caissier_banque, ressources_humaines, cabinet_comptable, admin, parent, enseignant, apprenant...)
  */
 router.get("/utilisateurs/template", ExcelController.downloadUtilisateurTemplate)
+
+/**
+ * @openapi
+ * /inscription/excel/utilisateurs/template-word:
+ *   get:
+ *     tags: [Excel Import/Export]
+ *     summary: Télécharger le template Word pour l'import d'utilisateurs par rôle
+ *     parameters:
+ *       - in: query
+ *         name: role
+ *         schema: { type: string }
+ *         description: Rôle ciblé (institution, caissier_banque, ressources_humaines, cabinet_comptable, admin, parent, enseignant, apprenant...)
+ */
+router.get("/utilisateurs/template-word", ExcelController.downloadUtilisateurWordTemplate)
 
 /**
  * @openapi

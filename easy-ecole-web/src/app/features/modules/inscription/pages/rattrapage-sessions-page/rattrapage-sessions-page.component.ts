@@ -4,9 +4,11 @@ import { Router } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { AnneeAcademique } from 'src/app/data/modules/inscription/models/AnneeAcademique.model';
 import { Classe } from 'src/app/data/modules/inscription/models/Classe.model';
-import { RattrapageSession } from 'src/app/data/modules/inscription/models/RattrapageWorkflow.model';
+import { Enseignant } from 'src/app/data/modules/auth/models/Enseignant.model';
+import { RattrapagePlanning, RattrapageSession } from 'src/app/data/modules/inscription/models/RattrapageWorkflow.model';
 import { AnneeAcademiqueService } from 'src/app/data/modules/inscription/services/annee-academique.service';
 import { ClasseService } from 'src/app/data/modules/inscription/services/classe.service';
+import { EnseignantService } from 'src/app/data/modules/auth/services/enseignant.service';
 import { RattrapageWorkflowService } from 'src/app/data/modules/inscription/services/rattrapage-workflow.service';
 
 /** Ligne d'un document requis édité dans la modal (création/édition de session). */
@@ -36,6 +38,13 @@ export class RattrapageSessionsPageComponent extends BaseComponentClass implemen
   sessionEnEdition: RattrapageSession | null = null
   documentsRequisEdites: DocumentRequisEdite[] = []
 
+  // Modal désignation prof sur un planning
+  showDesignProfModal: boolean = false
+  planningEnDesign: RattrapagePlanning | null = null
+  enseignants: Enseignant[] = []
+  selectedEnseignantId: number | null = null
+  loadingEnseignants: boolean = false
+
   readonly Aujourdhui: string = (new Date()).toISOString().split('T')[0]
 
   sessionForm: FormGroup = new FormGroup({
@@ -51,7 +60,8 @@ export class RattrapageSessionsPageComponent extends BaseComponentClass implemen
     private router: Router,
     private rattrapageWorkflowService: RattrapageWorkflowService,
     private classeService: ClasseService,
-    private anneeAcademiqueService: AnneeAcademiqueService
+    private anneeAcademiqueService: AnneeAcademiqueService,
+    private enseignantService: EnseignantService
   ) {
     super()
     if (!this.rolesValue.isInstitution && !this.rolesValue.isAdmin) {
@@ -78,6 +88,36 @@ export class RattrapageSessionsPageComponent extends BaseComponentClass implemen
         this.loading = false
       }
     })
+  }
+
+  /** Charge la liste des enseignants pour le modal de désignation. */
+  loadEnseignants(): void {
+    this.loadingEnseignants = true
+    this.enseignantService.getAll().subscribe({
+      next: (enseignants) => { this.enseignants = enseignants; this.loadingEnseignants = false },
+      error: (err) => { console.error('Erreur chargement enseignants:', err); this.loadingEnseignants = false }
+    })
+  }
+
+  // ---------------------------------------------------------------------------
+  // Planning helpers
+  // ---------------------------------------------------------------------------
+
+  /** Nombre de samedis dans le planning d'une session. */
+  getPlanningCount(session: RattrapageSession): number {
+    return session.planning ? session.planning.length : 0
+  }
+
+  /** Libellé du planning : "4 samedis : 05/10, 12/10..." */
+  getPlanningLabel(session: RattrapageSession): string {
+    const planning = session.planning || []
+    if (planning.length === 0) return 'Aucun samedi planifié'
+    const dates = planning.map((p) => {
+      if (!p.dateSamedi) return ''
+      const d = new Date(p.dateSamedi)
+      return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`
+    }).filter(Boolean)
+    return `${planning.length} samedi${planning.length > 1 ? 's' : ''} : ${dates.join(', ')}`
   }
 
   loadClasses(): void {
@@ -209,6 +249,41 @@ export class RattrapageSessionsPageComponent extends BaseComponentClass implemen
     this.rattrapageWorkflowService.cloturerSession(session.id).subscribe({
       next: () => { this.loadSessions() },
       error: (err) => console.error('Erreur clôture session:', err)
+    })
+  }
+
+  // ---------------------------------------------------------------------------
+  // Désignation d'un professeur sur un planning
+  // ---------------------------------------------------------------------------
+
+  openDesignProfModal(planning: RattrapagePlanning): void {
+    this.planningEnDesign = planning
+    this.selectedEnseignantId = planning.enseignantId || null
+    this.loadEnseignants()
+    this.showDesignProfModal = true
+  }
+
+  closeDesignProfModal(): void {
+    this.showDesignProfModal = false
+    this.planningEnDesign = null
+    this.selectedEnseignantId = null
+    this.enseignants = []
+  }
+
+  designerProf(): void {
+    if (!this.planningEnDesign || this.selectedEnseignantId === null) return
+    this.saving = true
+    this.rattrapageWorkflowService.designerProf(this.planningEnDesign.id!, this.selectedEnseignantId).subscribe({
+      next: () => {
+        this.saving = false
+        this.closeDesignProfModal()
+        this.loadSessions()
+      },
+      error: (err) => {
+        console.error('Erreur désignation professeur:', err)
+        this.saving = false
+        this.errorMessage = 'Erreur lors de la désignation du professeur'
+      }
     })
   }
 
