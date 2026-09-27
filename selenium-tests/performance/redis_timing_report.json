@@ -1,0 +1,73 @@
+{
+  "timestamp": "2026-09-23T16:06:15",
+  "redis_baseline": {
+    "redis_set": {
+      "avg": 0.7341519999317825,
+      "p50": 0.7190499891294166,
+      "p95": 0.9311600108048876
+    },
+    "redis_get": {
+      "avg": 0.7056350013590418,
+      "p50": 0.6804500153521076,
+      "p95": 0.8834499996737575
+    },
+    "cache_hits": 100
+  },
+  "api_vs_redis": {
+    "api": {
+      "avg": 19.58928999665659,
+      "p50": 24.048249993938953,
+      "p95": 28.485739993629977
+    },
+    "redis_ping": {
+      "avg": 1.347209996310994
+    },
+    "redis_get": {
+      "avg": 1.159670003107749,
+      "p50": 1.1285999935353175,
+      "p95": 1.4898950015776788
+    }
+  },
+  "api_results": [
+    [
+      "/inscription/parcours",
+      401
+    ],
+    [
+      "/inscription/dossiers",
+      401
+    ],
+    [
+      "/inscription/classes",
+      401
+    ],
+    [
+      "/inscription/rattrapages",
+      401
+    ],
+    [
+      "/inscription/demandesInscription",
+      401
+    ],
+    [
+      "/inscription/excel/ue/import",
+      401
+    ],
+    [
+      "/inscription/excel/ue/template",
+      401
+    ],
+    [
+      "/auth/permissions/mes-permissions",
+      401
+    ],
+    [
+      "/auth/login",
+      429
+    ],
+    [
+      "/health",
+      200
+    ]
+  ]
+}

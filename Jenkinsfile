@@ -147,6 +147,48 @@ pipeline {
             }
         }
 
+stage('E2E Tests') {
+            steps {
+                dir('easy-ecole-backend') {
+                    // Reset and seed database for clean state
+                    sh 'npm run db:reset'
+                    // Dépend du build backend
+                    echo "[E2E] Démarrage backend pour tests"
+                    // Utiliser ts-node start:server pour démarrer le backend (le mode serveur typique)
+                    // On utilise un simple démarrage en arrière-plan car le backend s'exécute sur un port défini (3000)
+                    sh '''
+                        echo "[E2E] Attente que le backend soit prêt (port 3000)..."
+                        # Démarrer le backend (en arrière-plan)
+                        npm run start:server > backend.log 2>&1 &
+                        BACKEND_PID=$!
+                        # Attendre que le backend soit prêt
+                        for i in {1..30}; do
+                            if curl -s http://localhost:3000/api/v1/health > /dev/null; then
+                                echo "[E2E] Backend prêt"
+                                break
+                            fi
+                            sleep 1
+                        done
+                        if ! curl -s http://localhost:3000/api/v1/health > /dev/null; then
+                            echo "[E2E] Backend non démarré après 30s - abort"
+                            kill $BACKEND_PID 2>/dev/null
+                            exit 1
+                        fi
+                        echo "[E2E] Exécution du test E2E pour tous les endpoints"
+                        # Le test-all-endpoints.cjs nécessite les données en base et un compte utilisateur
+                        node scripts/test-all-endpoints.cjs
+                        TEST_RESULT=$?
+                        echo "[E2E] Arrêt du backend"
+                        kill $BACKEND_PID 2>/dev/null
+                        wait $BACKEND_PID 2>/dev/null
+                        exit $TEST_RESULT
+                    '''
+                }
+            }
+        }
+            }
+        }
+
         stage('Tests Workers') {
             steps {
                 dir('easy-ecole-backend') {

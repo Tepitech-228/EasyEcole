@@ -1,0 +1,8 @@
+# EasyEcole V4 — Dépendances tests de performance
+# Usage: pip install -r requirements_perf.txt
+requests==2.34.2
+psutil==7.2.2
+openpyxl==3.1.5
+PyJWT==2.14.0
+# Optionnel — Locust pour mode distribué (non requis pour le mode concurrent.futures)
+# locust==2.20.1

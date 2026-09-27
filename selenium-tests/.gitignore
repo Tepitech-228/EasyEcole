@@ -1,0 +1,33 @@
+# EasyEcole Selenium Tests — .gitignore
+
+# Téléchargements de fichiers
+downloads/
+*.xlsx
+*.docx
+*.xls
+
+# Captures d'écran d'échec
+screenshots/
+*.png
+
+# Rapports de test
+report.html
+
+# Logs
+*.log
+
+# Fichiers temporaires
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.env
+
+# Cache Chrome
+*.cache
+.chromedriver
+
+# Résultats de test
+test-reports/
+.coverage
+.pytest_cache/
