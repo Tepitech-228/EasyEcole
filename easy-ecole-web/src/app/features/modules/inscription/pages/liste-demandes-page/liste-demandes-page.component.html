@@ -16,120 +16,22 @@
         </div>
     </div>
 
-    <div class="hierarchy-layout">
-        <!-- Tree sidebar -->
-        <div class="tree-panel">
-            <div *ngIf="treeLoading" class="loading-state">Chargement...</div>
-            <div *ngIf="!treeLoading && tree.length === 0" class="empty-state">Aucune donnée</div>
-            <div class="tree" *ngIf="!treeLoading && tree.length > 0">
-                <div *ngFor="let node of tree" class="tree-node">
-                    <div class="node-row" [class.selected]="selectedNode?.id === node.id" (click)="select(node)">
-                        <span class="toggle" (click)="$event.stopPropagation(); toggle(node)">
-                            <svg *ngIf="node.children?.length" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" [class.rotated]="node.expanded"><polyline points="9 18 15 12 9 6"/></svg>
-                            <svg *ngIf="!node.children?.length" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/></svg>
-                        </span>
-                        <span class="icon">
-                            <svg *ngIf="node.type === 'annee'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                            <svg *ngIf="node.type === 'niveau'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 1.1 2.7 3 6 3s6-1.9 6-3v-5"/></svg>
-                            <svg *ngIf="node.type === 'parcours'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                        </span>
-                        <span class="label">{{ node.label }}</span>
-                        <span class="badge demandes-badge">{{ node.data.demandes }}</span>
-                    </div>
-                    <div *ngIf="node.expanded && node.children?.length" class="children">
-                        <div *ngFor="let child of node.children" class="tree-node child">
-                            <div class="node-row" [class.selected]="selectedNode?.id === child.id" (click)="select(child)">
-                                <span class="toggle" (click)="$event.stopPropagation(); toggle(child)">
-                                    <svg *ngIf="child.children?.length" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" [class.rotated]="child.expanded"><polyline points="9 18 15 12 9 6"/></svg>
-                                    <svg *ngIf="!child.children?.length" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/></svg>
-                                </span>
-                                <span class="icon">
-                                    <svg *ngIf="child.type === 'niveau'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 1.1 2.7 3 6 3s6-1.9 6-3v-5"/></svg>
-                                    <svg *ngIf="child.type === 'parcours'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                                </span>
-                                <span class="label">{{ child.label }}</span>
-                                <span class="badge demandes-badge">{{ child.data.demandes }}</span>
-                            </div>
-                            <div *ngIf="child.expanded && child.children?.length" class="children">
-                                <div *ngFor="let grand of child.children" class="tree-node grandchild">
-                                    <div class="node-row" [class.selected]="selectedNode?.id === grand.id" (click)="select(grand)">
-                                        <span class="icon">
-                                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                                        </span>
-                                        <span class="label">{{ grand.label }}</span>
-                                        <span class="badge demandes-badge">{{ grand.data.demandes }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Detail panel -->
-        <div class="detail-panel" *ngIf="selectedNode">
-            <div class="detail-head">
-                <h3>{{ selectedNode.label }}</h3>
-                <span class="count-badge">{{ counts.demandes }} demande(s)</span>
-            </div>
-
-            <div *ngIf="detailLoading" class="loading-state">Chargement...</div>
-
-            <div *ngIf="!detailLoading && detailDemandes.length === 0" class="empty-state">
-                Aucune demande pour cet élément
-            </div>
-
-            <div class="table-container" *ngIf="!detailLoading && detailDemandes.length > 0">
-                <table class="ged-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th *ngIf="rolesValue.isInstitution || rolesValue.isAdmin">Apprenant</th>
-                            <th>Statut</th>
-                            <th>Date</th>
-                            <th class="text-right">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngFor="let d of detailDemandes; index as i">
-                            <td>{{ i + 1 }}</td>
-                            <td *ngIf="rolesValue.isInstitution || rolesValue.isAdmin">
-                                <div class="user-cell">
-                                    <img class="user-avatar"
-                                        [src]="d.utilisateur?.apprenant?.photo ? PHOTOS_PATH + d.utilisateur.apprenant.photo : 'assets/images/blank-profile-picture.png'"
-                                        alt="">
-                                    <div>
-                                        <div class="user-name">{{ d.utilisateur?.nom }} {{ d.utilisateur?.prenoms }}</div>
-                                        <div class="user-email">{{ d.utilisateur?.email }}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <app-custom-badge *ngIf="d.dateValidation" color="green" text="Validée"></app-custom-badge>
-                                <app-custom-badge *ngIf="!d.dateValidation" text="En cours"></app-custom-badge>
-                            </td>
-                            <td>{{ d.dateDemande | date: 'dd/MM/YYYY' }} à {{ d.dateDemande | date: 'HH:mm' }}</td>
-                            <td class="text-right">
-                                <app-custom-button (click)="openDemande(d.id)"
-                                    [text]="d.reponseInscription == undefined ? 'Traiter' : 'Détails'"></app-custom-button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="detail-placeholder" *ngIf="!selectedNode">
-            <svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="#94b3ff" stroke-width="1.5">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="16" y1="13" x2="8" y2="13"/>
-                <line x1="16" y1="17" x2="8" y2="17"/>
-            </svg>
-            <p>Sélectionnez un élément dans l'arborescence</p>
-        </div>
-    </div>
+    <app-dossier-view
+        [nodes]="nodes"
+        [columns]="columns"
+        [loading]="loading"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        [totalItems]="totalItems"
+        [pageSize]="pageSize"
+        [itemActions]="itemActions"
+        [renderItemActions]="true"
+        [includeBatchInRowActions]="false"
+        [clickToExpand]="true"
+        [canShowItemAction]="canShowItemAction"
+        (toggleNode)="onToggleNode($event)"
+        (itemAction)="onItemAction($event)"
+    ></app-dossier-view>
 </div>
 
 <!-- Nouvelle demande modal -->

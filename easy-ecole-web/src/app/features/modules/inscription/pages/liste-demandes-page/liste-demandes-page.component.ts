@@ -6,21 +6,11 @@ import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 import { EtatsSession } from 'src/app/data/enums/EtatsSession';
 import { DemandeInscription } from 'src/app/data/modules/inscription/models/DemandeInscription.model';
-import { ParcoursChoisi } from 'src/app/data/modules/inscription/models/ParcoursChoisi.model';
 import { Session } from 'src/app/data/modules/inscription/models/Session.model';
 import { DemandeInscriptionService } from 'src/app/data/modules/inscription/services/demande-inscription.service';
 import { SessionService } from 'src/app/data/modules/inscription/services/session.service';
 import { environment } from 'src/environments/environment';
-
-interface TreeNode {
-  id: string;
-  type: 'annee' | 'niveau' | 'parcours';
-  label: string;
-  data: { id: number; dossiers: number; demandes: number; bordereaux: number };
-  children?: TreeNode[];
-  expanded?: boolean;
-  loading?: boolean;
-}
+import { DossierNode, DossierColumn, BatchAction } from 'src/app/shared/components/dossier-view/dossier-view.component';
 
 @Component({
   selector: 'app-liste-demandes-page',
@@ -29,11 +19,17 @@ interface TreeNode {
 })
 export class ListeDemandesPageComponent extends BaseComponentClass implements OnInit {
 
-  tree: TreeNode[] = [];
-  treeLoading = false;
-  selectedNode: TreeNode | null = null;
-  detailLoading = false;
-  detailDemandes: any[] = [];
+  /** Arborescence rendue par app-dossier-view (année → niveau → parcours) */
+  nodes: DossierNode[] = [];
+  /** Colonnes du tableau de détail, construites dynamiquement selon le rôle */
+  columns: DossierColumn[] = [];
+
+  /** États de chargement et pagination (passés à app-dossier-view) */
+  loading = false;
+  currentPage = 1;
+  totalPages = 1;
+  totalItems = 0;
+  pageSize = 20;
 
   showNouvelleDemandeModal = false;
   alreadySignUp = false;
@@ -44,6 +40,12 @@ export class ListeDemandesPageComponent extends BaseComponentClass implements On
 
   readonly PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS
 
+  /** Actions affichées sur chaque ligne de demande dans app-dossier-view */
+  itemActions: BatchAction[] = [
+    { label: 'Traiter', action: 'traiter', color: 'blue', icon: 'edit' },
+    { label: 'Détails', action: 'details', color: 'gray', icon: 'visibility' },
+  ];
+
   constructor(
     private router: Router,
     private http: HttpClient,
@@ -51,73 +53,111 @@ export class ListeDemandesPageComponent extends BaseComponentClass implements On
     private sessionService: SessionService
   ) {
     super()
+    this.buildColumns()
     this.loadTree()
     this.getSessions()
   }
 
   ngOnInit(): void {}
 
+  /**
+   * Construit dynamiquement le tableau des colonnes à partir de rolesValue.
+   * La colonne « Apprenant » n'est visible que pour institution et admin.
+   * Peut être reconstruite si les rôles changent asynchronement.
+   */
+  private buildColumns(): void {
+    const showApprenant = this.rolesValue.isInstitution || this.rolesValue.isAdmin;
+    const cols: DossierColumn[] = [{ key: 'index', label: '#' }];
+    if (showApprenant) {
+      cols.push({ key: 'apprenant', label: 'Apprenant' });
+    }
+    cols.push(
+      { key: 'dateDemande', label: 'Date' },
+      { key: 'statut', label: 'Statut' },
+    );
+    this.columns = cols;
+  }
+
+  /**
+   * Transforme la hiérarchie brute (année → niveau → parcours) en DossierNode[]
+   * en mémorisant l'identifiant de l'année pour chaque nœud dans data.anneeId.
+   */
+  private buildTree(data: any[], anneeId?: number): DossierNode[] {
+    return data.map(node => {
+      const currentAnneeId = node.type === 'annee' ? node.data.id : anneeId;
+      return {
+        type: node.type,
+        id: node.id,
+        label: node.label,
+        data: { ...node.data, anneeId: currentAnneeId },
+        expanded: false,
+        children: node.children ? this.buildTree(node.children, currentAnneeId) : [],
+      };
+    });
+  }
+
+  /** Charge l'arborescence depuis l'endpoint /hierarchy et la transforme en DossierNode[]. */
   private loadTree(): void {
-    this.treeLoading = true
+    this.loading = true;
     this.http.get<any[]>(`${environment.API_MODULES.INSCRIPTION}/hierarchy`).subscribe({
       next: (data) => {
-        this.tree = data.map(node => ({ ...node, expanded: false, loading: false }))
-        this.treeLoading = false
+        this.nodes = this.buildTree(data);
+        this.loading = false;
       },
-      error: () => { this.treeLoading = false }
-    })
+      error: () => { this.loading = false }
+    });
   }
 
-  toggle(node: TreeNode): void {
-    if (node.children?.length) {
-      node.expanded = !node.expanded
+  /**
+   * Appelé par app-dossier-view via (toggleNode) quand un nœud est expanded.
+   * Charge les demandes pour un nœud parcours et les attache comme items.
+   */
+  onToggleNode(node: DossierNode): void {
+    if (node.expanded && !node.items?.length) {
+      this.loadDetail(node);
     }
   }
 
-  select(node: TreeNode): void {
-    this.selectedNode = node
-    this.detailLoading = true
-    this.detailDemandes = []
-    this.http.get<any>(`${environment.API_MODULES.INSCRIPTION}/hierarchy/${node.type}/${node.data.id}/${this.getAnneeId(node)}`).subscribe({
+  /** Charge les demandes d'un nœud sélectionné et les injecte comme items du nœud. */
+  private loadDetail(node: DossierNode): void {
+    const nodeId = node.data?.id || 0;
+    const anneeId = node.data?.anneeId || 0;
+    this.http.get<any>(`${environment.API_MODULES.INSCRIPTION}/hierarchy/${node.type}/${nodeId}/${anneeId}`).subscribe({
       next: (res) => {
-        this.detailDemandes = res.demandes || []
-        this.detailLoading = false
+        const demandes = (res.demandes || []).map((d: any, i: number) => ({
+          ...d,
+          index: i + 1,
+          date: d.dateDemande,
+          statut: d.dateValidation ? 'validee' : 'en_attente',
+          apprenant: d.utilisateur?.nom + ' ' + d.utilisateur?.prenoms,
+        }));
+        node.items = demandes;
+        // Recréer le tableau de nodes pour forcer la détection de changement Angular
+        this.nodes = [...this.nodes];
+        this.totalItems = demandes.length;
       },
-      error: () => { this.detailLoading = false }
-    })
+      error: () => {}
+    });
   }
 
-  private getAnneeId(node: TreeNode): number {
-    let current: TreeNode | undefined = node
-    while (current && current.type !== 'annee') {
-      current = this.findParent(current)
-    }
-    return current?.data.id || 0
+  /** Gestion de l'action par ligne : ouvre la demande via openDemande. */
+  onItemAction(event: { item: any, action: string }): void {
+    this.openDemande(event.item.id);
   }
 
-  private findParent(node: TreeNode): TreeNode | undefined {
-    for (const parent of this.tree) {
-      if (parent.children?.some(c => c.id === node.id)) return parent
-      if (parent.children) {
-        for (const child of parent.children) {
-          if (child.children?.some(c => c.id === node.id)) return child
-        }
-      }
-    }
-    return undefined
-  }
-
-  get counts(): { demandes: number } {
-    return { demandes: this.selectedNode?.data.demandes ?? 0 }
+  /** Filtre optionnel pour afficher « Traiter » ou « Détails » selon l'état de la demande. */
+  canShowItemAction = (item: any, action: string): boolean => {
+    if (action === 'traiter') return item.reponseInscription === undefined;
+    if (action === 'details') return item.reponseInscription !== undefined;
+    return true;
   }
 
   private getSessions(): void {
     this.sessionService.getAll().subscribe({
       next: (res) => {
-        // Sessions non clôturées : en cours ou à venir.
         this.sessions = res
           .filter(session => Session.getEtat(session.dateDebut, session.dateFin) != EtatsSession.CLOTUREE)
-          .sort((a, b) => new Date(a.dateDebut).getTime() - new Date(b.dateDebut).getTime())
+          .sort((a, b) => new Date(a.dateDebut).getTime() - new Date(b.dateFin).getTime())
       },
       error: () => {}
     })
