@@ -1,4 +1,4 @@
-<a *ngIf="cours" [routerLink]="['./' + cours.id]" class="course-card block h-full">
+<a *ngIf="cours" [routerLink]="[COURS_DETAIL_PATH, cours.id]" class="course-card block h-full">
     <div id="card" class="course-card__body w-full h-full bg-white shadow-sm ring-1 ring-gray-200 rounded-lg overflow-hidden">
         <div class="course-card__image-wrap">
         <img class="course-card__image w-full object-cover object-center" style="aspect-ratio: 16 / 9 !important;"

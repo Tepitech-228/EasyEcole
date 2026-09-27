@@ -10,7 +10,7 @@ export class CoursCardComponent implements OnInit {
 
   @Input() cours?: Cours
 
-  // readonly COURS_PATH: string = environment.MEDIAS_PATH.COURS.COURS
+  readonly COURS_DETAIL_PATH = '/cours/cours';
 
   constructor() { }
 

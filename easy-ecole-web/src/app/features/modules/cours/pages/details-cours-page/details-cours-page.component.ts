@@ -163,9 +163,47 @@ export class DetailsCoursPageComponent extends BaseComponentClass implements OnI
       )
   }
 
-  // ── ECUE ──────────────────────────────────────────────────────────────────
+   // ── GETTERS DE SÉCURITÉ ET DE CALCUL ──────────────────────────────────
 
-  getEcues(): void {
+   get chapitres(): ChapitreCours[] {
+     return this.cours?.chapitresCours ?? []
+   }
+
+   get ecuesSafe(): Ecue[] {
+     return this.ecues ?? []
+   }
+
+   get totalCmHoraire(): number {
+     return this.ecuesSafe.reduce((acc, e) => acc + (e.cmHoraire ?? 0), 0)
+   }
+
+   get totalTdTpHoraire(): number {
+     return this.ecuesSafe.reduce((acc, e) => acc + (e.tdTpHoraire ?? 0), 0)
+   }
+
+   get totalTpeHoraire(): number {
+     return this.ecuesSafe.reduce((acc, e) => acc + (e.tpeHoraire ?? 0), 0)
+   }
+
+   get totalHoraire(): number {
+     return this.totalCmHoraire + this.totalTdTpHoraire + this.totalTpeHoraire
+   }
+
+   get totalCreditEcts(): number {
+     return this.ecuesSafe.reduce((acc, e) => acc + (e.creditEcts ?? 0), 0)
+   }
+
+   get totalCoefficient(): number {
+     return this.ecuesSafe.reduce((acc, e) => acc + (e.coefficient ?? 0), 0)
+   }
+
+   get ecuesCount(): number {
+     return this.ecuesSafe.length
+   }
+
+   // ── ECUE ──────────────────────────────────────────────────────────────────
+
+   getEcues(): void {
     this.ecueService.getByUe(this.id)
       .subscribe(
         {
@@ -190,6 +228,18 @@ export class DetailsCoursPageComponent extends BaseComponentClass implements OnI
   nomEnseignant(ecue: Ecue): string {
     const utilisateur = ecue.enseignant?.utilisateur
     return utilisateur ? `${utilisateur.prenoms || ''} ${utilisateur.nom || ''}`.trim() : 'Non affecté'
+  }
+
+  /** Nom complet de l'enseignant responsable de l'UE (cours.enseignant) */
+  nomEnseignantResponsable(): string {
+    const u = this.cours?.enseignant?.utilisateur
+    if (!u) return '---'
+    return `${u.prenoms || ''} ${u.nom || ''}`.trim() || '---'
+  }
+
+  /** Total horaire d'un ECUE (CM + TD/TP + TPE) */
+  ecueTotalHoraire(ecue: Ecue): number {
+    return (ecue.cmHoraire ?? 0) + (ecue.tdTpHoraire ?? 0) + (ecue.tpeHoraire ?? 0)
   }
 
   openEcueModal(ecue?: Ecue): void {

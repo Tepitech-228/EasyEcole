@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { Ecue } from "../models/Ecue";
+import { Enseignant } from "../../auth/models/Enseignant";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 
 export default class EcueController {
@@ -8,9 +9,12 @@ export default class EcueController {
 
     static async getAll(req: Request, res: Response): Promise<Response> {
         try {
-            const data = await Ecue.findAll({
-                include: [Ecue.associations.cours]
-            });
+ const data = await Ecue.findAll({
+                 include: [
+                     Ecue.associations.cours,
+                     { association: Ecue.associations.enseignant, include: [Enseignant.associations.utilisateur] }
+                 ]
+             });
             return res.status(200).send(data);
         } catch (error) {
             console.error('Erreur', error);
@@ -76,10 +80,13 @@ export default class EcueController {
 
     static async getByUe(req: Request, res: Response): Promise<Response> {
         try {
-            const data = await Ecue.findAll({
-                where: { coursId: req.params.ueId },
-                include: [Ecue.associations.cours]
-            });
+     const data = await Ecue.findAll({
+                 where: { coursId: req.params.ueId },
+                 include: [
+                     Ecue.associations.cours,
+                     { association: Ecue.associations.enseignant, include: [Enseignant.associations.utilisateur] }
+                 ]
+             });
             return res.status(200).send(data);
         } catch (error) {
             console.error('Erreur', error);

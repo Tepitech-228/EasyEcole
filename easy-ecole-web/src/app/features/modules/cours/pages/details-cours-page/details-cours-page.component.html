@@ -23,6 +23,127 @@
         </div>
     </div>
 
+    <app-details-section text="Informations de l'UE">
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6 py-4">
+            <div>
+                <span class="block text-xs text-gray-400">Code</span>
+                <span class="block text-sm font-medium text-gray-800">{{ cours.code ?? '---' }}</span>
+            </div>
+            <div>
+                <span class="block text-xs text-gray-400">Intitulé</span>
+                <span class="block text-sm font-medium text-gray-800">{{ cours.intitule ?? '---' }}</span>
+            </div>
+            <div>
+                <span class="block text-xs text-gray-400">Crédits</span>
+                <span class="block text-sm font-medium text-gray-800">{{ cours.credit ?? '---' }}</span>
+            </div>
+            <div>
+                <span class="block text-xs text-gray-400">Crédits ECTS</span>
+                <span class="block text-sm font-medium text-gray-800">{{ cours.creditEcts ?? '---' }}</span>
+            </div>
+            <div>
+                <span class="block text-xs text-gray-400">Semestre</span>
+                <span class="block text-sm font-medium text-gray-800">{{ cours.semestre ?? '---' }}</span>
+            </div>
+            <div>
+                <span class="block text-xs text-gray-400">Coefficient</span>
+                <span class="block text-sm font-medium text-gray-800">{{ cours.coefficient ?? '---' }}</span>
+            </div>
+            <div>
+                <span class="block text-xs text-gray-400">Catégorie UE</span>
+                <span class="block text-sm font-medium text-gray-800">{{ cours.categorieUe ? ('UE ' + cours.categorieUe | lowercase) : '---' }}</span>
+            </div>
+            <div>
+                <span class="block text-xs text-gray-400">Cours obligatoire</span>
+                <span class="block text-sm font-medium text-gray-800">{{ cours.estObligatoire ? 'Oui' : 'Non' }}</span>
+            </div>
+            <div>
+                <span class="block text-xs text-gray-400">Filière</span>
+                <span class="block text-sm font-medium text-gray-800">{{ cours.parcours?.titre ?? '---' }}</span>
+            </div>
+            <div>
+                <span class="block text-xs text-gray-400">Niveau d'étude</span>
+                <span class="block text-sm font-medium text-gray-800">{{ cours.parcours?.niveauEtude?.libelle ?? '---' }}</span>
+            </div>
+            <div>
+                <span class="block text-xs text-gray-400">Classe</span>
+                <span class="block text-sm font-medium text-gray-800">{{ cours.classe?.libelle ?? '---' }}</span>
+            </div>
+            <div>
+                <span class="block text-xs text-gray-400">Enseignant responsable</span>
+                <span class="block text-sm font-medium text-gray-800">{{ nomEnseignantResponsable() }}</span>
+            </div>
+        </div>
+    </app-details-section>
+
+    <app-details-section text="Volume horaire">
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6 py-4">
+            <div>
+                <span class="block text-xs text-gray-400">Volume horaire total</span>
+                <span class="block text-sm font-medium text-gray-800">{{ cours.volumeHoraire ?? '---' }}</span>
+            </div>
+        </div>
+    </app-details-section>
+
+    <app-details-section text="Description" *ngIf="cours?.description">
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6 py-4">
+            <div class="col-span-full">
+                <span class="block text-sm font-medium text-gray-800">{{ cours.description ?? '---' }}</span>
+            </div>
+        </div>
+    </app-details-section>
+
+    <app-details-section text="Objectifs pédagogiques" *ngIf="cours?.objectifs">
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6 py-4">
+            <div class="col-span-full">
+                <span class="block text-sm font-medium text-gray-800">{{ cours.objectifs ?? '---' }}</span>
+            </div>
+        </div>
+    </app-details-section>
+
+    <app-details-section text="Composition de l'UE">
+        <!-- UE à cours unique -->
+        <div *ngIf="ecuesSafe.length == 0" class="text-center py-12 bg-white border border-gray-200 rounded-lg">
+            <span class="material-symbols-outlined text-5xl text-gray-300 mb-4">category</span>
+            <p class="text-gray-500">UE à cours unique — pas de ventilation CM / TD / TP</p>
+            <p class="text-sm text-gray-400 mt-2">Volume horaire de l'UE : {{ cours?.volumeHoraire ?? '---' }}h</p>
+        </div>
+
+        <!-- Tableau de synthèse des ECUE -->
+        <div *ngIf="ecuesSafe.length > 0" class="overflow-x-auto bg-white border border-gray-200 rounded-lg">
+            <table class="min-w-full">
+                <thead class="bg-gray-50 border-b">
+                    <tr>
+                        <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">Code</th>
+                        <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">Libellé</th>
+                        <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">Type</th>
+                        <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">Enseignant</th>
+                        <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">CM (h)</th>
+                        <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">TD/TP (h)</th>
+                        <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">TPE (h)</th>
+                        <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">Total (h)</th>
+                        <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">ECTS</th>
+                        <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">Coeff.</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    <tr *ngFor="let ecue of ecuesSafe" class="hover:bg-gray-50">
+                        <td class="px-4 py-3 text-sm text-gray-900 font-medium whitespace-nowrap">{{ ecue.code }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.libelle }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.type ?? '—' }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{{ nomEnseignant(ecue) }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.cmHoraire ?? '—' }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.tdTpHoraire ?? '—' }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.tpeHoraire ?? '—' }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-900 font-medium">{{ ecueTotalHoraire(ecue) }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.creditEcts ?? '—' }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.coefficient ?? '1' }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </app-details-section>
+
     <div class="mb-8 flex overflow-x-auto overflow-y-hidden border-b border-gray-200 whitespace-nowrap">
         <button *ngFor="let tab of tabs" (click)="activeTab = tab.id"
             [ngClass]="activeTab == tab.id ? 'text-indigo-600 border-indigo-500' : 'text-gray-600 border-transparent hover:border-gray-300 hover:text-gray-800'"
@@ -35,12 +156,12 @@
         <div *ngIf="activeTab == 1" class="grid grid-cols-4 w-full gap-x-2 gap-y-4">
             <div class="block xl:col-span-3 lg:col-span-3 md:col-span-3 col-span-full">
                 <div class="flex gap-y-12 flex-col">
-                    <div *ngIf="cours.chapitresCours!.length == 0"
+                    <div *ngIf="chapitres.length == 0"
                         class="w-full py-24 flex flex-col gap-y-8 items-center justify-center">
                         <img class="h-56" src="assets/images/selection-pana.svg" alt="no resource">
                         <div class="text-sm text-gray-500">Aucun chapitre disponible</div>
                     </div>
-                    <app-chapitre-card *ngFor="let chapitre of cours.chapitresCours!" [chapitre]="chapitre"
+                    <app-chapitre-card *ngFor="let chapitre of chapitres" [chapitre]="chapitre"
                         [rolesValue]="rolesValue"></app-chapitre-card>
                 </div>
             </div>
@@ -49,8 +170,7 @@
                     <div class="pl-10">
                         <div class="flex flex-col gap-y-4">
                             <div class="font-semibold text-md text-gray-600 mb-2">Sommaire</div>
-                            <div *ngFor="let chapitre of cours.chapitresCours!" class="flex items-center ">
-                                <!-- <div class="w-4 h-4 bg-white border border-gray-400 rounded-full"></div> -->
+                            <div *ngFor="let chapitre of chapitres" class="flex items-center ">
                                 <div class="text-sm text-gray-500">{{chapitre.titre}}</div>
                             </div>
                         </div>
@@ -170,13 +290,43 @@
                 <app-custom-button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" (click)="openEcueModal()" text="Nouvel ECUE"></app-custom-button>
             </div>
 
-            <div *ngIf="ecues.length == 0" class="text-center py-12 bg-white border border-gray-200 rounded-lg">
+            <!-- UE à cours unique -->
+            <div *ngIf="ecuesSafe.length == 0" class="text-center py-12 bg-white border border-gray-200 rounded-lg">
                 <span class="material-symbols-outlined text-5xl text-gray-300 mb-4">category</span>
                 <p class="text-gray-500">Aucun ECUE — cette UE est à cours unique</p>
-                <p class="text-sm text-gray-400 mt-2">Ajoutez des ECUE pour composer cette UE de plusieurs matières</p>
+                <p class="text-sm text-gray-400 mt-2">Volume horaire de l'UE : {{ cours.volumeHoraire ?? '---' }}h</p>
             </div>
 
-            <div *ngIf="ecues.length > 0" class="overflow-x-auto bg-white border border-gray-200 rounded-lg">
+            <!-- ECUE avec ventilation -->
+            <div *ngIf="ecuesSafe.length > 0" class="overflow-x-auto bg-white border border-gray-200 rounded-lg">
+                <!-- Cartes récapitulatives -->
+                <div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-4 p-4">
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
+                        <div class="text-xs text-gray-500">N° ECUE</div>
+                        <div class="text-lg font-semibold text-gray-800">{{ ecuesCount }}</div>
+                    </div>
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
+                        <div class="text-xs text-gray-500">CM (h)</div>
+                        <div class="text-lg font-semibold text-gray-800">{{ totalCmHoraire }}</div>
+                    </div>
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
+                        <div class="text-xs text-gray-500">TD/TP (h)</div>
+                        <div class="text-lg font-semibold text-gray-800">{{ totalTdTpHoraire }}</div>
+                    </div>
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
+                        <div class="text-xs text-gray-500">TPE (h)</div>
+                        <div class="text-lg font-semibold text-gray-800">{{ totalTpeHoraire }}</div>
+                    </div>
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
+                        <div class="text-xs text-gray-500">Total (h)</div>
+                        <div class="text-lg font-semibold text-gray-800">{{ totalHoraire }}</div>
+                    </div>
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
+                        <div class="text-xs text-gray-500">Crédits / Coeff.</div>
+                        <div class="text-lg font-semibold text-gray-800">{{ totalCreditEcts }} / {{ totalCoefficient }}</div>
+                    </div>
+                </div>
+
                 <table class="min-w-full">
                     <thead class="bg-gray-50 border-b">
                         <tr>
@@ -193,7 +343,7 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
-                        <tr *ngFor="let ecue of ecues" class="hover:bg-gray-50">
+                        <tr *ngFor="let ecue of ecuesSafe" class="hover:bg-gray-50">
                             <td class="px-4 py-3 text-sm text-gray-900 font-medium whitespace-nowrap">{{ ecue.code }}</td>
                             <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.libelle }}</td>
                             <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.creditEcts ?? '—' }}</td>
@@ -209,6 +359,20 @@
                             </td>
                         </tr>
                     </tbody>
+                    <tfoot>
+                        <tr class="font-semibold bg-gray-50">
+                            <td class="px-4 py-3 text-sm text-gray-900">TOTAUX</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">{{ ecuesCount }} ECUE</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">{{ totalCreditEcts }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">{{ totalCoefficient }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">{{ totalCmHoraire }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">{{ totalTdTpHoraire }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">{{ totalTpeHoraire }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">—</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">—</td>
+                            <td *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" class="px-4 py-3 text-sm text-right"></td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         </div>
