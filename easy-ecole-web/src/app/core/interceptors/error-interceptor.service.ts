@@ -5,6 +5,7 @@ import { catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { ToastService } from '../services/toast.service';
 import { LocalStorageService } from '../services/local-storage.service';
+import { ErrorModalService } from '../services/error-modal.service';
 import * as jwtDecode from 'jwt-decode';
 
 /**
@@ -36,7 +37,12 @@ export class ErrorInterceptorService implements HttpInterceptor {
     504: 'Délai dépassé'
   };
 
-  constructor(private toast: ToastService, private router: Router, private localStorageService: LocalStorageService) { }
+  constructor(
+    private toast: ToastService,
+    private router: Router,
+    private localStorageService: LocalStorageService,
+    private errorModalService: ErrorModalService
+  ) { }
 
   /**
    * Vérifie côté client si le JWT stocké est expiré.
@@ -103,60 +109,79 @@ export class ErrorInterceptorService implements HttpInterceptor {
         });
 
         if (err.status === 401) {
-          const storedToken = this.localStorageService.get(LocalStorageService.AUTH_TOKEN);
-          const hasToken = !!storedToken;
-          const tokenExpiredClient = hasToken && this.isTokenExpiredOrInvalid();
-          const sessionRevokedServer = this.isSessionRevokedServerSide(backendMessage);
+           const storedToken = this.localStorageService.get(LocalStorageService.AUTH_TOKEN);
+           const hasToken = !!storedToken;
+           const tokenExpiredClient = hasToken && this.isTokenExpiredOrInvalid();
+           const sessionRevokedServer = this.isSessionRevokedServerSide(backendMessage);
 
-          if (sessionRevokedServer) {
-            // Révocation explicite côté serveur (tokenVersion désynchronisé, signature
-            // refusée…) : le jeton ne peut plus être réutilisé → reconnexion propre.
-            this.toast.error('Session expirée, veuillez vous reconnecter');
-            this.localStorageService.remove(LocalStorageService.AUTH_TOKEN);
-            if (!this.router.url.startsWith('/auth')) {
-              this.router.navigate(['/auth/connexion']);
-            }
-          } else if (hasToken && tokenExpiredClient) {
-            // Un jeton est présent mais expiré côté client → il faut le renouveler.
-            this.toast.error('Session expirée, veuillez vous reconnecter');
-            this.localStorageService.remove(LocalStorageService.AUTH_TOKEN);
-            if (!this.router.url.startsWith('/auth')) {
-              this.router.navigate(['/auth/connexion']);
-            }
-          } else if (!hasToken) {
-            // Aucun jeton en local : requête partie SANS token (démarrage de la page,
-            // juste après la connexion OTP le dashboard peut tirer ses données avant
-            // que le jeton soit recopié). Ce n'est PAS une révocation : on préserve la
-            // session et on ne déconnecte pas (sinon boucle de logout intempestive).
-            // Si l'utilisateur n'est réellement pas connecté, le garde de route
-            // (AuthGuard) l'a déjà redirigé vers la page de connexion.
-            console.warn(
-              '[HTTP_ERROR] 401 sans token en local (requête partie sans Authorization). ' +
-              'Session préservée — aucune déconnexion.',
-              { url: req.urlWithParams, backendMessage }
-            );
-          } else {
-            // 401 réellement transitoire (token encore valide + pas de révocation
-            // explicite côté serveur) → on préserve la session, pas de redirection.
-            console.warn(
-              '[HTTP_ERROR] 401 reçu mais session apparemment valide. ' +
-              'Erreur probablement transitoire — pas de déconnexion.',
-              { url: req.urlWithParams, backendMessage }
-            );
-            this.toast.error('Erreur temporaire, veuillez réessayer');
-          }
-        } else if (!req.url.includes('/auth/login')) {
-          // Notification par défaut : les composants qui gèrent déjà error: localement
-          // afficheront leur propre message ; on évite ici les erreurs critiques muettes.
-          // Un 403 (accès refusé) est notifié en ORANGE (warning) puisqu'il s'agit d'un
-          // refus d'accès, pas d'une panne : plus visible que le succès vert, moins
-          // alarmiste que le rouge (réservé aux vraies erreurs).
-          if (err.status === 403) {
-            this.toast.warning(message);
-          } else {
-            this.toast.error(message);
-          }
-        }
+           if (sessionRevokedServer) {
+             // Révocation explicite côté serveur (tokenVersion désynchronisé, signature
+             // refusée…) : le jeton ne peut plus être réutilisé → reconnexion propre.
+             this.toast.error('Session expirée, veuillez vous reconnecter');
+             this.errorModalService.showUnauthorized('Votre session a expiré. Veuillez vous reconnecter.');
+             this.localStorageService.remove(LocalStorageService.AUTH_TOKEN);
+             if (!this.router.url.startsWith('/auth')) {
+               this.router.navigate(['/auth/connexion']);
+             }
+           } else if (hasToken && tokenExpiredClient) {
+             // Un jeton est présent mais expiré côté client → il faut le renouveler.
+             this.toast.error('Session expirée, veuillez vous reconnecter');
+             this.errorModalService.showUnauthorized('Votre session a expiré. Veuillez vous reconnecter.');
+             this.localStorageService.remove(LocalStorageService.AUTH_TOKEN);
+             if (!this.router.url.startsWith('/auth')) {
+               this.router.navigate(['/auth/connexion']);
+             }
+           } else if (!hasToken) {
+             // Aucun jeton en local : requête partie SANS token (démarrage de la page,
+             // juste après la connexion OTP le dashboard peut tirer ses données avant
+             // que le jeton soit recopié). Ce n'est PAS une révocation : on préserve la
+             // session et on ne déconnecte pas (sinon boucle de logout intempestive).
+             // Si l'utilisateur n'est réellement pas connecté, le garde de route
+             // (AuthGuard) l'a déjà redirigé vers la page de connexion.
+             console.warn(
+               '[HTTP_ERROR] 401 sans token en local (requête partie sans Authorization). ' +
+               'Session préservée — aucune déconnexion.',
+               { url: req.urlWithParams, backendMessage }
+             );
+           } else {
+             // 401 réellement transitoire (token encore valide + pas de révocation
+             // explicite côté serveur) → on préserve la session, pas de redirection.
+             console.warn(
+               '[HTTP_ERROR] 401 reçu mais session apparemment valide. ' +
+               'Erreur probablement transitoire — pas de déconnexion.',
+               { url: req.urlWithParams, backendMessage }
+             );
+             this.toast.error('Erreur temporaire, veuillez réessayer');
+             this.errorModalService.showError('Erreur temporaire, veuillez réessayer', undefined, 401, 'warning');
+           }
+         } else if (!req.url.includes('/auth/login')) {
+           // Notification par défaut : les composants qui gèrent déjà error: localement
+           // afficheront leur propre message ; on évite ici les erreurs critiques muettes.
+           // Un 403 (accès refusé) est notifié en ORANGE (warning) puisqu'il s'agit d'un
+           // refus d'accès, pas d'une panne : plus visible que le succès vert, moins
+           // alarmiste que le rouge (réservé aux vraies erreurs).
+           if (err.status === 403) {
+             this.toast.warning(message);
+             this.errorModalService.showError(message, undefined, 403, 'warning');
+           } else if (err.status === 422) {
+             // Erreurs de validation (422) : modal scrollable avec liste des détails
+             const validationErrors: string[] = err?.error?.errors || err?.error?.detail || [message];
+             this.toast.error(message);
+             this.errorModalService.showValidationErrors(validationErrors, message);
+           } else if (err.status >= 500) {
+             // Erreurs serveur (500+) : modal scrollable avec stack trace
+             this.toast.error(message);
+             this.errorModalService.showServerError(err, message);
+           } else if (err.status === 400) {
+             // Erreur 400 avec liste d'erreurs d'import/validation
+             const detailErrors: string[] = err?.error?.errors || err?.error?.detail || [message];
+             this.toast.error(message);
+             this.errorModalService.showError(message, detailErrors.length > 0 ? detailErrors : undefined, 400, 'error');
+           } else {
+             this.toast.error(message);
+             this.errorModalService.showError(message, undefined, err.status);
+           }
+         }
 
         return throwError(() => err);
       })

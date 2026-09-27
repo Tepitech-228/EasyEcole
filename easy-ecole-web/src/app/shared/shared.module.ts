@@ -7,6 +7,7 @@ import { VgCoreModule } from '@videogular/ngx-videogular/core';
 import { VgControlsModule } from '@videogular/ngx-videogular/controls';
 import { VgOverlayPlayModule } from '@videogular/ngx-videogular/overlay-play';
 import { VgBufferingModule } from '@videogular/ngx-videogular/buffering';
+import { ErrorModalComponent } from './components/error-modal/error-modal.component';
 import { FormInputComponent } from './components/form-input/form-input.component';
 import { CustomButtonComponent } from './components/custom-button/custom-button.component';
 import { CustomModalComponent } from './components/custom-modal/custom-modal.component';
@@ -37,6 +38,7 @@ import { ExcelImportDialogComponent } from './components/excel-import-dialog/exc
 
 @NgModule({
   declarations: [
+    ErrorModalComponent,
     FormInputComponent,
     CustomButtonComponent,
     CustomModalComponent,
@@ -93,6 +95,7 @@ import { ExcelImportDialogComponent } from './components/excel-import-dialog/exc
     NgSelectModule,
 
     // Components
+    ErrorModalComponent,
     FormInputComponent,
     CustomButtonComponent,
     CustomModalComponent,
