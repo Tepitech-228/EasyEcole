@@ -126,3 +126,23 @@ easy-ecole-backend/gen-token-*.js
 easy-ecole-backend/tmp-*.ts
 easy-ecole-backend/tsc_output*.txt
 test-reports/
+
+# Scripts et resultats d'audit ponctuels a la racine du depot
+audit-*.js
+audit-results.json
+tmp_check*.ps1
+easy-ecole-web/tmp_check*.ps1
+atelier/
+
+# Rapports d'analyse de performance : versionnes dans docs/performance/
+RAPPORT_PERFORMANCE_*.md
+
+# Artefacts de tests de charge k6 (les scripts .js restent versionnes)
+k6-tests/*.log
+k6-tests/*.txt
+
+# Artefacts de tests Selenium / Python (le code de test reste versionne)
+selenium-tests/__pycache__/
+selenium-tests/.pytest_cache/
+selenium-tests/downloads/
+selenium-tests/screenshots/
