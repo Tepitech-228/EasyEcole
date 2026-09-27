@@ -9,7 +9,28 @@ export interface ExcelImportResult {
   success: boolean;
   importedCount: number;
   errorCount: number;
-  details: { ligne?: number; email?: string; code?: string; statut: string; message: string; motDePasse?: string }[];
+  message?: string;
+  ignoredCount?: number;
+  ignoredRows?: { ligne: number; raison: string }[];
+  details: {
+    ligne?: number;
+    code?: string;
+    intitule?: string;
+    ecueCode?: string;
+    ecueLibelle?: string;
+    type?: string | null;
+    cmHoraire?: number;
+    tdTpHoraire?: number;
+    tpeHoraire?: number;
+    creditEcts?: number;
+    semestre?: string;
+    categorie?: string | null;
+    enseignant?: string | null;
+    coursId?: number;
+    statut: string;
+    message: string;
+    motDePasse?: string;
+  }[];
 }
 
 @Injectable({
@@ -118,6 +139,11 @@ export class ExcelService {
     return this.http.get(`${EXCEL_BASE}/apprenants/export/filtres`, { params: httpParams, responseType: 'blob' });
   }
 
+  /** Exporter les apprenants complets pour migration (3 onglets: Identité 37 cols, Cursus, Finance) */
+  exportApprenantsMigration(): Observable<Blob> {
+    return this.http.get(`${EXCEL_BASE}/apprenants/export/migration`, { responseType: 'blob' });
+  }
+
   /** Télécharger le template d'export des enseignants filtrés */
   exportEnseignantsFiltres(params?: any): Observable<Blob> {
     let httpParams = new HttpParams();
@@ -184,5 +210,12 @@ export class ExcelService {
       params = new HttpParams().set('role', role);
     }
     return this.http.get(`${EXCEL_BASE}/utilisateurs/export`, { params, responseType: 'blob' });
+  }
+
+  /** Importer des apprenants depuis un fichier de migration (3 onglets: Identité, Cursus, Finance) */
+  importApprenantsMigration(file: File): Observable<ExcelImportResult> {
+    const formData = new FormData();
+    formData.append('fichier', file);
+    return this.http.post<ExcelImportResult>(`${EXCEL_BASE}/apprenants/import/migration`, formData);
   }
 }

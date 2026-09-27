@@ -10,7 +10,7 @@ import { AnneeAcademiqueService } from 'src/app/data/modules/inscription/service
 import { RolesUtilisateur } from 'src/app/data/enums/RolesUtilisateur';
 
 export type ExportType = 'ue' | 'etudiants' | 'enseignants' | 'utilisateurs';
-export type ImportType = 'ue' | 'etudiants' | 'enseignants' | 'utilisateurs';
+export type ImportType = 'ue' | 'etudiants' | 'enseignants' | 'utilisateurs' | 'migration';
 
 @Component({
   selector: 'app-import-export-excel-page',
@@ -52,6 +52,8 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
   selectedFile: File | null = null;
   importing = false;
   importResult: ExcelImportResult | null = null;
+  exportMigrationLoading = false;
+  importMigrationLoading = false;
   errorMessage: string | null = null;
   successMessage: string | null = null;
 
@@ -66,7 +68,8 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
     { value: 'ue' as ImportType, label: 'UE et ECUE' },
     { value: 'etudiants' as ImportType, label: 'Étudiants' },
     { value: 'enseignants' as ImportType, label: 'Enseignants' },
-    { value: 'utilisateurs' as ImportType, label: 'Utilisateurs par rôle' }
+    { value: 'utilisateurs' as ImportType, label: 'Utilisateurs par rôle' },
+    { value: 'migration' as ImportType, label: 'Migration Complète (3 onglets)' }
   ];
 
   readonly rolesList = [
@@ -180,6 +183,25 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
     });
   }
 
+  exporterMigration(): void {
+    this.errorMessage = null;
+    this.successMessage = null;
+    this.exportMigrationLoading = true;
+
+    this.excelService.exportApprenantsMigration().subscribe({
+      next: (blob: Blob) => {
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+        ExcelService.downloadBlob(blob, `export-migration-complet-${timestamp}.xlsx`);
+        this.successMessage = 'Export migration complète téléchargé avec succès (3 onglets : Identité, Cursus, Finance).';
+        this.exportMigrationLoading = false;
+      },
+      error: () => {
+        this.errorMessage = 'Erreur lors du téléchargement de l\'export migration.';
+        this.exportMigrationLoading = false;
+      }
+    });
+  }
+
   telechargerTemplate(): void {
     this.errorMessage = null;
     this.successMessage = null;
@@ -244,20 +266,56 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
     }
   }
 
-  openFilePicker(): void {
-    document.getElementById('fileInput')?.click();
-  }
-
   onDragOver(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
   }
 
-  importer(): void {
+  openFilePicker(): void {
+    document.getElementById('fileInput')?.click();
+  }
+
+  importMigration(): void {
     if (!this.selectedFile) {
       this.errorMessage = 'Veuillez sélectionner un fichier.';
       return;
     }
+
+    if (this.importFormat !== 'xlsx') {
+      this.errorMessage = 'L\'import migration ne supporte que le format .xlsx.';
+      return;
+    }
+
+    this.importMigrationLoading = true;
+    this.importResult = null;
+    this.errorMessage = null;
+    this.successMessage = null;
+
+    const import$ = this.excelService.importApprenantsMigration(this.selectedFile);
+
+    import$.subscribe({
+      next: (result: ExcelImportResult) => {
+        this.importResult = result;
+        this.importMigrationLoading = false;
+        if (result.success) {
+          this.successMessage = `Import migration terminée : ${result.importedCount} apprenant(s) importé(s), ${result.errorCount} erreur(s).`;
+        } else {
+          this.errorMessage = result.message || 'Erreur lors de l\'import migration.';
+        }
+      },
+      error: (err) => {
+        this.importResult = null;
+        this.importMigrationLoading = false;
+        this.errorMessage = err?.error?.message || 'Erreur lors de l\'import migration.';
+      }
+    });
+  }
+
+   importer(): void {
+     if (!this.selectedFile) {
+       this.errorMessage = 'Veuillez sélectionner un fichier.';
+       return;
+     }
 
     this.importing = true;
     this.importResult = null;
@@ -265,6 +323,11 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
     this.successMessage = null;
 
     let import$: any;
+
+    if (this.importType === 'migration') {
+      this.importMigration();
+      return;
+    }
 
     if (this.importType === 'ue') {
       const parcours = this.parcoursList.find(item => String(item.id) === this.selectedImportParcoursId);
@@ -291,6 +354,8 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
         this.importing = false;
         if (result.success) {
           this.successMessage = `Import terminé : ${result.importedCount} réussi(s), ${result.errorCount} erreur(s).`;
+          const grouped = this.getGroupedUe();
+          if (grouped.length > 0) this.expandedUeCode = grouped[0].code;
         }
       },
       error: (err) => {
@@ -301,21 +366,25 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
     });
   }
 
-  resetImport(): void {
-    this.selectedFile = null;
-    this.importResult = null;
-    this.errorMessage = null;
-    this.successMessage = null;
-  }
+   resetImport(): void {
+      this.selectedFile = null;
+      this.importResult = null;
+      this.errorMessage = null;
+      this.successMessage = null;
+      this.detailFilter = 'all';
+      this.expandedUeCode = null;
+    }
 
-  importTypeChanged(): void {
-  }
+   importTypeChanged(): void {
+     this.detailFilter = 'all';
+   }
 
   getImportFileTypeLabel(): string {
     switch (this.importType) {
       case 'ue': return 'UE et ECUE';
       case 'etudiants': return 'Étudiants';
       case 'enseignants': return 'Enseignants';
+      case 'migration': return 'Migration Complète';
       default: return 'Utilisateurs (' + (this.rolesList.find(r => r.value === this.selectedImportRole)?.label || this.selectedImportRole) + ')';
     }
   }
@@ -325,9 +394,111 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
       case 'ue': return 'Maquette UE/ECUE';
       case 'etudiants': return 'Fichier Apprenants';
       case 'enseignants': return 'Fichier Enseignants';
+      case 'migration': return 'Fichier Migration 3 onglets';
       default: return 'Fichier Utilisateurs';
     }
   }
 
+  detailFilter: string = 'all';
+
+  expandedUeCode: string | null = null;
+
   trackByFn(index: number, item: any): number { return index; }
+
+  toggleUe(code: string): void {
+    this.expandedUeCode = this.expandedUeCode === code ? null : code;
+  }
+
+  isExpanded(code: string): boolean {
+    return this.expandedUeCode === code;
+  }
+
+  getGroupedUe(): any[] {
+    const filtered = this.getFilteredDetails();
+    const groupMap: { [key: string]: any } = {};
+    const order: string[] = [];
+
+    for (const detail of filtered) {
+      const code = detail.code || '(sans code)';
+      if (!groupMap[code]) {
+        groupMap[code] = {
+          code: code,
+          intitule: '',
+          semestre: '',
+          categorie: null,
+          coursId: null,
+          nbEcue: 0,
+          totalCm: 0,
+          totalTdTp: 0,
+          totalTpe: 0,
+          totalEcts: 0,
+          statut: 'succès',
+          ecues: []
+        };
+        order.push(code);
+      }
+      const g = groupMap[code];
+      if (!g.intitule && detail.intitule) g.intitule = detail.intitule;
+      if (!g.semestre && detail.semestre) g.semestre = detail.semestre;
+      if (!g.categorie && detail.categorie != null) g.categorie = detail.categorie;
+      if (g.coursId == null && detail.coursId != null) g.coursId = detail.coursId;
+      g.nbEcue++;
+      g.totalCm += (detail.cmHoraire || 0);
+      g.totalTdTp += (detail.tdTpHoraire || 0);
+      g.totalTpe += (detail.tpeHoraire || 0);
+      g.totalEcts += (detail.creditEcts || 0);
+      const s = (detail.statut || '').trim().toLowerCase();
+      if (s === 'erreur' || s === 'error') g.statut = 'erreur';
+      g.ecues.push(detail);
+    }
+
+    return order.map(code => groupMap[code]);
+  }
+
+  statutBadgeClass(statut: string): string {
+    const s = (statut || '').trim().toLowerCase();
+    if (s === 'succès' || s === 'succes' || s === 'success') return 'bg-green-50 text-green-700';
+    if (s === 'erreur' || s === 'error') return 'bg-red-50 text-red-700';
+    return 'bg-gray-100 text-gray-700';
+  }
+
+  statutLabel(statut: string): string {
+    const s = (statut || '').trim().toLowerCase();
+    if (s === 'succès' || s === 'succes' || s === 'success') return 'Succès';
+    if (s === 'erreur' || s === 'error') return 'Erreur';
+    return 'Ignoré';
+  }
+
+  getFilteredDetails(): any[] {
+    if (!this.importResult?.details?.length) return [];
+    if (this.detailFilter === 'ignore') return [];
+    return this.importResult.details.filter(d => {
+      const s = (d.statut || '').trim().toLowerCase();
+      if (this.detailFilter === 'succes') return s === 'succès' || s === 'succes' || s === 'success';
+      if (this.detailFilter === 'erreur') return s === 'erreur' || s === 'error';
+      return true;
+    });
+  }
+
+  get ignoredCount(): number {
+    if (!this.importResult) return 0;
+    return this.importResult.ignoredCount ?? this.importResult.ignoredRows?.length ?? 0;
+  }
+
+  get ignoredRows(): { ligne: number; raison: string }[] {
+    return this.importResult?.ignoredRows ?? [];
+  }
+
+  countDetailsByStatut(variante: 'succes' | 'erreur'): number {
+    if (!this.importResult?.details?.length) return 0;
+    return this.importResult.details.filter(d => {
+      const s = (d.statut || '').trim().toLowerCase();
+      if (variante === 'succes') return s === 'succès' || s === 'succes' || s === 'success';
+      return s === 'erreur' || s === 'error';
+    }).length;
+  }
+
+  hasTemporaryPasswords(): boolean {
+    return !!this.importResult?.details?.some(d => d.motDePasse);
+  }
 }

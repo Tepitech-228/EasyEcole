@@ -150,6 +150,15 @@ router.post("/apprenants/import", upload.single("fichier"), ExcelController.impo
 
 /**
  * @openapi
+ * /inscription/excel/apprenants/import/migration:
+ *   post:
+ *     tags: [Excel Import/Export]
+ *     summary: Importer des apprenants depuis un fichier de migration (3 feuilles : Identité, Cursus, Finance)
+ */
+router.post("/apprenants/import/migration", upload.single("fichier"), ExcelController.importApprenantsMigration)
+
+/**
+ * @openapi
  * /inscription/excel/apprenants/export:
  *   get:
  *     tags: [Excel Import/Export]
@@ -165,6 +174,15 @@ router.get("/apprenants/export", ExcelController.exportApprenants)
  *     summary: Exporter les apprenants filtrés (parcoursId, filiereId, anneeAcademiqueId, salleId, niveauId, classeId)
  */
 router.get("/apprenants/export/filtres", ExcelController.exportApprenantsFiltres)
+
+/**
+ * @openapi
+ * /inscription/excel/apprenants/export/migration:
+ *   get:
+ *     tags: [Excel Import/Export]
+ *     summary: Exporter tous les apprenants pour migration (feuilles Identité, Cursus, Finance)
+ */
+router.get("/apprenants/export/migration", ExcelController.exportApprenantsComplet)
 
 // ========================================================================
 //  ENSEIGNANTS — Export filtré

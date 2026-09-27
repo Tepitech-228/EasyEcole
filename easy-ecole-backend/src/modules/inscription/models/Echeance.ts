@@ -1,6 +1,7 @@
 ﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
+import { Bordereau } from "./Bordereau";
 import { DossierEtudiant } from "./DossierEtudiant";
 
 export class Echeance extends Model<InferAttributes<Echeance>, InferCreationAttributes<Echeance>> {
@@ -32,6 +33,7 @@ export class Echeance extends Model<InferAttributes<Echeance>, InferCreationAttr
 
   declare static associations: {
     dossierEtudiant: Association<Echeance, DossierEtudiant>
+    bordereaux: Association<Echeance, Bordereau>
   };
 }
 
