@@ -48,11 +48,11 @@
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     <tr *ngFor="let l of lignes; index as i">
-                                        <td class="px-3 py-2"><input type="text" [(ngModel)]="l.designation" [name]="'desg'+i" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></td>
-                                        <td class="px-3 py-2"><input type="number" [(ngModel)]="l.quantite" [name]="'qte'+i" class="w-24 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></td>
-                                        <td class="px-3 py-2"><input type="number" [(ngModel)]="l.prixEstime" [name]="'prix'+i" class="w-32 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></td>
+                                        <td class="px-3 py-2"><input type="text" [(ngModel)]="l.designation" [ngModelOptions]="{standalone: true}" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></td>
+                                        <td class="px-3 py-2"><input type="number" [(ngModel)]="l.quantite" [ngModelOptions]="{standalone: true}" class="w-24 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></td>
+                                        <td class="px-3 py-2"><input type="number" [(ngModel)]="l.prixEstime" [ngModelOptions]="{standalone: true}" class="w-32 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></td>
                                         <td class="px-3 py-2">
-                                            <select [(ngModel)]="l.unite" [name]="'unite'+i" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                            <select [(ngModel)]="l.unite" [ngModelOptions]="{standalone: true}" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                                 <option>Unié</option>
                                                 <option>Boîte</option>
                                                 <option>Lots</option>
