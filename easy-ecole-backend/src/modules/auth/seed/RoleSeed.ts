@@ -61,6 +61,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
         'action.inscription.dossier.generer', 'action.inscription.dossier.modifier-statut',
         'action.inscription.echeance.generer',
         'action.cours.cours.creer', 'action.cours.cours.modifier', 'action.cours.cours.supprimer',
+        'action.inscription.ecue.creer', 'action.inscription.ecue.modifier', 'action.inscription.ecue.supprimer',
         'action.cours.enseignant.creer', 'action.cours.enseignant.modifier',
         'action.cours.note.saisir', 'action.cours.note.modifier',
         'action.evaluation.bulletin.generer', 'action.evaluation.deliberation.organiser',

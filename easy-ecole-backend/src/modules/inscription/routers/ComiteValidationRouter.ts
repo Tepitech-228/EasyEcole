@@ -11,6 +11,7 @@ const router = express.Router()
 
 router
     .get('/dossiers', [Authenticate], ComiteValidationController.listerDossiers)
+    .get('/dossiers/:id/pdf-fusionne', [Authenticate], ComiteValidationController.telechargerPdfFusionne)
     .get('/dossiers/:id', [Authenticate], ComiteValidationController.detailDossier)
     .get('/dossiers/:id/votes', [Authenticate], ComiteValidationController.listerVotes)
     .post('/dossiers/:id/decider', [Authenticate], ComiteValidationController.decider)

@@ -18,6 +18,14 @@ import { Utilisateur } from "../../auth/models/Utilisateur";
 import { CursusApprenant } from "../models/CursusApprenant";
 import { NiveauEtude } from "../models/NiveauEtude";
 import { AnneeAcademique } from "../models/AnneeAcademique";
+import { PdfMergeService } from "../../../core/services/PdfMergeService";
+import { Quitus } from "../models/Quitus";
+import { RecuCaisse } from "../../scolarite/models/RecuCaisse";
+import { DemandeDocument } from "../../scolarite/models/DemandeDocument";
+import { DocumentDelivre } from "../../scolarite/models/DocumentDelivre";
+import { DocGenDocument } from "../../docgen/models/DocGenDocument";
+import path from "path";
+import fs from "fs";
 
 /**
  * Extrait le numéro de niveau depuis le libellé (ex: "LICENCE 1" → 1).
@@ -580,6 +588,119 @@ export default class ComiteValidationController {
             await transaction.rollback().catch(rbErr => console.error('[COMITE][decider] ROLLBACK EN ÉCHEC — transaction possiblement orpheline:', rbErr))
             console.error('[Comite] decider:', error)
             return res.status(400).json({ success: false, message: error.message || 'Erreur interne' })
+        }
+    }
+
+    /**
+     * GET /comite-validations/dossiers/:id/pdf-fusionne
+     * Télécharge un PDF multipages contenant tous les documents de l'étudiant.
+     */
+    static async telechargerPdfFusionne(req: Request, res: Response): Promise<Response> {
+        try {
+            const role = (req as any).utilisateurRole
+            if (role != RolesUtilisateur.COMITE_ORIENTATION && role != RolesUtilisateur.ADMIN) {
+                return res.status(403).json({ success: false })
+            }
+
+            const demande = await DemandeInscription.findOne({
+                where: { id: req.params.id },
+                include: inclureTout(),
+            })
+            if (!demande) {
+                return res.status(404).json({ success: false, message: "Dossier non trouvé" })
+            }
+
+            // ── Collecter tous les chemins PDF de l'étudiant ──
+            const pdfPaths: string[] = []
+
+            // 1. Bordereaux (fichiers uploadés)
+            const bordereaux = await Bordereau.findAll({
+                where: { utilisateurId: demande.utilisateurId },
+                order: [['dateSoumission', 'ASC']],
+            })
+            for (const b of bordereaux) {
+                if (b.fichier) {
+                    const p = path.isAbsolute(b.fichier) ? b.fichier : path.join(process.cwd(), b.fichier)
+                    if (fs.existsSync(p)) pdfPaths.push(p)
+                }
+            }
+
+            // 2. Quitus
+            const quitus = await Quitus.findAll({
+                where: { bordereauId: bordereaux.map(b => b.id) },
+            })
+            for (const q of quitus) {
+                if (q.fichierPDF) {
+                    const p = path.isAbsolute(q.fichierPDF) ? q.fichierPDF : path.join(process.cwd(), q.fichierPDF)
+                    if (fs.existsSync(p)) pdfPaths.push(p)
+                }
+            }
+
+            // 3. Reçus de caisse (via DemandeDocument)
+            const demandesDocuments = await DemandeDocument.findAll({
+                where: { etudiantId: demande.utilisateurId },
+                attributes: ['id'],
+            })
+            const demandeDocIds = demandesDocuments.map(d => d.id)
+            if (demandeDocIds.length > 0) {
+                const recusCaisse = await RecuCaisse.findAll({
+                    where: { demandeDocumentId: { [Op.in]: demandeDocIds } },
+                    order: [['datePaiement', 'ASC']],
+                })
+                for (const r of recusCaisse) {
+                    if (r.fichierPDF) {
+                        const p = path.isAbsolute(r.fichierPDF) ? r.fichierPDF : path.join(process.cwd(), r.fichierPDF)
+                        if (fs.existsSync(p)) pdfPaths.push(p)
+                    }
+                }
+
+                // 4. Documents délivrés (via DemandeDocument)
+                const documentsDelivres = await DocumentDelivre.findAll({
+                    where: { demandeId: { [Op.in]: demandeDocIds } },
+                    order: [['dateDelivrance', 'ASC']],
+                })
+                for (const d of documentsDelivres) {
+                    if (d.fichierPDF) {
+                        const p = path.isAbsolute(d.fichierPDF) ? d.fichierPDF : path.join(process.cwd(), d.fichierPDF)
+                        if (fs.existsSync(p)) pdfPaths.push(p)
+                    }
+                }
+            }
+
+            // 5. Documents docgen
+            const docGenDocs = await DocGenDocument.findAll({
+                where: { sourceId: demande.utilisateurId.toString(), sourceType: 'etudiant' },
+                order: [['createdAt', 'ASC']],
+            })
+            for (const d of docGenDocs) {
+                if (d.filePath) {
+                    const p = path.isAbsolute(d.filePath) ? d.filePath : path.join(process.cwd(), d.filePath)
+                    if (fs.existsSync(p)) pdfPaths.push(p)
+                }
+            }
+
+            if (pdfPaths.length === 0) {
+                return res.status(404).json({ success: false, message: "Aucun PDF trouvé pour cet étudiant" })
+            }
+
+            // ── Fusionner les PDFs ──
+            const matricule = demande.matricule || `etudiant_${demande.utilisateurId}`
+            const outputPath = await PdfMergeService.mergeStudentPdfs(matricule, pdfPaths)
+
+            // ── Envoyer le fichier ──
+            res.setHeader('Content-Type', 'application/pdf')
+            res.setHeader('Content-Disposition', `attachment; filename="dossier_${matricule}.pdf"`)
+            fs.createReadStream(outputPath).pipe(res)
+
+            // Nettoyer le fichier temporaire après envoi
+            res.on('finish', () => {
+                try { fs.unlinkSync(outputPath) } catch (e) { /* ignore */ }
+            })
+
+            return res
+        } catch (error) {
+            console.error('[Comite] telechargerPdfFusionne:', error)
+            return res.status(500).json({ success: false, message: 'Erreur lors de la génération du PDF' })
         }
     }
 
