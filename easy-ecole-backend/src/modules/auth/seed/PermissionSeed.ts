@@ -167,6 +167,7 @@ const ALL_PERMISSIONS: Array<{ key: string; libelle: string; module: string; typ
     { key: 'menu.finances.bordereaux', libelle: 'Mes bordereaux', module: 'Finances', type: 'menu', parentKey: 'menu.finances' },
     { key: 'menu.finances.validation-bordereaux', libelle: 'Valid. bordereaux', module: 'Finances', type: 'menu', parentKey: 'menu.finances' },
     { key: 'menu.finances.impayes', libelle: 'Étudiants en situation irrégulière', module: 'Finances', type: 'menu', parentKey: 'menu.finances' },
+    { key: 'menu.finances.situation-financiere', libelle: 'Situation financière', module: 'Finances', type: 'menu', parentKey: 'menu.finances' },
     { key: 'action.finances.paiement.enregistrer', libelle: 'Enregistrer un paiement', module: 'Finances', type: 'action', parentKey: 'menu.finances.paiements' },
     { key: 'action.finances.paiement.annuler', libelle: 'Annuler un paiement', module: 'Finances', type: 'action', parentKey: 'menu.finances.paiements' },
     { key: 'action.finances.comptabilite.consulter', libelle: 'Consulter la compta', module: 'Finances', type: 'action', parentKey: 'menu.finances.comptabilite' },

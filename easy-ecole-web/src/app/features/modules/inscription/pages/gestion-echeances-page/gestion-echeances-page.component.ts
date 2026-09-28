@@ -5,6 +5,8 @@ import { Echeance } from 'src/app/data/modules/inscription/models/Echeance.model
 import { DossierEtudiant } from 'src/app/data/modules/inscription/models/DossierEtudiant.model';
 import { EcheanceService } from 'src/app/data/modules/inscription/services/echeance.service';
 import { DossierEtudiantService } from 'src/app/data/modules/inscription/services/dossier-etudiant.service';
+import { DossierNode, DossierColumn } from 'src/app/shared/components/dossier-view/dossier-view.component';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-gestion-echeances-page',
@@ -15,6 +17,7 @@ export class GestionEcheancesPageComponent extends BaseComponentClass implements
 
   error: boolean = false
   successMessage: string = ''
+  loading: boolean = true
 
   showNouvelleEcheanceModal: boolean = false
   showEditerEcheanceModal: boolean = false
@@ -25,6 +28,17 @@ export class GestionEcheancesPageComponent extends BaseComponentClass implements
   dossiers: DossierEtudiant[] = []
   selectedEcheance?: Echeance
   selectedDossierId?: string
+
+  // ── Arbre avec sommes payées ──
+  treeNodes: DossierNode[] = []
+  readonly columns: DossierColumn[] = [
+    { key: 'type', label: 'Type', width: '100px' },
+    { key: 'numeroEcheance', label: 'N°', width: '80px' },
+    { key: 'montant', label: 'Montant', width: '120px' },
+    { key: 'montantPaye', label: 'Payé', width: '120px' },
+    { key: 'restant', label: 'Reste', width: '120px' },
+    { key: 'statut', label: 'Statut', width: '100px' },
+  ]
 
   echeanceForm: FormGroup = new FormGroup({
     dossierEtudiantId: new FormControl(null, [Validators.required]),
@@ -40,11 +54,90 @@ export class GestionEcheancesPageComponent extends BaseComponentClass implements
     private dossierEtudiantService: DossierEtudiantService
   ) {
     super()
-    this.getEcheances()
-    this.getDossiers()
+    this.loadData()
   }
 
   ngOnInit(): void {
+  }
+
+  loadData(): void {
+    this.loading = true
+    this.dossierEtudiantService.getArbre().subscribe({
+      next: (arbre) => {
+        this.buildTreeWithSums(arbre)
+        this.loading = false
+      },
+      error: (err) => {
+        console.error('[Echeances] Erreur chargement arbre:', err)
+        this.error = true
+        this.loading = false
+      }
+    })
+  }
+
+  private buildTreeWithSums(arbre: any[]): void {
+    this.treeNodes = arbre.map(annee => ({
+      type: 'annee' as const,
+      label: `${annee.annee} — Inscription: ${this.formatMontant(this.sumByType(annee, 'inscription'))} | Scolarité: ${this.formatMontant(this.sumByType(annee, 'scolarite'))}`,
+      expanded: true,
+      children: annee.filieres?.map((filiere: any) => ({
+        type: 'parcours' as const,
+        label: `${filiere.filiere} — Inscription: ${this.formatMontant(this.sumByType(filiere, 'inscription'))} | Scolarité: ${this.formatMontant(this.sumByType(filiere, 'scolarite'))}`,
+        expanded: true,
+        children: filiere.niveaux?.map((niveau: any) => ({
+          type: 'niveau' as const,
+          label: `${niveau.niveau} — Inscription: ${this.formatMontant(this.sumByType(niveau, 'inscription'))} | Scolarité: ${this.formatMontant(this.sumByType(niveau, 'scolarite'))}`,
+          expanded: true,
+          children: niveau.classes?.map((classe: any) => ({
+            type: 'classe' as const,
+            label: `${classe.classe} — ${classe.dossiers?.length || 0} étudiant(s)`,
+            expanded: false,
+            children: classe.dossiers?.map((dossier: any) => ({
+              type: 'etudiant' as const,
+              label: `${dossier.nom} ${dossier.prenoms}`,
+              expanded: false,
+              items: dossier.echeances?.map((e: any) => ({
+                id: e.id,
+                type: e.type === 'inscription' ? 'Inscription' : 'Scolarité',
+                numeroEcheance: `N° ${e.numeroEcheance}`,
+                montant: e.montant,
+                montantPaye: e.montantPaye || 0,
+                restant: (e.montant || 0) - (e.montantPaye || 0),
+                statut: e.statut,
+              })) || [],
+            })) || [],
+          })) || [],
+        })) || [],
+      })) || [],
+    }))
+  }
+
+  private sumByType(node: any, type: string): number {
+    let sum = 0
+    if (node.dossiers) {
+      for (const d of node.dossiers) {
+        if (d.echeances) {
+          for (const e of d.echeances) {
+            if (e.type === type) sum += e.montant || 0
+          }
+        }
+      }
+    }
+    if (node.filieres) {
+      for (const f of node.filieres) sum += this.sumByType(f, type)
+    }
+    if (node.niveaux) {
+      for (const n of node.niveaux) sum += this.sumByType(n, type)
+    }
+    if (node.classes) {
+      for (const c of node.classes) sum += this.sumByType(c, type)
+    }
+    return sum
+  }
+
+  formatMontant(value: number | undefined | null): string {
+    if (value == null || value === 0) return '0 FCFA'
+    return new Intl.NumberFormat('fr-FR').format(value) + ' FCFA'
   }
 
   getEcheances(): void {

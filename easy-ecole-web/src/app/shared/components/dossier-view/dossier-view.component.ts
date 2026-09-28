@@ -70,6 +70,7 @@ export class DossierViewComponent {
   @Output() batchAction = new EventEmitter<{ action: string, ids: number[] }>();
   @Output() pageChange = new EventEmitter<number>();
   @Output() itemAction = new EventEmitter<{ item: any, action: string }>();
+  @Output() viewStudent = new EventEmitter<any>();
 
   selectedIds: Set<number> = new Set();
 

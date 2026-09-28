@@ -39,6 +39,7 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
     [RolesUtilisateur.ESA_COMPTA]: 'Service Recouvrement',
     [RolesUtilisateur.PARENT]: 'Parent',
     [RolesUtilisateur.SECRETAIRE]: 'Secrétaire',
+    [RolesUtilisateur.SURVEILLANT]: 'Surveillant',
   }
 
   // Rôles staff = tous sauf apprenant, enseignant, parent, admin, institution → profil PersonnelAdministratif
@@ -50,6 +51,7 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
     RolesUtilisateur.RESSOURCES_HUMAINES,
     RolesUtilisateur.ESA_COMPTA,
     RolesUtilisateur.SECRETAIRE,
+    RolesUtilisateur.SURVEILLANT,
   ]
 
   constructor(
@@ -111,6 +113,7 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
       specialite: '', gradeAcademique: '', fonctionAdministrative: '',
       anneeExperience: 0, plusHautDiplome: '',
       statutEtudiant: 'nouveau', periode: 'matin',
+      estPrescripteur: false,
     }
     this.showModal = true
   }

@@ -88,6 +88,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   }
 
   readonly BORDEREAUX_PATH: string = (window as any).__env?.MEDIAS_PATH?.INSCRIPTION?.BORDEREAUX || '/media/inscription/bordereaux/'
+  readonly PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS
 
   searchTerm: string = ''
 
@@ -664,5 +665,14 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   getStatutLabel(statut: string): string {
     const map: any = { 'en_attente': 'En attente', 'valide': 'Validé', 'rejete': 'Rejeté', 'en_saisie_comptable': 'En saisie', 'traite': 'Traité' }
     return map[statut] || statut
+  }
+
+  /** Retourne l'URL de la photo de l'étudiant (ou l'image par défaut si absente) */
+  getPhotoUrl(bordereau: any): string {
+    const photo = bordereau?.utilisateur?.apprenant?.photo
+    if (photo) {
+      return this.PHOTOS_PATH + photo
+    }
+    return 'assets/images/blank-profile-picture.png'
   }
 }

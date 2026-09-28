@@ -12,7 +12,6 @@ import { NiveauEtudeService } from 'src/app/data/modules/inscription/services/ni
 import { ParcoursService } from 'src/app/data/modules/inscription/services/parcours.service';
 import { ClasseService } from 'src/app/data/modules/inscription/services/classe.service';
 import { environment } from 'src/environments/environment';
-import { DossierNode, DossierColumn, BatchAction } from 'src/app/shared/components/dossier-view/dossier-view.component';
 import { combineLatest } from 'rxjs';
 import { untilDestroyed } from 'src/app/core/utils/take-until-destroy';
 import { ToastService } from 'src/app/core/services/toast.service';
@@ -79,21 +78,6 @@ export class ImpayesPageComponent extends BaseComponentClass implements OnInit {
 
   // ── Options des mois (accessibles depuis le template) ──
   readonly MOIS_OPTIONS = MOIS_OPTIONS;
-
-  // ── Colonnes de la table d'items ──
-  readonly columns: DossierColumn[] = [
-    { key: 'type', label: 'Type', width: '100px' },
-    { key: 'numeroEcheance', label: 'Échéance/Mois', width: '150px' },
-    { key: 'dateLimite', label: 'Date limite', width: '130px' },
-    { key: 'montant', label: 'Montant', width: '120px' },
-    { key: 'montantPaye', label: 'Payé', width: '100px' },
-    { key: 'restant', label: 'Reste', width: '120px' },
-    { key: 'statut', label: 'Statut', width: '100px' },
-  ];
-
-  readonly batchActions: BatchAction[] = [
-    { label: 'Voir détail', color: 'blue', action: 'voir-detail', icon: 'visibility' },
-  ];
 
   loading = true;
   error = false;
@@ -163,16 +147,16 @@ export class ImpayesPageComponent extends BaseComponentClass implements OnInit {
 
     this.impayesService.getImpayes(params).pipe(untilDestroyed(this)).subscribe({
       next: (res: ImpayesResponse) => {
+        console.log('[Impayes] Données reçues:', res);
+        console.log('[Impayes] Nombre d\'étudiants:', res.data?.length || 0);
         this.allImpayesData = res.data || [];
         this.semestres = res.semestres || [];
         this.total = res.pagination?.total || 0;
         this.totalPages = res.pagination?.totalPages || 0;
-        // TODO: le filtrage client est effectué par le getter treeNodes (buildTreeNodes),
-        // et les filtres sont déjà transmis au serveur via params.
-        // Suppression de cet appel pour casser la boucle infinie loadImpayes → applyFilters → loadImpayes.
         this.loading = false;
       },
-      error: () => {
+      error: (err) => {
+        console.error('[Impayes] Erreur de chargement:', err);
         this.loading = false;
         this.error = true;
         this.toastService.error('Erreur lors du chargement des données');
@@ -190,25 +174,18 @@ export class ImpayesPageComponent extends BaseComponentClass implements OnInit {
     this.niveauxFiltres = [];
     this.parcoursFiltres = [];
     this.classesFiltres = [];
-
-    if (this.selectedAnneeId) {
-      const niveauIds = new Set<string>();
-      this.parcoursList
-        .filter(p => {
-          const session = (p as any).session;
-          return session?.anneeAcademiqueId && String(session.anneeAcademiqueId) === String(this.selectedAnneeId);
-        })
-        .forEach(p => { if (p.niveauEtudeId) niveauIds.add(String(p.niveauEtudeId)); });
-      this.niveauxFiltres = niveauIds.size > 0
-        ? this.niveaux.filter(n => niveauIds.has(String(n.id!)))
-        : this.niveaux;
-    }
+    this.page = 1;
     this.applyFilters();
   }
 
   onCycleChange(): void {
     this.selectedFiliereId = '';
+    this.selectedNiveauId = '';
+    this.selectedClasseId = '';
     this.parcoursFiltres = [];
+    this.niveauxFiltres = [];
+    this.classesFiltres = [];
+    this.page = 1;
 
     if (this.selectedCycle) {
       this.parcoursFiltres = this.parcoursList.filter(p => p.type === this.selectedCycle);
@@ -218,7 +195,10 @@ export class ImpayesPageComponent extends BaseComponentClass implements OnInit {
 
   onFiliereChange(): void {
     this.selectedNiveauId = '';
+    this.selectedClasseId = '';
     this.niveauxFiltres = [];
+    this.classesFiltres = [];
+    this.page = 1;
 
     if (this.selectedFiliereId) {
       const parcours = this.parcoursList.find(p => String(p.id) === String(this.selectedFiliereId));
@@ -232,6 +212,7 @@ export class ImpayesPageComponent extends BaseComponentClass implements OnInit {
   onNiveauChange(): void {
     this.selectedClasseId = '';
     this.classesFiltres = [];
+    this.page = 1;
 
     if (this.selectedNiveauId) {
       this.classesFiltres = this.classes.filter(c => String(c.niveauEtudeId) === String(this.selectedNiveauId));
@@ -240,14 +221,17 @@ export class ImpayesPageComponent extends BaseComponentClass implements OnInit {
   }
 
   onSemestreChange(): void {
+    this.page = 1;
     this.applyFilters();
   }
 
   onClasseChange(): void {
+    this.page = 1;
     this.applyFilters();
   }
 
   onMoisChange(): void {
+    this.page = 1;
     this.applyFilters();
   }
 
@@ -261,62 +245,49 @@ export class ImpayesPageComponent extends BaseComponentClass implements OnInit {
     this.applyFilters();
   }
 
+  // ── Réinitialisation des filtres ──
+  resetFilters(): void {
+    this.selectedAnneeId = '';
+    this.selectedCycle = '';
+    this.selectedFiliereId = '';
+    this.selectedNiveauId = '';
+    this.selectedSemestre = '';
+    this.selectedClasseId = '';
+    this.selectedMois = '';
+    this.searchTerm = '';
+    this.niveauxFiltres = [];
+    this.parcoursFiltres = [];
+    this.classesFiltres = [];
+    this.page = 1;
+    this.applyFilters();
+  }
+
   // ── Application des filtres et chargement ──
   private applyFilters(): void {
     this.loadImpayes();
   }
 
   // ── Construction de l'arbre ──
-  get treeNodes(): DossierNode[] {
+  get treeNodes(): any[] {
     return this.buildTreeNodes();
   }
 
-  private buildTreeNodes(): DossierNode[] {
-    let filtered = this.allImpayesData;
-
-    if (this.selectedAnneeId) {
-      filtered = filtered.filter(d => String(d.anneeAcademique.id) === String(this.selectedAnneeId));
-    }
-    if (this.selectedCycle) {
-      filtered = filtered.filter(d => d.parcours.type === this.selectedCycle);
-    }
-    if (this.selectedFiliereId) {
-      filtered = filtered.filter(d => String(d.parcours.id) === String(this.selectedFiliereId));
-    }
-    if (this.selectedNiveauId) {
-      filtered = filtered.filter(d => String(d.niveau.id) === String(this.selectedNiveauId));
-    }
-    if (this.selectedClasseId) {
-      filtered = filtered.filter(d => String(d.classe.id) === String(this.selectedClasseId));
-    }
-    if (this.selectedMois !== '') {
-      filtered = filtered.filter(d =>
-        d.echeancesNonSoldees.some(e => {
-          const mc = e.moisConcerne ? String(e.moisConcerne).split('-')[1] : '';
-          return mc !== '' && parseInt(mc, 10) === this.selectedMois;
-        })
-      );
-    }
-    if (this.searchTerm.trim()) {
-      const q = this.searchTerm.toLowerCase().trim();
-      filtered = filtered.filter(d => {
-        const nom = `${d.etudiant.nom} ${d.etudiant.prenoms}`.toLowerCase();
-        const mat = d.etudiant.matricule.toLowerCase();
-        return nom.includes(q) || mat.includes(q);
-      });
-    }
+  private buildTreeNodes(): any[] {
+    // Les filtres sont déjà appliqués côté serveur via les paramètres de la requête
+    // On utilise directement les données reçues
+    const filtered = this.allImpayesData;
 
     const groups: { [key: string]: any } = {};
 
     for (const d of filtered) {
-      const anneeKey = d.anneeAcademique.libelle || 'Sans année';
-      const cycle = d.parcours.type || 'Sans cycle';
+      const anneeKey = d.anneeAcademique?.libelle || 'Sans année';
+      const cycle = d.parcours?.type || 'Sans cycle';
       const cycleKey = `${anneeKey}||${cycle}`;
-      const filiereKey = `${cycleKey}||${d.parcours.titre}`;
-      const niveauKey = `${filiereKey}||${d.niveau.libelle}`;
+      const filiereKey = `${cycleKey}||${d.parcours?.titre || 'Sans filière'}`;
+      const niveauKey = `${filiereKey}||${d.niveau?.libelle || 'Sans niveau'}`;
       const semestre = deriveSemestreFromEcheances(d.echeancesNonSoldees);
       const semestreKey = semestre ? `${niveauKey}||${semestre}` : `${niveauKey}||Sans semestre`;
-      const classeKey = `${semestreKey}||${d.classe.libelle}`;
+      const classeKey = `${semestreKey}||${d.classe?.libelle || 'Sans classe'}`;
       const etudiantLabel = `${d.etudiant.nom} ${d.etudiant.prenoms}`;
       const etudiantKey = `${classeKey}||${etudiantLabel}`;
 
@@ -374,11 +345,13 @@ export class ImpayesPageComponent extends BaseComponentClass implements OnInit {
                           expanded: true,
                           children: Object.entries(etudiants).map(([etudiantKey, group]: [string, any]) => {
                             const etudiantLabel = etudiantKey.split('||').pop() || 'Étudiant inconnu';
+                            const etudiantData = filtered.find(d => `${d.etudiant.nom} ${d.etudiant.prenoms}` === etudiantLabel);
                             return {
                               type: 'etudiant' as const,
                               label: etudiantLabel,
                               expanded: false,
                               items: group.items || [],
+                              data: etudiantData,
                             };
                           })
                         };
@@ -408,11 +381,64 @@ export class ImpayesPageComponent extends BaseComponentClass implements OnInit {
     };
   }
 
-  // ── Actions sur les items ──
-  onItemAction(event: { item: any, action: string }): void {
-    if (event.action === 'voir-detail') {
-      this.toastService.info(`Détail échéance : ${event.item.numeroEcheance}`);
-    }
+  // ── Toggle expansion des nœuds ──
+  toggleNode(node: any): void {
+    node.expanded = !node.expanded;
+  }
+
+  // ── Résumé financier ──
+  get totalPaye(): number {
+    return this.allImpayesData.reduce((sum, d) => {
+      return sum + d.echeancesNonSoldees.reduce((s: number, e: any) => s + (e.montantPaye || 0), 0);
+    }, 0);
+  }
+
+  get totalGlobal(): number {
+    return this.allImpayesData.reduce((sum, d) => {
+      return sum + d.echeancesNonSoldees.reduce((s: number, e: any) => s + (e.montant || 0), 0);
+    }, 0);
+  }
+
+  get totalRestant(): number {
+    return this.allImpayesData.reduce((sum, d) => sum + (d.totalRestant || 0), 0);
+  }
+
+  get totalPayeString(): string {
+    return this.formatMontant(this.totalPaye);
+  }
+
+  get totalGlobalString(): string {
+    return this.formatMontant(this.totalGlobal);
+  }
+
+  get totalRestantString(): string {
+    return this.formatMontant(this.totalRestant);
+  }
+
+  // ── Détail étudiant ──
+  etudiantSelectionne: ImpayesDataItem | null = null;
+
+  voirDetailEtudiant(etudiant: ImpayesDataItem): void {
+    this.etudiantSelectionne = etudiant;
+  }
+
+  fermerDetailEtudiant(): void {
+    this.etudiantSelectionne = null;
+  }
+
+  get etudiantPaye(): number {
+    if (!this.etudiantSelectionne) return 0;
+    return this.etudiantSelectionne.echeancesNonSoldees.reduce((s: number, e: any) => s + (e.montantPaye || 0), 0);
+  }
+
+  get etudiantRestant(): number {
+    if (!this.etudiantSelectionne) return 0;
+    return this.etudiantSelectionne.totalRestant || 0;
+  }
+
+  get etudiantTotal(): number {
+    if (!this.etudiantSelectionne) return 0;
+    return this.etudiantSelectionne.echeancesNonSoldees.reduce((s: number, e: any) => s + (e.montant || 0), 0);
   }
 
   /** Conversion sûre d'un montant en nombre */
@@ -425,13 +451,5 @@ export class ImpayesPageComponent extends BaseComponentClass implements OnInit {
   formatMontant(value: number | undefined | null): string {
     if (value == null || value === 0) return '0 FCFA';
     return new Intl.NumberFormat('fr-FR').format(value) + ' FCFA';
-  }
-
-  get totalRestantString(): string {
-    return this.formatMontant(this.totalRestant);
-  }
-
-  get totalRestant(): number {
-    return this.allImpayesData.reduce((sum, d) => sum + (d.totalRestant || 0), 0);
   }
 }

@@ -32,4 +32,10 @@ export class ListeNoteEvaluationService {
   delete(id: string): Observable<any> {
     return this.httpClient.delete(`${this.SERVICE_URL}/${id}`)
   }
+
+  exportPv(id: string, format: 'pdf' | 'excel'): Observable<any> {
+    return this.httpClient.get<any>(`${this.SERVICE_URL}/${id}/export-pv`, {
+      params: { format }
+    })
+  }
 }

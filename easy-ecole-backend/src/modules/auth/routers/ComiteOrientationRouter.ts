@@ -8,5 +8,6 @@ const router = express.Router()
 router
     .get('/', [AuthComiteOrientation], ComiteOrientationController.getProfile)
     .put('/', [AuthComiteOrientation], ComiteOrientationController.updateProfile)
+    .post('/ajouter-ue-etudiant', [AuthComiteOrientation], ComiteOrientationController.ajouterUeEtudiant)
 
 export default router

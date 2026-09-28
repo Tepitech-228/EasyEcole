@@ -1,5 +1,5 @@
 <div class="flex justify-between items-start mb-8">
-    <app-header-title title="Gestion des échéances" subtitle="Créer et gérer les échéances de paiement des étudiants"></app-header-title>
+    <app-header-title title="Gestion des échéances" subtitle="Vue arborescente des échéances avec sommes payées par inscription et scolarité"></app-header-title>
     <div class="flex justify-end items-center gap-x-3">
         <app-custom-button (click)="openGenererEcheancesModal()" *ngIf="rolesValue.isInstitution" text="Génération automatique"></app-custom-button>
         <app-custom-button (click)="openNouvelleEcheanceModal()" *ngIf="rolesValue.isInstitution" text="Nouvelle échéance"></app-custom-button>
@@ -8,93 +8,31 @@
 
 <app-form-message *ngIf="successMessage" [text]="successMessage" color="green"></app-form-message>
 
-<div class="mb-8">
-    <div class="overflow-x-auto">
-        <div class="py-2 inline-block min-w-full">
-            <div class="overflow-hidden">
-                <table class="min-w-full">
-                    <thead class="bg-gray-100 border-b">
-                        <tr>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                <div class="px-2">#</div>
-                            </th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                <div class="px-2">Dossier</div>
-                            </th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                <div class="px-2">Type</div>
-                            </th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                <div class="px-2">N° Échéance</div>
-                            </th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                <div class="px-2">Mois</div>
-                            </th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                <div class="px-2">Date limite</div>
-                            </th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
-                                <div class="px-2">Montant</div>
-                            </th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                <div class="px-2">Statut</div>
-                            </th>
-                            <th *ngIf="rolesValue.isInstitution" scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
-                                <div class="px-2">Action</div>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngIf="echeances.length == 0"
-                            class="bg-white p-0 border-b transition duration-300 ease-in-out">
-                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
-                                colspan="9">Aucune échéance</td>
-                        </tr>
-                        <tr *ngFor="let echeance of echeances; index as index"
-                            class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
-                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ index + 1 }}</div>
-                            </td>
-                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
-                                    {{ echeance.dossierEtudiant ? echeance.dossierEtudiant.matricule : '---' }}
-                                </div>
-                            </td>
-                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ echeance.type }}</div>
-                            </td>
-                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ echeance.numeroEcheance }}</div>
-                            </td>
-                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ echeance.moisConcerne || '---' }}</div>
-                            </td>
-                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ echeance.dateLimite | date:'dd/MM/YYYY' }}</div>
-                            </td>
-                            <td class="bg-transparent text-right text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ echeance.montant | currency:'XAF' }}</div>
-                            </td>
-                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <app-custom-badge [color]="getStatutColor(echeance.statut)" [text]="echeance.statut"></app-custom-badge>
-                            </td>
-                            <td *ngIf="rolesValue.isInstitution" class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
-                                    <span>
-                                        <app-custom-button (click)="openEditerEcheanceModal(echeance)" text="Modifier"></app-custom-button>
-                                    </span>
-                                    <span>
-                                        <app-custom-button (click)="openSupprimerEcheanceModal(echeance)" text="Supprimer" color="primary"></app-custom-button>
-                                    </span>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+<!-- Loading -->
+<div *ngIf="loading" class="p-6 space-y-4">
+    <div *ngFor="let _ of [].constructor(4)" class="animate-pulse flex items-center gap-3">
+        <div class="w-4 h-4 bg-gray-200 rounded"></div>
+        <div class="w-6 h-6 bg-gray-200 rounded"></div>
+        <div class="h-4 bg-gray-200 rounded flex-1"></div>
+        <div class="w-16 h-4 bg-gray-200 rounded"></div>
     </div>
 </div>
+
+<!-- Empty state -->
+<div *ngIf="!loading && treeNodes.length === 0" class="bg-white rounded-xl border border-gray-200 p-12 text-center shadow-sm">
+    <span class="material-symbols-outlined text-6xl text-gray-200">inbox</span>
+    <p class="text-gray-500 text-base mt-4">Aucune échéance trouvée</p>
+    <p class="text-gray-400 text-sm mt-1">Les échéances apparaîtront ici une fois créées</p>
+</div>
+
+<!-- Arbre avec sommes payées -->
+<app-dossier-view
+    *ngIf="!loading && treeNodes.length > 0"
+    [nodes]="treeNodes"
+    [columns]="columns"
+    [loading]="loading"
+    [clickToExpand]="true">
+</app-dossier-view>
 
 <!-- Modal Nouvelle échéance -->
 <app-custom-modal title="Nouvelle échéance" subtitle="Créer une échéance de paiement" (onCloseModal)="closeNouvelleEcheanceModal()" [center]="true" [showModal]="showNouvelleEcheanceModal">

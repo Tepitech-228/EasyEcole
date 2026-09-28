@@ -6,6 +6,7 @@ import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../AuthModule";
 export class ComiteOrientation extends Model<InferAttributes<ComiteOrientation>, InferCreationAttributes<ComiteOrientation>> {
   declare id: CreationOptional<string>
   declare fonction: CreationOptional<string>
+  declare estPrescripteur: CreationOptional<boolean>
   declare utilisateurId: ForeignKey<Utilisateur['id']>
   declare utilisateur?: NonAttribute<Utilisateur>
 
@@ -26,6 +27,11 @@ ComiteOrientation.init({
   fonction: {
     type: new DataTypes.STRING,
     allowNull: true
+  },
+  estPrescripteur: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

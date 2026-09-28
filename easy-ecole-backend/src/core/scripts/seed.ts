@@ -365,6 +365,9 @@ export async function seed() {
     await AutPA.create({ matricule: 'PA-002', statut: 'Permanent', fonction: 'Comptable', directionService: 'Finance et Comptabilité', cni: 'CI87654321', dateNaissance: new Date('1980-03-20'), lieuNaissance: 'Bouaké', sexe: 'M', nationalite: 'Ivoirienne', plusHautDiplome: 'BTS Comptabilité', statutHandicap: false, utilisateurId: uPers2.id });
     console.log('  ✓ Personnel administratif — Diallo Moussa (Comptable)');
 
+    const uSurv = await safeCreate(AutU, { nom: 'Koné', prenoms: 'Yao', identifiant: 'surveillant1', email: 'surveillant.yao@easyecole.tg', motDePasse: hash, role: 'surveillant', contact: '+2280108000001', dateVerificationEmail: new Date() }, ['identifiant']);
+    console.log('  ✓ Surveillant — Koné Yao');
+
     interface AppSeed { nom: string; prenoms: string; identifiant: string; email: string; dateNais: Date; lieuNais: string; bp: string; tel: string; quartier: string; ville: string; pere: string; mere: string; professionPere: string; professionMere: string; nomPrevenir: string; telPrevenir: string; otp: boolean; }
     const apprenants: AppSeed[] = [
         { nom: 'Test', prenoms: 'OTP Etudiant', identifiant: 'etudiant-otp', email: 'tepitechcorp@gmail.com', dateNais: new Date('2002-01-01'), lieuNais: 'Lomé', bp: 'BP 2000', tel: '+22890000001', quartier: 'Centre', ville: 'Lomé', pere: 'Parent Test', mere: 'Mère Test', professionPere: 'Fonctionnaire', professionMere: 'Ménagère', nomPrevenir: 'Parent Test', telPrevenir: '+22890000002', otp: true },

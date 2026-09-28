@@ -303,10 +303,19 @@ export default class PointageController {
             if (dossier) {
                 const paiement = VerificationPaiementService.verifierDossier(dossier);
 
+                // Calcul de la situation financière détaillée
+                const situationFinanciere = this.calculerSituationFinanciere(dossier);
+
                 if (paiement.statut == 'rouge') {
                     return res.status(200).json({
                         statut: 'rouge',
                         message: paiement.message,
+                        utilisateurId: dossier.utilisateurId,
+                        nom: dossier.utilisateur?.nom || '',
+                        prenoms: dossier.utilisateur?.prenoms || '',
+                        role: dossier.utilisateur?.role || 'apprenant',
+                        photo: dossier.photo || '',
+                        situationFinanciere,
                         ...(paiement.echeancesRestantes.length > 0 ? { echeancesRestantes: paiement.echeancesRestantes } : {})
                     });
                 }
@@ -315,7 +324,11 @@ export default class PointageController {
                     statut: 'vert',
                     message: paiement.message,
                     utilisateurId: dossier.utilisateurId,
-                    photo: dossier.photo || ''
+                    nom: dossier.utilisateur?.nom || '',
+                    prenoms: dossier.utilisateur?.prenoms || '',
+                    role: dossier.utilisateur?.role || 'apprenant',
+                    photo: dossier.photo || '',
+                    situationFinanciere
                 });
             }
 
@@ -339,5 +352,55 @@ export default class PointageController {
             console.error('Erreur', error);
             return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
+    }
+
+    /**
+     * Calcule la situation financière complète d'un étudiant pour l'affichage
+     * lors du scan QR (pointage).
+     */
+    private calculerSituationFinanciere(dossier: DossierEtudiant): any {
+        const echeances = dossier.echeances || [];
+        const now = new Date();
+
+        // Somme globale = frais de scolarité + frais d'inscription
+        const fraisScolarite = dossier.fraisScolarite || 0;
+        const fraisInscription = echeances
+            .filter(e => e.type === 'inscription')
+            .reduce((sum, e) => sum + (e.montant || 0), 0);
+        const sommeGlobale = fraisScolarite + fraisInscription;
+
+        // Montant déjà payé
+        const montantPaye = echeances
+            .reduce((sum, e) => sum + (e.montantPaye || 0), 0);
+
+        // Reste à payer
+        const resteAPayer = Math.max(0, sommeGlobale - montantPaye);
+
+        // Échéance du mois en cours
+        const moisEnCours = now.toISOString().slice(0, 7); // "YYYY-MM"
+        const echeanceMoisEnCours = echeances.find(e => {
+            const dateLimite = new Date(e.dateLimite);
+            return dateLimite.toISOString().slice(0, 7) === moisEnCours;
+        });
+
+        // À jour si l'échéance du mois en cours est payée ou n'existe pas
+        const estAJour = !echeanceMoisEnCours ||
+            echeanceMoisEnCours.statut === 'paye' ||
+            echeanceMoisEnCours.statut === 'partiel';
+
+        return {
+            sommeGlobale,
+            montantPaye,
+            resteAPayer,
+            estAJour,
+            echeanceMoisEnCours: echeanceMoisEnCours ? {
+                numeroEcheance: echeanceMoisEnCours.numeroEcheance,
+                montant: echeanceMoisEnCours.montant,
+                montantPaye: echeanceMoisEnCours.montantPaye,
+                resteAPayer: Math.max(0, echeanceMoisEnCours.montant - (echeanceMoisEnCours.montantPaye || 0)),
+                dateLimite: echeanceMoisEnCours.dateLimite,
+                statut: echeanceMoisEnCours.statut
+            } : null
+        };
     }
 }

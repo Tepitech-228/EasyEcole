@@ -78,6 +78,15 @@
           <span *ngIf="node.items?.length" class="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5 mr-1">
             {{ node.items!.length }}
           </span>
+
+          <!-- Bouton voir détail étudiant -->
+          <button
+            *ngIf="node.type === 'etudiant' && node.data"
+            (click)="viewStudent.emit(node.data); $event.stopPropagation()"
+            class="ml-2 inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition">
+            <span class="material-symbols-outlined text-sm">visibility</span>
+            Détail
+          </button>
         </div>
 
         <!-- Children nodes (recursive) -->
@@ -92,7 +101,8 @@
             (toggleNode)="toggleNode.emit($event)"
             (selectionChange)="selectionChange.emit($event)"
             (batchAction)="batchAction.emit($event)"
-            (itemAction)="itemAction.emit($event)">
+            (itemAction)="itemAction.emit($event)"
+            (viewStudent)="viewStudent.emit($event)">
           </app-dossier-view>
         </div>
 

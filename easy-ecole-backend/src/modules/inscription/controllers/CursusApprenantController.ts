@@ -85,36 +85,64 @@ export default class CursusApprenantController {
     }
 
     static async getCoursChoisisCursusApprenant(req: Request, res: Response): Promise<Response> {
-        let options: FindOptions<InferAttributes<CursusApprenant>> = {}
-        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
-            options = {
+        if ((req as any).utilisateurRole != RolesUtilisateur.APPRENANT) {
+            return res.status(403).json({ success: false })
+        }
+
+        try {
+            // Récupérer le cursus actif de l'étudiant
+            const cursusOptions: FindOptions<InferAttributes<CursusApprenant>> = {
                 where: { utilisateurId: (req as any).utilisateurId },
                 include: [
-                    { 
-                        association: CursusApprenant.associations.demandeInscription,
-                        include: [{association: DemandeInscription.associations.cours, include: [
-                            Cours.associations.enseignant,
-                            Cours.associations.classe,
-                            {association: Cours.associations.parcours, include: [Parcours.associations.niveauEtude]}]}
-                        ]
-                    },
                     CursusApprenant.associations.parcours,
                     CursusApprenant.associations.classe,
                     CursusApprenant.associations.anneeAcademique,
                     CursusApprenant.associations.niveauEtude
                 ],
                 order: [['createdAt', 'DESC']],
-                limit: 1 }
-        }
-        else {
-            return res.status(403).json({ success: false })
-        }
+                limit: 1
+            };
 
-        try {
-            let cursusApprenant: CursusApprenant | null;
-            cursusApprenant = await CursusApprenant.findOne(options);
+            const cursusApprenant = await CursusApprenant.findOne(cursusOptions);
 
-            return res.status(200).send(cursusApprenant);
+            if (!cursusApprenant) {
+                return res.status(200).send(null);
+            }
+
+            // Récupérer les CoursParticipants (cours liés à l'étudiant après inscription)
+            const coursParticipants = await CoursParticipant.findAll({
+                where: {
+                    utilisateurId: (req as any).utilisateurId,
+                    cursusApprenantId: cursusApprenant.id
+                },
+                include: [{
+                    association: CoursParticipant.associations.cours,
+                    include: [
+                        Cours.associations.enseignant,
+                        Cours.associations.classe,
+                        { association: Cours.associations.parcours, include: [Parcours.associations.niveauEtude] }
+                    ]
+                }]
+            });
+
+            // Récupérer aussi les cours choisis pendant l'inscription (si pas encore validés)
+            const coursChoisis = await DemandeInscriptionCours.findAll({
+                where: { demandeInscriptionId: cursusApprenant.demandeInscriptionId },
+                include: [{
+                    association: DemandeInscriptionCours.associations.cours,
+                    include: [
+                        Cours.associations.enseignant,
+                        Cours.associations.classe,
+                        { association: Cours.associations.parcours, include: [Parcours.associations.niveauEtude] }
+                    ]
+                }]
+            });
+
+            return res.status(200).send({
+                cursusApprenant,
+                coursParticipants,
+                coursChoisis
+            });
         } catch (error) {
             console.error('Erreur', error);
             return res.status(500).json({ success: false, message: 'Erreur interne' });

@@ -90,7 +90,7 @@
                                 <div
                                     class="block flex justify-end gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
                                     <span>
-                                        <app-custom-button (click)="showDetailsCursusModal = true"
+                                        <app-custom-button (click)="openDetailsModal(cursusApprenant)"
                                             text="Détails"></app-custom-button>
                                     </span>
                                 </div>
@@ -195,12 +195,90 @@
                                 class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                 <div
                                     class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
-                                    {{ cursusApprenant.anneeAcademique ? cursusApprenant.anneeAcademique.libelle : '---' }}</div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+                                     {{ cursusApprenant.anneeAcademique ? cursusApprenant.anneeAcademique.libelle : '---' }}</div>
+                             </td>
+                         </tr>
+                     </tbody>
+                 </table>
+             </div>
+         </div>
+     </div>
 </div>
+
+<!-- Modal Détails du cursus -->
+<app-custom-modal *ngIf="showDetailsCursusModal" title="Détails du cursus" subtitle="UE et ECUE liées à votre inscription" (onCloseModal)="closeDetailsModal()" [center]="true" [size]="'full'">
+  <div *ngIf="loadingDetails" class="text-center py-8">
+    <app-loading-spinner></app-loading-spinner>
+  </div>
+
+  <div *ngIf="!loadingDetails && selectedCursus" class="space-y-6">
+    <!-- Informations du cursus -->
+    <div class="bg-gray-50 rounded-lg p-4">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div>
+          <span class="text-gray-500">Filière :</span>
+          <strong>{{ selectedCursus.parcours?.titre || '—' }}</strong>
+        </div>
+        <div>
+          <span class="text-gray-500">Niveau :</span>
+          <strong>{{ selectedCursus.niveauEtude?.libelle || '—' }}</strong>
+        </div>
+        <div>
+          <span class="text-gray-500">Classe :</span>
+          <strong>{{ selectedCursus.classe?.libelle || '—' }}</strong>
+        </div>
+        <div>
+          <span class="text-gray-500">Année :</span>
+          <strong>{{ selectedCursus.anneeAcademique?.libelle || '—' }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Liste des UE -->
+    <div>
+      <h4 class="text-sm font-semibold text-gray-800 mb-3">Unités d'Enseignement (UE)</h4>
+
+      <div *ngIf="getUeList().length === 0" class="text-center py-8 text-gray-500">
+        <span class="material-symbols-outlined text-4xl text-gray-300">school</span>
+        <p class="mt-2">Aucune UE liée à cette inscription</p>
+      </div>
+
+      <div *ngIf="getUeList().length > 0" class="space-y-3">
+        <div *ngFor="let ue of getUeList()" class="border border-gray-200 rounded-lg overflow-hidden">
+          <!-- En-tête UE -->
+          <div class="bg-indigo-50 px-4 py-3 flex items-center justify-between">
+            <div>
+              <span class="text-xs font-medium text-indigo-600">{{ ue.code }}</span>
+              <h5 class="text-sm font-semibold text-gray-900">{{ ue.intitule }}</h5>
+            </div>
+            <div class="text-right text-xs text-gray-500">
+              <p>Semestre {{ ue.semestre }}</p>
+              <p>{{ ue.credit }} crédit(s)</p>
+            </div>
+          </div>
+          <!-- Enseignant -->
+          <div class="px-4 py-2 bg-gray-50 border-t border-gray-100">
+            <span class="text-xs text-gray-500">Enseignant :</span>
+            <span class="text-xs font-medium text-gray-700 ml-1">{{ ue.enseignant }}</span>
+          </div>
+          <!-- Liste des ECUE -->
+          <div *ngIf="getEcueList(ue.id).length > 0" class="px-4 py-2 border-t border-gray-100">
+            <p class="text-xs font-medium text-gray-600 mb-2">ECUE :</p>
+            <div class="space-y-1">
+              <div *ngFor="let ecue of getEcueList(ue.id)" class="flex items-center justify-between text-xs">
+                <span class="text-gray-700">
+                  <span class="font-medium">{{ ecue.code }}</span> - {{ ecue.libelle }}
+                </span>
+                <span class="text-gray-500">{{ ecue.creditEcts }} ECTS</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex justify-end pt-4 border-t border-gray-100">
+    <app-custom-button (click)="closeDetailsModal()" text="Fermer" [outlined]="true" color="gray"></app-custom-button>
+  </div>
+</app-custom-modal>

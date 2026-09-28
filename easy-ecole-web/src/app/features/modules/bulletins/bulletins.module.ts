@@ -32,6 +32,7 @@ import { SignaturePadComponent } from './components/signature-pad/signature-pad.
 import { FeuillePresencePageComponent } from './pages/feuille-presence-page/feuille-presence-page.component';
 import { AbsencesCoursPageComponent } from './pages/absences-cours-page/absences-cours-page.component';
 import { DettesAcademiquesPageComponent } from './pages/dettes-academiques-page/dettes-academiques-page.component';
+import { PvNotesPageComponent } from './pages/pv-notes-page/pv-notes-page.component';
 import { FormsModule } from '@angular/forms';
 
 @NgModule({

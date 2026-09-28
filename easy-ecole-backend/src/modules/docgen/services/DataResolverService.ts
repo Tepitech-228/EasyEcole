@@ -405,6 +405,7 @@ async function resolveAutorisationProvisoire(params: GenerateParams): Promise<Re
     { association: 'utilisateur', include: [{ association: 'apprenant' }] },
     { association: 'parcoursChoisis', include: [{ association: 'parcours' }] },
     { association: 'session', include: [{ association: 'anneeAcademique' }] },
+    { association: 'preInscription' },
   ];
 
   let demande: any = null;
@@ -423,11 +424,63 @@ async function resolveAutorisationProvisoire(params: GenerateParams): Promise<Re
 
   if (!demande) return { etablissement, etudiants: [] };
 
+  // Récupérer les initiales du validateur (membre du comité)
+  let initialesValidateur = '';
+  let nomValidateur = '';
+  try {
+    const { Utilisateur } = await import('../../auth/models/Utilisateur');
+    const preInscription = demande.preInscription;
+    if (preInscription && preInscription.traiteParId) {
+      const validateur = await Utilisateur.findByPk(preInscription.traiteParId);
+      if (validateur) {
+        nomValidateur = `${validateur.nom || ''} ${validateur.prenoms || ''}`.trim();
+        // Générer les initiales : première lettre de chaque mot en majuscule
+        const mots = nomValidateur.split(/\s+/).filter(m => m.length > 0);
+        initialesValidateur = mots.map(m => m[0].toUpperCase()).join('');
+      }
+    }
+  } catch (e) {
+    console.error('Erreur récupération validateur:', e);
+  }
+
   const utilisateur = demande.utilisateur as any;
   const apprenant = utilisateur?.apprenant;
   const parcoursChoisi = demande.parcoursChoisis?.[0];
   const parcours = parcoursChoisi?.parcours;
   const anneeAcademique = (demande.session as any)?.anneeAcademique;
+
+  // Récupérer les UE prescrites (si l'étudiant a une prescription du comité)
+  let uesPrescrites: any[] = [];
+  try {
+    const { CoursParticipant } = await import('../../inscription/models/CoursParticipant');
+    const { Cours } = await import('../../inscription/models/Cours');
+
+    // Récupérer les cours participants de l'étudiant qui ne sont pas dans le parcours choisi
+    // (ce sont les UE prescrites par le comité)
+    const coursParticipants = await CoursParticipant.findAll({
+      where: { utilisateurId: demande.utilisateurId },
+      include: [{
+        association: 'cours',
+        include: [{ association: 'parcours' }]
+      }]
+    });
+
+    // Filtrer les UE qui ne sont pas du parcours choisi (UE prescrites)
+    uesPrescrites = coursParticipants
+      .filter((cp: any) => {
+        const coursParcoursId = cp.cours?.parcoursId;
+        const parcoursChoisiId = parcours?.id;
+        return coursParcoursId && parcoursChoisiId && coursParcoursId !== parcoursChoisiId;
+      })
+      .map((cp: any) => ({
+        code: cp.cours?.code || '',
+        intitule: cp.cours?.intitule || '',
+        semestre: cp.cours?.semestre || '',
+        credit: cp.cours?.credit || 0,
+      }));
+  } catch (e) {
+    console.error('Erreur récupération UE prescrites:', e);
+  }
 
   const etudiant = {
     nom: utilisateur?.nom || '',
@@ -441,12 +494,15 @@ async function resolveAutorisationProvisoire(params: GenerateParams): Promise<Re
     diplomeVise: parcours?.type === 'LICENCE' ? 'Licence' : parcours?.type === 'MASTER' ? 'Master' : parcours?.type || '',
     anneeAcademique: anneeAcademique?.libelle || '',
     classe: '',
+    uesPrescrites: uesPrescrites.length > 0 ? uesPrescrites : null,
   };
 
   return {
     etablissement,
     etudiants: [etudiant],
     anneeAcademique: etudiant.anneeAcademique,
+    initialesValidateur,
+    nomValidateur,
   };
 }
 

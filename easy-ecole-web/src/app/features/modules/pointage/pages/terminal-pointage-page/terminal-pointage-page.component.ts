@@ -238,7 +238,13 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       this.scanError = res.message || 'Accès refusé'
       this.playBeepRefus()
     } else {
-      this.playBeepSucces()
+      // Bip : 1 si à jour, 2 si pas à jour
+      const estAJour = res.situationFinanciere?.estAJour !== false
+      if (estAJour) {
+        this.playBeepSucces()
+      } else {
+        this.playBeepRefus()
+      }
       this.scannedUser = {
         userId: res.utilisateurId,
         nom: res.nom || 'Inconnu',
@@ -247,7 +253,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
         statut: 'vert',
         message: res.message,
         photo: res.photo || '',
-        photoUrl: res.photo ? this.PHOTOS_PATH + res.photo : 'assets/images/blank-profile-picture.png'
+        photoUrl: res.photo ? this.PHOTOS_PATH + res.photo : 'assets/images/blank-profile-picture.png',
+        situationFinanciere: res.situationFinanciere || null
       }
     }
   }
@@ -310,5 +317,10 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     this.scanTimeout = false
     this.manualId = ''
     this.showManualInput = false
+  }
+
+  formatCurrency(value: number | undefined | null): string {
+    if (value == null) return '—'
+    return new Intl.NumberFormat('fr-FR').format(value) + ' FCFA'
   }
 }

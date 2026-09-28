@@ -209,6 +209,23 @@
                     </div>
                 </ng-container>
 
+                <!-- Comité d'orientation -->
+                <ng-container *ngIf="formData.role === RolesUtilisateur.COMITE_ORIENTATION">
+                    <div class="mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+                        <h5 class="text-sm font-semibold text-indigo-800 mb-3">Options Comité d'Orientation</h5>
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" id="estPrescripteur" [(ngModel)]="formData.estPrescripteur"
+                                class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <label for="estPrescripteur" class="text-sm text-gray-700">
+                                <strong>Prescripteur</strong> — Ce membre peut prescrire des orientations d'étudiants
+                            </label>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">
+                            Un prescripteur est habilité à recommander des changements de parcours ou des orientations spécifiques pour les étudiants.
+                        </p>
+                    </div>
+                </ng-container>
+
                 <!-- Enseignant -->
                 <ng-container *ngIf="isEnseignant">
                     <div class="grid grid-cols-2 gap-4">

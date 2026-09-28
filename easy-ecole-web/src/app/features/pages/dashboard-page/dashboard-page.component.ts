@@ -934,7 +934,7 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
     if (isAdmin)       return 'linear-gradient(135deg, #2563eb, #1d4ed8, #3730a3)';
     if (isInstitution) return 'linear-gradient(135deg, #7c3aed, #6d28d9, #581c87)';
     if (isEnseignant)  return 'linear-gradient(135deg, #059669, #047857, #0f766e)';
-    if (isApprenant)   return 'linear-gradient(135deg, #f59e0b, #ea580c, #be123c)';
+    if (isApprenant)   return 'linear-gradient(135deg, #2563eb, #1d4ed8, #1e40af)';
     if (isRessourcesHumaines) return 'linear-gradient(135deg, #db2777, #be185d, #9d174d)';
     if (isCaissierBanque)     return 'linear-gradient(135deg, #16a34a, #15803d, #065f46)';
     if (isCabinetComptable)   return 'linear-gradient(135deg, #0891b2, #0e7490, #1e40af)';

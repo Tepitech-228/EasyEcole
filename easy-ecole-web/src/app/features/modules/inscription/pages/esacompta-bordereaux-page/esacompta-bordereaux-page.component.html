@@ -186,7 +186,14 @@
     </section>
     <section class="min-w-0">
        <div class="bg-gray-50 rounded-lg p-4 mb-4">
-         <div class="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
+         <div class="flex items-start gap-4">
+           <!-- Photo de l'étudiant -->
+           <div class="flex-shrink-0">
+             <img [src]="getPhotoUrl(selectedBordereau)"
+                  [alt]="(selectedBordereau.utilisateur?.nom || '') + ' ' + (selectedBordereau.utilisateur?.prenoms || '')"
+                  class="w-16 h-16 rounded-full object-cover border-2 border-white shadow-md bg-gray-100">
+           </div>
+           <div class="flex-1 grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
            <!-- Étudiant + Matricule -->
            <div class="col-span-2">
              <span class="text-gray-500">Étudiant :</span>

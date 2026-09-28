@@ -12,6 +12,7 @@ import { DetailsDemandePageComponent } from './pages/details-demande-page/detail
 import { ListeDemandesPageComponent } from './pages/liste-demandes-page/liste-demandes-page.component';
 import { AjoutDeboucheComponent } from './components/ajout-debouche/ajout-debouche.component';
 import { TraitementDemandeComponent } from './components/traitement-demande/traitement-demande.component';
+import { AjouterUeEtudiantPageComponent } from './pages/ajouter-ue-etudiant-page/ajouter-ue-etudiant-page.component';
 
 
 @NgModule({
@@ -23,7 +24,8 @@ import { TraitementDemandeComponent } from './components/traitement-demande/trai
     DetailsDemandePageComponent,
     ListeDemandesPageComponent,
     AjoutDeboucheComponent,
-    TraitementDemandeComponent
+    TraitementDemandeComponent,
+    AjouterUeEtudiantPageComponent
   ],
   imports: [
     CommonModule,

@@ -5,6 +5,7 @@ import { DetailsParcoursPageComponent } from './pages/details-parcours-page/deta
 import { NouveauParcoursPageComponent } from './pages/nouveau-parcours-page/nouveau-parcours-page.component';
 import { ListeDemandesPageComponent } from './pages/liste-demandes-page/liste-demandes-page.component';
 import { DetailsDemandePageComponent } from './pages/details-demande-page/details-demande-page.component';
+import { AjouterUeEtudiantPageComponent } from './pages/ajouter-ue-etudiant-page/ajouter-ue-etudiant-page.component';
 import { AuthGuard } from 'src/app/core/guards/auth.guard';
 
 const routes: Routes = [
@@ -41,18 +42,24 @@ const routes: Routes = [
     path: 'demandes',
     canActivateChild: [AuthGuard],
     children: [
-      { 
+      {
         path: '',
         component: ListeDemandesPageComponent,
         pathMatch: 'full'
       },
-    
-      { 
+
+      {
         path: ':id',
         component: DetailsDemandePageComponent,
         pathMatch: 'full'
       },
     ]
+  },
+
+  {
+    path: 'ajouter-ue-etudiant',
+    component: AjouterUeEtudiantPageComponent,
+    pathMatch: 'full'
   }
 ];
 

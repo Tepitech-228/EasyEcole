@@ -1,0 +1,107 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-8">
+    <app-header-title title="Ajouter des UE à un étudiant" subtitle="Permet d'ajouter des UE d'un parcours à un étudiant en plus de ses UE actuelles"></app-header-title>
+  </div>
+
+  <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+  <div *ngIf="!loading" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Formulaire -->
+    <div class="lg:col-span-1">
+      <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <h3 class="text-sm font-semibold text-gray-800 mb-4">Sélection</h3>
+
+        <!-- Étudiant -->
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Étudiant</label>
+          <select [(ngModel)]="selectedEtudiantId" (ngModelChange)="onEtudiantChange()"
+            class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+            <option value="">-- Sélectionner un étudiant --</option>
+            <option *ngFor="let etudiant of etudiants" [value]="etudiant.id">
+              {{ etudiant.nom }} {{ etudiant.prenoms }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Parcours -->
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Parcours</label>
+          <select [(ngModel)]="selectedParcoursId" (ngModelChange)="onParcoursChange()"
+            class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+            <option value="">-- Sélectionner un parcours --</option>
+            <option *ngFor="let p of parcours" [value]="p.id">{{ p.titre }}</option>
+          </select>
+        </div>
+
+        <!-- UE disponibles -->
+        <div *ngIf="showUeList" class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-1">UE à ajouter</label>
+          <div class="max-h-64 overflow-y-auto border border-gray-200 rounded-lg">
+            <div *ngFor="let ue of ueParcours" class="flex items-center gap-3 p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+              (click)="toggleUe(ue.id)">
+              <input type="checkbox" [checked]="isUeSelected(ue.id)" (click)="$event.stopPropagation()"
+                class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+              <div class="flex-1">
+                <p class="text-sm font-medium text-gray-900">{{ ue.intitule }}</p>
+                <p class="text-xs text-gray-500">{{ ue.code }} — Semestre {{ ue.semestre }}</p>
+              </div>
+              <span *ngIf="isUeDejaAssignee(ue.id)" class="text-xs text-green-600 font-medium">Déjà assignée</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bouton d'ajout -->
+        <button (click)="ajouterUe()" [disabled]="saving || !selectedEtudiantId || !selectedParcoursId || selectedUeIds.length === 0"
+          class="w-full mt-4 px-4 py-2.5 rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition">
+          <span *ngIf="!saving">Ajouter {{ selectedUeIds.length }} UE</span>
+          <span *ngIf="saving">Ajout en cours...</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Résumé -->
+    <div class="lg:col-span-2">
+      <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <h3 class="text-sm font-semibold text-gray-800 mb-4">Résumé</h3>
+
+        <div *ngIf="!selectedEtudiantId" class="text-center py-12">
+          <span class="material-symbols-outlined text-6xl text-gray-200">school</span>
+          <p class="text-gray-500 text-base mt-4">Sélectionnez un étudiant pour commencer</p>
+        </div>
+
+        <div *ngIf="selectedEtudiantId">
+          <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="bg-gray-50 rounded-lg p-4">
+              <p class="text-xs text-gray-500 mb-1">Étudiant</p>
+              <p class="text-sm font-medium text-gray-900">{{ getEtudiantNom() }}</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4">
+              <p class="text-xs text-gray-500 mb-1">Parcours sélectionné</p>
+              <p class="text-sm font-medium text-gray-900">{{ getParcoursTitre() }}</p>
+            </div>
+          </div>
+
+          <div *ngIf="selectedUeIds.length > 0" class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-4">
+            <p class="text-sm font-medium text-indigo-800 mb-2">{{ selectedUeIds.length }} UE sélectionnée(s)</p>
+            <div class="flex flex-wrap gap-2">
+              <span *ngFor="let ueId of selectedUeIds" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
+                {{ ueParcours.find(ue => ue.id === ueId)?.intitule || 'UE ' + ueId }}
+              </span>
+            </div>
+          </div>
+
+          <div *ngIf="ueEtudiant.length > 0">
+            <h4 class="text-sm font-semibold text-gray-800 mb-3">UE déjà assignées à l'étudiant</h4>
+            <div class="space-y-2">
+              <div *ngFor="let ue of ueEtudiant" class="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-2">
+                <span class="text-sm text-gray-700">{{ ue.intitule || ue.cours?.intitule }}</span>
+                <span class="text-xs text-green-600 font-medium">Assignée</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

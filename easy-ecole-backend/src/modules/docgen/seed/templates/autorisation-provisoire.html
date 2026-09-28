@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Autorisation Provisoire d'Inscription</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            font-size: 12pt;
+            line-height: 1.6;
+            margin: 40px;
+            color: #000;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 16pt;
+            margin: 0;
+            text-transform: uppercase;
+        }
+        .header h2 {
+            font-size: 14pt;
+            margin: 5px 0;
+            font-weight: normal;
+        }
+        .content {
+            text-align: justify;
+        }
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .info-table td {
+            padding: 8px;
+            border: 1px solid #000;
+        }
+        .info-table td:first-child {
+            font-weight: bold;
+            width: 40%;
+            background-color: #f0f0f0;
+        }
+        .prescription-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #000;
+        }
+        .prescription-section h3 {
+            font-size: 14pt;
+            margin-bottom: 15px;
+        }
+        .ue-list {
+            margin-left: 20px;
+        }
+        .ue-list li {
+            margin-bottom: 8px;
+        }
+        .signature {
+            margin-top: 50px;
+            text-align: right;
+        }
+        .signature p {
+            margin: 5px 0;
+        }
+        .footer {
+            margin-top: 30px;
+            font-size: 10pt;
+            text-align: center;
+            border-top: 1px solid #000;
+            padding-top: 10px;
+        }
+        .page-break {
+            page-break-before: always;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{etablissement.nom}}</h1>
+        <h2>Autorisation Provisoire d'Inscription</h2>
+        <p>Année académique : {{anneeAcademique}}</p>
+    </div>
+
+    <div class="content">
+        <p>Je soussigné(e), le Directeur de l'{{etablissement.nom}}, autorise provisoirement l'étudiant(e) dont les coordonnées suivent à s'inscrire dans notre établissement pour l'année académique {{anneeAcademique}}.</p>
+
+        <table class="info-table">
+            <tr>
+                <td>Nom</td>
+                <td>{{etudiants.0.nom}}</td>
+            </tr>
+            <tr>
+                <td>Prénom</td>
+                <td>{{etudiants.0.prenom}}</td>
+            </tr>
+            <tr>
+                <td>Matricule</td>
+                <td>{{etudiants.0.matricule}}</td>
+            </tr>
+            <tr>
+                <td>Date de naissance</td>
+                <td>{{etudiants.0.dateNaissance}}</td>
+            </tr>
+            <tr>
+                <td>Lieu de naissance</td>
+                <td>{{etudiants.0.lieuNaissance}}</td>
+            </tr>
+            <tr>
+                <td>Nationalité</td>
+                <td>{{etudiants.0.nationalite}}</td>
+            </tr>
+            <tr>
+                <td>Filière</td>
+                <td>{{etudiants.0.filiere}}</td>
+            </tr>
+            <tr>
+                <td>Niveau</td>
+                <td>{{etudiants.0.niveau}}</td>
+            </tr>
+            <tr>
+                <td>Diplôme visé</td>
+                <td>{{etudiants.0.diplomeVise}}</td>
+            </tr>
+        </table>
+
+        <p>Cette autorisation est valable jusqu'à la délivrance de l'autorisation définitive d'inscription.</p>
+
+        <div class="signature">
+            <p>Fait à {{etablissement.ville}}, le {{date}}</p>
+            <p>Le Directeur</p>
+            <p style="margin-top: 30px;">{{etablissement.directeur}}</p>
+        </div>
+
+        {{#if initialesValidateur}}
+        <div class="signature" style="margin-top: 30px; text-align: left;">
+            <p>Validé par :</p>
+            <p style="margin-top: 10px; font-size: 16pt; font-weight: bold;">{{initialesValidateur}}</p>
+            <p style="font-size: 10pt; color: #666;">{{nomValidateur}}</p>
+        </div>
+        {{/if}}
+    </div>
+
+    {{#if etudiants.0.uesPrescrites}}
+    <div class="page-break"></div>
+    <div class="prescription-section">
+        <h3>Prescription d'Unités d'Enseignement (UE)</h3>
+        <p>Conformément à la prescription du Comité d'Orientation, les Unités d'Enseignement suivantes sont prescrites à l'étudiant(e) :</p>
+
+        <ul class="ue-list">
+            {{#each etudiants.0.uesPrescrites}}
+            <li>
+                <strong>{{this.code}}</strong> - {{this.intitule}}
+                <br>
+                <em>Semestre {{this.semestre}} | Crédits : {{this.credit}}</em>
+            </li>
+            {{/each}}
+        </ul>
+
+        <p style="margin-top: 20px;">Ces UE s'ajoutent aux UE obligatoires du parcours choisi.</p>
+
+        <div class="signature">
+            <p>Le Président du Comité d'Orientation</p>
+            <p style="margin-top: 30px;">{{etablissement.presidentComite}}</p>
+        </div>
+    </div>
+    {{/if}}
+
+    <div class="footer">
+        <p>Document généré automatiquement - {{etablissement.nom}}</p>
+    </div>
+</body>
+</html>
