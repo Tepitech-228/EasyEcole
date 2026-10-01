@@ -145,7 +145,12 @@ router    /**
                 [RolesUtilisateur.APPRENANT]: 'Apprenant',
                 [RolesUtilisateur.CAISSIER_BANQUE]: 'Comptable',
                 [RolesUtilisateur.CABINET_COMPTABLE]: 'Comptable',
-                [RolesUtilisateur.COMITE_ORIENTATION]: 'Parent',
+                // ⚠️ Répli utilisé quand l'utilisateur n'a AUCUN lien
+                // aut_user_roles. Le comité retombait ici sur 'Parent' (copier-
+                // coller), ce qui lui donnait le menu des parents au lieu du
+                // sien. Corrigé : chaque rôle métier pointe sur son RBAC.
+                [RolesUtilisateur.COMITE_ORIENTATION]: 'Comité',
+                [RolesUtilisateur.ESA_COMPTA]: 'ESA Compta',
             };
             const roleName = roleNameMap[userRole];
             if (roleName) {

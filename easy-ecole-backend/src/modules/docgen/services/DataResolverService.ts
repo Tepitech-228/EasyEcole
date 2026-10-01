@@ -55,6 +55,8 @@ interface ResolvedData {
   journal?: Record<string, any>;
   exercice?: Record<string, any>;
   echeancier?: Array<Record<string, any>>;
+  initialesValidateur?: string;
+  nomValidateur?: string;
   employe?: Record<string, any>;
   bulletin?: Record<string, any>;
   contrat?: Record<string, any>;
@@ -465,12 +467,19 @@ async function resolveAutorisationProvisoire(params: GenerateParams): Promise<Re
       }]
     });
 
-    // Filtrer les UE qui ne sont pas du parcours choisi (UE prescrites)
+    // Filtre des UE prescrites (voir TODO(schema) : distinction DÉDUITE de
+    // l'écart de parcours, faute de marqueur en base).
+    // Une UE est considérée prescrite quand elle n'appartient pas au parcours
+    // choisi — y compris lorsqu'elle n'appartient à AUCUN parcours, cas
+    // auparavant ignoré silencieusement. Limite connue : si l'étudiant change de
+    // parcours, la qualification de toutes ses UE s'inverse.
+    const parcoursChoisiId = parcours?.id ?? null;
     uesPrescrites = coursParticipants
       .filter((cp: any) => {
-        const coursParcoursId = cp.cours?.parcoursId;
-        const parcoursChoisiId = parcours?.id;
-        return coursParcoursId && parcoursChoisiId && coursParcoursId !== parcoursChoisiId;
+        const coursParcoursId = cp.cours?.parcoursId ?? null;
+        if (coursParcoursId === null || coursParcoursId === undefined) return true;
+        if (parcoursChoisiId === null || parcoursChoisiId === undefined) return true;
+        return Number(coursParcoursId) !== Number(parcoursChoisiId);
       })
       .map((cp: any) => ({
         code: cp.cours?.code || '',

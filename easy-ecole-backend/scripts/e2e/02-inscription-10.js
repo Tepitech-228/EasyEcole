@@ -30,6 +30,12 @@ async function phase2(context) {
 
   studentUsers = []
 
+  // Seed requis : etapeInscriptionId référencé par ins_demandes_inscription
+  await db.query(
+    'INSERT IGNORE INTO ins_etapes_inscription (libelle, ordre, createdAt, updatedAt) VALUES (?, 1, NOW(), NOW())',
+    { replacements: ['Soumission'], type: db.QueryTypes.INSERT }
+  )
+
   for (let i = 1; i <= 10; i++) {
     const nom = `Etudiant${i}`
     const prenoms = `Prenom${i}`
@@ -41,11 +47,10 @@ async function phase2(context) {
     studentUsers.push({ id: student.id, token, email, identifiant })
 
     // 2.2 Créer DemandeInscription
-    const [demandeResult] = await db.query(
+    const demandeId = await db.query(
       'INSERT INTO ins_demandes_inscription (matricule, typeDemande, statutPipeline, dateDemande, sessionId, utilisateurId, etapeInscriptionId, createdAt, updatedAt) VALUES (?, ?, ?, NOW(), ?, ?, 1, NOW(), NOW())',
       { replacements: [identifiant, 'inscription', 'soumis', sessionId, student.id], type: db.QueryTypes.INSERT }
     )
-    const demandeId = demandeResult.insertId
 
     // Pipeline : authentifie → saisie_validee
     await db.query('UPDATE ins_demandes_inscription SET statutPipeline = ? WHERE id = ?', { replacements: ['authentifie', demandeId], type: db.QueryTypes.UPDATE })

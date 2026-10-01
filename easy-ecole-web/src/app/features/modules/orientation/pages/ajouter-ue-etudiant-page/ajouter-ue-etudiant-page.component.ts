@@ -106,7 +106,7 @@ export class AjouterUeEtudiantPageComponent extends BaseComponentClass implement
   private loadUeParcours(): void {
     if (!this.selectedParcoursId) return;
 
-    this.coursService.getAll(Number(this.selectedParcoursId)).subscribe({
+    this.coursService.getAll(String(this.selectedParcoursId)).subscribe({
       next: (res: any) => {
         this.ueParcours = Array.isArray(res) ? res : [];
         this.showUeList = true;
@@ -167,5 +167,10 @@ export class AjouterUeEtudiantPageComponent extends BaseComponentClass implement
   getParcoursTitre(): string {
     const parcours = this.parcours.find(p => String(p.id) === String(this.selectedParcoursId));
     return parcours ? parcours.titre : '';
+  }
+
+  getUeName(ueId: number): string {
+    const ue = this.ueParcours.find(u => u.id === ueId);
+    return ue ? ue.intitule : 'UE ' + ueId;
   }
 }

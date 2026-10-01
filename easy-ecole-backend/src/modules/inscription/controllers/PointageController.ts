@@ -358,7 +358,7 @@ export default class PointageController {
      * Calcule la situation financière complète d'un étudiant pour l'affichage
      * lors du scan QR (pointage).
      */
-    private calculerSituationFinanciere(dossier: DossierEtudiant): any {
+    private static calculerSituationFinanciere(dossier: DossierEtudiant): any {
         const echeances = dossier.echeances || [];
         const now = new Date();
 

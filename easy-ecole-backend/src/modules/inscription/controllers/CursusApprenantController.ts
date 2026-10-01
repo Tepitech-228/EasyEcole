@@ -6,6 +6,8 @@ import { Utilisateur } from "../../auth/models/Utilisateur";
 import { DemandeInscription } from "../models/DemandeInscription";
 import { Cours } from "../models/Cours";
 import { Parcours } from "../models/Parcours";
+import { CoursParticipant } from "../models/CoursParticipant";
+import { DemandeInscriptionCours } from "../models/DemandeInscriptionCours";
 import { CoursStatutService } from '../services/CoursStatutService';
 
 export default class CursusApprenantController {

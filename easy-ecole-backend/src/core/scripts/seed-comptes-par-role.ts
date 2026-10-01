@@ -58,7 +58,7 @@ const ROLE_ENUM_TO_RBAC: Record<string, string | null> = {
     institution: 'Directeur',
     cabinet_comptable: 'Comptable',
     esa_compta: 'Comptable',
-    comite_orientation: 'Directeur',
+    comite_orientation: 'Comité',
     caissier_banque: 'Comptable',
     personnel_administratif: 'Directeur',
     secretaire: 'Directeur',

@@ -13,6 +13,8 @@ export class Utilisateur {
   declare motDePasse?: string
   declare role?: RolesUtilisateur
   declare contact?: string
+  /** Habilitation à prescrire des UE/ECUE supplémentaires (profil comité). */
+  declare estPrescripteur?: boolean
   declare photoDeProfil?: string
   declare dateVerificationEmail?: Date
 

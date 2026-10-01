@@ -1,379 +1,469 @@
-<div class="flex justify-between items-start mb-8">
-    <app-header-title title="Étudiants en situation irrégulière" subtitle="Consulter les étudiants ayant au moins une échéance non soldée (impayé, partiel, en retard)"></app-header-title>
-</div>
+<div class="impayes-page">
 
-<!-- Alerte erreur -->
-<div *ngIf="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-    Une erreur est survenue lors du chargement des données.
-    <span *ngIf="apiErrorMessage">{{ apiErrorMessage }}</span>
-</div>
+  <!-- ============================================================ EN-TÊTE -->
+  <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+    <app-header-title
+      title="Étudiants en situation irrégulière"
+      subtitle="Suivi des échéances non soldées : inscription et scolarité">
+    </app-header-title>
 
-<!-- Barre de filtres -->
-<div class="bg-white border border-gray-200 rounded-lg p-4 mb-6">
-    <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center gap-x-2">
-            <span class="material-symbols-outlined text-gray-500">filter_list</span>
-            <span class="text-sm font-medium text-gray-700">Filtrer les impayés</span>
-        </div>
-        <button (click)="resetFilters()" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200 transition">
-            <span class="material-symbols-outlined text-sm">refresh</span>
-            Réinitialiser
-        </button>
+    <button (click)="basculerFiltres()"
+            class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg border transition"
+            [class.bg-indigo-600]="!filtresOuverts"
+            [class.text-white]="!filtresOuverts"
+            [class.border-indigo-600]="!filtresOuverts"
+            [class.bg-white]="filtresOuverts"
+            [class.text-gray-700]="filtresOuverts"
+            [class.border-gray-300]="filtresOuverts"
+            [class.hover:bg-gray-50]="filtresOuverts">
+      <span class="material-symbols-outlined text-lg">filter_list</span>
+      Filtres
+      <span *ngIf="filtresActifs.length"
+            class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-semibold rounded-full"
+            [class.bg-white]="!filtresOuverts"
+            [class.text-indigo-600]="!filtresOuverts"
+            [class.bg-indigo-100]="filtresOuverts"
+            [class.text-indigo-700]="filtresOuverts">
+        {{ filtresActifs.length }}
+      </span>
+      <span class="material-symbols-outlined text-lg">{{ filtresOuverts ? 'expand_less' : 'expand_more' }}</span>
+    </button>
+  </div>
+
+  <!-- ============================================================ ERREUR -->
+  <div *ngIf="error"
+       class="flex items-start gap-3 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6">
+    <span class="material-symbols-outlined text-red-500 mt-0.5">error</span>
+    <div>
+      <p class="text-sm font-medium">Une erreur est survenue lors du chargement des données.</p>
+      <p *ngIf="apiErrorMessage" class="text-sm text-red-700 mt-0.5">{{ apiErrorMessage }}</p>
     </div>
+  </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-x-4 gap-y-3">
-        <!-- Année académique -->
-        <div>
-            <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">
-                <span class="material-symbols-outlined text-sm align-text-bottom mr-1">calendar_month</span>
-                Année académique
-            </label>
-            <select [(ngModel)]="selectedAnneeId" (ngModelChange)="onAnneeChange()"
+  <!-- ============================================================ FILTRES -->
+  <div *ngIf="filtresOuverts" class="bg-white border border-gray-200 rounded-lg p-5 mb-5">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">
+          Année académique
+        </label>
+        <select [(ngModel)]="selectedAnneeId" (ngModelChange)="onAnneeChange()"
                 class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
-                <option value="">-- Toutes les années --</option>
-                <option *ngFor="let a of annees" [value]="a.id">{{ a.libelle }}</option>
-            </select>
-        </div>
+          <option value="">Toutes les années</option>
+          <option *ngFor="let a of annees" [value]="a.id">{{ a.libelle }}</option>
+        </select>
+      </div>
 
-        <!-- Cycle -->
-        <div>
-            <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">
-                <span class="material-symbols-outlined text-sm align-text-bottom mr-1">school</span>
-                Cycle
-            </label>
-            <select [(ngModel)]="selectedCycle" (ngModelChange)="onCycleChange()"
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">Cycle</label>
+        <select [(ngModel)]="selectedCycle" (ngModelChange)="onCycleChange()"
                 class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
-                <option value="">-- Tous les cycles --</option>
-                <option *ngFor="let c of cycleOptions" [value]="c">{{ c }}</option>
-            </select>
-        </div>
+          <option value="">Tous les cycles</option>
+          <option *ngFor="let c of cycleOptions" [value]="c">{{ c }}</option>
+        </select>
+      </div>
 
-        <!-- Filière -->
-        <div>
-            <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">
-                <span class="material-symbols-outlined text-sm align-text-bottom mr-1">route</span>
-                Filière
-            </label>
-            <select [(ngModel)]="selectedFiliereId" (ngModelChange)="onFiliereChange()"
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">Filière</label>
+        <select [(ngModel)]="selectedFiliereId" (ngModelChange)="onFiliereChange()"
                 [disabled]="!selectedAnneeId || !selectedCycle"
                 class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed">
-                <option value="">-- Toutes les filières --</option>
-                <option *ngFor="let p of parcoursFiltres" [value]="p.id">{{ p.titre }}</option>
-            </select>
-        </div>
+          <option value="">Toutes les filières</option>
+          <option *ngFor="let p of parcoursFiltres" [value]="p.id">{{ p.titre }}</option>
+        </select>
+      </div>
 
-        <!-- Niveau -->
-        <div>
-            <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">
-                <span class="material-symbols-outlined text-sm align-text-bottom mr-1">school</span>
-                Niveau
-            </label>
-            <select [(ngModel)]="selectedNiveauId" (ngModelChange)="onNiveauChange()"
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">Niveau</label>
+        <select [(ngModel)]="selectedNiveauId" (ngModelChange)="onNiveauChange()"
                 [disabled]="!selectedFiliereId"
                 class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed">
-                <option value="">-- Tous les niveaux --</option>
-                <option *ngFor="let n of niveauxFiltres" [value]="n.id">{{ n.libelle }}</option>
-            </select>
-        </div>
-    </div>
+          <option value="">Tous les niveaux</option>
+          <option *ngFor="let n of niveauxFiltres" [value]="n.id">{{ n.libelle }}</option>
+        </select>
+      </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-x-4 gap-y-3 mt-3">
-        <!-- Semestre -->
-        <div>
-            <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">
-                <span class="material-symbols-outlined text-sm align-text-bottom mr-1">schedule</span>
-                Semestre
-            </label>
-            <select [(ngModel)]="selectedSemestre" (ngModelChange)="onSemestreChange()"
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">Semestre</label>
+        <select [(ngModel)]="selectedSemestre" (ngModelChange)="onSemestreChange()"
                 class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
-                <option value="">-- Tous les semestres --</option>
-                <option *ngFor="let s of semestres" [value]="s">{{ s }}</option>
-            </select>
-        </div>
+          <option value="">Tous les semestres</option>
+          <option *ngFor="let s of semestres" [value]="s">{{ s }}</option>
+        </select>
+      </div>
 
-        <!-- Classe -->
-        <div>
-            <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">
-                <span class="material-symbols-outlined text-sm align-text-bottom mr-1">group</span>
-                Classe
-            </label>
-            <select [(ngModel)]="selectedClasseId" (ngModelChange)="onClasseChange()"
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">Classe</label>
+        <select [(ngModel)]="selectedClasseId" (ngModelChange)="onClasseChange()"
                 [disabled]="!selectedNiveauId"
                 class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed">
-                <option value="">-- Toutes les classes --</option>
-                <option *ngFor="let c of classesFiltres" [value]="c.id">{{ c.libelle }}</option>
-            </select>
-        </div>
+          <option value="">Toutes les classes</option>
+          <option *ngFor="let c of classesFiltres" [value]="c.id">{{ c.libelle }}</option>
+        </select>
+      </div>
 
-        <!-- Mois -->
-        <div>
-            <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">
-                <span class="material-symbols-outlined text-sm align-text-bottom mr-1">calendar_month</span>
-                Mois non soldé
-            </label>
-            <select [(ngModel)]="selectedMois" (ngModelChange)="onMoisChange()"
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">Mois non soldé</label>
+        <select [(ngModel)]="selectedMois" (ngModelChange)="onMoisChange()"
                 class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
-                <option value="">-- Tous les mois --</option>
-                <option *ngFor="let m of MOIS_OPTIONS" [ngValue]="m.value">{{ m.label }}</option>
-            </select>
-        </div>
+          <option value="">Tous les mois</option>
+          <option *ngFor="let m of MOIS_OPTIONS" [ngValue]="m.value">{{ m.label }}</option>
+        </select>
+      </div>
 
-        <!-- Recherche -->
-        <div>
-            <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">
-                <span class="material-symbols-outlined text-sm align-text-bottom mr-1">search</span>
-                Recherche
-            </label>
-            <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="onSearch()"
-                placeholder="Nom, prénom, matricule..."
-                class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">Recherche</label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg pointer-events-none">search</span>
+          <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="onSearch()"
+                 placeholder="Nom, prénom, matricule…"
+                 class="block w-full rounded-md border border-gray-300 py-2.5 pl-10 pr-3 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
         </div>
+      </div>
     </div>
-</div>
+  </div>
 
-<!-- Résumé -->
-<div class="bg-white border border-gray-200 rounded-lg p-4 mb-6">
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-gradient-to-r from-red-50 to-red-100 border border-red-200 rounded-md px-4 py-3 text-center">
-            <p class="text-xs text-red-600 font-semibold">ÉTUDIANTS CONCERNÉS</p>
-            <p class="text-2xl font-bold text-red-700">{{ total }}</p>
-        </div>
-        <div class="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-md px-4 py-3 text-center">
-            <p class="text-xs text-blue-600 font-semibold">TOTAL PAYÉ</p>
-            <p class="text-2xl font-bold text-blue-700">{{ totalPayeString }}</p>
-        </div>
-        <div class="bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200 rounded-md px-4 py-3 text-center">
-            <p class="text-xs text-amber-700 font-semibold">RESTE À PAYER</p>
-            <p class="text-2xl font-bold text-amber-700">{{ totalRestantString }}</p>
-        </div>
-        <div class="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-md px-4 py-3 text-center">
-            <p class="text-xs text-green-600 font-semibold">SOMME GLOBALE À PAYER</p>
-            <p class="text-2xl font-bold text-green-700">{{ totalGlobalString }}</p>
-        </div>
+  <!-- Puces des filtres actifs -->
+  <div *ngIf="filtresActifs.length" class="flex flex-wrap items-center gap-2 mb-5">
+    <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Filtré par</span>
+    <span *ngFor="let f of filtresActifs; let i = index"
+          class="inline-flex items-center gap-1.5 pl-3 pr-2 py-1.5 text-sm rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+      <span class="text-indigo-400 font-medium">{{ f.label }} :</span>
+      <span class="font-medium">{{ f.valeur }}</span>
+      <button (click)="retirerFiltre(i)" class="text-indigo-400 hover:text-indigo-700 transition" title="Retirer ce filtre">
+        <span class="material-symbols-outlined text-sm">close</span>
+      </button>
+    </span>
+    <button (click)="resetFilters()"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded-full hover:bg-gray-200 transition">
+      <span class="material-symbols-outlined text-sm">refresh</span>
+      Tout effacer
+    </button>
+  </div>
+
+  <!-- ============================================================ INDICATEURS -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white border border-gray-200 rounded-lg p-4">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="material-symbols-outlined text-gray-400 text-lg">groups</span>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Étudiants concernés</p>
+      </div>
+      <p class="text-2xl font-bold text-gray-900">{{ total }}</p>
+      <p class="text-xs text-gray-500 mt-1">{{ nbEcheancesTotal }} échéance(s) non soldée(s)</p>
     </div>
-</div>
 
-<!-- Loading -->
-<div *ngIf="loading" class="p-6 space-y-4">
-    <div *ngFor="let _ of [].constructor(4)" class="animate-pulse flex items-center gap-3">
-        <div class="w-4 h-4 bg-gray-200 rounded"></div>
-        <div class="w-6 h-6 bg-gray-200 rounded"></div>
-        <div class="h-4 bg-gray-200 rounded flex-1"></div>
-        <div class="w-16 h-4 bg-gray-200 rounded"></div>
+    <div class="bg-white border border-amber-200 rounded-lg p-4 ring-1 ring-amber-100">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="material-symbols-outlined text-amber-500 text-lg">payments</span>
+        <p class="text-xs font-semibold text-amber-700 uppercase tracking-wider">Reste à payer</p>
+      </div>
+      <p class="text-2xl font-bold text-amber-700">{{ totalRestantString }}</p>
+      <p class="text-xs text-amber-600 mt-1">Montant effectivement dû</p>
     </div>
-</div>
 
-<!-- Empty state -->
-<div *ngIf="!loading && allImpayesData.length === 0" class="bg-white rounded-xl border border-gray-200 p-12 text-center shadow-sm">
-    <span class="material-symbols-outlined text-6xl text-gray-200">inbox</span>
-    <p class="text-gray-500 text-base mt-4">Aucun étudiant en situation irrégulière trouvé</p>
-    <p class="text-gray-400 text-sm mt-1">Les résultats apparaîtront ici une fois les filtres appliqués</p>
-</div>
+    <div class="bg-white border border-gray-200 rounded-lg p-4">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="material-symbols-outlined text-gray-400 text-lg">receipt_long</span>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Somme globale</p>
+      </div>
+      <p class="text-2xl font-bold text-gray-900">{{ totalGlobalString }}</p>
+      <p class="text-xs text-gray-500 mt-1">Dont {{ totalPayeString }} encaissé</p>
+    </div>
 
-<!-- Arbre personnalisé avec accordéons -->
-<div *ngIf="!loading && allImpayesData.length > 0" class="bg-white border border-gray-200 rounded-lg overflow-hidden">
-    <div *ngFor="let annee of treeNodes" class="border-b border-gray-100 last:border-b-0">
-        <!-- Année académique -->
-        <div class="flex items-center gap-2 px-4 py-3 bg-gray-50 cursor-pointer hover:bg-gray-100 transition" (click)="toggleNode(annee)">
-            <span class="material-symbols-outlined text-gray-400 text-sm">{{ annee.expanded ? 'expand_more' : 'chevron_right' }}</span>
-            <span class="material-symbols-outlined text-yellow-600">calendar_month</span>
-            <span class="text-sm font-semibold text-gray-800">{{ annee.label }}</span>
-        </div>
+    <div class="bg-white border border-gray-200 rounded-lg p-4">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="material-symbols-outlined text-gray-400 text-lg">schedule</span>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Retard le plus ancien</p>
+      </div>
+      <p class="text-2xl font-bold text-gray-900">{{ ancienneteMax || '—' }}</p>
+      <p class="text-xs text-gray-500 mt-1" *ngIf="ancienneteMax">soit {{ ancienneteMax }} jour(s) de retard</p>
+      <p class="text-xs text-gray-500 mt-1" *ngIf="!ancienneteMax">Aucune échéance échue</p>
+    </div>
+  </div>
 
-        <!-- Cycles -->
-        <div *ngIf="annee.expanded" class="pl-6">
-            <div *ngFor="let cycle of annee.children" class="border-b border-gray-50 last:border-b-0">
-                <div class="flex items-center gap-2 px-4 py-2.5 bg-gray-25 cursor-pointer hover:bg-gray-50 transition" (click)="toggleNode(cycle)">
-                    <span class="material-symbols-outlined text-gray-400 text-sm">{{ cycle.expanded ? 'expand_more' : 'chevron_right' }}</span>
-                    <span class="material-symbols-outlined text-green-600">school</span>
-                    <span class="text-sm font-medium text-gray-700">{{ cycle.label }}</span>
+  <!-- ============================================================ CHARGEMENT -->
+  <div *ngIf="loading" class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+    <div *ngFor="let _ of [].constructor(6)" class="flex items-center gap-4 px-4 py-4 border-b border-gray-100 last:border-b-0">
+      <div class="w-9 h-9 bg-gray-200 rounded-full animate-pulse"></div>
+      <div class="flex-1 space-y-2">
+        <div class="h-3 bg-gray-200 rounded w-1/3 animate-pulse"></div>
+        <div class="h-2.5 bg-gray-100 rounded w-1/4 animate-pulse"></div>
+      </div>
+      <div class="h-6 w-24 bg-gray-200 rounded animate-pulse"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================ AUCUN RÉSULTAT -->
+  <div *ngIf="!loading && total === 0"
+       class="bg-white border border-gray-200 rounded-lg p-16 text-center">
+    <span class="material-symbols-outlined text-6xl text-gray-200">task_alt</span>
+    <p class="text-gray-700 font-medium mt-4">Aucun étudiant en situation irrégulière</p>
+    <p class="text-gray-400 text-sm mt-1">
+      Toutes les échéances sont soldées, ou les filtres ne correspondent à aucun dossier.
+    </p>
+  </div>
+
+  <!-- ============================================================ TABLEAU -->
+  <div *ngIf="!loading && lignes.length > 0" class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th (click)="trier('nom')"
+                class="px-4 py-3 text-left cursor-pointer select-none group">
+              <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wider group-hover:text-indigo-600">
+                Étudiant
+                <span class="material-symbols-outlined text-base"
+                      [class.text-indigo-500]="triPar === 'nom'"
+                      [class.text-gray-300]="triPar !== 'nom'">{{ triIcone('nom') }}</span>
+              </span>
+            </th>
+            <th class="hidden lg:table-cell px-4 py-3 text-left">
+              <span class="text-xs font-semibold text-gray-600 uppercase tracking-wider">Classe</span>
+            </th>
+            <th class="px-4 py-3 text-left">
+              <span class="text-xs font-semibold text-gray-600 uppercase tracking-wider">Échéances</span>
+            </th>
+            <th (click)="trier('retard')"
+                class="px-4 py-3 text-left cursor-pointer select-none group">
+              <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wider group-hover:text-indigo-600">
+                Retard
+                <span class="material-symbols-outlined text-base"
+                      [class.text-indigo-500]="triPar === 'retard'"
+                      [class.text-gray-300]="triPar !== 'retard'">{{ triIcone('retard') }}</span>
+              </span>
+            </th>
+            <th (click)="trier('reste')"
+                class="px-4 py-3 text-right cursor-pointer select-none group">
+              <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wider group-hover:text-indigo-600">
+                Reste à payer
+                <span class="material-symbols-outlined text-base"
+                      [class.text-indigo-500]="triPar === 'reste'"
+                      [class.text-gray-300]="triPar !== 'reste'">{{ triIcone('reste') }}</span>
+              </span>
+            </th>
+            <th class="px-4 py-3 text-right">
+              <span class="text-xs font-semibold text-gray-600 uppercase tracking-wider">Action</span>
+            </th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-gray-100">
+          <tr *ngFor="let l of lignes"
+              class="hover:bg-indigo-50/40 cursor-pointer transition"
+              (click)="voirDetailEtudiant(l.donnee)">
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-3">
+                <span class="flex items-center justify-center w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 text-sm font-semibold shrink-0">
+                  {{ (l.nomComplet.charAt(0) || '?').toUpperCase() }}
+                </span>
+                <div class="min-w-0">
+                  <p class="text-sm font-medium text-gray-900 truncate">{{ l.nomComplet }}</p>
+                  <p class="text-xs text-gray-500 truncate">
+                    {{ l.matricule }}<span *ngIf="l.filiere !== '—'"> · {{ l.filiere }}</span>
+                  </p>
                 </div>
+              </div>
+            </td>
 
-                <!-- Filières -->
-                <div *ngIf="cycle.expanded" class="pl-6">
-                    <div *ngFor="let filiere of cycle.children" class="border-b border-gray-50 last:border-b-0">
-                        <div class="flex items-center gap-2 px-4 py-2.5 bg-gray-10 cursor-pointer hover:bg-gray-25 transition" (click)="toggleNode(filiere)">
-                            <span class="material-symbols-outlined text-gray-400 text-sm">{{ filiere.expanded ? 'expand_more' : 'chevron_right' }}</span>
-                            <span class="material-symbols-outlined text-violet-500">route</span>
-                            <span class="text-sm font-medium text-gray-700">{{ filiere.label }}</span>
-                        </div>
+            <td class="hidden lg:table-cell px-4 py-3">
+              <p class="text-sm text-gray-700">{{ l.classe }}</p>
+              <p class="text-xs text-gray-500">{{ l.niveau }}<span *ngIf="l.annee !== '—'"> · {{ l.annee }}</span></p>
+            </td>
 
-                        <!-- Niveaux -->
-                        <div *ngIf="filiere.expanded" class="pl-6">
-                            <div *ngFor="let niveau of filiere.children" class="border-b border-gray-50 last:border-b-0">
-                                <div class="flex items-center gap-2 px-4 py-2.5 bg-white cursor-pointer hover:bg-gray-50 transition" (click)="toggleNode(niveau)">
-                                    <span class="material-symbols-outlined text-gray-400 text-sm">{{ niveau.expanded ? 'expand_more' : 'chevron_right' }}</span>
-                                    <span class="material-symbols-outlined text-indigo-500">school</span>
-                                    <span class="text-sm font-medium text-gray-700">{{ niveau.label }}</span>
-                                </div>
+            <td class="px-4 py-3">
+              <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
+                {{ l.nbEcheances }}
+              </span>
+            </td>
 
-                                <!-- Semestres -->
-                                <div *ngIf="niveau.expanded" class="pl-6">
-                                    <div *ngFor="let semestre of niveau.children" class="border-b border-gray-50 last:border-b-0">
-                                        <div class="flex items-center gap-2 px-4 py-2.5 bg-gray-50 cursor-pointer hover:bg-gray-100 transition" (click)="toggleNode(semestre)">
-                                            <span class="material-symbols-outlined text-gray-400 text-sm">{{ semestre.expanded ? 'expand_more' : 'chevron_right' }}</span>
-                                            <span class="material-symbols-outlined text-blue-400">schedule</span>
-                                            <span class="text-sm font-medium text-gray-700">{{ semestre.label }}</span>
-                                        </div>
+            <td class="px-4 py-3">
+              <span *ngIf="l.ancienneteJours > 0"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium"
+                    [class.bg-red-50]="l.statutPire === 'en_retard'"
+                    [class.text-red-700]="l.statutPire === 'en_retard'"
+                    [class.bg-amber-50]="l.statutPire !== 'en_retard'"
+                    [class.text-amber-700]="l.statutPire !== 'en_retard'">
+                <span class="material-symbols-outlined text-sm">schedule</span>
+                {{ l.ancienneteLabel }}
+              </span>
+              <span *ngIf="l.ancienneteJours === 0" class="text-sm text-gray-400">—</span>
+            </td>
 
-                                        <!-- Classes -->
-                                        <div *ngIf="semestre.expanded" class="pl-6">
-                                            <div *ngFor="let classe of semestre.children" class="border-b border-gray-50 last:border-b-0">
-                                                <div class="flex items-center gap-2 px-4 py-2.5 bg-white cursor-pointer hover:bg-gray-50 transition" (click)="toggleNode(classe)">
-                                                    <span class="material-symbols-outlined text-gray-400 text-sm">{{ classe.expanded ? 'expand_more' : 'chevron_right' }}</span>
-                                                    <span class="material-symbols-outlined text-violet-500">group</span>
-                                                    <span class="text-sm font-medium text-gray-700">{{ classe.label }}</span>
-                                                </div>
+            <td class="px-4 py-3 text-right">
+              <p class="text-sm font-semibold text-gray-900 whitespace-nowrap">{{ formatMontant(l.reste) }}</p>
+              <span class="inline-flex items-center px-2 py-0.5 mt-1 rounded-full text-[0.6875rem] font-medium"
+                    [class.bg-red-100]="l.statutPire === 'en_retard'"
+                    [class.text-red-700]="l.statutPire === 'en_retard'"
+                    [class.bg-orange-100]="l.statutPire === 'impaye'"
+                    [class.text-orange-700]="l.statutPire === 'impaye'"
+                    [class.bg-yellow-100]="l.statutPire === 'partiel'"
+                    [class.text-yellow-700]="l.statutPire === 'partiel'">
+                {{ libelleStatut(l.statutPire) }}
+              </span>
+            </td>
 
-                                                <!-- Étudiants -->
-                                                <div *ngIf="classe.expanded" class="pl-6">
-                                                    <div *ngFor="let etudiant of classe.children" class="border-b border-gray-50 last:border-b-0">
-                                                        <div class="flex items-center gap-2 px-4 py-2.5 bg-gray-50 cursor-pointer hover:bg-gray-100 transition" (click)="toggleNode(etudiant)">
-                                                            <span class="material-symbols-outlined text-gray-400 text-sm">{{ etudiant.expanded ? 'expand_more' : 'chevron_right' }}</span>
-                                                            <span class="material-symbols-outlined text-blue-500">person</span>
-                                                            <span class="text-sm font-medium text-gray-700">{{ etudiant.label }}</span>
-                                                            <button
-                                                                (click)="voirDetailEtudiant(etudiant.data); $event.stopPropagation()"
-                                                                class="ml-auto inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition">
-                                                                <span class="material-symbols-outlined text-sm">visibility</span>
-                                                                Détail
-                                                            </button>
-                                                        </div>
-
-                                                        <!-- Échéances de l'étudiant -->
-                                                        <div *ngIf="etudiant.expanded && etudiant.items?.length" class="pl-6 pb-2">
-                                                            <div class="border border-gray-200 rounded-md overflow-hidden m-2">
-                                                                <table class="min-w-full divide-y divide-gray-200">
-                                                                    <thead class="bg-gray-100">
-                                                                        <tr>
-                                                                            <th class="text-left px-3 py-2 text-xs font-semibold text-gray-600 uppercase">Type</th>
-                                                                            <th class="text-left px-3 py-2 text-xs font-semibold text-gray-600 uppercase">N°</th>
-                                                                            <th class="text-left px-3 py-2 text-xs font-semibold text-gray-600 uppercase">Mois</th>
-                                                                            <th class="text-right px-3 py-2 text-xs font-semibold text-gray-600 uppercase">Montant</th>
-                                                                            <th class="text-right px-3 py-2 text-xs font-semibold text-gray-600 uppercase">Payé</th>
-                                                                            <th class="text-right px-3 py-2 text-xs font-semibold text-gray-600 uppercase">Reste</th>
-                                                                            <th class="text-left px-3 py-2 text-xs font-semibold text-gray-600 uppercase">Statut</th>
-                                                                        </tr>
-                                                                    </thead>
-                                                                    <tbody class="divide-y divide-gray-200 bg-white">
-                                                                        <tr *ngFor="let item of etudiant.items" class="hover:bg-gray-50 transition">
-                                                                            <td class="px-3 py-2 text-sm text-gray-700">{{ item.type }}</td>
-                                                                            <td class="px-3 py-2 text-sm text-gray-600">{{ item.numeroEcheance }}</td>
-                                                                            <td class="px-3 py-2 text-sm text-gray-600">{{ item.moisConcerne }}</td>
-                                                                            <td class="px-3 py-2 text-sm text-right font-medium text-gray-900">{{ formatMontant(item.montant) }}</td>
-                                                                            <td class="px-3 py-2 text-sm text-right text-green-600">{{ formatMontant(item.montantPaye) }}</td>
-                                                                            <td class="px-3 py-2 text-sm text-right text-amber-600 font-medium">{{ formatMontant(item.restant) }}</td>
-                                                                            <td class="px-3 py-2">
-                                                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
-                                                                                      [class.bg-red-100]="item.statut === 'impaye'"
-                                                                                      [class.text-red-700]="item.statut === 'impaye'"
-                                                                                      [class.bg-orange-100]="item.statut === 'partiel'"
-                                                                                      [class.text-orange-700]="item.statut === 'partiel'"
-                                                                                      [class.bg-yellow-100]="item.statut === 'en_retard'"
-                                                                                      [class.text-yellow-700]="item.statut === 'en_retard'">
-                                                                                    {{ item.statut === 'impaye' ? 'Impayé' : item.statut === 'partiel' ? 'Partiel' : 'En retard' }}
-                                                                                </span>
-                                                                            </td>
-                                                                        </tr>
-                                                                    </tbody>
-                                                                </table>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+            <td class="px-4 py-3 text-right">
+              <button (click)="voirDetailEtudiant(l.donnee); $event.stopPropagation()"
+                      class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-md hover:bg-indigo-100 transition">
+                <span class="material-symbols-outlined text-sm">visibility</span>
+                Détail
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-</div>
 
-<!-- Modal détail étudiant -->
-<div *ngIf="etudiantSelectionne" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" (click)="fermerDetailEtudiant()">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
-        <!-- En-tête -->
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
-            <div>
-                <h3 class="text-lg font-bold text-gray-900">Situation financière</h3>
-                <p class="text-sm text-gray-500">{{ etudiantSelectionne.etudiant.nom }} {{ etudiantSelectionne.etudiant.prenoms }}</p>
-                <p class="text-xs text-gray-400">Matricule : {{ etudiantSelectionne.etudiant.matricule }}</p>
-            </div>
-            <button (click)="fermerDetailEtudiant()" class="text-gray-400 hover:text-gray-600 transition">
-                <span class="material-symbols-outlined">close</span>
-            </button>
+    <!-- ============================================================ PAGINATION -->
+    <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-gray-200 bg-gray-50">
+      <p class="text-sm text-gray-600">{{ libellePlage }}</p>
+
+      <div class="flex items-center gap-3">
+        <label class="hidden sm:flex items-center gap-2 text-sm text-gray-600">
+          Par page
+          <select [(ngModel)]="limit" (ngModelChange)="onLimitChange()"
+                  class="rounded-md border border-gray-300 py-1.5 pl-2 pr-7 text-sm text-gray-900 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            <option *ngFor="let n of optionsLimit" [ngValue]="n">{{ n }}</option>
+          </select>
+        </label>
+
+        <nav *ngIf="totalPages > 1" class="flex items-center gap-1">
+          <button (click)="onPageChange(page - 1)" [disabled]="!peutPrecedent"
+                  class="inline-flex items-center justify-center w-8 h-8 rounded-md border border-gray-300 bg-white text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition">
+            <span class="material-symbols-outlined text-lg">chevron_left</span>
+          </button>
+
+          <button *ngFor="let p of pages" (click)="onPageChange(p)"
+                  class="inline-flex items-center justify-center min-w-[2rem] h-8 px-2 rounded-md text-sm font-medium border transition"
+                  [class.bg-indigo-600]="p === page"
+                  [class.text-white]="p === page"
+                  [class.border-indigo-600]="p === page"
+                  [class.bg-white]="p !== page"
+                  [class.text-gray-700]="p !== page"
+                  [class.border-gray-300]="p !== page"
+                  [class.hover:bg-gray-100]="p !== page">
+            {{ p }}
+          </button>
+
+          <button (click)="onPageChange(page + 1)" [disabled]="!peutSuivant"
+                  class="inline-flex items-center justify-center w-8 h-8 rounded-md border border-gray-300 bg-white text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition">
+            <span class="material-symbols-outlined text-lg">chevron_right</span>
+          </button>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ MODAL DÉTAIL -->
+  <div *ngIf="etudiantSelectionne"
+       class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm p-4"
+       (click)="fermerDetailEtudiant()">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col"
+         (click)="$event.stopPropagation()">
+
+      <div class="flex items-start justify-between gap-4 p-6 border-b border-gray-200">
+        <div class="flex items-center gap-3 min-w-0">
+          <span class="flex items-center justify-center w-11 h-11 rounded-full bg-indigo-100 text-indigo-700 font-semibold shrink-0">
+            {{ (etudiantSelectionne.etudiant.nom.charAt(0) || '?').toUpperCase() }}
+          </span>
+          <div class="min-w-0">
+            <h3 class="text-lg font-bold text-gray-900 truncate">
+              {{ etudiantSelectionne.etudiant.nom }} {{ etudiantSelectionne.etudiant.prenoms }}
+            </h3>
+            <p class="text-sm text-gray-500">
+              Matricule {{ etudiantSelectionne.etudiant.matricule }}
+              <span *ngIf="etudiantLigne"> · {{ etudiantLigne!.classe }}</span>
+            </p>
+          </div>
         </div>
+        <button (click)="fermerDetailEtudiant()"
+                class="text-gray-400 hover:text-gray-600 transition shrink-0">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
 
-        <!-- Résumé financier -->
+      <div class="overflow-y-auto">
+        <!-- Synthèse -->
         <div class="p-6 border-b border-gray-100">
-            <div class="grid grid-cols-3 gap-4">
-                <div class="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-                    <p class="text-xs text-green-600 font-semibold">TOTAL PAYÉ</p>
-                    <p class="text-xl font-bold text-green-700">{{ formatMontant(etudiantPaye) }}</p>
-                </div>
-                <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
-                    <p class="text-xs text-amber-600 font-semibold">RESTE À PAYER</p>
-                    <p class="text-xl font-bold text-amber-700">{{ formatMontant(etudiantRestant) }}</p>
-                </div>
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-                    <p class="text-xs text-blue-600 font-semibold">SOMME GLOBALE À PAYER</p>
-                    <p class="text-xl font-bold text-blue-700">{{ formatMontant(etudiantTotal) }}</p>
-                </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+              <p class="text-[0.6875rem] font-semibold text-gray-500 uppercase tracking-wider">Total dû</p>
+              <p class="text-lg font-bold text-gray-900 mt-1">{{ formatMontant(etudiantTotal) }}</p>
             </div>
+            <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+              <p class="text-[0.6875rem] font-semibold text-green-600 uppercase tracking-wider">Déjà payé</p>
+              <p class="text-lg font-bold text-green-700 mt-1">{{ formatMontant(etudiantPaye) }}</p>
+            </div>
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <p class="text-[0.6875rem] font-semibold text-amber-600 uppercase tracking-wider">Reste à payer</p>
+              <p class="text-lg font-bold text-amber-700 mt-1">{{ formatMontant(etudiantRestant) }}</p>
+            </div>
+            <div *ngIf="etudiantLigne && etudiantLigne!.ancienneteJours > 0" class="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p class="text-[0.6875rem] font-semibold text-red-600 uppercase tracking-wider">Retard</p>
+              <p class="text-lg font-bold text-red-700 mt-1">{{ etudiantLigne!.ancienneteLabel }}</p>
+            </div>
+          </div>
         </div>
 
-        <!-- Détail des échéances -->
+        <!-- Échéances -->
         <div class="p-6">
-            <h4 class="text-sm font-semibold text-gray-700 mb-4">Échéances non soldées</h4>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-gray-200">
-                            <th class="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase">Type</th>
-                            <th class="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase">N°</th>
-                            <th class="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase">Mois</th>
-                            <th class="text-right py-2 px-3 text-xs font-semibold text-gray-500 uppercase">Montant</th>
-                            <th class="text-right py-2 px-3 text-xs font-semibold text-gray-500 uppercase">Payé</th>
-                            <th class="text-right py-2 px-3 text-xs font-semibold text-gray-500 uppercase">Reste</th>
-                            <th class="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase">Statut</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngFor="let e of etudiantSelectionne.echeancesNonSoldees" class="border-b border-gray-100 hover:bg-gray-50">
-                            <td class="py-2 px-3">
-                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
-                                      [class.bg-purple-100]="e.type === 'inscription'"
-                                      [class.text-purple-700]="e.type === 'inscription'"
-                                      [class.bg-indigo-100]="e.type !== 'inscription'"
-                                      [class.text-indigo-700]="e.type !== 'inscription'">
-                                    {{ e.type === 'inscription' ? 'Inscription' : 'Scolarité' }}
-                                </span>
-                            </td>
-                            <td class="py-2 px-3 text-gray-600">N° {{ e.numeroEcheance }}</td>
-                            <td class="py-2 px-3 text-gray-600">{{ e.moisConcerne }}</td>
-                            <td class="py-2 px-3 text-right font-medium text-gray-900">{{ formatMontant(e.montant) }}</td>
-                            <td class="py-2 px-3 text-right text-green-600">{{ formatMontant(e.montantPaye) }}</td>
-                            <td class="py-2 px-3 text-right text-amber-600 font-medium">{{ formatMontant(e.montant - e.montantPaye) }}</td>
-                            <td class="py-2 px-3">
-                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
-                                      [class.bg-red-100]="e.statut === 'impaye'"
-                                      [class.text-red-700]="e.statut === 'impaye'"
-                                      [class.bg-orange-100]="e.statut === 'partiel'"
-                                      [class.text-orange-700]="e.statut === 'partiel'"
-                                      [class.bg-yellow-100]="e.statut === 'en_retard'"
-                                      [class.text-yellow-700]="e.statut === 'en_retard'">
-                                    {{ e.statut === 'impaye' ? 'Impayé' : e.statut === 'partiel' ? 'Partiel' : 'En retard' }}
-                                </span>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+          <h4 class="text-sm font-semibold text-gray-700 mb-4">
+            Échéances non soldées ({{ etudiantLigne?.nbEcheances || 0 }})
+          </h4>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-gray-200">
+                  <th class="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase">Type</th>
+                  <th class="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase">Mois</th>
+                  <th class="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase">Échéance</th>
+                  <th class="text-right py-2 px-3 text-xs font-semibold text-gray-500 uppercase">Montant</th>
+                  <th class="text-right py-2 px-3 text-xs font-semibold text-gray-500 uppercase">Payé</th>
+                  <th class="text-right py-2 px-3 text-xs font-semibold text-gray-500 uppercase">Reste</th>
+                  <th class="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase">Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let e of etudiantLigne?.echeances"
+                    class="border-b border-gray-100 hover:bg-gray-50">
+                  <td class="py-2.5 px-3">
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                          [class.bg-violet-100]="e.type === 'Inscription'"
+                          [class.text-violet-700]="e.type === 'Inscription'"
+                          [class.bg-indigo-100]="e.type === 'Scolarité'"
+                          [class.text-indigo-700]="e.type === 'Scolarité'">
+                      {{ e.type }}
+                    </span>
+                  </td>
+                  <td class="py-2.5 px-3 text-gray-700">
+                    {{ e.moisConcerne }}<span class="text-xs text-gray-400"> · {{ e.numeroEcheance }}</span>
+                  </td>
+                  <td class="py-2.5 px-3 text-gray-600">
+                    <span *ngIf="e.dateLimite">{{ e.dateLimite | date:'dd/MM/yyyy' }}</span>
+                    <span *ngIf="!e.dateLimite">—</span>
+                  </td>
+                  <td class="py-2.5 px-3 text-right font-medium text-gray-900">{{ formatMontant(e.montant) }}</td>
+                  <td class="py-2.5 px-3 text-right text-green-600">{{ formatMontant(e.montantPaye) }}</td>
+                  <td class="py-2.5 px-3 text-right text-amber-600 font-semibold">{{ formatMontant(e.restant) }}</td>
+                  <td class="py-2.5 px-3">
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                          [class.bg-red-100]="e.statut === 'en_retard'"
+                          [class.text-red-700]="e.statut === 'en_retard'"
+                          [class.bg-orange-100]="e.statut === 'impaye'"
+                          [class.text-orange-700]="e.statut === 'impaye'"
+                          [class.bg-yellow-100]="e.statut === 'partiel'"
+                          [class.text-yellow-700]="e.statut === 'partiel'">
+                      {{ libelleStatut(e.statut) }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
+      </div>
     </div>
+  </div>
+
 </div>

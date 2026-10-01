@@ -20,8 +20,12 @@ export class ComiteMembreService {
     )
   }
 
-  create(payload: { nom: string; prenoms: string; email: string; identifiant: string; motDePasse?: string; contact?: string }): Observable<any> {
+  create(payload: { nom: string; prenoms: string; email: string; identifiant: string; motDePasse?: string; contact?: string; estPrescripteur?: boolean }): Observable<any> {
     return this.httpClient.post(`${this.SERVICE_URL}`, payload)
+  }
+
+  setPrescripteur(id: number, estPrescripteur: boolean): Observable<any> {
+    return this.httpClient.patch(`${this.SERVICE_URL}/${id}/prescripteur`, { estPrescripteur })
   }
 
   delete(id: number): Observable<any> {

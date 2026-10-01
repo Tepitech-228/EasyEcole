@@ -29,17 +29,31 @@ const upload = multer({
     storage,
     fileFilter: (_req, file, cb) => {
         const ext = path.extname(file.originalname).toLowerCase();
-        // Tolère les PDF dont le navigateur envoie un MIME vide, générique
-        // (application/octet-stream) ou dérivé (application/x-pdf)
-        const isPdf = file.mimetype === 'application/pdf'
-            || file.mimetype === 'application/x-pdf'
-            || file.mimetype === 'application/octet-stream'
-            || file.mimetype === ''
-            || file.mimetype === undefined;
-        if (isPdf && ext === '.pdf') {
+        const mime = (file.mimetype || '').toLowerCase();
+
+        // Formats acceptés, contrôlés sur l'extension ET sur le MIME.
+        // Les images sont admises car un bordereau est très souvent photographié,
+        // et que le module sait déjà les relire (DocumentDossierController).
+        const pdfExt = ['.pdf'];
+        const imgExt = ['.jpg', '.jpeg', '.png'];
+        const pdfMime = [
+            'application/pdf',
+            'application/x-pdf',
+            'application/octet-stream', // MIME vide/générique envoyé par certains navigateurs
+            ''
+        ];
+        const imgMime = ['image/jpeg', 'image/jpg', 'image/png', 'application/octet-stream', ''];
+
+        const isPdf = pdfExt.includes(ext) && (pdfMime.includes(mime) || mime === undefined);
+        const isImage = imgExt.includes(ext) && (imgMime.includes(mime) || mime === undefined);
+
+        if (isPdf || isImage) {
             cb(null, true);
         } else {
-            cb(new Error('Seuls les fichiers PDF sont acceptés'));
+            cb(new multer.MulterError(
+                'LIMIT_UNEXPECTED_FILE',
+                'Formats acceptés : PDF, JPG, JPEG ou PNG (20 Mo maximum).'
+            ));
         }
     },
     limits: { fileSize: 20 * 1024 * 1024 } // 20 Mo max par fichier

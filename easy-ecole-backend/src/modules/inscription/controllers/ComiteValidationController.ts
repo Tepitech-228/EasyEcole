@@ -11,6 +11,7 @@ import { DossierEtudiant } from "../models/DossierEtudiant";
 import { Apprenant } from "../../auth/models/Apprenant";
 import { Session } from "../models/Session";
 import { ParcoursChoisi } from "../models/ParcoursChoisi";
+import { Parcours } from "../models/Parcours";
 import { BordereauDossierService } from "../services/BordereauDossierService";
 import { EtatPreInscription, PreInscription } from "../models/PreInscription";
 import { ComiteVote } from "../models/ComiteVote";
@@ -24,6 +25,7 @@ import { RecuCaisse } from "../../scolarite/models/RecuCaisse";
 import { DemandeDocument } from "../../scolarite/models/DemandeDocument";
 import { DocumentDelivre } from "../../scolarite/models/DocumentDelivre";
 import { DocGenDocument } from "../../docgen/models/DocGenDocument";
+import { DemandeInscriptionDossier } from "../models/DemandeInscriptionDossier";
 import path from "path";
 import fs from "fs";
 
@@ -46,17 +48,40 @@ function incrementerLibelleNiveau(libelle: string): string {
 const STATUTS_COMITE = ['transmis_comite', 'authentifie']
 const PIPELINE_COMITE = 'transmis_comite'
 
-const inclureTout = () => [
+/** Valeurs acceptées pour le filtre « filière » (colonne Parcours.type). */
+const FILIERES = ['LICENCE', 'MASTER', 'DOCTORAT', 'BTS', 'MBA']
+
+/** Plafond de dossiers renvoyés par la liste du comité. */
+const LISTER_DOSSIERS_MAX = 100
+
+/**
+ * Construit les includes du dossier.
+ *
+ * `opts` sert à transformer les LEFT JOIN en JOIN interne : sans `required`,
+ * une condition `$parcoursChoisis.parcours.type$` n'écarterait rien, car le
+ * where s'applique après la jointure externe. On ne rend donc obligatoires que
+ * les associations réellement traversées par un filtre.
+ *
+ * Note : rendre `parcoursChoisis` obligatoire exclut les dossiers sans parcours
+ * choisi. C'est le comportement voulu lorsqu'on filtre par filière/parcours/niveau.
+ */
+const inclureTout = (opts: { sessionInterne?: boolean; parcoursInterne?: boolean } = {}) => [
     {
         association: DemandeInscription.associations.utilisateur,
         include: [{ model: Apprenant, as: 'apprenant' }]
     },
     {
         association: DemandeInscription.associations.parcoursChoisis,
-        include: [{ association: ParcoursChoisi.associations.parcours }]
+        required: !!opts.parcoursInterne,
+        include: [{
+            association: ParcoursChoisi.associations.parcours,
+            required: !!opts.parcoursInterne,
+            include: [Parcours.associations.niveauEtude]
+        }]
     },
     {
         association: DemandeInscription.associations.session,
+        required: !!opts.sessionInterne,
         include: [Session.associations.anneeAcademique]
     },
     { association: DemandeInscription.associations.preInscription },
@@ -71,6 +96,11 @@ export default class ComiteValidationController {
      * GET /comite-validations/dossiers
      * Liste les dossiers transmis au comité (statutPipeline = 'transmis_comite' ou 'authentifie').
      * ?tous=true → retourne tous les dossiers du pipeline (historique).
+     *
+     * Filtres combinables (ET) : anneeId, filiere, parcoursId, niveauId.
+     * Réponse : { data: [...], meta: { total, tronque } } — `total` = nombre de
+     * dossiers correspondant au filtre, `tronque` signale que la liste affichée
+     * est incomplète (la requête est plafonnée à LISTER_DOSSIERS_MAX).
      */
     static async listerDossiers(req: Request, res: Response): Promise<Response> {
         try {
@@ -83,11 +113,53 @@ export default class ComiteValidationController {
                 ? { statutPipeline: { [Op.ne]: null } }
                 : { statutPipeline: { [Op.in]: STATUTS_COMITE } }
 
+            // ── Filtres ──
+            // Un paramètre vide ou non valide est simplement ignoré : on préfère
+            // un filtre sans effet à une erreur sur une saisie partielle.
+            const conditions: any[] = []
+            let sessionInterne = false
+            let parcoursInterne = false
+
+            const anneeId = Number(req.query.anneeId)
+            if (Number.isInteger(anneeId) && anneeId > 0) {
+                conditions.push({ '$session.anneeAcademiqueId$': anneeId })
+                sessionInterne = true
+            }
+
+            const filiere = String(req.query.filiere || '').trim().toUpperCase()
+            if (FILIERES.includes(filiere)) {
+                conditions.push({ '$parcoursChoisis.parcours.type$': filiere })
+                parcoursInterne = true
+            }
+
+            const parcoursId = Number(req.query.parcoursId)
+            if (Number.isInteger(parcoursId) && parcoursId > 0) {
+                conditions.push({ '$parcoursChoisis.parcours.id$': parcoursId })
+                parcoursInterne = true
+            }
+
+            const niveauId = Number(req.query.niveauId)
+            if (Number.isInteger(niveauId) && niveauId > 0) {
+                conditions.push({ '$parcoursChoisis.parcours.niveauEtudeId$': niveauId })
+                parcoursInterne = true
+            }
+
+            if (conditions.length > 0) where[Op.and] = conditions
+
+            const include = inclureTout({ sessionInterne, parcoursInterne })
+
             const demandes = await DemandeInscription.findAll({
                 where,
-                include: inclureTout(),
+                include,
                 order: [['createdAt', 'DESC']],
-                limit: 100,
+                limit: LISTER_DOSSIERS_MAX,
+            })
+
+            // Nombre total correspondant au filtre, hors plafond d'affichage.
+            const total = await DemandeInscription.count({
+                where,
+                include,
+                distinct: true,
             })
 
             const utilisateurIds = demandes.map(d => d.utilisateurId)
@@ -155,7 +227,10 @@ export default class ComiteValidationController {
             // Attendre la résolution de tous les promesses de carte
             const resolvedData = await Promise.all(data)
 
-            return res.status(200).json({ data: resolvedData })
+            return res.status(200).json({
+                data: resolvedData,
+                meta: { total, tronque: total > resolvedData.length }
+            })
         } catch (error) {
             console.error('[Comite] listerDossiers:', error)
             return res.status(500).json({ success: false, message: 'Erreur interne' })
@@ -611,7 +686,7 @@ export default class ComiteValidationController {
             }
 
             // ── Collecter tous les chemins PDF de l'étudiant ──
-            const pdfPaths: string[] = []
+            const filePaths: string[] = []
 
             // 1. Bordereaux (fichiers uploadés)
             const bordereaux = await Bordereau.findAll({
@@ -621,7 +696,7 @@ export default class ComiteValidationController {
             for (const b of bordereaux) {
                 if (b.fichier) {
                     const p = path.isAbsolute(b.fichier) ? b.fichier : path.join(process.cwd(), b.fichier)
-                    if (fs.existsSync(p)) pdfPaths.push(p)
+                    if (fs.existsSync(p)) filePaths.push(p)
                 }
             }
 
@@ -632,7 +707,7 @@ export default class ComiteValidationController {
             for (const q of quitus) {
                 if (q.fichierPDF) {
                     const p = path.isAbsolute(q.fichierPDF) ? q.fichierPDF : path.join(process.cwd(), q.fichierPDF)
-                    if (fs.existsSync(p)) pdfPaths.push(p)
+                    if (fs.existsSync(p)) filePaths.push(p)
                 }
             }
 
@@ -650,7 +725,7 @@ export default class ComiteValidationController {
                 for (const r of recusCaisse) {
                     if (r.fichierPDF) {
                         const p = path.isAbsolute(r.fichierPDF) ? r.fichierPDF : path.join(process.cwd(), r.fichierPDF)
-                        if (fs.existsSync(p)) pdfPaths.push(p)
+                        if (fs.existsSync(p)) filePaths.push(p)
                     }
                 }
 
@@ -662,7 +737,7 @@ export default class ComiteValidationController {
                 for (const d of documentsDelivres) {
                     if (d.fichierPDF) {
                         const p = path.isAbsolute(d.fichierPDF) ? d.fichierPDF : path.join(process.cwd(), d.fichierPDF)
-                        if (fs.existsSync(p)) pdfPaths.push(p)
+                        if (fs.existsSync(p)) filePaths.push(p)
                     }
                 }
             }
@@ -675,26 +750,53 @@ export default class ComiteValidationController {
             for (const d of docGenDocs) {
                 if (d.filePath) {
                     const p = path.isAbsolute(d.filePath) ? d.filePath : path.join(process.cwd(), d.filePath)
-                    if (fs.existsSync(p)) pdfPaths.push(p)
+                    if (fs.existsSync(p)) filePaths.push(p)
                 }
             }
 
-            if (pdfPaths.length === 0) {
-                return res.status(404).json({ success: false, message: "Aucun PDF trouvé pour cet étudiant" })
+            // 6. Pièces justificatives déposées au wizard (table ins_dossiers_demandes)
+            // C'est la source principale : sans elle, le PDF ne contenait ni CNI,
+            // ni photo d'identité, ni justificatif de scolarité — les pièces que
+            // le comité voit pourtant dans le dossier affiché à l'écran.
+            const piecesJustificatives = await DemandeInscriptionDossier.findAll({
+                where: { demandeId: demande.id },
+                attributes: { exclude: ['id'] },
+                order: [['dossierId', 'ASC']],
+            })
+            for (const piece of piecesJustificatives) {
+                if (!piece.nomFichier) continue
+                // Même résolution que DocumentDossierController : chemin relatif
+                // complet en base (nouvelle arborescence) sinon dépôt plat.
+                let p = path.resolve(process.cwd(), piece.nomFichier)
+                if (!fs.existsSync(p)) {
+                    p = path.resolve(process.cwd(), 'public/inscription/dossiers', path.basename(piece.nomFichier))
+                }
+                if (fs.existsSync(p)) filePaths.push(p)
             }
 
-            // ── Fusionner les PDFs ──
+            if (filePaths.length === 0) {
+                return res.status(404).json({ success: false, message: "Aucun document trouvé pour cet étudiant" })
+            }
+
+            // ── Fusionner les pièces ──
             const matricule = demande.matricule || `etudiant_${demande.utilisateurId}`
-            const outputPath = await PdfMergeService.mergeStudentPdfs(matricule, pdfPaths)
+            const fusion = await PdfMergeService.mergeStudentPdfs(matricule, filePaths)
+
+            if (fusion.ignores.length > 0) {
+                console.warn(
+                    `[Comite] ${fusion.ignores.length} pièce(s) écartée(s) pour ${matricule}:`,
+                    fusion.ignores.join(', ')
+                )
+            }
 
             // ── Envoyer le fichier ──
             res.setHeader('Content-Type', 'application/pdf')
             res.setHeader('Content-Disposition', `attachment; filename="dossier_${matricule}.pdf"`)
-            fs.createReadStream(outputPath).pipe(res)
+            fs.createReadStream(fusion.outputPath).pipe(res)
 
             // Nettoyer le fichier temporaire après envoi
             res.on('finish', () => {
-                try { fs.unlinkSync(outputPath) } catch (e) { /* ignore */ }
+                try { fs.unlinkSync(fusion.outputPath) } catch (e) { /* ignore */ }
             })
 
             return res

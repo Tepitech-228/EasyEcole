@@ -12,6 +12,7 @@ const router = express.Router()
 router
     .get('/', [Authenticate], ComiteMembreController.listerMembres)
     .post('/', [Authenticate], ComiteMembreController.creerMembre)
+    .patch('/:id/prescripteur', [Authenticate], ComiteMembreController.definirPrescripteur)
     .delete('/:id', [Authenticate], ComiteMembreController.supprimerMembre)
 
 export default router

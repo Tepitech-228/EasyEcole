@@ -17,6 +17,19 @@ export const REF_ROLES: RefRole[] = [
   { nom: 'Parent', description: 'Parent d\'apprenant' },
   { nom: 'Surveillant', description: 'Surveillance et discipline' },
   { nom: 'Bibliothécaire', description: 'Gestion de la bibliothèque' },
+  // ⚠️ Ces deux rôles sont utilisés dans REF_ROLE_PERMISSIONS mais étaient
+  // ABSENTS de cette liste : ensureReferenceData ignorait donc SILENCIEUSEMENT
+  // toutes leurs liaisons (cf. ensureReferenceData.ts l. 61). Conséquence :
+  // aucun accès pour les utilisateurs ESA_COMPTA / INSTITUTION.
+  { nom: 'ESA Compta', description: 'Service Recouvrement (ESA-COMPTA)' },
+  { nom: 'Institution', description: 'Établissement / Direction' },
+  // ⚠️ Rôle du COMITÉ D'ORIENTATION. Il n'existait pas : le comité était
+  // rattaché au rôle « Directeur » par le seed (seed-comptes-par-role.ts,
+  // ROLE_ENUM_TO_RBAC) et au rôle « Parent » par le repli de MenuRoutes
+  // (roleNameMap). Deux aiguillages incohérents et tous deux faux ⇒ le
+  // membre du comité voyait le menu du Directeur (ou celui du Parent), et
+  // jamais une page d'accueil correspondant à son métier.
+  { nom: 'Comité', description: 'Comité d\'orientation : préinscriptions, validation et bourses' },
 ]
 
 export const REF_PERMISSIONS: RefPermission[] = [
@@ -166,6 +179,7 @@ export const REF_PERMISSIONS: RefPermission[] = [
   { key: 'menu.finances.bordereaux', libelle: 'Mes bordereaux', module: 'Finances', type: 'menu', parentKey: 'menu.finances' },
   { key: 'menu.finances.validation-bordereaux', libelle: 'Valid. bordereaux', module: 'Finances', type: 'menu', parentKey: 'menu.finances' },
   { key: 'menu.finances.impayes', libelle: 'Étudiants en situation irrégulière', module: 'Finances', type: 'menu', parentKey: 'menu.finances' },
+  { key: 'menu.finances.situation-financiere', libelle: 'Situation financière', module: 'Finances', type: 'menu', parentKey: 'menu.finances' },
   { key: 'action.finances.paiement.enregistrer', libelle: 'Enregistrer un paiement', module: 'Finances', type: 'action', parentKey: 'menu.finances.paiements' },
   { key: 'action.finances.paiement.annuler', libelle: 'Annuler un paiement', module: 'Finances', type: 'action', parentKey: 'menu.finances.paiements' },
   { key: 'action.finances.comptabilite.consulter', libelle: 'Consulter la compta', module: 'Finances', type: 'action', parentKey: 'menu.finances.comptabilite' },
@@ -367,6 +381,7 @@ export const REF_ROLE_PERMISSIONS: RefRolePermission[] = [
   { roleNom: 'Directeur', permissionKey: 'menu.finances.bordereaux' },
   { roleNom: 'Directeur', permissionKey: 'menu.finances.validation-bordereaux' },
   { roleNom: 'Directeur', permissionKey: 'menu.finances.impayes' },
+  { roleNom: 'Directeur', permissionKey: 'menu.finances.situation-financiere' },
   { roleNom: 'Directeur', permissionKey: 'action.finances.paiement.enregistrer' },
   { roleNom: 'Directeur', permissionKey: 'action.finances.paiement.annuler' },
   { roleNom: 'Directeur', permissionKey: 'menu.stocks' },
@@ -422,6 +437,7 @@ export const REF_ROLE_PERMISSIONS: RefRolePermission[] = [
   { roleNom: 'Comptable', permissionKey: 'menu.finances.bordereaux' },
   { roleNom: 'Comptable', permissionKey: 'menu.finances.validation-bordereaux' },
   { roleNom: 'Comptable', permissionKey: 'menu.finances.impayes' },
+  { roleNom: 'Comptable', permissionKey: 'menu.finances.situation-financiere' },
   { roleNom: 'Comptable', permissionKey: 'action.finances.paiement.enregistrer' },
   { roleNom: 'Comptable', permissionKey: 'action.finances.paiement.annuler' },
   { roleNom: 'Comptable', permissionKey: 'action.finances.comptabilite.consulter' },
@@ -585,4 +601,48 @@ export const REF_ROLE_PERMISSIONS: RefRolePermission[] = [
   { roleNom: 'Institution', permissionKey: 'menu.bourses.campagne' },
   { roleNom: 'Institution', permissionKey: 'action.bourse.campagne.creer' },
   { roleNom: 'Institution', permissionKey: 'action.bourse.attribution.creer' },
+  // ── FINANCES : ESA Compta (Service Recouvrement) ──
+  // ESA_COMPTA n'a AUCUN repli de rôle dans PermissionController.ts (l. 180-187) :
+  // ses droits proviennent donc uniquement des liaisons ci-dessous. Elles
+  // étaient absentes -> 403 sur tous les écrans financiers.
+  { roleNom: 'ESA Compta', permissionKey: 'menu.tableau-de-bord' },
+  { roleNom: 'ESA Compta', permissionKey: 'menu.inscription' },
+  { roleNom: 'ESA Compta', permissionKey: 'menu.inscription.paiements' },
+  { roleNom: 'ESA Compta', permissionKey: 'menu.inscription.bordereaux' },
+  { roleNom: 'ESA Compta', permissionKey: 'menu.finances' },
+  { roleNom: 'ESA Compta', permissionKey: 'menu.finances.paiements' },
+  { roleNom: 'ESA Compta', permissionKey: 'menu.finances.comptabilite' },
+  { roleNom: 'ESA Compta', permissionKey: 'menu.finances.impayes' },
+  { roleNom: 'ESA Compta', permissionKey: 'menu.finances.situation-financiere' },
+  { roleNom: 'ESA Compta', permissionKey: 'action.finances.paiement.enregistrer' },
+  { roleNom: 'ESA Compta', permissionKey: 'action.finances.comptabilite.consulter' },
+  { roleNom: 'ESA Compta', permissionKey: 'action.finance.bordereau.voir' },
+  { roleNom: 'ESA Compta', permissionKey: 'menu.reporting' },
+  { roleNom: 'ESA Compta', permissionKey: 'menu.reporting.paiements' },
+  { roleNom: 'ESA Compta', permissionKey: 'menu.communication' },
+  { roleNom: 'ESA Compta', permissionKey: 'menu.communication.messagerie' },
+  { roleNom: 'ESA Compta', permissionKey: 'menu.parametres' },
+  { roleNom: 'ESA Compta', permissionKey: 'menu.parametres.mon-profil' },
+  { roleNom: 'ESA Compta', permissionKey: 'menu.parametres.mon-compte' },
+  // ── FINANCES : Institution ──
+  { roleNom: 'Institution', permissionKey: 'menu.finances.impayes' },
+  { roleNom: 'Institution', permissionKey: 'menu.finances.situation-financiere' },
+  { roleNom: 'Institution', permissionKey: 'menu.finances.comptabilite' },
+  { roleNom: 'Institution', permissionKey: 'menu.finances.bordereaux' },
+  // ── COMITÉ D'ORIENTATION ──
+  // Périmètre strictement dérivé de MENU_CONFIG (menu.config.ts) : seules les
+  // entrées dont allowedRoles contient COMITE_ORIENTATION. Les clés parentes
+  // sont obligatoires, sinon le menu ne se déploie pas.
+  { roleNom: 'Comité', permissionKey: 'menu.tableau-de-bord' },
+  { roleNom: 'Comité', permissionKey: 'menu.comite-orientation' },
+  { roleNom: 'Comité', permissionKey: 'menu.comite-orientation.preinscriptions' },
+  { roleNom: 'Comité', permissionKey: 'menu.finances' },
+  { roleNom: 'Comité', permissionKey: 'menu.finances.comite-validation' },
+  { roleNom: 'Comité', permissionKey: 'menu.bourses' },
+  { roleNom: 'Comité', permissionKey: 'menu.bourses.configurations' },
+  { roleNom: 'Comité', permissionKey: 'menu.bourses.attributions' },
+  { roleNom: 'Comité', permissionKey: 'menu.bourses.campagne' },
+  { roleNom: 'Comité', permissionKey: 'menu.parametres' },
+  { roleNom: 'Comité', permissionKey: 'menu.parametres.mon-profil' },
+  { roleNom: 'Comité', permissionKey: 'menu.parametres.mon-compte' },
 ]

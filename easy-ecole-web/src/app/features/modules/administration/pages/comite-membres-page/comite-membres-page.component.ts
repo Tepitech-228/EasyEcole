@@ -19,6 +19,7 @@ export class ComiteMembresPageComponent extends BaseComponentClass implements On
   apiErrorMessage: string = ''
   creating: boolean = false
   deleting: boolean = false
+  updatingId: number | null = null
 
   createForm: FormGroup
   selectedMember: Utilisateur | null = null
@@ -37,6 +38,7 @@ export class ComiteMembresPageComponent extends BaseComponentClass implements On
       identifiant: ['', [Validators.required]],
       motDePasse: ['', [Validators.required]],
       contact: ['', []],
+      estPrescripteur: [false],
     });
   }
 
@@ -59,7 +61,9 @@ export class ComiteMembresPageComponent extends BaseComponentClass implements On
   }
 
   ouvrirCreateModal(): void {
-    this.createForm.reset();
+    // reset() seul met la case à null : on impose explicitement le défaut false
+    // pour que la case parte décochée à chaque ouverture.
+    this.createForm.reset({ estPrescripteur: false });
     this.apiErrorMessage = '';
     this.showCreateModal = true;
   }
@@ -95,6 +99,47 @@ export class ComiteMembresPageComponent extends BaseComponentClass implements On
   confirmerSuppression(membre: Utilisateur): void {
     this.selectedMember = membre;
     this.showDeleteModal = true;
+  }
+
+  /**
+   * `Utilisateur.id` est typé `string | undefined` côté modèle : la comparaison
+   * directe avec `updatingId` (number) est rejetée par le compilateur de
+   * gabarits. La conversion se fait ici, une fois.
+   */
+  estMiseAJour(membre: Utilisateur): boolean {
+    return this.updatingId !== null && Number(membre.id) === this.updatingId;
+  }
+
+  /**
+   * Bascule l'habilitation prescripteur.
+   * Le preset d'état est annulé si l'appel échoue, pour que l'écran reste
+   * aligné sur ce que le serveur a réellement enregistré.
+   */
+  basculerPrescripteur(membre: Utilisateur): void {
+    const precedent = Boolean(membre.estPrescripteur);
+    const cible = !precedent;
+    const id = Number(membre.id);
+
+    if (isNaN(id)) return;
+
+    membre.estPrescripteur = cible;
+    this.updatingId = id;
+
+    this.comiteMembreService.setPrescripteur(id, cible).subscribe({
+      next: () => {
+        this.updatingId = null;
+        this.toastService.success(
+          cible
+            ? `${membre.nom} ${membre.prenoms} peut désormais prescrire des UE/ECUE`
+            : `Habilitation prescripteur retirée à ${membre.nom} ${membre.prenoms}`
+        );
+      },
+      error: (err) => {
+        membre.estPrescripteur = precedent;
+        this.updatingId = null;
+        this.toastService.error(err.error?.message || 'Erreur lors de la modification du rôle prescripteur');
+      }
+    });
   }
 
   fermerDeleteModal(): void {

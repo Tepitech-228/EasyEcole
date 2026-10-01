@@ -28,6 +28,12 @@ async function phase7(context) {
   const sessionN1Id = sessionResult.insertId
   console.log(`[OK] Session L2 N+1 créée (id=${sessionN1Id})`)
 
+  // Seed requis : etapeInscriptionId référencé par ins_demandes_inscription
+  await db.query(
+    'INSERT IGNORE INTO ins_etapes_inscription (libelle, ordre, createdAt, updatedAt) VALUES (?, 1, NOW(), NOW())',
+    { replacements: ['Soumission'], type: db.QueryTypes.INSERT }
+  )
+
   // 7.4 Pour chaque étudiant
   for (let i = 0; i < allStudentIds.length; i++) {
     const userId = allStudentIds[i]

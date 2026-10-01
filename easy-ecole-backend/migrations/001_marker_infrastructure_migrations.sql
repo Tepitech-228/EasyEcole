@@ -1,0 +1,37 @@
+-- ============================================================================
+-- 001 — Marqueur : infrastructure de migrations
+-- ============================================================================
+--
+-- Migration volontairement VIDE (aucun DDL).
+--
+-- Son unique rôle est d'être la première ligne du registre `schema_migrations` :
+-- elle acte que le pipeline de migrations existe désormais dans le dépôt, et
+-- qu'il est exécuté par docker-entrypoint.sh avant le démarrage de l'application.
+--
+-- Historique
+-- ----------
+-- Avant cette migration, le projet n'avait AUCUN système de migrations.
+-- Le schéma de la base de production était fabriqué à l'exécution, à chaque
+-- démarrage du serveur, par `sequelize.sync({ alter: true })`
+-- (src/core/helpers/DatabaseConnection.ts, l. 193-210) :
+--   - opération non déterministe, rejouée intégralement à chaque boot ;
+--   - sans registre, donc sans mémoire de ce qui a déjà été appliqué ;
+--   - non bloquante, les erreurs n'étant que journalisées (l. 207) ;
+--   - en échec sur une clé étrangère (ER_NO_REFERENCED_ROW_2), ce qui laissait
+--     un schéma partiel et une application « verte » produisant des erreurs 500.
+--
+-- Un mécanisme de migrations était pourtant déjà spécifié dans
+-- docker-entrypoint.sh (`node /app/scripts/apply-migrations.cjs || exit 1`),
+-- mais le runner n'existait pas dans le dépôt et les fichiers de migration
+-- étaient censés être MONTÉS EN VOLUME manuellement dans Dokploy à chaque
+-- déploiement. C'était la source de la « gymnastique » opérationnelle.
+--
+-- À partir de cette migration :
+--   - le runner et les migrations sont versionnés dans le dépôt et copiés
+--     dans l'image Docker (plus aucun montage manuel) ;
+--   - chaque migration est appliquée une seule fois, en erreur bloquante ;
+--   - une migration modifiée après application est détectée et bloque.
+--
+-- Les bases existantes sont traitées par une migration de référence dédiée
+-- (lot P1) : cette migration ne touche à aucune donnée.
+-- ============================================================================
