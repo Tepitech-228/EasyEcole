@@ -148,6 +148,26 @@ RUN chmod +x docker-entrypoint.sh
 #   storage -> /app/storage  (cartes étudiantes générées, docgen)
 # Ils sont créés DANS l'image pour que Docker initialise le volume nommé avec
 # l'arborescence attendue (multer ne crée pas les dossiers lui-même).
+#
+# ⚠️ NE PAS faire `chown -R node:node /app` ici.
+# Un chown récursif sur /app traverse les ~340 Mo de node_modules ET chaque
+# fichier doit être RÉÉCRIT dans une nouvelle couche OverlayFS (copy-on-write) :
+# cela dupliquait ~360 Mo dans l'image finale sans rien apporter.
+# Docker applique déjà les bons droits sur les fichiers copiés par COPY, et le
+# WORKDIR /app appartient à root:root — l'utilisateur node n'a pas besoin d'y
+# écrire, SAUF dans les répertoires énumérés ci-dessous.
+#
+# Liste EXHAUSTIVE des chemins écrits au runtime par l'application, relevés dans
+# les sources (tous en `process.cwd()` = /app) :
+#   - public/...        uploads, GED, docgen, cachets, photos, dossiers, reçus
+#   - storage/...       cartes étudiantes, docgen, qr-codes
+#   - .keys/            clé maîtresse AES (EncryptionService) — absent sinon
+#   - config/           config de stockage modifiable (StorageConfigController)
+#   - uploads/pv/       PV de délibération (GenerateurPVService) — chemin
+#                       distinct de public/uploads, piège facile
+#   - backups/          sauvegardes GED / nettoyageÉtudiants
+# ⚠️ Tout nouveau chemin d'écriture ajouté dans le code DOIT être listé ici,
+# sinon le conteneur démarre et échoue sur EACCES au premier upload.
 # ---------------------------------------------------------------------------
 RUN mkdir -p \
     /app/public/uploads/images \
@@ -163,7 +183,18 @@ RUN mkdir -p \
     /app/public/inscription/dossiers \
     /app/storage/cartes \
     /app/storage/docgen \
-    && chown -R node:node /app
+    /app/storage/qr-codes \
+    /app/.keys \
+    /app/config \
+    /app/uploads/pv \
+    /app/backups \
+    && chown -R node:node \
+        /app/public \
+        /app/storage \
+        /app/.keys \
+        /app/config \
+        /app/uploads \
+        /app/backups
 
 # Utilisateur non-root (les processus Node/Chromium tournent avec --no-sandbox
 # côté application, déjà géré dans le code : voir GenerateurCarteService /
