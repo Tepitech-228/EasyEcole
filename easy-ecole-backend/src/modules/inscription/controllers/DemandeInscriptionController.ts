@@ -454,7 +454,10 @@ export default class DemandeInscriptionController {
                 });
         }
         else {
-            return res.status(400).json({ alreadySignUp: true });
+            // ⚠️ Code distinct de `alreadySignUp` (qui signale « une demande
+            // existe déjà pour cette session »). Réutiliser le même code
+            // affichait à l'étudiant un message hors sujet sur l'ajout d'un cours.
+            return res.status(400).json({ coursDejaChoisi: true });
         }
 
         return null

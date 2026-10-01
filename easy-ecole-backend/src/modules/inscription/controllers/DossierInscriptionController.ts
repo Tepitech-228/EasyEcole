@@ -104,9 +104,20 @@ export default class DossierInscriptionController {
 
             // Remplacement propre : on supprime les anciens fichiers de CE dossier
             // pour éviter les doublons qui cassent le comptage front/back.
-            const anciens = await DemandeInscriptionDossier.findAll({ where: { demandeId, dossierId } });
+            //
+            // Suppression PHYSIQUE et CIBLÉE sur la paire (demandeId, dossierId).
+            // Le modèle est `paranoid` : un destroy() classique ne ferait qu'un soft
+            // delete, la ligne physique resterait, et la contrainte UNIQUE
+            // (demandeId, dossierId) rejeterait ensuite le nouvel envoi.
+            //
+            // ⚠️ Le `where` DOIT rester cette paire. Cette table n'a pas d'identifiant
+            // de ligne ; une suppression non ciblée viderait toute la table.
+            const anciens = await DemandeInscriptionDossier.findAll({
+                where: { demandeId, dossierId },
+                paranoid: false
+            });
             for (const ancien of anciens) {
-                await ancien.destroy();
+                await ancien.destroy({ force: true });
                 const oldPath = path.join(UPLOAD_DIR, ancien.nomFichier);
                 if (fs.existsSync(oldPath)) {
                     try { fs.unlinkSync(oldPath); } catch (_) { /* fichier déjà supprimé */ }
@@ -137,6 +148,22 @@ export default class DossierInscriptionController {
                 }
             }
             console.error('[uploadDossierInscription]', error);
+
+            // Distinguer un refus de format (actionnable par l'étudiant) d'une panne
+            // technique. Un refus renvoyé en 500 conduisait l'utilisateur à réessayer
+            // indéfiniment, alors qu'aucune tentative ne pouvait aboutir.
+            const errMsg = error instanceof Error ? error.message : String(error);
+            if (errMsg.includes('LIMIT_UNEXPECTED_FILE')
+                || errMsg.includes('LIMIT_FILE_SIZE')
+                || errMsg.includes('format')) {
+                return res.status(400).json({
+                    success: false,
+                    message: errMsg.includes('LIMIT_FILE_SIZE')
+                        ? 'Fichier trop volumineux : la taille maximale est de 20 Mo.'
+                        : 'Format non accepté. Formats autorisés : PDF, JPG, JPEG, PNG.'
+                });
+            }
+
             return res.status(500).json({ success: false, message: "Erreur lors du téléversement des documents" });
         }
     }

@@ -37,16 +37,49 @@ export default class ComiteOrientationController {
                 return res.status(404).json({ success: false, message: "Parcours non trouvé" });
             }
 
-            // Vérifier que les UE appartiennent au parcours
-            const ueValides = await Cours.findAll({
-                where: { id: ueIds, parcoursId }
-            });
-
-            if (ueValides.length !== ueIds.length) {
+            if (ueIds.length === 0) {
                 return res.status(400).json({
                     success: false,
-                    message: "Certaines UE n'appartiennent pas au parcours sélectionné"
+                    message: "Aucune UE à ajouter (tableau ueIds vide)"
                 });
+            }
+
+            // Règle métier : le membre prescripteur AJOUTE des UE/ECUE EN PLUS
+            // de la base de l'étudiant (niveau / parcours / filière). C'est un
+            // cumul, pas un remplacement. On contrôle donc uniquement
+            // l'EXISTENCE des UE et l'on accepte aussi bien les UE d'un autre
+            // parcours que celles qui n'appartiennent à aucun parcours.
+            //
+            // TODO(schema) : la distinction base / prescrit reste DÉDUITE de
+            // l'écart de parcours, faute de marqueur en base (les migrations de
+            // schéma sont momentanément indisponibles). Limite connue : si
+            // l'étudiant change de parcours, toutes ses UE s'inversent. Un
+            // marqueur persistant sera introduit dès que le schéma pourra évoluer.
+            const ueIdsUniques = [...new Set(ueIds.map((id: unknown) => Number(id)))];
+            const ueValides = await Cours.findAll({ where: { id: ueIdsUniques } });
+            const ueValidesIds = ueValides.map((ue: any) => ue.id);
+            const ueManquantes = ueIdsUniques.filter((id: number) => !ueValidesIds.includes(id));
+
+            if (ueManquantes.length > 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "UE introuvable(s)",
+                    ueManquantes
+                });
+            }
+
+            // Année académique : aucune valeur devinée. Le modèle
+            // AnneeAcademique ne porte ni dates ni indicateur « active », on
+            // reprend donc l'année du cursus déjà ouvert par l'étudiant ; à
+            // défaut, l'appelant doit la fournir explicitement.
+            let anneeAcademiqueId: number | null = req.body.anneeAcademiqueId ?? null;
+
+            if (!anneeAcademiqueId) {
+                const cursusExistant = await CursusApprenant.findOne({
+                    where: { utilisateurId },
+                    order: [['id', 'DESC']]
+                });
+                anneeAcademiqueId = cursusExistant?.anneeAcademiqueId ?? null;
             }
 
             // Récupérer ou créer le cursus de l'étudiant pour ce parcours
@@ -55,13 +88,22 @@ export default class ComiteOrientationController {
             });
 
             if (!cursus) {
+                if (!anneeAcademiqueId) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Année académique de l'étudiant introuvable : renseignez anneeAcademiqueId."
+                    });
+                }
+
                 cursus = await CursusApprenant.create({
                     utilisateurId,
                     parcoursId,
                     niveauEtudeId: parcours.niveauEtudeId,
                     classeId: null,
-                    anneeAcademiqueId: 1, // TODO: récupérer l'année académique active
-                    demandeInscriptionId: null
+                    anneeAcademiqueId,
+                    demandeInscriptionId: undefined,
+                    externe: false,
+                    intituleParcours: parcours.titre || ''
                 });
             }
 

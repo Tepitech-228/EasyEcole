@@ -1,9 +1,20 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
-import { ComiteValidationService, DossierComite, Quorum } from 'src/app/data/modules/inscription/services/comite-validation.service';
+import { ComiteValidationService, DossierComite, FiltresComite, Quorum } from 'src/app/data/modules/inscription/services/comite-validation.service';
+import { ParcoursService } from 'src/app/data/modules/inscription/services/parcours.service';
+import { Parcours } from 'src/app/data/modules/inscription/models/Parcours.model';
+import { NiveauEtudeService } from 'src/app/data/modules/inscription/services/niveau-etude.service';
+import { NiveauEtude } from 'src/app/data/modules/inscription/models/NiveauEtude.model';
+import { AnneeAcademiqueService } from 'src/app/data/modules/inscription/services/annee-academique.service';
+import { AnneeAcademique } from 'src/app/data/modules/inscription/models/AnneeAcademique.model';
+import { Subscription, forkJoin, of, Subject } from 'rxjs';
+import { catchError, switchMap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
+
+/** Valeurs de la colonne Parcours.type, alignées sur le backend. */
+const FILIERES = ['LICENCE', 'MASTER', 'DOCTORAT', 'BTS', 'MBA']
 
 const QUORUM_VIDE: Quorum = {
   totalMembres: 0, votesCount: 0, valides: 0, restants: 0,
@@ -15,7 +26,7 @@ const QUORUM_VIDE: Quorum = {
   templateUrl: './comite-validation-page.component.html',
   styleUrls: ['./comite-validation-page.component.scss']
 })
-export class ComiteValidationPageComponent extends BaseComponentClass implements OnInit {
+export class ComiteValidationPageComponent extends BaseComponentClass implements OnInit, OnDestroy {
 
   dossiers: DossierComite[] = []
   loading: boolean = true
@@ -47,31 +58,140 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
   docPreviewUrl: SafeResourceUrl | null = null
   docPreviewIsImage: boolean = false
   docPreviewNom: string = ''
+  telechargementPdf: boolean = false
 
   constructor(
     private comiteService: ComiteValidationService,
     private localStorage: LocalStorageService,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private parcoursService: ParcoursService,
+    private niveauService: NiveauEtudeService,
+    private anneeService: AnneeAcademiqueService
   ) {
     super()
   }
 
-  ngOnInit(): void {
-    this.charger()
+  // ── Filtres du tableau ──
+
+  readonly FILIERES: string[] = FILIERES
+
+  anneesAcademiques: AnneeAcademique[] = []
+  niveauxEtude: NiveauEtude[] = []
+  listeParcours: Parcours[] = []
+  filtres: FiltresComite = { anneeId: '', filiere: '', parcoursId: '', niveauId: '' }
+  metaTotal: number | null = null
+  listeTronquee: boolean = false
+  referentielsCharges: boolean = false
+
+  /** Émet à chaque changement de filtre ; switchMap ne garde que la dernière réponse. */
+  private readonly changementFiltres: Subject<void> = new Subject<void>()
+  private readonly abonnements: Subscription[] = []
+
+  get nbFiltresActifs(): number {
+    return Object.values(this.filtres).filter(v => !!v).length
   }
 
+  /** Parcours proposés, restreints à la filière sélectionnée. */
+  get parcoursDisponibles(): Parcours[] {
+    if (!this.filtres.filiere) return this.listeParcours
+    return this.listeParcours.filter(p => p.type === this.filtres.filiere)
+  }
+
+  /**
+   * Niveaux proposés. Restreints à ceux des parcours visibles, sauf si un
+   * parcours est sélectionné : on ne propose alors que son propre niveau.
+   */
+  get niveauxDisponibles(): NiveauEtude[] {
+    const parcours = this.filtres.parcoursId
+      ? this.parcoursDisponibles.filter(p => String(p.id) === String(this.filtres.parcoursId))
+      : this.parcoursDisponibles
+
+    const idsNiveaux = new Set<string>()
+    for (const p of parcours) {
+      if (p.niveauEtudeId) idsNiveaux.add(String(p.niveauEtudeId))
+    }
+    if (idsNiveaux.size === 0) return this.niveauxEtude
+    return this.niveauxEtude.filter(n => idsNiveaux.has(String(n.id)))
+  }
+
+  /**
+   * Un changement de filtre parent invalide ses enfants : on les vide pour ne
+   * jamais laisser une combinaison impossible (ex. un parcours de MASTER avec
+   * une filière LICENSE).
+   */
+  surFiltreChange(critere: keyof FiltresComite, valeur: string): void {
+    (this.filtres as any)[critere] = valeur || ''
+    if (critere === 'filiere') {
+      this.filtres.parcoursId = ''
+      this.filtres.niveauId = ''
+    } else if (critere === 'parcoursId') {
+      this.filtres.niveauId = ''
+    }
+    this.changementFiltres.next()
+  }
+
+  reinitialiserFiltres(): void {
+    this.filtres = { anneeId: '', filiere: '', parcoursId: '', niveauId: '' }
+    this.changementFiltres.next()
+  }
+
+  private chargerReferentiels(): void {
+    this.abonnements.push(
+      forkJoin({
+        annees: this.anneeService.getAll().pipe(catchError(() => of([] as AnneeAcademique[]))),
+        niveaux: this.niveauService.getAll().pipe(catchError(() => of([] as NiveauEtude[]))),
+        parcours: this.parcoursService.getAll().pipe(catchError(() => of([] as Parcours[])))
+      }).subscribe({
+        next: (r) => {
+          this.anneesAcademiques = r.annees || []
+          this.niveauxEtude = r.niveaux || []
+          this.listeParcours = r.parcours || []
+          this.referentielsCharges = true
+        }
+      })
+    )
+  }
+
+  ngOnInit(): void {
+    this.chargerReferentiels()
+
+    this.abonnements.push(
+      this.changementFiltres.pipe(
+        switchMap(() => {
+          this.loading = true
+          this.error = false
+          return this.comiteService.listerDossiers(this.afficherTous, this.filtres)
+        })
+      ).subscribe({
+        next: (res) => {
+          this.dossiers = res.data || []
+          this.metaTotal = res.meta?.total ?? null
+          this.listeTronquee = !!res.meta?.tronque
+          this.loading = false
+        },
+        error: (err) => {
+          console.error(err)
+          this.dossiers = []
+          this.metaTotal = null
+          this.listeTronquee = false
+          this.apiErrorMessage = err?.error?.message || 'Erreur de chargement des dossiers'
+          this.error = true
+          this.loading = false
+        }
+      })
+    )
+
+    this.changementFiltres.next()
+  }
+
+  ngOnDestroy(): void {
+    this.changementFiltres.complete()
+    this.abonnements.forEach(s => s.unsubscribe())
+  }
+
+  /** Recharge la liste en conservant les filtres actifs (toggle « afficher tous »). */
   charger(): void {
-    this.loading = true
-    this.error = false
-    this.comiteService.listerDossiers(this.afficherTous).subscribe({
-      next: (res) => { this.dossiers = res.data || []; this.loading = false },
-      error: (err) => {
-        console.error(err)
-        this.apiErrorMessage = err?.error?.message || 'Erreur de chargement des dossiers'
-        this.error = true
-        this.loading = false
-      }
-    })
+    this.changementFiltres.next()
   }
 
   getParcoursFinal(d: any): string {
@@ -216,6 +336,38 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
     const url = this.getDocEtudiantUrl(doc)
     this.docPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url)
     this.docPreviewNom = fichier
+  }
+
+  /**
+   * Télécharge le dossier complet de l'étudiant en un seul PDF multipages,
+   * réunissant les pièces déposées au wizard et les pièces financières.
+   */
+  telechargerDossierComplet(d: any): void {
+    if (!d?.id || this.telechargementPdf) return
+    this.telechargementPdf = true
+    this.apiErrorMessage = ''
+
+    this.comiteService.telechargerPdfFusionne(d.id).subscribe({
+      next: (blob) => {
+        this.telechargementPdf = false
+        if (!blob || blob.size === 0) {
+          this.apiErrorMessage = 'Aucune pièce n’a pu être rassemblée pour cet étudiant.'
+          return
+        }
+        const url = URL.createObjectURL(blob)
+        const lien = document.createElement('a')
+        lien.href = url
+        lien.download = `dossier_${d.matricule || d.id}.pdf`
+        document.body.appendChild(lien)
+        lien.click()
+        document.body.removeChild(lien)
+        URL.revokeObjectURL(url)
+      },
+      error: () => {
+        this.telechargementPdf = false
+        this.apiErrorMessage = 'Impossible de générer le dossier PDF de cet étudiant.'
+      }
+    })
   }
 
   preparerDecision(decision: 'valide' | 'correction_demandee' | 'rejete'): void {

@@ -63,7 +63,7 @@ export class MonCursusPageComponent extends BaseComponentClass implements OnInit
 
   private loadCoursDetails(cursusId: string): void {
     this.loadingDetails = true
-    this.coursusApprenantService.getCoursChoisis(cursusId).subscribe({
+    this.cursusApprenantService.getCoursChoisis(cursusId).subscribe({
       next: (res) => {
         this.coursDetails = res
         this.loadingDetails = false

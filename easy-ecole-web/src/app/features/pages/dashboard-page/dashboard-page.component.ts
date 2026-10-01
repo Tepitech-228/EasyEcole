@@ -476,48 +476,136 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
   };
 
   // ─── Orientation Charts ─────────────────────────────────
+  /** Palette du comité : ambre = à traiter, vert = validé, rouge = rejeté, bleu = correction. */
+  private static readonly PALETTE_COMITE = {
+    attente: '#f59e0b',
+    valide: '#10b981',
+    rejete: '#ef4444',
+    correction: '#3b82f6',
+  };
+
   get orientationDoughnutData(): any {
     const enAttente = this.dashboardData.enAttente || 0;
     const validees = this.dashboardData.validees || 0;
     const rejetees = this.dashboardData.rejetees || 0;
+    // 4e état du pipeline : une correction demandée n'est ni validée ni
+    // rejetée, l'élève doit encore agir. Le masquer faussait le total.
+    const corrections = this.dashboardData.correctionsDemandees || 0;
+    const P = DashboardPageComponent.PALETTE_COMITE;
     return {
-      labels: ['En attente', 'Validées', 'Rejetées'],
+      labels: ['À traiter', 'Validés', 'Rejetés', 'Correction demandée'],
       datasets: [{
-        data: [enAttente, validees, rejetees],
-        backgroundColor: ['#f59e0b', '#10b981', '#ef4444'],
-        hoverBackgroundColor: ['#d97706', '#059669', '#dc2626'],
-        borderWidth: 2,
-        borderColor: ['#f59e0b', '#10b981', '#ef4444'],
-        hoverOffset: 12,
+        data: [enAttente, validees, rejetees, corrections],
+        backgroundColor: [P.attente, P.valide, P.rejete, P.correction],
+        hoverBackgroundColor: ['#d97706', '#059669', '#dc2626', '#2563eb'],
+        // Segments détachés et arrondis : plus lisible qu'un contour blanc épais.
+        borderWidth: 0,
+        spacing: 3,
+        borderRadius: 6,
+        hoverOffset: 10,
       }]
     };
+  }
+
+  /** Libellé + couleur du statut pipeline, pour les listes du bloc comité. */
+  private static readonly STATUTS_PIPELINE: Record<string, { label: string; classe: string }> = {
+    soumis:                { label: 'Soumis',                classe: 'bg-gray-50 text-gray-700' },
+    authentifie:           { label: 'Authentifié',           classe: 'bg-slate-50 text-slate-700' },
+    saisie_validee:        { label: 'Saisie validée',        classe: 'bg-indigo-50 text-indigo-700' },
+    transmis_comite:       { label: 'À traiter',             classe: 'bg-amber-50 text-amber-700' },
+    valide:                { label: 'Validé',                classe: 'bg-emerald-50 text-emerald-700' },
+    correction_demandee:   { label: 'Correction demandée',   classe: 'bg-blue-50 text-blue-700' },
+    rejete:                { label: 'Rejeté',                classe: 'bg-red-50 text-red-700' },
+  };
+
+  statutDossier(d: any): { label: string; classe: string } {
+    return DashboardPageComponent.STATUTS_PIPELINE[d?.statutPipeline || '']
+      || { label: 'En cours', classe: 'bg-gray-50 text-gray-700' };
   }
 
   orientationDoughnutOptions: any = {
     responsive: true,
     maintainAspectRatio: false,
-    cutout: '72%',
-    animation: { animateRotate: true, duration: 1300, easing: 'easeOutCubic' as any },
+    // Espace central pour le total affiché en surimpression (cf. template).
+    cutout: '74%',
+    animation: { animateRotate: true, animateScale: false, duration: 1100, easing: 'easeOutQuart' as any },
+    layout: { padding: 8 },
     plugins: {
       legend: {
         position: 'bottom',
         labels: {
-          padding: 18,
+          padding: 16,
           usePointStyle: true,
           pointStyle: 'circle',
+          boxWidth: 8,
+          boxHeight: 8,
           font: { size: 12, family: 'Inter, sans-serif' },
           color: '#475569'
         }
       },
       tooltip: {
-        backgroundColor: '#111827',
-        titleFont: { size: 12, family: 'Inter, sans-serif' },
-        bodyFont: { size: 12, family: 'Inter, sans-serif' },
-        padding: 14,
-        cornerRadius: 12,
-        displayColors: false
+        backgroundColor: '#0f172a',
+        titleFont: { size: 12, family: 'Inter, sans-serif', weight: '600' },
+        bodyFont: { size: 13, family: 'Inter, sans-serif' },
+        padding: 12,
+        cornerRadius: 10,
+        displayColors: true,
+        usePointStyle: true,
+        boxWidth: 8,
+        boxHeight: 8,
+        callbacks: {
+          label: (ctx: any) => {
+            const total = ctx.dataset.data.reduce((a: number, b: number) => a + Number(b), 0);
+            const pct = total ? ((Number(ctx.parsed) / total) * 100).toFixed(0) : '0';
+            return `  ${ctx.label} : ${ctx.parsed} (${pct} %)`;
+          },
+        },
       }
     }
+  };
+
+  /** Total affiché au centre du donut. */
+  get orientationTotal(): number {
+    return (this.dashboardData.enAttente || 0)
+      + (this.dashboardData.validees || 0)
+      + (this.dashboardData.rejetees || 0)
+      + (this.dashboardData.correctionsDemandees || 0);
+  }
+
+  // ─── COMITÉ : répartition 1ère inscription / réinscription ──
+  get orientationRepartitionData(): any {
+    const p = this.dashboardData?.parType || {};
+    return {
+      labels: ['1ère inscription', 'Réinscription'],
+      datasets: [{
+        data: [p.premiereInscription || 0, p.reinscription || 0],
+        backgroundColor: ['#4f46e5', '#0ea5e9'],
+        hoverBackgroundColor: ['#4338ca', '#0284c7'],
+        borderRadius: 8,
+        barThickness: 26,
+      }],
+    };
+  }
+
+  orientationRepartitionOptions: any = {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 900, easing: 'easeOutQuart' as any },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#0f172a',
+        padding: 12,
+        cornerRadius: 10,
+        displayColors: false,
+        callbacks: { label: (ctx: any) => `  ${ctx.parsed.x} dossier(s)` },
+      },
+    },
+    scales: {
+      x: { beginAtZero: true, grid: { color: '#eef2f7' }, border: { display: false }, ticks: { precision: 0, color: '#64748b', font: { size: 11 } } },
+      y: { grid: { display: false }, border: { display: false }, ticks: { color: '#334155', font: { size: 11, weight: '600' } } },
+    },
   };
 
   // ─── Enseignant Charts ─────────────────────────────────

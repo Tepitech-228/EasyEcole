@@ -66,6 +66,7 @@ import { FormsModule } from '@angular/forms';
     FeuillePresencePageComponent,
     AbsencesCoursPageComponent,
     DettesAcademiquesPageComponent,
+    PvNotesPageComponent,
   ],
   imports: [
     CommonModule,

@@ -13,7 +13,7 @@ import { OcrService } from 'src/app/data/modules/inscription/services/ocr.servic
 import { ApprenantService } from 'src/app/data/modules/auth/services/apprenant.service';
 import { BordereauService } from 'src/app/data/modules/inscription/services/bordereau.service';
 import { DossierInscriptionService } from 'src/app/data/modules/inscription/services/dossier-inscription.service';
-import { InscriptionWizardStoreService } from 'src/app/data/modules/inscription/services/inscription-wizard-store.service';
+import { InscriptionWizardStoreService, FichierMeta } from 'src/app/data/modules/inscription/services/inscription-wizard-store.service';
 import { WizardItemType } from 'src/app/data/types/WizardItemType';
 
 interface FiliereSelection {
@@ -34,9 +34,11 @@ interface FiliereSelection {
  *            OCR branché via un service d'extraction extensible ; sans moteur
  *            configuré, un formulaire vierge à compléter est proposé)
  *  ÉTAPE 4 : récapitulatif + soumission
- *  ÉTAPE 5 : statut d'inscription (pipeline : soumis → authentifié (Audit)
- *            → transmis comité → validé) ; en cas de correction comptable,
- *            l'étape concernée passe en orange + notification mail.
+ *  ÉTAPE 5 : statut d'inscription. Seules les étapes qui concernent l'étudiant
+ *            sont affichées (« Demande envoyée » puis « Dossier validé ») ; la
+ *            chaîne interne de traitement (authentification/Audit, saisie
+ *            comptable, comité) reste pilotée côté back-office mais n'est pas
+ *            exposée à l'étudiant.
  */
 @Component({
   selector: 'app-inscription-wizard-page',
@@ -69,6 +71,12 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   documentsRequis: Array<{ id: string; titre: string; description?: string; obligatoire?: boolean }> = []
   documents: { [cle: string]: File | null } = {}
   bordereau: File | null = null
+
+  // Pièces qui avaient été sélectionnées avant un RECHARGEMENT du navigateur et
+  // qui doivent être re-sélectionnées : le contenu binaire n'est pas conservé
+  // (le nom d'origine l'est, pour pouvoir l'afficher à l'étudiant).
+  documentsAReposer: { [cle: string]: FichierMeta } = {}
+  bordereauAReposer: FichierMeta | null = null
 
   // Infos personnelles (pré-remplies par OCR, corrigées puis validées)
   infos: {
@@ -111,9 +119,12 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   }
 
   ngOnInit(): void {
-    // Restauration éventuelle de l'état sauvegardé au retour de la page profil
-    // (étape 3 redirigée vers /parametres/profil). L'état est rechargé UNE fois,
-    // puis on continue le chargement normal de l'arborescence / des sessions.
+    // Restauration de l'état dans deux cas :
+    //  1) retour de la page profil (/parametres/profil, étape 3 redirigée) ;
+    //  2) RECHARGEMENT du navigateur — l'état est relu depuis le sessionStorage,
+    //     ce qui évite de perdre toute la saisie de l'étudiant.
+    // Dans les deux cas l'état est restauré UNE fois, puis le chargement normal
+    // de l'arborescence / des sessions reprend.
     const etat = this.wizardStore.reprendreEtat()
     if (etat) {
       this.restaurerEtat(etat)
@@ -149,6 +160,13 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.bordereau = etat.bordereau || null
     this.infos = Object.assign({}, etat.infos)
 
+    // Pièces perdues lors d'un rechargement : leur contenu n'est pas
+    // restaurable, on mémorise leur nom pour l'afficher et on laisse
+    // `documents`/`bordereau` vides → le dossier reste incomplet tant que
+    // l'étudiant ne les a pas re-sélectionnées.
+    this.documentsAReposer = etat.documentsAReposer || {}
+    this.bordereauAReposer = etat.bordereauAReposer || null
+
     // Au retour de la page profil, on récupère les infos réellement ENREGISTRÉES
     // en base (le store ne contient que le pré-remplissage OCR, souvent vide).
     // On ne surcharge pas les valeurs déjà présentes dans le wizard.
@@ -176,7 +194,59 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
 
     // Recharge l'arborescence pour disposer des labels (filière, grade) au récap.
     this.loadArborescence()
-    this.etape = 4
+
+    // Étape de reprise : celle où l'étudiant en était (4 après le passage par la
+    // page profil). Bornée à l'intervalle valide pour qu'un état corrompu ne
+    // place jamais le wizard sur une étape inexistante.
+    const etape = Number(etat.etape)
+    this.etape = etape >= 1 && etape <= 5 ? etape : 1
+
+    // On repart de l'état assaini (pièces vidées) : on le réécrit pour que le
+    // rechargement suivant ne redemande pas des fichiers que l'étudiant vient
+    // de re-sélectionner.
+    this.sauvegarder()
+  }
+
+  /**
+   * Persiste l'état courant dans le store (sessionStorage) afin de survivre à un
+   * rechargement du navigateur. Appelé après CHAQUE modification significative :
+   * c'est la garantie « l'étudiant ne perd jamais sa saisie ».
+   */
+  private sauvegarder(): void {
+    this.wizardStore.sauvegarderEtat({
+      etape: this.etape,
+      sessionIdFromRoute: this.sessionIdFromRoute,
+      niveauEtudeIdFromRoute: this.niveauEtudeIdFromRoute,
+      typeChoisi: this.typeChoisi,
+      gradeChoisi: this.gradeChoisi,
+      filiereChoisie: this.filiereChoisie ?? null,
+      filiereSelectionId: this.filiereSelectionId,
+      sessionSelectionneeId: this.sessionSelectionneeId,
+      sessions: this.sessions,
+      documentsRequis: this.documentsRequis,
+      documents: this.documents,
+      bordereau: this.bordereau,
+      infos: { ...this.infos }
+    })
+  }
+
+  /** Vrai si des pièces restent à re-sélectionner (rechargement du navigateur). */
+  get aPiecesAReposer(): boolean {
+    return Object.keys(this.documentsAReposer).length > 0 || !!this.bordereauAReposer
+  }
+
+  /** Libellés lisibles des pièces à re-sélectionner, pour le message d'aide. */
+  get libellesPiecesAReposer(): string[] {
+    const libelles: string[] = []
+    for (const cle of Object.keys(this.documentsAReposer)) {
+      const titre = this.documentsRequis.find((d) => d.id === cle)?.titre
+      libelles.push(titre || this.documentsAReposer[cle].nom)
+    }
+    if (this.bordereauAReposer) {
+      const titreBordereau = this.documentsRequis.find((d) => this.estBordereau(d))?.titre
+      libelles.push(titreBordereau || this.bordereauAReposer.nom)
+    }
+    return libelles
   }
 
 
@@ -243,15 +313,18 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.typeChoisi = type
     this.gradeChoisi = ''
     this.filiereChoisie = undefined
+    this.sauvegarder()
   }
 
   choisirGrade(grade: string): void {
     this.gradeChoisi = grade
     this.filiereChoisie = undefined
+    this.sauvegarder()
   }
 
   choisirFiliere(f: FiliereSelection): void {
     this.filiereChoisie = f
+    this.sauvegarder()
   }
 
   /**
@@ -275,6 +348,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
       this.filiereChoisie = undefined
       this.typeChoisi = ''
       this.gradeChoisi = ''
+      this.sauvegarder()
       return
     }
     for (const t of this.arborescence) {
@@ -284,6 +358,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
           this.filiereChoisie = f
           this.typeChoisi = t.type
           this.gradeChoisi = g.grade
+          this.sauvegarder()
           return
         }
       }
@@ -334,6 +409,9 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
       }))
     this.documents = {}
     this.documentsRequis = dossiersSession
+    // Nouvelle session ⇒ les pièces de la précédente ne sont plus attendues.
+    this.documentsAReposer = {}
+    this.bordereauAReposer = null
   }
 
   /** Recharge le détail de la session pour récupérer ses dossiers d'inscription. */
@@ -355,16 +433,41 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     // Documents définis à la CRÉATION de la session (système en place),
     // disponibles uniquement via le détail de la session.
     this.chargerDocumentsSessionParId(Number(id))
+    this.sauvegarder()
   }
 
   surDocument(cle: string, event: any): void {
     const file: File = event?.target?.files?.[0]
     if (file) {
+      // Contrôle miroir du filtre serveur (DossierInscriptionRouter) : sans cela,
+      // un format refusé n'est signalé qu'après l'envoi, et l'étudiant voit
+      // « L'un des documents n'a pas pu être téléversé » sans savoir pourquoi.
+      const extensionsAutorisees = ['.pdf', '.jpg', '.jpeg', '.png']
+      const extension = ('.' + (file.name.split('.').pop() || '')).toLowerCase()
+      if (!extensionsAutorisees.includes(extension)) {
+        this.toastService.error(
+          'Formats acceptés : PDF, JPG, JPEG ou PNG. '
+          + `Le fichier « ${file.name} » a été refusé.`)
+        // Réinitialise le champ pour permettre une nouvelle sélection du même fichier.
+        if (event?.target) { event.target.value = '' }
+        return
+      }
+      if (file.size > 20 * 1024 * 1024) {
+        this.toastService.error(
+          `Le fichier « ${file.name} » dépasse la taille maximale de 20 Mo.`)
+        if (event?.target) { event.target.value = '' }
+        return
+      }
+
       this.documents[cle] = file
+      // La pièce est de nouveau disponible : on retire l'alerte de re-sélection.
+      delete this.documentsAReposer[cle]
       const requis = this.documentsRequis.find((d) => d.id === cle)
       if (requis && this.estBordereau(requis)) {
         this.bordereau = file
+        this.bordereauAReposer = null
       }
+      this.sauvegarder()
     }
   }
 
@@ -495,6 +598,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
       sexe: d.sexe || '',
       typePieceIdentite: d.typePieceIdentite || ''
     }
+    this.sauvegarder()
   }
 
   /**
@@ -596,6 +700,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     }
     this.errorMessage = ''
     this.etape = 2
+    this.sauvegarder()
     // Si une session est déjà sélectionnée (auto-depuis la route), recharger
     // les documents requis pour cette session avec le grade maintenant choisi.
     if (this.sessionSelectionneeId && this.documentsRequis.length === 0) {
@@ -627,10 +732,12 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     }
     this.errorMessage = ''
     this.etape = 4
+    this.sauvegarder()
   }
 
   revenirEtape(etape: number): void {
     this.etape = etape
+    this.sauvegarder()
   }
 
   // ---------------------------------------------------------------------------
@@ -657,6 +764,16 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
       return
     }
 
+    // La demande a pu être créée en amont (page de choix de session), qui
+    // redirige ensuite vers ce wizard avec son id. Dans ce cas on rattachera les
+    // pièces à CETTE demande : en créer une seconde est refusé par le backend
+    // (alreadySignUp) et laissait l'étudiant bloqué avec un faux « dossier soumis ».
+    const demandeExistanteId = this.route.snapshot.paramMap.get('id')
+    if (demandeExistanteId) {
+      this.rattacherParcoursEtFinaliser(demandeExistanteId)
+      return
+    }
+
     const demande = new DemandeInscription()
     demande.sessionId = String(this.sessionSelectionneeId)
     demande.dateDemande = new Date()
@@ -664,62 +781,46 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
 
     this.demandeInscriptionService.create(demande).subscribe({
       next: (demandeCreee) => {
-        const parcoursChoisi = new ParcoursChoisi()
-        parcoursChoisi.parcoursId = String(this.filiereChoisie!.id)
-        parcoursChoisi.demandeInscriptionId = demandeCreee.id || (demandeCreee as any).id
-        parcoursChoisi.choixFinal = true
-
-        this.parcoursChoisiService.create(parcoursChoisi).subscribe({
-          next: () => {
-            this.finaliserFichiers(demandeCreee.id || (demandeCreee as any).id)
-          },
-          error: (err) => {
-            this.submitting = false
-            this.errorMessage = err?.error?.message || 'La demande a été créée mais le parcours n\'a pas pu être rattaché.'
-            this.etape = 5
-            this.resultat = { statutPipeline: 'soumis' }
-          }
-        })
+        this.rattacherParcoursEtFinaliser(String(demandeCreee.id || (demandeCreee as any).id))
       },
       error: (err) => {
         this.submitting = false
         if (err?.error?.alreadySignUp) {
-          this.toastService.warning('Vous avez déjà une demande d\'inscription pour cette session.');
-          this.demandeInscriptionService.getAll().subscribe({
-            next: (res) => {
-              const existingDemande = res.data.find((d) => {
-                const matchSession = String(d.sessionId) === String(demande.sessionId)
-                const matchUser = BaseComponentClass.utilisateur?.id ? String(d.utilisateurId) === BaseComponentClass.utilisateur.id : true
-                return matchSession && matchUser
-              })
-
-              if (existingDemande) {
-                this.errorMessage = 'Une demande existe déjà pour cette session. Vous pouvez suivre son avancement depuis vos demandes.'
-                this.etape = 5
-                this.resultat = { statutPipeline: 'soumis', demandeId: existingDemande.id }
-              } else {
-                this.errorMessage = 'Vous avez déjà une demande pour cette session.'
-                this.submitting = false
-                this.etape = 5
-                this.resultat = { statutPipeline: 'soumis' }
-              }
-            },
-            error: () => {
-              this.submitting = false
-              this.errorMessage = 'Vous avez déjà une demande pour cette session.'
-              this.etape = 5
-              this.resultat = { statutPipeline: 'soumis' }
-            }
-          })
+          // Le dossier n'a PAS été transmis : on ne passe pas à l'étape 5.
+          // L'étudiant doit reprendre sa demande depuis « Mes demandes ».
+          this.errorMessage = 'Une demande d\'inscription existe déjà pour cette session. Ouvrez-la depuis « Mes demandes » pour la compléter.'
         } else {
-          this.toastService.error(err?.error?.message || 'Erreur lors de la soumission du dossier.');
+          this.toastService.error(err?.error?.message || 'Erreur lors de la soumission du dossier.')
           this.errorMessage = err?.error?.message || 'Erreur lors de la soumission du dossier.'
         }
       }
     })
   }
 
+  /**
+   * Rattache le parcours choisi à la demande puis téléverse les pièces.
+   * Chemin commun à la création d'une demande neuve et à la reprise d'une
+   * demande déjà créée (page de choix de session).
+   */
+  private rattacherParcoursEtFinaliser(demandeId: string): void {
+    const parcoursChoisi = new ParcoursChoisi()
+    parcoursChoisi.parcoursId = String(this.filiereChoisie!.id)
+    parcoursChoisi.demandeInscriptionId = demandeId
+    parcoursChoisi.choixFinal = true
+
+    this.parcoursChoisiService.create(parcoursChoisi).subscribe({
+      next: () => this.finaliserFichiers(demandeId),
+      error: (err) => {
+        // Dossier NON transmis : on ne saute pas à l'étape « réussi ».
+        this.echouerSoumission(err?.error?.message || 'La demande a été créée mais le parcours n\'a pas pu être rattaché.')
+      }
+    })
+  }
+
   recommencer(): void {
+    // Repartir d'une demande neuve : on efface aussi la saisie persistée,
+    // pour ne pas ressusciter un ancien brouillon au prochain rechargement.
+    this.wizardStore.effacer()
     this.etape = 1
     this.resultat = null
     this.typeChoisi = ''
@@ -729,6 +830,8 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.documentsRequis = []
     this.documents = {}
     this.bordereau = null
+    this.documentsAReposer = {}
+    this.bordereauAReposer = null
     this.errorMessage = ''
     this.successMessage = ''
   }
@@ -738,6 +841,9 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.resultat = { statutPipeline: 'soumis' }
     this.successMessage = 'Dossier soumis. Vous serez notifié de l\'avancement de votre inscription.'
     this.etape = 5
+    // Dossier transmis : la sauvegarde locale n'a plus lieu d'être. Les PII et
+    // les pièces de l'étudiant disparaissent du navigateur dès la soumission.
+    this.wizardStore.effacer()
   }
 
   /** Arrête la soumission en cas d'échec d'upload (plus d'erreur silencieuse). */
@@ -817,22 +923,28 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     return 'en_attente'
   }
 
+  /**
+   * Timeline affichée à l'étudiant.
+   *
+   * On n'y expose QUE ses propres étapes. La chaîne interne de traitement
+   * (authentification / Audit, saisie comptable, passage en comité) est
+   * conservée côté back-office et continue de piloter le dossier, mais elle
+   * n'apporte rien à l'étudiant : la montrer le rend anxieux et l'oblige à
+   * interpréter un vocabulaire administratif qui n'est pas le sien.
+   */
   statutsPipeline(): Array<{ key: string; label: string; active: boolean; done: boolean; kind: string }> {
     const statut = this.resultat?.statutPipeline || 'soumis'
-    const steps = [
-      { key: 'soumis', label: 'Soumis' },
-      { key: 'authentifie', label: 'Authentifié (Audit)' },
-      { key: 'transmis_comite', label: 'Transmis au comité' },
-      { key: 'valide', label: 'Validé' }
+    const enCorrection = statut === 'correction_demandee' || statut === 'rejete'
+    const valide = statut === 'valide'
+    return [
+      { key: 'soumis', label: 'Demande envoyée', active: !valide, done: valide, kind: 'ok' },
+      {
+        key: 'valide',
+        label: enCorrection ? 'Correction demandée' : 'Dossier validé',
+        active: !valide,
+        done: false,
+        kind: enCorrection ? 'warning' : 'ok'
+      }
     ]
-    const idx = steps.findIndex((s) => s.key === statut)
-    const currentIdx = idx === -1 ? (['correction_demandee', 'rejete'].includes(statut) ? steps.length - 1 : 0) : idx
-    return steps.map((s, i) => ({
-      key: s.key,
-      label: s.label,
-      active: i === currentIdx,
-      done: i < currentIdx,
-      kind: statut === 'correction_demandee' && i === currentIdx ? 'warning' : (statut === 'rejete' && i === currentIdx ? 'danger' : 'ok')
-    }))
   }
 }

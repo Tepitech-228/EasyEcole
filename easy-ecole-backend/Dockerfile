@@ -31,7 +31,21 @@ COPY .babelrc ./
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 
 # Installation des dépendances (y compris dev : @babel/cli, ts, etc.)
-RUN npm ci
+#
+# OPTIONS DE ROBUSTESSE ET DE RAPIDITÉ (build Dokploy) :
+#  - --mount=type=cache : le cache npm survit aux rebuilds. Sans lui, chaque
+#    déploiement retélécharge TOUS les tarballs (mesuré : ~30 min sur le
+#    serveur). Avec lui, un rebuild ne récupère que ce qui manque.
+#  - --fetch-retries* / --fetch-timeout : une coupure réseau côté registre
+#    (npm error code ECONNRESET) est retentée au lieu de faire échouer tout
+#    le déploiement.
+#  - --no-audit --no-fund : l'audit parcourt l'arbre complet sur le réseau,
+#    sans aucun effet sur le contenu de node_modules.
+RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+    npm ci --no-audit --no-fund \
+      --fetch-retries=8 --fetch-retry-factor=2 \
+      --fetch-retry-mintimeout=10000 --fetch-retry-maxtimeout=120000 \
+      --fetch-timeout=600000
 
 # Sources TypeScript (les tests et scripts dev sont exclus via .dockerignore)
 COPY tsconfig.json ./
@@ -95,10 +109,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Dépendances npm de PRODUCTION uniquement (pas de devDependencies).
 # PUPPETEER_CACHE_DIR : force le téléchargement de Chromium dans un dossier
 # prévisible, re-créé au runtime par l'utilisateur non-root `node`.
+#
+# Mêmes options que le stage build (cache npm persistant, retries réseau) :
+# c'est CETTE étape qui télécharge Chromium (~150 Mo), donc c'est elle qui
+# était la plus longue et la plus exposée aux ECONNRESET.
 # ---------------------------------------------------------------------------
 COPY package.json package-lock.json ./
 ENV PUPPETEER_CACHE_DIR=/opt/puppeteer_cache
-RUN npm ci --omit=dev && npm cache clean --force
+RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+    npm ci --omit=dev --no-audit --no-fund \
+      --fetch-retries=8 --fetch-retry-factor=2 \
+      --fetch-retry-mintimeout=10000 --fetch-retry-maxtimeout=120000 \
+      --fetch-timeout=600000
 
 # ---------------------------------------------------------------------------
 # Artefact compilé + point d'entrée
@@ -106,6 +128,20 @@ RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=build /app/lib ./lib
 COPY index.js ./
 COPY docker-entrypoint.sh ./
+
+# ---------------------------------------------------------------------------
+# Migrations SQL + runner
+# ---------------------------------------------------------------------------
+# Ces fichiers étaient jusqu'ici montés EN VOLUME manuellement dans Dokploy à
+# chaque déploiement (source de la « gymnastique » et des schémas partiels). Ils
+# sont désormais versionnés dans le dépôt et copiés dans l'image : le
+# déploiement est reproductible, sans configuration manuelle.
+#
+# - migrations/                 : un fichier .sql = une migration
+# - scripts/apply-migrations.cjs: runner (CommonJS, sans dépendance de dev)
+# ---------------------------------------------------------------------------
+COPY migrations ./migrations
+COPY scripts/apply-migrations.cjs ./scripts/apply-migrations.cjs
 RUN chmod +x docker-entrypoint.sh
 
 # ---------------------------------------------------------------------------

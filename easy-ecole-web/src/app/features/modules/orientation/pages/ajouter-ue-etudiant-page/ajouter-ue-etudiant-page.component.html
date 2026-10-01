@@ -82,11 +82,11 @@
             </div>
           </div>
 
-          <div *ngIf="selectedUeIds.length > 0" class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-4">
+            <div *ngIf="selectedUeIds.length > 0" class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-4">
             <p class="text-sm font-medium text-indigo-800 mb-2">{{ selectedUeIds.length }} UE sélectionnée(s)</p>
             <div class="flex flex-wrap gap-2">
               <span *ngFor="let ueId of selectedUeIds" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
-                {{ ueParcours.find(ue => ue.id === ueId)?.intitule || 'UE ' + ueId }}
+                {{ getUeName(ueId) }}
               </span>
             </div>
           </div>

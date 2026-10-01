@@ -18,13 +18,21 @@ DemandeInscriptionDossier.init({
     type: new DataTypes.STRING,
     allowNull: false
   },
+  // La table possède une clé primaire COMPOSITE (demandeId, dossierId) et aucune
+  // colonne `id`. Sans `primaryKey: true` ici, Sequelize injecte un attribut `id`
+  // implicite et TOUTE insertion échoue avec « Champ 'id' inconnu dans INSERT INTO ».
+  // `id: false` seul ne suffit pas : l'attribut subsiste. C'est la déclaration
+  // explicite de la clé primaire qui le supprime, et qui permet en plus à
+  // instance.where() de cibler la paire pour le remplacement des pièces.
   demandeId: {
     type: DataTypes.INTEGER.UNSIGNED,
-    allowNull: false
+    allowNull: false,
+    primaryKey: true
   },
   dossierId: {
     type: DataTypes.INTEGER.UNSIGNED,
-    allowNull: false
+    allowNull: false,
+    primaryKey: true
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

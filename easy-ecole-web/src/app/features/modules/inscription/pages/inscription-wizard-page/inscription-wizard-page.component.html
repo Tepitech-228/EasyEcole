@@ -13,6 +13,18 @@
   <div *ngIf="errorMessage" class="alert alert-danger mt-3">{{ errorMessage }}</div>
   <div *ngIf="successMessage" class="alert alert-success mt-3">{{ successMessage }}</div>
 
+  <!-- Rechargement du navigateur : la saisie est conservée, les pièces jointes non.
+       Un navigateur ne peut pas conserver un fichier téléversé ; on le dit clairement
+       plutôt que de laisser croire à l'étudiant que son dossier est complet. -->
+  <div *ngIf="aPiecesAReposer" class="alert alert-warning mt-3">
+    <strong>Vos choix et vos informations ont été conservés.</strong>
+    En revanche, les fichiers eux-mêmes doivent être re-sélectionnés (le navigateur ne
+    peut pas les conserver). Merci de re-sélectionner :
+    <ul class="mt-2 mb-0">
+      <li *ngFor="let nom of libellesPiecesAReposer">{{ nom }}</li>
+    </ul>
+  </div>
+
   <div *ngIf="loading" class="loading-wrap">
     <div class="spinner"></div>
     <span>Chargement en cours…</span>
@@ -111,7 +123,7 @@
             </svg>
             Choisir
           </div>
-          <input type="file" (change)="surDocument(d.id, $event)" />
+          <input type="file" accept=".pdf,.jpg,.jpeg,.png" (change)="surDocument(d.id, $event)" />
         </div>
 
         <span *ngIf="nomDocument(d.id)" class="doc-filename">
@@ -119,6 +131,9 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
           </svg>
           {{ nomDocument(d.id) }}
+        </span>
+        <span *ngIf="!nomDocument(d.id) && documentsAReposer[d.id]" class="doc-filename">
+          {{ documentsAReposer[d.id].nom }} — à re-sélectionner
         </span>
       </div>
 
@@ -320,7 +335,7 @@
         <strong>Inscription effectuée.</strong> Votre demande a été validée par le comité. Le matricule et le cursus ont été générés.
       </ng-container>
       <ng-container *ngIf="statutInscription === 'correction'">
-        <strong>Correction demandée.</strong> Une erreur a été signalée côté comptable. Vous avez été notifié par mail — corrigez l'étape indiquée en orange.
+        <strong>Correction demandée.</strong> Votre dossier nécessite une correction. Vous avez été notifié par mail — rouvrez l'étape indiquée et complétez les informations manquantes.
       </ng-container>
       <ng-container *ngIf="statutInscription === 'en_attente'">
         <strong>Dossier en attente de traitement.</strong> Vous serez notifié par mail dès qu'une étape avance ou nécessite une correction.

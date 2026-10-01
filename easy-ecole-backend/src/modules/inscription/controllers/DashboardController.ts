@@ -8,6 +8,7 @@ import { Enseignant } from "../../auth/models/Enseignant";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { CursusApprenant } from "../models/CursusApprenant";
 import { DemandeInscription } from "../models/DemandeInscription";
+import { ComiteVote } from "../models/ComiteVote";
 import { PreInscription } from "../models/PreInscription";
 import { Seance } from "../models/Seance";
 import { Cours } from "../models/Cours";
@@ -632,31 +633,103 @@ class DashboardController {
         return Array.from(map.entries()).map(([mode, montant]) => ({ mode, montant }));
     }
 
+    /**
+     * Tableau de bord du COMITÉ D'ORIENTATION.
+     *
+     * ⚠️ Trois corrections successives, à lire ensemble :
+     *
+     * 1. Les compteurs doivent porter sur `DemandeInscription.statutPipeline`
+     *    et non `PreInscription.statut` (table historique). Mélanger les deux
+     *    rendait le total incohérent avec la somme des autres indicateurs.
+     *
+     * 2. La file « à traiter » du comité est `IN ('transmis_comite',
+     *    'authentifie')` — cf. STATUTS_COMITE dans ComiteValidationController.
+     *    Compter seulement 'transmis_comite' affichait « 0 à traiter » alors
+     *    que la page du comité remontait des dossiers.
+     *
+     * 3. Une décision d'instruction peut être portée par un VOTE
+     *    (ComiteVote) avant que le statut ne bascule. Les rejets et les
+     *    corrections demandées sont donc comptés sur l'union du statut ET des
+     *    votes, comme le fait `estRejete` dans ComiteValidationController.
+     *
+     * Seuls les dossiers engagés dans le pipeline sont comptés : les lignes
+     * legacies (statutPipeline IS NULL) n'appartiennent pas au périmètre du
+     * comité et gonflaient artificiellement le total.
+     */
     private static async getOrientationDashboard() {
-        const [totalDemandes, enAttente, validees, rejetees, demandesRecentes] = await Promise.all([
-            DemandeInscription.count(),
-            PreInscription.count({ where: { statut: 'en_attente' } }),
-            PreInscription.count({ where: { statut: 'valide' } }),
-            PreInscription.count({ where: { statut: 'rejete' } }),
+        const parStatut = (statut: any) =>
+            DemandeInscription.count({ where: { statutPipeline: statut } });
+
+        /**
+         * Nombre de dossiers du pipeline ayant reçu au moins un vote de cette
+         * décision. On raisonne sur les DEMANDES et non sur les votes (un
+         * dossier peut cumuler plusieurs votes), et on ne garde que les
+         * dossiers engagés dans le pipeline, afin de rester comparable aux
+         * compteurs par statut.
+         */
+        const dossiersAvecVote = async (decision: 'valide' | 'correction_demandee' | 'rejete') => {
+            const ids = await ComiteVote.findAll({
+                where: { decision },
+                attributes: ['demandeInscriptionId'],
+                group: ['demandeInscriptionId'],
+            });
+            const liste = [...new Set(ids.map(v => Number((v as any).demandeInscriptionId)))];
+            if (!liste.length) return 0;
+            return DemandeInscription.count({
+                where: { id: { [Op.in]: liste }, statutPipeline: { [Op.ne]: null } },
+            });
+        };
+
+        const [totalDossiers, enAttente, validesStatut, valides, rejetesStatut, rejetees, correctionsStatut, correctionsDemandees, dossiersRecents, premiereInscription, reinscription] = await Promise.all([
+            DemandeInscription.count({ where: { statutPipeline: { [Op.ne]: null } } }),
+            DemandeInscription.count({ where: { statutPipeline: { [Op.in]: ['transmis_comite', 'authentifie'] } } }),
+            parStatut('valide'),
+            dossiersAvecVote('valide'),
+            parStatut('rejete'),
+            dossiersAvecVote('rejete'),
+            parStatut('correction_demandee'),
+            dossiersAvecVote('correction_demandee'),
             DemandeInscription.findAll({
+                where: { statutPipeline: { [Op.ne]: null } },
                 order: [['dateDemande', 'DESC']],
                 limit: 10,
-                attributes: ['id', 'dateDemande', 'matricule'],
+                attributes: ['id', 'dateDemande', 'matricule', 'statutPipeline', 'typeDemande'],
+            }),
+            // Répartition 1ʳᵉ inscription / réinscription (alimentée le graphique
+            // du bloc comité). NULL = legacy, compté comme 1ʳᵉ inscription.
+            DemandeInscription.count({
+                where: { statutPipeline: { [Op.ne]: null }, typeDemande: { [Op.ne]: 'reinscription' } },
+            }),
+            DemandeInscription.count({
+                where: { statutPipeline: { [Op.ne]: null }, typeDemande: 'reinscription' },
             }),
         ]);
+
+        // Le statut fait foi, le vote peut l'anticiper : on prend le max des deux
+        // sources (un dossier rejeté reste compté une seule fois).
+        const maxi = (a: number, b: number) => Math.max(a, b);
 
         return {
             success: true,
             role: 'orientation',
             data: {
-                totalDemandes,
+                // `totalDemandes` conservé : le nom est consommé tel quel par le
+                // dashboard Angular (`dashboardData.totalDemandes`).
+                totalDemandes: totalDossiers,
                 enAttente,
-                validees,
-                rejetees,
-                demandesRecentes: demandesRecentes.map(d => ({
+                validees: maxi(validesStatut, valides),
+                rejetees: maxi(rejetesStatut, rejetees),
+                correctionsDemandees: maxi(correctionsStatut, correctionsDemandees),
+                parType: {
+                    premiereInscription,
+                    reinscription,
+                },
+                demandesRecentes: dossiersRecents.map(d => ({
                     id: d.id,
                     date: d.dateDemande,
                     matricule: d.matricule,
+                    statutPipeline: d.statutPipeline,
+                    typeDemande: d.typeDemande,
                 })),
             }
         };

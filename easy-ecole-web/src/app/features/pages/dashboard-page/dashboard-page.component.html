@@ -731,75 +731,163 @@
 
   <!-- ==================== ORIENTATION DASHBOARD ==================== -->
   <ng-container *ngIf="!loading && rolesValue.isComiteOrientation">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 pt-6">
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <div class="rounded-2xl p-5 bg-gradient-to-br from-indigo-500 to-indigo-700 text-white">
-          <p class="text-xs font-semibold text-indigo-100 uppercase tracking-wider mb-1">Demandes total</p>
-          <p class="text-2xl sm:text-3xl font-bold">{{ dashboardData.totalDemandes || 0 }}</p>
+    <div class="comite-dashboard max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 pt-6">
+
+      <!-- En-tête de section -->
+      <div class="comite-overview-hero mb-6">
+        <div>
+          <p class="comite-overview-eyebrow">
+            <span class="material-symbols-outlined">groups</span> Comité d'orientation
+          </p>
+          <h2 class="comite-overview-title">Pilotage des pré-inscriptions</h2>
+          <p class="comite-overview-description">
+            Vos dossiers en cours, les décisions prises et la charge de travail qui reste.
+          </p>
         </div>
-        <div class="rounded-2xl p-5 bg-gradient-to-br from-amber-400 to-orange-600 text-white">
-          <p class="text-xs font-semibold text-amber-100 uppercase tracking-wider mb-1">En attente</p>
-          <p class="text-2xl sm:text-3xl font-bold">{{ dashboardData.enAttente || 0 }}</p>
-        </div>
-        <div class="rounded-2xl p-5 bg-gradient-to-br from-emerald-400 to-green-600 text-white">
-          <p class="text-xs font-semibold text-emerald-100 uppercase tracking-wider mb-1">Validées</p>
-          <p class="text-2xl sm:text-3xl font-bold">{{ dashboardData.validees || 0 }}</p>
-        </div>
-        <div class="rounded-2xl p-5 bg-gradient-to-br from-red-400 to-rose-600 text-white">
-          <p class="text-xs font-semibold text-red-100 uppercase tracking-wider mb-1">Rejetées</p>
-          <p class="text-2xl sm:text-3xl font-bold">{{ dashboardData.rejetees || 0 }}</p>
+        <div class="comite-overview-actions">
+          <span class="comite-live-dot"></span> Données actualisées
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-10">
-        <div class="dashboard-panel dashboard-chart-panel dashboard-panel--premium">
+      <!--
+        Cartes d'indicateurs du comité : MÊME système de composants que le
+        dashboard administrateur (dashboard-panel / dashboard-kpi-card /
+        dashboard-card-*). Avant, ce bloc utilisait des dégradés Tailwind bruts
+        (from-amber-400 to-orange-600) qui ne ressemblaient à rien d'autre dans
+        l'application — d'où l'impression d'un écran « à part ».
+      -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <div class="dashboard-panel dashboard-kpi-card indigo">
+          <div class="flex items-center justify-between mb-3">
+            <span class="dashboard-card-label">Total dossiers</span>
+            <div class="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center">
+              <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0121 12v7a2 2 0 01-2 2z"/></svg>
+            </div>
+          </div>
+          <p class="dashboard-card-number">{{ dashboardData.totalDemandes || 0 }}</p>
+          <p class="dashboard-card-trend neutral">Dossiers transmis au comité</p>
+        </div>
+
+        <div class="dashboard-panel dashboard-kpi-card amber">
+          <div class="flex items-center justify-between mb-3">
+            <span class="dashboard-card-label">À traiter</span>
+            <div class="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center">
+              <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <p class="dashboard-card-number">{{ dashboardData.enAttente || 0 }}</p>
+          <p class="dashboard-card-trend warning">En attente de décision</p>
+        </div>
+
+        <div class="dashboard-panel dashboard-kpi-card green">
+          <div class="flex items-center justify-between mb-3">
+            <span class="dashboard-card-label">Validés</span>
+            <div class="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center">
+              <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <p class="dashboard-card-number">{{ dashboardData.validees || 0 }}</p>
+          <p class="dashboard-card-trend positive">Dossiers validés</p>
+        </div>
+
+        <div class="dashboard-panel dashboard-kpi-card red">
+          <div class="flex items-center justify-between mb-3">
+            <span class="dashboard-card-label">Rejetés</span>
+            <div class="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center">
+              <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14v2m4-2v2m4-2.667l1.405-1.405A2.032 2.032 0 0118 11.732V8a2 2 0 00-2-2H8a2 2 0 00-2 2v3.268a2 2 0 01-.595 1.412L4 13.333m16 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <p class="dashboard-card-number">{{ dashboardData.rejetees || 0 }}</p>
+          <p class="dashboard-card-trend negative">Dossiers rejetés</p>
+        </div>
+      </div>
+
+      <!-- Graphiques -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div class="dashboard-panel dashboard-chart-panel dashboard-panel--premium lg:col-span-1">
           <div class="chart-card-header">
             <div>
               <h3 class="chart-card-title">Statut des pré-inscriptions</h3>
-              <p class="chart-card-subtitle">Répartition des décisions en temps réel</p>
+              <p class="chart-card-subtitle">Répartition des décisions</p>
+            </div>
+          </div>
+          <div class="relative h-64 flex items-center justify-center">
+            <canvas baseChart [data]="orientationDoughnutData" [options]="orientationDoughnutOptions" type="doughnut"></canvas>
+            <!-- Total en surimpression : évite de lire la légende pour l'essentiel -->
+            <div class="chart-center-label">
+              <span class="chart-center-value">{{ orientationTotal }}</span>
+              <span class="chart-center-caption">décisions</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-panel dashboard-chart-panel dashboard-panel--premium lg:col-span-1">
+          <div class="chart-card-header">
+            <div>
+              <h3 class="chart-card-title">Nature des dossiers</h3>
+              <p class="chart-card-subtitle">1ʳᵉ inscription ou réinscription</p>
             </div>
           </div>
           <div class="h-64 flex items-center justify-center">
-            <canvas baseChart [data]="orientationDoughnutData" [options]="orientationDoughnutOptions" type="doughnut"></canvas>
+            <canvas baseChart [data]="orientationRepartitionData" [options]="orientationRepartitionOptions" type="bar"></canvas>
           </div>
         </div>
-        <div class="dashboard-panel dashboard-chart-panel dashboard-panel--premium">
+
+        <div class="dashboard-panel dashboard-chart-panel dashboard-panel--premium lg:col-span-1">
           <div class="chart-card-header">
             <div>
               <h3 class="chart-card-title">Demandes récentes</h3>
-              <p class="chart-card-subtitle">Activité du comité d'orientation</p>
+              <p class="chart-card-subtitle">Activité du comité</p>
             </div>
           </div>
-          <div *ngIf="dashboardData.demandesRecentes?.length" class="space-y-3">
-            <div *ngFor="let d of dashboardData.demandesRecentes" class="flex items-center justify-between p-2.5 rounded-xl hover:bg-gray-50 transition-colors">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-sm font-bold text-indigo-700">
-                  {{ d.matricule?.[0] || '?' }}
+          <div class="h-64 overflow-y-auto pr-1">
+            <div *ngIf="dashboardData.demandesRecentes?.length" class="space-y-2">
+              <div *ngFor="let d of dashboardData.demandesRecentes" class="recent-row">
+                <div class="recent-avatar">{{ d.matricule?.[0] || '?' }}</div>
+                <div class="min-w-0 flex-1">
+                  <p class="recent-title">{{ d.matricule || '#' + d.id }}</p>
+                  <p class="recent-date">{{ d.date | date:'dd MMM yyyy' }}</p>
                 </div>
-                <div>
-                  <p class="text-sm font-medium text-gray-900">{{ d.matricule || '#' + d.id }}</p>
-                  <p class="text-xs text-gray-500">{{ d.date | date:'dd MMM yyyy' }}</p>
-                </div>
+                <span class="recent-badge" [ngClass]="statutDossier(d).classe">{{ statutDossier(d).label }}</span>
               </div>
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700">Nouvelle</span>
+            </div>
+            <div *ngIf="!dashboardData.demandesRecentes?.length" class="h-full flex flex-col items-center justify-center text-center">
+              <span class="material-symbols-outlined text-4xl text-gray-300">inbox</span>
+              <p class="text-sm text-gray-500 mt-2">Aucun dossier transmis</p>
+              <p class="text-xs text-gray-400 mt-1">Les pré-inscriptions apparaîtront ici.</p>
             </div>
           </div>
-          <div *ngIf="!dashboardData.demandesRecentes?.length" class="py-8 text-center text-sm text-gray-400">Aucune demande récente</div>
         </div>
       </div>
 
-      <div class="flex items-center gap-3 pb-10">
-        <a routerLink="/orientation" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-gray-700 text-sm font-semibold rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 00-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-          Voir les demandes
+      <!-- Actions -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-10">
+        <a routerLink="/inscription/comite-orientation" class="action-card action-card--primary">
+          <span class="action-card-icon">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </span>
+          <span class="action-card-body">
+            <span class="action-card-title">Dossiers à traiter</span>
+            <span class="action-card-sub">{{ dashboardData.enAttente || 0 }} en attente de décision</span>
+          </span>
         </a>
-        <a routerLink="/inscription/comite-validation" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-gray-700 text-sm font-semibold rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          Dossiers transmis au comité
+        <a routerLink="/inscription/comite-validation" class="action-card">
+          <span class="action-card-icon">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 00-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          </span>
+          <span class="action-card-body">
+            <span class="action-card-title">Dossiers transmis</span>
+            <span class="action-card-sub">Consulter l'ensemble du pipeline</span>
+          </span>
         </a>
-        <a routerLink="/inscription/rattrapage/comite" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-gray-700 text-sm font-semibold rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 00-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-          Rattrapage — Comité
+        <a routerLink="/inscription/rattrapage/comite" class="action-card">
+          <span class="action-card-icon">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </span>
+          <span class="action-card-body">
+            <span class="action-card-title">Rattrapage</span>
+            <span class="action-card-sub">Examens de rattrapage</span>
+          </span>
         </a>
       </div>
     </div>

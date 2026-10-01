@@ -29,7 +29,19 @@ COPY package.json package-lock.json ./
 
 # Installation des dépendances (npm 10 exécute les scripts postinstall de
 # core-js / esbuild / @angular/cli — attendus ici)
-RUN npm ci
+#
+# OPTIONS DE ROBUSTESSE ET DE RAPIDITÉ (build Dokploy) :
+#  - --mount=type=cache : le cache npm survit aux rebuilds (sans lui, tout est
+#    retéléchargé à chaque déploiement — mesuré : ~22 min sur le serveur).
+#  - --fetch-retries* / --fetch-timeout : une coupure réseau (ECONNRESET) est
+#    retentée au lieu de faire échouer le déploiement entier.
+#  - --no-audit --no-fund : l'audit parcourt l'arbre complet sur le réseau,
+#    sans aucun effet sur le contenu de node_modules.
+RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+    npm ci --no-audit --no-fund \
+      --fetch-retries=8 --fetch-retry-factor=2 \
+      --fetch-retry-mintimeout=10000 --fetch-retry-maxtimeout=120000 \
+      --fetch-timeout=600000
 
 # Sources de l'application
 COPY angular.json ./
