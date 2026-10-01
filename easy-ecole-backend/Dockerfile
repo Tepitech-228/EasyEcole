@@ -41,11 +41,10 @@ ENV PUPPETEER_SKIP_DOWNLOAD=true
 #    le déploiement.
 #  - --no-audit --no-fund : l'audit parcourt l'arbre complet sur le réseau,
 #    sans aucun effet sur le contenu de node_modules.
-RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+RUN --mount=type=cache,target=/root/.npm \
     npm ci --no-audit --no-fund \
-      --fetch-retries=8 --fetch-retry-factor=2 \
-      --fetch-retry-mintimeout=10000 --fetch-retry-maxtimeout=120000 \
-      --fetch-timeout=600000
+      --fetch-retries=3 --fetch-retry-mintimeout=2000 --fetch-retry-maxtimeout=15000 \
+      --fetch-timeout=120000
 
 # Sources TypeScript (les tests et scripts dev sont exclus via .dockerignore)
 COPY tsconfig.json ./
@@ -116,11 +115,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ---------------------------------------------------------------------------
 COPY package.json package-lock.json ./
 ENV PUPPETEER_CACHE_DIR=/opt/puppeteer_cache
-RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+RUN --mount=type=cache,target=/root/.npm \
     npm ci --omit=dev --no-audit --no-fund \
-      --fetch-retries=8 --fetch-retry-factor=2 \
-      --fetch-retry-mintimeout=10000 --fetch-retry-maxtimeout=120000 \
-      --fetch-timeout=600000
+      --fetch-retries=3 --fetch-retry-mintimeout=2000 --fetch-retry-maxtimeout=15000 \
+      --fetch-timeout=120000
 
 # ---------------------------------------------------------------------------
 # Artefact compilé + point d'entrée

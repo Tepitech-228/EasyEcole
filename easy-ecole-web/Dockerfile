@@ -37,11 +37,10 @@ COPY package.json package-lock.json ./
 #    retentée au lieu de faire échouer le déploiement entier.
 #  - --no-audit --no-fund : l'audit parcourt l'arbre complet sur le réseau,
 #    sans aucun effet sur le contenu de node_modules.
-RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+RUN --mount=type=cache,target=/root/.npm \
     npm ci --no-audit --no-fund \
-      --fetch-retries=8 --fetch-retry-factor=2 \
-      --fetch-retry-mintimeout=10000 --fetch-retry-maxtimeout=120000 \
-      --fetch-timeout=600000
+      --fetch-retries=3 --fetch-retry-mintimeout=2000 --fetch-retry-maxtimeout=15000 \
+      --fetch-timeout=120000
 
 # Sources de l'application
 COPY angular.json ./
