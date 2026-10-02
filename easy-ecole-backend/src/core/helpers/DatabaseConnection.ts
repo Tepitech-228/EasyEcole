@@ -130,12 +130,29 @@ export class DatabaseConnection {
                 }
             }
 
+            // ============================================================================
+            // SCHÉMA — synchronisation automatique DÉSACTIVÉE par défaut
+            // Incident du 02/10/2026 : `sequelize.sync({ alter: true })` était relancé
+            // à CHAQUE démarrage. MariaDB recréait à chaque passage un nouvel index
+            // auto-suffixé sur la même colonne (`code`, `code_2`, `code_3`...) :
+            // 63 index identiques sur 10 lignes, plafond MariaDB atteint (64/table),
+            // puis ER_TOO_MANY_KEYS et arrêt du sync — les index UNIQUE prevus par
+            // ensureUniqueIndexes() ne pouvaient alors plus être crees (Warning au boot).
+            //
+            // Le comportement est desormais identique en developpement et en production :
+            // AUCUNE resynchronisation automatique. Elle reste possible, mais uniquement
+            // sur choix explicite et ponctuel (ex. apres une evolution de modele) :
+            //     $env:DB_SYNC_ON_BOOT='true'; npm run start:dev
+            // Un sync ne modifie que la STRUCTURE des tables, jamais les donnees.
+            // ============================================================================
+            const syncOnBoot = process.env.DB_SYNC_ON_BOOT === 'true';
+
             // Sync ciblé frais/rattrapage : réservé au développement (en production,
             // les schémas sont gérés par migrations/scripts — cf. bloc sync global plus bas).
             // Exécution SEQUENTIELLE : le Promise.all lançait des ALTER TABLE en parallèle
             // sur des tables liées (FK), provoquant des courses et des warnings
             // ("Cannot add foreign key constraint" / "Constraint ibfk_* does not exist").
-            if (env === 'development') {
+            if (env === 'development' && syncOnBoot) {
                 try {
                     const { FraisScolarite } = require('../../modules/inscription/models/FraisScolarite');
                     const { RattrapageInscription } = require('../../modules/inscription/models/RattrapageInscription');
@@ -161,7 +178,7 @@ export class DatabaseConnection {
                 }
             }
 
-            if (env === 'development') {
+            if (env === 'development' && syncOnBoot) {
                 await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
                 try {
                     await this._sequelize.sync({ alter: true });
@@ -190,15 +207,18 @@ export class DatabaseConnection {
                 }
 
                 await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
-            } else if (process.env.DB_SYNC_ON_BOOT === 'true') {
+            } else if (syncOnBoot) {
                 // Déploiement (Dokploy/Docker) : ce projet n'a PAS de migrations
                 // Sequelize ; le schéma est historiquement créé par le sync alter
-                // du développement. COMPORTEMENT PAR DÉFAUT en production :
-                // synchronisation AUTOMATIQUE du schéma à chaque démarrage,
-                // sans intervention manuelle (crée les tables manquantes, ex.
-                // ins_seances -> crash du cron RappelSalleCron).
-                // Pour désactiver explicitement : DB_SYNC_ON_BOOT=false.
-                console.log('[DB] Synchronisation automatique du schéma au démarrage (production)…')
+                // du développement.
+                //
+                // COMPORTEMENT PAR DÉFAUT en production : AUCUNE synchronisation
+                // automatique. Elle ne se déclenche que si DB_SYNC_ON_BOOT=true est
+                // positionné explicitement (déploiement ponctuel, ex. création de la
+                // table ins_seances manquante qui faisait planter le cron
+                // RappelSalleCron). Motif du changement : voir le bloc
+                // « SCHÉMA — synchronisation automatique DÉSACTIVÉE » plus haut.
+                console.log('[DB] Synchronisation du schéma activée pour ce démarrage (DB_SYNC_ON_BOOT=true)…')
                 await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 0')
                 try {
                     await this._sequelize.sync({ alter: true })
@@ -209,7 +229,7 @@ export class DatabaseConnection {
                     await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 1').catch(() => undefined)
                 }
             } else {
-                console.log('Production mode: sync disabled (DB_SYNC_ON_BOOT=false)');
+                console.log('[DB] Synchronisation automatique du schéma désactivée (DB_SYNC_ON_BOOT non défini)');
             }
 
             // --- Contraintes UNIQUE nominatives (après les syncs) ---
