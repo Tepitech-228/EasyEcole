@@ -116,6 +116,10 @@ const ALL_PERMISSIONS: Array<{ key: string; libelle: string; module: string; typ
     { key: 'menu.evaluations', libelle: 'Évaluations', module: 'Évaluations', type: 'menu' },
     { key: 'menu.evaluations.bulletins', libelle: 'Bulletins', module: 'Évaluations', type: 'menu', parentKey: 'menu.evaluations' },
     { key: 'menu.evaluations.deliberations', libelle: 'Délibérations', module: 'Évaluations', type: 'menu', parentKey: 'menu.evaluations' },
+    { key: 'menu.evaluations.equivalences', libelle: 'Équivalences', module: 'Évaluations', type: 'menu', parentKey: 'menu.evaluations' },
+    { key: 'menu.evaluations.dispenses', libelle: 'Dispenses', module: 'Évaluations', type: 'menu', parentKey: 'menu.evaluations' },
+    { key: 'menu.evaluations.parametres-notation', libelle: 'Paramètres notation', module: 'Évaluations', type: 'menu', parentKey: 'menu.evaluations' },
+    { key: 'menu.evaluations.deliberations-jury', libelle: 'Délibérations & Jury', module: 'Évaluations', type: 'menu', parentKey: 'menu.evaluations' },
     { key: 'menu.evaluations.moyennes', libelle: 'Moyennes', module: 'Évaluations', type: 'menu', parentKey: 'menu.evaluations' },
     { key: 'menu.evaluations.mon-releve', libelle: 'Mon relevé', module: 'Évaluations', type: 'menu', parentKey: 'menu.evaluations' },
     { key: 'action.evaluation.bulletin.generer', libelle: 'Générer un bulletin', module: 'Évaluations', type: 'action', parentKey: 'menu.evaluations.bulletins' },
@@ -144,6 +148,7 @@ const ALL_PERMISSIONS: Array<{ key: string; libelle: string; module: string; typ
     { key: 'menu.scolarite.registres', libelle: 'Registres', module: 'Scolarité', type: 'menu', parentKey: 'menu.scolarite' },
     { key: 'menu.scolarite.calendrier', libelle: 'Calendrier', module: 'Scolarité', type: 'menu', parentKey: 'menu.scolarite' },
     { key: 'menu.scolarite.discipline', libelle: 'Discipline', module: 'Scolarité', type: 'menu', parentKey: 'menu.scolarite' },
+    { key: 'menu.scolarite.sanctions-discipline', libelle: 'Sanctions & Discipline', module: 'Scolarité', type: 'menu', parentKey: 'menu.scolarite' },
     { key: 'menu.scolarite.conseils', libelle: 'Conseils classe', module: 'Scolarité', type: 'menu', parentKey: 'menu.scolarite' },
     { key: 'menu.scolarite.bibliotheque', libelle: 'Bibliothèque', module: 'Scolarité', type: 'menu', parentKey: 'menu.scolarite' },
     { key: 'menu.scolarite.bibliotheque.gestion', libelle: 'Gestion bibliothèque', module: 'Scolarité', type: 'menu', parentKey: 'menu.scolarite.bibliotheque' },
@@ -165,7 +170,10 @@ const ALL_PERMISSIONS: Array<{ key: string; libelle: string; module: string; typ
     { key: 'menu.finances.paiements', libelle: 'Paiements', module: 'Finances', type: 'menu', parentKey: 'menu.finances' },
     { key: 'menu.finances.comptabilite', libelle: 'Comptabilité', module: 'Finances', type: 'menu', parentKey: 'menu.finances' },
     { key: 'menu.finances.bordereaux', libelle: 'Mes bordereaux', module: 'Finances', type: 'menu', parentKey: 'menu.finances' },
+    { key: 'menu.finances.bordereaux-a-traiter', libelle: 'Bordereaux à imputer', module: 'Finances', type: 'menu', parentKey: 'menu.finances' },
     { key: 'menu.finances.validation-bordereaux', libelle: 'Valid. bordereaux', module: 'Finances', type: 'menu', parentKey: 'menu.finances' },
+    { key: 'menu.finances.types-bordereaux', libelle: 'Types de bordereau', module: 'Finances', type: 'menu', parentKey: 'menu.finances' },
+    { key: 'menu.finances.comite-validation', libelle: 'Validation comité', module: 'Finances', type: 'menu', parentKey: 'menu.finances' },
     { key: 'menu.finances.impayes', libelle: 'Étudiants en situation irrégulière', module: 'Finances', type: 'menu', parentKey: 'menu.finances' },
     { key: 'menu.finances.situation-financiere', libelle: 'Situation financière', module: 'Finances', type: 'menu', parentKey: 'menu.finances' },
     { key: 'action.finances.paiement.enregistrer', libelle: 'Enregistrer un paiement', module: 'Finances', type: 'action', parentKey: 'menu.finances.paiements' },
@@ -217,6 +225,15 @@ const ALL_PERMISSIONS: Array<{ key: string; libelle: string; module: string; typ
     { key: 'menu.stages.demandes-stage', libelle: 'Demandes stage', module: 'Stages', type: 'menu', parentKey: 'menu.stages' },
     { key: 'menu.stages.entreprises', libelle: 'Entreprises', module: 'Stages', type: 'menu', parentKey: 'menu.stages' },
 
+    // ============ GED / ARCHIVAGES NUMÉRIQUES ============
+    { key: 'menu.ged', libelle: 'Archivages numériques', module: 'Archivages numériques', type: 'menu' },
+    { key: 'menu.ged.catalogue', libelle: 'Catalogue', module: 'Archivages numériques', type: 'menu', parentKey: 'menu.ged' },
+    { key: 'menu.ged.recherche', libelle: 'Recherche avancée', module: 'Archivages numériques', type: 'menu', parentKey: 'menu.ged' },
+    { key: 'menu.ged.dossiers', libelle: 'Dossiers', module: 'Archivages numériques', type: 'menu', parentKey: 'menu.ged' },
+    { key: 'menu.ged.televerser', libelle: 'Téléverser', module: 'Archivages numériques', type: 'menu', parentKey: 'menu.ged' },
+    { key: 'menu.ged.conservation', libelle: 'Conservation', module: 'Archivages numériques', type: 'menu', parentKey: 'menu.ged' },
+    { key: 'menu.ged.bordereaux', libelle: 'Bordereaux de conservation', module: 'Archivages numériques', type: 'menu', parentKey: 'menu.ged' },
+
     // ============ RESSOURCES HUMAINES ============
     { key: 'menu.rh', libelle: 'Ressources Humaines', module: 'R.H', type: 'menu' },
     { key: 'menu.rh.employes', libelle: 'Employés', module: 'R.H', type: 'menu', parentKey: 'menu.rh' },
@@ -224,6 +241,9 @@ const ALL_PERMISSIONS: Array<{ key: string; libelle: string; module: string; typ
     { key: 'menu.rh.candidatures', libelle: 'Candidatures', module: 'R.H', type: 'menu', parentKey: 'menu.rh' },
     { key: 'menu.rh.categories-professionnelles', libelle: 'Catégories professionnelles', module: 'R.H', type: 'menu', parentKey: 'menu.rh' },
     { key: 'menu.rh.grilles-salariales', libelle: 'Grilles salariales', module: 'R.H', type: 'menu', parentKey: 'menu.rh' },
+    { key: 'menu.rh.parametres-paie', libelle: 'Paramètres paie', module: 'R.H', type: 'menu', parentKey: 'menu.rh' },
+    { key: 'menu.rh.contrats', libelle: 'Contrats', module: 'R.H', type: 'menu', parentKey: 'menu.rh' },
+    { key: 'menu.rh.planning-personnel', libelle: 'Planning personnel', module: 'R.H', type: 'menu', parentKey: 'menu.rh' },
     { key: 'menu.rh.paie', libelle: 'Paie', module: 'R.H', type: 'menu', parentKey: 'menu.rh' },
     { key: 'menu.rh.heures-supplementaires', libelle: 'Heures supplémentaires', module: 'R.H', type: 'menu', parentKey: 'menu.rh' },
     { key: 'menu.rh.prets', libelle: 'Prêts / Avances', module: 'R.H', type: 'menu', parentKey: 'menu.rh' },
@@ -253,6 +273,7 @@ const ALL_PERMISSIONS: Array<{ key: string; libelle: string; module: string; typ
     { key: 'menu.administration.journal-audit', libelle: 'Journal audit', module: 'Administration', type: 'menu', parentKey: 'menu.administration' },
     { key: 'menu.administration.configuration', libelle: 'Configuration', module: 'Administration', type: 'menu', parentKey: 'menu.administration' },
     { key: 'menu.administration.permissions', libelle: 'Permissions', module: 'Administration', type: 'menu', parentKey: 'menu.administration' },
+    { key: 'menu.administration.comite-membres', libelle: 'Membres du comité', module: 'Administration', type: 'menu', parentKey: 'menu.administration' },
     { key: 'action.administration.utilisateur.creer', libelle: 'Créer un utilisateur', module: 'Administration', type: 'action', parentKey: 'menu.administration.utilisateurs' },
     { key: 'action.administration.utilisateur.modifier', libelle: 'Modifier un utilisateur', module: 'Administration', type: 'action', parentKey: 'menu.administration.utilisateurs' },
     { key: 'action.administration.utilisateur.supprimer', libelle: 'Supprimer un utilisateur', module: 'Administration', type: 'action', parentKey: 'menu.administration.utilisateurs' },
@@ -313,23 +334,15 @@ const ALL_PERMISSIONS: Array<{ key: string; libelle: string; module: string; typ
 export class PermissionSeed {
     static async init(): Promise<void> {
         try {
-            const count = await Permission.count();
-            if (count > 0) {
-                return;
-            }
-
-            for (const perm of ALL_PERMISSIONS) {
-                await Permission.findOrCreate({
-                    where: { key: perm.key },
-                    defaults: {
-                        key: perm.key,
-                        libelle: perm.libelle,
-                        module: perm.module,
-                        type: perm.type,
-                        parentKey: perm.parentKey ?? null
-                    }
-                });
-            }
+            await Permission.bulkCreate(ALL_PERMISSIONS.map(perm => ({
+                key: perm.key,
+                libelle: perm.libelle,
+                module: perm.module,
+                type: perm.type,
+                parentKey: perm.parentKey ?? null
+            })), {
+                updateOnDuplicate: ['libelle', 'module', 'type', 'parentKey']
+            });
         } catch (error) {
             console.error('Erreur lors du seed des permissions:', error);
         }

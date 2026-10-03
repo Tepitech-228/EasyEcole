@@ -12,6 +12,7 @@ import { environment } from 'src/environments/environment';
 export class TerminalPointagePageComponent extends BaseComponentClass implements OnDestroy {
   todayPointage: any = null
   loading: boolean = true
+  loadError: string = ''
   scanning: boolean = false
   scanMode: 'arrivee' | 'depart' = 'arrivee'
   scannedUser: any = null
@@ -144,13 +145,21 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
 
   private loadTodayPointage(): void {
     this.loading = true
+    this.loadError = ''
     this.pointageService.getToday().subscribe({
       next: (res) => {
         this.todayPointage = res
         this.loading = false
       },
-      error: () => { this.loading = false }
+      error: () => {
+        this.loading = false
+        this.loadError = 'Impossible de récupérer votre pointage. Réessayez.'
+      }
     })
+  }
+
+  retryLoadTodayPointage(): void {
+    this.loadTodayPointage()
   }
 
   pointerArrivee(): void {

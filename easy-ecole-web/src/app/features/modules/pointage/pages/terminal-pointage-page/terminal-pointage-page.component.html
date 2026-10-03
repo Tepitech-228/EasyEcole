@@ -5,7 +5,14 @@
 
   <app-loading-spinner *ngIf="loading"></app-loading-spinner>
 
-  <div *ngIf="!loading" class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+  <div *ngIf="!loading && loadError" class="pointage-message pointage-message--error" role="alert">
+    <p>{{ loadError }}</p>
+    <button type="button" class="pointage-btn pointage-btn--outline mt-3" (click)="retryLoadTodayPointage()">
+      Réessayer
+    </button>
+  </div>
+
+  <div *ngIf="!loading && !loadError" class="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
     <!-- ============================================= -->
     <!-- LEFT: Self Pointage & Quick Access             -->

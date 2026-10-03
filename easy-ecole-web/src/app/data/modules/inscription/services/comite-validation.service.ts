@@ -92,8 +92,8 @@ export class ComiteValidationService {
     return this.httpClient.get<{ data: DossierComite }>(`${this.SERVICE_URL}/dossiers/${id}`)
   }
 
-  decider(id: number | string, decision: 'valide' | 'correction_demandee' | 'rejete', motif?: string): Observable<any> {
-    return this.httpClient.post(`${this.SERVICE_URL}/dossiers/${id}/decider`, { decision, motif })
+  decider(id: number | string, decision: 'valide' | 'correction_demandee' | 'rejete', motif?: string, dossierIdsAReposer?: number[]): Observable<any> {
+    return this.httpClient.post(`${this.SERVICE_URL}/dossiers/${id}/decider`, { decision, motif, dossierIdsAReposer })
   }
 
   /**

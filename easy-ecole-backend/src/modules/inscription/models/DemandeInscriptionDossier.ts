@@ -6,6 +6,7 @@ import { DossierInscription } from "./DossierInscription";
 
 export class DemandeInscriptionDossier extends Model<InferAttributes<DemandeInscriptionDossier>, InferCreationAttributes<DemandeInscriptionDossier>> {
   declare nomFichier: CreationOptional<string>
+  declare correctionDemandee: CreationOptional<boolean>
   declare demandeId: ForeignKey<DemandeInscription['id']>
   declare dossierId: ForeignKey<DossierInscription['id']>
 
@@ -17,6 +18,11 @@ DemandeInscriptionDossier.init({
   nomFichier: {
     type: new DataTypes.STRING,
     allowNull: false
+  },
+  correctionDemandee: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
   },
   // La table possède une clé primaire COMPOSITE (demandeId, dossierId) et aucune
   // colonne `id`. Sans `primaryKey: true` ici, Sequelize injecte un attribut `id`

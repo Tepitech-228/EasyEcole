@@ -8,6 +8,9 @@ import { ListeNoteEvaluation } from "../../inscription/models/ListeNoteEvaluatio
 import { Mcc } from "../../inscription/models/Mcc";
 import { RegleEvaluation } from "../../inscription/models/RegleEvaluation";
 import { SalleDeClasse } from "../../inscription/models/SalleDeClasse";
+import { RattrapageNote } from "../../inscription/models/RattrapageNote";
+import { RattrapageInscription } from "../../inscription/models/RattrapageInscription";
+import { validatedRattrapageNotesWhere } from "./validatedRattrapageNotesWhere";
 
 export interface LigneBulletinCalcul {
   coursId: number
@@ -45,7 +48,8 @@ export class GenerationBulletinService {
     semestre: string,
     anneeAcademiqueId: number,
     transaction?: Transaction,
-    salleId?: number | null
+    salleId?: number | null,
+    options: { refreshExisting?: boolean; cursusApprenantId?: number } = {}
   ): Promise<BulletinGenerationResult[]> {
     const results: BulletinGenerationResult[] = [];
 
@@ -68,6 +72,9 @@ export class GenerationBulletinService {
     }
 
     const whereCursus: any = { classeId, anneeAcademiqueId };
+    if (options.cursusApprenantId != null) {
+      whereCursus.id = options.cursusApprenantId;
+    }
     // Classe effective portée par le bulletin : celle de la salle si elle est renseignée,
     // sinon la classe passée en paramètre (salle générique ou sans lien classe).
     let classeEffective = Number(classeId);
@@ -132,7 +139,7 @@ export class GenerationBulletinService {
     }
     const coursIdsUniques = Array.from(new Set(coursIdsMcc));
 
-    const [tousCoursParticipants, listesEval, bulletinsDejaExistants] = await Promise.all([
+    const [tousCoursParticipants, listesEval, bulletinsExistants, notesRattrapage] = await Promise.all([
       CoursParticipant.findAll({
         where: { cursusApprenantId: { [Op.in]: cursusIds } },
         attributes: ['id', 'coursId', 'cursusApprenantId']
@@ -146,9 +153,35 @@ export class GenerationBulletinService {
       }),
       Bulletin.findAll({
         where: { cursusApprenantId: { [Op.in]: cursusIds }, semestre, anneeAcademiqueId },
-        attributes: ['cursusApprenantId']
+        attributes: ['id', 'cursusApprenantId']
+      }),
+      RattrapageNote.findAll({
+        where: {
+          ...validatedRattrapageNotesWhere(
+            cursusList.map(cursus => Number(cursus.utilisateurId)),
+            coursIdsUniques
+          ),
+        },
+        include: [{
+          association: RattrapageNote.associations.rattrapageInscription,
+          required: true,
+          include: [{
+            association: RattrapageInscription.associations.rattrapageSession,
+            where: { anneeAcademiqueId },
+            required: true,
+          }],
+        }],
+        order: [['updatedAt', 'DESC']],
       })
     ]);
+
+    const noteRattrapageParEtudiantCours = new Map<string, number>();
+    for (const note of notesRattrapage) {
+      const key = `${Number(note.etudiantId)}:${Number(note.ueId)}`;
+      if (!noteRattrapageParEtudiantCours.has(key)) {
+        noteRattrapageParEtudiantCours.set(key, Number(note.note_rattrapage));
+      }
+    }
 
     const coursParticipantParCursus = new Map<number, Map<string, number>>();
     for (const cp of tousCoursParticipants) {
@@ -162,10 +195,8 @@ export class GenerationBulletinService {
       m.set(String(pidCours), Number(cp.id));
     }
 
-    const cursusAvecBulletinExistant = new Set(
-      bulletinsDejaExistants
-        .map(b => Number((b as any).cursusApprenantId))
-        .filter((v): v is number => v != null)
+    const bulletinExistantParCursus = new Map(
+      bulletinsExistants.map(b => [Number(b.cursusApprenantId), b])
     );
 
     const listesParCours = new Map<number, ListeEvalGroup[]>();
@@ -189,7 +220,8 @@ export class GenerationBulletinService {
     }
 
     for (const cursus of cursusList) {
-      if (cursusAvecBulletinExistant.has(Number(cursus.id))) continue;
+      const bulletinExistant = bulletinExistantParCursus.get(Number(cursus.id));
+      if (bulletinExistant && !options.refreshExisting) continue;
 
       const coursParticipantMap = coursParticipantParCursus.get(Number(cursus.id)) || new Map<string, number>();
 
@@ -219,9 +251,13 @@ export class GenerationBulletinService {
           const coursIdNum = Number(String(cours.id));
           const listesDuCours = listesParCours.get(coursIdNum) || [];
 
-          const moyenne = GenerationBulletinService.calculerMoyenneCours(
+          let moyenne = GenerationBulletinService.calculerMoyenneCours(
             listesDuCours, coursParticipantId
           );
+          const noteRattrapage = noteRattrapageParEtudiantCours.get(`${Number(cursus.utilisateurId)}:${coursIdNum}`);
+          if (noteRattrapage !== undefined && noteRattrapage > moyenne) {
+            moyenne = noteRattrapage;
+          }
 
           const moyenneCC = GenerationBulletinService.calculerMoyenneCC(
             listesDuCours, coursParticipantId
@@ -271,7 +307,7 @@ export class GenerationBulletinService {
         ? Math.round((sommeProduitECTS / sommeECTS) * 100) / 100
         : null;
 
-      const bulletin = await Bulletin.create({
+      const bulletinValues = {
         anneeAcademiqueId: anneeAcademiqueId as any,
         semestre,
         cursusApprenantId: cursus.id as any,
@@ -285,7 +321,21 @@ export class GenerationBulletinService {
         creditsValides,
         statut: 'brouillon' as const,
         dateGeneration: new Date(),
-      }, { transaction });
+      };
+      const bulletin = bulletinExistant
+        ? await bulletinExistant.update({
+            ...bulletinValues,
+            datePublication: null,
+            signatureEnseignant: null,
+            signatureChef: null,
+            dateSignatureEnseignant: null,
+            dateSignatureChef: null,
+          }, { transaction })
+        : await Bulletin.create(bulletinValues, { transaction });
+
+      if (bulletinExistant) {
+        await LigneBulletin.destroy({ where: { bulletinId: bulletin.id }, transaction });
+      }
 
       for (const ueResult of resultatsUe) {
         for (const l of ueResult.lignes) {

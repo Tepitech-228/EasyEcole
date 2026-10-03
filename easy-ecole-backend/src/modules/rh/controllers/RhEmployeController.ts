@@ -58,7 +58,8 @@ export default class RhEmployeController {
       await data.destroy();
       return res.status(200).json({ success: true, message: "Employé supprimé" });
     } catch (error) {
-      return res.status(500).json({ success: false, error });
+      console.error('Erreur suppression employé:', error);
+      return res.status(500).json({ success: false, message: 'Erreur interne serveur' });
     }
   }
 
@@ -67,7 +68,8 @@ export default class RhEmployeController {
       const count = await RhEmploye.count();
       return res.status(200).json({ success: true, count });
     } catch (error) {
-      return res.status(500).json({ success: false, error });
+      console.error('Erreur comptage employés:', error);
+      return res.status(500).json({ success: false, message: 'Erreur interne serveur' });
     }
   }
 }

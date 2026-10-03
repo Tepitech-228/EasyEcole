@@ -54,6 +54,7 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
 
   // Modale « Dossier étudiant » (données personnelles + documents déposés)
   selectedEtudiantDossier: any = null
+  documentsAReposer: number[] = []
   showEtudiantModal: boolean = false
   docPreviewUrl: SafeResourceUrl | null = null
   docPreviewIsImage: boolean = false
@@ -310,6 +311,9 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
 
   ouvrirDossierEtudiant(d: any): void {
     this.selectedEtudiantDossier = d
+    this.documentsAReposer = (d?.dossiersDemande || [])
+      .filter((doc: any) => doc.correctionDemandee)
+      .map((doc: any) => Number(doc.dossierId))
     this.docPreviewUrl = null
     this.docPreviewNom = ''
     this.showEtudiantModal = true
@@ -320,6 +324,18 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
     this.selectedEtudiantDossier = null
     this.docPreviewUrl = null
     this.docPreviewNom = ''
+  }
+
+  estDocumentAReposer(doc: any): boolean {
+    return this.documentsAReposer.includes(Number(doc?.dossierId))
+  }
+
+  definirDocumentAReposer(doc: any, checked: boolean): void {
+    const dossierId = Number(doc?.dossierId)
+    if (!Number.isInteger(dossierId) || dossierId <= 0) return
+    this.documentsAReposer = checked
+      ? [...new Set([...this.documentsAReposer, dossierId])]
+      : this.documentsAReposer.filter(id => id !== dossierId)
   }
 
   getDocEtudiantUrl(doc: any): string {
@@ -385,7 +401,10 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
     if (this.decisionEnCours !== 'valide' && !this.motifDecision.trim()) return
 
     this.processingDecision = true
-    this.comiteService.decider(this.selectedDossier.id, this.decisionEnCours, this.motifDecision).subscribe({
+    const dossierIdsAReposer = this.decisionEnCours === 'correction_demandee' && this.documentsAReposer.length
+      ? this.documentsAReposer
+      : undefined
+    this.comiteService.decider(this.selectedDossier.id, this.decisionEnCours, this.motifDecision, dossierIdsAReposer).subscribe({
       next: (res) => {
         this.processingDecision = false
         const matricule = res?.data?.matricule

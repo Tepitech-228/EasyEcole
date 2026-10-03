@@ -135,15 +135,59 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
     this.http.get(`${this.API_URL}/inscription/demandesInscription`).pipe(untilDestroyed(this)).subscribe({
       next: (res: any) => {
         const demandes = Array.isArray(res) ? res : (res?.data || []);
-        this.demandesCompletes = demandes.filter((d: any) =>
-          d.preInscription?.statut === 'valide'
-        );
-        this.demandesEnCours = demandes.filter((d: any) =>
-          d.preInscription?.statut && d.preInscription.statut !== 'valide'
-        );
+        this.demandesCompletes = demandes.filter((d: any) => this.getDemandeStatutKey(d) === 'valide');
+        this.demandesEnCours = demandes.filter((d: any) => this.getDemandeStatutKey(d) !== 'valide');
       },
       error: () => {}
     });
+  }
+
+  private getDemandeStatutKey(d: any): string {
+    return d?.statutPipeline || d?.preInscription?.statut || 'soumis';
+  }
+
+  getDemandeStatutLabel(d: any): string {
+    const statut = this.getDemandeStatutKey(d);
+    switch (statut) {
+      case 'valide': return 'Validée';
+      case 'rejete': return 'Rejetée';
+      case 'correction_demandee': return 'Correction demandée';
+      case 'authentifie': return 'Audit';
+      case 'transmis_comite': return 'À traiter';
+      case 'saisie_validee': return 'Saisie validée';
+      case 'en_attente': return 'En attente';
+      default: return 'En cours';
+    }
+  }
+
+  getDemandeStatutClasse(d: any): string {
+    const statut = this.getDemandeStatutKey(d);
+    switch (statut) {
+      case 'valide': return 'bg-emerald-50 text-emerald-700';
+      case 'rejete': return 'bg-red-50 text-red-700';
+      case 'correction_demandee': return 'bg-blue-50 text-blue-700';
+      case 'authentifie': return 'bg-slate-50 text-slate-700';
+      case 'transmis_comite': return 'bg-amber-50 text-amber-700';
+      case 'saisie_validee': return 'bg-indigo-50 text-indigo-700';
+      case 'en_attente': return 'bg-amber-50 text-amber-700';
+      default: return 'bg-gray-50 text-gray-700';
+    }
+  }
+
+  aDesPiecesAReposer(d: any): boolean {
+    return Array.isArray(d?.dossiersDemande) && d.dossiersDemande.some((piece: any) => piece.correctionDemandee);
+  }
+
+  getDemandeActionRoute(d: any): any[] {
+    return this.getDemandeStatutKey(d) === 'correction_demandee' && this.aDesPiecesAReposer(d)
+      ? ['/inscription/demandes', d.id, 'correction']
+      : ['/inscription/demandes', d.id];
+  }
+
+  getDemandeActionLabel(d: any): string {
+    return this.getDemandeStatutKey(d) === 'correction_demandee' && this.aDesPiecesAReposer(d)
+      ? 'Remplacer les pièces'
+      : 'Continuer';
   }
 
   faireDemandeInscription(): void {

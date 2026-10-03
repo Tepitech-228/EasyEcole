@@ -1,0 +1,50 @@
+<div class="correction-page">
+  <div class="correction-page__container">
+    <app-header-title title="Remplacer des pièces" subtitle="Votre demande reste ouverte. Seuls les documents signalés par le comité sont à renvoyer."></app-header-title>
+
+    <div *ngIf="loading" class="correction-state">Chargement des pièces demandées…</div>
+    <div *ngIf="errorMessage" class="correction-alert" role="alert">{{ errorMessage }}</div>
+
+    <section *ngIf="!loading && !submitted && pieces.length > 0" class="correction-panel">
+      <div class="correction-panel__heading">
+        <div>
+          <span class="correction-kicker">DEMANDE {{ demande?.matricule || '#' + demande?.id }}</span>
+          <h2>Documents à remplacer</h2>
+        </div>
+        <span class="correction-count">{{ pieces.length }} pièce{{ pieces.length > 1 ? 's' : '' }}</span>
+      </div>
+
+      <div class="correction-pieces">
+        <article *ngFor="let piece of pieces" class="correction-piece">
+          <div class="correction-piece__title">
+            <span class="material-symbols-outlined" aria-hidden="true">description</span>
+            <div>
+              <h3>{{ titrePiece(piece) }}</h3>
+              <p>Fichier reçu : {{ piece.nomFichier }}</p>
+            </div>
+          </div>
+          <label class="correction-upload">
+            <span>Nouveau fichier</span>
+            <input type="file" accept=".pdf,.jpg,.jpeg,.png" (change)="onFileSelected($event, piece)">
+            <small *ngIf="fichiers[piece.dossierId.toString()] as fichier">Sélectionné : {{ fichier.name }}</small>
+          </label>
+        </article>
+      </div>
+
+      <div class="correction-footer">
+        <p>Les pièces déjà remplacées sont conservées si un envoi échoue. Votre demande et son parcours ne sont pas recréés.</p>
+        <button type="button" (click)="soumettreCorrections()" [disabled]="submitting || !toutesLesPiecesSelectionnees">
+          <span class="material-symbols-outlined" aria-hidden="true">{{ submitting ? 'hourglass_top' : 'upload_file' }}</span>
+          {{ submitting ? 'Envoi en cours…' : 'Envoyer les pièces corrigées' }}
+        </button>
+      </div>
+    </section>
+
+    <section *ngIf="!loading && submitted" class="correction-success" role="status">
+      <span class="material-symbols-outlined" aria-hidden="true">task_alt</span>
+      <h2>Pièces envoyées</h2>
+      <p>Votre demande reprend son traitement avec les documents corrigés.</p>
+      <button type="button" (click)="retourTableauDeBord()">Retour au tableau de bord</button>
+    </section>
+  </div>
+</div>

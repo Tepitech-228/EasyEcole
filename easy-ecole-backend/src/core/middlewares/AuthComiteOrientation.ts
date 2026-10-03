@@ -6,6 +6,6 @@ export const AuthComiteOrientation = (req: Request, res: Response, next: Functio
         return next()
     }
     else {
-        return res.status(403).json({success: false})
+        return res.status(403).json({ success: false, message: "Accès réservé au comité d'orientation" })
     }
 }

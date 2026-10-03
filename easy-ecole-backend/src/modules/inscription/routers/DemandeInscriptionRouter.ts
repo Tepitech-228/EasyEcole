@@ -11,7 +11,7 @@ import { validerEmail, validerIdentifiantX } from "../../../core/validators/vali
 
 const router = express.Router()
 
-/** Multer pour l'upload du justificatif de bourse (PDF, 20 Mo max) */
+/** Multer pour l'upload du justificatif de bourse (PDF/JPG/PNG, 20 Mo max) */
 const bourseStorage = multer.diskStorage({
     destination: (_req, file, callback) => {
         const dir = "public/inscription/dossiers/"
@@ -28,15 +28,15 @@ const uploadBourse = multer({
     storage: bourseStorage,
     fileFilter: (_req, file, cb) => {
         const ext = path.extname(file.originalname).toLowerCase()
-        const isPdf = file.mimetype === 'application/pdf'
-            || file.mimetype === 'application/x-pdf'
-            || file.mimetype === 'application/octet-stream'
-            || file.mimetype === ''
-            || file.mimetype === undefined
-        if (isPdf && ext === '.pdf') {
+        const mime = (file.mimetype || '').toLowerCase()
+        const pdfMimes = ['application/pdf', 'application/x-pdf', 'application/octet-stream', '']
+        const imageMimes = ['image/jpeg', 'image/jpg', 'image/png', 'application/octet-stream', '']
+        const isPdf = ext === '.pdf' && pdfMimes.includes(mime)
+        const isImage = ['.jpg', '.jpeg', '.png'].includes(ext) && imageMimes.includes(mime)
+        if (isPdf || isImage) {
             cb(null, true)
         } else {
-            cb(new Error('Seuls les fichiers PDF sont acceptés pour le justificatif de bourse'))
+            cb(new Error('Formats acceptés : PDF, JPG, JPEG ou PNG pour le justificatif de bourse'))
         }
     },
     limits: { fileSize: 20 * 1024 * 1024 }
@@ -244,7 +244,7 @@ router
  *     summary: Déclare ou met à jour le statut boursier de l'étudiant
  *     description: >
  *       L'étudiant déclare s'il est boursier. Si oui, il peut joindre
- *       un justificatif (PDF). Le document est visible par le comité d'orientation.
+ *       un justificatif (PDF, JPG, JPEG ou PNG). Le document est visible par le comité d'orientation.
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -278,7 +278,7 @@ router.use((err: any, _req: express.Request, res: express.Response, next: expres
         if (err.code === 'LIMIT_FILE_SIZE') message = "Le fichier dépasse la taille maximale autorisée (20 Mo)"
         return res.status(400).json({ success: false, message })
     }
-    if (err?.message?.includes('PDF sont acceptés')) {
+    if (err?.message?.includes('Formats acceptés')) {
         return res.status(400).json({ success: false, message: err.message })
     }
     next(err)

@@ -38,7 +38,13 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
-const MIGRATIONS_DIR = path.join(ROOT, 'migrations');
+const REPOSITORY_MIGRATIONS_DIR = path.resolve(ROOT, '..', 'migrations');
+const BACKEND_MIGRATIONS_DIR = path.join(ROOT, 'migrations');
+const MIGRATIONS_DIR = process.env.MIGRATIONS_DIR
+  ? path.resolve(process.env.MIGRATIONS_DIR)
+  : fs.existsSync(REPOSITORY_MIGRATIONS_DIR)
+    ? REPOSITORY_MIGRATIONS_DIR
+    : BACKEND_MIGRATIONS_DIR;
 const REFERENCE_DATA_TS = path.join(ROOT, 'src', 'core', 'data', 'reference-data.ts');
 const UNIQUE_INDEXES_TS = path.join(ROOT, 'src', 'core', 'helpers', 'ensureUniqueIndexes.ts');
 
@@ -113,6 +119,32 @@ function chunk(list, size) {
   const out = [];
   for (let i = 0; i < list.length; i += size) out.push(list.slice(i, i + size));
   return out;
+}
+
+function nextMigrationNumber() {
+  const numbers = fs
+    .readdirSync(MIGRATIONS_DIR)
+    .filter((name) => /^\d+_.*\.sql$/i.test(name))
+    .map((name) => Number(name.match(/^(\d+)_/)[1]));
+  return numbers.length ? Math.max(...numbers) + 1 : 1;
+}
+
+function writeNewMigration(file, content, number) {
+  const existingFiles = fs.readdirSync(MIGRATIONS_DIR).filter((name) => name.toLowerCase().endsWith('.sql'));
+  const identicalFile = existingFiles.find(
+    (name) => fs.readFileSync(path.join(MIGRATIONS_DIR, name), 'utf8') === content
+  );
+  if (identicalFile) {
+    console.log(`[gen] inchangé, déjà présent : ${identicalFile}`);
+    return false;
+  }
+
+  const suffix = file.replace(/^\d+_/, '');
+  const targetName = `${String(number).padStart(3, '0')}_${suffix}`;
+  const target = path.join(MIGRATIONS_DIR, targetName);
+  fs.writeFileSync(target, content, { encoding: 'utf8', flag: 'wx' });
+  console.log(`[gen] créé ${targetName} (${content.length} octets)`);
+  return true;
 }
 
 // ─── Génération : 002 — données de référence ─────────────────────────────────
@@ -421,13 +453,11 @@ function main() {
     content: generatePerformanceIndexesMigration(perfDefs),
   });
 
+  let migrationNumber = nextMigrationNumber();
   for (const { file, content } of files) {
-    const target = path.join(MIGRATIONS_DIR, file);
-    const existed = fs.existsSync(target);
-    fs.writeFileSync(target, content, 'utf8');
-    console.log(
-      `[gen] ${existed ? 'écrasé' : 'créé  '} ${file} (${content.length} octets)`
-    );
+    if (writeNewMigration(file, content, migrationNumber)) {
+      migrationNumber++;
+    }
   }
 
   console.log('[gen] terminé.');

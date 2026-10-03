@@ -365,6 +365,15 @@ export default class ComiteValidationController {
         if (decision !== 'valide' && !motif) {
             return res.status(400).json({ success: false, message: "Motif requis pour une correction ou un rejet" })
         }
+        const idsPiecesFournis = Array.isArray(req.body.dossierIdsAReposer)
+        const dossierIdsAReposer: number[] = idsPiecesFournis
+            ? Array.from(new Set<number>((req.body.dossierIdsAReposer as unknown[])
+                .map((value: unknown) => Number(value))
+                .filter((id: number) => Number.isInteger(id) && id > 0)))
+            : []
+        if (idsPiecesFournis && dossierIdsAReposer.length === 0) {
+            return res.status(400).json({ success: false, message: "Sélectionnez au moins une pièce à corriger" })
+        }
 
         const currentUserId = req.utilisateurId as number
 
@@ -397,6 +406,25 @@ export default class ComiteValidationController {
             if (totalMembres === 0) {
                 await transaction.rollback()
                 return res.status(400).json({ success: false, message: "Aucun membre du comité configuré" })
+            }
+
+            if (decision === 'correction_demandee' && idsPiecesFournis) {
+                const piecesExistantes = await DemandeInscriptionDossier.findAll({
+                    where: { demandeId: demande.id, dossierId: { [Op.in]: dossierIdsAReposer } },
+                    transaction,
+                })
+                if (piecesExistantes.length !== dossierIdsAReposer.length) {
+                    await transaction.rollback()
+                    return res.status(400).json({ success: false, message: "Une pièce sélectionnée n'appartient pas à cette demande" })
+                }
+                await DemandeInscriptionDossier.update(
+                    { correctionDemandee: false },
+                    { where: { demandeId: demande.id }, transaction }
+                )
+                await DemandeInscriptionDossier.update(
+                    { correctionDemandee: true },
+                    { where: { demandeId: demande.id, dossierId: { [Op.in]: dossierIdsAReposer } }, transaction }
+                )
             }
 
             // Vérifier que le membre n'a pas déjà voté sur ce dossier (UNIQUE)
@@ -858,13 +886,13 @@ export default class ComiteValidationController {
                 EmailSender.getInstance().sendPdf(
                     utilisateur.email,
                     nomComplet,
-                    "Easy Ecole: Félicitations — Votre inscription a été validée",
+                    "ESA ECOLE: Félicitations — Votre inscription a été validée",
                     `<p>Cher ${nomComplet},</p>
                      <p>Nous avons le plaisir de vous informer que votre dossier d'inscription a été examiné et <strong>validé par le comité</strong>.</p>
                      <p>Votre dossier étudiant a été officiellement créé.</p>
                      <p><strong>Matricule : ${matricule}</strong></p>
                      <p>Nous vous invitons à conserver précieusement votre matricule et à vous rendre au <strong>Secrétariat de l'établissement</strong> afin de retirer votre autorisation provisoire d'inscription.</p>
-                     <p>Cordialement,<br>Le Secrétariat — Easy Ecole</p>`,
+                     <p>Cordialement,<br>Le Secrétariat — ESA ECOLE</p>`,
                     '', ''
                 )
             }
@@ -881,11 +909,11 @@ export default class ComiteValidationController {
                 EmailSender.getInstance().sendPdf(
                     utilisateur.email,
                     nomComplet,
-                    "Easy Ecole: Décision du comité concernant votre inscription",
+                    "ESA ECOLE: Décision du comité concernant votre inscription",
                     `<p>Cher ${nomComplet},</p>
                      <p>Après examen de votre dossier, le comité d'inscription a rendu une décision de <strong>rejet</strong>.</p>
                      <p><strong>Motif :</strong> ${motif}</p>
-                     <p>Cordialement,<br>Service des inscriptions — Easy Ecole</p>`,
+                     <p>Cordialement,<br>Service des inscriptions — ESA ECOLE</p>`,
                     '', ''
                 )
             }
@@ -902,12 +930,12 @@ export default class ComiteValidationController {
                 EmailSender.getInstance().sendPdf(
                     utilisateur.email,
                     nomComplet,
-                    "Easy Ecole: Correction requise sur votre dossier d'inscription",
+                    "ESA ECOLE: Correction requise sur votre dossier d'inscription",
                     `<p>Cher ${nomComplet},</p>
                      <p>Le comité d'inscription demande des <strong>corrections</strong> sur votre dossier.</p>
                      <p><strong>Motif :</strong> ${motif}</p>
                      <p>Merci de vous rapprocher du service des inscriptions pour régulariser votre situation.</p>
-                     <p>Cordialement,<br>Service des inscriptions — Easy Ecole</p>`,
+                     <p>Cordialement,<br>Service des inscriptions — ESA ECOLE</p>`,
                     '', ''
                 )
             }

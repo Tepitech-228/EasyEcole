@@ -64,6 +64,82 @@ jest.mock('../../../modules/inscription/models/RattrapageDocumentDepose', () => 
   },
 }))
 
+jest.mock('../../../modules/inscription/models/RattrapageComiteVote', () => ({
+  RattrapageComiteVote: {
+    findByPk: jest.fn(),
+    findOne: jest.fn(),
+    findAll: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    destroy: jest.fn(),
+    associations: { rattrapageInscription: 'rattrapageInscription', membre: 'membre' },
+  },
+}))
+
+jest.mock('../../../modules/inscription/models/RattrapagePlanning', () => ({
+  RattrapagePlanning: {
+    findByPk: jest.fn(),
+    findOne: jest.fn(),
+    findAll: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    destroy: jest.fn(),
+    associations: { enseignants: 'enseignants', classe: 'classe', session: 'session' },
+  },
+}))
+
+jest.mock('../../../modules/inscription/models/RattrapageEnseignant', () => ({
+  RattrapageEnseignant: {
+    findByPk: jest.fn(),
+    findOne: jest.fn(),
+    findAll: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    destroy: jest.fn(),
+    associations: { enseignant: 'enseignant', planning: 'planning' },
+  },
+}))
+
+jest.mock('../../../modules/inscription/models/RattrapageNote', () => ({
+  RattrapageNote: {
+    findByPk: jest.fn(),
+    findOne: jest.fn(),
+    findAll: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    bulkCreate: jest.fn(),
+    associations: { rattrapageInscription: 'rattrapageInscription', ue: 'ue' },
+  },
+}))
+
+jest.mock('../../../modules/inscription/models/Classe', () => ({
+  Classe: { findByPk: jest.fn(), findOne: jest.fn(), findAll: jest.fn(), associations: {} },
+}))
+
+jest.mock('../../../modules/inscription/models/Cours', () => ({
+  Cours: { findByPk: jest.fn(), findOne: jest.fn(), findAll: jest.fn(), associations: {} },
+}))
+
+jest.mock('../../../modules/inscription/models/Ecue', () => ({
+  Ecue: { findByPk: jest.fn() },
+}))
+
+jest.mock('../../../modules/inscription/models/CoursParticipant', () => ({
+  CoursParticipant: { findByPk: jest.fn(), findOne: jest.fn(), findAll: jest.fn(), associations: {} },
+}))
+
+jest.mock('../../../modules/inscription/models/CursusApprenant', () => ({
+  CursusApprenant: { findByPk: jest.fn(), findOne: jest.fn(), findAll: jest.fn(), associations: {} },
+}))
+
+jest.mock('../../../modules/inscription/models/DossierEtudiant', () => ({
+  DossierEtudiant: { findByPk: jest.fn(), findOne: jest.fn(), findAll: jest.fn(), associations: {} },
+}))
+
+jest.mock('../../../modules/auth/models/Enseignant', () => ({
+  Enseignant: { findByPk: jest.fn(), findOne: jest.fn(), findAll: jest.fn(), associations: {} },
+}))
+
 jest.mock('../../../modules/inscription/models/AnneeAcademique', () => ({
   AnneeAcademique: { findByPk: jest.fn() },
 }))
@@ -87,18 +163,31 @@ jest.mock('../../../modules/auth/models/Utilisateur', () => {
   return { Utilisateur }
 })
 
-jest.mock('../../../core/helpers/DatabaseConnection', () => ({
-  DatabaseConnection: {
-    getInstance: () => ({
-      sequelize: { transaction: jest.fn() },
-    }),
-  },
+jest.mock('../../../core/helpers/DatabaseConnection', () => {
+  const transaction = jest.fn()
+  return {
+    mockTransaction: transaction,
+    DatabaseConnection: {
+      getInstance: () => ({ sequelize: { transaction } }),
+    },
+  }
+})
+
+jest.mock('../../../modules/bulletins/services/GenerationBulletinService', () => ({
+  GenerationBulletinService: { generer: jest.fn() },
 }))
 
 const { RattrapageInscription } = require('../../../modules/inscription/models/RattrapageInscription')
 const { RattrapageSession } = require('../../../modules/inscription/models/RattrapageSession')
 const { RattrapageDocumentRequis } = require('../../../modules/inscription/models/RattrapageDocumentRequis')
 const { RattrapageDocumentDepose } = require('../../../modules/inscription/models/RattrapageDocumentDepose')
+const { RattrapageNote } = require('../../../modules/inscription/models/RattrapageNote')
+const { RattrapagePlanning } = require('../../../modules/inscription/models/RattrapagePlanning')
+const { Cours } = require('../../../modules/inscription/models/Cours')
+const { CursusApprenant } = require('../../../modules/inscription/models/CursusApprenant')
+const { CoursParticipant } = require('../../../modules/inscription/models/CoursParticipant')
+const { GenerationBulletinService } = require('../../../modules/bulletins/services/GenerationBulletinService')
+const { DatabaseConnection, mockTransaction } = require('../../../core/helpers/DatabaseConnection')
 const Ctrl = require('../../../modules/inscription/controllers/RattrapageWorkflowController').default
 
 const DOC_FIXES = ['autorisation_provisoire', 'quitus_bordereaux', 'bordereau_rattrapage']
@@ -273,5 +362,76 @@ describe('RattrapageWorkflowController — uploaderDocument (pièces fixes pour 
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
       message: expect.stringContaining('documentRequisId'),
     }))
+  })
+})
+
+describe('RattrapageWorkflowController — validation de note', () => {
+  it('refuse la validation par un autre rôle', async () => {
+    const req = mockRequest({ utilisateurRole: 'institution', params: { id: '8' } } as any)
+    const res = mockResponse()
+
+    await Ctrl.validerNote(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(mockTransaction).not.toHaveBeenCalled()
+  })
+
+  it('valide la note de son enseignant auteur et recalcule le bulletin', async () => {
+    const transaction = {
+      LOCK: { UPDATE: 'UPDATE' },
+      commit: jest.fn(),
+      rollback: jest.fn(),
+    }
+    ;(mockTransaction as jest.Mock).mockResolvedValue(transaction)
+    const note = {
+      id: 8,
+      rattrapageInscriptionId: 12,
+      etudiantId: 30,
+      ueId: 4,
+      saisiPar: 50,
+      note_rattrapage: 12,
+      statut: 'saisie',
+      update: jest.fn().mockResolvedValue(undefined),
+    }
+    ;(RattrapageNote.findByPk as jest.Mock).mockResolvedValue(note)
+    ;(RattrapageInscription.findByPk as jest.Mock).mockResolvedValue({
+      id: 12,
+      statutDemande: 'valide',
+      statutPaiement: 'paye',
+      rattrapageSessionId: 6,
+    })
+    ;(RattrapageSession.findByPk as jest.Mock).mockResolvedValue({ anneeAcademiqueId: 2026 })
+    ;(Cours.findByPk as jest.Mock).mockResolvedValue({ id: 4, parcoursId: 7, semestre: 'semestre1' })
+    ;(CursusApprenant.findOne as jest.Mock).mockResolvedValue({
+      id: 15,
+      classeId: 3,
+      parcoursId: 7,
+    })
+    ;(CoursParticipant.findOne as jest.Mock).mockResolvedValue({ id: 21 })
+    ;(GenerationBulletinService.generer as jest.Mock).mockResolvedValue([{
+      bulletin: { id: 19 },
+      ues: [{ lignes: [{ coursId: 4 }] }],
+    }])
+
+    const req = mockRequest({
+      utilisateurRole: 'enseignant',
+      utilisateurId: 50,
+      params: { id: '8' },
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.validerNote(req, res)
+
+    expect(note.update).toHaveBeenCalledWith({ statut: 'validée' }, { transaction })
+    expect(GenerationBulletinService.generer).toHaveBeenCalledWith(
+      3,
+      'semestre1',
+      2026,
+      transaction,
+      null,
+      { refreshExisting: true, cursusApprenantId: 15 },
+    )
+    expect(transaction.commit).toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
   })
 })
