@@ -62,9 +62,13 @@ const mysql = require('mysql2/promise');
 
 // ─── Configuration ───────────────────────────────────────────────────────────
 
+const REPOSITORY_MIGRATIONS_DIR = path.resolve(__dirname, '..', '..', 'migrations');
+const RUNTIME_MIGRATIONS_DIR = path.resolve(__dirname, '..', 'migrations');
 const MIGRATIONS_DIR = process.env.MIGRATIONS_DIR
   ? path.resolve(process.env.MIGRATIONS_DIR)
-  : path.resolve(__dirname, '..', 'migrations');
+  : fs.existsSync(REPOSITORY_MIGRATIONS_DIR)
+    ? REPOSITORY_MIGRATIONS_DIR
+    : RUNTIME_MIGRATIONS_DIR;
 const DB_NAME = process.env.DB_NAME || 'easyecole';
 const DB_HOST = process.env.DB_HOST || '127.0.0.1';
 const DB_PORT = parseInt(process.env.DB_PORT || '3306', 10);

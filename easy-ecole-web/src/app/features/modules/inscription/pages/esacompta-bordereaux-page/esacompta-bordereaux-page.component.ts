@@ -670,6 +670,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   /** Retourne l'URL de la photo de l'étudiant (ou l'image par défaut si absente) */
   getPhotoUrl(bordereau: any): string {
     const photo = bordereau?.utilisateur?.apprenant?.photo
+      || bordereau?.demandeInscription?.utilisateur?.apprenant?.photo
     if (photo) {
       return this.PHOTOS_PATH + photo
     }

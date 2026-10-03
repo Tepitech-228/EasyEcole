@@ -6,6 +6,6 @@ export const AuthAdmin = (req: Request, res: Response, next: Function) => {
         return next()
     }
     else {
-        return res.status(403).json({success: false})
+        return res.status(403).json({ success: false, message: "Accès réservé à l'administration" })
     }
 }

@@ -14,14 +14,25 @@ const DEFAULT_ROLES = [
     { nom: 'Parent', description: 'Parent d\'apprenant' },
     { nom: 'Surveillant', description: 'Surveillance et discipline' },
     { nom: 'Bibliothécaire', description: 'Gestion de la bibliothèque' },
+    { nom: 'Comité', description: 'Traitement collégial des dossiers d’inscription' },
+    { nom: 'ESA Compta', description: 'Saisie et suivi comptable des bordereaux' },
+    { nom: 'Personnel administratif', description: 'Gestion administrative et secrétariat' },
+    { nom: 'Ressources Humaines', description: 'Gestion du personnel et de la paie' },
+    { nom: 'Secrétaire', description: 'Accueil et traitement des dossiers administratifs' },
 ];
 
-const ROLE_PERMISSIONS: Record<string, string[]> = {
+export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'Super Admin': [
+        'menu.administration',
+        'menu.administration.roles',
+        'menu.administration.permissions',
         'action.administration.personnel.generer-qr',
     ],
     'Directeur': [
         'menu.tableau-de-bord',
+        'menu.administration',
+        'menu.administration.roles',
+        'menu.administration.permissions',
         'menu.inscription', 'menu.inscription.sessions', 'menu.inscription.parcours',
         'menu.inscription.demandes',         'menu.inscription.dossiers-etudiants',
         'menu.inscription.cartes',
@@ -160,19 +171,43 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
         'menu.tableau-de-bord',
         'menu.parametres', 'menu.parametres.mon-profil', 'menu.parametres.mon-compte',
     ],
+    'Comité': [
+        'menu.tableau-de-bord', 'menu.comite-orientation', 'menu.comite-orientation.preinscriptions',
+        'menu.finances.comite-validation', 'menu.bourses.configurations', 'menu.bourses.attributions',
+        'menu.bourses.campagne', 'menu.parametres.mon-profil', 'menu.parametres.mon-compte',
+    ],
+    'ESA Compta': [
+        'menu.tableau-de-bord', 'menu.finances', 'menu.finances.bordereaux-a-traiter',
+        'menu.finances.types-bordereaux', 'menu.finances.situation-financiere', 'menu.finances.impayes',
+        'menu.parametres.mon-profil', 'menu.parametres.mon-compte',
+    ],
+    'Personnel administratif': [
+        'menu.tableau-de-bord', 'menu.secretariat.dashboard', 'menu.secretariat.demandes',
+        'menu.secretariat.encaissement', 'menu.secretariat.caisse', 'menu.secretariat.types-documents',
+        'menu.parametres.mon-profil', 'menu.parametres.mon-compte',
+    ],
+    'Ressources Humaines': [
+        'menu.tableau-de-bord', 'menu.rh', 'menu.rh.employes', 'menu.rh.paie',
+        'menu.rh.demandes-conge', 'menu.rh.soldes-conge', 'menu.rh.reportings',
+        'menu.parametres.mon-profil', 'menu.parametres.mon-compte',
+    ],
+    'Secrétaire': [
+        'menu.tableau-de-bord', 'menu.secretariat.dashboard', 'menu.secretariat.demandes',
+        'menu.secretariat.encaissement', 'menu.secretariat.caisse', 'menu.secretariat.cloture',
+        'menu.secretariat.autorisations-provisoires', 'menu.secretariat.types-documents',
+        'menu.secretariat.journal', 'menu.parametres.mon-profil', 'menu.parametres.mon-compte',
+    ],
 };
 
 export class RoleSeed {
     static async init(adminUserId?: number): Promise<void> {
         try {
-            const count = await Role.count();
-            if (count > 0) return;
-
             for (const roleData of DEFAULT_ROLES) {
-                const role = await Role.create({
-                    nom: roleData.nom,
-                    description: roleData.description,
+                const [role, created] = await Role.findOrCreate({
+                    where: { nom: roleData.nom },
+                    defaults: { nom: roleData.nom, description: roleData.description },
                 });
+                if (!created) continue;
 
                 const permissionKeys = ROLE_PERMISSIONS[roleData.nom] || [];
                 if (permissionKeys.length > 0) {

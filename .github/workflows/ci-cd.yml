@@ -238,7 +238,7 @@ jobs:
       - name: '[CI] Build image Docker backend'
         run: |
           echo "[CI] Construction de l'image Docker backend..."
-          docker build -t easyecole-backend:ci -f easy-ecole-backend/Dockerfile easy-ecole-backend/
+          docker build -t easyecole-backend:ci -f easy-ecole-backend/Dockerfile .
           echo "[CI] Image backend construite avec succes"
 
       - name: '[CI] Build image Docker frontend'
@@ -250,7 +250,7 @@ jobs:
       - name: '[CI] Validation docker-compose'
         run: |
           echo "[CI] Validation du fichier docker-compose.yml..."
-          docker compose config --quiet
+          MYSQL_ROOT_PASSWORD=ci-only DB_PASS=ci-only docker compose config --quiet
           echo "[CI] docker-compose.yml valide"
 
       - name: '[CI] Nettoyage images Docker'

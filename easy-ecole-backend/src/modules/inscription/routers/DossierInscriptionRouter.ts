@@ -6,6 +6,7 @@ import { customAlphabet } from 'nanoid'
 
 import DossierInscriptionController from "../controllers/DossierInscriptionController"
 import Authenticate from "../../../core/middlewares/Authenticate";
+import { AuthApprenant } from "../../../core/middlewares/AuthApprenant";
 
 const router = express.Router()
 
@@ -116,7 +117,7 @@ router
  *       200:
  *         description: Fichier téléchargé
  */
-    .put('/', [Authenticate, upload.array('fichiers', 50)], DossierInscriptionController.uploadDossierInscription)
+    .put('/', [Authenticate, AuthApprenant, upload.array('fichiers', 50)], DossierInscriptionController.uploadDossierInscription)
 
 // Gestion dédiée des erreurs multer (taille, type, nombre) → 400 explicite au lieu du 500 générique
 router.use((err: any, _req: express.Request, res: express.Response, next: express.NextFunction) => {

@@ -79,7 +79,8 @@ async function createSession(anneeAcademiqueId) {
   const [existing] = await db.query("SELECT id FROM ins_sessions WHERE anneeAcademiqueId=? AND dateDebut='2025-09-01' LIMIT 1", { replacements: [anneeAcademiqueId], type: db.QueryTypes.SELECT })
   const existingRow = Array.isArray(existing) ? existing[0] : existing
   if (existingRow && existingRow.id) {
-    console.log('[SEED] Session déjà existante (id=%d)', existingRow.id)
+    await db.query("UPDATE ins_sessions SET statut='ouverte' WHERE id=?", { replacements: [existingRow.id], type: db.QueryTypes.UPDATE })
+    console.log('[SEED] Session déjà existante (id=%d), statut réinitialisé à ouverte', existingRow.id)
     return existingRow.id
   }
   const [result] = await db.query(
@@ -131,7 +132,7 @@ async function createNiveauParcoursClasse() {
     classeId = classeRow.id
   } else {
     const [classeResult] = await db.query(
-      'INSERT INTO ins_classes (libelle, description, option, capaciteMax, niveauEtudeId, parcoursId, etablissementId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
+      'INSERT INTO ins_classes (libelle, description, `option`, capaciteMax, niveauEtudeId, parcoursId, etablissementId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
       { replacements: ['L1 GL', 'Licence 1 Génie Logiciel', 'JOUR', 50, niveauEtudeId, parcoursId, 1], type: db.QueryTypes.INSERT }
     )
     classeId = typeof classeResult === 'number' ? classeResult : classeResult.insertId
@@ -216,21 +217,34 @@ async function createUeEcueEchelle(parcoursId, anneeAcademiqueId) {
  * Crée un professeur.
  */
 async function createEnseignant(nom, prenoms) {
+  const existing = await db.query(
+    'SELECT id, nom, prenoms, identifiant, email, role, tokenVersion, etablissementId FROM aut_utilisateurs WHERE nom = ? AND prenoms = ? LIMIT 1',
+    { replacements: [nom, prenoms], type: db.QueryTypes.SELECT }
+  )
+  if (existing.length > 0) {
+    await db.query(
+      'INSERT IGNORE INTO aut_enseignants (utilisateurId, specialite, createdAt, updatedAt) VALUES (?, ?, NOW(), NOW())',
+      { replacements: [existing[0].id, 'Mathématiques'], type: db.QueryTypes.INSERT }
+    )
+    return { user: existing[0] }
+  }
+
   const bcrypt = require('bcrypt')
   const hashed = await bcrypt.hash('Test123!', 10)
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 
   const [result] = await db.query(
     'INSERT INTO aut_utilisateurs (nom, prenoms, identifiant, email, motDePasse, role, contact, tokenVersion, etablissementId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 1, NOW(), NOW())',
-    { replacements: [nom, prenoms, `ens-${Date.now()}`, `ens-${Date.now()}@test.com`, hashed, 'enseignant'], type: db.QueryTypes.INSERT }
+    { replacements: [nom, prenoms, `ens-${suffix}`, `ens-${suffix}@test.com`, hashed, 'enseignant', '0000000000'], type: db.QueryTypes.INSERT }
   )
   const userId = typeof result === 'number' ? result : result.insertId
 
   await db.query(
-    'INSERT INTO aut_enseignants (utilisateurId, matiere, createdAt, updatedAt) VALUES (?, ?, NOW(), NOW())',
-    { replacements: [userId], type: db.QueryTypes.INSERT }
+'INSERT IGNORE INTO aut_enseignants (utilisateurId, specialite, createdAt, updatedAt) VALUES (?, ?, NOW(), NOW())',
+    { replacements: [userId, 'Mathématiques'], type: db.QueryTypes.INSERT }
   )
 
-  const [userRows] = await db.query(
+const userRows = await db.query(
     'SELECT id, nom, prenoms, identifiant, email, role, tokenVersion, etablissementId FROM aut_utilisateurs WHERE id = ?',
     { replacements: [userId], type: db.QueryTypes.SELECT }
   )
@@ -300,7 +314,7 @@ function genererSamedis(dateDebut, dateFin) {
  */
 async function createRattrapagePlanning(rattrapageSessionId, classeId, date) {
   await db.query(
-    'INSERT INTO ins_rattrapage_planning (rattrapageSessionId, classeId, dateSamedi, heureDebut, heureFin, salleId, statut, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, NULL, ?, NOW(), NOW())',
+    'INSERT IGNORE INTO ins_rattrapage_planning (rattrapageSessionId, classeId, dateSamedi, heureDebut, heureFin, salleId, statut, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, NULL, ?, NOW(), NOW())',
     { replacements: [rattrapageSessionId, classeId, date, '08:00:00', '12:00:00', 'programme'], type: db.QueryTypes.INSERT }
   )
 }
@@ -311,7 +325,7 @@ async function createRattrapagePlanning(rattrapageSessionId, classeId, date) {
 async function createRattrapageNote(rattrapageInscriptionId, etudiantId, ueId, noteOriginale, noteRattrapage) {
   await db.query(
     'INSERT INTO ins_rattrapage_notes (rattrapageInscriptionId, etudiantId, ueId, note_originale, note_rattrapage, saisiPar, statut, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, NULL, ?, NOW(), NOW())',
-    { replacements: [rattrapageInscriptionId, etudiantId, ueId, noteOriginale, noteRattrapage, 'validée'], type: db.QueryTypes.INSERT }
+    { replacements: [rattrapageInscriptionId, etudiantId, ueId, noteOriginale, noteRattrapage, 'saisie'], type: db.QueryTypes.INSERT }
   )
 }
 
@@ -319,22 +333,22 @@ async function createRattrapageNote(rattrapageInscriptionId, etudiantId, ueId, n
  * Calcule la moyenne d'un étudiant.
  */
 async function calculerMoyenne(utilisateurId, classeId, anneeAcademiqueId) {
-  const [rows] = await db.query(
+const rows = await db.query(
     'SELECT AVG(ne.note) as moyenne FROM ins_notes_evaluation ne JOIN ins_listes_notes_evaluation lne ON ne.listeNoteEvaluationId = lne.id JOIN ins_cours_participants cp ON cp.coursId = lne.coursId AND cp.id = ne.coursParticipantId WHERE cp.utilisateurId = ? AND lne.anneeAcademiqueId = ?',
     { replacements: [utilisateurId, anneeAcademiqueId], type: db.QueryTypes.SELECT }
   )
-  return rows[0]?.moyenne || null
+  return rows[0] && rows[0].moyenne != null ? Number(rows[0].moyenne) : null
 }
 
 /**
  * Calcule la moyenne COALESCE(note_rattrapage, note_originale).
  */
 async function calculerMoyenneAvecRattrapage(utilisateurId, anneeAcademiqueId) {
-  const [rows] = await db.query(
+const rows = await db.query(
     'SELECT AVG(COALESCE(rn.note_rattrapage, rn.note_originale)) as moyenne FROM ins_rattrapage_notes rn WHERE rn.etudiantId = ?',
     { replacements: [utilisateurId], type: db.QueryTypes.SELECT }
   )
-  return rows[0]?.moyenne || null
+  return rows[0] && rows[0].moyenne != null ? Number(rows[0].moyenne) : null
 }
 
 module.exports = {

@@ -162,9 +162,11 @@ export default class PermissionController {
             }
 
             const userPermissionKeys = new Set<string>();
+            let configured = false;
 
             const userRoles = await UserRole.findAll({ where: { utilisateurId } });
             if (userRoles.length > 0) {
+                configured = true;
                 const roleIds = userRoles.map(ur => ur.roleId);
                 const roles = await Role.findAll({
                     where: { id: roleIds },
@@ -183,10 +185,17 @@ export default class PermissionController {
                     [RolesUtilisateur.APPRENANT]: 'Apprenant',
                     [RolesUtilisateur.CAISSIER_BANQUE]: 'Comptable',
                     [RolesUtilisateur.CABINET_COMPTABLE]: 'Comptable',
-                    [RolesUtilisateur.COMITE_ORIENTATION]: 'Parent',
+                    [RolesUtilisateur.COMITE_ORIENTATION]: 'Comité',
+                    [RolesUtilisateur.ESA_COMPTA]: 'ESA Compta',
+                    [RolesUtilisateur.PERSONNEL_ADMINISTRATIF]: 'Personnel administratif',
+                    [RolesUtilisateur.RESSOURCES_HUMAINES]: 'Ressources Humaines',
+                    [RolesUtilisateur.SECRETAIRE]: 'Secrétaire',
+                    [RolesUtilisateur.SURVEILLANT]: 'Surveillant',
+                    [RolesUtilisateur.PARENT]: 'Parent',
                 };
                 const roleName = roleNameMap[role];
                 if (roleName) {
+                    configured = true;
                     const fallbackRole = await Role.findOne({
                         where: { nom: roleName },
                         include: [{ model: Permission, as: 'permissions', attributes: ['key'] }]
@@ -204,6 +213,7 @@ export default class PermissionController {
                 where: { utilisateurId, estActif: true },
                 include: [{ model: Permission, as: 'permission', attributes: ['key'] }]
             });
+            if (userPermissions.length > 0) configured = true;
             for (const up of userPermissions) {
                 const perm = (up as any).permission;
                 if (perm?.key) {
@@ -212,7 +222,6 @@ export default class PermissionController {
             }
 
             const keys = Array.from(userPermissionKeys);
-            const configured = keys.length > 0;
 
             return res.status(200).send({ permissions: keys, configured });
         } catch (error) {

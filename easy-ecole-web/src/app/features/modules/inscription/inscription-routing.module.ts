@@ -39,6 +39,7 @@ import { ReinscriptionWizardPageComponent } from './pages/reinscription-wizard-p
 import { InscriptionWizardPageComponent } from './pages/inscription-wizard-page/inscription-wizard-page.component';
 import { ImpayesPageComponent } from './pages/impayes-page/impayes-page.component';
 import { SituationFinancierePageComponent } from './pages/situation-financiere-page/situation-financiere-page.component';
+import { InscriptionCorrectionDocumentsPageComponent } from './pages/inscription-correction-documents-page/inscription-correction-documents-page.component';
 
 const routes: Routes = [
   {
@@ -111,6 +112,13 @@ const routes: Routes = [
         path: '',
         component: ListeDemandesPageComponent,
         pathMatch: 'full'
+      },
+
+      {
+        path: ':id/correction',
+        component: InscriptionCorrectionDocumentsPageComponent,
+        pathMatch: 'full',
+        canActivate: [ApprenantGuard]
       },
 
       {

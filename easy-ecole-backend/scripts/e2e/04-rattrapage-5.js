@@ -31,11 +31,10 @@ async function phase4(context) {
     const samedi = samedis[i % samedis.length]
 
     // Créer la demande rattrapage
-    const [demandeResult] = await db.query(
+    const [rattrapageInscriptionId] = await db.query(
       'INSERT INTO ins_rattrapages_inscriptions (coursParticipantId, coursId, sessionExamenId, source, motifEtudiant, creneauSouhaite, rattrapageSessionId, statutDemande, demandePar, createdAt, updatedAt) VALUES (NULL, NULL, NULL, "demande_etudiant", "Échec S1 - Mathématiques", "2026-07", ?, "en_attente", ?, NOW(), NOW())',
       { replacements: [rattrapageSessionId, userId], type: db.QueryTypes.INSERT }
     )
-    const rattrapageInscriptionId = demandeResult.insertId
     rattrapageInscriptionIds.push(rattrapageInscriptionId)
 
     // Ajouter les 3 pièces justificatives
@@ -50,18 +49,18 @@ async function phase4(context) {
     // Déposer les documents
     for (const piece of pieces) {
       await db.query(
-        'INSERT INTO ins_rattrapage_documents_deposes (rattrapageInscriptionId, documentRequisId, fichier, nomFichier, createdAt, updatedAt) VALUES (?, NULL, "/fake.pdf", ?, NOW(), NOW())',
-        { replacements: [rattrapageInscriptionId, `${piece}-${userId}.pdf`], type: db.QueryTypes.INSERT }
+        'INSERT INTO ins_rattrapage_documents_deposes (rattrapageInscriptionId, documentRequisId, codeDocument, fichier, createdAt, updatedAt) VALUES (?, NULL, ?, ?, NOW(), NOW())',
+        { replacements: [rattrapageInscriptionId, piece, `${piece}-${userId}.pdf`], type: db.QueryTypes.INSERT }
       )
     }
 
     // Passage Cabinet→ESA→Comité unanimité
-    await db.query('UPDATE ins_rattrapages_inscriptions SET statut = ? WHERE id = ?', { replacements: ['authentifie', rattrapageInscriptionId], type: db.QueryTypes.UPDATE })
-    await db.query('UPDATE ins_rattrapages_inscriptions SET statut = ? WHERE id = ?', { replacements: ['saisie_validee', rattrapageInscriptionId], type: db.QueryTypes.UPDATE })
+    await db.query('UPDATE ins_rattrapages_inscriptions SET statut = ? WHERE id = ?', { replacements: ['present', rattrapageInscriptionId], type: db.QueryTypes.UPDATE })
+    await db.query('UPDATE ins_rattrapages_inscriptions SET statut = ? WHERE id = ?', { replacements: ['valide', rattrapageInscriptionId], type: db.QueryTypes.UPDATE })
 
-    const [adminRows] = await db.query("SELECT id FROM aut_utilisateurs WHERE role = 'admin' LIMIT 1", { type: db.QueryTypes.SELECT })
+    const adminRows = await db.query("SELECT id FROM aut_utilisateurs WHERE role = 'admin' LIMIT 1", { type: db.QueryTypes.SELECT })
     if (adminRows.length > 0) {
-      await db.query('INSERT INTO ins_rattrapage_comite_votes (rattrapageInscriptionId, utilisateurId, vote, commentaire, createdAt) VALUES (?, ?, "pour", "Unanimité", NOW())', { replacements: [rattrapageInscriptionId, adminRows[0].id], type: db.QueryTypes.INSERT })
+      await db.query('INSERT INTO ins_rattrapage_comite_votes (rattrapageInscriptionId, membreId, decision, motif, createdAt) VALUES (?, ?, "valide", "Unanimite", NOW())', { replacements: [rattrapageInscriptionId, adminRows[0].id], type: db.QueryTypes.INSERT })
     }
 
     await db.query('UPDATE ins_rattrapages_inscriptions SET statutDemande = ?, dateValidationComite = NOW() WHERE id = ?', { replacements: ['valide', rattrapageInscriptionId], type: db.QueryTypes.UPDATE })
@@ -72,7 +71,7 @@ async function phase4(context) {
   }
 
   // Vérification
-  const [validCount] = await db.query('SELECT COUNT(*) as cnt FROM ins_rattrapages_inscriptions WHERE rattrapageSessionId = ? AND statutDemande = ?', { replacements: [rattrapageSessionId, 'valide'], type: db.QueryTypes.SELECT })
+  const validCount = await db.query('SELECT COUNT(*) as cnt FROM ins_rattrapages_inscriptions WHERE rattrapageSessionId = ? AND statutDemande = ?', { replacements: [rattrapageSessionId, 'valide'], type: db.QueryTypes.SELECT })
   console.log(`\n[OK] ${validCount[0].cnt} demandes rattrapage validées par le comité`)
 
   if (validCount[0].cnt !== failedStudentIds.length) { console.log('[FAIL] Nombre de demandes validées incorrect'); process.exit(1) }

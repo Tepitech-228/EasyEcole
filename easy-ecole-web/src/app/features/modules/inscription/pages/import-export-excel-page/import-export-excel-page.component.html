@@ -1,36 +1,59 @@
-<div class="page-container">
-  <app-header-title title="Import / Export Excel" subtitle="Gérez les importations et exportations de données via des fichiers Excel"></app-header-title>
+<div class="page-shell">
+  <div class="page-container">
+    <div class="page-header-row">
+      <div>
+        <span class="page-kicker">ESA ECOLE <span aria-hidden="true">/</span> DONNÉES</span>
+        <app-header-title title="Centre de migration" subtitle="Transférez vos données académiques et vos profils en toute maîtrise."></app-header-title>
+      </div>
+      <span class="page-state"><span class="page-state__dot"></span> Outils de transfert</span>
+    </div>
 
-  <app-custom-alert *ngIf="errorMessage" [show]="true" [title]="errorMessage" type="danger" [inline]="true"></app-custom-alert>
-  <app-custom-alert *ngIf="successMessage" [show]="true" [title]="successMessage" type="success" [inline]="true"></app-custom-alert>
+    <app-custom-alert *ngIf="errorMessage" [show]="true" [title]="errorMessage" type="danger" [inline]="true"></app-custom-alert>
+    <app-custom-alert *ngIf="successMessage" [show]="true" [title]="successMessage" type="success" [inline]="true"></app-custom-alert>
 
-  <div class="mt-6 border-b border-gray-200">
-    <nav class="-mb-px flex gap-x-8" aria-label="Tabs">
-      <button
-        (click)="activeTab = 'export'"
-        [class]="activeTab === 'export' ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-        class="border-b-3 py-3 px-4 text-sm font-medium transition-colors">
-        <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5"></path>
-        </svg>
-        Export
-      </button>
-      <button
-        (click)="activeTab = 'import'"
-        [class]="activeTab === 'import' ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-        class="border-b-3 py-3 px-4 text-sm font-medium transition-colors">
-        <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V8m0 0l-3 3m3-3l3 3M7 16l6-6"></path>
-        </svg>
-        Import
-      </button>
-    </nav>
-  </div>
+    <div class="scope-line">
+      <span class="scope-line__label">Périmètre</span>
+      <span>UE &amp; ECUE</span>
+      <span>Étudiants &amp; cursus</span>
+      <span>Enseignants</span>
+      <span>Profils &amp; comptes</span>
+    </div>
+
+    <div class="panel-tabs">
+      <nav class="nav-tabs" aria-label="Opérations de données" role="tablist">
+        <button
+          type="button"
+          (click)="activeTab = 'export'"
+          [class.tab-button--active]="activeTab === 'export'"
+          [attr.aria-selected]="activeTab === 'export'"
+          class="tab-button" role="tab">
+          <span class="material-symbols-outlined tab-button__icon" aria-hidden="true">file_download</span>
+          <span>Exporter</span>
+          <small>Sortir les données</small>
+        </button>
+        <button
+          type="button"
+          (click)="activeTab = 'import'"
+          [class.tab-button--active]="activeTab === 'import'"
+          [attr.aria-selected]="activeTab === 'import'"
+          class="tab-button" role="tab">
+          <span class="material-symbols-outlined tab-button__icon" aria-hidden="true">upload_file</span>
+          <span>Importer</span>
+          <small>Intégrer les données</small>
+        </button>
+      </nav>
+    </div>
 
   <!-- ===== Onglet Export ===== -->
   <div *ngIf="activeTab === 'export'" class="mt-6">
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4">Exporter des données</h2>
+    <div class="operation-panel bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+      <div class="section-heading">
+        <div>
+          <span class="section-kicker">01 <span>/</span> EXPORT</span>
+          <h2 class="text-lg font-semibold text-gray-900 mb-1">Préparer un export</h2>
+          <p class="section-subtitle">Choisissez les données et le format à transmettre ou à archiver.</p>
+        </div>
+      </div>
 
       <div class="mb-6">
         <label class="block text-xs font-medium text-gray-600 mb-1">Type d'export</label>
@@ -133,38 +156,38 @@
 
       <button (click)="exporter()"
          class="inline-flex items-center px-4 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm">
-         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5"></path>
-         </svg>
+         <span class="material-symbols-outlined mr-2 text-base" aria-hidden="true">file_download</span>
          Exporter
        </button>
      </div>
 
      <!-- ===== Section Export Migration Complète ===== -->
-     <div class="mt-6 rounded-2xl border-2 border-emerald-200 bg-emerald-50/30 p-6">
-       <div class="flex items-center gap-3 mb-2">
-         <h3 class="text-lg font-semibold text-emerald-900">Export Migration Complète</h3>
-         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">Nouveau</span>
+     <section class="migration-export">
+       <div class="migration-export__copy">
+         <span class="section-kicker">TRANSFERT ÉTUDIANT</span>
+         <h3>Export migration complète</h3>
+         <p>Un classeur structuré en trois onglets : identité, cursus et finance. Conçu pour préparer la reprise des dossiers étudiants.</p>
        </div>
-       <p class="text-sm text-emerald-700 mb-4">
-         Fichier Excel 3 onglets : Identité (37 colonnes), Cursus, Finance — directement ré-importable via l'onglet Import. Recommandé pour basculer l'ancienne base.
-       </p>
        <button (click)="exporterMigration()"
          [disabled]="exportMigrationLoading"
-         class="inline-flex items-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
-         <svg *ngIf="!exportMigrationLoading" class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5"></path>
-         </svg>
+         class="migration-export__button inline-flex items-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+         <span *ngIf="!exportMigrationLoading" class="material-symbols-outlined mr-2 text-base" aria-hidden="true">database</span>
          <span *ngIf="exportMigrationLoading">Téléchargement en cours…</span>
-         <span *ngIf="!exportMigrationLoading">Télécharger Export Migration (3 onglets)</span>
+         <span *ngIf="!exportMigrationLoading">Télécharger le classeur</span>
        </button>
-     </div>
+     </section>
    </div>
 
   <!-- ===== Onglet Import ===== -->
   <div *ngIf="activeTab === 'import'" class="mt-6">
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4">Importer des données</h2>
+    <div class="operation-panel bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+      <div class="section-heading">
+        <div>
+          <span class="section-kicker">02 <span>/</span> IMPORT</span>
+          <h2 class="text-lg font-semibold text-gray-900 mb-1">Intégrer un fichier</h2>
+          <p class="section-subtitle">Sélectionnez le type de données, puis contrôlez le rapport avant de poursuivre.</p>
+        </div>
+      </div>
 
 <div class="mb-6">
         <label class="block text-xs font-medium text-gray-600 mb-1">Type d'import</label>
@@ -213,15 +236,13 @@
       <!-- Zone de dépôt de fichier -->
       <div class="mb-6">
         <div (click)="openFilePicker()" (dragover)="onDragOver($event)" (drop)="onDrop($event)"
-          class="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-gray-50/50 transition-colors">
+          class="upload-zone border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-gray-50/50 transition-colors">
           <input type="file" id="fileInput" accept=".xlsx,.xls,.docx" (change)="onFileSelected($event)" class="hidden">
-          <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16V8m0 0l-3 3m3-3l3 3m3-3h5a2 2 0 012 2v10a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h5"></path>
-          </svg>
+          <span class="material-symbols-outlined mx-auto block text-5xl text-gray-400" aria-hidden="true">cloud_upload</span>
           <p class="mt-4 text-sm text-gray-600">
             <span class="font-semibold">Cliquez pour sélectionner</span> ou glissez-déposez votre fichier ici
           </p>
-          <p class="mt-1 text-xs text-gray-400">Formats : .xlsx, .xls ou .docx. Votre fichier maquette (2 lignes d'en-tête : CODE DE L'UE / INTITULE DES ENSEIGNEMENTS, colonnes TYPE/CM/TD-TP/TPE/TOTAL/TOTAL PRESENTIEL/CREDIT/ENSEIGNANT) sera analysé pour créer automatiquement les UE et chacun de leurs ECUE. Les sections MINEURES/MAJEURES/LIBRES et la ligne TOTAL SEMESTRE sont gérées automatiquement. La colonne ENSEIGNANT n'est pas encore importée (les enseignants seront rattachés plus tard).</p>
+          <p class="mt-1 text-xs text-gray-400">Formats acceptés : .xlsx, .xls et .docx</p>
           <p *ngIf="selectedFile" class="mt-2 text-sm text-gray-700 font-medium">{{ selectedFile.name }}</p>
         </div>
       </div>
@@ -230,9 +251,7 @@
       <div class="flex flex-wrap items-center gap-4 mb-6">
 <button (click)="telechargerTemplate()"
            class="inline-flex items-center px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-xl transition-colors">
-           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 012 2h12a2 2 0 01-2 2v-2M7 10l5 5 5-5"></path>
-           </svg>
+           <span class="material-symbols-outlined mr-2 text-base" aria-hidden="true">download</span>
            Télécharger le template ({{ importFormat }})
          </button>
         <button type="button" (click)="importer()"
@@ -340,8 +359,8 @@
               <ng-container *ngFor="let ue of getGroupedUe()">
                 <tr (click)="toggleUe(ue.code)" class="cursor-pointer hover:bg-gray-50">
                   <td class="px-3 py-3 text-sm">
-                    <span class="material-symbols-outlined text-base align-middle transition-transform" [class.rotate-90]="isExpanded(ue.code)">
-                      {{ isExpanded(ue.code) ? 'expand_less' : 'expand_more' }}
+                    <span class="material-symbols-outlined text-base align-middle transition-transform" [class.rotate-90]="isExpanded(ue.code)" aria-hidden="true">
+                      chevron_right
                     </span>
                   </td>
                   <td class="px-3 py-3 text-sm font-medium text-gray-900">{{ ue.code }}</td>

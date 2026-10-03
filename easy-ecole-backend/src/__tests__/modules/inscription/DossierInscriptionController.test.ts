@@ -10,7 +10,37 @@ jest.mock('../../../modules/inscription/models/DossierInscription', () => {
   return { DossierInscription: Mock }
 })
 
+jest.mock('../../../modules/inscription/models/DemandeInscription', () => ({
+  DemandeInscription: {
+    findByPk: jest.fn(),
+    associations: {
+      cours: {},
+      coursChoisis: {},
+      session: {},
+      etapeInscription: {},
+      dossiersDemande: {},
+      paiementsInscription: {},
+      reponseInscription: {},
+    },
+  },
+}))
+
+jest.mock('../../../modules/inscription/models/DemandeInscriptionDossier', () => ({
+  DemandeInscriptionDossier: {
+    findOne: jest.fn(),
+    findAll: jest.fn(),
+    create: jest.fn(),
+    count: jest.fn(),
+  },
+}))
+
+jest.mock('../../../modules/inscription/models/ComiteVote', () => ({
+  ComiteVote: { destroy: jest.fn() },
+}))
+
 const { DossierInscription } = require('../../../modules/inscription/models/DossierInscription')
+const { DemandeInscription } = require('../../../modules/inscription/models/DemandeInscription')
+const { DemandeInscriptionDossier } = require('../../../modules/inscription/models/DemandeInscriptionDossier')
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -129,6 +159,66 @@ describe('DossierInscriptionController.createDossierInscription', () => {
     await DossierInscriptionController.createDossierInscription(req, res)
 
     expect(res.status).toHaveBeenCalledWith(400)
+  })
+})
+
+describe('DossierInscriptionController.uploadDossierInscription', () => {
+  it('refuse les rôles autres qu’apprenant avant de consulter la demande', async () => {
+    const req = mockRequest({
+      utilisateurRole: 'enseignant',
+      body: { demandeId: '1', dossierId: '2' },
+      files: [{ filename: 'document.pdf' }],
+    } as any)
+    const res = mockResponse()
+
+    await DossierInscriptionController.uploadDossierInscription(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(DemandeInscription.findByPk).not.toHaveBeenCalled()
+    expect(DemandeInscriptionDossier.findAll).not.toHaveBeenCalled()
+  })
+
+  it('refuse à un apprenant de modifier les pièces de la demande d’un autre utilisateur', async () => {
+    const req = mockRequest({
+      utilisateurId: 7,
+      utilisateurRole: 'apprenant',
+      body: { demandeId: '1', dossierId: '2' },
+      files: [{ filename: 'document.pdf' }],
+    } as any)
+    const res = mockResponse()
+    ;(DemandeInscription.findByPk as jest.Mock).mockResolvedValue({ utilisateurId: 8 })
+
+    await DossierInscriptionController.uploadDossierInscription(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(DemandeInscriptionDossier.findAll).not.toHaveBeenCalled()
+    expect(DemandeInscriptionDossier.create).not.toHaveBeenCalled()
+  })
+
+  it('permet à un apprenant propriétaire de téléverser ses pièces', async () => {
+    const req = mockRequest({
+      utilisateurId: 7,
+      utilisateurRole: 'apprenant',
+      body: { demandeId: '1', dossierId: '2' },
+      files: [{ filename: 'document.pdf' }],
+    } as any)
+    const res = mockResponse()
+    const demande = { utilisateurId: 7, statutPipeline: 'brouillon' }
+    ;(DemandeInscription.findByPk as jest.Mock)
+      .mockResolvedValueOnce(demande)
+      .mockResolvedValueOnce(demande)
+    ;(DemandeInscriptionDossier.findAll as jest.Mock).mockResolvedValue([])
+    ;(DemandeInscriptionDossier.create as jest.Mock).mockResolvedValue({})
+
+    await DossierInscriptionController.uploadDossierInscription(req, res)
+
+    expect(DemandeInscriptionDossier.create).toHaveBeenCalledWith({
+      nomFichier: 'document.pdf',
+      dossierId: '2',
+      demandeId: '1',
+      correctionDemandee: false,
+    })
+    expect(res.status).toHaveBeenCalledWith(201)
   })
 })
 

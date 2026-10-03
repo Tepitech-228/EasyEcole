@@ -5,6 +5,7 @@ import { Permission } from "../models/Permission";
 import { UserRole } from "../models/UserRole";
 import { UserPermission } from "../models/UserPermission";
 import { Utilisateur } from "../models/Utilisateur";
+import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 
 export default class RoleController {
 
@@ -94,27 +95,42 @@ export default class RoleController {
     }
 
     static async updateRolePermissions(req: Request, res: Response): Promise<Response> {
+        const transaction = await DatabaseConnection.getInstance().sequelize.transaction();
         try {
             const { id } = req.params;
             const { permissionIds } = req.body;
 
-            const role = await Role.findByPk(id);
+            const role = await Role.findByPk(id, { transaction });
             if (!role) {
+                await transaction.rollback();
                 return res.status(404).json({ success: false, message: "Rôle non trouvé" });
             }
 
-            await RolePermission.destroy({ where: { roleId: id } });
+            const ids = Array.isArray(permissionIds)
+                ? [...new Set(permissionIds.map(Number).filter((permissionId: number) => Number.isInteger(permissionId) && permissionId > 0))]
+                : [];
+            const permissions = ids.length > 0
+                ? await Permission.findAll({ where: { id: ids }, attributes: ['id'], transaction })
+                : [];
+            if (permissions.length !== ids.length) {
+                await transaction.rollback();
+                return res.status(400).json({ success: false, message: "Une ou plusieurs permissions sont inconnues" });
+            }
 
-            if (Array.isArray(permissionIds) && permissionIds.length > 0) {
-                const newPermissions = permissionIds.map((permissionId: number) => ({
+            await RolePermission.destroy({ where: { roleId: id }, force: true, transaction });
+
+            if (ids.length > 0) {
+                const newPermissions = ids.map((permissionId: number) => ({
                     roleId: Number(id) as any,
                     permissionId: permissionId as any
                 }));
-                await RolePermission.bulkCreate(newPermissions);
+                await RolePermission.bulkCreate(newPermissions, { transaction });
             }
 
+            await transaction.commit();
             return res.status(200).json({ success: true, message: "Permissions du rôle mises à jour" });
         } catch (error) {
+            await transaction.rollback();
             return res.status(500).json({ success: false, error });
         }
     }
@@ -147,10 +163,15 @@ export default class RoleController {
                 return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
             }
 
-            await UserRole.findOrCreate({
+            const lienExistant = await UserRole.findOne({
                 where: { utilisateurId, roleId: id },
-                defaults: { utilisateurId, roleId: id }
+                paranoid: false,
             });
+            if (lienExistant) {
+                if ((lienExistant as any).deletedAt) await lienExistant.restore();
+            } else {
+                await UserRole.create({ utilisateurId, roleId: id });
+            }
 
             return res.status(200).json({ success: true, message: "Rôle assigné à l'utilisateur" });
         } catch (error) {

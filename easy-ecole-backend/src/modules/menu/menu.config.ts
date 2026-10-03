@@ -6,6 +6,7 @@ export interface MenuItemConfig {
     icon: string;
     permissionKey?: string;
     allowedRoles?: RolesUtilisateur[];
+    roleRestricted?: boolean;
 }
 
 export interface MenuGroupConfig {
@@ -14,6 +15,7 @@ export interface MenuGroupConfig {
     items: MenuItemConfig[];
     permissionKey?: string;
     allowedRoles?: RolesUtilisateur[];
+    roleRestricted?: boolean;
 }
 
 export interface MenuPoleConfig {
@@ -65,8 +67,8 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                     { label: 'Cartes étudiantes', route: '/inscription/cartes', icon: 'credit_card', permissionKey: 'menu.inscription.cartes', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Arborescence dossiers', route: '/inscription/hierarchy-dossiers', icon: 'account_tree', permissionKey: 'menu.inscription.hierarchy', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Registres', route: '/scolarite/registres', icon: 'menu_book', permissionKey: 'menu.scolarite.registres', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
-                    { label: 'Equivalences', route: '/bulletins/equivalences', icon: 'swap_horiz', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
-                    { label: 'Dispenses', route: '/bulletins/dispenses', icon: 'file_copy', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
+                    { label: 'Equivalences', route: '/bulletins/equivalences', icon: 'swap_horiz', permissionKey: 'menu.evaluations.equivalences', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
+                    { label: 'Dispenses', route: '/bulletins/dispenses', icon: 'file_copy', permissionKey: 'menu.evaluations.dispenses', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
                     { label: 'Reorientation', route: '/scolarite/reorientation', icon: 'swap_horiz', permissionKey: 'menu.scolarite.reorientation', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Reclamations', route: '/scolarite/mes-reclamations', icon: 'feedback', permissionKey: 'menu.scolarite.reclamations', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
                     { label: 'Traiter reclam.', route: '/scolarite/traiter-reclamations', icon: 'gavel', permissionKey: 'menu.scolarite.traiter-reclamations', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
@@ -110,14 +112,14 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                     { label: 'Bulletins', route: '/bulletins', icon: 'badge', permissionKey: 'menu.evaluations.bulletins', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
                     { label: 'Moyennes', route: '/bulletins/moyennes', icon: 'calculate', permissionKey: 'menu.evaluations.moyennes', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
                     { label: 'Audit notes', route: '/bulletins/audit-notes', icon: 'history', permissionKey: 'menu.evaluations.audit', allowedRoles: [RolesUtilisateur.ADMIN] },
-                    { label: 'Paramètres notation', route: '/bulletins/parametres-notation', icon: 'table_chart', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Paramètres notation', route: '/bulletins/parametres-notation', icon: 'table_chart', permissionKey: 'menu.evaluations.parametres-notation', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
 
                     // ── Examens & Jurys ──
-                    { label: 'Délibérations & Jury', route: '/bulletins/deliberations-jury', icon: 'how_to_vote', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Délibérations & Jury', route: '/bulletins/deliberations-jury', icon: 'how_to_vote', permissionKey: 'menu.evaluations.deliberations-jury', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
 
                     // ── Suivi individuel ──
                     { label: 'Absences', route: '/bulletins/absences', icon: 'block', permissionKey: 'menu.evaluations.absences', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
-                    { label: 'Sanctions & Discipline', route: '/scolarite/sanctions-discipline', icon: 'gavel', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Sanctions & Discipline', route: '/scolarite/sanctions-discipline', icon: 'gavel', permissionKey: 'menu.scolarite.sanctions-discipline', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Conseils classe', route: '/scolarite/conseils', icon: 'groups', permissionKey: 'menu.scolarite.conseils', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
                 ]
             },
@@ -254,17 +256,17 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                     { label: 'Candidatures', route: '/rh/candidatures', icon: 'receipt_long', permissionKey: 'menu.rh.candidatures' },
                     { label: 'Catégories professionnelles', route: '/rh/categories-professionnelles', icon: 'category', permissionKey: 'menu.rh.categories-professionnelles', allowedRoles: [RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.ADMIN] },
                     { label: 'Grilles salariales', route: '/rh/grilles-salariales', icon: 'table_chart', permissionKey: 'menu.rh.grilles-salariales', allowedRoles: [RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.ADMIN] },
-                    { label: 'Paramètres paie', route: '/rh/parametres-paie', icon: 'settings', allowedRoles: [RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.ADMIN] },
+                    { label: 'Paramètres paie', route: '/rh/parametres-paie', icon: 'settings', permissionKey: 'menu.rh.parametres-paie', allowedRoles: [RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.ADMIN] },
                     { label: 'Paie', route: '/rh/paie', icon: 'paid', permissionKey: 'menu.rh.paie' },
                     { label: 'Heures supplémentaires', route: '/rh/heures-supplementaires', icon: 'schedule', permissionKey: 'menu.rh.heures-supplementaires', allowedRoles: [RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.ADMIN] },
                     { label: 'Prêts / Avances', route: '/rh/prets', icon: 'account_balance', permissionKey: 'menu.rh.prets', allowedRoles: [RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.ADMIN] },
                     { label: 'Prestataires', route: '/rh/prestataires', icon: 'badge', permissionKey: 'menu.rh.prestataires', allowedRoles: [RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.ADMIN] },
                     { label: 'Indemnités prestataires', route: '/rh/indemnites-prestataires', icon: 'payments', permissionKey: 'menu.rh.indemnites-prestataires', allowedRoles: [RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.ADMIN] },
                     { label: 'Prestations', route: '/rh/prestations', icon: 'cycle', permissionKey: 'menu.rh.prestations' },
-                    { label: 'Contrats', route: '/rh/contrats-enseignant', icon: 'file_copy', allowedRoles: [RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.ADMIN] },
+                    { label: 'Contrats', route: '/rh/contrats-enseignant', icon: 'file_copy', permissionKey: 'menu.rh.contrats', allowedRoles: [RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.ADMIN] },
                     { label: 'Formations', route: '/rh/formations', icon: 'school', permissionKey: 'menu.rh.formations' },
                     { label: 'Évaluations', route: '/rh/evaluations', icon: 'assessment', permissionKey: 'menu.rh.evaluations' },
-                    { label: 'Planning personnel', route: '/rh/planning-personnel', icon: 'calendar_view_week', allowedRoles: [RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.ADMIN, RolesUtilisateur.INSTITUTION] },
+                    { label: 'Planning personnel', route: '/rh/planning-personnel', icon: 'calendar_view_week', permissionKey: 'menu.rh.planning-personnel', allowedRoles: [RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.ADMIN, RolesUtilisateur.INSTITUTION] },
                     { label: 'Reportings RH', route: '/rh/reportings', icon: 'assessment', permissionKey: 'menu.rh.reportings', allowedRoles: [RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.ADMIN] },
                 ]
             },
@@ -327,16 +329,16 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                 label: 'Documents',
                 icon: 'inventory_2',
                 items: [
-                    { label: 'Catalogue', route: '/ged/catalog', icon: 'inventory_2' },
-                    { label: 'Recherche avancee', route: '/ged/search', icon: 'search' },
-                    { label: 'Dossiers', route: '/ged/folders', icon: 'folder' },
+                    { label: 'Catalogue', route: '/ged/catalog', icon: 'inventory_2', permissionKey: 'menu.ged.catalogue' },
+                    { label: 'Recherche avancee', route: '/ged/search', icon: 'search', permissionKey: 'menu.ged.recherche' },
+                    { label: 'Dossiers', route: '/ged/folders', icon: 'folder', permissionKey: 'menu.ged.dossiers' },
                 ]
             },
             {
                 label: 'Traitement',
                 icon: 'upload_file',
                 items: [
-                    { label: 'Televerser', route: '/ged/upload', icon: 'upload_file' },
+                    { label: 'Televerser', route: '/ged/upload', icon: 'upload_file', permissionKey: 'menu.ged.televerser' },
 
                 ]
             },
@@ -344,8 +346,8 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                 label: 'Organisation',
                 icon: 'rule',
                 items: [
-                    { label: 'Conservation', route: '/ged/conservation', icon: 'event' },
-                    { label: 'Bordereaux', route: '/ged/disposal', icon: 'delete_sweep', allowedRoles: [RolesUtilisateur.ADMIN] },
+                    { label: 'Conservation', route: '/ged/conservation', icon: 'event', permissionKey: 'menu.ged.conservation' },
+                    { label: 'Bordereaux', route: '/ged/disposal', icon: 'delete_sweep', permissionKey: 'menu.ged.bordereaux', allowedRoles: [RolesUtilisateur.ADMIN] },
                 ]
             },
         ]
@@ -412,14 +414,23 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                 label: 'Administration',
                 icon: 'security',
                 allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN],
+                roleRestricted: true,
                 items: [
                     { label: 'Utilisateurs', route: '/administration/utilisateurs', icon: 'people', permissionKey: 'menu.administration.utilisateurs', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
-                    { label: 'Roles', route: '/parametres/roles', icon: 'manage_accounts', permissionKey: 'menu.administration.roles', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
-                    { label: 'Permissions', route: '/parametres/permissions', icon: 'security', permissionKey: 'menu.administration.permissions', allowedRoles: [RolesUtilisateur.ADMIN] },
                     { label: 'QR Codes', route: '/administration/qr-codes', icon: 'qr_code', permissionKey: 'menu.administration.qr-codes', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Journal audit', route: '/administration/audit-logs', icon: 'fact_check', permissionKey: 'menu.administration.journal-audit', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Configuration', route: '/administration/configuration', icon: 'tune', permissionKey: 'menu.administration.configuration', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
-                    { label: 'Membres du comité', route: '/administration/comite-membres', icon: 'group', permissionKey: 'menu.administration.comite-membres', allowedRoles: [RolesUtilisateur.ADMIN] },
+                    { label: 'Membres du comité', route: '/administration/comite-membres', icon: 'group', permissionKey: 'menu.administration.comite-membres', allowedRoles: [RolesUtilisateur.ADMIN], roleRestricted: true },
+                ]
+            },
+            {
+                label: 'Accès & profils',
+                icon: 'admin_panel_settings',
+                allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN],
+                roleRestricted: true,
+                items: [
+                    { label: 'Profils d’accès', route: '/administration/roles', icon: 'manage_accounts', permissionKey: 'menu.administration.roles', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Permissions directes', route: '/parametres/permissions', icon: 'security', permissionKey: 'menu.administration.permissions', allowedRoles: [RolesUtilisateur.ADMIN], roleRestricted: true },
                 ]
             },
             {

@@ -13,24 +13,32 @@ const router = Router();
 function filterMenuByPermissions(
     menu: MenuPoleConfig[],
     userRole: RolesUtilisateur,
-    userPermissionKeys: Set<string>
+    userPermissionKeys: Set<string>,
+    hasAssignedProfiles: boolean
 ): MenuPoleConfig[] {
     return menu.reduce<MenuPoleConfig[]>((poles, pole) => {
-        if (pole.allowedRoles && !pole.allowedRoles.includes(userRole)) {
-            return poles;
-        }
-
         const filteredGroups = pole.groups.reduce<MenuGroupConfig[]>((groups, group) => {
-            if (group.allowedRoles && !group.allowedRoles.includes(userRole)) {
+            if (group.roleRestricted && group.allowedRoles && !group.allowedRoles.includes(userRole)) {
                 return groups;
             }
 
             const filteredItems = group.items.filter(item => {
+                // Assigned profiles use explicit grants as the source of truth.
+                if (hasAssignedProfiles && item.permissionKey && !item.roleRestricted) {
+                    return userPermissionKeys.has(item.permissionKey);
+                }
+
+                if (pole.allowedRoles && !pole.allowedRoles.includes(userRole)) {
+                    return false;
+                }
+                if (group.allowedRoles && !group.allowedRoles.includes(userRole)) {
+                    return false;
+                }
                 if (item.allowedRoles) {
                     return item.allowedRoles.includes(userRole);
                 }
-                if (item.permissionKey && !userPermissionKeys.has(item.permissionKey)) {
-                    return false;
+                if (item.permissionKey) {
+                    return userPermissionKeys.has(item.permissionKey);
                 }
                 return true;
             });
@@ -151,6 +159,11 @@ router    /**
                 // sien. Corrigé : chaque rôle métier pointe sur son RBAC.
                 [RolesUtilisateur.COMITE_ORIENTATION]: 'Comité',
                 [RolesUtilisateur.ESA_COMPTA]: 'ESA Compta',
+                [RolesUtilisateur.PERSONNEL_ADMINISTRATIF]: 'Personnel administratif',
+                [RolesUtilisateur.RESSOURCES_HUMAINES]: 'Ressources Humaines',
+                [RolesUtilisateur.SECRETAIRE]: 'Secrétaire',
+                [RolesUtilisateur.SURVEILLANT]: 'Surveillant',
+                [RolesUtilisateur.PARENT]: 'Parent',
             };
             const roleName = roleNameMap[userRole];
             if (roleName) {
@@ -178,7 +191,7 @@ router    /**
             }
         }
 
-        const filteredMenu = filterMenuByPermissions(MENU_CONFIG, userRole, userPermissionKeys);
+        const filteredMenu = filterMenuByPermissions(MENU_CONFIG, userRole, userPermissionKeys, userRoles.length > 0);
 
         // ── Blocage partiel du menu pour les étudiants en situation de paiement
         //    en retard (chantier modalités 1x/3x/10x) ─────────────────────────────

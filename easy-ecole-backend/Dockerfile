@@ -22,8 +22,8 @@ FROM node:22-bookworm-slim AS build
 WORKDIR /app
 
 # Manifestes pour profiter du cache Docker
-COPY package.json package-lock.json ./
-COPY .babelrc ./
+COPY easy-ecole-backend/package.json easy-ecole-backend/package-lock.json ./
+COPY easy-ecole-backend/.babelrc ./
 
 # Le script postinstall de puppeteer tente de télécharger Chrome pendant
 # `npm ci`. Inutile pour la compilation Babel : on le saute ici (le stage
@@ -47,8 +47,8 @@ RUN --mount=type=cache,target=/root/.npm \
       --fetch-timeout=120000
 
 # Sources TypeScript (les tests et scripts dev sont exclus via .dockerignore)
-COPY tsconfig.json ./
-COPY src ./src
+COPY easy-ecole-backend/tsconfig.json ./
+COPY easy-ecole-backend/src ./src
 
 # Script npm réel du package.json : "build": "babel src --out-dir lib --copy-files --extensions .ts,.js"
 RUN npm run build
@@ -113,7 +113,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # c'est CETTE étape qui télécharge Chromium (~150 Mo), donc c'est elle qui
 # était la plus longue et la plus exposée aux ECONNRESET.
 # ---------------------------------------------------------------------------
-COPY package.json package-lock.json ./
+COPY easy-ecole-backend/package.json easy-ecole-backend/package-lock.json ./
 ENV PUPPETEER_CACHE_DIR=/opt/puppeteer_cache
 RUN --mount=type=cache,target=/root/.npm \
     npm ci --omit=dev --no-audit --no-fund \
@@ -124,8 +124,8 @@ RUN --mount=type=cache,target=/root/.npm \
 # Artefact compilé + point d'entrée
 # ---------------------------------------------------------------------------
 COPY --from=build /app/lib ./lib
-COPY index.js ./
-COPY docker-entrypoint.sh ./
+COPY easy-ecole-backend/index.js ./
+COPY easy-ecole-backend/docker-entrypoint.sh ./
 
 # ---------------------------------------------------------------------------
 # Migrations SQL + runner
@@ -139,7 +139,7 @@ COPY docker-entrypoint.sh ./
 # - scripts/apply-migrations.cjs: runner (CommonJS, sans dépendance de dev)
 # ---------------------------------------------------------------------------
 COPY migrations ./migrations
-COPY scripts/apply-migrations.cjs ./scripts/apply-migrations.cjs
+COPY easy-ecole-backend/scripts/apply-migrations.cjs ./scripts/apply-migrations.cjs
 RUN chmod +x docker-entrypoint.sh
 
 # ---------------------------------------------------------------------------

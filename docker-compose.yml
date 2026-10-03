@@ -15,7 +15,8 @@
 # VARIABLES D'ENVIRONNEMENT (DOKPLOY) :
 #   Saisir toutes les variables dans Dokploy (onglet "Environment" du projet) :
 #   JWT_SECRET, DB_PASS, CORS_ORIGIN, SMTP_*, CINETPAY_*, ENCRYPTION_MASTER_KEY…
-#   - Le service db interpole ${MYSQL_ROOT_PASSWORD}, ${DB_NAME}, ${TZ} depuis
+#   - Le service db interpole ${MYSQL_ROOT_PASSWORD}, ${DB_PASS}, ${DB_USER},
+#     ${DB_NAME}, ${TZ} depuis
 #     les variables du projet (Dokploy les injecte aussi dans les conteneurs).
 #   - Le service backend reçoit automatiquement toutes les variables du projet
 #     (remplace l'ancien `env_file: .env` — PAS de fichier .env dans le repo).
@@ -25,8 +26,8 @@
 #   (docker-compose.local.yml remap le frontend sur le port 8091 et est ignoré
 #   par git — ne JAMAIS le déployer en production, voir .gitignore)
 #
-# RÉSEAU : réseau bridge par défaut créé par compose ; les services se joignent
-# par leur nom (db, backend, frontend).
+# RÉSEAUX : `app` relie nginx au backend; `data` (interne) relie backend,
+# workers, MySQL et Redis. MySQL/Redis ne sont pas joignables depuis nginx.
 # =============================================================================
 
 name: easyecole
@@ -40,9 +41,16 @@ services:
     container_name: easyecole-db
     restart: unless-stopped
     mem_limit: 1g
+    pids_limit: 200
+    init: true
+    security_opt:
+      - no-new-privileges:true
     environment:
       # Mot de passe root MySQL (à remplacer dans .env)
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD must be set}
+      # Compte applicatif dédié, initialisé uniquement à la création du volume.
+      MYSQL_USER: ${DB_USER:-easyecole_app}
+      MYSQL_PASSWORD: ${DB_PASS:?DB_PASS must be set}
       # Base créée au premier démarrage (le DUMP est ensuite importé)
       MYSQL_DATABASE: ${DB_NAME:-easyecole}
       # Fuseau horaire
@@ -57,6 +65,13 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
+    networks:
+      - data
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
 
   # ---------------------------------------------------------------------------
   # 1b) SAUVEGARDE MYSQL
@@ -82,6 +97,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - data
     # ⚠️ CONFLICT PORT 3306 : si un MySQL natif tourne déjà sur le serveur
     # Windows, NE PAS exposer le port de ce conteneur sur l'hôte.
     # Décommentez uniquement si vous avez besoin d'y accéder depuis l'hôte
@@ -96,31 +113,43 @@ services:
   # 2) BACKEND API Express/Node
   # ---------------------------------------------------------------------------
   backend:
-    build: ./easy-ecole-backend
+    build:
+      context: .
+      dockerfile: easy-ecole-backend/Dockerfile
     container_name: easyecole-backend
     restart: unless-stopped
     mem_limit: 2g
     shm_size: 1g
-    # Variables d'environnement : injectées par Dokploy (onglet "Environment"
-    # du projet). DB_HOST DOIT valoir `db` (nom du service), PAS localhost.
+    pids_limit: 300
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    # Variables DB explicites : DB_HOST DOIT valoir `db` (nom du service),
+    # PAS localhost. Les autres variables applicatives sont configurées dans
+    # l'environnement du déploiement.
     # (Ancien `env_file: .env` supprimé : Dokploy ne lit pas de fichier .env.)
     # REDIS_URL : valeur par défaut vers le service cache ; toute valeur saisie
     # dans Dokploy (${REDIS_URL}) la remplace sans toucher à ce fichier.
     environment:
+      NODE_ENV: production
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-easyecole}
+      DB_USER: ${DB_USER:-easyecole_app}
+      DB_PASS: ${DB_PASS:?DB_PASS must be set}
+      DB_SSL: ${DB_SSL:-off}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      # Chemins pour le runner de migrations SQL exécuté au startup
-      # (volume mounts ci-dessous : dossier migrations/ + runner scripts/).
-      BACKEND_DIR: /app
-      MIGRATIONS_DIR: /app/migrations
+      # L'historique de migrations est inclus dans l'image; conserver l'exécution
+      # automatique désactivée pour éviter d'appliquer des migrations anciennes
+      # non encore validées sur une base existante.
+      MIGRATIONS_ON_BOOT: ${MIGRATIONS_ON_BOOT:-false}
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - app
+      - data
     volumes:
-      # Migrations SQL : applicateur incrémental exécuté par docker-entrypoint.sh
-      # AVANT le démarrage de l'API (fichiers idempotents, suivi schema_migrations).
-      # Le volume mount suit le pattern existant de mysql-backup (scripts/).
-      - ./migrations:/app/migrations:ro
-      - ./scripts/apply-migrations.cjs:/app/scripts/apply-migrations.cjs:ro
       # Fichiers uploadés (multer, GED, dossiers, docgen, photos…) :
       # /app/public dans le conteneur (chemin relatif à process.cwd()).
       - uploads:/app/public
@@ -136,29 +165,46 @@ services:
       timeout: 5s
       retries: 5
       start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
 
   # ---------------------------------------------------------------------------
   # 2b) WORKERS BullMQ (OCR, PDF, import Excel)
   # ---------------------------------------------------------------------------
   worker:
-    build: ./easy-ecole-backend
+    build:
+      context: .
+      dockerfile: easy-ecole-backend/Dockerfile
     container_name: easyecole-worker
     restart: unless-stopped
     mem_limit: 2g
     shm_size: 1g
+    pids_limit: 300
+    init: true
+    security_opt:
+      - no-new-privileges:true
     entrypoint: ["node", "lib/core/workers/index.js"]
+    command: []
     environment:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      DB_HOST: ${DB_HOST:-db}
-      DB_PORT: ${DB_PORT:-3306}
+      DB_HOST: db
+      DB_PORT: 3306
       DB_NAME: ${DB_NAME:-easyecole}
       DB_USER: ${DB_USER:-easyecole_app}
-      DB_PASS: ${DB_PASS}
+      DB_PASS: ${DB_PASS:?DB_PASS must be set}
+      DB_SSL: ${DB_SSL:-off}
+      NODE_ENV: production
     depends_on:
-      db:
+      backend:
         condition: service_healthy
       redis:
         condition: service_healthy
+    networks:
+      - app
+      - data
     volumes:
       - uploads:/app/public
       - storage:/app/storage
@@ -171,6 +217,10 @@ services:
     container_name: easyecole-redis
     restart: unless-stopped
     mem_limit: 256m
+    pids_limit: 100
+    init: true
+    security_opt:
+      - no-new-privileges:true
     # Persistance AOF (survie au redémarrage) + limite mémoire avec politique
     # d'éviction LRU globale (les clés cache peuvent être purgées sous charge).
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
@@ -182,6 +232,13 @@ services:
       timeout: 5s
       retries: 5
       start_period: 5s
+    networks:
+      - data
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
 
   # ---------------------------------------------------------------------------
   # 4) FRONTEND nginx (build Angular + proxy)
@@ -195,8 +252,26 @@ services:
       # Port HTTP public de l'application. À adapter (ex: "8080:80") si le
       # port 80 est déjà occupé sur le serveur Windows.
       - "80:80"
+    networks:
+      - app
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    pids_limit: 100
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
 
 # =============================================================================
 # VOLUMES NOMÉS
@@ -212,3 +287,10 @@ volumes:
   redis_data:
   # Dumps compressés MySQL ; monter ce volume vers un stockage externe en prod.
   mysql_backups:
+
+networks:
+  app:
+    driver: bridge
+  data:
+    driver: bridge
+    internal: true
