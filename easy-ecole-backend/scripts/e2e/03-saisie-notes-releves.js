@@ -15,7 +15,7 @@ async function phase3(context) {
   console.log('\n========== PHASE 3 : Saisie notes + relevés ==========\n')
 
   // Récupérer tous les étudiants
-  const [students] = await db.query(
+  const students = await db.query(
     'SELECT ca.utilisateurId FROM ins_cursus_apprenants ca WHERE ca.classeId = ? AND ca.anneeAcademiqueId = ?',
     { replacements: [classeId, anneeAcademiqueId], type: db.QueryTypes.SELECT }
   )
@@ -30,19 +30,19 @@ async function phase3(context) {
 
     // Créer CoursParticipant
     await db.query(
-      'INSERT IGNORE INTO ins_cours_participants (utilisateurId, coursId, cursusApprenantId, createdAt, updatedAt) SELECT ?, id, ca.id, NOW(), NOW() FROM ins_cursus_apprenants ca WHERE ca.utilisateurId = ? AND ca.classeId = ? AND ca.anneeAcademiqueId = ?',
-      { replacements: [userId, userId, classeId, anneeAcademiqueId], type: db.QueryTypes.INSERT }
+      'INSERT IGNORE INTO ins_cours_participants (utilisateurId, coursId, cursusApprenantId, createdAt, updatedAt) SELECT ?, ?, ca.id, NOW(), NOW() FROM ins_cursus_apprenants ca WHERE ca.utilisateurId = ? AND ca.classeId = ? AND ca.anneeAcademiqueId = ?',
+      { replacements: [userId, ecueId, userId, classeId, anneeAcademiqueId], type: db.QueryTypes.INSERT }
     )
 
     // Récupérer le CoursParticipant ID
-    const [cpRows] = await db.query('SELECT id FROM ins_cours_participants WHERE utilisateurId = ? AND coursId = ?', { replacements: [userId, ecueId], type: db.QueryTypes.SELECT })
+    const cpRows = await db.query('SELECT id FROM ins_cours_participants WHERE utilisateurId = ? AND coursId = ?', { replacements: [userId, ecueId], type: db.QueryTypes.SELECT })
 
     if (cpRows.length > 0) {
       const cpId = cpRows[0].id
 
       // Créer ListeNoteEvaluation
-      await db.query('INSERT INTO ins_listes_note_evaluation (date, heureDebut, heureFin, typeNoteEvaluationId, coursId, enseignantId, anneeAcademiqueId, createdAt, updatedAt) VALUES (NOW(), NOW(), NOW(), ?, ?, 1, ?, NOW(), NOW())', { replacements: [ecueId, anneeAcademiqueId], type: db.QueryTypes.INSERT })
-      const [listeRows] = await db.query('SELECT id FROM ins_listes_note_evaluation WHERE coursId = ? AND anneeAcademiqueId = ? ORDER BY id DESC LIMIT 1', { replacements: [ecueId, anneeAcademiqueId], type: db.QueryTypes.SELECT })
+      await db.query('INSERT INTO ins_listes_notes_evaluation (poidsTypeNoteEvaluation, date, heureDebut, heureFin, typeNoteEvaluationId, coursId, enseignantId, anneeAcademiqueId, createdAt, updatedAt) VALUES (1, NOW(), NOW(), NOW(), ?, ?, 1, ?, NOW(), NOW())', { replacements: [3, ecueId, anneeAcademiqueId], type: db.QueryTypes.INSERT })
+      const listeRows = await db.query('SELECT id FROM ins_listes_notes_evaluation WHERE coursId = ? AND anneeAcademiqueId = ? ORDER BY id DESC LIMIT 1', { replacements: [ecueId, anneeAcademiqueId], type: db.QueryTypes.SELECT })
       const listeId2 = listeRows[0].id
 
       // Saisir la note
