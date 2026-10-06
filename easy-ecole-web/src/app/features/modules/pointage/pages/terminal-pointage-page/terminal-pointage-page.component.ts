@@ -30,6 +30,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   zoomMax: number = 1
   zoomStep: number = 0.1
   zoomValue: number = 1
+  decoderNatif: boolean = false
+  streamRes: string = ''
   private html5QrCode: Html5Qrcode | null = null
   private scanTimer: any = null
   private static readonly SCAN_TIMEOUT_MS = 30000
@@ -302,6 +304,16 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
           verbose: false
         } as any)
       }
+      // Diagnostic : moteur utilisé + résolution réelle du flux.
+      // Si le flux reste en 640x480 malgré la demande HD, aucun QR dense
+      // ne passera : il faudra forcer la HD ou changer de capteur.
+      this.decoderNatif = 'BarcodeDetector' in window
+      try {
+        const settings: any = this.html5QrCode.getRunningTrackSettings?.()
+        if (settings?.width && settings?.height) {
+          this.streamRes = settings.width + 'x' + settings.height
+        }
+      } catch { /* ignore */ }
       // Autofocus + exposition en continu : indispensable, une mise au point
       // figée sur l'infini rend tout QR flou de près. Non bloquant.
       try {
@@ -388,6 +400,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     this.torchSupported = false
     this.zoomSupported = false
     this.zoomValue = this.zoomMin
+    this.streamRes = ''
     if (this.html5QrCode) {
       const reader = this.html5QrCode
       this.html5QrCode = null

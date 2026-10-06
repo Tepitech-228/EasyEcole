@@ -237,6 +237,7 @@
               </div>
               <div class="scanner-status">
                 <p class="scanner-status-text">Recherche de QR code… Présentez le code bien à plat, à 15-30 cm, sans reflet</p>
+                <p *ngIf="streamRes" class="text-xs text-gray-400 mt-1">Détection {{ decoderNatif ? 'native' : 'standard' }} · Flux {{ streamRes }}</p>
                 <div class="flex items-center justify-center gap-2 mt-2">
                   <button (click)="stopScanner()" class="pointage-btn pointage-btn--outline pointage-btn--sm">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
