@@ -139,6 +139,14 @@ services:
       DB_PASS: ${DB_PASS:?DB_PASS must be set}
       DB_SSL: ${DB_SSL:-off}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      JWT_SECRET: ${JWT_SECRET}
+      DOCGEN_SECRET: ${DOCGEN_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      TZ: ${TZ:-UTC}
       # L'historique de migrations est inclus dans l'image; conserver l'exécution
       # automatique désactivée pour éviter d'appliquer des migrations anciennes
       # non encore validées sur une base existante.
