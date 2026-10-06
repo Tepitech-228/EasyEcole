@@ -349,8 +349,8 @@ export default class UtilisateurController {
                         const fileName = `${userId}.png`
                         const filePath = path.join(dir, fileName)
                         await QRCode.toFile(filePath, qrData, {
-                            type: 'png', width: 400, margin: 4,
-                            errorCorrectionLevel: 'Q',
+                            type: 'png', width: 600, margin: 4,
+                            errorCorrectionLevel: 'M',
                             color: { dark: '#000000', light: '#ffffff' }
                         })
                         if (personnel) { await personnel.update({ qrCode: fileName }) }

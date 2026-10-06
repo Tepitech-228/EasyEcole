@@ -56,9 +56,9 @@ export class EnseignantBadgeService {
     if (!enseignant.qrCode || !fs.existsSync(filePath)) {
       await QRCode.toFile(filePath, QrTokenService.signer(Number(enseignant.utilisateurId)), {
         type: "png",
-        width: 400,
+        width: 600,
         margin: 4,
-        errorCorrectionLevel: "Q",
+        errorCorrectionLevel: "M",
         color: { dark: "#000000", light: "#ffffff" },
       });
       await enseignant.update({ qrCode });

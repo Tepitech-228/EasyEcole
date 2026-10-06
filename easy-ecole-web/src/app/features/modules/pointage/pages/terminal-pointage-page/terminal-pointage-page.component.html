@@ -236,13 +236,31 @@
                 </div>
               </div>
               <div class="scanner-status">
-                <p class="scanner-status-text">Recherche de QR code…</p>
-                <button (click)="stopScanner()" class="pointage-btn pointage-btn--outline pointage-btn--sm mt-2">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                  </svg>
-                  Arrêter le scan
-                </button>
+                <p class="scanner-status-text">Recherche de QR code… Présentez le code bien à plat, à 15-30 cm, sans reflet</p>
+                <div class="flex items-center justify-center gap-2 mt-2">
+                  <button (click)="stopScanner()" class="pointage-btn pointage-btn--outline pointage-btn--sm">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    Arrêter le scan
+                  </button>
+                  <button *ngIf="torchSupported" (click)="toggleTorch()" class="pointage-btn pointage-btn--outline pointage-btn--sm">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                    {{ torchOn ? 'Éteindre la lampe' : 'Allumer la lampe' }}
+                  </button>
+                </div>
+                <div *ngIf="zoomSupported" class="flex items-center justify-center gap-2 mt-2">
+                  <span class="text-xs text-gray-400">Zoom</span>
+                  <input type="range" [min]="zoomMin" [max]="zoomMax" [step]="zoomStep" [(ngModel)]="zoomValue" (change)="setZoom(zoomValue)" class="w-40" aria-label="Zoom de la caméra">
+                </div>
+                <div class="flex items-center justify-center gap-2 mt-2">
+                  <label class="pointage-btn pointage-btn--outline pointage-btn--sm" style="cursor:pointer;">
+                    Tester avec une photo
+                    <input type="file" accept="image/*" capture="environment" class="sr-only" (change)="scannerDepuisImage($event)">
+                  </label>
+                </div>
               </div>
             </div>
           </div>

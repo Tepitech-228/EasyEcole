@@ -380,9 +380,9 @@ export default class ApprenantController {
 
                 await QRCode.toFile(filePath, qrData, {
                     type: 'png',
-                    width: 400,
+                    width: 600,
                     margin: 4,
-                    errorCorrectionLevel: 'Q',
+                    errorCorrectionLevel: 'M',
                     color: {
                         dark: '#000000',
                         light: '#ffffff'

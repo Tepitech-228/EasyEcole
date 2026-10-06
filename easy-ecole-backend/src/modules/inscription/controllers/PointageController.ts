@@ -347,10 +347,10 @@ export default class PointageController {
                 if (!utilisateur) {
                     return res.status(500).json({ success: false, message: 'Utilisateur du dossier introuvable' });
                 }
-                const photoInfo = await this.getPhotoPourPointage(utilisateur, dossier.photo);
+                const photoInfo = await PointageController.getPhotoPourPointage(utilisateur, dossier.photo);
 
                 // Calcul de la situation financière détaillée
-                const situationFinanciere = this.calculerSituationFinanciere(dossier);
+                const situationFinanciere = PointageController.calculerSituationFinanciere(dossier);
 
                 if (paiement.statut == 'rouge') {
                     return res.status(200).json({
@@ -381,7 +381,7 @@ export default class PointageController {
             if (userId) {
                 const utilisateur = await Utilisateur.findByPk(userId)
                 if (utilisateur) {
-                    const photoInfo = await this.getPhotoPourPointage(utilisateur);
+                    const photoInfo = await PointageController.getPhotoPourPointage(utilisateur);
                     // Matricule du profil (prof / personnel) pour affichage au terminal
                     let matricule: string | null = null;
                     try {

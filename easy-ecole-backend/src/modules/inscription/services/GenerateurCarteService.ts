@@ -36,7 +36,7 @@ export class GenerateurCarteService {
     const ecoleLogo = (etab as any)?.logo || '';
 
     const qrData = QrTokenService.signer(data.utilisateurId);
-    const qrBase64 = await QRCode.toDataURL(qrData, { width: 200, margin: 4, errorCorrectionLevel: 'Q' });
+    const qrBase64 = await QRCode.toDataURL(qrData, { width: 400, margin: 4, errorCorrectionLevel: 'M' });
 
     const ecoleNomEsc = escapeHtml(ecoleNom);
     const matriculeEsc = escapeHtml(data.matricule);
