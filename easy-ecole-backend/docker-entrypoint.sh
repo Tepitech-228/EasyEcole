@@ -40,18 +40,19 @@ else
   echo "[entrypoint] → les appliquer à la demande : npm run db:migrate"
 fi
 
-# `|| echo` neutralise volontairement `set -e` sur cette ligne : le seed des
-# comptes ne doit pas empêcher l'application de démarrer. Le runner de
+# `|| echo` neutralise volontairement `set -e` sur ces lignes : les seeds
+# ne doivent pas empêcher l'application de démarrer. Le runner de
 # migrations ci-dessus, lui, reste bloquant.
-echo "[entrypoint] Seed des comptes système..."
-node lib/core/scripts/seed-comptes-par-role.js || echo "[entrypoint] ⚠ Seed comptes terminé avec erreur (non bloquant)"
 
-# Seed des types + templates docgen (idempotent : ne crée que les codes
-# manquants, ex. API001). Sans lui, la validation d'un dossier par le comité
-# échoue en 400 « Type de document non trouvé: API001 ». Non bloquant, comme
-# le seed comptes : une erreur ici ne doit pas empêcher l'API de démarrer.
-echo "[entrypoint] Seed des types de documents (docgen)..."
-node lib/modules/docgen/seed/seed.js || echo "[entrypoint] ⚠ Seed docgen terminé avec erreur (non bloquant)"
+# Seeds fonctionnels idempotents (comptes système, rôles RBAC, docgen,
+# GED, documents requis par niveau, paramètres de frais) + contrôle de
+# santé des tables critiques. POINT D'ENTRÉE UNIQUE des seeds : tout nouveau
+# seed fonctionnel doit être branché dans lib/core/scripts/seed-boot.js
+# (voir les règles en tête de src/core/scripts/seed-boot.ts).
+# Non bloquant volontairement : une erreur de seed ne doit pas empêcher
+# l'API de démarrer — elle est visible dans les logs au boot.
+echo "[entrypoint] Seeds fonctionnels (seed-boot)..."
+node lib/core/scripts/seed-boot.js || echo "[entrypoint] ⚠ Seed boot terminé avec erreur (non bloquant)"
 
 echo "[entrypoint] Démarrage de l'application..."
 exec node index.js "$@"

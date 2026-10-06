@@ -13,7 +13,7 @@ import 'dotenv/config'
  *
  * Idempotent : les documents déjà présents ne sont pas dupliqués.
  */
-async function seedDocumentsRequisNiveau() {
+export async function seedDocumentsRequisNiveau() {
     const { DatabaseConnection } = require('../helpers/DatabaseConnection');
     const db = DatabaseConnection.getInstance();
     const sequelize = db.sequelize;
@@ -94,10 +94,13 @@ async function seedDocumentsRequisNiveau() {
 
     const total = await Model.count();
     console.log(`[seed-documents-requis-niveau] Terminé. Total en base : ${total}.`);
-    process.exit(0);
 }
 
-seedDocumentsRequisNiveau().catch((e: any) => {
-    console.error('[seed-documents-requis-niveau] Erreur :', e);
-    process.exit(1);
-});
+if (require.main === module) {
+    seedDocumentsRequisNiveau()
+        .then(() => process.exit(0))
+        .catch((e: any) => {
+            console.error('[seed-documents-requis-niveau] Erreur :', e);
+            process.exit(1);
+        });
+}
