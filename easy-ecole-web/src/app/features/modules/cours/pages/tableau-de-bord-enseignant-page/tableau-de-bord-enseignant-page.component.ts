@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { SeanceService } from 'src/app/data/modules/inscription/services/seance.service';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+import { RolesUtilisateur } from 'src/app/data/enums/RolesUtilisateur';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-tableau-de-bord-enseignant-page',
@@ -12,11 +14,15 @@ export class TableauDeBordEnseignantPageComponent extends BaseComponentClass imp
   error: string = '';
   dashboard: any = null;
 
-  constructor(private seanceService: SeanceService) {
+  constructor(private seanceService: SeanceService, private router: Router) {
     super();
   }
 
   ngOnInit(): void {
+    if (BaseComponentClass.utilisateur.role === RolesUtilisateur.SUPERVISEUR_GENERAL) {
+      this.router.navigateByUrl('/cours/supervision-generale');
+      return;
+    }
     this.loadDashboard();
   }
 

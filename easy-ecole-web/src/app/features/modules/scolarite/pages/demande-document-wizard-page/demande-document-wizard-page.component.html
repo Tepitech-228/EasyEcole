@@ -1,0 +1,132 @@
+<div class="page-container">
+  <app-header-title
+    [title]="demande?.typeDocument?.libelle || 'Demande de document'"
+    subtitle="Complétez et suivez votre dossier de demande">
+  </app-header-title>
+
+  <app-custom-alert *ngIf="errorMessage" [show]="true" [title]="errorMessage" type="danger" [inline]="true"></app-custom-alert>
+  <app-custom-alert *ngIf="successMessage" [show]="true" [title]="successMessage" type="success" [inline]="true"></app-custom-alert>
+
+  <div *ngIf="loading" class="card p-6 text-center text-gray-500">Chargement du dossier…</div>
+
+  <ng-container *ngIf="!loading && demande">
+    <section class="card mb-5 p-5">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p class="text-sm font-semibold text-gray-800">{{ demande.typeDocument?.libelle }}</p>
+          <p class="mt-1 text-sm text-gray-500">Demande n° {{ demande.numeroDemande || demande.id }}</p>
+          <p class="text-xs text-gray-500">Créée le {{ demande.date | date:'medium' }}</p>
+        </div>
+        <app-custom-badge [text]="demande.statut" [color]="demande.statut === 'rejetee' ? 'red' : demande.statut === 'brouillon' ? 'orange' : 'blue'"></app-custom-badge>
+      </div>
+      <div *ngIf="demande.statut === 'rejetee'" class="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+        <strong>Correction demandée.</strong>
+        <span *ngIf="demande.motifRejet"> {{ demande.motifRejet }}</span>
+        <p class="mt-1 text-xs">Remplacez les pièces concernées puis soumettez de nouveau le dossier.</p>
+      </div>
+      <div *ngIf="demande.statut === 'soumise' || demande.statut === 'en_attente_paiement' || demande.statut === 'paye' || demande.statut === 'en_preparation' || demande.statut === 'document_pret' || demande.statut === 'validee' || demande.statut === 'delivree' || demande.statut === 'remise'"
+        class="mt-4 text-sm text-gray-600">
+        Votre demande est enregistrée. Son statut et vos pièces resteront disponibles après rechargement.
+      </div>
+    </section>
+
+    <ng-container *ngIf="estModifiable; else lectureSeule">
+      <nav class="mb-5 grid grid-cols-3 gap-2" aria-label="Étapes de la demande">
+        <button *ngFor="let label of ['Pièces', 'Vérification', 'Soumission']; index as i"
+          type="button" (click)="allerEtape(i + 1)"
+          class="rounded-md border px-3 py-2 text-sm"
+          [class.bg-indigo-600]="etape === i + 1" [class.text-white]="etape === i + 1"
+          [class.bg-white]="etape !== i + 1" [class.text-gray-600]="etape !== i + 1">
+          {{ i + 1 }}. {{ label }}
+        </button>
+      </nav>
+
+      <section class="card p-5">
+        <ng-container [ngSwitch]="etape">
+          <div *ngSwitchCase="1">
+            <h2 class="mb-1 text-lg font-semibold text-gray-800">Pièces justificatives</h2>
+            <p class="mb-4 text-sm text-gray-500">Les fichiers sont enregistrés dès leur téléversement et associés à votre demande.</p>
+            <div *ngIf="piecesDemandees.length === 0" class="rounded-md bg-gray-50 p-4 text-sm text-gray-600">
+              Aucune pièce justificative n'est configurée pour ce type de document.
+            </div>
+            <div *ngFor="let piece of piecesDemandees" class="mb-4 rounded-md border border-gray-200 p-4">
+              <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <label class="font-medium text-gray-800">
+                  {{ piece.libelle }}
+                  <span *ngIf="piece.obligatoire" class="text-red-600">*</span>
+                </label>
+                <span *ngIf="pieceCourante(piece.cle) as fichier" class="text-xs text-green-700">
+                  Déposé : {{ fichier.nomOriginal }} (v{{ fichier.version }})
+                </span>
+              </div>
+              <p *ngIf="pieceCourante(piece.cle)?.statutAudit === 'rejetee'" class="mb-2 text-xs text-red-700">
+                Pièce refusée : {{ pieceCourante(piece.cle)?.motifRejet || 'veuillez la remplacer.' }}
+              </p>
+              <div class="flex flex-wrap items-center gap-3">
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                  [disabled]="uploadingCle !== null"
+                  (change)="surSelectionFichier(piece.cle, $event)"
+                  [attr.aria-label]="'Déposer ' + piece.libelle">
+                <span *ngIf="uploadingCle === piece.cle" class="text-xs text-indigo-600">Téléversement…</span>
+              </div>
+              <p class="mt-2 text-xs text-gray-500">PDF, JPG ou PNG — 20 Mo maximum.</p>
+            </div>
+          </div>
+
+          <div *ngSwitchCase="2">
+            <h2 class="mb-1 text-lg font-semibold text-gray-800">Vérification des pièces</h2>
+            <p class="mb-4 text-sm text-gray-500">Vérifiez le dossier avant de le transmettre au traitement.</p>
+            <div *ngFor="let piece of piecesDemandees" class="flex items-center justify-between border-b py-3 text-sm">
+              <span>{{ piece.libelle }} <span *ngIf="piece.obligatoire">*</span></span>
+              <span *ngIf="pieceCourante(piece.cle) as fichier" class="text-green-700">{{ fichier.nomOriginal }}</span>
+              <span *ngIf="!pieceCourante(piece.cle)" class="text-red-700">{{ piece.obligatoire ? 'Manquante' : 'Non déposée' }}</span>
+            </div>
+            <p *ngIf="piecesManquantes.length" class="mt-4 text-sm text-red-700">
+              Pièces obligatoires manquantes : {{ libellesPiecesManquantes }}
+            </p>
+          </div>
+
+          <div *ngSwitchDefault>
+            <h2 class="mb-1 text-lg font-semibold text-gray-800">Soumettre la demande</h2>
+            <p class="mb-4 text-sm text-gray-500">Après soumission, le dossier sera conservé dans votre historique et pourra être repris en cas de correction.</p>
+            <dl class="grid gap-3 rounded-md bg-gray-50 p-4 text-sm sm:grid-cols-2">
+              <div><dt class="text-gray-500">Document demandé</dt><dd class="font-medium">{{ demande.typeDocument?.libelle }}</dd></div>
+              <div><dt class="text-gray-500">Frais</dt><dd class="font-medium">{{ demande.montant | number }} FCFA</dd></div>
+              <div><dt class="text-gray-500">Pièces déposées</dt><dd class="font-medium">{{ (demande.pieces || []).length }} / {{ piecesDemandees.length }}</dd></div>
+            </dl>
+          </div>
+        </ng-container>
+
+        <div class="mt-6 flex flex-wrap justify-between gap-3 border-t pt-4">
+          <button type="button" class="secondary-action" (click)="retourListe()">Retour à mes demandes</button>
+          <div class="flex gap-2">
+            <button *ngIf="etape > 1" type="button" class="secondary-action" [disabled]="saving" (click)="allerEtape(etape - 1)">Précédent</button>
+            <button *ngIf="etape < 3" type="button" class="primary-action" [disabled]="saving || uploadingCle !== null"
+              (click)="allerEtape(etape + 1)">Suivant</button>
+            <button *ngIf="etape === 3" type="button" class="primary-action"
+              [disabled]="saving || piecesManquantes.length > 0" (click)="soumettre()">
+              {{ saving ? 'Envoi…' : 'Soumettre la demande' }}
+            </button>
+          </div>
+        </div>
+      </section>
+    </ng-container>
+
+    <ng-template #lectureSeule>
+      <section class="card p-5">
+        <h2 class="mb-3 text-lg font-semibold text-gray-800">Pièces de la demande</h2>
+        <div *ngIf="!demande.pieces?.length" class="text-sm text-gray-500">Aucune pièce n'est jointe à cette demande.</div>
+        <div *ngFor="let piece of demande.pieces" class="flex flex-wrap items-center justify-between gap-3 border-b py-3">
+          <div>
+            <p class="text-sm font-medium text-gray-800">{{ piece.libelle }}</p>
+            <p class="text-xs text-gray-500">{{ piece.nomOriginal }} — {{ piece.statutAudit }}</p>
+          </div>
+          <button type="button" class="secondary-action" (click)="ouvrirPiece(piece)">Voir la pièce</button>
+        </div>
+        <div class="mt-5 flex justify-end">
+          <button type="button" class="secondary-action" (click)="retourListe()">Retour à mes demandes</button>
+        </div>
+      </section>
+    </ng-template>
+  </ng-container>
+</div>

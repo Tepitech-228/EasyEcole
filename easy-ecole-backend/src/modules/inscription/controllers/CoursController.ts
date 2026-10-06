@@ -36,7 +36,12 @@ export default class CoursController {
             options.limit = limit;
         }
 
-        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT || (req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
+        if (
+            (req as any).utilisateurRole == RolesUtilisateur.APPRENANT ||
+            (req as any).utilisateurRole == RolesUtilisateur.INSTITUTION ||
+            (req as any).utilisateurRole == RolesUtilisateur.ADMIN ||
+            (req as any).utilisateurRole == RolesUtilisateur.SUPERVISEUR_GENERAL
+        ) {
             options = {
                 ...options,
                 include: [
@@ -90,7 +95,12 @@ export default class CoursController {
         let options: FindOptions<InferAttributes<Cours>> = {}
         options = { include: [Cours.associations.classe], where: { id: req.params.id } }
 
-        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT || (req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
+        if (
+            (req as any).utilisateurRole == RolesUtilisateur.APPRENANT ||
+            (req as any).utilisateurRole == RolesUtilisateur.INSTITUTION ||
+            (req as any).utilisateurRole == RolesUtilisateur.ADMIN ||
+            (req as any).utilisateurRole == RolesUtilisateur.SUPERVISEUR_GENERAL
+        ) {
             options = {
                 where: { id: req.params.id },
                 include: [

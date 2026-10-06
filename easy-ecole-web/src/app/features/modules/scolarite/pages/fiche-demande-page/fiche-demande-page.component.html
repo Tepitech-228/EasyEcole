@@ -2,6 +2,8 @@
   <app-header-title title="Fiche demande" subtitle="Demande #{{demande.numeroDemande || demande.id}}"></app-header-title>
 
   <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+  <app-custom-alert *ngIf="errorMessage" [show]="true" [title]="errorMessage" type="danger" [inline]="true"></app-custom-alert>
+  <app-custom-alert *ngIf="successMessage" [show]="true" [title]="successMessage" type="success" [inline]="true"></app-custom-alert>
 
   <div *ngIf="!loading" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Colonne gauche : Infos étudiant + demande -->
@@ -68,6 +70,31 @@
           <div><span class="text-gray-600">Nb impressions :</span> <span class="font-medium">{{demande.nbImpressions || 0}}</span></div>
           <div><span class="text-gray-600">Remise :</span> <span class="font-medium">{{formatDate(demande.dateRemise)}}</span></div>
           <div *ngIf="demande.motifRejet"><span class="text-gray-600">Motif rejet :</span> <span class="font-medium text-red-700">{{demande.motifRejet}}</span></div>
+        </div>
+        <button *ngIf="demande.statut === 'document_pret'" type="button" class="primary-action mt-4" (click)="ouvrirDocumentPret()">
+          Voir le document prêt
+        </button>
+      </div>
+
+      <div *ngIf="demande.pieces?.length" class="bg-white rounded-lg border border-gray-200 p-5">
+        <h3 class="text-sm font-semibold text-gray-900 uppercase mb-3">Pièces justificatives et audit</h3>
+        <div *ngFor="let piece of demande.pieces" class="border-b py-3 last:border-b-0">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p class="text-sm font-medium text-gray-800">{{piece.libelle}}</p>
+              <p class="text-xs text-gray-500">{{piece.nomOriginal}} — {{piece.statutAudit}}</p>
+              <p *ngIf="piece.motifRejet" class="text-xs text-red-700">{{piece.motifRejet}}</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" class="secondary-action" (click)="ouvrirPiece(piece)">Voir la pièce</button>
+              <ng-container *ngIf="estAuditable && ['soumise', 'paye'].includes(demande.statut) && piece.statutAudit !== 'validee'">
+                <button type="button" class="secondary-action" [disabled]="auditLoadingId !== null"
+                  (click)="auditerPiece(piece, 'validee')">Valider</button>
+                <button type="button" class="secondary-action text-red-700" [disabled]="auditLoadingId !== null"
+                  (click)="auditerPiece(piece, 'rejetee')">Refuser</button>
+              </ng-container>
+            </div>
+          </div>
         </div>
       </div>
 

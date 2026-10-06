@@ -326,8 +326,12 @@ export default class SeanceController {
                 const utilisateurId = Number((seance as any).enseignant?.utilisateur?.id)
                 const pointage = pointagesParUtilisateur.get(utilisateurId)
                 const fin = String(seance.heureFin)
-                const statut = pointage ? 'pointe' : (heure > fin ? 'absent' : 'en_retard')
-                return { seanceId: seance.id, cours: (seance as any).cours?.intitule, enseignant: (seance as any).enseignant?.utilisateur, heureDebut: seance.heureDebut, heureFin: seance.heureFin, statut }
+                const arrivee = pointage ? String(pointage.heureArrivee).slice(0, 8) : null
+                const debut = String(seance.heureDebut).slice(0, 8)
+                const statut = arrivee
+                    ? (arrivee > debut ? 'en_retard' : 'pointe')
+                    : (heure > fin ? 'absent' : 'en_retard')
+                return { seanceId: seance.id, cours: (seance as any).cours?.intitule, enseignant: (seance as any).enseignant?.utilisateur, heureDebut: seance.heureDebut, heureFin: seance.heureFin, heureArrivee: arrivee, statut }
             }).filter(item => item.statut !== 'pointe')
             return res.status(200).json(result)
         } catch (error) {
@@ -372,6 +376,45 @@ export default class SeanceController {
     private static minutes(value: any): number {
         const [heures, minutes] = String(value).slice(0, 5).split(':').map(Number)
         return heures * 60 + minutes
+    }
+
+    private static async getTeacherAttendanceStatus(enseignantId: number, utilisateurId: number): Promise<object> {
+        const now = new Date()
+        const today = now.toISOString().slice(0, 10)
+        const dayNumber = now.getUTCDay() || 7
+        const heureActuelle = now.toTimeString().slice(0, 8)
+        const seances = await Seance.findAll({
+            where: {
+                enseignantId,
+                jourSemaine: String(dayNumber),
+                dateDebut: { [Op.lte]: today },
+                dateFin: { [Op.gte]: today }
+            },
+            attributes: ['heureDebut', 'heureFin'],
+            order: [['heureDebut', 'ASC']]
+        })
+        const premiereSeance = seances[0]
+        if (!premiereSeance) return { statut: 'aucun_cours' }
+
+        const pointage = await Pointage.findOne({
+            where: { utilisateurId, date: today },
+            attributes: ['heureArrivee']
+        })
+        const heureDebut = String(premiereSeance.heureDebut).slice(0, 8)
+        const heureFin = String(premiereSeance.heureFin).slice(0, 8)
+        const heureArrivee = pointage ? String(pointage.heureArrivee).slice(0, 8) : null
+
+        let statut: string
+        if (heureArrivee) {
+            statut = heureArrivee > heureDebut ? 'en_retard' : 'a_heure'
+        } else if (heureActuelle >= heureFin) {
+            statut = 'absent'
+        } else if (heureActuelle >= heureDebut) {
+            statut = 'en_retard'
+        } else {
+            statut = 'a_pointer'
+        }
+        return { statut, heureDebut, heureFin, heureArrivee }
     }
 
     static async checkConflits(req: Request, res: Response): Promise<Response> {
@@ -504,7 +547,7 @@ export default class SeanceController {
     }
 
     static async createSeance(req: Request, res: Response): Promise<Response | null> {
-        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
+        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN && (req as any).utilisateurRole !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
             return res.status(403).json({ success: false, message: "Réservé à l'institution" });
         }
 
@@ -550,7 +593,7 @@ export default class SeanceController {
     }
 
     static async updateSeance(req: Request, res: Response): Promise<Response | null> {
-        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
+        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN && (req as any).utilisateurRole !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
             return res.status(403).json({ success: false, message: "Réservé à l'institution" });
         }
 
@@ -630,7 +673,7 @@ export default class SeanceController {
     }
 
     static async deleteSeance(req: Request, res: Response): Promise<Response | null> {
-        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
+        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN && (req as any).utilisateurRole !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
             return res.status(403).json({ success: false, message: "Réservé à l'institution" });
         }
 
@@ -655,7 +698,7 @@ export default class SeanceController {
     static async getCount(req: Request, res: Response): Promise<Response | null> {
         let options: CountOptions<InferAttributes<Seance>> = {}
 
-        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
+        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN && (req as any).utilisateurRole !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
             return res.status(403).json({ success: false, message: "Réservé à l'institution" });
         }
 
@@ -672,7 +715,7 @@ export default class SeanceController {
     }
 
     static async publierEmploiDuTemps(req: Request, res: Response): Promise<Response> {
-        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
+        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN && (req as any).utilisateurRole !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
             return res.status(403).json({ success: false, message: "Réservé à l'institution" });
         }
 
@@ -782,6 +825,10 @@ export default class SeanceController {
             }
 
             const enseignantId = enseignant.id as any;
+            const pointageDuJour = await SeanceController.getTeacherAttendanceStatus(
+                Number(enseignant.id),
+                Number(utilisateurId)
+            );
 
             const nbCoursAssignes = await Cours.count({ where: { enseignantId } });
 
@@ -887,6 +934,7 @@ export default class SeanceController {
 
             return res.status(200).json({
                 nbCoursAssignes,
+                pointageDuJour,
                 seancesASemaine,
                 evaluationsSansNotes: evaluationsSansNotes.length,
                 dernieresNotesSaisies,

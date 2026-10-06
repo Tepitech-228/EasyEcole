@@ -72,6 +72,27 @@
       <input id="document-label" class="field-input" [(ngModel)]="form.libelle" placeholder="Ex. Attestation de scolarité">
       <label class="field-label" for="document-fee">Frais en FCFA</label>
       <input id="document-fee" class="field-input" type="number" min="0" [(ngModel)]="form.frais" placeholder="0 pour un document gratuit">
+      <div class="mt-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <label class="field-label mb-0">Pièces justificatives requises</label>
+            <p class="muted text-xs">Le bordereau de paiement sera demandé automatiquement si le document est payant.</p>
+          </div>
+          <button type="button" class="secondary-action" (click)="ajouterPieceRequise()">Ajouter une pièce</button>
+        </div>
+        <div *ngFor="let piece of form.piecesRequises; index as i" class="mt-3 flex items-center gap-3">
+          <input class="field-input" [attr.aria-label]="'Libellé de la pièce ' + (i + 1)"
+            [(ngModel)]="piece.libelle" placeholder="Ex. Copie de la pièce d'identité">
+          <label class="flex shrink-0 items-center gap-2 text-sm text-gray-600">
+            <input type="checkbox" [(ngModel)]="piece.obligatoire">
+            Obligatoire
+          </label>
+          <button type="button" class="icon-action delete-action" (click)="retirerPieceRequise(i)"
+            aria-label="Retirer cette pièce">
+            <span class="material-symbols-outlined">delete</span>
+          </button>
+        </div>
+      </div>
       <div class="modal-actions">
         <button type="button" class="secondary-action" (click)="closeForm()">Annuler</button>
         <button type="button" class="primary-action" [disabled]="saving" (click)="save()">

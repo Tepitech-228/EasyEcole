@@ -19,6 +19,7 @@ const DEFAULT_ROLES = [
     { nom: 'Personnel administratif', description: 'Gestion administrative et secrétariat' },
     { nom: 'Ressources Humaines', description: 'Gestion du personnel et de la paie' },
     { nom: 'Secrétaire', description: 'Accueil et traitement des dossiers administratifs' },
+    { nom: 'Superviseur Général', description: 'Pilotage pédagogique transversal de l’établissement' },
 ];
 
 export const ROLE_PERMISSIONS: Record<string, string[]> = {
@@ -41,8 +42,9 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
         'menu.inscription.echeances', 'menu.inscription.validation-bordereaux',
         'menu.orientation', 'menu.orientation.parcours', 'menu.orientation.demandes',
         'menu.cours', 'menu.cours.enseignants', 'menu.cours.liste',
-        'menu.cours.presences', 'menu.cours.emplois-du-temps', 'menu.cours.notes',
-        'menu.evaluations', 'menu.evaluations.bulletins', 'menu.evaluations.deliberations',
+        'menu.cours.presences', 'menu.cours.cahiers-de-texte',
+        'menu.cours.emplois-du-temps', 'menu.cours.notes',
+        'menu.evaluations', 'menu.evaluations.sessions', 'menu.evaluations.bulletins', 'menu.evaluations.deliberations',
         'menu.evaluations.moyennes', 'menu.evaluations.rattrapages',
         'menu.scolarite', 'menu.scolarite.demandes-docs', 'menu.scolarite.traiter-demandes',
         'menu.scolarite.reclamations', 'menu.scolarite.traiter-reclamations',
@@ -180,6 +182,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
         'menu.tableau-de-bord', 'menu.finances', 'menu.finances.bordereaux-a-traiter',
         'menu.finances.types-bordereaux', 'menu.finances.situation-financiere', 'menu.finances.impayes',
         'menu.parametres.mon-profil', 'menu.parametres.mon-compte',
+        'action.finance.bordereau.voir', 'action.finance.bordereau.saisir', 'action.finance.bordereau.imputer',
     ],
     'Personnel administratif': [
         'menu.tableau-de-bord', 'menu.secretariat.dashboard', 'menu.secretariat.demandes',
@@ -197,6 +200,30 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
         'menu.secretariat.autorisations-provisoires', 'menu.secretariat.types-documents',
         'menu.secretariat.journal', 'menu.parametres.mon-profil', 'menu.parametres.mon-compte',
     ],
+    'Superviseur Général': [
+        'menu.tableau-de-bord',
+        'menu.inscription', 'menu.inscription.salles',
+        'menu.cours', 'menu.cours.enseignants', 'menu.cours.liste',
+        'menu.cours.presences', 'menu.cours.emplois-du-temps', 'menu.cours.notes',
+        'menu.scolarite', 'menu.scolarite.calendrier', 'menu.scolarite.conseils',
+        'menu.evaluations', 'menu.evaluations.bulletins', 'menu.evaluations.deliberations',
+        'menu.evaluations.deliberations-jury', 'menu.evaluations.moyennes',
+        'menu.evaluations.rattrapages',
+        'menu.pointage', 'menu.pointage.historique', 'menu.pointage.absences',
+        'menu.pointage.rapports',
+        'menu.reporting', 'menu.reporting.dashboard', 'menu.reporting.effectifs',
+        'menu.reporting.notes',
+        'menu.cours.supervision-generale',
+        'menu.parametres', 'menu.parametres.mon-profil', 'menu.parametres.mon-compte',
+        'action.cours.cours.creer', 'action.cours.cours.modifier',
+        'action.cours.enseignant.creer', 'action.cours.enseignant.modifier',
+        'action.inscription.salle.creer', 'action.inscription.salle.modifier',
+        'action.inscription.salle.supprimer',
+        'action.evaluation.bulletin.generer', 'action.evaluation.bulletin.publier',
+        'action.evaluation.deliberation.organiser', 'action.evaluation.deliberation.creer',
+        'action.evaluation.deliberation.modifier', 'action.evaluation.deliberation.charger-resultats',
+        'action.evaluation.rattrapage.assigner', 'action.evaluation.rattrapage.notifier',
+    ],
 };
 
 export class RoleSeed {
@@ -207,7 +234,10 @@ export class RoleSeed {
                     where: { nom: roleData.nom },
                     defaults: { nom: roleData.nom, description: roleData.description },
                 });
-                if (!created) continue;
+                if (!created) {
+                    const existingPermissionCount = await RolePermission.count({ where: { roleId: role.id } });
+                    if (existingPermissionCount > 0) continue;
+                }
 
                 const permissionKeys = ROLE_PERMISSIONS[roleData.nom] || [];
                 if (permissionKeys.length > 0) {

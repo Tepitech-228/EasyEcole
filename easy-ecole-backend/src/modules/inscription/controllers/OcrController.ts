@@ -27,7 +27,17 @@ export default class OcrController {
                 jobIds: jobs.map((job) => job.id),
             });
         } catch (error) {
-            await Promise.all(fichiers.map((fichier) => import('fs/promises').then((fs) => fs.unlink(fichier.path).catch(() => undefined))));
+            console.error("Erreur de mise en file OCR:", error);
+            const fs = await import('fs/promises');
+            await Promise.all(fichiers.map(async (fichier) => {
+                try {
+                    await fs.unlink(fichier.path);
+                } catch (cleanupError) {
+                    if ((cleanupError as NodeJS.ErrnoException).code !== 'ENOENT') {
+                        console.error("Erreur de nettoyage du fichier OCR:", fichier.path, cleanupError);
+                    }
+                }
+            }));
             return res.status(503).json({ success: false, message: 'File OCR indisponible' });
         }
     }

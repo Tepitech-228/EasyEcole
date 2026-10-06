@@ -1,7 +1,7 @@
 import express from "express"
 
 import SalleDeClasseController from "../controllers/SalleDeClasseController"
-import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
+import { AuthPilotagePedagogique } from "../../../core/middlewares/AuthPilotagePedagogique";
 import CheckPermission from "../../../core/middlewares/CheckPermission";
 import { cache } from "../../../core/middlewares/CacheMiddleware";
 
@@ -57,7 +57,7 @@ router
  *       201:
  *         description: Salle de classe créée
  */
-    .post('/', [AuthInstitution, CheckPermission('action.inscription.salle.creer')], SalleDeClasseController.createSalleDeClasse)
+    .post('/', [AuthPilotagePedagogique, CheckPermission('action.inscription.salle.creer')], SalleDeClasseController.createSalleDeClasse)
 /**
  * @openapi
  * /inscription/sallesDeClasse/{id}:
@@ -98,7 +98,7 @@ router
  *       404:
  *         description: Salle de classe non trouvée
  */
-    .put('/:id', [AuthInstitution, CheckPermission('action.inscription.salle.modifier')], SalleDeClasseController.updateSalleDeClasse)
+    .put('/:id', [AuthPilotagePedagogique, CheckPermission('action.inscription.salle.modifier')], SalleDeClasseController.updateSalleDeClasse)
 /**
  * @openapi
  * /inscription/sallesDeClasse/{id}:
@@ -113,7 +113,7 @@ router
  *       404:
  *         description: Salle de classe non trouvée
  */
-    .delete('/:id', [AuthInstitution, CheckPermission('action.inscription.salle.supprimer')], SalleDeClasseController.deleteSalleDeClasse)
+    .delete('/:id', [AuthPilotagePedagogique, CheckPermission('action.inscription.salle.supprimer')], SalleDeClasseController.deleteSalleDeClasse)
 /**
  * @openapi
  * /inscription/sallesDeClasse/statistics/count:
@@ -126,6 +126,6 @@ router
  *       200:
  *         description: Nombre de salles de classe
  */
-    .get('/statistics/count', [AuthInstitution], SalleDeClasseController.getCount)
+    .get('/statistics/count', [AuthPilotagePedagogique], SalleDeClasseController.getCount)
 
 export default router

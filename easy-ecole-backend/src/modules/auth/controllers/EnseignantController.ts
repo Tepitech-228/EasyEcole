@@ -6,8 +6,7 @@ import { AdresseEnseignant } from "../models/AdresseEnseignant";
 import { Cours } from "../../inscription/models/Cours";
 import * as path from "path";
 import * as fs from "fs";
-import QRCode from "qrcode";
-import { QrTokenService } from "../../../core/services/QrTokenService";
+import { EnseignantBadgeService } from "../services/EnseignantBadgeService";
 
 export default class EnseignantController {
 
@@ -106,6 +105,7 @@ export default class EnseignantController {
                         await Utilisateur.update(req.body.utilisateur, { where: { id: enseignant.utilisateurId } })
                     }
 
+                    await EnseignantBadgeService.ensureIdentity(enseignant, (req as any).etablissementId || null);
                     return res.status(200).send(enseignant);
                 })
                 .catch((error) => {
@@ -113,7 +113,7 @@ export default class EnseignantController {
                 });
         }
         else {
-            await Enseignant.create({
+            const enseignant = await Enseignant.create({
                 fonctionAdministrative: req.body.fonction,
                 dateNaissance: req.body.dateNaissance,
                 lieuNaissance: req.body.lieuNaissance,
@@ -123,13 +123,12 @@ export default class EnseignantController {
                 include: [
                     Enseignant.associations.adresse,
                 ]
-            })
-                .then((enseignant) => {
-                    return res.status(201).send(enseignant);
-                })
-                .catch((error) => {
-                    return res.status(400).json({ success: false, error: error });
-                });
+            });
+            const badge = await EnseignantBadgeService.ensureIdentity(
+                enseignant,
+                (req as any).etablissementId || null,
+            );
+            return res.status(201).send({ ...enseignant.toJSON(), ...badge });
         }
 
         return null
@@ -140,7 +139,17 @@ export default class EnseignantController {
         if ((req as any).utilisateurRole == RolesUtilisateur.ENSEIGNANT) {
             options = { where: { utilisateurId: (req as any).utilisateurId } }
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
+        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION
+            || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
+            // L'institution / l'admin peut renseigner la photo d'un prof (création / fiche),
+            // indispensable pour l'affichage photo au terminal de pointage.
+            const enseignantId = req.body.enseignantId || req.params.id
+            if (!enseignantId) {
+                return res.status(400).json({ success: false, message: "enseignantId requis" })
+            }
+            options = { where: { id: enseignantId } }
+        }
+        else {
             return res.status(403).json({ success: false })
         }
 
@@ -204,11 +213,6 @@ export default class EnseignantController {
     }
 
     static async generateQrCodes(req: Request, res: Response): Promise<Response | null> {
-        const dir: string = path.resolve(process.cwd(), 'storage', 'qr-codes', 'enseignants')
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true })
-        }
-
         try {
             let whereClause: any = {}
             if (req.body.enseignantId) {
@@ -220,33 +224,19 @@ export default class EnseignantController {
                 include: [Enseignant.associations.utilisateur]
             })
 
-            const results: { enseignantId: string, userId: string, qrCode: string }[] = []
+            const results: { enseignantId: string, userId: string, matricule: string, qrCode: string }[] = []
 
             for (const enseignant of enseignants) {
                 if (!enseignant.utilisateur) continue
 
                 const userId = String(enseignant.utilisateur.id)
-                const qrData = QrTokenService.signer(Number(enseignant.utilisateur.id))
-                const fileName = `${userId}.png`
-                const filePath = path.join(dir, fileName)
-
-                await QRCode.toFile(filePath, qrData, {
-                    type: 'png',
-                    width: 400,
-                    margin: 4,
-                    errorCorrectionLevel: 'Q',
-                    color: {
-                        dark: '#000000',
-                        light: '#ffffff'
-                    }
-                })
-
-                await enseignant.update({ qrCode: fileName })
+                const badge = await EnseignantBadgeService.ensureIdentity(enseignant)
 
                 results.push({
                     enseignantId: enseignant.id,
                     userId: userId,
-                    qrCode: fileName
+                    matricule: badge.matricule,
+                    qrCode: badge.qrCode,
                 })
             }
 
@@ -278,6 +268,10 @@ export default class EnseignantController {
 
     static async getQrCode(req: Request, res: Response): Promise<Response | null> {
         const { fileName } = req.params;
+        if (!/^[\w-]+\.png$/i.test(fileName)) {
+            return res.status(400).json({ success: false, message: 'Nom de QR code invalide' });
+        }
+
         const dir = path.resolve(process.cwd(), 'storage', 'qr-codes', 'enseignants');
         const filePath = path.join(dir, fileName);
 

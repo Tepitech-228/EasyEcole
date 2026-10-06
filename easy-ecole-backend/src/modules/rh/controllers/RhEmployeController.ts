@@ -31,7 +31,20 @@ export default class RhEmployeController {
 
   static async create(req: Request, res: Response): Promise<Response> {
     try {
-      const data = await RhEmploye.create(extraireChamps(req.body));
+      // Matricule auto-généré si non saisi (plus de saisie manuelle obligatoire)
+      const champs = extraireChamps(req.body);
+      if (!champs.matricule) {
+        const year = new Date().getFullYear();
+        const count = await RhEmploye.count();
+        let candidate = `EMP-${year}-${String(count + 1).padStart(4, '0')}`;
+        for (let attempt = 0; attempt < 5; attempt++) {
+          const exists = await RhEmploye.findOne({ where: { matricule: candidate } as any });
+          if (!exists) break;
+          candidate = `EMP-${year}-${String(count + 1 + attempt + 1).padStart(4, '0')}`;
+        }
+        champs.matricule = candidate;
+      }
+      const data = await RhEmploye.create(champs);
       return res.status(201).send(data);
     } catch (error) {
       console.error(error);

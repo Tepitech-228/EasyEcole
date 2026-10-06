@@ -78,6 +78,11 @@
         </div>
       </div>
 
+      <div *ngIf="exportType === 'modele-client'" class="mb-6 rounded-xl border border-blue-100 bg-blue-50/70 p-4 text-sm text-blue-950">
+        <p class="font-semibold">Modèle à transmettre au client</p>
+        <p class="mt-1">Téléchargez le classeur vierge avec les cinq onglets Identité, Cursus, Finance, Notes et Enseignants_Cours. Le client peut y renseigner toutes ses données; après réception, importez-le avec « Migration Complète (5 onglets) ».</p>
+      </div>
+
       <!-- Filtres pour Étudiants -->
       <div *ngIf="exportType === 'etudiants'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <div>
@@ -157,7 +162,7 @@
       <button (click)="exporter()"
          class="inline-flex items-center px-4 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm">
          <span class="material-symbols-outlined mr-2 text-base" aria-hidden="true">file_download</span>
-         Exporter
+         {{ exportType === 'modele-client' ? 'Télécharger le modèle client' : 'Exporter' }}
        </button>
      </div>
 
@@ -166,7 +171,7 @@
        <div class="migration-export__copy">
          <span class="section-kicker">TRANSFERT ÉTUDIANT</span>
          <h3>Export migration complète</h3>
-         <p>Un classeur structuré en trois onglets : identité, cursus et finance. Conçu pour préparer la reprise des dossiers étudiants.</p>
+         <p>Exporte les étudiants déjà présents dans EasyEcole. Pour recueillir les données d'un client, utilisez plutôt le modèle d'import « Étudiants ».</p>
        </div>
        <button (click)="exporterMigration()"
          [disabled]="exportMigrationLoading"
@@ -194,10 +199,21 @@
         <select [(ngModel)]="importType" (change)="importTypeChanged()" class="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white">
           <option *ngFor="let t of importTypes" [value]="t.value">{{ t.label }}</option>
         </select>
-        <select [(ngModel)]="importFormat" class="ml-3 border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white">
+        <select *ngIf="importType !== 'migration'" [(ngModel)]="importFormat" class="ml-3 border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white">
           <option value="xlsx">Excel (.xlsx)</option>
           <option value="docx">Word (.docx)</option>
         </select>
+      </div>
+
+      <div *ngIf="importType === 'etudiants'" class="mb-6 rounded-xl border border-blue-100 bg-blue-50/70 p-4 text-sm text-blue-950">
+        <p class="font-semibold">Reprise des étudiants depuis la base du client</p>
+        <p class="mt-1">
+          Téléchargez le modèle, faites-y copier les étudiants (une ligne par étudiant), puis importez-le ici.
+          L'import crée leur compte et une demande d'inscription afin qu'ils puissent poursuivre leur inscription dans EasyEcole.
+        </p>
+        <p class="mt-2 text-xs">
+          Les titres de session et de parcours doivent déjà exister dans EasyEcole. Les adresses e-mail doivent être uniques et les comptes déjà présents ne sont pas recréés.
+        </p>
       </div>
 
       <div *ngIf="importType === 'utilisateurs'" class="mb-6">
@@ -237,29 +253,31 @@
       <div class="mb-6">
         <div (click)="openFilePicker()" (dragover)="onDragOver($event)" (drop)="onDrop($event)"
           class="upload-zone border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-gray-50/50 transition-colors">
-          <input type="file" id="fileInput" accept=".xlsx,.xls,.docx" (change)="onFileSelected($event)" class="hidden">
+          <input type="file" id="fileInput" [accept]="importType === 'migration' ? '.xlsx' : '.xlsx,.xls,.docx'" (change)="onFileSelected($event)" class="hidden">
           <span class="material-symbols-outlined mx-auto block text-5xl text-gray-400" aria-hidden="true">cloud_upload</span>
           <p class="mt-4 text-sm text-gray-600">
             <span class="font-semibold">Cliquez pour sélectionner</span> ou glissez-déposez votre fichier ici
           </p>
-          <p class="mt-1 text-xs text-gray-400">Formats acceptés : .xlsx, .xls et .docx</p>
+          <p class="mt-1 text-xs text-gray-400">
+            {{ importType === 'migration' ? 'Format requis : classeur Excel .xlsx exporté depuis le centre de migration.' : 'Formats acceptés : .xlsx, .xls et .docx' }}
+          </p>
           <p *ngIf="selectedFile" class="mt-2 text-sm text-gray-700 font-medium">{{ selectedFile.name }}</p>
         </div>
       </div>
 
       <!-- Boutons d'action -->
       <div class="flex flex-wrap items-center gap-4 mb-6">
-<button (click)="telechargerTemplate()"
+<button *ngIf="importType !== 'migration'" (click)="telechargerTemplate()"
            class="inline-flex items-center px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-xl transition-colors">
            <span class="material-symbols-outlined mr-2 text-base" aria-hidden="true">download</span>
-           Télécharger le template ({{ importFormat }})
+   {{ importType === 'etudiants' ? 'Télécharger le modèle client' : 'Télécharger le template (' + importFormat + ')' }}
          </button>
         <button type="button" (click)="importer()"
           [disabled]="importing"
           class="inline-flex min-w-[190px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60">
           <span class="material-symbols-outlined text-base">upload_file</span>
           <span *ngIf="importing">Importation en cours…</span>
-          <span *ngIf="!importing">Importer la maquette</span>
+          <span *ngIf="!importing">{{ importType === 'migration' ? 'Importer la migration' : importType === 'ue' ? 'Importer la maquette' : importType === 'etudiants' ? 'Créer les étudiants et inscriptions' : 'Importer les données' }}</span>
         </button>
         <button *ngIf="selectedFile || importResult"
           (click)="resetImport()"
@@ -287,8 +305,77 @@
       <div *ngIf="importResult" class="mt-8">
         <h3 class="text-md font-semibold text-gray-900 mb-3">Rapport d'importation</h3>
 
-        <!-- Tuiles de synthèse -->
-        <div class="grid grid-cols-4 gap-4 mb-4">
+        <div *ngIf="importType === 'migration' && importResult.migrationSummary as summary" class="mb-6 overflow-hidden rounded-xl border border-gray-200">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-3">
+            <div>
+              <h4 class="text-sm font-semibold text-gray-900">Récapitulatif de la migration</h4>
+              <p class="mt-0.5 text-xs text-gray-500">{{ selectedFile?.name || 'Classeur de migration' }}</p>
+            </div>
+            <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold"
+              [ngClass]="importResult.errorCount ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'">
+              {{ importResult.errorCount ? 'Terminée avec des points à vérifier' : 'Terminée sans erreur' }}
+            </span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-100">
+              <thead class="bg-white">
+                <tr>
+                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Données</th>
+                  <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Dans le fichier</th>
+                  <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Importées</th>
+                  <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Déjà présentes</th>
+                  <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Erreurs</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 bg-white">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-medium text-gray-800">Apprenants</td>
+                  <td class="px-4 py-3 text-right text-sm text-gray-600">{{ summary.apprenants.total }}</td>
+                  <td class="px-4 py-3 text-right text-sm font-semibold text-green-700">{{ summary.apprenants.imported }}</td>
+                  <td class="px-4 py-3 text-right text-sm text-gray-400">—</td>
+                  <td class="px-4 py-3 text-right text-sm font-semibold" [ngClass]="summary.apprenants.errors ? 'text-red-600' : 'text-gray-400'">{{ summary.apprenants.errors }}</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-medium text-gray-800">Cursus</td>
+                  <td class="px-4 py-3 text-right text-sm text-gray-600">{{ summary.cursus.total }}</td>
+                  <td class="px-4 py-3 text-right text-sm font-semibold text-green-700">{{ summary.cursus.imported }}</td>
+                  <td class="px-4 py-3 text-right text-sm text-gray-400">—</td>
+                  <td class="px-4 py-3 text-right text-sm font-semibold" [ngClass]="summary.cursus.errors ? 'text-red-600' : 'text-gray-400'">{{ summary.cursus.errors }}</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-medium text-gray-800">Données financières</td>
+                  <td class="px-4 py-3 text-right text-sm text-gray-600">{{ summary.finances.total }}</td>
+                  <td class="px-4 py-3 text-right text-sm font-semibold text-green-700">{{ summary.finances.imported }}</td>
+                  <td class="px-4 py-3 text-right text-sm text-gray-400">—</td>
+                  <td class="px-4 py-3 text-right text-sm font-semibold" [ngClass]="summary.finances.errors ? 'text-red-600' : 'text-gray-400'">{{ summary.finances.errors }}</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-medium text-gray-800">Notes</td>
+                  <td class="px-4 py-3 text-right text-sm text-gray-600">{{ summary.notes.total }}</td>
+                  <td class="px-4 py-3 text-right text-sm font-semibold text-green-700">{{ summary.notes.imported }}</td>
+                  <td class="px-4 py-3 text-right text-sm text-gray-600">{{ summary.notes.alreadyPresent }}</td>
+                  <td class="px-4 py-3 text-right text-sm font-semibold" [ngClass]="summary.notes.errors ? 'text-red-600' : 'text-gray-400'">{{ summary.notes.errors }}</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-medium text-gray-800">Affectations enseignant-cours</td>
+                  <td class="px-4 py-3 text-right text-sm text-gray-600">{{ summary.affectations.total }}</td>
+                  <td class="px-4 py-3 text-right text-sm font-semibold text-green-700">{{ summary.affectations.imported }}</td>
+                  <td class="px-4 py-3 text-right text-sm text-gray-400">—</td>
+                  <td class="px-4 py-3 text-right text-sm font-semibold" [ngClass]="summary.affectations.errors ? 'text-red-600' : 'text-gray-400'">{{ summary.affectations.errors }}</td>
+                </tr>
+              </tbody>
+              <tfoot class="bg-gray-50">
+                <tr>
+                  <td colspan="4" class="px-4 py-3 text-sm font-semibold text-gray-700">Erreurs à examiner dans le détail ci-dessous</td>
+                  <td class="px-4 py-3 text-right text-sm font-bold" [ngClass]="importResult.errorCount ? 'text-red-600' : 'text-green-700'">{{ importResult.errorCount }}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- Récapitulatif des imports simples -->
+        <div *ngIf="importType !== 'migration'" class="grid grid-cols-4 gap-4 mb-4">
           <div class="bg-gray-50 rounded-xl p-4 text-center">
             <p class="text-2xl font-bold text-gray-900">{{ importResult.importedCount }}</p>
             <p class="text-xs text-gray-500">Importés avec succès</p>
@@ -305,6 +392,11 @@
             <p class="text-2xl font-bold text-gray-900">{{ importResult.details?.length || 0 }}</p>
             <p class="text-xs text-gray-500">Lignes traitées</p>
           </div>
+        </div>
+        <div *ngIf="importType === 'migration'" class="mb-4 text-sm text-gray-600">
+          <p *ngIf="importResult.publishedNotesAsDraftCount" class="text-amber-700">
+            {{ importResult.publishedNotesAsDraftCount }} note(s) publiées dans la source ont été importées en brouillon et nécessitent une republication manuelle.
+          </p>
         </div>
 
         <!-- Filtres -->
@@ -437,6 +529,7 @@
             <thead>
               <tr class="bg-gray-50/50">
                 <th class="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Ligne</th>
+                <th *ngIf="importType === 'migration'" class="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Type</th>
                 <th class="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Email</th>
                 <th class="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase" *ngIf="hasTemporaryPasswords()">Mot de passe provisoire</th>
                 <th class="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Statut</th>
@@ -446,6 +539,7 @@
             <tbody class="divide-y divide-gray-50">
               <tr *ngFor="let detail of getFilteredDetails(); let i = index">
                 <td class="px-3 py-3 text-sm text-gray-500">{{ detail.ligne ?? i + 1 }}</td>
+                <td *ngIf="importType === 'migration'" class="px-3 py-3 text-sm text-gray-600">{{ migrationDetailTypeLabel(detail.type) }}</td>
                 <td class="px-3 py-3 text-sm text-gray-700">{{ detail.email || '—' }}</td>
                 <td class="px-3 py-3 text-sm text-gray-700" *ngIf="hasTemporaryPasswords()">{{ detail.motDePasse || '—' }}</td>
                 <td class="px-3 py-3">

@@ -14,6 +14,9 @@ export class EchelleFormPageComponent extends BaseComponentClass implements OnIn
   isEditMode = false;
   echelleId: number | null = null;
   submitted = false;
+  saving = false;
+  loadFailed = false;
+  errorMessage = '';
 
   constructor(
     private fb: FormBuilder,
@@ -39,22 +42,34 @@ export class EchelleFormPageComponent extends BaseComponentClass implements OnIn
       this.echelleId = Number(id);
       this.service.getOne(this.echelleId).subscribe({
         next: (res) => this.form.patchValue(res),
-        error: () => this.router.navigate(['/bulletins/parametres-notation'])
+        error: () => {
+          this.loadFailed = true;
+          this.errorMessage = 'Impossible de charger cette échelle. Vous ne pouvez pas la modifier tant que le chargement a échoué.';
+        }
       });
     }
   }
 
   onSubmit(): void {
     this.submitted = true;
-    if (this.form.invalid) return;
+    if (this.form.invalid || this.loadFailed) return;
+    if (Number(this.form.value.noteMin) > Number(this.form.value.noteMax)) {
+      this.errorMessage = 'La note minimale doit être inférieure ou égale à la note maximale.';
+      return;
+    }
 
+    this.saving = true;
+    this.errorMessage = '';
     const obs = this.isEditMode
       ? this.service.update(this.echelleId!, this.form.value)
       : this.service.create(this.form.value);
 
     obs.subscribe({
       next: () => this.router.navigate(['/bulletins/parametres-notation']),
-      error: () => {}
+      error: () => {
+        this.errorMessage = 'L’échelle n’a pas pu être enregistrée. Vérifiez les valeurs puis réessayez.';
+        this.saving = false;
+      }
     });
   }
 

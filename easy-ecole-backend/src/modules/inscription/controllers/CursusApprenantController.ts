@@ -9,6 +9,8 @@ import { Parcours } from "../models/Parcours";
 import { CoursParticipant } from "../models/CoursParticipant";
 import { DemandeInscriptionCours } from "../models/DemandeInscriptionCours";
 import { CoursStatutService } from '../services/CoursStatutService';
+import { Ecue } from "../models/Ecue";
+import { Enseignant } from "../../auth/models/Enseignant";
 
 export default class CursusApprenantController {
 
@@ -93,8 +95,13 @@ export default class CursusApprenantController {
 
         try {
             // Récupérer le cursus actif de l'étudiant
+            const cursusWhere: any = {
+                utilisateurId: (req as any).utilisateurId
+            };
+            if (req.params.id) cursusWhere.id = req.params.id;
+
             const cursusOptions: FindOptions<InferAttributes<CursusApprenant>> = {
-                where: { utilisateurId: (req as any).utilisateurId },
+                where: cursusWhere,
                 include: [
                     CursusApprenant.associations.parcours,
                     CursusApprenant.associations.classe,
@@ -120,9 +127,16 @@ export default class CursusApprenantController {
                 include: [{
                     association: CoursParticipant.associations.cours,
                     include: [
-                        Cours.associations.enseignant,
+                        { association: Cours.associations.enseignant, include: [Enseignant.associations.utilisateur] },
                         Cours.associations.classe,
-                        { association: Cours.associations.parcours, include: [Parcours.associations.niveauEtude] }
+                        { association: Cours.associations.parcours, include: [Parcours.associations.niveauEtude] },
+                        {
+                            association: Cours.associations.ecues,
+                            include: [{
+                                association: Ecue.associations.enseignant,
+                                include: [Enseignant.associations.utilisateur]
+                            }]
+                        }
                     ]
                 }]
             });
@@ -133,9 +147,16 @@ export default class CursusApprenantController {
                 include: [{
                     association: DemandeInscriptionCours.associations.cours,
                     include: [
-                        Cours.associations.enseignant,
+                        { association: Cours.associations.enseignant, include: [Enseignant.associations.utilisateur] },
                         Cours.associations.classe,
-                        { association: Cours.associations.parcours, include: [Parcours.associations.niveauEtude] }
+                        { association: Cours.associations.parcours, include: [Parcours.associations.niveauEtude] },
+                        {
+                            association: Cours.associations.ecues,
+                            include: [{
+                                association: Ecue.associations.enseignant,
+                                include: [Enseignant.associations.utilisateur]
+                            }]
+                        }
                     ]
                 }]
             });

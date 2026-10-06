@@ -14,6 +14,8 @@ export class BaremeFormPageComponent extends BaseComponentClass implements OnIni
   saving: boolean = false
   success: boolean = false
   loading: boolean = false
+  loadFailed: boolean = false
+  errorMessage = ''
   baremeId: string | null = null
 
   form: FormGroup = new FormGroup({
@@ -54,13 +56,21 @@ export class BaremeFormPageComponent extends BaseComponentClass implements OnIni
       },
       error: () => {
         this.loading = false
+        this.loadFailed = true
+        this.errorMessage = 'Impossible de charger ce barème. Vous ne pouvez pas le modifier tant que le chargement a échoué.'
       }
     })
   }
 
   save(): void {
     if (this.form.invalid) return
+    if (this.loadFailed) return
+    if (Number(this.form.get('noteMin')!.value) > Number(this.form.get('noteMax')!.value)) {
+      this.errorMessage = 'La note minimale doit être inférieure ou égale à la note maximale.'
+      return
+    }
     this.saving = true
+    this.errorMessage = ''
 
     // Le modèle API EchelleNote n'expose pas "appréciation" : non envoyé.
     const payload: any = {
@@ -84,6 +94,7 @@ export class BaremeFormPageComponent extends BaseComponentClass implements OnIni
       },
       error: (err) => {
         this.saving = false
+        this.errorMessage = 'Le barème n’a pas pu être enregistré. Vérifiez les valeurs puis réessayez.'
         console.error(err)
       }
     })

@@ -1,13 +1,25 @@
 # Travaux restants après l'audit EasyEcole
 
-**Mis à jour le :** 3 octobre 2026 (corrections workflow et Docker)
+**Mis à jour le :** 4 octobre 2026 (première passe d'inventaire CRUD)
 
 Ce document récapitule les principaux chantiers qui restent à mener après l'audit. Les constats et corrections détaillés sont consignés dans [AUDIT-GLOBAL-2026-10-03.md](./AUDIT-GLOBAL-2026-10-03.md).
 
 ## Priorités
 
+### État des CRUD — première passe
+
+- Le repérage statique a trouvé 261 fichiers de routes backend et 655 appels CRUD/requêtes dans 233 fichiers de pages frontend. Ces volumes décrivent le périmètre détecté par recherche, pas une validation fonctionnelle exhaustive.
+- 44 routes mutatrices réparties dans 17 routeurs utilisent seulement `Authenticate`. Certaines peuvent être des actions destinées à tous les utilisateurs connectés; chacune doit être comparée à son besoin métier et à ses permissions avant modification.
+- Une recherche a relevé 150 appels directs à `create(req.body)`, `update(req.body)` ou `bulkCreate(req.body)` dans 93 contrôleurs. Ils sont à vérifier individuellement : certains corps sont des DTO explicitement structurés, mais la recherche signale un vaste chantier de listes blanches et de validation métier.
+- Le CRUD des sessions d'examen était incomplet : les écritures acceptaient des propriétés non prévues, la création du couple normale/rattrapage n'était pas atomique, le remplacement des correcteurs pouvait les effacer avant l'échec de la recréation, et l'interface masquait plusieurs erreurs. La mise à jour de correcteurs ne permettait pas d'enregistrer une liste vide.
+- Les mutations des sessions d'examen utilisent maintenant les permissions institutionnelles existantes. Les entrées sont validées et limitées aux champs autorisés, les références de classe/année et de cours/enseignants sont vérifiées, les écritures groupées sont transactionnelles, et l'interface affiche les erreurs et permet de vider les correcteurs.
+- Le CRUD des échelles de notes acceptait directement le corps HTTP (y compris des propriétés système) et ne validait pas l'intervalle côté serveur. Les écritures sont maintenant réservées à l'institution, limitées aux champs métier et contrôlées sur la plage 0–20 et l'ordre des bornes.
+- La saisie en masse des notes utilisait `bulkCreate(updateOnDuplicate)` sans index unique composite visible; les erreurs du contrôle de semestre étaient ignorées et les erreurs d'audit masquées. La sauvegarde traite maintenant chaque participant dans une transaction avec validation des notes/participants, contrôle d'enseignant et d'appartenance au cours, vérification du verrou semestre et audit atomique. La migration d'un index unique composite reste à préparer après détection et résolution contrôlée des doublons historiques, afin de couvrir aussi les créations concurrentes.
+- Cette première passe ne certifie pas les autres domaines CRUD. À poursuivre par blocs métier (référentiels académiques, inscription, notes/bulletins, finances, RH et documents) : permissions, validation des entrées, erreurs visibles, cohérence transactionnelle, confirmations de suppression et tests par scénario.
+
 1. **P0 — Aligner le schéma runtime du dossier d'inscription**
    - Un journal runtime partagé le 3 octobre montre que `DossierEtudiantController.getDossierComplet` échoue avec MySQL `ER_BAD_FIELD_ERROR` : Sequelize sélectionne `dossiersDemande.correctionDemandee`, absente de la table mappée par le modèle `ins_dossiers_demandes` dans la base utilisée.
+   - Un journal plus récent reproduit la même erreur depuis `ComiteValidationController.listerDossiers`. L'include utilisateur de cette liste a aussi été limité à une liste blanche excluant `motDePasse` et `tokenVersion`; l'application de la migration 027 reste nécessaire sur la base runtime.
    - Le runner et les migrations sont maintenant intégrés à l'image backend. La migration 027 est idempotente, mais n'a pas été exécutée sur la base runtime. L'appliquer de façon contrôlée puis tester la consultation et la correction de pièces. Ne pas activer toutes les migrations au démarrage sans avoir vérifié l'historique complet; `npm run db:migrate` lance l'ensemble des migrations en attente.
 
 2. **P0 — Recetter la validation des notes de rattrapage**
@@ -19,7 +31,7 @@ Ce document récapitule les principaux chantiers qui restent à mener après l'a
    - Les briques sont présentes, mais ce parcours complet n'a pas encore été démontré par une recette intégrée.
 
 4. **P1 — Vérifier en runtime l'exclusion des champs secrets**
-   - Le SQL observé sélectionnait `utilisateur.motDePasse` et `utilisateur.tokenVersion`. Le chargement de dossier utilise maintenant une whitelist d'attributs; vérifier la requête et la réponse sur l'environnement déployé.
+   - Le SQL observé sélectionnait `utilisateur.motDePasse` et `utilisateur.tokenVersion`. Les requêtes du chargement de dossier et de la liste du comité utilisent maintenant une whitelist d'attributs; vérifier la requête et la réponse sur l'environnement déployé.
 
 5. **P1 — Valider le build Docker et l'orchestration**
    - Le Dockerfile backend utilise maintenant le contexte racine et copie les migrations/runner dans l'image. Compose applique des limites de processus et de logs, des healthchecks et des réseaux séparés pour l'entrée web et les données.
@@ -35,6 +47,9 @@ Ce document récapitule les principaux chantiers qui restent à mener après l'a
 7. **Compléter les tests des API**
    - Les 16 modules auparavant sans tests possèdent maintenant au moins une suite ciblée.
    - Étendre les tests à chaque contrôleur et route, avec les cas de succès, d'accès refusé, de données invalides, de ressource absente et d'erreur technique.
+   - Les écritures du seed des rôles/permissions n'avalent plus leurs erreurs SQL; les liaisons manquantes pour un nouveau rôle produisent aussi une erreur explicite. Ce correctif local est couvert par un test, mais le seed reste journalisé puis toléré par l'initialisation DB; une stratégie fail-fast au démarrage reste à décider/tester.
+   - Le rejet de la mise en file OCR retourne toujours une réponse 503 non sensible, mais sa cause est maintenant journalisée; les échecs de nettoyage des fichiers sont aussi journalisés, sauf fichier déjà absent. Le chemin est couvert par un test ciblé.
+   - L'initialisation DB journalise maintenant l'objet erreur Sequelize complet du seed de comptes, au lieu du seul message générique « Validation error ». Le log transmis ne donne pas le champ invalide; le prochain démarrage permettra d'identifier précisément la validation qui échoue.
 
 8. **Vérifier les réponses d'erreur serveur**
    - Examiner les 848 réponses HTTP 500 candidates repérées par recherche statique dans 182 fichiers.
@@ -48,6 +63,7 @@ Ce document récapitule les principaux chantiers qui restent à mener après l'a
    - Réaliser les mesures dans un environnement de recette représentatif de la version courante.
    - Relever les latences p50, p95 et p99, le débit, les erreurs et l'utilisation mémoire sous charge.
    - Les mesures historiques disponibles concernent une autre branche; aucune mesure actuelle n'a été réalisée pendant l'audit.
+   - La page de situation financière ne reconstruit plus l'arbre récursif à chaque détection Angular; la recherche est temporisée et les requêtes précédentes sont annulées. Les filtres classe, période, recherche et le détail sont maintenant raccordés au bon cursus côté API. Ces corrections sont vérifiées au build et par des tests backend; le rendu authentifié en navigateur reste à valider.
 
 11. **Traiter les budgets frontend et exécuter les tests navigateur**
    - Réduire le poids initial Angular (4,52 MB pour un budget de 4 MB) et le style du dashboard (20,81 KB pour un budget de 15 KB).

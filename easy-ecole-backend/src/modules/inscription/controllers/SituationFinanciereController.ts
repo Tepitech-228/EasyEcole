@@ -53,10 +53,13 @@ export default class SituationFinanciereController {
                 }
             }
 
-            // ── Search : trouver les dossierEtudiantIds ou utilisateurIds ──
-            let whereDossierEtudiantIds: number[] | undefined;
-            if (req.query.search) {
-                const searchTerm = `%${req.query.search}%`;
+            // ── Search : résoudre les utilisateurs par nom/prénom ou matricule ──
+            const search = String(req.query.search || '').trim();
+            if (search.length > 100) {
+                return res.status(400).json({ success: false, message: "Le terme de recherche ne peut pas dépasser 100 caractères" });
+            }
+            if (search) {
+                const searchTerm = `%${search}%`;
                 const whereOrDossier: any = { matricule: { [Op.like]: searchTerm } };
                 const whereOrUser: any = {
                     [Op.or]: [
@@ -70,22 +73,15 @@ export default class SituationFinanciereController {
                     Utilisateur.findAll({ attributes: ['id'], where: whereOrUser }),
                 ]);
 
-                const dossierIdsFromSearch = matchingDossiers.map((d: any) => d.id);
-                const userIdsFromSearch = matchingUsers.map((u: any) => u.id);
-                const dossierIdsFromUsers = await DossierEtudiant.findAll({
-                    attributes: ['id'],
-                    where: { utilisateurId: { [Op.in]: userIdsFromSearch } }
-                });
+                const matchingUserIds = [...new Set([
+                    ...matchingUsers.map((u: any) => Number(u.id)),
+                    ...matchingDossiers.map((d: any) => Number(d.utilisateurId)),
+                ].filter(id => Number.isInteger(id) && id > 0))];
 
-                const allDossierIds = [
-                    ...dossierIdsFromSearch,
-                    ...dossierIdsFromUsers.map((d: any) => d.id)
-                ];
-                whereDossierEtudiantIds = [...new Set(allDossierIds)];
-
-                if (whereDossierEtudiantIds.length === 0) {
+                if (matchingUserIds.length === 0) {
                     return res.status(200).json({ success: true, data: [], pagination: { page, limit, total: 0, totalPages: 0 } });
                 }
+                cursusWhere.utilisateurId = { [Op.in]: matchingUserIds };
             }
 
             // ── Construire l'include complet ──
@@ -101,13 +97,12 @@ export default class SituationFinanciereController {
                         {
                             association: Utilisateur.associations.apprenant as any,
                             attributes: ['periode'],
-                            required: false,
+                            required: Object.keys(apprenantWhere).length > 0,
                             ...(Object.keys(apprenantWhere).length > 0 ? { where: apprenantWhere } : {}),
                         },
                         {
                             association: (Utilisateur as any).associations.dossiersEtudiants as any,
                             attributes: ['id', 'matricule'],
-                            where: whereDossierEtudiantIds ? { id: { [Op.in]: whereDossierEtudiantIds } } : undefined,
                             required: false,
                             include: [
                                 {
@@ -137,8 +132,8 @@ export default class SituationFinanciereController {
                 const dossier = utilisateur?.dossiersEtudiants?.[0] as any;
                 const echeances = dossier?.echeances || [];
 
-                const totalDu = echeances.reduce((sum: number, e: any) => sum + (e.montant || 0), 0);
-                const totalPaye = echeances.reduce((sum: number, e: any) => sum + (e.montantPaye || 0), 0);
+                const totalDu = echeances.reduce((sum: number, e: any) => sum + (Number(e.montant) || 0), 0);
+                const totalPaye = echeances.reduce((sum: number, e: any) => sum + (Number(e.montantPaye) || 0), 0);
                 const resteAPayer = Math.max(0, Math.round((totalDu - totalPaye) * 100) / 100);
                 const avancement = totalDu > 0 ? Math.round(totalPaye / totalDu * 100) : 0;
 
@@ -172,7 +167,7 @@ export default class SituationFinanciereController {
                     },
                     classe: classe ? { id: classe.id, libelle: classe.libelle, niveau: classe.niveau } : null,
                     niveau: niveau ? { id: niveau.id, libelle: niveau.libelle } : null,
-                    parcours: parcours ? { id: parcours.id, titre: parcours.titre } : null,
+                    parcours: parcours ? { id: parcours.id, titre: parcours.titre, type: parcours.type } : null,
                     anneeAcademique: anneeAcademique ? { id: anneeAcademique.id, libelle: anneeAcademique.libelle } : null,
                     totaux: {
                         totalDu: Math.round(totalDu * 100) / 100,
@@ -212,15 +207,26 @@ export default class SituationFinanciereController {
     static async getSituationDetail(req: Request, res: Response): Promise<Response> {
         try {
             const { utilisateurId } = req.params;
-            const userId = parseInt(utilisateurId);
+            const userId = Number(utilisateurId);
 
-            if (isNaN(userId)) {
+            if (!Number.isInteger(userId) || userId <= 0) {
                 return res.status(400).json({ success: false, message: "ID utilisateur invalide" });
             }
 
             // Trouver le cursus apprenant et le dossier
+            const cursusWhere: any = { utilisateurId: userId };
+            for (const field of ['anneeAcademiqueId', 'niveauEtudeId', 'parcoursId', 'classeId']) {
+                const value = req.query[field];
+                if (value == null || value === '') continue;
+                const parsed = Number(value);
+                if (!Number.isInteger(parsed) || parsed <= 0) {
+                    return res.status(400).json({ success: false, message: `Paramètre '${field}' invalide` });
+                }
+                cursusWhere[field] = parsed;
+            }
+
             const cursusApprenant = await CursusApprenant.findOne({
-                where: { utilisateurId: userId },
+                where: cursusWhere,
                 include: [
                     { association: CursusApprenant.associations.classe },
                     { association: CursusApprenant.associations.niveauEtude },
@@ -255,8 +261,8 @@ export default class SituationFinanciereController {
             const dossier = utilisateur?.dossiersEtudiants?.[0] as any;
             const echeances = dossier?.echeances || [];
 
-            const totalDu = echeances.reduce((sum: number, e: any) => sum + (e.montant || 0), 0);
-            const totalPaye = echeances.reduce((sum: number, e: any) => sum + (e.montantPaye || 0), 0);
+            const totalDu = echeances.reduce((sum: number, e: any) => sum + (Number(e.montant) || 0), 0);
+            const totalPaye = echeances.reduce((sum: number, e: any) => sum + (Number(e.montantPaye) || 0), 0);
             const resteAPayer = Math.max(0, Math.round((totalDu - totalPaye) * 100) / 100);
             const avancement = totalDu > 0 ? Math.round(totalPaye / totalDu * 100) : 0;
 

@@ -16,6 +16,27 @@
   </div>
 
   <ng-container *ngIf="!loading && dashboard">
+    <div class="mb-6 rounded-xl border p-5"
+      [class.border-amber-300]="dashboard.pointageDuJour?.statut === 'en_retard'"
+      [class.bg-amber-50]="dashboard.pointageDuJour?.statut === 'en_retard'"
+      [class.border-red-300]="dashboard.pointageDuJour?.statut === 'absent'"
+      [class.bg-red-50]="dashboard.pointageDuJour?.statut === 'absent'"
+      [class.border-emerald-300]="dashboard.pointageDuJour?.statut === 'a_heure'"
+      [class.bg-emerald-50]="dashboard.pointageDuJour?.statut === 'a_heure'"
+      [class.border-gray-200]="!['en_retard', 'absent', 'a_heure'].includes(dashboard.pointageDuJour?.statut)">
+      <h2 class="font-semibold text-gray-900">Mon suivi de ponctualité aujourd’hui</h2>
+      <p class="mt-1 text-sm text-gray-600" [ngSwitch]="dashboard.pointageDuJour?.statut">
+        <span *ngSwitchCase="'a_heure'">Pointage à l’heure (premier cours à {{ dashboard.pointageDuJour.heureDebut }}).</span>
+        <span *ngSwitchCase="'en_retard'">Retard constaté — début du premier cours à {{ dashboard.pointageDuJour.heureDebut }}.</span>
+        <span *ngSwitchCase="'absent'">Aucun pointage enregistré pour votre premier cours ({{ dashboard.pointageDuJour.heureDebut }}–{{ dashboard.pointageDuJour.heureFin }}).</span>
+        <span *ngSwitchCase="'a_pointer'">Votre premier cours débute à {{ dashboard.pointageDuJour.heureDebut }}. Aucun retard constaté pour le moment.</span>
+        <span *ngSwitchDefault>Aucun cours prévu aujourd’hui.</span>
+      </p>
+      <p *ngIf="dashboard.pointageDuJour?.heureArrivee" class="mt-1 text-xs text-gray-500">
+        Arrivée enregistrée à {{ dashboard.pointageDuJour.heureArrivee }}.
+      </p>
+    </div>
+
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-icon blue">

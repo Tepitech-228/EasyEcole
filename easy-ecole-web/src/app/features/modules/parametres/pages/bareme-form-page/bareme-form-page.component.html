@@ -5,6 +5,9 @@
 </div>
 
 <div class="bg-white rounded-lg shadow border border-gray-100 p-8">
+    <div *ngIf="errorMessage" role="alert" class="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        {{ errorMessage }}
+    </div>
     <form [formGroup]="form">
         <div class="grid grid-cols-1 gap-6 max-w-lg">
             <div>
@@ -32,7 +35,7 @@
         </div>
         <div class="flex justify-end gap-4 mt-6">
             <a routerLink="../" class="px-4 py-2 text-sm text-gray-700 hover:text-gray-900">Annuler</a>
-            <app-custom-button (click)="save()" [text]="saving ? 'Enregistrement...' : 'Enregistrer'" [disabled]="saving || form.invalid"></app-custom-button>
+            <app-custom-button (click)="save()" [text]="saving ? 'Enregistrement...' : 'Enregistrer'" [disabled]="saving || form.invalid || loadFailed"></app-custom-button>
         </div>
     </form>
 </div>

@@ -47,7 +47,7 @@ export async function ensureReferenceData(sequelize: Sequelize): Promise<void> {
             "ON DUPLICATE KEY UPDATE `libelle` = VALUES(`libelle`), `module` = VALUES(`module`), " +
             "`type` = VALUES(`type`), `parentKey` = VALUES(`parentKey`), `deletedAt` = NULL",
             { replacements: { key: p.key, libelle: p.libelle, module: p.module, type: p.type, parentKey: p.parentKey } }
-        ).catch((err: any) => console.warn("[ensureReferenceData] permission", p.key, "ignorée:", err?.message))
+        )
     }
 
     // 2. Rôles (pas de contrainte unique fiable → select puis insert/update)
@@ -64,16 +64,13 @@ export async function ensureReferenceData(sequelize: Sequelize): Promise<void> {
             const [insertResult]: any = await sequelize.query(
                 "INSERT INTO `aut_roles` (`nom`, `description`, `createdAt`, `updatedAt`) VALUES (:nom, :description, NOW(), NOW())",
                 { replacements: { nom: r.nom, description: r.description } }
-            ).catch((err: any) => {
-                console.warn("[ensureReferenceData] rôle", r.nom, "ignoré:", err?.message)
-                return [{ affectedRows: 0 }, undefined]
-            })
+            )
             if (insertResult?.affectedRows > 0) rolesCrees.add(r.nom)
         } else {
             await sequelize.query(
                 "UPDATE `aut_roles` SET `description` = :description, `deletedAt` = NULL WHERE `id` = :id",
                 { replacements: { description: r.description, id: (rows as any[])[0].id } }
-            ).catch(() => undefined)
+            )
         }
     }
 
@@ -88,7 +85,11 @@ export async function ensureReferenceData(sequelize: Sequelize): Promise<void> {
         if (!rolesCrees.has(rp.roleNom)) continue
         const roleId = roleIdByNom.get(rp.roleNom)
         const permissionId = permIdByKey.get(rp.permissionKey)
-        if (!roleId || !permissionId) continue // référentiel incomplet côté cible : on ignore silencieusement
+        if (!roleId || !permissionId) {
+            throw new Error(
+                `[ensureReferenceData] liaison manquante: rôle "${rp.roleNom}" ou permission "${rp.permissionKey}" absent du référentiel`
+            )
+        }
         const [res]: any = await sequelize.query(
             "INSERT INTO `aut_role_permissions` (`roleId`, `permissionId`, `createdAt`, `updatedAt`) " +
             "VALUES (:roleId, :permissionId, NOW(), NOW()) " +
@@ -99,5 +100,5 @@ export async function ensureReferenceData(sequelize: Sequelize): Promise<void> {
     }
 
     // Log discret : ne parler que si des écritures ont réellement eu lieu
-    console.log(`[ensureReferenceData] socle autorisations vérifié (${REF_PERMISSIONS.length} permissions, ${REF_ROLES.length} rôles, ${liaisonsCreees} liaison(s) créée(s)/réactivée(s))`)
+    console.log(`[ensureReferenceData] socle autorisations vérifié (${permissionsByKey.size} permissions, ${REF_ROLES.length} rôles, ${liaisonsCreees} liaison(s) créée(s)/réactivée(s))`)
 }

@@ -21,6 +21,7 @@ export class SessionExamenFormPageComponent extends BaseComponentClass implement
   submitted = false;
   loading = false;
   saving = false;
+  errorMessage = '';
 
   types = ['normale', 'rattrapage'];
   semestres = ['semestre1', 'semestre2', 'semestre3', 'semestre4', 'semestre5', 'semestre6'];
@@ -173,6 +174,7 @@ export class SessionExamenFormPageComponent extends BaseComponentClass implement
     this.submitted = true;
     if (this.form.invalid) return;
     this.saving = true;
+    this.errorMessage = '';
     const data = { ...this.form.value };
     const obs = this.isEditMode
       ? this.service.update(this.itemId!, data)
@@ -183,16 +185,22 @@ export class SessionExamenFormPageComponent extends BaseComponentClass implement
         const correcteursAEnvoyer = this.form.get('type')!.value === 'rattrapage'
           ? this.correcteurs.filter(c => c.coursId && c.enseignantId)
           : [];
-        if (correcteursAEnvoyer.length) {
+        if (this.form.get('type')!.value === 'rattrapage') {
           this.service.saveCorrecteurs(sessionId, correcteursAEnvoyer).subscribe({
             next: () => this.router.navigate(['/bulletins/sessions']),
-            error: () => this.saving = false
+            error: () => {
+              this.errorMessage = 'La session a été enregistrée, mais les correcteurs n’ont pas pu être enregistrés. Réessayez sans recréer la session.';
+              this.saving = false;
+            }
           });
         } else {
           this.router.navigate(['/bulletins/sessions']);
         }
       },
-      error: () => { this.saving = false; }
+      error: () => {
+        this.errorMessage = 'La session n’a pas pu être enregistrée. Vérifiez les informations puis réessayez.';
+        this.saving = false;
+      }
     });
   }
 

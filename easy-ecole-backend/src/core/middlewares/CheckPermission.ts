@@ -3,6 +3,7 @@ import { Permission } from '../../modules/auth/models/Permission'
 import { UserPermission } from '../../modules/auth/models/UserPermission'
 import { RolePermission } from '../../modules/auth/models/RolePermission'
 import { UserRole } from '../../modules/auth/models/UserRole'
+import { Role } from '../../modules/auth/models/Role'
 import { RolesUtilisateur } from '../enums/RolesUtilisateur'
 
 const permissionCache = new Map<string, { id: number; expiresAt: number }>()
@@ -47,6 +48,46 @@ export default (key: string) => {
                 })
                 if (rolePermission) {
                     return next()
+                }
+            } else {
+                const roleNameMap: Partial<Record<RolesUtilisateur, string>> = {
+                    [RolesUtilisateur.INSTITUTION]: 'Directeur',
+                    [RolesUtilisateur.ENSEIGNANT]: 'Enseignant',
+                    [RolesUtilisateur.APPRENANT]: 'Apprenant',
+                    [RolesUtilisateur.CAISSIER_BANQUE]: 'Comptable',
+                    [RolesUtilisateur.CABINET_COMPTABLE]: 'Comptable',
+                    [RolesUtilisateur.COMITE_ORIENTATION]: 'Comité',
+                    [RolesUtilisateur.ESA_COMPTA]: 'ESA Compta',
+                    [RolesUtilisateur.PERSONNEL_ADMINISTRATIF]: 'Personnel administratif',
+                    [RolesUtilisateur.RESSOURCES_HUMAINES]: 'Ressources Humaines',
+                    [RolesUtilisateur.SECRETAIRE]: 'Secrétaire',
+                    [RolesUtilisateur.SURVEILLANT]: 'Surveillant',
+                    [RolesUtilisateur.SUPERVISEUR_GENERAL]: 'Superviseur Général',
+                    [RolesUtilisateur.PARENT]: 'Parent',
+                }
+                const roleName = roleNameMap[role as RolesUtilisateur]
+                if (roleName) {
+                    const fallbackRole = await Role.findOne({ where: { nom: roleName }, attributes: ['id'] })
+                    if (fallbackRole) {
+                        const rolePermission = await RolePermission.findOne({
+                            where: { roleId: fallbackRole.id, permissionId },
+                            attributes: ['id'],
+                        })
+                        if (rolePermission) {
+                            return next()
+                        }
+                    }
+                }
+            }
+
+            if (role === RolesUtilisateur.SUPERVISEUR_GENERAL) {
+                const supervisorRole = await Role.findOne({ where: { nom: 'Superviseur Général' }, attributes: ['id'] })
+                if (supervisorRole) {
+                    const rolePermission = await RolePermission.findOne({
+                        where: { roleId: supervisorRole.id, permissionId },
+                        attributes: ['id'],
+                    })
+                    if (rolePermission) return next()
                 }
             }
 

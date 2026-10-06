@@ -73,6 +73,13 @@ export class BordereauService {
     return this.httpClient.get<Bordereau>(`${this.SERVICE_URL}/${id}`)
   }
 
+  downloadBordereau(id: string): Observable<Blob> {
+    return this.httpClient.get(
+      `${environment.API_MODULES.INSCRIPTION}/bordereaux/${encodeURIComponent(id)}/download`,
+      { responseType: 'blob' }
+    )
+  }
+
   upload(formData: FormData): Observable<Bordereau> {
     return this.httpClient.post<Bordereau>(`${this.SERVICE_URL}`, formData)
   }
@@ -120,9 +127,18 @@ export class BordereauService {
    * GET /inscription/finance/situation-financiere/:utilisateurId
    * Détail complet de la situation financière d'un étudiant.
    */
-  getSituationDetail(utilisateurId: string): Observable<any> {
+  getSituationDetail(utilisateurId: string, params?: any): Observable<any> {
+    let httpParams = new HttpParams();
+    if (params) {
+      Object.keys(params).forEach(key => {
+        if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
+          httpParams = httpParams.set(key, String(params[key]));
+        }
+      });
+    }
     return this.httpClient.get<any>(
-      `${environment.API_MODULES.INSCRIPTION}/finance/situation-financiere/${utilisateurId}`
+      `${environment.API_MODULES.INSCRIPTION}/finance/situation-financiere/${utilisateurId}`,
+      { params: httpParams }
     );
   }
 }

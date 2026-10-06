@@ -5,7 +5,7 @@
         class="flex md:flex-row flex-col gap-y-6 justify-between md:items-start md-items-end w-full border-0 py-4 mb-8">
         <div class="flex items-center gap-x-4">
             <img class="object-cover w-16 h-16 rounded-full border-2 border-gray-300"
-                [src]="enseignant.utilisateur!.apprenant?.photo ? PHOTOS_PATH + enseignant.utilisateur!.apprenant?.photo : 'assets/images/blank-profile-picture.png'"
+                [src]="enseignant.photo ? PHOTOS_ENSEIGNANTS_PATH + enseignant.photo : 'assets/images/blank-profile-picture.png'"
                 alt="">
             <div class="flex flex-col justify-evenly h-16">
                 <h2 class="text-md font-semibold text-gray-800 dark:text-white">{{
@@ -13,6 +13,10 @@
                 </h2>
                 <p class="text-sm font-normal text-gray-600 dark:text-gray-400">{{
                     enseignant!.utilisateur!.email }}</p>
+                <label class="text-xs text-indigo-600 hover:text-indigo-800 cursor-pointer font-medium">
+                    {{ enseignant.photo ? 'Changer la photo' : 'Ajouter une photo (visible au pointage)' }}
+                    <input type="file" accept="image/*" class="hidden" (change)="onPhotoSelected($event)">
+                </label>
             </div>
         </div>
     </div>
@@ -98,6 +102,33 @@
                 <div>
                     <span class="block text-xs text-gray-400">Heures de cours réalisées / an</span>
                     <span class="block text-sm font-medium text-gray-800">{{ enseignant.heureReelleAnnuelle ?? '---' }}</span>
+                </div>
+            </div>
+        </app-details-section>
+    </div>
+
+    <div class="w-full mb-8">
+        <app-details-section text="Badge d'accès (pointage)">
+            <div class="flex flex-col sm:flex-row items-center gap-6 py-4">
+                <div class="text-center">
+                    <img *ngIf="enseignant.qrCode" [src]="qrSrc(enseignant.qrCode)"
+                        alt="QR code du professeur"
+                        class="h-40 w-40 object-contain border border-gray-200 rounded-xl bg-white p-2">
+                    <div *ngIf="!enseignant.qrCode" class="text-sm text-gray-400 py-8">QR code non généré</div>
+                </div>
+                <div class="flex-1 w-full">
+                    <div class="mb-3">
+                        <span class="block text-xs text-gray-400">N° Matricule (saisie manuelle au terminal)</span>
+                        <span class="block text-base font-mono font-semibold text-gray-800">{{ enseignant.matricule || '---' }}</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mb-4">Scannez ce QR au terminal ou saisissez le matricule pour pointer l'arrivée et le départ.</p>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <app-custom-button *ngIf="rolesValue.isInstitution || rolesValue.isAdmin"
+                            (click)="regenererQr()" [disabled]="qrRegenerating"
+                            [text]="qrRegenerating ? 'Génération...' : 'Régénérer le QR'"></app-custom-button>
+                        <a *ngIf="enseignant.qrCode" [href]="qrSrc(enseignant.qrCode)" target="_blank" rel="noopener"
+                            class="text-xs font-medium text-indigo-600 hover:text-indigo-800 underline">Ouvrir / Imprimer</a>
+                    </div>
                 </div>
             </div>
         </app-details-section>

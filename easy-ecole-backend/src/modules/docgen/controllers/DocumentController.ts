@@ -5,7 +5,7 @@ import { DocGenTemplate } from "../models/DocGenTemplate";
 import { ReferenceService } from "../services/ReferenceService";
 import { DataResolverService } from "../services/DataResolverService";
 import { TemplateEngine } from "../services/TemplateEngine";
-import { PdfGeneratorService } from "../services/PdfGeneratorService";
+import { getDocGenPdfOptions, PdfGeneratorService } from "../services/PdfGeneratorService";
 import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
 import { EmailSender } from "../../../core/helpers/EmailSender";
 import { CursusApprenant } from "../../inscription/models/CursusApprenant";
@@ -100,7 +100,10 @@ export default class DocumentController {
         };
 
         const html = TemplateEngine.render(template.contenu, context);
-        const pdfBuffer = await PdfGeneratorService.generate(html, { ecoleNom: (resolved.etablissement as any).nom || 'ESA' });
+        const pdfBuffer = await PdfGeneratorService.generate(html, {
+          ecoleNom: (resolved.etablissement as any).nom || 'ESA',
+          ...getDocGenPdfOptions(typeCode),
+        });
 
         const hash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
         const fileName = `${reference}.pdf`;

@@ -191,6 +191,7 @@ export default class PermissionController {
                     [RolesUtilisateur.RESSOURCES_HUMAINES]: 'Ressources Humaines',
                     [RolesUtilisateur.SECRETAIRE]: 'Secrétaire',
                     [RolesUtilisateur.SURVEILLANT]: 'Surveillant',
+                    [RolesUtilisateur.SUPERVISEUR_GENERAL]: 'Superviseur Général',
                     [RolesUtilisateur.PARENT]: 'Parent',
                 };
                 const roleName = roleNameMap[role];

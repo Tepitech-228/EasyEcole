@@ -5,7 +5,7 @@ import { DocGenDocument } from "../models/DocGenDocument";
 import { DataResolverService } from "../services/DataResolverService";
 import { ReferenceService } from "../services/ReferenceService";
 import { TemplateEngine } from "../services/TemplateEngine";
-import { PdfGeneratorService } from "../services/PdfGeneratorService";
+import { getDocGenPdfOptions, PdfGeneratorService } from "../services/PdfGeneratorService";
 import { DocGenLogoService } from "../services/DocGenLogoService";
 import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
 import { CursusApprenant } from "../../inscription/models/CursusApprenant";
@@ -88,6 +88,7 @@ export class DocGenGeneratorService {
       orientation: params.orientation,
       format: params.format,
       margins: params.margins,
+      ...getDocGenPdfOptions(typeCode),
     });
 
     const hash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');

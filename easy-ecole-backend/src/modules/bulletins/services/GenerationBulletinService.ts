@@ -25,6 +25,7 @@ export interface UeBulletinResult {
   ueId: number
   ueCode: string
   ueLibelle: string
+  categorieUe: 'MINEURE' | 'MAJEURE' | 'LIBRE' | null
   moyenneUe: number
   creditEcts: number
   estValidee: boolean
@@ -296,6 +297,7 @@ export class GenerationBulletinService {
           ueId: Number(ue.id),
           ueCode: ue.code,
           ueLibelle: ue.intitule,
+          categorieUe: ue.categorieUe || null,
           moyenneUe,
           creditEcts,
           estValidee,

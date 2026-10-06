@@ -30,6 +30,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   private audioCtx: AudioContext | null = null
 
   readonly PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS
+  readonly TEACHER_PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS_ENSEIGNANTS
+  readonly PROFILE_PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PROFILES
 
   constructor(private pointageService: PointageService) {
     super()
@@ -243,8 +245,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   }
 
   private displayScannedResult(res: any): void {
-    if (res.statut === 'rouge') {
-      this.scanError = res.message || 'Accès refusé'
+    const autorise = res.statut !== 'rouge'
+    if (!autorise) {
       this.playBeepRefus()
     } else {
       // Bip : 1 si à jour, 2 si pas à jour
@@ -254,18 +256,28 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       } else {
         this.playBeepRefus()
       }
-      this.scannedUser = {
-        userId: res.utilisateurId,
-        nom: res.nom || 'Inconnu',
-        prenoms: res.prenoms || '',
-        role: res.role || 'apprenant',
-        statut: 'vert',
-        message: res.message,
-        photo: res.photo || '',
-        photoUrl: res.photo ? this.PHOTOS_PATH + res.photo : 'assets/images/blank-profile-picture.png',
-        situationFinanciere: res.situationFinanciere || null
-      }
     }
+    const photoBase = res.photoType === 'enseignant'
+      ? this.TEACHER_PHOTOS_PATH
+      : res.photoType === 'profile'
+        ? this.PROFILE_PHOTOS_PATH
+        : this.PHOTOS_PATH
+    this.scannedUser = {
+      userId: res.utilisateurId,
+      matricule: res.matricule || '',
+      nom: res.nom || 'Inconnu',
+      prenoms: res.prenoms || '',
+      role: res.role || 'apprenant',
+      statut: autorise ? 'vert' : 'rouge',
+      message: res.message || (autorise ? 'Accès autorisé' : 'Accès refusé'),
+      photo: res.photo || '',
+      photoUrl: res.photo ? photoBase + encodeURIComponent(res.photo) : '',
+      situationFinanciere: res.situationFinanciere || null
+    }
+  }
+
+  photoIndisponible(): void {
+    if (this.scannedUser) this.scannedUser.photoUrl = ''
   }
 
   verifierParIdManuel(): void {

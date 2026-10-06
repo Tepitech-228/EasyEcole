@@ -270,7 +270,7 @@
             <div class="p-5 text-center">
               <div *ngIf="scannedUser.photoUrl" class="pointage-scanned-photo-wrapper">
                 <img [src]="scannedUser.photoUrl" [alt]="'Photo de ' + scannedUser.nom"
-                  class="pointage-scanned-photo">
+                  class="pointage-scanned-photo" (error)="photoIndisponible()">
               </div>
               <div *ngIf="!scannedUser.photoUrl"
                 class="pointage-scanned-avatar"
@@ -279,6 +279,8 @@
               </div>
               <h4 class="text-lg font-bold text-gray-900">{{ scannedUser.nom }} {{ scannedUser.prenoms }}</h4>
               <p class="pointage-scanned-role">{{ scannedUser.role }}</p>
+              <p *ngIf="scannedUser.matricule" class="text-xs font-mono font-semibold text-gray-700">{{ scannedUser.matricule }}</p>
+              <p *ngIf="scannedUser.message" class="mb-3 text-sm text-gray-600">{{ scannedUser.message }}</p>
               <span class="pointage-scanned-badge"
                   [ngClass]="scannedUser.statut === 'vert' ? 'pointage-scanned-badge--vert' : 'pointage-scanned-badge--rouge'">
                 <span class="dot"></span>

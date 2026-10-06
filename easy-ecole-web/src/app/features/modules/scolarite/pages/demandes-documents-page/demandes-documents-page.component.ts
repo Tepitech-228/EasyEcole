@@ -134,17 +134,23 @@ export class DemandesDocumentsPageComponent extends BaseComponentClass implement
     this.demandeService.create(this.newDemande).subscribe({
       next: (demande) => {
         this.newDemande = { typeDocumentId: '' };
-        const payant = Number(demande.montant) > 0;
-        this.successMessage = payant
-          ? `Demande soumise avec succès. Cette demande est payante (${Number(demande.montant).toLocaleString('fr-FR')} FC) — veuillez procéder au paiement.`
-          : 'Demande soumise avec succès (gratuite).';
-        this.loadDemandes();
+        this.loading = false;
+        if (!demande.id) {
+          this.errorMessage = 'Le brouillon a été créé sans identifiant récupérable.';
+          return;
+        }
+        this.router.navigate(['/scolarite/demandes-documents', demande.id]);
       },
       error: () => {
         this.errorMessage = 'Erreur lors de la soumission de la demande';
         this.loading = false;
       }
     });
+  }
+
+  reprendreDemande(demande: DemandeDocument): void {
+    if (!demande.id) return;
+    this.router.navigate(['/scolarite/demandes-documents', demande.id]);
   }
 
   /**
@@ -221,7 +227,9 @@ export class DemandesDocumentsPageComponent extends BaseComponentClass implement
 
   statutLabel(statut: string): string {
     switch (statut) {
+      case 'brouillon': return 'Brouillon';
       case 'soumise': return 'Soumise';
+      case 'en_comite': return 'En validation du comité';
       case 'validee': return 'Validée';
       case 'rejetee': return 'Rejetée';
       case 'delivree': return 'Délivrée';
@@ -231,7 +239,9 @@ export class DemandesDocumentsPageComponent extends BaseComponentClass implement
 
   statutColor(statut: string): string {
     switch (statut) {
+      case 'brouillon': return 'orange';
       case 'soumise': return 'yellow';
+      case 'en_comite': return 'purple';
       case 'validee': return 'blue';
       case 'rejetee': return 'red';
       case 'delivree': return 'green';

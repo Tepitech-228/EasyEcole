@@ -56,9 +56,12 @@
 <app-custom-modal *ngIf="showModal" [title]="isEditing ? 'Modifier l\'employé' : 'Nouvel employé'" subtitle="Saisissez les informations de l'employé" (onCloseModal)="closeModal()" [center]="true" [showModal]="showModal">
   <form [formGroup]="form" (ngSubmit)="onSubmit()">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Matricule</label>
-        <input type="text" formControlName="matricule" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+      <div *ngIf="isEditing">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Matricule (auto)</label>
+        <input type="text" formControlName="matricule" readonly class="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm font-mono">
+      </div>
+      <div *ngIf="!isEditing" class="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+        Matricule généré automatiquement (EMP-AAAA-NNNN) — utilisable au pointage.
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>

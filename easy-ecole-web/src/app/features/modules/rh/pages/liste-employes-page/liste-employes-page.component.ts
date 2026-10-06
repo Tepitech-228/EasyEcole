@@ -42,7 +42,8 @@ export class ListeEmployesPageComponent extends BaseComponentClass implements On
 
   private initForm(): void {
     this.form = this.fb.group({
-      matricule: ['', Validators.required],
+      // Matricule auto-généré côté backend (EMP-AAAA-NNNN) — saisie manuelle supprimée
+      matricule: [''],
       nom: ['', Validators.required],
       prenoms: ['', Validators.required],
       posteId: [null],
@@ -121,10 +122,13 @@ export class ListeEmployesPageComponent extends BaseComponentClass implements On
       typeContratId: this.form.value.typeContratId || null,
       salaireBase: Number(this.form.value.salaireBase) || 0,
       statut: this.form.value.statut,
-      matricule: this.form.value.matricule,
       nom: this.form.value.nom,
       prenoms: this.form.value.prenoms
     };
+    // En création : matricule auto côté backend. En édition : on conserve le existant.
+    if (this.isEditing && this.form.value.matricule) {
+      payload.matricule = this.form.value.matricule;
+    }
 
     if (this.isEditing) {
       // L'id est celui de l'employé conservé au moment de l'ouverture du modal.

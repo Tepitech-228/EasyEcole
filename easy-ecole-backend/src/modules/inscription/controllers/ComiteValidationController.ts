@@ -15,6 +15,7 @@ import { Parcours } from "../models/Parcours";
 import { BordereauDossierService } from "../services/BordereauDossierService";
 import { EtatPreInscription, PreInscription } from "../models/PreInscription";
 import { ComiteVote } from "../models/ComiteVote";
+import { genererInitialesUniquesComite } from "../services/ComiteInitialesService";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { CursusApprenant } from "../models/CursusApprenant";
 import { NiveauEtude } from "../models/NiveauEtude";
@@ -68,6 +69,7 @@ const LISTER_DOSSIERS_MAX = 100
 const inclureTout = (opts: { sessionInterne?: boolean; parcoursInterne?: boolean } = {}) => [
     {
         association: DemandeInscription.associations.utilisateur,
+        attributes: ['id', 'nom', 'prenoms', 'identifiant', 'email', 'role', 'contact', 'photoDeProfil', 'etablissementId'],
         include: [{ model: Apprenant, as: 'apprenant' }]
     },
     {
@@ -518,6 +520,22 @@ export default class ComiteValidationController {
             if (votesValides === totalMembres) {
                 // Unanimité atteinte → finalisation
                 let matriculeFinal: string | null = null
+                const votesUnanimes = await ComiteVote.findAll({
+                    where: { demandeInscriptionId: demande.id, decision: 'valide' },
+                    include: [{ association: ComiteVote.associations.membre, attributes: ['nom', 'prenoms'] }],
+                    order: [['membreId', 'ASC']],
+                    transaction,
+                })
+                const initialesParMembre = genererInitialesUniquesComite(
+                    votesUnanimes.map((vote: any) => vote.membre || {}),
+                )
+                const initialesComite = initialesParMembre.join(', ')
+                if (votesUnanimes.length !== totalMembres || initialesParMembre.length !== totalMembres) {
+                    throw new Error(
+                        `Impossible de composer les initiales de tous les membres du comité pour la demande ${demande.id}: ` +
+                        `${initialesParMembre.length}/${totalMembres} identités disponibles`,
+                    )
+                }
 
                 const bordereau = await Bordereau.findOne({
                     where: { utilisateurId: demande.utilisateurId },
@@ -555,7 +573,8 @@ export default class ComiteValidationController {
                 const finalisation = await BordereauDossierService.finaliserAffectationPedagogique(
                     demande.utilisateurId,
                     req,
-                    transaction
+                    transaction,
+                    { initialesComite }
                 )
                 matriculeFinal = finalisation.matricule
 

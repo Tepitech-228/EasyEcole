@@ -86,6 +86,27 @@ describe('getAllCours', () => {
     )
   })
 
+  it('should return all cours for SUPERVISEUR_GENERAL', async () => {
+    const req = mockRequest({ utilisateurRole: 'superviseur_general' } as any)
+    const res = mockResponse()
+    const mockData = [{ id: 1 }]
+    ;(Cours.findAll as jest.Mock).mockResolvedValue(mockData)
+
+    await Ctrl.getAllCours(req, res)
+
+    expect(Cours.findAll).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: [
+          'classe',
+          { association: 'enseignant', include: ['utilisateur'] },
+          { association: 'parcours', include: ['niveauEtude'] },
+          'ecues'
+        ]
+      })
+    )
+    expect(res.send).toHaveBeenCalledWith(mockData)
+  })
+
   it('should support parcoursId filter', async () => {
     const req = mockRequest({ query: { parcoursId: '3' }, utilisateurRole: 'admin' } as any)
     const res = mockResponse()
@@ -110,6 +131,30 @@ describe('getAllCours', () => {
 describe('getCours', () => {
   it('should return cours with full includes for AP/IN role', async () => {
     const req = mockRequest({ params: { id: '1' }, utilisateurRole: 'apprenant' } as any)
+    const res = mockResponse()
+    const mockData = { id: 1 }
+    ;(Cours.findOne as jest.Mock).mockResolvedValue(mockData)
+
+    await Ctrl.getCours(req, res)
+
+    expect(Cours.findOne).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: '1' },
+        include: [
+          'classe',
+          'chapitresCours',
+          'seances',
+          'enseignant',
+          'ecues',
+          { association: 'parcours', include: ['niveauEtude'] }
+        ]
+      })
+    )
+    expect(res.send).toHaveBeenCalledWith(mockData)
+  })
+
+  it('should return course details for SUPERVISEUR_GENERAL', async () => {
+    const req = mockRequest({ params: { id: '1' }, utilisateurRole: 'superviseur_general' } as any)
     const res = mockResponse()
     const mockData = { id: 1 }
     ;(Cours.findOne as jest.Mock).mockResolvedValue(mockData)

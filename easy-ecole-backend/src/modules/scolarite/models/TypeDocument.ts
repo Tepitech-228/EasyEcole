@@ -12,6 +12,7 @@ export class TypeDocument extends Model<InferAttributes<TypeDocument>, InferCrea
   declare paiementObligatoire: CreationOptional<boolean>
   declare generationAuto: CreationOptional<boolean>
   declare actif: CreationOptional<boolean>
+  declare piecesRequises: CreationOptional<Array<{ cle: string; libelle: string; obligatoire: boolean }> | null>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -58,6 +59,11 @@ TypeDocument.init({
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: true
+  },
+  piecesRequises: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: []
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

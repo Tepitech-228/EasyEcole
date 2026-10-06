@@ -1,6 +1,7 @@
 import { CursusApprenant } from '../../inscription/models/CursusApprenant';
 import { Enseignant } from '../../auth/models/Enseignant';
 import { EchelleNote } from '../../bulletins/models/EchelleNote';
+import { RegleEvaluation } from '../../inscription/models/RegleEvaluation';
 import { Etablissement } from '../../etablissement/models/Etablissement';
 import { DemandeInscription } from '../../inscription/models/DemandeInscription';
 import { DesignationMemoire } from '../../inscription/models/DesignationMemoire';
@@ -16,10 +17,12 @@ import { RhContratEnseignant } from '../../rh/models/RhContratEnseignant';
 import { RhFicheEvaluation } from '../../rh/models/RhFicheEvaluation';
 import { RhPrestationEnseignant } from '../../rh/models/RhPrestationEnseignant';
 import { Bordereau } from '../../inscription/models/Bordereau';
+import { genererInitialesUniquesComite } from '../../inscription/services/ComiteInitialesService';
 import { Op } from 'sequelize';
 
 interface GenerateParams {
   typeCode: string;
+  initialesComite?: string;
   sourceId?: number | string;
   classeId?: number;
   semestre?: string;
@@ -56,6 +59,7 @@ interface ResolvedData {
   exercice?: Record<string, any>;
   echeancier?: Array<Record<string, any>>;
   initialesValidateur?: string;
+  initialesComite?: string;
   nomValidateur?: string;
   employe?: Record<string, any>;
   bulletin?: Record<string, any>;
@@ -206,34 +210,41 @@ async function resolveReleveNotes(params: GenerateParams): Promise<ResolvedData>
       { association: 'anneeAcademique' },
       { association: 'coursParticipants', include: [
         { association: 'cours' },
-        { association: 'notesEvaluation', include: [{ association: 'listeNoteEvaluation' }] }
+        { association: 'notesEvaluation', include: [{
+          association: 'listeNoteEvaluation',
+          include: [{ association: 'cours' }],
+        }] }
       ]}
     ]
   });
 
-  const enseignantIds = new Set<number>();
-  for (const cursus of cursusList as any[]) {
-    for (const participant of cursus.coursParticipants || []) {
-      for (const note of participant.notesEvaluation || []) {
-        const enseignantId = note.listeNoteEvaluation?.enseignantId;
-        if (enseignantId) enseignantIds.add(Number(enseignantId));
-      }
-    }
-  }
-  const enseignants = enseignantIds.size > 0
-    ? await Enseignant.findAll({
-      where: { id: { [Op.in]: [...enseignantIds] } },
-      include: [{ association: 'utilisateur' }],
+  const parcoursIds = [...new Set(cursusList.map((cursus: any) => Number(cursus.parcoursId)).filter(Number.isFinite))];
+  const reglesEvaluation = parcoursIds.length
+    ? await RegleEvaluation.findAll({
+      where: {
+        parcoursId: { [Op.in]: parcoursIds },
+        type: 'note_minimale',
+        actif: true,
+      },
+      attributes: ['parcoursId', 'semestre', 'valeur'],
+      raw: true,
     })
     : [];
-  const enseignantsNoms = new Map<number, string>(enseignants.map((enseignant: any) => {
-    const utilisateur = enseignant.utilisateur;
-    return [Number(enseignant.id), utilisateur ? `${utilisateur.nom} ${utilisateur.prenoms}` : ''];
-  }));
+  const seuilsParcours = new Map<string, number>();
+  for (const regle of reglesEvaluation as any[]) {
+    const seuil = Number(regle.valeur);
+    if (Number.isFinite(seuil)) {
+      seuilsParcours.set(`${regle.parcoursId}:${regle.semestre || ''}`, seuil);
+    }
+  }
 
   const etudiants = await Promise.all(cursusList.map(async (cursus: any) => {
     const coursParticipants = cursus.coursParticipants || [];
     const unitesMap = new Map<string, any>();
+    const noteMinimaleParcours = (semestre: string): number =>
+      seuilsParcours.get(`${cursus.parcoursId}:${semestre}`)
+        ?? seuilsParcours.get(`${cursus.parcoursId}:`)
+        ?? 10;
 
     for (const cp of coursParticipants) {
       if (!cp.cours) continue;
@@ -245,35 +256,89 @@ async function resolveReleveNotes(params: GenerateParams): Promise<ResolvedData>
         unitesMap.set(coursKey, {
           code: cp.cours.code || '',
           intitule: cp.cours.intitule || '',
-          creditEcts: cp.cours.creditEcts || 0,
+          categorieUe: cp.cours.categorieUe || '',
+          categorieUeLibelle: cp.cours.categorieUe === 'MAJEURE'
+            ? 'UE majeure'
+            : cp.cours.categorieUe === 'MINEURE'
+              ? 'UE mineure'
+              : cp.cours.categorieUe === 'LIBRE'
+                ? 'UE libre'
+                : 'UE',
+          semestre: semestre ? `Semestre ${String(semestre).replace(/^semestre/i, '')}` : '',
+          creditEcts: Number(cp.cours.creditEcts ?? cp.cours.credit ?? 0),
           coefficient: cp.cours.coefficient || 1,
           matieres: [],
           notes: [],
+          semestreCode: semestre,
         });
       }
       const unite = unitesMap.get(coursKey)!;
 
       const notes = (cp.notesEvaluation || []).filter((n: any) => n.note != null);
       for (const note of notes) {
-        unite.notes.push(note.note);
-        const enseignantNom = note.listeNoteEvaluation?.enseignantId
-          ? enseignantsNoms.get(Number(note.listeNoteEvaluation.enseignantId)) || ''
-          : '';
-        unite.matieres.push({
-          nom: note.listeNoteEvaluation?.cours?.intitule || cp.cours.intitule,
-          coefficient: cp.cours.coefficient || 1,
-          creditEcts: cp.cours.creditEcts || 0,
-          note: note.note,
-          enseignant: enseignantNom,
-          type: note.listeNoteEvaluation?.typeNoteEvaluation?.libelle || '',
-        });
+        const coursEcue = note.listeNoteEvaluation?.cours;
+        const cleEcue = String(coursEcue?.id ?? note.listeNoteEvaluation?.coursId ?? cp.coursId);
+        let matiere = unite.matieres.find((item: any) => item.cleEcue === cleEcue);
+        if (!matiere) {
+          matiere = {
+            cleEcue,
+            code: coursEcue?.code || cp.cours.code || '',
+            nom: coursEcue?.intitule || cp.cours.intitule,
+            coefficient: Number(coursEcue?.coefficient ?? cp.cours.coefficient ?? 1),
+            creditEcts: Number(coursEcue?.creditEcts ?? coursEcue?.credit ?? cp.cours.creditEcts ?? cp.cours.credit ?? 0),
+            sommeNotesPonderees: 0,
+            sommePoids: 0,
+            semestre: unite.semestre,
+          };
+          unite.matieres.push(matiere);
+        }
+        const noteValeur = Number(note.note);
+        const poids = Number(note.listeNoteEvaluation?.poidsTypeNoteEvaluation) || 1;
+        matiere.sommeNotesPonderees += noteValeur * poids;
+        matiere.sommePoids += poids;
       }
     }
 
     const unites = Array.from(unitesMap.values()).map(u => {
-      const notes = u.notes.filter((n: number) => n != null);
-      const moyenneUe = notes.length > 0 ? (notes.reduce((a: number, b: number) => a + b, 0) / notes.length) : 0;
-      return { ...u, moyenneUe: moyenneUe.toFixed(2), notes: undefined };
+      const seuil = noteMinimaleParcours(u.semestreCode);
+      const matieres = u.matieres.map((matiere: any) => {
+        const note = matiere.sommePoids
+          ? matiere.sommeNotesPonderees / matiere.sommePoids
+          : null;
+        const validee = note != null && note >= seuil;
+        return {
+          code: matiere.code,
+          nom: matiere.nom,
+          coefficient: matiere.coefficient,
+          creditEcts: matiere.creditEcts,
+          creditsObtenus: validee ? matiere.creditEcts : 0,
+          note: note == null ? null : Number(note.toFixed(2)),
+          statut: validee ? 'Validé' : 'Non validé',
+          semestre: matiere.semestre,
+        };
+      });
+      const notesPonderees = matieres.reduce(
+        (acc: { total: number; poids: number }, matiere: any) => matiere.note == null
+          ? acc
+          : {
+            total: acc.total + matiere.note * Math.max(0, Number(matiere.coefficient) || 1),
+            poids: acc.poids + Math.max(0, Number(matiere.coefficient) || 1),
+          },
+        { total: 0, poids: 0 },
+      );
+      const moyenneUe = notesPonderees.poids
+        ? notesPonderees.total / notesPonderees.poids
+        : null;
+      const validee = moyenneUe != null && moyenneUe >= seuil;
+      return {
+        ...u,
+        matieres,
+        moyenneUe: moyenneUe == null ? '' : moyenneUe.toFixed(2),
+        creditsObtenus: validee ? u.creditEcts : 0,
+        statut: validee ? 'Validé' : 'Non validé',
+        notes: undefined,
+        semestreCode: undefined,
+      };
     });
 
     const toutesNotes = unites.flatMap((u: any) => u.matieres.map((m: any) => m.note).filter((n: number) => n != null));
@@ -282,7 +347,8 @@ async function resolveReleveNotes(params: GenerateParams): Promise<ResolvedData>
       : 0;
 
     const creditsTotal = unites.reduce((sum: number, u: any) => sum + (u.creditEcts || 0), 0);
-    const creditsValides = moyenneGenerale >= 10 ? creditsTotal : 0;
+    const creditsValides = unites.reduce((sum: number, u: any) => sum + u.creditsObtenus, 0);
+    const uesValidees = unites.filter((ue: any) => ue.statut === 'Validé').length;
     const mention = getMention(moyenneGenerale, echelles);
 
     const apprenant = cursus.utilisateur;
@@ -297,6 +363,8 @@ async function resolveReleveNotes(params: GenerateParams): Promise<ResolvedData>
       dateNaissance: '',
       anneeAcademique: cursus.anneeAcademique?.libelle || '',
       unites,
+      uesValidees,
+      uesTotal: unites.length,
       moyenneGenerale: moyenneGeneraleNum.toFixed(2),
       creditsTotal,
       creditsValides,
@@ -407,7 +475,6 @@ async function resolveAutorisationProvisoire(params: GenerateParams): Promise<Re
     { association: 'utilisateur', include: [{ association: 'apprenant' }] },
     { association: 'parcoursChoisis', include: [{ association: 'parcours' }] },
     { association: 'session', include: [{ association: 'anneeAcademique' }] },
-    { association: 'preInscription' },
   ];
 
   let demande: any = null;
@@ -426,23 +493,24 @@ async function resolveAutorisationProvisoire(params: GenerateParams): Promise<Re
 
   if (!demande) return { etablissement, etudiants: [] };
 
-  // Récupérer les initiales du validateur (membre du comité)
-  let initialesValidateur = '';
-  let nomValidateur = '';
-  try {
-    const { Utilisateur } = await import('../../auth/models/Utilisateur');
-    const preInscription = demande.preInscription;
-    if (preInscription && preInscription.traiteParId) {
-      const validateur = await Utilisateur.findByPk(preInscription.traiteParId);
-      if (validateur) {
-        nomValidateur = `${validateur.nom || ''} ${validateur.prenoms || ''}`.trim();
-        // Générer les initiales : première lettre de chaque mot en majuscule
-        const mots = nomValidateur.split(/\s+/).filter(m => m.length > 0);
-        initialesValidateur = mots.map(m => m[0].toUpperCase()).join('');
-      }
+  let initialesComite = params.initialesComite || '';
+  if (!initialesComite) {
+    const { ComiteVote } = await import('../../inscription/models/ComiteVote');
+    const votesComite = await ComiteVote.findAll({
+      where: { demandeInscriptionId: demande.id, decision: 'valide' },
+      include: [{ association: 'membre', attributes: ['nom', 'prenoms'] }],
+      order: [['membreId', 'ASC']],
+    });
+    const initialesParMembre = genererInitialesUniquesComite(
+      votesComite.map((vote: any) => vote.membre || {}),
+    );
+    initialesComite = initialesParMembre.join(', ');
+    if (demande.statutPipeline === 'valide' && initialesParMembre.length !== votesComite.length) {
+      throw new Error(`Identité manquante pour un membre ayant validé la demande ${demande.id}.`);
     }
-  } catch (e) {
-    console.error('Erreur récupération validateur:', e);
+  }
+  if (demande.statutPipeline === 'valide' && !initialesComite) {
+    throw new Error(`Aucune initiale de membre du comité disponible pour la demande ${demande.id}.`);
   }
 
   const utilisateur = demande.utilisateur as any;
@@ -510,8 +578,9 @@ async function resolveAutorisationProvisoire(params: GenerateParams): Promise<Re
     etablissement,
     etudiants: [etudiant],
     anneeAcademique: etudiant.anneeAcademique,
-    initialesValidateur,
-    nomValidateur,
+    initialesComite,
+    initialesValidateur: initialesComite,
+    nomValidateur: '',
   };
 }
 
@@ -1414,10 +1483,11 @@ register(['SCO001', 'SCO002', 'INS003', 'INS005', 'CER001', 'CER002', 'CER003', 
 register(['DIP001', 'DIP002', 'DIP003', 'DIP004'], resolveDiplome);
 register(['DEL001', 'DEL002', 'DEL003', 'DEL004', 'DEL005', 'DEL006', 'DEL007', 'DEL008'], resolvePvDeliberation);
 register(['ADM009', 'ADM014', 'ADM015', 'DSC005', 'DSC006', 'RH005'], resolveDecision);
-register(['API001'], resolveAutorisationProvisoire);
+register(['API001', 'API002'], resolveAutorisationProvisoire);
 register(['MEM001'], resolveDesignationMemoire);
 register(['SOU001', 'SOU002', 'SOU003', 'ENG001'], resolveAutorisationSoutenance);
 register(['SOU004', 'SOU005'], resolveDesignationMemoire);
+register(['RCH008'], resolveAttestation);
 register(['INS011', 'INS012', 'INS013', 'INS014', 'INS015', 'INS016', 'INS017'], resolveAutorisationSoutenance);
 register(['INS007', 'FIN002', 'FIN003'], resolveRecuPaiement);
   register(['REC001'], resolveRecuBordereau);

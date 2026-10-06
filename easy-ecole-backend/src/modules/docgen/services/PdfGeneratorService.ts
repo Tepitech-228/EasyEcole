@@ -7,6 +7,19 @@ import { getPuppeteerBrowser } from '../../../core/services/PuppeteerBrowserPool
 // Hauteur (et marge) à réserver pour l'en-tête institutionnel répété sur chaque page.
 const HEADER_HEIGHT_MM = 48;
 
+export function getDocGenPdfOptions(typeCode: string): {
+  disableHeader?: boolean;
+  margins?: { top: string; right: string; bottom: string; left: string };
+} {
+  if (typeCode === 'NOT003' || typeCode === 'NOT004') {
+    return {
+      disableHeader: true,
+      margins: { top: '10mm', right: '12mm', bottom: '10mm', left: '12mm' },
+    };
+  }
+  return {};
+}
+
 export class PdfGeneratorService {
   static async generate(html: string, options?: {
     format?: 'A4' | 'Letter' | string;

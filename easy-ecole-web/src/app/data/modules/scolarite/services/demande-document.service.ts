@@ -27,8 +27,42 @@ export class DemandeDocumentService {
   }
 
   create(data: Partial<DemandeDocument>): Observable<DemandeDocument> {
-    // Le champ fraisPayes est désormais IGNORÉ par le backend (calculé côté serveur).
     return this.httpClient.post<DemandeDocument>(`${this.SERVICE_URL}`, data);
+  }
+
+  sauvegarderProgression(id: string, etapeWizard: number): Observable<DemandeDocument> {
+    return this.httpClient.patch<DemandeDocument>(`${this.SERVICE_URL}/${id}/progression`, { etapeWizard });
+  }
+
+  televerserPiece(id: string, cle: string, fichier: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('cle', cle);
+    formData.append('fichier', fichier);
+    return this.httpClient.post(`${this.SERVICE_URL}/${id}/pieces`, formData);
+  }
+
+  soumettreWizard(id: string): Observable<DemandeDocument> {
+    return this.httpClient.post<DemandeDocument>(`${this.SERVICE_URL}/${id}/soumettre`, {});
+  }
+
+  telechargerPiece(id: string, pieceId: number): Observable<Blob> {
+    return this.httpClient.get(`${this.SERVICE_URL}/${id}/pieces/${pieceId}`, { responseType: 'blob' });
+  }
+
+  telechargerDocumentPret(id: string): Observable<Blob> {
+    return this.httpClient.get(`${this.SERVICE_URL}/${id}/document-pdf`, { responseType: 'blob' });
+  }
+
+  auditerPiece(id: string, pieceId: number, statutAudit: 'validee' | 'rejetee', motif?: string): Observable<any> {
+    return this.httpClient.put(`${this.SERVICE_URL}/${id}/pieces/${pieceId}/audit`, { statutAudit, motif });
+  }
+
+  getDemandesComite(): Observable<{ data: DemandeDocument[] }> {
+    return this.httpClient.get<{ data: DemandeDocument[] }>(`${this.SERVICE_URL}/comite/demandes`);
+  }
+
+  voterComite(id: string, decision: 'valider' | 'corriger', motif?: string): Observable<any> {
+    return this.httpClient.post(`${this.SERVICE_URL}/${id}/comite/voter`, { decision, motif });
   }
 
   updateStatus(id: string, statut: string): Observable<DemandeDocument> {

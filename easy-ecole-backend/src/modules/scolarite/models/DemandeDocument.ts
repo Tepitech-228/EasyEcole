@@ -11,6 +11,8 @@ export class DemandeDocument extends Model<InferAttributes<DemandeDocument>, Inf
   declare etudiantId: ForeignKey<Utilisateur['id']>
   declare typeDocumentId: ForeignKey<TypeDocument['id']>
   declare statut: string
+  declare etapeWizard: CreationOptional<number>
+  declare tourComite: CreationOptional<number>
   declare date: CreationOptional<Date>
   declare fraisPayes: CreationOptional<boolean>
   declare source: CreationOptional<string>
@@ -61,9 +63,19 @@ DemandeDocument.init({
     primaryKey: true
   },
   statut: {
-    type: DataTypes.ENUM('soumise', 'en_attente_paiement', 'paye', 'en_preparation', 'document_pret', 'remise', 'rejetee', 'annulee', 'validee', 'delivree'),
+    type: DataTypes.ENUM('brouillon', 'soumise', 'en_attente_paiement', 'paye', 'en_preparation', 'en_comite', 'document_pret', 'remise', 'rejetee', 'annulee', 'validee', 'delivree'),
     defaultValue: 'soumise',
     allowNull: false
+  },
+  etapeWizard: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: false,
+    defaultValue: 1
+  },
+  tourComite: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: false,
+    defaultValue: 1
   },
   date: {
     type: DataTypes.DATE,

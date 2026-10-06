@@ -1,9 +1,30 @@
 import express from "express"
+import multer from "multer"
 
 import DemandeDocumentController from "../controllers/DemandeDocumentController"
 import { AuthSecretariat } from "../../../core/middlewares/AuthSecretariat"
 
 const router = express.Router()
+const uploadPiece = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 20 * 1024 * 1024 },
+    fileFilter: (_req, file, callback) => {
+        const acceptedMimes = ['application/pdf', 'image/jpeg', 'image/png'];
+        if (acceptedMimes.includes(file.mimetype)) callback(null, true);
+        else callback(new Error('Formats acceptés : PDF, JPG ou PNG'));
+    }
+}).single('fichier');
+
+function gererErreurUpload(req: express.Request, res: express.Response, next: express.NextFunction): void {
+    uploadPiece(req, res, error => {
+        if (!error) return next();
+        const tooLarge = error instanceof multer.MulterError && error.code === 'LIMIT_FILE_SIZE';
+        res.status(tooLarge ? 413 : 400).json({
+            success: false,
+            message: tooLarge ? 'Le fichier dépasse la taille maximale de 20 Mo' : error.message
+        });
+    });
+}
 
 router
     /**
@@ -48,6 +69,14 @@ router
      *         description: Demande créée
      */
     .post('/', DemandeDocumentController.createDemandeDocument)
+    .patch('/:id/progression', DemandeDocumentController.sauvegarderProgressionWizard)
+    .post('/:id/pieces', gererErreurUpload, DemandeDocumentController.televerserPieceDemande)
+    .post('/:id/soumettre', DemandeDocumentController.soumettreDemandeWizard)
+    .get('/:id/pieces/:pieceId', DemandeDocumentController.telechargerPieceDemande)
+    .get('/:id/document-pdf', DemandeDocumentController.telechargerDocumentPret)
+    .put('/:id/pieces/:pieceId/audit', DemandeDocumentController.auditerPieceDemandeDocument)
+    .get('/comite/demandes', DemandeDocumentController.listerDemandesComiteDocuments)
+    .post('/:id/comite/voter', DemandeDocumentController.deciderComiteDemandeDocument)
      .put('/batch/statut', [AuthSecretariat], DemandeDocumentController.batchStatut)
     .get('/autorisations-provisoires', [AuthSecretariat], DemandeDocumentController.getAutorisationsProvisoires)
     .get('/autorisations-provisoires/:id/download', [AuthSecretariat], DemandeDocumentController.telechargerAutorisationProvisoire)

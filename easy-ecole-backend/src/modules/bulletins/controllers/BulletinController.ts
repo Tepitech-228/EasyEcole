@@ -11,6 +11,8 @@ import { SemestresParcours } from "../../../core/enums/SemestresParcours";
 import { SemestreProgressionService } from "../../../core/services/SemestreProgressionService";
 import { logger } from "../../../core/helpers/Logger";
 import { RattrapageInscription } from "../../inscription/models/RattrapageInscription";
+import { Cours } from "../../inscription/models/Cours";
+import { Mcc } from "../../inscription/models/Mcc";
 
 let echellesCache: { noteMin: number; mention: string }[] | null = null;
 async function getEchelles(): Promise<{ noteMin: number; mention: string }[]> {
@@ -186,7 +188,61 @@ export default class BulletinController {
         ]
       });
       if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvÃ©' });
-      return res.json(bulletin);
+
+      const lignes = bulletin.get('lignesBulletins') as LigneBulletin[] | undefined;
+      const uesBulletin: {
+        ueCode: string;
+        ueLibelle: string;
+        categorieUe: 'MINEURE' | 'MAJEURE' | 'LIBRE' | null;
+        creditEcts: number;
+        moyenneUe: number | null;
+        estValidee: boolean;
+        lignes: LigneBulletin[];
+      }[] = [];
+      if (bulletin.parcoursId && lignes?.length) {
+        const ues = await Cours.findAll({
+          where: { parcoursId: bulletin.parcoursId, semestre: bulletin.semestre },
+          include: [{
+            model: Mcc,
+            as: 'mccs',
+            required: false,
+            include: [{ model: Cours, as: 'cours', required: false }],
+          }],
+        });
+        for (const ue of ues) {
+          const mccs = ue.get('mccs') as Array<{ cours?: { id?: number } | null }> | undefined;
+          const coursIds = new Set<number>(
+            (mccs || [])
+              .map(mcc => Number(mcc.cours?.id))
+              .filter(id => Number.isFinite(id)),
+          );
+          const ueLignes = lignes.filter(ligne => coursIds.has(Number(ligne.coursId)));
+          if (ueLignes.length === 0) continue;
+          const lignesNotees = ueLignes.filter(ligne => ligne.moyenne != null);
+          const sommeCoefficients = lignesNotees.reduce(
+            (somme, ligne) => somme + (Number(ligne.coefficient) || 1),
+            0,
+          );
+          const moyenneUe = sommeCoefficients
+            ? Math.round(lignesNotees.reduce(
+                (somme, ligne) =>
+                  somme + Number(ligne.moyenne) * (Number(ligne.coefficient) || 1),
+                0,
+              ) / sommeCoefficients * 100) / 100
+            : null;
+
+          uesBulletin.push({
+            ueCode: ue.code,
+            ueLibelle: ue.intitule,
+            categorieUe: ue.categorieUe || null,
+            creditEcts: ue.creditEcts || ue.credit || 0,
+            moyenneUe,
+            estValidee: moyenneUe != null && moyenneUe >= 10,
+            lignes: ueLignes,
+          });
+        }
+      }
+      return res.json({ ...bulletin.toJSON(), ues: uesBulletin });
     } catch (error) {
       logger.error('Erreur dÃ©tail bulletin:', error);
       return res.status(500).json({ message: 'Erreur lors de la rÃ©cupÃ©ration' });
@@ -411,4 +467,3 @@ export default class BulletinController {
     }
   }
 }
-

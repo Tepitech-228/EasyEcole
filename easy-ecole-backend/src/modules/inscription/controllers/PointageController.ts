@@ -7,6 +7,9 @@ import { DossierEtudiant } from "../models/DossierEtudiant";
 import { Echeance } from "../models/Echeance";
 import { QrTokenService } from "../../../core/services/QrTokenService";
 import { VerificationPaiementService } from "../services/VerificationPaiementService";
+import { Enseignant } from "../../auth/models/Enseignant";
+import { Apprenant } from "../../auth/models/Apprenant";
+import { PersonnelAdministratif } from "../../auth/models/PersonnelAdministratif";
 
 const ROLES_POINTAGE = [
   RolesUtilisateur.APPRENANT,
@@ -36,6 +39,24 @@ const ROLES_POINTAGE_SCAN = [
 export default class PointageController {
 
     constructor() { }
+
+    private static async getPhotoPourPointage(utilisateur: Utilisateur, photoDossier?: string | null): Promise<{ photo: string; photoType: string }> {
+        if (utilisateur.role === RolesUtilisateur.APPRENANT) {
+            const apprenant = await Apprenant.findOne({
+                where: { utilisateurId: utilisateur.id },
+                attributes: ['photo']
+            });
+            return { photo: photoDossier || apprenant?.photo || '', photoType: 'apprenant' };
+        }
+        if (utilisateur.role === RolesUtilisateur.ENSEIGNANT) {
+            const enseignant = await Enseignant.findOne({
+                where: { utilisateurId: utilisateur.id },
+                attributes: ['photo']
+            });
+            return { photo: enseignant?.photo || '', photoType: 'enseignant' };
+        }
+        return { photo: utilisateur.photoDeProfil || '', photoType: 'profile' };
+    }
 
     static async getAllPointages(req: Request, res: Response): Promise<Response> {
         let options: FindOptions<InferAttributes<Pointage>> = {
@@ -273,9 +294,10 @@ export default class PointageController {
                 userId = String(verified.userId);
                 dossier = await DossierEtudiant.findOne({
                     where: { utilisateurId: verified.userId },
-                    include: [{
-                        association: DossierEtudiant.associations.echeances
-                    }]
+                    include: [
+                        { association: DossierEtudiant.associations.echeances },
+                        { association: DossierEtudiant.associations.utilisateur, attributes: ['id', 'nom', 'prenoms', 'role', 'photoDeProfil'] }
+                    ]
                 });
             } else if (codeQR.startsWith('{')) {
                 try {
@@ -283,25 +305,49 @@ export default class PointageController {
                     userId = qrData.id || null;
                     dossier = await DossierEtudiant.findOne({
                         where: { matricule: qrData.matricule },
-                        include: [{
-                            association: DossierEtudiant.associations.echeances
-                        }]
+                        include: [
+                            { association: DossierEtudiant.associations.echeances },
+                            { association: DossierEtudiant.associations.utilisateur, attributes: ['id', 'nom', 'prenoms', 'role', 'photoDeProfil'] }
+                        ]
                     })
                 } catch (parseError) {
                     return res.status(400).json({ success: false, message: 'Code QR invalide' });
                 }
             } else {
+                // Saisie manuelle : matricule dossier étudiant, matricule prof/personnel
+                // (auto-générés à la création) ou identifiant.
                 userId = codeQR;
                 dossier = await DossierEtudiant.findOne({
                     where: { matricule: codeQR },
-                    include: [{
-                        association: DossierEtudiant.associations.echeances
-                    }]
+                    include: [
+                        { association: DossierEtudiant.associations.echeances },
+                        { association: DossierEtudiant.associations.utilisateur, attributes: ['id', 'nom', 'prenoms', 'role', 'photoDeProfil'] }
+                    ]
                 })
+                if (!dossier) {
+                    const enseignant = await Enseignant.findOne({ where: { matricule: codeQR } });
+                    const personnel = enseignant
+                        ? null
+                        : await PersonnelAdministratif.findOne({ where: { matricule: codeQR } });
+                    const ownerId = enseignant?.utilisateurId || personnel?.utilisateurId || null;
+                    if (ownerId) userId = String(ownerId);
+                    else {
+                        const byIdent = await Utilisateur.findOne({
+                            where: { identifiant: codeQR },
+                            attributes: ['id']
+                        });
+                        if (byIdent) userId = String(byIdent.id);
+                    }
+                }
             }
 
             if (dossier) {
                 const paiement = VerificationPaiementService.verifierDossier(dossier);
+                const utilisateur = dossier.utilisateur;
+                if (!utilisateur) {
+                    return res.status(500).json({ success: false, message: 'Utilisateur du dossier introuvable' });
+                }
+                const photoInfo = await this.getPhotoPourPointage(utilisateur, dossier.photo);
 
                 // Calcul de la situation financière détaillée
                 const situationFinanciere = this.calculerSituationFinanciere(dossier);
@@ -314,7 +360,7 @@ export default class PointageController {
                         nom: dossier.utilisateur?.nom || '',
                         prenoms: dossier.utilisateur?.prenoms || '',
                         role: dossier.utilisateur?.role || 'apprenant',
-                        photo: dossier.photo || '',
+                        ...photoInfo,
                         situationFinanciere,
                         ...(paiement.echeancesRestantes.length > 0 ? { echeancesRestantes: paiement.echeancesRestantes } : {})
                     });
@@ -327,7 +373,7 @@ export default class PointageController {
                     nom: dossier.utilisateur?.nom || '',
                     prenoms: dossier.utilisateur?.prenoms || '',
                     role: dossier.utilisateur?.role || 'apprenant',
-                    photo: dossier.photo || '',
+                    ...photoInfo,
                     situationFinanciere
                 });
             }
@@ -335,14 +381,25 @@ export default class PointageController {
             if (userId) {
                 const utilisateur = await Utilisateur.findByPk(userId)
                 if (utilisateur) {
+                    const photoInfo = await this.getPhotoPourPointage(utilisateur);
+                    // Matricule du profil (prof / personnel) pour affichage au terminal
+                    let matricule: string | null = null;
+                    try {
+                        const [ens, pers] = await Promise.all([
+                            Enseignant.findOne({ where: { utilisateurId: userId } as any }),
+                            PersonnelAdministratif.findOne({ where: { utilisateurId: userId } as any }),
+                        ]);
+                        matricule = (ens as any)?.matricule || (pers as any)?.matricule || null;
+                    } catch (_) { /* non bloquant */ }
                     return res.status(200).json({
                         statut: 'vert',
                         message: 'Personnel autorisé',
                         utilisateurId: userId,
+                        matricule,
                         nom: utilisateur.nom,
                         prenoms: utilisateur.prenoms,
                         role: utilisateur.role,
-                        photo: utilisateur.photoDeProfil || ''
+                        ...photoInfo
                     });
                 }
             }

@@ -47,4 +47,16 @@ export class SeanceService {
   getTeacherDashboard(): Observable<any> {
     return this.httpClient.get(`${this.SERVICE_URL}/tableau-de-bord`)
   }
+
+  getVolumesEnseignants(mois: string): Observable<any> {
+    return this.httpClient.get(`${this.SERVICE_URL}/volumes-enseignants`, { params: { mois } })
+  }
+
+  getVolumesHoraires(): Observable<any[]> {
+    return this.httpClient.get<any[]>(`${this.SERVICE_URL}/volumes-horaires`)
+  }
+
+  getRetardsEnseignants(): Observable<any[]> {
+    return this.httpClient.get<any[]>(`${this.SERVICE_URL}/retards-enseignants`)
+  }
 }

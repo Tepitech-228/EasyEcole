@@ -278,7 +278,7 @@ export class DatabaseConnection {
                 const { seedComptesParRole } = require('../scripts/seed-comptes-par-role');
                 await seedComptesParRole(this._sequelize);
             } catch (seedErr: any) {
-                console.warn('Warning (seedComptesParRole):', seedErr?.message || seedErr);
+                console.warn('Warning (seedComptesParRole):', seedErr);
             }
 
             // --- Expiration automatique des bourses dépassées ---

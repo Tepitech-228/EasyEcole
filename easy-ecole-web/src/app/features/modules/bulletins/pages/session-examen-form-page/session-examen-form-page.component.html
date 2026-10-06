@@ -5,6 +5,9 @@
   </app-header-title>
 
   <div class="mt-8 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
+    <div *ngIf="errorMessage" role="alert" class="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+      {{ errorMessage }}
+    </div>
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
       <!-- Libellé -->
       <div>
@@ -141,8 +144,9 @@
           Annuler
         </button>
         <button type="submit"
+                [disabled]="saving"
                 class="px-6 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm border-0 cursor-pointer">
-          {{ isEditMode ? 'Enregistrer' : 'Créer' }}
+          {{ saving ? 'Enregistrement…' : (isEditMode ? 'Enregistrer' : 'Créer') }}
         </button>
       </div>
     </form>

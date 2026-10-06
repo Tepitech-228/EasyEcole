@@ -8,4 +8,5 @@ export interface TypeDocument {
   paiementObligatoire?: boolean;
   generationAuto?: boolean;
   actif?: boolean;
+  piecesRequises?: Array<{ cle: string; libelle: string; obligatoire: boolean }>;
 }

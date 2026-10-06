@@ -40,6 +40,7 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
     [RolesUtilisateur.PARENT]: 'Parent',
     [RolesUtilisateur.SECRETAIRE]: 'Secrétaire',
     [RolesUtilisateur.SURVEILLANT]: 'Surveillant',
+    [RolesUtilisateur.SUPERVISEUR_GENERAL]: 'Superviseur Général',
   }
 
   // Rôles staff = tous sauf apprenant, enseignant, parent, admin, institution → profil PersonnelAdministratif
@@ -52,6 +53,7 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
     RolesUtilisateur.ESA_COMPTA,
     RolesUtilisateur.SECRETAIRE,
     RolesUtilisateur.SURVEILLANT,
+    RolesUtilisateur.SUPERVISEUR_GENERAL,
   ]
 
   constructor(

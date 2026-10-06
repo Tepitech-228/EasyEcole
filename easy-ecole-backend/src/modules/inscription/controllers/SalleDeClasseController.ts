@@ -153,7 +153,7 @@ export default class SalleDeClasseController {
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
             return res.status(403).json({ success: false })
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
+        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.SUPERVISEUR_GENERAL) {
             options = { where: { id: req.params.id } }
         }
 
@@ -194,7 +194,7 @@ export default class SalleDeClasseController {
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
             return res.status(403).json({ success: false })
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
+        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.SUPERVISEUR_GENERAL) {
             options = { where: { id: req.params.id } }
         }
 

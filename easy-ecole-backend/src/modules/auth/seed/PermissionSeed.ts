@@ -103,6 +103,7 @@ const ALL_PERMISSIONS: Array<{ key: string; libelle: string; module: string; typ
     { key: 'menu.cours.cahiers-de-texte', libelle: 'Cahiers de texte', module: 'Cours', type: 'menu', parentKey: 'menu.cours' },
     { key: 'menu.cours.emplois-du-temps', libelle: 'Emplois du temps', module: 'Cours', type: 'menu', parentKey: 'menu.cours' },
     { key: 'menu.cours.notes', libelle: 'Notes', module: 'Cours', type: 'menu', parentKey: 'menu.cours' },
+    { key: 'menu.cours.supervision-generale', libelle: 'Tableau de bord du superviseur', module: 'Cours', type: 'menu', parentKey: 'menu.cours' },
     { key: 'action.cours.enseignant.creer', libelle: 'Créer un enseignant', module: 'Cours', type: 'action', parentKey: 'menu.cours.enseignants' },
     { key: 'action.cours.enseignant.modifier', libelle: 'Modifier un enseignant', module: 'Cours', type: 'action', parentKey: 'menu.cours.enseignants' },
     { key: 'action.cours.cours.creer', libelle: 'Créer un cours', module: 'Cours', type: 'action', parentKey: 'menu.cours.liste' },
@@ -114,6 +115,7 @@ const ALL_PERMISSIONS: Array<{ key: string; libelle: string; module: string; typ
 
     // ============ ÉVALUATIONS ============
     { key: 'menu.evaluations', libelle: 'Évaluations', module: 'Évaluations', type: 'menu' },
+    { key: 'menu.evaluations.sessions', libelle: 'Sessions d’examen', module: 'Évaluations', type: 'menu', parentKey: 'menu.evaluations' },
     { key: 'menu.evaluations.bulletins', libelle: 'Bulletins', module: 'Évaluations', type: 'menu', parentKey: 'menu.evaluations' },
     { key: 'menu.evaluations.deliberations', libelle: 'Délibérations', module: 'Évaluations', type: 'menu', parentKey: 'menu.evaluations' },
     { key: 'menu.evaluations.equivalences', libelle: 'Équivalences', module: 'Évaluations', type: 'menu', parentKey: 'menu.evaluations' },

@@ -8,6 +8,17 @@ const EXCEL_BASE = environment.API_MODULES.INSCRIPTION + '/excel';
 export interface ExcelImportResult {
   success: boolean;
   importedCount: number;
+  migrationSummary?: {
+    apprenants: { total: number; imported: number; errors: number };
+    cursus: { total: number; imported: number; errors: number };
+    finances: { total: number; imported: number; errors: number };
+    notes: { total: number; imported: number; alreadyPresent: number; errors: number };
+    affectations: { total: number; imported: number; errors: number };
+  };
+  importedNotesCount?: number;
+  existingNotesCount?: number;
+  importedTeacherAssignmentsCount?: number;
+  publishedNotesAsDraftCount?: number;
   errorCount: number;
   message?: string;
   ignoredCount?: number;
@@ -27,6 +38,7 @@ export interface ExcelImportResult {
     categorie?: string | null;
     enseignant?: string | null;
     coursId?: number;
+    email?: string;
     statut: string;
     message: string;
     motDePasse?: string;
@@ -109,6 +121,11 @@ export class ExcelService {
     return this.http.get(`${EXCEL_BASE}/apprenants/template`, { responseType: 'blob' });
   }
 
+  /** Télécharger le modèle de migration vierge (Identité, Cursus, Finance, Notes, Enseignants_Cours) */
+  downloadApprenantsMigrationTemplate(): Observable<Blob> {
+    return this.http.get(`${EXCEL_BASE}/apprenants/template/migration`, { responseType: 'blob' });
+  }
+
   /** Télécharger le template Word d'import des apprenants */
   downloadApprenantWordTemplate(): Observable<Blob> {
     return this.http.get(`${EXCEL_BASE}/apprenants/template-word`, { responseType: 'blob' });
@@ -139,7 +156,7 @@ export class ExcelService {
     return this.http.get(`${EXCEL_BASE}/apprenants/export/filtres`, { params: httpParams, responseType: 'blob' });
   }
 
-  /** Exporter les apprenants complets pour migration (3 onglets: Identité 37 cols, Cursus, Finance) */
+  /** Exporter les données de migration complètes, y compris les notes et affectations de cours */
   exportApprenantsMigration(): Observable<Blob> {
     return this.http.get(`${EXCEL_BASE}/apprenants/export/migration`, { responseType: 'blob' });
   }
@@ -212,7 +229,7 @@ export class ExcelService {
     return this.http.get(`${EXCEL_BASE}/utilisateurs/export`, { params, responseType: 'blob' });
   }
 
-  /** Importer des apprenants depuis un fichier de migration (3 onglets: Identité, Cursus, Finance) */
+  /** Importer les données des cinq feuilles du classeur de migration */
   importApprenantsMigration(file: File): Observable<ExcelImportResult> {
     const formData = new FormData();
     formData.append('fichier', file);

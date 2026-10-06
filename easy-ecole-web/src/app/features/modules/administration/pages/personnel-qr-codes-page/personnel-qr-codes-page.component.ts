@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 import { PersonnelAdministratif } from 'src/app/data/modules/auth/models/PersonnelAdministratif.model';
 import { PersonnelAdministratifService } from 'src/app/data/modules/auth/services/personnel-administratif.service';
 import { environment } from 'src/environments/environment';
@@ -29,6 +30,12 @@ export class PersonnelQrCodesPageComponent extends BaseComponentClass {
       },
       error: () => { this.loading = false }
     })
+  }
+
+  /** URL image QR avec token (?token=) : les <img> ne passent pas par l'intercepteur HTTP. */
+  qrSrc(fileName: string): string {
+    const token = localStorage.getItem(LocalStorageService.AUTH_TOKEN) || ''
+    return `${this.QR_CODES_PATH}${fileName}?token=${token}`
   }
 
   generateQRs(): void {

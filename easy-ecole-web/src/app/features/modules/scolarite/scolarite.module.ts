@@ -30,6 +30,8 @@ import { EncaissementDemandePageComponent } from './pages/encaissement-demande-p
 import { MesDocumentsPageComponent } from './pages/mes-documents-page/mes-documents-page.component';
 import { TypesDocumentsPageComponent } from './pages/types-documents-page/types-documents-page.component';
 import { AutorisationsProvisoiresPageComponent } from './pages/autorisations-provisoires-page/autorisations-provisoires-page.component';
+import { DemandeDocumentWizardPageComponent } from './pages/demande-document-wizard-page/demande-document-wizard-page.component';
+import { ComiteDemandesDocumentsPageComponent } from './pages/comite-demandes-documents-page/comite-demandes-documents-page.component';
 
 @NgModule({
   declarations: [
@@ -55,7 +57,9 @@ import { AutorisationsProvisoiresPageComponent } from './pages/autorisations-pro
     EncaissementDemandePageComponent,
     MesDocumentsPageComponent,
     TypesDocumentsPageComponent,
-    AutorisationsProvisoiresPageComponent
+    AutorisationsProvisoiresPageComponent,
+    DemandeDocumentWizardPageComponent,
+    ComiteDemandesDocumentsPageComponent
   ],
   imports: [
     CommonModule,
