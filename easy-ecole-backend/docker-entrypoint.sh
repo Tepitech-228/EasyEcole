@@ -46,5 +46,12 @@ fi
 echo "[entrypoint] Seed des comptes système..."
 node lib/core/scripts/seed-comptes-par-role.js || echo "[entrypoint] ⚠ Seed comptes terminé avec erreur (non bloquant)"
 
+# Seed des types + templates docgen (idempotent : ne crée que les codes
+# manquants, ex. API001). Sans lui, la validation d'un dossier par le comité
+# échoue en 400 « Type de document non trouvé: API001 ». Non bloquant, comme
+# le seed comptes : une erreur ici ne doit pas empêcher l'API de démarrer.
+echo "[entrypoint] Seed des types de documents (docgen)..."
+node lib/modules/docgen/seed/seed.js || echo "[entrypoint] ⚠ Seed docgen terminé avec erreur (non bloquant)"
+
 echo "[entrypoint] Démarrage de l'application..."
 exec node index.js "$@"
