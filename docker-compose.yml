@@ -147,10 +147,11 @@ services:
       SMTP_USER: ${SMTP_USER}
       SMTP_PASS: ${SMTP_PASS}
       TZ: ${TZ:-UTC}
-      # L'historique de migrations est inclus dans l'image; conserver l'exécution
-      # automatique désactivée pour éviter d'appliquer des migrations anciennes
-      # non encore validées sur une base existante.
-      MIGRATIONS_ON_BOOT: ${MIGRATIONS_ON_BOOT:-false}
+      # L'historique de migrations est inclus dans l'image; exécution automatique
+      # activée par défaut (migrations idempotentes, suivi schema_migrations).
+      # Fail-fast : une migration en échec bloque le démarrage (pas d'API à
+      # moitié migrée). Pour sauter : MIGRATIONS_ON_BOOT=false.
+      MIGRATIONS_ON_BOOT: ${MIGRATIONS_ON_BOOT:-true}
     depends_on:
       db:
         condition: service_healthy
