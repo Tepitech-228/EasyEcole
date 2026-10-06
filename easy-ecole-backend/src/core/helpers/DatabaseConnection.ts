@@ -139,9 +139,11 @@ export class DatabaseConnection {
             // puis ER_TOO_MANY_KEYS et arrêt du sync — les index UNIQUE prevus par
             // ensureUniqueIndexes() ne pouvaient alors plus être crees (Warning au boot).
             //
-            // Le comportement est desormais identique en developpement et en production :
-            // AUCUNE resynchronisation automatique. Elle reste possible, mais uniquement
-            // sur choix explicite et ponctuel (ex. apres une evolution de modele) :
+            // Le comportement diffère selon l'environnement :
+            //  - production : filet de sécurité — CREATE TABLE IF NOT EXISTS
+            //    uniquement (voir bloc « else if production » plus bas) ;
+            //  - développement : AUCUNE resynchronisation automatique, sauf choix
+            //    explicite et ponctuel (ex. apres une evolution de modele) :
             //     $env:DB_SYNC_ON_BOOT='true'; npm run start:dev
             // Un sync ne modifie que la STRUCTURE des tables, jamais les donnees.
             // ============================================================================
@@ -225,6 +227,32 @@ export class DatabaseConnection {
                     console.log('[DB] Schéma synchronisé (production).')
                 } catch (syncError: any) {
                     console.error('CRITIQUE [DB]: échec du sync de démarrage en production :', syncError?.message || syncError)
+                } finally {
+                    await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 1').catch(() => undefined)
+                }
+            } else if (env === 'production') {
+                // FILET DE SÉCURITÉ PRODUCTION — création des tables MANQUANTES uniquement.
+                // `sequelize.sync()` SANS `alter` émet uniquement des
+                // CREATE TABLE IF NOT EXISTS : les tables existantes (et leurs
+                // données) ne sont JAMAIS touchées — aucun ALTER, aucun index
+                // ajouté (l'incident ER_TOO_MANY_KEYS du 02/10/2026 venait du
+                // mode `alter`, pas utilisé ici). Conséquence : si un modèle
+                // (nouvelle table) est déployé sans sa migration SQL, la table
+                // est quand même créée au démarrage au lieu de produire des
+                // 500 « Unknown table/column ». Les évolutions de tables
+                // EXISTANTES (nouvelles colonnes) restent du ressort des
+                // migrations SQL, appliquées automatiquement par l'entrypoint
+                // (MIGRATIONS_ON_BOOT=true par défaut).
+                // Désactivation ponctuelle : DB_SYNC_ON_BOOT=true (sync alter
+                // complet, réservé dev) — il n'y a pas de mode « rien du tout ».
+                console.log('[DB] Vérification des tables manquantes (sync sans ALTER)…')
+                await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 0')
+                try {
+                    await this._sequelize.sync()
+                    console.log('[DB] Tables vérifiées/créées (aucune table existante modifiée).')
+                } catch (syncError: any) {
+                    console.error('CRITIQUE [DB]: échec de la création des tables manquantes :', syncError?.message || syncError)
+                    throw syncError
                 } finally {
                     await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 1').catch(() => undefined)
                 }
