@@ -265,6 +265,9 @@ const ALL_PERMISSIONS: Array<{ key: string; libelle: string; module: string; typ
     { key: 'menu.pointage.absences', libelle: 'Absences', module: 'Pointage', type: 'menu', parentKey: 'menu.pointage' },
     { key: 'menu.pointage.planning', libelle: 'Planning', module: 'Pointage', type: 'menu', parentKey: 'menu.pointage' },
     { key: 'menu.pointage.rapports', libelle: 'Rapports', module: 'Pointage', type: 'menu', parentKey: 'menu.pointage' },
+    { key: 'action.pointage.shift.creer', libelle: 'Créer un shift', module: 'Pointage', type: 'action', parentKey: 'menu.pointage.shifts' },
+    { key: 'action.pointage.shift.modifier', libelle: 'Modifier un shift', module: 'Pointage', type: 'action', parentKey: 'menu.pointage.shifts' },
+    { key: 'action.pointage.shift.supprimer', libelle: 'Supprimer un shift', module: 'Pointage', type: 'action', parentKey: 'menu.pointage.shifts' },
 
     // ============ ADMINISTRATION ============
     { key: 'menu.administration', libelle: 'Administration', module: 'Administration', type: 'menu' },

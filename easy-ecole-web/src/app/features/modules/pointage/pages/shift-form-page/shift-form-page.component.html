@@ -1,4 +1,6 @@
 <app-custom-alert [show]="success" title="Succès" color="green">Shift enregistré avec succès</app-custom-alert>
+<app-custom-alert [show]="!!apiError" title="Erreur" color="red">{{ apiError }}</app-custom-alert>
+<div *ngIf="loading" class="text-center py-8 text-gray-500">Chargement...</div>
 
 <div class="mb-6">
     <app-return-back></app-return-back>
@@ -44,7 +46,7 @@
             </div>
         </div>
         <div class="flex justify-end gap-4 mt-6">
-            <a routerLink="/modules/pointage/shifts" class="px-4 py-2 text-sm text-gray-700 hover:text-gray-900">Annuler</a>
+            <a routerLink="/pointage/shifts" class="px-4 py-2 text-sm text-gray-700 hover:text-gray-900">Annuler</a>
             <app-custom-button (click)="save()" [text]="saving ? 'Enregistrement...' : 'Enregistrer'" [disabled]="saving || form.invalid"></app-custom-button>
         </div>
     </form>

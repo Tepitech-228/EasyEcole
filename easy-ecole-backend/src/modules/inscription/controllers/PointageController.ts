@@ -99,6 +99,101 @@ export default class PointageController {
         }
     }
 
+    /**
+     * Rapport de pointage sur une période (défaut : mois en cours).
+     * GET /pointages/rapport?debut=YYYY-MM-DD&fin=YYYY-MM-DD
+     * Apprenants/enseignants : périmètre restreint à soi-même (comme l'historique).
+     */
+    static async getRapport(req: Request, res: Response): Promise<Response> {
+        const toISODate = (d: Date) => d.toISOString().split('T')[0]
+        const now = new Date()
+        const debutDefaut = toISODate(now).slice(0, 7) + '-01'
+        const debut = typeof req.query.debut === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(req.query.debut)
+            ? req.query.debut : debutDefaut
+        const fin = typeof req.query.fin === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(req.query.fin)
+            ? req.query.fin : toISODate(now)
+        if (debut > fin) {
+            return res.status(400).json({ success: false, message: 'La date de début doit précéder la date de fin' })
+        }
+
+        try {
+            const where: any = { date: { [Op.between]: [debut, fin] } }
+            const role = (req as any).utilisateurRole;
+            if (role == RolesUtilisateur.APPRENANT || role == RolesUtilisateur.ENSEIGNANT) {
+                where.utilisateurId = (req as any).utilisateurId
+            }
+            const pointages = await Pointage.findAll({
+                where,
+                include: [
+                    { association: Pointage.associations.utilisateur, attributes: ['id', 'nom', 'prenoms', 'identifiant', 'role'] }
+                ],
+                order: [['date', 'DESC']]
+            });
+
+            const minutes = (t: any): number | null => {
+                const m = String(t || '').match(/^(\d{2}):(\d{2})/)
+                return m ? Number(m[1]) * 60 + Number(m[2]) : null
+            }
+            const today = toISODate(now)
+            const parUtilisateur = new Map<number, any>()
+            let presentsAujourdhui = 0
+            let completsAujourdhui = 0
+
+            for (const p of pointages as any[]) {
+                const uid = Number(p.utilisateurId)
+                let e = parUtilisateur.get(uid)
+                if (!e) {
+                    e = {
+                        utilisateurId: uid,
+                        nom: p.utilisateur?.nom || '',
+                        prenoms: p.utilisateur?.prenoms || '',
+                        identifiant: p.utilisateur?.identifiant || '',
+                        role: p.utilisateur?.role || '',
+                        presences: 0,
+                        minutesTotales: 0,
+                        sansDepart: 0,
+                    }
+                    parUtilisateur.set(uid, e)
+                }
+                e.presences += 1
+                const deb = minutes(p.heureArrivee)
+                const finH = minutes(p.heureDepart)
+                if (deb !== null && finH !== null && finH >= deb) {
+                    e.minutesTotales += (finH - deb)
+                } else {
+                    e.sansDepart += 1
+                }
+                if (String(p.date).slice(0, 10) === today) {
+                    presentsAujourdhui += 1
+                    if (deb !== null && finH !== null && finH >= deb) completsAujourdhui += 1
+                }
+            }
+
+            const entries = [...parUtilisateur.values()].map(e => ({
+                ...e,
+                heuresTotales: Math.round((e.minutesTotales / 60) * 100) / 100,
+            })).sort((a, b) => b.presences - a.presences)
+            const total = pointages.length
+            const complets = entries.reduce((s, e) => s + (e.presences - e.sansDepart), 0)
+
+            return res.status(200).json({
+                periode: { debut, fin },
+                summary: {
+                    pointages: total,
+                    personnes: entries.length,
+                    presentsAujourdhui,
+                    completsAujourdhui,
+                    enCoursAujourdhui: Math.max(0, presentsAujourdhui - completsAujourdhui),
+                    tauxCompletude: total > 0 ? Math.round((complets / total) * 100) : 0,
+                },
+                entries,
+            });
+        } catch (error) {
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
+        }
+    }
+
     static async pointerArrivee(req: Request, res: Response): Promise<Response | null> {
         const role = (req as any).utilisateurRole;
         if (!ROLES_POINTAGE.includes(role)) {

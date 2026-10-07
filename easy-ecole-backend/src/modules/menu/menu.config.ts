@@ -291,7 +291,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
             {
                 label: 'Pointage',
                 icon: 'touch_app',
-                allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN, RolesUtilisateur.SUPERVISEUR_GENERAL],
+                allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN, RolesUtilisateur.SUPERVISEUR_GENERAL, RolesUtilisateur.SURVEILLANT],
                 items: [
                     { label: 'Terminal', route: '/pointage', icon: 'touch_app', permissionKey: 'menu.pointage.terminal' },
                     { label: 'Historique', route: '/pointage/historique', icon: 'history', permissionKey: 'menu.pointage.historique' },

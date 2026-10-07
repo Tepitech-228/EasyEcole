@@ -37,7 +37,7 @@
           <h2 class="font-semibold text-gray-900">Alertes de pointage</h2>
           <p class="text-sm text-gray-500">Séances commencées sans pointage enseignant</p>
         </div>
-        <a routerLink="/modules/pointage/rapports" class="text-sm font-medium text-blue-700 hover:underline">Voir les rapports</a>
+        <a routerLink="/pointage/rapports" class="text-sm font-medium text-blue-700 hover:underline">Voir les rapports</a>
       </div>
       <div *ngIf="!tardyTeachers.length" class="p-5 text-sm text-emerald-700">Aucune alerte de retard ou d’absence en cours.</div>
       <div *ngIf="tardyTeachers.length" class="overflow-x-auto">

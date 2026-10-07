@@ -37,6 +37,7 @@ import { CahierDeTexte } from "./CahierDeTexte";
 import { BlocCahierDeTexte } from "./BlocCahierDeTexte";
 import { TypeNoteEvaluation } from "./TypeNoteEvaluation";
 import { Pointage } from "./Pointage";
+import "./Shift";
 import { ListeNoteEvaluation } from "./ListeNoteEvaluation";
 import { NoteEvaluation } from "./NoteEvaluation";
 import { FraisParcours } from "./FraisParcours";

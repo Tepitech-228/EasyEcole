@@ -18,6 +18,7 @@ const router = express.Router()
 router
     .get('/', [Authenticate], PointageController.getAllPointages)
     .get('/today', [Authenticate], PointageController.getTodayPointage)
+    .get('/rapport', [Authenticate], PointageController.getRapport)
     .post('/arrivee', [Authenticate], PointageController.pointerArrivee)
     .post('/depart', [Authenticate], PointageController.pointerDepart)
     .post('/scan/arrivee', [Authenticate], PointageController.pointerArriveeByScan)
