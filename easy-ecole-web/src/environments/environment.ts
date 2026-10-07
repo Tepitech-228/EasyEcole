@@ -3,7 +3,15 @@
 // The list of file replacements can be found in `angular.json`.
 
 const hostname: string = window.location.hostname;
-const apiBaseUrl: string = "http://" + hostname + ":3000/"
+// En local, l'API tourne sur le port 3000. Mais si le front est servi via
+// une URL distante (tunnel type trycloudflare, test partagé...), le
+// « hostname:3000 » ne mène nulle part : le tunnel ne route que son port.
+// Dans ce cas on passe en même-origine (comme la prod), le reverse-proxy
+// ou l'ingress du tunnel routant déjà /api vers le backend.
+const isLocalhost: boolean = hostname === 'localhost' || hostname === '127.0.0.1';
+const apiBaseUrl: string = isLocalhost
+  ? "http://" + hostname + ":3000/"
+  : window.location.protocol + "//" + hostname + "/";
 const apiUrl: string = apiBaseUrl + "api/v1"
 
 export const environment = {
