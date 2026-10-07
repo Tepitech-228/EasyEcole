@@ -5,11 +5,14 @@
 > **[DOCUMENTATION-PRODUIT.md](DOCUMENTATION-PRODUIT.md)** — Documentation complète du produit : présentation, architecture technique, démarrage rapide, scripts, rôles/permissions, un chapitre par module (fonctionnalités, tables, API, pages frontend), parcours métier de bout en bout.
 >
 > **[LOGIQUE-METIER-POLES.md](LOGIQUE-METIER-POLES.md)** — Logique métier détaillée par pôle (processus, règles de gestion, cycles de vie, statuts, calculs) et relations entre les pôles (flux, données échangées, impacts).
+>
+> **[PROCESSUS-APPLICATION.md](PROCESSUS-APPLICATION.md)** — Guide opérationnel transversal des processus : acteurs, étapes, contrôles, résultats et limites connues.
 
 ## Structure par Pôles
 
 | Pôle | Doc | Pages | Processus clés |
 |------|-----|-------|----------------|
+| **Processus transverses** | [PROCESSUS-APPLICATION.md](PROCESSUS-APPLICATION.md) | - | Parcours de bout en bout, contrôles et dépendances |
 | **Pédagogique** | [01-PEDAGOGIQUE.md](01-PEDAGOGIQUE.md) | 48 | Inscription, Cours, Bulletins, Stages, Scolarité |
 | **Financier** | [02-FINANCIER.md](02-FINANCIER.md) | 29 | Comptabilité, Achats, Stocks, Immobilisations |
 | **Ressources Humaines** | [03-RH.md](03-RH.md) | 25 | Employés, Paie, Contrats, Formations |
