@@ -21,8 +21,11 @@ import { Utilisateur } from "../../auth/models/Utilisateur";
 import { Classe } from "../models/Classe";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { Cours } from "../models/Cours";
+import { Ecue } from "../models/Ecue";
+import { CoursParticipant } from "../models/CoursParticipant";
 import { CursusApprenant } from "../models/CursusApprenant"
 import { DossierEtudiant } from "../models/DossierEtudiant";
+import { GenerationBulletinService } from "../../bulletins/services/GenerationBulletinService";
 
 /**
  * Workflow officiel de rattrapage (sessions, demandes étudiantes, comité, paiement).
@@ -1439,9 +1442,9 @@ if (votesValides === totalMembres) {
         await transaction.rollback()
         return res.status(404).json({ success: false, message: 'Créneau de rattrapage introuvable' })
       }
-      if (planning.statut !== 'programme') {
+      if (!['programme', 'convoque'].includes(planning.statut)) {
         await transaction.rollback()
-        return res.status(400).json({ success: false, message: `Seul le statut 'programme' permet une désignation (actuel : ${planning.statut})` })
+        return res.status(400).json({ success: false, message: `Le statut '${planning.statut}' ne permet pas une désignation` })
       }
 
       // Vérifier unicité : même planning + enseignant (si ueId/ecueId sont optionnels)
@@ -1528,144 +1531,242 @@ if (votesValides === totalMembres) {
     }
 
     const body = req.body || {}
-    const rattrapageNoteId = body.rattrapageNoteId ? Number(body.rattrapageNoteId) : null
-    const planningId = body.planningId ? Number(body.planningId) : null
-    const note_rattrapage = body.note_rattrapage
+    const noteId = body.rattrapageNoteId == null ? null : Number(body.rattrapageNoteId)
+    const planningId = Number(body.planningId)
+    const inscriptionId = body.rattrapageInscriptionId == null ? null : Number(body.rattrapageInscriptionId)
+    const ueId = body.ueId == null ? null : Number(body.ueId)
+    const ecueId = body.ecueId == null ? null : Number(body.ecueId)
+    const note_rattrapage = Number(body.note_rattrapage)
 
-    if (!note_rattrapage && rattrapageNoteId == null) {
-      return res.status(400).json({ success: false, message: 'note_rattrapage est requis, ou rattrapageNoteId' })
+    if (!Number.isFinite(note_rattrapage) || note_rattrapage < 0 || note_rattrapage > 20) {
+      return res.status(400).json({ success: false, message: 'note_rattrapage doit être comprise entre 0 et 20' })
+    }
+    if (!Number.isInteger(planningId) || planningId <= 0) {
+      return res.status(400).json({ success: false, message: 'planningId invalide' })
+    }
+    if (noteId == null && (!Number.isInteger(inscriptionId) || inscriptionId! <= 0 || (!Number.isInteger(ueId) && !Number.isInteger(ecueId)))) {
+      return res.status(400).json({ success: false, message: 'rattrapageInscriptionId et ueId ou ecueId sont requis' })
+    }
+    if (noteId != null && (!Number.isInteger(noteId) || noteId <= 0)) {
+      return res.status(400).json({ success: false, message: 'rattrapageNoteId invalide' })
     }
 
     const transaction = await DatabaseConnection.getInstance().sequelize.transaction()
     try {
-      let enseignantPlanning: any = null
-      let planning: any = null
-
-      if (rattrapageNoteId != null && Number.isInteger(rattrapageNoteId) && rattrapageNoteId > 0) {
-        // Modification d\'une note existante : vérifier propriété enseignant via RattrapageEnseignant
-        enseignantPlanning = await RattrapageEnseignant.findOne({
-          where: { id: rattrapageNoteId },
-          include: [{ association: RattrapageEnseignant.associations.enseignant, attributes: ['id'] }],
-          transaction,
-        })
-        if (!enseignantPlanning) {
-          await transaction.rollback()
-          return res.status(404).json({ success: false, message: 'Enregistrement de note introuvable' })
-        }
-        if (enseignantPlanning.enseignantId !== req.utilisateurId) {
-          await transaction.rollback()
-          return res.status(403).json({ success: false, message: 'Vous n\'êtes pas l\'enseignant désigné pour ce créneau' })
-        }
-        planning = await RattrapagePlanning.findByPk(enseignantPlanning.rattrapagePlanningId, { transaction })
-      } else if (planningId != null && Number.isInteger(planningId) && planningId > 0) {
-        // Nouveau : vérifier que l\'enseignant est désigné via RattrapageEnseignant (réutiliser l\'id de l\'enseignant)
-        enseignantPlanning = await RattrapageEnseignant.findOne({
-          where: { rattrapagePlanningId: planningId, enseignantId: req.utilisateurId },
-          transaction,
-        })
-        if (!enseignantPlanning) {
-          await transaction.rollback()
-          return res.status(403).json({ success: false, message: 'Vous n\'êtes pas désigné comme enseignant pour ce créneau' })
-        }
-        planning = await RattrapagePlanning.findByPk(planningId, { transaction })
-      } else {
+      const enseignant = await Enseignant.findOne({
+        where: { utilisateurId: req.utilisateurId },
+        transaction,
+      })
+      if (!enseignant) {
         await transaction.rollback()
-        return res.status(400).json({ success: false, message: 'planningId ou rattrapageNoteId doit être fourni' })
+        return res.status(403).json({ success: false, message: 'Profil enseignant introuvable' })
       }
 
-      if (!planning || planning.statut !== 'convoque') {
+      const planning = await RattrapagePlanning.findByPk(planningId, { transaction })
+      if (!planning) {
+        await transaction.rollback()
+        return res.status(404).json({ success: false, message: 'Créneau de rattrapage introuvable' })
+      }
+      if (planning.statut !== 'convoque') {
         await transaction.rollback()
         return res.status(400).json({ success: false, message: 'Créneau non convoqué pour la saisie de notes' })
       }
 
-      if (rattrapageNoteId != null && Number.isInteger(rattrapageNoteId) && rattrapageNoteId > 0) {
-        // Mise à jour d\'une note existante (pas de modification de note_originale)
-        const existing = await RattrapageNote.findByPk(rattrapageNoteId, { transaction })
-        if (!existing) {
-          await transaction.rollback()
-          return res.status(404).json({ success: false, message: 'Note de rattrapage introuvable' })
-        }
-        await existing.update({ note_rattrapage, saisiPar: req.utilisateurId }, { transaction })
-        const updated = await RattrapageNote.findByPk(rattrapageNoteId, {
-          include: [
-            { association: RattrapageNote.associations.rattrapageInscription },
-            { association: RattrapageNote.associations.ue, attributes: ['id', 'code', 'libelle'] },
-          ],
-          transaction,
-        })
-        await transaction.commit()
-        return res.status(200).json({ success: true, message: 'Note mise à jour', data: updated })
-      } else {
-        // Nouvelle note de rattrapage : trouver la inscription via planning -> classe -> session
-        const planningClasseId = planning.classeId
-        const planningSession = await RattrapageSession.findOne({
-          where: { id: planning.rattrapageSessionId },
-          include: [{ association: RattrapageSession.associations.inscriptions, attributes: ['id', 'demandePar', 'ueId'] }],
-          transaction,
-        })
-        if (!planningSession) {
-          await transaction.rollback()
-          return res.status(404).json({ success: false, message: 'Session introuvable' })
-        }
-
-        // Trouver les apprenants de la filière (classe) pour ce cours (ueId/ecueId de la désignation)
-        // NOTE: RattrapageInscription n'a pas de champ ueId/ecueId — filtrage par session uniquement (TODO: filtrer par UE si besoin)
-        const inscriptionIds: number[] = []
-        if (enseignantPlanning.ueId) {
-          const apprenants = await RattrapageInscription.findAll({
-            where: {
-              rattrapageSessionId: planning.rattrapageSessionId,
-              statutPaiement: 'paye',
-            },
-            attributes: ['id'],
-            transaction,
-          })
-          inscriptionIds.push(...apprenants.map(a => a.id))
-        } else if (enseignantPlanning.ecueId) {
-          const apprenants = await RattrapageInscription.findAll({
-            where: {
-              rattrapageSessionId: planning.rattrapageSessionId,
-              statutPaiement: 'paye',
-            },
-            attributes: ['id'],
-            transaction,
-          })
-          inscriptionIds.push(...apprenants.map(a => a.id))
-        } else {
-          // Sans UE/ECUE, on suppose tous les inscrits à la session
-          const apprenants = await RattrapageInscription.findAll({
-            where: {
-              rattrapageSessionId: planning.rattrapageSessionId,
-              statutPaiement: 'paye',
-            },
-            attributes: ['id'],
-            transaction,
-          })
-          inscriptionIds.push(...apprenants.map(a => a.id))
-        }
-
-        if (inscriptionIds.length === 0) {
-          await transaction.rollback()
-          return res.status(400).json({ success: false, message: 'Aucun apprenant éligible trouvé pour cette filière/cours' })
-        }
-
-        // Pour chaque inscrit, créer une note avec note_originale = null (sera remplie plus tard si note_originale existe)
-        const notesCreate = inscriptionIds.map(insId => ({
-          rattrapageInscriptionId: insId,
-          etudiantId: (planningSession.inscriptions?.find((i: any) => i.id === insId)?.demandePar ?? undefined) as any,
-          ueId: enseignantPlanning.ueId ?? null,
-          note_originale: null as any,
-          note_rattrapage: note_rattrapage,
-          saisiPar: req.utilisateurId,
-          statut: 'programme' as const,
-        }))
-        const created = await RattrapageNote.bulkCreate(notesCreate, { transaction })
-        await transaction.commit()
-        return res.status(201).json({ success: true, message: 'Notes créées', data: created })
+      let note = noteId == null ? null : await RattrapageNote.findByPk(noteId, { transaction, lock: transaction.LOCK.UPDATE })
+      if (noteId != null && !note) {
+        await transaction.rollback()
+        return res.status(404).json({ success: false, message: 'Note de rattrapage introuvable' })
       }
+
+      let inscription: RattrapageInscription | null
+      let coursId: number
+      if (note) {
+        if (Number(note.saisiPar) !== Number(req.utilisateurId)) {
+          await transaction.rollback()
+          return res.status(403).json({ success: false, message: 'Seul l’enseignant ayant saisi cette note peut la modifier' })
+        }
+        if (note.statut === 'validée') {
+          await transaction.rollback()
+          return res.status(409).json({ success: false, message: 'Une note validée ne peut plus être modifiée' })
+        }
+        inscription = await RattrapageInscription.findByPk(note.rattrapageInscriptionId, { transaction })
+        coursId = Number(note.ueId)
+      } else {
+        const assignmentWhere: any = { rattrapagePlanningId: planningId, enseignantId: enseignant.id }
+        if (ueId != null && Number.isInteger(ueId)) assignmentWhere.ueId = ueId
+        if (ecueId != null && Number.isInteger(ecueId)) assignmentWhere.ecueId = ecueId
+        const designation = await RattrapageEnseignant.findOne({ where: assignmentWhere, transaction })
+        if (!designation) {
+          await transaction.rollback()
+          return res.status(403).json({ success: false, message: 'Vous n’êtes pas désigné pour cette UE/ECUE sur ce créneau' })
+        }
+        coursId = Number(designation.ueId)
+        if (designation.ecueId != null) {
+          const ecue = await Ecue.findByPk(designation.ecueId, { transaction })
+          if (!ecue) {
+            await transaction.rollback()
+            return res.status(404).json({ success: false, message: 'ECUE désignée introuvable' })
+          }
+          coursId = Number(ecue.coursId)
+        }
+        if (inscriptionId == null) {
+          await transaction.rollback()
+          return res.status(400).json({ success: false, message: 'rattrapageInscriptionId est requis' })
+        }
+        inscription = await RattrapageInscription.findByPk(inscriptionId, { transaction, lock: transaction.LOCK.UPDATE })
+      }
+
+      if (!inscription || Number(inscription.rattrapageSessionId) !== Number(planning.rattrapageSessionId)) {
+        await transaction.rollback()
+        return res.status(400).json({ success: false, message: 'La demande ne correspond pas à la session de ce créneau' })
+      }
+      if (inscription.statutDemande !== 'valide' || inscription.statutPaiement !== 'paye' || !inscription.demandePar) {
+        await transaction.rollback()
+        return res.status(400).json({ success: false, message: 'Seuls les étudiants dont la demande est validée et payée peuvent recevoir une note' })
+      }
+      if (!Number.isInteger(coursId) || coursId <= 0) {
+        await transaction.rollback()
+        return res.status(400).json({ success: false, message: 'La désignation doit être associée à une UE ou ECUE' })
+      }
+      if (note && Number(note.ueId) !== coursId) {
+        await transaction.rollback()
+        return res.status(403).json({ success: false, message: 'Cette note ne correspond pas à l’UE désignée sur ce créneau' })
+      }
+
+      if (!note) {
+        note = await RattrapageNote.findOne({
+          where: { rattrapageInscriptionId: inscription.id, ueId: coursId },
+          transaction,
+          lock: transaction.LOCK.UPDATE,
+        })
+        if (note?.statut === 'validée') {
+          await transaction.rollback()
+          return res.status(409).json({ success: false, message: 'Une note validée ne peut plus être modifiée' })
+        }
+      }
+
+      const creation = !note
+      const values = {
+        rattrapageInscriptionId: inscription.id,
+        etudiantId: inscription.demandePar,
+        ueId: coursId,
+        note_originale: note?.note_originale ?? null,
+        note_rattrapage,
+        saisiPar: req.utilisateurId,
+        statut: 'saisie',
+      }
+      if (note) {
+        await note.update(values, { transaction })
+      } else {
+        note = await RattrapageNote.create(values, { transaction })
+      }
+      await transaction.commit()
+      return res.status(creation ? 201 : 200).json({
+        success: true,
+        message: creation ? 'Note saisie pour l’étudiant' : 'Note mise à jour',
+        data: note,
+      })
     } catch (error) {
       await transaction.rollback()
       console.error('[saisirNote rattrapage-workflow]', error)
+      return res.status(500).json({ success: false, message: 'Erreur interne du serveur' })
+    }
+  }
+
+  /** PUT /rattrapage-workflow/notes/:id/valider — valide la note saisie par l'enseignant et actualise le bulletin. */
+  static async validerNote(req: Request, res: Response): Promise<Response> {
+    if (req.utilisateurRole !== RolesUtilisateur.ENSEIGNANT) {
+      return res.status(403).json({ success: false, message: 'Validation réservée à l’enseignant ayant saisi la note' })
+    }
+
+    const noteId = Number(req.params.id)
+    if (!Number.isInteger(noteId) || noteId <= 0) {
+      return res.status(400).json({ success: false, message: 'Identifiant de note invalide' })
+    }
+
+    const transaction = await DatabaseConnection.getInstance().sequelize.transaction()
+    try {
+      const note = await RattrapageNote.findByPk(noteId, {
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      })
+      if (!note) {
+        await transaction.rollback()
+        return res.status(404).json({ success: false, message: 'Note de rattrapage introuvable' })
+      }
+      if (Number(note.saisiPar) !== Number(req.utilisateurId)) {
+        await transaction.rollback()
+        return res.status(403).json({ success: false, message: 'Seul l’enseignant ayant saisi cette note peut la valider' })
+      }
+      if (note.statut !== 'saisie') {
+        await transaction.rollback()
+        return res.status(409).json({ success: false, message: 'Seule une note au statut saisie peut être validée' })
+      }
+      if (note.note_rattrapage == null || note.ueId == null) {
+        await transaction.rollback()
+        return res.status(409).json({ success: false, message: 'La note doit être saisie et associée à une UE avant validation' })
+      }
+
+      const inscription = await RattrapageInscription.findByPk(note.rattrapageInscriptionId, { transaction })
+      if (!inscription || inscription.statutDemande !== 'valide' || inscription.statutPaiement !== 'paye' || !inscription.rattrapageSessionId) {
+        await transaction.rollback()
+        return res.status(409).json({ success: false, message: 'La demande doit être validée et payée avant validation de la note' })
+      }
+
+      const session = await RattrapageSession.findByPk(inscription.rattrapageSessionId, { transaction })
+      const cours = await Cours.findByPk(note.ueId, { transaction })
+      if (!session?.anneeAcademiqueId || !cours?.semestre) {
+        await transaction.rollback()
+        return res.status(409).json({ success: false, message: 'La session doit être liée à une année académique et l’UE à un semestre' })
+      }
+
+      const cursus = await CursusApprenant.findOne({
+        where: {
+          utilisateurId: note.etudiantId,
+          anneeAcademiqueId: session.anneeAcademiqueId,
+        },
+        order: [['createdAt', 'DESC']],
+        transaction,
+      })
+      if (!cursus?.classeId || Number(cursus.parcoursId) !== Number(cours.parcoursId)) {
+        await transaction.rollback()
+        return res.status(409).json({ success: false, message: 'Aucun cursus compatible trouvé pour intégrer cette note au bulletin' })
+      }
+      const participation = await CoursParticipant.findOne({
+        where: { cursusApprenantId: cursus.id, coursId: cours.id },
+        transaction,
+      })
+      if (!participation) {
+        await transaction.rollback()
+        return res.status(409).json({ success: false, message: 'L’étudiant n’est pas inscrit à cette UE dans le cursus ciblé' })
+      }
+
+      await note.update({ statut: 'validée' }, { transaction })
+      const bulletins = await GenerationBulletinService.generer(
+        cursus.classeId,
+        cours.semestre,
+        session.anneeAcademiqueId,
+        transaction,
+        null,
+        { refreshExisting: true, cursusApprenantId: Number(cursus.id) }
+      )
+      const ligneRattrapageIncluse = bulletins.some(resultat =>
+        resultat.ues.some(ue => ue.lignes.some(ligne => Number(ligne.coursId) === Number(note.ueId)))
+      )
+      if (!ligneRattrapageIncluse) {
+        await transaction.rollback()
+        return res.status(409).json({ success: false, message: 'L’UE de rattrapage ne figure pas dans la structure de calcul du bulletin' })
+      }
+
+      await transaction.commit()
+      return res.status(200).json({
+        success: true,
+        message: 'Note validée; le bulletin a été recalculé en brouillon et doit être republié.',
+        data: { note, bulletin: bulletins[0].bulletin },
+      })
+    } catch (error) {
+      await transaction.rollback()
+      console.error('[validerNote rattrapage-workflow]', error)
       return res.status(500).json({ success: false, message: 'Erreur interne du serveur' })
     }
   }

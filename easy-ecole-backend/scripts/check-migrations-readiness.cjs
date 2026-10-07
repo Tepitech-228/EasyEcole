@@ -46,9 +46,13 @@ const mysql = require('mysql2/promise');
 const { extractArrayBlock, parseObjectLiterals } = require('./generate-migrations-from-sources.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
+const REPOSITORY_MIGRATIONS_DIR = path.resolve(ROOT, '..', 'migrations');
+const BACKEND_MIGRATIONS_DIR = path.join(ROOT, 'migrations');
 const MIGRATIONS_DIR = process.env.MIGRATIONS_DIR
   ? path.resolve(process.env.MIGRATIONS_DIR)
-  : path.join(ROOT, 'migrations');
+  : fs.existsSync(REPOSITORY_MIGRATIONS_DIR)
+    ? REPOSITORY_MIGRATIONS_DIR
+    : BACKEND_MIGRATIONS_DIR;
 const REFERENCE_DATA_TS = path.join(ROOT, 'src', 'core', 'data', 'reference-data.ts');
 const UNIQUE_INDEXES_TS = path.join(ROOT, 'src', 'core', 'helpers', 'ensureUniqueIndexes.ts');
 
@@ -56,8 +60,9 @@ const CONNECT_ATTEMPTS = parseInt(process.env.MIGRATIONS_CONNECT_ATTEMPTS || '10
 const CONNECT_RETRY_MS = parseInt(process.env.MIGRATIONS_CONNECT_RETRY_MS || '3000', 10);
 
 /**
- * Colonnes exigées par 002_reference_data_autorisations.sql.
- * Si l'une manque, la migration échoue immédiatement (Unknown column).
+ * Colonnes exigées par ensureReferenceData(), exécuté au démarrage du backend.
+ * Le générateur SQL est un outil de maintenance : ses fichiers ne sont pas
+ * supposés exister dans chaque checkout.
  */
 const REQUIRED_SCHEMA = {
   aut_roles: ['id', 'nom', 'description', 'createdAt', 'updatedAt', 'deletedAt'],
@@ -275,13 +280,13 @@ async function main() {
       }
     }
 
-    // ── 2. Prérequis de la migration des données de référence
-    title('2. PRÉREQUIS — données de référence (rôles / permissions)');
+    // ── 2. Prérequis des données de référence initialisées au démarrage
+    title('2. PRÉREQUIS — seed runtime des rôles et permissions');
 
     for (const [table, columns] of Object.entries(REQUIRED_SCHEMA)) {
       const exists = await tableExists(conn, table);
       if (!exists) {
-        const message = `table ${table} absente — la migration des données de référence échouera`;
+        const message = `table ${table} absente — ensureReferenceData() ne pourra pas initialiser les autorisations`;
         blockers.push(message);
         console.log(KO + message);
         continue;
@@ -293,7 +298,7 @@ async function main() {
         blockers.push(message);
         console.log(KO + message);
       } else {
-        console.log(OK + `${table} — ${columns.length} colonne(s) requise(s) présente(s).`);
+        console.log(OK + `${table} — ${columns.length} colonne(s) requise(s) par le seed runtime présente(s).`);
       }
     }
 

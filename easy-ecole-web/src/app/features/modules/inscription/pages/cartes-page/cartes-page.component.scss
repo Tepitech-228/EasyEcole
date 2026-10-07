@@ -37,7 +37,9 @@ $font-data: 'Inter', 'Open Sans', sans-serif;
 .cartes-page-wrapper {
   position: relative;
   min-height: 100vh;
-  background: $gray-50;
+  background:
+    radial-gradient(ellipse at 88% 8%, rgba($gold-light, 0.12), transparent 28rem),
+    linear-gradient(180deg, #f4f6f8 0%, #f8f9fb 45%, #f1f3f6 100%);
 }
 
 /* ====================================================
@@ -54,7 +56,7 @@ $font-data: 'Inter', 'Open Sans', sans-serif;
   text-transform: uppercase;
   color: $on-surface-variant;
   padding: 6px 16px;
-  border-radius: 4px;
+  border-radius: 8px;
   transition: background-color 0.15s ease, color 0.15s ease;
   cursor: pointer;
 }
@@ -64,8 +66,9 @@ $font-data: 'Inter', 'Open Sans', sans-serif;
 }
 
 .mode-tab.active {
-  background: $primary;
+  background: $navy;
   color: $white;
+  box-shadow: 0 4px 10px rgba($navy, 0.18);
 }
 
 /* ====================================================
@@ -119,6 +122,7 @@ $font-data: 'Inter', 'Open Sans', sans-serif;
   letter-spacing: 0.05em;
   color: $gray-800;
   background: $white;
+  transition: all 0.18s ease;
 }
 
 .chip.active, .field-chip.selected {
@@ -138,6 +142,14 @@ $font-data: 'Inter', 'Open Sans', sans-serif;
   color: $gray-800;
   background: $white;
   text-align: left;
+  transition: all 0.18s ease;
+  cursor: pointer;
+}
+
+.chip:hover,
+.field-chip:hover {
+  border-color: $togo-green;
+  color: $togo-green;
 }
 
 /* ====================================================
@@ -170,6 +182,24 @@ $font-data: 'Inter', 'Open Sans', sans-serif;
   color: $ink;
   font-family: $font-display;
   overflow: hidden;
+}
+
+.card-front {
+  background:
+    radial-gradient(circle at 94% 8%, rgba($togo-red, 0.08), transparent 34%),
+    linear-gradient(145deg, #fff 0%, #fbfcfd 58%, #f2f5f7 100%);
+  border-color: #d7dde4;
+}
+
+.card-front::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 5px;
+  background: linear-gradient(90deg, $togo-green 0 33.33%, $togo-yellow 33.33% 66.66%, $togo-red 66.66% 100%);
 }
 
 .card-back {
@@ -222,7 +252,7 @@ $font-data: 'Inter', 'Open Sans', sans-serif;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  padding: 12px 18px 6px;
+  padding: 10px 18px 4px;
   position: relative;
   z-index: 1;
 }
@@ -243,14 +273,15 @@ $font-data: 'Inter', 'Open Sans', sans-serif;
 
 .country-name {
   font-weight: 800;
-  font-size: 11px;
+  font-size: 9px;
+  max-width: 230px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: $navy;
 }
 
 .country-motto {
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 600;
   font-style: italic;
   letter-spacing: 0.04em;
@@ -291,34 +322,67 @@ $font-data: 'Inter', 'Open Sans', sans-serif;
 .card-body-recto {
   flex: 1;
   min-height: 0;
-  padding: 10px 20px 8px;
+  padding: 5px 16px 22px;
   position: relative;
   z-index: 1;
 }
 
 .body-row {
   display: flex;
-  gap: 14px;
-  height: 100%;
+  gap: 10px;
+  height: calc(100% - 20px);
 }
 
 .photo-container {
-  width: 108px;
+  width: 92px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: 3px;
 }
 
 .photo-container img {
   width: 100%;
   height: 100%;
-  max-height: 136px;
+  max-height: 112px;
   object-fit: cover;
-  object-position: top;
-  border-radius: 12px;
-  border: 2px solid $gold-light;
+  object-position: center 24%;
+  border-radius: 8px;
+  border: 2px solid $togo-green;
   background: $cream-dark;
-  box-shadow: 0 8px 18px -8px rgba(10, 42, 74, 0.35);
+  box-shadow: 0 6px 14px -8px rgba(10, 42, 74, 0.45);
+}
+
+.photo-caption {
+  font-size: 5.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: $muted;
+}
+
+.card-issue-line {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: absolute;
+  bottom: 5px;
+  left: 16px;
+  max-width: calc(100% - 110px);
+  font-size: 6px;
+  color: $muted;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.card-issue-line strong {
+  color: $navy;
+  margin-right: 3px;
+}
+
+.details-container {
+  margin-right: 84px;
 }
 
 .details-container {
@@ -330,7 +394,7 @@ $font-data: 'Inter', 'Open Sans', sans-serif;
 .info-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 10px;
+  gap: 5px 6px;
   align-content: start;
   width: 100%;
 }
@@ -339,11 +403,11 @@ $font-data: 'Inter', 'Open Sans', sans-serif;
   display: flex;
   align-items: center;
   gap: 7px;
-  min-height: 30px;
-  padding: 6px 10px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.62);
-  border: 1px solid rgba(216, 210, 194, 0.8);
+  min-height: 23px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(216, 222, 228, 0.9);
 }
 
 .field-icon {
@@ -362,13 +426,13 @@ $font-data: 'Inter', 'Open Sans', sans-serif;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: $gold;
-  width: 74px;
+  color: $togo-green;
+  width: 60px;
   flex-shrink: 0;
 }
 
 .field-value {
-  font-size: 11.5px;
+  font-size: 9px;
   font-weight: 700;
   color: $navy-dark;
   line-height: 1.2;
@@ -378,7 +442,65 @@ $font-data: 'Inter', 'Open Sans', sans-serif;
   white-space: nowrap;
 }
 
-/* ===== QR (recto & verso) ===== */
+/* ===== Statut étudiant et QR code ===== */
+.student-side-panel {
+  position: absolute;
+  right: 15px;
+  top: 91px;
+  bottom: 34px;
+  width: 75px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wreath-badge {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wreath-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: $togo-green;
+  stroke: $togo-green;
+  stroke-width: 1.4;
+}
+
+.wreath-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: $navy;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.wreath-center .material-symbols-outlined {
+  font-size: 15px;
+  color: $gold;
+}
+
+.wreath-center strong {
+  font-size: 6px;
+  letter-spacing: 0.06em;
+}
+
+.wreath-center small {
+  margin-top: 2px;
+  font-size: 4.8px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
 .qr-container {
   position: absolute;
   right: 22px;
@@ -391,16 +513,16 @@ $font-data: 'Inter', 'Open Sans', sans-serif;
 }
 
 .qr-box {
-  width: 76px;
-  height: 76px;
-  border-radius: 10px;
-  border: 2px solid $gold;
+  width: 56px;
+  height: 56px;
+  border-radius: 7px;
+  border: 1.5px solid $togo-green;
   background: $white;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  box-shadow: 0 8px 16px -6px rgba(10, 42, 74, 0.3);
+  box-shadow: 0 5px 12px -6px rgba(10, 42, 74, 0.35);
 }
 
 .qr-box img {
@@ -415,7 +537,8 @@ $font-data: 'Inter', 'Open Sans', sans-serif;
 }
 
 .qr-badge {
-  font-size: 7px;
+  font-size: 4.5px;
+  text-align: center;
   font-weight: 800;
   letter-spacing: 0.18em;
   color: $navy;
@@ -427,13 +550,13 @@ $font-data: 'Inter', 'Open Sans', sans-serif;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 8px 20px 14px;
+  padding: 6px 18px 11px;
   position: relative;
   z-index: 1;
 }
 
 .footer-text {
-  font-size: 8.5px;
+  font-size: 7px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -441,21 +564,29 @@ $font-data: 'Inter', 'Open Sans', sans-serif;
 }
 
 .card-badge {
-  font-size: 8px;
+  font-size: 6px;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  padding: 3px 10px;
-  border-radius: 999px;
+  max-width: 52%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: rgba($navy, 0.08);
+  color: $navy;
 }
 
 .badge-active {
-  background: $togo-red;
-  color: $white;
+  border: 1px solid rgba($togo-green, 0.28);
+  background: rgba($togo-green, 0.1);
+  color: $togo-green;
 }
 
 .badge-pending {
-  background: $togo-yellow;
+  border: 1px solid rgba($togo-red, 0.22);
+  background: rgba($togo-yellow, 0.34);
   color: $navy-dark;
 }
 
@@ -472,7 +603,7 @@ $font-data: 'Inter', 'Open Sans', sans-serif;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 18px 4px;
+  padding: 9px 18px 4px;
   position: relative;
   z-index: 1;
 }
@@ -516,7 +647,7 @@ $font-data: 'Inter', 'Open Sans', sans-serif;
 .card-body-verso {
   flex: 1;
   min-height: 0;
-  padding: 8px 18px 4px;
+  padding: 7px 18px 4px;
   position: relative;
   z-index: 1;
 }
@@ -559,8 +690,8 @@ $font-data: 'Inter', 'Open Sans', sans-serif;
 }
 
 .rules-list li {
-  font-size: 8.5px;
-  line-height: 1.45;
+  font-size: 7px;
+  line-height: 1.35;
   color: $muted;
   margin-bottom: 3px;
 }
@@ -576,7 +707,7 @@ $font-data: 'Inter', 'Open Sans', sans-serif;
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 9.5px;
+  font-size: 8px;
   min-width: 0;
 }
 
@@ -611,6 +742,14 @@ $font-data: 'Inter', 'Open Sans', sans-serif;
   flex-direction: column;
   gap: 4px;
   margin-top: 2px;
+}
+
+.magnetic-strip {
+  width: 100%;
+  height: 15px;
+  flex: 0 0 15px;
+  background: linear-gradient(180deg, #252a31, #101419);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.16), inset 0 -1px 2px rgba(0, 0, 0, 0.45);
 }
 
 .signature-label {

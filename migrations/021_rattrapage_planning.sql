@@ -28,7 +28,7 @@ SET @sql := IF(@tableExists = 0,
       `dateSamedi` DATE NOT NULL COMMENT "Date du samedi de rattrapage",
       `heureDebut` TIME NOT NULL COMMENT "Heure de début du créneau",
       `heureFin` TIME NOT NULL COMMENT "Heure de fin du créneau",
-      `salleId` INT UNSIGNED NULL COMMENT "FK vers ins_salles_de_classe.id",
+      `salleId` INT UNSIGNED NULL COMMENT "FK vers ins_salles_de_classes.id",
       `statut` ENUM(\"programme\",\"convoque\",\"present\",\"absent\",\"saisie_notes\") NOT NULL DEFAULT \"programme\",
       `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       `updatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -39,7 +39,7 @@ SET @sql := IF(@tableExists = 0,
       KEY `idx_planning_classe` (`classeId`),
       CONSTRAINT `fk_planning_session` FOREIGN KEY (`rattrapageSessionId`) REFERENCES `ins_sessions_rattrapage` (`id`) ON DELETE CASCADE,
       CONSTRAINT `fk_planning_classe` FOREIGN KEY (`classeId`) REFERENCES `ins_classes` (`id`) ON DELETE CASCADE,
-      CONSTRAINT `fk_planning_salle` FOREIGN KEY (`salleId`) REFERENCES `ins_salles_de_classe` (`id`) ON DELETE SET NULL
+      CONSTRAINT `fk_planning_salle` FOREIGN KEY (`salleId`) REFERENCES `ins_salles_de_classes` (`id`) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
   'SELECT \'table ins_rattrapage_planning deja presente\'');
 

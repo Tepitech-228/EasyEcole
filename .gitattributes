@@ -1,0 +1,7 @@
+# Les scripts shell exécutés dans les conteneurs Linux DOIVENT rester en LF.
+# Un fichier CRLF provoque « exec: ./docker-entrypoint.sh: not found » (exit 127).
+* text=auto
+*.sh text eol=lf
+*.bash text eol=lf
+Dockerfile text eol=lf
+*.sql text eol=lf

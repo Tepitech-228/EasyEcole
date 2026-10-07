@@ -483,6 +483,7 @@ export default class DossierEtudiantController {
                 include: [
                     {
                         association: DossierEtudiant.associations.utilisateur,
+                        attributes: ['id', 'nom', 'prenoms', 'identifiant', 'email', 'role', 'contact', 'photoDeProfil', 'etablissementId'],
                         include: [{
                             model: Apprenant, as: 'apprenant',
                             include: [
@@ -537,7 +538,7 @@ export default class DossierEtudiantController {
             return res.status(200).json({ dossier, demande, bordereaux });
         } catch (error) {
             console.error('Erreur getDossierComplet:', error);
-            return res.status(500).json({ success: false, error });
+            return res.status(500).json({ success: false, message: 'Erreur lors du chargement du dossier' });
         }
     }
 

@@ -15,6 +15,7 @@ export class MonCursusPageComponent extends BaseComponentClass implements OnInit
   selectedCursus: any = null
   coursDetails: any = null
   loadingDetails: boolean = false
+  expandedUeId: string | number | null = null
 
   private cursusApprenant: CursusApprenant[] = []
   cursusApprenantInternes: CursusApprenant[] = []
@@ -51,14 +52,16 @@ export class MonCursusPageComponent extends BaseComponentClass implements OnInit
 
   openDetailsModal(cursus: any): void {
     this.selectedCursus = cursus
+    this.expandedUeId = null
     this.showDetailsCursusModal = true
-    this.loadCoursDetails(cursus.id)
+    this.loadCoursDetails(String(cursus.id))
   }
 
   closeDetailsModal(): void {
     this.showDetailsCursusModal = false
     this.selectedCursus = null
     this.coursDetails = null
+    this.expandedUeId = null
   }
 
   private loadCoursDetails(cursusId: string): void {
@@ -75,27 +78,53 @@ export class MonCursusPageComponent extends BaseComponentClass implements OnInit
     })
   }
 
+  private getCoursDuCursus(): any[] {
+    if (!this.coursDetails) return []
+    const coursParticipants = (this.coursDetails.coursParticipants || [])
+      .map((participant: any) => participant.cours)
+      .filter(Boolean)
+    if (coursParticipants.length > 0) return coursParticipants
+
+    return (this.coursDetails.coursChoisis || [])
+      .map((choix: any) => choix.cours)
+      .filter(Boolean)
+  }
+
   getUeList(): any[] {
-    if (!this.coursDetails?.coursParticipants) return []
-    return this.coursDetails.coursParticipants.map((cp: any) => ({
-      id: cp.cours?.id,
-      code: cp.cours?.code,
-      intitule: cp.cours?.intitule,
-      semestre: cp.cours?.semestre,
-      credit: cp.cours?.credit,
-      enseignant: cp.cours?.enseignant ? `${cp.cours.enseignant.utilisateur?.nom || ''} ${cp.cours.enseignant.utilisateur?.prenoms || ''}`.trim() : '—'
+    return this.getCoursDuCursus().map((cours: any) => ({
+      id: cours.id,
+      code: cours.code,
+      intitule: cours.intitule,
+      semestre: cours.semestre,
+      credit: cours.credit,
+      enseignant: this.nomEnseignant(cours.enseignant)
     }))
   }
 
   getEcueList(ueId: number): any[] {
-    if (!this.coursDetails?.coursParticipants) return []
-    const participant = this.coursDetails.coursParticipants.find((cp: any) => cp.cours?.id === ueId)
-    if (!participant?.cours?.ecues) return []
-    return participant.cours.ecues.map((ecue: any) => ({
+    const cours = this.getCoursDuCursus().find((item: any) => Number(item.id) === Number(ueId))
+    if (!cours?.ecues) return []
+    return cours.ecues.map((ecue: any) => ({
       code: ecue.code,
       libelle: ecue.libelle,
       creditEcts: ecue.creditEcts,
-      type: ecue.type
+      coefficient: ecue.coefficient,
+      cmHoraire: ecue.cmHoraire,
+      tdTpHoraire: ecue.tdTpHoraire,
+      tpeHoraire: ecue.tpeHoraire,
+      type: ecue.type,
+      enseignant: this.nomEnseignant(ecue.enseignant)
     }))
+  }
+
+  toggleUe(ueId: string | number): void {
+    this.expandedUeId = this.expandedUeId === ueId ? null : ueId
+  }
+
+  private nomEnseignant(enseignant: any): string {
+    const utilisateur = enseignant?.utilisateur
+    return utilisateur
+      ? `${utilisateur.nom || ''} ${utilisateur.prenoms || ''}`.trim() || '—'
+      : 'Non assigné'
   }
 }

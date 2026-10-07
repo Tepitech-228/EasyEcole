@@ -22,6 +22,9 @@ import { Utilisateur } from '../../modules/auth/models/Utilisateur'
  *   - bordereaux-page / validation-bordereaux-page → /api/v1/inscription/bordereaux/... (affichage média + download)
  *   - comite-validation-page → /api/v1/inscription/documents/:id/download (pièces justificatives d'inscription)
  *   - deliberation.service.ts → telechargerPV → /api/v1/inscription/deliberations/pv/:filename
+ *   - qr-codes-page, enseignant-qr-codes-page, personnel-qr-codes-page
+ *     vers les images PNG (balise img : l'intercepteur HTTP ne peut pas
+ *     attacher le header Authorization, d'ou le token en query string)
  */
 const QUERY_TOKEN_ALLOWED: string[][] = [
     ['/ged/'],
@@ -31,7 +34,10 @@ const QUERY_TOKEN_ALLOWED: string[][] = [
     ['/demandesInscription/', '/fiche-paiement'],
     ['/inscription/bordereaux/'],
     ['/inscription/documents/', '/download'],
-    ['/deliberations/pv/'],]
+    ['/deliberations/pv/'],
+    ['/auth/apprenants/qr-codes/'],
+    ['/auth/enseignants/qr-codes/'],
+    ['/auth/personnelAdministratif/qr-codes/'],]
 
 function isQueryTokenAllowed(originalUrl: string): boolean {
     if (!originalUrl.startsWith('/api/v1')) return false

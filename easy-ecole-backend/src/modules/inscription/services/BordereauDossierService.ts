@@ -550,6 +550,7 @@ export class BordereauDossierService {
         utilisateurId: number,
         req: any,
         transaction: Transaction,
+        options: { initialesComite?: string } = {},
     ): Promise<{ matricule: string }> {
         const demande = await DemandeInscription.findOne({
             where: { utilisateurId },
@@ -704,43 +705,47 @@ export class BordereauDossierService {
                 etudiantId: demande.utilisateurId,
                 typeDocumentId: typeAutorisation.id,
                 source: 'automatique',
+                anneeAcademiqueId: anneeId,
+                parcoursId: parcoursFinal?.parcoursId ?? null,
             },
             transaction,
         });
-        if (!autorisationExistante) {
-            try {
-                const autorisation = await DocGenGeneratorService.generer({
-                    typeCode: 'API001',
-                    sourceType: 'cursus_apprenant',
-                    sourceId: savedCursus.id,
-                    utilisateurId: Number((req as any).utilisateurId),
-                    params: {
-                        demandeInscriptionId: demande.id,
-                        cursusApprenantId: savedCursus.id,
-                        etudiantId: demande.utilisateurId,
-                        anneeAcademiqueId: anneeId,
-                        parcoursId: parcoursFinal?.parcoursId,
-                        niveauEtudeId,
-                    },
-                }, req);
-                await DemandeDocument.create({
-                    etudiantId: demande.utilisateurId,
-                    typeDocumentId: typeAutorisation.id,
-                    statut: 'document_pret',
-                    fraisPayes: true,
-                    source: 'automatique',
-                    montant: 0,
-                    parcoursId: parcoursFinal?.parcoursId ?? null,
-                    niveauEtudeId: niveauEtudeId ?? null,
-                    classeId: classeDerivee?.id ?? null,
-                    anneeAcademiqueId: anneeId ?? null,
-                    numeroDemande: autorisation.reference,
-                    dateGeneration: new Date(),
-                    fichierPDF: autorisation.filePath,
-                } as any, { transaction });
-            } catch (docGenError) {
-                console.error("[AffectationPédagogique] Erreur génération autorisation provisoire (non bloquante):", docGenError);
-            }
+        const autorisation = await DocGenGeneratorService.generer({
+            typeCode: 'API001',
+            sourceType: 'cursus_apprenant',
+            sourceId: savedCursus.id,
+            utilisateurId: Number((req as any).utilisateurId),
+            params: {
+                demandeInscriptionId: demande.id,
+                cursusApprenantId: savedCursus.id,
+                etudiantId: demande.utilisateurId,
+                anneeAcademiqueId: anneeId,
+                parcoursId: parcoursFinal?.parcoursId,
+                niveauEtudeId,
+                initialesComite: options.initialesComite,
+            },
+        }, req);
+        const documentValues = {
+            statut: 'document_pret',
+            fraisPayes: true,
+            source: 'automatique',
+            montant: 0,
+            parcoursId: parcoursFinal?.parcoursId ?? null,
+            niveauEtudeId: niveauEtudeId ?? null,
+            classeId: classeDerivee?.id ?? null,
+            anneeAcademiqueId: anneeId ?? null,
+            numeroDemande: autorisation.reference,
+            dateGeneration: new Date(),
+            fichierPDF: autorisation.filePath,
+        };
+        if (autorisationExistante) {
+            await autorisationExistante.update(documentValues, { transaction });
+        } else {
+            await DemandeDocument.create({
+                etudiantId: demande.utilisateurId,
+                typeDocumentId: typeAutorisation.id,
+                ...documentValues,
+            } as any, { transaction });
         }
 
         if (!classeDerivee?.id) {

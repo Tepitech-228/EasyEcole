@@ -52,7 +52,7 @@
                     <tr>
                         <td><img src="{{LOGO_DATA_URI}}" alt="Logo ESA" class="logo-img"></td>
                         <td class="school-info">
-                            <strong>�0COLE SUP�0RIEURE DES AFFAIRES</strong><br>
+                            <strong>�0COLE SUP�0RIEURE DES AFFAIRES</strong><br>
                             Direction des Examens et Régularité Académique<br>
                             Lomé, Togo<br>
                             Tél : (+228) 90 00 00 00 | Email : contact@esa.tg
@@ -86,29 +86,29 @@
                 <table class="grades-table">
                     <thead>
                         <tr>
-                            <th style="width: 32%;">Unité d'Enseignement (UE) / Cours (EC)</th>
-                            <th style="width: 22%;">Enseignant</th>
-                            <th style="width: 8%; text-align: center;">Crédit</th>
-                            <th style="width: 11%; text-align: center;">Moy. / 20</th>
-                            <th style="width: 11%; text-align: center;">Session</th>
-                            <th style="width: 16%; text-align: center;">Visa / Sign.</th>
+                            <th style="width: 42%;">Unité d'Enseignement (UE) / Cours (EC)</th>
+                            <th style="width: 10%; text-align: center;">Crédit</th>
+                            <th style="width: 16%; text-align: center;">Moy. / 20</th>
+                            <th style="width: 16%; text-align: center;">Semestre</th>
+                            <th style="width: 16%; text-align: center;">Session</th>
                         </tr>
                     </thead>
                     <tbody>
                         {{#each etudiant.unites}}
                         <tr class="ue-header">
-                            <td colspan="3"><strong>{{code}} � {{intitule}}</strong></td>
+                            <td><strong>{{code}} � {{intitule}}</strong><br><span>{{categorieUeLibelle}}</span></td>
                             <td style="text-align: center;"><strong>{{creditEcts}} Cr.</strong></td>
-                            <td colspan="2" style="text-align: center;"><strong>{{moyenneUe}} / 20</strong></td>
+                            <td style="text-align: center;"><strong>{{moyenneUe}} / 20</strong></td>
+                            <td style="text-align: center;">{{semestre}}</td>
+                            <td style="text-align: center;">—</td>
                         </tr>
                         {{#each matieres}}
                         <tr class="ec-row">
                             <td>⬢ {{nom}}</td>
-                            <td>{{enseignant}}</td>
                             <td style="text-align: center;">{{creditEcts}}</td>
                             <td style="text-align: center;">{{note}}</td>
-                            <td style="text-align: center;">Normale</td>
-                            <td style="text-align: center; font-style: italic; color: #777; font-size: 7.5pt;">[�0margé]</td>
+                            <td style="text-align: center;">{{semestre}}</td>
+                            <td style="text-align: center;">{{session}}</td>
                         </tr>
                         {{/each}}
                         {{/each}}
@@ -137,7 +137,7 @@
     </div>
 
     <div style="text-align:center;margin-top:10px;font-size:10px;color:#999;">
-        Document généré le {{dateGeneration}} � Réf: {{reference}}<br>
+        Document généré le {{dateGeneration}} � Réf: {{reference}}<br>
         <img src="{{qrCodeDataUrl}}" alt="QR Code" style="width:80px;height:80px;margin-top:5px;">
     </div>
 </body>

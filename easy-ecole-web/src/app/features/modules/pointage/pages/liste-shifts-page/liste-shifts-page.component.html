@@ -3,9 +3,16 @@
     <app-custom-button (click)="nouvelleShift()" text="Nouveau shift"></app-custom-button>
 </div>
 
-<div *ngIf="shifts.length == 0" class="text-center py-8 text-gray-500">Aucun shift trouvé</div>
+<div *ngIf="loading" class="text-center py-8 text-gray-500">Chargement...</div>
 
-<div *ngIf="shifts.length > 0" class="flex flex-col">
+<div *ngIf="!loading && loadError" class="text-center py-8 text-red-500">
+    {{ loadError }}
+    <div class="mt-3"><app-custom-button (click)="loadShifts()" text="Réessayer"></app-custom-button></div>
+</div>
+
+<div *ngIf="!loading && !loadError && shifts.length == 0" class="text-center py-8 text-gray-500">Aucun shift trouvé. Créez le premier avec « Nouveau shift ».</div>
+
+<div *ngIf="!loading && !loadError && shifts.length > 0" class="flex flex-col">
     <div class="overflow-x-auto">
         <div class="py-2 inline-block min-w-full">
             <div class="overflow-hidden">
@@ -32,26 +39,29 @@
                             </td>
                             <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                 <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
-                                    <app-custom-badge color="blue" [text]="shift.heureDebut"></app-custom-badge>
+                                    <app-custom-badge color="blue" [text]="formatHeure(shift.heureDebut)"></app-custom-badge>
                                 </div>
                             </td>
                             <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                 <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
-                                    <app-custom-badge color="orange" [text]="shift.heureFin"></app-custom-badge>
+                                    <app-custom-badge color="orange" [text]="formatHeure(shift.heureFin)"></app-custom-badge>
                                 </div>
                             </td>
                             <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ shift.jours.join(', ') }}</div>
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ formatJours(shift.jours) }}</div>
                             </td>
                             <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                 <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
-                                    <app-custom-badge *ngIf="shift.actif" color="green" text="Actif"></app-custom-badge>
-                                    <app-custom-badge *ngIf="!shift.actif" color="primary" text="Inactif"></app-custom-badge>
+                                    <button type="button" (click)="toggleActif(shift)" [title]="shift.actif ? 'Désactiver' : 'Activer'" class="border-0 bg-transparent cursor-pointer p-0">
+                                        <app-custom-badge *ngIf="shift.actif" color="green" text="Actif"></app-custom-badge>
+                                        <app-custom-badge *ngIf="!shift.actif" color="primary" text="Inactif"></app-custom-badge>
+                                    </button>
                                 </div>
                             </td>
                             <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                <div class="flex items-center gap-2 border-0 m-0 px-2 py-4">
                                     <app-custom-button (click)="editShift(shift.id)" text="Modifier" color="blue"></app-custom-button>
+                                    <app-custom-button (click)="deleteShift(shift)" [text]="deletingId === shift.id ? '...' : 'Supprimer'" color="primary" [disabled]="deletingId === shift.id"></app-custom-button>
                                 </div>
                             </td>
                         </tr>

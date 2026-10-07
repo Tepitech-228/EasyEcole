@@ -16,9 +16,14 @@ import { environment } from 'src/environments/environment';
 export class ListeEnseignantsPageComponent extends BaseComponentClass implements OnInit {
 
   readonly PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS
+  readonly QR_CODES_PATH: string = environment.QR_CODES_ENSEIGNANTS_PATH
   showNouvelEnseignantModal: boolean = false
+  successMessage: string | null = null
+  errorMessage: string | null = null
 
   enseignants: Enseignant[] = []
+  selectedPhoto: File | null = null
+  photoPreviewUrl: string | null = null
 
   enseignantForm: FormGroup = new FormGroup({
     identifiant: new FormControl(null, [Validators.required]),
@@ -27,7 +32,6 @@ export class ListeEnseignantsPageComponent extends BaseComponentClass implements
     prenoms: new FormControl(null, [Validators.required]),
     contact: new FormControl(null, [Validators.required]),
     cni: new FormControl(null),
-    matricule: new FormControl(null),
     sexe: new FormControl(null),
     dateNaissance: new FormControl(null),
     nationalite: new FormControl(null),
@@ -77,6 +81,8 @@ export class ListeEnseignantsPageComponent extends BaseComponentClass implements
   ajouterEnseignant(): void {
     this.enseignantForm.markAllAsTouched()
     if (this.enseignantForm.valid) {
+      this.successMessage = null
+      this.errorMessage = null
       let enseignant: Enseignant = new Enseignant()
       enseignant.utilisateur = new Utilisateur()
       enseignant.utilisateur.identifiant = this.enseignantForm.get('identifiant')!.value
@@ -86,7 +92,7 @@ export class ListeEnseignantsPageComponent extends BaseComponentClass implements
       enseignant.utilisateur.contact = this.enseignantForm.get('contact')!.value
 
       enseignant.cni = this.enseignantForm.get('cni')!.value ?? null
-      enseignant.matricule = this.enseignantForm.get('matricule')!.value ?? null
+      // Matricule auto-généré côté backend (badge + QR) — plus de saisie manuelle
       enseignant.sexe = this.enseignantForm.get('sexe')!.value ?? null
       enseignant.dateNaissance = this.enseignantForm.get('dateNaissance')!.value ?? null
       enseignant.nationalite = this.enseignantForm.get('nationalite')!.value ?? null
@@ -103,15 +109,41 @@ export class ListeEnseignantsPageComponent extends BaseComponentClass implements
       enseignant.nifOtr = this.enseignantForm.get('nifOtr')!.value ?? null
 
       this.authService.registerEnseignant(enseignant).subscribe({
-        next: (res) => {
-          this.getEnseignants()
-          this.closeNouvelEnseignantModal()
+        next: (res: { matricule?: string; qrCode?: string; enseignantId?: string }) => {
+          // Photo éventuelle : envoyée juste après la création (affichée au pointage)
+          if (this.selectedPhoto && res.enseignantId) {
+            this.enseignantService.updatePhotoById(res.enseignantId, this.selectedPhoto).subscribe({
+              next: () => this.finaliserCreation(res.matricule),
+              error: () => this.finaliserCreation(res.matricule, true),
+            })
+          } else {
+            this.finaliserCreation(res.matricule)
+          }
         },
         error: (err) => {
-
+          this.errorMessage = err?.error?.message || "Impossible de créer l'enseignant et son badge."
         },
       })
     }
+  }
+
+  onPhotoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement
+    const file = input.files && input.files[0]
+    if (!file) return
+    this.selectedPhoto = file
+    const reader = new FileReader()
+    reader.onload = () => { this.photoPreviewUrl = reader.result as string }
+    reader.readAsDataURL(file)
+  }
+
+  private finaliserCreation(matricule?: string, photoEchec: boolean = false): void {
+    this.successMessage = matricule
+      ? `Enseignant créé. Matricule : ${matricule}. Son QR code est lié à son compte.` +
+        (photoEchec ? ' (Photo non enregistrée, à ajouter depuis sa fiche.)' : '')
+      : 'Enseignant créé avec son matricule et son QR code liés à son compte.'
+    this.getEnseignants()
+    this.closeNouvelEnseignantModal()
   }
 
   // Modals
@@ -121,6 +153,8 @@ export class ListeEnseignantsPageComponent extends BaseComponentClass implements
   closeNouvelEnseignantModal(): void {
     this.showNouvelEnseignantModal = false
     this.enseignantForm.reset()
+    this.selectedPhoto = null
+    this.photoPreviewUrl = null
   }
 
 }

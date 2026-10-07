@@ -1,5 +1,247 @@
+.page-shell {
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top left, rgba(79, 70, 229, 0.13), transparent 30%),
+    linear-gradient(180deg, #f3f7ff 0%, #f9fbff 100%);
+  padding: 1.5rem 0 3rem;
+}
+
 .page-container {
-  max-width: 80rem;
+  max-width: 82rem;
   margin: 0 auto;
-  padding: 2rem 1rem;
+  padding: 0 1rem;
+}
+
+.page-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+.section-subtitle {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.86rem;
+}
+
+.header-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.badge--purple {
+  background: rgba(139, 92, 246, 0.12);
+  color: #6d28d9;
+}
+
+.badge--blue {
+  background: rgba(37, 99, 235, 0.1);
+  color: #1d4ed8;
+}
+
+.badge--green {
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  position: relative;
+  overflow: hidden;
+  padding: 1rem 1.1rem;
+  border-radius: 1.2rem;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.05);
+}
+
+.stat-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: currentColor;
+}
+
+.stat-card--blue {
+  color: #1d4ed8;
+}
+
+.stat-card--violet {
+  color: #7c3aed;
+}
+
+.stat-card--green {
+  color: #059669;
+}
+
+.stat-card__label,
+.stat-card__hint {
+  display: block;
+}
+
+.stat-card__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.stat-card__value {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: clamp(1.15rem, 2vw, 1.6rem);
+  line-height: 1.2;
+  color: #0f172a;
+}
+
+.stat-card__hint {
+  margin-top: 0.2rem;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.panel-tabs {
+  padding: 0.3rem 0 0;
+  margin-bottom: 1.25rem;
+}
+
+.nav-tabs {
+  display: inline-flex;
+  gap: 0.4rem;
+  padding: 0.4rem;
+  border-radius: 1rem;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.tab-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 9rem;
+  padding: 0.9rem 1.2rem;
+  border-radius: 0.8rem;
+  border: 0;
+  background: transparent;
+  color: #475569;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab-button--active {
+  background: linear-gradient(135deg, #1d4ed8, #4f46e5);
+  color: #fff;
+  box-shadow: 0 14px 26px rgba(79, 70, 229, 0.22);
+}
+
+.tab-button:not(.tab-button--active):hover {
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+:host ::ng-deep app-custom-alert .alert {
+  margin-bottom: 1rem;
+}
+
+:host ::ng-deep .bg-white.rounded-2xl,
+:host ::ng-deep .bg-white.rounded-2xl.border {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border: 1px solid rgba(148, 163, 184, 0.18) !important;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06) !important;
+}
+
+:host ::ng-deep .rounded-2xl,
+:host ::ng-deep .rounded-xl {
+  border-radius: 1.25rem !important;
+}
+
+:host ::ng-deep select,
+:host ::ng-deep input {
+  border-radius: 0.9rem !important;
+  border-color: rgba(148, 163, 184, 0.35) !important;
+  background: rgba(248, 250, 252, 0.9) !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.02);
+}
+
+:host ::ng-deep button[type='button'],
+:host ::ng-deep button:not(.tab-button) {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+:host ::ng-deep button[type='button']:hover,
+:host ::ng-deep button:not(.tab-button):hover {
+  transform: translateY(-1px);
+}
+
+:host ::ng-deep .bg-blue-700,
+:host ::ng-deep .bg-emerald-600 {
+  background: linear-gradient(135deg, #1d4ed8, #2563eb) !important;
+  box-shadow: 0 12px 22px rgba(37, 99, 235, 0.22) !important;
+}
+
+:host ::ng-deep .bg-gray-100,
+:host ::ng-deep .bg-gray-50 {
+  background: rgba(248, 250, 252, 0.95) !important;
+}
+
+@media (max-width: 768px) {
+  .page-header-row {
+    flex-direction: column;
+  }
+
+  .header-badges {
+    justify-content: flex-start;
+    padding-top: 0;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .nav-tabs {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .tab-button {
+    flex: 1;
+    min-width: 0;
+  }
 }

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivate, CanLoad, Route, Router, RouterStateSnapshot, UrlSegment, UrlTree } from '@angular/router';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { PermissionStateService } from '../services/permission-state.service';
 
 @Injectable({
@@ -17,29 +18,21 @@ export class PermissionGuard implements CanActivate, CanLoad {
     route: ActivatedRouteSnapshot,
     state: RouterStateSnapshot
   ): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
-    return this.checkPermission(route)
+    return this.checkPermission(route.data?.['permission'])
   }
 
   canLoad(
     route: Route,
     segments: UrlSegment[]
   ): boolean | UrlTree | Observable<boolean | UrlTree> | Promise<boolean | UrlTree> {
-    const permission = route.data?.['permission']
-    if (!permission) return true
-
-    if (!this.permissionState.hasPermission(permission)) {
-      return this.router.parseUrl('/')
-    }
-    return true
+    return this.checkPermission(route.data?.['permission'])
   }
 
-  private checkPermission(route: ActivatedRouteSnapshot): boolean | UrlTree {
-    const permission = route.data?.['permission']
+  private checkPermission(permission?: string): boolean | UrlTree | Observable<boolean | UrlTree> {
     if (!permission) return true
-
-    if (!this.permissionState.hasPermission(permission)) {
-      return this.router.parseUrl('/')
-    }
-    return true
+    return this.permissionState.ensureLoaded().pipe(
+      map(() => this.permissionState.hasPermission(permission) ? true : this.router.parseUrl('/')),
+      catchError(() => of(this.router.parseUrl('/')))
+    )
   }
 }

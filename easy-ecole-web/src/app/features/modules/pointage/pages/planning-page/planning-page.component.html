@@ -18,7 +18,10 @@
         <div *ngFor="let cell of planning[jour]" class="mb-2 p-2 rounded border"
             [style.background]="cell.couleur + '15'"
             [style.borderColor]="cell.couleur + '40'">
-            <div class="text-xs font-medium" [style.color]="cell.couleur">{{ cell.employe }}</div>
+            <div class="text-xs font-semibold text-gray-900">{{ cell.employe }}</div>
+            <div *ngIf="cell.matricule" class="text-xs text-gray-400 font-mono">{{ cell.matricule }}</div>
+            <div *ngIf="cell.poste" class="text-xs text-gray-500">{{ cell.poste }}</div>
+            <div class="text-xs mt-1 font-medium" [style.color]="cell.couleur">{{ cell.tache }}</div>
             <div class="text-xs mt-1 text-gray-500">{{ cell.heureDebut }} - {{ cell.heureFin }}</div>
         </div>
     </div>

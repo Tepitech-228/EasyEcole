@@ -10,10 +10,7 @@ import { IDGenerator } from "../../../core/helpers/IDGenerator";
 import { JWT_SECRET } from "../../../core/config/jwt";
 import { OtpService } from "../../../core/services/OtpService";
 import { Etablissement } from "../../etablissement/models/Etablissement";
-import { QrTokenService } from "../../../core/services/QrTokenService";
-import QRCode from "qrcode";
-import * as path from "path";
-import * as fs from "fs";
+import { EnseignantBadgeService } from "../services/EnseignantBadgeService";
 
 function masquerEmail(email: string): string {
   const [local, domaine] = email.split('@')
@@ -313,31 +310,25 @@ await utilisateur.save()
             }
           }
 
-          try {
-            const dir: string = path.resolve(process.cwd(), 'storage', 'qr-codes', 'enseignants')
-            if (!fs.existsSync(dir)) {
-              fs.mkdirSync(dir, { recursive: true })
-            }
-            const userId = String(utilisateur.id)
-            const qrData = QrTokenService.signer(utilisateur.id)
-            const fileName = `${userId}.png`
-            const filePath = path.join(dir, fileName)
-            await QRCode.toFile(filePath, qrData, {
-              type: 'png', width: 400, margin: 4,
-              errorCorrectionLevel: 'Q',
-              color: { dark: '#000000', light: '#ffffff' }
-            })
-            if (enseignant) {
-              await enseignant.update({ qrCode: fileName })
-            }
-          } catch (qrError) {
-            console.error('Erreur génération QR enseignant:', qrError)
+          if (!enseignant) {
+            throw new Error("Le profil de l'enseignant n'a pas été créé.");
           }
+          const badge = await EnseignantBadgeService.ensureIdentity(
+            enseignant,
+            (req as any).etablissementId || null,
+          );
 
           EmailSender.getInstance().sendMessageInscriptionEnseignant(utilisateur.identifiant, tempPassword, utilisateur.email)
-          return res.status(201).send({ success: true });
+          return res.status(201).send({
+            success: true,
+            enseignantId: enseignant.id,
+            utilisateurId: utilisateur.id,
+            matricule: badge.matricule,
+            qrCode: badge.qrCode,
+          });
         })
       .catch((error) => {
+        console.error("Erreur inscription enseignant:", error);
         return res.status(400).json({ success: false, message: "Erreur lors de l'inscription de l'enseignant" });
       });
 

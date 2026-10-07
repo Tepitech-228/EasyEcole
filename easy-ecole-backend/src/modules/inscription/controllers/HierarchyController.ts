@@ -324,7 +324,7 @@ export default class HierarchyController {
   static async getNotesTree(req: Request, res: Response): Promise<Response> {
     try {
       const parcoursList = await Parcours.findAll({ order: [['titre', 'ASC']] });
-      const semestresList = await SemestreAcademique.findAll({ order: [['code', 'ASC']] });
+      const semestresList = await SemestreAcademique.findAll({ order: [['codeSemestre', 'ASC']] });
       const coursList = await Cours.findAll();
 
       const tree = parcoursList.map((p) => {
@@ -350,7 +350,7 @@ export default class HierarchyController {
     try {
       const classes = await Classe.findAll({ order: [['libelle', 'ASC']] });
       const coursList = await Cours.findAll();
-      const chapitres = await ChapitreCours.findAll({ order: [['ordre', 'ASC']] });
+      const chapitres = await ChapitreCours.findAll({ order: [['titre', 'ASC']] });
       const seances = await Seance.findAll();
 
       const tree = classes.map((cl) => {
@@ -410,7 +410,7 @@ export default class HierarchyController {
   /** Lot 7 - Sous-lot B2 : Emplois du temps (Semestre -> Semaine -> Cours) */
   static async getEmploisDuTempsTree(req: Request, res: Response): Promise<Response> {
     try {
-      const semestres = await SemestreAcademique.findAll({ order: [['code', 'ASC']] });
+      const semestres = await SemestreAcademique.findAll({ order: [['codeSemestre', 'ASC']] });
       const seances = await Seance.findAll({ include: [{ association: Seance.associations.cours }] });
 
       const tree = semestres.map((s) => {

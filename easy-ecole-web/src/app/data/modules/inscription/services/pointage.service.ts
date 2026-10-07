@@ -40,4 +40,13 @@ export class PointageService {
   verifierStatutByQR(codeQR: string): Observable<any> {
     return this.httpClient.get<any>(`${this.SERVICE_URL}/scan/verifier-statut/${encodeURIComponent(codeQR)}`)
   }
+
+  getRapport(debut?: string, fin?: string): Observable<any> {
+    let url = `${this.SERVICE_URL}/rapport`
+    const params: string[] = []
+    if (debut) params.push(`debut=${encodeURIComponent(debut)}`)
+    if (fin) params.push(`fin=${encodeURIComponent(fin)}`)
+    if (params.length > 0) url += '?' + params.join('&')
+    return this.httpClient.get<any>(url)
+  }
 }

@@ -4,6 +4,8 @@ import { PlanningPersonnelService, PlanningPersonnel } from 'src/app/data/module
 
 interface PlanningCell {
   employe: string
+  matricule: string
+  poste: string
   tache: string
   heureDebut: string
   heureFin: string
@@ -56,10 +58,11 @@ export class PlanningPageComponent extends BaseComponentClass implements OnInit 
     for (const item of data) {
       const jour = this.capitalize(item.jourSemaine.toLowerCase())
       if (this.planning[jour] !== undefined) {
+        const nomEmploye = ((item.employe?.nom || '') + ' ' + (item.employe?.prenoms || '')).trim()
         this.planning[jour].push({
-          employe: item.employe?.poste?.libelle
-            ? `${item.tache} (${item.employe?.poste?.libelle})`
-            : item.tache,
+          employe: nomEmploye || 'Employé #' + (item.employeId || '—'),
+          matricule: item.employe?.matricule || '',
+          poste: item.employe?.poste?.libelle || '',
           tache: item.tache,
           heureDebut: item.heureDebut?.toString().slice(0, 5),
           heureFin: item.heureFin?.toString().slice(0, 5),

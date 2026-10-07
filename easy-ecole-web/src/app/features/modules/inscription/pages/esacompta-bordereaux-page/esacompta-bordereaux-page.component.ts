@@ -218,6 +218,8 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
 
   private loadData(): void {
     this.loading = true
+    this.error = false
+    this.apiErrorMessage = ''
     const params: any = { page: 1, limit: 50, statut: this.activeStatut }
     if (this.selectedAnneeId) params.anneeAcademiqueId = this.selectedAnneeId
     if (this.selectedNiveauId) params.niveauEtudeId = this.selectedNiveauId
@@ -231,7 +233,12 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
         this.loading = false
         this.dataLoaded = true
       },
-      error: () => { this.loading = false; this.dataLoaded = true }
+      error: (err) => {
+        this.loading = false
+        this.dataLoaded = true
+        this.error = true
+        this.apiErrorMessage = err?.error?.message || 'Impossible de charger les bordereaux. Vérifiez vos droits puis réessayez.'
+      }
     })
   }
 
@@ -670,6 +677,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   /** Retourne l'URL de la photo de l'étudiant (ou l'image par défaut si absente) */
   getPhotoUrl(bordereau: any): string {
     const photo = bordereau?.utilisateur?.apprenant?.photo
+      || bordereau?.demandeInscription?.utilisateur?.apprenant?.photo
     if (photo) {
       return this.PHOTOS_PATH + photo
     }

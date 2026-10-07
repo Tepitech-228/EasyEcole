@@ -10,13 +10,13 @@ import { BaremeFormPageComponent } from './pages/bareme-form-page/bareme-form-pa
 import { FraisPageComponent } from './pages/frais-page/frais-page.component';
 import { FraisFormPageComponent } from './pages/frais-form-page/frais-form-page.component';
 import { NotificationsPageComponent } from './pages/notifications-page/notifications-page.component';
-import { RolesPageComponent } from './pages/roles-page/roles-page.component';
 import { SystemePageComponent } from './pages/systeme-page/systeme-page.component';
 import { AuditPageComponent } from './pages/audit-page/audit-page.component';
 import { SauvegardesPageComponent } from './pages/sauvegardes-page/sauvegardes-page.component';
 import { ModelesPageComponent } from './pages/modeles-page/modeles-page.component';
 import { ModeleEditPageComponent } from './pages/modele-edit-page/modele-edit-page.component';
 import { GestionPermissionsPageComponent } from './pages/gestion-permissions-page/gestion-permissions-page.component';
+import { PermissionGuard } from 'src/app/core/guards/permission.guard';
 
 const routes: Routes = [
   { path: 'profil', component: MonProfilPageComponent },
@@ -32,14 +32,14 @@ const routes: Routes = [
   { path: 'frais/nouveau', component: FraisFormPageComponent },
   { path: 'frais/:id', component: FraisFormPageComponent },
   { path: 'notifications', component: NotificationsPageComponent },
-  { path: 'roles', component: RolesPageComponent },
-  { path: 'roles/:id', component: RolesPageComponent },
+  { path: 'roles', redirectTo: '/administration/roles', pathMatch: 'full' },
+  { path: 'roles/:id', redirectTo: '/administration/roles', pathMatch: 'full' },
   { path: 'systeme', component: SystemePageComponent },
   { path: 'audit', component: AuditPageComponent },
   { path: 'sauvegardes', component: SauvegardesPageComponent },
   { path: 'modeles', component: ModelesPageComponent },
   { path: 'modeles/:id', component: ModeleEditPageComponent },
-  { path: 'permissions', component: GestionPermissionsPageComponent },
+  { path: 'permissions', component: GestionPermissionsPageComponent, canActivate: [PermissionGuard], data: { permission: 'menu.administration.permissions' } },
 ];
 
 @NgModule({

@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 import { AnneesParcours } from 'src/app/data/enums/AnneesParcours';
 import { SemestresParcours } from 'src/app/data/enums/SemestresParcours';
 import { Enseignant } from 'src/app/data/modules/auth/models/Enseignant.model';
@@ -19,9 +20,13 @@ import { environment } from 'src/environments/environment';
 export class DetailsEnseignantPageComponent extends BaseComponentClass implements OnInit {
 
   readonly PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS
+  readonly PHOTOS_ENSEIGNANTS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS_ENSEIGNANTS
+  readonly QR_CODES_PATH: string = environment.QR_CODES_ENSEIGNANTS_PATH
 
   id: string
   enseignant?: Enseignant
+  photoUploading: boolean = false
+  qrRegenerating: boolean = false
 
   cours: Cours[] = []
   coursLoading: boolean = false
@@ -49,6 +54,38 @@ export class DetailsEnseignantPageComponent extends BaseComponentClass implement
   }
 
   ngOnInit(): void {
+  }
+
+  /** URL image QR avec token (?token=) : les <img> ne passent pas par l'intercepteur HTTP. */
+  qrSrc(fileName: string): string {
+    const token = localStorage.getItem(LocalStorageService.AUTH_TOKEN) || ''
+    return `${this.QR_CODES_PATH}${fileName}?token=${token}`
+  }
+
+  regenererQr(): void {
+    if (!this.enseignant?.id || this.qrRegenerating) return
+    this.qrRegenerating = true
+    this.enseignantService.generateQrCodes(this.enseignant.id).subscribe({
+      next: () => {
+        this.qrRegenerating = false
+        this.getEnseignant()
+      },
+      error: () => { this.qrRegenerating = false }
+    })
+  }
+
+  onPhotoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement
+    const file = input.files && input.files[0]
+    if (!file || !this.enseignant?.id) return
+    this.photoUploading = true
+    this.enseignantService.updatePhotoById(this.enseignant.id, file).subscribe({
+      next: () => {
+        this.photoUploading = false
+        this.getEnseignant()
+      },
+      error: () => { this.photoUploading = false }
+    })
   }
 
   customCoursSearchFn(term: string, item: Cours) {

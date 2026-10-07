@@ -170,10 +170,18 @@ export class DetailBulletinPageComponent extends BaseComponentClass implements O
     return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
   }
 
-  getTeacherName(cours: any): string {
-    if (!cours) return '-';
-    if (cours.enseignantNom) return cours.enseignantNom;
-    if (cours.utilisateur?.nom) return `${cours.utilisateur.nom} ${cours.utilisateur.prenoms || ''}`.trim();
-    return '-';
+  getCategorieUe(categorie: string | null | undefined): string {
+    switch (categorie) {
+      case 'MAJEURE': return 'UE majeure';
+      case 'MINEURE': return 'UE mineure';
+      case 'LIBRE': return 'UE libre';
+      default: return '';
+    }
+  }
+
+  getUesValidees(bulletin: any): number {
+    return Array.isArray(bulletin?.ues)
+      ? bulletin.ues.filter((ue: any) => ue.estValidee).length
+      : 0;
   }
 }

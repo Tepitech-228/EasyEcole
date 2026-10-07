@@ -1,6 +1,7 @@
 import { DocGenTemplate } from "../models/DocGenTemplate";
 import { DocGenType } from "../models/DocGenType";
 import { DocGenLogoService } from "../services/DocGenLogoService";
+import { extractOfficialTemplatePages, OFFICIAL_TEMPLATE_TYPE_CODES } from "./official-template-pages";
 import fs from "fs";
 import path from "path";
 
@@ -51,11 +52,11 @@ const TEMPLATE_MAP: Record<string, { libelle: string; typeCodes: string[] }> = {
   },
   'releve-notes.html': {
     libelle: 'Relevé de notes par défaut',
-    typeCodes: ['NOT001', 'NOT002', 'NOT003', 'NOT004', 'NOT005', 'NOT006'],
+    typeCodes: ['NOT001', 'NOT002', 'NOT005', 'NOT006'],
   },
   'bulletin.html': {
     libelle: 'Bulletin de notes par défaut',
-    typeCodes: ['BUL001', 'BUL002', 'BUL003'],
+    typeCodes: ['NOT003', 'NOT004'],
   },
   'diplome.html': {
     libelle: 'Diplôme par défaut',
@@ -248,35 +249,58 @@ export async function seedDocGenTemplates(): Promise<void> {
     const contenu = DocGenLogoService.injectLogo(fs.readFileSync(filePath, 'utf-8'));
 
     for (const typeCode of info.typeCodes) {
-      const type = await DocGenType.findOne({ where: { code: typeCode } });
-      if (!type) {
-        console.warn(`  [docgen] Type not found for code: ${typeCode} (template: ${fileName})`);
-        continue;
-      }
-
-      const existing = await DocGenTemplate.findOne({
-        where: { typeId: type.id, isDefault: true }
-      });
-
-      if (!existing) {
-        await DocGenTemplate.create({
-          typeId: type.id,
-          libelle: info.libelle,
-          contenu,
-          isDefault: true,
-          version: 1,
-        } as any);
-        console.log(`  [docgen] Template créé: ${typeCode} -> ${info.libelle}`);
-      } else if (existing.contenu !== contenu) {
-        existing.contenu = contenu;
-        existing.version = (existing.version || 1) + 1;
-        await existing.save();
-        console.log(`  [docgen] Template mis à jour (v${existing.version}): ${typeCode} -> ${info.libelle}`);
-      } else {
-        console.log(`  [docgen] Template identique: ${typeCode}`);
+      if (!OFFICIAL_TEMPLATE_TYPE_CODES.has(typeCode)) {
+        await synchronizeDefaultTemplate(typeCode, info.libelle, contenu, fileName);
       }
     }
   }
 
+  const officialSourcePath = path.join(templatesDir, 'formulaires-academiques-officiels-source.html');
+  if (!fs.existsSync(officialSourcePath)) {
+    throw new Error(`Document source DocGen introuvable: ${officialSourcePath}`);
+  }
+
+  const officialPages = extractOfficialTemplatePages(fs.readFileSync(officialSourcePath, 'utf-8'));
+  for (const page of officialPages) {
+    const contenu = DocGenLogoService.injectLogo(page.contenu);
+    await synchronizeDefaultTemplate(page.typeCode, page.libelle, contenu, `page ${page.pageNumber}`);
+  }
+
   console.log(`[docgen] Templates synchronisés.`);
+}
+
+async function synchronizeDefaultTemplate(
+  typeCode: string,
+  libelle: string,
+  contenu: string,
+  source: string,
+): Promise<void> {
+  const type = await DocGenType.findOne({ where: { code: typeCode } });
+  if (!type) {
+    console.warn(`  [docgen] Type not found for code: ${typeCode} (template: ${source})`);
+    return;
+  }
+
+  const existing = await DocGenTemplate.findOne({
+    where: { typeId: type.id, isDefault: true }
+  });
+
+  if (!existing) {
+    await DocGenTemplate.create({
+      typeId: type.id,
+      libelle,
+      contenu,
+      isDefault: true,
+      version: 1,
+    } as any);
+    console.log(`  [docgen] Template créé: ${typeCode} -> ${libelle}`);
+  } else if (existing.contenu !== contenu) {
+    existing.contenu = contenu;
+    existing.libelle = libelle;
+    existing.version = (existing.version || 1) + 1;
+    await existing.save();
+    console.log(`  [docgen] Template mis à jour (v${existing.version}): ${typeCode} -> ${libelle}`);
+  } else {
+    console.log(`  [docgen] Template identique: ${typeCode}`);
+  }
 }

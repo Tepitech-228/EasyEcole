@@ -28,6 +28,7 @@
         "db:seed-ged-full": "ts-node src/modules/ged/seed-ged-full-demo.ts",
         "db:seed-ged-folders": "ts-node src/core/scripts/seed-ged-folders.ts",
         "db:seed-accounts": "ts-node src/core/scripts/seed-accounts.ts",
+        "db:seed-superviseur-general": "ts-node src/core/scripts/seed-superviseur-general.ts",
         "db:seed-documents-requis-niveau": "ts-node src/core/scripts/seed-documents-requis-niveau.ts",
         "db:seed-docgen": "ts-node src/modules/docgen/seed/seed.ts",
         "db:seed-complet": "ts-node src/core/scripts/seed-complet.ts",
@@ -35,6 +36,7 @@
         "test": "jest",
         "test:watch": "jest --watch",
         "test:coverage": "jest --coverage",
+        "test:all-endpoints": "node scripts/test-all-endpoints.cjs",
         "test:e2e": "ts-node scripts/e2e/run-e2e.js"
     },
     "keywords": [],

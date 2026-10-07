@@ -9,6 +9,17 @@
 > - Fiche tests d'intégration : `FICHE-TESTS-ANTI-REQUETES-SILENCIEUSES.md`
 > - Fiche cache Redis : `FICHE-IMPLEMENTATION-CACHE-REDIS.md`
 
+## Mise à jour du 03/10/2026
+
+Les valeurs ci-dessous sont un état historique du 29/08/2026; elles ne décrivent pas le dernier arbre de travail. Depuis cette mesure :
+
+- les **16 modules** alors listés sans tests (`rh`, `scolarite`, `immobilisation`, `ged`, `orientation`, `elearning`, `bulletins`, `achats`, `qualite`, `stage`, `marche`, `communication`, `bourse`, `reporting`, `etablissement`, `parent`) disposent chacun d'au moins une suite ciblée;
+- **17 suites/fichiers de tests ciblés** ont été ajoutés à ces modules, en plus des correctifs de suites existantes;
+- la suite backend complète passe : **65 suites passées, 2 ignorées; 666 tests réussis, 14 ignorés**;
+- `--detectOpenHandles` ne signale plus de handle ouvert après le `unref` du timer de nettoyage OTP.
+
+**Attention :** ce progrès n'équivaut pas à une couverture complète des 16 modules. Les suites couvrent un contrôleur ou service choisi par module, pas chaque contrôleur, endpoint, méthode, rôle ou erreur. Le critère de couverture intégrale reste celui décrit ci-dessous et doit être poursuivi par contrôleur/route. Les mesures détaillées du run sont consignées dans `AUDIT-GLOBAL-2026-10-03.md`.
+
 ---
 
 ## 1. Synthèse (état mesuré)

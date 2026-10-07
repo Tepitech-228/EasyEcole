@@ -26,7 +26,8 @@ export class OtpService {
   private static store = new Map<string, OtpEntry>()
 
   static {
-    setInterval(() => this.cleanup(), CLEANUP_INTERVAL)
+    const cleanupTimer = setInterval(() => this.cleanup(), CLEANUP_INTERVAL)
+    cleanupTimer.unref()
   }
 
   static generate(email: string): string {

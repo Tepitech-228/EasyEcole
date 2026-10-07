@@ -14,8 +14,8 @@ async function phase6(context) {
   // Insérer des bulletins avec COALESCE
   for (const userId of failedStudentIds) {
     await db.query(
-      'INSERT IGNORE INTO ins_bulletins (utilisateurId, anneeAcademiqueId, classeId, moyenneGenerale, statut, type, dateGeneration, createdAt, updatedAt) SELECT ?, ?, ?, COALESCE((SELECT AVG(rn.note_rattrapage) FROM ins_rattrapage_notes rn JOIN ins_rattrapages_inscriptions ri ON ri.id = rn.rattrapageInscriptionId WHERE ri.demandePar = ?), (SELECT AVG(ne.note) FROM ins_notes_evaluation ne JOIN ins_listes_note_evaluation lne ON ne.listeNoteEvaluationId = lne.id JOIN ins_cours_participants cp ON cp.id = ne.coursParticipantId WHERE cp.utilisateurId = ? AND lne.anneeAcademiqueId = ?), 0), ?, "rattrapage", NOW(), NOW(), NOW())',
-      { replacements: [userId, anneeAcademiqueId, classeId, userId, userId, anneeAcademiqueId, 'genere'], type: db.QueryTypes.INSERT }
+      'INSERT IGNORE INTO ins_bulletins (utilisateurId, anneeAcademiqueId, classeId, parcoursId, niveauEtudeId, semestre, cursusApprenantId, moyenneGenerale, statut, dateGeneration, createdAt, updatedAt) SELECT ?, ?, ?, ca.parcoursId, ca.niveauEtudeId, "semestre1", ca.id, COALESCE((SELECT AVG(rn.note_rattrapage) FROM ins_rattrapage_notes rn JOIN ins_rattrapages_inscriptions ri ON ri.id = rn.rattrapageInscriptionId WHERE ri.demandePar = ?), (SELECT AVG(ne.note) FROM ins_notes_evaluation ne JOIN ins_listes_notes_evaluation lne ON ne.listeNoteEvaluationId = lne.id JOIN ins_cours_participants cp ON cp.id = ne.coursParticipantId WHERE cp.utilisateurId = ? AND lne.anneeAcademiqueId = ?), 0), "publie", NOW(), NOW(), NOW() FROM ins_cursus_apprenants ca WHERE ca.utilisateurId = ? AND ca.anneeAcademiqueId = ?',
+      { replacements: [userId, anneeAcademiqueId, classeId, userId, userId, anneeAcademiqueId, userId, anneeAcademiqueId], type: db.QueryTypes.INSERT }
     )
   }
 
@@ -30,7 +30,7 @@ async function phase6(context) {
     else { console.log(`[FAIL] Étudiant ${userId} : moyenne_rattrapage=${moyenne} < 10 ❌`); allPassed = false }
   }
 
-  const [newBulletins] = await db.query('SELECT COUNT(*) as cnt FROM ins_bulletins WHERE anneeAcademiqueId = ? AND type = ?', { replacements: [anneeAcademiqueId, 'rattrapage'], type: db.QueryTypes.SELECT })
+  const newBulletins = await db.query('SELECT COUNT(*) as cnt FROM ins_bulletins WHERE anneeAcademiqueId = ? AND statut = ?', { replacements: [anneeAcademiqueId, 'publie'], type: db.QueryTypes.SELECT })
   console.log(`\n[OK] ${newBulletins[0].cnt} bulletins régénérés après rattrapage`)
 
   if (!allPassed) { console.log('[FAIL] Certains étudiants n\'ont pas atteint la moyenne >= 10'); process.exit(1) }

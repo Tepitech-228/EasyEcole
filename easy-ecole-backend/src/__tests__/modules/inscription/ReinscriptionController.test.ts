@@ -64,6 +64,14 @@ jest.mock('../../../modules/inscription/models/Echeance', () => ({
   Echeance: { findAll: jest.fn(), findOne: jest.fn(), count: jest.fn() },
 }))
 
+jest.mock('../../../modules/inscription/models/AnneeAcademique', () => ({
+  AnneeAcademique: { findByPk: jest.fn(), findAll: jest.fn() },
+}))
+
+jest.mock('../../../modules/inscription/models/NiveauEtude', () => ({
+  NiveauEtude: { findByPk: jest.fn(), findAll: jest.fn() },
+}))
+
 jest.mock('../../../core/helpers/DatabaseConnection', () => {
   const sequelize = { transaction: jest.fn() }
   return { DatabaseConnection: { instance: null, getInstance: jest.fn(() => ({ sequelize })) } }

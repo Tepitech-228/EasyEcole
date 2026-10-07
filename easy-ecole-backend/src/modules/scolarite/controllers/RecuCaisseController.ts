@@ -8,6 +8,7 @@ import { JournalCaisse } from "../models/JournalCaisse";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { RecuCaisseGeneratorService } from "../services/RecuCaisseGeneratorService";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
+import { DemandeDocumentWorkflowService } from "../services/DemandeDocumentWorkflowService";
 
 export default class RecuCaisseController {
 
@@ -223,6 +224,19 @@ export default class RecuCaisseController {
         }, { transaction });
 
         await transaction.commit();
+
+        if (demande.source === 'demande_etudiant') {
+          try {
+            await DemandeDocumentWorkflowService.promouvoirAuComiteSiPret(demande.id);
+          } catch (workflowError) {
+            console.error(`[SECRETARIAT][collecterPaiement] progression workflow demande=${demande.id}`, workflowError);
+            return res.status(500).json({
+              success: false,
+              code: 'PAYMENT_RECORDED_WORKFLOW_ADVANCE_FAILED',
+              message: "Paiement enregistré, mais impossible de mettre à jour l'étape suivante du dossier"
+            });
+          }
+        }
 
         // Journal d'audit hors transaction (évite le deadlock sur le verrou X)
         await SecretariatService.logAction('PAIEMENT_ENCAISSE', utilisateurId, demande.id, `Reçu ${numeroRecu} — ${montantNum} FCFA`);

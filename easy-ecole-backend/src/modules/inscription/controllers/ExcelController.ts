@@ -9,6 +9,8 @@ import { Op } from "sequelize";
 import { Cours } from "../models/Cours";
 import { Ecue } from "../models/Ecue";
 import { Parcours } from "../models/Parcours";
+import { Classe } from "../models/Classe";
+import { NiveauEtude } from "../models/NiveauEtude";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { Apprenant } from "../../auth/models/Apprenant";
@@ -35,6 +37,10 @@ import { AnneeAcademique } from "../models/AnneeAcademique";
 import { Bordereau } from "../models/Bordereau";
 import { Echeance } from "../models/Echeance";
 import { TypeOperationBordereau } from "../models/TypeOperationBordereau";
+import { AuditNote } from "../../bulletins/models/AuditNote";
+import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
+import { validateNoteValue } from "../../../core/validators/noteValidators";
+import { EnseignantBadgeService } from "../../auth/services/EnseignantBadgeService";
 
 // ---------------------------------------------------------------------------
 //  UTILITIES
@@ -78,8 +84,103 @@ function parseExcelDate(value: any): Date | null {
     const utcDays = Math.floor(value - 25569);
     return new Date(utcDays * 86400 * 1000);
   }
+  if (typeof value === "string") {
+    const normalizedValue = value.trim();
+    const serialDate = normalizedValue.match(/^\d{5}(?:\.\d+)?$/);
+    if (serialDate) {
+      const utcDays = Math.floor(Number(normalizedValue) - 25569);
+      return new Date(utcDays * 86400 * 1000);
+    }
+    const frenchDate = normalizedValue.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (frenchDate) {
+      const [, day, month, year] = frenchDate;
+      const parsed = new Date(Number(year), Number(month) - 1, Number(day));
+      return parsed.getFullYear() === Number(year) &&
+        parsed.getMonth() === Number(month) - 1 &&
+        parsed.getDate() === Number(day)
+        ? parsed
+        : null;
+    }
+  }
   const d = new Date(value);
   return isNaN(d.getTime()) ? null : d;
+}
+
+function parseExcelTime(value: string): string | null {
+  const normalized = value.trim();
+  const serial = Number(normalized);
+  if (normalized && Number.isFinite(serial) && serial >= 0 && serial < 1) {
+    const seconds = Math.round(serial * 86400);
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+    return [hours, minutes, remainingSeconds].map(part => String(part).padStart(2, "0")).join(":");
+  }
+
+  const match = normalized.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (!match) return null;
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  const seconds = Number(match[3] || 0);
+  if (hours > 23 || minutes > 59 || seconds > 59) return null;
+  return [hours, minutes, seconds].map(part => String(part).padStart(2, "0")).join(":");
+}
+
+function normalizeMigrationLabel(value: unknown): string {
+  return String(value || "")
+    .trim()
+    .toLocaleLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+async function resolveMigrationClass(
+  libelle: string,
+  parcoursId: number,
+  niveauEtudeId?: number,
+): Promise<Classe> {
+  const candidates = await Classe.findAll({ where: { libelle } });
+  const compatible = candidates
+    .filter(classe =>
+      (!classe.parcoursId || Number(classe.parcoursId) === parcoursId) &&
+      (!niveauEtudeId || !classe.niveauEtudeId || Number(classe.niveauEtudeId) === niveauEtudeId),
+    )
+    .sort((left, right) => {
+      const score = (classe: Classe) =>
+        (Number(classe.parcoursId) === parcoursId ? 1 : 0) +
+        (niveauEtudeId && Number(classe.niveauEtudeId) === niveauEtudeId ? 1 : 0);
+      return score(right) - score(left);
+    });
+
+  if (compatible.length > 0) return compatible[0];
+  if (candidates.length > 0) {
+    throw new Error(`La classe "${libelle}" existe déjà, mais elle est liée à un autre parcours ou niveau.`);
+  }
+
+  if (!niveauEtudeId) {
+    throw new Error(`La classe "${libelle}" n'existe pas et son niveau ne peut pas être déduit.`);
+  }
+
+  return Classe.create({
+    libelle,
+    parcoursId,
+    niveauEtudeId,
+  } as any);
+}
+
+function inferMigrationNiveauLabel(classeLabel: string): string | null {
+  const match = classeLabel.match(/(?:^|-)(BTS|MBA|L|M|D)(\d+)(?=-|$)/i);
+  if (!match) return null;
+  const cycle = match[1].toUpperCase();
+  const cycleLabel: Record<string, string> = {
+    L: "Licence",
+    M: "Master",
+    D: "Doctorat",
+    BTS: "BTS",
+    MBA: "MBA",
+  };
+  return `${cycleLabel[cycle]} ${match[2]}`;
 }
 
 /** Nettoie un nom de feuille Excel (max 31 car., sans caractères interdits) */
@@ -1125,7 +1226,7 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
   static async importEnseignants(req: Request, res: Response): Promise<Response> {
     if (!req.file) return res.status(400).json({ success: false, message: "Aucun fichier fourni" });
     const filePath = req.file.path;
-    const results: { email?: string; statut: string; message: string; motDePasse?: string }[] = [];
+    const results: { email?: string; statut: string; message: string; motDePasse?: string; matricule?: string; qrCode?: string }[] = [];
     const isWord = /\.docx$/i.test(req.file.originalname);
 
     try {
@@ -1183,15 +1284,26 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
             role: RolesUtilisateur.ENSEIGNANT,
           });
 
-          await Enseignant.create({
+          const enseignant = await Enseignant.create({
             utilisateurId: utilisateur.id,
             dateNaissance: dateNaissance ?? undefined,
             lieuNaissance: lieuNaissance ?? undefined,
             fonction: fonction ?? undefined,
           } as any);
+          const badge = await EnseignantBadgeService.ensureIdentity(
+            enseignant,
+            (req as any).etablissementId || null,
+          );
 
           imported++;
-          results.push({ email, statut: "succès", message: "Enseignant créé", motDePasse: tempPassword });
+          results.push({
+            email,
+            statut: "succès",
+            message: `Enseignant créé avec le matricule ${badge.matricule} et son QR code.`,
+            motDePasse: tempPassword,
+            matricule: badge.matricule,
+            qrCode: badge.qrCode,
+          });
         } catch (err: any) {
           errors++;
           results.push({ email, statut: "erreur", message: err.message });
@@ -1321,72 +1433,35 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
 
       applyHeaderStyle(ws.getRow(1));
 
-      ws.addRow({
-        nom: "Diallo",
-        prenoms: "Aminata",
-        identifiant: "adiallo",
-        email: "aminata.diallo@etu.com",
-        contact: "+221 76 123 45 67",
-        sexe: "F",
-        parcours: "Licence Informatique",
-        filiere: "Licence Informatique",
-        classe: "Licence 1",
-        niveau: "Licence",
-        promotion: "2025-2026",
-        salle: "Amphithéâtre A",
-        statutDossier: "complet",
-        dateNaissance: "01/01/2000",
-        lieuNaissance: "Thiès",
-        nationalite: "Sénégalaise",
-        typePieceIdentite: "CNI",
-        numeroPiece: "",
-        statutHandicap: "Non",
-        natureHandicap: "",
-        anneeObtentionBac: "2019",
-        serieBac: "LLCE",
-        photo: "",
-        qrCode: "",
-        boitePostale: "",
-        quartier: "",
-        ville: "Thiès",
-        pays: "Sénégal",
-        telDomicile: "",
-        nomPere: "",
-        professionPere: "",
-        nomMere: "",
-        professionMere: "",
-        nomPersonnePrevenir: "",
-        telPersonnePrevenir: "",
-        estSalarie: "Non",
-        professionSalarie: "",
-        session: "2025-2026",
-        parcoursImport: "Licence Informatique",
-      });
-
       const instr = wb.addWorksheet("Instructions");
-      instr.addRow(["Import des Apprenants (Étudiants)"]);
+      instr.addRow(["Import des étudiants provenant de la base du client"]);
       instr.addRow([]);
       instr.addRow([
-        "Colonnes obligatoires : Nom, Prénoms, Email, Identifiant, " +
-        "Date naissance, Lieu naissance, Session, Parcours"
-      ]);
-      instr.addRow([]);
-      instr.addRow([
-        "Un compte utilisateur sera créé avec le rôle 'apprenant'.",
-      ]);
-      instr.addRow([
-        "Une demande d'inscription sera automatiquement créée et rattachée " +
-        "à la session et au parcours spécifiés."
-      ]);
-      instr.addRow([
-        "L'apprenant pourra directement se connecter et poursuivre son onboarding."
+        "Renseignez une ligne par étudiant dans l'onglet Apprenants. L'onglet est volontairement vide : aucun étudiant fictif ne sera importé par erreur."
       ]);
       instr.addRow([]);
       instr.addRow([
-        "Session : le titre de la session doit déjà exister dans le système."
+        "Colonnes obligatoires : Nom, Prénoms, Identifiant, Email, Date naissance, Lieu naissance, Session (titre), Parcours (titre)."
       ]);
       instr.addRow([
-        "Parcours : le titre du parcours doit déjà exister dans le système."
+        "La date de naissance doit être saisie au format JJ/MM/AAAA. Ne modifiez pas l'ordre ni le nom des colonnes."
+      ]);
+      instr.addRow([
+        "Chaque ligne crée un compte apprenant et une demande d'inscription. L'étudiant pourra ensuite compléter son inscription dans EasyEcole."
+      ]);
+      instr.addRow([]);
+      instr.addRow([
+        "Session (titre) : indiquez le titre exact d'une session déjà créée dans EasyEcole."
+      ]);
+      instr.addRow([
+        "Parcours (titre) : indiquez le titre exact d'un parcours déjà créé dans EasyEcole."
+      ]);
+      instr.addRow([]);
+      instr.addRow([
+        "Les adresses e-mail doivent être uniques et ne pas correspondre à un compte déjà existant dans EasyEcole."
+      ]);
+      instr.addRow([
+        "Le matricule est facultatif; s'il est absent, il sera généré par le système."
       ]);
 
       res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -1396,6 +1471,99 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
     } catch (error) {
       console.error("Erreur template apprenants:", error);
       return res.status(500).json({ success: false, message: "Erreur lors de la génération du template" });
+    }
+  }
+
+  /**
+   * GET /excel/apprenants/template/migration
+   * Télécharge un modèle vierge de migration avec les cinq feuilles attendues par l'import.
+   */
+  static async downloadApprenantsMigrationTemplate(req: Request, res: Response): Promise<Response> {
+    try {
+      const wb = new ExcelJS.Workbook();
+      wb.creator = "EasyEcole";
+
+      const sheets = [
+        {
+          name: "Identité",
+          headers: [
+            "Matricule", "Nom", "Prénoms", "Email", "Téléphone", "Sexe", "Parcours", "Filière",
+            "Classe", "Niveau", "Promotion (année académique)", "Salle", "Statut dossier",
+            "Date naissance", "Lieu naissance", "Nationalité", "Type pièce identité", "Numéro pièce",
+            "Statut handicap", "Nature handicap", "Année obtention Bac", "Série Bac", "Photo", "QR Code",
+            "Boîte postale", "Quartier", "Ville", "Pays", "Tél domicile", "Nom Père", "Profession Père",
+            "Nom Mère", "Profession Mère", "Nom personne prévenir", "Tél personne prévenir", "Est salarié",
+            "Profession",
+          ],
+          widths: [
+            18, 20, 24, 28, 18, 8, 26, 26, 18, 16, 24, 20, 16, 18, 18, 18, 20, 20, 14,
+            22, 18, 18, 20, 20, 20, 20, 20, 20, 18, 22, 24, 22, 24, 24, 20, 14, 24,
+          ],
+        },
+        {
+          name: "Cursus",
+          headers: [
+            "CursusApprenantId", "UtilisateurId", "Matricule", "ParcoursId", "Parcours titre",
+            "NiveauId", "ClasseId", "Classe libellé", "Année académiqueId", "Année libellé",
+            "EtablissementId", "Statut étudiant", "Période", "Email", "Niveau libellé",
+          ],
+          widths: [18, 14, 18, 14, 26, 14, 14, 24, 16, 24, 16, 16, 14, 28, 22],
+        },
+        {
+          name: "Finance",
+          headers: [
+            "Matricule", "Nom", "Prénoms", "Email", "Session ID", "Session Libellé",
+            "Année Académique", "Semestre", "DossierEtudiant ID", "Echeance ID",
+            "Echeance Montant", "Echeance Date", "Echeance Statut", "Bordereau ID",
+            "Bordereau Référence", "Bordereau Montant", "Bordereau Date Dépôt",
+            "Bordereau Statut", "Type Opération Bordereau", "Somme Payée", "Reste à Payer",
+            "Date Paiement", "Frais de scolarité dossier", "Mode de paiement dossier",
+            "Nombre de mensualités dossier", "Démarrage parcours dossier", "Type échéance",
+            "Numéro échéance", "Fichier bordereau",
+          ],
+          widths: [
+            18, 20, 24, 28, 14, 24, 22, 14, 18, 14, 16, 18, 16, 16, 22, 16, 18, 16, 26,
+            16, 18, 18, 22, 22, 28, 24, 18, 18, 30,
+          ],
+        },
+        {
+          name: "Notes",
+          headers: [
+            "Matricule", "Nom", "Prénoms", "Email", "Cours Code", "Cours Intitulé", "ECUE Code",
+            "ECUE Intitulé", "Note", "Coefficient", "Crédit", "Semestre", "Année Académique",
+            "Type Note", "Date Saisie", "Enseignant Nom", "Enseignant Email", "Enseignant ID",
+            "Date Évaluation", "Heure début", "Heure fin", "Statut Note",
+          ],
+          widths: [18, 20, 24, 28, 15, 35, 15, 35, 10, 12, 10, 14, 20, 16, 16, 25, 30, 14, 16, 14, 14, 14],
+        },
+        {
+          name: "Enseignants_Cours",
+          headers: [
+            "Cours Code", "Cours Intitulé", "ECUE Code", "Parcours", "Semestre", "Enseignant Nom",
+            "Enseignant Email", "Enseignant ID", "Classe",
+          ],
+          widths: [15, 35, 15, 26, 14, 25, 30, 14, 20],
+        },
+      ];
+
+      sheets.forEach(({ name, headers, widths }) => {
+        const worksheet = wb.addWorksheet(sanitizeSheetName(name));
+        worksheet.columns = headers.map((header, index) => ({
+          header,
+          key: `column${index + 1}`,
+          width: widths[index],
+        }));
+        worksheet.views = [{ state: "frozen", ySplit: 1 }];
+        applyHeaderStyle(worksheet.getRow(1));
+      });
+
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.setHeader("Content-Disposition", 'attachment; filename="modele-migration-client-5-onglets.xlsx"');
+      await wb.xlsx.write(res);
+      return res.status(200).end();
+    } catch (error) {
+      console.error("Erreur template migration apprenants:", error);
+      return res.status(500).json({ success: false, message: "Erreur lors de la génération du modèle de migration" });
     }
   }
 
@@ -1444,7 +1612,15 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
         const wb = new ExcelJS.Workbook();
         await wb.xlsx.readFile(filePath);
         const ws = wb.getWorksheet("Apprenants");
-        if (!ws) return res.status(400).json({ success: false, message: "Feuille 'Apprenants' introuvable" });
+        if (!ws) {
+          if (wb.getWorksheet("Identité")) {
+            return res.status(400).json({
+              success: false,
+              message: "Ce classeur est une migration complète. Choisissez « Migration Complète (5 onglets) » dans Type d'import pour l'importer.",
+            });
+          }
+          return res.status(400).json({ success: false, message: "Feuille 'Apprenants' introuvable" });
+        }
         rows = [];
         // Lecture de toutes les 38 colonnes
         for (let i = 2; i <= ws.rowCount; i++) {
@@ -1639,19 +1815,17 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
 
   /**
    * POST /excel/apprenants/import/migration
-   * Import complet des apprenants depuis un fichier de migration (3 feuilles : Identité, Cursus, Finance)
+   * Import complet des apprenants depuis les cinq feuilles du classeur de migration.
    */
   static async importApprenantsMigration(req: Request, res: Response): Promise<Response> {
     if (!req.file) return res.status(400).json({ success: false, message: "Aucun fichier fourni" });
     
     const filePath = req.file.path;
-    const isWord = /\.docx$/i.test(req.file.originalname);
-    
-    if (isWord) {
-      return res.status(400).json({ success: false, message: "Le format Word n'est pas supporté pour l'import migration. Utilisez le format Excel (.xlsx)" });
-    }
-    
     try {
+      if (!/\.xlsx$/i.test(req.file.originalname)) {
+        return res.status(400).json({ success: false, message: "L'import migration requiert un classeur Excel .xlsx." });
+      }
+
       const wb = new ExcelJS.Workbook();
       await wb.xlsx.readFile(filePath);
       
@@ -1666,6 +1840,56 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
       // Parse Finance sheet
       const wsFinance = wb.getWorksheet("Finance");
       if (!wsFinance) return res.status(400).json({ success: false, message: "Feuille 'Finance' introuvable" });
+
+      const wsNotes = wb.getWorksheet("Notes");
+      if (!wsNotes) return res.status(400).json({ success: false, message: "Feuille 'Notes' introuvable" });
+
+      const wsEnseignantsCours = wb.getWorksheet("Enseignants_Cours");
+      if (!wsEnseignantsCours) {
+        return res.status(400).json({ success: false, message: "Feuille 'Enseignants_Cours' introuvable" });
+      }
+
+      const normalizeHeader = (value: unknown) => String(value || "")
+        .trim()
+        .toLocaleLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+      const noteHeaders = Array.from(
+        { length: wsNotes.columnCount },
+        (_, index) => normalizeHeader(wsNotes.getRow(1).getCell(index + 1).text),
+      );
+      const requiredNoteHeaders = [
+        "email",
+        "cours code",
+        "note",
+        "coefficient",
+        "annee academique",
+        "type note",
+        "date evaluation",
+        "heure debut",
+        "heure fin",
+        "statut note",
+      ];
+      const missingNoteHeaders = requiredNoteHeaders.filter(header => !noteHeaders.includes(header));
+      if (missingNoteHeaders.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `La feuille 'Notes' ne contient pas les nouvelles métadonnées (${missingNoteHeaders.join(", ")}). Réexportez le classeur depuis la version actuelle avant de l'importer.`,
+        });
+      }
+
+      const assignmentHeaders = Array.from(
+        { length: wsEnseignantsCours.columnCount },
+        (_, index) => normalizeHeader(wsEnseignantsCours.getRow(1).getCell(index + 1).text),
+      );
+      const requiredAssignmentHeaders = ["cours code", "parcours", "enseignant email", "classe"];
+      const missingAssignmentHeaders = requiredAssignmentHeaders.filter(header => !assignmentHeaders.includes(header));
+      if (missingAssignmentHeaders.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `La feuille 'Enseignants_Cours' ne contient pas les colonnes requises : ${missingAssignmentHeaders.join(", ")}.`,
+        });
+      }
       
       // Process Identité data
       const apprenantsData = [];
@@ -1698,19 +1922,48 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
       for (let rowNum = 2; rowNum <= wsFinance.rowCount; rowNum++) {
         const row = wsFinance.getRow(rowNum);
         const values = [];
-        for (let colNum = 1; colNum <= 25; colNum++) {
+        for (let colNum = 1; colNum <= 29; colNum++) {
           values.push(row.getCell(colNum)?.toString()?.trim() || '');
         }
         if (values.some(v => v !== '')) {
           financeData.push(values);
         }
       }
+
+      const notesData: Array<{ values: string[]; line: number }> = [];
+      for (let rowNum = 2; rowNum <= wsNotes.rowCount; rowNum++) {
+        const row = wsNotes.getRow(rowNum);
+        const values = [];
+        for (let colNum = 1; colNum <= 22; colNum++) {
+          values.push(row.getCell(colNum)?.toString()?.trim() || "");
+        }
+        if (values.some(value => value !== "")) notesData.push({ values, line: rowNum });
+      }
+
+      const enseignantsCoursData: Array<{ values: string[]; line: number }> = [];
+      for (let rowNum = 2; rowNum <= wsEnseignantsCours.rowCount; rowNum++) {
+        const row = wsEnseignantsCours.getRow(rowNum);
+        const values = [];
+        for (let colNum = 1; colNum <= 9; colNum++) {
+          values.push(row.getCell(colNum)?.toString()?.trim() || "");
+        }
+        if (values.some(value => value !== "")) enseignantsCoursData.push({ values, line: rowNum });
+      }
       
       // Import each apprenant from Identité data
       let imported = 0, errors = 0;
+      let importedNotes = 0;
+      let existingNotes = 0;
+      let importedTeacherAssignments = 0;
+      let publishedNotesAsDraft = 0;
+      let importedCursus = 0;
+      let importedFinanceRows = 0;
       const results = [];
+      const normalize = (value: unknown) => String(value || '').trim().toLowerCase();
       
       for (const values of apprenantsData) {
+        let migrationTempPassword: string | undefined;
+        let migrationSection: "apprenant" | "cursus" | "finance" = "apprenant";
         try {
           const [
             matricule, nom, prenoms, email, telephone, sexe, parcours, filiere, classe, niveau, promotion, salle, statutDossier,
@@ -1721,11 +1974,16 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
             nomPersonnePrevenir, telPersonnePrevenir,
             estSalarie, professionSalarie
           ] = values;
+          const parcoursIdentite = parcours;
+          const classeIdentite = classe;
+          const niveauIdentite = niveau;
+          const promotionIdentite = promotion;
           
           // Validate required fields
-          if (!nom || !prenoms || !email) {
+          const dateNaissanceImportee = parseExcelDate(dateNaissance);
+          if (!nom || !prenoms || !email || !dateNaissanceImportee || !lieuNaissance) {
             errors++;
-            results.push({ email, statut: "erreur", message: "Champs obligatoires manquants : nom, prénoms, email" });
+            results.push({ type: "apprenant", email, statut: "erreur", message: "Champs obligatoires manquants ou invalides : nom, prénoms, email, date de naissance et lieu de naissance" });
             continue;
           }
           
@@ -1736,32 +1994,40 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
           if (!utilisateur) {
             // Create new user
             const tempPassword = generateTempPassword();
+            let identifiant = email.split('@')[0];
+            if (await Utilisateur.findOne({ where: { identifiant } })) {
+              identifiant = `${identifiant}-${generateTempPassword().slice(0, 6)}`;
+            }
             utilisateur = await Utilisateur.create({
               nom,
               prenoms,
               email: email!,
-              identifiant: email.split('@')[0], // Simple identifiant from email
+              identifiant,
               contact: telephone || '',
               motDePasse: bcrypt.hashSync(tempPassword, 12),
               role: RolesUtilisateur.APPRENANT,
             });
             isNewUser = true;
-            
-            // Store temp password for result
-            results.push({ email, statut: "succès", message: "Utilisateur créé", motDePasse: tempPassword });
-          } else {
-            results.push({ email, statut: "succès", message: "Utilisateur existant mis à jour" });
+            migrationTempPassword = tempPassword;
+          } else if (utilisateur.role !== RolesUtilisateur.APPRENANT) {
+            errors++;
+            results.push({ type: "apprenant", email, statut: "erreur", message: "Cette adresse email appartient déjà à un compte qui n'est pas apprenant." });
+            continue;
           }
           
           // Create or update apprenant
           let apprenant = await Apprenant.findOne({ where: { utilisateurId: utilisateur.id } });
           if (!apprenant) {
-            apprenant = await Apprenant.create({ utilisateurId: utilisateur.id } as any);
+            apprenant = await Apprenant.create({
+              utilisateurId: utilisateur.id,
+              dateNaissance: dateNaissanceImportee,
+              lieuNaissance,
+              sexe: (sexe === 'M' || sexe === 'F' || sexe === 'Autre') ? sexe : 'M',
+            } as any);
           }
           
-          // Update apprenant fields - use proper defaults for required fields
-          apprenant.dateNaissance = dateNaissance ? new Date(dateNaissance) : new Date(); // Default to today if empty
-          apprenant.lieuNaissance = lieuNaissance || "Inconnu"; // Required field
+          apprenant.dateNaissance = dateNaissanceImportee;
+          apprenant.lieuNaissance = lieuNaissance;
           apprenant.sexe = (sexe === 'M' || sexe === 'F' || sexe === 'Autre') ? sexe : 'M'; // Must be valid enum
           apprenant.nationalite = nationalite || 'Ivoirienne';
           apprenant.typePieceIdentite = typePieceIdentite || '';
@@ -1779,12 +2045,20 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
           // Create or update adresse
           let adresse = await AdresseApprenant.findOne({ where: { apprenantId: apprenant.id } });
           if (!adresse) {
-            adresse = await AdresseApprenant.create({ apprenantId: apprenant.id } as any);
+            adresse = await AdresseApprenant.create({
+              apprenantId: apprenant.id,
+              boitePostale: boitePostale || '',
+              prorietaireBoitePostale: '',
+              telMobile: telephone || '',
+              quartier: quartier || '',
+              ville: ville || '',
+              pays: pays || '',
+            } as any);
           }
-          (adresse as any).boitePostale = boitePostale || null;
-          (adresse as any).quartier = quartier || null;
-          (adresse as any).ville = ville || null;
-          (adresse as any).pays = pays || null;
+          (adresse as any).boitePostale = boitePostale || '';
+          (adresse as any).quartier = quartier || '';
+          (adresse as any).ville = ville || '';
+          (adresse as any).pays = pays || '';
           (adresse as any).telDomicile = telDomicile || null;
           await adresse.save();
           apprenant.adresseId = adresse.id;
@@ -1792,12 +2066,18 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
           // Create or update informations parents
           let infosParents = await InformationsParentsApprenant.findOne({ where: { apprenantId: apprenant.id } });
           if (!infosParents) {
-            infosParents = await InformationsParentsApprenant.create({ apprenantId: apprenant.id } as any);
+            infosParents = await InformationsParentsApprenant.create({
+              apprenantId: apprenant.id,
+              nomPrenomsPere: nomPere || '',
+              professionPere: professionPere || '',
+              nomPrenomsMere: nomMere || '',
+              professionMere: professionMere || '',
+            } as any);
           }
-          (infosParents as any).nomPrenomsPere = nomPere || null;
-          (infosParents as any).professionPere = professionPere || null;
-          (infosParents as any).nomPrenomsMere = nomMere || null;
-          (infosParents as any).professionMere = professionMere || null;
+          (infosParents as any).nomPrenomsPere = nomPere || '';
+          (infosParents as any).professionPere = professionPere || '';
+          (infosParents as any).nomPrenomsMere = nomMere || '';
+          (infosParents as any).professionMere = professionMere || '';
           await infosParents.save();
           apprenant.informationsParentsId = infosParents.id;
           
@@ -1806,12 +2086,22 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
           if (nomPersonnePrevenir) {
             let personnePrevenir = await PersonnePrevenirApprenant.findOne({ where: { apprenantId: apprenant.id } });
             if (!personnePrevenir) {
-              personnePrevenir = await PersonnePrevenirApprenant.create({ apprenantId: apprenant.id } as any);
+              const parts = nomPersonnePrevenir.split(' ');
+              personnePrevenir = await PersonnePrevenirApprenant.create({
+                apprenantId: apprenant.id,
+                nom: parts[0] || '',
+                prenoms: parts.slice(1).join(' ') || '',
+                telMobile: telPersonnePrevenir || '',
+                boitePostale: boitePostale || '',
+                quartier: quartier || '',
+                ville: ville || '',
+                pays: pays || '',
+              } as any);
             }
             const parts = nomPersonnePrevenir.split(' ');
-            (personnePrevenir as any).nom = parts[0] || null;
-            (personnePrevenir as any).prenoms = parts.slice(1).join(' ') || null;
-            (personnePrevenir as any).telMobile = telPersonnePrevenir || null;
+            (personnePrevenir as any).nom = parts[0] || '';
+            (personnePrevenir as any).prenoms = parts.slice(1).join(' ') || '';
+            (personnePrevenir as any).telMobile = telPersonnePrevenir || '';
             await personnePrevenir.save();
             personnePrevenirId = personnePrevenir.id;
           }
@@ -1828,12 +2118,37 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
           apprenant.informationsSalarieId = infoSalarie.id;
           
           await apprenant.save();
+
+          const normalizedEmail = email.trim().toLowerCase();
           
-          // Update dossier if matricule provided
+          // Update or create dossier if a matricule is provided.
           if (matricule) {
             let dossier = await DossierEtudiant.findOne({ where: { matricule } });
+            if (dossier && Number(dossier.utilisateurId) !== Number(utilisateur.id)) {
+              throw new Error(`Le matricule ${matricule} est déjà associé à un autre compte.`);
+            }
             if (!dossier) {
-              dossier = await DossierEtudiant.create({ matricule, utilisateurId: utilisateur.id } as any);
+              dossier = await DossierEtudiant.findOne({ where: { utilisateurId: utilisateur.id } });
+            }
+            const financeRow = financeData.find(row => normalize(row[3]) === normalizedEmail);
+            const fraisScolarite = financeRow?.[22] ? Number(financeRow[22]) : null;
+            const nbMensualites = Number(financeRow?.[24]);
+            const demarrageParcours = parseExcelDate(financeRow?.[25]);
+            if (!dossier) {
+              dossier = await DossierEtudiant.create({
+                matricule,
+                utilisateurId: utilisateur.id,
+                fraisScolarite: fraisScolarite !== null && Number.isFinite(fraisScolarite) ? fraisScolarite : 0,
+                modePaiement: financeRow?.[23] === 'mensuel' ? 'mensuel' : 'unique',
+                nbMensualites: Number.isInteger(nbMensualites) && nbMensualites > 0 ? nbMensualites : 1,
+                demarrageParcours: demarrageParcours || new Date(),
+              } as any);
+            } else {
+              dossier.utilisateurId = utilisateur.id;
+              if (fraisScolarite !== null && Number.isFinite(fraisScolarite)) dossier.fraisScolarite = fraisScolarite;
+              if (financeRow?.[23] === 'mensuel' || financeRow?.[23] === 'unique') dossier.modePaiement = financeRow[23] as any;
+              if (Number.isInteger(nbMensualites) && nbMensualites > 0) dossier.nbMensualites = nbMensualites;
+              if (demarrageParcours) dossier.demarrageParcours = demarrageParcours;
             }
             // Map statutDossier to correct enum
             const statutMap: Record<string, 'actif' | 'suspendu' | 'archive'> = {
@@ -1847,126 +2162,218 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
             dossier.statut = statutMap[statutDossier?.toLowerCase().trim()] || 'actif';
             await dossier.save();
           }
-          
-          // Process cursus data for this user
-          const cursusRows = cursusData.filter(row => String(row[1]) === String(utilisateur.id)); // utilisateurId column
+          // Les identifiants utilisateurs du classeur source ne sont pas ceux de la base cible.
+          // Les identifiants utilisateurs du classeur source ne sont pas ceux de la base cible.
+          const normalizedMatricule = (matricule || '').trim().toLowerCase();
+          const cursusRows = cursusData.filter(row => {
+            const cursusEmail = normalize(row[13]);
+            const cursusMatricule = normalize(row[2]);
+            return cursusEmail
+              ? cursusEmail === normalizedEmail
+              : Boolean(normalizedMatricule && cursusMatricule === normalizedMatricule);
+          });
+          migrationSection = "cursus";
           for (const cursusRow of cursusRows) {
             const [
-              cursusApprenantId, utilisateurIdStr, matriculeCursus, parcoursIdStr, parcoursTitre, niveauIdStr, classeIdStr, classeLibelle, anneeAcademiqueIdStr, anneeLibelle, etablissementIdStr, statutEtudiantStr, periodeStr
+              _sourceCursusId, _sourceUtilisateurId, _matriculeCursus, _sourceParcoursId, parcoursTitre, _sourceNiveauId, _sourceClasseId, classeLibelle, _sourceAnneeAcademiqueId, anneeLibelle, _sourceEtablissementId, statutEtudiantStr, periodeStr
             ] = cursusRow;
             
-            // Find or create cursus apprenant
-            let cursusApprenant = await CursusApprenant.findOne({ where: { id: cursusApprenantId || 0 } });
-            if (!cursusApprenant && cursusApprenantId && cursusApprenantId !== '') {
-              cursusApprenant = await CursusApprenant.create({ id: parseInt(cursusApprenantId), utilisateurId: utilisateur.id } as any);
-            } else if (!cursusApprenant) {
-              cursusApprenant = await CursusApprenant.create({ utilisateurId: utilisateur.id } as any);
+            const niveauExportLibelle = cursusRow[14] ? String(cursusRow[14]).trim() : '';
+            const parcoursLabel = String(parcoursTitre || parcoursIdentite || '').trim();
+            const classeLabel = String(classeLibelle || classeIdentite || '').trim();
+            const anneeLabel = String(anneeLibelle || promotionIdentite || '').trim();
+            const niveauLabel = niveauExportLibelle || String(niveauIdentite || '').trim();
+            const parcoursCible = parcoursLabel
+              ? await Parcours.findOne({ where: { titre: parcoursLabel } })
+              : null;
+            const niveauCible = niveauLabel
+              ? await NiveauEtude.findOne({ where: { libelle: niveauLabel } })
+              : null;
+            const anneeAcademique = anneeLabel
+              ? await AnneeAcademique.findOne({ where: { libelle: anneeLabel } })
+              : null;
+            if (!parcoursCible || !niveauCible || !anneeAcademique) {
+              const missing = [
+                !parcoursCible ? `parcours "${parcoursLabel}"` : null,
+                !niveauCible ? `niveau "${niveauLabel}"` : null,
+                !anneeAcademique ? `année académique "${anneeLabel}"` : null,
+              ].filter(Boolean);
+              throw new Error(`Références de cursus introuvables pour ${email} : ${missing.join(", ")}.`);
+            }
+            const classeCible = classeLabel
+              ? await resolveMigrationClass(classeLabel, parcoursCible.id, niveauCible.id)
+              : null;
+
+            let cursusApprenant = await CursusApprenant.findOne({
+              where: {
+                utilisateurId: utilisateur.id,
+                parcoursId: parcoursCible.id,
+                niveauEtudeId: niveauCible.id,
+                anneeAcademiqueId: anneeAcademique.id,
+                classeId: classeCible?.id || null,
+              }
+            });
+            if (!cursusApprenant) {
+              cursusApprenant = await CursusApprenant.create({
+                utilisateurId: utilisateur.id,
+                parcoursId: parcoursCible.id,
+                niveauEtudeId: niveauCible.id,
+                anneeAcademiqueId: anneeAcademique.id,
+                classeId: classeCible?.id || null,
+                intituleParcours: parcoursCible.titre,
+              } as any);
             }
             
-            // Update cursus apprenant fields
-            if (parcoursIdStr && parcoursIdStr !== '') cursusApprenant.parcoursId = parseInt(parcoursIdStr);
-            if (niveauIdStr && niveauIdStr !== '') cursusApprenant.niveauEtudeId = parseInt(niveauIdStr);
-            if (classeIdStr && classeIdStr !== '') cursusApprenant.classeId = parseInt(classeIdStr);
-            if (anneeAcademiqueIdStr && anneeAcademiqueIdStr !== '') cursusApprenant.anneeAcademiqueId = parseInt(anneeAcademiqueIdStr);
-            if (etablissementIdStr && etablissementIdStr !== '') (cursusApprenant as any).etablissementId = etablissementIdStr;
-            if (statutEtudiantStr === 'nouveau' || statutEtudiantStr === 'ancien') cursusApprenant.statutReinscription = statutEtudiantStr;
-            if (periodeStr === 'matin' || periodeStr === 'soir' || periodeStr === 'en_ligne') (cursusApprenant as any).periode = periodeStr; // Cast to any for now
+            apprenant.statutEtudiant = statutEtudiantStr === 'ancien' ? 'ancien' : 'nouveau';
+            if (periodeStr === 'matin' || periodeStr === 'soir' || periodeStr === 'en_ligne') apprenant.periode = periodeStr;
+            await apprenant.save();
             await cursusApprenant.save();
+            importedCursus++;
           }
           
           // Process finance data for this user
-          const financeRows = financeData.filter(row => {
-            const emailFinance = row[3]; // Email column in finance sheet
-            return emailFinance === email;
-          });
+          migrationSection = "finance";
+          const financeRows = financeData.filter(row => normalize(row[3]) === normalizedEmail);
           
           for (const financeRow of financeRows) {
             const [
               matriculeFin, nomFin, prenomsFin, emailFin, sessionIdStr, sessionLibelle, anneeAcademiqueFin, semestre,
               dossierEtudiantIdStr, echeanceIdStr, echeanceMontantStr, echeanceDateStr, echeanceStatut,
               bordereauIdStr, bordereauReference, bordereauMontantStr, bordereauDateDepotStr, bordereauStatut,
-              typeOperationLibelle, sommePayeeStr, resteAPayerStr, datePaiementStr
+              typeOperationLibelle, sommePayeeStr, resteAPayerStr, datePaiementStr,
+              fraisScolariteStr, modePaiementStr, nbMensualitesStr, demarrageParcoursStr,
+              typeEcheanceStr, numeroEcheanceStr, fichierBordereau
             ] = financeRow;
+
+            const hasEcheanceData = Boolean(echeanceMontantStr || echeanceDateStr || echeanceStatut || sommePayeeStr);
+            const hasBordereauData = Boolean(bordereauReference || bordereauMontantStr || bordereauDateDepotStr || bordereauStatut || fichierBordereau);
+            if (!hasEcheanceData && !hasBordereauData) continue;
             
-            // Find or create dossier by matricule or ID
+            // Les IDs du fichier source ne doivent jamais être réutilisés en base cible.
             let dossier = null;
             if (matriculeFin) {
               dossier = await DossierEtudiant.findOne({ where: { matricule: matriculeFin } });
+              if (dossier && Number(dossier.utilisateurId) !== Number(utilisateur.id)) {
+                throw new Error(`Le matricule ${matriculeFin} est déjà associé à un autre compte.`);
+              }
             }
-            if (!dossier && dossierEtudiantIdStr && dossierEtudiantIdStr !== '') {
-              dossier = await DossierEtudiant.findByPk(parseInt(dossierEtudiantIdStr));
-            }
+            if (!dossier) dossier = await DossierEtudiant.findOne({ where: { utilisateurId: utilisateur.id } });
             if (!dossier) {
-              dossier = await DossierEtudiant.create({ matricule: matriculeFin || `MAT-${Date.now()}`, utilisateurId: utilisateur.id } as any);
+              const frais = fraisScolariteStr ? Number(fraisScolariteStr) : 0;
+              const mensualites = Number(nbMensualitesStr);
+              dossier = await DossierEtudiant.create({
+                matricule: matriculeFin || `MAT-${utilisateur.id}`,
+                utilisateurId: utilisateur.id,
+                fraisScolarite: Number.isFinite(frais) ? frais : 0,
+                modePaiement: modePaiementStr === 'mensuel' ? 'mensuel' : 'unique',
+                nbMensualites: Number.isInteger(mensualites) && mensualites > 0 ? mensualites : 1,
+                demarrageParcours: parseExcelDate(demarrageParcoursStr) || new Date(),
+              } as any);
             }
             
             // Find or create echeance
-            let echeance = null;
-            if (echeanceIdStr && echeanceIdStr !== '') {
-              echeance = await Echeance.findByPk(parseInt(echeanceIdStr));
+            const montantEcheance = echeanceMontantStr ? Number(echeanceMontantStr) : 0;
+            const dateEcheance = parseExcelDate(echeanceDateStr);
+            if (!dateEcheance || !Number.isFinite(montantEcheance)) {
+              throw new Error(`Échéance invalide pour ${email} : montant ou date limite manquant.`);
+            }
+            const typeEcheance = typeEcheanceStr === 'scolarite' || typeEcheanceStr === 'inscription'
+              ? typeEcheanceStr
+              : (String(typeOperationLibelle || '').toLowerCase().includes('scolar') ? 'scolarite' : 'inscription');
+            const numeroEcheanceSource = Number(numeroEcheanceStr);
+            const numeroEcheance = Number.isInteger(numeroEcheanceSource) && numeroEcheanceSource > 0
+              ? numeroEcheanceSource
+              : (await Echeance.count({ where: { dossierEtudiantId: dossier.id } })) + 1;
+            let echeance = numeroEcheanceStr
+              ? await Echeance.findOne({
+                where: { dossierEtudiantId: dossier.id, type: typeEcheance, numeroEcheance }
+              })
+              : null;
+            if (!echeance) {
+              echeance = await Echeance.findOne({
+                where: {
+                  dossierEtudiantId: dossier.id,
+                  type: typeEcheance,
+                  montant: montantEcheance,
+                  dateLimite: dateEcheance,
+                }
+              });
             }
             if (!echeance) {
               echeance = await Echeance.create({
                 dossierEtudiantId: dossier.id,
-                montant: parseFloat(echeanceMontantStr) || 0,
-                dateLimite: echeanceDateStr ? new Date(echeanceDateStr) : new Date(), // Default to today if empty
+                type: typeEcheance,
+                numeroEcheance,
+                montant: montantEcheance,
+                dateLimite: dateEcheance,
                 statut: echeanceStatut === 'impaye' || echeanceStatut === 'paye' || echeanceStatut === 'en_retard' || echeanceStatut === 'partiel' 
-                       ? echeanceStatut : 'impaye' // Default if invalid
+                       ? echeanceStatut : 'impaye'
               } as any);
             } else {
-              // Update existing echeance
-              if (echeanceMontantStr && echeanceMontantStr !== '') echeance.montant = parseFloat(echeanceMontantStr);
-              if (echeanceDateStr && echeanceDateStr !== '') echeance.dateLimite = new Date(echeanceDateStr);
+              echeance.montant = montantEcheance;
+              echeance.dateLimite = dateEcheance;
               if (echeanceStatut === 'impaye' || echeanceStatut === 'paye' || echeanceStatut === 'en_retard' || echeanceStatut === 'partiel') {
                 echeance.statut = echeanceStatut;
               }
               await echeance.save();
             }
             
-            // Find or create bordereau
+            // Find or create bordereau only when the export contains bordereau data.
             let bordereau = null;
-            if (bordereauIdStr && bordereauIdStr !== '') {
-              bordereau = await Bordereau.findByPk(parseInt(bordereauIdStr));
+            if (hasBordereauData) {
+              if (bordereauReference) {
+                bordereau = await Bordereau.findOne({
+                  where: {
+                    utilisateurId: utilisateur.id,
+                    [Op.or]: [
+                      { numeroBordereau: bordereauReference },
+                      { referenceBancaire: bordereauReference },
+                    ],
+                  }
+                });
+              }
+              if (!bordereau) {
+                const dateDepot = parseExcelDate(bordereauDateDepotStr);
+                const montantBordereau = bordereauMontantStr ? Number(bordereauMontantStr) : null;
+                let typeOperationId: number | null = null;
+                if (typeOperationLibelle) {
+                  const typeOperation = await TypeOperationBordereau.findOne({ where: { libelle: typeOperationLibelle } });
+                  typeOperationId = typeOperation?.id || null;
+                }
+                bordereau = await Bordereau.create({
+                  utilisateurId: utilisateur.id,
+                  echeanceId: echeance.id,
+                  fichier: fichierBordereau || '',
+                  numeroBordereau: bordereauReference || null,
+                  referenceBancaire: bordereauReference || undefined,
+                  montant: montantBordereau !== null && Number.isFinite(montantBordereau) ? montantBordereau : null,
+                  dateSoumission: dateDepot || undefined,
+                  statut: bordereauStatut === 'en_attente' || bordereauStatut === 'valide' || bordereauStatut === 'rejete' ||
+                    bordereauStatut === 'en_saisie_comptable' || bordereauStatut === 'traite'
+                    ? bordereauStatut : 'en_attente',
+                  typeOperationId,
+                } as any);
+              }
             }
-            if (!bordereau && bordereauReference && bordereauReference !== '') {
-              bordereau = await Bordereau.findOne({ where: { referenceBancaire: bordereauReference } });
-            }
-            if (!bordereau) {
-              bordereau = await Bordereau.create({
-                echeanceId: echeance.id,
-                numeroBordereau: bordereauReference || null,
-                montant: bordereauMontantStr && bordereauMontantStr !== '' ? parseFloat(bordereauMontantStr) : null,
-                dateSoumission: bordereauDateDepotStr ? new Date(bordereauDateDepotStr) : undefined,
-                statut: bordereauStatut === 'en_attente' || bordereauStatut === 'valide' || bordereauStatut === 'rejete' || 
-                       bordereauStatut === 'en_saisie_comptable' || bordereauStatut === 'traite'
-                       ? bordereauStatut : 'en_attente',
-                typeOperationId: 1 // Default type operation
-              } as any);
-            } else {
+            if (bordereau) {
               // Update existing bordereau
               if (bordereauReference && bordereauReference !== '') bordereau.numeroBordereau = bordereauReference;
-              if (bordereauMontantStr && bordereauMontantStr !== '') bordereau.montant = parseFloat(bordereauMontantStr);
-              if (bordereauDateDepotStr && bordereauDateDepotStr !== '') bordereau.dateSoumission = new Date(bordereauDateDepotStr);
+              if (bordereauReference) bordereau.referenceBancaire = bordereauReference;
+              if (bordereauMontantStr && bordereauMontantStr !== '') bordereau.montant = Number(bordereauMontantStr);
+              const dateDepot = parseExcelDate(bordereauDateDepotStr);
+              if (dateDepot) bordereau.dateSoumission = dateDepot;
               if (bordereauStatut === 'en_attente' || bordereauStatut === 'valide' || bordereauStatut === 'rejete' || 
                  bordereauStatut === 'en_saisie_comptable' || bordereauStatut === 'traite') {
                 bordereau.statut = bordereauStatut;
-              }
-              if (typeOperationLibelle && typeOperationLibelle !== '') {
-                // Find or create type operation
-                let typeOp = await TypeOperationBordereau.findOne({ where: { libelle: typeOperationLibelle } });
-                if (!typeOp) {
-                  typeOp = await TypeOperationBordereau.create({ libelle: typeOperationLibelle } as any);
-                }
-                bordereau.typeOperationId = typeOp.id;
               }
               await bordereau.save();
             }
             
             // Update echeance with payment info if provided
             if (sommePayeeStr && sommePayeeStr !== '') {
-              const sommePayee = parseFloat(sommePayeeStr);
+              const sommePayee = Number(sommePayeeStr);
               echeance.montantPaye = sommePayee;
-              echeance.datePaiement = datePaiementStr ? new Date(datePaiementStr) : null;
+              echeance.datePaiement = parseExcelDate(datePaiementStr);
               // Recalculate statut based on payment
               const resteAPayer = (echeance.montant || 0) - sommePayee;
               if (sommePayee === 0) {
@@ -1978,25 +2385,422 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
               }
               await echeance.save();
             }
-            
-            imported++;
+            importedFinanceRows++;
           }
           
-          if (financeRows.length === 0 && !isNewUser) {
-            // Still count as imported if no finance data but user existed
-            imported++;
-          }
+          imported++;
+          results.push({
+            type: "apprenant",
+            email,
+            statut: "succès",
+            message: isNewUser ? "Apprenant créé" : "Apprenant mis à jour",
+            ...(migrationTempPassword ? { motDePasse: migrationTempPassword } : {}),
+          });
           
         } catch (err: any) {
           errors++;
           const email = values[3] || 'unknown';
-          results.push({ email, statut: "erreur", message: err.message });
+          results.push({
+            type: migrationSection,
+            email,
+            statut: "erreur",
+            message: err instanceof Error ? err.message : String(err),
+            ...(migrationTempPassword ? { motDePasse: migrationTempPassword } : {}),
+          });
+        }
+      }
+
+      const importedEmails = new Set(apprenantsData.map(row => normalize(row[3])).filter(Boolean));
+      const importedMatricules = new Set(apprenantsData.map(row => normalize(row[0])).filter(Boolean));
+      for (const cursusRow of cursusData) {
+        const cursusMatricule = normalize(cursusRow[2]);
+        const cursusEmail = normalize(cursusRow[13]);
+        if ((cursusEmail && importedEmails.has(cursusEmail)) || (cursusMatricule && importedMatricules.has(cursusMatricule))) continue;
+        errors++;
+        results.push({
+          type: "cursus",
+          statut: "erreur",
+          message: `Ligne de cursus non associée à un apprenant (matricule : ${cursusRow[2] || "absent"}).`,
+        });
+      }
+      for (const financeRow of financeData) {
+        const financeEmail = normalize(financeRow[3]);
+        const financeMatricule = normalize(financeRow[0]);
+        if ((financeEmail && importedEmails.has(financeEmail)) || (financeMatricule && importedMatricules.has(financeMatricule))) continue;
+        errors++;
+        results.push({
+          type: "finance",
+          email: financeRow[3],
+          statut: "erreur",
+          message: `Ligne financière non associée à un apprenant (matricule : ${financeRow[0] || "absent"}).`,
+        });
+      }
+
+      const assignmentByCourse = new Map<string, { values: string[]; line: number }>();
+      const conflictingAssignmentKeys = new Set<string>();
+      for (const assignment of enseignantsCoursData) {
+        const [coursCode, , , parcoursLabel, , , enseignantEmail, , classeLabel] = assignment.values;
+        if (!enseignantEmail) continue;
+
+        const key = [
+          normalize(coursCode),
+          normalize(parcoursLabel),
+        ].join("|");
+        const previous = assignmentByCourse.get(key);
+        if (previous && normalize(previous.values[6]) !== normalize(enseignantEmail)) {
+          if (!conflictingAssignmentKeys.has(key)) {
+            errors++;
+            results.push({
+              type: "affectation",
+              ligne: assignment.line,
+              statut: "erreur",
+              message: `Plusieurs enseignants sont affectés au cours ${coursCode} (${parcoursLabel}).`,
+            });
+            conflictingAssignmentKeys.add(key);
+          }
+          continue;
+        }
+        assignmentByCourse.set(key, assignment);
+      }
+
+      const teacherCache = new Map<string, Enseignant | null>();
+      for (const [key, assignment] of assignmentByCourse) {
+        if (conflictingAssignmentKeys.has(key)) continue;
+        const [coursCode, , , parcoursLabel, , , enseignantEmail, , classeLabel] = assignment.values;
+        try {
+          const parcoursCible = await Parcours.findOne({ where: { titre: parcoursLabel } });
+          if (!parcoursCible) throw new Error(`Parcours introuvable : ${parcoursLabel}.`);
+
+          const niveauLabel = inferMigrationNiveauLabel(classeLabel);
+          const niveauCours = niveauLabel
+            ? await NiveauEtude.findOne({ where: { libelle: niveauLabel } })
+            : null;
+          const classeCible = classeLabel && niveauCours
+            ? await resolveMigrationClass(classeLabel, parcoursCible.id, niveauCours.id)
+            : classeLabel
+              ? await Classe.findOne({ where: { libelle: classeLabel } })
+              : null;
+          if (classeLabel && !classeCible) throw new Error(`Classe introuvable : ${classeLabel}.`);
+
+          let cours = classeCible
+            ? await Cours.findOne({
+              where: { code: coursCode, parcoursId: parcoursCible.id, classeId: classeCible.id },
+            })
+            : null;
+          if (!cours) {
+            const courseCandidates = await Cours.findAll({
+              where: { code: coursCode, parcoursId: parcoursCible.id },
+            });
+            cours = courseCandidates.find(candidate =>
+              !candidate.classeId || Number(candidate.classeId) === Number(classeCible?.id),
+            ) || null;
+          }
+          if (!cours) throw new Error(`Cours ${coursCode} introuvable dans le parcours ${parcoursLabel}.`);
+
+          const normalizedTeacherEmail = normalize(enseignantEmail);
+          let enseignant = teacherCache.get(normalizedTeacherEmail);
+          if (enseignant === undefined) {
+            enseignant = await resolveEnseignant(enseignantEmail);
+            teacherCache.set(normalizedTeacherEmail, enseignant);
+          }
+          if (!enseignant) throw new Error(`Enseignant introuvable : ${enseignantEmail}.`);
+
+          if (Number(cours.enseignantId) !== Number(enseignant.id)) {
+            cours.enseignantId = enseignant.id;
+            await cours.save();
+          }
+          importedTeacherAssignments++;
+          results.push({
+            type: "affectation",
+            ligne: assignment.line,
+            code: coursCode,
+            statut: "succès",
+            message: `Enseignant ${enseignantEmail} affecté au cours ${coursCode}.`,
+          });
+        } catch (error) {
+          errors++;
+          results.push({
+            type: "affectation",
+            ligne: assignment.line,
+            code: coursCode,
+            statut: "erreur",
+            message: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+
+      const anneeCache = new Map<string, AnneeAcademique | null>();
+      const typeNoteCache = new Map<string, TypeNoteEvaluation | null>();
+      const coursCache = new Map<string, Cours[]>();
+      for (const noteRow of notesData) {
+        const [
+          matriculeNote, , , emailNote, coursCode, , , , noteStr, coefficientStr, , ,
+          anneeLabel, typeNoteLabel, dateSaisieStr, , enseignantEmail, , dateEvaluationStr,
+          heureDebutStr, heureFinStr, statutSource,
+        ] = noteRow.values;
+        if (!noteStr) continue;
+
+        try {
+          if ((!emailNote && !matriculeNote) || !coursCode || !anneeLabel || !typeNoteLabel) {
+            throw new Error("Email ou matricule, cours, année académique et type de note sont obligatoires.");
+          }
+          const noteValue = validateNoteValue(noteStr);
+          if (noteValue === null) continue;
+
+          const evaluationDate = parseExcelDate(dateEvaluationStr);
+          const heureDebut = parseExcelTime(heureDebutStr);
+          const heureFin = parseExcelTime(heureFinStr);
+          if (!evaluationDate || !heureDebut || !heureFin || heureFin <= heureDebut) {
+            throw new Error("Date ou horaires d'évaluation manquants/invalides. Réexportez le classeur avec les métadonnées d'évaluation.");
+          }
+          const poids = Number(coefficientStr);
+          if (!coefficientStr || !Number.isFinite(poids) || poids < 0) {
+            throw new Error("Le coefficient de l'évaluation doit être un nombre positif.");
+          }
+
+          let utilisateur = emailNote
+            ? await Utilisateur.findOne({ where: { email: emailNote } })
+            : null;
+          if (!utilisateur && matriculeNote) {
+            const dossier = await DossierEtudiant.findOne({ where: { matricule: matriculeNote } });
+            if (dossier) utilisateur = await Utilisateur.findByPk(dossier.utilisateurId);
+          }
+          if (!utilisateur || utilisateur.role !== RolesUtilisateur.APPRENANT) {
+            throw new Error(`Apprenant introuvable pour la ligne ${noteRow.line}.`);
+          }
+
+          const normalizedYear = normalize(anneeLabel);
+          let anneeAcademique = anneeCache.get(normalizedYear);
+          if (anneeAcademique === undefined) {
+            anneeAcademique = await AnneeAcademique.findOne({ where: { libelle: anneeLabel } });
+            anneeCache.set(normalizedYear, anneeAcademique);
+          }
+          if (!anneeAcademique) throw new Error(`Année académique introuvable : ${anneeLabel}.`);
+
+          const normalizedType = normalize(typeNoteLabel);
+          let typeNote = typeNoteCache.get(normalizedType);
+          if (typeNote === undefined) {
+            const availableTypes = await TypeNoteEvaluation.findAll();
+            typeNote = availableTypes.find(candidate => normalize(candidate.libelle) === normalizedType) || null;
+            typeNoteCache.set(normalizedType, typeNote);
+          }
+          if (!typeNote) throw new Error(`Type d'évaluation introuvable : ${typeNoteLabel}.`);
+
+          const courseKey = normalize(coursCode);
+          let courseCandidates = coursCache.get(courseKey);
+          if (!courseCandidates) {
+            courseCandidates = await Cours.findAll({ where: { code: coursCode } });
+            coursCache.set(courseKey, courseCandidates);
+          }
+          if (courseCandidates.length === 0) throw new Error(`Cours introuvable : ${coursCode}.`);
+
+          const cursusListForStudent = await CursusApprenant.findAll({
+            where: { utilisateurId: utilisateur.id, anneeAcademiqueId: anneeAcademique.id },
+          });
+          const matches = courseCandidates.flatMap(cours => cursusListForStudent
+            .filter(cursus => Number(cursus.parcoursId) === Number(cours.parcoursId))
+            .map(cursus => ({ cours, cursus })));
+          if (matches.length === 0) {
+            throw new Error(`Le cours ${coursCode} n'est pas rattaché au parcours de ${emailNote || matriculeNote} pour l'année ${anneeLabel}.`);
+          }
+          if (matches.length > 1) {
+            throw new Error(`Impossible d'associer sans ambiguïté le cours ${coursCode} au cursus de ${emailNote || matriculeNote}.`);
+          }
+          const { cours, cursus } = matches[0];
+
+          let enseignant: Enseignant | null = null;
+          if (enseignantEmail) {
+            const normalizedTeacherEmail = normalize(enseignantEmail);
+            enseignant = teacherCache.get(normalizedTeacherEmail) || null;
+            if (!enseignant) {
+              enseignant = await resolveEnseignant(enseignantEmail);
+              teacherCache.set(normalizedTeacherEmail, enseignant);
+            }
+          }
+          if (!enseignant && cours.enseignantId) {
+            enseignant = await Enseignant.findByPk(cours.enseignantId);
+          }
+          if (enseignantEmail && !enseignant) {
+            throw new Error(`Enseignant introuvable pour l'évaluation du cours ${coursCode} : ${enseignantEmail}.`);
+          }
+
+          const sequelize = DatabaseConnection.getInstance().sequelize;
+          const noteImportResult = await sequelize.transaction(async transaction => {
+            let evaluationMetadataMismatch = false;
+            let evaluation = await ListeNoteEvaluation.findOne({
+              where: {
+                coursId: cours.id,
+                typeNoteEvaluationId: typeNote!.id,
+                anneeAcademiqueId: anneeAcademique!.id,
+              },
+              transaction,
+              lock: transaction.LOCK.UPDATE,
+            });
+            if (!evaluation) {
+              const isExam = String(typeNote!.categorie || "").toLowerCase() === "examen"
+                || normalize(typeNote!.libelle).includes("examen");
+              const evaluationDateLimit = isExam
+                ? new Date(evaluationDate.getTime())
+                : null;
+              if (evaluationDateLimit) evaluationDateLimit.setDate(evaluationDateLimit.getDate() + 14);
+              evaluation = await ListeNoteEvaluation.create({
+                coursId: cours.id,
+                typeNoteEvaluationId: typeNote!.id,
+                anneeAcademiqueId: anneeAcademique!.id,
+                enseignantId: enseignant?.id || null,
+                date: evaluationDate,
+                dateLimiteSaisie: evaluationDateLimit,
+                heureDebut,
+                heureFin,
+                poidsTypeNoteEvaluation: poids,
+              } as any, { transaction });
+            } else {
+              const existingDate = evaluation.date ? parseExcelDate(String(evaluation.date)) : null;
+              const existingStart = parseExcelTime(String(evaluation.heureDebut));
+              const existingEnd = parseExcelTime(String(evaluation.heureFin));
+              evaluationMetadataMismatch = Boolean(
+                !existingDate ||
+                existingDate.toISOString().slice(0, 10) !== evaluationDate.toISOString().slice(0, 10) ||
+                existingStart !== heureDebut ||
+                existingEnd !== heureFin ||
+                Number(evaluation.poidsTypeNoteEvaluation) !== poids ||
+                Number(evaluation.enseignantId || 0) !== Number(enseignant?.id || 0),
+              );
+            }
+
+            let participant = await CoursParticipant.findOne({
+              where: { utilisateurId: utilisateur!.id, coursId: cours.id },
+              transaction,
+              lock: transaction.LOCK.UPDATE,
+            });
+            if (!participant) {
+              participant = await CoursParticipant.create({
+                utilisateurId: utilisateur!.id,
+                coursId: cours.id,
+                cursusApprenantId: cursus.id,
+              }, { transaction });
+            } else if (Number(participant.cursusApprenantId) !== Number(cursus.id)) {
+              throw new Error(`L'inscription existante au cours ${coursCode} appartient à un autre cursus; aucune donnée n'a été remplacée.`);
+            }
+
+            const existingNote = await NoteEvaluation.findOne({
+              where: {
+                listeNoteEvaluationId: evaluation!.id,
+                coursParticipantId: participant.id,
+              },
+              transaction,
+              lock: transaction.LOCK.UPDATE,
+            });
+            if (existingNote) {
+              if (existingNote.note === null || Number(existingNote.note) !== noteValue) {
+                throw new Error(`Une note différente existe déjà pour ${emailNote || matriculeNote} / ${coursCode}; aucune donnée existante n'a été remplacée.`);
+              }
+              return { imported: false, existing: true, published: false, evaluationMetadataMismatch };
+            }
+
+            const dateSaisie = parseExcelDate(dateSaisieStr);
+            const noteEvaluation = await NoteEvaluation.create({
+              listeNoteEvaluationId: evaluation!.id,
+              coursParticipantId: participant.id,
+              note: noteValue,
+              statut: "brouillon",
+              ...(dateSaisie ? { createdAt: dateSaisie } : {}),
+            } as any, { transaction });
+            await AuditNote.create({
+              noteEvaluationId: noteEvaluation.id,
+              ancienneNote: null,
+              nouvelleNote: noteValue,
+              modifiePar: req.utilisateurId!,
+              motif: "Import migration Excel",
+            }, { transaction });
+
+            return {
+              imported: true,
+              existing: false,
+              published: normalize(statutSource) === "publie",
+              evaluationMetadataMismatch,
+            };
+          });
+          const evaluationMetadataWarning = noteImportResult.evaluationMetadataMismatch
+            ? " Métadonnées de l'évaluation déjà existante conservées (elles diffèrent du classeur)."
+            : "";
+          if (noteImportResult.imported) {
+            importedNotes++;
+            if (noteImportResult.published) publishedNotesAsDraft++;
+            results.push({
+              type: "note",
+              ligne: noteRow.line,
+              email: emailNote,
+              code: coursCode,
+              statut: "succès",
+              message: `${noteImportResult.published
+                ? "Note importée en brouillon; elle devra être republiée manuellement."
+                : "Note importée en brouillon."}${evaluationMetadataWarning}`,
+            });
+          } else {
+            existingNotes++;
+            results.push({
+              type: "note",
+              ligne: noteRow.line,
+              email: emailNote,
+              code: coursCode,
+              statut: "succès",
+              message: `Note déjà présente; aucune modification effectuée.${evaluationMetadataWarning}`,
+            });
+          }
+        } catch (error) {
+          errors++;
+          results.push({
+            type: "note",
+            ligne: noteRow.line,
+            email: emailNote,
+            code: coursCode,
+            statut: "erreur",
+            message: error instanceof Error ? error.message : String(error),
+          });
         }
       }
       
       return res.status(200).json({ 
-        success: true, 
+        success: imported > 0 || importedNotes > 0 || importedTeacherAssignments > 0 || errors === 0,
+        message: errors > 0
+          ? "Import terminé avec des erreurs sur certaines lignes."
+          : "Import terminé.",
         importedCount: imported, 
+        importedNotesCount: importedNotes,
+        existingNotesCount: existingNotes,
+        importedTeacherAssignmentsCount: importedTeacherAssignments,
+        publishedNotesAsDraftCount: publishedNotesAsDraft,
+        migrationSummary: {
+          apprenants: {
+            total: apprenantsData.length,
+            imported,
+            errors: results.filter(result => result.type === "apprenant" && result.statut === "erreur").length,
+          },
+          cursus: {
+            total: cursusData.length,
+            imported: importedCursus,
+            errors: results.filter(result => result.type === "cursus" && result.statut === "erreur").length,
+          },
+          finances: {
+            total: financeData.filter(row =>
+              [10, 11, 12, 14, 15, 16, 17, 19, 28].some(index => Boolean(row[index])),
+            ).length,
+            imported: importedFinanceRows,
+            errors: results.filter(result => result.type === "finance" && result.statut === "erreur").length,
+          },
+          notes: {
+            total: notesData.filter(row => Boolean(row.values[8])).length,
+            imported: importedNotes,
+            alreadyPresent: existingNotes,
+            errors: results.filter(result => result.type === "note" && result.statut === "erreur").length,
+          },
+          affectations: {
+            total: assignmentByCourse.size,
+            imported: importedTeacherAssignments,
+            errors: results.filter(result => result.type === "affectation" && result.statut === "erreur").length,
+          },
+        },
         errorCount: errors, 
         details: results 
       });
@@ -2005,7 +2809,9 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
       console.error("Erreur import migration complet:", error);
       return res.status(500).json({ success: false, message: error.message });
     } finally {
-      fs.unlink(filePath, () => {});
+      fs.unlink(filePath, (unlinkError) => {
+        if (unlinkError) console.error("Erreur suppression du fichier temporaire de migration:", unlinkError);
+      });
     }
   }
 
@@ -2470,6 +3276,8 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
         { header: "EtablissementId", key: "etablissementId", width: 16 },
         { header: "Statut étudiant", key: "statutEtudiant", width: 16 },
         { header: "Période", key: "periode", width: 14 },
+        { header: "Email", key: "email", width: 28 },
+        { header: "Niveau libellé", key: "niveauLibelle", width: 22 },
       ];
       applyHeaderStyle(wsCursus.getRow(1));
 
@@ -2489,6 +3297,8 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
           etablissementId: c.etablissementId ?? "",
           statutEtudiant: a?.statutEtudiant ?? "",
           periode: a?.periode ?? "",
+          email: c.utilisateur?.email ?? a?.utilisateur?.email ?? "",
+          niveauLibelle: c.niveauEtude?.libelle ?? "",
         });
         applyDataStyle(wsCursus.getRow(wsCursus.rowCount));
       });
@@ -2544,6 +3354,13 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
         { header: "Somme Payée", key: "sommePayee", width: 16 },
         { header: "Reste à Payer", key: "resteAPayer", width: 18 },
         { header: "Date Paiement", key: "datePaiement", width: 18 },
+        { header: "Frais de scolarité dossier", key: "fraisScolarite", width: 22 },
+        { header: "Mode de paiement dossier", key: "modePaiement", width: 22 },
+        { header: "Nombre de mensualités dossier", key: "nbMensualites", width: 28 },
+        { header: "Démarrage parcours dossier", key: "demarrageParcours", width: 24 },
+        { header: "Type échéance", key: "typeEcheance", width: 18 },
+        { header: "Numéro échéance", key: "numeroEcheance", width: 18 },
+        { header: "Fichier bordereau", key: "fichierBordereau", width: 30 },
       ];
       applyHeaderStyle(wsFinance.getRow(1));
 
@@ -2586,6 +3403,13 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
             sommePayee: "",
             resteAPayer: "",
             datePaiement: "",
+            fraisScolarite: dossier?.fraisScolarite ?? "",
+            modePaiement: dossier?.modePaiement ?? "",
+            nbMensualites: dossier?.nbMensualites ?? "",
+            demarrageParcours: dossier?.demarrageParcours ? new Date(dossier.demarrageParcours).toLocaleDateString("fr-FR") : "",
+            typeEcheance: "",
+            numeroEcheance: "",
+            fichierBordereau: "",
           });
           applyDataStyle(wsFinance.getRow(wsFinance.rowCount));
           return;
@@ -2616,6 +3440,13 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
               sommePayee: echeance.montantPaye ?? 0,
               resteAPayer: (echeance.montant ?? 0) - (echeance.montantPaye ?? 0),
               datePaiement: echeance.datePaiement ? new Date(echeance.datePaiement).toLocaleDateString("fr-FR") : "",
+              fraisScolarite: dossier?.fraisScolarite ?? "",
+              modePaiement: dossier?.modePaiement ?? "",
+              nbMensualites: dossier?.nbMensualites ?? "",
+              demarrageParcours: dossier?.demarrageParcours ? new Date(dossier.demarrageParcours).toLocaleDateString("fr-FR") : "",
+              typeEcheance: echeance.type ?? "",
+              numeroEcheance: echeance.numeroEcheance ?? "",
+              fichierBordereau: "",
             });
           } else {
             // One row per bordereau
@@ -2640,6 +3471,13 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
                 sommePayee: bordereau.montant ?? echeance.montantPaye ?? 0,
                 resteAPayer: echeance.montant - (bordereau.montant ?? echeance.montantPaye ?? 0),
                 datePaiement: bordereau.datePaiement ? new Date(bordereau.datePaiement).toLocaleDateString("fr-FR") : "",
+                fraisScolarite: dossier?.fraisScolarite ?? "",
+                modePaiement: dossier?.modePaiement ?? "",
+                nbMensualites: dossier?.nbMensualites ?? "",
+                demarrageParcours: dossier?.demarrageParcours ? new Date(dossier.demarrageParcours).toLocaleDateString("fr-FR") : "",
+                typeEcheance: echeance.type ?? "",
+                numeroEcheance: echeance.numeroEcheance ?? "",
+                fichierBordereau: bordereau.fichier ?? "",
               });
             });
           }
@@ -2671,6 +3509,10 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
         { header: "Enseignant Nom", key: "enseignantNom", width: 25 },
         { header: "Enseignant Email", key: "enseignantEmail", width: 30 },
         { header: "Enseignant ID", key: "enseignantId", width: 14 },
+        { header: "Date Évaluation", key: "dateEvaluation", width: 16 },
+        { header: "Heure début", key: "heureDebut", width: 14 },
+        { header: "Heure fin", key: "heureFin", width: 14 },
+        { header: "Statut Note", key: "statutNote", width: 14 },
       ];
 
       wsNotes.columns = notesColumns;
@@ -2726,7 +3568,6 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
       });
 
       // Pour chaque CoursParticipant, générer les lignes (avec ou sans note)
-      const notesPerStudentLimit = 5; // Limite pour test, structure prête pour tout volume
       let noteRowCount = 0;
 
       coursParticipants.forEach((cp: any) => {
@@ -2738,8 +3579,7 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
         if (!cours) return;
 
         const notesForCp = notesByCpId.get(cp.id) ?? [];
-        // Limiter à 5 notes par étudiant pour le test
-        const notesToShow = notesForCp.slice(0, notesPerStudentLimit);
+        const notesToShow = notesForCp;
 
         if (notesToShow.length === 0) {
           // Si pas de note, lister le cours avec des champs vides
@@ -2764,6 +3604,10 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
             enseignantNom: cours.enseignant?.utilisateur?.nom ?? "",
             enseignantEmail: cours.enseignant?.utilisateur?.email ?? "",
             enseignantId: cours.enseignantId ?? "",
+            dateEvaluation: "",
+            heureDebut: "",
+            heureFin: "",
+            statutNote: "",
           });
           applyDataStyle(wsNotes.getRow(wsNotes.rowCount));
           noteRowCount++;
@@ -2800,6 +3644,10 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
               enseignantNom: enseignant?.utilisateur?.nom ?? "",
               enseignantEmail: enseignant?.utilisateur?.email ?? "",
               enseignantId: enseignant?.id ?? "",
+              dateEvaluation: lne?.date ? new Date(lne.date).toLocaleDateString("fr-FR") : "",
+              heureDebut: lne?.heureDebut ?? "",
+              heureFin: lne?.heureFin ?? "",
+              statutNote: ne.statut ?? "brouillon",
             });
             applyDataStyle(wsNotes.getRow(wsNotes.rowCount));
             noteRowCount++;
@@ -3281,7 +4129,15 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
     }
 
     const filePath = req.file.path;
-    const results: { ligne: number; email?: string; statut: string; message: string; motDePasse?: string }[] = [];
+    const results: {
+      ligne: number;
+      email?: string;
+      statut: string;
+      message: string;
+      motDePasse?: string;
+      matricule?: string;
+      qrCode?: string;
+    }[] = [];
     const isWord = /\.docx$/i.test(req.file.originalname);
 
     try {
@@ -3389,13 +4245,18 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
           } as any);
 
           // 4. Enregistrements spécifiques au rôle
+          let teacherBadge: { matricule: string; qrCode: string } | undefined;
           if (role === RolesUtilisateur.ENSEIGNANT) {
-            await Enseignant.create({
+            const enseignant = await Enseignant.create({
               utilisateurId: utilisateur.id,
               dateNaissance: dateNaissance ?? undefined,
               lieuNaissance: lieuNaissance ?? undefined,
               fonction: fonction ?? undefined,
             } as any);
+            teacherBadge = await EnseignantBadgeService.ensureIdentity(
+              enseignant,
+              (req as any).etablissementId || null,
+            );
           } else if (role === RolesUtilisateur.APPRENANT) {
             await Apprenant.create({
               utilisateurId: utilisateur.id,
@@ -3414,8 +4275,11 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
             ligne: idx + 1,
             email,
             statut: "succès",
-            message: "Compte créé",
+            message: teacherBadge
+              ? `Compte enseignant créé avec le matricule ${teacherBadge.matricule} et son QR code.`
+              : "Compte créé",
             motDePasse: motDePasseSaisi ? undefined : motDePasseFinal,
+            ...(teacherBadge ? { matricule: teacherBadge.matricule, qrCode: teacherBadge.qrCode } : {}),
           });
         } catch (err: any) {
           errors++;

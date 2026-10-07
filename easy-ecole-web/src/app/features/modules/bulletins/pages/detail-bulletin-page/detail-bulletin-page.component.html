@@ -43,27 +43,7 @@
 
     <!-- ═══════════ DOCUMENT : RELEVÉ DE NOTES OFFICIEL (LMD) — DESIGN ESA V1 ═══════════ -->
     <div class="doc-page">
-      <div class="frame">
-        <!-- Filigrane ESA -->
-        <img [src]="logoUrl" alt="" class="watermark">
-
         <div class="content-wrapper">
-          <!-- En-tête officiel -->
-          <table class="header-table">
-            <tr>
-              <td>
-                <img [src]="logoUrl" alt="Logo" class="logo-img">
-              </td>
-              <td class="school-info">
-                <strong>{{ etablissementNomMajuscules }}</strong><br>
-                Direction des Examens et Régularité Académique<br>
-                {{ etablissementLocalisation || '-' }}<br>
-                Tél : {{ etablissementTelephone || '-' }} | Email : {{ etablissementEmail || '-' }}
-              </td>
-            </tr>
-          </table>
-          <div class="banner-accent"></div>
-
           <!-- Titre du document -->
           <div class="doc-title">
             <h1>Relevé de Notes Officiel (LMD)</h1>
@@ -93,23 +73,23 @@
             <table class="grades-table" *ngFor="let ue of b.ues">
               <tbody>
                 <tr class="ue-header">
-                  <td colspan="3"><strong>{{ ue.ueCode }} : {{ ue.ueLibelle }}</strong></td>
+                  <td colspan="2">
+                    <strong>{{ ue.ueCode }} : {{ ue.ueLibelle }}</strong>
+                    <span class="ue-category">{{ getCategorieUe(ue.categorieUe) }}</span>
+                  </td>
                   <td style="text-align: center;"><strong>{{ ue.creditEcts }} Cr.</strong></td>
-                  <td colspan="4" style="text-align: center;"><strong>{{ ue.moyenneUe != null ? ue.moyenneUe + ' / 20' : '-' }} ({{ ue.estValidee ? 'Validé' : 'Non validé' }})</strong></td>
+                  <td colspan="3" style="text-align: center;"><strong>{{ ue.moyenneUe != null ? ue.moyenneUe + ' / 20' : '-' }} ({{ ue.estValidee ? 'Validé' : 'Non validé' }})</strong></td>
                 </tr>
                 <tr class="ec-row" *ngFor="let l of ue.lignes">
-                  <td>• {{ l.cours?.intitule }}</td>
-                  <td class="teacher-name">{{ getTeacherName(l.cours) }}</td>
+                  <td>
+                    • <strong>{{ l.cours?.code }}</strong> — {{ l.cours?.intitule }}
+                    <span class="ue-category">{{ getCategorieUe(l.cours?.categorieUe) }}</span>
+                  </td>
                   <td style="text-align: center;">{{ l.coefficient || '-' }}</td>
                   <td style="text-align: center;" [ngClass]="getNoteClass(l.moyenneCC)">{{ l.moyenneCC != null ? l.moyenneCC : '-' }}</td>
                   <td style="text-align: center;" [ngClass]="getNoteClass(l.noteDevoir)">{{ l.noteDevoir != null ? l.noteDevoir : '-' }}</td>
                   <td style="text-align: center;" [ngClass]="getNoteClass(l.noteExamen)">{{ l.noteExamen != null ? l.noteExamen : '-' }}</td>
                   <td style="text-align: center; font-weight: bold;" [ngClass]="getNoteClass(l.moyenne)">{{ l.moyenne != null ? l.moyenne + ' / 20' : '-' }}</td>
-                  <td style="text-align: center; font-style: italic; color: #777; font-size: 7.5pt;">
-                    <span *ngIf="l.moyenne != null && l.moyenne >= 10" class="valide-badge">Validé</span>
-                    <span *ngIf="l.moyenne != null && l.moyenne < 10" class="non-valide-badge">Non</span>
-                    <span *ngIf="l.moyenne == null">[—]</span>
-                  </td>
                 </tr>
               </tbody>
             </table>
@@ -120,30 +100,25 @@
             <table class="grades-table">
               <thead>
                 <tr>
-                  <th style="width: 32%;">UE / Cours (EC)</th>
-                  <th style="width: 18%;">Enseignant</th>
-                  <th style="width: 6%; text-align: center;">Coef</th>
-                  <th style="width: 9%; text-align: center;">CC</th>
-                  <th style="width: 9%; text-align: center;">Devoir</th>
-                  <th style="width: 9%; text-align: center;">Examen</th>
-                  <th style="width: 10%; text-align: center;">Moy. / 20</th>
-                  <th style="width: 7%; text-align: center;">Visa / Validé</th>
+                  <th style="width: 42%;">UE / Cours (EC)</th>
+                  <th style="width: 8%; text-align: center;">Coef</th>
+                  <th style="width: 10%; text-align: center;">CC</th>
+                  <th style="width: 10%; text-align: center;">Devoir</th>
+                  <th style="width: 10%; text-align: center;">Examen</th>
+                  <th style="width: 20%; text-align: center;">Moy. / 20</th>
                 </tr>
               </thead>
               <tbody>
                 <tr class="ec-row" *ngFor="let l of b.lignesBulletins">
-                  <td>{{ l.cours?.intitule }}</td>
-                  <td class="teacher-name">{{ getTeacherName(l.cours) }}</td>
+                  <td>
+                    {{ l.cours?.intitule }}
+                    <span class="ue-category">{{ getCategorieUe(l.cours?.categorieUe) }}</span>
+                  </td>
                   <td style="text-align: center;">{{ l.coefficient || '-' }}</td>
                   <td style="text-align: center;" [ngClass]="getNoteClass(l.moyenneCC)">{{ l.moyenneCC != null ? l.moyenneCC : '-' }}</td>
                   <td style="text-align: center;" [ngClass]="getNoteClass(l.noteDevoir)">{{ l.noteDevoir != null ? l.noteDevoir : '-' }}</td>
                   <td style="text-align: center;" [ngClass]="getNoteClass(l.noteExamen)">{{ l.noteExamen != null ? l.noteExamen : '-' }}</td>
                   <td style="text-align: center; font-weight: bold;" [ngClass]="getNoteClass(l.moyenne)">{{ l.moyenne != null ? l.moyenne + ' / 20' : '-' }}</td>
-                  <td style="text-align: center; font-style: italic; color: #777; font-size: 7.5pt;">
-                    <span *ngIf="l.moyenne != null && l.moyenne >= 10" class="valide-badge">Validé</span>
-                    <span *ngIf="l.moyenne != null && l.moyenne < 10" class="non-valide-badge">Non</span>
-                    <span *ngIf="l.moyenne == null">[—]</span>
-                  </td>
                 </tr>
               </tbody>
             </table>
@@ -171,6 +146,7 @@
           <table class="summary-box">
             <tr>
               <td><strong>Total Crédits Capturés :</strong> {{ b.creditsValides || '0' }} / {{ b.totalCredits || '0' }} ECTS</td>
+              <td><strong>UE validées :</strong> {{ getUesValidees(b) }} / {{ b.ues?.length || 0 }}</td>
               <td><strong>Moyenne Générale :</strong> {{ b.moyenneGenerale != null ? b.moyenneGenerale + ' / 20' : '-' }} <span *ngIf="b.rang">— Rang {{ b.rang }}/{{ b.effectifClasse }}</span></td>
               <td><strong>Décision :</strong> {{ getDecision(b) }} <span *ngIf="b.mention">({{ b.mention }})</span></td>
             </tr>
@@ -182,21 +158,24 @@
           </div>
         </div>
 
-        <!-- Pied de page : date & signatures -->
+        <!-- Pied de page : date et autorité signataire -->
         <table class="footer-table">
           <tr>
-            <td class="date-cell">Fait à {{ etablissementVille || '—' }}, le {{ getDateFait(b) }}</td>
-            <td class="sign-cell">
-              <div class="sign-title">Le Directeur des Examens</div>
-              <div class="sign-line">Signature &amp; Cachet Officiel</div>
-            </td>
-            <td class="sign-cell">
-              <div class="sign-title">Le Chef de Scolarité</div>
-              <div class="sign-line">Signature Officielle</div>
+            <td class="sign-cell signatory-cell">
+              <div class="date-cell">Fait à {{ etablissementVille || '—' }}, le {{ getDateFait(b) }}</div>
+              <div class="sign-title">Charles BIRREGAH</div>
+              <div class="sign-sub">
+                Fondateur-Président Directeur Général/ ESA<br>
+                Gérant Associé du cabinet /AEC Sarl<br>
+                Docteur en Sciences de Gestion (Finances)<br>
+                Expert-Comptable inscrit au tableau de l’ONECCA – Togo<br>
+                Commissaire aux comptes de sociétés<br>
+                Expert agréé près les cours et tribunaux du Togo<br>
+                Expert agréé par le Conseil Régional de l’UEMOA
+              </div>
             </td>
           </tr>
         </table>
-      </div>
     </div>
 
     <div *ngIf="rolesValue.isInstitution" class="no-print bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mt-6">

@@ -1,8 +1,8 @@
-import { Component, OnInit } from '@angular/core';
-import { combineLatest, Observable, of } from 'rxjs';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { combineLatest, Observable, of, Subscription } from 'rxjs';
 import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
-import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 import { ToastService } from 'src/app/core/services/toast.service';
 import { AnneeAcademique } from 'src/app/data/modules/inscription/models/AnneeAcademique.model';
 import { Bordereau } from 'src/app/data/modules/inscription/models/Bordereau.model';
@@ -14,7 +14,6 @@ import { BordereauService } from 'src/app/data/modules/inscription/services/bord
 import { NiveauEtudeService } from 'src/app/data/modules/inscription/services/niveau-etude.service';
 import { ParcoursService } from 'src/app/data/modules/inscription/services/parcours.service';
 import { SessionService } from 'src/app/data/modules/inscription/services/session.service';
-import { environment } from 'src/environments/environment';
 import { DossierNode, BatchAction } from 'src/app/shared/components/dossier-view/dossier-view.component';
 
 @Component({
@@ -22,7 +21,7 @@ import { DossierNode, BatchAction } from 'src/app/shared/components/dossier-view
   templateUrl: './validation-bordereaux-page.component.html',
   styleUrls: ['./validation-bordereaux-page.component.scss']
 })
-export class ValidationBordereauxPageComponent extends BaseComponentClass implements OnInit {
+export class ValidationBordereauxPageComponent extends BaseComponentClass implements OnInit, OnDestroy {
 
   error: boolean = false
   successMessage: string = ''
@@ -32,6 +31,11 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   showRejetModal: boolean = false
   showPdfModal: boolean = false
   pdfBordereau?: Bordereau
+  pdfPreviewUrl: SafeResourceUrl | null = null
+  pdfPreviewLoading: boolean = false
+  pdfPreviewError: string = ''
+  private previewObjectUrl: string | null = null
+  private previewSubscription?: Subscription
   successResult: { type: 'inscription' | 'scolarite' | 'rattrapage', matricule?: string, codeQuitus?: string } | null = null
   showSuccessModal: boolean = false
 
@@ -98,17 +102,15 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
    */
   canShowItemAction = (item: any, action: string): boolean => true;
 
-  readonly BORDEREAUX_PATH: string = environment.MEDIAS_PATH.INSCRIPTION.BORDEREAUX
-
   constructor(
     private bordereauService: BordereauService,
     private anneeAcademiqueService: AnneeAcademiqueService,
     private niveauEtudeService: NiveauEtudeService,
     private parcoursService: ParcoursService,
     private sessionService: SessionService,
-    private localStorage: LocalStorageService,
     private fb: FormBuilder,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private sanitizer: DomSanitizer
   ) {
     super()
     this.validationForm = this.fb.group({
@@ -502,21 +504,57 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   }
 
   openPdfModal(bordereau: Bordereau): void {
+    this.clearPdfPreview()
     this.pdfBordereau = bordereau
     this.showPdfModal = true
+    this.pdfPreviewLoading = true
+    this.pdfPreviewError = ''
+
+    if (!bordereau.id) {
+      this.pdfPreviewLoading = false
+      this.pdfPreviewError = 'Identifiant du bordereau manquant.'
+      return
+    }
+
+    this.previewSubscription = this.bordereauService.downloadBordereau(bordereau.id).subscribe({
+      next: (file) => {
+        if (!file.size) {
+          this.pdfPreviewError = 'Le fichier du bordereau est vide.'
+          this.pdfPreviewLoading = false
+          return
+        }
+        this.previewObjectUrl = URL.createObjectURL(file)
+        this.pdfPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.previewObjectUrl)
+        this.pdfPreviewLoading = false
+      },
+      error: (err) => {
+        this.pdfPreviewError = err?.error?.message
+          || (err.status === 404
+            ? 'Le fichier du bordereau est introuvable.'
+            : 'Impossible de charger le bordereau. Vérifiez vos droits puis réessayez.')
+        this.pdfPreviewLoading = false
+      }
+    })
   }
 
   closePdfModal(): void {
     this.showPdfModal = false
     this.pdfBordereau = undefined
+    this.clearPdfPreview()
   }
 
-  getBordereauDownloadUrl(id: string): string {
-    const token = this.localStorage.get(LocalStorageService.AUTH_TOKEN)
-    let url = `${this.BORDEREAUX_PATH}${id}/download`
-    if (token) {
-      url += `?token=${encodeURIComponent(token)}`
+  ngOnDestroy(): void {
+    this.clearPdfPreview()
+  }
+
+  private clearPdfPreview(): void {
+    this.previewSubscription?.unsubscribe()
+    this.previewSubscription = undefined
+    if (this.previewObjectUrl) {
+      URL.revokeObjectURL(this.previewObjectUrl)
+      this.previewObjectUrl = null
     }
-    return url
+    this.pdfPreviewUrl = null
+    this.pdfPreviewLoading = false
   }
 }

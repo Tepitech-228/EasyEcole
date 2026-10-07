@@ -31,7 +31,20 @@ export default class RhEmployeController {
 
   static async create(req: Request, res: Response): Promise<Response> {
     try {
-      const data = await RhEmploye.create(extraireChamps(req.body));
+      // Matricule auto-généré si non saisi (plus de saisie manuelle obligatoire)
+      const champs = extraireChamps(req.body);
+      if (!champs.matricule) {
+        const year = new Date().getFullYear();
+        const count = await RhEmploye.count();
+        let candidate = `EMP-${year}-${String(count + 1).padStart(4, '0')}`;
+        for (let attempt = 0; attempt < 5; attempt++) {
+          const exists = await RhEmploye.findOne({ where: { matricule: candidate } as any });
+          if (!exists) break;
+          candidate = `EMP-${year}-${String(count + 1 + attempt + 1).padStart(4, '0')}`;
+        }
+        champs.matricule = candidate;
+      }
+      const data = await RhEmploye.create(champs);
       return res.status(201).send(data);
     } catch (error) {
       console.error(error);
@@ -58,7 +71,8 @@ export default class RhEmployeController {
       await data.destroy();
       return res.status(200).json({ success: true, message: "Employé supprimé" });
     } catch (error) {
-      return res.status(500).json({ success: false, error });
+      console.error('Erreur suppression employé:', error);
+      return res.status(500).json({ success: false, message: 'Erreur interne serveur' });
     }
   }
 
@@ -67,7 +81,8 @@ export default class RhEmployeController {
       const count = await RhEmploye.count();
       return res.status(200).json({ success: true, count });
     } catch (error) {
-      return res.status(500).json({ success: false, error });
+      console.error('Erreur comptage employés:', error);
+      return res.status(500).json({ success: false, message: 'Erreur interne serveur' });
     }
   }
 }

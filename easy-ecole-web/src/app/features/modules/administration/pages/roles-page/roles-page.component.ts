@@ -17,6 +17,7 @@ export class RolesPageComponent extends BaseComponentClass implements OnInit {
   rolePermissionIds: Set<number> = new Set()
   roleUsers: any[] = []
   allUsers: any[] = []
+  permissionSearch: string = ''
   loading: boolean = false
   activeTab: 'permissions' | 'utilisateurs' = 'permissions'
 
@@ -77,6 +78,17 @@ export class RolesPageComponent extends BaseComponentClass implements OnInit {
     })
   }
 
+  get filteredPermissionsGrouped(): Record<string, any[]> {
+    const term = this.permissionSearch.trim().toLowerCase()
+    return Object.keys(this.permissionsGrouped || {}).reduce((grouped, module) => {
+      const permissions = (this.permissionsGrouped[module] || []).filter((permission: any) =>
+        !term || permission.libelle?.toLowerCase().includes(term) || permission.key?.toLowerCase().includes(term)
+      )
+      if (permissions.length > 0) grouped[module] = permissions
+      return grouped
+    }, {} as Record<string, any[]>)
+  }
+
   selectRole(role: any): void {
     this.selectedRole = role
     this.activeTab = 'permissions'
@@ -88,7 +100,7 @@ export class RolesPageComponent extends BaseComponentClass implements OnInit {
     if (!this.selectedRole) return
     this.roleService.getRolePermissions(this.selectedRole.id).subscribe({
       next: (res: any[]) => {
-        this.rolePermissionIds = new Set((res || []).map((p: any) => Number(p.id)))
+        this.rolePermissionIds = new Set((res || []).map((p: any) => Number(p.permissionId)))
       },
       error: () => {}
     })
@@ -117,7 +129,7 @@ export class RolesPageComponent extends BaseComponentClass implements OnInit {
   }
 
   toggleModule(module: string, checked: boolean): void {
-    const perms = this.permissionsGrouped[module] || []
+    const perms = this.filteredPermissionsGrouped[module] || []
     for (const p of perms) {
       if (checked) {
         this.rolePermissionIds.add(Number(p.id))
@@ -128,12 +140,12 @@ export class RolesPageComponent extends BaseComponentClass implements OnInit {
   }
 
   isModuleFullyChecked(module: string): boolean {
-    const perms = this.permissionsGrouped[module] || []
+    const perms = this.filteredPermissionsGrouped[module] || []
     return perms.length > 0 && perms.every((p: any) => this.rolePermissionIds.has(Number(p.id)))
   }
 
   isModulePartiallyChecked(module: string): boolean {
-    const perms = this.permissionsGrouped[module] || []
+    const perms = this.filteredPermissionsGrouped[module] || []
     const checked = perms.filter((p: any) => this.rolePermissionIds.has(Number(p.id)))
     return checked.length > 0 && checked.length < perms.length
   }
@@ -192,13 +204,18 @@ export class RolesPageComponent extends BaseComponentClass implements OnInit {
     const obs = this.editingRole
       ? this.roleService.updateRole(this.editingRole.id, this.roleForm)
       : this.roleService.createRole(this.roleForm)
+    const creating = !this.editingRole
 
     obs.subscribe({
-      next: () => {
+      next: (savedRole: any) => {
         this.saving = false
         this.closeRoleModal()
+        if (creating && savedRole?.id) {
+          this.selectedRole = savedRole
+          this.activeTab = 'permissions'
+        }
         this.loadRoles()
-        this.toastService.success(this.editingRole ? 'Rôle modifié' : 'Rôle créé')
+        this.toastService.success(creating ? 'Profil créé; attribuez-lui ses permissions' : 'Profil modifié')
       },
       error: (err) => {
         this.saving = false
@@ -255,8 +272,8 @@ export class RolesPageComponent extends BaseComponentClass implements OnInit {
   }
 
   get availableUsers(): any[] {
-    const assignedIds = new Set(this.roleUsers.map((u: any) => u.id))
-    return this.allUsers.filter((u: any) => !assignedIds.has(u.id)).filter((u: any) => {
+    const assignedIds = new Set(this.roleUsers.map((userRole: any) => Number(userRole.utilisateurId)))
+    return this.allUsers.filter((u: any) => !assignedIds.has(Number(u.id))).filter((u: any) => {
       if (!this.assignSearch) return true
       const term = this.assignSearch.toLowerCase()
       return (u.nom || '').toLowerCase().includes(term) ||

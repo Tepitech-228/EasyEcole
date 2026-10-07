@@ -41,7 +41,7 @@ export class NotificationHelper {
                     const emailSender = EmailSender.getInstance();
                     await emailSender.sendMail({
                         to: user.email,
-                        subject: `Easy Ecole: ${type}`,
+                        subject: `ESA ECOLE: ${type}`,
                         html: `<p>${message}</p>`
                     });
                 }
@@ -94,7 +94,7 @@ export class NotificationHelper {
                     if (user.email) {
                         await emailSender.sendMail({
                             to: user.email,
-                            subject: `Easy Ecole: ${titre}`,
+                            subject: `ESA ECOLE: ${titre}`,
                             html: `<p>${message}</p>`
                         });
                     }

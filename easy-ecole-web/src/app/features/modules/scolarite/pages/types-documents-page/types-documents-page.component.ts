@@ -15,7 +15,7 @@ export class TypesDocumentsPageComponent implements OnInit {
   successMessage = '';
   formOpen = false;
   editingId: string | null = null;
-  form: TypeDocument = { libelle: '', frais: 0 };
+  form: TypeDocument = { libelle: '', frais: 0, piecesRequises: [] };
 
   constructor(private typeDocumentService: TypeDocumentService) {}
 
@@ -40,14 +40,18 @@ export class TypesDocumentsPageComponent implements OnInit {
 
   openCreate(): void {
     this.editingId = null;
-    this.form = { libelle: '', frais: 0 };
+    this.form = { libelle: '', frais: 0, piecesRequises: [] };
     this.formOpen = true;
     this.errorMessage = '';
   }
 
   openEdit(type: TypeDocument): void {
     this.editingId = type.id || null;
-    this.form = { ...type, frais: Number(type.frais) || 0 };
+    this.form = {
+      ...type,
+      frais: Number(type.frais) || 0,
+      piecesRequises: (type.piecesRequises || []).map(piece => ({ ...piece }))
+    };
     this.formOpen = true;
     this.errorMessage = '';
   }
@@ -66,7 +70,27 @@ export class TypesDocumentsPageComponent implements OnInit {
     this.saving = true;
     this.errorMessage = '';
     this.successMessage = '';
-    const payload: TypeDocument = { libelle, frais: Number(this.form.frais) || 0 };
+    const pieces = (this.form.piecesRequises || []).map((piece, index) => {
+      const libellePiece = piece.libelle.trim();
+      return {
+        cle: this.clePiece(libellePiece, index),
+        libelle: libellePiece,
+        obligatoire: piece.obligatoire !== false
+      };
+    });
+    if (pieces.some(piece => !piece.libelle)) {
+      this.errorMessage = 'Chaque pièce requise doit avoir un libellé.';
+      return;
+    }
+    if (new Set(pieces.map(piece => piece.cle)).size !== pieces.length) {
+      this.errorMessage = 'Les libellés des pièces doivent être uniques.';
+      return;
+    }
+    const payload: TypeDocument = {
+      libelle,
+      frais: Number(this.form.frais) || 0,
+      piecesRequises: pieces
+    };
     const request$ = this.editingId
       ? this.typeDocumentService.update({ ...payload, id: this.editingId })
       : this.typeDocumentService.create(payload);
@@ -100,5 +124,19 @@ export class TypesDocumentsPageComponent implements OnInit {
 
   formatFrais(frais: number | undefined): string {
     return `${(Number(frais) || 0).toLocaleString('fr-FR')} FCFA`;
+  }
+
+  ajouterPieceRequise(): void {
+    this.form.piecesRequises = [...(this.form.piecesRequises || []), { cle: '', libelle: '', obligatoire: true }];
+  }
+
+  retirerPieceRequise(index: number): void {
+    this.form.piecesRequises = (this.form.piecesRequises || []).filter((_piece, i) => i !== index);
+  }
+
+  private clePiece(libelle: string, index: number): string {
+    const base = libelle.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
+    return base || `piece-${index + 1}`;
   }
 }

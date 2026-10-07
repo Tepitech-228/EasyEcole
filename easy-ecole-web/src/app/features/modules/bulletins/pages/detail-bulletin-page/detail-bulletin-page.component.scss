@@ -28,10 +28,10 @@
   background-color: #ffffff;
   width: 100%;
   max-width: 210mm;
-  min-height: 275mm;
-  padding: 10mm;
-  margin: 15px auto;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  min-height: 0;
+  padding: 0;
+  margin: 0 auto;
+  box-shadow: none;
 }
 
 .doc-page:last-child {
@@ -40,34 +40,13 @@
 
 /* Cadre bordure ESA - Bleu Foncé */
 .frame {
-  border: 3px solid #002147; /* Bleu Foncé / Navy */
-  padding: 15px;
-  min-height: 255mm;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  overflow: hidden; /* Empêche les débordements du filigrane */
-}
-
-/* ==========================================================
-   FILIGRANE (WATERMARK)
-   ========================================================== */
-.watermark {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 70%;
-  max-width: 450px;
-  opacity: 0.07; /* Transparence discrète pour l'impression */
-  z-index: 0;
-  pointer-events: none;
+  border: 0;
+  padding: 0;
+  min-height: 0;
 }
 
 .content-wrapper {
-  position: relative;
-  z-index: 1; /* Garantit que le texte reste au-dessus du filigrane */
+  position: static;
 }
 
 /* ==========================================================
@@ -216,10 +195,13 @@
   font-weight: 600;
 }
 
-.teacher-name {
+.ue-category {
+  display: inline-block;
+  margin-left: 6px;
+  color: #526579;
+  font-size: 7.5pt;
   font-weight: 600;
-  color: #333;
-  font-size: 8pt;
+  text-transform: uppercase;
 }
 
 .valide-badge {
@@ -278,6 +260,8 @@
 .date-cell {
   font-style: italic;
   font-size: 9pt;
+  margin-bottom: 4px;
+  text-align: right;
 }
 
 .sign-cell {
@@ -289,14 +273,18 @@
   font-weight: bold;
   font-size: 9pt;
   color: #002147;
-  margin-bottom: 45px;
+  margin-bottom: 3px;
 }
 
-.sign-line {
-  border-top: 1px dashed #002147;
-  padding-top: 4px;
+.signatory-cell {
+  width: 60%;
+  text-align: right;
+}
+
+.sign-sub {
+  color: #526579;
   font-size: 8pt;
-  color: #555;
+  line-height: 1.4;
 }
 
 /* Couleurs des notes */

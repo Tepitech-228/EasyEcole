@@ -87,7 +87,6 @@ export const UNIQUE_INDEX_DEFS: readonly UniqueIndexDef[] = [
     { table: 'ins_types_note_evaluation', column: 'libelle' },
     { table: 'ins_salles_de_classes', column: 'libelle' },
     { table: 'ins_quitus', column: 'code' },
-    { table: 'ins_parcours', column: 'titre' },
     { table: 'ins_paiements_inscription', column: 'numero' },
     { table: 'ins_niveaux_etudes', column: 'libelle' },
     { table: 'ins_matieres_prerequis', column: 'libelle' },

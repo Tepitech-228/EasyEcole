@@ -36,6 +36,15 @@ export class EnseignantService {
     return this.httpClient.put<Enseignant>(`${this.SERVICE_URL}/photo`, formData)
   }
 
+  /** L'institution renseigne la photo d'un prof (affichée au terminal de pointage). */
+  updatePhotoById(enseignantId: string, photo: File): Observable<Enseignant> {
+    let formData: FormData = new FormData()
+      formData.append('photo', photo, photo.name)
+      formData.append('enseignantId', enseignantId)
+
+    return this.httpClient.put<Enseignant>(`${this.SERVICE_URL}/photo`, formData)
+  }
+
   generateQrCodes(enseignantId?: string): Observable<any> {
     return this.httpClient.post(`${this.SERVICE_URL}/qr-codes/generate`, { enseignantId })
   }

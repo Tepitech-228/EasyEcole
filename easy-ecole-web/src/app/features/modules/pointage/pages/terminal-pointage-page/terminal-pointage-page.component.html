@@ -5,7 +5,14 @@
 
   <app-loading-spinner *ngIf="loading"></app-loading-spinner>
 
-  <div *ngIf="!loading" class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+  <div *ngIf="!loading && loadError" class="pointage-message pointage-message--error" role="alert">
+    <p>{{ loadError }}</p>
+    <button type="button" class="pointage-btn pointage-btn--outline mt-3" (click)="retryLoadTodayPointage()">
+      Réessayer
+    </button>
+  </div>
+
+  <div *ngIf="!loading && !loadError" class="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
     <!-- ============================================= -->
     <!-- LEFT: Self Pointage & Quick Access             -->
@@ -93,19 +100,19 @@
         </div>
         <div class="pointage-card-body">
           <div class="space-y-1">
-            <a routerLink="/modules/pointage/historique" class="pointage-quick-link">
+            <a routerLink="/pointage/historique" class="pointage-quick-link">
               <svg class="link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
               </svg>
               Historique des pointages
             </a>
-            <a routerLink="/modules/pointage/rapports" class="pointage-quick-link">
+            <a routerLink="/pointage/rapports" class="pointage-quick-link">
               <svg class="link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
               </svg>
               Rapports et statistiques
             </a>
-            <a routerLink="/modules/pointage/planning" class="pointage-quick-link">
+            <a routerLink="/pointage/planning" class="pointage-quick-link">
               <svg class="link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
               </svg>
@@ -229,13 +236,32 @@
                 </div>
               </div>
               <div class="scanner-status">
-                <p class="scanner-status-text">Recherche de QR code…</p>
-                <button (click)="stopScanner()" class="pointage-btn pointage-btn--outline pointage-btn--sm mt-2">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                  </svg>
-                  Arrêter le scan
-                </button>
+                <p class="scanner-status-text">Recherche de QR code… Présentez le code bien à plat, à 15-30 cm, sans reflet</p>
+                <p *ngIf="streamRes" class="text-xs text-gray-400 mt-1">Détection {{ decoderNatif ? 'native' : 'standard' }} · Flux {{ streamRes }}</p>
+                <div class="flex items-center justify-center gap-2 mt-2">
+                  <button (click)="stopScanner()" class="pointage-btn pointage-btn--outline pointage-btn--sm">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    Arrêter le scan
+                  </button>
+                  <button *ngIf="torchSupported" (click)="toggleTorch()" class="pointage-btn pointage-btn--outline pointage-btn--sm">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                    {{ torchOn ? 'Éteindre la lampe' : 'Allumer la lampe' }}
+                  </button>
+                </div>
+                <div *ngIf="zoomSupported" class="flex items-center justify-center gap-2 mt-2">
+                  <span class="text-xs text-gray-400">Zoom</span>
+                  <input type="range" [min]="zoomMin" [max]="zoomMax" [step]="zoomStep" [(ngModel)]="zoomValue" (change)="setZoom(zoomValue)" class="w-40" aria-label="Zoom de la caméra">
+                </div>
+                <div class="flex items-center justify-center gap-2 mt-2">
+                  <label class="pointage-btn pointage-btn--outline pointage-btn--sm" style="cursor:pointer;">
+                    Tester avec une photo
+                    <input type="file" accept="image/*" capture="environment" class="sr-only" (change)="scannerDepuisImage($event)">
+                  </label>
+                </div>
               </div>
             </div>
           </div>
@@ -263,7 +289,7 @@
             <div class="p-5 text-center">
               <div *ngIf="scannedUser.photoUrl" class="pointage-scanned-photo-wrapper">
                 <img [src]="scannedUser.photoUrl" [alt]="'Photo de ' + scannedUser.nom"
-                  class="pointage-scanned-photo">
+                  class="pointage-scanned-photo" (error)="photoIndisponible()">
               </div>
               <div *ngIf="!scannedUser.photoUrl"
                 class="pointage-scanned-avatar"
@@ -272,6 +298,8 @@
               </div>
               <h4 class="text-lg font-bold text-gray-900">{{ scannedUser.nom }} {{ scannedUser.prenoms }}</h4>
               <p class="pointage-scanned-role">{{ scannedUser.role }}</p>
+              <p *ngIf="scannedUser.matricule" class="text-xs font-mono font-semibold text-gray-700">{{ scannedUser.matricule }}</p>
+              <p *ngIf="scannedUser.message" class="mb-3 text-sm text-gray-600">{{ scannedUser.message }}</p>
               <span class="pointage-scanned-badge"
                   [ngClass]="scannedUser.statut === 'vert' ? 'pointage-scanned-badge--vert' : 'pointage-scanned-badge--rouge'">
                 <span class="dot"></span>

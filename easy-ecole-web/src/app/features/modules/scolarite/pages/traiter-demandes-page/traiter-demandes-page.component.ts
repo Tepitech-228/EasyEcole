@@ -63,15 +63,11 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
   treeNodes: DossierNode[] = [];
 
   // Batch actions
-  batchActions: BatchAction[] = [
-    { label: 'Valider la sélection', color: 'green', action: 'valider', icon: 'verified' },
-    { label: 'Rejeter la sélection', color: 'red', action: 'rejeter', icon: 'block' }
-  ];
+  batchActions: BatchAction[] = [];
 
   // Action individuelle sur une ligne
   itemActions: BatchAction[] = [
     { label: 'Visualiser', color: 'gray', action: 'voir', icon: 'pageview' },
-    { label: 'Générer', color: 'indigo', action: 'generer', icon: 'description' },
     { label: 'Imprimer', color: 'orange', action: 'imprimer', icon: 'print' }
   ];
 
@@ -227,13 +223,7 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
     const statut = item?.statut;
     switch (action) {
       case 'voir': return true;
-      case 'confirmerPaiement': return this.isPaiementBloquant(item);
-      case 'valider': return !this.isPaiementBloquant(item) && ['soumise', 'en_attente_paiement'].includes(statut);
-      case 'preparer': return ['paye', 'validee'].includes(statut);
-      case 'generer': return statut === 'en_preparation';
-      case 'imprimer': return statut === 'document_pret';
-      case 'remettre': return statut === 'document_pret';
-      case 'rejeter': return !['document_pret', 'remise', 'rejetee', 'annulee', 'validee', 'delivree'].includes(statut);
+      case 'imprimer': return statut === 'document_pret' && !!item?.fichierPDF;
       default: return false;
     }
   }
@@ -286,25 +276,8 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
   onItemAction(event: { item: any; action: string }): void {
     if (event.action === 'voir') {
       this.router.navigate(['/scolarite/secretariat/demandes/fiche', event.item.id]);
-    } else if (event.action === 'confirmerPaiement') {
-      this.openPaiementModal(event.item);
-    } else if (event.action === 'preparer') {
-      this.preparerDocument(event.item);
-    } else if (event.action === 'generer') {
-      this.genererDocument(event.item);
     } else if (event.action === 'imprimer') {
       this.imprimerDocument(event.item);
-    } else if (event.action === 'remettre') {
-      this.remettreDocument(event.item);
-    } else if (event.action === 'rejeter') {
-      this.selectedIds = [event.item.id];
-      this.showRejetModal = true;
-    } else if (event.action === 'valider') {
-      if (this.isPaiementBloquant(event.item)) {
-        this.errorMessage = 'Paiement requis : cette demande est payante et non réglée. Confirmez d\'abord le paiement.';
-        return;
-      }
-      this.executeBatch('validee', [event.item.id]);
     }
   }
 
@@ -389,13 +362,34 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
 
   imprimerDocument(demande: DemandeDocument): void {
     if (!demande.id) return;
-    this.demandeService.confirmerImpression(demande.id).subscribe({
-      next: () => {
-        this.successMessage = 'Impression confirmée.';
-        this.loadDemandes();
+    const fenetre = window.open('', '_blank');
+    this.demandeService.telechargerDocumentPret(demande.id).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        if (!fenetre) {
+          const lien = document.createElement('a');
+          lien.href = url;
+          lien.download = `document-${demande.numeroDemande || demande.id}.pdf`;
+          lien.click();
+          URL.revokeObjectURL(url);
+          this.errorMessage = 'Autorisez les fenêtres contextuelles pour imprimer directement; le PDF a été téléchargé.';
+          return;
+        }
+        fenetre.location.href = url;
+        fenetre.onload = () => fenetre.print();
+        this.demandeService.confirmerImpression(demande.id!).subscribe({
+          next: () => {
+            this.successMessage = 'Le document a été ouvert pour impression.';
+            this.loadDemandes();
+          },
+          error: err => {
+            this.errorMessage = err?.error?.message || 'Le PDF est ouvert, mais le journal d’impression n’a pas pu être mis à jour.';
+          }
+        });
       },
-      error: (err) => {
-        this.errorMessage = err?.error?.message || 'Erreur lors de l\'impression';
+      error: err => {
+        if (fenetre) fenetre.close();
+        this.errorMessage = err?.error?.message || 'Impossible de télécharger le document à imprimer.';
       }
     });
   }
@@ -425,6 +419,7 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
   statutLabel(statut: string): string {
     switch (statut) {
       case 'soumise': return 'Soumise';
+      case 'en_comite': return 'En comité';
       case 'validee': return 'Validée';
       case 'rejetee': return 'Rejetée';
       case 'delivree': return 'Délivrée';
@@ -440,6 +435,7 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
   statutColor(statut: string): string {
     switch (statut) {
       case 'soumise': return 'yellow';
+      case 'en_comite': return 'purple';
       case 'validee': return 'blue';
       case 'rejetee': return 'red';
       case 'delivree': return 'green';

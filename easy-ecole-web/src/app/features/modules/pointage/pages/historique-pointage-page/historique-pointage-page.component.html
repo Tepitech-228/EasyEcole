@@ -1,57 +1,119 @@
-<div class="flex justify-between items-start mb-8">
-    <app-header-title title="Historique des pointages" subtitle="Consultez l'historique de vos pointages"></app-header-title>
-</div>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-8">
+    <app-header-title title="Historique des pointages" subtitle="Consultez l'historique des pointages"></app-header-title>
+  </div>
 
-<div *ngIf="loading" class="text-center py-8 text-gray-500">Chargement...</div>
+  <div *ngIf="loading" class="text-center py-8 text-gray-500">Chargement...</div>
 
-<div *ngIf="!loading && pointages.length == 0" class="text-center py-8 text-gray-500">Aucun pointage trouvé</div>
-
-<div *ngIf="!loading && pointages.length > 0" class="flex flex-col">
-    <div class="overflow-x-auto">
-        <div class="py-2 inline-block min-w-full">
-            <div class="overflow-hidden">
-                <table class="min-w-full">
-                    <thead class="bg-gray-100 border-b">
-                        <tr>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                <div class="px-2">#</div>
-                            </th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                <div class="px-2">Date</div>
-                            </th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                <div class="px-2">Arrivée</div>
-                            </th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
-                                <div class="px-2">Départ</div>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngFor="let pointage of pointages; index as index"
-                            class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
-                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ index + 1 }}</div>
-                            </td>
-                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ pointage.date | date: 'dd MMMM YYYY' }}</div>
-                            </td>
-                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
-                                    <app-custom-badge *ngIf="pointage.heureArrivee" color="green" [text]="pointage.heureArrivee"></app-custom-badge>
-                                    <span *ngIf="!pointage.heureArrivee">---</span>
-                                </div>
-                            </td>
-                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
-                                    <app-custom-badge *ngIf="pointage.heureDepart" color="orange" [text]="pointage.heureDepart"></app-custom-badge>
-                                    <span *ngIf="!pointage.heureDepart">---</span>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+  <ng-container *ngIf="!loading">
+    <!-- ===== STATISTIQUES ===== -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 text-center">
+        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Total</p>
+        <p class="text-2xl font-bold text-gray-900">{{ nbTotal }}</p>
+        <p class="text-xs text-gray-400">pointage(s)</p>
+      </div>
+      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 text-center">
+        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Aujourd'hui</p>
+        <p class="text-2xl font-bold text-indigo-600">{{ nbToday }}</p>
+        <p class="text-xs text-gray-400">pointage(s)</p>
+      </div>
+      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 text-center">
+        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Journées complètes</p>
+        <p class="text-2xl font-bold text-green-600">{{ nbComplets }}</p>
+        <p class="text-xs text-gray-400">arrivée + départ</p>
+      </div>
+      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 text-center">
+        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Sans départ</p>
+        <p class="text-2xl font-bold text-orange-500">{{ nbEnCours }}</p>
+        <p class="text-xs text-gray-400">en cours</p>
+      </div>
     </div>
+
+    <!-- ===== FILTRES ===== -->
+    <div class="bg-white border border-gray-200 rounded-2xl p-4 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div class="md:col-span-2">
+          <label class="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wider">Rechercher une personne</label>
+          <input [(ngModel)]="searchTerm" type="text" placeholder="Nom, prénoms ou identifiant..." autocomplete="off"
+            class="block w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wider">Rôle</label>
+          <select [(ngModel)]="roleFilter"
+            class="block w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100">
+            <option value="">Tous les rôles</option>
+            <option *ngFor="let r of rolesList" [value]="r.value">{{ r.label }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wider">Date</label>
+          <div class="flex gap-2">
+            <input [(ngModel)]="dateFilter" type="date"
+              class="block w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100">
+            <button *ngIf="hasFiltres" (click)="effacerFiltres()" title="Effacer les filtres"
+              class="shrink-0 inline-flex items-center justify-center w-10 rounded-xl bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition">
+              <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <p class="text-xs text-gray-400 mt-3">{{ filteredPointages.length }} résultat(s) sur {{ nbTotal }}</p>
+    </div>
+
+    <!-- ===== TABLEAU ===== -->
+    <div *ngIf="filteredPointages.length == 0" class="text-center py-8 text-gray-500 bg-white border border-gray-200 rounded-2xl">Aucun pointage trouvé</div>
+
+    <div *ngIf="filteredPointages.length > 0" class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full">
+          <thead class="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th scope="col" class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 text-left">#</th>
+              <th scope="col" class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 text-left">Personne</th>
+              <th scope="col" class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 text-left">Rôle</th>
+              <th scope="col" class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 text-left">Date</th>
+              <th scope="col" class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 text-left">Arrivée</th>
+              <th scope="col" class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 text-left">Départ</th>
+              <th scope="col" class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 text-left">Durée</th>
+              <th scope="col" class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 text-left">Statut</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <tr *ngFor="let pointage of filteredPointages; index as index" class="hover:bg-gray-50 transition">
+              <td class="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">{{ index + 1 }}</td>
+              <td class="px-4 py-3 whitespace-nowrap">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold shrink-0">
+                    {{ getInitiales(pointage) }}
+                  </div>
+                  <div>
+                    <p class="text-sm font-semibold text-gray-900">{{ getNom(pointage) }}</p>
+                    <p *ngIf="pointage.utilisateur?.identifiant" class="text-xs text-gray-400 font-mono">{{ pointage.utilisateur?.identifiant }}</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap">
+                <app-custom-badge color="blue" [text]="getRoleLabel(pointage.utilisateur?.role)"></app-custom-badge>
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{{ pointage.date | date: 'dd/MM/YYYY' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap">
+                <app-custom-badge *ngIf="pointage.heureArrivee" color="green" [text]="pointage.heureArrivee"></app-custom-badge>
+                <span *ngIf="!pointage.heureArrivee" class="text-sm text-gray-300">---</span>
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap">
+                <app-custom-badge *ngIf="pointage.heureDepart" color="orange" [text]="pointage.heureDepart"></app-custom-badge>
+                <span *ngIf="!pointage.heureDepart" class="text-sm text-gray-300">---</span>
+              </td>
+              <td class="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap">{{ getDuree(pointage) }}</td>
+              <td class="px-4 py-3 whitespace-nowrap">
+                <app-custom-badge *ngIf="estComplet(pointage)" color="green" text="Complet"></app-custom-badge>
+                <app-custom-badge *ngIf="!estComplet(pointage)" color="orange" text="En cours"></app-custom-badge>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-container>
 </div>

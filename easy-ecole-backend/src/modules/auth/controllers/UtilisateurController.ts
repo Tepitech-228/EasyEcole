@@ -13,6 +13,7 @@ import { QrTokenService } from "../../../core/services/QrTokenService";
 import QRCode from "qrcode";
 import * as path from "path";
 import * as fs from "fs";
+import { EnseignantBadgeService } from "../services/EnseignantBadgeService";
 
 export default class UtilisateurController {
 
@@ -28,6 +29,7 @@ export default class UtilisateurController {
             [RolesUtilisateur.ESA_COMPTA]: 'Service Recouvrement',
             [RolesUtilisateur.SECRETAIRE]: 'Secrétaire',
             [RolesUtilisateur.SURVEILLANT]: 'Surveillant',
+            [RolesUtilisateur.SUPERVISEUR_GENERAL]: 'Superviseur général',
         };
         return map[role] || role;
     }
@@ -202,7 +204,9 @@ export default class UtilisateurController {
                 RolesUtilisateur.ESA_COMPTA,
                 RolesUtilisateur.SECRETAIRE,
                 RolesUtilisateur.SURVEILLANT,
+                RolesUtilisateur.SUPERVISEUR_GENERAL,
             ].includes(userRole);
+            let enseignantBadge: { matricule: string; qrCode: string } | undefined;
 
             try {
                 if (userRole === RolesUtilisateur.APPRENANT) {
@@ -274,21 +278,13 @@ export default class UtilisateurController {
                             throw createErr
                         }
                     }
-
-                    try {
-                        const dir: string = path.resolve(process.cwd(), 'storage', 'qr-codes', 'enseignants')
-                        if (!fs.existsSync(dir)) { fs.mkdirSync(dir, { recursive: true }) }
-                        const userId = String(utilisateur.id)
-                        const qrData = QrTokenService.signer(utilisateur.id)
-                        const fileName = `${userId}.png`
-                        const filePath = path.join(dir, fileName)
-                        await QRCode.toFile(filePath, qrData, {
-                            type: 'png', width: 400, margin: 4,
-                            errorCorrectionLevel: 'Q',
-                            color: { dark: '#000000', light: '#ffffff' }
-                        })
-                        if (enseignant) { await enseignant.update({ qrCode: fileName }) }
-                    } catch (qrError) { console.error('Erreur génération QR enseignant:', qrError) }
+                    if (!enseignant) {
+                        throw new Error("Le profil enseignant n'a pas été créé.");
+                    }
+                    enseignantBadge = await EnseignantBadgeService.ensureIdentity(
+                        enseignant,
+                        (req as any).etablissementId || req.body.etablissementId || null,
+                    );
 
                 } else if (isStaff) {
                     let matricule = req.body.matricule || null
@@ -353,8 +349,8 @@ export default class UtilisateurController {
                         const fileName = `${userId}.png`
                         const filePath = path.join(dir, fileName)
                         await QRCode.toFile(filePath, qrData, {
-                            type: 'png', width: 400, margin: 4,
-                            errorCorrectionLevel: 'Q',
+                            type: 'png', width: 600, margin: 4,
+                            errorCorrectionLevel: 'M',
                             color: { dark: '#000000', light: '#ffffff' }
                         })
                         if (personnel) { await personnel.update({ qrCode: fileName }) }
@@ -362,9 +358,17 @@ export default class UtilisateurController {
                 }
             } catch (profileError: any) {
                 console.error('Erreur création profil:', profileError?.message);
+                return res.status(500).json({
+                    success: false,
+                    message: "Le compte a été créé, mais la génération du profil enseignant ou de son badge a échoué. Relancez la génération du QR code depuis la gestion des QR codes.",
+                });
             }
 
-            return res.status(201).json({ success: true, utilisateur });
+            return res.status(201).json({
+                success: true,
+                utilisateur,
+                ...(enseignantBadge ? { enseignant: enseignantBadge } : {}),
+            });
         } catch (error) {
             return res.status(500).json({ success: false, message: "Erreur interne du serveur" });
         }

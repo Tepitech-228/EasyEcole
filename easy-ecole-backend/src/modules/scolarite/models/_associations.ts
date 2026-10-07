@@ -27,12 +27,19 @@ import { RecuCaisse } from "./RecuCaisse";
 import { JournalCaisse } from "./JournalCaisse";
 import { ClotureCaisse } from "./ClotureCaisse";
 import { JournalSecretariat } from "./JournalSecretariat";
+import { DemandeDocumentPiece } from "./DemandeDocumentPiece";
+import { DemandeDocumentVote } from "./DemandeDocumentVote";
 
 ConseilClasse.hasMany(DecisionConseil, { foreignKey: 'conseilClasseId', as: 'decisions' })
 DecisionConseil.belongsTo(ConseilClasse, { foreignKey: 'conseilClasseId', as: 'conseilClasse' })
 
 TypeDocument.hasMany(DemandeDocument, { foreignKey: 'typeDocumentId', as: 'demandesDocument' })
 DemandeDocument.belongsTo(TypeDocument, { foreignKey: 'typeDocumentId', as: 'typeDocument' })
+DemandeDocument.hasMany(DemandeDocumentPiece, { foreignKey: 'demandeId', as: 'pieces' })
+DemandeDocumentPiece.belongsTo(DemandeDocument, { foreignKey: 'demandeId', as: 'demande' })
+DemandeDocument.hasMany(DemandeDocumentVote, { foreignKey: 'demandeId', as: 'votesComite' })
+DemandeDocumentVote.belongsTo(DemandeDocument, { foreignKey: 'demandeId', as: 'demande' })
+DemandeDocumentVote.belongsTo(Utilisateur, { foreignKey: 'membreId', as: 'membre' })
 
 Utilisateur.hasMany(DemandeDocument, { foreignKey: 'etudiantId', as: 'demandesDocument' })
 DemandeDocument.belongsTo(Utilisateur, { foreignKey: 'etudiantId', as: 'etudiant' })

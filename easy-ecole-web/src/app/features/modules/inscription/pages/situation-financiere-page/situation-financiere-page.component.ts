@@ -1,6 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { BordereauService } from 'src/app/data/modules/inscription/services/bordereau.service';
 import { AnneeAcademique } from 'src/app/data/modules/inscription/models/AnneeAcademique.model';
@@ -14,10 +12,10 @@ import { ClasseService } from 'src/app/data/modules/inscription/services/classe.
 import { DossierNode, DossierColumn, BatchAction } from 'src/app/shared/components/dossier-view/dossier-view.component';
 import { environment } from 'src/environments/environment';
 import { ToastService } from 'src/app/core/services/toast.service';
-import { Observable, of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { combineLatest } from 'rxjs';
 import { untilDestroyed } from 'src/app/core/utils/take-until-destroy';
-import { CustomModalComponent } from 'src/app/shared/components/custom-modal/custom-modal.component';
+import { catchError, debounceTime, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-situation-financiere-page',
@@ -28,6 +26,8 @@ export class SituationFinancierePageComponent extends BaseComponentClass impleme
 
   // ── Données brutes ──
   situationData: any[] = [];
+  treeNodes: DossierNode[] = [];
+  private readonly reloadRequests = new Subject<void>();
 
   // ── Selecteurs de référence ──
   annees: AnneeAcademique[] = [];
@@ -79,6 +79,7 @@ export class SituationFinancierePageComponent extends BaseComponentClass impleme
   selectedEtudiant: any = null;
   detailLoading = false;
   detailData: any = null;
+  detailError = '';
 
   // ── Pagination ──
   page = 1;
@@ -87,7 +88,6 @@ export class SituationFinancierePageComponent extends BaseComponentClass impleme
   totalPages = 0;
 
   constructor(
-    private route: ActivatedRoute,
     private bordereauService: BordereauService,
     private anneeService: AnneeAcademiqueService,
     private niveauService: NiveauEtudeService,
@@ -99,6 +99,30 @@ export class SituationFinancierePageComponent extends BaseComponentClass impleme
   }
 
   ngOnInit(): void {
+    this.reloadRequests.pipe(
+      debounceTime(250),
+      switchMap(() => {
+        this.loading = true;
+        this.error = false;
+        this.apiErrorMessage = '';
+        return this.bordereauService.getSituationFinanciere(this.getSituationParams()).pipe(
+          catchError((err) => {
+            this.loading = false;
+            this.error = true;
+            this.apiErrorMessage = err?.error?.message || 'Erreur lors du chargement de la situation financière';
+            this.toastService.error(this.apiErrorMessage);
+            return of(null);
+          })
+        );
+      })
+    ).pipe(untilDestroyed(this)).subscribe((res: any) => {
+      if (!res) return;
+      this.situationData = res.data || [];
+      this.total = res.pagination?.total ?? 0;
+      this.totalPages = res.pagination?.totalPages ?? 0;
+      this.treeNodes = this.buildTreeNodes(this.situationData);
+      this.loading = false;
+    });
     this.loadSelects();
   }
 
@@ -115,21 +139,19 @@ export class SituationFinancierePageComponent extends BaseComponentClass impleme
         this.niveaux = niveaux;
         this.parcoursList = parcours;
         this.classes = classes;
-        this.loadSituation();
+        this.niveauxFiltres = niveaux;
+        this.applyFilters();
       },
-      error: () => {
+      error: (err) => {
         this.loading = false;
         this.error = true;
-        this.toastService.error('Erreur lors du chargement des référentiels');
+        this.apiErrorMessage = err?.error?.message || 'Erreur lors du chargement des référentiels';
+        this.toastService.error(this.apiErrorMessage);
       }
     });
   }
 
-  // ── Chargement de la situation financière ──
-  private loadSituation(): void {
-    this.loading = true;
-    this.error = false;
-
+  private getSituationParams(): any {
     const params: any = {
       page: this.page,
       limit: this.limit,
@@ -140,20 +162,7 @@ export class SituationFinancierePageComponent extends BaseComponentClass impleme
     if (this.selectedClasseId) params.classeId = this.selectedClasseId;
     if (this.selectedPeriode) params.periode = this.selectedPeriode;
     if (this.searchTerm.trim()) params.search = this.searchTerm.trim();
-
-    this.bordereauService.getSituationFinanciere(params).pipe(untilDestroyed(this)).subscribe({
-      next: (res: any) => {
-        this.situationData = res.data || [];
-        this.total = res.pagination?.total || 0;
-        this.totalPages = res.pagination?.totalPages || 0;
-        this.loading = false;
-      },
-      error: () => {
-        this.loading = false;
-        this.error = true;
-        this.toastService.error('Erreur lors du chargement de la situation financière');
-      }
-    });
+    return params;
   }
 
   // ── Cascade de filtres ──
@@ -165,18 +174,7 @@ export class SituationFinancierePageComponent extends BaseComponentClass impleme
     this.parcoursFiltres = [];
     this.classesFiltres = [];
 
-    if (this.selectedAnneeId) {
-      const niveauIds = new Set<string>();
-      this.parcoursList
-        .filter(p => {
-          const session = (p as any).session;
-          return session?.anneeAcademiqueId && String(session.anneeAcademiqueId) === String(this.selectedAnneeId);
-        })
-        .forEach(p => { if (p.niveauEtudeId) niveauIds.add(String(p.niveauEtudeId)); });
-      this.niveauxFiltres = niveauIds.size > 0
-        ? this.niveaux.filter(n => niveauIds.has(String(n.id!)))
-        : this.niveaux;
-    }
+    this.niveauxFiltres = this.niveaux;
     this.applyFilters();
   }
 
@@ -194,7 +192,12 @@ export class SituationFinancierePageComponent extends BaseComponentClass impleme
 
   onParcoursChange(): void {
     this.selectedClasseId = '';
-    this.classesFiltres = [];
+    this.classesFiltres = this.selectedParcoursId
+      ? this.classes.filter(c =>
+        String(c.parcoursId) === String(this.selectedParcoursId) &&
+        (!this.selectedNiveauId || String(c.niveauEtudeId) === String(this.selectedNiveauId))
+      )
+      : [];
     this.applyFilters();
   }
 
@@ -218,7 +221,11 @@ export class SituationFinancierePageComponent extends BaseComponentClass impleme
 
   // ── Application des filtres ──
   private applyFilters(): void {
-    this.loadSituation();
+    this.reloadRequests.next();
+  }
+
+  retryLoad(): void {
+    this.applyFilters();
   }
 
   // ── Conversion sûre d'un montant en nombre ──
@@ -255,79 +262,69 @@ export class SituationFinancierePageComponent extends BaseComponentClass impleme
    * Arbre : AnnéeAcadémique → Niveau → Parcours → Filière(classe) → OptionCours(semestre) → Étudiant
    * Chaque feuille étudiant contient un item mappé via situationToItem().
    */
-  get treeNodes(): DossierNode[] {
-    const q = this.searchTerm.toLowerCase().trim();
-
-    const filtered = this.situationData.filter(d => {
-      if (!q) return true;
-      const nom = `${d.etudiant?.nom ?? ''} ${d.etudiant?.prenoms ?? ''}`.toLowerCase();
-      const mat = d.etudiant?.matricule?.toLowerCase() ?? '';
-      return nom.includes(q) || mat.includes(q);
-    });
-
+  private buildTreeNodes(data: any[]): DossierNode[] {
     const groups: { [key: string]: any } = {};
 
-    for (const s of filtered) {
+    const makeKey = (id: any, label: string): string => JSON.stringify([id == null ? label : String(id), label]);
+
+    for (const s of data) {
       const anneeLibelle: string = s.anneeAcademique?.libelle || 'Sans année';
       const niveauLibelle: string = s.niveau?.libelle || 'Sans niveau';
       const parcoursLibelle: string = s.parcours?.titre || 'Sans parcours';
-      const filiereLibelle: string = s.parcours?.type || 'Sans filière';
+      const classeLibelle: string = s.classe?.libelle || 'Sans classe';
       const optionCoursLibelle: string = this.getPeriodeLibelle(s.etudiant?.periode);
       const etudiantLabel = s.etudiant ? `${s.etudiant.nom} ${s.etudiant.prenoms}` : 'Étudiant inconnu';
 
-      const anneeKey = anneeLibelle;
-      const niveauKey = `${anneeKey}||${niveauLibelle}`;
-      const parcoursKey = `${niveauKey}||${parcoursLibelle}`;
-      const filiereKey = `${parcoursKey}||${filiereLibelle}`;
-      const optionKey = `${filiereKey}||${optionCoursLibelle}`;
-      const etudiantKey = `${optionKey}||${etudiantLabel}`;
+      const anneeKey = makeKey(s.anneeAcademique?.id, anneeLibelle);
+      const niveauKey = makeKey(s.niveau?.id, niveauLibelle);
+      const parcoursKey = makeKey(s.parcours?.id, parcoursLibelle);
+      const classeKey = makeKey(s.classe?.id, classeLibelle);
+      const optionKey = makeKey(optionCoursLibelle, optionCoursLibelle);
+      const etudiantKey = makeKey(s.etudiant?.id, etudiantLabel);
 
       if (!groups[anneeKey]) groups[anneeKey] = {};
       if (!groups[anneeKey][niveauKey]) groups[anneeKey][niveauKey] = {};
       if (!groups[anneeKey][niveauKey][parcoursKey]) groups[anneeKey][niveauKey][parcoursKey] = {};
-      if (!groups[anneeKey][niveauKey][parcoursKey][filiereKey]) groups[anneeKey][niveauKey][parcoursKey][filiereKey] = {};
-      if (!groups[anneeKey][niveauKey][parcoursKey][filiereKey][optionKey]) groups[anneeKey][niveauKey][parcoursKey][filiereKey][optionKey] = {};
-      if (!groups[anneeKey][niveauKey][parcoursKey][filiereKey][optionKey][etudiantKey]) {
-        groups[anneeKey][niveauKey][parcoursKey][filiereKey][optionKey][etudiantKey] = { items: [] };
+      if (!groups[anneeKey][niveauKey][parcoursKey][classeKey]) groups[anneeKey][niveauKey][parcoursKey][classeKey] = {};
+      if (!groups[anneeKey][niveauKey][parcoursKey][classeKey][optionKey]) groups[anneeKey][niveauKey][parcoursKey][classeKey][optionKey] = {};
+      if (!groups[anneeKey][niveauKey][parcoursKey][classeKey][optionKey][etudiantKey]) {
+        groups[anneeKey][niveauKey][parcoursKey][classeKey][optionKey][etudiantKey] = { items: [] };
       }
-      groups[anneeKey][niveauKey][parcoursKey][filiereKey][optionKey][etudiantKey].items.push(this.situationToItem(s));
+      groups[anneeKey][niveauKey][parcoursKey][classeKey][optionKey][etudiantKey].items.push(this.situationToItem(s));
     }
+
+    const labelOf = (key: string): string => JSON.parse(key)[1];
 
     return Object.entries(groups).map(([anneeKey, niveaux]: [string, any]) => ({
       type: 'annee' as const,
-      label: anneeKey,
+      label: labelOf(anneeKey),
       expanded: true,
       children: Object.entries(niveaux).map(([niveauKey, parcs]: [string, any]) => {
-        const niveauLibelle = niveauKey.split('||')[1] || niveauKey;
         return {
           type: 'niveau' as const,
-          label: niveauLibelle,
+          label: labelOf(niveauKey),
           expanded: true,
           children: Object.entries(parcs).map(([parcoursKey, filieres]: [string, any]) => {
-            const parcoursLibelle = parcoursKey.split('||')[2] || parcoursKey;
             return {
               type: 'parcours' as const,
-              label: parcoursLibelle,
+              label: labelOf(parcoursKey),
               expanded: true,
-              children: Object.entries(filieres).map(([filiereKey, options]: [string, any]) => {
-                const filiereLibelle = filiereKey.split('||')[3] || filiereKey;
+              children: Object.entries(filieres).map(([classeKey, options]: [string, any]) => {
                 return {
                   type: 'classe' as const,
-                  label: filiereLibelle,
-                  subtitle: 'Filière',
+                  label: labelOf(classeKey),
+                  subtitle: 'Classe',
                   expanded: true,
                   children: Object.entries(options).map(([optionKey, etudiants]: [string, any]) => {
-                    const optionLibelle = optionKey.split('||')[4] || optionKey;
                     return {
                       type: 'semestre' as const,
-                      label: optionLibelle,
+                      label: labelOf(optionKey),
                       subtitle: 'Option cours',
                       expanded: true,
                       children: Object.entries(etudiants).map(([etudiantKey, group]: [string, any]) => {
-                        const etudiantLabel = etudiantKey.split('||').pop() || 'Étudiant inconnu';
                         return {
                           type: 'etudiant' as const,
-                          label: etudiantLabel,
+                          label: labelOf(etudiantKey),
                           expanded: false,
                           items: group.items || [],
                         };
@@ -369,24 +366,33 @@ export class SituationFinancierePageComponent extends BaseComponentClass impleme
   private openDetailModal(item: any): void {
     this.selectedEtudiant = item;
     this.detailData = null;
+    this.detailError = '';
     this.showDetailModal = true;
     this.detailLoading = true;
 
-    const utilisateurId = item?.raw?.etudiant?.id;
+    const raw = item?.raw || {};
+    const utilisateurId = raw?.etudiant?.id;
     if (!utilisateurId) {
       this.detailLoading = false;
-      this.toastService.error("Identifiant étudiant absent");
+      this.detailError = "Identifiant étudiant absent";
+      this.toastService.error(this.detailError);
       return;
     }
 
-    this.bordereauService.getSituationDetail(String(utilisateurId)).pipe(untilDestroyed(this)).subscribe({
+    this.bordereauService.getSituationDetail(String(utilisateurId), {
+      anneeAcademiqueId: raw.anneeAcademique?.id,
+      niveauEtudeId: raw.niveau?.id,
+      parcoursId: raw.parcours?.id,
+      classeId: raw.classe?.id,
+    }).pipe(untilDestroyed(this)).subscribe({
       next: (res: any) => {
         this.detailData = res?.data || res;
         this.detailLoading = false;
       },
-      error: () => {
+      error: (err) => {
         this.detailLoading = false;
-        this.toastService.error("Erreur lors du chargement du détail");
+        this.detailError = err?.error?.message || "Erreur lors du chargement du détail";
+        this.toastService.error(this.detailError);
       }
     });
   }
@@ -395,5 +401,6 @@ export class SituationFinancierePageComponent extends BaseComponentClass impleme
     this.showDetailModal = false;
     this.selectedEtudiant = null;
     this.detailData = null;
+    this.detailError = '';
   }
 }

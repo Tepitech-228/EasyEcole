@@ -5,6 +5,7 @@ import * as path from "path"
 import { customAlphabet } from 'nanoid'
 
 import EnseignantController from "../controllers/EnseignantController"
+import Authenticate from "../../../core/middlewares/Authenticate";
 import { AuthEnseignant } from "../../../core/middlewares/AuthEnseignant";
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
 import CheckPermission from "../../../core/middlewares/CheckPermission";
@@ -115,7 +116,7 @@ router
      *       401:
      *         description: Non autorisé
      */
-    .put('/photo', [AuthEnseignant, upload.fields([{name: 'photo', maxCount: 1}])], EnseignantController.updatePhoto)
+    .put('/photo', [Authenticate, upload.fields([{name: 'photo', maxCount: 1}])], EnseignantController.updatePhoto)
     /**
      * @openapi
      * /auth/enseignants/qr-codes/generate:
@@ -131,7 +132,7 @@ router
      *         description: Non autorisé
      */
     .post('/qr-codes/generate', [AuthInstitution, CheckPermission('action.administration.enseignant.generer-qr')], EnseignantController.generateQrCodes)
-    .get('/qr-codes/:fileName', EnseignantController.getQrCode)
+    .get('/qr-codes/:fileName', [Authenticate], EnseignantController.getQrCode)
     /**
      * @openapi
      * /auth/enseignants:

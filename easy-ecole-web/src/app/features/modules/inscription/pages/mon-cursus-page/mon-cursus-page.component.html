@@ -246,31 +246,50 @@
       <div *ngIf="getUeList().length > 0" class="space-y-3">
         <div *ngFor="let ue of getUeList()" class="border border-gray-200 rounded-lg overflow-hidden">
           <!-- En-tête UE -->
-          <div class="bg-indigo-50 px-4 py-3 flex items-center justify-between">
+          <button type="button" (click)="toggleUe(ue.id)"
+            class="w-full bg-indigo-50 px-4 py-3 flex items-center justify-between text-left hover:bg-indigo-100 transition">
             <div>
               <span class="text-xs font-medium text-indigo-600">{{ ue.code }}</span>
               <h5 class="text-sm font-semibold text-gray-900">{{ ue.intitule }}</h5>
             </div>
-            <div class="text-right text-xs text-gray-500">
-              <p>Semestre {{ ue.semestre }}</p>
-              <p>{{ ue.credit }} crédit(s)</p>
+            <div class="flex items-center gap-3 text-right text-xs text-gray-500">
+              <div>
+                <p>Semestre {{ ue.semestre }}</p>
+                <p>{{ ue.credit }} crédit(s)</p>
+              </div>
+              <span class="material-symbols-outlined" aria-hidden="true">
+                {{ expandedUeId === ue.id ? 'expand_less' : 'expand_more' }}
+              </span>
             </div>
-          </div>
+          </button>
           <!-- Enseignant -->
           <div class="px-4 py-2 bg-gray-50 border-t border-gray-100">
             <span class="text-xs text-gray-500">Enseignant :</span>
             <span class="text-xs font-medium text-gray-700 ml-1">{{ ue.enseignant }}</span>
           </div>
           <!-- Liste des ECUE -->
-          <div *ngIf="getEcueList(ue.id).length > 0" class="px-4 py-2 border-t border-gray-100">
-            <p class="text-xs font-medium text-gray-600 mb-2">ECUE :</p>
-            <div class="space-y-1">
-              <div *ngFor="let ecue of getEcueList(ue.id)" class="flex items-center justify-between text-xs">
-                <span class="text-gray-700">
-                  <span class="font-medium">{{ ecue.code }}</span> - {{ ecue.libelle }}
-                </span>
-                <span class="text-gray-500">{{ ecue.creditEcts }} ECTS</span>
-              </div>
+          <div *ngIf="expandedUeId === ue.id" class="px-4 py-3 border-t border-gray-100">
+            <p *ngIf="getEcueList(ue.id).length === 0" class="text-xs text-gray-500">
+              Aucune ECUE n'est configurée pour cette UE.
+            </p>
+            <div *ngIf="getEcueList(ue.id).length > 0" class="space-y-3">
+              <h6 class="text-xs font-semibold text-gray-600">Éléments constitutifs (ECUE)</h6>
+              <article *ngFor="let ecue of getEcueList(ue.id)" class="rounded-md border border-gray-200 p-3">
+                <div class="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <p class="text-xs font-semibold text-gray-800">{{ ecue.code }} — {{ ecue.libelle }}</p>
+                    <p class="mt-1 text-xs text-gray-500">Enseignant : {{ ecue.enseignant }}</p>
+                  </div>
+                  <span class="text-xs text-gray-500">{{ ecue.creditEcts ?? '—' }} ECTS</span>
+                </div>
+                <dl class="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
+                  <div><dt class="text-gray-500">Type</dt><dd class="font-medium text-gray-700">{{ ecue.type ?? '—' }}</dd></div>
+                  <div><dt class="text-gray-500">CM</dt><dd class="font-medium text-gray-700">{{ ecue.cmHoraire ?? '—' }} h</dd></div>
+                  <div><dt class="text-gray-500">TD/TP</dt><dd class="font-medium text-gray-700">{{ ecue.tdTpHoraire ?? '—' }} h</dd></div>
+                  <div><dt class="text-gray-500">TPE</dt><dd class="font-medium text-gray-700">{{ ecue.tpeHoraire ?? '—' }} h</dd></div>
+                  <div><dt class="text-gray-500">Coefficient</dt><dd class="font-medium text-gray-700">{{ ecue.coefficient ?? '—' }}</dd></div>
+                </dl>
+              </article>
             </div>
           </div>
         </div>

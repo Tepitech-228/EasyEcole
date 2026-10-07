@@ -9,7 +9,7 @@ import { SalleDeClasseService } from 'src/app/data/modules/inscription/services/
 import { AnneeAcademiqueService } from 'src/app/data/modules/inscription/services/annee-academique.service';
 import { RolesUtilisateur } from 'src/app/data/enums/RolesUtilisateur';
 
-export type ExportType = 'ue' | 'etudiants' | 'enseignants' | 'utilisateurs';
+export type ExportType = 'ue' | 'etudiants' | 'modele-client' | 'enseignants' | 'utilisateurs';
 export type ImportType = 'ue' | 'etudiants' | 'enseignants' | 'utilisateurs' | 'migration';
 
 @Component({
@@ -60,16 +60,17 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
   readonly exportTypes = [
     { value: 'ue' as ExportType, label: 'UE et ECUE' },
     { value: 'etudiants' as ExportType, label: 'Étudiants' },
+    { value: 'modele-client' as ExportType, label: 'Modèle de migration client (5 onglets)' },
     { value: 'enseignants' as ExportType, label: 'Enseignants' },
     { value: 'utilisateurs' as ExportType, label: 'Utilisateurs par rôle' }
   ];
 
   readonly importTypes = [
     { value: 'ue' as ImportType, label: 'UE et ECUE' },
-    { value: 'etudiants' as ImportType, label: 'Étudiants' },
+    { value: 'etudiants' as ImportType, label: 'Nouveaux étudiants (base client)' },
     { value: 'enseignants' as ImportType, label: 'Enseignants' },
     { value: 'utilisateurs' as ImportType, label: 'Utilisateurs par rôle' },
-    { value: 'migration' as ImportType, label: 'Migration Complète (3 onglets)' }
+    { value: 'migration' as ImportType, label: 'Migration Complète (5 onglets)' }
   ];
 
   readonly rolesList = [
@@ -158,6 +159,8 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
       download$ = this.excelService.exportUe();
     } else if (this.exportType === 'etudiants') {
       download$ = this.excelService.exportApprenantsFiltres(this.exportFilters);
+    } else if (this.exportType === 'modele-client') {
+      download$ = this.excelService.downloadApprenantsMigrationTemplate();
     } else if (this.exportType === 'enseignants') {
       download$ = this.excelService.exportEnseignantsFiltres({
         filiereId: this.exportFilters.filiereId,
@@ -170,12 +173,18 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
 
     download$.subscribe({
       next: (blob: Blob) => {
-        const ext = this.exportType === 'etudiants' ? 'etudiants' :
+        const ext = this.exportType === 'modele-client' ? 'modele-etudiants-client' :
+                    this.exportType === 'etudiants' ? 'etudiants' :
                     this.exportType === 'enseignants' ? 'enseignants' :
                     `utilisateurs-${this.selectedImportRole}`;
         const timestamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
-        ExcelService.downloadBlob(blob, `export-${ext}-${timestamp}.${this.exportType === 'ue' && this.exportFormat === 'docx' ? 'docx' : 'xlsx'}`);
-        this.successMessage = 'Export généré et téléchargé avec succès.';
+        const filename = this.exportType === 'modele-client'
+          ? `export-migration-complet-modele-client-${timestamp}.xlsx`
+          : `export-${ext}-${timestamp}.${this.exportType === 'ue' && this.exportFormat === 'docx' ? 'docx' : 'xlsx'}`;
+        ExcelService.downloadBlob(blob, filename);
+        this.successMessage = this.exportType === 'modele-client'
+          ? 'Modèle de migration client téléchargé avec succès (5 onglets : Identité, Cursus, Finance, Notes, Enseignants_Cours).'
+          : 'Export généré et téléchargé avec succès.';
       },
       error: () => {
         this.errorMessage = 'Erreur lors du téléchargement du fichier Excel.';
@@ -192,7 +201,7 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
       next: (blob: Blob) => {
         const timestamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
         ExcelService.downloadBlob(blob, `export-migration-complet-${timestamp}.xlsx`);
-        this.successMessage = 'Export migration complète téléchargé avec succès (3 onglets : Identité, Cursus, Finance).';
+        this.successMessage = 'Export migration complète téléchargé avec succès (5 onglets : Identité, Cursus, Finance, Notes, Enseignants_Cours).';
         this.exportMigrationLoading = false;
       },
       error: () => {
@@ -239,9 +248,8 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
     this.selectedFile = file;
     if (file) {
       const ext = file.name.split('.').pop()?.toLowerCase();
-      if (ext === 'docx') {
-        this.importFormat = 'docx';
-      }
+      this.importFormat = ext === 'docx' ? 'docx' : 'xlsx';
+      this.selectMigrationTypeForExport(file);
     }
     this.importResult = null;
     this.errorMessage = null;
@@ -256,13 +264,19 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
       this.selectedFile = file;
       if (file) {
         const ext = file.name.split('.').pop()?.toLowerCase();
-        if (ext === 'docx') {
-          this.importFormat = 'docx';
-        }
+        this.importFormat = ext === 'docx' ? 'docx' : 'xlsx';
+        this.selectMigrationTypeForExport(file);
       }
       this.importResult = null;
       this.errorMessage = null;
       this.successMessage = null;
+    }
+  }
+
+  private selectMigrationTypeForExport(file: File): void {
+    if (/^export-migration-complet(?:-|\.|$)/i.test(file.name)) {
+      this.importType = 'migration';
+      this.importFormat = 'xlsx';
     }
   }
 
@@ -277,11 +291,13 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
 
   importMigration(): void {
     if (!this.selectedFile) {
+      this.importing = false;
       this.errorMessage = 'Veuillez sélectionner un fichier.';
       return;
     }
 
-    if (this.importFormat !== 'xlsx') {
+    if (this.selectedFile.name.split('.').pop()?.toLowerCase() !== 'xlsx') {
+      this.importing = false;
       this.errorMessage = 'L\'import migration ne supporte que le format .xlsx.';
       return;
     }
@@ -297,15 +313,23 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
       next: (result: ExcelImportResult) => {
         this.importResult = result;
         this.importMigrationLoading = false;
+        this.importing = false;
         if (result.success) {
-          this.successMessage = `Import migration terminée : ${result.importedCount} apprenant(s) importé(s), ${result.errorCount} erreur(s).`;
+          const summary = result.migrationSummary;
+          this.successMessage = summary
+            ? `Migration terminée : ${summary.apprenants.imported}/${summary.apprenants.total} apprenant(s), ${summary.cursus.imported}/${summary.cursus.total} cursus, ${summary.finances.imported}/${summary.finances.total} ligne(s) financière(s), ${summary.notes.imported}/${summary.notes.total} note(s), ${summary.affectations.imported}/${summary.affectations.total} affectation(s); ${result.errorCount} erreur(s).`
+            : `Migration terminée : ${result.importedCount} apprenant(s), ${result.importedNotesCount || 0} note(s), ${result.importedTeacherAssignmentsCount || 0} affectation(s) enseignant-cours; ${result.errorCount} erreur(s).`;
+          if (result.errorCount > 0) {
+            this.errorMessage = `${result.errorCount} ligne(s) n'ont pas pu être importée(s). Consultez le détail des erreurs.`;
+          }
         } else {
-          this.errorMessage = result.message || 'Erreur lors de l\'import migration.';
+          this.errorMessage = result.message || 'Aucune donnée n’a été importée. Consultez le détail des erreurs.';
         }
       },
       error: (err) => {
         this.importResult = null;
         this.importMigrationLoading = false;
+        this.importing = false;
         this.errorMessage = err?.error?.message || 'Erreur lors de l\'import migration.';
       }
     });
@@ -377,6 +401,9 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
 
    importTypeChanged(): void {
      this.detailFilter = 'all';
+      if (this.importType === 'migration') {
+        this.importFormat = 'xlsx';
+      }
    }
 
   getImportFileTypeLabel(): string {
@@ -394,7 +421,7 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
       case 'ue': return 'Maquette UE/ECUE';
       case 'etudiants': return 'Fichier Apprenants';
       case 'enseignants': return 'Fichier Enseignants';
-      case 'migration': return 'Fichier Migration 3 onglets';
+      case 'migration': return 'Fichier Migration 5 onglets';
       default: return 'Fichier Utilisateurs';
     }
   }
@@ -467,6 +494,17 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
     if (s === 'succès' || s === 'succes' || s === 'success') return 'Succès';
     if (s === 'erreur' || s === 'error') return 'Erreur';
     return 'Ignoré';
+  }
+
+  migrationDetailTypeLabel(type?: string): string {
+    const labels: Record<string, string> = {
+      apprenant: 'Apprenant',
+      cursus: 'Cursus',
+      finance: 'Finance',
+      note: 'Note',
+      affectation: 'Affectation enseignant-cours'
+    };
+    return type ? (labels[type] || type) : '—';
   }
 
   getFilteredDetails(): any[] {

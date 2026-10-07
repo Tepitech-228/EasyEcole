@@ -122,13 +122,17 @@ SET @tableExists := (
   SELECT COUNT(*) FROM information_schema.TABLES
   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ins_presences'
 );
+SET @colExists := (
+  SELECT COUNT(*) FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ins_presences' AND COLUMN_NAME = 'seanceId'
+);
 SET @idxExists := (
   SELECT COUNT(*) FROM information_schema.STATISTICS
   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ins_presences' AND INDEX_NAME = 'idx_presences_seance'
 );
-SET @sql := IF(@tableExists = 1 AND @idxExists = 0,
+SET @sql := IF(@tableExists = 1 AND @colExists = 1 AND @idxExists = 0,
   'ALTER TABLE `ins_presences` ADD INDEX `idx_presences_seance` (`seanceId`)',
-  'SELECT ''index deja present ou table absente''');
+  'SELECT ''index deja present, table ou colonne absente''');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- Cours : filtrage par classe + enseignant (planning)

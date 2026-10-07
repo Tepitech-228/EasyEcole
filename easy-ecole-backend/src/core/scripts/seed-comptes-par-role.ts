@@ -32,6 +32,7 @@ const MOTS_DE_PASSE: Record<string, string> = {
     esa_compta: MOT_DE_PASSE_DEFAUT,
     personnel_administratif: MOT_DE_PASSE_DEFAUT,
     secretaire: MOT_DE_PASSE_DEFAUT,
+    superviseur_general: MOT_DE_PASSE_DEFAUT,
     apprenant: MOT_DE_PASSE_DEFAUT,
     parent: MOT_DE_PASSE_DEFAUT,
 };
@@ -57,11 +58,12 @@ const ROLE_ENUM_TO_RBAC: Record<string, string | null> = {
     admin: 'Super Admin',
     institution: 'Directeur',
     cabinet_comptable: 'Comptable',
-    esa_compta: 'Comptable',
+    esa_compta: 'ESA Compta',
     comite_orientation: 'Comité',
     caissier_banque: 'Comptable',
     personnel_administratif: 'Directeur',
     secretaire: 'Directeur',
+    superviseur_general: 'Superviseur Général',
     enseignant: 'Enseignant',
     apprenant: 'Apprenant',
     parent: 'Parent',
@@ -113,38 +115,57 @@ export async function seedComptesParRole(seqIn?: any): Promise<void> {
 
     console.log('\n═══ 1/6 Comptes utilisateurs (upsert) ═══');
     console.log(`  Mot de passe par défaut : ${MOT_DE_PASSE_DEFAUT.substring(0, 3)}***`);
-    let created = 0, updated = 0, skipped = 0;
+    let created = 0, updated = 0, skipped = 0, failed = 0;
 
     for (const c of COMPTES) {
-        const hash = bcrypt.hashSync(MOTS_DE_PASSE[c.role], 12);
-        let u: any = await AutU.findOne({ where: { email: c.email } });
-        if (!u) u = await AutU.findOne({ where: { identifiant: c.identifiant } });
-        if (u) {
-            // Si le compte existant est déjà le bon rôle → mise à jour classique
-            // Si le compte était apprenant et est reclassé → on met à jour (pas de skip)
-            if (u.role === 'apprenant' && c.role !== 'apprenant') {
-                console.log(`  ↻ Reclassification : ${c.email} de apprenant → ${c.role} (#${u.id})`);
+        try {
+            const hash = bcrypt.hashSync(MOTS_DE_PASSE[c.role], 12);
+            // `paranoid: false` est INDISPENSABLE : une ligne soft-supprimée reste
+            // dans l'index UNIQUE `identifiant` alors qu'elle est invisible aux
+            // findOne par défaut. Sans ce drapeau, le seed ne voit pas le compte
+            // supprimé, tente un create, et MySQL répond ER_DUP_ENTRY.
+            let u: any = await AutU.findOne({ where: { email: c.email }, paranoid: false });
+            if (!u) u = await AutU.findOne({ where: { identifiant: c.identifiant }, paranoid: false });
+            if (u) {
+                if (u.deletedAt) {
+                    await u.restore();
+                    console.log(`  ↺ Restauré : ${c.identifiant} (${c.role}) — était supprimé le ${u.deletedAt}`);
+                }
+                // Si le compte existant est déjà le bon rôle → mise à jour classique
+                // Si le compte était apprenant et est reclassé → on met à jour (pas de skip)
+                if (u.role === 'apprenant' && c.role !== 'apprenant') {
+                    console.log(`  ↻ Reclassification : ${c.email} de apprenant → ${c.role} (#${u.id})`);
+                }
+                await u.update({
+                    nom: c.nom, prenoms: c.prenoms, identifiant: c.identifiant,
+                    role: c.role, motDePasse: hash, contact: c.contact || u.contact,
+                    dateVerificationEmail: new Date(),
+                });
+                console.log(`  ↻ Mis à jour : ${c.identifiant} (${c.role}) — ${c.email}`);
+                updated++;
+            } else {
+                u = await AutU.create({
+                    nom: c.nom, prenoms: c.prenoms, identifiant: c.identifiant, email: c.email,
+                    motDePasse: hash, role: c.role, contact: c.contact || '+228000000000',
+                    dateVerificationEmail: new Date(),
+                });
+                console.log(`  ✓ Créé : ${c.identifiant} (${c.role}) — ${c.email}`);
+                created++;
             }
-            await u.update({
-                nom: c.nom, prenoms: c.prenoms, identifiant: c.identifiant,
-                role: c.role, motDePasse: hash, contact: c.contact || u.contact,
-                dateVerificationEmail: new Date(),
-            });
-            console.log(`  ↻ Mis à jour : ${c.identifiant} (${c.role}) — ${c.email}`);
-            updated++;
-        } else {
-            u = await AutU.create({
-                nom: c.nom, prenoms: c.prenoms, identifiant: c.identifiant, email: c.email,
-                motDePasse: hash, role: c.role, contact: c.contact || '+228000000000',
-                dateVerificationEmail: new Date(),
-            });
-            console.log(`  ✓ Créé : ${c.identifiant} (${c.role}) — ${c.email}`);
-            created++;
+            (c as any)._u = u;
+        } catch (e: any) {
+            // Un compte en échec ne doit pas interrompre le seed des suivants :
+            // l'ancien code laissait l'exception remonter et abandonnait tout le
+            // reste de la liste, sans compter les comptes restés en base.
+            failed++;
+            console.error(`  ✗ Échec sur ${c.identifiant} (${c.email}) : ${e?.message || e}`);
         }
-        (c as any)._u = u;
     }
 
-    console.log(`\n  Total : ${created} créé(s), ${updated} mis à jour, ${skipped} ignoré(s)`);
+    console.log(`\n  Total : ${created} créé(s), ${updated} mis à jour, ${skipped} ignoré(s), ${failed} en échec(s)`);
+    if (failed > 0) {
+        console.warn(`  ⚠ ${failed} compte(s) de démonstration non seedés — voir les lignes ✗ ci-dessus.`);
+    }
 
     console.log('\n═══ 2/6 Profils liés ═══');
     const ensureAdresseE = async () => (await AutAdrE.create({ pays: 'Togo', ville: 'Lomé', quartier: 'Centre', boitePostale: 'BP 100', prorietaireBoitePostale: 'Démo', telMobile: '+228000000000' })).id ?? (await AutAdrE.findAll())[0].id;

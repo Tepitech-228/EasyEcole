@@ -297,12 +297,18 @@
             </button>
         </div>
         <div class="flex-1 min-h-0 pdf-preview-shell">
-            <img *ngIf="isImageFile(pdfBordereau!.fichier!)"
-                [src]="getBordereauDownloadUrl(pdfBordereau!.id!) | safeUrl | async"
+            <div *ngIf="pdfPreviewLoading" class="flex h-full items-center justify-center text-gray-500">
+                Chargement du bordereau...
+            </div>
+            <div *ngIf="!pdfPreviewLoading && pdfPreviewError" class="flex h-full items-center justify-center px-6 text-center text-red-600">
+                {{ pdfPreviewError }}
+            </div>
+            <img *ngIf="!pdfPreviewLoading && !pdfPreviewError && pdfPreviewUrl && isImageFile(pdfBordereau!.fichier!)"
+                [src]="pdfPreviewUrl"
                 class="pdf-preview-image"
                 alt="Bordereau">
-            <iframe *ngIf="!isImageFile(pdfBordereau!.fichier!)"
-                [src]="getBordereauDownloadUrl(pdfBordereau!.id!) | safeUrl | async"
+            <iframe *ngIf="!pdfPreviewLoading && !pdfPreviewError && pdfPreviewUrl && !isImageFile(pdfBordereau!.fichier!)"
+                [src]="pdfPreviewUrl"
                 title="Bordereau de paiement"
                 class="pdf-preview-frame"></iframe>
         </div>

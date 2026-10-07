@@ -62,9 +62,13 @@ const mysql = require('mysql2/promise');
 
 // ─── Configuration ───────────────────────────────────────────────────────────
 
+const REPOSITORY_MIGRATIONS_DIR = path.resolve(__dirname, '..', '..', 'migrations');
+const RUNTIME_MIGRATIONS_DIR = path.resolve(__dirname, '..', 'migrations');
 const MIGRATIONS_DIR = process.env.MIGRATIONS_DIR
   ? path.resolve(process.env.MIGRATIONS_DIR)
-  : path.resolve(__dirname, '..', 'migrations');
+  : fs.existsSync(REPOSITORY_MIGRATIONS_DIR)
+    ? REPOSITORY_MIGRATIONS_DIR
+    : RUNTIME_MIGRATIONS_DIR;
 const DB_NAME = process.env.DB_NAME || 'easyecole';
 const DB_HOST = process.env.DB_HOST || '127.0.0.1';
 const DB_PORT = parseInt(process.env.DB_PORT || '3306', 10);
@@ -231,9 +235,43 @@ async function ensureDatabaseExists(connection) {
   }
 }
 
-async function ensureMigrationsTable(connection) {
+const SCHEMA_MIGRATIONS = 'schema_migrations';
+const LEGACY_BACKUP = 'schema_migrations_legacy';
+
+async function tableExists(connection, table) {
+  const [rows] = await connection.query(
+    'SELECT COUNT(*) AS n FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?',
+    [table]
+  );
+  return rows && rows[0] && rows[0].n === 1;
+}
+
+/**
+ * Les anciennes installations Applicant une migration à la fois via
+ * src/core/scripts/apply-migration-temp.ts, qui crée sa table de suivi avec des
+ * colonnes en français : `nom`, `appliquee_le`, `duree_ms`. Le `CREATE TABLE IF
+ * NOT EXISTS` du runner est alors un no-op et le `SELECT name, checksum` échoue
+ * sur « Champ 'name' inconnu dans SELECT » : aucune migration ne peut plus
+ * jamais être appliquée. C'est l'état dans lequel se trouvait la base de dev,
+ * avec 026→029 bloquées depuis le 2026-09-22.
+ *
+ * On détecte cette forme et on convertit en place. La table legacy est
+ * conservée sous `schema_migrations_legacy` : la conversion est réversible et
+ * l'historique n'est jamais détruit.
+ */
+async function needsLegacyUpgrade(connection) {
+  if (!(await tableExists(connection, SCHEMA_MIGRATIONS))) return false;
+  const [cols] = await connection.query(
+    'SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?',
+    [SCHEMA_MIGRATIONS]
+  );
+  const names = cols.map((c) => c.COLUMN_NAME);
+  return names.includes('nom') && !names.includes('name');
+}
+
+async function createMigrationsTable(connection) {
   await connection.query(`
-    CREATE TABLE IF NOT EXISTS \`schema_migrations\` (
+    CREATE TABLE IF NOT EXISTS \`${SCHEMA_MIGRATIONS}\` (
       \`name\`        VARCHAR(191) NOT NULL,
       \`checksum\`    VARCHAR(64)  NOT NULL,
       \`applied_at\`  DATETIME     NOT NULL,
@@ -241,31 +279,161 @@ async function ensureMigrationsTable(connection) {
       PRIMARY KEY (\`name\`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci
   `);
-  log('table de suivi `schema_migrations` prête');
+}
+
+async function upgradeLegacyMigrationsTable(connection, migrationsByName) {
+  if (await tableExists(connection, LEGACY_BACKUP)) {
+    logError(
+      `la table \`${LEGACY_BACKUP}\` existe déjà : une conversion précédente a été ` +
+      `interrompue. Inspectez-la avant de relancer (elle contient l'historique ` +
+      `d'origine, nom/appliquee_le/duree_ms).`
+    );
+    process.exit(1);
+  }
+
+  const [legacyRows] = await connection.query(
+    `SELECT \`nom\`, \`appliquee_le\`, \`duree_ms\` FROM \`${SCHEMA_MIGRATIONS}\``
+  );
+  log(
+    `table \`${SCHEMA_MIGRATIONS}\` au format legacy détectée ` +
+    `(${legacyRows.length} migration(s) déjà appliquée(s)) — conversion en place`
+  );
+
+  await connection.query(`RENAME TABLE \`${SCHEMA_MIGRATIONS}\` TO \`${LEGACY_BACKUP}\``);
+  await createMigrationsTable(connection);
+
+  let carried = 0;
+  let orphans = [];
+  for (const row of legacyRows) {
+    const migration = migrationsByName.get(row.nom);
+    if (!migration) {
+      // Fichier absent du dépôt : le recopier déclencherait un rejeu, et son
+      // contenu n'est plus disponible pour être rejoué de façon idempotente.
+      // On l'ignore — et on le signale, car cela signifie que le dépôt a été
+      // amputé d'une migration déjà passée en base.
+      orphans.push(row.nom);
+      continue;
+    }
+    await connection.query(
+      `INSERT INTO \`${SCHEMA_MIGRATIONS}\` (\`name\`, \`checksum\`, \`applied_at\`, \`duration_ms\`) VALUES (?, ?, ?, ?)`,
+      [row.nom, migration.checksum, row.appliquee_le, row.duree_ms === null ? null : row.duree_ms]
+    );
+    carried++;
+  }
+
+  log(`  ${carried} migration(s) reprise(s) avec leur empreinte recalculée sur disque`);
+  if (orphans.length > 0) {
+    logError(
+      `  ${orphans.length} migration(s) de l'historique legacy n'existent plus sur disque ` +
+      `et n'ont pas pu être reprises : ${orphans.join(', ')}`
+    );
+  }
+  log(`  historique d'origine conservé dans \`${LEGACY_BACKUP}\``);
+}
+
+async function ensureMigrationsTable(connection, migrationsByName) {
+  const legacy = await needsLegacyUpgrade(connection);
+  if (legacy) {
+    await upgradeLegacyMigrationsTable(connection, migrationsByName);
+    return;
+  }
+  await createMigrationsTable(connection);
+  log(`table de suivi \`${SCHEMA_MIGRATIONS}\` prête`);
+}
+
+// ─── Arguments de la ligne de commande ──────────────────────────────────────
+
+/**
+ * Options documentées en tête de fichier :
+ *   (aucun)              toutes les migrations non appliquées
+ *   8 15                 migrations 008 → 015 uniquement
+ *   --force              rejoue aussi celles déjà appliquées
+ *   --dry-run            liste ce qui serait exécuté, sans rien écrire
+ *
+ * L'implémentation d'origine ignorait argv : `--dry-run` ne faisait rien et
+ * appliquait les migrations. C'est ce qui a permis à 026→029 de rester
+ * non appliquées sans que personne ne s'en aperçoive.
+ */
+function parseArgs(argv) {
+  const args = argv.slice(2);
+  const opts = { dryRun: false, force: false, from: null, to: null, errors: [] };
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '--dry-run') opts.dryRun = true;
+    else if (arg === '--force') opts.force = true;
+    else if (arg === '--help' || arg === '-h') opts.help = true;
+    else if (/^\d+$/.test(arg)) {
+      const n = parseInt(arg, 10);
+      if (opts.from === null) opts.from = n;
+      else if (opts.to === null) opts.to = n;
+      else opts.errors.push(`argument numérique inattendu : ${arg}`);
+    } else {
+      opts.errors.push(`option inconnue : ${arg}`);
+    }
+  }
+
+  if (opts.from !== null && opts.to !== null && opts.to < opts.from) {
+    opts.errors.push(`plage invalide : ${opts.from} → ${opts.to}`);
+  }
+  return opts;
+}
+
+function usage() {
+  log('usage : node scripts/apply-migrations.cjs [debut] [fin] [--force] [--dry-run]');
+  log('  node scripts/apply-migrations.cjs              # toutes les migrations non appliquées');
+  log('  node scripts/apply-migrations.cjs 8 15         # migrations 008 → 015 uniquement');
+  log('  node scripts/apply-migrations.cjs --force      # rejoue aussi les déjà appliquées');
+  log('  node scripts/apply-migrations.cjs --dry-run    # liste, sans exécuter');
 }
 
 // ─── Découverte des migrations ───────────────────────────────────────────────
 
-function discoverMigrations() {
+/**
+ * Numéro de séquence d'un nom de migration (`027_correction...` -> 27).
+ * Retourne null si le nom ne commence pas par un nombre.
+ */
+function migrationNumber(name) {
+  const match = /^(\d+)/.exec(name);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+/**
+ * `from` / `to` filtrent sur le numéro de séquence. Les migrations sans numéro
+ * (nom non calibré) sont exclues dès qu'une borne est fournie : une plage
+ * « 26 → 29 » ne doit pas embarquer par surprise un fichier `seed_*.sql`.
+ */
+function discoverMigrations(opts = {}) {
   if (!fs.existsSync(MIGRATIONS_DIR)) {
     logError(`dossier de migrations introuvable : ${MIGRATIONS_DIR}`);
     process.exit(1);
   }
+
+  const { from = null, to = null } = opts;
 
   const files = fs
     .readdirSync(MIGRATIONS_DIR)
     .filter((f) => f.toLowerCase().endsWith('.sql'))
     .sort();
 
-  return files.map((name) => {
-    const content = fs.readFileSync(path.join(MIGRATIONS_DIR, name), 'utf8');
-    return {
-      name,
-      path: path.join(MIGRATIONS_DIR, name),
-      content,
-      checksum: sha256(content),
-    };
-  });
+  return files
+    .filter((name) => {
+      if (from === null && to === null) return true;
+      const n = migrationNumber(name);
+      if (n === null) return false;
+      if (from !== null && n < from) return false;
+      if (to !== null && n > to) return false;
+      return true;
+    })
+    .map((name) => {
+      const content = fs.readFileSync(path.join(MIGRATIONS_DIR, name), 'utf8');
+      return {
+        name,
+        path: path.join(MIGRATIONS_DIR, name),
+        content,
+        checksum: sha256(content),
+      };
+    });
 }
 
 // ─── Exécution ───────────────────────────────────────────────────────────────
@@ -320,8 +488,12 @@ async function applyMigration(connection, migration) {
     }
 
     const duration = Date.now() - startedAt;
+    // ON DUPLICATE KEY : `--force` rejoue une migration déjà enregistrée, ce qui
+    // violerait la clé primaire `name`.
     await connection.query(
-      'INSERT INTO `schema_migrations` (`name`, `checksum`, `applied_at`, `duration_ms`) VALUES (?, ?, NOW(), ?)',
+      'INSERT INTO `schema_migrations` (`name`, `checksum`, `applied_at`, `duration_ms`) VALUES (?, ?, NOW(), ?) ' +
+        'ON DUPLICATE KEY UPDATE `checksum` = VALUES(`checksum`), `applied_at` = VALUES(`applied_at`), ' +
+        '`duration_ms` = VALUES(`duration_ms`)',
       [migration.name, migration.checksum, duration]
     );
     await connection.query('COMMIT');
@@ -334,7 +506,8 @@ async function applyMigration(connection, migration) {
 
 // ─── Point d'entrée ──────────────────────────────────────────────────────────
 
-async function main() {  if (DB_DIALECT !== 'mysql') {
+async function main() {
+  if (DB_DIALECT !== 'mysql') {
     logError(`dialecte non supporté par le runner de migrations : ${DB_DIALECT}`);
     process.exit(1);
   }
@@ -347,7 +520,18 @@ async function main() {  if (DB_DIALECT !== 'mysql') {
     process.exit(1);
   }
 
-  const migrations = discoverMigrations();
+  const opts = parseArgs(process.argv);
+  if (opts.help) {
+    usage();
+    process.exit(0);
+  }
+  if (opts.errors.length > 0) {
+    opts.errors.forEach((e) => logError(e));
+    usage();
+    process.exit(1);
+  }
+
+  const migrations = discoverMigrations(opts);
   if (migrations.length === 0) {
     log('aucune migration à appliquer');
   }
@@ -358,16 +542,49 @@ async function main() {  if (DB_DIALECT !== 'mysql') {
   try {
     await ensureDatabaseExists(connection);
     await connection.query(`USE \`${DB_NAME}\``);
-    await ensureMigrationsTable(connection);
+
+    if (opts.dryRun) {
+      // Lecture seule : ni la table de suivi ni la conversion legacy ne sont
+      // touchées, sinon « vérifier avant d'agir » modifierait la base.
+      const appliedNames = new Set();
+
+      if (await tableExists(connection, SCHEMA_MIGRATIONS)) {
+        const legacy = await needsLegacyUpgrade(connection);
+        const column = legacy ? 'nom' : 'name';
+        const [rows] = await connection.query(
+          `SELECT \`${column}\` AS migration_name FROM \`${SCHEMA_MIGRATIONS}\``
+        );
+        rows.forEach((r) => appliedNames.add(r.migration_name));
+        if (legacy) {
+          log(`attention : \`${SCHEMA_MIGRATIONS}\` est au format legacy — sera convertie à l'application`);
+        }
+      }
+
+      const toApply = migrations.filter((m) => !appliedNames.has(m.name));
+      log('———————————————————————————————————————————');
+      log('MODE DRY-RUN — aucune modification ne sera écrite');
+      log(`dossier de migrations   : ${MIGRATIONS_DIR}`);
+      log(`migrations découvertes  : ${migrations.length}`);
+      log(`déjà appliquées        : ${migrations.length - toApply.length}`);
+      log('à appliquer            :');
+      toApply.forEach((m) => log(`  + ${m.name}`));
+      log('———————————————————————————————————————————');
+      return;
+    }
+
+    await ensureMigrationsTable(
+      connection,
+      new Map(migrations.map((m) => [m.name, m]))
+    );
     await acquireLock(connection);
 
     const applied = await getAppliedMigrations(connection);
-    const summary = { applied: [], alreadyApplied: [], unchanged: 0 };
+    const summary = { applied: [], alreadyApplied: [], unchanged: 0, replayed: 0 };
 
     for (const migration of migrations) {
       const knownChecksum = applied.get(migration.name);
 
-      if (knownChecksum !== undefined) {
+      if (knownChecksum !== undefined && !opts.force) {
         if (knownChecksum !== migration.checksum) {
           logError(
             `MIGRATION MODIFIÉE APRÈS APPLICATION : ${migration.name}\n` +
@@ -387,6 +604,7 @@ async function main() {  if (DB_DIALECT !== 'mysql') {
       try {
         const duration = await applyMigration(connection, migration);
         summary.applied.push(migration.name);
+        if (knownChecksum !== undefined) summary.replayed++;
         log(`✔ ${migration.name} appliquée (${duration} ms)`);
       } catch (err) {
         logError(`échec de la migration ${migration.name} :`);
@@ -412,6 +630,9 @@ async function main() {  if (DB_DIALECT !== 'mysql') {
     log('———————————————————————————————————————————');
     log(`migrations appliquées       : ${summary.applied.length}`);
     summary.applied.forEach((n) => log(`  + ${n}`));
+    if (summary.replayed > 0) {
+      log(`  (dont ${summary.replayed} rejouée(s) via --force)`);
+    }
     log(`migrations déjà présentes   : ${summary.alreadyApplied.length}`);
     log(`version du schéma           : ${last ? `${last.name} (${last.applied_at})` : 'aucune'}`);
     log('———————————————————————————————————————————');

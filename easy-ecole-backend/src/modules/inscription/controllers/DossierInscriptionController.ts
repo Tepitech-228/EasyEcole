@@ -3,6 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { CountOptions, FindOptions, InferAttributes } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
+import { ComiteVote } from "../models/ComiteVote";
 import { DossierInscription } from "../models/DossierInscription";
 import { DemandeInscriptionDossier } from "../models/DemandeInscriptionDossier";
 import { DemandeInscription } from "../models/DemandeInscription";
@@ -86,6 +87,18 @@ export default class DossierInscriptionController {
         }
 
         const UPLOAD_DIR = path.resolve('public', 'inscription', 'dossiers');
+        const nettoyerFichiersUpload = (): void => {
+            for (const fichier of fichiers) {
+                const fichierEcrit = path.join(UPLOAD_DIR, fichier.filename);
+                if (fs.existsSync(fichierEcrit)) {
+                    try { fs.unlinkSync(fichierEcrit); } catch (_) { /* nettoyage best-effort */ }
+                }
+            }
+        };
+        if (req.utilisateurRole !== RolesUtilisateur.APPRENANT) {
+            nettoyerFichiersUpload();
+            return res.status(403).json({ success: false, message: "L'envoi des pièces est réservé aux apprenants" });
+        }
         const includes = [
             { association: DemandeInscription.associations.cours },
             { association: DemandeInscription.associations.coursChoisis },
@@ -99,7 +112,22 @@ export default class DossierInscriptionController {
         try {
             const demandeExiste = await DemandeInscription.findByPk(demandeId);
             if (demandeExiste == null) {
+                nettoyerFichiersUpload();
                 return res.status(404).json({ success: false, message: "Demande d'inscription introuvable" });
+            }
+
+            if (Number(demandeExiste.utilisateurId) !== Number(req.utilisateurId)) {
+                nettoyerFichiersUpload();
+                return res.status(403).json({ success: false, message: "Cette demande ne vous appartient pas" });
+            }
+
+            const correctionEnCours = demandeExiste.statutPipeline === 'correction_demandee';
+            if (correctionEnCours) {
+                const pieceAReposer = await DemandeInscriptionDossier.findOne({ where: { demandeId, dossierId } });
+                if (!pieceAReposer?.correctionDemandee) {
+                    nettoyerFichiersUpload();
+                    return res.status(403).json({ success: false, message: "Cette pièce n'a pas été demandée en correction" });
+                }
             }
 
             // Remplacement propre : on supprime les anciens fichiers de CE dossier
@@ -129,24 +157,25 @@ export default class DossierInscriptionController {
                     nomFichier: fichier.filename,
                     dossierId,
                     demandeId,
+                    correctionDemandee: false,
                 });
+            }
+
+            if (correctionEnCours) {
+                const piecesRestantes = await DemandeInscriptionDossier.count({
+                    where: { demandeId, correctionDemandee: true }
+                });
+                if (piecesRestantes === 0) {
+                    await ComiteVote.destroy({ where: { demandeInscriptionId: demandeId } });
+                    await demandeExiste.update({ statutPipeline: 'transmis_comite', motifPipeline: null });
+                }
             }
 
             const demande = await DemandeInscription.findByPk(demandeId, { include: includes });
             return res.status(201).json(demande);
         } catch (error) {
             // Nettoyage des fichiers déjà écrits par multer pour ne pas laisser d'orphelins
-            for (const fichier of fichiers) {
-                const writtenPath = path.join(UPLOAD_DIR, fichier.filename);
-                if (fs.existsSync(writtenPath)) {
-                    try { fs.unlinkSync(writtenPath); } catch (unlinkErr) {
-                        // Nettoyage best-effort : l'erreur principale prime, mais un fichier
-                        // orphelin non supprimable doit rester traçable.
-                        console.warn(`[DOSSIER][upload] fichier orphelin non supprimé: ${writtenPath}`,
-                            unlinkErr instanceof Error ? unlinkErr.message : unlinkErr);
-                    }
-                }
-            }
+            nettoyerFichiersUpload();
             console.error('[uploadDossierInscription]', error);
 
             // Distinguer un refus de format (actionnable par l'étudiant) d'une panne

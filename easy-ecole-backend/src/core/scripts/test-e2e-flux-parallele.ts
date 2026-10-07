@@ -71,7 +71,7 @@ async function main() {
     if (!sessions.length) { ko('aucune session'); return finir(seq) }
     const session = sessions[0]
     ok('session', `#${session.id}`)
-    const PARCOURS_ID = 1 // Génie logiciel : 4 cours tous rattachés à une classe
+    const PARCOURS_ID = 5 // Informatique : 55 cours classés
     const [[pc]]: any[] = await seq.query(`SELECT COUNT(*) n FROM ins_cours WHERE parcoursId=:p AND deletedAt IS NULL AND classeId IS NOT NULL`, { replacements: { p: PARCOURS_ID } })
     if (!pc?.n) { ko('parcours sans cours/classé — ajuster PARCOURS_ID'); return finir(seq) }
     ok('parcours', `#${PARCOURS_ID} (${pc.n} cours classés)`)

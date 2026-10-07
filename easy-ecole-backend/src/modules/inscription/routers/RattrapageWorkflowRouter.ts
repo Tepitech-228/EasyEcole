@@ -411,7 +411,7 @@ router
    * /inscription/rattrapage-workflow/notes:
    *   post:
    *     tags: [Rattrapage Workflow]
-   *     summary: L'enseignant désigné saisit des notes de rattrapage
+   *     summary: L'enseignant désigné saisit la note d'un étudiant
    *     security: [{ bearerAuth: [] }]
    *     requestBody:
    *       required: true
@@ -422,12 +422,34 @@ router
    *             properties:
    *               planningId: { type: number }
    *               rattrapageNoteId: { type: number }
+   *               rattrapageInscriptionId: { type: number }
+   *               ueId: { type: number }
+   *               ecueId: { type: number }
    *               note_rattrapage: { type: number }
    *     responses:
    *       201:
-   *         description: Notes créées ou mises à jour
+   *         description: Note individuelle créée ou mise à jour
    */
   .post('/notes', RattrapageWorkflowController.saisirNote)
+  /**
+   * @openapi
+   * /inscription/rattrapage-workflow/notes/{id}/valider:
+   *   put:
+   *     tags: [Rattrapage Workflow]
+   *     summary: L'enseignant valide sa note saisie et déclenche le recalcul du bulletin
+   *     security: [{ bearerAuth: [] }]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema: { type: integer }
+   *     responses:
+   *       200:
+   *         description: Note validée et bulletin recalculé en brouillon
+   *       403:
+   *         description: Seul l'enseignant auteur de la saisie peut valider
+   */
+  .put('/notes/:id/valider', RattrapageWorkflowController.validerNote)
   /**
    * @openapi
    * /inscription/rattrapage-workflow/demandes/{id}/confirmer-paiement:

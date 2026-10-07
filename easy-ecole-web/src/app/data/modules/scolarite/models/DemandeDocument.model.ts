@@ -8,6 +8,8 @@ export interface DemandeDocument {
   etudiantId: string;
   typeDocumentId: string;
   statut: string;
+  etapeWizard?: number;
+  tourComite?: number;
   date: Date;
   fraisPayes: boolean;
   /** 'automatique' = génération normale (gratuite) | 'demande_etudiant' = demande volontaire (payante) */
@@ -40,6 +42,22 @@ export interface DemandeDocument {
   dateRemise?: Date;
   remisParId?: number;
   motifRejet?: string;
+  pieces?: DemandeDocumentPiece[];
+  votesComite?: Array<{ membreId: number; decision: 'valider' | 'corriger'; motif?: string | null; tour: number }>;
+  votesRequis?: number;
+}
+
+export interface DemandeDocumentPiece {
+  id: number;
+  cle: string;
+  libelle: string;
+  nomOriginal: string;
+  typeMime: string;
+  tailleOctets: number;
+  version: number;
+  statutAudit: 'en_attente' | 'validee' | 'rejetee';
+  motifRejet?: string | null;
+  createdAt?: Date;
 }
 
 /**

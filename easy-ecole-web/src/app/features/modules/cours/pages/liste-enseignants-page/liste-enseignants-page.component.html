@@ -5,6 +5,9 @@
     </div>
 </div>
 
+<app-custom-alert *ngIf="successMessage" [show]="true" [title]="successMessage" type="success" [inline]="true"></app-custom-alert>
+<app-custom-alert *ngIf="errorMessage" [show]="true" [title]="errorMessage" type="danger" [inline]="true"></app-custom-alert>
+
 <div class="flex flex-col">
     <div class="overflow-x-auto">
         <div class="py-2 inline-block min-w-full">
@@ -27,6 +30,16 @@
                                     Contact
                                 </div>
                             </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                <div class="px-2">
+                                    Matricule
+                                </div>
+                            </th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-center">
+                                <div class="px-2">
+                                    QR code
+                                </div>
+                            </th>
                             <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
                                 <div class="px-2">
                                     Action
@@ -38,7 +51,7 @@
                         <tr *ngIf="enseignants.length == 0"
                             class="bg-white p-0 border-b transition duration-300 ease-in-out">
                             <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
-                                colspan="5">Aucun enseignant</td>
+                                colspan="6">Aucun enseignant</td>
                         </tr>
                         <tr *ngFor="let enseignant of enseignants; index as index"
                             class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
@@ -70,6 +83,20 @@
                                 class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                 <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ enseignant.utilisateur!.contact }}</div>
                             </td>
+                            <td class="bg-transparent text-sm text-gray-600 p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="block w-full h-full border-0 m-0 px-2 py-4 sm:text-sm">
+                                    {{ enseignant.matricule || 'En attente' }}
+                                </div>
+                            </td>
+                            <td class="bg-transparent text-sm text-gray-600 p-0 whitespace-nowrap border-0 m-0 px-2">
+                                <div class="flex justify-center px-2 py-2">
+                                    <img *ngIf="enseignant.qrCode"
+                                        [src]="(QR_CODES_PATH + enseignant.qrCode) | safeUrl | async"
+                                        [alt]="'QR code de ' + enseignant.utilisateur!.nom + ' ' + enseignant.utilisateur!.prenoms"
+                                        class="w-14 h-14 object-contain">
+                                    <span *ngIf="!enseignant.qrCode" class="text-xs text-gray-400">Non généré</span>
+                                </div>
+                            </td>
                             
                             <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                 <div
@@ -89,6 +116,15 @@
 <!-- // Modals -->
 <app-custom-modal title="Nouvel enseignant" subtitle="Enregistrer un nouvel enseignant" (onCloseModal)="showNouvelEnseignantModal = false" [center]="true" [showModal]="showNouvelEnseignantModal">
     <form [formGroup]="enseignantForm">
+        <div class="flex items-center gap-4 mb-6">
+            <img [src]="photoPreviewUrl || 'assets/images/blank-profile-picture.png'" alt="Photo"
+                class="object-cover w-16 h-16 rounded-full border-2 border-gray-300">
+            <div>
+                <label for="photo" class="mb-1 block text-sm leading-6 text-gray-600">Photo (affichée au pointage)</label>
+                <input type="file" id="photo" accept="image/*" (change)="onPhotoSelected($event)"
+                    class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-indigo-700 hover:file:bg-indigo-100">
+            </div>
+        </div>
         <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
             <div class="md:col-span-3 col-span-full">
                 <label for="identifiant" class="mb-2 block text-sm leading-6 text-gray-600">Identifiant</label>
@@ -156,9 +192,9 @@
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
             </div>
             <div class="md:col-span-3 col-span-full">
-                <label for="matricule" class="mb-2 block text-sm leading-6 text-gray-600">N° Matricule</label>
-                <input type="text" id="matricule" formControlName="matricule" placeholder="Saisir le N° Matricule ici..."
-                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <div class="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs text-blue-700">
+                    N° Matricule + QR code générés automatiquement à la création — utilisables au pointage arrivée / départ.
+                </div>
             </div>
             <div class="md:col-span-3 col-span-full">
                 <label for="sexe" class="mb-2 block text-sm leading-6 text-gray-600">Sexe</label>

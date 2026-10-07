@@ -1,0 +1,126 @@
+<section class="mx-auto max-w-7xl space-y-6 p-6">
+  <header class="rounded-2xl bg-gradient-to-r from-slate-900 to-blue-800 p-7 text-white">
+    <p class="text-sm font-semibold uppercase tracking-wider text-blue-200">Pilotage pédagogique</p>
+    <h1 class="mt-2 text-3xl font-bold">Tableau de bord — Superviseur Général</h1>
+    <p class="mt-2 text-blue-100">Suivi transversal des classes, des enseignants, des cours et des évaluations.</p>
+  </header>
+
+  <app-custom-alert *ngIf="error" [show]="true" [title]="error" type="danger" [inline]="true"></app-custom-alert>
+  <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+  <ng-container *ngIf="!loading">
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <article class="rounded-xl border bg-white p-5 shadow-sm">
+        <p class="text-sm text-gray-500">Enseignants suivis ce mois</p>
+        <p class="mt-2 text-3xl font-bold text-slate-900">{{ totalTeachers }}</p>
+      </article>
+      <article class="rounded-xl border bg-white p-5 shadow-sm">
+        <p class="text-sm text-gray-500">Heures prévues</p>
+        <p class="mt-2 text-3xl font-bold text-blue-700">{{ totalHoursPlanned | number:'1.0-1' }} h</p>
+      </article>
+      <article class="rounded-xl border bg-white p-5 shadow-sm">
+        <p class="text-sm text-gray-500">Heures effectuées</p>
+        <p class="mt-2 text-3xl font-bold text-emerald-700">{{ totalHoursDone | number:'1.0-1' }} h</p>
+      </article>
+      <article class="rounded-xl border bg-white p-5 shadow-sm">
+        <p class="text-sm text-gray-500">Retards / absences en cours</p>
+        <p class="mt-2 text-3xl font-bold" [class.text-red-700]="tardyTeachers.length" [class.text-emerald-700]="!tardyTeachers.length">
+          {{ tardyTeachers.length }}
+        </p>
+        <p class="mt-1 text-xs text-gray-400">Actualisation automatique chaque minute</p>
+      </article>
+    </div>
+
+    <section class="rounded-xl border bg-white shadow-sm">
+      <div class="flex items-center justify-between border-b px-5 py-4">
+        <div>
+          <h2 class="font-semibold text-gray-900">Alertes de pointage</h2>
+          <p class="text-sm text-gray-500">Séances commencées sans pointage enseignant</p>
+        </div>
+        <a routerLink="/pointage/rapports" class="text-sm font-medium text-blue-700 hover:underline">Voir les rapports</a>
+      </div>
+      <div *ngIf="!tardyTeachers.length" class="p-5 text-sm text-emerald-700">Aucune alerte de retard ou d’absence en cours.</div>
+      <div *ngIf="tardyTeachers.length" class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+            <tr><th class="px-5 py-3">Enseignant</th><th class="px-5 py-3">Cours</th><th class="px-5 py-3">Horaire</th><th class="px-5 py-3">État</th></tr>
+          </thead>
+          <tbody class="divide-y">
+            <tr *ngFor="let item of tardyTeachers">
+              <td class="px-5 py-3">{{ item.enseignant?.prenoms }} {{ item.enseignant?.nom }}</td>
+              <td class="px-5 py-3">{{ item.cours || '—' }}</td>
+              <td class="px-5 py-3">{{ item.heureDebut }}–{{ item.heureFin }}</td>
+              <td class="px-5 py-3">
+                <span class="rounded-full px-2.5 py-1 text-xs font-semibold"
+                  [class.bg-amber-100]="item.statut === 'en_retard'"
+                  [class.text-amber-800]="item.statut === 'en_retard'"
+                  [class.bg-red-100]="item.statut === 'absent'"
+                  [class.text-red-800]="item.statut === 'absent'">
+                  {{ item.statut === 'absent' ? 'Absent' : 'En retard' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="rounded-xl border bg-white shadow-sm">
+      <div class="border-b px-5 py-4">
+        <h2 class="font-semibold text-gray-900">Heures par enseignant</h2>
+        <p class="text-sm text-gray-500">Planning et présence enregistrée par pointage</p>
+      </div>
+      <div *ngIf="!teachers.length" class="p-5 text-sm text-gray-500">Aucune séance planifiée pour ce mois.</div>
+      <div *ngIf="teachers.length" class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+            <tr><th class="px-5 py-3">Enseignant</th><th class="px-5 py-3">Heures prévues</th><th class="px-5 py-3">Effectuées</th><th class="px-5 py-3">Restantes au contrat</th><th class="px-5 py-3">Séances sans pointage</th></tr>
+          </thead>
+          <tbody class="divide-y">
+            <tr *ngFor="let teacher of teachers">
+              <td class="px-5 py-3 font-medium">{{ teacher.nom }}</td>
+              <td class="px-5 py-3">{{ teacher.heuresPlanifiees }} h</td>
+              <td class="px-5 py-3">{{ teacher.heuresEffectuees }} h</td>
+              <td class="px-5 py-3">{{ teacher.heuresRestantes }} h</td>
+              <td class="px-5 py-3">{{ teacher.absences }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="rounded-xl border bg-white shadow-sm">
+      <div class="border-b px-5 py-4">
+        <h2 class="font-semibold text-gray-900">Volumes horaires des cours</h2>
+        <p class="text-sm text-gray-500">Volume déclaré comparé aux heures attestées par pointage</p>
+      </div>
+      <div *ngIf="!courses.length" class="p-5 text-sm text-gray-500">Aucun volume horaire configuré.</div>
+      <div *ngIf="courses.length" class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+            <tr><th class="px-5 py-3">Code UE</th><th class="px-5 py-3">Cours</th><th class="px-5 py-3">Prévu</th><th class="px-5 py-3">Consommé</th><th class="px-5 py-3">Restant</th></tr>
+          </thead>
+          <tbody class="divide-y">
+            <tr *ngFor="let course of courses">
+              <td class="px-5 py-3">{{ course.code }}</td>
+              <td class="px-5 py-3">{{ course.intitule }}</td>
+              <td class="px-5 py-3">{{ course.volumeHoraire }} h</td>
+              <td class="px-5 py-3">{{ course.volumeConsomme }} h</td>
+              <td class="px-5 py-3" [class.text-red-700]="course.depassement">{{ course.volumeRestant }} h</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <nav class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Accès rapides de pilotage pédagogique">
+      <a routerLink="/cours/emplois-du-temps" class="rounded-lg border bg-white p-4 font-medium text-blue-800 hover:bg-blue-50">Emplois du temps</a>
+      <a routerLink="/inscription/salles-de-classe" class="rounded-lg border bg-white p-4 font-medium text-blue-800 hover:bg-blue-50">Gestion des salles</a>
+      <a routerLink="/cours/presences" class="rounded-lg border bg-white p-4 font-medium text-blue-800 hover:bg-blue-50">Cahiers de présence</a>
+      <a routerLink="/cours/cahiers-de-texte" class="rounded-lg border bg-white p-4 font-medium text-blue-800 hover:bg-blue-50">Cahiers de cours</a>
+      <a routerLink="/bulletins" class="rounded-lg border bg-white p-4 font-medium text-blue-800 hover:bg-blue-50">Bulletins et PV de notes</a>
+      <a routerLink="/bulletins/rattrapages" class="rounded-lg border bg-white p-4 font-medium text-blue-800 hover:bg-blue-50">Sessions de rattrapage</a>
+      <a routerLink="/bulletins/deliberations-jury" class="rounded-lg border bg-white p-4 font-medium text-blue-800 hover:bg-blue-50">PV / délibérations</a>
+    </nav>
+  </ng-container>
+</section>

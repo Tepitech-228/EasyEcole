@@ -12,21 +12,35 @@ async function phase7(context) {
 
   // 7.1 Clôturer la session 2025-2026
   await db.query('UPDATE ins_sessions SET statut = ?, dateFin = NOW() WHERE id = ?', { replacements: ['cloturee', sessionId], type: db.QueryTypes.UPDATE })
-  const [sessRow] = await db.query('SELECT statut FROM ins_sessions WHERE id = ?', { replacements: [sessionId], type: db.QueryTypes.SELECT })
+  const sessRow = await db.query('SELECT statut FROM ins_sessions WHERE id = ?', { replacements: [sessionId], type: db.QueryTypes.SELECT })
   console.log(sessRow[0].statut === 'cloturee' ? '[OK] Session 2025-2026 clôturée' : '[FAIL] Session non clôturée')
 
   // 7.2 Créer l'année scolaire 2026-2027
+  const anneeRows = await db.query("SELECT id FROM ins_annees_academiques WHERE libelle = '2026-2027' LIMIT 1", { type: db.QueryTypes.SELECT })
+let anneeN1Id
+if (anneeRows.length > 0) {
+  anneeN1Id = anneeRows[0].id
+  console.log(`[SEED] Année 2026-2027 déjà existante (id=${anneeN1Id})`)
+} else {
   const [anneeResult] = await db.query("INSERT INTO ins_annees_academiques (libelle, description, createdAt, updatedAt) VALUES ('2026-2027', 'Année scolaire 2026-2027', NOW(), NOW())", { type: db.QueryTypes.INSERT })
-  const anneeN1Id = anneeResult.insertId
+  anneeN1Id = anneeResult
   console.log(`[OK] Année 2026-2027 créée (id=${anneeN1Id})`)
+  }
 
   // 7.3 Créer la session N+1 (L2)
+  const sessionRows = await db.query('SELECT id FROM ins_sessions WHERE anneeAcademiqueId = ? AND dateDebut = ? LIMIT 1', { replacements: [anneeN1Id, '2026-09-01'], type: db.QueryTypes.SELECT })
+  let sessionN1Id
+  if (sessionRows.length > 0) {
+    sessionN1Id = sessionRows[0].id
+    console.log(`[SEED] Session N+1 déjà existante (id=${sessionN1Id})`)
+  } else {
   const [sessionResult] = await db.query(
     'INSERT INTO ins_sessions (dateDebut, dateFin, description, statut, anneeAcademiqueId, niveauEtudeId, etablissementId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
     { replacements: ['2026-09-01', '2027-06-30', 'Session L2 2026-2027', 'ouverte', anneeN1Id, 2, 1], type: db.QueryTypes.INSERT }
   )
-  const sessionN1Id = sessionResult.insertId
+  sessionN1Id = sessionResult
   console.log(`[OK] Session L2 N+1 créée (id=${sessionN1Id})`)
+  }
 
   // Seed requis : etapeInscriptionId référencé par ins_demandes_inscription
   await db.query(
@@ -38,48 +52,55 @@ async function phase7(context) {
   for (let i = 0; i < allStudentIds.length; i++) {
     const userId = allStudentIds[i]
 
-    const [demandeResult] = await db.query(
+    const [demandeId] = await db.query(
       'INSERT INTO ins_demandes_inscription (matricule, typeDemande, statutPipeline, dateDemande, sessionId, utilisateurId, etapeInscriptionId, createdAt, updatedAt) VALUES (?, "reinscription", "soumis", NOW(), ?, ?, 1, NOW(), NOW())',
       { replacements: [`REINS-${userId}`, sessionN1Id, userId], type: db.QueryTypes.INSERT }
     )
-    const demandeId = demandeResult.insertId
+    
 
     await db.query('UPDATE ins_demandes_inscription SET statutPipeline = ? WHERE id = ?', { replacements: ['authentifie', demandeId], type: db.QueryTypes.UPDATE })
     await db.query('UPDATE ins_demandes_inscription SET statutPipeline = ? WHERE id = ?', { replacements: ['saisie_validee', demandeId], type: db.QueryTypes.UPDATE })
 
-    const [adminRows] = await db.query("SELECT id FROM aut_utilisateurs WHERE role = 'admin' LIMIT 1", { type: db.QueryTypes.SELECT })
+    const adminRows = await db.query("SELECT id FROM aut_utilisateurs WHERE role = 'admin' LIMIT 1", { type: db.QueryTypes.SELECT })
     if (adminRows.length > 0) {
-      await db.query('INSERT INTO ins_comite_votes (demandeInscriptionId, utilisateurId, vote, commentaire, createdAt) VALUES (?, ?, "pour", "Réinscription approuvée", NOW())', { replacements: [demandeId, adminRows[0].id], type: db.QueryTypes.INSERT })
+      await db.query('INSERT INTO ins_comite_votes (demandeInscriptionId, membreId, decision, motif, createdAt) VALUES (?, ?, "valide", "Reinscription approuvee", NOW())', { replacements: [demandeId, adminRows[0].id], type: db.QueryTypes.INSERT })
     }
 
     await db.query('UPDATE ins_demandes_inscription SET statutPipeline = ?, dateValidation = NOW() WHERE id = ?', { replacements: ['valide', demandeId], type: db.QueryTypes.UPDATE })
 
-    // 6 pièces
+    // 6 pièces : PK ins_dossiers_demandes = (demandeId, dossierId) => un dossier par pièce
+    const runTag = Date.now()
     const pieces = ['demande_dg', 'autorisation_provisoire', 'releves_notes', 'cni', 'quitus_bordereaux_annee', 'bordereau_nouvelle_annee']
     for (const piece of pieces) {
-      await db.query('INSERT INTO ins_dossiers_demandes (demandeId, dossierId, nomFichier, typeDocument, createdAt, updatedAt) VALUES (?, ?, "/fake/' + piece + '.pdf", "' + piece + '", NOW(), NOW())', { replacements: [demandeId, piece], type: db.QueryTypes.INSERT })
+      const [dossierId] = await db.query(
+        'INSERT INTO ins_dossiers_inscription (titre, description, tailleMax, sessionId, createdAt, updatedAt) VALUES (?, ?, 5, ?, NOW(), NOW())',
+        { replacements: [`Piece ${piece} ${userId}-${runTag}`, `Piece ${piece} du dossier de réinscription`, sessionN1Id], type: db.QueryTypes.INSERT }
+      )
+      await db.query('INSERT INTO ins_dossiers_demandes (demandeId, dossierId, nomFichier, createdAt, updatedAt) VALUES (?, ' + dossierId + ', "/fake/' + piece + '-' + runTag + '.pdf", NOW(), NOW())', { replacements: [demandeId], type: db.QueryTypes.INSERT })
     }
 
     // Bordereau
-    await db.query('INSERT INTO ins_bordereaux (utilisateurId, type, montant, referenceBancaire, statut, statutPaiement, dateCreation, createdAt, updatedAt) VALUES (?, "reinscription", 5000, "E2E-REINS-' + userId + '", "valide", "paye", NOW(), NOW(), NOW())', { replacements: [userId], type: db.QueryTypes.INSERT })
+    await db.query('INSERT INTO ins_bordereaux (utilisateurId, type, fichier, montant, modalite, referenceBancaire, statut, statutPaiement, dateSoumission, createdAt, updatedAt) VALUES (?, "inscription", CONCAT("/fake/bordereau_", ?, ".pdf"), 5000, "1x", CONCAT("E2E-REINS-", ?), "valide", "finalise", NOW(), NOW(), NOW())', { replacements: [userId, userId, userId], type: db.QueryTypes.INSERT })
 
     // CursusApprenant N+1
     await db.query(
       'INSERT INTO ins_cursus_apprenants (statutReinscription, intituleParcours, parcoursId, niveauEtudeId, classeId, anneeAcademiqueId, demandeInscriptionId, utilisateurId, dateReinscription, createdAt, updatedAt) VALUES (?, "Licence 2 Génie Logiciel", 1, 2, 1, ?, ?, ?, NOW(), NOW(), NOW())',
-      { replacements: ['en_cours', anneeN1Id, demandeId, userId], type: db.QueryTypes.INSERT }
+      { replacements: ['confirme', anneeN1Id, demandeId, userId], type: db.QueryTypes.INSERT }
     )
 
     console.log(`[OK] Étudiant ${userId} : réinscription N+1 pipeline complet`)
   }
 
   // Vérification
-  const [totalCursusN1] = await db.query('SELECT COUNT(*) as cnt FROM ins_cursus_apprenants WHERE anneeAcademiqueId = ? AND statutReinscription = ?', { replacements: [anneeN1Id, 'en_cours'], type: db.QueryTypes.SELECT })
-  const [totalReinscriptions] = await db.query('SELECT COUNT(*) as cnt FROM ins_demandes_inscription WHERE typeDemande = ? AND statutPipeline = ?', { replacements: ['reinscription', 'valide'], type: db.QueryTypes.SELECT })
+  const totalCursusN1 = await db.query('SELECT COUNT(DISTINCT utilisateurId) as cnt FROM ins_cursus_apprenants WHERE anneeAcademiqueId = ? AND statutReinscription = ? AND utilisateurId IN (?)', { replacements: [anneeN1Id, 'confirme', allStudentIds], type: db.QueryTypes.SELECT })
+  const totalReinscriptions = await db.query('SELECT COUNT(*) as cnt FROM ins_demandes_inscription WHERE typeDemande = ? AND statutPipeline = ? AND utilisateurId IN (?)', { replacements: ['reinscription', 'valide', allStudentIds], type: db.QueryTypes.SELECT })
 
-  console.log(`\n[OK] ${totalCursusN1[0].cnt} Cursus N+1 (2026-2027) créés`)
-  console.log(`[OK] ${totalReinscriptions[0].cnt} demandes de réinscription validées`)
+  const nbCursusN1 = Number(totalCursusN1[0].cnt)
+  const nbReinscriptions = Number(totalReinscriptions[0].cnt)
+  console.log(`\n[OK] ${nbCursusN1} Cursus N+1 (2026-2027) créés`)
+  console.log(`[OK] ${nbReinscriptions} demandes de réinscription validées`)
 
-  if (totalCursusN1[0].cnt !== 10) { console.log('[FAIL] Nombre de cursus N+1 incorrect'); process.exit(1) }
+  if (nbCursusN1 !== 10) { console.log('[FAIL] Nombre de cursus N+1 incorrect'); process.exit(1) }
 
   console.log('\n[RESULTAT PHASE 7] 10 étudiants réinscrits en L2 2026-2027')
   return { anneeN1Id, sessionN1Id }

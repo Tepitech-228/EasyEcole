@@ -46,7 +46,7 @@
   <div class="card mb-6">
     <div class="card-header">
       <h2 class="card-title">Nouvelle demande</h2>
-      <p class="card-subtitle">Sélectionnez le type de document que vous souhaitez obtenir</p>
+      <p class="card-subtitle">Le brouillon sera créé dès le lancement du wizard et restera enregistré dans votre historique.</p>
     </div>
     <div class="card-body">
       <div class="form-grid">
@@ -65,7 +65,7 @@
         </div>
       </div>
       <div class="form-actions">
-        <app-custom-button (click)="submitDemande()" text="Soumettre la demande" color="primary" [disabled]="!newDemande.typeDocumentId || loading"></app-custom-button>
+        <app-custom-button (click)="submitDemande()" text="Commencer le wizard" color="primary" [disabled]="!newDemande.typeDocumentId || loading"></app-custom-button>
       </div>
     </div>
   </div>
@@ -82,6 +82,7 @@
             class="form-input-sm">
           <select [(ngModel)]="filterStatut" (change)="filtrer()" class="form-select-sm">
             <option value="undefined">Tous les statuts</option>
+            <option value="brouillon">Brouillon</option>
             <option value="soumise">Soumise</option>
             <option value="validee">Validée</option>
             <option value="rejetee">Rejetée</option>
@@ -112,6 +113,9 @@
           <div>
             <p class="list-item-title">{{ demande.typeDocument?.libelle || 'Document' }}</p>
             <p class="list-item-subtitle">Date: {{ demande.date | date:'EEEE d MMMM yyyy, HH:mm' }}</p>
+            <p *ngIf="demande.statut === 'rejetee' && demande.motifRejet" class="list-item-subtitle text-red-600">
+              Correction demandée : {{ demande.motifRejet }}
+            </p>
 
             <!-- Gratuit / Payant (via GET /:id/verifier-acces) -->
             <p *ngIf="accesFor(demande).gratuit" class="list-item-subtitle text-emerald-600">
@@ -143,10 +147,15 @@
             </div>
 
             <!-- Paiement d'une demande payante non réglée -->
-            <div *ngIf="!accesFor(demande).gratuit && !accesFor(demande).fraisPayes && demande.statut !== 'delivree'" class="flex items-center gap-2">
+            <div *ngIf="!accesFor(demande).gratuit && !accesFor(demande).fraisPayes && demande.statut !== 'delivree' && demande.statut !== 'brouillon' && demande.statut !== 'rejetee'" class="flex items-center gap-2">
               <app-custom-button (click)="payerBordereau(demande)" [disabled]="payingId === demande.id" text="Payer (bordereau)" color="primary"></app-custom-button>
               <app-custom-button (click)="payerEnLigne(demande)" [disabled]="payingId === demande.id" text="Payer en ligne" color="primary" [outlined]="true"></app-custom-button>
             </div>
+
+            <app-custom-button *ngIf="demande.statut === 'brouillon' || demande.statut === 'rejetee'"
+              (click)="reprendreDemande(demande)"
+              [text]="demande.statut === 'rejetee' ? 'Corriger le dossier' : 'Continuer le dossier'"
+              color="primary"></app-custom-button>
 
             <button *ngIf="demande.statut === 'soumise' && !accesFor(demande).fraisPayes" (click)="confirmDelete(demande)"
               class="btn-icon text-red-500 hover:text-red-700" title="Annuler la demande">

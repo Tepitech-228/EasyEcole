@@ -7,6 +7,9 @@ import { DossierEtudiant } from "../models/DossierEtudiant";
 import { Echeance } from "../models/Echeance";
 import { QrTokenService } from "../../../core/services/QrTokenService";
 import { VerificationPaiementService } from "../services/VerificationPaiementService";
+import { Enseignant } from "../../auth/models/Enseignant";
+import { Apprenant } from "../../auth/models/Apprenant";
+import { PersonnelAdministratif } from "../../auth/models/PersonnelAdministratif";
 
 const ROLES_POINTAGE = [
   RolesUtilisateur.APPRENANT,
@@ -36,6 +39,24 @@ const ROLES_POINTAGE_SCAN = [
 export default class PointageController {
 
     constructor() { }
+
+    private static async getPhotoPourPointage(utilisateur: Utilisateur, photoDossier?: string | null): Promise<{ photo: string; photoType: string }> {
+        if (utilisateur.role === RolesUtilisateur.APPRENANT) {
+            const apprenant = await Apprenant.findOne({
+                where: { utilisateurId: utilisateur.id },
+                attributes: ['photo']
+            });
+            return { photo: photoDossier || apprenant?.photo || '', photoType: 'apprenant' };
+        }
+        if (utilisateur.role === RolesUtilisateur.ENSEIGNANT) {
+            const enseignant = await Enseignant.findOne({
+                where: { utilisateurId: utilisateur.id },
+                attributes: ['photo']
+            });
+            return { photo: enseignant?.photo || '', photoType: 'enseignant' };
+        }
+        return { photo: utilisateur.photoDeProfil || '', photoType: 'profile' };
+    }
 
     static async getAllPointages(req: Request, res: Response): Promise<Response> {
         let options: FindOptions<InferAttributes<Pointage>> = {
@@ -72,6 +93,101 @@ export default class PointageController {
             });
 
             return res.status(200).send(pointage);
+        } catch (error) {
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
+        }
+    }
+
+    /**
+     * Rapport de pointage sur une période (défaut : mois en cours).
+     * GET /pointages/rapport?debut=YYYY-MM-DD&fin=YYYY-MM-DD
+     * Apprenants/enseignants : périmètre restreint à soi-même (comme l'historique).
+     */
+    static async getRapport(req: Request, res: Response): Promise<Response> {
+        const toISODate = (d: Date) => d.toISOString().split('T')[0]
+        const now = new Date()
+        const debutDefaut = toISODate(now).slice(0, 7) + '-01'
+        const debut = typeof req.query.debut === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(req.query.debut)
+            ? req.query.debut : debutDefaut
+        const fin = typeof req.query.fin === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(req.query.fin)
+            ? req.query.fin : toISODate(now)
+        if (debut > fin) {
+            return res.status(400).json({ success: false, message: 'La date de début doit précéder la date de fin' })
+        }
+
+        try {
+            const where: any = { date: { [Op.between]: [debut, fin] } }
+            const role = (req as any).utilisateurRole;
+            if (role == RolesUtilisateur.APPRENANT || role == RolesUtilisateur.ENSEIGNANT) {
+                where.utilisateurId = (req as any).utilisateurId
+            }
+            const pointages = await Pointage.findAll({
+                where,
+                include: [
+                    { association: Pointage.associations.utilisateur, attributes: ['id', 'nom', 'prenoms', 'identifiant', 'role'] }
+                ],
+                order: [['date', 'DESC']]
+            });
+
+            const minutes = (t: any): number | null => {
+                const m = String(t || '').match(/^(\d{2}):(\d{2})/)
+                return m ? Number(m[1]) * 60 + Number(m[2]) : null
+            }
+            const today = toISODate(now)
+            const parUtilisateur = new Map<number, any>()
+            let presentsAujourdhui = 0
+            let completsAujourdhui = 0
+
+            for (const p of pointages as any[]) {
+                const uid = Number(p.utilisateurId)
+                let e = parUtilisateur.get(uid)
+                if (!e) {
+                    e = {
+                        utilisateurId: uid,
+                        nom: p.utilisateur?.nom || '',
+                        prenoms: p.utilisateur?.prenoms || '',
+                        identifiant: p.utilisateur?.identifiant || '',
+                        role: p.utilisateur?.role || '',
+                        presences: 0,
+                        minutesTotales: 0,
+                        sansDepart: 0,
+                    }
+                    parUtilisateur.set(uid, e)
+                }
+                e.presences += 1
+                const deb = minutes(p.heureArrivee)
+                const finH = minutes(p.heureDepart)
+                if (deb !== null && finH !== null && finH >= deb) {
+                    e.minutesTotales += (finH - deb)
+                } else {
+                    e.sansDepart += 1
+                }
+                if (String(p.date).slice(0, 10) === today) {
+                    presentsAujourdhui += 1
+                    if (deb !== null && finH !== null && finH >= deb) completsAujourdhui += 1
+                }
+            }
+
+            const entries = [...parUtilisateur.values()].map(e => ({
+                ...e,
+                heuresTotales: Math.round((e.minutesTotales / 60) * 100) / 100,
+            })).sort((a, b) => b.presences - a.presences)
+            const total = pointages.length
+            const complets = entries.reduce((s, e) => s + (e.presences - e.sansDepart), 0)
+
+            return res.status(200).json({
+                periode: { debut, fin },
+                summary: {
+                    pointages: total,
+                    personnes: entries.length,
+                    presentsAujourdhui,
+                    completsAujourdhui,
+                    enCoursAujourdhui: Math.max(0, presentsAujourdhui - completsAujourdhui),
+                    tauxCompletude: total > 0 ? Math.round((complets / total) * 100) : 0,
+                },
+                entries,
+            });
         } catch (error) {
             console.error('Erreur', error);
             return res.status(500).json({ success: false, message: 'Erreur interne' });
@@ -273,9 +389,10 @@ export default class PointageController {
                 userId = String(verified.userId);
                 dossier = await DossierEtudiant.findOne({
                     where: { utilisateurId: verified.userId },
-                    include: [{
-                        association: DossierEtudiant.associations.echeances
-                    }]
+                    include: [
+                        { association: DossierEtudiant.associations.echeances },
+                        { association: DossierEtudiant.associations.utilisateur, attributes: ['id', 'nom', 'prenoms', 'role', 'photoDeProfil'] }
+                    ]
                 });
             } else if (codeQR.startsWith('{')) {
                 try {
@@ -283,28 +400,52 @@ export default class PointageController {
                     userId = qrData.id || null;
                     dossier = await DossierEtudiant.findOne({
                         where: { matricule: qrData.matricule },
-                        include: [{
-                            association: DossierEtudiant.associations.echeances
-                        }]
+                        include: [
+                            { association: DossierEtudiant.associations.echeances },
+                            { association: DossierEtudiant.associations.utilisateur, attributes: ['id', 'nom', 'prenoms', 'role', 'photoDeProfil'] }
+                        ]
                     })
                 } catch (parseError) {
                     return res.status(400).json({ success: false, message: 'Code QR invalide' });
                 }
             } else {
+                // Saisie manuelle : matricule dossier étudiant, matricule prof/personnel
+                // (auto-générés à la création) ou identifiant.
                 userId = codeQR;
                 dossier = await DossierEtudiant.findOne({
                     where: { matricule: codeQR },
-                    include: [{
-                        association: DossierEtudiant.associations.echeances
-                    }]
+                    include: [
+                        { association: DossierEtudiant.associations.echeances },
+                        { association: DossierEtudiant.associations.utilisateur, attributes: ['id', 'nom', 'prenoms', 'role', 'photoDeProfil'] }
+                    ]
                 })
+                if (!dossier) {
+                    const enseignant = await Enseignant.findOne({ where: { matricule: codeQR } });
+                    const personnel = enseignant
+                        ? null
+                        : await PersonnelAdministratif.findOne({ where: { matricule: codeQR } });
+                    const ownerId = enseignant?.utilisateurId || personnel?.utilisateurId || null;
+                    if (ownerId) userId = String(ownerId);
+                    else {
+                        const byIdent = await Utilisateur.findOne({
+                            where: { identifiant: codeQR },
+                            attributes: ['id']
+                        });
+                        if (byIdent) userId = String(byIdent.id);
+                    }
+                }
             }
 
             if (dossier) {
                 const paiement = VerificationPaiementService.verifierDossier(dossier);
+                const utilisateur = dossier.utilisateur;
+                if (!utilisateur) {
+                    return res.status(500).json({ success: false, message: 'Utilisateur du dossier introuvable' });
+                }
+                const photoInfo = await PointageController.getPhotoPourPointage(utilisateur, dossier.photo);
 
                 // Calcul de la situation financière détaillée
-                const situationFinanciere = this.calculerSituationFinanciere(dossier);
+                const situationFinanciere = PointageController.calculerSituationFinanciere(dossier);
 
                 if (paiement.statut == 'rouge') {
                     return res.status(200).json({
@@ -314,7 +455,7 @@ export default class PointageController {
                         nom: dossier.utilisateur?.nom || '',
                         prenoms: dossier.utilisateur?.prenoms || '',
                         role: dossier.utilisateur?.role || 'apprenant',
-                        photo: dossier.photo || '',
+                        ...photoInfo,
                         situationFinanciere,
                         ...(paiement.echeancesRestantes.length > 0 ? { echeancesRestantes: paiement.echeancesRestantes } : {})
                     });
@@ -327,7 +468,7 @@ export default class PointageController {
                     nom: dossier.utilisateur?.nom || '',
                     prenoms: dossier.utilisateur?.prenoms || '',
                     role: dossier.utilisateur?.role || 'apprenant',
-                    photo: dossier.photo || '',
+                    ...photoInfo,
                     situationFinanciere
                 });
             }
@@ -335,14 +476,25 @@ export default class PointageController {
             if (userId) {
                 const utilisateur = await Utilisateur.findByPk(userId)
                 if (utilisateur) {
+                    const photoInfo = await PointageController.getPhotoPourPointage(utilisateur);
+                    // Matricule du profil (prof / personnel) pour affichage au terminal
+                    let matricule: string | null = null;
+                    try {
+                        const [ens, pers] = await Promise.all([
+                            Enseignant.findOne({ where: { utilisateurId: userId } as any }),
+                            PersonnelAdministratif.findOne({ where: { utilisateurId: userId } as any }),
+                        ]);
+                        matricule = (ens as any)?.matricule || (pers as any)?.matricule || null;
+                    } catch (_) { /* non bloquant */ }
                     return res.status(200).json({
                         statut: 'vert',
                         message: 'Personnel autorisé',
                         utilisateurId: userId,
+                        matricule,
                         nom: utilisateur.nom,
                         prenoms: utilisateur.prenoms,
                         role: utilisateur.role,
-                        photo: utilisateur.photoDeProfil || ''
+                        ...photoInfo
                     });
                 }
             }

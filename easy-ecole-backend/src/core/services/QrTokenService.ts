@@ -11,8 +11,13 @@ const QR_VERSION = 'v=1';
 export class QrTokenService {
   /**
    * Signs a userId into a secure HMAC token.
-   * Format: CARTE|v=1|{base64url(payload)}|{hmac_signature}
+   * Format: CARTE|v=1|{base64url(payload)}|{hmac_tronquee_16_hex}
    * payload = userId:timestamp
+   *
+   * La signature est volontairement tronquée à 64 bits : le code tient en
+   * ~35 caractères (QR version 3-4, gros modules) au lieu de ~100 (version
+   * 7-8, modules minuscules illisibles par une webcam). La vérification se
+   * fait côté serveur, l'oracle de forge est donc en ligne et limité.
    */
   static signer(userId: number): string {
     const timestamp = Date.now();
@@ -22,7 +27,8 @@ export class QrTokenService {
     const signature = crypto
       .createHmac('sha256', QR_SECRET)
       .update(dataToSign)
-      .digest('hex');
+      .digest('hex')
+      .slice(0, 16);
     return `${dataToSign}|${signature}`;
   }
 
@@ -45,11 +51,18 @@ export class QrTokenService {
       return null;
     }
 
+    // Compatibilité : anciens codes en signature longue (64 hex),
+    // nouveaux codes en signature courte (16 hex).
+    if (signature.length !== 16 && signature.length !== 64) {
+      return null;
+    }
+
     const dataToSign = `${prefix}|${version}|${base64Payload}`;
     const expectedSignature = crypto
       .createHmac('sha256', QR_SECRET)
       .update(dataToSign)
-      .digest('hex');
+      .digest('hex')
+      .slice(0, signature.length);
 
     const sigBuffer = Buffer.from(signature, 'hex');
     const expectedBuffer = Buffer.from(expectedSignature, 'hex');

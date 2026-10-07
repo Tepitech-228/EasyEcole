@@ -37,6 +37,7 @@ import BlocCahierDeTexteRouter from "./routers/BlocCahierDeTexteRouter";
 import TypeNoteEvaluationRouter from "./routers/TypeNoteEvaluationRouter";
 import ListeNoteEvaluationRouter from "./routers/ListeNoteEvaluationRouter";
 import PointageRouter from "./routers/PointageRouter";
+import ShiftRouter from "./routers/ShiftRouter";
 import NoteEvaluationRouter from "./routers/NoteEvaluationRouter";
 import BulletinRouter from "../bulletins/routers/BulletinRouter"
 import DeliberationRouter from "../bulletins/routers/DeliberationRouter"
@@ -174,6 +175,8 @@ router
     .use('/blocsCahierDeTexte', [Authenticate, InscriptionComplete], BlocCahierDeTexteRouter)
     .use('/notesEvaluation', [Authenticate, InscriptionComplete], NoteEvaluationRouter)
     .use('/pointages', [Authenticate, InscriptionComplete], PointageRouter)
+    // Shifts (horaires de travail du pointage) : CRUD persisté
+    .use('/shifts', [Authenticate, InscriptionComplete], ShiftRouter)
     .use('/', [Authenticate, InscriptionComplete], BulletinRouter)
     .use('/', [Authenticate, InscriptionComplete], DeliberationRouter)
     .use('/echeances', [Authenticate, InscriptionComplete], EcheanceRouter)

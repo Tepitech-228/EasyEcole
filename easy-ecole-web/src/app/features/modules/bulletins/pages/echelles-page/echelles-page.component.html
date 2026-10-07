@@ -13,6 +13,11 @@
     </a>
   </div>
 
+  <div *ngIf="errorMessage" role="alert" class="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 flex items-center justify-between gap-4">
+    <span>{{ errorMessage }}</span>
+    <button *ngIf="!deletingId && !savingId" type="button" (click)="chargerEchelles()" class="font-semibold underline">Réessayer</button>
+  </div>
+
   <div class="mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
     <div class="overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-100">
@@ -34,6 +39,7 @@
             <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{{ e.mention }}</td>
             <td class="px-5 py-4 whitespace-nowrap text-center">
               <button (click)="basculerStatut(e.id)"
+                      [disabled]="savingId === e.id || deletingId === e.id"
                       class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border-0 cursor-pointer"
                       [ngClass]="e.estActive ? 'bg-green-50 text-green-700 ring-1 ring-green-200' : 'bg-gray-50 text-gray-400 ring-1 ring-gray-200'">
                 <span class="w-1.5 h-1.5 rounded-full mr-1.5" [ngClass]="e.estActive ? 'bg-green-500' : 'bg-gray-300'"></span>
@@ -47,6 +53,7 @@
                   Modifier
                 </a>
                 <button (click)="supprimer(e.id)"
+                        [disabled]="deletingId === e.id || savingId === e.id"
                         class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors border-0 cursor-pointer">
                   Supprimer
                 </button>
@@ -56,10 +63,11 @@
         </tbody>
       </table>
     </div>
-    <div *ngIf="echelles.length === 0" class="px-5 py-12 text-center">
+    <div *ngIf="!loading && !errorMessage && echelles.length === 0" class="px-5 py-12 text-center">
       <svg class="mx-auto h-12 w-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
       <p class="mt-4 text-sm text-gray-500">Aucune échelle de notes configurée</p>
       <a routerLink="/bulletins/echelles/nouveau" class="mt-2 inline-block text-sm text-blue-600 hover:text-blue-700 font-medium">Créer une échelle</a>
     </div>
+    <div *ngIf="loading" class="px-5 py-12 text-center text-sm text-gray-500">Chargement des échelles…</div>
   </div>
 </div>

@@ -1,10 +1,10 @@
 <div class="flex justify-between items-start mb-8">
-    <app-header-title title="Gestion des rôles" subtitle="Créer, modifier et assigner des permissions aux rôles"></app-header-title>
+    <app-header-title title="Profils et permissions" subtitle="Composez les accès par domaine et affectez-les aux utilisateurs"></app-header-title>
 </div>
 
-<div class="flex gap-6">
+<div class="flex flex-col xl:flex-row gap-5">
     <!-- Sidebar : Liste des rôles -->
-    <div class="w-72 shrink-0">
+    <div class="w-full xl:w-72 shrink-0">
         <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
             <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
                 <span class="text-sm font-semibold text-gray-800">Rôles ({{ roles.length }})</span>
@@ -72,12 +72,23 @@
 
                 <!-- Contenu : Permissions -->
                 <div *ngIf="activeTab === 'permissions'" class="p-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-900">Autorisations du profil</p>
+                            <p class="text-xs text-gray-500 mt-1">{{ rolePermissionIds.size }} droit(s) attribué(s)</p>
+                        </div>
+                        <input type="search" [(ngModel)]="permissionSearch" placeholder="Rechercher une permission..."
+                            class="w-full sm:w-80 rounded-md border border-gray-300 px-3 py-2 text-sm">
+                    </div>
                     <div *ngIf="getObjectKeys(permissionsGrouped).length === 0" class="text-center py-8 text-gray-500">
                         Chargement des permissions...
                     </div>
-                    <div *ngFor="let module of getObjectKeys(permissionsGrouped)" class="mb-6 last:mb-0">
-                        <div class="flex items-center justify-between mb-2">
-                            <h4 class="text-sm font-semibold text-gray-800">{{ module }}</h4>
+                    <div *ngFor="let module of getObjectKeys(filteredPermissionsGrouped)" class="mb-6 last:mb-0">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                            <div>
+                                <h4 class="text-sm font-semibold text-gray-800">{{ module }}</h4>
+                                <p class="text-xs text-gray-500 mt-0.5">{{ filteredPermissionsGrouped[module].length }} permission(s) affichée(s)</p>
+                            </div>
                             <div class="flex items-center gap-x-3">
                                 <button (click)="toggleModule(module, true)"
                                     class="text-xs text-green-600 hover:text-green-800 font-medium">Tout cocher</button>
@@ -86,7 +97,7 @@
                             </div>
                         </div>
                         <div class="bg-gray-50 rounded-lg border border-gray-200 divide-y divide-gray-200">
-                            <div *ngFor="let perm of permissionsGrouped[module]"
+                            <div *ngFor="let perm of filteredPermissionsGrouped[module]"
                                 class="flex items-center justify-between px-4 py-2 hover:bg-white transition-colors">
                                 <div class="flex items-center gap-x-2">
                                     <span [ngClass]="{
@@ -107,6 +118,11 @@
                                 </label>
                             </div>
                         </div>
+                    </div>
+
+                    <div *ngIf="getObjectKeys(permissionsGrouped).length > 0 && getObjectKeys(filteredPermissionsGrouped).length === 0"
+                        class="text-center py-8 text-sm text-gray-500">
+                        Aucune permission ne correspond à cette recherche.
                     </div>
 
                     <div class="flex justify-end mt-6 pt-4 border-t border-gray-200">
@@ -135,14 +151,14 @@
                         <div *ngFor="let u of roleUsers" class="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
                             <div class="flex items-center gap-x-3">
                                 <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-sm font-medium">
-                                    {{ (u.nom?.charAt(0) || '') + (u.prenoms?.charAt(0) || '') }}
+                                    {{ (u.utilisateur?.nom?.charAt(0) || '') + (u.utilisateur?.prenoms?.charAt(0) || '') }}
                                 </div>
                                 <div>
-                                    <div class="text-sm font-medium text-gray-900">{{ u.nom }} {{ u.prenoms }}</div>
-                                    <div class="text-xs text-gray-500">{{ u.email }}</div>
+                                    <div class="text-sm font-medium text-gray-900">{{ u.utilisateur?.nom }} {{ u.utilisateur?.prenoms }}</div>
+                                    <div class="text-xs text-gray-500">{{ u.utilisateur?.email }}</div>
                                 </div>
                             </div>
-                            <button (click)="removeUser(u.id)"
+                            <button (click)="removeUser(u.utilisateurId)"
                                 class="text-xs text-red-600 hover:text-red-800 font-medium">Retirer</button>
                         </div>
                     </div>

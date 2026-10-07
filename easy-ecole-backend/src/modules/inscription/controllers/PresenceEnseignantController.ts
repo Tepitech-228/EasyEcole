@@ -56,6 +56,11 @@ export default class PresenceEnseignantController {
 
       const liste = await ListePresence.findOne({
         where: { coursId: seance.coursId as any },
+        // Sequelize v6 ecrit un sous-requete incomplet des que 3 niveaux
+        // d'include sont imbriques : le JOIN vers coursParticipant est alors
+        // omis du SQL final (ER_BAD_FIELD_ERROR sur
+        // 'presences->presencesCoursParticipants->coursParticipant.id').
+        subQuery: false,
         include: [{
           association: ListePresence.associations.presences,
           where: { date: seance.dateDebut, heureDebut: seance.heureDebut },

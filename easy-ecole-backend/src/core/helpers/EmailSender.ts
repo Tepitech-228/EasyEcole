@@ -1,6 +1,7 @@
 import { createTransport, SendMailOptions, Transporter } from "nodemailer"
 
 const env = process.env.NODE_ENV || 'development';
+export const EMAIL_SENDER_NAME = 'ESA ECOLE';
 
 function getMailConfig() {
     if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
@@ -80,10 +81,10 @@ export class EmailSender {
     public test(): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `Easy Ecole <${this.getUsername()}>`,
+            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
             to: "armand.kayi@technologybusiness-tb.com",
             encoding: 'UTF-8',
-            subject: 'Easy Ecole: Mail test',
+            subject: `${EMAIL_SENDER_NAME}: Mail test`,
             html: this.getEmailTemplate()
         }
 
@@ -103,12 +104,12 @@ export class EmailSender {
     public sendServerStartingMessage(email: string = 'armand.kayi@technologybusiness-tb.com'): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `Easy Ecole <${this.getUsername()}>`,
+            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
             to: email,
             encoding: 'UTF-8',
-            subject: 'Easy Ecole: Démarrage de l\'API',
-            html: `<p>Le serveur API de l'application Easy Ecole vient d'être (re)démarré.</p>
-            <p>Coridialement, <br> Easy Ecole</p>`
+            subject: `${EMAIL_SENDER_NAME}: Démarrage de l'API`,
+            html: `<p>Le serveur API de l'application ${EMAIL_SENDER_NAME} vient d'être (re)démarré.</p>
+            <p>Cordialement, <br> ${EMAIL_SENDER_NAME}</p>`
         }
 
         return new Promise((resolve, reject) => {
@@ -126,12 +127,12 @@ export class EmailSender {
     public sendConfirmationDemandeOrientation(username: string, email: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `Easy Ecole <${this.getUsername()}>`,
+            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
             to: email,
             encoding: 'UTF-8',
-            subject: 'Easy Ecole: Votre demande d\'orientation a été bien reçue',
-            html: `<p>Hi <b>${username},</b></p> <p>Votre demande a été bien reçue. <br> Un mail vous sera envoyé à la fin du traitement</p>
-            <p>Coridialement, <br> Easy Ecole</p>`
+            subject: `${EMAIL_SENDER_NAME}: Votre demande d'orientation a été bien reçue`,
+            html: `<p>Bonjour <b>${username},</b></p> <p>Votre demande a été bien reçue. <br> Un mail vous sera envoyé à la fin du traitement.</p>
+            <p>Cordialement, <br> ${EMAIL_SENDER_NAME}</p>`
         }
 
         return new Promise((resolve, reject) => {
@@ -149,13 +150,13 @@ export class EmailSender {
     public sendReponseOrientation(username: string, email: string, message: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `Easy Ecole <${this.getUsername()}>`,
+            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
             to: email,
             encoding: 'UTF-8',
-            subject: 'Easy Ecole: Réponse d\'orientation',
-            html: `<p>Hi <b>${username},</b></p> <p>Votre demande a été traitée. <br>Veuillez vous connecter à la plateforme pour voir les resultats de la demande</p>
-            <p>Message de l'institution:</b>${message}</p>
-            <p>Coridialement, <br> Easy Ecole</p>`
+            subject: `${EMAIL_SENDER_NAME}: Réponse d'orientation`,
+            html: `<p>Bonjour <b>${username},</b></p> <p>Votre demande a été traitée. <br>Veuillez vous connecter à la plateforme pour voir les résultats de la demande.</p>
+            <p>Message de l'institution :</b>${message}</p>
+            <p>Cordialement, <br> ${EMAIL_SENDER_NAME}</p>`
         }
 
         return new Promise((resolve, reject) => {
@@ -173,12 +174,12 @@ export class EmailSender {
     public sendConfirmationDemandeInscription(username: string, email: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `Easy Ecole <${this.getUsername()}>`,
+            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
             to: email,
             encoding: 'UTF-8',
-            subject: 'Easy Ecole: Votre demande d\'inscription a été bien reçue',
-            html: `<p>Hi <b>${username},</b></p> <p>Votre demande a été bien reçue. <br> Veuillez suivre les instructions pour la suite du processus. Pour plus, d'informations vous pouvez nous joindre à l'adresse ci-dessous: </p>
-            <p>Coridialement, <br> Easy Ecole</p>`
+            subject: `${EMAIL_SENDER_NAME}: Votre demande d'inscription a été bien reçue`,
+            html: `<p>Bonjour <b>${username},</b></p> <p>Votre demande a été bien reçue. <br> Veuillez suivre les instructions pour la suite du processus. Pour plus d'informations, vous pouvez nous joindre à l'adresse ci-dessous: </p>
+            <p>Cordialement, <br> ${EMAIL_SENDER_NAME}</p>`
         }
 
         return new Promise((resolve, reject) => {
@@ -196,13 +197,13 @@ export class EmailSender {
     public sendReponseInscription(username: string, email: string, message: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `Easy Ecole <${this.getUsername()}>`,
+            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
             to: email,
             encoding: 'UTF-8',
-            subject: 'Easy Ecole: Réponse d\'inscription',
-            html: `<p>Hi <b>${username},</b></p> <p>Votre demande a été traitée. <br>Veuillez vous connecter à la plateforme pour voir les resultats de la demande</p>
-            <p>Message de l'institution:</b>${message}</p>
-            <p>Coridialement, <br> Easy Ecole</p>`
+            subject: `${EMAIL_SENDER_NAME}: Réponse d'inscription`,
+            html: `<p>Bonjour <b>${username},</b></p> <p>Votre demande a été traitée. <br>Veuillez vous connecter à la plateforme pour voir les résultats de la demande.</p>
+            <p>Message de l'institution :</b>${message}</p>
+            <p>Cordialement, <br> ${EMAIL_SENDER_NAME}</p>`
         }
 
         return new Promise((resolve, reject) => {
@@ -242,12 +243,12 @@ export class EmailSender {
     public sendValidationDemandeInscription(username: string, email: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `Easy Ecole <${this.getUsername()}>`,
+            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
             to: email,
             encoding: 'UTF-8',
-            subject: 'Easy Ecole: Validation de votre demande d\'inscription',
-            html: `<p>Hi <b>${username},</b></p> <p>Votre demande a été validée. <br>Veuillez vous connecter à la plateforme pour voir les détails de la demande</p>
-            <p>Coridialement, <br> Easy Ecole</p>`
+            subject: `${EMAIL_SENDER_NAME}: Validation de votre demande d'inscription`,
+            html: `<p>Bonjour <b>${username},</b></p> <p>Votre demande a été validée. <br>Veuillez vous connecter à la plateforme pour voir les détails de la demande.</p>
+            <p>Cordialement, <br> ${EMAIL_SENDER_NAME}</p>`
         }
 
         return new Promise((resolve, reject) => {
@@ -265,12 +266,12 @@ export class EmailSender {
     public sendMessageInscriptionEnseignant(username: string, tempPassword: string, email: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `Easy Ecole <${this.getUsername()}>`,
+            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
             to: email,
             encoding: 'UTF-8',
-            subject: 'Easy Ecole: Création de votre compte Enseignant',
-            html: `<p>Hi <b>${username},</b></p> <p>Votre compte a été créé avec succès. Vous pouvez vous connecter avec les identifiants suivants: <br> Nom d'utilisateur: <strong>${username}</strong> <br> Mot de passe: <strong>${tempPassword}</strong> <br><em>Pour des raisons de sécurité, veuillez changer votre mot de passe après s'être connecté à votre compte.</em></p>
-            <p>Coridialement, <br> Easy Ecole</p>`
+            subject: `${EMAIL_SENDER_NAME}: Création de votre compte Enseignant`,
+            html: `<p>Bonjour <b>${username},</b></p> <p>Votre compte a été créé avec succès. Vous pouvez vous connecter avec les identifiants suivants: <br> Nom d'utilisateur: <strong>${username}</strong> <br> Mot de passe: <strong>${tempPassword}</strong> <br><em>Pour des raisons de sécurité, veuillez changer votre mot de passe après vous être connecté à votre compte.</em></p>
+            <p>Cordialement, <br> ${EMAIL_SENDER_NAME}</p>`
         }
 
         return new Promise((resolve, reject) => {
@@ -288,15 +289,15 @@ export class EmailSender {
     public sendPreInscriptionValidee(username: string, email: string, attachmentPath?: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `Easy Ecole <${this.getUsername()}>`,
+            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
             to: email,
             encoding: 'UTF-8',
-            subject: 'Easy Ecole: Votre préinscription a été validée',
+            subject: `${EMAIL_SENDER_NAME}: Votre préinscription a été validée`,
             html: `<p>Bonjour <b>${username},</b></p>
             <p>Votre dossier de préinscription a été validé par le comité d'orientation.</p>
             <p>Une autorisation provisoire d'inscription est disponible dans votre espace. Connectez-vous à la plateforme pour la télécharger.</p>
             <p>Vous pouvez maintenant procéder au paiement des frais d'inscription auprès de la banque muni de cette autorisation.</p>
-            <p>Coridialement, <br> Easy Ecole</p>`
+            <p>Cordialement, <br> ${EMAIL_SENDER_NAME}</p>`
         }
 
         if (attachmentPath) {
@@ -319,15 +320,15 @@ export class EmailSender {
     public sendPreInscriptionRejetee(username: string, email: string, motif: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `Easy Ecole <${this.getUsername()}>`,
+            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
             to: email,
             encoding: 'UTF-8',
-            subject: 'Easy Ecole: Votre préinscription a été rejetée',
+            subject: `${EMAIL_SENDER_NAME}: Votre préinscription a été rejetée`,
             html: `<p>Bonjour <b>${username},</b></p>
             <p>Votre dossier de préinscription a été rejeté par le comité d'orientation.</p>
             <p>Motif: <b>${motif}</b></p>
             <p>Pour plus d'informations, veuillez contacter l'établissement.</p>
-            <p>Coridialement, <br> Easy Ecole</p>`
+            <p>Cordialement, <br> ${EMAIL_SENDER_NAME}</p>`
         }
 
         return new Promise((resolve, reject) => {
@@ -341,10 +342,10 @@ export class EmailSender {
     public sendParentWelcome(email: string, identifiant: string, motDePasse: string, nomParent: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `Easy Ecole <${this.getUsername()}>`,
+            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
             to: email,
             encoding: 'UTF-8',
-            subject: 'Easy Ecole: Bienvenue sur l\'Espace Parents',
+            subject: `${EMAIL_SENDER_NAME}: Bienvenue sur l'Espace Parents`,
             html: `<p>Bonjour <b>${nomParent},</b></p>
             <p>Votre compte parent a été créé avec succès pour le suivi de la scolarité de votre enfant.</p>
             <p>Vous pouvez vous connecter à l'Espace Parents avec les identifiants suivants:</p>
@@ -352,7 +353,7 @@ export class EmailSender {
             <p>Identifiant: <strong>${identifiant}</strong></p>
             <p>Mot de passe: <strong>${motDePasse}</strong></p>
             <p><em>Pour des raisons de sécurité, veuillez changer votre mot de passe après votre première connexion.</em></p>
-            <p>Coridialement, <br> Easy Ecole</p>`
+            <p>Cordialement, <br> ${EMAIL_SENDER_NAME}</p>`
         }
 
         return new Promise((resolve, reject) => {
@@ -366,15 +367,15 @@ export class EmailSender {
     public sendQuitusEtMatricule(username: string, email: string, matricule: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `Easy Ecole <${this.getUsername()}>`,
+            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
             to: email,
             encoding: 'UTF-8',
-            subject: 'Easy Ecole: Votre dossier étudiant est prêt',
+            subject: `${EMAIL_SENDER_NAME}: Votre dossier étudiant est prêt`,
             html: `<p>Bonjour <b>${username},</b></p>
             <p>Votre dossier étudiant a été créé avec succès.</p>
             <p>Votre numéro matricule est: <strong>${matricule}</strong></p>
-            <p>Vous pouvez desormais utiliser ce matricule pour toutes vos démarches au sein de l'établissement.</p>
-            <p>Coridialement, <br> Easy Ecole</p>`
+            <p>Vous pouvez désormais utiliser ce matricule pour toutes vos démarches au sein de l'établissement.</p>
+            <p>Cordialement, <br> ${EMAIL_SENDER_NAME}</p>`
         }
 
         return new Promise((resolve, reject) => {
@@ -398,10 +399,10 @@ export class EmailSender {
         }
 
         const mailOptions: SendMailOptions = {
-            from: `Easy Ecole <${this.getUsername()}>`,
+            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
             to: email,
             encoding: 'UTF-8',
-            subject: 'Easy Ecole: Confirmer votre email',
+            subject: `${EMAIL_SENDER_NAME}: Confirmer votre email`,
             html: this.getEmailTemplate(template)
         }
 
@@ -420,20 +421,20 @@ export class EmailSender {
     public sendPasswordResetLink(username: string, email: string, redirectTo: string, token: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const template: EmailTemplateType = {
-            title: 'Easy Ecole: Réinitialiser le mot de passe',
+            title: `${EMAIL_SENDER_NAME}: Réinitialiser le mot de passe`,
             fullname: username,
-            paragraph1: 'Pour réinitialiser le mot de passe de votre compte, veuillez cliquer sur le button ci-dessous :',
+            paragraph1: 'Pour réinitialiser le mot de passe de votre compte, veuillez cliquer sur le bouton ci-dessous :',
             buttonLink: redirectTo + '?token=' + token,
             button: 'Confirmer',
-            paragraph2: 'Si cela ne marche pas, <br>veuillez copier et coller le lien ci-dessous dans votre navigateur:',
+            paragraph2: 'Si cela ne marche pas, <br>veuillez copier et coller le lien ci-dessous dans votre navigateur :',
             link: redirectTo + '?token=' + token
         }
 
         const mailOptions: SendMailOptions = {
-            from: `Easy Ecole <${this.getUsername()}>`,
+            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
             to: email,
             encoding: 'UTF-8',
-            subject: 'Easy Ecole: Réinitialiser le mot de passe',
+            subject: `${EMAIL_SENDER_NAME}: Réinitialiser le mot de passe`,
             html: this.getEmailTemplate(template)
         }
 
@@ -455,14 +456,14 @@ export class EmailSender {
         const formattedCode = code
 
         const mailOptions: SendMailOptions = {
-            from: `EasyEcole <${this.getUsername()}>`,
+            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
             to: email,
             encoding: 'UTF-8',
-            subject: 'EasyEcole - Votre code de connexion',
+            subject: `${EMAIL_SENDER_NAME} - Votre code de connexion`,
             html: `
             <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 20px;">
                 <div style="text-align: center; padding: 20px 0;">
-                    <h1 style="color: #1F4E79; margin: 0;">EasyEcole</h1>
+                    <h1 style="color: #1F4E79; margin: 0;">${EMAIL_SENDER_NAME}</h1>
                 </div>
                 <div style="background: #f5f7fa; border-radius: 12px; padding: 30px; text-align: center;">
                     <p style="font-size: 16px; color: #333; margin: 0 0 20px 0;">Bonjour,<br>Utilisez le code ci-dessous pour vous connecter :</p>
@@ -470,9 +471,9 @@ export class EmailSender {
                         <span style="font-family: 'Courier New', monospace; font-size: 28px; font-weight: bold; letter-spacing: 6px; color: #fff;">${formattedCode}</span>
                     </div>
                     <p style="font-size: 14px; color: #666; margin: 0;">Ce code expire dans <strong>5 minutes</strong>.</p>
-                    <p style="font-size: 13px; color: #999; margin: 15px 0 0 0;">Si vous n'etes pas à l'origine de cette demande, ignorez cet email.</p>
+                    <p style="font-size: 13px; color: #999; margin: 15px 0 0 0;">Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.</p>
                 </div>
-                <div style="text-align: center; padding: 15px; color: #999; font-size: 12px;">EasyEcole - Gestion Scolaire &copy; ${new Date().getFullYear()}</div>
+                <div style="text-align: center; padding: 15px; color: #999; font-size: 12px;">${EMAIL_SENDER_NAME} - Gestion Scolaire &copy; ${new Date().getFullYear()}</div>
             </div>`
         }
 
@@ -482,7 +483,7 @@ export class EmailSender {
     public sendPdf(email: string, username: string, subject: string, messageHtml: string, pdfPath: string, pdfFilename: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `Easy Ecole <${this.getUsername()}>`,
+            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
             to: email,
             encoding: 'UTF-8',
             subject,

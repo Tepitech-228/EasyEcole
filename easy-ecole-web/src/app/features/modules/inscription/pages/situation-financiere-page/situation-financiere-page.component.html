@@ -3,9 +3,9 @@
 </div>
 
 <!-- Alerte erreur -->
-<div *ngIf="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-    Une erreur est survenue lors du chargement des données.
-    <span *ngIf="apiErrorMessage">{{ apiErrorMessage }}</span>
+<div *ngIf="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 flex items-center justify-between gap-4">
+    <span>{{ apiErrorMessage || 'Une erreur est survenue lors du chargement des données.' }}</span>
+    <button type="button" (click)="retryLoad()" class="font-semibold underline whitespace-nowrap">Réessayer</button>
 </div>
 
 <!-- Barre de filtres -->
@@ -118,7 +118,7 @@
 </div>
 
 <!-- Empty state -->
-<div *ngIf="!loading && situationData.length === 0" class="bg-white rounded-xl border border-gray-200 p-12 text-center shadow-sm">
+<div *ngIf="!loading && !error && situationData.length === 0" class="bg-white rounded-xl border border-gray-200 p-12 text-center shadow-sm">
     <span class="material-symbols-outlined text-6xl text-gray-200">inbox</span>
     <p class="text-gray-500 text-base mt-4">Aucune situation financière trouvée</p>
     <p class="text-gray-400 text-sm mt-1">Les résultats apparaîtront ici une fois les filtres appliqués</p>
@@ -160,8 +160,12 @@
         </div>
     </div>
 
+    <div *ngIf="!detailLoading && detailError" class="rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        {{ detailError }}
+    </div>
+
     <!-- Contenu du détail -->
-    <ng-container *ngIf="!detailLoading && detailData">
+    <ng-container *ngIf="!detailLoading && !detailError && detailData">
         <!-- KPI Cards -->
         <div class="grid grid-cols-4 gap-4 mb-6">
             <div class="bg-gradient-to-r from-red-50 to-red-100 border border-red-200 rounded-md p-4 text-center">

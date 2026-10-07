@@ -22,8 +22,14 @@ import { DetailsCahierDeTextePageComponent } from './pages/details-cahier-de-tex
 import { MesPresencesPageComponent } from './pages/mes-presences-page/mes-presences-page.component';
 import { MesNotesPageComponent } from './pages/mes-notes-page/mes-notes-page.component';
 import { TableauDeBordEnseignantPageComponent } from './pages/tableau-de-bord-enseignant-page/tableau-de-bord-enseignant-page.component';
+import { SupervisionGeneralePageComponent } from './pages/supervision-generale-page/supervision-generale-page.component';
 
 const routes: Routes = [
+  {
+    path: 'supervision-generale',
+    component: SupervisionGeneralePageComponent,
+    pathMatch: 'full'
+  },
   {
     path: 'tableau-de-bord',
     component: TableauDeBordEnseignantPageComponent,

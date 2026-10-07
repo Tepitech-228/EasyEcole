@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DemandeDocumentService } from 'src/app/data/modules/scolarite/services/demande-document.service';
 import { DemandeDocument } from 'src/app/data/modules/scolarite/models/DemandeDocument.model';
+import { DemandeDocumentPiece } from 'src/app/data/modules/scolarite/models/DemandeDocument.model';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 
 @Component({
@@ -13,6 +14,9 @@ import { BaseComponentClass } from 'src/app/core/base-component-class';
 export class FicheDemandePageComponent extends BaseComponentClass implements OnInit {
   demande: DemandeDocument | null = null;
   loading: boolean = true;
+  errorMessage = '';
+  successMessage = '';
+  auditLoadingId: number | null = null;
   id: string | null = null;
 
   workflowSteps = [
@@ -46,9 +50,71 @@ export class FicheDemandePageComponent extends BaseComponentClass implements OnI
         this.demande = data;
         this.loading = false;
       },
-      error: () => {
+      error: (err) => {
         this.loading = false;
+        this.errorMessage = err?.error?.message || 'Impossible de charger cette demande.';
         this.router.navigate(['/scolarite/secretariat/demandes']);
+      }
+    });
+  }
+
+  get estAuditable(): boolean {
+    return this.rolesValue.isSecretaire || this.rolesValue.isInstitution || this.rolesValue.isAdmin;
+  }
+
+  auditerPiece(piece: DemandeDocumentPiece, statutAudit: 'validee' | 'rejetee'): void {
+    if (!this.id || !this.demande?.id) return;
+    let motif: string | undefined;
+    if (statutAudit === 'rejetee') {
+      motif = window.prompt('Motif du refus de cette pièce :')?.trim();
+      if (!motif) return;
+    }
+    this.auditLoadingId = piece.id;
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.demandeService.auditerPiece(this.id, piece.id, statutAudit, motif).subscribe({
+      next: (result) => {
+        this.auditLoadingId = null;
+        this.successMessage = result.transmiseAuComite
+          ? 'Pièce validée. Le dossier est transmis au comité.'
+          : statutAudit === 'validee' ? 'Pièce validée.' : 'Pièce refusée et correction demandée à l’étudiant.';
+        this.loadDemande();
+      },
+      error: err => {
+        this.auditLoadingId = null;
+        this.errorMessage = err?.error?.message || 'Impossible d’enregistrer l’audit.';
+      }
+    });
+  }
+
+  ouvrirPiece(piece: DemandeDocumentPiece): void {
+    if (!this.demande?.id) return;
+    const fenetre = window.open('', '_blank');
+    this.demandeService.telechargerPiece(this.demande.id, piece.id).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        if (fenetre) fenetre.location.href = url;
+        else URL.revokeObjectURL(url);
+      },
+      error: err => {
+        if (fenetre) fenetre.close();
+        this.errorMessage = err?.error?.message || 'Impossible d’ouvrir cette pièce.';
+      }
+    });
+  }
+
+  ouvrirDocumentPret(): void {
+    if (!this.demande?.id) return;
+    const fenetre = window.open('', '_blank');
+    this.demandeService.telechargerDocumentPret(this.demande.id).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        if (fenetre) fenetre.location.href = url;
+        else URL.revokeObjectURL(url);
+      },
+      error: err => {
+        if (fenetre) fenetre.close();
+        this.errorMessage = err?.error?.message || 'Impossible d’ouvrir le document.';
       }
     });
   }

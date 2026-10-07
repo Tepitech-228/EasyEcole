@@ -381,11 +381,11 @@
         style="background: linear-gradient(135deg, #f59e0b, #f97316, #ea580c);">
         <div class="flex items-center justify-between">
           <div>
-            <h3 class="text-lg font-semibold">Inscription en cours</h3>
-            <p class="text-sm text-amber-100 mt-1">Vous avez une demande d'inscription en attente de finalisation.</p>
+            <h3 class="text-lg font-semibold">{{ aDesPiecesAReposer(demandesEnCours[0]) ? 'Documents à remplacer' : 'Inscription en cours' }}</h3>
+            <p class="text-sm text-amber-100 mt-1">{{ aDesPiecesAReposer(demandesEnCours[0]) ? 'Le comité demande de remplacer certaines pièces. Votre demande reste active.' : 'Vous avez une demande d’inscription en attente de finalisation.' }}</p>
           </div>
-          <a [routerLink]="'/inscription/demandes/' + demandesEnCours[0].id" class="inline-flex items-center gap-2 px-4 py-2 bg-white text-amber-700 text-sm font-semibold rounded-lg hover:bg-amber-50 transition-colors">
-            Continuer
+          <a [routerLink]="getDemandeActionRoute(demandesEnCours[0])" class="inline-flex items-center gap-2 px-4 py-2 bg-white text-amber-700 text-sm font-semibold rounded-lg hover:bg-amber-50 transition-colors">
+            {{ getDemandeActionLabel(demandesEnCours[0]) }}
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
           </a>
         </div>
@@ -497,17 +497,11 @@
                 </div>
               </div>
               <div class="flex items-center gap-2 shrink-0">
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                      [class.bg-amber-50]="d.preInscription?.statut === 'en_attente'"
-                      [class.text-amber-700]="d.preInscription?.statut === 'en_attente'"
-                      [class.bg-red-50]="d.preInscription?.statut === 'rejete'"
-                      [class.text-red-700]="d.preInscription?.statut === 'rejete'"
-                      [class.bg-blue-50]="!d.preInscription?.statut"
-                      [class.text-blue-700]="!d.preInscription?.statut">
-                  {{ d.preInscription?.statut === 'en_attente' ? 'En attente' : d.preInscription?.statut === 'rejete' ? 'Rejetée' : 'Brouillon' }}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" [ngClass]="getDemandeStatutClasse(d)">
+                  {{ getDemandeStatutLabel(d) }}
                 </span>
-                <a [routerLink]="'/inscription/demandes/' + d.id" class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors">
-                  Continuer
+                <a [routerLink]="getDemandeActionRoute(d)" class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                  {{ getDemandeActionLabel(d) }}
                   <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                 </a>
               </div>

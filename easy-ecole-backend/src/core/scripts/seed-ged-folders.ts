@@ -4,7 +4,7 @@ import Domain from "../../modules/ged/models/Domain"
 import Folder from "../../modules/ged/models/Folder"
 import { Utilisateur } from "../../modules/auth/models/Utilisateur"
 
-async function main() {
+export async function seedGedFolders() {
   const db = DatabaseConnection.getInstance()
   await db.init()
 
@@ -167,4 +167,6 @@ async function main() {
   }
 }
 
-main().then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1) })
+if (require.main === module) {
+  seedGedFolders().then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1) })
+}

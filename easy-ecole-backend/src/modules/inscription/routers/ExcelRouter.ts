@@ -132,6 +132,15 @@ router.get("/apprenants/template", ExcelController.downloadApprenantTemplate)
 
 /**
  * @openapi
+ * /inscription/excel/apprenants/template/migration:
+ *   get:
+ *     tags: [Excel Import/Export]
+ *     summary: Télécharger un modèle vierge de migration complet avec les cinq onglets
+ */
+router.get("/apprenants/template/migration", ExcelController.downloadApprenantsMigrationTemplate)
+
+/**
+ * @openapi
  * /inscription/excel/apprenants/template-word:
  *   get:
  *     tags: [Excel Import/Export]
@@ -153,7 +162,7 @@ router.post("/apprenants/import", upload.single("fichier"), ExcelController.impo
  * /inscription/excel/apprenants/import/migration:
  *   post:
  *     tags: [Excel Import/Export]
- *     summary: Importer des apprenants depuis un fichier de migration (3 feuilles : Identité, Cursus, Finance)
+ *     summary: "Importer une migration complète depuis les feuilles Identité, Cursus, Finance, Notes et Enseignants_Cours"
  */
 router.post("/apprenants/import/migration", upload.single("fichier"), ExcelController.importApprenantsMigration)
 

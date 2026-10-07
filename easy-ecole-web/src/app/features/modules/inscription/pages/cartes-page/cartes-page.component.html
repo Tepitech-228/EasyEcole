@@ -146,7 +146,7 @@
           <div class="card-inner w-full h-full relative cursor-pointer transition-transform duration-700 preserve-3d shadow-xl rounded-2xl" [class.card-flip]="cardFlipped" (click)="toggleFlip()">
 
             <!-- ===================== RECTO ===================== -->
-            <div class="card-face absolute inset-0 rounded-2xl overflow-hidden">
+            <div class="card-face card-front absolute inset-0 rounded-2xl overflow-hidden">
               <div class="sep"></div>
 
               <div class="watermark-layer">
@@ -176,8 +176,8 @@
                 </div>
 
                 <div class="header-right">
-                  <div class="country-name">RÉPUBLIQUE TOGOLAISE</div>
-                  <div class="country-motto">Travail · Liberté · Patrie</div>
+                  <div class="country-name">{{ etablissementNom || 'ÉTABLISSEMENT D’ENSEIGNEMENT SUPÉRIEUR' }}</div>
+                  <div class="country-motto">{{ etablissementLocalisation || 'République Togolaise' }}</div>
                 </div>
               </div>
 
@@ -191,6 +191,7 @@
                 <div class="body-row">
                   <div class="photo-container photo-panel">
                     <img [src]="card.photoSrc" [alt]="'Photo de ' + card.nom + ' ' + card.prenoms" (error)="onPhotoError($event, selectedApprenant)">
+                    <span class="photo-caption">PHOTO ÉTUDIANT</span>
                   </div>
 
                   <div class="details-container data-panel">
@@ -215,19 +216,35 @@
                     </div>
                   </div>
                 </div>
+
+                <div class="card-issue-line">
+                  <span><strong>DÉLIVRÉE LE</strong> {{ dateDelivrance }}</span>
+                  <span><strong>VALABLE POUR</strong> {{ card.anneeScolaire }}</span>
+                </div>
               </div>
 
-              <div class="qr-container">
+              <div class="student-side-panel">
+                <div class="wreath-badge" aria-label="Statut de la carte">
+                  <svg class="wreath-svg" viewBox="0 0 100 100" aria-hidden="true">
+                    <path d="M26 78C10 61 13 34 34 20M74 78c16-17 13-44-8-58" />
+                    <path d="M28 65c-9-2-13-8-12-15 7 1 12 6 12 15Zm1-17c-8-4-10-11-7-17 7 3 10 9 7 17Zm7-15c-5-7-3-14 2-18 5 6 5 12-2 18Zm36 32c9-2 13-8 12-15-7 1-12 6-12 15Zm-1-17c8-4 10-11 7-17-7 3-10 9-7 17Zm-7-15c5-7 3-14-2-18-5 6-5 12 2 18Z" />
+                  </svg>
+                  <span class="wreath-center">
+                    <span class="material-symbols-outlined">school</span>
+                    <strong>ÉTUDIANT</strong>
+                    <small>{{ card.badge }}</small>
+                  </span>
+                </div>
                 <div class="qr-box qr-panel">
                   <img *ngIf="card.qrSrc" [src]="card.qrSrc" alt="QR code de la carte étudiante">
                   <span *ngIf="!card.qrSrc" class="material-symbols-outlined qr-fallback">qr_code_2</span>
                 </div>
-                <div class="qr-badge">SCAN TO VERIFY</div>
+                <div class="qr-badge">SCANNER POUR VÉRIFIER</div>
               </div>
 
               <div class="card-footer">
-                <span class="footer-text">TRAVAIL · LIBERTÉ · PATRIE</span>
-                <span class="card-badge {{ card.badgeClass }}">{{ card.badge }}</span>
+                <span class="footer-text">DISCIPLINE · EXCELLENCE · RÉUSSITE</span>
+                <span class="card-badge {{ card.badgeClass }}">{{ card.matricule }}</span>
               </div>
             </div>
 
@@ -266,6 +283,8 @@
                 </div>
               </div>
 
+              <div class="magnetic-strip" aria-hidden="true"></div>
+
               <div class="card-body-verso">
                 <div class="verso-columns">
 
@@ -275,8 +294,8 @@
                         <span class="material-symbols-outlined">contract</span> RÈGLEMENTATIONS
                       </div>
                       <ul class="rules-list">
-                        <li>La carte est personnelle, non transférable et doit être présentée à toute réquisition des autorités.</li>
-                        <li>En cas de perte, signaler immédiatement à l'administration.</li>
+                        <li>Cette carte est personnelle et non transférable. Elle doit être présentée à toute réquisition des autorités de l’établissement.</li>
+                        <li>En cas de perte ou de vol, signaler immédiatement l’incident à l’administration.</li>
                       </ul>
                       <div class="section-title">
                         <span class="material-symbols-outlined">id_card</span> INFORMATIONS

@@ -11,5 +11,6 @@ export enum RolesUtilisateur {
     ADMIN = "admin",
     PARENT = "parent",
     SECRETAIRE = "secretaire",
-    SURVEILLANT = "surveillant"
+    SURVEILLANT = "surveillant",
+    SUPERVISEUR_GENERAL = "superviseur_general"
 }

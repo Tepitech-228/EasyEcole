@@ -58,7 +58,7 @@ async function phase1() {
   if (!ecueOk) { console.log('row:', ecueRow); process.exit(1) }
 
   console.log('\n[RESULTAT PHASE 1] Année=2025-2026, Session=%d, Classe=%d, Echelle=%d', sessionId, classeId, echelleId)
-  return { anneeAcademiqueId, sessionId, classeId, echelleId, salleId: npc.salleId, ecueId: ueResult.ecueId, listeId: ueResult.listeId }
+  return { anneeAcademiqueId, sessionId, classeId, parcoursId: npc.parcoursId, echelleId, salleId: npc.salleId, ecueId: ueResult.ecueId, listeId: ueResult.listeId }
 }
 
 module.exports = { phase1 }

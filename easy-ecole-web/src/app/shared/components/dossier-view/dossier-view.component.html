@@ -146,6 +146,18 @@
                         <span *ngIf="toNumber(item[col.key]) > 0">{{ toNumber(item[col.key]) | number:'1.0-0' }} FC</span>
                         <span *ngIf="toNumber(item[col.key]) <= 0" class="text-gray-400">Gratuit</span>
                       </ng-container>
+                      <ng-container *ngSwitchCase="'totalDu'">
+                        <span>{{ toNumber(item[col.key]) | number:'1.0-0' }} FCFA</span>
+                      </ng-container>
+                      <ng-container *ngSwitchCase="'totalPaye'">
+                        <span>{{ toNumber(item[col.key]) | number:'1.0-0' }} FCFA</span>
+                      </ng-container>
+                      <ng-container *ngSwitchCase="'resteAPayer'">
+                        <span>{{ toNumber(item[col.key]) | number:'1.0-0' }} FCFA</span>
+                      </ng-container>
+                      <ng-container *ngSwitchCase="'avancement'">
+                        <span>{{ toNumber(item[col.key]) }}%</span>
+                      </ng-container>
                       <ng-container *ngSwitchCase="'source'">
                         <app-custom-badge [text]="item.source === 'automatique' ? 'Génération normale' : 'Demande volontaire'" [color]="item.source === 'automatique' ? 'green' : 'orange'"></app-custom-badge>
                       </ng-container>
