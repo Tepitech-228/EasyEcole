@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { ReinscriptionService } from 'src/app/data/modules/inscription/services/reinscription.service';
 import { OcrService } from 'src/app/data/modules/inscription/services/ocr.service';
 import { DemandeInscriptionService } from 'src/app/data/modules/inscription/services/demande-inscription.service';
+import { ReinscriptionWizardStoreService } from 'src/app/data/modules/inscription/services/reinscription-wizard-store.service';
 
 interface DocumentRequis {
   code: string;
@@ -27,12 +28,22 @@ export class ReinscriptionWizardPageComponent extends BaseComponentClass impleme
   sessions: any[] = []
   sessionSelectionneeId?: number
 
-  // Étape courante : 1..5
-  etape = 1
+  // Étape courante : 1..5 — persistée (setter auto-sauvegarde + beforeunload),
+  // le wizard reprend où l'étudiant s'était arrêté même après rechargement.
+  private _etape = 1
+  get etape(): number {
+    return this._etape
+  }
+  set etape(v: number) {
+    this._etape = Math.min(5, Math.max(1, Number(v) || 1))
+    this.sauvegarder()
+  }
 
   documentsRequis: DocumentRequis[] = []
   documents: { [code: string]: File | null } = {}
+  documentsAReposer: { [code: string]: { nom: string; taille: number; type: string } } = {}
   bordereau: File | null = null
+  bordereauAReposer: { nom: string; taille: number; type: string } | null = null
   montant?: number
   referenceBancaire = ''
   modalite = '1x'
@@ -55,7 +66,8 @@ export class ReinscriptionWizardPageComponent extends BaseComponentClass impleme
     private router: Router,
     private reinscriptionService: ReinscriptionService,
     private ocrService: OcrService,
-    private demandeInscriptionService: DemandeInscriptionService
+    private demandeInscriptionService: DemandeInscriptionService,
+    private wizardStore: ReinscriptionWizardStoreService
   ) {
     super()
     if (!this.rolesValue.isApprenant) {
@@ -64,8 +76,45 @@ export class ReinscriptionWizardPageComponent extends BaseComponentClass impleme
   }
 
   ngOnInit(): void {
+    this.restaurerEtat()
     this.loadEligibilite()
     this.loadPlanifications()
+  }
+
+  /** Restaure l'étape et les champs saisis avant un rechargement. */
+  private restaurerEtat(): void {
+    const etat = this.wizardStore.reprendreEtat()
+    if (!etat) return
+    this._etape = Math.min(5, Math.max(1, Number(etat.etape) || 1))
+    this.sessionSelectionneeId = etat.sessionSelectionneeId
+    this.montant = etat.montant
+    this.referenceBancaire = etat.referenceBancaire || ''
+    this.modalite = etat.modalite || '1x'
+    this.infos = { ...this.infos, ...(etat.infos || {}) }
+    this.documentsAReposer = etat.documentsAReposer || {}
+    this.bordereauAReposer = etat.bordereauAReposer || null
+    this.resultat = etat.resultat ?? null
+  }
+
+  /** Persiste l'étape + champs (les File ne sont pas sérialisables). */
+  private sauvegarder(): void {
+    this.wizardStore.sauvegarderEtat({
+      etape: this._etape,
+      sessionSelectionneeId: this.sessionSelectionneeId,
+      montant: this.montant,
+      referenceBancaire: this.referenceBancaire,
+      modalite: this.modalite,
+      infos: { ...this.infos },
+      documents: { ...this.documents },
+      bordereau: this.bordereau,
+      resultat: this.resultat,
+    })
+  }
+
+  /** Dernier filet : fige l'état même si l'étudiant recharge en pleine saisie. */
+  @HostListener('window:beforeunload')
+  onBeforeUnload(): void {
+    this.sauvegarder()
   }
 
   // ---------------------------------------------------------------------------
@@ -180,12 +229,20 @@ export class ReinscriptionWizardPageComponent extends BaseComponentClass impleme
 
   surDocument(code: string, event: any): void {
     const file: File = event?.target?.files?.[0]
-    if (file) this.documents[code] = file
+    if (file) {
+      this.documents[code] = file
+      delete this.documentsAReposer[code]
+      this.sauvegarder()
+    }
   }
 
   surBordereau(event: any): void {
     const file: File = event?.target?.files?.[0]
-    if (file) this.bordereau = file
+    if (file) {
+      this.bordereau = file
+      this.bordereauAReposer = null
+      this.sauvegarder()
+    }
   }
 
   nomDocument(code: string): string {
@@ -230,6 +287,7 @@ export class ReinscriptionWizardPageComponent extends BaseComponentClass impleme
         if (d.contact) this.infos.contact = d.contact
         if (d.email) this.infos.email = d.email
         if (d.adresse) this.infos.adresse = d.adresse
+        this.sauvegarder()
       },
       error: () => {
         this.ocrEnCours = false
@@ -303,15 +361,18 @@ export class ReinscriptionWizardPageComponent extends BaseComponentClass impleme
   }
 
   recommencer(): void {
-    this.etape = 1
+    this._etape = 1
     this.resultat = null
     this.documents = {}
+    this.documentsAReposer = {}
     this.bordereau = null
+    this.bordereauAReposer = null
     this.montant = undefined
     this.referenceBancaire = ''
     this.modalite = '1x'
     this.errorMessage = ''
     this.successMessage = ''
+    this.wizardStore.effacer()
     this.loadEligibilite()
   }
 

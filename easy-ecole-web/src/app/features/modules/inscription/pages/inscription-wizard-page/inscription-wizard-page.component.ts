@@ -78,6 +78,11 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   documentsAReposer: { [cle: string]: FichierMeta } = {}
   bordereauAReposer: FichierMeta | null = null
 
+  // Pièces DÉJÀ déposées sur le serveur pour la demande ouverte
+  // (/inscription/demandes/:id) : dossierId → nom du fichier. Elles comptent
+  // comme fournies sans être re-téléversées à la soumission.
+  piecesServeur: Map<string, string> = new Map()
+
   // Infos personnelles (pré-remplies par OCR, corrigées puis validées)
   infos: {
     nom: string; prenoms: string; dateNaissance: string; lieuNaissance: string;
@@ -119,6 +124,15 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   }
 
   ngOnInit(): void {
+    // Demande EXISTANTE (/inscription/demandes/:id) : le serveur fait foi.
+    // Sans cela, un rechargement sur une demande créée affichait un wizard
+    // vierge à l'étape 1 alors que le dossier est déjà déposé côté serveur.
+    const demandeId = this.route.snapshot.paramMap.get('id')
+    if (demandeId) {
+      this.chargerDemandeExistante(demandeId)
+      return
+    }
+
     // Restauration de l'état dans deux cas :
     //  1) retour de la page profil (/parametres/profil, étape 3 redirigée) ;
     //  2) RECHARGEMENT du navigateur — l'état est relu depuis le sessionStorage,
@@ -205,6 +219,74 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     // rechargement suivant ne redemande pas des fichiers que l'étudiant vient
     // de re-sélectionner.
     this.sauvegarder()
+  }
+
+  /**
+   * Reprend une demande EXISTANTE depuis le serveur (route /inscription/demandes/:id).
+   * Positionne le wizard sur l'étape réelle du dossier au lieu d'un wizard vierge :
+   *  - demande déjà transmise (statutPipeline) → étape 5 (suivi) ;
+   *  - brouillon avec parcours choisi → étape 2 (documents), pré-rempli ;
+   *  - brouillon avec toutes les pièces déposées → étape 3 (informations).
+   * Les pièces déjà sur le serveur comptent comme fournies (pas de re-téléversement).
+   */
+  private chargerDemandeExistante(id: string): void {
+    this.loading = true
+    this.errorMessage = ''
+    this.demandeInscriptionService.get(id).subscribe({
+      next: (demande: any) => {
+        this.loading = false
+        if (!demande) {
+          this.errorMessage = 'Demande introuvable.'
+          return
+        }
+        if (demande.statutPipeline) {
+          // Dossier déjà transmis : suivi, pas de nouvelle saisie.
+          this.resultat = { statutPipeline: demande.statutPipeline }
+          this.successMessage = 'Votre demande a déjà été soumise et reste consultable dans votre historique.'
+          this.etape = 5
+          this.sauvegarder()
+          return
+        }
+        // Brouillon : pré-remplit depuis le serveur.
+        this.sessionSelectionneeId = demande.sessionId != null ? Number(demande.sessionId) : undefined
+        const choix = Array.isArray(demande.parcoursChoisis)
+          ? demande.parcoursChoisis.find((p: any) => p.choixFinal === true || p.choixFinal === 1) || demande.parcoursChoisis[0]
+          : null
+        if (choix?.parcours) {
+          this.filiereChoisie = {
+            id: String(choix.parcoursId ?? choix.parcours?.id ?? ''),
+            titre: choix.parcours?.titre || '',
+            type: choix.parcours?.type,
+          } as any
+          this.filiereSelectionId = String(choix.parcoursId ?? choix.parcours?.id ?? '')
+          this.typeChoisi = choix.parcours?.type || ''
+        }
+        const requis = Array.isArray(demande.session?.dossiersInscription)
+          ? demande.session.dossiersInscription
+          : []
+        this.documentsRequis = requis.map((d: any) => ({
+          id: String(d.id),
+          titre: d.titre || 'Document',
+          description: d.description,
+          obligatoire: d.obligatoire,
+        }))
+        this.piecesServeur = new Map(
+          (Array.isArray(demande.dossiersDemande) ? demande.dossiersDemande : [])
+            .filter((p: any) => p?.dossierId != null)
+            .map((p: any) => [String(p.dossierId), p.nomFichier || 'Déposé'])
+        )
+        const obligatoires = this.documentsRequis.filter((d) => d.obligatoire !== false)
+        const toutDepose = obligatoires.length > 0
+          && obligatoires.every((d) => this.piecesServeur.has(String(d.id)))
+        this.etape = toutDepose ? 3 : (choix ? 2 : 1)
+        this.loadSessions()
+        this.sauvegarder()
+      },
+      error: (err) => {
+        this.loading = false
+        this.errorMessage = err?.error?.message || 'Impossible de charger cette demande.'
+      }
+    })
   }
 
   /**
@@ -475,8 +557,15 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     return this.documents[cle]?.name || ''
   }
 
+  /** Nom à afficher : fichier local, sinon pièce déjà déposée sur le serveur. */
+  nomDocumentAffiche(cle: string): string {
+    return this.nomDocument(cle) || this.piecesServeur.get(String(cle)) || ''
+  }
+
   get documentsComplets(): boolean {
-    return this.documentsRequis.length > 0 && this.documentsRequis.every((d) => !!this.documents[d.id])
+    return this.documentsRequis.length > 0 && this.documentsRequis.every(
+      (d) => !!this.documents[d.id] || this.piecesServeur.has(String(d.id))
+    )
   }
 
   /** Vrai si la session exige un document de type bordereau. */

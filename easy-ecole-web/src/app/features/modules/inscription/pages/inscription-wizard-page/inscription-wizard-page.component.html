@@ -135,6 +135,9 @@
         <span *ngIf="!nomDocument(d.id) && documentsAReposer[d.id]" class="doc-filename">
           {{ documentsAReposer[d.id].nom }} — à re-sélectionner
         </span>
+        <span *ngIf="!nomDocument(d.id) && !documentsAReposer[d.id] && piecesServeur.get(d.id)" class="doc-filename">
+          {{ piecesServeur.get(d.id) }} — déjà déposé ✓
+        </span>
       </div>
 
       <!-- Bordereau de paiement inclus dans les documents requis de la session -->
@@ -254,7 +257,7 @@
                   {{ d.titre }}
                   <span *ngIf="estBordereau(d)" class="recap-badge">bordereau</span>
                 </span>
-                <span class="recap-doc-fichier">{{ nomDocument(d.id) }}</span>
+                <span class="recap-doc-fichier">{{ nomDocumentAffiche(d.id) }}</span>
               </li>
             </ul>
             <span *ngIf="!documentsRequis.length" class="muted">Aucune pièce requise pour cette session.</span>
