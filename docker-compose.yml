@@ -4,7 +4,7 @@
 # 4 services :
 #   - db       : MySQL 8.0 (base de données, volume persistant mysql_data)
 #   - backend  : API Express/Node (build local, volume uploads -> /app/public,
-#                volume storage -> /app/storage)
+#                bind mount PDFs -> /app/storage (hôte : /opt/mon-app/storage))
 #   - redis    : Redis 7 (cache réponse API, fail-safe, volume redis_data)
 #   - frontend : nginx servant le build Angular + proxy /api -> backend:3000
 #
@@ -20,6 +20,9 @@
 #     les variables du projet (Dokploy les injecte aussi dans les conteneurs).
 #   - Le service backend reçoit automatiquement toutes les variables du projet
 #     (remplace l'ancien `env_file: .env` — PAS de fichier .env dans le repo).
+#   - STORAGE_HOST_PATH (facultatif) : chemin hôte du bind mount des PDF,
+#     défaut /opt/mon-app/storage. En local (dev Windows), définir
+#     STORAGE_HOST_PATH=./.data/storage dans .env.
 #
 # LOCAL (dev) : lancer avec l'override local :
 #   docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
@@ -91,7 +94,9 @@ services:
     volumes:
       - mysql_backups:/backups/mysql
       - uploads:/data/uploads:ro
-      - storage:/data/storage:ro
+      # PDFs et documents persistants (bind mount du backend, même chemin
+      # hôte) montés EN LECTURE SEULE pour l'archivage hebdomadaire.
+      - ${STORAGE_HOST_PATH:-/opt/mon-app/storage}:/data/storage:ro
       - ./scripts/mysql-backup.sh:/usr/local/bin/mysql-backup.sh:ro
     entrypoint: ["/bin/sh", "/usr/local/bin/mysql-backup.sh"]
     depends_on:
@@ -162,8 +167,19 @@ services:
       # Fichiers uploadés (multer, GED, dossiers, docgen, photos…) :
       # /app/public dans le conteneur (chemin relatif à process.cwd()).
       - uploads:/app/public
-      # Cartes étudiantes générées + docgen : /app/storage
-      - storage:/app/storage
+      # Stockage persistant : /app/storage (PDF, cartes, docgen, qr-codes).
+      # BIND MOUNT — plus de volume nommé : les fichiers vivent sur l'hôte
+      # dans ${STORAGE_HOST_PATH} (défaut : /opt/mon-app/storage) et
+      # survivent à toute recréation de conteneur (redéploiement, rollback,
+      # changement d'image). PRÉPARER LE DOSSIER HÔTE AVANT le premier
+      # déploiement avec ce compose :
+      #   sudo mkdir -p /opt/mon-app/storage/pdfs
+      #   sudo chown -R 1000:1000 /opt/mon-app/storage
+      #   sudo chmod -R u+rwX,g+rwX /opt/mon-app/storage
+      # (1000:1000 = utilisateur `node` du conteneur ; vérifier : id node)
+      # Vérification automatique au démarrage : docker-entrypoint.sh refuse
+      # de démarrer si le dossier est absent ou non inscriptible.
+      - ${STORAGE_HOST_PATH:-/opt/mon-app/storage}:/app/storage
     # Port 3000 NON exposé par défaut : le frontend passe par le proxy nginx.
     # À décommenter pour du debug (tests curl directs) :
     # ports:
@@ -207,6 +223,10 @@ services:
     init: true
     security_opt:
       - no-new-privileges:true
+    # ⚠️ Le worker court-circuite docker-entrypoint.sh (pas de migrations ni
+    # de vérification de stockage ici) : c'est le backend qui crée et vérifie
+    # /app/storage/pdfs au démarrage, et le worker ne démarre qu'après le
+    # backend healthy (depends_on). Même bind mount que le backend.
     entrypoint: ["node", "lib/core/workers/index.js"]
     command: []
     environment:
@@ -228,7 +248,7 @@ services:
       - data
     volumes:
       - uploads:/app/public
-      - storage:/app/storage
+      - ${STORAGE_HOST_PATH:-/opt/mon-app/storage}:/app/storage
 
   # ---------------------------------------------------------------------------
   # 3) CACHE REDIS 7 (cache réponse middleware `cache()` — fail-safe)
@@ -302,12 +322,16 @@ volumes:
   mysql_data:
   # Fichiers uploadés du backend (/app/public)
   uploads:
-  # Cartes étudiantes et documents générés (/app/storage)
-  storage:
   # Persistance du cache Redis (fichiers AOF dans /data)
   redis_data:
   # Dumps compressés MySQL ; monter ce volume vers un stockage externe en prod.
   mysql_backups:
+  # ⚠️ L'ancien volume nommé `storage` n'est PLUS déclaré : /app/storage est
+  # désormais un bind mount sur ${STORAGE_HOST_PATH} (défaut
+  # /opt/mon-app/storage). L'ancien volume (easyecole_storage) reste sur le
+  # disque après cette mise à jour : il contient les PDF créés avant la
+  # bascule et doit être MIGRÉ vers le bind mount (voir compte-rendu), puis
+  # supprimé une fois la migration vérifiée (`docker volume rm easyecole_storage`).
 
 networks:
   app:

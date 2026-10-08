@@ -27,7 +27,6 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   successMessage: string = ''
   apiErrorMessage: string = ''
 
-  showValidationModal: boolean = false
   showRejetModal: boolean = false
   showPdfModal: boolean = false
   pdfBordereau?: Bordereau
@@ -48,8 +47,6 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   bordereauxEnAttente: Bordereau[] = []
   selectedBordereau?: Bordereau
   commentaireRejet: string = ''
-  /** Distingue l'ouverture de la modal de rejet depuis une ligne (simple) ou d'une sélection groupée (batch). */
-  private rejetMode: 'simple' | 'batch' = 'simple'
 
   activeFilter: 'tous' | 'inscription' | 'scolarite' = 'tous'
 
@@ -85,15 +82,21 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
     { key: 'referenceBancaire', label: 'Référence' },
     { key: 'dateSoumission', label: 'Date' }
   ];
+  /**
+   * Actions groupées : seul le rejet massif de pièces manifestement invalides est
+   * conservé. La validation reste un acte individuel et traçable de l'Audit.
+   */
   batchActions: BatchAction[] = [
-    { label: 'Voir le bordereau', color: 'blue', action: 'voirBordereau', icon: 'visibility' },
     { label: 'Rejeter', color: 'red', action: 'rejeter', icon: 'cancel' }
   ];
 
+  /**
+   * Nouveau workflow : l'Audit AUTHENTIFIE le bordereau (une seule action par ligne).
+   * La modal affiche le bordereau à gauche et le formulaire de saisie à droite,
+   * avec Rejeter / Valider en bas.
+   */
   itemActions: BatchAction[] = [
-    { label: 'Voir le bordereau', color: 'blue', action: 'voirBordereau', icon: 'visibility' },
-    { label: 'Valider', color: 'green', action: 'valider', icon: 'check_circle' },
-    { label: 'Rejeter', color: 'red', action: 'rejeter', icon: 'cancel' }
+    { label: 'Authentifier', color: 'green', action: 'authentifier', icon: 'verified_user' }
   ];
 
   /**
@@ -299,7 +302,7 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
       this.bordereauService.valider(bordereauId!, payload).subscribe({
         next: () => {
           this.getBordereauxEnAttente()
-          this.closeValidationModal()
+          this.closePdfModal()
 
           this.successResult = { type: type || 'scolarite' }
           this.showSuccessModal = true
@@ -315,53 +318,69 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
     }
   }
 
+  /** Rejet groupé des bordereaux cochés dans l'arborescence (pièces manifestement invalides). */
   rejeterBordereau(): void {
     if (!this.commentaireRejet.trim()) return
+    if (this.selectedIds.length === 0) return
+
+    this.error = false
+    this.apiErrorMessage = ''
+    this.batchLoading = true
+
+    this.bordereauService.batchRejeter(this.selectedIds, this.commentaireRejet).subscribe({
+      next: () => {
+        this.batchLoading = false
+        this.selectedIds = []
+        this.successMessage = 'Bordereaux rejetés. Les étudiants concernés seront notifiés par e-mail.'
+        this.getBordereauxEnAttente()
+        this.closeRejetModal()
+        setTimeout(() => { this.successMessage = '' }, 4000)
+      },
+      error: (err) => {
+        this.batchLoading = false
+        console.error('Erreur rejet groupé bordereaux:', err)
+        this.apiErrorMessage = err?.error?.message || err?.error?.error?.message || 'Une erreur est survenue lors du rejet groupé.'
+        this.error = true
+        setTimeout(() => { this.error = false; this.apiErrorMessage = '' }, 5000)
+      }
+    })
+  }
+
+  /**
+   * Rejet depuis la modal d'authentification (bouton « Rejeter » en bas de l'écran scindé).
+   * Le motif est obligatoire : notifié à l'étudiant par e-mail et conservé sur la demande
+   * (statutPipeline='rejete' + motifPipeline) pour la reprise du dossier dans le wizard.
+   */
+  rejeterDepuisModal(): void {
+    if (!this.selectedBordereau) return
+
+    const motif = (this.validationForm.get('commentaire')?.value || '').trim()
     this.error = false
     this.apiErrorMessage = ''
 
-    // ── Rejet groupé : bordereaux cochés dans l'arborescence ──
-    if (this.rejetMode === 'batch') {
-      if (this.selectedIds.length === 0) return
-      this.batchLoading = true
-      this.bordereauService.batchRejeter(this.selectedIds, this.commentaireRejet).subscribe({
-        next: () => {
-          this.batchLoading = false
-          this.selectedIds = []
-          this.successMessage = 'Bordereaux rejetés'
-          this.getBordereauxEnAttente()
-          this.closeRejetModal()
-          setTimeout(() => { this.successMessage = '' }, 3000)
-        },
-        error: (err) => {
-          this.batchLoading = false
-          console.error('Erreur rejet groupé bordereaux:', err)
-          this.apiErrorMessage = err?.error?.message || err?.error?.error?.message || 'Une erreur est survenue lors du rejet groupé.'
-          this.error = true
-          setTimeout(() => { this.error = false; this.apiErrorMessage = '' }, 5000)
-        }
-      })
+    if (!motif) {
+      this.validationForm.get('commentaire')?.markAsTouched()
+      this.error = true
+      this.apiErrorMessage = "Le motif du rejet est obligatoire : il sera notifié à l'étudiant."
+      setTimeout(() => { this.error = false; this.apiErrorMessage = '' }, 5000)
       return
     }
 
-    // ── Rejet unitaire : bouton d'une ligne ──
-    if (this.selectedBordereau) {
-      this.bordereauService.rejeter(this.selectedBordereau.id!, this.commentaireRejet).subscribe({
-        next: () => {
-          this.successMessage = 'Bordereau rejeté'
-          this.getBordereauxEnAttente()
-          this.closeRejetModal()
-
-          setTimeout(() => { this.successMessage = '' }, 3000)
-        },
-        error: (err) => {
-          console.error('Erreur rejet bordereau:', err)
-          this.apiErrorMessage = err?.error?.message || err?.error?.error?.message || 'Une erreur est survenue lors du rejet du bordereau.'
-          this.error = true
-          setTimeout(() => { this.error = false; this.apiErrorMessage = ''; }, 5000)
-        }
-      })
-    }
+    const bordereauId = this.selectedBordereau.id
+    this.bordereauService.rejeter(bordereauId!, motif).subscribe({
+      next: () => {
+        this.successMessage = 'Bordereau rejeté. L\'étudiant sera notifié par e-mail et devra re-téléverser une pièce valide.'
+        this.getBordereauxEnAttente()
+        this.closePdfModal()
+        setTimeout(() => { this.successMessage = '' }, 5000)
+      },
+      error: (err) => {
+        console.error('Erreur rejet bordereau:', err)
+        this.apiErrorMessage = err?.error?.message || err?.error?.error?.message || 'Une erreur est survenue lors du rejet du bordereau.'
+        this.error = true
+        setTimeout(() => { this.error = false; this.apiErrorMessage = '' }, 5000)
+      }
+    })
   }
 
   effriterFiltres(): void {
@@ -432,26 +451,15 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   }
 
   onBatchAction(event: { action: string; ids: number[] }): void {
-    if (event.action === 'voirBordereau') {
-      return;
-    } else if (event.action === 'rejeter') {
-      this.rejetMode = 'batch';
+    if (event.action === 'rejeter') {
       this.commentaireRejet = '';
       this.showRejetModal = true;
     }
   }
 
   onItemAction(event: { item: any; action: string }): void {
-    if (event.action === 'valider') {
-      this.selectedBordereau = event.item;
-      this.showValidationModal = true;
-    } else if (event.action === 'rejeter') {
-      this.rejetMode = 'simple';
-      this.selectedBordereau = event.item;
-      this.commentaireRejet = '';
-      this.showRejetModal = true;
-    } else if (event.action === 'voirBordereau') {
-      this.openPdfModal(event.item);
+    if (event.action === 'authentifier') {
+      this.openAuthentificationModal(event.item);
     }
   }
 
@@ -461,31 +469,23 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   }
 
   // Modals
-  openValidationModal(bordereau: Bordereau): void {
+  /**
+   * Ouverture de l'écran d'authentification : bordereau à gauche (aperçu PDF),
+   * formulaire de saisie à droite, Rejeter / Valider en bas.
+   * Le formulaire est pré-rempli avec les valeurs déjà saisies sur le bordereau,
+   * ce qui limite la ressaisie de l'Audit.
+   */
+  openAuthentificationModal(bordereau: Bordereau): void {
     this.selectedBordereau = bordereau
     this.error = false
     this.apiErrorMessage = ''
-    // Pré-remplir le formulaire avec les valeurs existantes du bordereau (si déjà saisies)
     this.validationForm.reset({
       referenceBancaire: bordereau.referenceBancaire || '',
       numeroBordereau: bordereau.numeroBordereau || '',
       datePaiement: bordereau.datePaiement ? new Date(bordereau.datePaiement).toISOString().split('T')[0] : '',
       commentaire: bordereau.commentaire || ''
     })
-    this.showValidationModal = true
-  }
-
-  closeValidationModal(): void {
-    this.showValidationModal = false
-    this.selectedBordereau = undefined
-    this.validationForm.reset()
-  }
-
-  openRejetModal(bordereau: Bordereau): void {
-    this.rejetMode = 'simple';
-    this.selectedBordereau = bordereau
-    this.commentaireRejet = ''
-    this.showRejetModal = true
+    this.openPdfModal(bordereau)
   }
 
   closeRejetModal(): void {
@@ -540,6 +540,8 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   closePdfModal(): void {
     this.showPdfModal = false
     this.pdfBordereau = undefined
+    this.selectedBordereau = undefined
+    this.validationForm.reset()
     this.clearPdfPreview()
   }
 

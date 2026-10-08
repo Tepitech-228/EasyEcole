@@ -143,11 +143,17 @@ COPY easy-ecole-backend/scripts/apply-migrations.cjs ./scripts/apply-migrations.
 RUN chmod +x docker-entrypoint.sh
 
 # ---------------------------------------------------------------------------
-# Répertoires d'écriture (montés en volumes nommés dans docker-compose.yml :
-#   uploads -> /app/public   (photos, GED, dossiers, docgen, multer…)
-#   storage -> /app/storage  (cartes étudiantes générées, docgen)
-# Ils sont créés DANS l'image pour que Docker initialise le volume nommé avec
-# l'arborescence attendue (multer ne crée pas les dossiers lui-même).
+# Répertoires d'écriture (montés dans docker-compose.yml :
+#   uploads  -> /app/public   volume nommé  (photos, GED, dossiers, docgen…)
+#   storage  -> /app/storage  BIND MOUNT depuis ${STORAGE_HOST_PATH} sur
+#               l'hôte (défaut /opt/mon-app/storage) : PDF persistants,
+#               cartes étudiantes, docgen, qr-codes — survit aux
+#               redéploiements Dokploy.
+# Ils sont créés DANS l'image pour que Docker initialise correctement le
+# montage et pour documenter exhaustivement les chemins d'écriture (multer ne
+# crée pas les dossiers lui-même). En production, le bind mount recouvre
+# /app/storage : le mkdir ci-dessous sert alors de référence pour le
+# fonctionnement local sans bind mount.
 #
 # ⚠️ NE PAS faire `chown -R node:node /app` ici.
 # Un chown récursif sur /app traverse les ~340 Mo de node_modules ET chaque
@@ -160,6 +166,7 @@ RUN chmod +x docker-entrypoint.sh
 # Liste EXHAUSTIVE des chemins écrits au runtime par l'application, relevés dans
 # les sources (tous en `process.cwd()` = /app) :
 #   - public/...        uploads, GED, docgen, cachets, photos, dossiers, reçus
+#   - storage/pdfs      PDF enregistrés (PdfStorageService) — bind mount prod
 #   - storage/...       cartes étudiantes, docgen, qr-codes
 #   - .keys/            clé maîtresse AES (EncryptionService) — absent sinon
 #   - config/           config de stockage modifiable (StorageConfigController)
@@ -181,6 +188,7 @@ RUN mkdir -p \
     /app/public/elearning/videos \
     /app/public/inscription/bordereaux \
     /app/public/inscription/dossiers \
+    /app/storage/pdfs \
     /app/storage/cartes \
     /app/storage/docgen \
     /app/storage/qr-codes \

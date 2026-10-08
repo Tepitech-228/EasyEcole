@@ -376,6 +376,12 @@ export default class ComiteValidationController {
         if (idsPiecesFournis && dossierIdsAReposer.length === 0) {
             return res.status(400).json({ success: false, message: "Sélectionnez au moins une pièce à corriger" })
         }
+        // Une correction comme un rejet exigent que le comité désigne les
+        // « pièces fautives » à re-téléverser (le wizard s'en sert pour ouvrir
+        // le mode correction comité — jamais le bordereau seul).
+        if (decision !== 'valide' && !idsPiecesFournis) {
+            return res.status(400).json({ success: false, message: "Sélectionnez au moins une pièce à corriger" })
+        }
 
         const currentUserId = req.utilisateurId as number
 
@@ -410,22 +416,41 @@ export default class ComiteValidationController {
                 return res.status(400).json({ success: false, message: "Aucun membre du comité configuré" })
             }
 
-            if (decision === 'correction_demandee' && idsPiecesFournis) {
+            // ── Pièces à re-téléverser par l'étudiant (flag correctionDemandee) ──
+            // rejete ET correction_demandee : uniquement les pièces cochées par
+            // le comité (les « pièces fautives »). Le bordereau est écarté d'un
+            // rejet : son authentification relève de l'Audit/Cabinet ; si le
+            // comité le cochait seul, la sélection devient vide → refus.
+            let piecesAReposer: number[] = []
+            if (decision !== 'valide') {
                 const piecesExistantes = await DemandeInscriptionDossier.findAll({
                     where: { demandeId: demande.id, dossierId: { [Op.in]: dossierIdsAReposer } },
+                    include: [{ association: DemandeInscriptionDossier.associations.dossierInscription }],
                     transaction,
                 })
                 if (piecesExistantes.length !== dossierIdsAReposer.length) {
                     await transaction.rollback()
                     return res.status(400).json({ success: false, message: "Une pièce sélectionnée n'appartient pas à cette demande" })
                 }
+                piecesAReposer = piecesExistantes
+                    .filter((p: any) =>
+                        decision !== 'rejete'
+                        || !(p.dossierInscription && /bordereau/i.test(p.dossierInscription.titre || '')))
+                    .map((p: any) => p.dossierId)
+                if (piecesAReposer.length === 0) {
+                    await transaction.rollback()
+                    return res.status(400).json({ success: false, message: "Sélectionnez au moins une pièce à corriger" })
+                }
+            }
+
+            if (decision !== 'valide' && piecesAReposer.length > 0) {
                 await DemandeInscriptionDossier.update(
                     { correctionDemandee: false },
                     { where: { demandeId: demande.id }, transaction }
                 )
                 await DemandeInscriptionDossier.update(
                     { correctionDemandee: true },
-                    { where: { demandeId: demande.id, dossierId: { [Op.in]: dossierIdsAReposer } }, transaction }
+                    { where: { demandeId: demande.id, dossierId: { [Op.in]: piecesAReposer } }, transaction }
                 )
             }
 
@@ -454,6 +479,7 @@ export default class ComiteValidationController {
             if (decision === 'rejete') {
                 demande.statutPipeline = 'rejete'
                 demande.motifPipeline = motif
+                demande.soumissionComite = false
                 await demande.save({ transaction })
                 await transaction.commit()
 
@@ -483,6 +509,7 @@ export default class ComiteValidationController {
             if (decision === 'correction_demandee') {
                 demande.statutPipeline = 'correction_demandee'
                 demande.motifPipeline = motif
+                demande.soumissionComite = false
                 await demande.save({ transaction })
                 await transaction.commit()
 

@@ -206,7 +206,7 @@ describe('AuthController.registerEnseignant', () => {
     const res = mockResponse()
     ;(Utilisateur.findOne as jest.Mock).mockResolvedValue(null)
     ;(Enseignant.count as jest.Mock).mockResolvedValue(0)
-    ;(Enseignant.create as jest.Mock).mockResolvedValue({ id: 1, update: jest.fn().mockResolvedValue(undefined) })
+    ;(Enseignant.create as jest.Mock).mockResolvedValue({ id: 1, utilisateurId: 1, matricule: 'ESA-GEN-SIE-0001', update: jest.fn().mockResolvedValue(undefined) })
     ;(bcrypt.hashSync as jest.Mock).mockReturnValue('hashed-temp-pass')
     mockUtilSave.mockResolvedValue({ id: 1 })
 
@@ -215,7 +215,7 @@ describe('AuthController.registerEnseignant', () => {
     expect(mockUtilSave).toHaveBeenCalled()
     expect(Enseignant.create).toHaveBeenCalledWith(expect.objectContaining({ utilisateurId: 1, matricule: 'ESA-GEN-SIE-0001' }))
     expect(res.status).toHaveBeenCalledWith(201)
-    expect(res.send).toHaveBeenCalledWith({ success: true })
+    expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ success: true, matricule: 'ESA-GEN-SIE-0001' }))
   })
 })
 

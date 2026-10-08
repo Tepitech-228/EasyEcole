@@ -339,6 +339,35 @@ export class EmailSender {
         })
     }
 
+    /**
+     * Notification de rejet d'un bordereau de paiement (flux inscription/scolarité).
+     * L'étudiant est invité à re-téléverser une pièce valide puis à soumettre à nouveau
+     * son dossier — les étapes déjà validées (filière, documents, informations) sont conservées.
+     */
+    public sendBordereauRejete(username: string, email: string, motif: string): Promise<void> {
+        if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
+        const mailOptions: SendMailOptions = {
+            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
+            to: email,
+            encoding: 'UTF-8',
+            subject: `${EMAIL_SENDER_NAME}: Votre bordereau de paiement a été refusé`,
+            html: `<p>Bonjour <b>${username},</b></p>
+            <p>Le bordereau de paiement que vous avez téléversé a été <b>refusé</b> lors de son authentification.</p>
+            <p>Motif : <b>${motif}</b></p>
+            <p>Veuillez vous connecter à la plateforme, téléverser un nouveau bordereau valide puis
+            soumettre à nouveau votre dossier. Les autres étapes de votre demande sont conservées :
+            vous n'avez pas à les refaire.</p>
+            <p>Cordialement, <br> ${EMAIL_SENDER_NAME}</p>`
+        }
+
+        return new Promise((resolve, reject) => {
+            this.transporter!.sendMail(mailOptions, function (err, data) {
+                if (err) reject(err)
+                else resolve()
+            })
+        })
+    }
+
     public sendParentWelcome(email: string, identifiant: string, motDePasse: string, nomParent: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {

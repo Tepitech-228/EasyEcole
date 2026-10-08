@@ -5,6 +5,7 @@ jest.mock('../../../modules/inscription/models/DossierInscription', () => {
   const Mock: any = jest.fn()
   Mock.findAll = jest.fn()
   Mock.findOne = jest.fn()
+  Mock.findByPk = jest.fn()
   Mock.create = jest.fn()
   Mock.count = jest.fn()
   return { DossierInscription: Mock }
@@ -41,6 +42,7 @@ jest.mock('../../../modules/inscription/models/ComiteVote', () => ({
 const { DossierInscription } = require('../../../modules/inscription/models/DossierInscription')
 const { DemandeInscription } = require('../../../modules/inscription/models/DemandeInscription')
 const { DemandeInscriptionDossier } = require('../../../modules/inscription/models/DemandeInscriptionDossier')
+const { ComiteVote } = require('../../../modules/inscription/models/ComiteVote')
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -352,5 +354,97 @@ describe('DossierInscriptionController.getCount', () => {
     await DossierInscriptionController.getCount(req, res)
 
     expect(res.status).toHaveBeenCalledWith(500)
+  })
+})
+
+describe('DossierInscriptionController.uploadDossierInscription — reprise après rejet', () => {
+  function reqUpload(dossierId: string, fichiers = [{ filename: 'document.pdf' }]) {
+    return mockRequest({
+      utilisateurId: 7,
+      utilisateurRole: 'apprenant',
+      body: { demandeId: '1', dossierId },
+      files: fichiers,
+    } as any)
+  }
+
+  it('rejet comité : refuse une pièce ni signalée ni bordereau (403)', async () => {
+    const res = mockResponse()
+    const demande = {
+      utilisateurId: 7,
+      statutPipeline: 'rejete',
+      update: jest.fn().mockResolvedValue(undefined),
+    }
+    ;(DemandeInscription.findByPk as jest.Mock).mockResolvedValue(demande)
+    ;(DemandeInscriptionDossier.count as jest.Mock).mockResolvedValue(2) // correction comité en cours
+    ;(DemandeInscriptionDossier.findOne as jest.Mock).mockResolvedValue({ correctionDemandee: false, dossierId: 2 })
+    ;(DossierInscription.findByPk as jest.Mock).mockResolvedValue({ id: 2, titre: 'Relevé de notes' })
+
+    await DossierInscriptionController.uploadDossierInscription(reqUpload('2'), res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(DemandeInscriptionDossier.create).not.toHaveBeenCalled()
+    expect(demande.update).not.toHaveBeenCalled()
+  })
+
+  it('rejet Audit : le bordereau reste re-téléversable (201) sans retransmission comité', async () => {
+    const res = mockResponse()
+    const demande = {
+      utilisateurId: 7,
+      statutPipeline: 'rejete',
+      update: jest.fn().mockResolvedValue(undefined),
+    }
+    ;(DemandeInscription.findByPk as jest.Mock)
+      .mockResolvedValueOnce(demande)
+      .mockResolvedValueOnce(demande)
+    ;(DemandeInscriptionDossier.count as jest.Mock)
+      .mockResolvedValueOnce(0) // correctionComiteEnCours
+    ;(DemandeInscriptionDossier.findOne as jest.Mock).mockResolvedValue({ correctionDemandee: false, dossierId: 2 })
+    ;(DossierInscription.findByPk as jest.Mock).mockResolvedValue({ id: 2, titre: 'Bordereau de paiement' })
+    ;(DemandeInscriptionDossier.findAll as jest.Mock).mockResolvedValue([])
+    ;(DemandeInscriptionDossier.create as jest.Mock).mockResolvedValue({})
+
+    await DossierInscriptionController.uploadDossierInscription(reqUpload('2'), res)
+
+    expect(res.status).toHaveBeenCalledWith(201)
+    expect(DemandeInscriptionDossier.create).toHaveBeenCalledWith({
+      nomFichier: 'document.pdf',
+      dossierId: '2',
+      demandeId: '1',
+      correctionDemandee: false,
+    })
+    // Aucune finalisation : le bordereau est traité par BordereauController
+    expect(demande.update).not.toHaveBeenCalled()
+    expect(ComiteVote.destroy).not.toHaveBeenCalled()
+  })
+
+  it('rejet comité : quand la dernière pièce signalée est re-téléversée, le dossier repart au comité', async () => {
+    const res = mockResponse()
+    const demande = {
+      utilisateurId: 7,
+      statutPipeline: 'rejete',
+      update: jest.fn().mockResolvedValue(undefined),
+    }
+    ;(DemandeInscription.findByPk as jest.Mock)
+      .mockResolvedValueOnce(demande)
+      .mockResolvedValueOnce(demande)
+    ;(DemandeInscriptionDossier.count as jest.Mock)
+      .mockResolvedValueOnce(1) // correctionComiteEnCours
+      .mockResolvedValueOnce(0) // piecesRestantes après l'envoi
+    ;(DemandeInscriptionDossier.findOne as jest.Mock).mockResolvedValue({
+      correctionDemandee: true,
+      dossierId: 2,
+    })
+    ;(DemandeInscriptionDossier.findAll as jest.Mock).mockResolvedValue([])
+    ;(DemandeInscriptionDossier.create as jest.Mock).mockResolvedValue({})
+
+    await DossierInscriptionController.uploadDossierInscription(reqUpload('2'), res)
+
+    expect(res.status).toHaveBeenCalledWith(201)
+    expect(demande.update).toHaveBeenCalledWith({
+      statutPipeline: 'transmis_comite',
+      motifPipeline: null,
+      soumissionComite: true,
+    })
+    expect(ComiteVote.destroy).toHaveBeenCalledWith({ where: { demandeInscriptionId: '1' } })
   })
 })

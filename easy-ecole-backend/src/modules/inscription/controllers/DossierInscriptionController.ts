@@ -121,12 +121,38 @@ export default class DossierInscriptionController {
                 return res.status(403).json({ success: false, message: "Cette demande ne vous appartient pas" });
             }
 
-            const correctionEnCours = demandeExiste.statutPipeline === 'correction_demandee';
+            const statutPipeline = demandeExiste.statutPipeline as string
+            const correctionEnCours = ['correction_demandee', 'rejete'].includes(statutPipeline);
+
+            // Dossier en correction comité : la réintégration au comité
+            // ('transmis_comite') n'a lieu que si des pièces sont réellement
+            // signalées — jamais pour un rejet Audit (qui ne passe QUE par le
+            // bordereau via BordereauController, sans finalisation ici).
+            const correctionComiteEnCours = correctionEnCours && (await DemandeInscriptionDossier.count({
+                where: { demandeId, correctionDemandee: true }
+            })) > 0;
+
             if (correctionEnCours) {
                 const pieceAReposer = await DemandeInscriptionDossier.findOne({ where: { demandeId, dossierId } });
-                if (!pieceAReposer?.correctionDemandee) {
-                    nettoyerFichiersUpload();
-                    return res.status(403).json({ success: false, message: "Cette pièce n'a pas été demandée en correction" });
+                if (statutPipeline === 'correction_demandee') {
+                    // Correction comité (souple) : uniquement les pièces signalées.
+                    if (!pieceAReposer?.correctionDemandee) {
+                        nettoyerFichiersUpload();
+                        return res.status(403).json({ success: false, message: "Cette pièce n'a pas été demandée en correction" });
+                    }
+                } else {
+                    // statut 'rejete' :
+                    //  - rejet comité     → seules les pièces signalées (correctionDemandee) ;
+                    //  - rejet Audit      → seul le bordereau (pièce rattachée à la demade,
+                    //    identifiée par son intitulé) est re-téléversable via ce contrôleur.
+                    const requis = pieceAReposer
+                        ? await DossierInscription.findByPk(pieceAReposer.dossierId)
+                        : null;
+                    const estBordereauDoc = !!requis && /bordereau/i.test(requis.titre || '');
+                    if (!pieceAReposer?.correctionDemandee && !estBordereauDoc) {
+                        nettoyerFichiersUpload();
+                        return res.status(403).json({ success: false, message: "Cette pièce n'a pas été demandée en correction" });
+                    }
                 }
             }
 
@@ -161,13 +187,19 @@ export default class DossierInscriptionController {
                 });
             }
 
-            if (correctionEnCours) {
+            if (correctionComiteEnCours) {
                 const piecesRestantes = await DemandeInscriptionDossier.count({
                     where: { demandeId, correctionDemandee: true }
                 });
                 if (piecesRestantes === 0) {
+                    // Toutes les pièces signalées ont été re-téléversées : le dossier
+                    // repart au comité (les votes précédents sont remis à zéro).
                     await ComiteVote.destroy({ where: { demandeInscriptionId: demandeId } });
-                    await demandeExiste.update({ statutPipeline: 'transmis_comite', motifPipeline: null });
+                    await demandeExiste.update({
+                        statutPipeline: 'transmis_comite',
+                        motifPipeline: null,
+                        soumissionComite: true,
+                    });
                 }
             }
 

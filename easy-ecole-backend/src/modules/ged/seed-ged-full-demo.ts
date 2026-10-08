@@ -212,6 +212,22 @@ async function generateGedDocuments(sequelize: any, classes: any[]) {
   
   const pdfRoot = path.resolve(process.cwd(), 'public/ged', 'seed_full')
   ensureDir(pdfRoot)
+
+  // Auteur de repli résolu en base (aligné migration 034) — plus aucun uploaderId codé en dur.
+  let uploaderIdDemo = 0
+  try {
+    const [comptes] = await sequelize.query(
+      `SELECT id FROM aut_utilisateurs
+       WHERE deletedAt IS NULL
+       ORDER BY (identifiant = 'system-ged') DESC, (role = 'admin') DESC, id ASC
+       LIMIT 1`
+    )
+    uploaderIdDemo = Number((comptes as any[])[0]?.id ?? 0)
+  } catch { uploaderIdDemo = 0 }
+  if (!uploaderIdDemo) {
+    console.warn('GED: aucun compte actif (system-ged ou admin) trouvé — documents de démo ignorés.')
+    return
+  }
   
   const domains = await Domain.findAll()
   const dByCode = Object.fromEntries(domains.map(d => [d.code, d.id]))
@@ -275,7 +291,7 @@ async function generateGedDocuments(sequelize: any, classes: any[]) {
         statut: 'Disponible',
         fichier: `seed_full/${filename}`,
         taille: `${(pdfBuf.length / 1024).toFixed(1)} Ko`,
-        uploaderId: 1,
+        uploaderId: uploaderIdDemo,
         folderId: pick(folderIds) ?? undefined,
         nbPages: 1 + Math.floor(Math.random() * 4),
         auteur: 'Service Scolarité',
@@ -313,7 +329,7 @@ async function generateGedDocuments(sequelize: any, classes: any[]) {
         statut: 'Disponible',
         fichier: `seed_full/${filename}`,
         taille: `${(pdfBuf.length / 1024).toFixed(1)} Ko`,
-        uploaderId: 1,
+        uploaderId: uploaderIdDemo,
         folderId: pick(folderIds) ?? undefined,
         nbPages: 1,
         auteur: 'Service Financier',
@@ -347,7 +363,7 @@ async function generateGedDocuments(sequelize: any, classes: any[]) {
         statut: 'Disponible',
         fichier: `seed_full/${filename}`,
         taille: `${(pdfBuf.length / 1024).toFixed(1)} Ko`,
-        uploaderId: 1,
+        uploaderId: uploaderIdDemo,
         folderId: pick(folderIds) ?? undefined,
         nbPages: 2,
         auteur: "Bureau d'admission",
@@ -386,7 +402,7 @@ async function generateGedDocuments(sequelize: any, classes: any[]) {
         statut: 'Disponible',
         fichier: `seed_full/${filename}`,
         taille: `${(pdfBuf.length / 1024).toFixed(1)} Ko`,
-        uploaderId: 1,
+        uploaderId: uploaderIdDemo,
         folderId: pick(folderIds) ?? undefined,
         nbPages: 3 + Math.floor(Math.random() * 5),
         auteur: 'Conseil de classe',
@@ -426,7 +442,7 @@ async function generateGedDocuments(sequelize: any, classes: any[]) {
         statut: 'Disponible',
         fichier: `seed_full/${filename}`,
         taille: `${(pdfBuf.length / 1024).toFixed(1)} Ko`,
-        uploaderId: 1,
+        uploaderId: uploaderIdDemo,
         nbPages: 5 + Math.floor(Math.random() * 15),
         auteur: 'Chercheur',
         dateDocument: new Date(2026, 2, 1),
@@ -461,7 +477,7 @@ async function generateGedDocuments(sequelize: any, classes: any[]) {
         statut: 'Disponible',
         fichier: `seed_full/${filename}`,
         taille: `${(pdfBuf.length / 1024).toFixed(1)} Ko`,
-        uploaderId: 1,
+        uploaderId: uploaderIdDemo,
         nbPages: 1 + Math.floor(Math.random() * 3),
         auteur: 'Service RH',
         dateDocument: new Date(2026, 6, 1),
@@ -497,7 +513,7 @@ async function generateGedDocuments(sequelize: any, classes: any[]) {
         statut: 'Disponible',
         fichier: `seed_full/${filename}`,
         taille: `${(pdfBuf.length / 1024).toFixed(1)} Ko`,
-        uploaderId: 1,
+        uploaderId: uploaderIdDemo,
         nbPages: 2,
         auteur: 'Service logistique',
         dateDocument: new Date(2026, 5, 1),

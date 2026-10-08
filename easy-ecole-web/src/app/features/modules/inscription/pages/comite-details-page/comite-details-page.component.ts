@@ -20,11 +20,6 @@ export class ComiteDetailsPageComponent extends BaseComponentClass implements On
   error: boolean = false
   apiErrorMessage: string = ''
 
-  decisionEnCours: 'valide' | 'correction_demandee' | 'rejete' | null = null
-  motifDecision: string = ''
-  processingDecision: boolean = false
-  successMessage: string = ''
-
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -88,15 +83,6 @@ export class ComiteDetailsPageComponent extends BaseComponentClass implements On
     }
   }
 
-  aDejaVote(): boolean {
-    return this.getQuorum(this.dossier).aVote
-  }
-
-  peutVoter(): boolean {
-    const q = this.getQuorum(this.dossier)
-    return !q.estUnanime && !q.estRejete
-  }
-
   messageEtatQuorum(): string {
     const q = this.getQuorum(this.dossier)
     if (q.estRejete) return 'Dossier rejeté (veto)'
@@ -111,78 +97,6 @@ export class ComiteDetailsPageComponent extends BaseComponentClass implements On
     if (q.estUnanime) return 'bg-green-500'
     if (q.estRejete) return 'bg-red-500'
     return pct >= 50 ? 'bg-orange-500' : 'bg-gray-400'
-  }
-
-  getValiderTooltip(): string {
-    const q = this.getQuorum(this.dossier)
-    if (q.estRejete) return 'Dossier déjà rejeté'
-    if (this.aDejaVote()) return 'Vous avez déjà voté'
-    if (!q.estUnanime) {
-      return `Votre vote "valide" sera enregistré. Finalisation à l'unanimité — encore ${q.restants} vote(s) manquant(s)`
-    }
-    return ''
-  }
-
-  getRejeterTooltip(): string {
-    const q = this.getQuorum(this.dossier)
-    if (q.estRejete) return 'Dossier déjà rejeté'
-    if (this.aDejaVote()) return 'Vous avez déjà voté'
-    return ''
-  }
-
-  getCorrectionTooltip(): string {
-    const q = this.getQuorum(this.dossier)
-    if (q.estRejete) return 'Dossier déjà rejeté'
-    if (this.aDejaVote()) return 'Vous avez déjà voté'
-    return ''
-  }
-
-  // ── Gestion de la décision collégiale ──
-
-  preparerDecision(decision: 'valide' | 'correction_demandee' | 'rejete'): void {
-    this.decisionEnCours = decision
-    this.motifDecision = ''
-    this.successMessage = ''
-    this.error = false
-  }
-
-  annulerDecision(): void {
-    this.decisionEnCours = null
-    this.motifDecision = ''
-    this.successMessage = ''
-    this.error = false
-  }
-
-  confirmerDecision(): void {
-    if (!this.dossier?.id || !this.decisionEnCours) return
-    if (this.decisionEnCours !== 'valide' && !this.motifDecision.trim()) return
-
-    this.processingDecision = true
-    this.comiteService.decider(this.dossier.id, this.decisionEnCours, this.motifDecision || undefined).subscribe({
-      next: (res) => {
-        this.processingDecision = false
-        this.successMessage = this.decisionEnCours === 'valide'
-          ? 'Inscription validée par le comité. L\'étudiant a été notifié par email.'
-          : `Décision « ${this.libelleDecision(this.decisionEnCours)} » enregistrée et notifiée à l'étudiant.`
-        this.fermerDetail()
-        this.loadDossier(this.dossier!.id!.toString())
-        setTimeout(() => this.successMessage = '', 8000)
-      },
-      error: (err) => {
-        console.error(err)
-        this.apiErrorMessage = err?.error?.message || 'Erreur lors de l\'enregistrement de la décision'
-        this.error = true
-        this.processingDecision = false
-        setTimeout(() => { this.error = false; this.apiErrorMessage = '' }, 6000)
-      }
-    })
-  }
-
-  fermerDetail(): void {
-    this.decisionEnCours = null
-    this.motifDecision = ''
-    this.successMessage = ''
-    this.error = false
   }
 
   libelleDecision(d: string | null | undefined): string {

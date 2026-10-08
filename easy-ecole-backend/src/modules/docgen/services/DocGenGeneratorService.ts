@@ -147,7 +147,7 @@ export class DocGenGeneratorService {
           parcoursId,
           niveauEtudeId,
           cursusApprenantId: cursusApprenantId!,
-          uploaderId: utilisateurId || req?.utilisateurId || 1,
+          uploaderId: utilisateurId || req?.utilisateurId || undefined,
         });
       } else if (['SCO', 'INS', 'CER', 'API', 'PRE', 'ADM', 'MEM'].includes(codePrefix) && anneeAcademiqueId && parcoursId && niveauEtudeId) {
         await ArchiveGedService.archiverDocumentScolarite({
@@ -161,11 +161,11 @@ export class DocGenGeneratorService {
           classeId: classeId!,
           semestre,
           cursusApprenantId: cursusApprenantId!,
-          uploaderId: utilisateurId || req?.utilisateurId || 1,
+          uploaderId: utilisateurId || req?.utilisateurId || undefined,
         });
       }
     } catch (archivalErr) {
-      console.error('Erreur archivage GED (DocGenGeneratorService):', archivalErr);
+      console.warn('[GED][non-bloquant]', 'DocGenGeneratorService', archivalErr);
     }
 
     return {

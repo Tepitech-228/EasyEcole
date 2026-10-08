@@ -229,6 +229,29 @@ export default class BordereauController {
 
         await bordereau.save()
             .then(async (bordereau) => {
+                // ── Cycle rejet → re-correction (flux inscription) ──
+                // Si l'Audit a refusé le bordereau précédent (statutPipeline='rejete'),
+                // ce nouveau dépôt relance le dossier : on repasse la demande à 'soumis'
+                // et on purge le motif. L'étudiant re-soumet ensuite depuis le wizard.
+                // Erreur non bloquante : on loggue et on répond 201 (le bordereau est
+                // déjà créé ; un échec ici serait retenté lors de la re-soumission).
+                if (type === 'inscription') {
+                    try {
+                        const demande = await DemandeInscription.findOne({
+                            where: { utilisateurId: bordereau.utilisateurId },
+                            order: [['createdAt', 'DESC']],
+                        });
+                        if (demande && demande.statutPipeline === 'rejete') {
+                            demande.statutPipeline = 'soumis';
+                            demande.motifPipeline = null;
+                            demande.soumissionComite = false;
+                            await demande.save();
+                        }
+                    } catch (err) {
+                        console.error('[BORDEREAU][create] Échec remise à soumis de la demande:', err);
+                    }
+                }
+
                 return res.status(201).send(bordereau);
             })
             .catch((error) => {
@@ -381,34 +404,87 @@ export default class BordereauController {
             return res.status(403).json({ success: false })
         }
 
-        let bordereau: Bordereau | null = await Bordereau.findByPk(req.params.id);
+        // ── Transaction + verrou de ligne (anti double-soumission) ──
+        // Même discipline que la validation : deux clics simultanés sur « Rejeter »
+        // ne doivent produire QU'UNE SEULE décision. Le verrou bloque le 2e appel
+        // jusqu'au commit du 1er, qui lit ensuite un bordereau 'rejete' → 400
+        // "Bordereau déjà traité" propre.
+        // Le rejet propage le motif à la demande d'inscription (statutPipeline='rejete',
+        // motifPipeline) : le student re-téléverse un bordereau et re-soumet depuis
+        // le wizard (mode correction), les étapes déjà validées sont conservées.
+        const transaction = await DatabaseConnection.getInstance().sequelize.transaction();
 
-        if (bordereau == null) {
-            return res.status(404).json({ success: false, message: "Bordereau non trouvé" });
-        }
-
-        if (bordereau.statut != 'en_attente') {
-            return res.status(400).json({ success: false, message: "Bordereau déjà traité" });
-        }
-
-        if (!req.body.commentaire) {
-            return res.status(400).json({ success: false, message: "Commentaire requis pour le rejet" });
-        }
-
-        bordereau.statut = 'rejete'
-        bordereau.dateValidation = new Date()
-        bordereau.valideParId = (req as any).utilisateurId
-        bordereau.commentaire = req.body.commentaire
-
-        await bordereau.save()
-            .then(async (bordereau) => {
-                return res.status(200).send(bordereau);
-            })
-            .catch((error) => {
-                return res.status(400).json({ success: false, error: error });
+        try {
+            let bordereau: Bordereau | null = await Bordereau.findByPk(req.params.id, {
+                transaction,
+                lock: transaction.LOCK.UPDATE,
+                include: [
+                    { association: Bordereau.associations.echeance, include: [Echeance.associations.dossierEtudiant] },
+                    Bordereau.associations.utilisateur
+                ]
             });
 
-        return null
+            if (bordereau == null) {
+                await transaction.rollback();
+                return res.status(404).json({ success: false, message: "Bordereau non trouvé" });
+            }
+
+            if (bordereau.statut != 'en_attente') {
+                await transaction.rollback();
+                return res.status(400).json({ success: false, message: "Bordereau déjà traité" });
+            }
+
+            const motif = typeof req.body.commentaire === 'string' ? req.body.commentaire.trim() : '';
+            if (!motif) {
+                await transaction.rollback();
+                return res.status(400).json({ success: false, message: "Commentaire requis pour le rejet" });
+            }
+
+            bordereau.statut = 'rejete'
+            bordereau.dateValidation = new Date()
+            bordereau.valideParId = (req as any).utilisateurId
+            bordereau.commentaire = motif
+
+            await bordereau.save({ transaction })
+
+            // Pipeline d'inscription (FLUX SÉQUENTIEL) : le rejet par l'Audit fait
+            // repasser le dossier en 'rejete' (motif conservé) → l'étudiant re-soumet
+            // une pièce valide (createBordereau remet alors le dossier à 'soumis').
+            const demande = await DemandeInscription.findOne({
+                where: { utilisateurId: bordereau.utilisateurId },
+                order: [['createdAt', 'DESC']],
+                transaction,
+                lock: transaction.LOCK.UPDATE,
+            })
+            if (demande && (!demande.statutPipeline || ['soumis', 'authentifie'].includes(demande.statutPipeline))) {
+                demande.statutPipeline = 'rejete'
+                demande.motifPipeline = motif
+                demande.soumissionComite = false
+                await demande.save({ transaction })
+            }
+
+            await transaction.commit();
+
+            // ── Notification de l'étudiant (non bloquante : après commit) ──
+            // Le rejet est déjà durable ; si le SMTP échoue, on loggue sans faire
+            // échouer la décision de l'Audit (retentative possible côté ops).
+            const utilisateur = bordereau.utilisateur as any;
+            if (utilisateur && utilisateur.email) {
+                EmailSender.getInstance().sendBordereauRejete(
+                    utilisateur.identifiant || utilisateur.email,
+                    utilisateur.email,
+                    motif
+                ).catch((err) => {
+                    console.error('[BORDEREAU][rejet] Échec envoi e-mail étudiant:', err);
+                });
+            }
+
+            return res.status(200).send(bordereau);
+        } catch (error) {
+            await transaction.rollback().catch(rbErr => console.error('[BORDEREAU][rejet] ROLLBACK EN ÉCHEC — transaction possiblement orpheline:', rbErr));
+            console.error("Erreur rejet bordereau:", error);
+            return res.status(400).json({ success: false, message: (error as Error).message || "Erreur inconnue" });
+        }
     }
 
     static async batchStatut(req: Request, res: Response): Promise<Response> {
@@ -444,26 +520,66 @@ export default class BordereauController {
 
         try {
             let count = 0;
+            const traites: Bordereau[] = [];
             for (const id of ids) {
-                const bordereau = await Bordereau.findByPk(id, { transaction });
+                const bordereau = await Bordereau.findByPk(id, {
+                    transaction,
+                    include: [Bordereau.associations.utilisateur]
+                });
                 if (!bordereau || bordereau.statut !== 'en_attente') continue;
 
                 bordereau.statut = statut;
                 bordereau.dateValidation = new Date();
                 bordereau.valideParId = (req as any).utilisateurId;
 
+                const motif = statut === 'rejete' ? (typeof commentaire === 'string' ? commentaire.trim() : '') || null : null;
                 if (statut === 'rejete') {
-                    bordereau.commentaire = commentaire || null;
+                    // Typer le modèle : commentaire est déclaré `string`, la colonne
+                    // accepte null en base (rejet en lot sans motif précisé).
+                    bordereau.commentaire = motif as string;
                 }
 
                 await bordereau.save({ transaction });
+
+                // ── Pipeline d'inscription (idem rejet individuel) ──
+                // Le rejet en lot fait repasser la demande de l'étudiant en 'rejete'
+                // avec le motif : le wizard proposera la reprise en mode correction.
+                const demande = await DemandeInscription.findOne({
+                    where: { utilisateurId: bordereau.utilisateurId },
+                    order: [['createdAt', 'DESC']],
+                    transaction,
+                    lock: transaction.LOCK.UPDATE,
+                })
+                if (demande && (!demande.statutPipeline || ['soumis', 'authentifie'].includes(demande.statutPipeline))) {
+                    demande.statutPipeline = 'rejete'
+                    demande.motifPipeline = motif as string
+                    demande.soumissionComite = false
+                    await demande.save({ transaction })
+                }
+
+                traites.push(bordereau);
                 count++;
             }
 
             await transaction.commit();
+
+            // ── Notification des étudiants rejetés (non bloquante : après commit) ──
+            for (const bordereau of traites) {
+                const utilisateur = bordereau.utilisateur as any;
+                if (utilisateur && utilisateur.email) {
+                    EmailSender.getInstance().sendBordereauRejete(
+                        utilisateur.identifiant || utilisateur.email,
+                        utilisateur.email,
+                        bordereau.commentaire || ''
+                    ).catch((err) => {
+                        console.error('[BORDEREAU][rejet-batch] Échec envoi e-mail étudiant:', err);
+                    });
+                }
+            }
+
             return res.status(200).json({ success: true, count });
         } catch (error) {
-            await transaction.rollback();
+            await transaction.rollback().catch(rbErr => console.error('[BORDEREAU][rejet-batch] ROLLBACK EN ÉCHEC — transaction possiblement orpheline:', rbErr));
             console.error('Erreur', error);
             return res.status(500).json({ success: false, message: 'Erreur interne' });
         }

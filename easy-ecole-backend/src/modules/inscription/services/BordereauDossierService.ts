@@ -442,34 +442,49 @@ export class BordereauDossierService {
         paiement.description = `Paiement par bordereau #${bordereau.id} (${bordereau.type || 'inscription'})`
         await paiement.save({ transaction })
 
+        // L'archivage GED est TRAÇABLE mais JAMAIS bloquant : une erreur GED
+        // (compte utilisateur absent, répertoire illisible, FK…) ne doit pas
+        // annuler la création du dossier étudiant ni la saisie du bordereau.
+        const uploaderIdGED = Number((req as any)?.utilisateurId) || undefined
+
         if (demande.dossiersDemande && savedCursusId) {
             for (const doc of demande.dossiersDemande) {
-                await ArchiveGedService.archiverDocumentInscription(
-                    Number(demande.id),
-                    doc.nomFichier,
-                    {
-                        titre: `Dossier inscription - ${matricule}`,
-                        anneeAcademiqueId: Number(demande.session?.anneeAcademiqueId!),
-                        parcoursId: Number(parcoursChoisiFinal?.parcoursId!),
-                        niveauEtudeId: Number(parcoursChoisiFinal?.parcours?.niveauEtudeId!),
-                        classeId: undefined,
-                        cursusApprenantId: Number(savedCursusId)
-                    }
-                )
+                try {
+                    await ArchiveGedService.archiverDocumentInscription(
+                        Number(demande.id),
+                        doc.nomFichier,
+                        {
+                            titre: `Dossier inscription - ${matricule}`,
+                            anneeAcademiqueId: Number(demande.session?.anneeAcademiqueId!),
+                            parcoursId: Number(parcoursChoisiFinal?.parcoursId!),
+                            niveauEtudeId: Number(parcoursChoisiFinal?.parcours?.niveauEtudeId!),
+                            classeId: undefined,
+                            cursusApprenantId: Number(savedCursusId),
+                            uploaderId: uploaderIdGED
+                        }
+                    )
+                } catch (gedError) {
+                    console.warn('[GED][non-bloquant]', 'archivage dossier inscription', gedError)
+                }
             }
         }
 
         if (bordereau.fichier) {
-            await ArchiveGedService.archiverBordereau(
-                Number(bordereau.id),
-                bordereau.fichier,
-                {
-                    titre: `Bordereau ${bordereau.type} - ${bordereau.referenceBancaire || bordereau.id}`,
-                    anneeAcademiqueId: Number(demande.session?.anneeAcademiqueId!),
-                    parcoursId: Number(parcoursChoisiFinal?.parcoursId!),
-                    niveauEtudeId: Number(parcoursChoisiFinal?.parcours?.niveauEtudeId!)
-                }
-            )
+            try {
+                await ArchiveGedService.archiverBordereau(
+                    Number(bordereau.id),
+                    bordereau.fichier,
+                    {
+                        titre: `Bordereau ${bordereau.type} - ${bordereau.referenceBancaire || bordereau.id}`,
+                        anneeAcademiqueId: Number(demande.session?.anneeAcademiqueId!),
+                        parcoursId: Number(parcoursChoisiFinal?.parcoursId!),
+                        niveauEtudeId: Number(parcoursChoisiFinal?.parcours?.niveauEtudeId!),
+                        uploaderId: uploaderIdGED
+                    }
+                )
+            } catch (gedError) {
+                console.warn('[GED][non-bloquant]', 'archivage bordereau', gedError)
+            }
         }
 
         try {

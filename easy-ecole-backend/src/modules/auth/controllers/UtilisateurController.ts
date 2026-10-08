@@ -398,6 +398,38 @@ export default class UtilisateurController {
                 return res.status(404).json({ success: false, message: "Utilisateur non trouve" });
             }
 
+            // COMPTES RÉFÉRENCÉS PAR LA GED — incident FK uploaderId.
+            // Un compte auteur d'au moins un document GED ou d'une trace d'audit
+            // ne peut pas être supprimé : la suppression casserait la traçabilité
+            // des archives (et déclencherait une erreur de clé étrangère au
+            // prochain affichage). Il faut d'abord réaffecter ces documents
+            // (migration 034_ged_reparation_uploader_id / traitement ciblé).
+            // Chaque vérification est isolée pour supporter les bases où les
+            // tables GED n'existent pas encore (module non déployé, sync différé).
+            const liensGED: string[] = [];
+            const checksGED: { sql: string; label: string }[] = [
+                { sql: 'SELECT COUNT(*) AS cnt FROM ged_documents WHERE uploaderId = :id', label: "document(s) GED dont ce compte est l'auteur" },
+                { sql: 'SELECT COUNT(*) AS cnt FROM ged_audit_logs WHERE userId = :id', label: "trace(s) d'audit GED" },
+            ];
+            for (const check of checksGED) {
+                try {
+                    const [rows]: any = await sequelize.query(check.sql, { replacements: { id: userId } });
+                    const count = rows?.[0]?.cnt || 0;
+                    if (count > 0) {
+                        liensGED.push(`${count} ${check.label}`);
+                    }
+                } catch (err: any) {
+                    // Table manquante ou erreur de lecture : on ignore silencieusement
+                    console.warn(`[deleteUtilisateur] Contrôle GED ignoré (${check.label}):`, err?.message || err);
+                }
+            }
+            if (liensGED.length > 0) {
+                return res.status(409).json({
+                    success: false,
+                    message: `Suppression impossible : ce compte est référencé par la GED (${liensGED.join(', ')}). Réaffectez d'abord ces documents, puis recommencez.`
+                });
+            }
+
             if (utilisateur.role === RolesUtilisateur.APPRENANT) {
                 await sequelize.transaction(async (t) => {
                     const q = (sql: string, replacements: any = {}) => sequelize.query(sql, { replacements, transaction: t });

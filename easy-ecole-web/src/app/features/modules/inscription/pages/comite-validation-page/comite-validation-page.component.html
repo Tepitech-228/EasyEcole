@@ -339,8 +339,13 @@
         <textarea *ngIf="decisionEnCours !== 'valide'" rows="3" [(ngModel)]="motifDecision"
           placeholder="Motif de la décision..."
           class="w-full rounded-md border border-gray-300 p-2 text-sm mb-3"></textarea>
-        <p *ngIf="decisionEnCours === 'correction_demandee'" class="text-xs text-orange-700 mb-3">
-          {{ documentsAReposer.length }} pièce(s) marquée(s) pour remplacement.
+        <p *ngIf="decisionEnCours !== 'valide'" class="text-xs mb-3"
+           [class.text-orange-700]="decisionEnCours === 'correction_demandee'"
+           [class.text-red-700]="decisionEnCours === 'rejete'">
+          {{ documentsAReposer.length }} pièce(s) fautive(s) sélectionnée(s) — exigée(s) à l'étudiant lors de la reprise du dossier.
+        </p>
+        <p *ngIf="decisionEnCours !== 'valide' && documentsAReposer.length === 0" class="text-xs text-red-600 mb-3">
+          Aucune pièce sélectionnée : ouvrez d'abord le détail du dossier étudiant et cochez la/les pièce(s) fautive(s) dans sa liste de pièces. Le bordereau authentifié n'est pas concerné par un rejet.
         </p>
         <p *ngIf="decisionEnCours === 'valide'" class="text-xs text-gray-500 mb-3">
           Cette action crée officiellement l'étudiant : matricule définitif, affectation parcours/cours, carte étudiante, puis email officiel.
@@ -350,7 +355,7 @@
                   class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-300">
             Annuler
           </button>
-          <button (click)="confirmerDecision()" [disabled]="processingDecision || (decisionEnCours !== 'valide' && !motifDecision.trim()) || (decisionEnCours === 'correction_demandee' && documentsAReposer.length === 0)"
+          <button (click)="confirmerDecision()" [disabled]="processingDecision || (decisionEnCours !== 'valide' && (!motifDecision.trim() || documentsAReposer.length === 0))"
                   class="inline-flex items-center gap-x-1.5 px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-sm transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2"
                   [class.bg-green-600]="decisionEnCours === 'valide'"
                   [class.hover:bg-green-700]="decisionEnCours === 'valide'"

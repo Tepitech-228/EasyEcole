@@ -10,6 +10,7 @@ import { ProcessusGenerateur } from "../../modules/ged/models/ProcessusGenerateu
 import { ReferenceService } from "./ReferenceService";
 import { AuditService } from "./AuditService";
 import { GED_CONFIG } from "../config/GedConfig";
+import { RolesUtilisateur } from "../enums/RolesUtilisateur";
 
 const GED_DIR = GED_CONFIG.STORAGE_DIR;
 const PROCESSUS_CODES = {
@@ -94,6 +95,45 @@ function getCurrentSemestre(): string {
 
 export class ArchiveGedService {
 
+  /**
+   * RÉSOLUTION DE L'AUTEUR D'ARCHIVAGE — plus jamais d'identifiant codé en dur.
+   *
+   * Invariants :
+   *  - ne renvoie JAMAIS un identifiant absent de `aut_utilisateurs` (vérifié par requête) ;
+   *  - ne suppose JAMAIS que le compte `1` existe ;
+   *  - ordre : identifiant explicite fourni ET existant → compte système
+   *    (`identifiant = 'system-ged'`) → compte `role='admin'` le plus ancien non
+   *    supprimé (`deletedAt IS NULL`, `ORDER BY id ASC`) → throw.
+   *
+   * `Utilisateur` est require() de façon paresseuse : ce service est chargé tôt
+   * dans la chaîne d'imports GED (DocumentGed importe déjà Utilisateur), un
+   * import statique en tête de fichier exposerait à des cycles d'initialisation.
+   */
+  private static async resoudreUploaderId(explicit?: number): Promise<number> {
+    const { Utilisateur } = require("../../modules/auth/models/Utilisateur") as typeof import("../../modules/auth/models/Utilisateur");
+
+    const expliciteId = explicit !== undefined && explicit !== null ? Number(explicit) : NaN;
+    if (Number.isFinite(expliciteId) && expliciteId > 0) {
+      const compte = await Utilisateur.findOne({ where: { id: expliciteId }, attributes: ["id"] });
+      if (compte) return Number(compte.id);
+    }
+
+    const compteSysteme = await Utilisateur.findOne({
+      where: { identifiant: "system-ged" },
+      attributes: ["id"],
+    });
+    if (compteSysteme) return Number(compteSysteme.id);
+
+    const plusAncienAdmin = await Utilisateur.findOne({
+      where: { role: RolesUtilisateur.ADMIN, deletedAt: null },
+      attributes: ["id"],
+      order: [["id", "ASC"]],
+    });
+    if (plusAncienAdmin) return Number(plusAncienAdmin.id);
+
+    throw new Error("Aucun compte utilisateur utilisable pour l'archivage GED");
+  }
+
   static async archiverDepuisFichier(params: {
     fichierSource: string;
     domaineCode: string;
@@ -124,6 +164,8 @@ export class ArchiveGedService {
     const domain = await Domain.findOne({ where: { code: params.domaineCode } });
     const docType = await DocumentType.findOne({ where: { code: params.typeDocumentCode } });
     if (!domain || !docType) return null;
+
+    const uploaderId = await ArchiveGedService.resoudreUploaderId(params.uploaderId);
 
     const year = new Date().getFullYear();
     const reference = await ReferenceService.generer(domain.code, docType.shortCode, year);
@@ -157,7 +199,7 @@ export class ArchiveGedService {
       statut: 'Disponible',
       fichier: destFilename,
       taille: `${(stats.size / 1024).toFixed(1)} Ko`,
-      uploaderId: params.uploaderId || 1,
+      uploaderId,
       folderId,
       domainId: domain.id,
       documentTypeId: docType.id,
@@ -184,7 +226,7 @@ export class ArchiveGedService {
       inscriptionDossierId: params.inscriptionDossierId || undefined,
     });
 
-    await AuditService.log(document.id, 1, 'archivage', {
+    await AuditService.log(document.id, uploaderId, 'archivage', {
       source: params.processusModule,
       reference: document.reference,
       typeDocument: params.typeDocumentCode
@@ -205,6 +247,7 @@ export class ArchiveGedService {
       classeId?: number;
       cursusApprenantId?: number;
       salleId?: number;
+      uploaderId?: number;
     }
   ): Promise<DocumentGed | null> {
     const sourcePath = path.resolve(process.cwd(), "public/inscription/dossiers", sourceFilename);
@@ -213,6 +256,8 @@ export class ArchiveGedService {
     const domain = await Domain.findOne({ where: { code: 'SCOL' } });
     const docType = await DocumentType.findOne({ where: { code: 'fiche_inscription' } });
     if (!domain || !docType) return null;
+
+    const uploaderId = await ArchiveGedService.resoudreUploaderId(options.uploaderId);
 
     const year = new Date().getFullYear();
     const reference = await ReferenceService.generer(domain.code, docType.shortCode, year);
@@ -250,7 +295,7 @@ export class ArchiveGedService {
       statut: 'Disponible',
       fichier: destFilename,
       taille: `${(stats.size / 1024).toFixed(1)} Ko`,
-      uploaderId: 1,
+      uploaderId,
       folderId,
       domainId: domain.id,
       documentTypeId: docType.id,
@@ -276,7 +321,7 @@ export class ArchiveGedService {
       inscriptionDossierId: demandeInscriptionDossierId
     });
 
-    await AuditService.log(document.id, 1, 'archivage', {
+    await AuditService.log(document.id, uploaderId, 'archivage', {
       source: 'inscription',
       reference: document.reference
     });
@@ -295,6 +340,7 @@ export class ArchiveGedService {
       classeId?: number;
       semestre?: string;
       cursusApprenantId?: number;
+      uploaderId?: number;
     }
   ): Promise<DocumentGed | null> {
     const sourcePath = path.resolve(process.cwd(), "public/inscription/bordereaux", sourceFilename);
@@ -303,6 +349,8 @@ export class ArchiveGedService {
     const domain = await Domain.findOne({ where: { code: 'FIN' } });
     const docType = await DocumentType.findOne({ where: { code: 'bordereau' } });
     if (!domain || !docType) return null;
+
+    const uploaderId = await ArchiveGedService.resoudreUploaderId(options.uploaderId);
 
     const year = new Date().getFullYear();
     const reference = await ReferenceService.generer(domain.code, docType.shortCode, year);
@@ -340,7 +388,7 @@ export class ArchiveGedService {
       statut: 'Disponible',
       fichier: destFilename,
       taille: `${(stats.size / 1024).toFixed(1)} Ko`,
-      uploaderId: 1,
+      uploaderId,
       folderId,
       domainId: domain.id,
       documentTypeId: docType.id,
@@ -365,7 +413,7 @@ export class ArchiveGedService {
       bordereauId
     });
 
-    await AuditService.log(document.id, 1, 'archivage', {
+    await AuditService.log(document.id, uploaderId, 'archivage', {
       source: 'bordereau',
       reference: document.reference
     });
@@ -394,6 +442,8 @@ export class ArchiveGedService {
       docType = await DocumentType.findOne({ where: { code: 'releve_notes' } });
     }
     if (!domain || !docType) return null;
+
+    const uploaderId = await ArchiveGedService.resoudreUploaderId();
 
     const year = new Date().getFullYear();
     const reference = await ReferenceService.generer(domain.code, docType.shortCode, year);
@@ -437,7 +487,7 @@ export class ArchiveGedService {
       statut: 'Disponible',
       fichier: destFilename,
       taille: `${(stats.size / 1024).toFixed(1)} Ko`,
-      uploaderId: 1,
+      uploaderId,
       folderId,
       domainId: domain.id,
       documentTypeId: docType.id,
@@ -463,7 +513,7 @@ export class ArchiveGedService {
       bulletinId: bulletin.id
     });
 
-    await AuditService.log(document.id, 1, 'archivage', {
+    await AuditService.log(document.id, uploaderId, 'archivage', {
       source: 'bulletin',
       reference: document.reference
     });
@@ -489,6 +539,8 @@ export class ArchiveGedService {
     const domain = await Domain.findOne({ where: { code: 'SCOL' } });
     const docType = await DocumentType.findOne({ where: { code: params.documentTypeCode } });
     if (!domain || !docType) return null;
+
+    const uploaderId = await ArchiveGedService.resoudreUploaderId(params.uploaderId);
 
     const year = new Date().getFullYear();
     const reference = await ReferenceService.generer(domain.code, docType.shortCode, year);
@@ -532,7 +584,7 @@ export class ArchiveGedService {
       statut: 'Disponible',
       fichier: destFilename,
       taille: `${(stats.size / 1024).toFixed(1)} Ko`,
-      uploaderId: params.uploaderId || 1,
+      uploaderId,
       folderId,
       domainId: domain.id,
       documentTypeId: docType.id,
@@ -556,7 +608,7 @@ export class ArchiveGedService {
       cursusApprenantId: params.cursusApprenantId || undefined
     });
 
-    await AuditService.log(document.id, 1, 'archivage', {
+    await AuditService.log(document.id, uploaderId, 'archivage', {
       source: 'scolarite',
       reference: document.reference,
       documentTypeCode: params.documentTypeCode
@@ -581,6 +633,8 @@ export class ArchiveGedService {
     const domain = await Domain.findOne({ where: { code: 'SCOL' } });
     const docType = await DocumentType.findOne({ where: { code: 'pv_jury' } });
     if (!domain || !docType) return null;
+
+    const uploaderId = await ArchiveGedService.resoudreUploaderId(params.uploaderId);
 
     const year = new Date().getFullYear();
     const reference = await ReferenceService.generer(domain.code, docType.shortCode, year);
@@ -623,7 +677,7 @@ export class ArchiveGedService {
       statut: 'Disponible',
       fichier: destFilename,
       taille: `${(stats.size / 1024).toFixed(1)} Ko`,
-      uploaderId: params.uploaderId || 1,
+      uploaderId,
       folderId,
       domainId: domain.id,
       documentTypeId: docType.id,
@@ -646,7 +700,7 @@ export class ArchiveGedService {
       semestre: params.semestre || getCurrentSemestre()
     });
 
-    await AuditService.log(document.id, 1, 'archivage', {
+    await AuditService.log(document.id, uploaderId, 'archivage', {
       source: 'deliberation',
       reference: document.reference
     });
@@ -669,6 +723,8 @@ export class ArchiveGedService {
     const domain = await Domain.findOne({ where: { code: 'SCOL' } });
     const docType = await DocumentType.findOne({ where: { code: 'diplome' } });
     if (!domain || !docType) return null;
+
+    const uploaderId = await ArchiveGedService.resoudreUploaderId(params.uploaderId);
 
     const year = new Date().getFullYear();
     const reference = await ReferenceService.generer(domain.code, docType.shortCode, year);
@@ -709,7 +765,7 @@ export class ArchiveGedService {
       statut: 'Disponible',
       fichier: destFilename,
       taille: `${(stats.size / 1024).toFixed(1)} Ko`,
-      uploaderId: params.uploaderId || 1,
+      uploaderId,
       folderId,
       domainId: domain.id,
       documentTypeId: docType.id,
@@ -731,7 +787,7 @@ export class ArchiveGedService {
       cursusApprenantId: params.cursusApprenantId || undefined
     });
 
-    await AuditService.log(document.id, 1, 'archivage', {
+    await AuditService.log(document.id, uploaderId, 'archivage', {
       source: 'diplome',
       reference: document.reference
     });

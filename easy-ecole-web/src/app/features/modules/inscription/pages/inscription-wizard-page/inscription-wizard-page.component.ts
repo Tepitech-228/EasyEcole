@@ -99,6 +99,12 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
 
   resultat: any = null
 
+  /** Mode correction du dossier : 'bordereau' (refus Audit/Cabinet) ou 'comite' (document(s) rejeté(s) au comité). */
+  modeCorrection: 'bordereau' | 'comite' | null = null
+
+  /** Motif de la correction demandée (bordereau refusé ou document rejeté au comité). */
+  motifCorrection: string | null = null
+
   // OCR/ICR : popup de progression + % de données récupérées.
   ocrEnCours: boolean = false
   ocrResultat: { pourcentage: number; nbChamps: number; totalChamps: number } | null = null
@@ -239,15 +245,71 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
           this.errorMessage = 'Demande introuvable.'
           return
         }
-        if (demande.statutPipeline) {
+        // Pièces marquées « à re-téléverser » par le comité (flag correctionDemandee).
+        const piecesCorrection = new Set<string>(
+          (Array.isArray(demande.dossiersDemande) ? demande.dossiersDemande : [])
+            .filter((p: any) => p?.correctionDemandee)
+            .map((p: any) => String(p.dossierId))
+        )
+        const statutPipeline = demande.statutPipeline
+        // - 'rejete' sans pièce signalée    → bordereau refusé par l'Audit/Cabinet ;
+        // - 'rejete' avec pièce(s) signalée(s) → dossier rejeté par le comité ;
+        // - 'correction_demandee'           → correction demandée par le comité.
+        const estCorrectionBordereau = statutPipeline === 'rejete' && piecesCorrection.size === 0
+        const estCorrectionComite = statutPipeline === 'correction_demandee'
+          || (statutPipeline === 'rejete' && piecesCorrection.size > 0)
+        const estCorrection = estCorrectionBordereau || estCorrectionComite
+
+        if (statutPipeline && !estCorrection) {
           // Dossier déjà transmis : suivi, pas de nouvelle saisie.
-          this.resultat = { statutPipeline: demande.statutPipeline }
+          this.resultat = { statutPipeline }
           this.successMessage = 'Votre demande a déjà été soumise et reste consultable dans votre historique.'
           this.etape = 5
           this.sauvegarder()
           return
         }
-        // Brouillon : pré-remplit depuis le serveur.
+
+        // ── Mode correction ──
+        // L'étudiant ne refait NI la filière (étape 1) NI les informations
+        // personnelles (étape 3) : il est placé directement à l'étape 2 où il
+        // re-téléverse UNIQUEMENT ce qui a été rejeté — le bordereau pour
+        // l'Audit, les document(s) signalé(s) pour le comité — puis soumet à
+        // nouveau (étape 4). Aucun OCR ni resaisie : infos pré-remplies.
+        if (estCorrection) {
+          this.modeCorrection = estCorrectionBordereau ? 'bordereau' : 'comite'
+          this.motifCorrection = demande.motifPipeline || 'Motif non précisé par le service.'
+          this.documents = {}
+          this.bordereau = null
+          this.documentsAReposer = {}
+          this.bordereauAReposer = null
+          this.errorMessage = ''
+          this.successMessage = ''
+          // Le rejet/correction a déjà été notifié par e-mail. On récupère
+          // l'essentiel des informations depuis le profil enregistré.
+          this.apprenantService.get().subscribe({
+            next: (a: any) => {
+              if (a) {
+                const dateNaissance = a.dateNaissance ? new Date(a.dateNaissance).toISOString().split('T')[0] : ''
+                this.infos = {
+                  nom: a.utilisateur?.nom || '',
+                  prenoms: a.utilisateur?.prenoms || '',
+                  dateNaissance,
+                  lieuNaissance: a.lieuNaissance || '',
+                  nationalite: a.identite?.nationalite || '',
+                  contact: a.utilisateur?.contact || '',
+                  email: a.utilisateur?.email || '',
+                  adresse: a.adresse?.ville || '',
+                  numeroPiece: a.numeroPiece || '',
+                  sexe: a.sexe || '',
+                  typePieceIdentite: a.typePieceIdentite || ''
+                }
+              }
+            },
+            error: () => undefined
+          })
+        }
+
+        // Brouillon / correction : pré-remplit depuis le serveur.
         this.sessionSelectionneeId = demande.sessionId != null ? Number(demande.sessionId) : undefined
         const choix = Array.isArray(demande.parcoursChoisis)
           ? demande.parcoursChoisis.find((p: any) => p.choixFinal === true || p.choixFinal === 1) || demande.parcoursChoisis[0]
@@ -275,10 +337,31 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
             .filter((p: any) => p?.dossierId != null)
             .map((p: any) => [String(p.dossierId), p.nomFichier || 'Déposé'])
         )
+
+        // Correction : on retire du « déjà déposé » ce qui doit être re-téléversé.
+        //  - bordereau (Audit) : la pièce bordereau ne compte plus comme déposée ;
+        //  - comité : seules les pièces signalées (correctionDemandee) sont
+        //    retirées, le bordereau déjà authentifié reste déposé.
+        if (estCorrectionBordereau) {
+          const bordereauRequis = this.documentsRequis.find((d) => this.estBordereau(d))
+          if (bordereauRequis) {
+            const nom = this.piecesServeur.get(String(bordereauRequis.id))
+            this.piecesServeur.delete(String(bordereauRequis.id))
+            this.documentsAReposer[String(bordereauRequis.id)] = { nom: nom || 'bordereau refusé', taille: 0, type: '' }
+          }
+        } else if (estCorrectionComite) {
+          for (const [cle, nom] of this.piecesServeur) {
+            if (piecesCorrection.has(cle)) {
+              this.piecesServeur.delete(cle)
+              this.documentsAReposer[cle] = { nom, taille: 0, type: '' }
+            }
+          }
+        }
+
         const obligatoires = this.documentsRequis.filter((d) => d.obligatoire !== false)
         const toutDepose = obligatoires.length > 0
           && obligatoires.every((d) => this.piecesServeur.has(String(d.id)))
-        this.etape = toutDepose ? 3 : (choix ? 2 : 1)
+        this.etape = estCorrection ? 2 : (toutDepose ? 3 : (choix ? 2 : 1))
         this.loadSessions()
         this.sauvegarder()
       },
@@ -824,6 +907,37 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.sauvegarder()
   }
 
+  /**
+   * Mode correction : après re-téléversement de ce qui a été rejeté (le
+   * bordereau pour l'Audit, les documents signalés pour le comité), passage
+   * DIRECT au récapitulatif — ni OCR ni resaisie des informations personnelles.
+   */
+  passerEtape4DepuisCorrection(): void {
+    if (!this.documentsComplets) {
+      this.errorMessage = this.modeCorrection === 'comite'
+        ? 'Veuillez re-téléverser les documents signalés par le comité.'
+        : 'Veuillez re-téléverser le bordereau de paiement refusé.'
+      return
+    }
+    // En mode comité, le bordereau déjà authentifié reste « déposé » : il n'est
+    // ni re-sélectionné ni re-téléversé. En mode bordereau, il est requis.
+    if (this.modeCorrection === 'bordereau' && !this.bordereauPret) {
+      this.errorMessage = 'Veuillez téléverser le bordereau de paiement.'
+      return
+    }
+    this.errorMessage = ''
+    this.etape = 4
+    this.sauvegarder()
+  }
+
+  /** Note sous le selecteur de session en mode correction. */
+  get libelleCorrectionNote(): string {
+    if (this.modeCorrection === 'comite') {
+      return `Correction du dossier ${this.sessionRecapLabel} : seuls les documents signalés par le comité sont à re-téléverser.`
+    }
+    return `Correction du dossier ${this.sessionRecapLabel} : seul le bordereau de paiement est à re-téléverser.`
+  }
+
   revenirEtape(etape: number): void {
     this.etape = etape
     this.sauvegarder()
@@ -859,6 +973,13 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     // (alreadySignUp) et laissait l'étudiant bloqué avec un faux « dossier soumis ».
     const demandeExistanteId = this.route.snapshot.paramMap.get('id')
     if (demandeExistanteId) {
+      // En correction, la demande ET le parcours existent déjà : rejouer le
+      // rattachement créerait un doublon de choix de parcours. On téléverse
+      // directement les pièces re-téléversées.
+      if (this.modeCorrection) {
+        this.finaliserFichiers(demandeExistanteId)
+        return
+      }
       this.rattacherParcoursEtFinaliser(demandeExistanteId)
       return
     }
@@ -921,13 +1042,20 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.bordereau = null
     this.documentsAReposer = {}
     this.bordereauAReposer = null
+    this.modeCorrection = null
+    this.motifCorrection = null
     this.errorMessage = ''
     this.successMessage = ''
   }
 
-  private finaliserSoumission(): void {
+  private finaliserSoumission(statutPipeline?: string): void {
     this.submitting = false
-    this.resultat = { statutPipeline: 'soumis' }
+    // En correction comité, le backend renvoie le statut réel du dossier
+    // ('transmis_comite' une fois toutes les pièces signalées re-téléversées) :
+    // on l'affiche tel quel au lieu de forcer « soumis ».
+    this.resultat = { statutPipeline: statutPipeline || 'soumis' }
+    this.modeCorrection = null
+    this.motifCorrection = null
     this.successMessage = 'Dossier soumis. Vous serez notifié de l\'avancement de votre inscription.'
     this.etape = 5
     // Dossier transmis : la sauvegarde locale n'a plus lieu d'être. Les PII et
@@ -951,6 +1079,9 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   private finaliserFichiers(demandeId: string): void {
     const dossierDocs: Array<{ dossierId: string; fichier: File }> = []
     let bordereauFichier: File | null = null
+    // Statut renvoyé par le dernier téléversement de document (correction comité :
+    // le backend réintègre le dossier au comité une fois la dernière pièce posée).
+    let dernierStatut: string | null = null
     for (const requis of this.documentsRequis) {
       const fichier = this.documents[requis.id]
       if (!fichier) continue
@@ -965,13 +1096,17 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
 
     const televerserSuivant = (index: number): void => {
       if (index >= dossierDocs.length) {
-        this.televerserBordereau(bordereauFichier)
+        this.televerserBordereau(bordereauFichier, dernierStatut)
         return
       }
       const item = dossierDocs[index]
       this.dossierInscriptionService.uploadMultiple(demandeId, item.dossierId, [item.fichier]).subscribe({
         next: (event) => {
           if (event.type === HttpEventType.Response) {
+            const body: any = event.body
+            if (body && typeof body.statutPipeline === 'string') {
+              dernierStatut = body.statutPipeline
+            }
             televerserSuivant(index + 1)
           }
         },
@@ -982,9 +1117,11 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     televerserSuivant(0)
   }
 
-  private televerserBordereau(fichier: File | null): void {
+  private televerserBordereau(fichier: File | null, dernierStatut?: string | null): void {
     if (!fichier) {
-      this.finaliserSoumission()
+      // Aucun bordereau re-téléversé (correction comité) : on conserve le statut
+      // renvoyé par le dernier téléversement de document (ex. 'transmis_comite').
+      this.finaliserSoumission(dernierStatut || undefined)
       return
     }
     const formData = new FormData()

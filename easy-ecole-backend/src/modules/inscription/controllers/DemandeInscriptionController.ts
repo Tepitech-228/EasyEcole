@@ -325,6 +325,7 @@ export default class DemandeInscriptionController {
             sourceType: 'genere_application',
             confidentialite: 'confidentiel',
             cycleVie: 'courant',
+            uploaderId: Number((req as any)?.utilisateurId) || undefined,
         }).catch(err => console.error("Erreur archivage fiche de paiement:", err))
 
         const filePath = path.resolve(process.cwd(), 'public/inscription/bordereaux/', filename)
@@ -737,18 +738,23 @@ export default class DemandeInscriptionController {
 
             if (demandeInscription.dossiersDemande) {
                 for (const dossier of demandeInscription.dossiersDemande) {
-                    await ArchiveGedService.archiverDocumentInscription(
-                        Number(demandeInscription.id),
-                        dossier.nomFichier,
-                        {
-                            titre: `Dossier inscription - ${demandeInscription.matricule}`,
-                            anneeAcademiqueId: Number(savedCursus.anneeAcademiqueId!),
-                            parcoursId: Number(savedCursus.parcoursId),
-                            niveauEtudeId: Number(savedCursus.niveauEtudeId),
-                            classeId: savedCursus.classeId ? Number(savedCursus.classeId) : undefined,
-                            cursusApprenantId: Number(savedCursus.id)
-                        }
-                    )
+                    try {
+                        await ArchiveGedService.archiverDocumentInscription(
+                            Number(demandeInscription.id),
+                            dossier.nomFichier,
+                            {
+                                titre: `Dossier inscription - ${demandeInscription.matricule}`,
+                                anneeAcademiqueId: Number(savedCursus.anneeAcademiqueId!),
+                                parcoursId: Number(savedCursus.parcoursId),
+                                niveauEtudeId: Number(savedCursus.niveauEtudeId),
+                                classeId: savedCursus.classeId ? Number(savedCursus.classeId) : undefined,
+                                cursusApprenantId: Number(savedCursus.id),
+                                uploaderId: Number((req as any)?.utilisateurId) || undefined
+                            }
+                        )
+                    } catch (gedError) {
+                        console.warn('[GED][non-bloquant]', 'archivage dossier inscription', gedError)
+                    }
                 }
             }
         }

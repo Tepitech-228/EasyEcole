@@ -125,6 +125,72 @@ async function controleSante(sequelize: any): Promise<void> {
     }
 }
 
+/**
+ * Contrôle ciblé — incident FK « uploaderId » (saisie de bordereau bloquée).
+ *
+ * Détecte à CHAQUE démarrage :
+ *  1. documents GED / traces d'audit dont l'auteur n'existe plus
+ *     (`uploaderId`/`userId` NULL ou absent d'aut_utilisateurs)
+ *     → la migration 034_ged_reparation_uploader_id n'a pas été appliquée ;
+ *  2. absence totale de compte utilisable pour l'archivage GED
+ *     (`system-ged` ou `admin` actif) → chaque nouvel archivage échouerait.
+ *
+ * Avertissements non bloquants, visibles dans les logs de chaque boot :
+ * le décalage se voit immédiatement, au lieu d'une erreur 400 surprise à l'usage.
+ */
+async function controleAuteursGED(sequelize: any): Promise<void> {
+    console.log("[seed-boot] Contrôle des auteurs d'archivage GED…");
+    let alertes = 0;
+
+    const controles: Array<{ sql: string; alerte: string }> = [
+        {
+            sql: `SELECT COUNT(*) AS n FROM ged_documents d
+                  LEFT JOIN aut_utilisateurs u ON u.id = d.uploaderId
+                  WHERE d.uploaderId IS NULL OR u.id IS NULL`,
+            alerte: "document(s) GED sans compte auteur valide — migration 034 non appliquée ?",
+        },
+        {
+            sql: `SELECT COUNT(*) AS n FROM ged_audit_logs l
+                  LEFT JOIN aut_utilisateurs u ON u.id = l.userId
+                  WHERE l.userId IS NULL OR u.id IS NULL`,
+            alerte: "trace(s) d'audit GED sans compte valide — migration 034 non appliquée ?",
+        },
+    ];
+
+    for (const { sql, alerte } of controles) {
+        try {
+            const [[{ n }]] = await sequelize.query(sql);
+            if (Number(n) > 0) {
+                alertes++;
+                console.warn(`[seed-boot] ⚠ ${n} ${alerte}`);
+            }
+        } catch (e: any) {
+            // Tables GED absentes (module non déployé, base fraîche) : on signale et on passe.
+            console.warn(`[seed-boot] ⚠ Contrôle GED impossible (${e?.message}) — tables absentes ?`);
+        }
+    }
+
+    try {
+        const [[{ comptes }]] = await sequelize.query(
+            `SELECT COUNT(*) AS comptes FROM aut_utilisateurs
+             WHERE deletedAt IS NULL AND (identifiant = 'system-ged' OR role = 'admin')`
+        );
+        if (Number(comptes) === 0) {
+            alertes++;
+            console.warn("[seed-boot] ⚠ Aucun compte utilisable pour l'archivage GED (ni system-ged ni admin actif) — tout archivage échouera");
+        }
+    } catch (e: any) {
+        alertes++;
+        console.warn(`[seed-boot] ⚠ Impossible de vérifier les comptes utilisables : ${e?.message}`);
+    }
+
+    if (alertes === 0) {
+        console.log("[seed-boot] ✓ Auteurs GED OK (auteurs valides, aucun compte de repli manquant)");
+    } else {
+        console.warn(`[seed-boot] ⚠ ${alertes} anomalie(s) GED — voir ci-dessus`);
+    }
+}
+
 async function main(): Promise<void> {
     console.log("[seed-boot] Début des seeds fonctionnels (idempotents)…");
     const db = DatabaseConnection.getInstance();
@@ -142,6 +208,7 @@ async function main(): Promise<void> {
     }
 
     await controleSante(db.sequelize);
+    await controleAuteursGED(db.sequelize);
 
     if (echecs > 0) {
         console.warn(`[seed-boot] Terminé AVEC ${echecs} échec(s) sur ${ETAPES.length} étapes.`);

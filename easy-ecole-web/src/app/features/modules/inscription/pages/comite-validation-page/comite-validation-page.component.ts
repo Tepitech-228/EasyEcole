@@ -399,9 +399,14 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
   confirmerDecision(): void {
     if (!this.selectedDossier?.id || !this.decisionEnCours) return
     if (this.decisionEnCours !== 'valide' && !this.motifDecision.trim()) return
+    if (this.decisionEnCours !== 'valide' && this.documentsAReposer.length === 0) {
+      this.apiErrorMessage = 'Sélectionnez au moins une pièce fautive à faire re-téléverser avant de confirmer.'
+      this.error = true
+      return
+    }
 
     this.processingDecision = true
-    const dossierIdsAReposer = this.decisionEnCours === 'correction_demandee' && this.documentsAReposer.length
+    const dossierIdsAReposer = this.decisionEnCours !== 'valide' && this.documentsAReposer.length
       ? this.documentsAReposer
       : undefined
     this.comiteService.decider(this.selectedDossier.id, this.decisionEnCours, this.motifDecision, dossierIdsAReposer).subscribe({

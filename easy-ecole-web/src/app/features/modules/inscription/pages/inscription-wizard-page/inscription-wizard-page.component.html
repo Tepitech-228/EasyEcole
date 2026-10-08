@@ -13,10 +13,32 @@
   <div *ngIf="errorMessage" class="alert alert-danger mt-3">{{ errorMessage }}</div>
   <div *ngIf="successMessage" class="alert alert-success mt-3">{{ successMessage }}</div>
 
+  <!-- Bordereau refusé par l'Audit/Cabinet : reprise en mode correction (étape 2 uniquement) -->
+  <div *ngIf="modeCorrection === 'bordereau'" class="alert alert-warning mt-3">
+    <strong>Votre bordereau de paiement a été refusé.</strong><br/>
+    <span>Motif : « {{ motifCorrection }} »</span>
+    <ul class="mt-2 mb-0">
+      <li>Téléversez un nouveau bordereau valide ci-dessous.</li>
+      <li>Vos choix de filière, vos autres documents et vos informations personnelles sont conservés : ils ne sont pas à refaire.</li>
+      <li>Une fois le bordereau re-téléversé, validez la correction pour soumettre à nouveau votre dossier.</li>
+    </ul>
+  </div>
+
+  <!-- Document(s) rejeté(s) au comité : même reprise en mode correction -->
+  <div *ngIf="modeCorrection === 'comite'" class="alert alert-warning mt-3">
+    <strong>Votre demande a été renvoyée pour correction par le comité.</strong><br/>
+    <span>Motif : « {{ motifCorrection }} »</span>
+    <ul class="mt-2 mb-0">
+      <li>Re-téléversez ci-dessous les documents signalés par le comité.</li>
+      <li>Vos choix de filière, le bordereau déjà validé et vos informations personnelles sont conservés : ils ne sont pas à refaire.</li>
+      <li>Une fois les documents re-téléversés, validez la correction pour soumettre à nouveau votre dossier au comité.</li>
+    </ul>
+  </div>
+
   <!-- Rechargement du navigateur : la saisie est conservée, les pièces jointes non.
        Un navigateur ne peut pas conserver un fichier téléversé ; on le dit clairement
        plutôt que de laisser croire à l'étudiant que son dossier est complet. -->
-  <div *ngIf="aPiecesAReposer" class="alert alert-warning mt-3">
+  <div *ngIf="aPiecesAReposer && !motifCorrection" class="alert alert-warning mt-3">
     <strong>Vos choix et vos informations ont été conservés.</strong>
     En revanche, les fichiers eux-mêmes doivent être re-sélectionnés (le navigateur ne
     peut pas les conserver). Merci de re-sélectionner :
@@ -91,12 +113,16 @@
       <label>Session d'inscription</label>
       <select
         class="form-control native-select"
+        [ngModel]="sessionSelectionneeId"
         (change)="surChoixSession($event)">
         <option value="">— Choisir une session —</option>
         <option *ngFor="let s of sessions" [value]="s.id">
           Session du {{ s.dateDebut | date:'dd/MM/yyyy' }} au {{ s.dateFin | date:'dd/MM/yyyy' }}
         </option>
       </select>
+      <p *ngIf="motifCorrection" class="muted mt-2" style="font-size: 0.85rem;">
+        {{ libelleCorrectionNote }}
+      </p>
     </div>
 
     <div *ngIf="documentsRequis.length > 0">
@@ -143,8 +169,9 @@
       <!-- Bordereau de paiement inclus dans les documents requis de la session -->
 
       <div class="mt-4">
-        <button class="btn btn-primary" [disabled]="!documentsComplets || !bordereauPret" (click)="passerEtape3()">
-          Soumettre les pièces
+        <button class="btn btn-primary" [disabled]="!documentsComplets || (modeCorrection !== 'comite' && !bordereauPret)"
+                (click)="modeCorrection ? passerEtape4DepuisCorrection() : passerEtape3()">
+          {{ modeCorrection ? 'Valider la correction et continuer' : 'Soumettre les pièces' }}
           <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
           </svg>
