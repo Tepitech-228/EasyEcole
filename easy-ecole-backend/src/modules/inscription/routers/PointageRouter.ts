@@ -24,5 +24,6 @@ router
     .post('/scan/arrivee', [Authenticate], PointageController.pointerArriveeByScan)
     .post('/scan/depart', [Authenticate], PointageController.pointerDepartByScan)
     .get('/scan/verifier-statut/:codeQR', [Authenticate], PointageController.verifierStatutByQR)
+    .get('/mon-qr', [Authenticate], PointageController.getMonQr)
 
 export default router

@@ -41,6 +41,10 @@ export class PointageService {
     return this.httpClient.get<any>(`${this.SERVICE_URL}/scan/verifier-statut/${encodeURIComponent(codeQR)}`)
   }
 
+  getMonQr(): Observable<{ success: boolean, qrDataUrl: string }> {
+    return this.httpClient.get<{ success: boolean, qrDataUrl: string }>(`${this.SERVICE_URL}/mon-qr`)
+  }
+
   getRapport(debut?: string, fin?: string): Observable<any> {
     let url = `${this.SERVICE_URL}/rapport`
     const params: string[] = []

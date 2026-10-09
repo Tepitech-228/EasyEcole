@@ -6,6 +6,7 @@ import { DocGenDocument } from 'src/app/data/modules/docgen/models/DocGenDocumen
 import { DocGenDocumentService } from 'src/app/data/modules/docgen/services/docgen-document.service';
 import { DossierEtudiant } from 'src/app/data/modules/inscription/models/DossierEtudiant.model';
 import { DossierEtudiantService } from 'src/app/data/modules/inscription/services/dossier-etudiant.service';
+import { PointageService } from 'src/app/data/modules/inscription/services/pointage.service';
 import { environment } from 'src/environments/environment';
 
 export interface AttestationType {
@@ -30,7 +31,7 @@ export class MonDossierPageComponent extends BaseComponentClass implements OnIni
 
   error: boolean = false
   dossier?: DossierEtudiant
-  qrCodeData: string = ''
+  qrImageUrl: string = ''
 
   readonly attestationTypes: AttestationType[] = ATTESTATION_TYPES
   attestationLoading: Record<string, boolean> = { PRE001: false, ADM020: false }
@@ -38,6 +39,7 @@ export class MonDossierPageComponent extends BaseComponentClass implements OnIni
   constructor(
     private dossierEtudiantService: DossierEtudiantService,
     private docgenDocumentService: DocGenDocumentService,
+    private pointageService: PointageService,
     private toastService: ToastService,
     private router: Router
   ) {
@@ -56,13 +58,28 @@ export class MonDossierPageComponent extends BaseComponentClass implements OnIni
     this.dossierEtudiantService.getMonDossier().subscribe({
       next: (res) => {
         this.dossier = res
-        if (this.dossier?.codeQR) {
-          this.qrCodeData = this.dossier.codeQR
-        }
+        this.chargerQrImage()
       },
       error: (err) => {
         console.log(err)
         this.error = true
+      }
+    })
+  }
+
+  /**
+   * QR de pointage généré côté serveur (token signé court, lisible par
+   * webcam). Toujours frais, aucune dépendance à un service externe.
+   */
+  private chargerQrImage(): void {
+    this.pointageService.getMonQr().subscribe({
+      next: (res) => {
+        if (res?.qrDataUrl) {
+          this.qrImageUrl = res.qrDataUrl
+        }
+      },
+      error: (err) => {
+        console.error('Impossible de générer le QR de pointage', err)
       }
     })
   }
@@ -102,10 +119,6 @@ export class MonDossierPageComponent extends BaseComponentClass implements OnIni
       case 'impaye': return 'yellow'
       default: return 'gray'
     }
-  }
-
-  encodeURIComponent(value: string): string {
-    return encodeURIComponent(value)
   }
 
   // ─────────────────────────────────────────────

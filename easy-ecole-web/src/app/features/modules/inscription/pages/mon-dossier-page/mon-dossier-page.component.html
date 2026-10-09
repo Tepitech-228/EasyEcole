@@ -242,10 +242,13 @@
     <div class="md:col-span-1 space-y-6">
       <div class="bg-white shadow rounded-lg p-6 text-center">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">QR Code</h3>
-        <div *ngIf="qrCodeData" class="flex justify-center mb-4">
-          <img [src]="'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrCodeData)"
-               alt="QR Code" class="w-48 h-48">
+        <div *ngIf="qrImageUrl" class="flex justify-center mb-4">
+          <img [src]="qrImageUrl"
+               alt="QR Code de pointage" class="w-48 h-48">
         </div>
+        <p *ngIf="!qrImageUrl" class="text-xs text-amber-600 mb-4">
+          QR code indisponible pour le moment — utilisez votre matricule ci-dessous.
+        </p>
         <p class="text-xs text-gray-400 mb-4">Scannez ce QR code pour le pointage</p>
         <div class="bg-gray-50 rounded p-3">
           <span class="block text-xs text-gray-500 mb-1">Matricule</span>

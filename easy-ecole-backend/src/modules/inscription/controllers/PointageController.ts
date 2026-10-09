@@ -10,6 +10,7 @@ import { VerificationPaiementService } from "../services/VerificationPaiementSer
 import { Enseignant } from "../../auth/models/Enseignant";
 import { Apprenant } from "../../auth/models/Apprenant";
 import { PersonnelAdministratif } from "../../auth/models/PersonnelAdministratif";
+import QRCode from 'qrcode';
 
 const ROLES_POINTAGE = [
   RolesUtilisateur.APPRENANT,
@@ -554,5 +555,30 @@ export default class PointageController {
                 statut: echeanceMoisEnCours.statut
             } : null
         };
+    }
+
+    /**
+     * Génère à la volée le QR code de pointage personnel de l'utilisateur
+     * connecté (token signé court, format identique aux badges/cartes : lisible
+     * par webcam). Toujours frais, aucune dépendance à un service externe
+     * (api.qrserver.com), aucune expiration liée à un fichier stocké.
+     */
+    static async getMonQr(req: Request, res: Response): Promise<Response> {
+        try {
+            const userId = Number(req.utilisateurId);
+            if (!userId) {
+                return res.status(401).json({ success: false, message: 'Non authentifié' });
+            }
+            const token = QrTokenService.signer(userId);
+            const qrDataUrl = await QRCode.toDataURL(token, {
+                width: 400,
+                margin: 4,
+                errorCorrectionLevel: 'M'
+            });
+            return res.status(200).json({ success: true, qrDataUrl });
+        } catch (error) {
+            console.error('Erreur', error);
+            return res.status(500).json({ success: false, message: 'Erreur interne' });
+        }
     }
 }
