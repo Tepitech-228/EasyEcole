@@ -194,7 +194,6 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   readonly moyensPaiementOptions: { value: string; label: string }[] = [
     { value: 'virement', label: 'Virement bancaire' },
     { value: 'especes', label: 'Espèces' },
-    { value: 'mobile_money', label: 'Mobile Money' },
     { value: 'cheque', label: 'Chèque' },
     { value: 'autre', label: 'Autres' },
     { value: 'depot_banque', label: 'Dépôt en banque' }
