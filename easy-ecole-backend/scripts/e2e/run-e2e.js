@@ -20,6 +20,7 @@ const { phase5 } = require('./05-notes-rattrapage.js')
 const { phase6 } = require('./06-bulletins-apres.js')
 const { phase7 } = require('./07-reinscription-10.js')
 const { phase8 } = require('./08-documents.js')
+const { phase10 } = require('./10-comite-correction.js')
 
 const PHASES = [
   { id: '01', name: 'Année scolaire', fn: phase1 },
@@ -29,7 +30,8 @@ const PHASES = [
   { id: '05', name: 'Notes rattrapage', fn: phase5 },
   { id: '06', name: 'Bulletins après rattrapage', fn: phase6 },
   { id: '07', name: 'Réinscription 10 étudiants', fn: phase7 },
-  { id: '08', name: 'Demandes de documents', fn: phase8 }
+  { id: '08', name: 'Demandes de documents', fn: phase8 },
+  { id: '10', name: 'Comité : décisions, pièces fautives, correction', fn: phase10 }
 ]
 
 const START_TIME = Date.now()
