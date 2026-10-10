@@ -545,4 +545,14 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     if (value == null) return '—'
     return new Intl.NumberFormat('fr-FR').format(value) + ' FCFA'
   }
+
+  libelleMois(mois: string | undefined | null): string {
+    if (!mois) return '—'
+    const m = String(mois).match(/^(\d{4})-(\d{2})$/)
+    if (!m) return String(mois)
+    const noms = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+    const nom = noms[Number(m[2]) - 1]
+    return nom ? `${nom} ${m[1]}` : String(mois)
+  }
 }

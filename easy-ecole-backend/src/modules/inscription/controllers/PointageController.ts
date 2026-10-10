@@ -514,6 +514,7 @@ export default class PointageController {
     private static calculerSituationFinanciere(dossier: DossierEtudiant): any {
         const echeances = dossier.echeances || [];
         const now = new Date();
+        now.setHours(0, 0, 0, 0);
 
         // Somme globale = frais de scolarité + frais d'inscription
         const fraisScolarite = dossier.fraisScolarite || 0;
@@ -529,31 +530,67 @@ export default class PointageController {
         // Reste à payer
         const resteAPayer = Math.max(0, sommeGlobale - montantPaye);
 
-        // Échéance du mois en cours
-        const moisEnCours = now.toISOString().slice(0, 7); // "YYYY-MM"
-        const echeanceMoisEnCours = echeances.find(e => {
-            const dateLimite = new Date(e.dateLimite);
-            return dateLimite.toISOString().slice(0, 7) === moisEnCours;
-        });
+        // Délai de paiement : le 5 du mois concerné par l'échéance.
+        // Une échéance non soldée après le 5 de son mois est en retard.
+        const moisDe = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const dateLimiteEffective = (e: Echeance): Date => {
+            const d = new Date(e.dateLimite as any);
+            return new Date(d.getFullYear(), d.getMonth(), 5);
+        };
 
-        // À jour si l'échéance du mois en cours est payée ou n'existe pas
-        const estAJour = !echeanceMoisEnCours ||
-            echeanceMoisEnCours.statut === 'paye' ||
-            echeanceMoisEnCours.statut === 'partiel';
+        const moisActuel = moisDe(now);
+
+        const lignes = [...echeances]
+            .sort((a, b) => new Date(a.dateLimite as any).getTime() - new Date(b.dateLimite as any).getTime())
+            .map(e => {
+                const montant = e.montant || 0;
+                const paye = Math.min(e.montantPaye || 0, montant);
+                const reste = Math.max(0, montant - paye);
+                const dateLimite = dateLimiteEffective(e);
+                const estPaye = reste <= 0;
+                const enRetard = !estPaye && dateLimite.getTime() < now.getTime();
+                const mois = (e.moisConcerne && String(e.moisConcerne)) || moisDe(dateLimite);
+                return {
+                    id: e.id,
+                    numeroEcheance: e.numeroEcheance,
+                    type: e.type,
+                    mois,
+                    montant,
+                    montantPaye: paye,
+                    resteAPayer: reste,
+                    devise: e.devise,
+                    dateLimite,
+                    statut: e.statut,
+                    estPaye,
+                    enRetard,
+                };
+            });
+
+        const echeancesEnRetard = lignes.filter(l => l.enRetard);
+        const estAJour = echeancesEnRetard.length === 0;
+
+        const moisEnCours = lignes.find(l => moisDe(new Date(l.dateLimite)) === moisActuel) || null;
 
         return {
             sommeGlobale,
             montantPaye,
             resteAPayer,
             estAJour,
-            echeanceMoisEnCours: echeanceMoisEnCours ? {
-                numeroEcheance: echeanceMoisEnCours.numeroEcheance,
-                montant: echeanceMoisEnCours.montant,
-                montantPaye: echeanceMoisEnCours.montantPaye,
-                resteAPayer: Math.max(0, echeanceMoisEnCours.montant - (echeanceMoisEnCours.montantPaye || 0)),
-                dateLimite: echeanceMoisEnCours.dateLimite,
-                statut: echeanceMoisEnCours.statut
-            } : null
+            echeancesEnRetard: echeancesEnRetard.length,
+            echeancesPayees: lignes.filter(l => l.estPaye).length,
+            echeancesTotales: lignes.length,
+            moisEnCours: moisEnCours ? {
+                mois: moisEnCours.mois,
+                numeroEcheance: moisEnCours.numeroEcheance,
+                montant: moisEnCours.montant,
+                montantPaye: moisEnCours.montantPaye,
+                resteAPayer: moisEnCours.resteAPayer,
+                dateLimite: moisEnCours.dateLimite,
+                statut: moisEnCours.statut,
+                estPaye: moisEnCours.estPaye,
+                enRetard: moisEnCours.enRetard,
+            } : null,
+            echeances: lignes
         };
     }
 

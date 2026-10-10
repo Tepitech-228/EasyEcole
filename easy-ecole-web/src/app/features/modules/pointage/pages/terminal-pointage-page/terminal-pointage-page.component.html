@@ -338,18 +338,50 @@
                 </div>
 
                 <!-- Échéance du mois en cours -->
-                <div *ngIf="scannedUser.situationFinanciere.echeanceMoisEnCours" class="mt-3 bg-amber-50 border border-amber-200 rounded-lg p-3">
-                  <p class="text-xs font-medium text-amber-800 mb-1">Échéance du mois en cours</p>
+                <div *ngIf="scannedUser.situationFinanciere.moisEnCours" class="mt-3 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <p class="text-xs font-medium text-amber-800 mb-1">Échéance du mois en cours (délai : le 5)</p>
                   <div class="flex items-center justify-between text-sm">
-                    <span class="text-gray-600">Mois {{ scannedUser.situationFinanciere.echeanceMoisEnCours.numeroEcheance }}</span>
-                    <span class="font-medium" [ngClass]="scannedUser.situationFinanciere.echeanceMoisEnCours.statut === 'paye' ? 'text-green-600' : 'text-red-600'">
-                      {{ scannedUser.situationFinanciere.echeanceMoisEnCours.statut === 'paye' ? 'Payée' : 'Impayée' }}
+                    <span class="text-gray-600">{{ libelleMois(scannedUser.situationFinanciere.moisEnCours.mois) }}</span>
+                    <span class="font-medium" [ngClass]="scannedUser.situationFinanciere.moisEnCours.estPaye ? 'text-green-600' : 'text-red-600'">
+                      {{ scannedUser.situationFinanciere.moisEnCours.estPaye ? 'Payée' : (scannedUser.situationFinanciere.moisEnCours.enRetard ? 'En retard' : 'À régler avant le 5') }}
                     </span>
                   </div>
                   <div class="flex items-center justify-between text-sm mt-1">
                     <span class="text-gray-600">Reste</span>
-                    <span class="font-medium text-gray-900">{{ formatCurrency(scannedUser.situationFinanciere.echeanceMoisEnCours.resteAPayer) }}</span>
+                    <span class="font-medium text-gray-900">{{ formatCurrency(scannedUser.situationFinanciere.moisEnCours.resteAPayer) }}</span>
                   </div>
+                </div>
+
+                <!-- Détail des échéances (payées + restantes) -->
+                <div *ngIf="scannedUser.situationFinanciere.echeances?.length" class="mt-4">
+                  <div class="flex items-center justify-between mb-2">
+                    <h6 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Échéances</h6>
+                    <span class="text-xs text-gray-400">
+                      {{ scannedUser.situationFinanciere.echeancesPayees }}/{{ scannedUser.situationFinanciere.echeancesTotales }} payée(s)
+                    </span>
+                  </div>
+                  <ul class="space-y-1.5">
+                    <li *ngFor="let ech of scannedUser.situationFinanciere.echeances"
+                      class="flex items-center justify-between text-sm rounded-lg px-3 py-2"
+                      [ngClass]="ech.estPaye ? 'bg-green-50' : (ech.enRetard ? 'bg-red-50' : 'bg-gray-50')">
+                      <div class="flex items-center gap-2 min-w-0">
+                        <span class="material-symbols-outlined text-sm"
+                          [ngClass]="ech.estPaye ? 'text-green-600' : (ech.enRetard ? 'text-red-600' : 'text-gray-400')">
+                          {{ ech.estPaye ? 'check_circle' : (ech.enRetard ? 'error' : 'schedule') }}
+                        </span>
+                        <div class="min-w-0">
+                          <p class="text-gray-800 truncate">{{ libelleMois(ech.mois) }} <span class="text-gray-400">· n°{{ ech.numeroEcheance }}</span></p>
+                          <p class="text-xs" [ngClass]="ech.estPaye ? 'text-green-600' : (ech.enRetard ? 'text-red-600' : 'text-gray-500')">
+                            {{ ech.estPaye ? 'Payée' : (ech.enRetard ? 'En retard' : 'À venir') }}
+                          </p>
+                        </div>
+                      </div>
+                      <div class="text-right shrink-0 pl-2">
+                        <p class="font-medium text-gray-900">{{ formatCurrency(ech.montant) }}</p>
+                        <p *ngIf="!ech.estPaye" class="text-xs text-red-600">reste {{ formatCurrency(ech.resteAPayer) }}</p>
+                      </div>
+                    </li>
+                  </ul>
                 </div>
               </div>
             </div>
