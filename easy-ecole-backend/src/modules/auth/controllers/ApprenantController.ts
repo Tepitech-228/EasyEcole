@@ -100,7 +100,7 @@ export default class ApprenantController {
         let apprenant: Apprenant | null = await Apprenant.findOne(options);
 
         if (apprenant != null) {
-            return res.status(400).json({ success: false, message: "Apprenant dÃ©jÃ  existant" });
+            return res.status(400).json({ success: false, message: "Apprenant déjà existant" });
         }
         else {
             await Apprenant.create({

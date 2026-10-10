@@ -35,7 +35,7 @@ export default class PassationController {
       });
       if (!deliberation) {
         await t.rollback();
-        return res.status(404).json({ message: 'DÃ©libÃ©ration non trouvÃ©e' });
+        return res.status(404).json({ message: 'Délibération non trouvée' });
       }
 
       const nextAnnee = await AnneeAcademique.findOne({
@@ -45,7 +45,7 @@ export default class PassationController {
       });
       if (!nextAnnee) {
         await t.rollback();
-        return res.status(400).json({ message: 'Aucune annÃ©e acadÃ©mique supÃ©rieure trouvÃ©e' });
+        return res.status(400).json({ message: 'Aucune année académique supérieure trouvée' });
       }
 
       const classe = deliberation.classe as any;
@@ -99,7 +99,7 @@ export default class PassationController {
               nom: r.nom,
               prenoms: r.prenoms,
               nbDettes: dettesActives.length,
-              message: `Ã‰tudiant en derniÃ¨re annÃ©e avec ${dettesActives.length} dette(s) active(s)`
+              message: `Étudiant en dernière année avec ${dettesActives.length} dette(s) active(s)`
             });
             continue;
           }
@@ -163,7 +163,7 @@ export default class PassationController {
               );
               (decision as any).dettesCrees = dettes.length;
             } catch (err) {
-              errors.push(`Erreur crÃ©ation dettes pour ${r.nom} ${r.prenoms}: ${err}`);
+              errors.push(`Erreur création dettes pour ${r.nom} ${r.prenoms}: ${err}`);
             }
           }
         }
@@ -174,7 +174,7 @@ export default class PassationController {
       await t.commit();
 
       return res.status(201).json({
-        message: `Passation effectuÃ©e pour ${created.length} Ã©tudiant(s)`,
+        message: `Passation effectuée pour ${created.length} étudiant(s)`,
         total: eligibles.length,
         created: created.length,
         skipped: eligibles.length - created.length,
@@ -208,7 +208,7 @@ export default class PassationController {
       return res.json(items);
     } catch (error) {
       logger.error('Erreur liste passations:', error);
-      return res.status(500).json({ message: 'Erreur lors de la rÃ©cupÃ©ration' });
+      return res.status(500).json({ message: 'Erreur lors de la récupération' });
     }
   }
 }

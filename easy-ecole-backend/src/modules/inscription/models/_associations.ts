@@ -428,7 +428,7 @@ Bordereau.belongsTo(Echeance, { foreignKey: 'echeanceId', as: 'echeance' })
 Utilisateur.hasMany(Bordereau, { foreignKey: 'utilisateurId', as: 'bordereaux' })
 Bordereau.belongsTo(Utilisateur, { foreignKey: 'utilisateurId', as: 'utilisateur' })
 
-// Bordereau - Utilisateur (validÃ© par)
+// Bordereau - Utilisateur (validé par)
 Utilisateur.hasMany(Bordereau, { foreignKey: 'valideParId', as: 'bordereauxValides' })
 Bordereau.belongsTo(Utilisateur, { foreignKey: 'valideParId', as: 'validePar' })
 
@@ -440,7 +440,7 @@ Quitus.belongsTo(Bordereau, { foreignKey: 'bordereauId', as: 'bordereau' })
 Bordereau.belongsTo(TypeOperationBordereau, { foreignKey: 'typeOperationId', as: 'typeOperation' })
 TypeOperationBordereau.hasMany(Bordereau, { foreignKey: 'typeOperationId', as: 'bordereaux' })
 
-// ---- New LMD / Ã‰valuation AvancÃ©e Associations ----
+// ---- New LMD / Évaluation Avancée Associations ----
 
 import { Ecue } from "./Ecue";
 import { Mcc } from "./Mcc";

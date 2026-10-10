@@ -19,11 +19,11 @@ export default class SuiviUeController {
       ]);
       return res.json({ ...result, progression });
     } catch (error: any) {
-      if (error.message === 'Cursus non trouvÃ©') {
+      if (error.message === 'Cursus non trouvé') {
         return res.status(404).json({ message: error.message });
       }
       logger.error('Erreur suivi UE:', error);
-      return res.status(500).json({ message: 'Erreur lors de la rÃ©cupÃ©ration du suivi' });
+      return res.status(500).json({ message: 'Erreur lors de la récupération du suivi' });
     }
   }
 
@@ -31,7 +31,7 @@ export default class SuiviUeController {
     try {
       const utilisateurId = (req as any).utilisateurId;
       if (!utilisateurId) {
-        return res.status(401).json({ message: 'Non authentifiÃ©' });
+        return res.status(401).json({ message: 'Non authentifié' });
       }
 
       const cursus = await CursusApprenant.findOne({
@@ -60,7 +60,7 @@ export default class SuiviUeController {
       return res.json({ ...result, progression });
     } catch (error) {
       logger.error('Erreur mon suivi:', error);
-      return res.status(500).json({ message: 'Erreur lors de la rÃ©cupÃ©ration du suivi' });
+      return res.status(500).json({ message: 'Erreur lors de la récupération du suivi' });
     }
   }
 
@@ -75,7 +75,7 @@ export default class SuiviUeController {
       return res.json(dettes);
     } catch (error) {
       logger.error('Erreur dettes:', error);
-      return res.status(500).json({ message: 'Erreur lors de la rÃ©cupÃ©ration des dettes' });
+      return res.status(500).json({ message: 'Erreur lors de la récupération des dettes' });
     }
   }
 
@@ -90,7 +90,7 @@ export default class SuiviUeController {
       return res.json(dettes);
     } catch (error) {
       logger.error('Erreur dettes actives:', error);
-      return res.status(500).json({ message: 'Erreur lors de la rÃ©cupÃ©ration des dettes' });
+      return res.status(500).json({ message: 'Erreur lors de la récupération des dettes' });
     }
   }
 
@@ -104,8 +104,8 @@ export default class SuiviUeController {
       const result = await GestionDetteService.verifierEligibiliteProgression(cursusApprenantId);
       return res.json(result);
     } catch (error) {
-      logger.error('Erreur vÃ©rification Ã©ligibilitÃ©:', error);
-      return res.status(500).json({ message: 'Erreur lors de la vÃ©rification' });
+      logger.error('Erreur vérification éligibilité:', error);
+      return res.status(500).json({ message: 'Erreur lors de la vérification' });
     }
   }
 
@@ -120,13 +120,13 @@ export default class SuiviUeController {
 
       const dette = await GestionDetteService.resorberDette(detteId, bulletinId);
       if (!dette) {
-        return res.status(404).json({ message: 'Dette non trouvÃ©e ou dÃ©jÃ  rÃ©sorbÃ©e' });
+        return res.status(404).json({ message: 'Dette non trouvée ou déjà résorbée' });
       }
 
       return res.json(dette);
     } catch (error) {
-      logger.error('Erreur rÃ©sorption dette:', error);
-      return res.status(500).json({ message: 'Erreur lors de la rÃ©sorption' });
+      logger.error('Erreur résorption dette:', error);
+      return res.status(500).json({ message: 'Erreur lors de la résorption' });
     }
   }
 }

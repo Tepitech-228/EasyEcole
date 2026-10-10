@@ -88,7 +88,7 @@ export default class BulletinController {
         });
         if (!cursusCount) {
           await t.rollback();
-          return res.status(404).json({ message: 'Aucun apprenant trouvÃ© dans cette classe' });
+          return res.status(404).json({ message: 'Aucun apprenant trouvé dans cette classe' });
         }
       }
 
@@ -102,8 +102,8 @@ export default class BulletinController {
       return res.status(201).json(bulletins);
     } catch (error) {
       await t.rollback();
-      logger.error('Erreur gÃ©nÃ©ration bulletins:', error);
-      return res.status(500).json({ message: 'Erreur lors de la gÃ©nÃ©ration' });
+      logger.error('Erreur génération bulletins:', error);
+      return res.status(500).json({ message: 'Erreur lors de la génération' });
     }
   }
 
@@ -167,7 +167,7 @@ export default class BulletinController {
       });
     } catch (error) {
       logger.error('Erreur liste bulletins:', error);
-      return res.status(500).json({ message: 'Erreur lors de la rÃ©cupÃ©ration' });
+      return res.status(500).json({ message: 'Erreur lors de la récupération' });
     }
   }
 
@@ -187,7 +187,7 @@ export default class BulletinController {
           }
         ]
       });
-      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvÃ©' });
+      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvé' });
 
       const lignes = bulletin.get('lignesBulletins') as LigneBulletin[] | undefined;
       const uesBulletin: {
@@ -244,8 +244,8 @@ export default class BulletinController {
       }
       return res.json({ ...bulletin.toJSON(), ues: uesBulletin });
     } catch (error) {
-      logger.error('Erreur dÃ©tail bulletin:', error);
-      return res.status(500).json({ message: 'Erreur lors de la rÃ©cupÃ©ration' });
+      logger.error('Erreur détail bulletin:', error);
+      return res.status(500).json({ message: 'Erreur lors de la récupération' });
     }
   }
 
@@ -253,10 +253,10 @@ export default class BulletinController {
   async update(req: Request, res: Response) {
     try {
       const bulletin = await Bulletin.findByPk(Number(req.params.id));
-      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvÃ©' });
+      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvé' });
 
       if (bulletin.statut === 'publie') {
-        return res.status(400).json({ message: 'Impossible de modifier un bulletin publiÃ©' });
+        return res.status(400).json({ message: 'Impossible de modifier un bulletin publié' });
       }
 
       const { appreciation } = req.body;
@@ -266,8 +266,8 @@ export default class BulletinController {
 
       return res.json(bulletin);
     } catch (error) {
-      logger.error('Erreur mise Ã  jour bulletin:', error);
-      return res.status(500).json({ message: 'Erreur lors de la mise Ã  jour' });
+      logger.error('Erreur mise à jour bulletin:', error);
+      return res.status(500).json({ message: 'Erreur lors de la mise à jour' });
     }
   }
 
@@ -275,8 +275,8 @@ export default class BulletinController {
   async publier(req: Request, res: Response) {
     try {
       const bulletin = await Bulletin.findByPk(Number(req.params.id));
-      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvÃ©' });
-      if (bulletin.statut === 'publie') return res.status(400).json({ message: 'DÃ©jÃ  publiÃ©' });
+      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvé' });
+      if (bulletin.statut === 'publie') return res.status(400).json({ message: 'Déjà publié' });
 
       await bulletin.update({
         statut: 'publie',
@@ -306,7 +306,7 @@ export default class BulletinController {
   async signerEnseignant(req: Request, res: Response) {
     try {
       const bulletin = await Bulletin.findByPk(Number(req.params.id));
-      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvÃ©' });
+      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvé' });
 
       const { signature } = req.body;
       if (!signature) return res.status(400).json({ message: 'Signature requise' });
@@ -327,7 +327,7 @@ export default class BulletinController {
   async signerChef(req: Request, res: Response) {
     try {
       const bulletin = await Bulletin.findByPk(Number(req.params.id));
-      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvÃ©' });
+      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvé' });
 
       const { signature } = req.body;
       if (!signature) return res.status(400).json({ message: 'Signature requise' });
@@ -348,7 +348,7 @@ export default class BulletinController {
   async delete(req: Request, res: Response) {
     try {
       const bulletin = await Bulletin.findByPk(Number(req.params.id));
-      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvÃ©' });
+      if (!bulletin) return res.status(404).json({ message: 'Bulletin non trouvé' });
 
       await bulletin.destroy();
       return res.status(204).end();
@@ -426,7 +426,7 @@ export default class BulletinController {
   async monReleve(req: Request, res: Response) {
     try {
       const utilisateurId = req.utilisateurId!;
-      if (!utilisateurId) return res.status(401).json({ message: 'Non authentifiÃ©' });
+      if (!utilisateurId) return res.status(401).json({ message: 'Non authentifié' });
 
       // Restriction 1ère année : un apprenant en Licence 1 ne doit voir QUE les
       // bulletins des semestres 1 et 2 (déterminé via son niveau d'étude courant).
@@ -451,7 +451,7 @@ export default class BulletinController {
         ],
         order: [['datePublication', 'DESC']]
       });
-      if (!bulletin) return res.status(404).json({ message: 'Aucun bulletin publiÃ© trouvÃ©' });
+      if (!bulletin) return res.status(404).json({ message: 'Aucun bulletin publié trouvé' });
       const rattrapageEffectue = await RattrapageInscription.count({
         where: {
           demandePar: utilisateurId,
@@ -462,8 +462,8 @@ export default class BulletinController {
       (bulletin as any).setDataValue('aFaitRattrapage', rattrapageEffectue > 0);
       return res.json(bulletin);
     } catch (error) {
-      logger.error('Erreur relevÃ©:', error);
-      return res.status(500).json({ message: 'Erreur lors de la rÃ©cupÃ©ration' });
+      logger.error('Erreur relevé:', error);
+      return res.status(500).json({ message: 'Erreur lors de la récupération' });
     }
   }
 }

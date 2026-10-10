@@ -56,8 +56,8 @@ export default class DeliberationController {
         }
       });
     } catch (error) {
-      logger.error('Erreur liste dÃ©libÃ©rations:', error);
-      return res.status(500).json({ message: 'Erreur lors de la rÃ©cupÃ©ration' });
+      logger.error('Erreur liste délibérations:', error);
+      return res.status(500).json({ message: 'Erreur lors de la récupération' });
     }
   }
 
@@ -75,13 +75,13 @@ export default class DeliberationController {
       });
 
       if (!deliberation) {
-        return res.status(404).json({ message: 'DÃ©libÃ©ration non trouvÃ©e' });
+        return res.status(404).json({ message: 'Délibération non trouvée' });
       }
 
       return res.json(deliberation);
     } catch (error) {
-      logger.error('Erreur dÃ©tail dÃ©libÃ©ration:', error);
-      return res.status(500).json({ message: 'Erreur lors de la rÃ©cupÃ©ration' });
+      logger.error('Erreur détail délibération:', error);
+      return res.status(500).json({ message: 'Erreur lors de la récupération' });
     }
   }
 
@@ -107,8 +107,8 @@ export default class DeliberationController {
 
       return res.status(201).json(deliberation);
     } catch (error) {
-      logger.error('Erreur crÃ©ation dÃ©libÃ©ration:', error);
-      return res.status(500).json({ message: 'Erreur lors de la crÃ©ation' });
+      logger.error('Erreur création délibération:', error);
+      return res.status(500).json({ message: 'Erreur lors de la création' });
     }
   }
 
@@ -116,7 +116,7 @@ export default class DeliberationController {
     try {
       const deliberation = await Deliberation.findByPk(req.params.id);
       if (!deliberation) {
-        return res.status(404).json({ message: 'DÃ©libÃ©ration non trouvÃ©e' });
+        return res.status(404).json({ message: 'Délibération non trouvée' });
       }
 
       const { libelle, classeId, anneeAcademiqueId, periode, date, statut, sessionType, commentaire, verrouille } = req.body;
@@ -135,8 +135,8 @@ export default class DeliberationController {
       await deliberation.update(updateData);
       return res.json(deliberation);
     } catch (error) {
-      logger.error('Erreur mise Ã  jour dÃ©libÃ©ration:', error);
-      return res.status(500).json({ message: 'Erreur lors de la mise Ã  jour' });
+      logger.error('Erreur mise à jour délibération:', error);
+      return res.status(500).json({ message: 'Erreur lors de la mise à jour' });
     }
   }
 
@@ -144,13 +144,13 @@ export default class DeliberationController {
     try {
       const deliberation = await Deliberation.findByPk(req.params.id);
       if (!deliberation) {
-        return res.status(404).json({ message: 'DÃ©libÃ©ration non trouvÃ©e' });
+        return res.status(404).json({ message: 'Délibération non trouvée' });
       }
 
       await deliberation.destroy();
       return res.status(204).end();
     } catch (error) {
-      logger.error('Erreur suppression dÃ©libÃ©ration:', error);
+      logger.error('Erreur suppression délibération:', error);
       return res.status(500).json({ message: 'Erreur lors de la suppression' });
     }
   }
@@ -160,17 +160,17 @@ export default class DeliberationController {
       const { decision, commentaire, assiduite, situationFinanciere } = req.body;
       const decisionsValides = Object.values(DecisionType);
       if (!decisionsValides.includes(decision)) {
-        return res.status(400).json({ message: `DÃ©cision invalide. Valeurs autorisÃ©es: ${decisionsValides.join(', ')}` });
+        return res.status(400).json({ message: `Décision invalide. Valeurs autorisées: ${decisionsValides.join(', ')}` });
       }
 
       const resultat = await ResultatDeliberation.findByPk(req.params.resultatId);
       if (!resultat) {
-        return res.status(404).json({ message: 'RÃ©sultat non trouvÃ©' });
+        return res.status(404).json({ message: 'Résultat non trouvé' });
       }
 
       const deliberation = await Deliberation.findByPk(resultat.deliberationId);
       if (deliberation && deliberation.verrouille) {
-        return res.status(403).json({ message: 'DÃ©libÃ©ration verrouillÃ©e, aucune modification autorisÃ©e' });
+        return res.status(403).json({ message: 'Délibération verrouillée, aucune modification autorisée' });
       }
 
       const ancienneDecision = resultat.decision;
@@ -208,8 +208,8 @@ export default class DeliberationController {
 
       return res.json(resultat);
     } catch (error) {
-      logger.error('Erreur mise Ã  jour dÃ©cision:', error);
-      return res.status(500).json({ message: 'Erreur lors de la mise Ã  jour' });
+      logger.error('Erreur mise à jour décision:', error);
+      return res.status(500).json({ message: 'Erreur lors de la mise à jour' });
     }
   }
 
@@ -217,12 +217,12 @@ export default class DeliberationController {
     try {
       const deliberation = await Deliberation.findByPk(req.params.id);
       if (!deliberation) {
-        return res.status(404).json({ message: 'DÃ©libÃ©ration non trouvÃ©e' });
+        return res.status(404).json({ message: 'Délibération non trouvée' });
       }
 
       const existing = await ResultatDeliberation.count({ where: { deliberationId: deliberation.id } });
       if (existing > 0) {
-        return res.status(400).json({ message: 'Les rÃ©sultats ont dÃ©jÃ  Ã©tÃ© chargÃ©s' });
+        return res.status(400).json({ message: 'Les résultats ont déjà été chargés' });
       }
 
       const bulletins = await Bulletin.findAll({
@@ -235,7 +235,7 @@ export default class DeliberationController {
       });
 
       if (!bulletins.length) {
-        return res.status(404).json({ message: 'Aucun bulletin trouvÃ© pour cette classe et pÃ©riode' });
+        return res.status(404).json({ message: 'Aucun bulletin trouvé pour cette classe et période' });
       }
 
       const resultatsData = bulletins.map((b, index) => ({
@@ -273,7 +273,7 @@ export default class DeliberationController {
 
       return res.status(201).json(resultats);
     } catch (error) {
-      logger.error('Erreur chargement rÃ©sultats:', error);
+      logger.error('Erreur chargement résultats:', error);
       return res.status(500).json({ message: 'Erreur lors du chargement' });
     }
   }
@@ -282,18 +282,18 @@ export default class DeliberationController {
     try {
       const deliberation = await Deliberation.findByPk(req.params.id);
       if (!deliberation) {
-        return res.status(404).json({ message: 'DÃ©libÃ©ration non trouvÃ©e' });
+        return res.status(404).json({ message: 'Délibération non trouvée' });
       }
 
       if (deliberation.statut === 'cloturee') {
-        return res.status(400).json({ message: 'DÃ©libÃ©ration dÃ©jÃ  clÃ´turÃ©e' });
+        return res.status(400).json({ message: 'Délibération déjà clôturée' });
       }
 
       await deliberation.update({ statut: 'cloturee' });
       return res.json(deliberation);
     } catch (error) {
-      logger.error('Erreur clÃ´ture dÃ©libÃ©ration:', error);
-      return res.status(500).json({ message: 'Erreur lors de la clÃ´ture' });
+      logger.error('Erreur clôture délibération:', error);
+      return res.status(500).json({ message: 'Erreur lors de la clôture' });
     }
   }
 
@@ -301,10 +301,10 @@ export default class DeliberationController {
     try {
       const deliberation = await Deliberation.findByPk(req.params.id);
       if (!deliberation) {
-        return res.status(404).json({ message: 'DÃ©libÃ©ration non trouvÃ©e' });
+        return res.status(404).json({ message: 'Délibération non trouvée' });
       }
       if (deliberation.statut !== 'cloturee') {
-        return res.status(400).json({ message: 'Seules les dÃ©libÃ©rations clÃ´turÃ©es peuvent Ãªtre publiÃ©es' });
+        return res.status(400).json({ message: 'Seules les délibérations clôturées peuvent être publiées' });
       }
       await deliberation.update({ statut: 'publiee' });
       return res.json(deliberation);
@@ -318,10 +318,10 @@ export default class DeliberationController {
     try {
       const deliberation = await Deliberation.findByPk(req.params.id);
       if (!deliberation) {
-        return res.status(404).json({ message: 'DÃ©libÃ©ration non trouvÃ©e' });
+        return res.status(404).json({ message: 'Délibération non trouvée' });
       }
       if (deliberation.statut !== 'publiee') {
-        return res.status(400).json({ message: 'Seules les dÃ©libÃ©rations publiÃ©es peuvent Ãªtre contestÃ©es' });
+        return res.status(400).json({ message: 'Seules les délibérations publiées peuvent être contestées' });
       }
       await deliberation.update({ statut: 'contestee', verrouille: false });
       return res.json(deliberation);
@@ -335,10 +335,10 @@ export default class DeliberationController {
     try {
       const deliberation = await Deliberation.findByPk(req.params.id);
       if (!deliberation) {
-        return res.status(404).json({ message: 'DÃ©libÃ©ration non trouvÃ©e' });
+        return res.status(404).json({ message: 'Délibération non trouvée' });
       }
       if (deliberation.statut !== 'cloturee' && deliberation.statut !== 'publiee') {
-        return res.status(400).json({ message: 'Seules les dÃ©libÃ©rations clÃ´turÃ©es ou publiÃ©es peuvent Ãªtre verrouillÃ©es' });
+        return res.status(400).json({ message: 'Seules les délibérations clôturées ou publiées peuvent être verrouillées' });
       }
       await deliberation.update({ verrouille: true });
       return res.json(deliberation);
@@ -352,13 +352,13 @@ export default class DeliberationController {
     try {
       const deliberation = await Deliberation.findByPk(req.params.id);
       if (!deliberation) {
-        return res.status(404).json({ message: 'DÃ©libÃ©ration non trouvÃ©e' });
+        return res.status(404).json({ message: 'Délibération non trouvée' });
       }
       await deliberation.update({ verrouille: false });
       return res.json(deliberation);
     } catch (error) {
-      logger.error('Erreur dÃ©verrouillage:', error);
-      return res.status(500).json({ message: 'Erreur lors du dÃ©verrouillage' });
+      logger.error('Erreur déverrouillage:', error);
+      return res.status(500).json({ message: 'Erreur lors du déverrouillage' });
     }
   }
 
@@ -369,7 +369,7 @@ export default class DeliberationController {
         include: [{ association: Deliberation.associations.classe }]
       });
       if (!deliberation) {
-        return res.status(404).json({ message: 'DÃ©libÃ©ration non trouvÃ©e' });
+        return res.status(404).json({ message: 'Délibération non trouvée' });
       }
 
       const filename = await GenerateurPVService.generer(deliberationId);
@@ -377,7 +377,7 @@ export default class DeliberationController {
       const classe = deliberation.classe as any;
       // Archivage automatique dans la GED
       await ArchiveGedService.archiverDocumentDeliberation({
-        titre: `PV DÃ©libÃ©ration - ${classe?.libelle || ''} - ${deliberation.periode} - ${deliberation.date?.toLocaleDateString('fr-FR') || ''}`,
+        titre: `PV Délibération - ${classe?.libelle || ''} - ${deliberation.periode} - ${deliberation.date?.toLocaleDateString('fr-FR') || ''}`,
         fichier: filename,
         anneeAcademiqueId: deliberation.anneeAcademiqueId,
         parcoursId: classe?.parcoursId || undefined,
@@ -387,10 +387,10 @@ export default class DeliberationController {
         uploaderId: (req as any).utilisateurId || 1
       });
 
-      return res.json({ message: 'PV gÃ©nÃ©rÃ© et archivÃ© avec succÃ¨s', filename });
+      return res.json({ message: 'PV généré et archivé avec succès', filename });
     } catch (error) {
-      logger.error('Erreur gÃ©nÃ©ration PV:', error);
-      return res.status(500).json({ message: 'Erreur lors de la gÃ©nÃ©ration du PV' });
+      logger.error('Erreur génération PV:', error);
+      return res.status(500).json({ message: 'Erreur lors de la génération du PV' });
     }
   }
 
@@ -403,11 +403,11 @@ export default class DeliberationController {
         return res.status(400).json({ message: 'Nom de fichier invalide' });
       }
       if (!fs.existsSync(filePath)) {
-        return res.status(404).json({ message: 'Fichier non trouvÃ©' });
+        return res.status(404).json({ message: 'Fichier non trouvé' });
       }
       res.download(filePath, filename);
     } catch (error) {
-      return res.status(500).json({ message: 'Erreur lors du tÃ©lÃ©chargement' });
+      return res.status(500).json({ message: 'Erreur lors du téléchargement' });
     }
   }
 
@@ -417,7 +417,7 @@ export default class DeliberationController {
         include: [{ association: Deliberation.associations.resultats }]
       });
       if (!deliberation) {
-        return res.status(404).json({ message: 'DÃ©libÃ©ration non trouvÃ©e' });
+        return res.status(404).json({ message: 'Délibération non trouvée' });
       }
 
       const resultats = deliberation.resultats || [];
@@ -484,7 +484,7 @@ export default class DeliberationController {
       });
       return res.json(historique);
     } catch (error) {
-      return res.status(500).json({ message: 'Erreur lors de la rÃ©cupÃ©ration' });
+      return res.status(500).json({ message: 'Erreur lors de la récupération' });
     }
   }
 
@@ -493,11 +493,24 @@ export default class DeliberationController {
       const { deliberationId } = req.params;
       const resultats = await ResultatDeliberation.findAll({
         where: { deliberationId, decision: 'admis_avec_dette' },
-        include: [{ model: DetteAcademique, as: 'dettes', required: false }]
+        include: [{ association: ResultatDeliberation.associations.cursusApprenant, required: false }]
       });
-      return res.json(resultats);
+
+      const dettes = await DetteAcademique.findAll({ where: { deliberationId } });
+      const dettesParCursus = new Map<number, DetteAcademique[]>();
+      for (const dette of dettes) {
+        const key = Number(dette.cursusApprenantId);
+        if (!dettesParCursus.has(key)) dettesParCursus.set(key, []);
+        dettesParCursus.get(key)!.push(dette);
+      }
+
+      const data = resultats.map(r => ({
+        ...r.get({ plain: true }),
+        dettes: dettesParCursus.get(Number(r.cursusApprenantId)) || []
+      }));
+      return res.json(data);
     } catch (error) {
-      return res.status(500).json({ message: 'Erreur lors de la rÃ©cupÃ©ration des dettes' });
+      return res.status(500).json({ message: 'Erreur lors de la récupération des dettes' });
     }
   }
 }
