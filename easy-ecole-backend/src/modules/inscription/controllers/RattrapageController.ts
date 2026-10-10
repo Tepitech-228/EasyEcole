@@ -283,7 +283,7 @@ export default class RattrapageController {
     try {
       const { RattrapageDocumentRequis } = await import('../models/RattrapageDocumentRequis')
       const documents = await RattrapageDocumentRequis.findAll({
-        where: { rattrapageSessionId: req.params.sessionId },
+        where: { rattrapageSessionId: req.params.id },
         order: [['ordre', 'ASC']],
       })
       return res.status(200).json({ success: true, data: documents })

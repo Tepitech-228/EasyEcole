@@ -336,6 +336,14 @@ AffectationSalleClasse.belongsTo(Classe, { as: 'classe', foreignKey: 'classeId' 
 AnneeAcademique.hasMany(AffectationSalleClasse, { foreignKey: 'anneeAcademiqueId', as: 'affectationsSallesClasses' })
 AffectationSalleClasse.belongsTo(AnneeAcademique, { as: 'anneeAcademique', foreignKey: 'anneeAcademiqueId' })
 
+// Creneau - Etablissement
+Etablissement.hasMany(Creneau, { foreignKey: 'etablissementId', as: 'creneaux' })
+Creneau.belongsTo(Etablissement, { as: 'etablissement', foreignKey: 'etablissementId' })
+
+// AffectationSalleClasse - Etablissement
+Etablissement.hasMany(AffectationSalleClasse, { foreignKey: 'etablissementId', as: 'affectationsSallesClasses' })
+AffectationSalleClasse.belongsTo(Etablissement, { as: 'etablissement', foreignKey: 'etablissementId' })
+
 // Cours - ListePresence
 Cours.hasMany(ListePresence, { foreignKey: 'coursId', as: 'listesPresences' })
 ListePresence.belongsTo(Cours, { as: 'cours', foreignKey: 'coursId' })

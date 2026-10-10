@@ -20,9 +20,9 @@ export default class RhReportingController {
       const periodeIds = periodeOuvertes.map((p: any) => p.id);
       const masseSalariale = periodeIds.length > 0 ? await RhBulletinPaie.sum('totalGains', { where: { periodeId: periodeIds } as any }) || 0 : 0;
       const parDepartement = await RhEmploye.findAll({
-        attributes: ['departementId', [fn('COUNT', col('id')), 'count']],
+        attributes: ['departementId', [fn('COUNT', col('RhEmploye.id')), 'count']],
         include: [{ model: RhDepartement, as: 'departement', attributes: ['nom'] }],
-        group: ['departementId']
+        group: ['RhEmploye.departementId']
       });
       const pretsActifs = await RhPret.count({ where: { statut: 'actif' } });
       const totalPrets = await RhPret.sum('soldeRestant', { where: { statut: 'actif' } }) || 0;
@@ -61,10 +61,10 @@ export default class RhReportingController {
   static async getEffectifs(req: Request, res: Response): Promise<Response> {
     try {
       const data = await RhEmploye.findAll({
-        attributes: ['posteId', [fn('COUNT', col('id')), 'count']],
+        attributes: ['posteId', [fn('COUNT', col('RhEmploye.id')), 'count']],
         include: [{ model: RhPoste, as: 'poste', attributes: ['titre'] }],
         where: { statut: 'actif' },
-        group: ['posteId']
+        group: ['RhEmploye.posteId']
       });
       return res.status(200).json(data);
     } catch (error) {

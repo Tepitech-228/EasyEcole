@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Op, fn, col, literal } from "sequelize";
+import { Op, literal } from "sequelize";
 import { DocumentGed } from "../models/DocumentGed";
 import Domain from "../models/Domain";
 import DocumentType from "../models/DocumentType";
@@ -17,7 +17,7 @@ class DashboardGedController {
             const totalDefinitif = await DocumentGed.count({ where: { lifecycleStatus: 'definitif' } });
             const totalADetruire = await DocumentGed.count({ where: { lifecycleStatus: 'a_detruire' } });
             const totalLocked = await DocumentGed.count({ where: { isLocked: true } });
-            const totalSansDUA = await DocumentGed.count({ where: literal('dua_end_date IS NULL') });
+            const totalSansDUA = await DocumentGed.count({ where: literal('duaEndDate IS NULL') });
             const duaExpire = await DocumentGed.count({ where: { duaEndDate: { [Op.lte]: new Date() }, lifecycleStatus: { [Op.notIn]: ['a_detruire'] } } });
 
             const totalFolders = await Folder.count();
@@ -50,12 +50,7 @@ class DashboardGedController {
     static async parDomaine(req: Request, res: Response): Promise<Response> {
         try {
             const domains = await Domain.findAll({
-                attributes: ['id', 'code', 'nom'],
-                include: [{
-                    association: 'documents',
-                    attributes: [],
-                    required: false
-                }]
+                attributes: ['id', 'code', 'label']
             });
 
             const result: any[] = [];

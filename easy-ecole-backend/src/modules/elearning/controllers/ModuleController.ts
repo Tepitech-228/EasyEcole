@@ -6,8 +6,10 @@ export default class ModuleController {
 
     static async getAll(req: Request, res: Response): Promise<Response> {
         try {
+            const where: any = {};
+            if (req.params.coursId) where.coursId = req.params.coursId;
             const modules = await ModuleElearning.findAll({
-                where: { coursId: req.params.coursId },
+                where,
                 include: [ModuleElearning.associations.supports]
             });
             return res.status(200).send(modules);

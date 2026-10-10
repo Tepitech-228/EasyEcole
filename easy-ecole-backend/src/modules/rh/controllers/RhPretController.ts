@@ -57,7 +57,7 @@ export default class RhPretController {
     try {
       const data = await RhPret.findAll({
         where: { employeId: req.params.employeId },
-        include: [RhRemboursementPret]
+        include: [{ model: RhRemboursementPret, as: 'remboursements' }]
       });
       return res.status(200).send(data);
     } catch (error) {

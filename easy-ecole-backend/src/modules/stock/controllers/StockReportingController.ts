@@ -13,7 +13,11 @@ class StockReportingController {
     static async getStats(req: Request, res: Response): Promise<Response> {
         try {
             const totalArticles = await Article.count();
-            const valeurStock = await Article.sum(literal('stockActuel * prixUnitaire') as any) || 0;
+            const valeurStockRow: any = await Article.findOne({
+                attributes: [[fn('SUM', literal('stockActuel * prixUnitaire')), 'total']],
+                raw: true
+            });
+            const valeurStock = Number(valeurStockRow?.total || 0);
             const alerteStock = await Article.count({ where: { stockActuel: { [Op.lte]: col('stockMinimum') } } });
             const mouvementsAnnee = await MouvementStock.count({
                 where: { dateMouvement: { [Op.gte]: new Date(new Date().getFullYear(), 0, 1) } }
@@ -23,9 +27,9 @@ class StockReportingController {
                 where: { dateRebut: { [Op.gte]: new Date(new Date().getFullYear(), 0, 1) } }
             }) || 0;
             const parCategorie = await Article.findAll({
-                attributes: ['categorieId', [fn('COUNT', col('id')), 'count'], [fn('SUM', literal('stockActuel * prixUnitaire')), 'valeur']],
+                attributes: ['categorieId', [fn('COUNT', col('StkArticle.id')), 'count'], [fn('SUM', literal('stockActuel * prixUnitaire')), 'valeur']],
                 include: [{ model: CategorieArticle, as: 'categorie', attributes: ['nom'] }],
-                group: ['categorieId']
+                group: ['StkArticle.categorieId']
             });
             return res.status(200).json({
                 totalArticles, valeurStock, alerteStock,

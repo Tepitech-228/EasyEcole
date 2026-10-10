@@ -24,9 +24,9 @@ export default class ReportingController {
                 group: ['etat']
             });
             const parCategorie = await Immobilisation.findAll({
-                attributes: ['categorieId', [fn('COUNT', col('id')), 'count']],
+                attributes: ['categorieId', [fn('COUNT', col('ImmImmobilisation.id')), 'count']],
                 include: [{ model: CategorieImmobilisation, as: 'categorie', attributes: ['nom'] }],
-                group: ['categorieId']
+                group: ['ImmImmobilisation.categorieId']
             });
             const recentAcquisitions = await Acquisition.count({
                 where: { dateAcquisition: { [Op.gte]: new Date(new Date().getFullYear(), 0, 1) } }

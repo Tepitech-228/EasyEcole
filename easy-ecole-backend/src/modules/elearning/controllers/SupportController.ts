@@ -9,9 +9,9 @@ export default class SupportController {
 
     static async getAll(req: Request, res: Response): Promise<Response> {
         try {
-            const supports = await Support.findAll({
-                where: { moduleId: req.params.moduleId }
-            });
+            const where: any = {};
+            if (req.params.moduleId) where.moduleId = req.params.moduleId;
+            const supports = await Support.findAll({ where });
             return res.status(200).send(supports);
         } catch (error) {
             return res.status(500).json({ success: false, error: error });

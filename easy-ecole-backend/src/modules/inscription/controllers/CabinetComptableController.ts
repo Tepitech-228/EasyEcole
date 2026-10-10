@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { Bordereau } from "../../inscription/models/Bordereau";
-import { QueryTypes } from "sequelize";
+import { QueryTypes, Op } from "sequelize";
 
 export class CabinetComptableDashboardController {
 
@@ -14,7 +14,7 @@ export class CabinetComptableDashboardController {
             const traites = await Bordereau.count({ where: { statut: 'traite' } });
 
             const avecReference = await Bordereau.count({
-                where: { referenceBancaire: { $ne: null } as any }
+                where: { referenceBancaire: { [Op.ne]: null } as any }
             });
 
             // Requêtes chartes en parallèle avec try/catch individuel
@@ -111,7 +111,7 @@ export class CabinetComptableDashboardController {
 
         try {
             const { rows, count: total } = await Bordereau.findAndCountAll({
-                where: { referenceBancaire: { $ne: null } as any },
+                where: { referenceBancaire: { [Op.ne]: null } as any },
                 include: [
                     { association: Bordereau.associations.utilisateur },
                     { association: Bordereau.associations.validePar }

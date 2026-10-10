@@ -2849,7 +2849,8 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
       applyHeaderStyle(ws.getRow(1));
 
       apprenants.forEach((a) => {
-        const u = a.utilisateur!;
+        const u = a.utilisateur;
+        if (!u) return;
         const identite = (a as any).identite;
         const row = ws.addRow({
           nom: u.nom,
@@ -4090,7 +4091,7 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
         };
         if (showApprenant) rowData.matricule = dossierByUserId.get(u.id)?.matricule ?? "";
         if (showProfil) {
-          rowData.fonction = (profil as any).fonctionAdministrative ?? (profil as any).fonction ?? "";
+          rowData.fonction = (profil as any)?.fonctionAdministrative ?? (profil as any)?.fonction ?? "";
           rowData.dateNaissance = profil?.dateNaissance ? new Date(profil.dateNaissance).toLocaleDateString("fr-FR") : "";
           rowData.lieuNaissance = profil?.lieuNaissance ?? "";
         }

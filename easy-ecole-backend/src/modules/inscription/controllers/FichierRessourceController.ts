@@ -62,7 +62,14 @@ export default class FichierRessourceController {
                 }
             }
             const fichierRessourcePath = path.resolve('public/cours/ressources/' + fichierRessource.fichier)
-            const data = await fs.readFile(fichierRessourcePath);
+            let data: Buffer;
+            try {
+                data = await fs.readFile(fichierRessourcePath);
+            } catch (err: any) {
+                if (err?.code === 'ENOENT')
+                    return res.status(404).json({ success: false, message: "Fichier introuvable sur le serveur" });
+                throw err;
+            }
 
             res.setHeader('Content-Disposition', `attachment; filename=${nomFichierRessource}`);
             res.setHeader('Content-Type', 'application/octet-stream');

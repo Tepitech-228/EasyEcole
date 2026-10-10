@@ -265,6 +265,8 @@ export default class ListeNoteEvaluationController {
             return res
         } catch (error) {
             console.error("Erreur export PV:", error);
+            if (error instanceof Error && error.message.includes("non trouvée"))
+                return res.status(404).json({ success: false, message: error.message })
             return res.status(500).json({ success: false, message: "Erreur lors de l'export du PV" })
         }
     }
