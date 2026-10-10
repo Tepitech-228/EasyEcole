@@ -70,30 +70,17 @@ const ROLE_ENUM_TO_RBAC: Record<string, string | null> = {
 };
 
 const COMPTES: CompteDemo[] = [
-    // ── Comptes administratifs (emails Gmail de prod, recevant les OTP) ──
-    // Ces 4 comptes sont créés/mis à jour automatiquement au déploiement (Dokploy post-deploy).
+    // ── Comptes système de PRODUCTION — SEULS comptes créés/mis à jour au déploiement ──
+    //   • admin            → administrateur unique du système (Super Admin)
+    //   • cabinet_comptable → cabinet comptable (Comptable)
+    //   • esa_compta        → Service Recouvrement (ESA Compta)
     // L'OTP est envoyé à l'adresse `email` (voir AuthController / OtpService).
+    // ⚠️ AUCUN compte de démonstration/test ici : ce seed tourne à CHAQUE boot
+    //    (docker-entrypoint → seed-boot, et DatabaseConnection.init). Y ajouter un
+    //    compte le créerait en production.
     { role: 'admin', roleRbac: ROLE_ENUM_TO_RBAC['admin'], nom: 'Admin', prenoms: 'Systeme', identifiant: 'tepitechbuild', email: 'tepitechbuild@gmail.com', contact: '+22890000000' },
     { role: 'cabinet_comptable', roleRbac: ROLE_ENUM_TO_RBAC['cabinet_comptable'], nom: 'Cabinet', prenoms: 'Comptable', identifiant: 'tepitechcorp', email: 'tepitechcorp@gmail.com', contact: '+2280106000001', dateNaissance: '1985-01-01', lieuNaissance: 'Lomé' },
     { role: 'esa_compta', roleRbac: ROLE_ENUM_TO_RBAC['esa_compta'], nom: 'ESA', prenoms: 'Compta Service', identifiant: 'kakashitogo', email: 'kakashitogo@gmail.com', contact: '+2280110000001' },
-    { role: 'comite_orientation', roleRbac: ROLE_ENUM_TO_RBAC['comite_orientation'], nom: 'Comite', prenoms: 'Orientation', identifiant: 'histoiregede', email: 'histoiregede@gmail.com', contact: '+2280104000003' },
-    // ── Comptes système complémentaires (rôles toujours actifs) ──
-    { role: 'institution', roleRbac: ROLE_ENUM_TO_RBAC['institution'], nom: 'Institution', prenoms: 'Direction', identifiant: 'direction', email: 'direction@easyecole.tg', contact: '+2280101000001', dateNaissance: '1985-01-01', lieuNaissance: 'Lomé' },
-    { role: 'secretaire', roleRbac: ROLE_ENUM_TO_RBAC['secretaire'], nom: 'Secretaire', prenoms: 'Systeme', identifiant: 'secretaire1', email: 'secretaire@easyecole.tg', contact: '+2280108000001' },
-    { role: 'enseignant', roleRbac: ROLE_ENUM_TO_RBAC['enseignant'], nom: 'Enseignant', prenoms: 'Systeme', identifiant: 'pacetamol362', email: 'pacetamol362@gmail.com', contact: '+2280102000001', dateNaissance: '1980-05-15', lieuNaissance: 'Lomé' },
-
-    // ── Comptes démo additionnels (identifiants easyecole.tg) ──
-    { role: 'enseignant', roleRbac: ROLE_ENUM_TO_RBAC['enseignant'], nom: 'Kossi', prenoms: 'Yawo', identifiant: 'prof-maths', email: 'prof.maths@easyecole.tg', contact: '+2280102000002', dateNaissance: '1982-03-10', lieuNaissance: 'Abidjan' },
-    { role: 'enseignant', roleRbac: ROLE_ENUM_TO_RBAC['enseignant'], nom: 'Kossi', prenoms: 'Maria', identifiant: 'prof-info', email: 'prof.maria@easyecole.tg', contact: '+2280102000003', dateNaissance: '1985-07-22', lieuNaissance: 'Bouaké' },
-    { role: 'enseignant', roleRbac: ROLE_ENUM_TO_RBAC['enseignant'], nom: 'Yawo', prenoms: 'Jean', identifiant: 'prof-gestion', email: 'prof.jean@easyecole.tg', contact: '+2280102000004', dateNaissance: '1980-11-15', lieuNaissance: 'Odienné' },
-    { role: 'enseignant', roleRbac: ROLE_ENUM_TO_RBAC['enseignant'], nom: 'Edem', prenoms: 'Ama', identifiant: 'prof-droit', email: 'prof.ama@easyecole.tg', contact: '+2280102000005', dateNaissance: '1988-09-05', lieuNaissance: 'Man' },
-    { role: 'caissier_banque', roleRbac: ROLE_ENUM_TO_RBAC['caissier_banque'], nom: 'Atsu', prenoms: 'Koffi', identifiant: 'caissier1', email: 'caissier.atsu@easyecole.tg', contact: '+2280103000001', dateNaissance: '1992-06-18', lieuNaissance: 'Abidjan' },
-    { role: 'caissier_banque', roleRbac: ROLE_ENUM_TO_RBAC['caissier_banque'], nom: 'Komlan', prenoms: 'Ami', identifiant: 'caissier2', email: 'caissier.ami@easyecole.tg', contact: '+2280103000002', dateNaissance: '1990-01-25', lieuNaissance: 'Korhogo' },
-    { role: 'comite_orientation', roleRbac: ROLE_ENUM_TO_RBAC['comite_orientation'], nom: 'Mensah', prenoms: 'Yao', identifiant: 'comite1', email: 'comite.yao@easyecole.tg', contact: '+2280104000001' },
-    { role: 'comite_orientation', roleRbac: ROLE_ENUM_TO_RBAC['comite_orientation'], nom: 'Kokou', prenoms: 'Adjo', identifiant: 'comite2', email: 'comite.adjo@easyecole.tg', contact: '+2280104000002' },
-    { role: 'personnel_administratif', roleRbac: ROLE_ENUM_TO_RBAC['personnel_administratif'], nom: 'Koné', prenoms: 'Aminata', identifiant: 'pers-admin1', email: 'pers.admin@easyecole.tg', contact: '+2280107000001' },
-    { role: 'apprenant', roleRbac: ROLE_ENUM_TO_RBAC['apprenant'], nom: 'Tay', prenoms: 'Adjo', identifiant: 'etudiant-demo', email: 'etudiant.demo@etu.ust.ci', contact: '+2280501000001' },
-    { role: 'parent', roleRbac: ROLE_ENUM_TO_RBAC['parent'], nom: 'Tchala', prenoms: 'Bassirou', identifiant: 'parent1', email: 'parent.tchala@easyecole.tg', contact: '+2280120000001' },
 ];
 
 export async function seedComptesParRole(seqIn?: any): Promise<void> {

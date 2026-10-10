@@ -230,8 +230,14 @@ async function runSeeds(sequelize: Sequelize): Promise<void> {
   log('Étape 4/5 : Exécution des seeds essentiels...');
 
   try {
-    require('./seed');
-    logSuccess('Seeds exécutés');
+    // ⚠️ NE PAS require('./seed') : ce script injecte un jeu de données de
+    // DÉMO complet (comptes, étudiants, notes…). En production, seuls les
+    // comptes système sont créés ici ; les référentiels fonctionnels (RBAC,
+    // docgen, GED, frais…) sont appliqués au boot par seed-boot
+    // (voir docker-entrypoint.sh).
+    const { seedComptesParRole } = require('./seed-comptes-par-role');
+    await seedComptesParRole(sequelize);
+    logSuccess('Comptes système seedés (aucune donnée de démo)');
   } catch (seedError: any) {
     logWarning(`Seed ignoré: ${seedError.message}`);
   }
