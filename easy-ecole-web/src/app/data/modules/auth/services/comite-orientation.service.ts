@@ -8,7 +8,7 @@ import { environment } from 'src/environments/environment';
 })
 export class ComiteOrientationService {
 
-  private readonly SERVICE_URL: string = `${environment.API_MODULES.AUTH}/comiteOrientation`
+  private readonly SERVICE_URL: string = `${environment.API_MODULES.AUTH}/comite-orientation`
 
   constructor(private httpClient: HttpClient) { }
 

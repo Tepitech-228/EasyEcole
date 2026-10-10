@@ -42,7 +42,6 @@ import NoteEvaluationRouter from "./routers/NoteEvaluationRouter";
 import BulletinRouter from "../bulletins/routers/BulletinRouter"
 import DeliberationRouter from "../bulletins/routers/DeliberationRouter"
 import EcheanceRouter from "./routers/EcheanceRouter";
-import BordereauController from "./controllers/BordereauController";
 import BordereauRouter from "./routers/BordereauRouter";
 import CabinetComptableRouter from "./routers/CabinetComptableRouter";
 import FinanceRouter from "./routers/FinanceRouter";
@@ -87,8 +86,6 @@ import DesignationMemoireRouter from "./routers/DesignationMemoireRouter";
 
 const router = express.Router();
 
-router.get('/bordereaux/:id/download', [Authenticate], BordereauController.downloadBordereau)
-
 // Route publique pour vérification de carte (sans Authenticate)
 router.get('/cartes/verifier/:code', CartesController.verifier)
 
@@ -114,8 +111,6 @@ router
     .use('/anneesAcademiques', [Authenticate], AnneeAcademiqueRouter)
     .use('/cursusApprenant', [Authenticate, InscriptionComplete], CursusApprenantRouter)
     .use('/sallesDeClasse', [Authenticate], SalleDeClasseRouter)
-    .use('/creneaux', [Authenticate], CreneauRouter)
-    .use('/affectations-salles-classes', [Authenticate], AffectationSalleClasseRouter)
     .use('/creneaux', [Authenticate], CreneauRouter)
     .use('/affectations-salles-classes', [Authenticate], AffectationSalleClasseRouter)
     .use('/chapitresCours', [Authenticate, InscriptionComplete], ChapitreCoursRouter)

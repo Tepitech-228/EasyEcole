@@ -7,7 +7,7 @@ import { NoteStage } from '../models/NoteStage.model';
 @Injectable({ providedIn: 'root' })
 export class NoteStageService {
 
-    private readonly SERVICE_URL: string = `${environment.API_MODULES.STAGES}/notes-stage`
+    private readonly SERVICE_URL: string = `${environment.API_MODULES.STAGES}/notes`
 
     constructor(private httpClient: HttpClient) { }
 

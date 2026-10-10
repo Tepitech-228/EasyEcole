@@ -7,7 +7,7 @@ import { RapportStage } from '../models/RapportStage.model';
 @Injectable({ providedIn: 'root' })
 export class RapportStageService {
 
-    private readonly SERVICE_URL: string = `${environment.API_MODULES.STAGES}/rapports-stage`
+    private readonly SERVICE_URL: string = `${environment.API_MODULES.STAGES}/rapports`
 
     constructor(private httpClient: HttpClient) { }
 

@@ -22,10 +22,6 @@ const routes: Routes = [
   { path: 'audit-logs', component: AuditLogsPageComponent },
   { path: 'configuration', component: ConfigurationPageComponent },
   { path: 'comite-membres', component: ComiteMembresPageComponent },
-  {
-    path: 'monitoring',
-    loadChildren: () => import('../monitoring/monitoring.module').then(m => m.MonitoringModule),
-  },
 ];
 
 @NgModule({

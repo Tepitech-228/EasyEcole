@@ -10,7 +10,6 @@ import { BaremeFormPageComponent } from './pages/bareme-form-page/bareme-form-pa
 import { FraisPageComponent } from './pages/frais-page/frais-page.component';
 import { FraisFormPageComponent } from './pages/frais-form-page/frais-form-page.component';
 import { NotificationsPageComponent } from './pages/notifications-page/notifications-page.component';
-import { SystemePageComponent } from './pages/systeme-page/systeme-page.component';
 import { AuditPageComponent } from './pages/audit-page/audit-page.component';
 import { SauvegardesPageComponent } from './pages/sauvegardes-page/sauvegardes-page.component';
 import { ModelesPageComponent } from './pages/modeles-page/modeles-page.component';
@@ -34,7 +33,6 @@ const routes: Routes = [
   { path: 'notifications', component: NotificationsPageComponent },
   { path: 'roles', redirectTo: '/administration/roles', pathMatch: 'full' },
   { path: 'roles/:id', redirectTo: '/administration/roles', pathMatch: 'full' },
-  { path: 'systeme', component: SystemePageComponent },
   { path: 'audit', component: AuditPageComponent },
   { path: 'sauvegardes', component: SauvegardesPageComponent },
   { path: 'modeles', component: ModelesPageComponent },

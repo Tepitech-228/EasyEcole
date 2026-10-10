@@ -13,8 +13,6 @@ import { BaremeFormPageComponent } from './pages/bareme-form-page/bareme-form-pa
 import { FraisPageComponent } from './pages/frais-page/frais-page.component';
 import { FraisFormPageComponent } from './pages/frais-form-page/frais-form-page.component';
 import { NotificationsPageComponent } from './pages/notifications-page/notifications-page.component';
-import { RolesPageComponent } from './pages/roles-page/roles-page.component';
-import { SystemePageComponent } from './pages/systeme-page/systeme-page.component';
 import { AuditPageComponent } from './pages/audit-page/audit-page.component';
 import { SauvegardesPageComponent } from './pages/sauvegardes-page/sauvegardes-page.component';
 import { ModelesPageComponent } from './pages/modeles-page/modeles-page.component';
@@ -35,8 +33,6 @@ import { ReactiveFormsModule } from '@angular/forms';
     FraisPageComponent,
     FraisFormPageComponent,
     NotificationsPageComponent,
-    RolesPageComponent,
-    SystemePageComponent,
     AuditPageComponent,
     SauvegardesPageComponent,
     ModelesPageComponent,

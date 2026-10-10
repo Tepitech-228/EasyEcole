@@ -7,7 +7,7 @@ import { AttestationStage } from '../models/AttestationStage.model';
 @Injectable({ providedIn: 'root' })
 export class AttestationStageService {
 
-    private readonly SERVICE_URL: string = `${environment.API_MODULES.STAGES}/attestations-stage`
+    private readonly SERVICE_URL: string = `${environment.API_MODULES.STAGES}/attestations`
 
     constructor(private httpClient: HttpClient) { }
 

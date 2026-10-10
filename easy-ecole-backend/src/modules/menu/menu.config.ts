@@ -452,7 +452,6 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                     { label: 'Annee scol.', route: '/parametres/annees-scolaires', icon: 'calendar_today', permissionKey: 'menu.parametres.configuration.annees-scolaires', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Frais', route: '/parametres/frais', icon: 'payments', permissionKey: 'menu.parametres.configuration.frais', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Notifications', route: '/parametres/notifications', icon: 'notifications', permissionKey: 'menu.parametres.configuration.notifications', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
-                    { label: 'Systeme', route: '/parametres/systeme', icon: 'settings', permissionKey: 'menu.parametres.configuration.systeme', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Sauvegardes', route: '/parametres/sauvegardes', icon: 'backup', permissionKey: 'menu.parametres.configuration.sauvegardes', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                 ]
             },

@@ -7,7 +7,7 @@ import { ConventionStage } from '../models/ConventionStage.model';
 @Injectable({ providedIn: 'root' })
 export class ConventionStageService {
 
-    private readonly SERVICE_URL: string = `${environment.API_MODULES.STAGES}/conventions-stage`
+    private readonly SERVICE_URL: string = `${environment.API_MODULES.STAGES}/conventions`
 
     constructor(private httpClient: HttpClient) { }
 
