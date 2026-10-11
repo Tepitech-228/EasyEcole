@@ -24,7 +24,7 @@ mysqldump \
   "${DB_NAME}" | gzip -c > "$temporary"
 
 mv "$temporary" "$target"
-tar -czf "${backup_dir}/${DB_NAME}_${timestamp}_files.tar.gz" -C /data uploads storage
+tar -czf "${backup_dir}/${DB_NAME}_${timestamp}_files.tar.gz" -C /data uploads storage pv
 find "$backup_dir" -type f -name '*.sql.gz' -mtime "+${retention_days}" -delete
 find "$backup_dir" -type f -name '*_files.tar.gz' -mtime "+${retention_days}" -delete
 
@@ -44,7 +44,7 @@ while :; do
     --user="${MYSQL_USER:-root}" --password="${MYSQL_PASSWORD}" \
     "${DB_NAME}" | gzip -c > "$temporary"
   mv "$temporary" "$target"
-  tar -czf "${backup_dir}/${DB_NAME}_${timestamp}_files.tar.gz" -C /data uploads storage
+  tar -czf "${backup_dir}/${DB_NAME}_${timestamp}_files.tar.gz" -C /data uploads storage pv
   find "$backup_dir" -type f -name '*.sql.gz' -mtime "+${retention_days}" -delete
   find "$backup_dir" -type f -name '*_files.tar.gz' -mtime "+${retention_days}" -delete
   echo "[backup] created ${target}"

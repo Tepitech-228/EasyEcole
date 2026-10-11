@@ -143,17 +143,20 @@ COPY easy-ecole-backend/scripts/apply-migrations.cjs ./scripts/apply-migrations.
 RUN chmod +x docker-entrypoint.sh
 
 # ---------------------------------------------------------------------------
-# Répertoires d'écriture (montés dans docker-compose.yml :
-#   uploads  -> /app/public   volume nommé  (photos, GED, dossiers, docgen…)
-#   storage  -> /app/storage  BIND MOUNT depuis ${STORAGE_HOST_PATH} sur
-#               l'hôte (défaut /opt/mon-app/storage) : PDF persistants,
-#               cartes étudiantes, docgen, qr-codes — survit aux
-#               redéploiements Dokploy.
-# Ils sont créés DANS l'image pour que Docker initialise correctement le
-# montage et pour documenter exhaustivement les chemins d'écriture (multer ne
-# crée pas les dossiers lui-même). En production, le bind mount recouvre
-# /app/storage : le mkdir ci-dessous sert alors de référence pour le
-# fonctionnement local sans bind mount.
+# Répertoires d'écriture (montés dans docker-compose.yml) — tous des BIND
+# MOUNTS hôte en production :
+#   public  -> /app/public   ${PUBLIC_HOST_PATH}   (uploads, GED, dossiers…)
+#   uploads -> /app/uploads  ${UPLOADS_HOST_PATH}  (PV de délibération)
+#   storage -> /app/storage  ${STORAGE_HOST_PATH}  (PDF persistants, cartes…)
+#   config  -> /app/config   ${CONFIG_HOST_PATH}
+#   .keys   -> /app/.keys    ${KEYS_HOST_PATH}     (clé maîtresse AES)
+#   backups -> /app/backups  ${BACKUPS_HOST_PATH}  (sauvegardes intégrité GED)
+# Ils sont créés DANS l'image pour le fonctionnement LOCAL (sans bind mount) et
+# comme référence exhaustive des chemins d'écriture (multer ne crée pas ses
+# dossiers lui-même). ⚠️ EN PRODUCTION, chaque bind mount RECOUVRE le dossier
+# correspondant de l'image : ces mkdir sont alors MASQUÉS — c'est pourquoi
+# docker-entrypoint.sh recrée les sous-dossiers au démarrage (fail-fast si le
+# montage hôte n'est pas inscriptible).
 #
 # ⚠️ NE PAS faire `chown -R node:node /app` ici.
 # Un chown récursif sur /app traverse les ~340 Mo de node_modules ET chaque

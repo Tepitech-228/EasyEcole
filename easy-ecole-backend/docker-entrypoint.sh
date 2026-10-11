@@ -3,6 +3,8 @@
 # docker-entrypoint.sh — Entrypoint Dokploy
 #
 # 0. Vérifie/crée le stockage persistant des PDF (/app/storage/pdfs)
+# 0b. Vérifie/crée les répertoires fichiers sous les bind mounts hôte
+#     (/app/public, /app/uploads) — multer ne crée pas ses dossiers.
 # 1. Applique les migrations SQL incrémentales (idempotentes, suivi
 #    schema_migrations) UNIQUEMENT si MIGRATIONS_ON_BOOT=true — FAIL-FAST :
 #    si une migration échoue, le conteneur ne démarre pas (le déploiement est
@@ -58,6 +60,40 @@ if [ ! -w "$PDFS_DIR" ]; then
   exit 1
 fi
 echo "[entrypoint] Stockage PDF OK : $PDFS_DIR (écriture autorisée — aucun fichier existant modifié)"
+
+# -----------------------------------------------------------------------------
+# 0b. RÉPERTOIRES FICHIERS — /app/public, /app/uploads (bind mounts hôte)
+# -----------------------------------------------------------------------------
+# Même logique que /app/storage/pdfs, mais pour les AUTRES bind mounts.
+# Pourquoi c'est indispensable : dès que /app/public et /app/uploads sont des
+# BIND MOUNTS sur l'hôte, les sous-dossiers créés DANS l'image au build
+# (voir Dockerfile, bloc `RUN mkdir -p`) sont MASQUÉS par le montage. Or
+# multer (src/core/config/upload.ts) écrit dans public/uploads/{images,
+# documents,videos} SANS créer le dossier → ENOENT/EACCES au premier upload
+# sur un hôte neuf.
+# On (re)crée donc ici, de façon IDEMPOTENTE (mkdir -p ne supprime jamais
+# rien), tous les dossiers d'écriture runtime attendus sous ces montages.
+FILE_DIRS="/app/public/uploads/images /app/public/uploads/documents /app/public/uploads/videos /app/public/docgen/cachets /app/public/auth/profiles /app/public/auth/apprenants/photos /app/public/auth/enseignants/photos /app/public/elearning/videos /app/public/inscription/bordereaux /app/public/inscription/dossiers /app/uploads/pv"
+for d in $FILE_DIRS; do
+  if ! mkdir -p "$d"; then
+    echo "[entrypoint] ERREUR : impossible de créer $d."
+    echo "[entrypoint] → le bind mount hôte (/app/public, /app/uploads) est-il monté ?"
+    exit 1
+  fi
+done
+for d in /app/public /app/uploads /app/config /app/.keys /app/backups; do
+  if [ ! -w "$d" ]; then
+    echo "[entrypoint] ERREUR : $d n'est pas accessible en écriture (uid=$(id -u))."
+    echo "[entrypoint] → Sur l'hôte (VM Linux), exécuter AVANT le déploiement :"
+    echo "[entrypoint]    sudo mkdir -p /opt/mon-app/{public,uploads,storage,config,keys,backups}"
+    echo "[entrypoint]    sudo chown -R 1000:1000 /opt/mon-app"
+    echo "[entrypoint]    sudo chmod -R u+rwX,g+rwX /opt/mon-app"
+    echo "[entrypoint]   (1000:1000 = utilisateur node ; vérifier avec : id node)"
+    echo "[entrypoint]   Puis relancer le déploiement."
+    exit 1
+  fi
+done
+echo "[entrypoint] Répertoires fichiers OK (public/, uploads/) — écriture autorisée"
 
 # Les migrations SQL incrémentales (idempotentes, suivi schema_migrations)
 # sont appliquées automatiquement au démarrage (défaut), AVANT le seed et

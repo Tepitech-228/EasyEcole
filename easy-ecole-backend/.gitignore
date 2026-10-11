@@ -22,3 +22,6 @@ src/core/scripts/_controle-regul-tmp.ts
 # Config files with secrets
 src/core/config/mail.json
 src/core/scripts/clean-etudiants.ts
+
+# Config runtime générée par StorageConfigController (bind mount /app/config en prod)
+/config/

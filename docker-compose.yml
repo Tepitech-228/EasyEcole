@@ -20,9 +20,14 @@
 #     les variables du projet (Dokploy les injecte aussi dans les conteneurs).
 #   - Le service backend reçoit automatiquement toutes les variables du projet
 #     (remplace l'ancien `env_file: .env` — PAS de fichier .env dans le repo).
-#   - STORAGE_HOST_PATH (facultatif) : chemin hôte du bind mount des PDF,
-#     défaut /opt/mon-app/storage. En local (dev Windows), définir
-#     STORAGE_HOST_PATH=./.data/storage dans .env.
+#   - Chemins HÔTE des bind mounts (facultatifs ; défauts sous /opt/mon-app/) :
+#       STORAGE_HOST_PATH → /app/storage (PDF docgen, cartes, qr-codes)  [/opt/mon-app/storage]
+#       PUBLIC_HOST_PATH  → /app/public  (uploads, GED, bordereaux, dossiers) [/opt/mon-app/public]
+#       UPLOADS_HOST_PATH → /app/uploads (PV de délibération)            [/opt/mon-app/uploads]
+#       CONFIG_HOST_PATH  → /app/config  (configuration de stockage)     [/opt/mon-app/config]
+#       KEYS_HOST_PATH    → /app/.keys   (clé maîtresse AES)             [/opt/mon-app/keys]
+#       BACKUPS_HOST_PATH → /app/backups (sauvegardes intégrité GED)     [/opt/mon-app/backups]
+#     En local (dev Windows), définir ces chemins sous ./.data/ dans .env.
 #
 # LOCAL (dev) : lancer avec l'override local :
 #   docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
@@ -93,7 +98,10 @@ services:
       BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
     volumes:
       - mysql_backups:/backups/mysql
-      - uploads:/data/uploads:ro
+      # Fichiers uploadés (public/) — BIND MOUNT hôte, en LECTURE SEULE.
+      - ${PUBLIC_HOST_PATH:-/opt/mon-app/public}:/data/uploads:ro
+      # PV de délibération (/app/uploads) — BIND MOUNT hôte, LECTURE SEULE.
+      - ${UPLOADS_HOST_PATH:-/opt/mon-app/uploads}:/data/pv:ro
       # PDFs et documents persistants (bind mount du backend, même chemin
       # hôte) montés EN LECTURE SEULE pour l'archivage hebdomadaire.
       - ${STORAGE_HOST_PATH:-/opt/mon-app/storage}:/data/storage:ro
@@ -164,22 +172,37 @@ services:
       - app
       - data
     volumes:
-      # Fichiers uploadés (multer, GED, dossiers, docgen, photos…) :
-      # /app/public dans le conteneur (chemin relatif à process.cwd()).
-      - uploads:/app/public
-      # Stockage persistant : /app/storage (PDF, cartes, docgen, qr-codes).
-      # BIND MOUNT — plus de volume nommé : les fichiers vivent sur l'hôte
-      # dans ${STORAGE_HOST_PATH} (défaut : /opt/mon-app/storage) et
-      # survivent à toute recréation de conteneur (redéploiement, rollback,
-      # changement d'image). PRÉPARER LE DOSSIER HÔTE AVANT le premier
-      # déploiement avec ce compose :
-      #   sudo mkdir -p /opt/mon-app/storage/pdfs
-      #   sudo chown -R 1000:1000 /opt/mon-app/storage
-      #   sudo chmod -R u+rwX,g+rwX /opt/mon-app/storage
+      # ── Fichiers UPLOADÉS (multer, GED, dossiers, bordereaux, rattrapage…)
+      # /app/public dans le conteneur (chemins relatifs à process.cwd()).
+      # BIND MOUNT hôte : fichiers VISIBLES et PERSISTANTS sur le disque de la
+      # VM dans ${PUBLIC_HOST_PATH} (défaut /opt/mon-app/public).
+      - ${PUBLIC_HOST_PATH:-/opt/mon-app/public}:/app/public
+      # ── PV de délibération (GenerateurPVService / DeliberationController).
+      # Chemin DISTINCT de public/uploads : /app/uploads. Sans ce montage, les
+      # PV PDF sont PERDUS à chaque recréation de conteneur.
+      - ${UPLOADS_HOST_PATH:-/opt/mon-app/uploads}:/app/uploads
+      # ── Stockage PDF persistant : /app/storage (docgen, pdfs, comite-pdfs,
+      # cartes, qr-codes). Les documents GÉNÉRÉS (attestations, autorisations,
+      # bordereaux, reçus docgen) vivent ici → visibles sur l'hôte.
+      # PRÉPARER LES DOSSIERS HÔTE AVANT le premier déploiement :
+      #   sudo mkdir -p /opt/mon-app/{storage/pdfs,public,uploads,config,keys,backups}
+      #   sudo chown -R 1000:1000 /opt/mon-app
+      #   sudo chmod -R u+rwX,g+rwX /opt/mon-app
       # (1000:1000 = utilisateur `node` du conteneur ; vérifier : id node)
-      # Vérification automatique au démarrage : docker-entrypoint.sh refuse
-      # de démarrer si le dossier est absent ou non inscriptible.
+      # docker-entrypoint.sh refuse de démarrer si /app/storage/pdfs n'est
+      # pas inscriptible (fail-fast).
       - ${STORAGE_HOST_PATH:-/opt/mon-app/storage}:/app/storage
+      # ── Configuration de stockage modifiable (StorageConfigController).
+      - ${CONFIG_HOST_PATH:-/opt/mon-app/config}:/app/config
+      # ── Clé maîtresse AES (EncryptionService, dossier /app/.keys).
+      # ⚠️ NE JAMAIS perdre ce dossier : sa disparition rend INDÉCHIFFRABLES
+      # toutes les données déjà chiffrées en base.
+      - ${KEYS_HOST_PATH:-/opt/mon-app/keys}:/app/.keys
+      # ── Sauvegardes d'INTÉGRITÉ GED (IntegrityController → backups/ged_<ts>).
+      # La table `ged_backups` est en base, mais les fichiers archivés vivent
+      # ici : sans ce montage, chaque redéploiement ORPHELINE les enregistrements
+      # de sauvegarde (fichiers introuvables → restauration impossible).
+      - ${BACKUPS_HOST_PATH:-/opt/mon-app/backups}:/app/backups
     # Port 3000 NON exposé par défaut : le frontend passe par le proxy nginx.
     # À décommenter pour du debug (tests curl directs) :
     # ports:
@@ -247,8 +270,14 @@ services:
       - app
       - data
     volumes:
-      - uploads:/app/public
+      # Mêmes BIND MOUNTS hôte que le backend (voir commentaires détaillés
+      # ci-dessus) : le worker OCR/PDF doit écrire dans les mêmes dossiers.
+      - ${PUBLIC_HOST_PATH:-/opt/mon-app/public}:/app/public
+      - ${UPLOADS_HOST_PATH:-/opt/mon-app/uploads}:/app/uploads
       - ${STORAGE_HOST_PATH:-/opt/mon-app/storage}:/app/storage
+      - ${CONFIG_HOST_PATH:-/opt/mon-app/config}:/app/config
+      - ${KEYS_HOST_PATH:-/opt/mon-app/keys}:/app/.keys
+      - ${BACKUPS_HOST_PATH:-/opt/mon-app/backups}:/app/backups
 
   # ---------------------------------------------------------------------------
   # 3) CACHE REDIS 7 (cache réponse middleware `cache()` — fail-safe)
@@ -320,8 +349,14 @@ services:
 volumes:
   # Données MySQL (base complète importée depuis le dump)
   mysql_data:
-  # Fichiers uploadés du backend (/app/public)
-  uploads:
+  # ⚠️ L'ancien volume nommé `uploads` (/app/public) n'est PLUS déclaré :
+  # /app/public est désormais un BIND MOUNT sur ${PUBLIC_HOST_PATH} (défaut
+  # /opt/mon-app/public). L'ancien volume (easyecole_uploads) reste sur le
+  # disque : il contient les fichiers uploadés AVANT la bascule (GED, photos,
+  # bordereaux, dossiers). LE MIGRER vers le bind mount avant de le supprimer :
+  #   docker run --rm -v easyecole_uploads:/from -v /opt/mon-app/public:/to \
+  #     busybox sh -c 'cp -a /from/. /to/'
+  #   docker volume rm easyecole_uploads
   # Persistance du cache Redis (fichiers AOF dans /data)
   redis_data:
   # Dumps compressés MySQL ; monter ce volume vers un stockage externe en prod.
