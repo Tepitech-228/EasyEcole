@@ -10,8 +10,13 @@ import ListeNoteEvaluationController from "../controllers/ListeNoteEvaluationCon
 
 const router = express.Router()
 
-// Rôle PARENT non scopé côté contrôleur : on ferme l'accès.
-router.use(RefuserRoles(RolesUtilisateur.PARENT))
+// Accès non scopé côté contrôleur : on ferme.
+// PARENT : aucune vue dédiée.
+// APPRENANT : getAllListesNoteEvaluation retombe dans la branche « tout » et
+//            getListeNoteEvaluation (include notesEvaluation) expose TOUTES les
+//            notes de la classe (y compris brouillons des autres étudiants).
+//            L'apprenant consulte ses notes via /bulletins/mon-releve (déjà scopé).
+router.use(RefuserRoles(RolesUtilisateur.PARENT, RolesUtilisateur.APPRENANT))
 
 const storage = multer.diskStorage({
     destination: (req, file, callback) => {
