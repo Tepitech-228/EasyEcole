@@ -5,6 +5,8 @@ import { AuthApprenant } from "../../../core/middlewares/AuthApprenant";
 import { AuthEnseignant } from "../../../core/middlewares/AuthEnseignant";
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
 import CheckPermission from "../../../core/middlewares/CheckPermission";
+import { RefuserRoles } from "../../../core/middlewares/RefuserRoles";
+import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { validerGeneration, validerUpdate, validerPagination } from "../validators/BulletinValidator";
 
 const router = Router();
@@ -59,7 +61,7 @@ router.post('/bulletins/generer', [AuthInstitution, CheckPermission('action.eval
  *       401:
  *         description: Non autorisé
  */
-router.get('/bulletins', [Authenticate], validerPagination, controller.getAll.bind(controller));
+router.get('/bulletins', [Authenticate, RefuserRoles(RolesUtilisateur.PARENT, RolesUtilisateur.APPRENANT)], validerPagination, controller.getAll.bind(controller));
 /**
  * @openapi
  * /inscription/bulletins/mon-releve:
@@ -75,7 +77,7 @@ router.get('/bulletins', [Authenticate], validerPagination, controller.getAll.bi
  *         description: Non autorisé
  */
 router.get('/bulletins/mon-releve', [Authenticate, AuthApprenant], controller.monReleve.bind(controller));
-router.get('/bulletins/moyennes', [Authenticate], controller.getMoyennes.bind(controller));
+router.get('/bulletins/moyennes', [Authenticate, RefuserRoles(RolesUtilisateur.PARENT, RolesUtilisateur.APPRENANT)], controller.getMoyennes.bind(controller));
 /**
  * @openapi
  * /inscription/bulletins/{id}:
@@ -96,7 +98,7 @@ router.get('/bulletins/moyennes', [Authenticate], controller.getMoyennes.bind(co
  *       404:
  *         description: Bulletin non trouvé
  */
-router.get('/bulletins/:id', [Authenticate], controller.getOne.bind(controller));
+router.get('/bulletins/:id', [Authenticate, RefuserRoles(RolesUtilisateur.PARENT, RolesUtilisateur.APPRENANT)], controller.getOne.bind(controller));
 /**
  * @openapi
  * /inscription/bulletins/{id}:

@@ -1,8 +1,13 @@
 import express from "express"
 
+import { RefuserRoles } from "../../../core/middlewares/RefuserRoles"
+import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur"
 import PresenceCoursParticipantController from "../controllers/PresenceCoursParticipantController"
 
 const router = express.Router()
+
+// Rôle PARENT non scopé côté contrôleur : on ferme l'accès.
+router.use(RefuserRoles(RolesUtilisateur.PARENT))
 
 /**
  * @openapi

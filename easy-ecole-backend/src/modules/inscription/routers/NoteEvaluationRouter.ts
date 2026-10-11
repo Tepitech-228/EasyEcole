@@ -2,8 +2,13 @@ import express from "express"
 
 import NoteEvaluationController from "../controllers/NoteEvaluationController"
 import Authenticate from "../../../core/middlewares/Authenticate"
+import { RefuserRoles } from "../../../core/middlewares/RefuserRoles"
+import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur"
 
 const router = express.Router()
+
+// Rôle PARENT non scopé côté contrôleur : on ferme l'accès.
+router.use(RefuserRoles(RolesUtilisateur.PARENT))
 
 /**
  * @openapi

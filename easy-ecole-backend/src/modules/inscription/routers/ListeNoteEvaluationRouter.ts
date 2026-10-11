@@ -4,9 +4,14 @@ import * as path from "path"
 import * as fs from "fs"
 import { customAlphabet } from 'nanoid'
 
+import { RefuserRoles } from "../../../core/middlewares/RefuserRoles"
+import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur"
 import ListeNoteEvaluationController from "../controllers/ListeNoteEvaluationController"
 
 const router = express.Router()
+
+// Rôle PARENT non scopé côté contrôleur : on ferme l'accès.
+router.use(RefuserRoles(RolesUtilisateur.PARENT))
 
 const storage = multer.diskStorage({
     destination: (req, file, callback) => {
