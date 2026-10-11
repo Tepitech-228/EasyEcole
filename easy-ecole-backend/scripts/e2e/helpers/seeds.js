@@ -12,7 +12,12 @@ const PREFIX = 'ins_'
  * Nettoie toutes les données E2E de la base.
  */
 async function cleanE2EData() {
+  // ⚠️ Les FK sont désactivées pendant le nettoyage (SET FOREIGN_KEY_CHECKS=0),
+  // donc les ON DELETE CASCADE ne s'appliquent PAS : chaque table enfant doit
+  // être listée AVANT sa table parente, sinon des lignes orphelines subsistent
+  // (ex. ins_lignes_bulletins après suppression de ins_bulletins).
   const tables = [
+    // --- rattrapage (feuilles d'abord) ---
     'ins_rattrapage_notes',
     'ins_rattrapages_inscriptions',
     'ins_rattrapage_documents_deposes',
@@ -22,17 +27,28 @@ async function cleanE2EData() {
     'ins_rattrapage_planning',
     'ins_rattrapage_enseignants',
     'ins_rattrapage_comite_votes',
+    // --- notes / bulletins (enfants avant parents) ---
+    'ins_lignes_bulletins',
     'ins_bulletins',
+    'ins_audit_notes',
     'ins_notes_evaluation',
     'ins_listes_notes_evaluation',
+    'ins_resultats_deliberation',
     'ins_cours_participants',
+    'ins_cours_choisis',
     'ins_parcours_choisis',
+    // --- inscription (feuilles -> racine) ---
+    'ins_pre_inscriptions',
+    'ins_reponses_inscription',
     'ins_demandes_inscription',
     'ins_cursus_apprenants',
+    'ins_designation_memoires',
+    'ins_dispenses',
     'ins_dossiers_inscription',
     'ins_frais_inscription',
     'ins_paiements_inscription',
     'ins_dossiers_demandes',
+    'ins_echeances',
     'ins_bordereaux',
     'ins_demandes_inscription_cours',
     'ins_dossiers_etudiants',

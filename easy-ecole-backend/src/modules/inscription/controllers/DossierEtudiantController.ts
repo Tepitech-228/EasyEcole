@@ -9,6 +9,7 @@ import { AdresseApprenant } from "../../auth/models/AdresseApprenant";
 import { InformationsParentsApprenant } from "../../auth/models/InformationsParentsApprenant";
 import { InformationsSalarieApprenant } from "../../auth/models/InformationsSalarieApprenant";
 import { PersonnePrevenirApprenant } from "../../auth/models/PersonnePrevenirApprenant";
+import { ParentEnfant } from "../../parent/models/ParentEnfant";
 import { IDGenerator } from "../../../core/helpers/IDGenerator";
 import { Echeance } from "../models/Echeance";
 import { DemandeInscription } from "../models/DemandeInscription";
@@ -28,6 +29,22 @@ import { Bordereau } from "../models/Bordereau";
 import { GenerateurCarteService } from "../services/GenerateurCarteService";
 import fs from "fs";
 import path from "path";
+
+/** Rôles « staff » autorisés à lire l'ensemble des dossiers étudiants. */
+const ROLES_STAFF_DOSSIER = [
+    RolesUtilisateur.INSTITUTION,
+    RolesUtilisateur.CAISSIER_BANQUE,
+    RolesUtilisateur.ENSEIGNANT,
+    RolesUtilisateur.PERSONNEL_ADMINISTRATIF,
+    RolesUtilisateur.RESSOURCES_HUMAINES,
+    RolesUtilisateur.CABINET_COMPTABLE,
+    RolesUtilisateur.ESA_COMPTA,
+    RolesUtilisateur.COMITE_ORIENTATION,
+    RolesUtilisateur.ADMIN,
+    RolesUtilisateur.SECRETAIRE,
+    RolesUtilisateur.SURVEILLANT,
+    RolesUtilisateur.SUPERVISEUR_GENERAL,
+];
 
 const hasChoixFinalValue = (value: unknown): boolean => {
     if (typeof value === 'boolean') return value;
@@ -53,7 +70,40 @@ export default class DossierEtudiantController {
 
     constructor() { }
 
+    /**
+     * Périmètre de lecture des dossiers selon le rôle de l'appelant.
+     *  - `null`      : accès complet (rôle staff) ;
+     *  - `number[]`  : accès restreint à ces utilisateurId
+     *                  (apprenant → soi-même, parent → ses enfants rattachés) ;
+     *  - `undefined` : accès refusé (rôle inconnu / non habilité).
+     */
+    private static async getUtilisateurIdsAutorises(req: Request): Promise<number[] | null | undefined> {
+        const role = (req as any).utilisateurRole
+        if (role === RolesUtilisateur.APPRENANT) {
+            const id = Number((req as any).utilisateurId)
+            return Number.isFinite(id) ? [id] : []
+        }
+        if (role === RolesUtilisateur.PARENT) {
+            const relations = await ParentEnfant.findAll({
+                where: { parentUtilisateurId: (req as any).utilisateurId },
+                include: [{ model: Apprenant, as: 'apprenant', attributes: ['id', 'utilisateurId'] }]
+            })
+            return [...new Set(
+                relations
+                    .map(r => (r as any).apprenant?.utilisateurId)
+                    .filter((id: unknown): id is number => typeof id === 'number')
+            )]
+        }
+        if (ROLES_STAFF_DOSSIER.includes(role)) return null
+        return undefined
+    }
+
     static async getAllDossiers(req: Request, res: Response): Promise<Response> {
+        const scope = await DossierEtudiantController.getUtilisateurIdsAutorises(req)
+        if (scope === undefined) {
+            return res.status(403).json({ success: false, message: "Rôle non autorisé" })
+        }
+
         const hasPagination = req.query.page !== undefined || req.query.limit !== undefined
         const page = Math.max(1, parseInt(String(req.query.page)) || 1)
         const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit)) || 20))
@@ -65,8 +115,8 @@ export default class DossierEtudiantController {
             DossierEtudiant.associations.echeances
         ]
 
-        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
-            where.utilisateurId = (req as any).utilisateurId
+        if (scope !== null) {
+            where.utilisateurId = scope
         }
 
         if (req.query.anneeAcademiqueId || req.query.niveauEtudeId || req.query.parcoursId) {
@@ -91,7 +141,12 @@ export default class DossierEtudiantController {
             }
 
             const matchingDemandes = await DemandeInscription.findAll(demandeWhere)
-            const utilisateurIds = [...new Set(matchingDemandes.map(d => d.utilisateurId))]
+            let utilisateurIds = [...new Set(matchingDemandes.map(d => d.utilisateurId))]
+
+            if (scope !== null) {
+                const autorises = new Set(scope)
+                utilisateurIds = utilisateurIds.filter(id => autorises.has(id))
+            }
 
             if (utilisateurIds.length === 0) {
                 const emptyResult = hasPagination
@@ -309,6 +364,11 @@ export default class DossierEtudiantController {
     }
 
     static async getDossier(req: Request, res: Response): Promise<Response> {
+        const scope = await DossierEtudiantController.getUtilisateurIdsAutorises(req)
+        if (scope === undefined) {
+            return res.status(403).json({ success: false, message: "Rôle non autorisé" })
+        }
+
         let options: FindOptions<InferAttributes<DossierEtudiant>> = {
             where: { id: req.params.id },
             include: [
@@ -317,8 +377,8 @@ export default class DossierEtudiantController {
             ]
         }
 
-        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
-            options.where = { ...options.where, utilisateurId: (req as any).utilisateurId }
+        if (scope !== null) {
+            options.where = { ...options.where, utilisateurId: scope as any }
         }
 
         try {
@@ -437,9 +497,17 @@ export default class DossierEtudiantController {
     static async getStatutByMatricule(req: Request, res: Response): Promise<Response> {
         const { matricule } = req.params
 
+        const scope = await DossierEtudiantController.getUtilisateurIdsAutorises(req)
+        if (scope === undefined) {
+            return res.status(403).json({ success: false, message: "Rôle non autorisé" })
+        }
+
         try {
+            const where: any = { matricule }
+            if (scope !== null) where.utilisateurId = scope
+
             const dossier: DossierEtudiant | null = await DossierEtudiant.findOne({
-                where: { matricule: matricule },
+                where,
                 include: [{
                     association: DossierEtudiant.associations.echeances,
                     where: { statut: ['impaye', 'en_retard'] },
@@ -473,9 +541,14 @@ export default class DossierEtudiantController {
 
     static async getDossierComplet(req: Request, res: Response): Promise<Response> {
         try {
-            let where: { id: string; utilisateurId?: number } = { id: req.params.id };
-            if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
-                where.utilisateurId = (req as any).utilisateurId;
+            const scope = await DossierEtudiantController.getUtilisateurIdsAutorises(req)
+            if (scope === undefined) {
+                return res.status(403).json({ success: false, message: "Rôle non autorisé" })
+            }
+
+            let where: { id: string; utilisateurId?: number[] } = { id: req.params.id };
+            if (scope !== null) {
+                where.utilisateurId = scope;
             }
 
             const dossier = await DossierEtudiant.findOne({

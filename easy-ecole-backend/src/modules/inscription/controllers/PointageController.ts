@@ -217,24 +217,19 @@ export default class PointageController {
                 return res.status(400).json({ success: false, alreadyExists: true, message: "Pointage déjà effectué aujourd'hui" });
             }
 
-            let pointage: Pointage = new Pointage();
-            pointage.date = today as any
-            pointage.heureArrivee = time as any
-            pointage.utilisateurId = (req as any).utilisateurId
+            const created = await Pointage.create({
+                date: today,
+                heureArrivee: time,
+                utilisateurId: (req as any).utilisateurId
+            } as any)
 
-            await pointage.save()
-                .then((pointage) => {
-                    return res.status(201).send(pointage);
-                })
-                .catch((error) => {
-                    return res.status(400).json({ success: false, error: error });
-                });
+            return res.status(201).send(created)
         } catch (error) {
-            console.error('Erreur', error);
-            return res.status(500).json({ success: false, message: 'Erreur interne' });
+            // Une violation d'unicité (uq_ins_pointages_utilisateur_date) signifie
+            // qu'un scan concurrent a créé le pointage entre le findOne et le create :
+            // on la traite comme un doublon (400), pas comme une erreur serveur.
+            return PointageController.repondreErreurPointage(res, error, "Pointage déjà effectué aujourd'hui");
         }
-
-        return null
     }
 
     static async pointerDepart(req: Request, res: Response): Promise<Response | null> {
@@ -263,13 +258,8 @@ export default class PointageController {
                 return res.status(400).json({ success: false, alreadyExists: true, message: "Départ déjà pointé aujourd'hui" });
             }
 
-            await pointage.update({ heureDepart: time as any })
-                .then(async (pointage) => {
-                    return res.status(200).send(pointage);
-                })
-                .catch((error) => {
-                    return res.status(400).json({ success: false, error: error });
-                });
+            const updated = await pointage.update({ heureDepart: time as any })
+            return res.status(200).send(updated)
 
         } catch (error) {
             console.error('Erreur', error);
@@ -311,24 +301,18 @@ export default class PointageController {
                 return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
             }
 
-            let pointage: Pointage = new Pointage();
-            pointage.date = today as any
-            pointage.heureArrivee = time as any
-            pointage.utilisateurId = userId
+            const created = await Pointage.create({
+                date: today,
+                heureArrivee: time,
+                utilisateurId: userId
+            } as any)
 
-            await pointage.save()
-                .then((pointage) => {
-                    return res.status(201).send(pointage);
-                })
-                .catch((error) => {
-                    return res.status(400).json({ success: false, error: error });
-                });
+            return res.status(201).send(created)
         } catch (error) {
-            console.error('Erreur', error);
-            return res.status(500).json({ success: false, message: 'Erreur interne' });
+            // Course entre le findOne ci-dessus et ce create : l'index unique
+            // (utilisateurId, date) rejette le doublon, qu'on renvoie en 400.
+            return PointageController.repondreErreurPointage(res, error, "Pointage déjà effectué aujourd'hui pour cet utilisateur");
         }
-
-        return null
     }
 
     static async pointerDepartByScan(req: Request, res: Response): Promise<Response | null> {
@@ -362,13 +346,8 @@ export default class PointageController {
                 return res.status(400).json({ success: false, alreadyExists: true, message: "Départ déjà pointé pour cet utilisateur" });
             }
 
-            await pointage.update({ heureDepart: time as any })
-                .then((pointage) => {
-                    return res.status(200).send(pointage);
-                })
-                .catch((error) => {
-                    return res.status(400).json({ success: false, error: error });
-                });
+            const updated = await pointage.update({ heureDepart: time as any })
+            return res.status(200).send(updated)
 
         } catch (error) {
             console.error('Erreur', error);
@@ -379,6 +358,11 @@ export default class PointageController {
     }
 
     static async verifierStatutByQR(req: Request, res: Response): Promise<Response> {
+        const role = (req as any).utilisateurRole;
+        if (!ROLES_POINTAGE_SCAN.includes(role)) {
+            return res.status(403).json({ success: false, message: "Rôle non autorisé" })
+        }
+
         const { codeQR } = req.params
 
         try {
@@ -617,5 +601,19 @@ export default class PointageController {
             console.error('Erreur', error);
             return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
+    }
+
+    /**
+     * Traduit une violation d'unicité de `ins_pointages (utilisateurId, date)`
+     * en réponse 400 « déjà pointé » (cas d'un scan concurrent), sans exposer
+     * l'erreur Sequelize brute. Toute autre erreur reste un 500 générique
+     * (loggée côté serveur).
+     */
+    private static repondreErreurPointage(res: Response, error: unknown, messageDoublon: string): Response {
+        if ((error as any)?.name === 'SequelizeUniqueConstraintError') {
+            return res.status(400).json({ success: false, alreadyExists: true, message: messageDoublon })
+        }
+        console.error('Erreur', error)
+        return res.status(500).json({ success: false, message: 'Erreur interne' })
     }
 }

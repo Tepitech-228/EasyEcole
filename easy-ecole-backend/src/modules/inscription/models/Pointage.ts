@@ -38,6 +38,13 @@ Pointage.init({
     type: DataTypes.TIME,
     allowNull: true
   },
+  // Déclaré explicitement (et non uniquement via `belongsTo`) afin que
+  // l'index composite ci-dessous le résolve sans dépendre de l'ordre de
+  // chargement des associations.
+  utilisateurId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
+  },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
 }, {
@@ -45,5 +52,11 @@ Pointage.init({
   paranoid: true,
   modelName: MODULE_MODEL_PREFIX + 'Pointage',
   tableName: MODULE_TABLE_PREFIX + 'pointages',
-  timestamps: true
+  timestamps: true,
+  indexes: [
+    // Un seul pointage par utilisateur et par date (arrivée puis départ sur la
+    // même ligne). Empêche le doublon créé lors de deux scans concurrents :
+    // le contrôle findOne-then-create du contrôleur n'est pas atomique.
+    { unique: true, name: 'uq_ins_pointages_utilisateur_date', fields: ['utilisateurId', 'date'] }
+  ]
 })
