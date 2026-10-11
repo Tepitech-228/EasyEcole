@@ -57,7 +57,8 @@ async function main() {
     const [admin] = await db.query('SELECT id, email, identifiant, role, tokenVersion, etablissementId FROM aut_utilisateurs WHERE role IN ("admin","institution") AND deletedAt IS NULL LIMIT 1')
     if (admin[0]) {
       const adminToken = jwt.sign({ exp: Math.floor(Date.now()/1000)+3600, id: admin[0].id, email: admin[0].email, identifiant: admin[0].identifiant, role: admin[0].role, tokenVersion: admin[0].tokenVersion, etablissementId: admin[0].etablissementId||null }, SECRET)
-      const [annee] = await db.query('SELECT id FROM ins_annees_academiques LIMIT 1')
+      // La table est "paranoid" : exclure les années supprimées (sinon findByPk renvoie null -> 400).
+      const [annee] = await db.query('SELECT id FROM ins_annees_academiques WHERE deletedAt IS NULL ORDER BY id LIMIT 1')
       const anneeId = annee[0]?.id || 2
       const createRes = await fetch(`${BASE}/sessions`, {
         method: 'POST',

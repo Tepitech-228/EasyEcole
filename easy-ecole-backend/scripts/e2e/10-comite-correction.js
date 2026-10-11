@@ -44,6 +44,15 @@ async function getDemande(id) {
   return sqlOne('SELECT id, statutPipeline, motifPipeline, soumissionComite FROM ins_demandes_inscription WHERE id = ?', [id])
 }
 
+// Donnée personnelle du flux réel : l'étudiant déclare sa période de cours
+// (matin/soir/en_ligne). Exigée à la FINALISATION comité (pédagogie non différée),
+// sinon l'admission échoue avec « L'étudiant doit renseigner sa période… ».
+async function setApprenantPeriode(userId, periode = 'matin') {
+  await db.query('UPDATE aut_apprenants SET periode = ?, updatedAt = NOW() WHERE utilisateurId = ?', {
+    replacements: [periode, userId], type: db.QueryTypes.UPDATE
+  })
+}
+
 async function createPieceReference(sessionId, titre) {
   const existing = await sqlOne("SELECT id FROM ins_dossiers_inscription WHERE titre = ? AND sessionId = ?", [titre, sessionId])
   if (existing && existing.id) return existing.id
@@ -70,6 +79,21 @@ async function createDemandeParApi(token, sessionId) {
   }
   if (!demandeId) throw new Error(`POST /demandesInscription → ${r.status} ${r.text.slice(0, 200)}`)
   return demandeId
+}
+
+// Étape réelle du parcours étudiant : sélection d'un parcours (choix final).
+// Sans elle, la saisie ESA et la validation finale du comité échouent avec
+// « Aucun parcours choisi » (BordereauDossierService.creerDossierEtudiantDepuisBordereau).
+async function choisirParcours(token, demandeId, parcoursId) {
+  const r = await apiRequest('POST', '/inscription/parcoursChoisis', token, {
+    parcoursId,
+    demandeInscriptionId: demandeId,
+    choixFinal: true,
+  })
+  if (r.status !== 201) {
+    throw new Error(`POST /parcoursChoisis → ${r.status} ${r.text.slice(0, 200)}`)
+  }
+  return r.json?.id
 }
 
 async function uploadPiece(token, demandeId, dossierId, label) {
@@ -118,8 +142,10 @@ async function phase10() {
 
   // ── 2. Étudiant A : circuit complet + correction + unanimité ──
   const etuA = await createUserAndToken({ nom: 'CorrEtu', prenoms: 'Alpha', email: 'corretua@test.com', identifiant: 'corretua', role: ROLES.APPRENANT })
+  await setApprenantPeriode(etuA.user.id, 'matin')
   const demandeA = await createDemandeParApi(etuA.token, sessionId)
   console.log(`[INFO] Étudiant A — demande #${demandeA}`)
+  await choisirParcours(etuA.token, demandeA, parcoursId)
 
   let r = await uploadPiece(etuA.token, demandeA, idCNI, 'cni-alpha')
   assert(r.status === 201, `A. upload pièce CNI (statut ${r.status})`)
@@ -157,7 +183,7 @@ async function phase10() {
   // ── 4. Saisie ESA-COMPTA → transmission au comité ──
   const esa = await createUserAndToken({ nom: 'EsaCorr', prenoms: 'Compta', email: 'esacorr@test.com', identifiant: 'esacorr', role: ROLES.ESA_COMPTA })
   r = await apiRequest('PUT', `/inscription/finance/bordereaux/${bordereauA}/saisir`, esa.token, { montantPaiement: 50000 })
-  assert(r.status === 200, `A. saisie ESA-COMPTA (statut ${r.status})`)
+  assert(r.status === 200, `A. saisie ESA-COMPTA (statut ${r.status})${r.status !== 200 ? ' :: ' + JSON.stringify(r.json) : ''}`)
   etat = await getDemande(demandeA)
   assert(etat.statutPipeline === 'transmis_comite', `A. pipeline 'transmis_comite' après saisie ESA (reçu '${etat.statutPipeline}')`)
 
@@ -211,7 +237,7 @@ async function phase10() {
   for (const membre of membresActifs) {
     const mToken = await buildToken(membre)
     r = await apiRequest('POST', `/inscription/comite-validations/dossiers/${demandeA}/decider`, mToken, { decision: 'valide' })
-    assert([200, 400].includes(r.status), `A. vote valide de ${membre.identifiant} (statut ${r.status})`)
+    assert([200, 400].includes(r.status), `A. vote valide de ${membre.identifiant} (statut ${r.status})${r.status !== 200 ? ' :: ' + JSON.stringify(r.json) : ''}`)
     if (r.status === 200 && r.json?.data?.matricule) matriculeFinal = r.json.data.matricule
     if (r.status === 200) dernierStatut = r.json?.data?.statutPipeline
   }
@@ -221,8 +247,10 @@ async function phase10() {
 
   // ── 9. Étudiant B : rejet (vote bloquant) + bordereau seul écarté ──
   const etuB = await createUserAndToken({ nom: 'CorrEtu', prenoms: 'Beta', email: 'corretub@test.com', identifiant: 'corretub', role: ROLES.APPRENANT })
+  await setApprenantPeriode(etuB.user.id, 'matin')
   const demandeB = await createDemandeParApi(etuB.token, sessionId)
   console.log(`[INFO] Étudiant B — demande #${demandeB}`)
+  await choisirParcours(etuB.token, demandeB, parcoursId)
 
   r = await uploadPiece(etuB.token, demandeB, idCNI, 'cni-beta')
   assert(r.status === 201, `B. upload pièce CNI (statut ${r.status})`)

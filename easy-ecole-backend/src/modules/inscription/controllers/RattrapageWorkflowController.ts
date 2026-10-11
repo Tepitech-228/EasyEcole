@@ -699,7 +699,7 @@ export default class RattrapageWorkflowController {
         })
         votesPlain = votes.map(v => {
           const plain: any = v.get({ plain: true })
-          return { ...plain, membre: plain.membre ? plain.membre.get({ plain: true }) : null }
+          return { ...plain, membre: plain.membre ?? null }
         })
         membresPlain = (await Utilisateur.findAll({
           where: { role: RolesUtilisateur.COMITE_ORIENTATION, deletedAt: null },
@@ -1026,7 +1026,7 @@ if (votesValides === totalMembres) {
 
       const votesPlain = votes.map(v => {
         const plain: any = v.get({ plain: true })
-        return { ...plain, membre: plain.membre ? plain.membre.get({ plain: true }) : null }
+        return { ...plain, membre: plain.membre ?? null }
       })
 
       const membresPlain = membres.map(m => {
@@ -1057,7 +1057,7 @@ if (votesValides === totalMembres) {
         }
       })
     } catch (error) {
-      await transaction.rollback()
+      try { await transaction.rollback() } catch (_) { /* transaction déjà terminée (commit) */ }
       console.error('[validerDemande rattrapage-workflow]', error)
       return res.status(500).json({ success: false, message: 'Erreur interne du serveur' })
     }
@@ -1135,7 +1135,7 @@ if (votesValides === totalMembres) {
 
       const votesPlain = votes.map(v => {
         const plain: any = v.get({ plain: true })
-        return { ...plain, membre: plain.membre ? plain.membre.get({ plain: true }) : null }
+        return { ...plain, membre: plain.membre ?? null }
       })
 
       const membresPlain = membres.map(m => {
@@ -1177,7 +1177,7 @@ if (votesValides === totalMembres) {
         }
       })
     } catch (error) {
-      await transaction.rollback()
+      try { await transaction.rollback() } catch (_) { /* transaction déjà terminée (commit) */ }
       console.error('[rejeterDemande rattrapage-workflow]', error)
       return res.status(500).json({ success: false, message: 'Erreur interne du serveur' })
     }
@@ -1212,7 +1212,7 @@ if (votesValides === totalMembres) {
 
       const votesPlain = votes.map(v => {
         const plain: any = v.get({ plain: true })
-        return { ...plain, membre: plain.membre ? plain.membre.get({ plain: true }) : null }
+        return { ...plain, membre: plain.membre ?? null }
       })
 
       const membresPlain = (await Utilisateur.findAll({

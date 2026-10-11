@@ -48,7 +48,21 @@ if (anneeRows.length > 0) {
     { replacements: ['Soumission'], type: db.QueryTypes.INSERT }
   )
 
-  // 7.4 Pour chaque étudiant
+  // 7.4 Résolution dynamique des identifiants de référence N+1
+  //      (les IDs en base ne sont PAS stables : ne jamais les coder en dur → FK ins_cursus_apprenants)
+  const parcoursRows = await db.query("SELECT id FROM ins_parcours WHERE titre = 'Génie logiciel' LIMIT 1", { type: db.QueryTypes.SELECT })
+  const parcoursIdN1 = parcoursRows[0] && parcoursRows[0].id
+  if (!parcoursIdN1) { console.log('[FAIL] Parcours "Génie logiciel" introuvable en base'); process.exit(1) }
+
+  const niveauRows = await db.query("SELECT id FROM ins_niveaux_etudes WHERE libelle = 'Licence 2' LIMIT 1", { type: db.QueryTypes.SELECT })
+  const niveauN1Id = (niveauRows[0] && niveauRows[0].id) || 2
+
+  const classeRowsN1 = await db.query("SELECT id FROM ins_classes WHERE libelle = 'L1 GL' LIMIT 1", { type: db.QueryTypes.SELECT })
+  const classeIdN1 = (classeRowsN1[0] && classeRowsN1[0].id) || 1
+
+  console.log(`[SEED] Réinscription N+1 → parcoursId=${parcoursIdN1}, niveauEtudeId=${niveauN1Id}, classeId=${classeIdN1}`)
+
+  // 7.5 Pour chaque étudiant
   for (let i = 0; i < allStudentIds.length; i++) {
     const userId = allStudentIds[i]
 
@@ -84,8 +98,8 @@ if (anneeRows.length > 0) {
 
     // CursusApprenant N+1
     await db.query(
-      'INSERT INTO ins_cursus_apprenants (statutReinscription, intituleParcours, parcoursId, niveauEtudeId, classeId, anneeAcademiqueId, demandeInscriptionId, utilisateurId, dateReinscription, createdAt, updatedAt) VALUES (?, "Licence 2 Génie Logiciel", 1, 2, 1, ?, ?, ?, NOW(), NOW(), NOW())',
-      { replacements: ['confirme', anneeN1Id, demandeId, userId], type: db.QueryTypes.INSERT }
+      'INSERT INTO ins_cursus_apprenants (statutReinscription, intituleParcours, parcoursId, niveauEtudeId, classeId, anneeAcademiqueId, demandeInscriptionId, utilisateurId, dateReinscription, createdAt, updatedAt) VALUES (?, "Licence 2 Génie Logiciel", ?, ?, ?, ?, ?, ?, NOW(), NOW(), NOW())',
+      { replacements: ['confirme', parcoursIdN1, niveauN1Id, classeIdN1, anneeN1Id, demandeId, userId], type: db.QueryTypes.INSERT }
     )
 
     console.log(`[OK] Étudiant ${userId} : réinscription N+1 pipeline complet`)
