@@ -646,12 +646,28 @@ export class BordereauDossierService {
                 await paiement.update({ matriculeInscription: matricule }, { transaction })
             }
         }
-        const dossier = await DossierEtudiant.findOne({
+        let dossier = await DossierEtudiant.findOne({
             where: { utilisateurId },
             order: [['id', 'DESC']],
             transaction,
         })
-        if (dossier && dossier.matricule !== matricule) {
+        if (!dossier) {
+            // Invariant métier : tout apprenant validé (admis) DOIT posséder un
+            // dossier étudiant. La finalisation est le moment officiel de création :
+            // si le socle financier n'a pas été posé en amont (absence de bordereau),
+            // on crée ici le dossier pour ne jamais laisser un étudiant sans dossier.
+            const codeQR = JSON.stringify({ matricule, utilisateurId })
+            dossier = await DossierEtudiant.create({
+                utilisateurId,
+                matricule,
+                codeQR,
+                statut: 'actif',
+                fraisScolarite: 0,
+                modePaiement: 'mensuel',
+                nbMensualites: 10,
+                demarrageParcours: (parcoursFinal as any)?.createdAt || demande.createdAt || new Date(),
+            } as any, { transaction })
+        } else if (dossier.matricule !== matricule) {
             await dossier.update({ matricule }, { transaction })
         }
 

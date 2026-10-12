@@ -487,6 +487,25 @@ export default class PointageController {
                         ]);
                         matricule = (ens as any)?.matricule || (pers as any)?.matricule || null;
                     } catch (_) { /* non bloquant */ }
+
+                    // Un apprenant SANS dossier étudiant n'est PAS du personnel :
+                    // on ne doit jamais l'annoncer comme « Personnel autorisé ».
+                    // On signale explicitement l'absence de dossier d'inscription
+                    // (blocage pointage) en conservant l'identité affichée.
+                    if (utilisateur.role === RolesUtilisateur.APPRENANT) {
+                        return res.status(200).json({
+                            statut: 'rouge',
+                            message: "Aucun dossier d'inscription actif pour cet étudiant",
+                            utilisateurId: userId,
+                            matricule: (utilisateur as any).matricule ?? null,
+                            nom: utilisateur.nom,
+                            prenoms: utilisateur.prenoms,
+                            role: utilisateur.role,
+                            ...photoInfo,
+                            situationFinanciere: null
+                        });
+                    }
+
                     return res.status(200).json({
                         statut: 'vert',
                         message: 'Personnel autorisé',
@@ -516,12 +535,14 @@ export default class PointageController {
         const now = new Date();
         now.setHours(0, 0, 0, 0);
 
-        // Somme globale = frais de scolarité + frais d'inscription
-        const fraisScolarite = dossier.fraisScolarite || 0;
-        const fraisInscription = echeances
-            .filter(e => e.type === 'inscription')
-            .reduce((sum, e) => sum + (e.montant || 0), 0);
-        const sommeGlobale = fraisScolarite + fraisInscription;
+        // Somme globale = total réel facturé (échéances d'inscription + de scolarité).
+        // On s'appuie sur la somme des échéances, qui reflète exactement le dû.
+        // Additionner `dossier.fraisScolarite` aux échéances d'inscription
+        // provoquait un DOUBLE COMPTAGE des frais d'inscription lorsque
+        // `fraisScolarite` portait encore le total d'inscription (aucune
+        // scolarité configurée). Repli sur `fraisScolarite` si aucune échéance.
+        const totalEcheances = echeances.reduce((sum, e) => sum + (e.montant || 0), 0);
+        const sommeGlobale = totalEcheances > 0 ? totalEcheances : (dossier.fraisScolarite || 0);
 
         // Montant déjà payé
         const montantPaye = echeances
