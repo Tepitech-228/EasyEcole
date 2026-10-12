@@ -369,55 +369,71 @@ export default class PointageController {
             let userId: string | null = null;
             let dossier: DossierEtudiant | null = null;
 
+            // Résolution unifiée, partagée par le scan QR (token OU JSON) et la
+            // saisie manuelle du matricule : on extrait les mêmes clés candidates
+            // puis on cherche le dossier étudiant de la même façon. Objectif : le
+            // QR d'un apprenant renvoie EXACTEMENT la réponse de son matricule.
+            const dossierIncludes: any[] = [
+                { association: DossierEtudiant.associations.echeances },
+                { association: DossierEtudiant.associations.utilisateur, attributes: ['id', 'nom', 'prenoms', 'role', 'photoDeProfil'] }
+            ];
+
+            let candidatUtilisateurId: number | null = null;
+            let candidatMatricule: string | null = null;
+
             const verified = QrTokenService.verifier(codeQR);
             if (verified) {
+                // QR carte étudiant/personnel = token signé -> utilisateurId.
+                candidatUtilisateurId = verified.userId;
                 userId = String(verified.userId);
-                dossier = await DossierEtudiant.findOne({
-                    where: { utilisateurId: verified.userId },
-                    include: [
-                        { association: DossierEtudiant.associations.echeances },
-                        { association: DossierEtudiant.associations.utilisateur, attributes: ['id', 'nom', 'prenoms', 'role', 'photoDeProfil'] }
-                    ]
-                });
             } else if (codeQR.startsWith('{')) {
+                // QR JSON (codeQR de dossier) = { utilisateurId, matricule }.
+                let qrData: any;
                 try {
-                    const qrData = JSON.parse(codeQR)
-                    userId = qrData.id || null;
-                    dossier = await DossierEtudiant.findOne({
-                        where: { matricule: qrData.matricule },
-                        include: [
-                            { association: DossierEtudiant.associations.echeances },
-                            { association: DossierEtudiant.associations.utilisateur, attributes: ['id', 'nom', 'prenoms', 'role', 'photoDeProfil'] }
-                        ]
-                    })
+                    qrData = JSON.parse(codeQR);
                 } catch (parseError) {
                     return res.status(400).json({ success: false, message: 'Code QR invalide' });
                 }
+                const rawId = qrData.utilisateurId ?? qrData.id;
+                candidatUtilisateurId = rawId != null && Number.isFinite(Number(rawId)) ? Number(rawId) : null;
+                candidatMatricule = typeof qrData.matricule === 'string' && qrData.matricule ? qrData.matricule : null;
+                if (candidatUtilisateurId != null) userId = String(candidatUtilisateurId);
             } else {
                 // Saisie manuelle : matricule dossier étudiant, matricule prof/personnel
                 // (auto-générés à la création) ou identifiant.
+                candidatMatricule = codeQR;
                 userId = codeQR;
+            }
+
+            // Dossier étudiant : par utilisateurId d'abord, puis par matricule.
+            if (candidatUtilisateurId != null) {
                 dossier = await DossierEtudiant.findOne({
-                    where: { matricule: codeQR },
-                    include: [
-                        { association: DossierEtudiant.associations.echeances },
-                        { association: DossierEtudiant.associations.utilisateur, attributes: ['id', 'nom', 'prenoms', 'role', 'photoDeProfil'] }
-                    ]
-                })
-                if (!dossier) {
-                    const enseignant = await Enseignant.findOne({ where: { matricule: codeQR } });
-                    const personnel = enseignant
-                        ? null
-                        : await PersonnelAdministratif.findOne({ where: { matricule: codeQR } });
-                    const ownerId = enseignant?.utilisateurId || personnel?.utilisateurId || null;
-                    if (ownerId) userId = String(ownerId);
-                    else {
-                        const byIdent = await Utilisateur.findOne({
-                            where: { identifiant: codeQR },
-                            attributes: ['id']
-                        });
-                        if (byIdent) userId = String(byIdent.id);
-                    }
+                    where: { utilisateurId: candidatUtilisateurId },
+                    include: dossierIncludes
+                });
+            }
+            if (!dossier && candidatMatricule) {
+                dossier = await DossierEtudiant.findOne({
+                    where: { matricule: candidatMatricule },
+                    include: dossierIncludes
+                });
+            }
+
+            // Repli non-dossier (personnel / enseignant) — comportement inchangé :
+            // un personnel n'a pas de dossier étudiant, il reste résolu par identité.
+            if (!dossier && candidatMatricule) {
+                const enseignant = await Enseignant.findOne({ where: { matricule: candidatMatricule } });
+                const personnel = enseignant
+                    ? null
+                    : await PersonnelAdministratif.findOne({ where: { matricule: candidatMatricule } });
+                const ownerId = enseignant?.utilisateurId || personnel?.utilisateurId || null;
+                if (ownerId) userId = String(ownerId);
+                else {
+                    const byIdent = await Utilisateur.findOne({
+                        where: { identifiant: candidatMatricule },
+                        attributes: ['id']
+                    });
+                    if (byIdent) userId = String(byIdent.id);
                 }
             }
 

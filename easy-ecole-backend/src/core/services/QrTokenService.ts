@@ -34,7 +34,8 @@ export class QrTokenService {
 
   /**
    * Verifies a token and returns the userId if valid.
-   * Returns null if the token is invalid or expired.
+   * Returns null if the token is invalid (la validité est couverte par la
+   * signature HMAC ; elle n'expire pas au cours de l'année académique).
    */
   static verifier(token: string): { userId: number; timestamp: number } | null {
     if (typeof token !== 'string' || token.length === 0) {
@@ -96,12 +97,10 @@ export class QrTokenService {
       return null;
     }
 
-    // Optional: expire after 30 days
-    const now = Date.now();
-    if (now - timestamp > 30 * 24 * 60 * 60 * 1000) {
-      return null;
-    }
-
+    // Le QR étudiant doit rester valide pendant toute l'année académique :
+    // aucune expiration par âge. La validité repose uniquement sur la
+    // signature HMAC vérifiée ci-dessus (les cartes déjà imprimées
+    // redeviennent donc elles aussi valables).
     return { userId, timestamp };
   }
 }

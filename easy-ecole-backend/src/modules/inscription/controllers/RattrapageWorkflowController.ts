@@ -920,7 +920,7 @@ if (votesValides === totalMembres) {
            let assigned = false
            for (let i = planningIndex; i < disponibles.length; i++) {
              const planning = disponibles[i]
-             const dateStr = planning.dateSamedi.toISOString().split('T')[0]
+             const dateStr = String(planning.dateSamedi).split('T')[0]
              if (planning.classeId === filiereId && !datesUtilisees.has(dateStr)) {
                affectations.push({
                  filiereId: filiereId,
@@ -938,13 +938,13 @@ if (votesValides === totalMembres) {
            if (!assigned) {
              for (let i = planningIndex; i < disponibles.length; i++) {
                const planning = disponibles[i]
-               if (!datesUtilisees.has(planning.dateSamedi.toISOString().split('T')[0])) {
+               if (!datesUtilisees.has(String(planning.dateSamedi).split('T')[0])) {
                  affectations.push({
                    filiereId: filiereId,
                    planningId: planning.id,
                    dateSamedi: planning.dateSamedi
                  })
-                 datesUtilisees.add(planning.dateSamedi.toISOString().split('T')[0])
+                 datesUtilisees.add(String(planning.dateSamedi).split('T')[0])
                  planningIndex = i + 1
                  assigned = true
                  break
@@ -959,7 +959,7 @@ if (votesValides === totalMembres) {
                planningId: planning.id,
                dateSamedi: planning.dateSamedi
              })
-             datesUtilisees.add(planning.dateSamedi.toISOString().split('T')[0])
+             datesUtilisees.add(String(planning.dateSamedi).split('T')[0])
              planningIndex++
            }
          }
@@ -1482,7 +1482,10 @@ if (votesValides === totalMembres) {
         enseignantId,
         ueId: ueId ?? null,
         ecueId: ecueId ?? null,
-        statut: 'programme' as const,
+        // ENUM ins_rattrapage_enseignants.statut = ('designe','confirmé','annulé').
+        // 'programme' est propre au planning (ins_rattrapage_planning) — une valeur
+        // invalide ici faisait échouer l'INSERT (500).
+        statut: 'designe' as const,
       }, { transaction })
 
       // Mettre à jour le planning en statut 'convoque' pour indiquer qu'un enseignant est assigné

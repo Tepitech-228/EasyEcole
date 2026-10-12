@@ -344,7 +344,8 @@ router
    *       200:
    *         description: Demande rejetée
    */
-   .get('/demandes/:id/votes', RattrapageWorkflowController.listerVotes)
+  .put('/demandes/:id/rejeter', RattrapageWorkflowController.rejeterDemande)
+  .get('/demandes/:id/votes', RattrapageWorkflowController.listerVotes)
   /**
    * @openapi
    * /inscription/rattrapage-workflow/sessions/{id}/planning:
