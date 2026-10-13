@@ -507,7 +507,7 @@ export default class RattrapageController {
 
         try {
           await sender.sendMail({
-            from: `Easy Ecole <easy.ecole@technologybusiness-tb.com>`,
+            from: `Easy Ecole <${process.env.MAIL_FROM || process.env.SMTP_USER || 'no-reply@easyecole.com'}>`,
             to: user.email,
             encoding: 'UTF-8',
             subject: 'Session de rattrapage ouverte',

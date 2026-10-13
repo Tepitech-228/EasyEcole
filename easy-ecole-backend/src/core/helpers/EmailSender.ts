@@ -1,7 +1,89 @@
 import { createTransport, SendMailOptions, Transporter } from "nodemailer"
+import * as https from "https"
+import * as fs from "fs"
 
 const env = process.env.NODE_ENV || 'development';
 export const EMAIL_SENDER_NAME = 'ESA ECOLE';
+
+/** Expéditeur déjà vérifié dans le compte Brevo (repli si MAIL_FROM/BREVO_FROM absents). */
+const BREVO_DEFAULT_SENDER = 'tepitechbuild@gmail.com'
+
+/**
+ * Transport nodemailer personnalisé : envoi via l'API REST Brevo
+ * (POST /v3/smtp/email) — aucun SMTP requis, une simple clé API suffit.
+ * Activé dès que BREVO_API_KEY est défini (prioritaire sur le SMTP).
+ */
+function brevoApiSend(mail: any, callback: (err: Error | null, info?: any) => void): void {
+    try {
+        const addresses = mail.message.getAddresses()
+        const from = addresses && addresses.from && addresses.from[0]
+        const nomParDefaut = (a: any) => a.name || String(a.address || '').split('@')[0] || 'Destinataire'
+        const to = (addresses.to || []).map((a: any) => ({ email: a.address, name: nomParDefaut(a) }))
+        const cc = (addresses.cc || []).map((a: any) => ({ email: a.address, name: nomParDefaut(a) }))
+        const bcc = (addresses.bcc || []).map((a: any) => ({ email: a.address, name: nomParDefaut(a) }))
+
+        const payload: any = {
+            sender: {
+                name: EMAIL_SENDER_NAME,
+                email: (from && from.address) || process.env.MAIL_FROM || process.env.BREVO_FROM || BREVO_DEFAULT_SENDER,
+            },
+            to: to.length ? to : [{ email: String(mail.data.to || '') }],
+            subject: mail.subject || mail.data.subject || '',
+        }
+        if (mail.data.html) payload.htmlContent = mail.data.html
+        if (mail.data.text) payload.textContent = mail.data.text
+        if (cc.length) payload.cc = cc
+        if (bcc.length) payload.bcc = bcc
+
+        const attachments = Array.isArray(mail.data.attachments)
+            ? mail.data.attachments.filter((a: any) => a && a.filename)
+            : []
+        if (attachments.length > 0) {
+            payload.attachments = attachments.map((a: any) => {
+                let content: string | undefined
+                if (a.content) {
+                    content = Buffer.isBuffer(a.content)
+                        ? a.content.toString('base64')
+                        : Buffer.from(String(a.content), 'utf8').toString('base64')
+                } else if (a.path && typeof a.path === 'string') {
+                    content = fs.readFileSync(a.path).toString('base64')
+                }
+                return { name: a.filename, content }
+            })
+        }
+
+        const body = JSON.stringify(payload)
+        const req = https.request({
+            host: 'api.brevo.com',
+            path: '/v3/smtp/email',
+            method: 'POST',
+            headers: {
+                'api-key': process.env.BREVO_API_KEY || '',
+                'accept': 'application/json',
+                'content-type': 'application/json',
+                'content-length': Buffer.byteLength(body),
+            },
+        }, res => {
+            let d = ''
+            res.on('data', c => d += c)
+            res.on('end', () => {
+                if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+                    let parsed: any = {}
+                    try { parsed = JSON.parse(d) } catch { /* corps non-JSON : on ignore */ }
+                    callback(null, { messageId: parsed.messageId || `brevo-${Date.now()}`, response: d.slice(0, 200) })
+                } else {
+                    callback(new Error(`Brevo API ${res.statusCode}: ${d.slice(0, 300)}`))
+                }
+            })
+        })
+        req.setTimeout(20000, () => req.destroy(new Error('Brevo API timeout')))
+        req.on('error', callback)
+        req.write(body)
+        req.end()
+    } catch (err: any) {
+        callback(err instanceof Error ? err : new Error(String(err)))
+    }
+}
 
 function getMailConfig() {
     if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
@@ -44,13 +126,22 @@ export class EmailSender {
     private transporter: Transporter | null = null
 
     constructor() {
+        if (process.env.BREVO_API_KEY) {
+            // Mode API Brevo : prioritaire sur le SMTP (pas de login SMTP a gerer)
+            this.transporter = createTransport({
+                name: 'brevo-api',
+                version: '1.0.0',
+                send: brevoApiSend,
+            })
+            return
+        }
         const config = getMailConfig()
         if (config) {
             this.transporter = createTransport({
                 pool: true,
                 host: config.host,
                 port: config.port,
-                secure: true,
+                secure: config.port === 465,
                 auth: {
                     user: config.username,
                     pass: config.password,
@@ -78,10 +169,24 @@ export class EmailSender {
         } catch { return '' }
     }
 
+    /**
+     * Adresse d'expéditeur (From).
+     * MAIL_FROM prime : avec un relais transactionnel (Brevo, Resend…),
+     * SMTP_USER est une clé API (ex. Xsmtpsib-…), pas une adresse email —
+     * le From serait invalide. MAIL_FROM doit être une adresse vérifiée
+     * dans le relais. À défaut, repli sur SMTP_USER (comportement historique).
+     */
+    private getFromAddress(): string {
+        const expediteur = process.env.BREVO_API_KEY
+            ? (process.env.MAIL_FROM || process.env.BREVO_FROM || BREVO_DEFAULT_SENDER)
+            : (process.env.MAIL_FROM || this.getUsername())
+        return `${EMAIL_SENDER_NAME} <${expediteur}>`
+    }
+
     public test(): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
+            from: this.getFromAddress(),
             to: "armand.kayi@technologybusiness-tb.com",
             encoding: 'UTF-8',
             subject: `${EMAIL_SENDER_NAME}: Mail test`,
@@ -104,7 +209,7 @@ export class EmailSender {
     public sendServerStartingMessage(email: string = 'armand.kayi@technologybusiness-tb.com'): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
+            from: this.getFromAddress(),
             to: email,
             encoding: 'UTF-8',
             subject: `${EMAIL_SENDER_NAME}: Démarrage de l'API`,
@@ -127,7 +232,7 @@ export class EmailSender {
     public sendConfirmationDemandeOrientation(username: string, email: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
+            from: this.getFromAddress(),
             to: email,
             encoding: 'UTF-8',
             subject: `${EMAIL_SENDER_NAME}: Votre demande d'orientation a été bien reçue`,
@@ -150,7 +255,7 @@ export class EmailSender {
     public sendReponseOrientation(username: string, email: string, message: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
+            from: this.getFromAddress(),
             to: email,
             encoding: 'UTF-8',
             subject: `${EMAIL_SENDER_NAME}: Réponse d'orientation`,
@@ -174,7 +279,7 @@ export class EmailSender {
     public sendConfirmationDemandeInscription(username: string, email: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
+            from: this.getFromAddress(),
             to: email,
             encoding: 'UTF-8',
             subject: `${EMAIL_SENDER_NAME}: Votre demande d'inscription a été bien reçue`,
@@ -197,7 +302,7 @@ export class EmailSender {
     public sendReponseInscription(username: string, email: string, message: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
+            from: this.getFromAddress(),
             to: email,
             encoding: 'UTF-8',
             subject: `${EMAIL_SENDER_NAME}: Réponse d'inscription`,
@@ -243,7 +348,7 @@ export class EmailSender {
     public sendValidationDemandeInscription(username: string, email: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
+            from: this.getFromAddress(),
             to: email,
             encoding: 'UTF-8',
             subject: `${EMAIL_SENDER_NAME}: Validation de votre demande d'inscription`,
@@ -266,7 +371,7 @@ export class EmailSender {
     public sendMessageInscriptionEnseignant(username: string, tempPassword: string, email: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
+            from: this.getFromAddress(),
             to: email,
             encoding: 'UTF-8',
             subject: `${EMAIL_SENDER_NAME}: Création de votre compte Enseignant`,
@@ -289,7 +394,7 @@ export class EmailSender {
     public sendPreInscriptionValidee(username: string, email: string, attachmentPath?: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
+            from: this.getFromAddress(),
             to: email,
             encoding: 'UTF-8',
             subject: `${EMAIL_SENDER_NAME}: Votre préinscription a été validée`,
@@ -320,7 +425,7 @@ export class EmailSender {
     public sendPreInscriptionRejetee(username: string, email: string, motif: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
+            from: this.getFromAddress(),
             to: email,
             encoding: 'UTF-8',
             subject: `${EMAIL_SENDER_NAME}: Votre préinscription a été rejetée`,
@@ -347,7 +452,7 @@ export class EmailSender {
     public sendBordereauRejete(username: string, email: string, motif: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
+            from: this.getFromAddress(),
             to: email,
             encoding: 'UTF-8',
             subject: `${EMAIL_SENDER_NAME}: Votre bordereau de paiement a été refusé`,
@@ -371,7 +476,7 @@ export class EmailSender {
     public sendParentWelcome(email: string, identifiant: string, motDePasse: string, nomParent: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
+            from: this.getFromAddress(),
             to: email,
             encoding: 'UTF-8',
             subject: `${EMAIL_SENDER_NAME}: Bienvenue sur l'Espace Parents`,
@@ -396,7 +501,7 @@ export class EmailSender {
     public sendQuitusEtMatricule(username: string, email: string, matricule: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
+            from: this.getFromAddress(),
             to: email,
             encoding: 'UTF-8',
             subject: `${EMAIL_SENDER_NAME}: Votre dossier étudiant est prêt`,
@@ -428,7 +533,7 @@ export class EmailSender {
         }
 
         const mailOptions: SendMailOptions = {
-            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
+            from: this.getFromAddress(),
             to: email,
             encoding: 'UTF-8',
             subject: `${EMAIL_SENDER_NAME}: Confirmer votre email`,
@@ -460,7 +565,7 @@ export class EmailSender {
         }
 
         const mailOptions: SendMailOptions = {
-            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
+            from: this.getFromAddress(),
             to: email,
             encoding: 'UTF-8',
             subject: `${EMAIL_SENDER_NAME}: Réinitialiser le mot de passe`,
@@ -485,7 +590,7 @@ export class EmailSender {
         const formattedCode = code
 
         const mailOptions: SendMailOptions = {
-            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
+            from: this.getFromAddress(),
             to: email,
             encoding: 'UTF-8',
             subject: `${EMAIL_SENDER_NAME} - Votre code de connexion`,
@@ -512,7 +617,7 @@ export class EmailSender {
     public sendPdf(email: string, username: string, subject: string, messageHtml: string, pdfPath: string, pdfFilename: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
-            from: `${EMAIL_SENDER_NAME} <${this.getUsername()}>`,
+            from: this.getFromAddress(),
             to: email,
             encoding: 'UTF-8',
             subject,

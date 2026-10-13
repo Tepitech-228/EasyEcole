@@ -202,7 +202,7 @@ export default class PaiementInscriptionController {
                         <p>Cordialement,<br/>Easy Ecole</p>`;
 
                     EmailSender.getInstance().sendMail({
-                        from: `Easy Ecole <${process.env.SMTP_USER || 'no-reply@easyecole.com'}>`,
+                        from: `Easy Ecole <${process.env.MAIL_FROM || process.env.SMTP_USER || 'no-reply@easyecole.com'}>`,
                         to: studentEmail,
                         encoding: 'UTF-8',
                         subject: 'Reçu de paiement Easy Ecole',
@@ -569,7 +569,7 @@ export default class PaiementInscriptionController {
                                 <p>Cordialement,<br/>Easy Ecole</p>`;
 
                             EmailSender.getInstance().sendMail({
-                                from: `Easy Ecole <${process.env.SMTP_USER || 'no-reply@easyecole.com'}>`,
+                                from: `Easy Ecole <${process.env.MAIL_FROM || process.env.SMTP_USER || 'no-reply@easyecole.com'}>`,
                                 to: demande.utilisateur.email,
                                 encoding: 'UTF-8',
                                 subject: 'Reçu de paiement Easy Ecole',

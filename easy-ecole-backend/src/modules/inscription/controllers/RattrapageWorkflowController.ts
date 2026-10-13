@@ -1986,7 +1986,7 @@ if (votesValides === totalMembres) {
     if (!sender.isConfigured()) return
     try {
       await sender.sendMail({
-        from: 'Easy Ecole <easy.ecole@technologybusiness-tb.com>',
+        from: `Easy Ecole <${process.env.MAIL_FROM || process.env.SMTP_USER || 'no-reply@easyecole.com'}>`,
         to: destinataire.email,
         encoding: 'UTF-8',
         subject: sujet,

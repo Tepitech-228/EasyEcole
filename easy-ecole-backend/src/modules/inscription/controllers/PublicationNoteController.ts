@@ -112,7 +112,7 @@ export default class PublicationNoteController {
                     const noteValue = noteRecord?.note ?? null;
 
                     EmailSender.getInstance().sendMail({
-                        from: `Easy Ecole <${process.env.SMTP_USER || require('../../../core/config/mail.json')[process.env.NODE_ENV || 'development'].username}>`,
+                        from: `Easy Ecole <${process.env.MAIL_FROM || process.env.SMTP_USER || 'no-reply@easyecole.com'}>`,
                         to: user.email,
                         encoding: 'UTF-8',
                         subject: `Easy Ecole: Note disponible - ${coursIntitule}`,

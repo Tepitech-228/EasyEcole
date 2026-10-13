@@ -96,7 +96,7 @@ export class RappelNotesExamenCron {
           if (!dest.email) continue
           try {
             await EmailSender.getInstance().sendMail({
-              from: 'Easy Ecole <easy.ecole@technologybusiness-tb.com>',
+              from: `Easy Ecole <${process.env.MAIL_FROM || process.env.SMTP_USER || 'no-reply@easyecole.com'}>`,
               to: dest.email,
               subject: `[ALERTE] Note d'examen en retard — ${ue} / ${classe}`,
               html: `<p>Bonjour ${dest.prenoms || ''} ${dest.nom || ''},</p>
