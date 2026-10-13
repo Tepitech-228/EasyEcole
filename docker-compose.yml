@@ -1,10 +1,20 @@
 # =============================================================================
 # EasyEcole — Docker Compose (déploiement production : Ubuntu + Dokploy)
 #
+# TOPOLOGIE ESA (2 VM Hyper-V) :
+#   - VM APP (192.168.100.10 — 6 vCPU / 6 Go RAM / 1 To) : héberge CETTE stack
+#       backend (API Express/Node), worker (BullMQ), redis (cache), frontend (nginx)
+#   - VM DB  (192.168.100.20 — 4 vCPU / 6 Go RAM / 3 To) : MySQL 8.0 NATIF,
+#       HORS Docker. La base n'est ni conteneurisée ni sauvegardée par ce compose.
+#
+# BASE DE DONNÉES : EXTERNE. Le backend s'y connecte via DB_HOST (défaut
+#   192.168.100.20:3306). Autorisations pare-feu attendues :
+#     - VM DB  : autoriser 3306 entrant depuis la VM APP uniquement
+#     - VM APP : autoriser la SORTIE vers 3306 (+ ports applicatifs utiles)
+#
 # 4 services :
-#   - db       : MySQL 8.0 (base de données, volume persistant mysql_data)
-#   - backend  : API Express/Node (build local, volume uploads -> /app/public,
-#                bind mount PDFs -> /app/storage (hôte : /opt/mon-app/storage))
+#   - backend  : API Express/Node (build local, bind mounts uploads/storage…)
+#   - worker   : workers BullMQ (OCR, PDF, import Excel) — même image que backend
 #   - redis    : Redis 7 (cache réponse API, fail-safe, volume redis_data)
 #   - frontend : nginx servant le build Angular + proxy /api -> backend:3000
 #
@@ -14,10 +24,8 @@
 #
 # VARIABLES D'ENVIRONNEMENT (DOKPLOY) :
 #   Saisir toutes les variables dans Dokploy (onglet "Environment" du projet) :
-#   JWT_SECRET, DB_PASS, CORS_ORIGIN, SMTP_*, CINETPAY_*, ENCRYPTION_MASTER_KEY…
-#   - Le service db interpole ${MYSQL_ROOT_PASSWORD}, ${DB_PASS}, ${DB_USER},
-#     ${DB_NAME}, ${TZ} depuis
-#     les variables du projet (Dokploy les injecte aussi dans les conteneurs).
+#   DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS,
+#   JWT_SECRET, DOCGEN_SECRET, CORS_ORIGIN, SMTP_*, REDIS_URL…
 #   - Le service backend reçoit automatiquement toutes les variables du projet
 #     (remplace l'ancien `env_file: .env` — PAS de fichier .env dans le repo).
 #   - Chemins HÔTE des bind mounts (facultatifs ; défauts sous /opt/mon-app/) :
@@ -35,93 +43,12 @@
 #   par git — ne JAMAIS le déployer en production, voir .gitignore)
 #
 # RÉSEAUX : `app` relie nginx au backend; `data` (interne) relie backend,
-# workers, MySQL et Redis. MySQL/Redis ne sont pas joignables depuis nginx.
+# workers et Redis.
 # =============================================================================
 
 name: easyecole
 
 services:
-  # ---------------------------------------------------------------------------
-  # 1) BASE DE DONNÉES MySQL 8.0
-  # ---------------------------------------------------------------------------
-  db:
-    image: mysql:8.0
-    container_name: easyecole-db
-    restart: unless-stopped
-    mem_limit: 1g
-    pids_limit: 200
-    init: true
-    security_opt:
-      - no-new-privileges:true
-    environment:
-      # Mot de passe root MySQL (à remplacer dans .env)
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD must be set}
-      # Compte applicatif dédié, initialisé uniquement à la création du volume.
-      MYSQL_USER: ${DB_USER:-easyecole_app}
-      MYSQL_PASSWORD: ${DB_PASS:?DB_PASS must be set}
-      # Base créée au premier démarrage (le DUMP est ensuite importé)
-      MYSQL_DATABASE: ${DB_NAME:-easyecole}
-      # Fuseau horaire
-      TZ: ${TZ:-UTC}
-    # Volume persistant : les données survivent aux recréations de conteneur
-    volumes:
-      - mysql_data:/var/lib/mysql
-    # Healthcheck : on attend que MySQL réponde avant de démarrer le backend
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
-    networks:
-      - data
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: "3"
-
-  # ---------------------------------------------------------------------------
-  # 1b) SAUVEGARDE MYSQL
-  # ---------------------------------------------------------------------------
-  mysql-backup:
-    image: mysql:8.0
-    container_name: easyecole-mysql-backup
-    restart: unless-stopped
-    environment:
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_NAME: ${DB_NAME:-easyecole}
-      MYSQL_USER: root
-      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
-      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
-    volumes:
-      - mysql_backups:/backups/mysql
-      # Fichiers uploadés (public/) — BIND MOUNT hôte, en LECTURE SEULE.
-      - ${PUBLIC_HOST_PATH:-/opt/mon-app/public}:/data/uploads:ro
-      # PV de délibération (/app/uploads) — BIND MOUNT hôte, LECTURE SEULE.
-      - ${UPLOADS_HOST_PATH:-/opt/mon-app/uploads}:/data/pv:ro
-      # PDFs et documents persistants (bind mount du backend, même chemin
-      # hôte) montés EN LECTURE SEULE pour l'archivage hebdomadaire.
-      - ${STORAGE_HOST_PATH:-/opt/mon-app/storage}:/data/storage:ro
-      - ./scripts/mysql-backup.sh:/usr/local/bin/mysql-backup.sh:ro
-    entrypoint: ["/bin/sh", "/usr/local/bin/mysql-backup.sh"]
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - data
-    # ⚠️ CONFLICT PORT 3306 : si un MySQL natif tourne déjà sur le serveur
-    # Windows, NE PAS exposer le port de ce conteneur sur l'hôte.
-    # Décommentez uniquement si vous avez besoin d'y accéder depuis l'hôte
-    # (utilisez 3307 pour éviter le conflit) :
-    # ports:
-    #   - "3307:3306"
-    # ⚠️ IMPORTANT : si vous exposez un port hôte différent de 3306, mettez à
-    # jour DB_PORT dans .env (le backend pointe vers le service `db`, donc
-    # DB_PORT=3306 reste correct dans le réseau Docker).
-
   # ---------------------------------------------------------------------------
   # 2) BACKEND API Express/Node
   # ---------------------------------------------------------------------------
@@ -137,16 +64,16 @@ services:
     init: true
     security_opt:
       - no-new-privileges:true
-    # Variables DB explicites : DB_HOST DOIT valoir `db` (nom du service),
-    # PAS localhost. Les autres variables applicatives sont configurées dans
-    # l'environnement du déploiement.
+    # Hôte de la base : la BD est EXTERNE (VM DB 192.168.100.20).
+    # DB_HOST DOIT pointer vers la VM DB (défaut ci-dessous), PAS vers un
+    # conteneur `db` (qui n'existe plus dans cette stack).
     # (Ancien `env_file: .env` supprimé : Dokploy ne lit pas de fichier .env.)
     # REDIS_URL : valeur par défaut vers le service cache ; toute valeur saisie
     # dans Dokploy (${REDIS_URL}) la remplace sans toucher à ce fichier.
     environment:
       NODE_ENV: production
-      DB_HOST: db
-      DB_PORT: 3306
+      DB_HOST: ${DB_HOST:-192.168.100.20}
+      DB_PORT: ${DB_PORT:-3306}
       DB_NAME: ${DB_NAME:-easyecole}
       DB_USER: ${DB_USER:-easyecole_app}
       DB_PASS: ${DB_PASS:?DB_PASS must be set}
@@ -165,9 +92,6 @@ services:
       # Fail-fast : une migration en échec bloque le démarrage (pas d'API à
       # moitié migrée). Pour sauter : MIGRATIONS_ON_BOOT=false.
       MIGRATIONS_ON_BOOT: ${MIGRATIONS_ON_BOOT:-true}
-    depends_on:
-      db:
-        condition: service_healthy
     networks:
       - app
       - data
@@ -216,7 +140,7 @@ services:
       #   1. migrations SQL fail-fast (jusqu'à 34 fichiers la 1ère fois)
       #   2. seed-boot : 6 seeds idempotents séquentiels (comptes+RBAC,
       #      docgen, GED, dossiers GED, documents requis, frais)
-      # Localement, UNE seule prennait déjà ~53 s ; en prod la séquence
+      # Localement, UNE seule prenait déjà ~53 s ; en prod la séquence
       # complète dépasse largement les 40 s + 5×15 s ≈ 2 min initiaux :
       # Docker marquait le backend « unhealthy » pendant que l'API n'avait
       # pas encore le temps d'écouter → deploy Dokploy en échec
@@ -254,8 +178,9 @@ services:
     command: []
     environment:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      DB_HOST: db
-      DB_PORT: 3306
+      # Same EXTERNAL database as the backend (VM DB 192.168.100.20).
+      DB_HOST: ${DB_HOST:-192.168.100.20}
+      DB_PORT: ${DB_PORT:-3306}
       DB_NAME: ${DB_NAME:-easyecole}
       DB_USER: ${DB_USER:-easyecole_app}
       DB_PASS: ${DB_PASS:?DB_PASS must be set}
@@ -320,7 +245,7 @@ services:
     mem_limit: 256m
     ports:
       # Port HTTP public de l'application. À adapter (ex: "8080:80") si le
-      # port 80 est déjà occupé sur le serveur Windows.
+      # port 80 est déjà occupé sur le serveur.
       - "80:80"
     networks:
       - app
@@ -347,8 +272,8 @@ services:
 # VOLUMES NOMÉS
 # =============================================================================
 volumes:
-  # Données MySQL (base complète importée depuis le dump)
-  mysql_data:
+  # Persistance du cache Redis (fichiers AOF dans /data)
+  redis_data:
   # ⚠️ L'ancien volume nommé `uploads` (/app/public) n'est PLUS déclaré :
   # /app/public est désormais un BIND MOUNT sur ${PUBLIC_HOST_PATH} (défaut
   # /opt/mon-app/public). L'ancien volume (easyecole_uploads) reste sur le
@@ -357,16 +282,15 @@ volumes:
   #   docker run --rm -v easyecole_uploads:/from -v /opt/mon-app/public:/to \
   #     busybox sh -c 'cp -a /from/. /to/'
   #   docker volume rm easyecole_uploads
-  # Persistance du cache Redis (fichiers AOF dans /data)
-  redis_data:
-  # Dumps compressés MySQL ; monter ce volume vers un stockage externe en prod.
-  mysql_backups:
   # ⚠️ L'ancien volume nommé `storage` n'est PLUS déclaré : /app/storage est
   # désormais un bind mount sur ${STORAGE_HOST_PATH} (défaut
   # /opt/mon-app/storage). L'ancien volume (easyecole_storage) reste sur le
   # disque après cette mise à jour : il contient les PDF créés avant la
   # bascule et doit être MIGRÉ vers le bind mount (voir compte-rendu), puis
   # supprimé une fois la migration vérifiée (`docker volume rm easyecole_storage`).
+  #
+  # ⚠️ BASE DE DONNÉES : plus AUCUN volume MySQL ici. La base est EXTERNE
+  # (VM DB 192.168.100.20). Sauvegardes et persistance sont gérées côté VM DB.
 
 networks:
   app:
