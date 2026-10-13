@@ -95,6 +95,37 @@ for d in /app/public /app/uploads /app/config /app/.keys /app/backups; do
 done
 echo "[entrypoint] Répertoires fichiers OK (public/, uploads/) — écriture autorisée"
 
+# -----------------------------------------------------------------------------
+# 0c. AMORÇAGE DU SCHÉMA DE BASE (AVANT les migrations) — base NEUVE uniquement
+# -----------------------------------------------------------------------------
+# POURQUOI ICI (et pas après) : les fichiers `migrations/*.sql` sont des
+# migrations d'ÉVOLUTION — elles font des ALTER/INSERT sur des tables qui
+# SUPPOSENT donc déjà exister. Or sur une base NEUVE (premier déploiement),
+# AUCUNE table n'existe : la 1ère migration (`001_salleId_bulletins.sql`) échoue
+# alors en `ER_NO_SUCH_TABLE` (ins_bulletins) et, fail-fast oblige, le conteneur
+# ne démarre JAMAIS. Le schéma de base n'étant créé que par l'application — qui
+# démarre APRÈS les migrations —, on aboutit à une impasse d'amorçage.
+#
+# On crée donc ICI les tables MANQUANTES (création seule, SANS ALTER : les
+# tables existantes et leurs données ne sont JAMAIS touchées), AVANT les
+# migrations. Idempotent : sur une base déjà peuplée, aucune table n'est créée
+# et le script ne fait que vérifier/rapporter.
+#
+# Non bloquant volontairement : un échec ici ne doit pas bloquer un déploiement
+# sur base EXISTANTE ; sur base neuve, l'erreur reste visible et les migrations
+# échoueront juste après avec un message explicite si le schéma est incomplet.
+#
+# DB_PASSWORD ↔ DB_PASS : ce script historique lit `DB_PASSWORD` alors que toute
+# la stack (compose, DatabaseConnection, runner de migrations) utilise `DB_PASS`.
+# On fournit donc l'alias pour éviter une connexion à mot de passe vide.
+if [ "${DB_BOOTSTRAP_SCHEMA:-true}" = "true" ]; then
+  echo "[entrypoint] Amorçage du schéma de base (création des tables manquantes, sans ALTER)..."
+  export DB_PASSWORD="${DB_PASSWORD:-${DB_PASS:-}}"
+  node lib/core/scripts/setup-production.js || echo "[entrypoint] ⚠ amorçage du schéma terminé avec erreur (non bloquant)"
+else
+  echo "[entrypoint] Amorçage du schéma désactivé (DB_BOOTSTRAP_SCHEMA != true)."
+fi
+
 # Les migrations SQL incrémentales (idempotentes, suivi schema_migrations)
 # sont appliquées automatiquement au démarrage (défaut), AVANT le seed et
 # l'application. Comportement fail-fast : si une migration échoue, le
