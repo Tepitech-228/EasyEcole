@@ -19,7 +19,12 @@ export class AuthLayoutComponent implements OnInit, OnDestroy {
     'assets/images/ESA-1.webp',
     'assets/images/ESA-2.jpeg',
     'assets/images/ESA-3.jpg',
-    'assets/images/ESA-4.jpeg'
+    'assets/images/ESA-4.jpeg',
+    'assets/images/ESA-5.jpg',
+    'assets/images/ESA-6.jpg',
+    'assets/images/ESA-7.jpg',
+    'assets/images/ESA-8.jpg',
+    'assets/images/ESA-9.jpeg'
   ]
   activeSlide: number = 0
   private timer?: any
