@@ -1,6 +1,8 @@
 // Variables de la charte
 $blue: #1769aa;
 $teal: #087f8c;
+$ink: #0f172a;
+$muted: #64748b;
 
 .auth-layout {
     position: relative;
@@ -9,8 +11,8 @@ $teal: #087f8c;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 24px;
-    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    padding: 40px 24px 76px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
 }
 
 // --- Slides du carrousel ---
@@ -20,11 +22,13 @@ $teal: #087f8c;
     background-size: cover;
     background-position: center;
     opacity: 0;
-    transition: opacity 1.2s ease;
+    transform: scale(1.04);
+    transition: opacity 1.4s ease, transform 8s ease;
     z-index: 0;
 
     &.is-active {
         opacity: 1;
+        transform: scale(1);
     }
 }
 
@@ -32,9 +36,38 @@ $teal: #087f8c;
 .auth-layout__overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(15, 40, 80, 0.55), rgba(15, 40, 80, 0.35));
+    background:
+        radial-gradient(140% 100% at 50% 0%, rgba(15, 40, 80, 0.00) 0%, rgba(9, 22, 45, 0.28) 100%),
+        linear-gradient(180deg, rgba(9, 22, 45, 0.12) 0%, rgba(9, 22, 45, 0.28) 100%);
     z-index: 0;
     pointer-events: none;
+}
+
+// --- Indicateurs du carrousel ---
+.auth-layout__dots {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 44px;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.auth-layout__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.45);
+    transition: all 0.3s ease;
+
+    &.is-active {
+        width: 22px;
+        background: #ffffff;
+    }
 }
 
 // --- Carte centrée ---
@@ -42,22 +75,47 @@ $teal: #087f8c;
     position: relative;
     z-index: 1;
     width: 100%;
-    max-width: 28rem;
+    max-width: 26rem;
     background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 16px;
-    padding: 32px 32px 32px;
-    box-shadow: 0 20px 45px -12px rgba(15, 40, 80, 0.15);
+    border-radius: 20px;
+    padding: 36px 32px 30px;
+    box-shadow:
+        0 30px 60px -20px rgba(9, 22, 45, 0.45),
+        0 12px 28px -16px rgba(9, 22, 45, 0.35);
     display: flex;
     flex-direction: column;
     align-items: center;
+    overflow: hidden;
+    animation: auth-fade-up 0.5s ease both;
+}
+
+@keyframes auth-fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+// --- Bandeau de marque ---
+.auth-layout__accent {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, $blue 0%, $teal 100%);
 }
 
 // --- Logo ---
 .auth-layout__logo {
-    height: 44px;
+    height: 48px;
     width: auto;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
     display: block;
     margin-inline: auto;
     object-fit: contain;
@@ -65,23 +123,26 @@ $teal: #087f8c;
 
 // --- Title & Subtitle ---
 .auth-layout__title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #111827;
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: $ink;
     margin: 0;
     text-align: center;
 }
 
 .auth-layout__subtitle {
-    font-size: 0.875rem;
-    color: #6b7280;
+    font-size: 0.9rem;
+    color: $muted;
     margin: 8px 0 28px;
     text-align: center;
+    max-width: 22rem;
 }
 
 // --- Zone basse ---
 .auth-layout__bottom {
-    border-top: 1px solid #f3f4f6;
+    border-top: 1px solid #f1f5f9;
     padding-top: 20px;
     margin-top: 28px;
     width: 100%;
@@ -90,13 +151,14 @@ $teal: #087f8c;
 
 .auth-layout__bottom-text {
     font-size: 0.875rem;
-    color: #6b7280;
+    color: $muted;
 }
 
 .auth-layout__bottom-link {
     font-size: 0.875rem;
-    font-weight: 500;
+    font-weight: 600;
     color: $blue;
+    margin-left: 6px;
     text-decoration: none;
     transition: color 0.2s;
 
@@ -105,13 +167,44 @@ $teal: #087f8c;
     }
 }
 
+// --- Signature ---
+.auth-layout__signature {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 14px;
+    z-index: 1;
+    margin: 0;
+    text-align: center;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.8);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+}
+
 // --- Responsive mobile ---
 @media (max-width: 640px) {
     .auth-layout {
-        padding: 24px 16px;
+        padding: 28px 16px 72px;
     }
 
     .auth-layout__card {
-        padding: 28px 20px;
+        padding: 30px 22px 26px;
+        border-radius: 16px;
+    }
+
+    .auth-layout__title {
+        font-size: 1.4rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .auth-layout__slide {
+        transition: opacity 0.4s ease;
+        transform: none;
+    }
+
+    .auth-layout__card {
+        animation: none;
     }
 }

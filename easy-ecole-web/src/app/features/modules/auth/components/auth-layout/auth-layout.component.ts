@@ -27,6 +27,7 @@ export class AuthLayoutComponent implements OnInit, OnDestroy {
     'assets/images/ESA-9.jpeg'
   ]
   activeSlide: number = 0
+  readonly year: number = new Date().getFullYear()
   private timer?: any
 
   constructor() { }

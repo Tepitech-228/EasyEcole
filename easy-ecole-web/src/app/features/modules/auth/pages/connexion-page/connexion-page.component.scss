@@ -1,2 +1,130 @@
-// Le style des champs est géré par les classes Tailwind inline.
-// Ce fichier SCSS est réservé pour d'éventuels styles spécifiques locaux.
+// Styles du formulaire de connexion — volontairement en SCSS compilé (et non en
+// classes Tailwind à valeurs arbitraires) afin de ne dépendre d'aucun mode JIT.
+$blue: #1769aa;
+$teal: #087f8c;
+$danger: #ef4444;
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    width: 100%;
+}
+
+.auth-field {
+    width: 100%;
+}
+
+.auth-field__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.auth-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.auth-field__head .auth-label {
+    margin-bottom: 0;
+}
+
+.auth-link {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: $blue;
+    text-decoration: none;
+    transition: color 0.2s ease;
+
+    &:hover {
+        color: $teal;
+    }
+}
+
+.auth-control {
+    position: relative;
+
+    &__icon {
+        position: absolute;
+        left: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+        font-size: 1.125rem;
+        line-height: 1;
+        pointer-events: none;
+    }
+
+    &__toggle {
+        position: absolute;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        border: 0;
+        background: transparent;
+        color: #9ca3af;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0;
+        transition: color 0.2s ease;
+
+        &:hover {
+            color: #4b5563;
+        }
+
+        .material-symbols-outlined {
+            font-size: 1.125rem;
+        }
+    }
+}
+
+.auth-input {
+    width: 100%;
+    height: 2.75rem;
+    padding: 0 0.75rem 0 2.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #111827;
+    font-size: 0.925rem;
+    line-height: 1;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    &::placeholder {
+        color: #9ca3af;
+    }
+
+    &:hover {
+        border-color: #9ca3af;
+    }
+
+    &:focus {
+        border-color: $blue;
+        box-shadow: 0 0 0 3px rgba(23, 105, 170, 0.15);
+    }
+
+    &--password {
+        padding-right: 2.5rem;
+    }
+
+    &--error {
+        border-color: $danger;
+
+        &:focus {
+            border-color: $danger;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+        }
+    }
+}
+
+.auth-submit {
+    display: block;
+    width: 100%;
+    margin-top: 0.5rem;
+}

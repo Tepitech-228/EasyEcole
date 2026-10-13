@@ -7,10 +7,19 @@
     <!-- Voile de contraste -->
     <div class="auth-layout__overlay"></div>
 
+    <!-- Indicateurs du carrousel -->
+    <div class="auth-layout__dots" aria-hidden="true">
+        <span class="auth-layout__dot" *ngFor="let slide of slides; let i = index"
+              [class.is-active]="i === activeSlide"></span>
+    </div>
+
     <!-- Carte centrée -->
     <div class="auth-layout__card">
+        <!-- Bandeau de marque -->
+        <span class="auth-layout__accent" aria-hidden="true"></span>
+
         <!-- Logo -->
-        <img class="auth-layout__logo" src="assets/images/esa.png" alt="EasyEcole">
+        <img class="auth-layout__logo" src="assets/images/esa.png" alt="EasyÉcole">
 
         <!-- Title & Subtitle -->
         <h1 class="auth-layout__title">{{ title }}</h1>
@@ -25,5 +34,7 @@
             <a [routerLink]="bottomLink" class="auth-layout__bottom-link">{{ bottomLinkText }}</a>
         </div>
     </div>
+
+    <!-- Signature -->
+    <p class="auth-layout__signature">&copy; {{ year }} EasyÉcole — Plateforme de gestion scolaire</p>
 </div>
- SA 

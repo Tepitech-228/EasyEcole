@@ -1,47 +1,44 @@
-<app-custom-alert [show]="error || emptyError" title="Erreur">
-    {{ emptyError ? 'Veuillez renseigner tous les champs' : '' }}
-    {{ error ? 'Identifiants de connexion incorrects' : '' }}
-</app-custom-alert>
-
 <app-auth-layout title="Connexion" subtitle="Veuillez entrer vos identifiants pour vous connecter" [showBottom]="true"
     bottomText="Vous n'avez pas un compte?" bottomLinkText="Inscrivez-vous" bottomLink="../inscription">
-    <form [formGroup]="connexionForm" class="flex flex-col gap-5 w-full">
+
+    <!-- Message d'erreur : bannière intégrée à la carte (pas d'overlay plein écran) -->
+    <app-custom-alert class="w-full" [show]="error || emptyError" [inline]="true" title="Erreur">
+        {{ emptyError ? 'Veuillez renseigner tous les champs.' : '' }}
+        {{ error ? 'Identifiants de connexion incorrects.' : '' }}
+    </app-custom-alert>
+
+    <form [formGroup]="connexionForm" class="auth-form" (ngSubmit)="connexion()" novalidate>
+
         <!-- Champ : Email / Nom d'utilisateur -->
-        <div class="block w-full">
-            <label class="text-sm font-medium text-gray-700 mb-2 block">Email ou nom d'utilisateur</label>
-            <div class="relative">
-                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg pointer-events-none">person</span>
-                <input type="text"
-                    class="h-11 w-full rounded-[10px] bg-white border border-gray-300 px-3 pl-10 text-gray-900 text-[0.925rem] placeholder-[#9ca3af] transition-all duration-200 focus:border-[#1769aa] focus:shadow-[0_0_0_3px_rgba(23,105,170,0.15)] outline-none"
-                    formControlName="usernameOrEmail" placeholder="example@gmail.com" autocomplete="username" required />
+        <div class="auth-field">
+            <label class="auth-label" for="usernameOrEmail">Email ou nom d'utilisateur</label>
+            <div class="auth-control">
+                <span class="material-symbols-outlined auth-control__icon">person</span>
+                <input id="usernameOrEmail" class="auth-input" [class.auth-input--error]="connexionForm.get('usernameOrEmail')?.touched && connexionForm.get('usernameOrEmail')?.invalid"
+                    type="text" formControlName="usernameOrEmail" placeholder="example@gmail.com" autocomplete="username" required />
             </div>
             <app-form-message *ngIf="connexionForm.get('usernameOrEmail')?.errors?.['required'] && connexionForm.get('usernameOrEmail')?.touched" text="Ce champ est obligatoire"></app-form-message>
         </div>
 
         <!-- Champ : Mot de passe -->
-        <div class="block w-full">
-            <div class="flex items-center justify-between mb-2">
-                <label class="text-sm font-medium text-gray-700">Mot de passe</label>
-                <div class="text-sm">
-                    <a routerLink="../mot-de-passe-oublie" class="text-[#1769aa] hover:text-[#087f8c]">Mot de passe oublié ?</a>
-                </div>
+        <div class="auth-field">
+            <div class="auth-field__head">
+                <label class="auth-label" for="password">Mot de passe</label>
+                <a class="auth-link" routerLink="../mot-de-passe-oublie">Mot de passe oublié ?</a>
             </div>
-            <div class="relative">
-                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg pointer-events-none">lock</span>
-                <input [type]="passwordVisible ? 'text' : 'password'"
-                    class="h-11 w-full rounded-[10px] bg-white border border-gray-300 px-3 pl-10 text-gray-900 text-[0.925rem] placeholder-[#9ca3af] transition-all duration-200 focus:border-[#1769aa] focus:shadow-[0_0_0_3px_rgba(23,105,170,0.15)] outline-none"
-                    formControlName="password" placeholder="********" autocomplete="current-password" required />
-                <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer focus:outline-none"
-                    (click)="passwordVisible = !passwordVisible" [attr.aria-label]="passwordVisible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'">
-                    <span class="material-symbols-outlined text-lg leading-none">
-                        {{ passwordVisible ? 'visibility_off' : 'visibility' }}
-                    </span>
+            <div class="auth-control">
+                <span class="material-symbols-outlined auth-control__icon">lock</span>
+                <input id="password" class="auth-input auth-input--password" [class.auth-input--error]="connexionForm.get('password')?.touched && connexionForm.get('password')?.invalid"
+                    [type]="passwordVisible ? 'text' : 'password'" formControlName="password" placeholder="********" autocomplete="current-password" required />
+                <button type="button" class="auth-control__toggle" (click)="passwordVisible = !passwordVisible"
+                    [attr.aria-label]="passwordVisible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'">
+                    <span class="material-symbols-outlined">{{ passwordVisible ? 'visibility_off' : 'visibility' }}</span>
                 </button>
             </div>
             <app-form-message *ngIf="connexionForm.get('password')?.errors?.['required'] && connexionForm.get('password')?.touched" text="Ce champ est obligatoire"></app-form-message>
             <app-form-message *ngIf="connexionForm.get('password')?.errors?.['minlength'] && connexionForm.get('password')?.touched" text="Le mot de passe doit contenir au moins 8 caractères"></app-form-message>
         </div>
 
-        <app-custom-button class="w-full mt-2" (click)="connexion()" type="submit" text="Se connecter" [fullWidth]="true" [disabled]="disableButton" [loading]="disableButton"></app-custom-button>
+        <app-custom-button class="auth-submit" type="submit" text="Se connecter" [fullWidth]="true" [disabled]="disableButton" [loading]="disableButton"></app-custom-button>
     </form>
 </app-auth-layout>
