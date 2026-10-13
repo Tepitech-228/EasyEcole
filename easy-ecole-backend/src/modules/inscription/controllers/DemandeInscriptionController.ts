@@ -630,7 +630,7 @@ export default class DemandeInscriptionController {
             
             const ordre = savedCursus.classeId && savedCursus.anneeAcademiqueId
                 ? await CursusApprenant.count({ where: { classeId: savedCursus.classeId, anneeAcademiqueId: savedCursus.anneeAcademiqueId } }) + 1
-                : await DossierEtudiant.count() + 1
+                : await DossierEtudiant.prochainOrdreMatricule()
             
             const etablissement = demandeInscription.etablissementId
                 ? await Etablissement.findByPk(demandeInscription.etablissementId)

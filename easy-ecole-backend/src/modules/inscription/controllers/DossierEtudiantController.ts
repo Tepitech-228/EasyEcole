@@ -459,7 +459,7 @@ export default class DossierEtudiantController {
             ? await Etablissement.findByPk(etablissementId)
             : null
 
-        const ordre = await DossierEtudiant.count() + 1
+        const ordre = await DossierEtudiant.prochainOrdreMatricule()
         const typeCours = (req.body.typeCours as 'jour' | 'soir') || 'jour'
 
         const matricule = IDGenerator.getInstance().generateMatriculeFinal(

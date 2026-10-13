@@ -1,4 +1,4 @@
-﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association } from "sequelize";
+﻿import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, ForeignKey, NonAttribute, Association, QueryTypes, Transaction } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { Utilisateur } from "../../auth/models/Utilisateur";
@@ -39,6 +39,29 @@ export class DossierEtudiant extends Model<InferAttributes<DossierEtudiant>, Inf
     echeances: Association<DossierEtudiant, Echeance>
     coursParticipants: Association<DossierEtudiant, CoursParticipant>
   };
+
+  /**
+   * Prochain numéro d'ordre du matricule final
+   * (`{ordre}-{FILIERE}{ANNEE}{J|S}-{AA}-{SITE}`).
+   *
+   * On s'appuie sur le plus grand ordre DÉJÀ ATTRIBUÉ — y compris les dossiers
+   * supprimés logiquement — plutôt que sur `count() + 1`. `count()` ignore les
+   * enregistrements soft-deleted : après une suppression, il peut donc
+   * réattribuer un ordre déjà utilisé et produire un matricule EN COLLISION.
+   * Seuls les matricules au format FINAL sont comptés (les matricules
+   * temporaires de demande, à 8 chiffres, sont ignorés).
+   */
+  static async prochainOrdreMatricule(transaction?: Transaction): Promise<number> {
+    const table = MODULE_TABLE_PREFIX + 'dossiers_etudiants'
+    const rows = await DossierEtudiant.sequelize!.query(
+      `SELECT MAX(CAST(SUBSTRING_INDEX(matricule, '-', 1) AS UNSIGNED)) AS maxOrdre
+         FROM ${table}
+        WHERE matricule REGEXP '^[0-9]+-[A-Z]+[0-9]?[JS]-[0-9]{2}-[A-Z]+$'`,
+      { transaction, type: QueryTypes.SELECT }
+    ) as any[]
+    const max = Number(rows?.[0]?.maxOrdre || 0)
+    return max + 1
+  }
 }
 
 DossierEtudiant.init({

@@ -196,7 +196,7 @@ export class BordereauDossierService {
         } else if (estFormatFinal) {
             matricule = matriculeExistant
         } else {
-            const ordre = await DossierEtudiant.count() + 1
+            const ordre = await DossierEtudiant.prochainOrdreMatricule(transaction)
             matricule = IDGenerator.getInstance().generateMatriculeFinal(
                 parcoursData!,
                 anneeLibelle,
@@ -633,7 +633,7 @@ export class BordereauDossierService {
         if (typeof demande.matricule === 'string' && MATRICULE_FINAL_REGEX.test(demande.matricule)) {
             matricule = demande.matricule
         } else {
-            const ordre = await DossierEtudiant.count() + 1
+            const ordre = await DossierEtudiant.prochainOrdreMatricule(transaction)
             if (!parcoursData) throw new Error("Parcours introuvable pour la génération du matricule")
             matricule = IDGenerator.getInstance().generateMatriculeFinal(
                 parcoursData, anneeLibelle, classeDerivee, ordre, etablissement, typeCoursPeriode
