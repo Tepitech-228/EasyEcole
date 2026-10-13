@@ -5,8 +5,15 @@
 //     port 3000 exposé, ni de CORS en cross-origin.
 //   - Alternative (documentée dans GUIDE-DEPLOIEMENT.md) : URL absolue
 //     https://<serveur>:3000 avec le port 3000 exposé + certificats SSL.
-const hostname: string = window.location.hostname;
-const apiBaseUrl: string = window.location.protocol + "//" + hostname + "/"
+// ⚠️ `window.location.host` (et NON `hostname`) : `host` INCLUT LE PORT.
+// Le site est publié sur un port hôte non standard (ex. 8080) → avec
+// `hostname` seul, l'URL de l'API retombait sur http://<ip>:80, une AUTRE
+// origine que la page (:8080) → requêtes bloquées (CORS « No Access-Control-
+// Allow-Origin » + mauvais serveur). `host` = origine EXACTE de la page :
+// même-origine, donc le proxy nginx /api/ -> backend:3000 fait le reste,
+// sans aucun CORS. (Sur 80/443 par défaut, `host` == `hostname` : inchangé.)
+const host: string = window.location.host;
+const apiBaseUrl: string = window.location.protocol + "//" + host + "/"
 const apiUrl: string = apiBaseUrl + "api/v1"
 
 export const environment = {
