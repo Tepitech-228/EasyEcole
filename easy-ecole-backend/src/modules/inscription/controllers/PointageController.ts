@@ -10,6 +10,7 @@ import { VerificationPaiementService } from "../services/VerificationPaiementSer
 import { Enseignant } from "../../auth/models/Enseignant";
 import { Apprenant } from "../../auth/models/Apprenant";
 import { PersonnelAdministratif } from "../../auth/models/PersonnelAdministratif";
+import { DemandeInscription } from "../models/DemandeInscription";
 import QRCode from 'qrcode';
 
 const ROLES_POINTAGE = [
@@ -434,6 +435,17 @@ export default class PointageController {
                         attributes: ['id']
                     });
                     if (byIdent) userId = String(byIdent.id);
+                    else if (!userId) {
+                        // Dernier recours : apprenant en cours d'inscription (demande
+                        // matriculée) mais sans dossier étudiant encore créé. On le
+                        // résout via le matricule de sa demande afin de renvoyer le
+                        // message explicite « aucun dossier actif » au lieu d'un 404.
+                        const demande = await DemandeInscription.findOne({
+                            where: { matricule: candidatMatricule },
+                            attributes: ['utilisateurId']
+                        });
+                        if (demande) userId = String(demande.utilisateurId);
+                    }
                 }
             }
 
@@ -497,7 +509,9 @@ export default class PointageController {
                             statut: 'rouge',
                             message: "Aucun dossier d'inscription actif pour cet étudiant",
                             utilisateurId: userId,
-                            matricule: (utilisateur as any).matricule ?? null,
+                            // Utilisateur n'a pas de champ `matricule` : on expose
+                            // l'identifiant pour que le terminal n'affiche pas `null`.
+                            matricule: utilisateur.identifiant,
                             nom: utilisateur.nom,
                             prenoms: utilisateur.prenoms,
                             role: utilisateur.role,
