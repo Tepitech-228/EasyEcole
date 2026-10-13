@@ -249,9 +249,11 @@ services:
     restart: unless-stopped
     mem_limit: 256m
     ports:
-      # Port HTTP public de l'application. À adapter (ex: "8080:80") si le
-      # port 80 est déjà occupé sur le serveur.
-      - "80:80"
+      # Port HTTP public de l'application : hôte 8080 -> nginx (conteneur) 80.
+      # Le port 80 de l'hôte étant déjà occupé sur la VM APP, on publie sur 8080.
+      # L'application est donc servie sur http://<IP_VM_APP>:8080/
+      # (remettre "80:80" si le port 80 hôte est un jour libéré).
+      - "8080:80"
     networks:
       - app
     depends_on:

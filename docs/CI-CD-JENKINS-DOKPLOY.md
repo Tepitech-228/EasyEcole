@@ -21,7 +21,7 @@ Dokploy API (POST /api/application.deploy, Bearer token)
    │ Dokploy gère : compose, réseau bridge, volumes, proxy nginx, secrets, rollout
    ▼
 3 serveurs Ubuntu (déjà configurés dans Dokploy)
-   │ easyecole stack : db, mysql-backup, backend, worker, redis, frontend (80:80)
+   │ easyecole stack : backend, worker, redis, frontend (8080:80)
    └─► Health Check → Rollback si KO → Notification
 ```
 
@@ -38,7 +38,7 @@ Dokploy API (POST /api/application.deploy, Bearer token)
 | **backend** | `build: ./easy-ecole-backend` (Babel → lib) | 3000 interne (non exposé, via nginx) | bridge | `./migrations:ro`, `./scripts/apply-migrations.cjs:ro`, `uploads:/app/public`, `storage:/app/storage` | `db` healthy, env `REDIS_URL` |
 | **worker** | **même build backend** `entrypoint: node lib/core/workers/index.js` (BullMQ OCR/Pdf/ExcelImport) | — | bridge | `uploads`, `storage` | `db` + `redis` healthy |
 | **redis** | `redis:7-alpine` `--appendonly --maxmemory 256mb --allkeys-lru` | — | bridge | `redis_data:/data` | — |
-| **frontend** | `build: ./easy-ecole-web` (ng build → nginx:1.27-alpine) | **80:80** (prod), 8091:80 en local (`docker-compose.local.yml`) | bridge | — | `backend` |
+| **frontend** | `build: ./easy-ecole-web` (ng build → nginx:1.27-alpine) | **8080:80** (prod), 8091:80 en local (`docker-compose.local.yml`) | bridge | — | `backend` |
 
 **Points clés :**
 - **Pas de RabbitMQ dans le compose actuel** : les workers sont **BullMQ sur Redis** (`ioredis`, `REDIS_URL=redis://redis:6379`). Si RabbitMQ est souhaité, il s'ajoute en service `rabbitmq:3-management` à côté de Redis, sans remplacer Redis.
