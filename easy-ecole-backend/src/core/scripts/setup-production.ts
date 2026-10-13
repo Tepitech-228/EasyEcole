@@ -359,4 +359,29 @@ async function main() {
 }
 
 // Lancer le script
-main();
+//
+// ⚠️ SORTIE EXPLICITE OBLIGATOIRE.
+// `DatabaseConnection` est un SINGLETON qui ouvre un pool Sequelize (min. 5
+// connexions). Tant que ce pool est vivant, la boucle d'événements Node reste
+// active : le process NE REND JAMAIS LA MAIN, même une fois `main()` terminé.
+// Or ce script est exécuté par docker-entrypoint.sh (§0c) AVANT les migrations
+// et l'application : sans sortie explicite, il bloque TOUT le démarrage et le
+// conteneur finit « unhealthy » (incident déploiement : « dependency failed to
+// start: container easyecole-backend is unhealthy »).
+// On ferme donc proprement la connexion, puis on force la sortie.
+main()
+  .then(async () => {
+    try {
+      const { DatabaseConnection } = require('../helpers/DatabaseConnection');
+      await DatabaseConnection.getInstance().sequelize.close();
+    } catch (closeError: any) {
+      // La fermeture n'est qu'un confort : on sort de toute façon.
+      console.warn(`[SETUP][ATTENTION] Fermeture de la connexion impossible: ${closeError?.message || closeError}`);
+    }
+    process.exit(0);
+  })
+  .catch((error: any) => {
+    // main() gère déjà ses propres erreurs (process.exit(1)) ; filet de sûreté.
+    console.error(`[SETUP][ERREUR] Échec non géré: ${error?.message || error}`);
+    process.exit(1);
+  });

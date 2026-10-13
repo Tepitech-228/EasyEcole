@@ -121,7 +121,20 @@ echo "[entrypoint] Répertoires fichiers OK (public/, uploads/) — écriture au
 if [ "${DB_BOOTSTRAP_SCHEMA:-true}" = "true" ]; then
   echo "[entrypoint] Amorçage du schéma de base (création des tables manquantes, sans ALTER)..."
   export DB_PASSWORD="${DB_PASSWORD:-${DB_PASS:-}}"
-  node lib/core/scripts/setup-production.js || echo "[entrypoint] ⚠ amorçage du schéma terminé avec erreur (non bloquant)"
+  # Le script DOIT sortir de lui-même (il ferme son pool Sequelize puis
+  # process.exit). `timeout` est un FILET DE SÉCURITÉ anti-blocage : si un jour
+  # le script restait suspendu, l'entrypoint ne doit JAMAIS bloquer ici — sinon
+  # l'API ne démarre pas et le conteneur finit « unhealthy ».
+  # Borné sous la fenêtre de santé du backend (start_period 240 s + retries).
+  if command -v timeout >/dev/null 2>&1; then
+    timeout 300 node lib/core/scripts/setup-production.js \
+      || echo "[entrypoint] ⚠ amorçage du schéma terminé avec erreur ou interrompu (non bloquant)"
+  else
+    # Repli : si `timeout` est absent, on lance quand même (sinon l'amorçage
+    # serait silencieusement sauté et une base neuve resterait sans tables).
+    node lib/core/scripts/setup-production.js \
+      || echo "[entrypoint] ⚠ amorçage du schéma terminé avec erreur (non bloquant)"
+  fi
 else
   echo "[entrypoint] Amorçage du schéma désactivé (DB_BOOTSTRAP_SCHEMA != true)."
 fi
