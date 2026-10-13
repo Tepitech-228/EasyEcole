@@ -12,6 +12,7 @@ import { CaissierBanque } from "../../auth/models/CaissierBanque";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { Etablissement } from "../../etablissement/models/Etablissement";
 import { creerEcritureComptable, lettrerEcritures411 } from "../../comptabilite/helpers/ComptabiliteHelper";
+import { ImputationService } from "../services/ImputationService";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MobileMoneyCinetpay } from "../../../core/helpers/MobileMoneyCinetpay";
 import { DocumentPDFGenerator } from "../../../core/helpers/DocumentPDFGenerator";
@@ -140,6 +141,27 @@ export default class PaiementInscriptionController {
                     montant: paiementInscription.montant,
                     transaction
                 })
+
+                // INSC-1.4: Imputation de l'échéancier. Sans cela, l'échéance
+                // 'inscription' du dossier restait impayée malgré l'encaissement
+                // (le paiement était enregistré + écrit comptable, mais
+                // `ins_echeances.montantPaye` n'était jamais incrémenté).
+                // Non bloquant volontairement : si aucun dossier n'existe encore
+                // (étudiant en amont du parcours), c'est un no-op ; une erreur
+                // d'imputation ne doit pas annuler le paiement déjà encaissé.
+                const utilisateurIdEtudiant = demandeInscription!.utilisateurId
+                if (utilisateurIdEtudiant != null) {
+                    try {
+                        await ImputationService.imputerPaiementDirect(
+                            utilisateurIdEtudiant,
+                            paiementInscription.montant,
+                            transaction,
+                            'inscription'
+                        )
+                    } catch (imputationError) {
+                        console.error('Erreur imputation paiement inscription (non bloquant) :', imputationError)
+                    }
+                }
 
                 // Atomicité garantie : paiement + écriture + lettrage validés ensemble.
                 await transaction.commit()

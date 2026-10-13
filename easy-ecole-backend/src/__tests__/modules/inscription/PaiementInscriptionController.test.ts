@@ -62,6 +62,12 @@ jest.mock('../../../modules/comptabilite/helpers/ComptabiliteHelper', () => ({
   lettrerEcritures411: jest.fn().mockResolvedValue(true)
 }))
 
+jest.mock('../../../modules/inscription/services/ImputationService', () => ({
+  ImputationService: {
+    imputerPaiementDirect: jest.fn().mockResolvedValue({ bordereauId: 0, montantDisponible: 0, lignes: [], surplus: 0 })
+  }
+}))
+
 jest.mock('../../../core/helpers/DatabaseConnection', () => {
   const { Sequelize } = require('sequelize')
   const transaction = {
@@ -97,6 +103,7 @@ jest.mock('../../../core/services/ArchiveGedService', () => ({
 const { PaiementInscription } = require('../../../modules/inscription/models/PaiementInscription')
 const { DemandeInscription } = require('../../../modules/inscription/models/DemandeInscription')
 const { creerEcritureComptable, lettrerEcritures411 } = require('../../../modules/comptabilite/helpers/ComptabiliteHelper')
+const { ImputationService } = require('../../../modules/inscription/services/ImputationService')
 import Ctrl from '../../../modules/inscription/controllers/PaiementInscriptionController'
 
 beforeEach(() => {
@@ -128,7 +135,7 @@ describe('createPaiementInscription', () => {
   })
 
   it('crée un paiement et une écriture comptable 512/411 (INSC-1.2)', async () => {
-    const mockDemande = { id: 42, matricule: 'MAT-001' }
+    const mockDemande = { id: 42, matricule: 'MAT-001', utilisateurId: 1 }
     const basePaiement = {
       id: 100,
       numero: 'PAY-0001',
@@ -181,6 +188,15 @@ describe('createPaiementInscription', () => {
       })
     )
 
+    // INSC-1.4: Vérifier que l'échéancier est imputé (échéances d'inscription
+    // du dossier de l'étudiant), dans la même transaction
+    expect(ImputationService.imputerPaiementDirect).toHaveBeenCalledWith(
+      1,
+      50000,
+      expect.any(Object),
+      'inscription'
+    )
+
     expect(res.status).toHaveBeenCalledWith(201)
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -198,7 +214,7 @@ describe('createPaiementInscription', () => {
   })
 
   it('crée un paiement pour CAISSIER_BANQUE avec type EN_LIGNE', async () => {
-    const mockDemande = { id: 42, matricule: 'MAT-001' }
+    const mockDemande = { id: 42, matricule: 'MAT-001', utilisateurId: 1 }
     const basePaiementEnLigne = {
       id: 100,
       numero: 'PAY-0001',
@@ -233,6 +249,12 @@ describe('createPaiementInscription', () => {
       })
     )
     expect(lettrerEcritures411).toHaveBeenCalled()
+    expect(ImputationService.imputerPaiementDirect).toHaveBeenCalledWith(
+      1,
+      30000,
+      expect.any(Object),
+      'inscription'
+    )
     expect(res.status).toHaveBeenCalledWith(201)
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -245,7 +267,7 @@ describe('createPaiementInscription', () => {
   })
 
   it('retourne 400 si la sauvegarde échoue', async () => {
-    const mockDemande = { id: 42, matricule: 'MAT-001' }
+    const mockDemande = { id: 42, matricule: 'MAT-001', utilisateurId: 1 }
     const mockSave = jest.fn().mockRejectedValue(new Error('Validation error'))
 
     ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue(mockDemande)

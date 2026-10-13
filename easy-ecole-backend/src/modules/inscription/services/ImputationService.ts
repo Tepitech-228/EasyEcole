@@ -564,6 +564,108 @@ export class ImputationService {
     }
 
     /**
+     * Impute un paiement DIRECT (paiement d'inscription en espèces / en ligne,
+     * saisi au guichet ou via le parcours en ligne) sur les échéances
+     * impayées / partielles / en retard des dossiers d'un utilisateur, en FIFO
+     * par `dateLimite` croissante.
+     *
+     * Différence avec `imputerPourUtilisateur` : ce flux est déclenché par un
+     * `PaiementInscription` et NON par un bordereau — il n'existe donc aucun
+     * `bordereauId`. On n'écrit AUCUNE ligne de lettrage `cpt_bordereau_echeance`
+     * (le reste du flux bordereau/ESA-COMPTA n'est pas impacté) : la traçabilité
+     * de l'imputation est portée par le `PaiementInscription` appelant (id +
+     * montant). Le surplus éventuel est versé au portefeuille de crédit du
+     * dossier cible, comme pour le flux bordereau ; il sera consommé ensuite par
+     * `consommerPortefeuille` lors du prochain bordereau.
+     *
+     * @param utilisateurId - propriétaire des dossiers
+     * @param montant - montant du paiement direct
+     * @param transaction - transaction active
+     * @param type - restriction éventuelle à une nature de frais (bordereau simple)
+     * @returns ResultatImputation (bordereauId = 0 : aucun bordereau associé)
+     */
+    static async imputerPaiementDirect(
+        utilisateurId: number,
+        montant: number,
+        transaction: Transaction,
+        type?: 'inscription' | 'scolarite',
+    ): Promise<ResultatImputation> {
+        if (!Number.isFinite(montant) || montant <= 0) {
+            throw new MontantConstateInvalideError(montant)
+        }
+
+        const dossiers = await DossierEtudiant.findAll({
+            where: { utilisateurId },
+            transaction,
+        })
+
+        if (dossiers.length === 0) {
+            return {
+                bordereauId: 0,
+                montantDisponible: montant,
+                lignes: [],
+                surplus: montant,
+            }
+        }
+
+        const dossierIds = dossiers.map(d => d.id)
+        const statutFilter = ['impaye', 'partiel', 'en_retard'] as const
+        const typeBases: ('inscription' | 'scolarite')[] = type ? [type] : ['inscription', 'scolarite']
+
+        const echeances: Echeance[] = []
+        for (const t of typeBases) {
+            const echeancesDuType = await Echeance.findAll({
+                where: {
+                    dossierEtudiantId: { [Op.in]: dossierIds },
+                    type: t,
+                    statut: statutFilter as any,
+                },
+                order: [['dateLimite', 'ASC'], ['id', 'ASC']],
+                transaction,
+                lock: transaction.LOCK.UPDATE,
+            })
+            echeances.push(...echeancesDuType)
+        }
+
+        const { lignes, reste } = await ImputationService.calculerImputation(echeances, montant)
+
+        // Sauvegardes effectives — SANS lettrage : paiement direct, pas de bordereau.
+        for (const ligne of lignes) {
+            const echeance = echeances.find(e => e.id === ligne.echeanceId)
+            if (echeance) {
+                echeance.montantPaye = Math.round((echeance.montantPaye || 0) + ligne.montantImpute)
+                echeance.statut = ligne.statutApres
+                await echeance.save({ transaction })
+            }
+        }
+
+        const dossierCible = dossiers.find(d => d.statut === 'actif') ?? dossiers[0]
+        let portefeuilleCreditId: number | undefined
+
+        if (reste > 0) {
+            const mouvement = await ImputationService.creerMouvementPortefeuille(
+                dossierCible.id,
+                'credit',
+                reste,
+                reste,
+                null,
+                null,
+                `Surplus paiement direct utilisateur #${utilisateurId}`,
+                transaction
+            )
+            portefeuilleCreditId = mouvement.id
+        }
+
+        return {
+            bordereauId: 0,
+            montantDisponible: montant,
+            lignes,
+            surplus: reste,
+            portefeuilleCreditId,
+        }
+    }
+
+    /**
      * Simulation pure (read-only) de l'imputation FIFO.
      * Ne fait aucune écriture en base : pas de save(), pas de lettrage, pas de portefeuille.
      */
