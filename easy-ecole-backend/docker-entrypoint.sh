@@ -167,7 +167,18 @@ fi
 # Non bloquant volontairement : une erreur de seed ne doit pas empêcher
 # l'API de démarrer — elle est visible dans les logs au boot.
 echo "[entrypoint] Seeds fonctionnels (seed-boot)..."
-node lib/core/scripts/seed-boot.js || echo "[entrypoint] ⚠ Seed boot terminé avec erreur (non bloquant)"
+# `timeout` = FILET DE SÉCURITÉ : les seeds sont NON BLOQUANTS par contrat
+# (une erreur ne doit pas empêcher l'API de démarrer). On les borne donc pour
+# qu'une lenteur ou un blocage (verrou DDL, latence base) ne retienne JAMAIS
+# l'API sur le chemin critique — sinon le conteneur finit « unhealthy ».
+# Non destructif : les seeds sont idempotents, ils se termineront au boot suivant.
+if command -v timeout >/dev/null 2>&1; then
+  timeout 600 node lib/core/scripts/seed-boot.js \
+    || echo "[entrypoint] ⚠ Seed boot terminé avec erreur ou interrompu (non bloquant)"
+else
+  node lib/core/scripts/seed-boot.js \
+    || echo "[entrypoint] ⚠ Seed boot terminé avec erreur (non bloquant)"
+fi
 
 echo "[entrypoint] Démarrage de l'application..."
 exec node index.js "$@"

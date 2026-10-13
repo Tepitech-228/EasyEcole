@@ -194,7 +194,18 @@ async function controleAuteursGED(sequelize: any): Promise<void> {
 async function main(): Promise<void> {
     console.log("[seed-boot] Début des seeds fonctionnels (idempotents)…");
     const db = DatabaseConnection.getInstance();
-    await db.init();
+    // ⚠️ NE PAS appeler db.init() ici : c'est un DUPLICATA du travail lourd de
+    // schéma (sync des ~100 modèles + ensures/ALTER) que l'application exécute
+    // DÉJÀ sur son événement `listening` (src/app.ts). Sur le chemin critique de
+    // démarrage (l'entrypoint, AVANT que l'API n'écoute), ce doublon rallongeait
+    // le boot de plusieurs minutes et pouvait faire dépasser la fenêtre de santé
+    // Docker → « dependency failed to start: container easyecole-backend is
+    // unhealthy ».
+    // Le schéma est garanti en amont par l'entrypoint : §0c (setup-production,
+    // création des tables manquantes) puis §1 (migrations SQL). Ici on se
+    // contente d'ouvrir/valider la connexion ; les seeds restent idempotents et
+    // non bloquants, et le schéma est entretenu une seule fois par l'app.
+    await db.sequelize.authenticate();
 
     let echecs = 0;
     for (const etape of ETAPES) {
