@@ -167,3 +167,10 @@
 
 ::-webkit-scrollbar { width: 7px; }
 ::-webkit-scrollbar-thumb { background: #d7d9e6; border-radius: 10px; }
+
+@media (max-width: 900px) {
+  .conv-pane { width: 100%; }
+  .thread-pane { flex: 1; min-width: 0; display: none; }
+  .page.visible:has(app-chat-window) .conv-pane { display: none; }
+  .page.visible:has(app-chat-window) .thread-pane { display: flex; }
+}

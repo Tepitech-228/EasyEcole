@@ -8,6 +8,13 @@ import { DossierInscription } from "../models/DossierInscription";
 import { DemandeInscriptionDossier } from "../models/DemandeInscriptionDossier";
 import { DemandeInscription } from "../models/DemandeInscription";
 
+/** '' / undefined / non numérique -> null (colonne DOUBLE nullable). */
+const normaliserTailleMax = (v: unknown): number | null => {
+    if (v === null || v === undefined || v === '') return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+};
+
 export default class DossierInscriptionController {
 
     constructor() { }
@@ -57,7 +64,7 @@ export default class DossierInscriptionController {
             let dossierInscription: DossierInscription = new DossierInscription();
             dossierInscription.titre = req.body.titre
             dossierInscription.description = req.body.description
-            dossierInscription.tailleMax = req.body.tailleMax
+            dossierInscription.tailleMax = normaliserTailleMax(req.body.tailleMax) as any
             dossierInscription.sessionId = req.body.sessionId
 
             await dossierInscription.save()
@@ -248,7 +255,7 @@ export default class DossierInscriptionController {
 
                 await dossierInscription.update({
                     titre: req.body.titre,
-                    tailleMax: req.body.tailleMax,
+                    tailleMax: normaliserTailleMax(req.body.tailleMax) as any,
                     description: req.body.description,
                 })
                     .then(async (dossierInscription) => {

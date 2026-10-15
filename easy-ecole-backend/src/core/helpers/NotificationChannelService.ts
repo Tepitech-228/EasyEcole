@@ -7,20 +7,32 @@ export class NotificationChannelService {
     if (!telephone) return
 
     await Promise.allSettled([
-      this.envoyerSms(telephone, message),
+      this.envoyerAfrikSms(telephone, message),
       this.envoyerWhatsApp(telephone, message),
     ])
   }
 
-  private static async envoyerSms(telephone: string, message: string): Promise<void> {
-    const accountSid = process.env.TWILIO_ACCOUNT_SID
-    const authToken = process.env.TWILIO_AUTH_TOKEN
-    const from = process.env.TWILIO_SMS_FROM
-    if (!accountSid || !authToken || !from) return
+  /** Normalise un numero au format AfrikSMS : chiffres seuls, code pays inclus, sans + ni 00. */
+  private static normaliserNumero(telephone: string): string {
+    const chiffres = telephone.replace(/\D/g, '')
+    return chiffres.startsWith('00') ? chiffres.slice(2) : chiffres
+  }
 
-    const params = new URLSearchParams({ To: telephone, From: from, Body: message })
-    await axios.post(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, params.toString(), {
-      auth: { username: accountSid, password: authToken },
+  private static async envoyerAfrikSms(telephone: string, message: string): Promise<void> {
+    const clientId = process.env.SMS_AFRIKSMS_CLIENT_ID
+    const apiKey = process.env.SMS_AFRIKSMS_API_KEY
+    const senderId = process.env.SMS_AFRIKSMS_SENDER_ID
+    if (!clientId || !apiKey || !senderId) return
+
+    const baseUrl = process.env.SMS_AFRIKSMS_BASE_URL || 'https://api.afriksms.com'
+    const params = new URLSearchParams({
+      ClientId: clientId,
+      ApiKey: apiKey,
+      SenderId: senderId,
+      Message: message,
+      MobileNumbers: this.normaliserNumero(telephone),
+    })
+    await axios.post(`${baseUrl}/api/web/web_v1/outbounds/send`, params.toString(), {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       timeout: 10000,
     })

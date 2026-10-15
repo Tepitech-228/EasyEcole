@@ -406,3 +406,8 @@
 .esa-search-panel {
   border-radius: 1rem;
 }
+
+@media (max-width: 640px) {
+  .esa-chart-container { flex-direction: column; align-items: flex-start; }
+  .esa-bar-item { grid-template-columns: 84px 1fr 36px; gap: 0.5rem; }
+}

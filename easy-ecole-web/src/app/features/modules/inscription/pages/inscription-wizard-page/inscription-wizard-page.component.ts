@@ -130,6 +130,15 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   }
 
   ngOnInit(): void {
+    // Query params (filtre session / niveau) lus DANS TOUS LES CAS, y compris la
+    // reprise d'une demande existante (/inscription/demandes/:id?sessionId=..).
+    // Sans cela, le chemin « demande existante » chargeait l'arborescence sans
+    // filtre — ou ne la chargeait pas du tout — et la liste des filières de
+    // l'étape 1 restait vide.
+    const queryParamMap = this.route.snapshot.queryParamMap
+    this.sessionIdFromRoute = queryParamMap.get('sessionId') || undefined
+    this.niveauEtudeIdFromRoute = queryParamMap.get('niveauEtudeId') || undefined
+
     // Demande EXISTANTE (/inscription/demandes/:id) : le serveur fait foi.
     // Sans cela, un rechargement sur une demande créée affichait un wizard
     // vierge à l'étape 1 alors que le dossier est déjà déposé côté serveur.
@@ -362,6 +371,47 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
         const toutDepose = obligatoires.length > 0
           && obligatoires.every((d) => this.piecesServeur.has(String(d.id)))
         this.etape = estCorrection ? 2 : (toutDepose ? 3 : (choix ? 2 : 1))
+
+        // Brouillon NON soumis : le serveur ne connaît encore NI le parcours NI
+        // les documents (envoyés seulement à la soumission finale, étape 4). Le
+        // calcul ci-dessus retomberait donc sur l'étape 1 après un F5 ou un retour
+        // de la page profil. On reprend l'étape sauvegardée localement (store)
+        // pour ce brouillon, en ne faisant foi du serveur que pour un dossier
+        // réellement transmis ou en correction.
+        if (!statutPipeline && !estCorrection) {
+          const etatSauve = this.wizardStore.getEtat()
+          if (etatSauve) {
+            if (etatSauve.etape >= 1 && etatSauve.etape <= 5) {
+              this.etape = Math.max(this.etape, etatSauve.etape)
+            }
+            this.documents = etatSauve.documents || this.documents
+            this.documentsAReposer = etatSauve.documentsAReposer || this.documentsAReposer
+            this.bordereauAReposer = etatSauve.bordereauAReposer || this.bordereauAReposer
+            if (etatSauve.infos) {
+              this.infos = { ...this.infos, ...etatSauve.infos }
+            }
+            if (etatSauve.documentsRequis?.length && this.documentsRequis.length === 0) {
+              this.documentsRequis = etatSauve.documentsRequis
+            }
+            // La filière n'est PAS connue du serveur tant que le dossier est un
+            // brouillon (le parcours est créé seulement à la soumission). On la
+            // réhydrate donc depuis le store, comme le fait `restaurerEtat` ;
+            // sinon le récapitulatif (et la soumission) restent sans parcours.
+            if (!this.filiereChoisie && etatSauve.filiereChoisie) {
+              this.filiereChoisie = etatSauve.filiereChoisie as any
+              this.filiereSelectionId = etatSauve.filiereSelectionId || ''
+              this.typeChoisi = etatSauve.typeChoisi || this.typeChoisi
+              this.gradeChoisi = etatSauve.gradeChoisi || this.gradeChoisi
+            }
+          }
+        }
+
+        // Étape 1 (brouillon SANS parcours choisi) : la liste des filières est le
+        // SEUL moyen de poursuivre. On charge donc l'arborescence ici, sinon le
+        // <select> « Filière » reste vide et l'étudiant ne peut pas avancer.
+        if (this.etape === 1) {
+          this.loadArborescence()
+        }
         this.loadSessions()
         this.sauvegarder()
       },

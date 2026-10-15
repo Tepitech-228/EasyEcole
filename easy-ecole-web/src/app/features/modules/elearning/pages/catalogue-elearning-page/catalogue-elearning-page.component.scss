@@ -91,7 +91,7 @@ $radius: 14px;
 
 .search-box {
   flex: 1;
-  min-width: 260px;
+  min-width: min(260px, 100%);
   max-width: 480px;
   display: flex;
   align-items: center;

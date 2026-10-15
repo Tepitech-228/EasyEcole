@@ -19,6 +19,7 @@
 :host(.btn-gradient) button {
     height: 48px !important;
     min-width: 100px !important;
+    max-width: 100% !important;
     border-radius: 10px !important;
     border: none !important;
     cursor: pointer !important;

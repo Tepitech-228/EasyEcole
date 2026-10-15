@@ -45,6 +45,60 @@ router
      */
     .get('/', BordereauController.getAllBordereaux)
     .put('/batch/statut', [AuthCabinetComptable, CheckPermission('action.inscription.bordereau.valider')], BordereauController.batchStatut)
+     /**
+      * @openapi
+      * /inscription/bordereaux/verifier-unicite:
+      *   get:
+      *     tags: [Bordereaux]
+      *     summary: Vérifie qu'une référence bancaire / un numéro de bordereau n'est pas déjà utilisé par un autre bordereau (Cabinet)
+      *     security: [{ bearerAuth: [] }]
+      *     parameters:
+      *       - in: query
+      *         name: referenceBancaire
+      *         schema: { type: string }
+      *       - in: query
+      *         name: numeroBordereau
+      *         schema: { type: string }
+      *       - in: query
+      *         name: excludeId
+      *         schema: { type: integer }
+      *     responses:
+      *       200:
+      *         description: { success, unique, conflit? }
+      *       400:
+      *         description: Paramètre manquant
+      */
+     .get('/verifier-unicite', [AuthCabinetComptable, CheckPermission('action.inscription.bordereau.valider')], async (req: Request, res: Response) => {
+       try {
+         const referenceBancaire = typeof req.query.referenceBancaire === 'string' ? req.query.referenceBancaire.trim() : '';
+         const numeroBordereau = typeof req.query.numeroBordereau === 'string' ? req.query.numeroBordereau.trim() : '';
+         const excludeId = req.query.excludeId ? Number(req.query.excludeId) : null;
+
+         if (!referenceBancaire && !numeroBordereau) {
+           return res.status(400).json({ success: false, message: 'Renseignez une référence bancaire ou un numéro de bordereau.' });
+         }
+
+         const whereClause: any = { deletedAt: null };
+         const orConditions: any[] = [];
+         if (referenceBancaire) orConditions.push({ referenceBancaire });
+         if (numeroBordereau) orConditions.push({ numeroBordereau });
+         if (excludeId && !isNaN(excludeId)) whereClause.id = { [Op.ne]: excludeId };
+         whereClause[Op.or] = orConditions;
+
+         const existant = await Bordereau.findOne({ where: whereClause, attributes: ['id', 'referenceBancaire', 'numeroBordereau'] });
+         if (!existant) {
+           return res.json({ success: true, unique: true });
+         }
+
+         const conflit = referenceBancaire && existant.referenceBancaire === referenceBancaire
+           ? { champ: 'referenceBancaire', valeur: existant.referenceBancaire }
+           : { champ: 'numeroBordereau', valeur: existant.numeroBordereau };
+         return res.json({ success: true, unique: false, conflit });
+       } catch (error: any) {
+         console.error('[Bordereau] verifier-unicite ERREUR:', error?.message);
+         return res.status(500).json({ success: false, message: "Erreur de vérification d'unicité." });
+       }
+     })
     /**
      * @openapi
      * /inscription/bordereaux/{id}:
@@ -165,60 +219,6 @@ router
      *         description: Bordereau rejeté
      */
     .put('/:id/rejeter', [AuthCabinetComptable], BordereauController.rejeterBordereau)
-     /**
-      * @openapi
-      * /inscription/bordereaux/verifier-unicite:
-      *   get:
-      *     tags: [Bordereaux]
-      *     summary: Vérifie qu'une référence bancaire / un numéro de bordereau n'est pas déjà utilisé par un autre bordereau (Cabinet)
-      *     security: [{ bearerAuth: [] }]
-      *     parameters:
-      *       - in: query
-      *         name: referenceBancaire
-      *         schema: { type: string }
-      *       - in: query
-      *         name: numeroBordereau
-      *         schema: { type: string }
-      *       - in: query
-      *         name: excludeId
-      *         schema: { type: integer }
-      *     responses:
-      *       200:
-      *         description: { success, unique, conflit? }
-      *       400:
-      *         description: Paramètre manquant
-      */
-     .get('/verifier-unicite', [AuthCabinetComptable, CheckPermission('action.inscription.bordereau.valider')], async (req: Request, res: Response) => {
-       try {
-         const referenceBancaire = typeof req.query.referenceBancaire === 'string' ? req.query.referenceBancaire.trim() : '';
-         const numeroBordereau = typeof req.query.numeroBordereau === 'string' ? req.query.numeroBordereau.trim() : '';
-         const excludeId = req.query.excludeId ? Number(req.query.excludeId) : null;
-
-         if (!referenceBancaire && !numeroBordereau) {
-           return res.status(400).json({ success: false, message: 'Renseignez une référence bancaire ou un numéro de bordereau.' });
-         }
-
-         const whereClause: any = { deletedAt: null };
-         const orConditions: any[] = [];
-         if (referenceBancaire) orConditions.push({ referenceBancaire });
-         if (numeroBordereau) orConditions.push({ numeroBordereau });
-         if (excludeId && !isNaN(excludeId)) whereClause.id = { [Op.ne]: excludeId };
-         whereClause[Op.or] = orConditions;
-
-         const existant = await Bordereau.findOne({ where: whereClause, attributes: ['id', 'referenceBancaire', 'numeroBordereau'] });
-         if (!existant) {
-           return res.json({ success: true, unique: true });
-         }
-
-         const conflit = referenceBancaire && existant.referenceBancaire === referenceBancaire
-           ? { champ: 'referenceBancaire', valeur: existant.referenceBancaire }
-           : { champ: 'numeroBordereau', valeur: existant.numeroBordereau };
-         return res.json({ success: true, unique: false, conflit });
-       } catch (error: any) {
-         console.error('[Bordereau] verifier-unicite ERREUR:', error?.message);
-         return res.status(500).json({ success: false, message: "Erreur de vérification d'unicité." });
-       }
-     })
      /**
       * @openapi
       * /inscription/bordereaux/{id}/traiter:

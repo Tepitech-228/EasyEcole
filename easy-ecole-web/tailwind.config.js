@@ -31,6 +31,18 @@ module.exports = {
   darkMode: false, // or 'media' or 'class'
   theme: {
     extend: {
+      // Breakpoints de référence (convention MOBILE-FIRST de l'équipe) :
+      //   xs 375px | sm 640px | md 768px | lg 1024px | xl 1280px | 2xl 1536px
+      // Les classes sans préfixe s'appliquent au mobile, puis sm:/md:/lg:
+      // élargissent. Objectif : aucune largeur en px figée dans les composants.
+      screens: {
+        'xs': '375px',
+        'sm': '640px',
+        'md': '768px',
+        'lg': '1024px',
+        'xl': '1280px',
+        '2xl': '1536px',
+      },
       fontFamily: {
         // 'sans': ['Roboto, "Helvetica Neue", sans-serif'],
         sans: ['Inter', 'sans-serif'],

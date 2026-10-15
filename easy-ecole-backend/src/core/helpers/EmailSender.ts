@@ -1,6 +1,7 @@
 import { createTransport, SendMailOptions, Transporter } from "nodemailer"
 import * as https from "https"
 import * as fs from "fs"
+import { SmsSender } from "./SmsSender"
 
 const env = process.env.NODE_ENV || 'development';
 export const EMAIL_SENDER_NAME = 'ESA ECOLE';
@@ -187,7 +188,7 @@ export class EmailSender {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
             from: this.getFromAddress(),
-            to: "armand.kayi@technologybusiness-tb.com",
+            to: "easy.ecole@technologybusiness-tb.com",
             encoding: 'UTF-8',
             subject: `${EMAIL_SENDER_NAME}: Mail test`,
             html: this.getEmailTemplate()
@@ -206,7 +207,7 @@ export class EmailSender {
         })
     }
 
-    public sendServerStartingMessage(email: string = 'armand.kayi@technologybusiness-tb.com'): Promise<void> {
+    public sendServerStartingMessage(email: string = 'easy.ecole@technologybusiness-tb.com'): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {
             from: this.getFromAddress(),
@@ -231,6 +232,7 @@ export class EmailSender {
 
     public sendConfirmationDemandeOrientation(username: string, email: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
+        void SmsSender.envoyerParEmail(email, `${EMAIL_SENDER_NAME} - Votre demande d'orientation a bien ete recue.`)
         const mailOptions: SendMailOptions = {
             from: this.getFromAddress(),
             to: email,
@@ -254,6 +256,7 @@ export class EmailSender {
 
     public sendReponseOrientation(username: string, email: string, message: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
+        void SmsSender.envoyerParEmail(email, `${EMAIL_SENDER_NAME} - Reponse a votre demande d'orientation. Consultez la plateforme.`)
         const mailOptions: SendMailOptions = {
             from: this.getFromAddress(),
             to: email,
@@ -278,6 +281,7 @@ export class EmailSender {
 
     public sendConfirmationDemandeInscription(username: string, email: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
+        void SmsSender.envoyerParEmail(email, `${EMAIL_SENDER_NAME} - Votre demande d'inscription a bien ete recue.`)
         const mailOptions: SendMailOptions = {
             from: this.getFromAddress(),
             to: email,
@@ -301,6 +305,7 @@ export class EmailSender {
 
     public sendReponseInscription(username: string, email: string, message: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
+        void SmsSender.envoyerParEmail(email, `${EMAIL_SENDER_NAME} - Reponse a votre demande d'inscription. Consultez la plateforme.`)
         const mailOptions: SendMailOptions = {
             from: this.getFromAddress(),
             to: email,
@@ -347,6 +352,7 @@ export class EmailSender {
 
     public sendValidationDemandeInscription(username: string, email: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
+        void SmsSender.envoyerParEmail(email, `${EMAIL_SENDER_NAME} - Votre demande d'inscription a ete validee.`)
         const mailOptions: SendMailOptions = {
             from: this.getFromAddress(),
             to: email,
@@ -393,6 +399,7 @@ export class EmailSender {
 
     public sendPreInscriptionValidee(username: string, email: string, attachmentPath?: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
+        void SmsSender.envoyerParEmail(email, `${EMAIL_SENDER_NAME} - Votre preinscription a ete validee.`)
         const mailOptions: SendMailOptions = {
             from: this.getFromAddress(),
             to: email,
@@ -424,6 +431,7 @@ export class EmailSender {
 
     public sendPreInscriptionRejetee(username: string, email: string, motif: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
+        void SmsSender.envoyerParEmail(email, `${EMAIL_SENDER_NAME} - Votre preinscription a ete rejetee. Motif: ${motif}`)
         const mailOptions: SendMailOptions = {
             from: this.getFromAddress(),
             to: email,
@@ -451,6 +459,7 @@ export class EmailSender {
      */
     public sendBordereauRejete(username: string, email: string, motif: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
+        void SmsSender.envoyerParEmail(email, `${EMAIL_SENDER_NAME} - Bordereau de paiement refuse. Motif: ${motif}. Re-soumettez votre dossier.`)
         const mailOptions: SendMailOptions = {
             from: this.getFromAddress(),
             to: email,
@@ -500,6 +509,7 @@ export class EmailSender {
 
     public sendQuitusEtMatricule(username: string, email: string, matricule: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
+        void SmsSender.envoyerParEmail(email, `${EMAIL_SENDER_NAME} - Votre dossier etudiant est pret. Matricule: ${matricule}`)
         const mailOptions: SendMailOptions = {
             from: this.getFromAddress(),
             to: email,
@@ -522,6 +532,7 @@ export class EmailSender {
 
     public sendEmailConfirmLink(username: string, email: string, redirectTo: string, token: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
+        void SmsSender.envoyerParEmail(email, `${EMAIL_SENDER_NAME} - Confirmez votre email via le lien recu par email.`)
         const template: EmailTemplateType = {
             title: 'Confirmer votre email',
             fullname: username,
@@ -554,6 +565,7 @@ export class EmailSender {
 
     public sendPasswordResetLink(username: string, email: string, redirectTo: string, token: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
+        void SmsSender.envoyerParEmail(email, `${EMAIL_SENDER_NAME} - Reinitialisation de mot de passe demandee. Suivez le lien recu par email.`)
         const template: EmailTemplateType = {
             title: `${EMAIL_SENDER_NAME}: Réinitialiser le mot de passe`,
             fullname: username,
@@ -586,6 +598,7 @@ export class EmailSender {
 
     public sendOtpCode(email: string, code: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
+        void SmsSender.envoyerParEmail(email, `${EMAIL_SENDER_NAME} - Votre code de connexion: ${code} (valable 5 minutes)`)
 
         const formattedCode = code
 

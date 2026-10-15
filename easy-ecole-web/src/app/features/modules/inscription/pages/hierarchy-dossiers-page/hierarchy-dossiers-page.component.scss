@@ -368,3 +368,8 @@ $radius: 14px;
   color: $gray-400;
   font-size: 14px;
 }
+
+@media (max-width: 900px) {
+  .hierarchy-layout { flex-direction: column; height: auto; min-height: 0; }
+  .tree-panel { width: 100%; max-height: 320px; }
+}

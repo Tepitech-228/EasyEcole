@@ -11,6 +11,13 @@ import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { AnneeAcademique } from "../models/AnneeAcademique";
 import { DossierStorageService } from "../services/DossierStorageService";
 
+/** '' / undefined / non numérique -> null (colonne DOUBLE nullable). */
+const normaliserTailleMax = (v: unknown): number | null => {
+    if (v === null || v === undefined || v === '') return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+};
+
 export default class SessionController {
 
     constructor() { }
@@ -111,6 +118,20 @@ export default class SessionController {
             return res.status(400).json({ success: false, message: "L'année académique est obligatoire" });
         }
 
+        // ── Validation des dossiers : « Taille max » doit être un nombre (en Mo) ou vide ──
+        if (req.body.dossiers && Array.isArray(req.body.dossiers)) {
+            for (const dossierData of req.body.dossiers) {
+                const tailleBrute = dossierData?.tailleMax;
+                const estVide = tailleBrute === null || tailleBrute === undefined || tailleBrute === '';
+                if (!estVide && !Number.isFinite(Number(tailleBrute))) {
+                    return res.status(400).json({
+                        success: false,
+                        message: `Champ « Taille max » invalide pour le dossier « ${dossierData?.titre ?? 'sans titre'} » : la valeur doit être un nombre (en Mo) ou être laissée vide. Valeur reçue : « ${tailleBrute} ».`,
+                    });
+                }
+            }
+        }
+
         const sequelize = DatabaseConnection.getInstance().sequelize;
 
         try {
@@ -164,7 +185,7 @@ export default class SessionController {
                         if (existant) {
                             await existant.update({
                                 description: dossierData.description,
-                                tailleMax: dossierData.tailleMax,
+                                tailleMax: normaliserTailleMax(dossierData.tailleMax) as any,
                             }, { transaction: t });
                             if (existant.deletedAt != null) {
                                 await existant.restore({ transaction: t });
@@ -174,7 +195,7 @@ export default class SessionController {
                             await DossierInscription.create({
                                 titre: dossierData.titre,
                                 description: dossierData.description,
-                                tailleMax: dossierData.tailleMax,
+                                tailleMax: normaliserTailleMax(dossierData.tailleMax) as any,
                                 sessionId: session.id,
                             }, { transaction: t });
                         }
@@ -235,6 +256,16 @@ export default class SessionController {
                 return res.status(400).json({
                     success: false,
                     message: typeof detail === 'string' ? detail : 'Données de session invalides',
+                });
+            }
+            // Erreur de format côté MySQL (ex. valeur vide dans une colonne numérique) :
+            // on renvoie 400 avec un message métier explicite au lieu d'un 500 opaque.
+            if (errName === 'SequelizeDatabaseError' && error?.parent?.errno === 1366) {
+                const colonne: string = error?.parent?.sqlMessage?.match(/column '?`?([^`']+?)`?'? at row/i)?.[1] ?? '';
+                const champ = colonne.split('.').pop() || 'un champ numérique';
+                return res.status(400).json({
+                    success: false,
+                    message: `Données invalides : le champ « ${champ} » doit être un nombre. Vous avez probablement laissé une valeur vide (ou non numérique) dans un champ obligatoirement numérique (ex. la « Taille max » d'un dossier, en Mo).`,
                 });
             }
             return res.status(500).json({ success: false, message: "Erreur interne lors de la création de la session" });

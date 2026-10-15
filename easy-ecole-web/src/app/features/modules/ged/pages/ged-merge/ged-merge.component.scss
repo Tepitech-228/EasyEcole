@@ -651,3 +651,10 @@
   .file-size { color: #8696a0; flex-shrink: 0; }
   button { flex-shrink: 0; }
 }
+
+@media (max-width: 900px) {
+  .merge-page { flex-direction: column; height: auto; }
+  .tree-panel { width: 100%; max-height: 260px; }
+  .form-grid,
+  .nomenclature-grid { grid-template-columns: 1fr; }
+}

@@ -410,3 +410,21 @@
   color: #fff;
   &:hover { background: #2a45d6; }
 }
+
+.player-main { min-width: 0; }
+
+@media (max-width: 768px) {
+  .player-layout { position: relative; }
+  .player-sidebar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    height: 100%;
+    width: 260px;
+    max-width: 82vw;
+    z-index: 30;
+    box-shadow: 4px 0 24px rgba(15, 23, 42, 0.14);
+  }
+  .player-sidebar.fermee { width: 0; box-shadow: none; }
+}

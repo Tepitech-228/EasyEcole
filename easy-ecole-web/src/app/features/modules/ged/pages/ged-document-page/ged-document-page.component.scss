@@ -239,3 +239,10 @@
   text-align: center;
   color: #8696a0;
 }
+
+@media (max-width: 900px) {
+  .doc-content { flex-direction: column; }
+  .doc-preview { width: 100%; }
+  .doc-meta { width: 100%; min-width: 0; }
+  .preview-iframe { height: 60vh; }
+}

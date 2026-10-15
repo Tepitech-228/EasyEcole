@@ -286,3 +286,8 @@
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.08); }
 }
+
+@media (max-width: 400px) {
+  .timer-circle-container { width: 88px; height: 88px; }
+  .otp-input { width: 30px; height: 42px; font-size: 18px; }
+}
