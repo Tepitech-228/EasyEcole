@@ -1,20 +1,10 @@
 # =============================================================================
 # EasyEcole — Docker Compose (déploiement production : Ubuntu + Dokploy)
 #
-# TOPOLOGIE ESA (2 VM Hyper-V) :
-#   - VM APP (192.168.100.10 — 6 vCPU / 6 Go RAM / 1 To) : héberge CETTE stack
-#       backend (API Express/Node), worker (BullMQ), redis (cache), frontend (nginx)
-#   - VM DB  (192.168.100.20 — 4 vCPU / 6 Go RAM / 3 To) : MySQL 8.0 NATIF,
-#       HORS Docker. La base n'est ni conteneurisée ni sauvegardée par ce compose.
-#
-# BASE DE DONNÉES : EXTERNE. Le backend s'y connecte via DB_HOST (défaut
-#   192.168.100.20:3306). Autorisations pare-feu attendues :
-#     - VM DB  : autoriser 3306 entrant depuis la VM APP uniquement
-#     - VM APP : autoriser la SORTIE vers 3306 (+ ports applicatifs utiles)
-#
 # 4 services :
-#   - backend  : API Express/Node (build local, bind mounts uploads/storage…)
-#   - worker   : workers BullMQ (OCR, PDF, import Excel) — même image que backend
+#   - db       : MySQL 8.0 (base de données, volume persistant mysql_data)
+#   - backend  : API Express/Node (build local, volume uploads -> /app/public,
+#                bind mount PDFs -> /app/storage (hôte : /opt/mon-app/storage))
 #   - redis    : Redis 7 (cache réponse API, fail-safe, volume redis_data)
 #   - frontend : nginx servant le build Angular + proxy /api -> backend:3000
 #
@@ -24,18 +14,15 @@
 #
 # VARIABLES D'ENVIRONNEMENT (DOKPLOY) :
 #   Saisir toutes les variables dans Dokploy (onglet "Environment" du projet) :
-#   DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS,
-#   JWT_SECRET, DOCGEN_SECRET, CORS_ORIGIN, SMTP_*, REDIS_URL…
+#   JWT_SECRET, DB_PASS, CORS_ORIGIN, SMTP_*, CINETPAY_*, ENCRYPTION_MASTER_KEY…
+#   - Le service db interpole ${MYSQL_ROOT_PASSWORD}, ${DB_PASS}, ${DB_USER},
+#     ${DB_NAME}, ${TZ} depuis
+#     les variables du projet (Dokploy les injecte aussi dans les conteneurs).
 #   - Le service backend reçoit automatiquement toutes les variables du projet
 #     (remplace l'ancien `env_file: .env` — PAS de fichier .env dans le repo).
-#   - Chemins HÔTE des bind mounts (facultatifs ; défauts sous /opt/mon-app/) :
-#       STORAGE_HOST_PATH → /app/storage (PDF docgen, cartes, qr-codes)  [/opt/mon-app/storage]
-#       PUBLIC_HOST_PATH  → /app/public  (uploads, GED, bordereaux, dossiers) [/opt/mon-app/public]
-#       UPLOADS_HOST_PATH → /app/uploads (PV de délibération)            [/opt/mon-app/uploads]
-#       CONFIG_HOST_PATH  → /app/config  (configuration de stockage)     [/opt/mon-app/config]
-#       KEYS_HOST_PATH    → /app/.keys   (clé maîtresse AES)             [/opt/mon-app/keys]
-#       BACKUPS_HOST_PATH → /app/backups (sauvegardes intégrité GED)     [/opt/mon-app/backups]
-#     En local (dev Windows), définir ces chemins sous ./.data/ dans .env.
+#   - STORAGE_HOST_PATH (facultatif) : chemin hôte du bind mount des PDF,
+#     défaut /opt/mon-app/storage. En local (dev Windows), définir
+#     STORAGE_HOST_PATH=./.data/storage dans .env.
 #
 # LOCAL (dev) : lancer avec l'override local :
 #   docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
@@ -43,12 +30,90 @@
 #   par git — ne JAMAIS le déployer en production, voir .gitignore)
 #
 # RÉSEAUX : `app` relie nginx au backend; `data` (interne) relie backend,
-# workers et Redis.
+# workers, MySQL et Redis. MySQL/Redis ne sont pas joignables depuis nginx.
 # =============================================================================
 
 name: easyecole
 
 services:
+  # ---------------------------------------------------------------------------
+  # 1) BASE DE DONNÉES MySQL 8.0
+  # ---------------------------------------------------------------------------
+  db:
+    image: mysql:8.0
+    container_name: easyecole-db
+    restart: unless-stopped
+    mem_limit: 1g
+    pids_limit: 200
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      # Mot de passe root MySQL (à remplacer dans .env)
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD must be set}
+      # Compte applicatif dédié, initialisé uniquement à la création du volume.
+      MYSQL_USER: ${DB_USER:-easyecole_app}
+      MYSQL_PASSWORD: ${DB_PASS:?DB_PASS must be set}
+      # Base créée au premier démarrage (le DUMP est ensuite importé)
+      MYSQL_DATABASE: ${DB_NAME:-easyecole}
+      # Fuseau horaire
+      TZ: ${TZ:-UTC}
+    # Volume persistant : les données survivent aux recréations de conteneur
+    volumes:
+      - mysql_data:/var/lib/mysql
+    # Healthcheck : on attend que MySQL réponde avant de démarrer le backend
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - data
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # 1b) SAUVEGARDE MYSQL
+  # ---------------------------------------------------------------------------
+  mysql-backup:
+    image: mysql:8.0
+    container_name: easyecole-mysql-backup
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-easyecole}
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+    volumes:
+      - mysql_backups:/backups/mysql
+      - uploads:/data/uploads:ro
+      # PDFs et documents persistants (bind mount du backend, même chemin
+      # hôte) montés EN LECTURE SEULE pour l'archivage hebdomadaire.
+      - ${STORAGE_HOST_PATH:-/opt/mon-app/storage}:/data/storage:ro
+      - ./scripts/mysql-backup.sh:/usr/local/bin/mysql-backup.sh:ro
+    entrypoint: ["/bin/sh", "/usr/local/bin/mysql-backup.sh"]
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - data
+    # ⚠️ CONFLICT PORT 3306 : si un MySQL natif tourne déjà sur le serveur
+    # Windows, NE PAS exposer le port de ce conteneur sur l'hôte.
+    # Décommentez uniquement si vous avez besoin d'y accéder depuis l'hôte
+    # (utilisez 3307 pour éviter le conflit) :
+    # ports:
+    #   - "3307:3306"
+    # ⚠️ IMPORTANT : si vous exposez un port hôte différent de 3306, mettez à
+    # jour DB_PORT dans .env (le backend pointe vers le service `db`, donc
+    # DB_PORT=3306 reste correct dans le réseau Docker).
+
   # ---------------------------------------------------------------------------
   # 2) BACKEND API Express/Node
   # ---------------------------------------------------------------------------
@@ -64,16 +129,16 @@ services:
     init: true
     security_opt:
       - no-new-privileges:true
-    # Hôte de la base : la BD est EXTERNE (VM DB 192.168.100.20).
-    # DB_HOST DOIT pointer vers la VM DB (défaut ci-dessous), PAS vers un
-    # conteneur `db` (qui n'existe plus dans cette stack).
+    # Variables DB explicites : DB_HOST DOIT valoir `db` (nom du service),
+    # PAS localhost. Les autres variables applicatives sont configurées dans
+    # l'environnement du déploiement.
     # (Ancien `env_file: .env` supprimé : Dokploy ne lit pas de fichier .env.)
     # REDIS_URL : valeur par défaut vers le service cache ; toute valeur saisie
     # dans Dokploy (${REDIS_URL}) la remplace sans toucher à ce fichier.
     environment:
       NODE_ENV: production
-      DB_HOST: ${DB_HOST:-192.168.100.20}
-      DB_PORT: ${DB_PORT:-3306}
+      DB_HOST: db
+      DB_PORT: 3306
       DB_NAME: ${DB_NAME:-easyecole}
       DB_USER: ${DB_USER:-easyecole_app}
       DB_PASS: ${DB_PASS:?DB_PASS must be set}
@@ -81,12 +146,7 @@ services:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       JWT_SECRET: ${JWT_SECRET}
       DOCGEN_SECRET: ${DOCGEN_SECRET}
-      # ⚠️ REQUIS : src/app.ts lève une erreur au chargement si CORS_ORIGIN est
-      # absent/vide → crash du conteneur au boot (jamais « healthy »). On
-      # échoue donc explicitement ici pour un message clair au déploiement.
-      # Valeur attendue en production : http://<IP_VM_APP>:8080
-      # (inclure le PORT, ex. http://192.168.100.10:8080).
-      CORS_ORIGIN: ${CORS_ORIGIN:?CORS_ORIGIN must be set in Dokploy (e.g. http://192.168.100.10:8080)}
+      CORS_ORIGIN: ${CORS_ORIGIN}
       SMTP_HOST: ${SMTP_HOST}
       SMTP_PORT: ${SMTP_PORT}
       SMTP_USER: ${SMTP_USER}
@@ -97,73 +157,51 @@ services:
       # Fail-fast : une migration en échec bloque le démarrage (pas d'API à
       # moitié migrée). Pour sauter : MIGRATIONS_ON_BOOT=false.
       MIGRATIONS_ON_BOOT: ${MIGRATIONS_ON_BOOT:-true}
-      # Amorçage du schéma de BASE avant migrations (tables MANQUANTES
-      # uniquement, sans ALTER) : indispensable sur une base NEUVE, sans effet
-      # sur une base existante. Non bloquant. Pour désactiver : =false.
-      # Voir docker-entrypoint.sh §0c (migrations d'évolution vs impasse).
-      DB_BOOTSTRAP_SCHEMA: ${DB_BOOTSTRAP_SCHEMA:-true}
+    depends_on:
+      db:
+        condition: service_healthy
     networks:
       - app
       - data
     volumes:
-      # ── Fichiers UPLOADÉS (multer, GED, dossiers, bordereaux, rattrapage…)
-      # /app/public dans le conteneur (chemins relatifs à process.cwd()).
-      # BIND MOUNT hôte : fichiers VISIBLES et PERSISTANTS sur le disque de la
-      # VM dans ${PUBLIC_HOST_PATH} (défaut /opt/mon-app/public).
-      - ${PUBLIC_HOST_PATH:-/opt/mon-app/public}:/app/public
-      # ── PV de délibération (GenerateurPVService / DeliberationController).
-      # Chemin DISTINCT de public/uploads : /app/uploads. Sans ce montage, les
-      # PV PDF sont PERDUS à chaque recréation de conteneur.
-      - ${UPLOADS_HOST_PATH:-/opt/mon-app/uploads}:/app/uploads
-      # ── Stockage PDF persistant : /app/storage (docgen, pdfs, comite-pdfs,
-      # cartes, qr-codes). Les documents GÉNÉRÉS (attestations, autorisations,
-      # bordereaux, reçus docgen) vivent ici → visibles sur l'hôte.
-      # PRÉPARER LES DOSSIERS HÔTE AVANT le premier déploiement :
-      #   sudo mkdir -p /opt/mon-app/{storage/pdfs,public,uploads,config,keys,backups}
-      #   sudo chown -R 1000:1000 /opt/mon-app
-      #   sudo chmod -R u+rwX,g+rwX /opt/mon-app
+      # Fichiers uploadés (multer, GED, dossiers, docgen, photos…) :
+      # /app/public dans le conteneur (chemin relatif à process.cwd()).
+      - uploads:/app/public
+      # Stockage persistant : /app/storage (PDF, cartes, docgen, qr-codes).
+      # BIND MOUNT — plus de volume nommé : les fichiers vivent sur l'hôte
+      # dans ${STORAGE_HOST_PATH} (défaut : /opt/mon-app/storage) et
+      # survivent à toute recréation de conteneur (redéploiement, rollback,
+      # changement d'image). PRÉPARER LE DOSSIER HÔTE AVANT le premier
+      # déploiement avec ce compose :
+      #   sudo mkdir -p /opt/mon-app/storage/pdfs
+      #   sudo chown -R 1000:1000 /opt/mon-app/storage
+      #   sudo chmod -R u+rwX,g+rwX /opt/mon-app/storage
       # (1000:1000 = utilisateur `node` du conteneur ; vérifier : id node)
-      # docker-entrypoint.sh refuse de démarrer si /app/storage/pdfs n'est
-      # pas inscriptible (fail-fast).
+      # Vérification automatique au démarrage : docker-entrypoint.sh refuse
+      # de démarrer si le dossier est absent ou non inscriptible.
       - ${STORAGE_HOST_PATH:-/opt/mon-app/storage}:/app/storage
-      # ── Configuration de stockage modifiable (StorageConfigController).
-      - ${CONFIG_HOST_PATH:-/opt/mon-app/config}:/app/config
-      # ── Clé maîtresse AES (EncryptionService, dossier /app/.keys).
-      # ⚠️ NE JAMAIS perdre ce dossier : sa disparition rend INDÉCHIFFRABLES
-      # toutes les données déjà chiffrées en base.
-      - ${KEYS_HOST_PATH:-/opt/mon-app/keys}:/app/.keys
-      # ── Sauvegardes d'INTÉGRITÉ GED (IntegrityController → backups/ged_<ts>).
-      # La table `ged_backups` est en base, mais les fichiers archivés vivent
-      # ici : sans ce montage, chaque redéploiement ORPHELINE les enregistrements
-      # de sauvegarde (fichiers introuvables → restauration impossible).
-      - ${BACKUPS_HOST_PATH:-/opt/mon-app/backups}:/app/backups
     # Port 3000 NON exposé par défaut : le frontend passe par le proxy nginx.
     # À décommenter pour du debug (tests curl directs) :
     # ports:
     #   - "3000:3000"
     healthcheck:
-      # ⚠️ 127.0.0.1 (et NON localhost) : le serveur écoute sur 0.0.0.0 (IPv4)
-      # (voir Dockerfile : CMD [... "0.0.0.0"] → process.argv[2]). Depuis
-      # Node ≥ 17, l'ordre de résolution DNS est « verbatim » : « localhost »
-      # peut être résolu en ::1 (IPv6), interface NON écoutée par le serveur →
-      # le test échouait en boucle. L'adresse IPv4 littérale lève l'ambiguïté.
-      test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:3000/api/v1/health', r => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))\""]
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000/api/v1/health', r => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))\""]
       interval: 15s
       timeout: 5s
-      # ⚠️ Fenêtre de démarrage du backend (élargie 2026-10-13) :
-      # L'entrypoint exécute, AVANT que l'API n'écoute :
-      #   0c. amorçage du schéma (borné à 300 s, non bloquant)
-      #   1.  migrations SQL fail-fast (jusqu'à ~34 fichiers la 1ère fois)
-      #   2.  seed-boot : 6 seeds idempotents séquentiels (comptes+RBAC,
-      #       docgen, GED, dossiers GED, documents requis, frais)
-      # Sur une base neuve, la séquence complète peut dépasser 7 min : Docker
-      # marquait le backend « unhealthy » alors que le boot se terminait
-      # correctement plus tard → deploy Dokploy en échec
+      # ⚠️ Fenêtre de démarrage du backend (2026-10-07) :
+      # L'entrypoint exécute AVANT de démarrer l'API :
+      #   1. migrations SQL fail-fast (jusqu'à 34 fichiers la 1ère fois)
+      #   2. seed-boot : 6 seeds idempotents séquentiels (comptes+RBAC,
+      #      docgen, GED, dossiers GED, documents requis, frais)
+      # Localement, UNE seule prennait déjà ~53 s ; en prod la séquence
+      # complète dépasse largement les 40 s + 5×15 s ≈ 2 min initiaux :
+      # Docker marquait le backend « unhealthy » pendant que l'API n'avait
+      # pas encore le temps d'écouter → deploy Dokploy en échec
       # (« dependency failed to start: container easyecole-backend is
-      # unhealthy »).
-      # Fenêtre élargie : 420 s + 20×15 s ≈ 12 min (au lieu de 7).
-      retries: 20
-      start_period: 420s
+      # unhealthy »), même si le boot finissait correctement 1-2 min plus tard.
+      # Fenêtre élargie : 240 s + 12×15 s ≈ 7 min.
+      retries: 12
+      start_period: 240s
     logging:
       driver: json-file
       options:
@@ -193,9 +231,8 @@ services:
     command: []
     environment:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      # Same EXTERNAL database as the backend (VM DB 192.168.100.20).
-      DB_HOST: ${DB_HOST:-192.168.100.20}
-      DB_PORT: ${DB_PORT:-3306}
+      DB_HOST: db
+      DB_PORT: 3306
       DB_NAME: ${DB_NAME:-easyecole}
       DB_USER: ${DB_USER:-easyecole_app}
       DB_PASS: ${DB_PASS:?DB_PASS must be set}
@@ -210,14 +247,8 @@ services:
       - app
       - data
     volumes:
-      # Mêmes BIND MOUNTS hôte que le backend (voir commentaires détaillés
-      # ci-dessus) : le worker OCR/PDF doit écrire dans les mêmes dossiers.
-      - ${PUBLIC_HOST_PATH:-/opt/mon-app/public}:/app/public
-      - ${UPLOADS_HOST_PATH:-/opt/mon-app/uploads}:/app/uploads
+      - uploads:/app/public
       - ${STORAGE_HOST_PATH:-/opt/mon-app/storage}:/app/storage
-      - ${CONFIG_HOST_PATH:-/opt/mon-app/config}:/app/config
-      - ${KEYS_HOST_PATH:-/opt/mon-app/keys}:/app/.keys
-      - ${BACKUPS_HOST_PATH:-/opt/mon-app/backups}:/app/backups
 
   # ---------------------------------------------------------------------------
   # 3) CACHE REDIS 7 (cache réponse middleware `cache()` — fail-safe)
@@ -259,11 +290,9 @@ services:
     restart: unless-stopped
     mem_limit: 256m
     ports:
-      # Port HTTP public de l'application : hôte 8080 -> nginx (conteneur) 80.
-      # Le port 80 de l'hôte étant déjà occupé sur la VM APP, on publie sur 8080.
-      # L'application est donc servie sur http://<IP_VM_APP>:8080/
-      # (remettre "80:80" si le port 80 hôte est un jour libéré).
-      - "8080:80"
+      # Port HTTP public de l'application. À adapter (ex: "8080:80") si le
+      # port 80 est déjà occupé sur le serveur Windows.
+      - "80:80"
     networks:
       - app
     depends_on:
@@ -289,25 +318,20 @@ services:
 # VOLUMES NOMÉS
 # =============================================================================
 volumes:
+  # Données MySQL (base complète importée depuis le dump)
+  mysql_data:
+  # Fichiers uploadés du backend (/app/public)
+  uploads:
   # Persistance du cache Redis (fichiers AOF dans /data)
   redis_data:
-  # ⚠️ L'ancien volume nommé `uploads` (/app/public) n'est PLUS déclaré :
-  # /app/public est désormais un BIND MOUNT sur ${PUBLIC_HOST_PATH} (défaut
-  # /opt/mon-app/public). L'ancien volume (easyecole_uploads) reste sur le
-  # disque : il contient les fichiers uploadés AVANT la bascule (GED, photos,
-  # bordereaux, dossiers). LE MIGRER vers le bind mount avant de le supprimer :
-  #   docker run --rm -v easyecole_uploads:/from -v /opt/mon-app/public:/to \
-  #     busybox sh -c 'cp -a /from/. /to/'
-  #   docker volume rm easyecole_uploads
+  # Dumps compressés MySQL ; monter ce volume vers un stockage externe en prod.
+  mysql_backups:
   # ⚠️ L'ancien volume nommé `storage` n'est PLUS déclaré : /app/storage est
   # désormais un bind mount sur ${STORAGE_HOST_PATH} (défaut
   # /opt/mon-app/storage). L'ancien volume (easyecole_storage) reste sur le
   # disque après cette mise à jour : il contient les PDF créés avant la
   # bascule et doit être MIGRÉ vers le bind mount (voir compte-rendu), puis
   # supprimé une fois la migration vérifiée (`docker volume rm easyecole_storage`).
-  #
-  # ⚠️ BASE DE DONNÉES : plus AUCUN volume MySQL ici. La base est EXTERNE
-  # (VM DB 192.168.100.20). Sauvegardes et persistance sont gérées côté VM DB.
 
 networks:
   app:
