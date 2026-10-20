@@ -7,6 +7,11 @@ import { Router } from '@angular/router';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 import { Enseignant } from '../models/Enseignant.model';
 
+export interface SiteUtilisateur {
+  id: number;
+  nom: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -21,6 +26,17 @@ export class AuthService {
 
   login(utilisateur: Utilisateur): Observable<any> {
     return this.httpClient.post(`${this.SERVICE_URL}/login`, utilisateur)
+  }
+
+  getSitesMoi(): Observable<SiteUtilisateur[]> {
+    return this.httpClient.get<SiteUtilisateur[]>(`${this.SERVICE_URL}/utilisateurs/moi/sites`);
+  }
+
+  definirSiteActif(etablissementId: number): Observable<{ accessToken: string; etablissementId: number }> {
+    return this.httpClient.post<{ accessToken: string; etablissementId: number }>(
+      `${this.SERVICE_URL}/utilisateurs/moi/site-actif`,
+      { etablissementId }
+    );
   }
 
   register(utilisateur: Utilisateur): Observable<any> {

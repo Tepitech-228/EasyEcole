@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+import { ApprenantService } from 'src/app/data/modules/auth/services/apprenant.service';
 import {
   DossierArbreAnnee,
   DossierArbreClasse,
@@ -60,9 +61,12 @@ export class ListeDossiersPageComponent extends BaseComponentClass implements On
   showDetailModal = false
   detailData: any = null
   detailLoading = false
+  photoUploadInProgress = false
+  photoUploadMessage = ''
 
   constructor(
     private http: HttpClient,
+    private apprenantService: ApprenantService,
     private dossierEtudiantService: DossierEtudiantService,
   ) {
     super()
@@ -291,6 +295,46 @@ export class ListeDossiersPageComponent extends BaseComponentClass implements On
   closeDetailModal(): void {
     this.showDetailModal = false
     this.detailData = null
+    this.photoUploadMessage = ''
+  }
+
+  uploadStudentPhoto(event: Event): void {
+    const input = event.target as HTMLInputElement
+    const selectedFile = input.files?.[0]
+    input.value = ''
+    this.photoUploadMessage = ''
+
+    if (!selectedFile || !this.detailData?.dossier?.utilisateur?.apprenant?.id) {
+      if (selectedFile) this.photoUploadMessage = "Impossible d'identifier le compte apprenant de ce dossier."
+      return
+    }
+    if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(selectedFile.type)) {
+      this.photoUploadMessage = 'Format refusé. Choisissez une image JPG, PNG, GIF ou WebP.'
+      return
+    }
+    if (selectedFile.size > 5 * 1024 * 1024) {
+      this.photoUploadMessage = 'La photo ne doit pas dépasser 5 Mo.'
+      return
+    }
+
+    const photo = selectedFile.type === 'image/jpeg' && /\.jpe$/i.test(selectedFile.name)
+      ? new File([selectedFile], selectedFile.name.replace(/\.jpe$/i, '.jpg'), { type: selectedFile.type })
+      : selectedFile
+
+    this.photoUploadInProgress = true
+    this.apprenantService.updatePhoto(photo, Number(this.detailData.dossier.utilisateur.apprenant.id)).subscribe({
+      next: () => {
+        this.photoUploadInProgress = false
+        this.photoUploadMessage = 'Photo enregistrée sur la fiche étudiant.'
+        this.getArbre()
+        this.visualiserDossier(Number(this.detailData.dossier.id))
+      },
+      error: (error) => {
+        console.error("Erreur lors de la mise à jour de la photo de l'apprenant:", error)
+        this.photoUploadInProgress = false
+        this.photoUploadMessage = error?.error?.message || "La photo n'a pas pu être enregistrée."
+      }
+    })
   }
 
   telechargerCarte(dossierId: string): void {

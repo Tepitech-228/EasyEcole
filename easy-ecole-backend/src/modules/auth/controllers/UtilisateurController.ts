@@ -14,6 +14,9 @@ import QRCode from "qrcode";
 import * as path from "path";
 import * as fs from "fs";
 import { EnseignantBadgeService } from "../services/EnseignantBadgeService";
+import { SiteUtilisateur } from "../models/SiteUtilisateur";
+import jwt from "jsonwebtoken";
+import { JWT_SECRET } from "../../../core/config/jwt";
 
 export default class UtilisateurController {
 
@@ -34,6 +37,111 @@ export default class UtilisateurController {
         return map[role] || role;
     }
 
+    static async getSitesMoi(req: Request, res: Response): Promise<Response> {
+        try {
+            const role = req.utilisateurRole;
+            if (role === RolesUtilisateur.ADMIN) {
+                const sites = await Etablissement.findAll({ where: { actif: true }, order: [['nom', 'ASC']] });
+                return res.status(200).json(sites);
+            }
+            const affectations = await SiteUtilisateur.findAll({
+                where: { utilisateurId: req.utilisateurId! },
+                attributes: ['etablissementId']
+            });
+            const siteIds = [...new Set([
+                ...affectations.map(item => Number(item.etablissementId)),
+                ...(req.etablissementId ? [Number(req.etablissementId)] : [])
+            ])];
+            const sites = siteIds.length
+                ? await Etablissement.findAll({ where: { id: { [Op.in]: siteIds }, actif: true }, order: [['nom', 'ASC']] })
+                : [];
+            return res.status(200).json(sites);
+        } catch (error) {
+            console.error("Erreur récupération des sites affectés:", error);
+            return res.status(500).json({ success: false, message: "Les sites affectés n’ont pas pu être chargés" });
+        }
+    }
+
+    static async definirSiteActif(req: Request, res: Response): Promise<Response> {
+        const etablissementId = Number(req.body?.etablissementId);
+        if (!Number.isSafeInteger(etablissementId) || etablissementId <= 0) {
+            return res.status(400).json({ success: false, message: "Identifiant de site invalide" });
+        }
+        try {
+            const site = await Etablissement.findOne({ where: { id: etablissementId, actif: true } });
+            if (!site) return res.status(404).json({ success: false, message: "Site inexistant ou inactif" });
+            if (req.utilisateurRole !== RolesUtilisateur.ADMIN) {
+                const affectation = await SiteUtilisateur.findOne({
+                    where: { utilisateurId: req.utilisateurId!, etablissementId }
+                });
+                if (!affectation) return res.status(403).json({ success: false, message: "Vous n’êtes pas affecté à ce site" });
+            }
+            const utilisateur = await Utilisateur.findByPk(req.utilisateurId!);
+            if (!utilisateur) return res.status(401).json({ success: false, message: "Utilisateur non trouvé" });
+
+            const accessToken = jwt.sign({
+                exp: Math.floor(Date.now() / 1000) + 10 * 60 * 60,
+                id: utilisateur.id,
+                email: utilisateur.email,
+                identifiant: utilisateur.identifiant,
+                role: utilisateur.role,
+                tokenVersion: utilisateur.tokenVersion,
+                etablissementId
+            }, JWT_SECRET);
+            return res.status(200).json({ success: true, etablissementId, accessToken });
+        } catch (error) {
+            console.error("Erreur changement de site actif:", error);
+            return res.status(500).json({ success: false, message: "Le site actif n’a pas pu être modifié" });
+        }
+    }
+
+    private static async validerSites(ids: unknown): Promise<number[] | null> {
+        if (!Array.isArray(ids) || ids.some(id => !Number.isSafeInteger(Number(id)) || Number(id) <= 0)) return null;
+        const siteIds = [...new Set(ids.map(Number))];
+        if (!siteIds.length) return null;
+        const sites = await Etablissement.findAll({
+            where: { id: { [Op.in]: siteIds }, actif: true },
+            attributes: ['id']
+        });
+        return sites.length === siteIds.length ? siteIds : null;
+    }
+
+    private static async sitesAccessibles(req: Request): Promise<number[]> {
+        const affectations = await SiteUtilisateur.findAll({
+            where: { utilisateurId: req.utilisateurId! },
+            attributes: ['etablissementId']
+        });
+        const siteIds = [...new Set([
+            ...affectations.map(item => Number(item.etablissementId)),
+            ...(req.etablissementId ? [Number(req.etablissementId)] : [])
+        ])];
+        if (!siteIds.length) return [];
+        const sites = await Etablissement.findAll({
+            where: { id: { [Op.in]: siteIds }, actif: true },
+            attributes: ['id']
+        });
+        return sites.map(site => Number(site.id));
+    }
+
+    private static sitesDemandes(req: Request): unknown {
+        if (req.body?.siteIds !== undefined) return req.body.siteIds;
+        if (req.body?.etablissementIds !== undefined) return req.body.etablissementIds;
+        const siteId = req.body?.etablissementId ?? req.etablissementId;
+        return siteId ? [siteId] : [];
+    }
+
+    private static nombreSitesAutorise(role: RolesUtilisateur, siteIds: number[]): boolean {
+        if (role === RolesUtilisateur.APPRENANT) return siteIds.length === 1;
+        const rolesCentraux = [
+            RolesUtilisateur.ADMIN,
+            RolesUtilisateur.INSTITUTION,
+            RolesUtilisateur.COMITE_ORIENTATION,
+            RolesUtilisateur.SUPERVISEUR_GENERAL,
+            RolesUtilisateur.CABINET_COMPTABLE,
+        ];
+        return rolesCentraux.includes(role) || siteIds.length > 0;
+    }
+
     static async getAllUtilisateurs(req: Request, res: Response): Promise<Response> {
         const rolesAutorises: RolesUtilisateur[] = [
             RolesUtilisateur.ADMIN,
@@ -49,6 +157,20 @@ export default class UtilisateurController {
         }
 
         try {
+            if ((req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
+                if (!(req as any).etablissementId) return res.status(200).send([]);
+                const affectations = await SiteUtilisateur.findAll({
+                    where: { etablissementId: (req as any).etablissementId },
+                    attributes: ['utilisateurId'],
+                    include: [{
+                        association: SiteUtilisateur.associations.etablissement,
+                        where: { actif: true },
+                        required: true,
+                        attributes: []
+                    }]
+                });
+                options.where = { id: { [Op.in]: affectations.map(item => item.utilisateurId) } };
+            }
             const utilisateurs = await Utilisateur.findAll(options);
             return res.status(200).send(utilisateurs);
         } catch (error) {
@@ -182,19 +304,65 @@ export default class UtilisateurController {
                 return res.status(400).json({ success: false, message: "Mot de passe requis (min 6 caractères)" });
             }
 
+            const userRole: RolesUtilisateur = req.body.role || RolesUtilisateur.APPRENANT;
+            if (
+                role === RolesUtilisateur.INSTITUTION
+                && [RolesUtilisateur.ADMIN, RolesUtilisateur.INSTITUTION].includes(userRole)
+            ) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Une institution ne peut pas créer un compte administrateur ou institution."
+                });
+            }
+            const siteIds = await this.validerSites(this.sitesDemandes(req));
+            if (siteIds === null && (req.body.siteIds !== undefined || req.body.etablissementIds !== undefined || req.body.etablissementId || req.etablissementId)) {
+                return res.status(400).json({ success: false, message: "Un site demandé n’existe pas ou est inactif" });
+            }
+            const affectations = siteIds || [];
+            if (role === RolesUtilisateur.INSTITUTION) {
+                if (!affectations.length) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Sélectionnez au moins un site auquel vous êtes affecté."
+                    });
+                }
+                const sitesAccessibles = await this.sitesAccessibles(req);
+                if (affectations.some(etablissementId => !sitesAccessibles.includes(etablissementId))) {
+                    return res.status(403).json({
+                        success: false,
+                        message: "Vous ne pouvez créer un utilisateur que sur les sites qui vous sont affectés."
+                    });
+                }
+            }
+            if (!this.nombreSitesAutorise(userRole, affectations)) {
+                return res.status(400).json({
+                    success: false,
+                    message: userRole === RolesUtilisateur.APPRENANT
+                        ? "Un étudiant doit être rattaché à un site actif"
+                        : "Ce profil doit être affecté à au moins un site"
+                });
+            }
+
             const utilisateur = await Utilisateur.create({
                 nom: req.body.nom,
                 prenoms: req.body.prenoms,
                 email: req.body.email,
                 identifiant: req.body.identifiant,
                 motDePasse: bcrypt.hashSync(req.body.motDePasse, 12),
-                role: req.body.role || RolesUtilisateur.APPRENANT,
+                role: userRole,
                 contact: req.body.contact || null,
+                etablissementId: affectations[0] || null,
             });
+            if (affectations.length) {
+                await SiteUtilisateur.bulkCreate(affectations.map(etablissementId => ({
+                    utilisateurId: utilisateur.id,
+                    etablissementId,
+                    affectePar: (req as any).utilisateurId || null
+                })));
+            }
 
             // Création du profil lié selon le rôle
             // Hors apprenant/enseignant/parent → tous = PersonnelAdministratif (fonction = rôle)
-            const userRole = req.body.role || RolesUtilisateur.APPRENANT;
             const isStaff = [
                 RolesUtilisateur.PERSONNEL_ADMINISTRATIF,
                 RolesUtilisateur.CAISSIER_BANQUE,
@@ -278,6 +446,7 @@ export default class UtilisateurController {
                             throw createErr
                         }
                     }
+
                     if (!enseignant) {
                         throw new Error("Le profil enseignant n'a pas été créé.");
                     }
@@ -371,6 +540,46 @@ export default class UtilisateurController {
             });
         } catch (error) {
             return res.status(500).json({ success: false, message: "Erreur interne du serveur" });
+        }
+    }
+
+    static async affecterSites(req: Request, res: Response): Promise<Response> {
+        if ((req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
+            return res.status(403).json({ success: false, message: "Réservé à l'administrateur" });
+        }
+        try {
+            const utilisateur = await Utilisateur.findByPk(req.params.id);
+            if (!utilisateur) return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
+            const siteIds = await this.validerSites(req.body?.siteIds);
+            if (siteIds === null && (!Array.isArray(req.body?.siteIds) || req.body.siteIds.length > 0)) {
+                return res.status(400).json({ success: false, message: "Un ou plusieurs sites n’existent pas ou sont inactifs" });
+            }
+            const affectations = siteIds || [];
+            if (!this.nombreSitesAutorise(utilisateur.role, affectations)) {
+                return res.status(400).json({
+                    success: false,
+                    message: utilisateur.role === RolesUtilisateur.APPRENANT
+                        ? "Un étudiant doit conserver exactement un site de rattachement"
+                        : "Ce profil doit être affecté à au moins un site"
+                });
+            }
+
+            await DatabaseConnection.getInstance().sequelize.transaction(async transaction => {
+                await SiteUtilisateur.destroy({ where: { utilisateurId: utilisateur.id }, transaction });
+                if (affectations.length) {
+                    await SiteUtilisateur.bulkCreate(affectations.map(etablissementId => ({
+                        utilisateurId: utilisateur.id,
+                        etablissementId,
+                        affectePar: (req as any).utilisateurId || null
+                    })), { transaction });
+                }
+                await utilisateur.update({ etablissementId: affectations[0] || null }, { transaction });
+            });
+
+            return res.status(200).json({ success: true, utilisateurId: utilisateur.id, siteIds: affectations });
+        } catch (error) {
+            console.error("Erreur affectation des sites utilisateur:", error);
+            return res.status(500).json({ success: false, message: "Les affectations de sites n’ont pas pu être enregistrées" });
         }
     }
 

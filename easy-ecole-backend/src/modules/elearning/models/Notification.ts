@@ -5,6 +5,7 @@ import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../ElearningModule";
 export class Notification extends Model<InferAttributes<Notification>, InferCreationAttributes<Notification>> {
   declare id: CreationOptional<string>
   declare utilisateurId: number
+  declare evaluationId: CreationOptional<number | null>
   declare type: string
   declare titre: CreationOptional<string | null>
   declare message: string
@@ -25,6 +26,10 @@ Notification.init({
   utilisateurId: {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false
+  },
+  evaluationId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
   },
   type: {
     type: new DataTypes.STRING,

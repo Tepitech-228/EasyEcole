@@ -14,6 +14,8 @@ export class Session {
   declare anneeAcademique?: AnneeAcademique
   declare niveauEtudeId: string
   declare niveauEtude?: NiveauEtude
+  declare etablissementId?: string | number | null
+  declare etablissement?: { id: string | number; nom: string }
   declare demandesInscription?: DemandeInscription[]
   declare fraisInscription?: FraisInscription[]
   declare dossiersInscription?: DossierInscription[]

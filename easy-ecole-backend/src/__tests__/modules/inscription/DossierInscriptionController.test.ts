@@ -8,6 +8,7 @@ jest.mock('../../../modules/inscription/models/DossierInscription', () => {
   Mock.findByPk = jest.fn()
   Mock.create = jest.fn()
   Mock.count = jest.fn()
+  Mock.associations = { session: 'session' }
   return { DossierInscription: Mock }
 })
 
@@ -74,19 +75,28 @@ describe('DossierInscriptionController.getAllDossiersInscription', () => {
 
 describe('DossierInscriptionController.getDossierInscription', () => {
   it('retourne 200 si trouvé', async () => {
-    const req = mockRequest({ params: { id: '1' } })
+    const req = mockRequest({ utilisateurRole: 'institution', etablissementId: 4, params: { id: '1' } } as any)
     const res = mockResponse()
     const fake = { id: 1, titre: 'Diplôme' }
     ;(DossierInscription.findOne as jest.Mock).mockResolvedValue(fake)
 
     await DossierInscriptionController.getDossierInscription(req, res)
 
+    expect(DossierInscription.findOne).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: '1' },
+      include: [{
+        association: 'session',
+        where: { etablissementId: 4 },
+        attributes: [],
+        required: true,
+      }],
+    }))
     expect(res.status).toHaveBeenCalledWith(200)
     expect(res.send).toHaveBeenCalledWith(fake)
   })
 
   it('retourne 404 si introuvable', async () => {
-    const req = mockRequest({ params: { id: '999' } })
+    const req = mockRequest({ utilisateurRole: 'institution', etablissementId: 4, params: { id: '999' } } as any)
     const res = mockResponse()
     ;(DossierInscription.findOne as jest.Mock).mockResolvedValue(null)
 
@@ -95,8 +105,18 @@ describe('DossierInscriptionController.getDossierInscription', () => {
     expect(res.status).toHaveBeenCalledWith(404)
   })
 
+  it('refuse de lire un dossier sans site actif', async () => {
+    const req = mockRequest({ utilisateurRole: 'institution', params: { id: '1' } } as any)
+    const res = mockResponse()
+
+    await DossierInscriptionController.getDossierInscription(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(DossierInscription.findOne).not.toHaveBeenCalled()
+  })
+
   it('retourne 500 en cas d\'erreur', async () => {
-    const req = mockRequest({ params: { id: '1' } })
+    const req = mockRequest({ utilisateurRole: 'institution', etablissementId: 4, params: { id: '1' } } as any)
     const res = mockResponse()
     ;(DossierInscription.findOne as jest.Mock).mockRejectedValue(new Error('DB error'))
 

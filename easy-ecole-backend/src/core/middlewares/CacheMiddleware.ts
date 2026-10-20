@@ -7,7 +7,8 @@ export function cache(ttlSeconds: number = 60) {
 
     if (req.method === 'GET') {
       const userId = (req as any).utilisateurId || 'anonymous'
-      const cacheKey = `cache:${userId}:${req.originalUrl}`
+      const etablissementId = (req as any).etablissementId || 'global'
+      const cacheKey = `cache:${userId}:${etablissementId}:${req.originalUrl}`
 
       try {
         const cached = await redis.get(cacheKey)

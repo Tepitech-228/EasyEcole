@@ -39,6 +39,15 @@ $radius: 14px;
   box-shadow: 0 4px 20px rgba(59, 91, 255, 0.25);
 }
 
+@media (max-width: 640px) {
+  .page-head {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+  }
+}
+
 .page-head-left h2 {
   font-family: 'Sora', system-ui, sans-serif;
   font-size: 20px;

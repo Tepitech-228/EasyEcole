@@ -178,6 +178,10 @@ export class BordereauDossierService {
         const classeDerivee: any = null
 
         const etablissementId = parcoursData?.etablissementId
+        if (etablissementId && bordereau.etablissementId && etablissementId !== bordereau.etablissementId) {
+            throw new Error("Le bordereau et le parcours ne relèvent pas du même site")
+        }
+        const siteDossierId = etablissementId ?? bordereau.etablissementId ?? null
         const etablissement = etablissementId
             ? await Etablissement.findByPk(etablissementId, { transaction })
             : null
@@ -258,6 +262,7 @@ export class BordereauDossierService {
                 where: { demandeInscriptionId: demande.id },
                 defaults: {
                     externe: false,
+                    etablissementId: siteDossierId,
                     intituleParcours: parcoursNom,
                     parcoursId: parcoursChoisiFinal?.parcoursId!,
                     niveauEtudeId: niveauEtudeId!,
@@ -269,6 +274,12 @@ export class BordereauDossierService {
                 transaction
             })
             savedCursusId = savedCursus.id
+            if (savedCursus.etablissementId && siteDossierId && savedCursus.etablissementId !== siteDossierId) {
+                throw new Error("Le cursus étudiant appartient à un autre site")
+            }
+            if (!savedCursus.etablissementId && siteDossierId) {
+                await savedCursus.update({ etablissementId: siteDossierId }, { transaction })
+            }
         }
 
         const demarrage = parcoursChoisiFinal?.createdAt || demande.createdAt || new Date()
@@ -277,6 +288,7 @@ export class BordereauDossierService {
             const codeQR = JSON.stringify({ matricule, utilisateurId: bordereau.utilisateurId })
             dossier = new DossierEtudiant()
             dossier.utilisateurId = bordereau.utilisateurId
+            dossier.etablissementId = siteDossierId
             dossier.matricule = matricule
             dossier.codeQR = codeQR
             dossier.statut = 'actif'
@@ -284,6 +296,11 @@ export class BordereauDossierService {
             dossier.modePaiement = 'mensuel'
             dossier.nbMensualites = 10
             dossier.demarrageParcours = demarrage
+            await dossier.save({ transaction })
+        } else if (dossier.etablissementId && siteDossierId && dossier.etablissementId !== siteDossierId) {
+            throw new Error("Le dossier étudiant appartient à un autre site")
+        } else if (!dossier.etablissementId && siteDossierId) {
+            dossier.etablissementId = siteDossierId
             await dossier.save({ transaction })
         }
 
@@ -646,8 +663,9 @@ export class BordereauDossierService {
                 await paiement.update({ matriculeInscription: matricule }, { transaction })
             }
         }
+        const siteDossierId = etablissementId ?? null
         let dossier = await DossierEtudiant.findOne({
-            where: { utilisateurId },
+            where: { utilisateurId, ...(siteDossierId ? { etablissementId: siteDossierId } : {}) },
             order: [['id', 'DESC']],
             transaction,
         })
@@ -659,6 +677,7 @@ export class BordereauDossierService {
             const codeQR = JSON.stringify({ matricule, utilisateurId })
             dossier = await DossierEtudiant.create({
                 utilisateurId,
+                etablissementId: siteDossierId,
                 matricule,
                 codeQR,
                 statut: 'actif',
@@ -666,9 +685,11 @@ export class BordereauDossierService {
                 modePaiement: 'mensuel',
                 nbMensualites: 10,
                 demarrageParcours: (parcoursFinal as any)?.createdAt || demande.createdAt || new Date(),
-            } as any, { transaction })
+            }, { transaction })
         } else if (dossier.matricule !== matricule) {
-            await dossier.update({ matricule }, { transaction })
+            await dossier.update({ matricule, etablissementId: siteDossierId ?? dossier.etablissementId }, { transaction })
+        } else if (!dossier.etablissementId && siteDossierId) {
+            await dossier.update({ etablissementId: siteDossierId }, { transaction })
         }
 
         const niveauEtudeId = parcoursData?.niveauEtudeId ?? classeDerivee?.niveauEtudeId
@@ -705,6 +726,7 @@ export class BordereauDossierService {
             where: { demandeInscriptionId: demande.id },
             defaults: {
                 externe: false,
+                etablissementId: siteDossierId,
                 intituleParcours: parcoursNom,
                 parcoursId: parcoursFinal!.parcoursId!,
                 niveauEtudeId: niveauEtudeId!,
@@ -716,6 +738,12 @@ export class BordereauDossierService {
             transaction
         })
         savedCursusId = savedCursus.id
+        if (savedCursus.etablissementId && siteDossierId && savedCursus.etablissementId !== siteDossierId) {
+            throw new Error("Le cursus étudiant appartient à un autre site")
+        }
+        if (!savedCursus.etablissementId && siteDossierId) {
+            await savedCursus.update({ etablissementId: siteDossierId }, { transaction })
+        }
 
         // L'autorisation provisoire est un livrable gratuit de la finalisation.
         // La recherche préalable rend l'opération idempotente en cas de reprise.

@@ -3,8 +3,47 @@ import jwt from 'jsonwebtoken';
 import { Message } from "../models/Message";
 import { ParticipantSalon } from "../models/ParticipantSalon";
 import { JWT_SECRET } from "../../../core/config/jwt";
+import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
+import { SiteUtilisateur } from "../../auth/models/SiteUtilisateur";
+import { Utilisateur } from "../../auth/models/Utilisateur";
 
 const presenceOnline = new Set<number>();
+const POINTAGE_VIEWER_ROLES = new Set<RolesUtilisateur>([
+    RolesUtilisateur.INSTITUTION,
+    RolesUtilisateur.CAISSIER_BANQUE,
+    RolesUtilisateur.PERSONNEL_ADMINISTRATIF,
+    RolesUtilisateur.RESSOURCES_HUMAINES,
+    RolesUtilisateur.CABINET_COMPTABLE,
+    RolesUtilisateur.ESA_COMPTA,
+    RolesUtilisateur.COMITE_ORIENTATION,
+    RolesUtilisateur.SECRETAIRE,
+    RolesUtilisateur.SURVEILLANT,
+    RolesUtilisateur.SUPERVISEUR_GENERAL
+]);
+
+async function rejoindreRoomsPointage(socket: Socket): Promise<void> {
+    const utilisateurId = Number((socket as any).utilisateurId);
+    const role = (socket as any).utilisateurRole as RolesUtilisateur;
+    if (role === RolesUtilisateur.ADMIN) {
+        await socket.join("pointage:administrateurs");
+        return;
+    }
+    if (!POINTAGE_VIEWER_ROLES.has(role) || !Number.isSafeInteger(utilisateurId) || utilisateurId <= 0) return;
+
+    const [utilisateur, affectations] = await Promise.all([
+        Utilisateur.findByPk(utilisateurId, { attributes: ["etablissementId"] }),
+        SiteUtilisateur.findAll({ where: { utilisateurId }, attributes: ["etablissementId"] })
+    ]);
+    const siteIds = new Set<number>([
+        ...(utilisateur?.etablissementId ? [Number(utilisateur.etablissementId)] : []),
+        ...affectations.map(affectation => Number(affectation.etablissementId))
+    ]);
+    for (const etablissementId of siteIds) {
+        if (Number.isSafeInteger(etablissementId) && etablissementId > 0) {
+            await socket.join(`pointage:site:${etablissementId}`);
+        }
+    }
+}
 
 export const setupChatSocket = (io: SocketIOServer): void => {
 
@@ -25,6 +64,9 @@ export const setupChatSocket = (io: SocketIOServer): void => {
 
     io.on('connection', (socket: Socket) => {
         console.log(`Utilisateur connecté au chat: ${socket.id}`);
+        void rejoindreRoomsPointage(socket).catch(error => {
+            console.error("[Pointage] Impossible d’autoriser les salons temps réel:", error);
+        });
 
         socket.on('join:salon', (salonId: string) => {
             socket.join(`salon:${salonId}`);

@@ -43,16 +43,16 @@
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <!-- Classe -->
+        <!-- Classes -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1.5">Classe</label>
-          <select formControlName="classeId"
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">Classes concernées</label>
+          <select formControlName="classeIds" multiple size="5"
                   class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600">
-            <option [ngValue]="null" disabled>Sélectionner une classe</option>
             <option *ngFor="let c of classes" [ngValue]="c.id">{{ c.libelle || c.code || 'Classe #' + c.id }}</option>
           </select>
+          <p class="mt-1 text-xs text-gray-400">Vous pouvez sélectionner plusieurs classes, y compris sur des sites différents.</p>
           <p *ngIf="loadingClasses" class="mt-1 text-xs text-gray-400">Chargement...</p>
-          <p *ngIf="submitted && form.get('classeId')?.errors?.['required']" class="mt-1 text-xs text-blue-600">Ce champ est requis</p>
+          <p *ngIf="submitted && form.get('classeIds')?.errors?.['required']" class="mt-1 text-xs text-blue-600">Sélectionnez au moins une classe</p>
         </div>
 
         <!-- Année académique -->
@@ -84,15 +84,6 @@
         </div>
       </div>
 
-      <!-- Statut -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1.5">Statut</label>
-        <select formControlName="statut"
-                class="block w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-blue-600">
-          <option *ngFor="let s of statuts" [value]="s">{{ s }}</option>
-        </select>
-      </div>
-
       <!-- Observations -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1.5">Observations</label>
@@ -109,13 +100,13 @@
           Seul cet enseignant pourra saisir les notes.
         </p>
 
-        <div *ngIf="!form.get('classeId')?.value" class="bg-amber-50 text-amber-700 text-xs rounded-xl px-3 py-2">
-          Sélectionnez d'abord la classe pour charger ses cours.
+        <div *ngIf="!form.get('classeIds')?.value?.length" class="bg-amber-50 text-amber-700 text-xs rounded-xl px-3 py-2">
+          Sélectionnez d'abord au moins une classe pour charger ses cours.
         </div>
 
         <div *ngIf="loadingCours" class="text-sm text-gray-400 py-4">Chargement des cours...</div>
 
-        <div *ngIf="!loadingCours && form.get('classeId')?.value && coursDeLaClasse.length === 0"
+        <div *ngIf="!loadingCours && form.get('classeIds')?.value?.length && coursDeLaClasse.length === 0"
              class="bg-gray-50 text-gray-500 text-xs rounded-xl px-3 py-2">
           Aucun cours trouvé pour cette classe.
         </div>

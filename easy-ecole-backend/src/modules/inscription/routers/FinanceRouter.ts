@@ -74,6 +74,12 @@ const router = express.Router();
  */
 router.get('/bordereaux-a-traiter', [AuthEsacompta, CheckPermission('action.finance.bordereau.voir')], async (req: Request, res: Response) => {
   try {
+    const etablissementId = Number((req as any).etablissementId);
+    const hasActiveSite = Number.isSafeInteger(etablissementId) && etablissementId > 0;
+    if (!hasActiveSite && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
+      return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+    }
+
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
     const offset = (page - 1) * limit;
@@ -100,7 +106,10 @@ router.get('/bordereaux-a-traiter', [AuthEsacompta, CheckPermission('action.fina
         return res.status(400).json({ success: false, message: "Statut(s) de bordereau invalide(s)" });
       }
     }
-    options.where = { statut: statutsRecherches as any }
+    options.where = {
+      statut: statutsRecherches as any,
+      ...(hasActiveSite ? { etablissementId } : {})
+    }
 
     if (req.query.anneeAcademiqueId || req.query.niveauEtudeId || req.query.parcoursId) {
       const demandeWhere: any = { include: [] as any[] }
@@ -272,7 +281,13 @@ router.get('/bordereaux/verifier-unicite', [AuthEsacompta, CheckPermission('acti
  */
 router.post('/bordereaux/:id/imputation-preview', [AuthEsacompta, CheckPermission('action.finance.bordereau.imputer')], async (req: Request, res: Response) => {
   try {
-    const bordereau = await Bordereau.findByPk(req.params.id, {
+    const etablissementId = Number((req as any).etablissementId);
+    const hasActiveSite = Number.isSafeInteger(etablissementId) && etablissementId > 0;
+    if (!hasActiveSite && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
+      return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+    }
+    const bordereau = await Bordereau.findOne({
+      where: { id: req.params.id, ...(hasActiveSite ? { etablissementId } : {}) },
       include: [
         { association: Bordereau.associations.echeance, include: [Echeance.associations.dossierEtudiant] },
         Bordereau.associations.utilisateur
@@ -300,7 +315,8 @@ router.post('/bordereaux/:id/imputation-preview', [AuthEsacompta, CheckPermissio
       bordereau.utilisateurId,
       montant,
       undefined,
-      imputationType
+      imputationType,
+      hasActiveSite ? etablissementId : undefined
     )
 
     return res.status(200).json({ success: true, preview: resultat })
@@ -318,7 +334,13 @@ router.post('/bordereaux/:id/imputation-preview', [AuthEsacompta, CheckPermissio
  */
 router.post('/bordereaux/:id/composition-preview', [AuthEsacompta, CheckPermission('action.finance.bordereau.imputer')], async (req: Request, res: Response) => {
   try {
-    const bordereau = await Bordereau.findByPk(req.params.id, {
+    const etablissementId = Number((req as any).etablissementId);
+    const hasActiveSite = Number.isSafeInteger(etablissementId) && etablissementId > 0;
+    if (!hasActiveSite && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
+      return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+    }
+    const bordereau = await Bordereau.findOne({
+      where: { id: req.params.id, ...(hasActiveSite ? { etablissementId } : {}) },
       include: [
         { association: Bordereau.associations.echeance, include: [Echeance.associations.dossierEtudiant] },
         Bordereau.associations.utilisateur
@@ -343,7 +365,9 @@ router.post('/bordereaux/:id/composition-preview', [AuthEsacompta, CheckPermissi
       .reduce((sum: number, f: any) => sum + (f.montant || 0), 0)
 
     // Montant déjà payé en inscription
-    const dossiers = await DossierEtudiant.findAll({ where: { utilisateurId: bordereau.utilisateurId } })
+    const dossiers = await DossierEtudiant.findAll({
+      where: { utilisateurId: bordereau.utilisateurId, ...(hasActiveSite ? { etablissementId } : {}) }
+    })
     let dejaPayeInscription = 0
     if (dossiers.length > 0) {
       const echeancesInscription = await Echeance.findAll({
@@ -457,6 +481,11 @@ router.post('/bordereaux/:id/composition-preview', [AuthEsacompta, CheckPermissi
  *         description: Bordereau traité avec imputation
  */
 router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.finance.bordereau.saisir')], async (req: Request, res: Response) => {
+  const etablissementId = Number((req as any).etablissementId);
+  const hasActiveSite = Number.isSafeInteger(etablissementId) && etablissementId > 0;
+  if (!hasActiveSite && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
+    return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+  }
   const transaction = await DatabaseConnection.getInstance().sequelize.transaction()
   const _rid = `[SAISIR#${req.params.id}]`
 
@@ -471,7 +500,8 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       commentaire: req.body.commentaire,
     }))
 
-    let bordereau = await Bordereau.findByPk(req.params.id, {
+    let bordereau = await Bordereau.findOne({
+      where: { id: req.params.id, ...(hasActiveSite ? { etablissementId } : {}) },
       transaction,
       lock: transaction.LOCK.UPDATE,
       include: [
@@ -509,9 +539,22 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
     // d'inscription, le reste constituant le premier versement de scolarité.
     const { DossierEtudiant } = require('../models/DossierEtudiant')
     const dossierExistant = await DossierEtudiant.findOne({
-      where: { utilisateurId: bordereau.utilisateurId },
+      where: { utilisateurId: bordereau.utilisateurId, ...(hasActiveSite ? { etablissementId } : {}) },
       transaction,
     })
+    if (hasActiveSite && !dossierExistant) {
+      const dossierSansSite = await DossierEtudiant.findOne({
+        where: { utilisateurId: bordereau.utilisateurId, etablissementId: null },
+        transaction,
+      })
+      if (dossierSansSite) {
+        await transaction.rollback()
+        return res.status(409).json({
+          success: false,
+          message: "Le dossier étudiant n'est pas rattaché à un site. Faites vérifier son affectation avant la saisie."
+        })
+      }
+    }
     const estPremierBordereau = !dossierExistant
 
     let typeOperationIdEffectif: number | null = req.body.typeOperationId ? Number(req.body.typeOperationId) : (bordereau.typeOperationId ?? null)
@@ -547,6 +590,14 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
         const typeScolarite = await TypeOperationBordereau.findOne({ where: { code: 'SCOLARITE' }, transaction })
         if (typeScolarite) typeOperationIdEffectif = typeScolarite.id
       }
+    }
+
+    if (hasActiveSite && estScolarite && !dossierExistant) {
+      await transaction.rollback()
+      return res.status(409).json({
+        success: false,
+        message: "Aucun dossier étudiant n'est rattaché au site actif pour ce paiement de scolarité."
+      })
     }
 
     console.log(_rid, 'Contexte:', { estPremierBordereau, estMixte, typeEffectif, typeOperationIdEffectif, typeOperationCode })
@@ -596,7 +647,7 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
 
         // Calculer le montant déjà payé en inscription
         const dossiers = await DossierEtudiant.findAll({
-          where: { utilisateurId: bordereau.utilisateurId },
+          where: { utilisateurId: bordereau.utilisateurId, ...(hasActiveSite ? { etablissementId } : {}) },
           transaction,
         })
         let dejaPayeInscription = 0
@@ -767,14 +818,16 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
           bordereau.id,
           bordereau.utilisateurId,
           composition!,
-          transaction
+          transaction,
+          hasActiveSite ? etablissementId : undefined
         )
       : await ImputationService.imputerPourUtilisateur(
           bordereau.id,
           bordereau.utilisateurId,
           montantPaiement,
           transaction,
-          imputationType
+          imputationType,
+          hasActiveSite ? etablissementId : undefined
         )
 
     // Consommation automatique du crédit de portefeuille : le solde soldera
@@ -784,7 +837,8 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
     try {
       consommationPortefeuille = await ImputationService.consommerPortefeuilleUtilisateur(
         bordereau.utilisateurId,
-        transaction
+        transaction,
+        hasActiveSite ? etablissementId : undefined
       )
     } catch (consoError: any) {
       console.error("Consommation portefeuille (non bloquante):", consoError?.message || consoError)
@@ -852,6 +906,7 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       const restantsASaisir = await Bordereau.count({
         where: {
           utilisateurId: bordereau.utilisateurId,
+          ...(hasActiveSite ? { etablissementId } : {}),
           statut: { [Op.in]: ['en_attente', 'valide'] },
         },
         transaction,

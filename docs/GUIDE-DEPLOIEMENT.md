@@ -55,7 +55,7 @@ Exemple : l'application sera accessible sur `https://app.easyecole.com`.
 
 1. Dans Dokploy : **Projects → Nouveau projet** (ex. `easyecole`) → **Nouveau service → Docker Compose**.
 2. **Source** : connecter le dépôt Git (GitHub/GitLab/Bitbucket), branche `main`, chemin racine du dépôt.
-3. Le fichier `docker-compose.yml` du dépôt est détecté automatiquement (3 services : `db`, `backend`, `frontend`).
+3. Le fichier `docker-compose.yml` du dépôt est détecté automatiquement (6 services : `db`, `mysql-backup`, `backend`, `worker`, `redis`, `frontend`).
 4. Activer **Auto Deploy** (redéploiement automatique à chaque push).
 
 ## 6. Variables d'environnement
@@ -86,8 +86,11 @@ Dans Dokploy, onglet **Environment du projet** : saisir toutes les variables ci-
 |---|---|
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | envoi d'e-mails (notifications, reçus) |
 | `CINETPAY_API_KEY` / `CINETPAY_MERCHANT_ID` / `CINETPAY_BASE_URL` | paiement Mobile Money |
-| `ENCRYPTION_MASTER_KEY` | clé AES-256 (64 caractères hexadécimaux) pour le chiffrement des données sensibles |
+| `ENCRYPTION_MASTER_KEY` | clé AES-256 (64 caractères hexadécimaux) pour le chiffrement des données sensibles ; obligatoire si des identifiants de terminaux Hikvision sont enregistrés |
+| `HIKVISION_POLLING_ENABLED` | mettre `false` sur les réplicas backend qui ne doivent pas interroger les terminaux Hikvision (garder une seule instance active) |
 | `SSL_KEY` / `SSL_CERT` | uniquement si certificat HTTPS propre (non requis : Dokploy gère Let's Encrypt) |
+
+`ENCRYPTION_MASTER_KEY` et `HIKVISION_POLLING_ENABLED` sont transmis au conteneur backend par `docker-compose.yml`. Le polling est activé par défaut ; sur une instance secondaire, définir explicitement `HIKVISION_POLLING_ENABLED=false`.
 
 > **Sécurité** : ne jamais commiter ces valeurs dans le dépôt. Le fichier `.env` est ignoré par git ; rien ne doit être saisi ailleurs que dans Dokploy.
 
@@ -136,34 +139,22 @@ docker exec -i easyecole-db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" ea
 
 ## 11. Sauvegardes
 
-Créer un script de sauvegarde sur le serveur (`/opt/easyecole-backup.sh`) et le planifier via cron :
+Le service Compose `mysql-backup` sauvegarde la base réelle `db` chaque jour à **23 h 50**, dans le fuseau défini par `TZ` (par défaut `UTC`). Au démarrage, il attend le prochain 23 h 50 au lieu de produire un dump supplémentaire à minuit ou au redémarrage. Il conserve 14 jours de sauvegardes et réessaie toutes les 15 minutes si MySQL ou l'archivage échoue. Pour déclencher une sauvegarde immédiate manuelle :
 
 ```bash
-#!/bin/bash
-# Sauvegarde EasyEcole — base + fichiers (volumes uploads et storage)
-DATE=$(date +%Y%m%d_%H%M%S)
-BACKUP_DIR=/opt/backups/easyecole
-mkdir -p $BACKUP_DIR
-
-# 1) Base MySQL
-docker exec easyecole-db sh -c 'exec mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" easyecole --single-transaction' > $BACKUP_DIR/easyecole_$DATE.sql
-
-# 2) Fichiers uploadés (photos, GED, vidéos) et documents générés (cartes, docgen)
-docker run --rm -v easyecole_uploads:/data -v $BACKUP_DIR:/backup busybox tar czf /backup/uploads_$DATE.tar.gz -C /data .
-docker run --rm -v easyecole_storage:/data -v $BACKUP_DIR:/backup busybox tar czf /backup/storage_$DATE.tar.gz -C /data .
-
-# 3) Nettoyage : garder 14 jours
-find $BACKUP_DIR -name "*.sql" -mtime +14 -delete
-find $BACKUP_DIR -name "*.tar.gz" -mtime +14 -delete
+docker exec easyecole-mysql-backup sh -c 'BACKUP_RUN_ONCE=true /usr/local/bin/mysql-backup.sh'
 ```
+
+Chaque sauvegarde contient un dump SQL compressé de `DB_NAME` (`--single-transaction`) et une archive des fichiers persistants. Les deux archives sont stockées dans le volume Docker `mysql_backups` sous `/backups/mysql`. Ce n'est pas une réplication ni une fusion de bases : le service lit directement la base `db` et produit un instantané restaurable.
+
+Le script vérifie le résultat de `mysqldump` et l'intégrité gzip et tar avant de publier les fichiers ; une erreur de connexion ne doit pas être considérée comme une sauvegarde valide. Pour contrôler les dernières archives :
 
 ```bash
-sudo chmod +x /opt/easyecole-backup.sh
-# Planification : tous les jours à 02h00
-(crontab -l 2>/dev/null; echo "0 2 * * * /opt/easyecole-backup.sh") | crontab -
+docker exec easyecole-mysql-backup sh -c 'ls -lh /backups/mysql'
+docker exec easyecole-mysql-backup sh -c 'gzip -t /backups/mysql/DERNIER_DUMP.sql.gz'
 ```
 
-> Les noms de volumes (`easyecole_uploads`, `easyecole_storage`) sont à vérifier avec `docker volume ls` — Dokploy peut préfixer les noms.
+Avant toute restauration, valider le dump sur une base de test distincte. Ne jamais restaurer par-dessus la base de production sans sauvegarde préalable.
 
 ## 12. Dépannage courant
 

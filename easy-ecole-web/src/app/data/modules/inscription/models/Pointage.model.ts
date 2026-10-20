@@ -8,6 +8,7 @@ export class Pointage {
 
   declare utilisateurId: string
   declare utilisateur?: Utilisateur
+  declare scans?: { id?: string; heure: string }[]
 
   declare readonly createdAt?: Date
   declare readonly updatedAt?: Date

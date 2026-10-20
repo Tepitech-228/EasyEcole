@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { FindOptions, InferAttributes, Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Pointage } from "../models/Pointage";
+import { PointageScan } from "../models/PointageScan";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { DossierEtudiant } from "../models/DossierEtudiant";
 import { Echeance } from "../models/Echeance";
@@ -11,6 +12,8 @@ import { Enseignant } from "../../auth/models/Enseignant";
 import { Apprenant } from "../../auth/models/Apprenant";
 import { PersonnelAdministratif } from "../../auth/models/PersonnelAdministratif";
 import { DemandeInscription } from "../models/DemandeInscription";
+import { SiteUtilisateur } from "../../auth/models/SiteUtilisateur";
+import { getSurveillantSiteId } from "../../../core/helpers/SurveillantSiteScope";
 import QRCode from 'qrcode';
 
 const ROLES_POINTAGE = [
@@ -60,20 +63,50 @@ export default class PointageController {
         return { photo: utilisateur.photoDeProfil || '', photoType: 'profile' };
     }
 
+    private static async getUtilisateurIdsDuSite(etablissementId: number): Promise<number[]> {
+        const affectations = await SiteUtilisateur.findAll({
+            where: { etablissementId },
+            attributes: ['utilisateurId'],
+        });
+        const affectationIds = affectations.map(item => Number(item.utilisateurId));
+        const utilisateurs = await Utilisateur.findAll({
+            where: {
+                [Op.or]: [
+                    { etablissementId },
+                    { id: { [Op.in]: affectationIds } },
+                ],
+            },
+            attributes: ['id'],
+        });
+        return utilisateurs.map(utilisateur => Number(utilisateur.id));
+    }
+
     static async getAllPointages(req: Request, res: Response): Promise<Response> {
         let options: FindOptions<InferAttributes<Pointage>> = {
             include: [
-                Pointage.associations.utilisateur
+                {
+                    association: Pointage.associations.utilisateur,
+                    attributes: ['id', 'nom', 'prenoms', 'identifiant', 'role', 'photoDeProfil']
+                },
+                Pointage.associations.scans
             ],
-            order: [['date', 'DESC'], ['heureArrivee', 'DESC']]
+            order: [['date', 'DESC'], ['heureArrivee', 'DESC'], [{ model: PointageScan, as: 'scans' }, 'heure', 'ASC'], [{ model: PointageScan, as: 'scans' }, 'id', 'ASC']]
         }
 
         const role = (req as any).utilisateurRole;
-        if (role == RolesUtilisateur.APPRENANT || role == RolesUtilisateur.ENSEIGNANT) {
-            options.where = { utilisateurId: (req as any).utilisateurId }
-        }
 
         try {
+            if (role == RolesUtilisateur.APPRENANT || role == RolesUtilisateur.ENSEIGNANT) {
+                options.where = { utilisateurId: (req as any).utilisateurId }
+            } else if (role === RolesUtilisateur.SURVEILLANT) {
+                const etablissementId = await getSurveillantSiteId(req);
+                if (!etablissementId) {
+                    return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
+                }
+                options.where = {
+                    utilisateurId: { [Op.in]: await this.getUtilisateurIdsDuSite(etablissementId) }
+                } as any;
+            }
             let pointages: Pointage[];
             pointages = await Pointage.findAll(options);
             return res.status(200).send(pointages);
@@ -123,6 +156,12 @@ export default class PointageController {
             const role = (req as any).utilisateurRole;
             if (role == RolesUtilisateur.APPRENANT || role == RolesUtilisateur.ENSEIGNANT) {
                 where.utilisateurId = (req as any).utilisateurId
+            } else if (role === RolesUtilisateur.SURVEILLANT) {
+                const etablissementId = await getSurveillantSiteId(req);
+                if (!etablissementId) {
+                    return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
+                }
+                where.utilisateurId = { [Op.in]: await this.getUtilisateurIdsDuSite(etablissementId) };
             }
             const pointages = await Pointage.findAll({
                 where,
@@ -259,7 +298,10 @@ export default class PointageController {
                 return res.status(400).json({ success: false, alreadyExists: true, message: "Départ déjà pointé aujourd'hui" });
             }
 
-            const updated = await pointage.update({ heureDepart: time as any })
+            const updated = await PointageController.enregistrerDepart(pointage, time)
+            if (!updated) {
+                return res.status(400).json({ success: false, alreadyExists: true, message: "Départ déjà pointé aujourd'hui" })
+            }
             return res.status(200).send(updated)
 
         } catch (error) {
@@ -347,7 +389,14 @@ export default class PointageController {
                 return res.status(400).json({ success: false, alreadyExists: true, message: "Départ déjà pointé pour cet utilisateur" });
             }
 
-            const updated = await pointage.update({ heureDepart: time as any })
+            const updated = await PointageController.enregistrerDepart(pointage, time)
+            if (!updated) {
+                return res.status(400).json({
+                    success: false,
+                    alreadyExists: true,
+                    message: "Départ déjà pointé pour cet utilisateur"
+                })
+            }
             return res.status(200).send(updated)
 
         } catch (error) {
@@ -356,6 +405,134 @@ export default class PointageController {
         }
 
         return null
+    }
+
+    static async pointerParQR(req: Request, res: Response): Promise<Response> {
+        const role = (req as any).utilisateurRole;
+        if (!ROLES_POINTAGE_SCAN.includes(role)) {
+            return res.status(403).json({ success: false, code: 'FORBIDDEN', message: "Rôle non autorisé" })
+        }
+
+        const codeQR = typeof req.body?.codeQR === 'string' ? req.body.codeQR.trim() : '';
+        const requestedMode = req.body?.mode;
+        if (!codeQR || codeQR.length > 2048 || (requestedMode !== undefined && requestedMode !== 'arrivee' && requestedMode !== 'depart')) {
+            return res.status(400).json({ success: false, code: 'INVALID_REQUEST', message: 'Code QR ou mode de pointage invalide' })
+        }
+
+        const verified = QrTokenService.verifier(codeQR);
+        if (!verified || !Number.isSafeInteger(verified.userId) || verified.userId <= 0) {
+            return res.status(400).json({ success: false, code: 'INVALID_QR', message: 'Code QR invalide' })
+        }
+
+        try {
+            const utilisateur = await Utilisateur.findByPk(verified.userId);
+            if (!utilisateur) {
+                return res.status(404).json({ success: false, code: 'USER_NOT_FOUND', message: 'Utilisateur non trouvé' })
+            }
+
+            if (utilisateur.role === RolesUtilisateur.APPRENANT) {
+                const dossier = await DossierEtudiant.findOne({
+                    where: { utilisateurId: utilisateur.id },
+                    include: [{ association: DossierEtudiant.associations.echeances }]
+                });
+                if (!dossier) {
+                    return res.status(403).json({
+                        success: false,
+                        code: 'ATTENDANCE_NOT_ALLOWED',
+                        statut: 'rouge',
+                        message: "Aucun dossier d'inscription actif pour cet étudiant"
+                    })
+                }
+                const paiement = VerificationPaiementService.verifierDossier(dossier);
+                if (paiement.statut === 'rouge') {
+                    return res.status(403).json({
+                        success: false,
+                        code: 'ATTENDANCE_NOT_ALLOWED',
+                        statut: 'rouge',
+                        message: paiement.message
+                    })
+                }
+            }
+
+            const isStudent = utilisateur.role === RolesUtilisateur.APPRENANT;
+            const today = new Date().toISOString().split('T')[0];
+            const now = new Date();
+            const time = now.toTimeString().split(' ')[0];
+            const maxAttempts = isStudent ? 2 : 1;
+
+            for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                const transaction = await Pointage.sequelize!.transaction();
+                try {
+                    const pointage = await Pointage.findOne({
+                        where: { utilisateurId: utilisateur.id, date: today },
+                        transaction,
+                        lock: transaction.LOCK.UPDATE
+                    });
+
+                    let actualMode: 'arrivee' | 'depart';
+                    let updated: Pointage;
+
+                    if (!pointage) {
+                        actualMode = 'arrivee';
+                        updated = await Pointage.create({
+                            date: today,
+                            heureArrivee: time,
+                            utilisateurId: utilisateur.id
+                        }, { transaction });
+                    } else if (isStudent) {
+                        actualMode = 'depart';
+                        const lastDeparture = pointage.heureDepart ? String(pointage.heureDepart).slice(0, 8) : null;
+                        if (!lastDeparture || time > lastDeparture) {
+                            await pointage.update({ heureDepart: time }, { transaction });
+                        }
+                        updated = pointage;
+                    } else {
+                        if (pointage.heureDepart) {
+                            await transaction.rollback();
+                            return res.status(400).json({
+                                success: false,
+                                alreadyExists: true,
+                                code: 'ALREADY_EXISTS',
+                                message: "Départ déjà pointé aujourd'hui pour cet utilisateur"
+                            });
+                        }
+
+                        actualMode = 'depart';
+                        await pointage.update({ heureDepart: time }, { transaction });
+                        updated = pointage;
+                    }
+
+                    if (isStudent) {
+                        await PointageScan.create({ pointageId: updated.id, heure: time }, { transaction });
+                    }
+                    await transaction.commit();
+                    return res.status(actualMode === 'arrivee' ? 201 : 200).json({
+                        success: true,
+                        mode: actualMode,
+                        pointage: updated
+                    });
+                } catch (error) {
+                    await transaction.rollback();
+                    if (isStudent && (error as any)?.name === 'SequelizeUniqueConstraintError' && attempt + 1 < maxAttempts) {
+                        continue;
+                    }
+                    throw error;
+                }
+            }
+
+            throw new Error('Impossible d’enregistrer le pointage après une collision concurrente');
+        } catch (error) {
+            if ((error as any)?.name === 'SequelizeUniqueConstraintError') {
+                return res.status(400).json({
+                    success: false,
+                    alreadyExists: true,
+                    code: 'ALREADY_EXISTS',
+                    message: "Arrivée déjà pointée aujourd'hui pour cet utilisateur"
+                })
+            }
+            console.error('[Pointage] échec de l’enregistrement par QR', error);
+            return res.status(500).json({ success: false, code: 'INTERNAL_ERROR', message: 'Erreur interne lors de l’enregistrement du pointage' })
+        }
     }
 
     static async verifierStatutByQR(req: Request, res: Response): Promise<Response> {
@@ -666,5 +843,19 @@ export default class PointageController {
         }
         console.error('Erreur', error)
         return res.status(500).json({ success: false, message: 'Erreur interne' })
+    }
+
+    private static async enregistrerDepart(pointage: Pointage, heureDepart: string): Promise<Pointage | null> {
+        // Une condition SQL atomique évite que deux scans lisent NULL puis
+        // écrivent chacun leur heure de départ sur la même ligne.
+        const [updatedCount] = await Pointage.update(
+            { heureDepart: heureDepart as any },
+            { where: { id: pointage.id, heureDepart: null } }
+        );
+        if (updatedCount === 0) return null
+
+        const updated = await Pointage.findByPk(pointage.id);
+        if (!updated) throw new Error('Le pointage mis à jour est introuvable')
+        return updated
     }
 }

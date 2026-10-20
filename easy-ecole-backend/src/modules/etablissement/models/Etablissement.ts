@@ -3,7 +3,7 @@ import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../EtablissementModule";
 
 export class Etablissement extends Model<InferAttributes<Etablissement>, InferCreationAttributes<Etablissement>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare nom: string
   declare type: CreationOptional<string>
   declare pays: CreationOptional<string>

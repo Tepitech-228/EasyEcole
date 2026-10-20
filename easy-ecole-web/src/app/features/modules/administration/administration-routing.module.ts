@@ -9,6 +9,7 @@ import { RolesPageComponent } from './pages/roles-page/roles-page.component';
 import { AuditLogsPageComponent } from './pages/audit-logs-page/audit-logs-page.component';
 import { ConfigurationPageComponent } from './pages/configuration-page/configuration-page.component';
 import { ComiteMembresPageComponent } from './pages/comite-membres-page/comite-membres-page.component';
+import { SitesPageComponent } from './pages/sites-page/sites-page.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -22,6 +23,7 @@ const routes: Routes = [
   { path: 'audit-logs', component: AuditLogsPageComponent },
   { path: 'configuration', component: ConfigurationPageComponent },
   { path: 'comite-membres', component: ComiteMembresPageComponent },
+  { path: 'sites', component: SitesPageComponent },
 ];
 
 @NgModule({

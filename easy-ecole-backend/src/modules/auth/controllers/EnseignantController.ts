@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CountOptions, FindOptions, InferAttributes } from "sequelize";
+import { CountOptions, FindOptions, InferAttributes, Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Enseignant } from "../models/Enseignant";
 import { AdresseEnseignant } from "../models/AdresseEnseignant";
@@ -7,6 +7,7 @@ import { Cours } from "../../inscription/models/Cours";
 import * as path from "path";
 import * as fs from "fs";
 import { EnseignantBadgeService } from "../services/EnseignantBadgeService";
+import { SiteUtilisateur } from "../models/SiteUtilisateur";
 
 export default class EnseignantController {
 
@@ -18,6 +19,19 @@ export default class EnseignantController {
         }
 
         try {
+            const etablissementId = (req as any).etablissementId;
+            if (etablissementId) {
+                const affectations = await SiteUtilisateur.findAll({
+                    where: { etablissementId },
+                    attributes: ['utilisateurId']
+                });
+                options.where = {
+                    utilisateurId: { [Op.in]: affectations.map(affectation => affectation.utilisateurId) }
+                } as any;
+            } else if ((req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
+                return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+            }
+
             let enseignants: Enseignant[];
             enseignants = await Enseignant.findAll(options);
 

@@ -1,5 +1,6 @@
 import { mockRequest, mockResponse } from '../../helpers/express-mocks'
 import AuthController from '../../../modules/auth/controllers/AuthController'
+import { RolesUtilisateur } from '../../../core/enums/RolesUtilisateur'
 
 jest.mock('jsonwebtoken', () => ({
   sign: jest.fn(),
@@ -33,7 +34,11 @@ jest.mock('../../../modules/auth/models/Enseignant', () => ({
 }))
 
 jest.mock('../../../modules/etablissement/models/Etablissement', () => ({
-  Etablissement: { findByPk: jest.fn() },
+  Etablissement: { findByPk: jest.fn(), findOne: jest.fn() },
+}))
+
+jest.mock('../../../modules/auth/models/SiteUtilisateur', () => ({
+  SiteUtilisateur: { findOrCreate: jest.fn(), findOne: jest.fn() },
 }))
 
 jest.mock('../../../core/helpers/EmailSender', () => ({
@@ -62,6 +67,8 @@ const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
 const { Utilisateur } = require('../../../modules/auth/models/Utilisateur')
 const { Enseignant } = require('../../../modules/auth/models/Enseignant')
+const { SiteUtilisateur } = require('../../../modules/auth/models/SiteUtilisateur')
+const { Etablissement } = require('../../../modules/etablissement/models/Etablissement')
 beforeEach(() => {
   jest.clearAllMocks()
 })
@@ -199,6 +206,8 @@ describe('AuthController.registerEnseignant', () => {
 
   it('crée un enseignant et retourne 201', async () => {
     const req = mockRequest({
+      etablissementId: 4,
+      utilisateurRole: RolesUtilisateur.ADMIN,
       body: {
         utilisateur: { identifiant: 'teacher1', email: 'teacher@test.com', nom: 'Jean', prenoms: 'Dupont', contact: '123456' },
       },
@@ -207,6 +216,7 @@ describe('AuthController.registerEnseignant', () => {
     ;(Utilisateur.findOne as jest.Mock).mockResolvedValue(null)
     ;(Enseignant.count as jest.Mock).mockResolvedValue(0)
     ;(Enseignant.create as jest.Mock).mockResolvedValue({ id: 1, utilisateurId: 1, matricule: 'ESA-GEN-SIE-0001', update: jest.fn().mockResolvedValue(undefined) })
+    ;(Etablissement.findOne as jest.Mock).mockResolvedValue({ id: 4 })
     ;(bcrypt.hashSync as jest.Mock).mockReturnValue('hashed-temp-pass')
     mockUtilSave.mockResolvedValue({ id: 1 })
 
@@ -214,8 +224,73 @@ describe('AuthController.registerEnseignant', () => {
 
     expect(mockUtilSave).toHaveBeenCalled()
     expect(Enseignant.create).toHaveBeenCalledWith(expect.objectContaining({ utilisateurId: 1, matricule: 'ESA-GEN-SIE-0001' }))
+    expect(SiteUtilisateur.findOrCreate).toHaveBeenCalledWith(expect.objectContaining({
+      where: { utilisateurId: 1, etablissementId: 4 },
+    }))
     expect(res.status).toHaveBeenCalledWith(201)
     expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ success: true, matricule: 'ESA-GEN-SIE-0001' }))
+  })
+
+  it('refuse la création d’un enseignant sans site actif', async () => {
+    const req = mockRequest({
+      body: {
+        utilisateur: { identifiant: 'teacher2', email: 'teacher2@test.com', nom: 'Jean', prenoms: 'Martin' },
+      },
+    })
+    const res = mockResponse()
+
+    await AuthController.registerEnseignant(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(mockUtilSave).not.toHaveBeenCalled()
+  })
+
+  it('accepts a selected site assigned to an institution even when no active site is in the token', async () => {
+    const req = mockRequest({
+      utilisateurId: 9,
+      utilisateurRole: RolesUtilisateur.INSTITUTION,
+      body: {
+        etablissementId: 5,
+        utilisateur: { identifiant: 'teacher3', email: 'teacher3@test.com', nom: 'Jean', prenoms: 'Martin', contact: '123456' },
+      },
+    })
+    const res = mockResponse()
+    ;(Utilisateur.findOne as jest.Mock).mockResolvedValue(null)
+    ;(Enseignant.count as jest.Mock).mockResolvedValue(0)
+    ;(Enseignant.create as jest.Mock).mockResolvedValue({ id: 2, utilisateurId: 2, matricule: 'ESA-GEN-SIE-0002', update: jest.fn().mockResolvedValue(undefined) })
+    ;(Etablissement.findOne as jest.Mock).mockResolvedValue({ id: 5 })
+    ;(SiteUtilisateur.findOne as jest.Mock).mockResolvedValue({ id: 3 })
+    ;(bcrypt.hashSync as jest.Mock).mockReturnValue('hashed-temp-pass')
+    mockUtilSave.mockResolvedValue({ id: 2 })
+
+    await AuthController.registerEnseignant(req, res)
+
+    expect(SiteUtilisateur.findOne).toHaveBeenCalledWith(expect.objectContaining({
+      where: { utilisateurId: 9, etablissementId: 5 },
+    }))
+    expect(SiteUtilisateur.findOrCreate).toHaveBeenCalledWith(expect.objectContaining({
+      where: { utilisateurId: 2, etablissementId: 5 },
+    }))
+    expect(res.status).toHaveBeenCalledWith(201)
+  })
+
+  it('rejects a selected site not assigned to the institution', async () => {
+    const req = mockRequest({
+      utilisateurId: 9,
+      utilisateurRole: RolesUtilisateur.INSTITUTION,
+      body: {
+        etablissementId: 5,
+        utilisateur: { identifiant: 'teacher4', email: 'teacher4@test.com', nom: 'Jean', prenoms: 'Martin' },
+      },
+    })
+    const res = mockResponse()
+    ;(Etablissement.findOne as jest.Mock).mockResolvedValue({ id: 5 })
+    ;(SiteUtilisateur.findOne as jest.Mock).mockResolvedValue(null)
+
+    await AuthController.registerEnseignant(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(mockUtilSave).not.toHaveBeenCalled()
   })
 })
 

@@ -43,7 +43,7 @@ interface WizardEtatPersiste {
 export type WizardInfos = {
   nom: string; prenoms: string; dateNaissance: string; lieuNaissance: string;
   nationalite: string; contact: string; email: string; adresse: string;
-  numeroPiece: string; sexe: string; typePieceIdentite: string;
+  numeroPiece: string; sexe: string; typePieceIdentite: string; etablissementId?: string;
 };
 
 export interface WizardEtat {
@@ -268,6 +268,9 @@ function deserialiser(persistee: WizardEtatPersiste): WizardEtat {
     bordereau: null,
     bordereauAReposer: persistee.bordereau || null,
     documentsAReposer,
-    infos: { ...(persistee.infos || ({} as WizardInfos)) }
+    infos: {
+      ...(persistee.infos || ({} as WizardInfos)),
+      etablissementId: persistee.infos?.etablissementId || ''
+    }
   };
 }

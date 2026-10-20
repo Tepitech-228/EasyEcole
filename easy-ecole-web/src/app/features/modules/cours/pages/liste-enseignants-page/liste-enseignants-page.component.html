@@ -125,6 +125,21 @@
                     class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-indigo-700 hover:file:bg-indigo-100">
             </div>
         </div>
+        <div class="mb-6">
+            <label for="enseignant-site" class="mb-2 block text-sm leading-6 text-gray-600">Site de rattachement *</label>
+            <select id="enseignant-site" formControlName="etablissementId" [disabled]="sitesLoading || sitesDisponibles.length === 0"
+                class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                <option value="">— Choisir un site —</option>
+                <option *ngFor="let site of sitesDisponibles" [ngValue]="site.id">{{ site.nom }}</option>
+            </select>
+            <p *ngIf="sitesLoading" class="mt-1 text-xs text-gray-500" role="status">Chargement des sites autorisés…</p>
+            <p *ngIf="sitesError" class="mt-1 text-xs text-red-600" role="alert">{{ sitesError }}</p>
+            <p *ngIf="!sitesLoading && !sitesError && sitesDisponibles.length === 0" class="mt-1 text-xs text-red-600" role="alert">
+                Aucun site actif ne vous est affecté. Contactez l’administration avant de créer un enseignant.
+            </p>
+            <app-form-message *ngIf="enseignantForm.get('etablissementId')!.invalid && enseignantForm.get('etablissementId')!.touched"
+                text="Veuillez sélectionner le site de rattachement"></app-form-message>
+        </div>
         <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
             <div class="md:col-span-3 col-span-full">
                 <label for="identifiant" class="mb-2 block text-sm leading-6 text-gray-600">Identifiant</label>

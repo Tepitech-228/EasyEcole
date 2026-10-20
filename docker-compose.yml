@@ -6,8 +6,9 @@
 #   PAS de serveur de base externe. (L'ancienne topologie 2 VM — VM APP +
 #   VM DB 192.168.100.20 — est abandonnee pour ce deploiement.)
 #
-# 5 services :
+# 6 services :
 #   - db       : MySQL 8.0 (volume persistant mysql_data)
+#   - mysql-backup : dump quotidien de la base et des fichiers persistants
 #   - backend  : API Express/Node (migrations + seeds au boot)
 #   - worker   : workers BullMQ (OCR, PDF, import Excel) — meme image que backend
 #   - redis    : Redis 7 (cache reponse API, fail-safe, volume redis_data)
@@ -37,7 +38,7 @@
 # LOCAL (dev) : docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
 #
 # RESEAUX : `app` relie nginx au backend ; `data` (interne) relie db, backend,
-#   worker et Redis. La base et Redis ne sont pas joignables depuis nginx.
+#   worker, Redis et mysql-backup. La base et Redis ne sont pas joignables depuis nginx.
 # =============================================================================
 
 name: easyecole
@@ -82,6 +83,43 @@ services:
         max-file: "3"
 
   # ---------------------------------------------------------------------------
+  # 1b) SAUVEGARDE MYSQL QUOTIDIENNE
+  # ---------------------------------------------------------------------------
+  mysql-backup:
+    image: mysql:8.0
+    container_name: easyecole-mysql-backup
+    restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-easyecole}
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD must be set}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      BACKUP_RETRY_SECONDS: ${BACKUP_RETRY_SECONDS:-900}
+      TZ: ${TZ:-UTC}
+    volumes:
+      - mysql_backups:/backups/mysql
+      - ${PUBLIC_HOST_PATH:-/opt/mon-app/public}:/data/uploads:ro
+      - ${STORAGE_HOST_PATH:-/opt/mon-app/storage}:/data/storage:ro
+      - ${UPLOADS_HOST_PATH:-/opt/mon-app/uploads}:/data/pv:ro
+      - ./scripts/mysql-backup.sh:/usr/local/bin/mysql-backup.sh:ro
+    entrypoint: ["/bin/sh", "/usr/local/bin/mysql-backup.sh"]
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - data
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
   # 2) BACKEND API Express/Node
   # ---------------------------------------------------------------------------
   backend:
@@ -108,6 +146,8 @@ services:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       JWT_SECRET: ${JWT_SECRET}
       DOCGEN_SECRET: ${DOCGEN_SECRET}
+      ENCRYPTION_MASTER_KEY: ${ENCRYPTION_MASTER_KEY:-}
+      HIKVISION_POLLING_ENABLED: ${HIKVISION_POLLING_ENABLED:-true}
       # ⚠️ REQUIS : src/app.ts leve une erreur au chargement si CORS_ORIGIN est
       # absent/vide -> crash du conteneur au boot (jamais « healthy »).
       # Valeur attendue : http://<IP_PUBLIQUE> (ou https://mon-domaine).
@@ -276,6 +316,8 @@ services:
 volumes:
   # Donnees MySQL (MONO-VM : la base vit dans ce volume).
   mysql_data:
+  # Dumps MySQL quotidiens, conserves independamment du cycle de vie du service.
+  mysql_backups:
   # Persistance du cache Redis (fichiers AOF dans /data).
   redis_data:
 

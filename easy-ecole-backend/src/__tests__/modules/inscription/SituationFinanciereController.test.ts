@@ -24,7 +24,7 @@ jest.mock("../../../modules/inscription/models/DossierEtudiant", () => ({
 
 jest.mock("../../../modules/auth/models/Utilisateur", () => ({
   Utilisateur: {
-    associations: { apprenant: "apprenant" },
+    associations: { apprenant: "apprenant", dossiersEtudiants: "dossiersEtudiants" },
     findAll: jest.fn(),
   },
 }));
@@ -42,12 +42,14 @@ describe("SituationFinanciereController.getSituation", () => {
     (Utilisateur.findAll as jest.Mock).mockResolvedValue([{ id: 43 }]);
     (CursusApprenant.findAndCountAll as jest.Mock).mockResolvedValue({ rows: [], count: 0 });
     const req = mockRequest({ query: { search: "diallo" } });
+    (req as any).etablissementId = 4;
     const res = mockResponse();
 
     await SituationFinanciereController.getSituation(req, res);
 
     expect(CursusApprenant.findAndCountAll).toHaveBeenCalledWith(expect.objectContaining({
       where: expect.objectContaining({
+        etablissementId: 4,
         utilisateurId: { [Op.in]: [43, 42] },
       }),
     }));
@@ -78,6 +80,7 @@ describe("SituationFinanciereController.getSituation", () => {
       }],
     });
     const req = mockRequest({ query: {} });
+    (req as any).etablissementId = 4;
     const res = mockResponse();
 
     await SituationFinanciereController.getSituation(req, res);
@@ -89,5 +92,9 @@ describe("SituationFinanciereController.getSituation", () => {
       resteAPayer: 750,
       avancement: 25,
     });
+    const options = (CursusApprenant.findAndCountAll as jest.Mock).mock.calls[0][0];
+    const utilisateurInclude = options.include.find((include: any) => include.association === "utilisateur");
+    const dossierInclude = utilisateurInclude.include.find((include: any) => include.association === "dossiersEtudiants");
+    expect(dossierInclude.where).toEqual({ etablissementId: 4 });
   });
 });

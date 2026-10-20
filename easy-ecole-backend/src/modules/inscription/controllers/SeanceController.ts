@@ -19,6 +19,8 @@ import { RhContratEnseignant } from "../../rh/models/RhContratEnseignant";
 import { Pointage } from "../models/Pointage";
 import { Apprenant } from "../../auth/models/Apprenant";
 import { ParentEnfant } from "../../parent/models/ParentEnfant";
+import { SiteUtilisateur } from "../../auth/models/SiteUtilisateur";
+import { getSurveillantSiteId } from "../../../core/helpers/SurveillantSiteScope";
 
 export default class SeanceController {
 
@@ -38,12 +40,66 @@ export default class SeanceController {
         ];
     }
 
+    private static async coursDuSiteActif(req: Request): Promise<number[] | null> {
+        const etablissementId = Number((req as any).etablissementId);
+        if (!Number.isSafeInteger(etablissementId) || etablissementId <= 0) return null;
+
+        const cours = await Cours.findAll({
+            where: { etablissementId },
+            attributes: ['id']
+        });
+        return cours.map(item => Number(item.id));
+    }
+
+    private static filtrerCoursDuSite(where: any, coursSiteIds: number[] | null): void {
+        if (coursSiteIds === null) return;
+        const filtreExistant = where.coursId;
+        if (filtreExistant && Array.isArray(filtreExistant[Op.in])) {
+            const autorises = new Set(coursSiteIds);
+            where.coursId = { [Op.in]: filtreExistant[Op.in].filter((id: number | string) => autorises.has(Number(id))) };
+        } else if (filtreExistant !== undefined) {
+            where.coursId = coursSiteIds.includes(Number(filtreExistant)) ? filtreExistant : { [Op.in]: [] };
+        } else {
+            where.coursId = { [Op.in]: coursSiteIds };
+        }
+    }
+
+    private static async verifierAffectationSite(
+        req: Request,
+        coursId: number | string,
+        enseignantId: number | string
+    ): Promise<string | null> {
+        const role = (req as any).utilisateurRole;
+        const etablissementId = Number((req as any).etablissementId);
+        if ((!Number.isSafeInteger(etablissementId) || etablissementId <= 0) && role !== RolesUtilisateur.ADMIN) {
+            return "Sélectionnez un site avant de gérer l'emploi du temps.";
+        }
+        if (role === RolesUtilisateur.ADMIN && (!Number.isSafeInteger(etablissementId) || etablissementId <= 0)) {
+            return null;
+        }
+
+        const cours = await Cours.findOne({ where: { id: coursId, etablissementId } });
+        if (!cours) return "Le cours n'appartient pas au site actif.";
+
+        const enseignant = await Enseignant.findByPk(enseignantId, { attributes: ['utilisateurId'] });
+        if (!enseignant) return "L'enseignant sélectionné est introuvable.";
+
+        const affectation = await SiteUtilisateur.findOne({
+            where: { utilisateurId: enseignant.utilisateurId, etablissementId },
+            attributes: ['id']
+        });
+        return affectation ? null : "L'enseignant n'est pas affecté au site actif.";
+    }
+
     static async getAllSeances(req: Request, res: Response): Promise<Response> {
         let options: FindOptions<InferAttributes<Seance>> = { include: SeanceController.baseIncludes() }
 
         try {
             let seances: Seance[];
             const role = (req as any).utilisateurRole;
+            if (role === RolesUtilisateur.SURVEILLANT && !(await getSurveillantSiteId(req))) {
+                return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
+            }
 
             if (role === RolesUtilisateur.APPRENANT) {
                 const cursus = await CursusApprenant.findAll({
@@ -66,9 +122,14 @@ export default class SeanceController {
                     } else {
                         options.where = { enseignantId: enseignant.id } as any;
                     }
+                } else {
+                    options.where = { enseignantId: -1 } as any;
                 }
             }
 
+            const where = (options.where || {}) as any;
+            SeanceController.filtrerCoursDuSite(where, await SeanceController.coursDuSiteActif(req));
+            options.where = where;
             seances = await Seance.findAll(options);
             return res.status(200).send(seances);
         } catch (error) {
@@ -86,10 +147,19 @@ export default class SeanceController {
             const enseignant = await Enseignant.findOne({ where: { utilisateurId: (req as any).utilisateurId } });
             if (enseignant) {
                 (options.where as any).enseignantId = enseignant.id;
+            } else {
+                (options.where as any).enseignantId = -1;
             }
         }
 
         try {
+            if ((req as any).utilisateurRole === RolesUtilisateur.SURVEILLANT && !(await getSurveillantSiteId(req))) {
+                return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
+            }
+            SeanceController.filtrerCoursDuSite(
+                options.where as any,
+                await SeanceController.coursDuSiteActif(req)
+            );
             const seance: Seance | null = await Seance.findOne(options);
 
             if (seance == null)
@@ -133,6 +203,9 @@ export default class SeanceController {
             };
 
             const role = (req as any).utilisateurRole;
+            if (role === RolesUtilisateur.SURVEILLANT && !(await getSurveillantSiteId(req))) {
+                return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
+            }
             if (role === RolesUtilisateur.APPRENANT) {
                 const cursus = await CursusApprenant.findAll({
                     where: { utilisateurId: (req as any).utilisateurId },
@@ -145,11 +218,9 @@ export default class SeanceController {
             } else if (role === RolesUtilisateur.ENSEIGNANT) {
                 const enseignant = await Enseignant.findOne({ where: { utilisateurId: (req as any).utilisateurId } });
                 if (enseignant) {
-                    if (filtreEnseignantId) {
-                        (options.where as any).enseignantId = filtreEnseignantId;
-                    } else {
-                        (options.where as any).enseignantId = enseignant.id;
-                    }
+                    (options.where as any).enseignantId = enseignant.id;
+                } else {
+                    (options.where as any).enseignantId = -1;
                 }
             } else {
                 if (filtreEnseignantId) {
@@ -176,6 +247,7 @@ export default class SeanceController {
                 }
             }
 
+            SeanceController.filtrerCoursDuSite(options.where as any, await SeanceController.coursDuSiteActif(req));
             const seances = await Seance.findAll(options);
             const events: any[] = [];
 
@@ -551,6 +623,9 @@ export default class SeanceController {
             return res.status(403).json({ success: false, message: "Réservé à l'institution" });
         }
 
+        const erreurSite = await SeanceController.verifierAffectationSite(req, req.body.coursId, req.body.enseignantId);
+        if (erreurSite) return res.status(400).json({ success: false, message: erreurSite });
+
         const conflits = await SeanceController.verifierConflits(req.body);
         if (conflits.length > 0) {
             return res.status(409).json({
@@ -597,8 +672,18 @@ export default class SeanceController {
             return res.status(403).json({ success: false, message: "Réservé à l'institution" });
         }
 
-        let seance: Seance | null = await Seance.findOne({ where: { id: req.params.id } });
+        const coursSiteIds = await SeanceController.coursDuSiteActif(req);
+        const seanceWhere: any = { id: req.params.id };
+        SeanceController.filtrerCoursDuSite(seanceWhere, coursSiteIds);
+        let seance: Seance | null = await Seance.findOne({ where: seanceWhere });
         if (seance != null) {
+            const erreurSite = await SeanceController.verifierAffectationSite(
+                req,
+                req.body.coursId ?? seance.coursId,
+                req.body.enseignantId ?? seance.enseignantId
+            );
+            if (erreurSite) return res.status(400).json({ success: false, message: erreurSite });
+
             const conflits = await SeanceController.verifierConflits(req.body, req.params.id);
             if (conflits.length > 0) {
                 return res.status(409).json({
@@ -677,7 +762,9 @@ export default class SeanceController {
             return res.status(403).json({ success: false, message: "Réservé à l'institution" });
         }
 
-        let seance: Seance | null = await Seance.findOne({ where: { id: req.params.id } });
+        const seanceWhere: any = { id: req.params.id };
+        SeanceController.filtrerCoursDuSite(seanceWhere, await SeanceController.coursDuSiteActif(req));
+        let seance: Seance | null = await Seance.findOne({ where: seanceWhere });
         if (seance) {
             await seance.destroy()
                 .then(() => {
@@ -696,10 +783,15 @@ export default class SeanceController {
     }
 
     static async getCount(req: Request, res: Response): Promise<Response | null> {
-        let options: CountOptions<InferAttributes<Seance>> = {}
+        const options: CountOptions<InferAttributes<Seance>> = {}
 
         if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN && (req as any).utilisateurRole !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
             return res.status(403).json({ success: false, message: "Réservé à l'institution" });
+        }
+
+        const coursSiteIds = await SeanceController.coursDuSiteActif(req);
+        if (coursSiteIds !== null) {
+            options.where = { coursId: { [Op.in]: coursSiteIds } } as any;
         }
 
         await Seance.count(options)

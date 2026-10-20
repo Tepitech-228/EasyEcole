@@ -7,7 +7,7 @@ import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur"
 
 const router = express.Router()
 
-// Rôle PARENT non scopé côté contrôleur : on ferme l'accès.
+router.use(Authenticate)
 router.use(RefuserRoles(RolesUtilisateur.PARENT))
 
 /**
@@ -23,7 +23,7 @@ router.use(RefuserRoles(RolesUtilisateur.PARENT))
  *         description: Liste des notes d'évaluation
  */
 router
-    .get('/', [Authenticate], NoteEvaluationController.getAll)
+    .get('/', NoteEvaluationController.getAll)
 /**
  * @openapi
  * /inscription/notesEvaluation/upsert:
@@ -42,7 +42,7 @@ router
  *       200:
  *         description: Note créée ou mise à jour
  */
-    .post('/upsert', [Authenticate], NoteEvaluationController.upsert)
+    .post('/upsert', NoteEvaluationController.upsert)
 /**
  * @openapi
  * /inscription/notesEvaluation/bulk-upsert:
@@ -61,7 +61,7 @@ router
  *       200:
  *         description: Notes créées ou mises à jour
  */
-    .post('/bulk-upsert', [Authenticate], NoteEvaluationController.bulkUpsert)
+    .post('/bulk-upsert', NoteEvaluationController.bulkUpsert)
 /**
  * @openapi
  * /inscription/notesEvaluation/{id}:
@@ -83,7 +83,9 @@ router
  *       404:
  *         description: Note non trouvée
  */
-    .get('/:id', [Authenticate], NoteEvaluationController.getOne)
+    .post('/:id/bloquer', NoteEvaluationController.bloquer)
+    .post('/:id/debloquer', NoteEvaluationController.debloquer)
+    .get('/:id', NoteEvaluationController.getOne)
 /**
  * @openapi
  * /inscription/notesEvaluation/{id}:
@@ -105,6 +107,6 @@ router
  *       404:
  *         description: Note non trouvée
  */
-    .delete('/:id', [Authenticate], NoteEvaluationController.delete)
+    .delete('/:id', NoteEvaluationController.delete)
 
 export default router

@@ -4,6 +4,18 @@ import type { Socket } from 'socket.io-client';
 import { environment } from 'src/environments/environment';
 import { Observable, Subject } from 'rxjs';
 
+export interface TerminalAttendanceEvent {
+  utilisateurId: number;
+  nom: string;
+  prenoms: string;
+  role: string;
+  employeeNoString: string;
+  date: string;
+  time: string;
+  mode: 'arrivee' | 'depart';
+  etablissementId: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -18,6 +30,7 @@ export class SocketService implements OnDestroy {
   private memberAddedSubject = new Subject<any>();
   private memberRemovedSubject = new Subject<any>();
   private memberRoleChangedSubject = new Subject<any>();
+  private terminalAttendanceSubject = new Subject<TerminalAttendanceEvent>();
   private reconnectSubject = new Subject<void>();
   estConnecte: boolean = false;
 
@@ -60,6 +73,9 @@ export class SocketService implements OnDestroy {
     });
     this.socket.on('member:roleChanged', (data: any) => {
       this.memberRoleChangedSubject.next(data);
+    });
+    this.socket.on('pointage:terminal', (data: TerminalAttendanceEvent) => {
+      this.terminalAttendanceSubject.next(data);
     });
     this.socket.on('connect', () => {
       this.estConnecte = true;
@@ -164,6 +180,10 @@ export class SocketService implements OnDestroy {
 
   onMemberRoleChanged(): Observable<any> {
     return this.memberRoleChangedSubject.asObservable();
+  }
+
+  onTerminalAttendance(): Observable<TerminalAttendanceEvent> {
+    return this.terminalAttendanceSubject.asObservable();
   }
 
   isConnected(): boolean {

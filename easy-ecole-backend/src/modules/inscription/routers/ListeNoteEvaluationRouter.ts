@@ -7,16 +7,14 @@ import { customAlphabet } from 'nanoid'
 import { RefuserRoles } from "../../../core/middlewares/RefuserRoles"
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur"
 import ListeNoteEvaluationController from "../controllers/ListeNoteEvaluationController"
+import Authenticate from "../../../core/middlewares/Authenticate"
+import { AuthSuperviseurGeneral } from "../../../core/middlewares/AuthSuperviseurGeneral"
+import { AuthSecretariatGeneral } from "../../../core/middlewares/AuthSecretariatGeneral"
 
 const router = express.Router()
 
-// Accès non scopé côté contrôleur : on ferme.
-// PARENT : aucune vue dédiée.
-// APPRENANT : getAllListesNoteEvaluation retombe dans la branche « tout » et
-//            getListeNoteEvaluation (include notesEvaluation) expose TOUTES les
-//            notes de la classe (y compris brouillons des autres étudiants).
-//            L'apprenant consulte ses notes via /bulletins/mon-releve (déjà scopé).
-router.use(RefuserRoles(RolesUtilisateur.PARENT, RolesUtilisateur.APPRENANT))
+router.use(Authenticate)
+router.use(RefuserRoles(RolesUtilisateur.PARENT))
 
 const storage = multer.diskStorage({
     destination: (req, file, callback) => {
@@ -56,6 +54,7 @@ const upload = multer({ storage: storage, fileFilter: (req, file, callback) => {
  */
 router
     .get('/', ListeNoteEvaluationController.getAllListesNoteEvaluation)
+    .get('/suivi', [AuthSuperviseurGeneral], ListeNoteEvaluationController.getSuivi)
 
 /**
  * @openapi
@@ -75,7 +74,13 @@ router
  *       201:
  *         description: Liste de notes créée
  */
-    .post('/', [], ListeNoteEvaluationController.createListeNoteEvaluation)
+    .post('/', [AuthSecretariatGeneral], ListeNoteEvaluationController.createListeNoteEvaluation)
+    .post('/:id/publier', [AuthSecretariatGeneral], ListeNoteEvaluationController.publier)
+    .post('/:id/bloquer', [AuthSuperviseurGeneral], ListeNoteEvaluationController.bloquerSaisie)
+    .post('/:id/debloquer', [AuthSuperviseurGeneral], ListeNoteEvaluationController.debloquerSaisie)
+    .post('/:id/cloturer', [AuthSuperviseurGeneral], ListeNoteEvaluationController.cloturerDefinitivement)
+    .post('/:id/prolonger', [AuthSuperviseurGeneral], ListeNoteEvaluationController.prolongerDelai)
+    .get('/:id/audit', [AuthSuperviseurGeneral], ListeNoteEvaluationController.getAudit)
 
 /**
  * @openapi
@@ -121,7 +126,7 @@ router
  *       200:
  *         description: Liste de notes mise à jour
  */
-    .put('/:id', [], ListeNoteEvaluationController.updateListeNoteEvaluation)
+    .put('/:id', [AuthSecretariatGeneral], ListeNoteEvaluationController.updateListeNoteEvaluation)
 
 /**
  * @openapi
@@ -141,7 +146,7 @@ router
  *       200:
  *         description: Liste de notes supprimée
  */
-    .delete('/:id', [], ListeNoteEvaluationController.deleteListeNoteEvaluation)
+    .delete('/:id', [AuthSecretariatGeneral], ListeNoteEvaluationController.deleteListeNoteEvaluation)
 
 /**
  * @openapi

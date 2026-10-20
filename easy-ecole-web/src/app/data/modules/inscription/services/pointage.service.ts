@@ -4,6 +4,30 @@ import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { Pointage } from '../models/Pointage.model';
 
+export interface PointageTerminalConfig {
+  id: number;
+  serialNumber: string;
+  nom: string;
+  sourceIp: string;
+  etablissementId: number;
+  actif: boolean;
+  attStamp: number;
+  lastSeenAt: string | null;
+}
+
+export interface HikvisionTerminalConfig {
+  id: number;
+  serialNumber: string;
+  nom: string;
+  sourceIp: string;
+  protocol: 'hikvision_isapi';
+  hikvisionPort: number;
+  hikvisionHttps: boolean;
+  etablissementId: number;
+  actif: boolean;
+  lastSeenAt: string | null;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -37,12 +61,56 @@ export class PointageService {
     return this.httpClient.post<Pointage>(`${this.SERVICE_URL}/scan/depart`, { userId })
   }
 
+  pointerParQR(codeQR: string): Observable<{ success: boolean, mode: 'arrivee' | 'depart', pointage: Pointage }> {
+    return this.httpClient.post<{ success: boolean, mode: 'arrivee' | 'depart', pointage: Pointage }>(
+      `${this.SERVICE_URL}/scan/pointage`,
+      { codeQR }
+    )
+  }
+
   verifierStatutByQR(codeQR: string): Observable<any> {
     return this.httpClient.get<any>(`${this.SERVICE_URL}/scan/verifier-statut/${encodeURIComponent(codeQR)}`)
   }
 
   getMonQr(): Observable<{ success: boolean, qrDataUrl: string }> {
     return this.httpClient.get<{ success: boolean, qrDataUrl: string }>(`${this.SERVICE_URL}/mon-qr`)
+  }
+
+  getTerminaux(): Observable<PointageTerminalConfig[]> {
+    return this.httpClient.get<PointageTerminalConfig[]>(`${this.SERVICE_URL}/terminaux`);
+  }
+
+  creerTerminal(data: Pick<PointageTerminalConfig, 'serialNumber' | 'nom' | 'sourceIp' | 'etablissementId'>): Observable<PointageTerminalConfig> {
+    return this.httpClient.post<PointageTerminalConfig>(`${this.SERVICE_URL}/terminaux`, data);
+  }
+
+  modifierTerminal(id: number, data: Partial<Pick<PointageTerminalConfig, 'nom' | 'sourceIp' | 'actif'>>): Observable<PointageTerminalConfig> {
+    return this.httpClient.put<PointageTerminalConfig>(`${this.SERVICE_URL}/terminaux/${id}`, data);
+  }
+
+  getTerminauxHikvision(): Observable<HikvisionTerminalConfig[]> {
+    return this.httpClient.get<HikvisionTerminalConfig[]>(`${this.SERVICE_URL}/hikvision-terminaux`);
+  }
+
+  creerTerminalHikvision(data: {
+    serialNumber: string;
+    nom: string;
+    sourceIp: string;
+    port: number;
+    https: boolean;
+    username: string;
+    password: string;
+    etablissementId: number;
+  }): Observable<HikvisionTerminalConfig> {
+    return this.httpClient.post<HikvisionTerminalConfig>(`${this.SERVICE_URL}/hikvision-terminaux`, data);
+  }
+
+  testerTerminalHikvision(id: number): Observable<{ success: boolean; message: string }> {
+    return this.httpClient.post<{ success: boolean; message: string }>(`${this.SERVICE_URL}/hikvision-terminaux/${id}/test`, {});
+  }
+
+  modifierEtatTerminalHikvision(id: number, actif: boolean): Observable<HikvisionTerminalConfig> {
+    return this.httpClient.put<HikvisionTerminalConfig>(`${this.SERVICE_URL}/hikvision-terminaux/${id}`, { actif });
   }
 
   getRapport(debut?: string, fin?: string): Observable<any> {

@@ -22,6 +22,10 @@ jest.mock('../../../modules/inscription/models/DemandeInscription', () => {
   return { DemandeInscription }
 })
 
+jest.mock('../../../modules/inscription/models/Session', () => ({
+  Session: { findOne: jest.fn() },
+}))
+
 jest.mock('../../../core/helpers/IDGenerator', () => ({
   IDGenerator: {
     getInstance: () => ({ generateInscriptionMatricule: () => 'EI-2026-0042' }),
@@ -35,11 +39,52 @@ jest.mock('../../../core/helpers/EmailSender', () => ({
 }))
 
 const { DemandeInscription } = require('../../../modules/inscription/models/DemandeInscription')
+const { Session } = require('../../../modules/inscription/models/Session')
 
 import Ctrl from '../../../modules/inscription/controllers/DemandeInscriptionController'
 
 beforeEach(() => {
   jest.clearAllMocks()
+  ;(Session.findOne as jest.Mock).mockResolvedValue({ id: 3, etablissementId: 4 })
+})
+
+describe('DemandeInscriptionController.getAllDemandesInscription', () => {
+  it('scopes the list to the active site', async () => {
+    const req = mockRequest({ utilisateurRole: 'institution', etablissementId: 4 } as any)
+    const res = mockResponse()
+    ;(DemandeInscription.findAndCountAll as jest.Mock).mockResolvedValue({ rows: [], count: 0 })
+
+    await Ctrl.getAllDemandesInscription(req, res)
+
+    expect(DemandeInscription.findAndCountAll).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { etablissementId: 4 } })
+    )
+  })
+
+  it('refuses to list requests without an active site', async () => {
+    const req = mockRequest({ utilisateurRole: 'institution' } as any)
+    const res = mockResponse()
+
+    await Ctrl.getAllDemandesInscription(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(DemandeInscription.findAndCountAll).not.toHaveBeenCalled()
+  })
+})
+
+describe('DemandeInscriptionController.getDemandeInscription', () => {
+  it('scopes the detail to the active site', async () => {
+    const req = mockRequest({ utilisateurRole: 'institution', etablissementId: 4, params: { id: '10' } } as any)
+    const res = mockResponse()
+    ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue(null)
+
+    await Ctrl.getDemandeInscription(req, res)
+
+    expect(DemandeInscription.findOne).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: '10', etablissementId: 4 } })
+    )
+    expect(res.status).toHaveBeenCalledWith(404)
+  })
 })
 
 describe('DemandeInscriptionController.createDemandeInscription — 1ère inscription', () => {
@@ -55,7 +100,8 @@ describe('DemandeInscriptionController.createDemandeInscription — 1ère inscri
     const req = mockRequest({
       utilisateurRole: 'apprenant',
       utilisateurId: 7,
-      body: { sessionId: 3, dateDemande: '2026-09-01' },
+      etablissementId: 4,
+      body: { sessionId: 3, etablissementId: 4, dateDemande: '2026-09-01' },
     } as any)
     const res = mockResponse()
     ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue(null)
@@ -72,7 +118,8 @@ describe('DemandeInscriptionController.createDemandeInscription — 1ère inscri
     const req = mockRequest({
       utilisateurRole: 'apprenant',
       utilisateurId: 7,
-      body: { sessionId: 3 },
+      etablissementId: 4,
+      body: { sessionId: 3, etablissementId: 4 },
     } as any)
     const res = mockResponse()
     ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue({ id: 1 })
@@ -87,7 +134,8 @@ describe('DemandeInscriptionController.createDemandeInscription — 1ère inscri
     const req = mockRequest({
       utilisateurRole: 'apprenant',
       utilisateurId: 7,
-      body: { sessionId: 3, dateDemande: '2026-09-01' },
+      etablissementId: 4,
+      body: { sessionId: 3, etablissementId: 4, dateDemande: '2026-09-01' },
     } as any)
     const res = mockResponse()
 
@@ -100,6 +148,72 @@ describe('DemandeInscriptionController.createDemandeInscription — 1ère inscri
 
     expect(DemandeInscription).toHaveBeenCalled()
     expect(mockSave).toHaveBeenCalled()
+    expect((DemandeInscription as jest.Mock).mock.results[0].value.etablissementId).toBe(4)
     expect(res.status).toHaveBeenCalledWith(201)
+  })
+
+  it('refuses to create a request without an active site', async () => {
+    const req = mockRequest({
+      utilisateurRole: 'apprenant',
+      utilisateurId: 7,
+      body: { sessionId: 3 },
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.createDemandeInscription(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(Session.findOne).not.toHaveBeenCalled()
+    expect(DemandeInscription.findOne).not.toHaveBeenCalled()
+  })
+
+  it('refuses a session owned by another site', async () => {
+    const req = mockRequest({
+      utilisateurRole: 'apprenant',
+      utilisateurId: 7,
+      etablissementId: 4,
+      body: { sessionId: 3, etablissementId: 4 },
+    } as any)
+    const res = mockResponse()
+    ;(Session.findOne as jest.Mock).mockResolvedValue(null)
+
+    await Ctrl.createDemandeInscription(req, res)
+
+    expect(Session.findOne).toHaveBeenCalledWith({
+      where: { id: 3, etablissementId: 4 },
+      attributes: ['id', 'etablissementId'],
+    })
+    expect(res.status).toHaveBeenCalledWith(404)
+    expect(DemandeInscription.findOne).not.toHaveBeenCalled()
+  })
+
+  it('requires the submitted site to match the authenticated active site', async () => {
+    const req = mockRequest({
+      utilisateurRole: 'apprenant',
+      utilisateurId: 7,
+      etablissementId: 4,
+      body: { sessionId: 3 },
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.createDemandeInscription(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(Session.findOne).not.toHaveBeenCalled()
+  })
+
+  it('rejects a submitted site that differs from the active site', async () => {
+    const req = mockRequest({
+      utilisateurRole: 'apprenant',
+      utilisateurId: 7,
+      etablissementId: 4,
+      body: { sessionId: 3, etablissementId: 9 },
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.createDemandeInscription(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(Session.findOne).not.toHaveBeenCalled()
   })
 })

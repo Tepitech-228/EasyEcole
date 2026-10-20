@@ -20,6 +20,7 @@ import { ProcessusListComponent } from './processus/processus-list.component';
 import { ProcessusFormComponent } from './processus/processus-form.component';
 import { StorageConfigComponent } from './storage-config/storage-config.component';
 import { FolderTreeItemComponent } from './components/folder-tree-item/folder-tree-item.component';
+import { GedStorageFilesComponent } from './pages/ged-storage-files/ged-storage-files.component';
 
 @NgModule({
   declarations: [
@@ -38,7 +39,8 @@ import { FolderTreeItemComponent } from './components/folder-tree-item/folder-tr
     ProcessusListComponent,
     ProcessusFormComponent,
     StorageConfigComponent,
-    FolderTreeItemComponent
+    FolderTreeItemComponent,
+    GedStorageFilesComponent
   ],
   imports: [
     CommonModule,

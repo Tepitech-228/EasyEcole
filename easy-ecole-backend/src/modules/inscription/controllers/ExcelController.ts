@@ -2216,6 +2216,7 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
             if (!cursusApprenant) {
               cursusApprenant = await CursusApprenant.create({
                 utilisateurId: utilisateur.id,
+                etablissementId: parcoursCible.etablissementId ?? classeCible?.etablissementId ?? null,
                 parcoursId: parcoursCible.id,
                 niveauEtudeId: niveauCible.id,
                 anneeAcademiqueId: anneeAcademique.id,

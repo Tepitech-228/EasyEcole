@@ -41,6 +41,24 @@
   @apply px-5 py-4;
 }
 
+/* Indication discrète : lecteur-clavier externe (badge/carte) accepté */
+.pointage-reader-hint {
+  @apply text-xs;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+  color: #9ca3af;
+
+  .hint-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10b981;
+    flex-shrink: 0;
+  }
+}
+
 /* =============================================
    MON POINTAGE (Self service)
    ============================================= */
@@ -560,4 +578,649 @@
    ============================================= */
 @media print {
   .no-print { display: none !important; }
+}
+
+.pointage-page-shell {
+  max-width: 1440px;
+  min-height: 100%;
+  color: #17243b;
+}
+
+.pointage-hero {
+  position: relative;
+  display: flex;
+  min-height: 188px;
+  align-items: center;
+  justify-content: space-between;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 26px;
+  padding: 2rem clamp(1.4rem, 4vw, 3.25rem);
+  color: #fff;
+  background:
+    radial-gradient(circle at 88% 22%, rgba(93, 216, 207, 0.2), transparent 24%),
+    linear-gradient(118deg, #101c35 0%, #18335f 55%, #244c82 100%);
+  box-shadow: 0 18px 42px rgba(17, 36, 68, 0.16);
+
+  &::after {
+    position: absolute;
+    right: 11%;
+    bottom: -132px;
+    width: 300px;
+    height: 300px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 50%;
+    content: '';
+    box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.025), 0 0 0 64px rgba(255, 255, 255, 0.02);
+  }
+}
+
+.pointage-hero-copy {
+  position: relative;
+  z-index: 1;
+
+  h1 {
+    margin: 0.6rem 0 0.35rem;
+    color: #fff;
+    font-size: clamp(1.75rem, 3vw, 2.4rem);
+    font-weight: 750;
+    letter-spacing: -0.04em;
+    line-height: 1.15;
+  }
+
+  p {
+    margin: 0;
+    color: rgba(232, 240, 252, 0.78);
+    font-size: 0.95rem;
+  }
+}
+
+.pointage-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: #9fe5dd;
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.16em;
+
+  span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #4dd4c4;
+    box-shadow: 0 0 0 4px rgba(77, 212, 196, 0.13);
+  }
+}
+
+.pointage-hero-mark {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 104px;
+  height: 104px;
+  flex: 0 0 auto;
+  place-items: center;
+  margin: 0 3rem 0 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 30px;
+  color: #c1f4ec;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  transform: rotate(-6deg);
+
+  svg { width: 54px; height: 54px; }
+}
+
+.pointage-methods-bar > div {
+  min-height: 82px;
+  border-radius: 18px;
+  box-shadow: 0 7px 20px rgba(28, 45, 73, 0.055);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(28, 45, 73, 0.1);
+  }
+}
+
+.pointage-hikvision-device {
+  border: 1px solid #cfe8e7;
+  background: linear-gradient(135deg, #f8fdfd, #eef8f7);
+}
+
+.pointage-hikvision-device > span:first-child {
+  color: #176e68;
+  background: #dff3f0;
+}
+
+.pointage-hikvision-badge {
+  color: #687385;
+  background: #e9edf2;
+
+  &.online { color: #17735d; background: #e4f7f0; }
+}
+
+.pointage-voice-control {
+  min-height: 82px;
+  border: 1px solid #e7ebf2;
+  border-radius: 18px;
+  padding: 0.75rem 1rem;
+  background: #fff;
+  box-shadow: 0 7px 20px rgba(28, 45, 73, 0.055);
+}
+
+.pointage-card {
+  border-color: #e6eaf1;
+  border-radius: 22px;
+  box-shadow: 0 9px 28px rgba(20, 37, 64, 0.065);
+}
+
+.pointage-card:hover {
+  border-color: #d9e2ef;
+  box-shadow: 0 14px 34px rgba(20, 37, 64, 0.1);
+}
+
+.pointage-card-header {
+  min-height: 72px;
+  padding: 1rem 1.25rem;
+  border-bottom-color: #edf0f5;
+}
+
+.pointage-card-body {
+  padding: 1.25rem;
+}
+
+.pointage-scan-placeholder {
+  border-color: #cfd9e8;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(217, 231, 250, 0.46), transparent 55%),
+    #fbfcfe;
+
+  &:hover {
+    border-color: #8faed7;
+    background-color: #f7faff;
+  }
+}
+
+.scanner-wrapper {
+  max-width: 440px;
+  border: 5px solid #fff;
+  border-radius: 22px;
+  box-shadow: 0 16px 36px rgba(14, 27, 48, 0.22);
+}
+
+.pointage-scanned-card {
+  border-radius: 22px;
+  background: #fff;
+}
+
+.pointage-quick-link {
+  padding: 0.8rem 0.85rem;
+  border: 1px solid transparent;
+
+  &:hover {
+    border-color: #e5eaf2;
+    background: #f7f9fc;
+  }
+}
+
+.pointage-terminal-config {
+  overflow: hidden;
+  border: 1px solid #e4eaf2;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(20, 37, 64, 0.055);
+}
+
+.pointage-terminal-config-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.85rem;
+  border: 0;
+  padding: 1rem 1.2rem;
+  color: #24334d;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  transition: background 180ms ease;
+
+  &:hover { background: #f8faff; }
+
+  strong, small { display: block; }
+  strong { font-size: 0.9rem; font-weight: 700; }
+  small { margin-top: 0.2rem; color: #8490a2; font-size: 0.74rem; }
+}
+
+.pointage-terminal-config-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 13px;
+  color: #315b91;
+  background: #edf4fd;
+
+  svg { width: 22px; height: 22px; }
+}
+
+.pointage-config-chevron {
+  color: #8290a5;
+  font-size: 1.35rem;
+  line-height: 1;
+  transition: transform 160ms ease;
+
+  &.open { transform: rotate(180deg); }
+}
+
+.pointage-terminal-config-body {
+  border-top: 1px solid #edf0f5;
+  padding: 1.25rem;
+}
+
+.pointage-hikvision-info {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid #dce8f6;
+  border-radius: 16px;
+  padding: 1rem;
+  background: #f5f9ff;
+
+  code {
+    display: block;
+    overflow-wrap: anywhere;
+    margin-top: 0.35rem;
+    color: #244a79;
+    font-size: 0.78rem;
+  }
+
+  p {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: #56657b;
+    font-size: 0.76rem;
+    line-height: 1.55;
+  }
+}
+
+.pointage-config-label {
+  color: #8793a4;
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pointage-terminal-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  gap: 0.9rem;
+  margin-bottom: 1.25rem;
+
+  label {
+    display: block;
+    min-width: 0;
+
+    span {
+      display: block;
+      margin-bottom: 0.35rem;
+      color: #536178;
+      font-size: 0.73rem;
+      font-weight: 650;
+    }
+
+    input, select {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid #d9e0ea;
+      border-radius: 10px;
+      padding: 0.55rem 0.7rem;
+      color: #25344b;
+      background: #fff;
+      font-size: 0.82rem;
+      outline: none;
+
+      &:focus {
+        border-color: #4774aa;
+        box-shadow: 0 0 0 3px rgba(71, 116, 170, 0.12);
+      }
+    }
+  }
+
+  > button { min-height: 42px; }
+}
+
+.pointage-terminal-loading {
+  padding: 0.75rem 0;
+  color: #8793a4;
+  font-size: 0.8rem;
+}
+
+.pointage-terminal-list {
+  border-top: 1px solid #edf0f5;
+  padding-top: 1rem;
+
+  h3 {
+    margin: 0 0 0.65rem;
+    color: #3b4b63;
+    font-size: 0.77rem;
+    font-weight: 700;
+  }
+}
+
+.pointage-terminal-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  border: 1px solid #edf0f5;
+  border-radius: 13px;
+  padding: 0.75rem;
+
+  & + & { margin-top: 0.55rem; }
+  strong, span, small { display: block; }
+  strong { overflow: hidden; color: #263751; font-size: 0.82rem; text-overflow: ellipsis; }
+  div > span { margin-top: 0.15rem; color: #68758a; font-size: 0.72rem; }
+  small { margin-top: 0.2rem; color: #98a2b1; font-size: 0.68rem; }
+}
+
+.pointage-terminal-status {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 0.3rem 0.55rem;
+  color: #8c641a;
+  background: #fff5dd;
+  font-size: 0.62rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+
+  &.online { color: #17735d; background: #e4f7f0; }
+}
+
+@media (max-width: 767px) {
+  .pointage-page-shell {
+    padding-top: 1rem;
+    padding-bottom: 1.5rem;
+  }
+
+  .pointage-hero {
+    min-height: 156px;
+    border-radius: 21px;
+    padding: 1.4rem 1.25rem;
+  }
+
+  .pointage-hero-mark {
+    width: 64px;
+    height: 64px;
+    margin: 0 0 0 0.75rem;
+    border-radius: 20px;
+
+    svg { width: 38px; height: 38px; }
+  }
+
+  .pointage-hero-copy p {
+    max-width: 29ch;
+    font-size: 0.84rem;
+  }
+
+  .pointage-methods-bar > div {
+    min-height: 74px;
+  }
+
+  .pointage-terminal-config-body { padding: 0.9rem; }
+  .pointage-hikvision-info { grid-template-columns: 1fr; }
+  .pointage-hikvision-info p { grid-column: auto; }
+  .pointage-terminal-form { grid-template-columns: 1fr; }
+  .pointage-terminal-row { align-items: flex-start; flex-wrap: wrap; }
+  .pointage-terminal-row > div { flex: 1 1 calc(100% - 100px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pointage-page-shell,
+  .pointage-methods-bar > div,
+  .pointage-card,
+  .pointage-quick-link {
+    animation: none;
+    transition: none;
+  }
+}
+
+.pointage-page-shell {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse at 3% 9%, rgba(218, 232, 250, 0.48), transparent 30rem),
+    radial-gradient(ellipse at 96% 36%, rgba(220, 244, 240, 0.38), transparent 26rem);
+}
+
+.pointage-hero {
+  min-height: 216px;
+  border-color: rgba(255, 255, 255, 0.1);
+  background:
+    radial-gradient(circle at 86% 18%, rgba(112, 225, 213, 0.23), transparent 20%),
+    radial-gradient(circle at 68% 120%, rgba(74, 112, 174, 0.32), transparent 38%),
+    linear-gradient(116deg, #101a30 0%, #18345f 58%, #28538a 100%);
+  box-shadow: 0 22px 48px rgba(20, 42, 76, 0.19);
+}
+
+.pointage-hero-copy h1 {
+  font-size: clamp(2rem, 3.4vw, 2.75rem);
+  letter-spacing: -0.045em;
+}
+
+.pointage-hero-copy p {
+  max-width: 48ch;
+  line-height: 1.65;
+}
+
+.pointage-hero-mark {
+  width: 116px;
+  height: 116px;
+  margin-right: 2.5rem;
+  border-radius: 34px;
+  color: #d0fff5;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.035));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.17), 0 18px 36px rgba(7, 19, 39, 0.16);
+}
+
+.pointage-methods-bar::before {
+  grid-column: 1 / -1;
+  margin: 0 0 0.15rem 0.15rem;
+  color: #77859b;
+  content: 'VOS MODES DE POINTAGE';
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.pointage-methods-bar > div {
+  min-height: 88px;
+  border-color: #e5eaf1;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 22px rgba(23, 43, 72, 0.055);
+}
+
+.pointage-methods-bar > div:first-of-type {
+  border-color: #cfe9df;
+  background: linear-gradient(135deg, #f4fbf7, #fff);
+}
+
+.pointage-hikvision-device {
+  border-color: #d4e6e8;
+  background: linear-gradient(135deg, #f2f9fa, #fff);
+}
+
+.pointage-voice-control {
+  align-items: flex-start;
+  justify-content: center;
+  border-color: #e5eaf1;
+  background: linear-gradient(135deg, #fff, #f8faff);
+}
+
+.pointage-card {
+  border-color: #e3e9f1;
+  border-radius: 24px;
+  box-shadow: 0 12px 32px rgba(20, 37, 64, 0.07);
+}
+
+.pointage-card:hover {
+  border-color: #d4dfec;
+  box-shadow: 0 18px 40px rgba(20, 37, 64, 0.105);
+}
+
+.pointage-card-header {
+  min-height: 78px;
+  padding: 1.15rem 1.35rem;
+  background: linear-gradient(180deg, #fff, #fcfdff);
+}
+
+.pointage-card-icon {
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(31, 60, 117, 0.07);
+  box-shadow: 0 5px 12px rgba(31, 60, 117, 0.07);
+}
+
+.pointage-card-body {
+  padding: 1.35rem;
+}
+
+.pointage-self-time {
+  min-height: 58px;
+  border-color: #e4ebf5;
+  background: linear-gradient(110deg, #f8faff, #f1f5fb);
+}
+
+.pointage-self-time .value {
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.pointage-quick-link {
+  min-height: 48px;
+  border: 1px solid transparent;
+  font-weight: 550;
+}
+
+.pointage-scan-placeholder {
+  min-height: 310px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed #b8c9df;
+  border-radius: 22px;
+  background:
+    radial-gradient(ellipse at 50% 8%, rgba(219, 233, 252, 0.78), transparent 52%),
+    linear-gradient(145deg, #f5f8fd, #fbfcff 68%);
+}
+
+.pointage-scan-placeholder .scan-big-icon {
+  width: 76px;
+  height: 76px;
+  margin-bottom: 1.15rem;
+  border: 1px solid #e2eafa;
+  border-radius: 23px;
+  color: #426da8;
+  background: linear-gradient(145deg, #fff, #eaf1fc);
+  box-shadow: 0 10px 24px rgba(31, 60, 117, 0.11);
+}
+
+.pointage-reader-hint {
+  width: fit-content;
+  margin-top: 0.45rem;
+  border: 1px solid #dceee5;
+  border-radius: 999px;
+  padding: 0.28rem 0.55rem;
+  color: #39715c;
+  background: #f2faf6;
+  font-size: 0.69rem;
+}
+
+.pointage-reader-hint .hint-dot {
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+}
+
+.pointage-terminal-config {
+  border-color: #e0e7f0;
+  border-radius: 22px;
+  box-shadow: 0 10px 28px rgba(20, 37, 64, 0.06);
+}
+
+.pointage-terminal-config-toggle {
+  min-height: 76px;
+  padding: 1rem 1.35rem;
+}
+
+.pointage-terminal-config-toggle:focus-visible,
+.pointage-btn:focus-visible,
+.pointage-quick-link:focus-visible {
+  outline: 3px solid rgba(59, 130, 246, 0.42);
+  outline-offset: 3px;
+}
+
+.pointage-terminal-form label input,
+.pointage-terminal-form label select {
+  min-height: 46px;
+  border-radius: 12px;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.pointage-terminal-form label input:focus,
+.pointage-terminal-form label select:focus {
+  border-color: #5b83ba;
+  box-shadow: 0 0 0 4px rgba(57, 103, 163, 0.12);
+}
+
+@media (max-width: 767px) {
+  .pointage-hero {
+    min-height: 172px;
+  }
+
+  .pointage-hero-mark {
+    width: 72px;
+    height: 72px;
+    margin-right: 0;
+  }
+
+  .pointage-hero-copy h1 {
+    font-size: clamp(1.7rem, 7vw, 2.2rem);
+  }
+
+  .pointage-card-header,
+  .pointage-card-body {
+    padding-right: 1rem;
+    padding-left: 1rem;
+  }
+
+  .pointage-scan-placeholder {
+    min-height: 260px;
+    padding: 1.5rem 1rem;
+  }
+
+  .pointage-reader-hint {
+    border-radius: 12px;
+    line-height: 1.4;
+  }
+}
+
+@media (max-width: 560px) {
+  .pointage-terminal-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pointage-hero,
+  .pointage-hero-mark,
+  .pointage-self-time,
+  .pointage-terminal-form label input,
+  .pointage-terminal-form label select {
+    transition: none;
+    animation: none;
+  }
 }

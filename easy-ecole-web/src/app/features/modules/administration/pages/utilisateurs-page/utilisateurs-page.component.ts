@@ -4,6 +4,7 @@ import { UtilisateurService } from 'src/app/data/modules/auth/services/utilisate
 import { ToastService } from 'src/app/core/services/toast.service';
 import { RolesUtilisateur } from 'src/app/data/enums/RolesUtilisateur';
 import { Router } from '@angular/router';
+import { AuthService, SiteUtilisateur } from 'src/app/data/modules/auth/services/auth.service';
 
 @Component({
   selector: 'app-utilisateurs-page',
@@ -21,6 +22,9 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
   editingUser: any = null
   formData: any = {}
   saving: boolean = false
+  availableSites: SiteUtilisateur[] = []
+  sitesLoading: boolean = false
+  sitesError: string = ''
 
   showDeleteModal: boolean = false
   deletingUser: any = null
@@ -60,6 +64,7 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
     private utilisateurService: UtilisateurService,
     private toastService: ToastService,
     private router: Router,
+    private authService: AuthService,
   ) { super() }
 
   ngOnInit(): void {
@@ -108,7 +113,7 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
     this.editingUser = null
     this.formData = {
       nom: '', prenoms: '', email: '', identifiant: '', motDePasse: '',
-      role: RolesUtilisateur.APPRENANT, contact: '',
+      role: RolesUtilisateur.APPRENANT, contact: '', siteIds: [],
       // Champs profil
       fonction: '', matricule: '', statut: 'Permanent', directionService: '',
       cni: '', dateNaissance: '', lieuNaissance: '', sexe: 'M', nationalite: 'Ivoirienne',
@@ -118,6 +123,7 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
       estPrescripteur: false,
     }
     this.showModal = true
+    this.loadAvailableSites()
   }
 
   openEditModal(user: any): void {
@@ -137,6 +143,56 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
     this.showModal = false
     this.editingUser = null
     this.formData = {}
+    this.sitesError = ''
+  }
+
+  private loadAvailableSites(): void {
+    this.sitesLoading = true
+    this.sitesError = ''
+    this.authService.getSitesMoi().subscribe({
+      next: sites => {
+        this.availableSites = sites
+        this.sitesLoading = false
+        if (sites.length === 1) {
+          this.formData.siteIds = [Number(sites[0].id)]
+        }
+      },
+      error: () => {
+        this.availableSites = []
+        this.sitesLoading = false
+        this.sitesError = 'Les sites autorisés ne peuvent pas être chargés. Réessayez avant de créer l’utilisateur.'
+      }
+    })
+  }
+
+  get siteSelectionRequired(): boolean {
+    return ![
+      RolesUtilisateur.ADMIN,
+      RolesUtilisateur.INSTITUTION,
+      RolesUtilisateur.COMITE_ORIENTATION,
+      RolesUtilisateur.SUPERVISEUR_GENERAL,
+      RolesUtilisateur.CABINET_COMPTABLE,
+    ].includes(this.formData.role)
+  }
+
+  siteEstSelectionne(siteId: number): boolean {
+    return Array.isArray(this.formData.siteIds)
+      && this.formData.siteIds.some((id: number) => Number(id) === Number(siteId))
+  }
+
+  modifierSiteSelection(siteId: number, selected: boolean): void {
+    const selectedIds: number[] = Array.isArray(this.formData.siteIds) ? this.formData.siteIds : []
+    this.formData.siteIds = selected
+      ? [...new Set([...selectedIds.map(Number), Number(siteId)])]
+      : selectedIds.filter(id => Number(id) !== Number(siteId))
+  }
+
+  selectionnerSiteApprenant(siteId: number | null): void {
+    this.formData.siteIds = siteId ? [Number(siteId)] : []
+  }
+
+  private get sitesSelectionnes(): number[] {
+    return Array.isArray(this.formData.siteIds) ? this.formData.siteIds.map(Number) : []
   }
 
   saveUser(): void {
@@ -144,10 +200,29 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
       this.toastService.error('Nom, prénoms et email sont requis')
       return
     }
+    if (!this.editingUser && this.sitesLoading) {
+      this.toastService.error('Attendez le chargement des sites autorisés')
+      return
+    }
+    if (!this.editingUser && this.sitesError) {
+      this.toastService.error(this.sitesError)
+      return
+    }
+    if (!this.editingUser && this.siteSelectionRequired && this.sitesSelectionnes.length === 0) {
+      this.toastService.error('Sélectionnez au moins un site pour cet utilisateur')
+      return
+    }
+    if (!this.editingUser && this.isApprenant && this.sitesSelectionnes.length !== 1) {
+      this.toastService.error('Un apprenant doit être rattaché à un seul site')
+      return
+    }
     this.saving = true
+    const userData = this.editingUser
+      ? this.formData
+      : { ...this.formData, siteIds: this.sitesSelectionnes }
     const obs = this.editingUser
-      ? this.utilisateurService.adminUpdate(this.editingUser.id, this.formData)
-      : this.utilisateurService.adminCreate(this.formData)
+      ? this.utilisateurService.adminUpdate(this.editingUser.id, userData)
+      : this.utilisateurService.adminCreate(userData)
 
     obs.subscribe({
       next: () => {

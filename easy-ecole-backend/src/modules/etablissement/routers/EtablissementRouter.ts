@@ -55,6 +55,15 @@ router
 .put('/:id', [Authenticate], EtablissementController.update)
         /**
      * @openapi
+     * /:id/actif:
+     *   patch:
+     *     tags: [Etablissement]
+     *     summary: Active ou désactive un établissement
+     *     security: [{ bearerAuth: [] }]
+     */
+.patch('/:id/actif', [Authenticate], EtablissementController.setActif)
+        /**
+     * @openapi
      * /:id:
      *   delete:
      *     tags: [Etablissement]

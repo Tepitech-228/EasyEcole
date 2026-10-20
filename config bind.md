@@ -283,7 +283,7 @@ curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1/api/v1/health    # att
 
 ## 9. Sauvegarde et exploitation
 
-- Conteneur `mysql-backup` (inclus) : dump quotidien dans le volume `mysql_backups`, rétention 14 jours, + archivage lecture seule de `public/`, `uploads/`, `storage/`.
+- Conteneur `mysql-backup` (inclus) : sauvegarde quotidienne à 23 h 50 selon `TZ` dans le volume `mysql_backups`, rétention 14 jours et archivage lecture seule des fichiers persistants.
 - Sauvegarder **en plus** : `/opt/mon-app/keys` (clé maîtresse) et `/opt/mon-app/config`.
 - Mises à jour : push → redéploiement automatique Dokploy ; les migrations s'appliquent au boot.
 

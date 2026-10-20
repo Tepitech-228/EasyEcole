@@ -1,5 +1,8 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { MenuService, MenuPole, MenuGroup } from 'src/app/core/services/menu.service';
+import { AuthService, SiteUtilisateur } from 'src/app/data/modules/auth/services/auth.service';
+import { LocalStorageService } from 'src/app/core/services/local-storage.service';
+import { JwtTokenService } from 'src/app/core/services/jwt-token.service';
 
 @Component({
   selector: 'app-sidebar-nav',
@@ -17,6 +20,10 @@ export class SidebarNavComponent implements OnInit {
   openItemLabel: string | null = null;
 
   loading: boolean = true;
+  sites: SiteUtilisateur[] = [];
+  siteActifId: number | null = null;
+  siteLoading = false;
+  siteError = '';
 
 
   private poleColors: Record<string, string> = {
@@ -59,7 +66,12 @@ export class SidebarNavComponent implements OnInit {
     return this.hexToRgba(this.activePoleColor, 0.25);
   }
 
-  constructor(private menuService: MenuService) {}
+  constructor(
+    private menuService: MenuService,
+    private authService: AuthService,
+    private localStorage: LocalStorageService,
+    private jwtTokenService: JwtTokenService
+  ) {}
 
   ngOnInit(): void {
     this.menuService.getMenu().subscribe(poles => {
@@ -67,6 +79,52 @@ export class SidebarNavComponent implements OnInit {
       this.loading = false;
       if (poles.length > 0) {
         this.activePoleLabel = poles[0].label;
+      }
+    });
+    this.authService.getSitesMoi().subscribe({
+      next: sites => {
+        this.sites = sites;
+        const token = this.localStorage.get(LocalStorageService.AUTH_TOKEN);
+        if (token) {
+          this.jwtTokenService.setToken(token);
+          const tokenData = this.jwtTokenService.getDecodeToken() as { etablissementId?: string | number };
+          const tokenSiteId = Number(tokenData?.etablissementId);
+          this.siteActifId = sites.some(site => Number(site.id) === tokenSiteId)
+            ? tokenSiteId
+            : null;
+        }
+        if (!this.siteActifId && sites.length === 1) {
+          this.activerSite(sites[0].id);
+        }
+      },
+      error: () => {
+        this.siteError = 'Les sites disponibles n’ont pas pu être chargés.';
+      }
+    });
+  }
+
+  changerSite(event: Event): void {
+    const etablissementId = Number((event.target as HTMLSelectElement).value);
+    if (!Number.isSafeInteger(etablissementId) || etablissementId <= 0 || etablissementId === this.siteActifId) return;
+    this.activerSite(etablissementId);
+  }
+
+  private activerSite(etablissementId: number): void {
+    this.siteLoading = true;
+    this.siteError = '';
+    this.authService.definirSiteActif(etablissementId).subscribe({
+      next: response => {
+        if (!response.accessToken) {
+          this.siteError = 'Le serveur n’a pas renvoyé de jeton pour ce site.';
+          this.siteLoading = false;
+          return;
+        }
+        this.localStorage.set(LocalStorageService.AUTH_TOKEN, response.accessToken);
+        window.location.reload();
+      },
+      error: () => {
+        this.siteError = 'Le site actif n’a pas pu être modifié.';
+        this.siteLoading = false;
       }
     });
   }

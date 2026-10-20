@@ -95,6 +95,24 @@
             <span class="detail-badge" [ngClass]="detailData.dossier.statut === 'actif' ? 'badge-green' : detailData.dossier.statut === 'suspendu' ? 'badge-yellow' : 'badge-red'">
               {{ detailData.dossier.statut }}
             </span>
+            <div class="photo-upload-control" *ngIf="detailData.dossier.utilisateur?.apprenant?.id">
+              <input
+                #studentPhotoInput
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp,.jpg,.jpeg,.jpe,.png,.gif,.webp"
+                hidden
+                (change)="uploadStudentPhoto($event)" />
+              <button
+                type="button"
+                class="btn-photo-upload"
+                [disabled]="photoUploadInProgress"
+                (click)="studentPhotoInput.click()">
+                <span class="material-symbols-outlined">{{ photoUploadInProgress ? 'hourglass_top' : 'photo_camera' }}</span>
+                {{ photoUploadInProgress ? 'Enregistrement...' : 'Ajouter / remplacer la photo' }}
+              </button>
+            </div>
+            <p class="photo-upload-message" *ngIf="photoUploadMessage" role="status">{{ photoUploadMessage }}</p>
+            <small class="photo-upload-note">La photo est enregistrée sur la fiche EasyEcole ; l’enrôlement facial sur la pointeuse est une étape distincte.</small>
           </div>
         </div>
 

@@ -4,6 +4,7 @@ import { CursusApprenant } from "../models/CursusApprenant";
 import { DossierEtudiant } from "../models/DossierEtudiant";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { Apprenant } from "../../auth/models/Apprenant";
+import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 
 /**
  * Contrôleur pour la situation financière des étudiants.
@@ -28,6 +29,15 @@ export default class SituationFinanciereController {
 
             // ── Construire le where pour CursusApprenant ──
             const cursusWhere: any = {};
+            const etablissementId = Number((req as any).etablissementId);
+            const dossierSiteWhere = Number.isSafeInteger(etablissementId) && etablissementId > 0
+                ? { etablissementId }
+                : {};
+            if (Number.isSafeInteger(etablissementId) && etablissementId > 0) {
+                cursusWhere.etablissementId = etablissementId;
+            } else if ((req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
+                return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+            }
 
             if (req.query.anneeAcademiqueId) {
                 cursusWhere.anneeAcademiqueId = req.query.anneeAcademiqueId;
@@ -69,7 +79,10 @@ export default class SituationFinanciereController {
                 };
 
                 const [matchingDossiers, matchingUsers] = await Promise.all([
-                    DossierEtudiant.findAll({ attributes: ['id', 'utilisateurId'], where: whereOrDossier }),
+                    DossierEtudiant.findAll({
+                        attributes: ['id', 'utilisateurId'],
+                        where: { ...whereOrDossier, ...dossierSiteWhere }
+                    }),
                     Utilisateur.findAll({ attributes: ['id'], where: whereOrUser }),
                 ]);
 
@@ -104,6 +117,7 @@ export default class SituationFinanciereController {
                             association: (Utilisateur as any).associations.dossiersEtudiants as any,
                             attributes: ['id', 'matricule'],
                             required: false,
+                            where: dossierSiteWhere,
                             include: [
                                 {
                                     association: DossierEtudiant.associations.echeances as any,
@@ -215,6 +229,15 @@ export default class SituationFinanciereController {
 
             // Trouver le cursus apprenant et le dossier
             const cursusWhere: any = { utilisateurId: userId };
+            const etablissementId = Number((req as any).etablissementId);
+            const dossierSiteWhere = Number.isSafeInteger(etablissementId) && etablissementId > 0
+                ? { etablissementId }
+                : {};
+            if (Number.isSafeInteger(etablissementId) && etablissementId > 0) {
+                cursusWhere.etablissementId = etablissementId;
+            } else if ((req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
+                return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+            }
             for (const field of ['anneeAcademiqueId', 'niveauEtudeId', 'parcoursId', 'classeId']) {
                 const value = req.query[field];
                 if (value == null || value === '') continue;
@@ -241,6 +264,8 @@ export default class SituationFinanciereController {
                             },
                             {
                                 association: (Utilisateur as any).associations.dossiersEtudiants as any,
+                                required: false,
+                                ...(Object.keys(dossierSiteWhere).length > 0 ? { where: dossierSiteWhere } : {}),
                                 include: [
                                     {
                                         association: DossierEtudiant.associations.echeances as any,

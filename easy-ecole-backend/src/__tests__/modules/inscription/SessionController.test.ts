@@ -60,7 +60,7 @@ beforeEach(() => {
 
 describe('getAllSessions', () => {
   it('should return all sessions with niveauEtude and anneeAcademique', async () => {
-    const req = mockRequest({})
+    const req = mockRequest({ utilisateurRole: 'institution', etablissementId: 4 } as any)
     const res = mockResponse()
     const mockData = [{ id: 1 }]
     ;(Session.findAll as jest.Mock).mockResolvedValue(mockData)
@@ -69,16 +69,27 @@ describe('getAllSessions', () => {
 
     expect(Session.findAll).toHaveBeenCalledWith(
       expect.objectContaining({
+        where: { etablissementId: 4 },
         include: ['niveauEtude', 'anneeAcademique']
       })
     )
     expect(res.send).toHaveBeenCalledWith(mockData)
   })
+
+  it('refuses to list sessions without an active site', async () => {
+    const req = mockRequest({ utilisateurRole: 'institution' } as any)
+    const res = mockResponse()
+
+    await Ctrl.getAllSessions(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(Session.findAll).not.toHaveBeenCalled()
+  })
 })
 
 describe('getSession', () => {
   it('should return session with all nested includes', async () => {
-    const req = mockRequest({ params: { id: '1' } })
+    const req = mockRequest({ utilisateurRole: 'institution', etablissementId: 4, params: { id: '1' } } as any)
     const res = mockResponse()
     const mockData = { id: 1 }
     ;(Session.findOne as jest.Mock).mockResolvedValue(mockData)
@@ -87,7 +98,7 @@ describe('getSession', () => {
 
     expect(Session.findOne).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: '1' },
+        where: { id: '1', etablissementId: 4 },
         include: [
           'niveauEtude',
           'anneeAcademique',
@@ -101,13 +112,23 @@ describe('getSession', () => {
   })
 
   it('should return 404 if not found', async () => {
-    const req = mockRequest({ params: { id: '999' } })
+    const req = mockRequest({ utilisateurRole: 'institution', etablissementId: 4, params: { id: '999' } } as any)
     const res = mockResponse()
     ;(Session.findOne as jest.Mock).mockResolvedValue(null)
 
     await Ctrl.getSession(req, res)
 
     expect(res.status).toHaveBeenCalledWith(404)
+  })
+
+  it('refuses detail requests without an active site', async () => {
+    const req = mockRequest({ utilisateurRole: 'institution', params: { id: '1' } } as any)
+    const res = mockResponse()
+
+    await Ctrl.getSession(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(Session.findOne).not.toHaveBeenCalled()
   })
 })
 

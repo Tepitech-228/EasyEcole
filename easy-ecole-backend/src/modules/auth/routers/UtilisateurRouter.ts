@@ -14,10 +14,14 @@ router
     .post('/', [Authenticate], UtilisateurController.adminCreateUtilisateur)
     /** GET /auth/utilisateurs/moi — Retourne l'utilisateur courant (basé sur le token JWT) */
     .get('/moi', [Authenticate], UtilisateurController.getMoi)
+    .get('/moi/sites', [Authenticate], UtilisateurController.getSitesMoi)
+    .post('/moi/site-actif', [Authenticate], UtilisateurController.definirSiteActif)
     /** GET /auth/utilisateurs/:id — Obtenir un utilisateur par ID */
     .get('/:id', [Authenticate], UtilisateurController.getUtilisateur)
     /** PUT /auth/utilisateurs/:id — Modifier un utilisateur (admin/institution) */
     .put('/:id', [Authenticate], UtilisateurController.adminUpdateUtilisateur)
+    /** PUT /auth/utilisateurs/:id/sites — Affecter un utilisateur à un ou plusieurs sites (admin) */
+    .put('/:id/sites', [Authenticate], UtilisateurController.affecterSites)
     /** PUT /auth/utilisateurs — Modifier son propre profil */
     .put('/', [Authenticate], UtilisateurController.updateUtilisateur)
     /** DELETE /auth/utilisateurs/:id — Supprimer un utilisateur (admin/institution) */

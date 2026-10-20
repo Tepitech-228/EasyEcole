@@ -37,7 +37,8 @@ export class DemandeInscription extends Model<InferAttributes<DemandeInscription
   declare documentBourse: CreationOptional<string | null>
   declare soumissionComite: CreationOptional<boolean>
   declare dateDemande: Date
-  declare dateValidation: CreationOptional<Date>
+  declare dateValidation: CreationOptional<Date | null>
+  declare consentementHikvisionAt: CreationOptional<Date | null>
   declare sessionId: ForeignKey<Session['id']>
   declare session?: NonAttribute<Session>
   declare etapeInscriptionId: ForeignKey<EtapeInscription['id']>
@@ -121,6 +122,10 @@ DemandeInscription.init({
     allowNull: false
   },
   dateValidation: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  consentementHikvisionAt: {
     type: DataTypes.DATE,
     allowNull: true
   },

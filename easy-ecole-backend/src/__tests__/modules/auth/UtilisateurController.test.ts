@@ -45,10 +45,16 @@ jest.mock('../../../modules/auth/models/PersonnelAdministratif', () => ({
 }))
 
 jest.mock('../../../modules/etablissement/models/Etablissement', () => ({
-  Etablissement: { findByPk: jest.fn(), count: jest.fn() },
+  Etablissement: { findByPk: jest.fn(), findAll: jest.fn(), count: jest.fn() },
+}))
+
+jest.mock('../../../modules/auth/models/SiteUtilisateur', () => ({
+  SiteUtilisateur: { findAll: jest.fn(), bulkCreate: jest.fn(), destroy: jest.fn() },
 }))
 
 const { Utilisateur } = require('../../../modules/auth/models/Utilisateur')
+const { Etablissement } = require('../../../modules/etablissement/models/Etablissement')
+const { SiteUtilisateur } = require('../../../modules/auth/models/SiteUtilisateur')
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -118,6 +124,58 @@ describe('UtilisateurController.getUtilisateur', () => {
     await UtilisateurController.getUtilisateur(req, res)
 
     expect(res.status).toHaveBeenCalledWith(500)
+  })
+})
+
+describe('UtilisateurController.adminCreateUtilisateur site scope', () => {
+  it('refuse à une institution de créer un utilisateur sur un site non affecté', async () => {
+    const req = mockRequest({
+      utilisateurRole: 'institution',
+      utilisateurId: 12,
+      etablissementId: 3,
+      body: {
+        nom: 'Test',
+        prenoms: 'Utilisateur',
+        email: 'test@example.com',
+        identifiant: 'test-user',
+        motDePasse: 'secret123',
+        role: 'apprenant',
+        siteIds: [8],
+      },
+    } as any)
+    const res = mockResponse()
+    ;(Utilisateur.findOne as jest.Mock).mockResolvedValue(null)
+    ;(Etablissement.findAll as jest.Mock)
+      .mockResolvedValueOnce([{ id: 8 }])
+      .mockResolvedValueOnce([{ id: 3 }])
+    ;(SiteUtilisateur.findAll as jest.Mock).mockResolvedValue([{ etablissementId: 3 }])
+
+    await UtilisateurController.adminCreateUtilisateur(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      message: 'Vous ne pouvez créer un utilisateur que sur les sites qui vous sont affectés.',
+    }))
+  })
+
+  it('empêche une institution de créer un compte administrateur', async () => {
+    const req = mockRequest({
+      utilisateurRole: 'institution',
+      utilisateurId: 12,
+      body: {
+        email: 'admin@example.com',
+        identifiant: 'new-admin',
+        motDePasse: 'secret123',
+        role: 'admin',
+      },
+    } as any)
+    const res = mockResponse()
+    ;(Utilisateur.findOne as jest.Mock).mockResolvedValue(null)
+
+    await UtilisateurController.adminCreateUtilisateur(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(Etablissement.findAll).not.toHaveBeenCalled()
   })
 })
 

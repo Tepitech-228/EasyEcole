@@ -1,7 +1,12 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, HostListener, NgZone, OnDestroy } from '@angular/core';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import { map } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
-import { PointageService } from 'src/app/data/modules/inscription/services/pointage.service';
+import { HikvisionTerminalConfig, PointageService } from 'src/app/data/modules/inscription/services/pointage.service';
+import { Pointage } from 'src/app/data/modules/inscription/models/Pointage.model';
+import { AuthService, SiteUtilisateur } from 'src/app/data/modules/auth/services/auth.service';
+import { SocketService, TerminalAttendanceEvent } from 'src/app/core/services/socket.service';
 import { environment } from 'src/environments/environment';
 
 @Component({
@@ -14,15 +19,41 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   loading: boolean = true
   loadError: string = ''
   scanning: boolean = false
+  scanProcessing: boolean = false
+  scanProcessingMessage: string = ''
   scanMode: 'arrivee' | 'depart' = 'arrivee'
   scannedUser: any = null
+  private scannedCodeQR: string | null = null
   scanError: string = ''
   scanSuccess: string = ''
   scanTimeout: boolean = false
   selfSuccess: string = ''
   selfError: string = ''
+  voiceAnnouncementsEnabled: boolean = true
+  voiceError: string = ''
+  lastAttendanceName: string = ''
+  lastAttendanceRole: string = ''
   manualId: string = ''
   showManualInput: boolean = false
+  readonly isAdmin: boolean
+  terminalConfigOpen = false
+  terminalConfigLoading = false
+  terminalConfigSaving = false
+  terminalConfigError = ''
+  terminalConfigSuccess = ''
+  terminalSites: SiteUtilisateur[] = []
+  hikvisionTerminals: HikvisionTerminalConfig[] = []
+  hikvisionTestingId: number | null = null
+  hikvisionDraft = {
+    serialNumber: '',
+    nom: 'Hikvision MinMoe',
+    sourceIp: '',
+    port: 80,
+    https: false,
+    username: '',
+    password: '',
+    etablissementId: null as number | null
+  }
   torchSupported: boolean = false
   torchOn: boolean = false
   zoomSupported: boolean = false
@@ -33,25 +64,350 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   decoderNatif: boolean = false
   streamRes: string = ''
   private html5QrCode: Html5Qrcode | null = null
+  private terminalAttendanceSubscription: Subscription | null = null
   private scanTimer: any = null
   private static readonly SCAN_TIMEOUT_MS = 30000
   private static readonly CACHE_TTL_MS = 60000
   private audioCtx: AudioContext | null = null
 
+  // Lecteur QR externe « Tovi » (clavier HID) : la carte TAPE les caractères.
+  static readonly TOVI_FLUSH_MS = 400
+  static readonly TOVI_CHAR_MAX_GAP_MS = 150
+  static readonly TOVI_MIN_LENGTH = 4
+  private toviBuffer: string = ''
+  private toviLastKeyAt: number = 0
+  private toviFlushTimer: any = null
+  private readonly readerQueue: Array<{ codeQR: string, mode: 'arrivee' | 'depart' }> = []
+  private readonly recentReaderScans = new Map<string, number>()
+  private readerScanInProgress: boolean = false
+  private static readonly READER_DUPLICATE_WINDOW_MS = 2500
+
   readonly PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS
   readonly TEACHER_PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS_ENSEIGNANTS
   readonly PROFILE_PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PROFILES
 
-  constructor(private pointageService: PointageService) {
+  constructor(
+    private pointageService: PointageService,
+    private authService: AuthService,
+    private socketService: SocketService,
+    private ngZone: NgZone
+  ) {
     super()
+    this.isAdmin = this.rolesValue.isAdmin
     this.loadTodayPointage()
+    if (this.isAdmin) this.chargerConfigurationTerminaux()
+    this.socketService.connect()
+    this.terminalAttendanceSubscription = this.socketService.onTerminalAttendance().subscribe(event => {
+      this.ngZone.run(() => this.afficherPointageHikvision(event))
+    })
+  }
+
+  private chargerConfigurationTerminaux(): void {
+    this.terminalConfigLoading = true
+    this.terminalConfigError = ''
+    this.authService.getSitesMoi().subscribe({
+      next: sites => {
+        this.terminalSites = sites
+        if (!this.hikvisionDraft.etablissementId && sites.length) {
+          this.hikvisionDraft.etablissementId = sites[0].id
+        }
+        this.terminalConfigLoading = false
+      },
+      error: () => {
+        this.terminalConfigError = 'Les sites ne peuvent pas être chargés. Vérifiez votre connexion puis réessayez.'
+        this.terminalConfigLoading = false
+      }
+    })
+    this.chargerTerminauxHikvision()
+  }
+
+  enregistrerTerminalHikvision(): void {
+    this.terminalConfigError = ''
+    this.terminalConfigSuccess = ''
+    const draft = this.hikvisionDraft
+    const etablissementId = Number(draft.etablissementId)
+    if (
+      !draft.serialNumber.trim() || !draft.nom.trim() || !draft.sourceIp.trim() ||
+      !draft.username.trim() || !draft.password ||
+      !Number.isSafeInteger(draft.port) || draft.port < 1 || draft.port > 65535 ||
+      !Number.isSafeInteger(etablissementId) || etablissementId <= 0
+    ) {
+      this.terminalConfigError = 'Renseignez le numéro de série, le nom, l’IP du terminal, le port, le compte, le mot de passe et le site.'
+      return
+    }
+    this.terminalConfigSaving = true
+    this.pointageService.creerTerminalHikvision({
+      serialNumber: draft.serialNumber.trim(),
+      nom: draft.nom.trim(),
+      sourceIp: draft.sourceIp.trim(),
+      port: draft.port,
+      https: draft.https,
+      username: draft.username.trim(),
+      password: draft.password,
+      etablissementId
+    }).subscribe({
+      next: terminal => {
+        this.hikvisionTerminals = [...this.hikvisionTerminals, terminal]
+        this.hikvisionDraft = { ...this.hikvisionDraft, serialNumber: '', sourceIp: '', username: '', password: '', etablissementId }
+        this.terminalConfigSuccess = 'Terminal enregistré. Testez la connexion ISAPI avant le premier pointage.'
+        this.terminalConfigSaving = false
+        this.testerTerminalHikvision(terminal)
+      },
+      error: err => {
+        this.terminalConfigError = err.error?.message || 'Le terminal Hikvision n’a pas pu être enregistré.'
+        this.terminalConfigSaving = false
+      }
+    })
+  }
+
+  testerTerminalHikvision(terminal: HikvisionTerminalConfig): void {
+    this.terminalConfigError = ''
+    this.hikvisionTestingId = terminal.id
+    this.pointageService.testerTerminalHikvision(terminal.id).subscribe({
+      next: result => {
+        this.terminalConfigSuccess = result.message
+        this.hikvisionTestingId = null
+        this.chargerTerminauxHikvision()
+      },
+      error: err => {
+        this.terminalConfigError = err.error?.message || 'La connexion ISAPI au terminal a échoué.'
+        this.hikvisionTestingId = null
+      }
+    })
+  }
+
+  basculerTerminalHikvision(terminal: HikvisionTerminalConfig): void {
+    this.terminalConfigError = ''
+    this.pointageService.modifierEtatTerminalHikvision(terminal.id, !terminal.actif).subscribe({
+      next: updated => {
+        this.hikvisionTerminals = this.hikvisionTerminals.map(item => item.id === updated.id ? updated : item)
+      },
+      error: err => {
+        this.terminalConfigError = err.error?.message || 'L’état du terminal Hikvision n’a pas pu être modifié.'
+      }
+    })
+  }
+
+  definirPortHikvision(): void {
+    this.hikvisionDraft.port = this.hikvisionDraft.https ? 443 : 80
+  }
+
+  private chargerTerminauxHikvision(): void {
+    this.pointageService.getTerminauxHikvision().subscribe({
+      next: terminals => this.hikvisionTerminals = terminals,
+      error: err => {
+        this.terminalConfigError = err.error?.message || 'Les terminaux Hikvision n’ont pas pu être chargés.'
+      }
+    })
+  }
+
+  terminalEstEnLigne(terminal: Pick<HikvisionTerminalConfig, 'lastSeenAt'>): boolean {
+    return !!terminal.lastSeenAt && Date.now() - new Date(terminal.lastSeenAt).getTime() < 5 * 60 * 1000
+  }
+
+  nomSiteTerminal(terminal: Pick<HikvisionTerminalConfig, 'etablissementId'>): string {
+    const site = this.terminalSites.find(item => Number(item.id) === Number(terminal.etablissementId))
+    return site ? site.nom : `Site ${terminal.etablissementId}`
+  }
+
+  get hikvisionStatusLabel(): string {
+    if (this.hikvisionTerminals.some(terminal => this.terminalEstEnLigne(terminal))) return 'CONNECTÉ'
+    if (this.hikvisionTerminals.some(terminal => terminal.actif)) return 'CONFIGURÉ'
+    return 'À CONFIGURER'
+  }
+
+  private afficherPointageHikvision(event: TerminalAttendanceEvent): void {
+    this.lastAttendanceName = this.formatPersonName(event)
+    this.lastAttendanceRole = this.roleLabel(event.role)
+    this.scanError = ''
+    this.scanSuccess = event.mode === 'arrivee'
+      ? `Arrivée enregistrée à ${event.time}`
+      : `Départ enregistré à ${event.time}`
+    this.playBeepSucces()
+    this.announceAttendance(event, event.mode)
   }
 
   ngOnDestroy(): void {
+    this.terminalAttendanceSubscription?.unsubscribe()
     this.stopScanner()
     this.clearScanTimer()
+    this.clearToviFlushTimer()
     if (this.audioCtx) {
       this.audioCtx.close()
+    }
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel()
+    }
+  }
+
+  /* ============================================================
+     LECTEUR EXTERNE (Tovi — clavier HID / keyboard-wedge)
+     Écoute permanente au niveau document : le scan est reconnu
+     quel que soit l'état affiché, sans clic ni souris.
+     ============================================================ */
+
+  @HostListener('document:keydown', ['$event'])
+  onDocumentKeydown(event: KeyboardEvent): void {
+    // E4 — ne jamais capturer la frappe saisie dans un champ de formulaire.
+    if (this.isEditableTarget(event.target)) return
+    // AltGr est requis pour des caractères QR comme `|` sur AZERTY.
+    // Les vrais raccourcis Ctrl/Alt/Meta restent ignorés.
+    const altGraph = event.getModifierState('AltGraph')
+    if (event.metaKey || ((event.ctrlKey || event.altKey) && !altGraph)) return
+    // Maintien de touche : ignoré (le lecteur émet une frappe par caractère).
+    if (event.repeat) return
+
+    // E2 (a) — fin de scan sur Enter : validation immédiate du buffer.
+    if (event.key === 'Enter') {
+      if (this.toviBuffer.length > 0) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+      this.flushToviBuffer()
+      return
+    }
+
+    // Caractères imprimables uniquement (une seule unité) : ignore Tab,
+    // Escape, flèches, F1-F12, Shift seul, Backspace, etc.
+    if (event.key.length !== 1) return
+
+    const now = Date.now()
+    // Cadence lecteur : une pause > 150 ms signale une frappe humaine,
+    // le buffer précédent est abandonné.
+    if (this.toviBuffer.length > 0
+      && now - this.toviLastKeyAt > TerminalPointagePageComponent.TOVI_CHAR_MAX_GAP_MS) {
+      this.toviBuffer = ''
+    }
+    this.toviLastKeyAt = now
+    this.toviBuffer += event.key
+
+    // E2 (b) — fin de scan par interruption (~400 ms d'inactivité).
+    this.restartToviFlushTimer()
+  }
+
+  private isEditableTarget(target: EventTarget | null): boolean {
+    const el = target as HTMLElement | null
+    if (!el || typeof el.tagName !== 'string') return false
+    const tag = el.tagName.toUpperCase()
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true
+    if (el.isContentEditable) return true
+    return typeof el.closest === 'function' && el.closest('[contenteditable]') !== null
+  }
+
+  private restartToviFlushTimer(): void {
+    this.clearToviFlushTimer()
+    this.toviFlushTimer = setTimeout(
+      () => this.flushToviBuffer(),
+      TerminalPointagePageComponent.TOVI_FLUSH_MS
+    )
+  }
+
+  private clearToviFlushTimer(): void {
+    if (this.toviFlushTimer) {
+      clearTimeout(this.toviFlushTimer)
+      this.toviFlushTimer = null
+    }
+  }
+
+  /** Valide le buffer du lecteur puis le vide (E5). */
+  private flushToviBuffer(): void {
+    const code = this.toviBuffer.trim()
+    this.toviBuffer = ''
+    this.toviLastKeyAt = 0
+    this.clearToviFlushTimer()
+    if (code.length < TerminalPointagePageComponent.TOVI_MIN_LENGTH) return
+    this.onToviScan(code)
+  }
+
+  /**
+   * Le lecteur HID ne dépend pas de l'ouverture de la caméra. Chaque code
+   * passe par la validation serveur puis par l'API QR qui revalide le jeton
+   * avant d'enregistrer le pointage.
+   */
+  private onToviScan(code: string): void {
+    const normalizedCode = code.trim()
+    if (normalizedCode.length < TerminalPointagePageComponent.TOVI_MIN_LENGTH) return
+
+    const now = Date.now()
+    this.recentReaderScans.forEach((expiresAt, previousCode) => {
+      if (expiresAt <= now) this.recentReaderScans.delete(previousCode)
+    })
+    if ((this.recentReaderScans.get(normalizedCode) || 0) > now) return
+    this.recentReaderScans.set(
+      normalizedCode,
+      now + TerminalPointagePageComponent.READER_DUPLICATE_WINDOW_MS
+    )
+
+    this.resetScan()
+    this.scanProcessing = true
+    this.scanProcessingMessage = 'Code QR reçu. Vérification de l’identité auprès du serveur…'
+    this.readerQueue.push({ codeQR: normalizedCode, mode: this.scanMode })
+    this.playBeep()
+    void this.stopScanner()
+    this.processNextReaderScan()
+  }
+
+  private processNextReaderScan(): void {
+    if (this.readerScanInProgress) return
+    const scan = this.readerQueue.shift()
+    if (!scan) {
+      this.scanProcessing = false
+      this.scanProcessingMessage = ''
+      return
+    }
+
+    this.readerScanInProgress = true
+    this.scanProcessing = true
+    this.scanError = ''
+    this.scanSuccess = ''
+    this.scannedUser = null
+    this.pointageService.verifierStatutByQR(scan.codeQR).subscribe({
+      next: (res) => {
+        this.displayScannedResult(res, false)
+        if (res.statut !== 'vert' || !res.utilisateurId) {
+          this.playBeepRefus()
+          this.finishReaderScan()
+          return
+        }
+
+        this.scanProcessingMessage = 'Identité confirmée. Enregistrement du pointage…'
+        this.pointageService.pointerParQR(scan.codeQR).subscribe({
+          next: (result) => {
+            const pointage = result.pointage
+            this.lastAttendanceName = this.formatPersonName(this.scannedUser)
+            this.lastAttendanceRole = this.roleLabel(this.scannedUser?.role)
+            this.announceAttendance(this.scannedUser, result.mode)
+            this.playBeepSucces()
+            this.scanSuccess = result.mode === 'arrivee'
+              ? 'Arrivée enregistrée à ' + pointage.heureArrivee
+              : 'Départ enregistré à ' + pointage.heureDepart
+            this.scannedUser = null
+            this.finishReaderScan()
+          },
+          error: (err) => {
+            this.scannedUser = null
+            this.scanError = err.error?.message || 'Le pointage n’a pas pu être enregistré. Réessayez.'
+            this.playBeepRefus()
+            this.finishReaderScan()
+          }
+        })
+      },
+      error: (err) => {
+        this.scannedUser = null
+        this.scanError = err.error?.message || 'Code QR invalide ou service de pointage indisponible.'
+        this.playBeepRefus()
+        this.finishReaderScan()
+      }
+    })
+  }
+
+  private finishReaderScan(): void {
+    this.readerScanInProgress = false
+    if (this.readerQueue.length > 0) {
+      this.processNextReaderScan()
+    } else {
+      this.scanProcessing = false
+      this.scanProcessingMessage = ''
     }
   }
 
@@ -126,9 +482,9 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   }
 
   private getCachedResult(codeQR: string): any {
-    const raw = sessionStorage.getItem(this.getCacheKey(codeQR))
-    if (!raw) return null
     try {
+      const raw = sessionStorage.getItem(this.getCacheKey(codeQR))
+      if (!raw) return null
       const data = JSON.parse(raw)
       if (Date.now() - data.timestamp < TerminalPointagePageComponent.CACHE_TTL_MS) {
         return data.result
@@ -435,6 +791,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   }
 
   private onScanSuccess(decodedText: string): void {
+    this.scannedCodeQR = decodedText.trim()
     this.playBeep()
     void this.stopScanner()
     const cached = this.getCachedResult(decodedText)
@@ -445,11 +802,11 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     this.verifierStatut(decodedText)
   }
 
-  private displayScannedResult(res: any): void {
-    const autorise = res.statut !== 'rouge'
-    if (!autorise) {
+  private displayScannedResult(res: any, playFeedback: boolean = true): void {
+    const autorise = res.statut === 'vert'
+    if (playFeedback && !autorise) {
       this.playBeepRefus()
-    } else {
+    } else if (playFeedback) {
       // Bip : 1 si à jour, 2 si pas à jour
       const estAJour = res.situationFinanciere?.estAJour !== false
       if (estAJour) {
@@ -483,6 +840,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
 
   verifierParIdManuel(): void {
     if (!this.manualId.trim()) return
+    this.scannedCodeQR = null
     this.verifierStatut(this.manualId.trim())
     this.showManualInput = false
   }
@@ -505,17 +863,28 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
 
   pointerScannedUser(mode: 'arrivee' | 'depart'): void {
     if (!this.scannedUser?.userId) return
-    const serviceCall = mode === 'arrivee'
-      ? this.pointageService.pointerArriveeByScan(this.scannedUser.userId)
-      : this.pointageService.pointerDepartByScan(this.scannedUser.userId)
+    const codeQR = this.scannedCodeQR
+    let actualMode = mode
+    const serviceCall = codeQR?.startsWith('CARTE|v=1|')
+      ? this.pointageService.pointerParQR(codeQR).pipe(map((response) => {
+        actualMode = response.mode
+        return response.pointage
+      }))
+      : mode === 'arrivee'
+        ? this.pointageService.pointerArriveeByScan(this.scannedUser.userId)
+        : this.pointageService.pointerDepartByScan(this.scannedUser.userId)
 
     serviceCall.subscribe({
-      next: (res) => {
+      next: (res: Pointage) => {
+        this.lastAttendanceName = this.formatPersonName(this.scannedUser)
+        this.lastAttendanceRole = this.roleLabel(this.scannedUser?.role)
+        this.announceAttendance(this.scannedUser, actualMode)
         this.playBeepSucces()
-        this.scanSuccess = mode === 'arrivee'
+        this.scanSuccess = actualMode === 'arrivee'
           ? 'Arrivée pointée à ' + res.heureArrivee
           : 'Départ pointé à ' + res.heureDepart
         this.scannedUser = null
+        this.scannedCodeQR = null
         setTimeout(() => this.scanSuccess = '', 4000)
       },
       error: (err) => {
@@ -527,6 +896,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
         } else {
           this.scanError = err.error?.message || 'Erreur lors du pointage'
         }
+        this.scannedUser = null
+        this.scannedCodeQR = null
         setTimeout(() => this.scanError = '', 4000)
       }
     })
@@ -539,6 +910,81 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     this.scanTimeout = false
     this.manualId = ''
     this.showManualInput = false
+    this.scannedCodeQR = null
+  }
+
+  toggleVoiceAnnouncements(): void {
+    this.voiceAnnouncementsEnabled = !this.voiceAnnouncementsEnabled
+    this.voiceError = ''
+    if (!this.voiceAnnouncementsEnabled
+      && typeof window !== 'undefined'
+      && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel()
+    }
+  }
+
+  testVoiceAnnouncement(): void {
+    if (!this.voiceAnnouncementsEnabled) return
+    this.speak('Bonjour chef Mohamed.')
+  }
+
+  private announceAttendance(user: any, mode: 'arrivee' | 'depart'): void {
+    if (!this.voiceAnnouncementsEnabled) return
+    const name = this.formatPersonName(user)
+    const role = this.roleLabel(user?.role)
+    const action = mode === 'arrivee' ? 'Arrivée enregistrée.' : 'Départ enregistré.'
+    this.speak(`${name}. ${role}. ${action}`)
+  }
+
+  private speak(text: string): void {
+    if (!this.voiceAnnouncementsEnabled) return
+    if (typeof window === 'undefined'
+      || !('speechSynthesis' in window)
+      || typeof SpeechSynthesisUtterance === 'undefined') {
+      this.voiceError = 'La synthèse vocale n’est pas disponible dans ce navigateur.'
+      return
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.lang = 'fr-FR'
+    utterance.rate = 0.95
+    utterance.onstart = () => { this.voiceError = '' }
+    utterance.onerror = (event) => {
+      if (event.error !== 'canceled' && this.voiceAnnouncementsEnabled) {
+        this.voiceError = 'La lecture vocale a échoué. Vérifiez le volume ou désactivez la voix.'
+      }
+    }
+
+    try {
+      window.speechSynthesis.cancel()
+      window.speechSynthesis.speak(utterance)
+    } catch {
+      this.voiceError = 'Impossible de lancer la lecture vocale dans ce navigateur.'
+    }
+  }
+
+  private formatPersonName(user: any): string {
+    return [user?.prenoms, user?.nom].filter((part) => typeof part === 'string' && part.trim()).join(' ').trim()
+      || 'Personne identifiée'
+  }
+
+  private roleLabel(role: string | undefined): string {
+    const labels: { [key: string]: string } = {
+      apprenant: 'Étudiant autorisé',
+      enseignant: 'Enseignant autorisé',
+      personnel_administratif: 'Personnel administratif autorisé',
+      institution: 'Personnel de l’établissement autorisé',
+      admin: 'Administrateur autorisé',
+      ressources_humaines: 'Personnel des ressources humaines autorisé',
+      surveillant: 'Surveillant autorisé',
+      secretaire: 'Secrétaire autorisé',
+      caissier_banque: 'Caissier autorisé',
+      superviseur_general: 'Superviseur général autorisé',
+      cabinet_comptable: 'Personnel comptable autorisé',
+      comite_orientation: 'Membre du comité d’orientation autorisé',
+      esa_compta: 'Personnel comptable autorisé'
+    }
+    return role ? labels[role.toLowerCase()] || 'Personnel autorisé' : 'Personne autorisée'
   }
 
   formatCurrency(value: number | undefined | null): string {

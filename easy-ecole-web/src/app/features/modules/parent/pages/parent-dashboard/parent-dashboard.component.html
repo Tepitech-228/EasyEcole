@@ -119,7 +119,8 @@
         <h3>Derni��re note</h3>
       </div>
       <div *ngIf="!dashboard?.derniereNote" class="dashboard-empty-state">Aucune note récente</div>
-      <table *ngIf="dashboard?.derniereNote" class="dashboard-table">
+      <div *ngIf="dashboard?.derniereNote" class="overflow-x-auto">
+      <table class="dashboard-table">
         <thead>
           <tr>
             <th>Cours</th>
@@ -135,6 +136,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
 
     <div *ngIf="dashboard?.echeances && dashboard!.echeances!.length > 0" class="dashboard-panel">

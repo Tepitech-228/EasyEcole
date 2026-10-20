@@ -90,6 +90,19 @@ export default class BordereauController {
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
             options.where = { utilisateurId: (req as any).utilisateurId }
         }
+        const etablissementId = Number((req as any).etablissementId);
+        if ((req as any).utilisateurRole === RolesUtilisateur.ESA_COMPTA) {
+            if (!Number.isSafeInteger(etablissementId) || etablissementId <= 0) {
+                return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+            }
+            options.where = { ...options.where, etablissementId };
+        } else if ((req as any).utilisateurRole === RolesUtilisateur.ADMIN
+            && Number.isSafeInteger(etablissementId) && etablissementId > 0) {
+            options.where = { ...options.where, etablissementId };
+        } else if ((req as any).utilisateurRole === RolesUtilisateur.APPRENANT
+            && Number.isSafeInteger(etablissementId) && etablissementId > 0) {
+            options.where = { ...options.where, etablissementId };
+        }
 
         if (req.query.statut) {
             options.where = { ...options.where, statut: req.query.statut as string }
@@ -167,6 +180,19 @@ export default class BordereauController {
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
             options.where = { ...options.where, utilisateurId: (req as any).utilisateurId }
         }
+        const etablissementId = Number((req as any).etablissementId);
+        if ((req as any).utilisateurRole === RolesUtilisateur.ESA_COMPTA) {
+            if (!Number.isSafeInteger(etablissementId) || etablissementId <= 0) {
+                return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+            }
+            options.where = { ...options.where, etablissementId };
+        } else if ((req as any).utilisateurRole === RolesUtilisateur.ADMIN
+            && Number.isSafeInteger(etablissementId) && etablissementId > 0) {
+            options.where = { ...options.where, etablissementId };
+        } else if ((req as any).utilisateurRole === RolesUtilisateur.APPRENANT
+            && Number.isSafeInteger(etablissementId) && etablissementId > 0) {
+            options.where = { ...options.where, etablissementId };
+        }
 
         try {
             const bordereau: Bordereau | null = await Bordereau.findOne(options);
@@ -184,6 +210,10 @@ export default class BordereauController {
     static async createBordereau(req: Request, res: Response): Promise<Response | null> {
         if ((req as any).utilisateurRole != RolesUtilisateur.APPRENANT) {
             return res.status(403).json({ success: false })
+        }
+        const etablissementId = Number((req as any).etablissementId);
+        if (!Number.isSafeInteger(etablissementId) || etablissementId <= 0) {
+            return res.status(400).json({ success: false, message: "Aucun site actif sélectionné" });
         }
 
         const type = req.body.type
@@ -220,6 +250,7 @@ export default class BordereauController {
         bordereau.type = type || null
         bordereau.echeanceId = echeanceId
         bordereau.utilisateurId = (req as any).utilisateurId
+        bordereau.etablissementId = etablissementId
         bordereau.fichier = fichier
         bordereau.montant = req.body.montant ? Number(req.body.montant) : null
         bordereau.referenceBancaire = req.body.referenceBancaire ?? null

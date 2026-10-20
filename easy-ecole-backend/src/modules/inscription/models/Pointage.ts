@@ -2,21 +2,24 @@
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { Utilisateur } from "../../auth/models/Utilisateur";
+import type { PointageScan } from "./PointageScan";
 
 export class Pointage extends Model<InferAttributes<Pointage>, InferCreationAttributes<Pointage>> {
   declare id: CreationOptional<number>
-  declare date: Date
-  declare heureArrivee: Date
-  declare heureDepart: CreationOptional<Date | null>
+  declare date: Date | string
+  declare heureArrivee: Date | string
+  declare heureDepart: CreationOptional<Date | string | null>
 
   declare utilisateurId: ForeignKey<Utilisateur['id']>
   declare utilisateur?: NonAttribute<Utilisateur>
+  declare scans?: NonAttribute<PointageScan[]>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
 
   declare static associations: {
     utilisateur: Association<Pointage, Utilisateur>
+    scans: Association<Pointage, PointageScan>
   };
 }
 

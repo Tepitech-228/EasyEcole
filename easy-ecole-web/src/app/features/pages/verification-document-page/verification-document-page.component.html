@@ -1,5 +1,5 @@
-<div class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-  <div class="w-full max-w-lg bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+<div class="min-h-screen bg-gray-50 flex flex-col items-center p-4">
+  <div class="my-auto w-full max-w-lg bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
     <div class="text-center mb-8">
       <img src="assets/logos/logo2.svg" alt="Logo" class="h-12 mx-auto mb-4">
       <h1 class="text-2xl font-bold text-gray-900">Vérification de document</h1>
@@ -16,6 +16,12 @@
           <label class="block text-xs font-medium text-gray-500 mb-1">Référence du document</label>
           <input formControlName="reference" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" placeholder="Ex: DOC-2026-1-0001" />
         </div>
+        <footer class="py-3 text-center text-xs text-gray-500" role="contentinfo">
+          <span class="inline-flex items-center justify-center gap-2">
+            <img src="assets/images/Logo%20T%26B.png" alt="Logo Technology & Business" class="h-8 w-16 rounded-sm object-contain">
+            <span>© Easyschool @Technology&amp;Business</span>
+          </span>
+        </footer>
       </div>
       <button type="submit" [disabled]="form.invalid || loading" class="w-full bg-indigo-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">
         {{ loading ? 'Vérification...' : 'Vérifier' }}

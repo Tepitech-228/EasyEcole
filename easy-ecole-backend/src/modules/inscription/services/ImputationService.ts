@@ -308,8 +308,9 @@ export class ImputationService {
     static async consommerPortefeuilleUtilisateur(
         utilisateurId: number,
         transaction: Transaction,
+        etablissementId?: number,
     ): Promise<{ consomme: number; soldeRestant: number; lignes: LigneLettrage[] }> {
-        const dossier = await ImputationService.resoudreDossierCible(utilisateurId, transaction)
+        const dossier = await ImputationService.resoudreDossierCible(utilisateurId, transaction, etablissementId)
         if (!dossier) {
             return { consomme: 0, soldeRestant: 0, lignes: [] }
         }
@@ -340,14 +341,15 @@ export class ImputationService {
     private static async resoudreDossierCible(
         utilisateurId: number,
         transaction: Transaction,
+        etablissementId?: number,
     ): Promise<DossierEtudiant | null> {
         let dossier = await DossierEtudiant.findOne({
-            where: { utilisateurId, statut: 'actif' },
+            where: { utilisateurId, statut: 'actif', ...(etablissementId ? { etablissementId } : {}) },
             transaction,
         })
         if (!dossier) {
             dossier = await DossierEtudiant.findOne({
-                where: { utilisateurId },
+                where: { utilisateurId, ...(etablissementId ? { etablissementId } : {}) },
                 order: [['id', 'DESC']],
                 transaction,
             })
@@ -381,13 +383,14 @@ export class ImputationService {
         montantConstate: number,
         transaction: Transaction,
         type?: 'inscription' | 'scolarite',
+        etablissementId?: number,
     ): Promise<ResultatImputation> {
         if (!Number.isFinite(montantConstate) || montantConstate <= 0) {
             throw new MontantConstateInvalideError(montantConstate)
         }
 
         const dossiers = await DossierEtudiant.findAll({
-            where: { utilisateurId },
+            where: { utilisateurId, ...(etablissementId ? { etablissementId } : {}) },
             transaction,
         })
 
@@ -482,6 +485,7 @@ export class ImputationService {
         utilisateurId: number,
         composition: CompositionImputation[],
         transaction: Transaction,
+        etablissementId?: number,
     ): Promise<ResultatImputation> {
         const montantTotal = Math.round(composition.reduce((s, c) => s + Number(c.montant || 0), 0) * 100) / 100
         if (!composition.length || !Number.isFinite(montantTotal) || montantTotal <= 0) {
@@ -489,7 +493,7 @@ export class ImputationService {
         }
 
         const dossiers = await DossierEtudiant.findAll({
-            where: { utilisateurId },
+            where: { utilisateurId, ...(etablissementId ? { etablissementId } : {}) },
             transaction,
         })
 
@@ -674,13 +678,14 @@ export class ImputationService {
         montantConstate: number,
         transaction?: Transaction,
         type?: 'inscription' | 'scolarite',
+        etablissementId?: number,
     ): Promise<ResultatImputation> {
         if (!Number.isFinite(montantConstate) || montantConstate <= 0) {
             throw new MontantConstateInvalideError(montantConstate)
         }
 
         const dossiers = await DossierEtudiant.findAll({
-            where: { utilisateurId },
+            where: { utilisateurId, ...(etablissementId ? { etablissementId } : {}) },
             transaction,
         })
 

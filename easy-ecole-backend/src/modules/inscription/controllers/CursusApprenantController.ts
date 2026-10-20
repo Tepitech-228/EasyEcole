@@ -16,6 +16,24 @@ export default class CursusApprenantController {
 
     constructor() { }
 
+    private static getSiteScope(req: Request): number | null | undefined {
+        const role = (req as any).utilisateurRole;
+        if (
+            role === RolesUtilisateur.ADMIN ||
+            role === RolesUtilisateur.CABINET_COMPTABLE ||
+            role === RolesUtilisateur.COMITE_ORIENTATION
+        ) {
+            return null;
+        }
+
+        if (role === RolesUtilisateur.APPRENANT) {
+            return null;
+        }
+
+        const siteId = Number((req as any).etablissementId);
+        return Number.isSafeInteger(siteId) && siteId > 0 ? siteId : undefined;
+    }
+
     static async getAllCursusApprenant(req: Request, res: Response): Promise<Response> {
         try {
             const page = Math.max(1, parseInt(req.query.page as string) || 1);
@@ -48,6 +66,14 @@ export default class CursusApprenantController {
 
             if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
                 where.utilisateurId = (req as any).utilisateurId;
+            } else {
+                const siteScope = CursusApprenantController.getSiteScope(req);
+                if (siteScope === undefined) {
+                    return res.status(403).json({ success: false, message: "Aucun site actif autorisé" });
+                }
+                if (siteScope !== null) {
+                    where.etablissementId = siteScope;
+                }
             }
 
             const include: any[] = [
@@ -55,7 +81,11 @@ export default class CursusApprenantController {
                     association: CursusApprenant.associations.utilisateur,
                     include: [
                         { association: Utilisateur.associations.apprenant },
-                        { association: 'dossiersEtudiants' }
+                        {
+                            association: 'dossiersEtudiants',
+                            ...(where.etablissementId ? { where: { etablissementId: where.etablissementId } } : {}),
+                            required: false
+                        }
                     ],
                     where: Object.keys(apprenantWhere).length > 0 ? apprenantWhere : undefined,
                     required: Object.keys(apprenantWhere).length > 0
@@ -173,11 +203,23 @@ export default class CursusApprenantController {
     }
 
     static async getCursusApprenant(req: Request, res: Response): Promise<Response> {
-        let options: FindOptions<InferAttributes<CursusApprenant>> = {}
-        options = { where: { id: req.params.id } }
-
         try {
-            const cursusApprenant: CursusApprenant | null = await CursusApprenant.findOne(options);
+            const where: any = { id: req.params.id };
+            const role = (req as any).utilisateurRole;
+
+            if (role === RolesUtilisateur.APPRENANT) {
+                where.utilisateurId = (req as any).utilisateurId;
+            } else {
+                const siteScope = CursusApprenantController.getSiteScope(req);
+                if (siteScope === undefined) {
+                    return res.status(403).json({ success: false, message: "Aucun site actif autorisé" });
+                }
+                if (siteScope !== null) {
+                    where.etablissementId = siteScope;
+                }
+            }
+
+            const cursusApprenant: CursusApprenant | null = await CursusApprenant.findOne({ where });
 
             if (cursusApprenant == null)
                 return res.status(404).json({ success: false, message: "CursusApprenant non trouvée" });
@@ -195,15 +237,21 @@ export default class CursusApprenantController {
             return res.status(403).json({ success: false })
         }
 
+        const siteScope = CursusApprenantController.getSiteScope(req);
+        if (siteScope === undefined) {
+            return res.status(403).json({ success: false, message: "Aucun site actif autorisé" });
+        }
+
         let cursusApprenant: CursusApprenant = new CursusApprenant();
         cursusApprenant.externe = req.body.externe
-        cursusApprenant.etablissementId = req.body.etablissementId
+        cursusApprenant.etablissementId = siteScope ?? req.body.etablissementId
         cursusApprenant.intituleParcours = req.body.intituleParcours
         cursusApprenant.parcoursId = req.body.parcoursId
         cursusApprenant.classeId = req.body.classeId
         cursusApprenant.anneeAcademiqueId = req.body.anneeAcademiqueId
         cursusApprenant.niveauEtudeId = req.body.niveauEtudeId
         cursusApprenant.demandeInscriptionId = req.body.demandeInscriptionId
+        cursusApprenant.utilisateurId = req.body.utilisateurId
 
         await cursusApprenant.save()
             .then((cursusApprenant) => {
@@ -217,20 +265,24 @@ export default class CursusApprenantController {
     }
 
     static async updateCursusApprenant(req: Request, res: Response): Promise<Response | null> {
-        let options: FindOptions<InferAttributes<CursusApprenant>> = {}
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
             return res.status(403).json({ success: false })
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
-            options = { where: { id: req.params.id } }
+
+        const siteScope = CursusApprenantController.getSiteScope(req);
+        if (siteScope === undefined) {
+            return res.status(403).json({ success: false, message: "Aucun site actif autorisé" });
         }
 
-        let cursusApprenant: CursusApprenant | null = await CursusApprenant.findOne(options);
+        const where: any = { id: req.params.id };
+        if (siteScope !== null) where.etablissementId = siteScope;
+
+        let cursusApprenant: CursusApprenant | null = await CursusApprenant.findOne({ where });
         if (cursusApprenant != null) {
 
             await cursusApprenant.update({
                 externe: req.body.externe,
-                etablissementId: req.body.etablissementId,
+                etablissementId: siteScope ?? req.body.etablissementId,
                 intituleParcours: req.body.intituleParcours,
                 parcoursId: req.body.parcoursId,
                 classeId: req.body.classeId,
@@ -253,15 +305,19 @@ export default class CursusApprenantController {
     }
 
     static async deleteCursusApprenant(req: Request, res: Response): Promise<Response | null> {
-        let options: FindOptions<InferAttributes<CursusApprenant>> = {}
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
             return res.status(403).json({ success: false })
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
-            options = { where: { id: req.params.id } }
+
+        const siteScope = CursusApprenantController.getSiteScope(req);
+        if (siteScope === undefined) {
+            return res.status(403).json({ success: false, message: "Aucun site actif autorisé" });
         }
 
-        let cursusApprenant: CursusApprenant | null = await CursusApprenant.findOne({ where: { id: req.params.id } });
+        const where: any = { id: req.params.id };
+        if (siteScope !== null) where.etablissementId = siteScope;
+
+        let cursusApprenant: CursusApprenant | null = await CursusApprenant.findOne({ where });
         if (cursusApprenant) {
             await cursusApprenant.destroy()
                 .then(() => {
@@ -300,11 +356,18 @@ export default class CursusApprenantController {
     }
 
     static async getCount(req: Request, res: Response): Promise<Response | null> {
-        let options: CountOptions<InferAttributes<CursusApprenant>> = {}
-
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
             return res.status(403).json({ success: false })
         }
+
+        const siteScope = CursusApprenantController.getSiteScope(req);
+        if (siteScope === undefined) {
+            return res.status(403).json({ success: false, message: "Aucun site actif autorisé" });
+        }
+
+        const options: CountOptions<InferAttributes<CursusApprenant>> = siteScope === null
+            ? {}
+            : { where: { etablissementId: siteScope } };
 
         await CursusApprenant.count(options)
             .then((value) => {

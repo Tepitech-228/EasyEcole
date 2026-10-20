@@ -4,9 +4,11 @@ import { Router } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { Enseignant } from 'src/app/data/modules/auth/models/Enseignant.model';
 import { Utilisateur } from 'src/app/data/modules/auth/models/Utilisateur.model';
-import { AuthService } from 'src/app/data/modules/auth/services/auth.service';
+import { AuthService, SiteUtilisateur } from 'src/app/data/modules/auth/services/auth.service';
 import { EnseignantService } from 'src/app/data/modules/auth/services/enseignant.service';
 import { environment } from 'src/environments/environment';
+import { LocalStorageService } from 'src/app/core/services/local-storage.service';
+import { JwtTokenService } from 'src/app/core/services/jwt-token.service';
 
 @Component({
   selector: 'app-liste-enseignants-page',
@@ -22,6 +24,9 @@ export class ListeEnseignantsPageComponent extends BaseComponentClass implements
   errorMessage: string | null = null
 
   enseignants: Enseignant[] = []
+  sitesDisponibles: SiteUtilisateur[] = []
+  sitesLoading = false
+  sitesError = ''
   selectedPhoto: File | null = null
   photoPreviewUrl: string | null = null
 
@@ -31,6 +36,7 @@ export class ListeEnseignantsPageComponent extends BaseComponentClass implements
     nom: new FormControl(null, [Validators.required]),
     prenoms: new FormControl(null, [Validators.required]),
     contact: new FormControl(null, [Validators.required]),
+    etablissementId: new FormControl(null, [Validators.required]),
     cni: new FormControl(null),
     sexe: new FormControl(null),
     dateNaissance: new FormControl(null),
@@ -51,7 +57,9 @@ export class ListeEnseignantsPageComponent extends BaseComponentClass implements
   constructor(
     private router: Router,
     private authService: AuthService,
-    private enseignantService: EnseignantService) {
+    private enseignantService: EnseignantService,
+    private localStorageService: LocalStorageService,
+    private registrationJwtService: JwtTokenService) {
     super()
     if (!this.rolesValue.isInstitution && !this.rolesValue.isAdmin) {
       this.router.navigate(['/'])
@@ -62,6 +70,33 @@ export class ListeEnseignantsPageComponent extends BaseComponentClass implements
   }
 
   ngOnInit(): void {
+    this.chargerSites()
+  }
+
+  private chargerSites(): void {
+    this.sitesLoading = true
+    this.authService.getSitesMoi().subscribe({
+      next: sites => {
+        this.sitesDisponibles = sites
+        const token = this.localStorageService.get(LocalStorageService.AUTH_TOKEN)
+        if (token) {
+          this.registrationJwtService.setToken(token)
+          const tokenData = this.registrationJwtService.getDecodeToken() as { etablissementId?: string | number }
+          const activeSiteId = Number(tokenData?.etablissementId)
+          if (sites.some(site => Number(site.id) === activeSiteId)) {
+            this.enseignantForm.patchValue({ etablissementId: activeSiteId })
+          }
+        }
+        if (!this.enseignantForm.get('etablissementId')!.value && sites.length === 1) {
+          this.enseignantForm.patchValue({ etablissementId: sites[0].id })
+        }
+        this.sitesLoading = false
+      },
+      error: () => {
+        this.sitesError = 'Les sites autorisés n’ont pas pu être chargés.'
+        this.sitesLoading = false
+      }
+    })
   }
 
   private getEnseignants(): void {
@@ -80,7 +115,12 @@ export class ListeEnseignantsPageComponent extends BaseComponentClass implements
 
   ajouterEnseignant(): void {
     this.enseignantForm.markAllAsTouched()
-    if (this.enseignantForm.valid) {
+    const selectedSiteId = Number(this.enseignantForm.get('etablissementId')!.value)
+    if (
+      this.enseignantForm.valid &&
+      !this.sitesLoading &&
+      this.sitesDisponibles.some(site => Number(site.id) === selectedSiteId)
+    ) {
       this.successMessage = null
       this.errorMessage = null
       let enseignant: Enseignant = new Enseignant()
@@ -91,6 +131,7 @@ export class ListeEnseignantsPageComponent extends BaseComponentClass implements
       enseignant.utilisateur.prenoms = this.enseignantForm.get('prenoms')!.value
       enseignant.utilisateur.contact = this.enseignantForm.get('contact')!.value
 
+      enseignant.etablissementId = selectedSiteId
       enseignant.cni = this.enseignantForm.get('cni')!.value ?? null
       // Matricule auto-généré côté backend (badge + QR) — plus de saisie manuelle
       enseignant.sexe = this.enseignantForm.get('sexe')!.value ?? null
@@ -152,7 +193,11 @@ export class ListeEnseignantsPageComponent extends BaseComponentClass implements
   }
   closeNouvelEnseignantModal(): void {
     this.showNouvelEnseignantModal = false
+    const selectedSiteId = this.enseignantForm.get('etablissementId')!.value
     this.enseignantForm.reset()
+    this.enseignantForm.patchValue({
+      etablissementId: selectedSiteId || (this.sitesDisponibles.length === 1 ? this.sitesDisponibles[0].id : null)
+    })
     this.selectedPhoto = null
     this.photoPreviewUrl = null
   }

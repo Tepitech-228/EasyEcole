@@ -1,7 +1,163 @@
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <header class="pointage-hero mb-7">
+    <div class="pointage-hero-copy">
+      <span class="pointage-eyebrow"><span></span> PRÉSENCE · CONTRÔLE D’ACCÈS</span>
+      <h1>Pointage intelligent</h1>
+      <p>Un accueil fluide et sécurisé pour les étudiants et le personnel.</p>
+    </div>
+    <div class="pointage-hero-mark" aria-hidden="true">
+      <svg viewBox="0 0 48 48" fill="none">
+        <path d="M7 17V9a2 2 0 0 1 2-2h8M31 7h8a2 2 0 0 1 2 2v8M41 31v8a2 2 0 0 1-2 2h-8M17 41H9a2 2 0 0 1-2-2v-8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="24" cy="20" r="5" stroke="currentColor" stroke-width="2.5"/>
+        <path d="M14 36c1.4-5.2 4.7-8 10-8s8.6 2.8 10 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+  </header>
+
   <div class="mb-8">
-    <app-header-title title="Terminal de pointage" subtitle="Gérez les arrivées et départs par QR code"></app-header-title>
+    <div class="pointage-methods-bar grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
+      <div class="flex min-w-0 items-center gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-3 shadow-sm">
+        <span class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-800">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2v6h-2zM14 18h2v2h-2z"/>
+          </svg>
+        </span>
+        <span class="flex min-w-0 flex-1 flex-col gap-1">
+          <strong class="truncate text-sm font-semibold text-gray-900">QR USB Tovi</strong>
+          <small class="text-xs leading-snug text-gray-500">Lecteur clavier prêt · scan automatique</small>
+        </span>
+        <span class="flex-shrink-0 rounded-full bg-green-100 px-2 py-1 text-xs font-bold tracking-wide text-green-700">ACTIF</span>
+      </div>
+
+      <div class="pointage-hikvision-device flex min-w-0 items-center gap-3 rounded-2xl p-3 shadow-sm">
+        <span class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 9V6a2 2 0 012-2h3m9 0h3a2 2 0 012 2v3m0 6v3a2 2 0 01-2 2h-3m-9 0H6a2 2 0 01-2-2v-3"/>
+            <circle cx="12" cy="10" r="3" stroke-width="1.8"/>
+            <path stroke-linecap="round" stroke-width="1.8" d="M7.5 18c.8-2.2 2.3-3.4 4.5-3.4s3.7 1.2 4.5 3.4"/>
+          </svg>
+        </span>
+        <span class="flex min-w-0 flex-1 flex-col gap-1">
+          <strong class="truncate text-sm font-semibold text-gray-900">Hikvision MinMoe</strong>
+          <small class="text-xs leading-snug text-gray-500">Pointage facial · ISAPI</small>
+        </span>
+        <span class="pointage-hikvision-badge flex-shrink-0 rounded-full px-2 py-1 text-xs font-bold tracking-wide"
+              [class.online]="hikvisionStatusLabel === 'CONNECTÉ'">{{ hikvisionStatusLabel }}</span>
+      </div>
+
+      <div class="pointage-voice-control flex min-w-0 flex-col items-start justify-center gap-1 lg:items-end">
+        <button type="button" class="pointage-voice-toggle inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors"
+          [ngClass]="voiceAnnouncementsEnabled ? 'border-green-200 bg-green-50 text-green-700' : 'border-gray-200 bg-white text-gray-600'"
+          [attr.aria-pressed]="voiceAnnouncementsEnabled"
+          (click)="toggleVoiceAnnouncements()">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5L6 9H3v6h3l5 4V5zM15.5 8.5a5 5 0 010 7m3-10a9 9 0 010 13"/>
+          </svg>
+          {{ voiceAnnouncementsEnabled ? 'Voix activée' : 'Activer la voix' }}
+        </button>
+        <button type="button" class="text-xs font-semibold text-blue-700 underline underline-offset-2 disabled:cursor-not-allowed disabled:text-gray-400"
+          [disabled]="!voiceAnnouncementsEnabled"
+          (click)="testVoiceAnnouncement()">
+          Tester la voix
+        </button>
+        <small *ngIf="voiceError" class="max-w-xs text-xs text-red-700" role="status">{{ voiceError }}</small>
+        <small *ngIf="!voiceError" class="max-w-xs text-xs text-gray-500 lg:text-right">Annonce le nom et le statut après validation</small>
+      </div>
+    </div>
   </div>
+
+  <section *ngIf="isAdmin" class="pointage-terminal-config mb-7">
+    <button type="button" class="pointage-terminal-config-toggle" [attr.aria-expanded]="terminalConfigOpen"
+            (click)="terminalConfigOpen = !terminalConfigOpen">
+      <span class="pointage-terminal-config-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 8a4 4 0 100 8 4 4 0 000-8zm8 4a8 8 0 01-.12 1.38l1.3 1.02-1.3 2.26-1.55-.57a8.05 8.05 0 01-2.38 1.38L15.7 19h-2.6l-.25-1.53a8.05 8.05 0 01-2.38-1.38l-1.55.57-1.3-2.26 1.3-1.02a8 8 0 010-2.76l-1.3-1.02 1.3-2.26 1.55.57a8.05 8.05 0 012.38-1.38L13.1 5h2.6l.25 1.53a8.05 8.05 0 012.38 1.38l1.55-.57 1.3 2.26-1.3 1.02A8 8 0 0120 12z"/>
+        </svg>
+      </span>
+      <span class="min-w-0 flex-1 text-left">
+        <strong>Configuration du terminal Hikvision</strong>
+        <small>Connexion ISAPI MinMoe</small>
+      </span>
+      <span class="pointage-config-chevron" [class.open]="terminalConfigOpen">⌄</span>
+    </button>
+
+    <div *ngIf="terminalConfigOpen" class="pointage-terminal-config-body">
+      <div *ngIf="terminalConfigError" class="pointage-message pointage-message--error mb-4" role="alert">{{ terminalConfigError }}</div>
+      <div *ngIf="terminalConfigSuccess" class="pointage-message pointage-message--success mb-4" role="status">{{ terminalConfigSuccess }}</div>
+
+      <div *ngIf="terminalConfigLoading" class="pointage-terminal-loading" role="status">Chargement de la configuration…</div>
+
+      <div class="pointage-hikvision-info">
+        <strong>Connexion du terminal MinMoe</strong>
+        <p>Renseignez l’adresse IP du terminal (pas localhost), le port ISAPI, son numéro de série, le compte administrateur et le site. Le serveur EasyEcole doit pouvoir joindre le terminal sur le réseau local. Le formulaire teste l’authentification ISAPI après l’enregistrement.</p>
+        <p>Le mot de passe est chiffré avant d’être conservé. Après validation d’un dossier, l’enrôlement facial est mis en file uniquement si l’étudiant a donné son consentement explicite. La compatibilité de l’envoi du visage doit être confirmée sur le firmware du terminal.</p>
+      </div>
+
+      <form (ngSubmit)="enregistrerTerminalHikvision()" class="pointage-terminal-form mt-4">
+        <label>
+          <span>Numéro de série Hikvision</span>
+          <input name="hikvisionSerial" [(ngModel)]="hikvisionDraft.serialNumber" required maxlength="64" autocomplete="off" placeholder="N° sur l’étiquette">
+        </label>
+        <label>
+          <span>Nom du terminal</span>
+          <input name="hikvisionName" [(ngModel)]="hikvisionDraft.nom" required maxlength="120" autocomplete="off">
+        </label>
+        <label>
+          <span>Adresse IP du terminal</span>
+          <input name="hikvisionIp" [(ngModel)]="hikvisionDraft.sourceIp" required autocomplete="off" placeholder="Ex. 192.168.1.50">
+        </label>
+        <label>
+          <span>Port ISAPI</span>
+          <input name="hikvisionPort" type="number" [(ngModel)]="hikvisionDraft.port" required min="1" max="65535">
+        </label>
+        <label>
+          <span>Compte du terminal</span>
+          <input name="hikvisionUsername" [(ngModel)]="hikvisionDraft.username" required maxlength="120" autocomplete="username">
+        </label>
+        <label>
+          <span>Mot de passe du terminal</span>
+          <input name="hikvisionPassword" type="password" [(ngModel)]="hikvisionDraft.password" required maxlength="256" autocomplete="new-password">
+        </label>
+        <label>
+          <span>Site rattaché</span>
+          <select name="hikvisionSite" [(ngModel)]="hikvisionDraft.etablissementId" required>
+            <option [ngValue]="null" disabled>Choisir un site</option>
+            <option *ngFor="let site of terminalSites" [ngValue]="site.id">{{ site.nom }}</option>
+          </select>
+        </label>
+        <label class="flex items-center gap-2">
+          <input name="hikvisionHttps" type="checkbox" [(ngModel)]="hikvisionDraft.https" (change)="definirPortHikvision()">
+          <span>Utiliser HTTPS (certificat du terminal vérifié par le serveur)</span>
+        </label>
+        <button type="submit" class="pointage-btn pointage-btn--arrivee" [disabled]="terminalConfigSaving || terminalConfigLoading || !terminalSites.length">
+          {{ terminalConfigSaving ? 'Enregistrement…' : 'Enregistrer et tester' }}
+        </button>
+      </form>
+
+      <div *ngIf="hikvisionTerminals.length" class="pointage-terminal-list">
+        <h3>Terminaux Hikvision</h3>
+        <article *ngFor="let terminal of hikvisionTerminals" class="pointage-terminal-row">
+          <div class="min-w-0">
+            <strong>{{ terminal.nom }}</strong>
+            <span>{{ terminal.serialNumber }} · {{ terminal.sourceIp }}:{{ terminal.hikvisionPort }}</span>
+            <span>Site : {{ nomSiteTerminal(terminal) }}</span>
+            <small>{{ terminalEstEnLigne(terminal) ? 'Connexion ISAPI récente' : (terminal.lastSeenAt ? 'Dernier contact : ' + (terminal.lastSeenAt | date:'short') : 'En attente de connexion ISAPI') }}</small>
+          </div>
+          <span class="pointage-terminal-status" [class.online]="terminalEstEnLigne(terminal)">
+            {{ terminal.actif ? (terminalEstEnLigne(terminal) ? 'CONNECTÉ' : 'EN ATTENTE') : 'DÉSACTIVÉ' }}
+          </span>
+          <button type="button" class="pointage-btn pointage-btn--outline pointage-btn--sm"
+                  [disabled]="hikvisionTestingId === terminal.id"
+                  (click)="testerTerminalHikvision(terminal)">
+            {{ hikvisionTestingId === terminal.id ? 'Test…' : 'Tester ISAPI' }}
+          </button>
+          <button type="button" class="pointage-btn pointage-btn--outline pointage-btn--sm" (click)="basculerTerminalHikvision(terminal)">
+            {{ terminal.actif ? 'Désactiver' : 'Réactiver' }}
+          </button>
+        </article>
+      </div>
+    </div>
+  </section>
 
   <app-loading-spinner *ngIf="loading"></app-loading-spinner>
 
@@ -140,6 +296,10 @@
             <div>
               <h3 class="text-sm font-semibold text-gray-900">Scanner un QR code</h3>
               <p class="text-xs text-gray-400">Scannez le QR d'un étudiant ou personnel</p>
+              <p class="pointage-reader-hint">
+                <span class="hint-dot"></span>
+                Lecteur USB clavier : validation et pointage automatiques côté serveur
+              </p>
             </div>
           </div>
           <div *ngIf="scannedUser || scanError || scanSuccess" class="no-print">
@@ -154,6 +314,16 @@
 
         <!-- Scanner Body -->
         <div class="pointage-card-body">
+
+          <div *ngIf="scanProcessing" class="pointage-state-card border border-blue-200 bg-blue-50" role="status" aria-live="polite">
+            <div class="state-icon">
+              <svg class="w-6 h-6 animate-spin text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582M20 12a8 8 0 01-14.9 4M20 12a8 8 0 01-14.9-4M20 12v-5h-.582"/>
+              </svg>
+            </div>
+            <div class="state-title text-blue-900">Traitement du scan</div>
+            <div class="state-desc text-blue-700">{{ scanProcessingMessage }}</div>
+          </div>
 
           <!-- ===== TIMEOUT ===== -->
           <div *ngIf="scanTimeout" class="pointage-state-card pointage-state-card--timeout">
@@ -178,26 +348,10 @@
           </div>
 
           <!-- ===== SCAN STATE ===== -->
-          <div *ngIf="!scannedUser && !scanError && !scanSuccess && !scanTimeout && !showManualInput">
+          <div *ngIf="!scanProcessing && !scannedUser && !scanError && !scanSuccess && !scanTimeout && !showManualInput">
 
-            <!-- Mode selector -->
-            <div class="pointage-mode-selector">
-              <button (click)="startScanner('arrivee')"
-                class="pointage-mode-btn"
-                [ngClass]="scanMode === 'arrivee' ? 'pointage-mode-btn--active' : ''">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/>
-                </svg>
-                Arrivée
-              </button>
-              <button (click)="startScanner('depart')"
-                class="pointage-mode-btn"
-                [ngClass]="scanMode === 'depart' ? 'pointage-mode-btn--active' : ''">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                </svg>
-                Départ
-              </button>
+            <div class="mb-4 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-center text-sm text-indigo-800">
+              Le système détermine automatiquement l’entrée ou la sortie selon le profil et les scans de la journée.
             </div>
 
             <!-- Scanner placeholder (inactif) ou caméra active -->
@@ -428,6 +582,10 @@
               </svg>
             </div>
             <div class="state-title">Pointage effectué</div>
+            <div *ngIf="lastAttendanceName" class="my-2 flex flex-col text-green-900">
+              <strong class="text-base">{{ lastAttendanceName }}</strong>
+              <span class="text-xs">{{ lastAttendanceRole }}</span>
+            </div>
             <div class="state-desc">{{ scanSuccess }}</div>
             <button (click)="resetScan()" class="pointage-btn pointage-btn--success pointage-btn--sm">
               Scanner un autre

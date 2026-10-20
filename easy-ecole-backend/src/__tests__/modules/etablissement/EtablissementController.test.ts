@@ -41,6 +41,20 @@ describe('EtablissementController', () => {
     expect(res.json).toHaveBeenCalledWith({ success: false, message: 'Accès non autorisé' })
   })
 
+  it('refuse la consultation par un compte sans site affecté', async () => {
+    Etablissement.findByPk.mockResolvedValue({ id: 5, nom: 'Autre école' })
+    const req = mockRequest({
+      params: { id: '5' },
+      utilisateurRole: RolesUtilisateur.INSTITUTION,
+      etablissementId: null,
+    } as any)
+    const res = mockResponse()
+
+    await EtablissementController.get(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+  })
+
   it('réserve la création aux administrateurs', async () => {
     const req = mockRequest({
       body: { nom: 'Nouvelle école' },
@@ -68,5 +82,39 @@ describe('EtablissementController', () => {
     expect(Etablissement.create).toHaveBeenCalledWith({ nom: 'Nouvelle école' })
     expect(res.status).toHaveBeenCalledWith(201)
     expect(res.send).toHaveBeenCalledWith(created)
+  })
+
+  it('refuse la modification d’un établissement par un rôle non administrateur', async () => {
+    const req = mockRequest({
+      params: { id: '4' },
+      body: { nom: 'Modification interdite' },
+      utilisateurRole: RolesUtilisateur.INSTITUTION,
+      etablissementId: 4,
+    } as any)
+    const res = mockResponse()
+
+    await EtablissementController.update(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(Etablissement.findByPk).not.toHaveBeenCalled()
+  })
+
+  it('allows administrators to deactivate a site without deleting it', async () => {
+    const update = jest.fn().mockResolvedValue(undefined)
+    const destroy = jest.fn()
+    const item = { id: 4, actif: true, update, destroy }
+    Etablissement.findByPk.mockResolvedValue(item)
+    const req = mockRequest({
+      params: { id: '4' },
+      body: { actif: false },
+      utilisateurRole: RolesUtilisateur.ADMIN,
+    } as any)
+    const res = mockResponse()
+
+    await EtablissementController.setActif(req, res)
+
+    expect(update).toHaveBeenCalledWith({ actif: false })
+    expect(destroy).not.toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
   })
 })

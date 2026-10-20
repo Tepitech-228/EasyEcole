@@ -27,6 +27,37 @@ export interface MenuPoleConfig {
 
 export const MENU_CONFIG: MenuPoleConfig[] = [
     {
+        label: 'Stockage des fichiers',
+        icon: 'folder_open',
+        allowedRoles: [
+            RolesUtilisateur.ADMIN,
+            RolesUtilisateur.SUPERVISEUR_GENERAL,
+            RolesUtilisateur.COMITE_ORIENTATION,
+            RolesUtilisateur.ESA_COMPTA,
+            RolesUtilisateur.CABINET_COMPTABLE
+        ],
+        groups: [
+            {
+                label: 'Documents',
+                items: [
+                    {
+                        label: 'Importer / exporter',
+                        route: '/ged/storage-files',
+                        icon: 'inventory_2',
+                        allowedRoles: [
+                            RolesUtilisateur.ADMIN,
+                            RolesUtilisateur.SUPERVISEUR_GENERAL,
+                            RolesUtilisateur.COMITE_ORIENTATION,
+                            RolesUtilisateur.ESA_COMPTA,
+                            RolesUtilisateur.CABINET_COMPTABLE
+                        ],
+                        roleRestricted: true
+                    }
+                ]
+            }
+        ]
+    },
+    {
         label: 'Pedagogique',
         icon: 'school',
         allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN, RolesUtilisateur.COMITE_ORIENTATION, RolesUtilisateur.SUPERVISEUR_GENERAL],
@@ -426,6 +457,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                 roleRestricted: true,
                 items: [
                     { label: 'Utilisateurs', route: '/administration/utilisateurs', icon: 'people', permissionKey: 'menu.administration.utilisateurs', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Sites', route: '/administration/sites', icon: 'business', allowedRoles: [RolesUtilisateur.ADMIN], roleRestricted: true },
                     { label: 'QR Codes', route: '/administration/qr-codes', icon: 'qr_code', permissionKey: 'menu.administration.qr-codes', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Journal audit', route: '/administration/audit-logs', icon: 'fact_check', permissionKey: 'menu.administration.journal-audit', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Configuration', route: '/administration/configuration', icon: 'tune', permissionKey: 'menu.administration.configuration', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },

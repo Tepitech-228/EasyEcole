@@ -3,8 +3,11 @@
         <div class="flex flex-col h-full justify-between overflow-x-hidden overflow-y-auto gap-y-6">
             <div class="flex flex-col gap-y-4">
                 <div class="mb-2 px-3 pt-5 flex items-center justify-between" style="border-color: #696969 !important;">
-                    <img id="sidebar-logo" class="h-8 px-3" src="assets/logos/logo2.svg" alt="">
-                    <img id="sidebar-logo-small" class="h-8 mx-auto" src="assets/logos/logo-icon.svg" alt="">
+                    <div id="sidebar-logo" class="flex h-8 items-center gap-2 px-3">
+                        <img class="h-7 w-auto" src="assets/images/logo-esa.png" alt="Logo ESA">
+                        <span class="whitespace-nowrap text-sm font-bold tracking-wide text-white">ESA ECOLE</span>
+                    </div>
+                    <img id="sidebar-logo-small" class="h-8 mx-auto" src="assets/images/logo-esa.png" alt="Logo ESA">
                     <div class="flex items-center gap-x-1">
                         <button type="button" (click)="toggleSidebar()" class="sidebar-toggle-btn hidden lg:flex" title="Réduire/Étendre le menu">
                             <svg class="h-4 w-4 text-white opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -188,6 +191,10 @@
             </div>
 
             <router-outlet></router-outlet>
+            <footer class="easy-school-copyright" role="contentinfo">
+                <img src="assets/images/Logo%20T%26B.png" alt="Logo Technology & Business">
+                © Easyschool @Technology&amp;Business
+            </footer>
         </div>
     </div>
 </main>

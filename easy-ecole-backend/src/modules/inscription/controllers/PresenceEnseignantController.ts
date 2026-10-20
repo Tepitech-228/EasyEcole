@@ -8,6 +8,8 @@ import { PresenceCoursParticipant } from "../models/PresenceCoursParticipant";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { EtatsDePresence } from "../../../core/enums/EtatsDePresence";
 import { AutoPresenceService } from "../services/AutoPresenceService";
+import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
+import { getSurveillantSiteId } from "../../../core/helpers/SurveillantSiteScope";
 
 export default class PresenceEnseignantController {
 
@@ -53,6 +55,12 @@ export default class PresenceEnseignantController {
         include: [{ association: Seance.associations.cours }]
       });
       if (!seance) return res.status(404).json({ message: 'Séance non trouvée' });
+      if ((req as any).utilisateurRole === RolesUtilisateur.SURVEILLANT) {
+        const etablissementId = await getSurveillantSiteId(req);
+        if (!etablissementId || Number((seance as any).cours?.etablissementId) !== etablissementId) {
+          return res.status(403).json({ message: "Vous n'avez pas accès aux présences de cette séance" });
+        }
+      }
 
       const liste = await ListePresence.findOne({
         where: { coursId: seance.coursId as any },

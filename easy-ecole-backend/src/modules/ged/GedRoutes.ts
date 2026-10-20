@@ -13,6 +13,7 @@ import FolderAutoRouter from "./routers/FolderAutoRouter";
 import DashboardGedRouter from "./routers/DashboardGedRouter";
 import NotificationGedRouter from "./routers/NotificationGedRouter";
 import TagRouter from "./routers/TagRouter";
+import StoredFileRouter from "./routers/StoredFileRouter";
 
 const router = express.Router();
 
@@ -28,6 +29,7 @@ router
     .use('/dashboard', [Authenticate], DashboardGedRouter)
     .use('/notifications', [Authenticate], NotificationGedRouter)
     .use('/tags', [Authenticate], TagRouter)
+    .use('/files', StoredFileRouter)
         /**
      * @openapi
      * /academic-tree:

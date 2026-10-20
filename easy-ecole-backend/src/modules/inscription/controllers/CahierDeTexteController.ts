@@ -6,6 +6,7 @@ import { Cours } from "../models/Cours";
 import { Parcours } from "../models/Parcours";
 import { CahierDeTexte } from "../models/CahierDeTexte";
 import { CoursParticipant } from "../models/CoursParticipant";
+import { getSurveillantSiteId } from "../../../core/helpers/SurveillantSiteScope";
 
 export default class CahierDeTexteController {
 
@@ -27,21 +28,30 @@ export default class CahierDeTexteController {
             if (enseignant) where.enseignantId = enseignant.id;
         }
 
-        let options: FindOptions<InferAttributes<CahierDeTexte>> = {
-            where,
-            include: [
-                {
-                    association: CahierDeTexte.associations.cours, include: [
-                        Cours.associations.classe,
-                        { association: Cours.associations.enseignant, include: [Enseignant.associations.utilisateur] },
-                        { association: Cours.associations.parcours, include: [Parcours.associations.niveauEtude] }
-                    ]
-                },
-                { association: CahierDeTexte.associations.enseignant, include: [Enseignant.associations.utilisateur] },
-            ]
-        }
-
         try {
+            const coursInclude: any = {
+                association: CahierDeTexte.associations.cours,
+                include: [
+                    Cours.associations.classe,
+                    { association: Cours.associations.enseignant, include: [Enseignant.associations.utilisateur] },
+                    { association: Cours.associations.parcours, include: [Parcours.associations.niveauEtude] }
+                ]
+            };
+            if (role === RolesUtilisateur.SURVEILLANT) {
+                const etablissementId = await getSurveillantSiteId(req);
+                if (!etablissementId) {
+                    return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
+                }
+                coursInclude.where = { etablissementId };
+                coursInclude.required = true;
+            }
+            const options: FindOptions<InferAttributes<CahierDeTexte>> = {
+                where,
+                include: [
+                    coursInclude,
+                    { association: CahierDeTexte.associations.enseignant, include: [Enseignant.associations.utilisateur] },
+                ]
+            };
             let cahiersDeTexte: CahierDeTexte[];
             cahiersDeTexte = await CahierDeTexte.findAll(options);
 
@@ -89,6 +99,11 @@ export default class CahierDeTexteController {
             else if (role === RolesUtilisateur.ENSEIGNANT) {
                 const enseignant = await Enseignant.findOne({ where: { utilisateurId } });
                 if (!enseignant || cahierDeTexte.enseignantId !== enseignant.id) {
+                    return res.status(403).json({ success: false, message: "Vous n'avez pas accès à ce cahier de texte" });
+                }
+            } else if (role === RolesUtilisateur.SURVEILLANT) {
+                const etablissementId = await getSurveillantSiteId(req);
+                if (!etablissementId || Number((cahierDeTexte as any).cours?.etablissementId) !== etablissementId) {
                     return res.status(403).json({ success: false, message: "Vous n'avez pas accès à ce cahier de texte" });
                 }
             }

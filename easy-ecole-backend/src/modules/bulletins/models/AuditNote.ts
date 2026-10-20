@@ -13,6 +13,7 @@ export class AuditNote extends Model<InferAttributes<AuditNote>, InferCreationAt
   declare nouvelleNote: CreationOptional<number | null>
   declare modifiePar: ForeignKey<Utilisateur['id']>
   declare motif: CreationOptional<string | null>
+  declare action: CreationOptional<string>
 
   declare modifieParUtilisateur?: Utilisateur
   declare noteEvaluation?: NoteEvaluation
@@ -50,6 +51,11 @@ AuditNote.init({
   motif: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  action: {
+    type: DataTypes.STRING(40),
+    allowNull: false,
+    defaultValue: 'modification_note'
   },
   createdAt: DataTypes.DATE,
 }, {

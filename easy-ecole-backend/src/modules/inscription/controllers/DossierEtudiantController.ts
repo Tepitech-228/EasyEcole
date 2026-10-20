@@ -98,10 +98,29 @@ export default class DossierEtudiantController {
         return undefined
     }
 
+    private static getEtablissementIdAutorise(req: Request): number | null | undefined {
+        const role = (req as any).utilisateurRole
+        if (
+            role === RolesUtilisateur.ADMIN ||
+            role === RolesUtilisateur.CABINET_COMPTABLE ||
+            role === RolesUtilisateur.COMITE_ORIENTATION
+        ) {
+            return null
+        }
+        if (!ROLES_STAFF_DOSSIER.includes(role)) return null
+
+        const siteId = Number((req as any).etablissementId)
+        return Number.isSafeInteger(siteId) && siteId > 0 ? siteId : undefined
+    }
+
     static async getAllDossiers(req: Request, res: Response): Promise<Response> {
         const scope = await DossierEtudiantController.getUtilisateurIdsAutorises(req)
         if (scope === undefined) {
             return res.status(403).json({ success: false, message: "Rôle non autorisé" })
+        }
+        const siteScope = DossierEtudiantController.getEtablissementIdAutorise(req)
+        if (siteScope === undefined) {
+            return res.status(403).json({ success: false, message: "Aucun site actif autorisé" })
         }
 
         const hasPagination = req.query.page !== undefined || req.query.limit !== undefined
@@ -117,6 +136,9 @@ export default class DossierEtudiantController {
 
         if (scope !== null) {
             where.utilisateurId = scope
+        }
+        if (siteScope !== null) {
+            where.etablissementId = siteScope
         }
 
         if (req.query.anneeAcademiqueId || req.query.niveauEtudeId || req.query.parcoursId) {
@@ -206,10 +228,15 @@ export default class DossierEtudiantController {
         if (role !== RolesUtilisateur.INSTITUTION && role !== RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false, message: "Accès réservé à l'administration" })
         }
+        const siteScope = DossierEtudiantController.getEtablissementIdAutorise(req)
+        if (siteScope === undefined) {
+            return res.status(403).json({ success: false, message: "Aucun site actif autorisé" })
+        }
 
         try {
             // 1) Tous les dossiers étudiants avec utilisateur -> apprenant (nom, prenoms, photo)
             const dossiers = await DossierEtudiant.findAll({
+                where: siteScope === null ? undefined : { etablissementId: siteScope },
                 include: [
                     { association: DossierEtudiant.associations.utilisateur, include: [{ model: Apprenant, as: 'apprenant' }] }
                 ]
@@ -222,6 +249,9 @@ export default class DossierEtudiantController {
                 include: [
                     {
                         association: DemandeInscription.associations.cursusApprenant,
+                        ...(siteScope !== null
+                            ? { where: { etablissementId: siteScope }, required: true }
+                            : {}),
                         include: [
                             { model: AnneeAcademique, as: 'anneeAcademique' },
                             { model: Parcours, as: 'parcours' },
@@ -368,17 +398,21 @@ export default class DossierEtudiantController {
         if (scope === undefined) {
             return res.status(403).json({ success: false, message: "Rôle non autorisé" })
         }
+        const siteScope = DossierEtudiantController.getEtablissementIdAutorise(req)
+        if (siteScope === undefined) {
+            return res.status(403).json({ success: false, message: "Aucun site actif autorisé" })
+        }
 
-        let options: FindOptions<InferAttributes<DossierEtudiant>> = {
-            where: { id: req.params.id },
+        const where: any = { id: req.params.id };
+        if (scope !== null) where.utilisateurId = scope;
+        if (siteScope !== null) where.etablissementId = siteScope;
+
+        const options: FindOptions<InferAttributes<DossierEtudiant>> = {
+            where,
             include: [
                 { association: DossierEtudiant.associations.utilisateur, include: [{ model: Apprenant, as: 'apprenant' }] },
                 DossierEtudiant.associations.echeances
             ]
-        }
-
-        if (scope !== null) {
-            options.where = { ...options.where, utilisateurId: scope as any }
         }
 
         try {
@@ -430,6 +464,10 @@ export default class DossierEtudiantController {
             (req as any).utilisateurRole != RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false })
         }
+        const siteScope = DossierEtudiantController.getEtablissementIdAutorise(req)
+        if (siteScope === undefined) {
+            return res.status(403).json({ success: false, message: "Aucun site actif autorisé" })
+        }
 
         const utilisateur = await Utilisateur.findByPk(req.body.utilisateurId)
         if (utilisateur == null) {
@@ -454,7 +492,11 @@ export default class DossierEtudiantController {
         const anneeLibelle = demande?.session?.anneeAcademique?.libelle || new Date().getFullYear().toString()
 
         const parcoursData = parcoursChoisiFinal?.parcours
-        const etablissementId = parcoursData?.etablissementId ?? classeMatricule?.etablissementId
+        const siteEtudiantId = parcoursData?.etablissementId ?? classeMatricule?.etablissementId
+        if (siteScope !== null && siteEtudiantId != null && Number(siteEtudiantId) !== siteScope) {
+            return res.status(403).json({ success: false, message: "L'étudiant n'appartient pas au site actif" })
+        }
+        const etablissementId = siteEtudiantId ?? (siteScope !== null ? siteScope : null)
         const etablissement = etablissementId
             ? await Etablissement.findByPk(etablissementId)
             : null
@@ -474,6 +516,7 @@ export default class DossierEtudiantController {
 
         let dossier: DossierEtudiant = new DossierEtudiant();
         dossier.utilisateurId = req.body.utilisateurId
+        dossier.etablissementId = etablissementId
         dossier.matricule = matricule
         dossier.codeQR = codeQR
         dossier.photo = req.body.photo ?? null
@@ -501,10 +544,15 @@ export default class DossierEtudiantController {
         if (scope === undefined) {
             return res.status(403).json({ success: false, message: "Rôle non autorisé" })
         }
+        const siteScope = DossierEtudiantController.getEtablissementIdAutorise(req)
+        if (siteScope === undefined) {
+            return res.status(403).json({ success: false, message: "Aucun site actif autorisé" })
+        }
 
         try {
             const where: any = { matricule }
             if (scope !== null) where.utilisateurId = scope
+            if (siteScope !== null) where.etablissementId = siteScope
 
             const dossier: DossierEtudiant | null = await DossierEtudiant.findOne({
                 where,
@@ -545,11 +593,16 @@ export default class DossierEtudiantController {
             if (scope === undefined) {
                 return res.status(403).json({ success: false, message: "Rôle non autorisé" })
             }
+            const siteScope = DossierEtudiantController.getEtablissementIdAutorise(req)
+            if (siteScope === undefined) {
+                return res.status(403).json({ success: false, message: "Aucun site actif autorisé" })
+            }
 
-            let where: { id: string; utilisateurId?: number[] } = { id: req.params.id };
+            const where: any = { id: req.params.id };
             if (scope !== null) {
                 where.utilisateurId = scope;
             }
+            if (siteScope !== null) where.etablissementId = siteScope;
 
             const dossier = await DossierEtudiant.findOne({
                 where,
@@ -577,7 +630,10 @@ export default class DossierEtudiantController {
             }
 
             const demande = await DemandeInscription.findOne({
-                where: { utilisateurId: dossier.utilisateurId },
+                where: {
+                    utilisateurId: dossier.utilisateurId,
+                    ...(siteScope !== null ? { etablissementId: siteScope } : {})
+                },
                 order: [['dateDemande', 'DESC']],
                 include: [
                     {
@@ -586,6 +642,9 @@ export default class DossierEtudiantController {
                     },
                     {
                         association: DemandeInscription.associations.cursusApprenant,
+                        ...(siteScope !== null
+                            ? { where: { etablissementId: siteScope }, required: true }
+                            : {}),
                         include: [
                             { model: AnneeAcademique, as: 'anneeAcademique' },
                             { model: Parcours, as: 'parcours' },
@@ -595,6 +654,9 @@ export default class DossierEtudiantController {
                     },
                     {
                         association: DemandeInscription.associations.session,
+                        ...(siteScope !== null
+                            ? { where: { etablissementId: siteScope }, required: true }
+                            : {}),
                         include: [
                             { model: AnneeAcademique, as: 'anneeAcademique' },
                             { model: NiveauEtude, as: 'niveauEtude' }
@@ -603,8 +665,10 @@ export default class DossierEtudiantController {
                 ]
             });
 
+            const bordereauWhere: any = { utilisateurId: dossier.utilisateurId }
+            if (siteScope !== null) bordereauWhere.etablissementId = siteScope
             const bordereaux = await Bordereau.findAll({
-                where: { utilisateurId: dossier.utilisateurId },
+                where: bordereauWhere,
                 include: [Bordereau.associations.echeance]
             });
 
@@ -617,7 +681,21 @@ export default class DossierEtudiantController {
 
     static async telechargerCarte(req: Request, res: Response): Promise<void> {
         try {
-            const dossier = await DossierEtudiant.findByPk(req.params.id, {
+            const scope = await DossierEtudiantController.getUtilisateurIdsAutorises(req)
+            if (scope === undefined) {
+                res.status(403).json({ success: false, message: "Rôle non autorisé" })
+                return
+            }
+            const siteScope = DossierEtudiantController.getEtablissementIdAutorise(req)
+            if (siteScope === undefined) {
+                res.status(403).json({ success: false, message: "Aucun site actif autorisé" })
+                return
+            }
+            const where: any = { id: req.params.id }
+            if (scope !== null) where.utilisateurId = scope
+            if (siteScope !== null) where.etablissementId = siteScope
+            const dossier = await DossierEtudiant.findOne({
+                where,
                 include: [{ association: DossierEtudiant.associations.utilisateur, include: [{ model: Apprenant, as: 'apprenant' }] }]
             })
             if (!dossier || !dossier.cartePath) {
@@ -642,7 +720,14 @@ export default class DossierEtudiantController {
 
     static async regenererCarte(req: Request, res: Response): Promise<Response> {
         try {
-            const dossier = await DossierEtudiant.findByPk(req.params.id, {
+            const siteScope = DossierEtudiantController.getEtablissementIdAutorise(req)
+            if (siteScope === undefined) {
+                return res.status(403).json({ success: false, message: "Aucun site actif autorisé" })
+            }
+            const where: any = { id: req.params.id }
+            if (siteScope !== null) where.etablissementId = siteScope
+            const dossier = await DossierEtudiant.findOne({
+                where,
                 include: [
                     {
                         association: DossierEtudiant.associations.utilisateur,
@@ -655,7 +740,10 @@ export default class DossierEtudiantController {
             }
 
             const demande = await DemandeInscription.findOne({
-                where: { utilisateurId: dossier.utilisateurId },
+                where: {
+                    utilisateurId: dossier.utilisateurId,
+                    ...(siteScope !== null ? { etablissementId: siteScope } : {})
+                },
                 order: [['dateDemande', 'DESC']],
                 include: [{
                     association: 'cursusApprenant' as any,
@@ -697,7 +785,13 @@ export default class DossierEtudiantController {
             return res.status(403).json({ success: false })
         }
 
-        let dossier: DossierEtudiant | null = await DossierEtudiant.findByPk(req.params.id);
+        const siteScope = DossierEtudiantController.getEtablissementIdAutorise(req)
+        if (siteScope === undefined) {
+            return res.status(403).json({ success: false, message: "Aucun site actif autorisé" })
+        }
+        const where: any = { id: req.params.id }
+        if (siteScope !== null) where.etablissementId = siteScope
+        let dossier: DossierEtudiant | null = await DossierEtudiant.findOne({ where });
         if (dossier != null) {
             await dossier.update({
                 statut: req.body.statut ?? dossier.statut,

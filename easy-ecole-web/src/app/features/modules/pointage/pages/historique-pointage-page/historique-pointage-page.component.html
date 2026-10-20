@@ -75,6 +75,7 @@
               <th scope="col" class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 text-left">Date</th>
               <th scope="col" class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 text-left">Arrivée</th>
               <th scope="col" class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 text-left">Départ</th>
+              <th scope="col" class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 text-left">Scans étudiants</th>
               <th scope="col" class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 text-left">Durée</th>
               <th scope="col" class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 text-left">Statut</th>
             </tr>
@@ -104,6 +105,17 @@
               <td class="px-4 py-3 whitespace-nowrap">
                 <app-custom-badge *ngIf="pointage.heureDepart" color="orange" [text]="pointage.heureDepart"></app-custom-badge>
                 <span *ngIf="!pointage.heureDepart" class="text-sm text-gray-300">---</span>
+              </td>
+              <td class="px-4 py-3 text-sm whitespace-nowrap">
+                <div *ngIf="pointage.scans?.length; else noStudentScans" class="flex flex-col gap-1">
+                  <span *ngFor="let scan of pointage.scans; index as scanIndex" class="text-gray-600">
+                    {{ scan.heure }}
+                    <span class="text-xs text-gray-400">
+                      {{ scanIndex === 0 ? 'Entrée' : scanIndex === (pointage.scans?.length || 0) - 1 ? 'Sortie retenue' : 'Intermédiaire' }}
+                    </span>
+                  </span>
+                </div>
+                <ng-template #noStudentScans><span class="text-gray-300">—</span></ng-template>
               </td>
               <td class="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap">{{ getDuree(pointage) }}</td>
               <td class="px-4 py-3 whitespace-nowrap">

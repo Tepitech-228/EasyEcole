@@ -194,6 +194,7 @@ router
  *       200:
  *         description: Demande d'inscription validée
  */
+    .put('/:id/consentement-hikvision', [AuthApprenant], DemandeInscriptionController.enregistrerConsentementHikvision)
     .put('/:id', [], DemandeInscriptionController.validerDemandeInscription)
 
 /**

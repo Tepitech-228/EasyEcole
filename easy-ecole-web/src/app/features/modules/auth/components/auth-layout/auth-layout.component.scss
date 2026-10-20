@@ -180,6 +180,17 @@ $muted: #64748b;
     color: rgba(255, 255, 255, 0.8);
     text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
     pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    img {
+        width: 64px;
+        height: 32px;
+        object-fit: contain;
+        border-radius: 2px;
+    }
 }
 
 // --- Responsive mobile ---

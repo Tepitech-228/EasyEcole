@@ -13,6 +13,7 @@ export class SessionsExamenPageComponent extends BaseComponentClass implements O
   loading = false;
   errorMessage = '';
   deletingId: number | null = null;
+  publishingId: number | null = null;
 
   constructor(
     private service: SessionExamenService,
@@ -47,6 +48,22 @@ export class SessionsExamenPageComponent extends BaseComponentClass implements O
       error: () => {
         this.errorMessage = 'La suppression a échoué. La session est toujours présente.';
         this.deletingId = null;
+      }
+    });
+  }
+
+  publier(id: number): void {
+    if (!confirm('Publier cette session ? Elle sera alors visible par les étudiants et les enseignants concernés.')) return;
+    this.publishingId = id;
+    this.errorMessage = '';
+    this.service.publier(id).subscribe({
+      next: (res) => {
+        this.items = this.items.map(item => item.id === id ? res.session : item);
+        this.publishingId = null;
+      },
+      error: () => {
+        this.errorMessage = 'La publication a échoué. La session est toujours en brouillon.';
+        this.publishingId = null;
       }
     });
   }

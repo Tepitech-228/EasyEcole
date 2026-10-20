@@ -14,6 +14,25 @@ main {
     }
 }
 
+.easy-school-copyright {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem 0;
+    color: #64748b;
+    font-size: 0.75rem;
+    line-height: 1.25rem;
+    text-align: center;
+
+    img {
+        width: 64px;
+        height: 32px;
+        object-fit: contain;
+        border-radius: 2px;
+    }
+}
+
 main.hideMenu {
     #left {
         left: -260px !important;
@@ -141,6 +160,18 @@ main.collapsed {
 
     .sidebar-search {
         display: none;
+    }
+}
+
+@media (max-width: 1023px) {
+    main.showMenu.collapsed {
+        #left {
+            width: min(82vw, 280px) !important;
+        }
+
+        .nav-text {
+            display: initial;
+        }
     }
 }
 

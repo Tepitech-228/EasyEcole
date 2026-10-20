@@ -11,7 +11,13 @@ import { AnneeAcademique } from "./AnneeAcademique";
 export class ListeNoteEvaluation extends Model<InferAttributes<ListeNoteEvaluation>, InferCreationAttributes<ListeNoteEvaluation>> {
   declare id: CreationOptional<number>
   declare date: Date
+  declare datePublication: CreationOptional<Date | null>
   declare dateLimiteSaisie: CreationOptional<Date | null>
+  declare statutGestion: CreationOptional<'brouillon' | 'publie' | 'annulee'>
+  declare saisieBloquee: CreationOptional<boolean>
+  declare verrouillageDefinitif: CreationOptional<boolean>
+  declare motifBlocage: CreationOptional<string | null>
+  declare bloqueePar: CreationOptional<number | null>
   declare heureDebut: Date
   declare heureFin: Date
   declare commentaire: CreationOptional<string>
@@ -57,9 +63,36 @@ ListeNoteEvaluation.init({
     allowNull: true
   },
   dateLimiteSaisie: {
-    type: DataTypes.DATEONLY,
+    type: DataTypes.DATE,
     allowNull: true,
     comment: 'Deadline saisie notes (examen +14j) pour alertes SG/DG'
+  },
+  datePublication: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  statutGestion: {
+    type: DataTypes.ENUM('brouillon', 'publie', 'annulee'),
+    allowNull: false,
+    defaultValue: 'brouillon'
+  },
+  saisieBloquee: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  verrouillageDefinitif: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  motifBlocage: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  bloqueePar: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
   },
   heureDebut: {
     type: DataTypes.TIME,

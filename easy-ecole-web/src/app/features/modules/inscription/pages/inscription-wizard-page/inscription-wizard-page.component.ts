@@ -15,6 +15,7 @@ import { BordereauService } from 'src/app/data/modules/inscription/services/bord
 import { DossierInscriptionService } from 'src/app/data/modules/inscription/services/dossier-inscription.service';
 import { InscriptionWizardStoreService, FichierMeta } from 'src/app/data/modules/inscription/services/inscription-wizard-store.service';
 import { WizardItemType } from 'src/app/data/types/WizardItemType';
+import { AuthService, SiteUtilisateur } from 'src/app/data/modules/auth/services/auth.service';
 
 interface FiliereSelection {
   id: string;
@@ -49,6 +50,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
 
   loading = false
   submitting = false
+  consentementHikvision = false
   errorMessage = ''
   successMessage = ''
 
@@ -62,6 +64,9 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   // Session
   sessions: any[] = []
   sessionSelectionneeId?: number
+  sitesDisponibles: SiteUtilisateur[] = []
+  sitesLoading = false
+  sitesError = ''
 
   // Filtre transmis par la page de choix de session
   sessionIdFromRoute?: string
@@ -88,10 +93,11 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     nom: string; prenoms: string; dateNaissance: string; lieuNaissance: string;
     nationalite: string; contact: string; email: string; adresse: string;
     numeroPiece: string; sexe: string; typePieceIdentite: string;
+    etablissementId?: string;
   } = {
     nom: '', prenoms: '', dateNaissance: '', lieuNaissance: '',
     nationalite: '', contact: '', email: '', adresse: '',
-    numeroPiece: '', sexe: '', typePieceIdentite: ''
+    numeroPiece: '', sexe: '', typePieceIdentite: '', etablissementId: ''
   }
 
   // Étape courante : 1..5
@@ -121,7 +127,8 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     private dossierInscriptionService: DossierInscriptionService,
     private apprenantService: ApprenantService,
     private wizardStore: InscriptionWizardStoreService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private authService: AuthService
   ) {
     super()
     if (!this.rolesValue.isApprenant) {
@@ -130,6 +137,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   }
 
   ngOnInit(): void {
+    this.chargerSitesDisponibles()
     // Query params (filtre session / niveau) lus DANS TOUS LES CAS, y compris la
     // reprise d'une demande existante (/inscription/demandes/:id?sessionId=..).
     // Sans cela, le chemin « demande existante » chargeait l'arborescence sans
@@ -862,7 +870,78 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   }
 
   get infosCompletes(): boolean {
-    return !!(this.infos.nom && this.infos.prenoms && this.infos.dateNaissance && this.infos.numeroPiece)
+    return !!(
+      this.infos.nom
+      && this.infos.prenoms
+      && this.infos.dateNaissance
+      && this.infos.numeroPiece
+      && this.siteSelectionValide
+    )
+  }
+
+  private chargerSitesDisponibles(): void {
+    this.sitesLoading = true
+    this.sitesError = ''
+    this.authService.getSitesMoi().subscribe({
+      next: sites => {
+        this.sitesDisponibles = sites
+        this.sitesLoading = false
+        if (!this.infos.etablissementId && sites.length === 1) {
+          this.infos.etablissementId = String(sites[0].id)
+        }
+        this.synchroniserSiteDepuisSession()
+      },
+      error: () => {
+        this.sitesDisponibles = []
+        this.sitesLoading = false
+        this.sitesError = 'Les sites auxquels vous avez accès ne peuvent pas être chargés. Réessayez.'
+      }
+    })
+  }
+
+  private synchroniserSiteDepuisSession(): void {
+    if (!this.sessionSelectionneeId) return
+    const session = this.sessions.find(item => Number(item.id) === Number(this.sessionSelectionneeId))
+    const sessionSiteId = Number(session?.etablissementId)
+    if (
+      Number.isSafeInteger(sessionSiteId)
+      && sessionSiteId > 0
+      && this.sitesDisponibles.some(site => Number(site.id) === sessionSiteId)
+    ) {
+      this.infos.etablissementId = String(sessionSiteId)
+    }
+  }
+
+  get siteSelectionValide(): boolean {
+    const siteId = Number(this.infos.etablissementId)
+    if (!Number.isSafeInteger(siteId) || siteId <= 0) return false
+    const siteAccessible = this.sitesDisponibles.some(site => Number(site.id) === siteId)
+    if (!siteAccessible) return false
+    if (!this.sessionSelectionneeId) return false
+    const session = this.sessions.find(item => Number(item.id) === Number(this.sessionSelectionneeId))
+    return Number(session?.etablissementId) === siteId
+  }
+
+  get sessionsDuSite(): any[] {
+    const siteId = Number(this.infos.etablissementId)
+    if (!Number.isSafeInteger(siteId) || siteId <= 0) return []
+    return this.sessions.filter(session => Number(session.etablissementId) === siteId)
+  }
+
+  surChoixSite(): void {
+    this.sessionSelectionneeId = undefined
+    this.documentsRequis = []
+    this.documents = {}
+    this.bordereau = null
+    this.documentsAReposer = {}
+    this.bordereauAReposer = null
+    this.errorMessage = ''
+    this.sauvegarder()
+  }
+
+  nomSiteSelectionne(): string {
+    const site = this.sitesDisponibles.find(item => Number(item.id) === Number(this.infos.etablissementId))
+    return site?.nom || ''
   }
 
   // ---------------------------------------------------------------------------
@@ -944,10 +1023,16 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
       return
     }
     this.errorMessage = ''
+    this.synchroniserSiteDepuisSession()
     this.lancerExtraction()
   }
 
   passerEtape4(): void {
+    this.synchroniserSiteDepuisSession()
+    if (!this.siteSelectionValide) {
+      this.errorMessage = 'Choisissez un site auquel vous êtes affecté et une session de ce site.'
+      return
+    }
     if (!this.infosCompletes) {
       this.errorMessage = 'Veuillez compléter et valider le formulaire d\'informations personnelles.'
       return
@@ -1036,6 +1121,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
 
     const demande = new DemandeInscription()
     demande.sessionId = String(this.sessionSelectionneeId)
+    demande.etablissementId = Number(this.infos.etablissementId)
     demande.dateDemande = new Date()
     demande.typeDemande = 'inscription'
 
@@ -1127,6 +1213,15 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
    * ni de « dossier soumis » abusif).
    */
   private finaliserFichiers(demandeId: string): void {
+    this.demandeInscriptionService.updateHikvisionConsent(demandeId, this.consentementHikvision).subscribe({
+      next: () => this.televerserFichiers(demandeId),
+      error: (err) => this.echouerSoumission(
+        err?.error?.message || "Le choix relatif à l'enrôlement Hikvision n'a pas pu être enregistré."
+      )
+    })
+  }
+
+  private televerserFichiers(demandeId: string): void {
     const dossierDocs: Array<{ dossierId: string; fichier: File }> = []
     let bordereauFichier: File | null = null
     // Statut renvoyé par le dernier téléversement de document (correction comité :

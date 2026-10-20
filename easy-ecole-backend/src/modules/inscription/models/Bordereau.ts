@@ -5,6 +5,7 @@ import { Echeance } from "./Echeance";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { Quitus } from "./Quitus";
 import { TypeOperationBordereau } from "./TypeOperationBordereau";
+import { Etablissement } from "../../etablissement/models/Etablissement";
 
 export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAttributes<Bordereau>> {
   declare id: CreationOptional<number>
@@ -23,6 +24,7 @@ export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAt
   declare composition?: string | null
   declare echeanceId: ForeignKey<Echeance['id']> | null
   declare utilisateurId: ForeignKey<Utilisateur['id']>
+  declare etablissementId: CreationOptional<ForeignKey<Etablissement['id'] | null>>
   declare fichier: string
   declare montant?: number | null
   declare modalite: '1x' | '3x' | '10x'
@@ -70,6 +72,10 @@ Bordereau.init({
   utilisateurId: {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false
+  },
+  etablissementId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true,
   },
   type: {
     type: DataTypes.ENUM('inscription', 'scolarite', 'rattrapage', 'mixte'),

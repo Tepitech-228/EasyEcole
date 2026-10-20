@@ -23,12 +23,17 @@ import { RoleSeed } from './modules/auth/seed/RoleSeed'
 import { RappelSalleCron } from './core/services/RappelSalleCron'
 import { RappelEcheanceCron } from './core/services/RappelEcheanceCron'
 import { RappelNotesExamenCron } from './core/services/RappelNotesExamenCron'
+import { RappelSeanceSaisieCron } from './core/services/RappelSeanceSaisieCron'
 import { NotificationGedService } from './modules/ged/services/NotificationGedService'
 import { seedComptabilite } from './modules/comptabilite/seed'
 import { seedParametresFrais } from './modules/comptabilite/seed-parametres-frais'
 import { errorHandler } from './core/middlewares/ErrorHandler'
 import { RedisClient } from './core/cache/RedisClient'
 import Authenticate from './core/middlewares/Authenticate'
+import PointageTerminalAdmsRouter from './modules/inscription/routers/PointageTerminalAdmsRouter'
+import HikvisionPushController from './modules/inscription/controllers/HikvisionPushController'
+import PointageRealtimeService from './modules/inscription/services/PointageRealtimeService'
+import HikvisionEnrollmentService from './modules/inscription/services/HikvisionEnrollmentService'
 
 // ── Dernière barrière de diagnostic (cf. audit erreurs silencieuses §28) ──
 // Ces handlers ne remplacent PAS la gestion locale des erreurs : ils garantissent
@@ -57,7 +62,7 @@ mobileMoneyCinetpay.init()
 
 const app = express()
 const port: number = Number(process.env.PORT) || 3000
-const hostname: string = process.argv[2] || 'localhost'
+const hostname: string = process.env.HOST || process.argv[2] || 'localhost'
 const SSL_KEY = process.env.SSL_KEY
 const SSL_CERT = process.env.SSL_CERT
 
@@ -324,6 +329,8 @@ RedisClient.getInstance().init().catch(err => {
 })
 
 const API_BASE_URL = "/api/v1"
+app.use('/iclock', PointageTerminalAdmsRouter)
+app.post('/api/hikvision/event', HikvisionPushController.receive)
 app.use(API_BASE_URL, router)
 
 app.use(errorHandler)
@@ -343,7 +350,21 @@ if (SSL_KEY && SSL_CERT && fs.existsSync(SSL_KEY) && fs.existsSync(SSL_CERT)) {
 const io = new SocketIOServer(server, {
     cors: { origin: corsOrigin }
 })
+PointageRealtimeService.initialize(io)
 setupChatSocket(io)
+
+const hikvisionCallbackHost = process.env.HIKVISION_CALLBACK_HOST?.trim()
+let hikvisionCallbackServer: http.Server | null = null
+if (hikvisionCallbackHost && hikvisionCallbackHost !== hostname) {
+  const callbackApp = express()
+  callbackApp.use(express.json({ limit: '10mb' }))
+  callbackApp.post('/api/hikvision/event', HikvisionPushController.receive)
+  hikvisionCallbackServer = http.createServer(callbackApp)
+  hikvisionCallbackServer.listen(port, hikvisionCallbackHost)
+  hikvisionCallbackServer.on('listening', () => {
+    console.log(`Hikvision callback listening on http://${hikvisionCallbackHost}:${port}/api/hikvision/event`)
+  })
+}
 
 server.listen(port, hostname)
 server.on("listening", async () => {
@@ -353,7 +374,27 @@ server.on("listening", async () => {
     // Database Connection initialisation
     const databaseConnection = DatabaseConnection.getInstance();
     await databaseConnection.init();
-
+    let hikvisionRecoveryInProgress = false;
+    const resumeHikvisionEvents = async (): Promise<void> => {
+        if (hikvisionRecoveryInProgress) return;
+        hikvisionRecoveryInProgress = true;
+        try {
+            await HikvisionPushController.resumePendingEvents();
+        } catch (error) {
+            console.error('[Hikvision] Reprise des événements en attente impossible:', error);
+        } finally {
+            hikvisionRecoveryInProgress = false;
+        }
+    };
+    void resumeHikvisionEvents();
+    setInterval(() => void resumeHikvisionEvents(), 60_000);
+    const runHikvisionEnrollments = (): void => {
+        void HikvisionEnrollmentService.processPending().catch(error => {
+            console.error('[Hikvision] Traitement de la file des enrôlements impossible:', error);
+        });
+    };
+    runHikvisionEnrollments();
+    setInterval(runHikvisionEnrollments, 60_000);
     // Seed permissions
     await PermissionSeed.init();
 
@@ -368,6 +409,9 @@ server.on("listening", async () => {
 
     // Start cron for notes d'examen en retard (SG/DG, 08h00, 14j)
     RappelNotesExamenCron.start();
+
+    // Start reminders for attendance and course reports after each scheduled lesson
+    RappelSeanceSaisieCron.start();
 
     // Check DUA expirations on startup
     try {
@@ -393,3 +437,10 @@ server.on("listening", async () => {
     // Mail notification
     // await EmailSender.getInstance().sendServerStartingMessage();
 })
+
+const stopServer = (): void => {
+    server.close()
+    hikvisionCallbackServer?.close()
+}
+process.once("SIGINT", stopServer)
+process.once("SIGTERM", stopServer)

@@ -153,7 +153,8 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     ],
     'Surveillant': [
         'menu.tableau-de-bord',
-        'menu.cours', 'menu.cours.presences', 'menu.cours.emplois-du-temps', 'menu.cours.notes',
+        'menu.cours', 'menu.cours.presences', 'menu.cours.cahiers-de-texte',
+        'menu.cours.emplois-du-temps', 'menu.cours.notes',
         'menu.scolarite', 'menu.scolarite.discipline', 'menu.scolarite.conseils',
         'menu.pointage', 'menu.pointage.terminal', 'menu.pointage.historique', 'menu.pointage.rapports', 'menu.pointage.planning', 'menu.pointage.shifts', 'menu.pointage.absences',
         'action.pointage.shift.creer', 'action.pointage.shift.modifier', 'action.pointage.shift.supprimer',

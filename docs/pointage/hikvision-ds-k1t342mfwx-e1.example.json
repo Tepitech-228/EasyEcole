@@ -1,0 +1,36 @@
+{
+  "device": {
+    "manufacturer": "Hikvision",
+    "family": "MinMoe",
+    "model": "DS-K1T342MFWX-E1",
+    "serialNumber": "TO_FILL_FROM_DEVICE_LABEL",
+    "firmwareVersion": "TO_FILL_FROM_DEVICE_MENU"
+  },
+  "site": {
+    "etablissementId": null,
+    "name": "TO_SELECT_IN_EASYECOLE"
+  },
+  "network": {
+    "deviceIp": "TO_RESERVE_ON_LOCAL_NETWORK",
+    "isapiPort": 80,
+    "https": false,
+    "productionAccess": "Private terminal IP reachable through site-to-site VPN"
+  },
+  "integration": {
+    "status": "ISAPI_EVENT_STREAM_SUPPORTED_TEST_REQUIRED",
+    "protocol": "ISAPI_HTTP_DIGEST_ALERT_STREAM",
+    "eventStreamPath": "/ISAPI/Event/notification/alertStream",
+    "eventUploadUrl": null,
+    "notes": [
+      "The EasyEcole backend polls the Hikvision device; do not configure a callback URL on the device.",
+      "The backend server must be able to reach the terminal IP. Use the same LAN for local testing and a site-to-site VPN in production.",
+      "Successful facial access events are imported; face images and biometric templates are not."
+    ]
+  },
+  "security": {
+    "httpsRequiredOutsideLocalTesting": true,
+    "deviceAccount": "Create_a_dedicated_account_on_the_device",
+    "passwordStorage": "Do_not_store_credentials_in_this_file",
+    "biometricDataTransfer": "Do_not_export_face_templates_or_photos_to_EasyEcole"
+  }
+}

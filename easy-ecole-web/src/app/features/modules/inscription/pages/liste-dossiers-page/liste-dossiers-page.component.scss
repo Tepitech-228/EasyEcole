@@ -120,6 +120,43 @@
   flex: 1;
 }
 
+.photo-upload-control {
+  margin-top: 0.625rem;
+}
+
+.btn-photo-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border: 1px solid #c7d2fe;
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.65rem;
+  background: #eef2ff;
+  color: #4338ca;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-photo-upload:hover:not(:disabled) {
+  background: #e0e7ff;
+}
+
+.btn-photo-upload:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.btn-photo-upload .material-symbols-outlined {
+  font-size: 1rem;
+}
+
+.photo-upload-message {
+  margin: 0.375rem 0 0;
+  color: #475569;
+  font-size: 0.75rem;
+}
+
 .detail-info h4 {
   font-family: Sora, system-ui, sans-serif;
   font-size: 1.125rem;
@@ -209,6 +246,18 @@
   grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
   padding: 1rem;
+}
+
+@media (max-width: 640px) {
+  .section-grid {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0.75rem;
+  }
+
+  .field {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
 }
 
 .field {

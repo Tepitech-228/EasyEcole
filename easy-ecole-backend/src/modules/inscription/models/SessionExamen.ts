@@ -15,11 +15,13 @@ export class SessionExamen extends Model<InferAttributes<SessionExamen>, InferCr
   declare dateDebut: CreationOptional<Date | null>
   declare dateFin: CreationOptional<Date | null>
   declare statut: CreationOptional<string>
+  declare datePublication: CreationOptional<Date | null>
   declare observations: CreationOptional<string | null>
 
   declare classe?: NonAttribute<Classe>
   declare anneeAcademique?: NonAttribute<AnneeAcademique>
   declare correcteurs?: NonAttribute<SessionCorrecteur[]>
+  declare classesCibles?: NonAttribute<Classe[]>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -29,6 +31,7 @@ export class SessionExamen extends Model<InferAttributes<SessionExamen>, InferCr
     classe: Association<SessionExamen, Classe>
     anneeAcademique: Association<SessionExamen, AnneeAcademique>
     correcteurs: Association<SessionExamen, SessionCorrecteur>
+    classesCibles: Association<SessionExamen, Classe>
   }
 }
 
@@ -68,9 +71,13 @@ SessionExamen.init({
     allowNull: true
   },
   statut: {
-    type: DataTypes.ENUM('planifiee', 'en_cours', 'terminee', 'cloturee'),
+    type: DataTypes.ENUM('brouillon', 'publie', 'planifiee', 'en_cours', 'terminee', 'cloturee', 'annulee'),
     allowNull: false,
-    defaultValue: 'planifiee'
+    defaultValue: 'brouillon'
+  },
+  datePublication: {
+    type: DataTypes.DATE,
+    allowNull: true
   },
   observations: {
     type: DataTypes.TEXT,

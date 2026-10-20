@@ -37,6 +37,7 @@ import { CahierDeTexte } from "./CahierDeTexte";
 import { BlocCahierDeTexte } from "./BlocCahierDeTexte";
 import { TypeNoteEvaluation } from "./TypeNoteEvaluation";
 import { Pointage } from "./Pointage";
+import { PointageScan } from "./PointageScan";
 import "./Shift";
 import { ListeNoteEvaluation } from "./ListeNoteEvaluation";
 import { NoteEvaluation } from "./NoteEvaluation";
@@ -72,6 +73,7 @@ Cours.belongsTo(Parcours, { as: 'parcours', foreignKey: 'parcoursId' })
 // Cours - Classe
 Classe.hasMany(Cours, { foreignKey: 'classeId', as: 'cours' })
 Cours.belongsTo(Classe, { as: 'classe', foreignKey: 'classeId' })
+Classe.belongsTo(Etablissement, { as: 'etablissement', foreignKey: 'etablissementId' })
 
 // SalleDeClasse - Classe
 Classe.hasMany(SalleDeClasse, { foreignKey: 'classeId', as: 'sallesDeClasse' })
@@ -404,6 +406,8 @@ NoteEvaluation.belongsTo(CoursParticipant, { as: 'coursParticipant', foreignKey:
 // Utilisateur - Pointage
 Utilisateur.hasMany(Pointage, { foreignKey: 'utilisateurId', as: 'pointages' })
 Pointage.belongsTo(Utilisateur, { as: 'utilisateur', foreignKey: 'utilisateurId' })
+Pointage.hasMany(PointageScan, { as: 'scans', foreignKey: 'pointageId' })
+PointageScan.belongsTo(Pointage, { as: 'pointage', foreignKey: 'pointageId' })
 
 // Quitus - PaiementInscription
 Quitus.belongsTo(PaiementInscription, { foreignKey: 'paiementInscriptionId', as: 'paiementInscription' })
@@ -412,6 +416,7 @@ PaiementInscription.hasOne(Quitus, { foreignKey: 'paiementInscriptionId', as: 'q
 // DossierEtudiant - Utilisateur
 Utilisateur.hasMany(DossierEtudiant, { foreignKey: 'utilisateurId', as: 'dossiersEtudiants' })
 DossierEtudiant.belongsTo(Utilisateur, { foreignKey: 'utilisateurId', as: 'utilisateur' })
+DossierEtudiant.belongsTo(Etablissement, { foreignKey: 'etablissementId', as: 'etablissement' })
 
 // DossierEtudiant - Echeance
 DossierEtudiant.hasMany(Echeance, { foreignKey: 'dossierEtudiantId', as: 'echeances' })
@@ -446,6 +451,7 @@ import { Ecue } from "./Ecue";
 import { Mcc } from "./Mcc";
 import { RegleEvaluation } from "./RegleEvaluation";
 import { SessionExamen } from "./SessionExamen";
+import { SessionExamenClasse } from "./SessionExamenClasse";
 import { Absence } from "./Absence";
 import { Equivalence } from "./Equivalence";
 import { Dispense } from "./Dispense";
@@ -477,6 +483,18 @@ SessionExamen.belongsTo(Classe, { as: 'classe', foreignKey: 'classeId' })
 // SessionExamen - AnneeAcademique
 AnneeAcademique.hasMany(SessionExamen, { foreignKey: 'anneeAcademiqueId', as: 'sessionsExamen' })
 SessionExamen.belongsTo(AnneeAcademique, { as: 'anneeAcademique', foreignKey: 'anneeAcademiqueId' })
+SessionExamen.belongsToMany(Classe, {
+  as: 'classesCibles',
+  through: SessionExamenClasse,
+  foreignKey: 'sessionExamenId',
+  otherKey: 'classeId'
+})
+Classe.belongsToMany(SessionExamen, {
+  as: 'sessionsExamensCibles',
+  through: SessionExamenClasse,
+  foreignKey: 'classeId',
+  otherKey: 'sessionExamenId'
+})
 
 // Absence - NoteEvaluation
 NoteEvaluation.hasOne(Absence, { foreignKey: 'noteEvaluationId', as: 'absence' })

@@ -15,6 +15,7 @@ import { PermissionsGedComponent } from './permissions/permissions-ged.component
 import { ProcessusListComponent } from './processus/processus-list.component';
 import { ProcessusFormComponent } from './processus/processus-form.component';
 import { StorageConfigComponent } from './storage-config/storage-config.component';
+import { GedStorageFilesComponent } from './pages/ged-storage-files/ged-storage-files.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'catalog', pathMatch: 'full' },
@@ -35,7 +36,8 @@ const routes: Routes = [
   { path: 'processus/new', component: ProcessusFormComponent },
   { path: 'processus/:id/edit', component: ProcessusFormComponent },
   { path: 'import', component: GedBatchUploadComponent },
-  { path: 'storage-config', component: StorageConfigComponent }
+  { path: 'storage-config', component: StorageConfigComponent },
+  { path: 'storage-files', component: GedStorageFilesComponent }
 ];
 
 @NgModule({

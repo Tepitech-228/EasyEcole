@@ -135,10 +135,46 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">Rôle</label>
                 <select [(ngModel)]="formData.role"
                     class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
-                    <option *ngFor="let k of roleKeys" [value]="RolesUtilisateur[k]">{{ roleLabels[RolesUtilisateur[k]]
-                        }}</option>
+                    <option *ngFor="let k of roleKeys" [value]="RolesUtilisateur[k]"
+                        [disabled]="rolesValue.isInstitution && (RolesUtilisateur[k] === RolesUtilisateur.ADMIN || RolesUtilisateur[k] === RolesUtilisateur.INSTITUTION)">
+                        {{ roleLabels[RolesUtilisateur[k]] }}
+                    </option>
                 </select>
             </div>
+
+            <section *ngIf="!editingUser" class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <h4 class="text-sm font-semibold text-gray-800">Sites de rattachement</h4>
+                <p class="mt-1 text-xs text-gray-500">
+                    Seuls les sites auxquels vous avez accès sont proposés.
+                    <ng-container *ngIf="siteSelectionRequired">Sélection requise pour ce profil.</ng-container>
+                </p>
+                <p *ngIf="sitesLoading" class="mt-3 text-sm text-gray-500" role="status">Chargement des sites autorisés…</p>
+                <p *ngIf="sitesError" class="mt-3 text-sm text-red-700" role="alert">{{ sitesError }}</p>
+                <p *ngIf="!sitesLoading && !sitesError && availableSites.length === 0" class="mt-3 text-sm text-red-700" role="alert">
+                    Aucun site actif ne vous est affecté. Impossible de créer un utilisateur avec un rattachement de site.
+                </p>
+                <div *ngIf="!sitesLoading && !sitesError && availableSites.length > 0" class="mt-3">
+                    <select *ngIf="isApprenant"
+                        [ngModel]="formData.siteIds?.[0] || null"
+                        (ngModelChange)="selectionnerSiteApprenant($event)"
+                        name="apprenantSite"
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        <option [ngValue]="null" disabled>Choisir le site de l’apprenant</option>
+                        <option *ngFor="let site of availableSites" [ngValue]="site.id">{{ site.nom }}</option>
+                    </select>
+                    <div *ngIf="!isApprenant" class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <label *ngFor="let site of availableSites"
+                            class="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+                            <input type="checkbox"
+                                [checked]="siteEstSelectionne(site.id)"
+                                (change)="modifierSiteSelection(site.id, $any($event.target).checked)"
+                                class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <span>{{ site.nom }}</span>
+                        </label>
+                    </div>
+                    <p *ngIf="isApprenant" class="mt-2 text-xs text-gray-500">Un apprenant est rattaché à un seul site.</p>
+                </div>
+            </section>
 
             <!-- === Champs de profil dynamiques === -->
             <div *ngIf="showProfilFields" class="border-t border-gray-200 pt-4 mt-4">
@@ -367,7 +403,7 @@
         <div class="flex justify-end gap-x-3 mt-6">
             <button (click)="closeModal()"
                 class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 font-medium">Annuler</button>
-            <button (click)="saveUser()" [disabled]="saving"
+            <button (click)="saveUser()" [disabled]="saving || (!editingUser && sitesLoading)"
                 class="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-md hover:bg-indigo-700 disabled:opacity-50">
                 {{ saving ? 'Enregistrement...' : (editingUser ? 'Modifier' : 'Créer') }}
             </button>

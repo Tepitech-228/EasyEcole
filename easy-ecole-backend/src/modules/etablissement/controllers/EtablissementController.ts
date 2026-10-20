@@ -27,10 +27,9 @@ export default class EtablissementController {
         try {
             const item = await Etablissement.findByPk(req.params.id);
             if (item == null) return res.status(404).json({ success: false, message: "Etablissement non trouvé" });
-            // Vérifier les droits
             const role = (req as any).utilisateurRole;
             const etablissementId = (req as any).etablissementId;
-            if (role !== RolesUtilisateur.ADMIN && etablissementId && Number(item.id) !== Number(etablissementId)) {
+            if (role !== RolesUtilisateur.ADMIN && (!etablissementId || Number(item.id) !== Number(etablissementId))) {
                 return res.status(403).json({ success: false, message: "Accès non autorisé" });
             }
             return res.status(200).send(item);
@@ -52,22 +51,36 @@ export default class EtablissementController {
     }
 
     static async update(req: Request, res: Response): Promise<Response> {
+        if ((req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
+            return res.status(403).json({ success: false, message: "Réservé à l'administrateur" });
+        }
         try {
             const item = await Etablissement.findByPk(req.params.id);
             if (item == null) return res.status(404).json({ success: false, message: "Etablissement non trouvé" });
-            
-            // Vérifier les droits
-            const role = (req as any).utilisateurRole;
-            const etablissementId = (req as any).etablissementId;
-            if (role !== RolesUtilisateur.ADMIN && etablissementId && Number(item.id) !== Number(etablissementId)) {
-                return res.status(403).json({ success: false, message: "Accès non autorisé" });
-            }
 
             await item.update(req.body);
             return res.status(200).send(item);
         } catch (error: any) {
             if (error.name === 'SequelizeUniqueConstraintError') return res.status(400).json({ success: false, alreadyExists: true });
             return res.status(500).json({ success: false, error });
+        }
+    }
+
+    static async setActif(req: Request, res: Response): Promise<Response> {
+        if ((req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
+            return res.status(403).json({ success: false, message: "Réservé à l'administrateur" });
+        }
+        if (typeof req.body?.actif !== 'boolean') {
+            return res.status(400).json({ success: false, message: "Le champ actif doit être un booléen" });
+        }
+        try {
+            const item = await Etablissement.findByPk(req.params.id);
+            if (!item) return res.status(404).json({ success: false, message: "Etablissement non trouvé" });
+            await item.update({ actif: req.body.actif });
+            return res.status(200).json({ success: true, etablissement: item });
+        } catch (error) {
+            console.error("Erreur changement d’état de l’établissement:", error);
+            return res.status(500).json({ success: false, message: "L’état de l’établissement n’a pas pu être modifié" });
         }
     }
 

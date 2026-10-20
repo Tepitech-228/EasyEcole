@@ -1,0 +1,108 @@
+<div *ngIf="!rolesValue.isAdmin" class="rounded-lg border border-red-200 bg-red-50 p-5 text-sm text-red-700" role="alert">
+  La gestion des sites est réservée à l’administrateur.
+</div>
+
+<ng-container *ngIf="rolesValue.isAdmin">
+  <div class="mb-8">
+    <app-header-title title="Sites" subtitle="Créer et consulter les établissements de l’application"></app-header-title>
+  </div>
+
+  <div *ngIf="errorMessage" class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+    {{ errorMessage }}
+  </div>
+  <div *ngIf="successMessage" class="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700" role="status">
+    {{ successMessage }}
+  </div>
+
+  <section class="mb-8 rounded-lg border border-gray-100 bg-white p-6 shadow-sm">
+    <h2 class="mb-1 text-lg font-semibold text-gray-900">Créer un site</h2>
+    <p class="mb-6 text-sm text-gray-500">Chaque site peut ensuite être rattaché à ses utilisateurs et à ses terminaux de pointage.</p>
+
+    <form [formGroup]="siteForm" (ngSubmit)="creerSite()" class="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <label class="block text-sm font-medium text-gray-700">
+        Nom du site *
+        <input formControlName="nom" maxlength="255" required placeholder="Ex. ESA Abidjan"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+        <small *ngIf="siteForm.get('nom')?.touched && siteForm.get('nom')?.invalid" class="mt-1 block text-xs text-red-600">Le nom du site est requis.</small>
+      </label>
+      <label class="block text-sm font-medium text-gray-700">
+        Nom court pour le matricule *
+        <input formControlName="site" maxlength="100" required placeholder="Ex. Abidjan"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+        <small *ngIf="siteForm.get('site')?.touched && siteForm.get('site')?.invalid" class="mt-1 block text-xs text-red-600">Ce champ est requis pour les matricules.</small>
+      </label>
+      <label class="block text-sm font-medium text-gray-700">
+        Code / sigle
+        <input formControlName="code" maxlength="10" placeholder="Ex. ESA-ABJ"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+      </label>
+      <label class="block text-sm font-medium text-gray-700">
+        Type d’établissement
+        <input formControlName="type" placeholder="Ex. Institut supérieur"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+      </label>
+      <label class="block text-sm font-medium text-gray-700">
+        Ville
+        <input formControlName="ville" placeholder="Ville"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+      </label>
+      <label class="block text-sm font-medium text-gray-700">
+        Pays
+        <input formControlName="pays" placeholder="Pays"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+      </label>
+      <label class="block text-sm font-medium text-gray-700 md:col-span-2">
+        Adresse
+        <input formControlName="adresse" placeholder="Adresse du site"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+      </label>
+      <div class="flex justify-end md:col-span-2">
+        <button type="submit" [disabled]="saving || siteForm.invalid"
+          class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">
+          {{ saving ? 'Création en cours…' : 'Créer le site' }}
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <section class="overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm">
+    <div class="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+      <div>
+        <h2 class="font-semibold text-gray-900">Sites enregistrés</h2>
+        <p class="text-sm text-gray-500">{{ sites.length }} site(s)</p>
+      </div>
+      <button type="button" (click)="chargerSites()" [disabled]="loading"
+        class="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+        Actualiser
+      </button>
+    </div>
+
+    <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+    <div *ngIf="!loading && sites.length === 0" class="px-5 py-10 text-center text-sm text-gray-500">Aucun site enregistré.</div>
+    <div *ngIf="!loading && sites.length" class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-5 py-3 text-left text-xs font-medium uppercase text-gray-500">Nom</th>
+            <th class="px-5 py-3 text-left text-xs font-medium uppercase text-gray-500">Site / code</th>
+            <th class="px-5 py-3 text-left text-xs font-medium uppercase text-gray-500">Localisation</th>
+            <th class="px-5 py-3 text-left text-xs font-medium uppercase text-gray-500">Statut</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          <tr *ngFor="let site of sites" class="hover:bg-gray-50">
+            <td class="whitespace-nowrap px-5 py-4 text-sm font-medium text-gray-900">{{ site.nom }}</td>
+            <td class="whitespace-nowrap px-5 py-4 text-sm text-gray-600">{{ site.site || '—' }} <span *ngIf="site.code">· {{ site.code }}</span></td>
+            <td class="whitespace-nowrap px-5 py-4 text-sm text-gray-600">{{ localisation(site) }}</td>
+            <td class="whitespace-nowrap px-5 py-4">
+              <span class="rounded-full px-2.5 py-1 text-xs font-medium"
+                [ngClass]="site.actif === false ? 'bg-gray-100 text-gray-600' : 'bg-green-100 text-green-700'">
+                {{ site.actif === false ? 'Inactif' : 'Actif' }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</ng-container>

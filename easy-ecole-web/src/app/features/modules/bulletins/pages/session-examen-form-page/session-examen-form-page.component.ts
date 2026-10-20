@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { SessionExamenService } from '../../services/session-examen.service';
 import { RattrapageService } from '../../services/rattrapage.service';
@@ -25,8 +25,6 @@ export class SessionExamenFormPageComponent extends BaseComponentClass implement
 
   types = ['normale', 'rattrapage'];
   semestres = ['semestre1', 'semestre2', 'semestre3', 'semestre4', 'semestre5', 'semestre6'];
-  statuts = ['planifiee', 'en_cours', 'terminee', 'cloturee'];
-
   // Correcteurs par cours (session de rattrapage)
   coursDeLaClasse: any[] = [];
   enseignants: any[] = [];
@@ -54,12 +52,11 @@ export class SessionExamenFormPageComponent extends BaseComponentClass implement
     this.form = this.fb.group({
       libelle: ['', Validators.required],
       type: ['', Validators.required],
-      classeId: [null, Validators.required],
+      classeIds: [[], Validators.required],
       anneeAcademiqueId: [null, Validators.required],
       semestre: ['', Validators.required],
       dateDebut: [''],
       dateFin: [''],
-      statut: ['planifiee'],
       observations: [''],
     });
   }
@@ -74,7 +71,10 @@ export class SessionExamenFormPageComponent extends BaseComponentClass implement
       this.loading = true;
       this.service.getOne(this.itemId).subscribe({
         next: (res) => {
-          this.form.patchValue(res);
+          this.form.patchValue({
+            ...res,
+            classeIds: res.classesCibles?.map((classe: any) => Number(classe.id)) || [Number(res.classeId)]
+          });
           this.loading = false;
           if (res.type === 'rattrapage') {
             this.chargerCoursEtCorrecteurs();
@@ -88,7 +88,7 @@ export class SessionExamenFormPageComponent extends BaseComponentClass implement
       this.form.get('type')!.valueChanges.subscribe(() => this.surChangementTypeOuClasse())
     );
     this.subs.push(
-      this.form.get('classeId')!.valueChanges.subscribe(() => this.surChangementTypeOuClasse())
+      this.form.get('classeIds')!.valueChanges.subscribe(() => this.surChangementTypeOuClasse())
     );
   }
 
@@ -119,18 +119,24 @@ export class SessionExamenFormPageComponent extends BaseComponentClass implement
   }
 
   private surChangementTypeOuClasse(): void {
-    if (this.form.get('type')!.value === 'rattrapage' && this.form.get('classeId')!.value) {
+    if (this.form.get('type')!.value === 'rattrapage' && this.form.get('classeIds')!.value?.length) {
       this.chargerCoursEtCorrecteurs();
     }
   }
 
   private chargerCoursEtCorrecteurs(): void {
-    const classeId = this.form.get('classeId')!.value;
-    if (!classeId) return;
+    const classeIds = (this.form.get('classeIds')!.value || []).map(Number);
+    if (!classeIds.length) {
+      this.coursDeLaClasse = [];
+      return;
+    }
     this.loadingCours = true;
-    this.coursService.getAllPaginated({ classeId: String(classeId) }).subscribe({
-      next: (res: any) => {
-        this.coursDeLaClasse = res.data || res || [];
+    forkJoin(classeIds.map(classeId => this.coursService.getAllPaginated({ classeId: String(classeId) }))).subscribe({
+      next: (responses: any[]) => {
+        this.coursDeLaClasse = responses.reduce((cours: any[], res: any) => {
+          const items = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+          return cours.concat(items);
+        }, []);
         this.loadingCours = false;
       },
       error: () => { this.coursDeLaClasse = []; this.loadingCours = false; }
@@ -175,7 +181,11 @@ export class SessionExamenFormPageComponent extends BaseComponentClass implement
     if (this.form.invalid) return;
     this.saving = true;
     this.errorMessage = '';
-    const data = { ...this.form.value };
+    const data = {
+      ...this.form.value,
+      classeIds: this.form.get('classeIds')!.value.map(Number),
+      classeId: Number(this.form.get('classeIds')!.value[0])
+    };
     const obs = this.isEditMode
       ? this.service.update(this.itemId!, data)
       : this.service.create(data);

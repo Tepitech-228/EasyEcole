@@ -11,6 +11,7 @@ import { RolesPageComponent } from './pages/roles-page/roles-page.component';
 import { AuditLogsPageComponent } from './pages/audit-logs-page/audit-logs-page.component';
 import { ConfigurationPageComponent } from './pages/configuration-page/configuration-page.component';
 import { ComiteMembresPageComponent } from './pages/comite-membres-page/comite-membres-page.component';
+import { SitesPageComponent } from './pages/sites-page/sites-page.component';
 import { ReactiveFormsModule } from '@angular/forms';
 
 @NgModule({
@@ -24,6 +25,7 @@ import { ReactiveFormsModule } from '@angular/forms';
     AuditLogsPageComponent,
     ConfigurationPageComponent,
     ComiteMembresPageComponent,
+    SitesPageComponent,
   ],
   imports: [
     CommonModule,

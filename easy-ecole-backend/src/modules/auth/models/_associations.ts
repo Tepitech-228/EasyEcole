@@ -21,10 +21,16 @@ import { Permission } from "./Permission";
 import { Role } from "./Role";
 import { RolePermission } from "./RolePermission";
 import { UserRole } from "./UserRole";
+import { SiteUtilisateur } from "./SiteUtilisateur";
 
 // Utilisateur - Apprenant
 Apprenant.belongsTo(Utilisateur, { as: 'utilisateur', foreignKey: 'utilisateurId' })
 Utilisateur.hasOne(Apprenant, { as: 'apprenant', foreignKey: 'utilisateurId' })
+
+Utilisateur.hasMany(SiteUtilisateur, { as: 'affectationsSites', foreignKey: 'utilisateurId' })
+SiteUtilisateur.belongsTo(Utilisateur, { as: 'utilisateur', foreignKey: 'utilisateurId' })
+Etablissement.hasMany(SiteUtilisateur, { as: 'affectationsUtilisateurs', foreignKey: 'etablissementId' })
+SiteUtilisateur.belongsTo(Etablissement, { as: 'etablissement', foreignKey: 'etablissementId' })
 
 // Apprenant - AdresseApprenant
 AdresseApprenant.belongsTo(Apprenant, { as: 'apprenant', foreignKey: 'apprenantId' })

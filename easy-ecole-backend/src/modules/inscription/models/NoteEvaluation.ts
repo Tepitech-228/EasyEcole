@@ -8,6 +8,9 @@ export class NoteEvaluation extends Model<InferAttributes<NoteEvaluation>, Infer
   declare id: CreationOptional<number>
   declare note: CreationOptional<number | null>
   declare statut: CreationOptional<string>
+  declare verrouillee: CreationOptional<boolean>
+  declare motifVerrouillage: CreationOptional<string | null>
+  declare verrouilleePar: CreationOptional<number | null>
 
   declare listeNoteEvaluationId: ForeignKey<ListeNoteEvaluation['id']>
   declare listeNoteEvaluation?: NonAttribute<ListeNoteEvaluation>
@@ -37,6 +40,19 @@ NoteEvaluation.init({
     type: DataTypes.ENUM('brouillon', 'publie'),
     defaultValue: 'brouillon',
     allowNull: false
+  },
+  verrouillee: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  motifVerrouillage: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  verrouilleePar: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

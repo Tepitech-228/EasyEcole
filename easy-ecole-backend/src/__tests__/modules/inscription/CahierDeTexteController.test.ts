@@ -43,8 +43,12 @@ jest.mock('../../../modules/inscription/models/CoursParticipant', () => ({
     findAll: jest.fn()
   }
 }))
+jest.mock('../../../core/helpers/SurveillantSiteScope', () => ({
+  getSurveillantSiteId: jest.fn(),
+}))
 
 const { CahierDeTexte } = require('../../../modules/inscription/models/CahierDeTexte')
+const { getSurveillantSiteId } = require('../../../core/helpers/SurveillantSiteScope')
 import Ctrl from '../../../modules/inscription/controllers/CahierDeTexteController'
 
 beforeEach(() => {
@@ -76,6 +80,29 @@ describe('getAllCahiersDeTexte', () => {
       })
     )
     expect(res.send).toHaveBeenCalledWith(mockData)
+  })
+
+  it('limite le surveillant aux cahiers des cours de son site affecté', async () => {
+    getSurveillantSiteId.mockResolvedValue(3)
+    ;(CahierDeTexte.findAll as jest.Mock).mockResolvedValue([])
+    const req = mockRequest({
+      utilisateurRole: 'surveillant',
+      utilisateurId: 8,
+      etablissementId: 3,
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.getAllCahiersDeTexte(req, res)
+
+    expect(CahierDeTexte.findAll).toHaveBeenCalledWith(expect.objectContaining({
+      include: expect.arrayContaining([
+        expect.objectContaining({
+          association: 'cours',
+          where: { etablissementId: 3 },
+          required: true,
+        })
+      ])
+    }))
   })
 })
 
@@ -115,6 +142,25 @@ describe('getCahierDeTexte', () => {
     await Ctrl.getCahierDeTexte(req, res)
 
     expect(res.status).toHaveBeenCalledWith(404)
+  })
+
+  it('refuses a surveillant access to a cahier from another site', async () => {
+    getSurveillantSiteId.mockResolvedValue(3)
+    ;(CahierDeTexte.findOne as jest.Mock).mockResolvedValue({
+      id: 1,
+      cours: { etablissementId: 4 },
+    })
+    const req = mockRequest({
+      params: { id: '1' },
+      utilisateurRole: 'surveillant',
+      utilisateurId: 8,
+      etablissementId: 3,
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.getCahierDeTexte(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
   })
 })
 

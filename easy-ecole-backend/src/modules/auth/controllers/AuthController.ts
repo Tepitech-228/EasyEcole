@@ -11,6 +11,7 @@ import { JWT_SECRET } from "../../../core/config/jwt";
 import { OtpService } from "../../../core/services/OtpService";
 import { Etablissement } from "../../etablissement/models/Etablissement";
 import { EnseignantBadgeService } from "../services/EnseignantBadgeService";
+import { SiteUtilisateur } from "../models/SiteUtilisateur";
 
 function masquerEmail(email: string): string {
   const [local, domaine] = email.split('@')
@@ -224,8 +225,35 @@ export default class AuthController {
   }
 
   static async registerEnseignant(req: Request, res: Response): Promise<Response | null> {
-    if (req.body.utilisateur.identifiant == undefined || req.body.utilisateur.email == undefined) {
+    if (!req.body?.utilisateur || req.body.utilisateur.identifiant == undefined || req.body.utilisateur.email == undefined) {
       return res.status(400).json({ emptyField: true });
+    }
+    const requestedSiteId = req.body.etablissementId !== undefined
+      ? Number(req.body.etablissementId)
+      : Number((req as any).etablissementId);
+    const etablissementId = requestedSiteId;
+    if (!Number.isSafeInteger(etablissementId) || etablissementId <= 0) {
+      return res.status(400).json({ success: false, message: "Sélectionnez le site de rattachement de l’enseignant." });
+    }
+    const site = await Etablissement.findOne({
+      where: { id: etablissementId, actif: true },
+      attributes: ["id"]
+    });
+    if (!site) {
+      return res.status(400).json({ success: false, message: "Le site sélectionné n’existe pas ou est inactif." });
+    }
+    const activeSiteId = Number((req as any).etablissementId);
+    if (
+      (req as any).utilisateurRole !== RolesUtilisateur.ADMIN &&
+      activeSiteId !== etablissementId
+    ) {
+      const affectation = await SiteUtilisateur.findOne({
+        where: { utilisateurId: (req as any).utilisateurId, etablissementId },
+        attributes: ["id"]
+      });
+      if (!affectation) {
+        return res.status(403).json({ success: false, message: "Vous n’êtes pas affecté au site sélectionné." });
+      }
     }
 
     let emailAlreadyUsed: boolean = await Utilisateur.findOne({ where: { email: req.body.utilisateur.email } }) != null
@@ -313,9 +341,13 @@ await utilisateur.save()
           if (!enseignant) {
             throw new Error("Le profil de l'enseignant n'a pas été créé.");
           }
+          await SiteUtilisateur.findOrCreate({
+            where: { utilisateurId: utilisateur.id, etablissementId },
+            defaults: { utilisateurId: utilisateur.id, etablissementId }
+          });
           const badge = await EnseignantBadgeService.ensureIdentity(
             enseignant,
-            (req as any).etablissementId || null,
+            etablissementId,
           );
 
           EmailSender.getInstance().sendMessageInscriptionEnseignant(utilisateur.identifiant, tempPassword, utilisateur.email)

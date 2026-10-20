@@ -8,6 +8,12 @@ import { DossierInscription } from "../models/DossierInscription";
 import { DemandeInscriptionDossier } from "../models/DemandeInscriptionDossier";
 import { DemandeInscription } from "../models/DemandeInscription";
 
+const getSiteScope = (req: Request): number | null | undefined => {
+    if (req.utilisateurRole === RolesUtilisateur.ADMIN) return null;
+    const etablissementId = Number(req.etablissementId);
+    return Number.isSafeInteger(etablissementId) && etablissementId > 0 ? etablissementId : undefined;
+};
+
 /** '' / undefined / non numérique -> null (colonne DOUBLE nullable). */
 const normaliserTailleMax = (v: unknown): number | null => {
     if (v === null || v === undefined || v === '') return null;
@@ -34,8 +40,23 @@ export default class DossierInscriptionController {
     }
 
     static async getDossierInscription(req: Request, res: Response): Promise<Response> {
+        const siteScope = getSiteScope(req);
+        if (siteScope === undefined) {
+            return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+        }
+
         let options: FindOptions<InferAttributes<DossierInscription>> = {}
-        options = { where: { id: req.params.id } }
+        options = {
+            where: { id: req.params.id },
+            ...(siteScope !== null ? {
+                include: [{
+                    association: DossierInscription.associations.session,
+                    where: { etablissementId: siteScope },
+                    attributes: [],
+                    required: true
+                }]
+            } : {})
+        }
 
         try {
             const dossierInscription: DossierInscription | null = await DossierInscription.findOne(options);

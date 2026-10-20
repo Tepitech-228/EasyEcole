@@ -101,7 +101,7 @@ export async function seedComptesParRole(seqIn?: any): Promise<void> {
     const AutAdrA = seq.model('AutAdresseApprenant');
 
     console.log('\n═══ 1/6 Comptes utilisateurs (upsert) ═══');
-    console.log(`  Mot de passe par défaut : ${MOT_DE_PASSE_DEFAUT.substring(0, 3)}***`);
+    console.log('  Mot de passe par défaut : configuré (non affiché)');
     let created = 0, updated = 0, skipped = 0, failed = 0;
 
     for (const c of COMPTES) {
@@ -352,11 +352,11 @@ export async function seedComptesParRole(seqIn?: any): Promise<void> {
     console.log(`\n  RBAC : ${rbacLinked} liaison(s) utilisateur→rôle, ${permsApplied} permission(s) appliquée(s), ${rbacSkipped} ignoré(s)`);
 
     console.log('\n═══ 6/6 Récapitulatif des comptes ═══');
-    console.log(`\n  Mot de passe utilisé : ${MOT_DE_PASSE_DEFAUT}\n`);
-    console.log('  Rôle                     Identifiant       Email                              Mot de passe');
-    console.log('  ──────────────────────── ───────────────── ────────────────────────────────── ──────────────');
+    console.log('\n  Les mots de passe ne sont pas affichés dans les logs.');
+    console.log('  Rôle                     Identifiant       Email');
+    console.log('  ──────────────────────── ───────────────── ──────────────────────────────────');
     for (const c of COMPTES) {
-        console.log(`  ${c.role.padEnd(24)} ${c.identifiant.padEnd(16)} ${c.email.padEnd(34)} ${MOTS_DE_PASSE[c.role]}`);
+        console.log(`  ${c.role.padEnd(24)} ${c.identifiant.padEnd(16)} ${c.email}`);
     }
     console.log('');
 }

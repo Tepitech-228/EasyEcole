@@ -51,7 +51,7 @@ describe("ImputationService — priorisation inscription avant scolarite", () =>
   function creerEcheance(overrides: Partial<Echeance> = {}): Echeance {
     const base: any = {
       id: overrides.id || Math.random(),
-      dossierEtudiantId: 1,
+      dossierEtudiantId: overrides.dossierEtudiantId ?? 1,
       type: overrides.type || 'scolarite',
       numeroEcheance: overrides.numeroEcheance || 1,
       montant: overrides.montant || 10000,
@@ -112,6 +112,27 @@ describe("ImputationService — priorisation inscription avant scolarite", () =>
     expect(resultat.lignes[2].echeanceId).toBe(30)
     expect(resultat.lignes[2].statutApres).toBe('paye')
     expect(resultat.surplus).toBeCloseTo(0, 2)
+  })
+
+  it("limite l'imputation aux dossiers du site actif", async () => {
+    const dossierSite = { id: 17, utilisateurId: 1, etablissementId: 4, statut: 'actif' } as DossierEtudiant
+    const dossierFindAll = jest.spyOn(DossierEtudiant, 'findAll').mockResolvedValue([dossierSite])
+    mockEcheances = [creerEcheance({ id: 41, dossierEtudiantId: 17, type: 'inscription', montant: 1000 })]
+
+    const resultat = await ImputationService.imputerPourUtilisateur(
+      23,
+      1,
+      1000,
+      mockTransaction as Transaction,
+      undefined,
+      4
+    )
+
+    expect(dossierFindAll).toHaveBeenCalledWith({
+      where: { utilisateurId: 1, etablissementId: 4 },
+      transaction: mockTransaction,
+    })
+    expect(resultat.lignes.map(ligne => ligne.echeanceId)).toEqual([41])
   })
 
   it("doit gérer un paiement inférieur aux frais d'inscription", async () => {

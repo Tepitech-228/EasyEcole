@@ -16,6 +16,7 @@ export class DemandeInscription {
   declare dateValidation?: Date
   declare sessionId?: string
   declare session?: Session
+  declare etablissementId?: string | number | null
   declare utilisateurId?: string
   declare utilisateur?: Utilisateur
   declare reponseInscription?: ReponseInscription

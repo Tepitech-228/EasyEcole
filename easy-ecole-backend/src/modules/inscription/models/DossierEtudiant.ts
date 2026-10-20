@@ -4,10 +4,12 @@ import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { Echeance } from "./Echeance";
 import { CoursParticipant } from "./CoursParticipant";
+import { Etablissement } from "../../etablissement/models/Etablissement";
 
 export class DossierEtudiant extends Model<InferAttributes<DossierEtudiant>, InferCreationAttributes<DossierEtudiant>> {
   declare id: CreationOptional<number>
   declare utilisateurId: ForeignKey<Utilisateur['id']>
+  declare etablissementId: CreationOptional<ForeignKey<Etablissement['id'] | null>>
   declare matricule: string
   declare codeQR: CreationOptional<string>
   declare photo: CreationOptional<string>
@@ -30,12 +32,14 @@ export class DossierEtudiant extends Model<InferAttributes<DossierEtudiant>, Inf
   declare utilisateur?: NonAttribute<Utilisateur>
   declare echeances?: NonAttribute<Echeance[]>
   declare coursParticipants?: NonAttribute<CoursParticipant[]>
+  declare etablissement?: NonAttribute<Etablissement>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
 
   declare static associations: {
     utilisateur: Association<DossierEtudiant, Utilisateur>
+    etablissement: Association<DossierEtudiant, Etablissement>
     echeances: Association<DossierEtudiant, Echeance>
     coursParticipants: Association<DossierEtudiant, CoursParticipant>
   };
@@ -69,6 +73,10 @@ DossierEtudiant.init({
     type: DataTypes.INTEGER.UNSIGNED,
     autoIncrement: true,
     primaryKey: true
+  },
+  etablissementId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
   },
   matricule: {
     type: new DataTypes.STRING,

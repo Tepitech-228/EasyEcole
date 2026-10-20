@@ -97,6 +97,7 @@ export default class ComiteOrientationController {
 
                 cursus = await CursusApprenant.create({
                     utilisateurId,
+                    etablissementId: parcours.etablissementId ?? null,
                     parcoursId,
                     niveauEtudeId: parcours.niveauEtudeId,
                     classeId: null,

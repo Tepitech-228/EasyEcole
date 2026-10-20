@@ -9,6 +9,7 @@ import { Utilisateur } from "../../auth/models/Utilisateur";
 import { AnneeAcademique } from "../models/AnneeAcademique";
 import { NiveauEtude } from "../models/NiveauEtude";
 import { Classe } from "../models/Classe";
+import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 
 const STATUTS_IRREGULIERS = ['impaye', 'partiel', 'en_retard'] as const;
 
@@ -29,6 +30,15 @@ export default class FinanceEcheanceController {
 
             // ── Construire le where pour CursusApprenant ──
             const cursusWhere: any = {};
+            const etablissementId = Number((req as any).etablissementId);
+            const dossierSiteWhere = Number.isSafeInteger(etablissementId) && etablissementId > 0
+                ? { etablissementId }
+                : {};
+            if (Number.isSafeInteger(etablissementId) && etablissementId > 0) {
+                cursusWhere.etablissementId = etablissementId;
+            } else if ((req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
+                return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+            }
 
             if (req.query.anneeAcademiqueId) {
                 cursusWhere.anneeAcademiqueId = req.query.anneeAcademiqueId;
@@ -81,7 +91,10 @@ export default class FinanceEcheanceController {
                 };
 
                 const [matchingDossiers, matchingUsers] = await Promise.all([
-                    DossierEtudiant.findAll({ attributes: ['id', 'utilisateurId'], where: whereOrDossier }),
+                    DossierEtudiant.findAll({
+                        attributes: ['id', 'utilisateurId'],
+                        where: { ...whereOrDossier, ...dossierSiteWhere }
+                    }),
                     Utilisateur.findAll({ attributes: ['id'], where: whereOrUser }),
                 ]);
 
@@ -89,7 +102,7 @@ export default class FinanceEcheanceController {
                 const userIdsFromSearch = matchingUsers.map((u: any) => u.id);
                 const dossierIdsFromUsers = await DossierEtudiant.findAll({
                     attributes: ['id'],
-                    where: { utilisateurId: { [Op.in]: userIdsFromSearch } }
+                    where: { utilisateurId: { [Op.in]: userIdsFromSearch }, ...dossierSiteWhere }
                 });
 
                 const allDossierIds = [
@@ -125,7 +138,10 @@ export default class FinanceEcheanceController {
                         {
                             association: (Utilisateur as any).associations.dossiersEtudiants as any,
                             attributes: ['id', 'matricule'],
-                            where: whereDossierEtudiantIds ? { id: { [Op.in]: whereDossierEtudiantIds } } : undefined,
+                            where: {
+                                ...dossierSiteWhere,
+                                ...(whereDossierEtudiantIds ? { id: { [Op.in]: whereDossierEtudiantIds } } : {})
+                            },
                             include: [
                                 {
                                     association: DossierEtudiant.associations.echeances as any,

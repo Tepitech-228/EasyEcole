@@ -29,10 +29,17 @@ import fs from "fs";
 import path from "path";
 import { DocumentPDFGenerator } from "../../../core/helpers/DocumentPDFGenerator";
 import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
+import HikvisionEnrollmentService from "../services/HikvisionEnrollmentService";
 import { creerEcritureComptable } from "../../comptabilite/helpers/ComptabiliteHelper";
 import { Etablissement } from "../../etablissement/models/Etablissement";
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
+
+const getSiteScope = (req: Request): number | null | undefined => {
+    if (req.utilisateurRole === RolesUtilisateur.ADMIN) return null;
+    const etablissementId = Number(req.etablissementId);
+    return Number.isSafeInteger(etablissementId) && etablissementId > 0 ? etablissementId : undefined;
+};
 
 const hasChoixFinalValue = (value: unknown): boolean => {
     if (typeof value === 'boolean') return value;
@@ -58,12 +65,40 @@ export default class DemandeInscriptionController {
 
     constructor() { }
 
+    static async enregistrerConsentementHikvision(req: Request, res: Response): Promise<Response> {
+        if (req.utilisateurRole !== RolesUtilisateur.APPRENANT) {
+            return res.status(403).json({ success: false, message: "Seul l'étudiant peut donner ou retirer cet accord." });
+        }
+        if (typeof req.body?.consentement !== "boolean") {
+            return res.status(400).json({ success: false, message: "Le choix de consentement est invalide." });
+        }
+        try {
+            const demande = await DemandeInscription.findOne({
+                where: { id: req.params.id, utilisateurId: req.utilisateurId }
+            });
+            if (!demande) return res.status(404).json({ success: false, message: "Demande d'inscription introuvable." });
+            await demande.update({
+                consentementHikvisionAt: req.body.consentement ? new Date() : null
+            });
+            return res.status(200).json({ success: true });
+        } catch (error) {
+            console.error("[Hikvision] Enregistrement du consentement impossible:", error);
+            return res.status(500).json({ success: false, message: "Le choix de consentement n'a pas pu être enregistré." });
+        }
+    }
+
     static async getAllDemandesInscription(req: Request, res: Response): Promise<Response> {
+        const siteScope = getSiteScope(req);
+        if (siteScope === undefined) {
+            return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+        }
+
         const page = Math.max(1, parseInt(req.query.page as string) || 1);
         const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
         const offset = (page - 1) * limit;
 
         let where: any = {};
+        if (siteScope !== null) where.etablissementId = siteScope;
         let include: any[] = [
             { association: DemandeInscription.associations.utilisateur, include: [{ model: Apprenant, as: 'apprenant' }] },
             DemandeInscription.associations.reponseInscription
@@ -130,10 +165,16 @@ export default class DemandeInscriptionController {
     }
 
     static async getDemandeInscription(req: Request, res: Response): Promise<Response> {
+        const siteScope = getSiteScope(req);
+        if (siteScope === undefined) {
+            return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+        }
+
         const isApprenant = (req as any).utilisateurRole == RolesUtilisateur.APPRENANT;
         const where: any = isApprenant
             ? { id: req.params.id, utilisateurId: (req as any).utilisateurId }
             : { id: req.params.id };
+        if (siteScope !== null) where.etablissementId = siteScope;
 
         try {
             // ── 1. Requête racine (légère, sans hasMany) ─────────────────────────
@@ -342,11 +383,37 @@ export default class DemandeInscriptionController {
 
     static async createDemandeInscription(req: Request, res: Response): Promise<Response | null> {
         let options: FindOptions<InferAttributes<DemandeInscription>> = {}
+        let demandeSiteId: number | undefined
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
+            const siteScope = getSiteScope(req);
+            if (siteScope === undefined) {
+                return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+            }
+            const submittedSiteId = Number(req.body?.etablissementId);
+            if (!Number.isSafeInteger(submittedSiteId) || submittedSiteId <= 0) {
+                return res.status(400).json({ success: false, message: "L'établissement est obligatoire" });
+            }
+            if (submittedSiteId !== siteScope) {
+                return res.status(403).json({ success: false, message: "L'établissement ne correspond pas au site actif" });
+            }
+
+            const session = await Session.findOne({
+                where: { id: req.body.sessionId, etablissementId: siteScope },
+                attributes: ['id', 'etablissementId']
+            });
+            if (!session) {
+                return res.status(404).json({ success: false, message: "Session non trouvée" });
+            }
+            demandeSiteId = Number(session.etablissementId)
             options = { where: { sessionId: req.body.sessionId, utilisateurId: (req as any).utilisateurId } }
         }
         else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
             return res.status(403).json({ success: false })
+        }
+
+        const siteScope = getSiteScope(req);
+        if (siteScope === undefined) {
+            return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
         }
 
         let demandeInscription: DemandeInscription | null = await DemandeInscription.findOne(options);
@@ -354,6 +421,7 @@ export default class DemandeInscriptionController {
             let demandeInscription: DemandeInscription = new DemandeInscription();
             demandeInscription.dateDemande = req.body.dateDemande
             demandeInscription.sessionId = req.body.sessionId
+            if (demandeSiteId !== undefined) demandeInscription.etablissementId = demandeSiteId
             demandeInscription.matricule = IDGenerator.getInstance().generateInscriptionMatricule()
             demandeInscription.utilisateurId = (req as any).utilisateurId
 
@@ -613,6 +681,9 @@ export default class DemandeInscriptionController {
             const parcoursChoisiFinal = getParcoursFinal(demandeInscription.parcoursChoisis)
             const cursusApprenant = new CursusApprenant()
             cursusApprenant.externe = false
+            cursusApprenant.etablissementId = demandeInscription.etablissementId
+                ?? parcoursChoisiFinal?.parcours?.etablissementId
+                ?? null
             cursusApprenant.parcoursId = parcoursChoisiFinal?.parcoursId || req.body.cursusApprenant?.parcoursId
             cursusApprenant.classeId = req.body.cursusApprenant?.classeId
             cursusApprenant.anneeAcademiqueId = req.body.cursusApprenant?.anneeAcademiqueId
@@ -649,6 +720,7 @@ export default class DemandeInscriptionController {
             const codeQR = JSON.stringify({ matricule: matriculeFinal, utilisateurId: demandeInscription.utilisateurId })
             const dossierEtudiant = new DossierEtudiant()
             dossierEtudiant.utilisateurId = demandeInscription.utilisateurId
+            dossierEtudiant.etablissementId = savedCursus.etablissementId
             dossierEtudiant.matricule = matriculeFinal
             dossierEtudiant.codeQR = codeQR
             dossierEtudiant.statut = 'actif'
@@ -657,6 +729,20 @@ export default class DemandeInscriptionController {
             dossierEtudiant.nbMensualites = req.body.dossierEtudiant?.nbMensualites ?? 10
             dossierEtudiant.demarrageParcours = req.body.dossierEtudiant?.demarrageParcours ?? new Date()
             await dossierEtudiant.save()
+            if (demandeInscription.consentementHikvisionAt && savedCursus.etablissementId) {
+                try {
+                    await HikvisionEnrollmentService.enqueueStudent(
+                        Number(demandeInscription.utilisateurId),
+                        Number(savedCursus.etablissementId),
+                        matriculeFinal,
+                        demandeInscription.consentementHikvisionAt
+                    )
+                } catch (error) {
+                    console.error(`[Hikvision] Enrôlement non planifié pour le dossier ${dossierEtudiant.id}:`, error)
+                }
+            } else if (demandeInscription.consentementHikvisionAt) {
+                console.warn(`[Hikvision] Enrôlement non planifié pour le dossier ${dossierEtudiant.id}: aucun site n'est associé au cursus validé.`)
+            }
 
             // Générer la carte étudiant avec QR code
             try {

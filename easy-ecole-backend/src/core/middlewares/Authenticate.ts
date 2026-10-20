@@ -3,6 +3,8 @@ import jwt from 'jsonwebtoken'
 import { RolesUtilisateur } from '../enums/RolesUtilisateur'
 import { JWT_SECRET } from '../config/jwt'
 import { Utilisateur } from '../../modules/auth/models/Utilisateur'
+import { Etablissement } from '../../modules/etablissement/models/Etablissement'
+import { SiteUtilisateur } from '../../modules/auth/models/SiteUtilisateur'
 
 /**
  * Chemins autorisés à accepter le token JWT en query string (?token=).
@@ -69,6 +71,24 @@ export default async (req: Request, res: Response, next: Function) => {
         req.utilisateurEmail = decoded.email;
         req.utilisateurRole = decoded.role;
         req.etablissementId = (decoded as any).etablissementId || null;
+        if (req.etablissementId) {
+            const site = await Etablissement.findOne({
+                where: { id: req.etablissementId, actif: true },
+                attributes: ['id']
+            })
+            if (!site) {
+                return res.status(403).json({ success: false, message: "Le site actif est inexistant ou désactivé" })
+            }
+            if (decoded.role !== RolesUtilisateur.ADMIN) {
+                const affectation = await SiteUtilisateur.findOne({
+                    where: { utilisateurId: decoded.id, etablissementId: req.etablissementId },
+                    attributes: ['id']
+                })
+                if (!affectation) {
+                    return res.status(403).json({ success: false, message: "Vous n’êtes pas affecté au site actif" })
+                }
+            }
+        }
 
         return next()
     } catch (error: any) {
