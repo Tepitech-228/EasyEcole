@@ -294,10 +294,19 @@ export default class UtilisateurController {
             }
 
             const existe = await Utilisateur.findOne({
-                where: { [Op.or]: [{ email: req.body.email }, { identifiant: req.body.identifiant }] }
+                where: {
+                    [Op.or]: [
+                        { email: req.body.email },
+                        { identifiant: req.body.identifiant },
+                        { nom: req.body.nom, prenoms: req.body.prenoms },
+                    ]
+                }
             });
             if (existe) {
-                return res.status(400).json({ success: false, message: "Email ou identifiant déjà utilisé" });
+                const champConflit = existe.email === req.body.email ? "Cet email" :
+                    existe.identifiant === req.body.identifiant ? "Cet identifiant" :
+                        "Ce nom et prénoms";
+                return res.status(409).json({ success: false, message: `${champConflit} est déjà utilisé par un autre compte.` });
             }
 
             if (!req.body.motDePasse || req.body.motDePasse.length < 6) {
@@ -563,7 +572,17 @@ export default class UtilisateurController {
                     ? { hikvisionEnrollmentQueued, ...(hikvisionEnrollmentWarning ? { hikvisionEnrollmentWarning } : {}) }
                     : {}),
             });
-        } catch (error) {
+        } catch (error: any) {
+            console.error("[UtilisateurController.adminCreateUtilisateur]", error?.name, error?.message, error?.parent?.sqlMessage || "");
+            if (error?.name === "SequelizeUniqueConstraintError" || error?.parent?.code === "ER_DUP_ENTRY") {
+                const champs = (error?.errors || []).map((e: any) => e.path).filter(Boolean).join(", ");
+                return res.status(409).json({
+                    success: false,
+                    message: champs
+                        ? `Conflit de valeur unique sur : ${champs}. Cette valeur est déjà utilisée.`
+                        : "Cette valeur est déjà utilisée par un autre compte."
+                });
+            }
             return res.status(500).json({ success: false, message: "Erreur interne du serveur" });
         }
     }

@@ -77,12 +77,21 @@ export default class ComiteMembreController {
                 return res.status(400).json({ success: false, message: "Mot de passe requis (min 6 caractères)" })
             }
 
-            // Vérifier l'unicité de l'email et de l'identifiant
+            // Vérifier l'unicité de l'email, de l'identifiant et du nom+prénoms
             const existe = await Utilisateur.findOne({
-                where: { [Op.or]: [{ email }, { identifiant }] }
+                where: {
+                    [Op.or]: [
+                        { email },
+                        { identifiant },
+                        { nom, prenoms },
+                    ]
+                }
             })
             if (existe) {
-                return res.status(400).json({ success: false, message: "Email ou identifiant déjà utilisé" })
+                const champConflit = existe.email === email ? "Cet email" :
+                    existe.identifiant === identifiant ? "Cet identifiant" :
+                        "Ce nom et prénoms"
+                return res.status(409).json({ success: false, message: `${champConflit} est déjà utilisé par un autre compte.` })
             }
 
             const utilisateur = await Utilisateur.create({
@@ -108,8 +117,17 @@ export default class ComiteMembreController {
             }
 
             return res.status(201).json({ success: true, message: "Membre du comité créé", utilisateur })
-        } catch (error) {
-            console.error('[ComiteMembre] creerMembre:', error)
+        } catch (error: any) {
+            console.error('[ComiteMembre] creerMembre:', error?.name, error?.message, error?.parent?.sqlMessage || "")
+            if (error?.name === "SequelizeUniqueConstraintError" || error?.parent?.code === "ER_DUP_ENTRY") {
+                const champs = (error?.errors || []).map((e: any) => e.path).filter(Boolean).join(", ")
+                return res.status(409).json({
+                    success: false,
+                    message: champs
+                        ? `Conflit de valeur unique sur : ${champs}. Cette valeur est déjà utilisée.`
+                        : "Cette valeur est déjà utilisée par un autre compte."
+                })
+            }
             return res.status(500).json({ success: false, message: 'Erreur interne' })
         }
     }
