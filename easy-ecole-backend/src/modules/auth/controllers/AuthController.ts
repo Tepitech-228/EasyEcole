@@ -300,7 +300,7 @@ await utilisateur.save()
                 utilisateurId: utilisateur.id,
                 cni: req.body.cni,
                 matricule: matricule,
-                sexe: req.body.sexe,
+                sexe: ['M', 'F', 'Autre'].includes(req.body.sexe) ? req.body.sexe : 'M',
                 dateNaissance: req.body.dateNaissance,
                 nationalite: req.body.nationalite,
                 plusHautDiplome: req.body.plusHautDiplome,

@@ -5,6 +5,7 @@ import { ToastService } from 'src/app/core/services/toast.service';
 import { RolesUtilisateur } from 'src/app/data/enums/RolesUtilisateur';
 import { Router } from '@angular/router';
 import { AuthService, SiteUtilisateur } from 'src/app/data/modules/auth/services/auth.service';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-utilisateurs-page',
@@ -21,6 +22,7 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
   showModal: boolean = false
   editingUser: any = null
   formData: any = {}
+  selectedPhoto: File | null = null
   saving: boolean = false
   availableSites: SiteUtilisateur[] = []
   sitesLoading: boolean = false
@@ -111,6 +113,7 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
 
   openAddModal(): void {
     this.editingUser = null
+    this.selectedPhoto = null
     this.formData = {
       nom: '', prenoms: '', email: '', identifiant: '', motDePasse: '',
       role: RolesUtilisateur.APPRENANT, contact: '', siteIds: [],
@@ -128,6 +131,7 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
 
   openEditModal(user: any): void {
     this.editingUser = user
+    this.selectedPhoto = null
     this.formData = {
       nom: user.nom || '',
       prenoms: user.prenoms || '',
@@ -143,7 +147,13 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
     this.showModal = false
     this.editingUser = null
     this.formData = {}
+    this.selectedPhoto = null
     this.sitesError = ''
+  }
+
+  onPhotoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement
+    this.selectedPhoto = input.files?.[0] || null
   }
 
   private loadAvailableSites(): void {
@@ -200,6 +210,10 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
       this.toastService.error('Nom, prénoms et email sont requis')
       return
     }
+    if (!this.editingUser && !this.selectedPhoto) {
+      this.toastService.error('Une photo de profil est obligatoire pour créer un compte utilisateur')
+      return
+    }
     if (!this.editingUser && this.sitesLoading) {
       this.toastService.error('Attendez le chargement des sites autorisés')
       return
@@ -220,16 +234,36 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
     const userData = this.editingUser
       ? this.formData
       : { ...this.formData, siteIds: this.sitesSelectionnes }
-    const obs = this.editingUser
-      ? this.utilisateurService.adminUpdate(this.editingUser.id, userData)
-      : this.utilisateurService.adminCreate(userData)
+    const photo = this.selectedPhoto
+    let obs: Observable<any>
+    if (this.editingUser) {
+      obs = this.utilisateurService.adminUpdate(this.editingUser.id, userData)
+    } else if (photo) {
+      obs = this.utilisateurService.adminCreate(userData, photo)
+    } else {
+      this.saving = false
+      this.toastService.error('Une photo de profil est obligatoire pour créer un compte utilisateur')
+      return
+    }
 
     obs.subscribe({
-      next: () => {
+      next: (response) => {
+        const wasEditing = Boolean(this.editingUser)
+        const createdRole = this.formData.role
         this.saving = false
         this.closeModal()
         this.loadUtilisateurs()
-        this.toastService.success(this.editingUser ? 'Utilisateur modifié' : 'Utilisateur créé')
+        if (response?.hikvisionEnrollmentWarning) {
+          this.toastService.error(response.hikvisionEnrollmentWarning)
+        } else if (
+          !wasEditing &&
+          [RolesUtilisateur.ENSEIGNANT, ...this.staffRoles].includes(createdRole) &&
+          !response?.hikvisionEnrollmentQueued
+        ) {
+          this.toastService.success('Utilisateur créé avec sa photo. Aucun terminal Hikvision actif sur ses sites : son enrôlement sera préparé à l’ajout d’un terminal.')
+        } else {
+          this.toastService.success(wasEditing ? 'Utilisateur modifié' : 'Utilisateur créé')
+        }
       },
       error: (err) => {
         this.saving = false

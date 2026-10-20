@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { PersonnelAdministratif } from "../../auth/models/PersonnelAdministratif";
 import { Enseignant } from "../../auth/models/Enseignant";
+import { SiteUtilisateur } from "../../auth/models/SiteUtilisateur";
 import { DossierEtudiant } from "../models/DossierEtudiant";
 import { Pointage } from "../models/Pointage";
 import { PointageTerminal } from "../models/PointageTerminal";
@@ -58,32 +59,52 @@ export function parseHikvisionPushEvent(body: unknown): HikvisionPushEvent | nul
 }
 
 async function resolveUtilisateur(employeeNo: string, etablissementId: number): Promise<Utilisateur | null> {
-  if (/^\d+$/.test(employeeNo)) {
-    const utilisateurById = await Utilisateur.findByPk(Number(employeeNo));
-    if (utilisateurById) return utilisateurById;
-  }
-
-  const [identifiants, dossiers, personnels, enseignants] = await Promise.all([
-    Utilisateur.findAll({ where: { identifiant: employeeNo }, attributes: ["id"] }),
+  const [dossiers, siteUsers] = await Promise.all([
     DossierEtudiant.findAll({
       where: { matricule: employeeNo, etablissementId },
       attributes: ["utilisateurId"]
     }),
+    SiteUtilisateur.findAll({ where: { etablissementId }, attributes: ["utilisateurId"] })
+  ]);
+
+  const siteUserIds = siteUsers.map(item => Number(item.utilisateurId));
+  const [personnels, enseignants] = await Promise.all([
     PersonnelAdministratif.findAll({
-      where: { matricule: employeeNo, etablissementId },
+      where: {
+        matricule: employeeNo,
+        [Op.or]: [
+          { utilisateurId: { [Op.in]: siteUserIds } },
+          { etablissementId }
+        ]
+      },
       attributes: ["utilisateurId"]
     }),
-    Enseignant.findAll({ where: { matricule: employeeNo }, attributes: ["utilisateurId"] })
+    Enseignant.findAll({
+      where: { matricule: employeeNo, utilisateurId: { [Op.in]: siteUserIds } },
+      attributes: ["utilisateurId"]
+    })
   ]);
-  const matchingIds = new Set<number>([
-    ...identifiants.map(item => Number(item.id)),
+  const profileIds = new Set<number>([
     ...dossiers.map(item => Number(item.utilisateurId)),
     ...personnels.map(item => Number(item.utilisateurId)),
     ...enseignants.map(item => Number(item.utilisateurId))
   ].filter(id => Number.isSafeInteger(id) && id > 0));
 
-  if (matchingIds.size !== 1) return null;
-  return Utilisateur.findByPk(Array.from(matchingIds)[0]);
+  if (profileIds.size > 1) return null;
+  if (profileIds.size === 1) return Utilisateur.findByPk(Array.from(profileIds)[0]);
+
+  const identifiants = await Utilisateur.findAll({
+    where: { identifiant: employeeNo },
+    attributes: ["id"]
+  });
+  const matchingIds = new Set<number>(
+    identifiants.map(item => Number(item.id)).filter(id => Number.isSafeInteger(id) && id > 0)
+  );
+  if (matchingIds.size === 1) return Utilisateur.findByPk(Array.from(matchingIds)[0]);
+  if (matchingIds.size > 1) return null;
+
+  if (/^\d+$/.test(employeeNo)) return Utilisateur.findByPk(Number(employeeNo));
+  return null;
 }
 
 async function traiterEvenement(terminal: PointageTerminal, eventId: number): Promise<void> {

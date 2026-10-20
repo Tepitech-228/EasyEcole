@@ -89,8 +89,8 @@ export default class HikvisionTerminalController {
                 actif: true,
                 lastSeenAt: null
             });
-            void HikvisionEnrollmentService.enqueueEligibleStudentsForTerminal(terminal).catch(error => {
-                console.error(`[Hikvision] Impossible de préparer les enrôlements consentis pour le terminal ${terminal.id}:`, error);
+            void HikvisionEnrollmentService.enqueueEligibleProfilesForTerminal(terminal).catch(error => {
+                console.error(`[Hikvision] Impossible de préparer les enrôlements admissibles pour le terminal ${terminal.id}:`, error);
             });
             return res.status(201).json(toClientTerminal(terminal));
         } catch (error) {

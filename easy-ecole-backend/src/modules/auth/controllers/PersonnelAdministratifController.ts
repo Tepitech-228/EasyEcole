@@ -73,7 +73,7 @@ export default class PersonnelAdministratifController {
                 nifOtr: req.body.nifOtr,
                 dateNaissance: req.body.dateNaissance,
                 lieuNaissance: req.body.lieuNaissance,
-                sexe: req.body.sexe,
+                sexe: ['M', 'F', 'Autre'].includes(req.body.sexe) ? req.body.sexe : 'M',
                 nationalite: req.body.nationalite,
                 contact: req.body.contact,
                 plusHautDiplome: req.body.plusHautDiplome,
@@ -119,20 +119,41 @@ export default class PersonnelAdministratifController {
             options = { where: { utilisateurId: (req as any).utilisateurId } }
         }
 
-        const files: any = req.files
-        if (files && files['photo']) {
-            const photo = files['photo'][0] as Express.Multer.File | undefined
+        const photo = req.file;
+        if (!photo) return res.status(400).json({ success: false, message: "Une photo de profil est requise." });
+
+        try {
             const personnel = await PersonnelAdministratif.findOne(options);
+            if (!personnel) return res.status(404).json({ success: false, message: "Profil du personnel introuvable." });
+            const utilisateur = await Utilisateur.findByPk(personnel.utilisateurId);
+            if (!utilisateur) return res.status(404).json({ success: false, message: "Compte utilisateur introuvable." });
 
-            if (personnel != null && photo) {
-                await personnel.update({ photo: photo.filename } as any)
-                    .then(() => res.status(200).json({ success: true }))
-                    .catch((error) => res.status(400).json({ success: false, error }))
-                return null
+            try {
+                await utilisateur.update({ photoDeProfil: photo.filename });
+            } catch (error) {
+                console.error(`[Profil] Échec d’enregistrement de la photo du personnel ${utilisateur.id}:`, error);
+                return res.status(500).json({ success: false, message: "La photo du personnel n’a pas pu être enregistrée." });
             }
-        }
 
-        return res.status(400).json({ success: false })
+            let enrollmentCount: number;
+            try {
+                const { default: HikvisionEnrollmentService } = await import("../../inscription/services/HikvisionEnrollmentService");
+                enrollmentCount = await HikvisionEnrollmentService.enqueueStaffProfile(Number(utilisateur.id));
+            } catch (error) {
+                console.error(`[Hikvision] Photo enregistrée mais enrôlement impossible pour le personnel ${utilisateur.id}:`, error);
+                return res.status(500).json({
+                    success: false,
+                    message: "La photo a été enregistrée, mais l’enrôlement Hikvision n’a pas pu être planifié."
+                });
+            }
+            return res.status(200).json({
+                success: true,
+                enrollmentQueued: enrollmentCount > 0
+            });
+        } catch (error) {
+            console.error("[Profil] Photo du personnel impossible à traiter:", error);
+            return res.status(500).json({ success: false, message: "La photo du personnel n’a pas pu être enregistrée." });
+        }
     }
 
     static async generateQRs(req: Request, res: Response): Promise<Response | null> {

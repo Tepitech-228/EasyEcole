@@ -104,7 +104,7 @@ export default class EnseignantController {
                 nifOtr: req.body.nifOtr,
                 dateNaissance: req.body.dateNaissance,
                 lieuNaissance: req.body.lieuNaissance,
-                sexe: req.body.sexe,
+                sexe: ['M', 'F', 'Autre'].includes(req.body.sexe) ? req.body.sexe : 'M',
                 nationalite: req.body.nationalite,
                 contact: req.body.contact,
                 plusHautDiplome: req.body.plusHautDiplome,
@@ -174,17 +174,25 @@ export default class EnseignantController {
             if (photo) {
                 let enseignant: Enseignant | null = await Enseignant.findOne(options);
                 if (enseignant != null) {
-                    await enseignant.update({
-                        photo: photo.filename,
-                    })
-                        .then(async () => {
-                            return res.status(200).json({ success: false });
-                        })
-                        .catch((error) => {
-                            return res.status(400).json({ success: false, error: error });
+                    try {
+                        await enseignant.update({ photo: photo.filename });
+                    } catch (error) {
+                        console.error(`[Profil] Échec d’enregistrement de la photo de l’enseignant ${enseignant.id}:`, error);
+                        return res.status(500).json({ success: false, message: "La photo de l’enseignant n’a pas pu être enregistrée." });
+                    }
+                    try {
+                        const { default: HikvisionEnrollmentService } = await import("../../inscription/services/HikvisionEnrollmentService");
+                        const enrollmentCount = enseignant.utilisateurId
+                            ? await HikvisionEnrollmentService.enqueueStaffProfile(Number(enseignant.utilisateurId))
+                            : 0;
+                        return res.status(200).json({ success: true, enrollmentQueued: enrollmentCount > 0 });
+                    } catch (error) {
+                        console.error(`[Hikvision] Photo enregistrée mais enrôlement impossible pour l’enseignant ${enseignant.id}:`, error);
+                        return res.status(500).json({
+                            success: false,
+                            message: "La photo a été reçue, mais l’enrôlement Hikvision n’a pas pu être planifié."
                         });
-
-                    return null
+                    }
                 }
                 else {
                     return res.status(404).json({ success: false, message: "Enseignant non trouvé" });

@@ -67,7 +67,7 @@
                                 <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
                                     <div class="flex items-center gap-x-2">
                                         <img class="object-cover w-8 h-8 rounded-full border-2 border-gray-300"
-                                            [src]="enseignant.utilisateur!.apprenant?.photo ? PHOTOS_PATH + enseignant.utilisateur!.apprenant?.photo : 'assets/images/blank-profile-picture.png'"
+                                            [src]="enseignant.photo ? PHOTOS_PATH + enseignant.photo : 'assets/images/blank-profile-picture.png'"
                                             alt="">
                                         <div class="pr-8">
                                             <h2 class="text-sm font-medium text-gray-800 dark:text-white ">{{
@@ -120,8 +120,8 @@
             <img [src]="photoPreviewUrl || 'assets/images/blank-profile-picture.png'" alt="Photo"
                 class="object-cover w-16 h-16 rounded-full border-2 border-gray-300">
             <div>
-                <label for="photo" class="mb-1 block text-sm leading-6 text-gray-600">Photo (affichée au pointage)</label>
-                <input type="file" id="photo" accept="image/*" (change)="onPhotoSelected($event)"
+                <label for="photo" class="mb-1 block text-sm leading-6 text-gray-600">Photo obligatoire (profil de pointage et terminal facial)</label>
+                <input type="file" id="photo" accept="image/*" required (change)="onPhotoSelected($event)"
                     class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-indigo-700 hover:file:bg-indigo-100">
             </div>
         </div>

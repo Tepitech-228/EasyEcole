@@ -131,6 +131,15 @@
                         class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
                 </div>
             </div>
+            <div *ngIf="!editingUser">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Photo de profil obligatoire</label>
+                <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" required
+                    (change)="onPhotoSelected($event)"
+                    class="block w-full text-sm text-gray-600">
+                <p class="mt-1 text-xs text-gray-500">
+                    Pour les enseignants et le personnel, cette photo servira aussi à préparer le profil facial du pointage Hikvision.
+                </p>
+            </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Rôle</label>
                 <select [(ngModel)]="formData.role"

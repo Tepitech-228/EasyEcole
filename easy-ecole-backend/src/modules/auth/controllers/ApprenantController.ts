@@ -107,7 +107,7 @@ export default class ApprenantController {
                 photo: req.body.photo,
                 dateNaissance: req.body.dateNaissance,
                 lieuNaissance: req.body.lieuNaissance,
-                sexe: req.body.sexe,
+                sexe: ['M', 'F', 'Autre'].includes(req.body.sexe) ? req.body.sexe : 'M',
                 nationalite: req.body.nationalite,
                 cni: req.body.cni,
                 statutHandicap: req.body.statutHandicap,

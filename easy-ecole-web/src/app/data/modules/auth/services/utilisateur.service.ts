@@ -25,8 +25,11 @@ export class UtilisateurService {
     return this.httpClient.put<Utilisateur>(`${this.SERVICE_URL}/`, utilisateur)
   }
 
-  adminCreate(data: any): Observable<any> {
-    return this.httpClient.post(`${this.SERVICE_URL}`, data)
+  adminCreate(data: any, photo: File): Observable<any> {
+    const formData = new FormData()
+    formData.append('data', JSON.stringify(data))
+    formData.append('photo', photo, photo.name)
+    return this.httpClient.post(`${this.SERVICE_URL}`, formData)
   }
 
   adminUpdate(id: string, data: any): Observable<any> {

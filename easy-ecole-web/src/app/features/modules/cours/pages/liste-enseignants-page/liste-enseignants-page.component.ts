@@ -17,7 +17,7 @@ import { JwtTokenService } from 'src/app/core/services/jwt-token.service';
 })
 export class ListeEnseignantsPageComponent extends BaseComponentClass implements OnInit {
 
-  readonly PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS
+  readonly PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS_ENSEIGNANTS
   readonly QR_CODES_PATH: string = environment.QR_CODES_ENSEIGNANTS_PATH
   showNouvelEnseignantModal: boolean = false
   successMessage: string | null = null
@@ -115,6 +115,10 @@ export class ListeEnseignantsPageComponent extends BaseComponentClass implements
 
   ajouterEnseignant(): void {
     this.enseignantForm.markAllAsTouched()
+    if (!this.selectedPhoto) {
+      this.errorMessage = 'La photo du profil est obligatoire pour créer un enseignant et préparer son enrôlement au pointage.'
+      return
+    }
     const selectedSiteId = Number(this.enseignantForm.get('etablissementId')!.value)
     if (
       this.enseignantForm.valid &&
@@ -134,7 +138,7 @@ export class ListeEnseignantsPageComponent extends BaseComponentClass implements
       enseignant.etablissementId = selectedSiteId
       enseignant.cni = this.enseignantForm.get('cni')!.value ?? null
       // Matricule auto-généré côté backend (badge + QR) — plus de saisie manuelle
-      enseignant.sexe = this.enseignantForm.get('sexe')!.value ?? null
+      enseignant.sexe = this.enseignantForm.get('sexe')!.value || null
       enseignant.dateNaissance = this.enseignantForm.get('dateNaissance')!.value ?? null
       enseignant.nationalite = this.enseignantForm.get('nationalite')!.value ?? null
       enseignant.plusHautDiplome = this.enseignantForm.get('plusHautDiplome')!.value ?? null
@@ -151,10 +155,10 @@ export class ListeEnseignantsPageComponent extends BaseComponentClass implements
 
       this.authService.registerEnseignant(enseignant).subscribe({
         next: (res: { matricule?: string; qrCode?: string; enseignantId?: string }) => {
-          // Photo éventuelle : envoyée juste après la création (affichée au pointage)
           if (this.selectedPhoto && res.enseignantId) {
             this.enseignantService.updatePhotoById(res.enseignantId, this.selectedPhoto).subscribe({
-              next: () => this.finaliserCreation(res.matricule),
+              next: (uploadResult: { enrollmentQueued?: boolean }) =>
+                this.finaliserCreation(res.matricule, false, uploadResult.enrollmentQueued),
               error: () => this.finaliserCreation(res.matricule, true),
             })
           } else {
@@ -178,10 +182,19 @@ export class ListeEnseignantsPageComponent extends BaseComponentClass implements
     reader.readAsDataURL(file)
   }
 
-  private finaliserCreation(matricule?: string, photoEchec: boolean = false): void {
+  private finaliserCreation(matricule?: string, photoEchec: boolean = false, enrollmentQueued?: boolean): void {
+    if (photoEchec) {
+      this.errorMessage = `Le compte enseignant a été créé${matricule ? ` (matricule : ${matricule})` : ''}, mais sa photo n’a pas pu être enregistrée. Ajoutez-la depuis sa fiche avant le pointage facial.`
+      this.successMessage = null
+      this.getEnseignants()
+      this.closeNouvelEnseignantModal()
+      return
+    }
     this.successMessage = matricule
-      ? `Enseignant créé. Matricule : ${matricule}. Son QR code est lié à son compte.` +
-        (photoEchec ? ' (Photo non enregistrée, à ajouter depuis sa fiche.)' : '')
+      ? `Enseignant créé. Matricule : ${matricule}. Son QR code est lié à son compte et sa photo est enregistrée.` +
+        (enrollmentQueued === true
+          ? ' Son profil facial est en attente d’envoi au terminal.'
+          : ' Aucun terminal Hikvision actif sur ses sites : l’enrôlement sera préparé à son ajout.')
       : 'Enseignant créé avec son matricule et son QR code liés à son compte.'
     this.getEnseignants()
     this.closeNouvelEnseignantModal()

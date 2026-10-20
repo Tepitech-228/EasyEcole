@@ -15,10 +15,13 @@ export class RolesPageComponent extends BaseComponentClass implements OnInit {
   selectedRole: any = null
   permissionsGrouped: any = {}
   rolePermissionIds: Set<number> = new Set()
+  loadedPermissionIds: Set<number> = new Set()
   roleUsers: any[] = []
   allUsers: any[] = []
   permissionSearch: string = ''
   loading: boolean = false
+  permissionsLoaded: boolean = false
+  permissionsError: boolean = false
   activeTab: 'permissions' | 'utilisateurs' = 'permissions'
 
   showRoleModal: boolean = false
@@ -57,6 +60,7 @@ export class RolesPageComponent extends BaseComponentClass implements OnInit {
           } else {
             this.selectedRole = null
             this.rolePermissionIds = new Set()
+            this.loadedPermissionIds = new Set()
             this.roleUsers = []
           }
         }
@@ -70,11 +74,17 @@ export class RolesPageComponent extends BaseComponentClass implements OnInit {
   }
 
   loadPermissions(): void {
+    this.permissionsLoaded = false
+    this.permissionsError = false
     this.permissionService.getAllPermissions().subscribe({
       next: (res) => {
         this.permissionsGrouped = res || {}
+        this.permissionsLoaded = true
+        this.permissionsError = false
       },
-      error: () => {}
+      error: () => {
+        this.permissionsError = true
+      }
     })
   }
 
@@ -101,6 +111,7 @@ export class RolesPageComponent extends BaseComponentClass implements OnInit {
     this.roleService.getRolePermissions(this.selectedRole.id).subscribe({
       next: (res: any[]) => {
         this.rolePermissionIds = new Set((res || []).map((p: any) => Number(p.permissionId)))
+        this.loadedPermissionIds = new Set(this.rolePermissionIds)
       },
       error: () => {}
     })
@@ -163,14 +174,27 @@ export class RolesPageComponent extends BaseComponentClass implements OnInit {
       }
     }
 
-    this.roleService.updateRolePermissions(this.selectedRole.id, { permissionIds: permIds }).subscribe({
+    let payload: { permissionIds: number[]; confirmClear?: boolean }
+    if (permIds.length === 0 && this.loadedPermissionIds.size > 0) {
+      const confirmed = window.confirm('Aucune permission sélectionnée. Retirer toutes les permissions de ce rôle ?')
+      if (!confirmed) {
+        this.saving = false
+        return
+      }
+      payload = { permissionIds: [], confirmClear: true }
+    } else {
+      payload = { permissionIds: permIds }
+    }
+
+    this.roleService.updateRolePermissions(this.selectedRole.id, payload).subscribe({
       next: () => {
         this.saving = false
+        this.loadRolePermissions()
         this.toastService.success('Permissions du rôle enregistrées')
       },
-      error: () => {
+      error: (err) => {
         this.saving = false
-        this.toastService.error('Erreur lors de l\'enregistrement')
+        this.toastService.error(err.error?.message || 'Erreur lors de l\'enregistrement')
       }
     })
   }
@@ -241,6 +265,7 @@ export class RolesPageComponent extends BaseComponentClass implements OnInit {
         this.showDeleteRoleModal = false
         this.selectedRole = null
         this.rolePermissionIds = new Set()
+        this.loadedPermissionIds = new Set()
         this.roleUsers = []
         this.loadRoles()
         this.toastService.success('Rôle supprimé')

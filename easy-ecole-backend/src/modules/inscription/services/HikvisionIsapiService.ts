@@ -215,21 +215,41 @@ export default class HikvisionIsapiService {
         }
     }
 
-    static async enrollStudent(
+    static enrollStudent(
         terminal: PointageTerminal,
         student: { employeeNo: string; name: string; photoFilename: string }
     ): Promise<void> {
-        if (!/^[A-Za-z0-9._-]{1,64}$/.test(student.employeeNo) || !student.name.trim()) {
-            throw new Error("Matricule or student name is invalid for Hikvision enrollment.");
+        return HikvisionIsapiService.enrollPerson(terminal, {
+            ...student,
+            photoCategory: "apprenant"
+        });
+    }
+
+    static async enrollPerson(
+        terminal: PointageTerminal,
+        student: {
+            employeeNo: string;
+            name: string;
+            photoFilename: string;
+            photoCategory: "apprenant" | "enseignant" | "personnel";
         }
-        const photoRoot = path.resolve(process.cwd(), "public", "auth", "apprenants", "photos");
+    ): Promise<void> {
+        if (!/^[A-Za-z0-9._-]{1,64}$/.test(student.employeeNo) || !student.name.trim()) {
+            throw new Error("Matricule or profile name is invalid for Hikvision enrollment.");
+        }
+        const photoDirectory = student.photoCategory === "apprenant"
+            ? ["apprenants", "photos"]
+            : student.photoCategory === "enseignant"
+                ? ["enseignants", "photos"]
+                : ["profiles"];
+        const photoRoot = path.resolve(process.cwd(), "public", "auth", ...photoDirectory);
         const photoPath = path.resolve(photoRoot, student.photoFilename);
         if (path.dirname(photoPath) !== photoRoot || path.basename(student.photoFilename) !== student.photoFilename) {
-            throw new Error("Student photo path is invalid for Hikvision enrollment.");
+            throw new Error("Profile photo path is invalid for Hikvision enrollment.");
         }
         const photo = await fs.readFile(photoPath);
         if (photo.length === 0 || photo.length > 5 * 1024 * 1024) {
-            throw new Error("Student photo is empty or exceeds the Hikvision upload limit.");
+            throw new Error("Profile photo is empty or exceeds the Hikvision upload limit.");
         }
         const extension = path.extname(photoPath).toLowerCase();
         const contentType = extension === ".png" ? "image/png" : extension === ".webp" ? "image/webp" : "image/jpeg";

@@ -4,6 +4,11 @@ import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { Enseignant } from '../models/Enseignant.model';
 
+export interface PhotoEnseignantResponse {
+  success: boolean;
+  enrollmentQueued: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -29,20 +34,20 @@ export class EnseignantService {
     return this.httpClient.get<{ success: boolean, count: number }>(`${this.SERVICE_URL}/statistics/count`)
   }
 
-  updatePhoto(photo: File): Observable<Enseignant> {
+  updatePhoto(photo: File): Observable<PhotoEnseignantResponse> {
     let formData: FormData = new FormData()
       formData.append('photo', photo, photo.name)
 
-    return this.httpClient.put<Enseignant>(`${this.SERVICE_URL}/photo`, formData)
+    return this.httpClient.put<PhotoEnseignantResponse>(`${this.SERVICE_URL}/photo`, formData)
   }
 
-  /** L'institution renseigne la photo d'un prof (affichée au terminal de pointage). */
-  updatePhotoById(enseignantId: string, photo: File): Observable<Enseignant> {
+  /** L'institution renseigne la photo d'un prof et prépare son enrôlement facial. */
+  updatePhotoById(enseignantId: string, photo: File): Observable<PhotoEnseignantResponse> {
     let formData: FormData = new FormData()
       formData.append('photo', photo, photo.name)
       formData.append('enseignantId', enseignantId)
 
-    return this.httpClient.put<Enseignant>(`${this.SERVICE_URL}/photo`, formData)
+    return this.httpClient.put<PhotoEnseignantResponse>(`${this.SERVICE_URL}/photo`, formData)
   }
 
   generateQrCodes(enseignantId?: string): Observable<any> {

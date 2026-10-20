@@ -98,7 +98,7 @@ export default class RoleController {
         const transaction = await DatabaseConnection.getInstance().sequelize.transaction();
         try {
             const { id } = req.params;
-            const { permissionIds } = req.body;
+            const { permissionIds, confirmClear } = req.body;
 
             const role = await Role.findByPk(id, { transaction });
             if (!role) {
@@ -115,6 +115,20 @@ export default class RoleController {
             if (permissions.length !== ids.length) {
                 await transaction.rollback();
                 return res.status(400).json({ success: false, message: "Une ou plusieurs permissions sont inconnues" });
+            }
+
+            // Garde anti-vidage : une liste vide (absente, non tableaux, ou uniquement
+            // des valeurs invalides) ne doit pas effacer silencieusement les permissions
+            // existantes d'un rôle sans confirmation explicite du client.
+            if (ids.length === 0 && confirmClear !== true) {
+                const currentCount = await RolePermission.count({ where: { roleId: id }, transaction });
+                if (currentCount > 0) {
+                    await transaction.rollback();
+                    return res.status(400).json({
+                        success: false,
+                        message: `Le rôle possède actuellement ${currentCount} permission(s). Une liste vide est refusée pour éviter une perte accidentelle : renvoyez confirmClear: true pour vider volontairement le rôle.`
+                    });
+                }
             }
 
             await RolePermission.destroy({ where: { roleId: id }, force: true, transaction });

@@ -342,6 +342,13 @@ export default class UtilisateurController {
                         : "Ce profil doit être affecté à au moins un site"
                 });
             }
+            const photo = req.file;
+            if (!photo) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Une photo de profil est obligatoire pour créer un compte utilisateur."
+                });
+            }
 
             const utilisateur = await Utilisateur.create({
                 nom: req.body.nom,
@@ -351,6 +358,7 @@ export default class UtilisateurController {
                 motDePasse: bcrypt.hashSync(req.body.motDePasse, 12),
                 role: userRole,
                 contact: req.body.contact || null,
+                photoDeProfil: photo.filename,
                 etablissementId: affectations[0] || null,
             });
             if (affectations.length) {
@@ -380,6 +388,7 @@ export default class UtilisateurController {
                 if (userRole === RolesUtilisateur.APPRENANT) {
                     await Apprenant.create({
                         utilisateurId: utilisateur.id,
+                        photo: photo.filename,
                         dateNaissance: req.body.dateNaissance || new Date(),
                         lieuNaissance: req.body.lieuNaissance || '',
                         sexe: req.body.sexe || 'M',
@@ -411,6 +420,7 @@ export default class UtilisateurController {
                         try {
                             enseignant = await Enseignant.create({
                                 utilisateurId: utilisateur.id,
+                                photo: photo.filename,
                                 specialite: req.body.specialite || null,
                                 gradeAcademique: req.body.gradeAcademique || null,
                                 matricule: matricule,
@@ -533,10 +543,25 @@ export default class UtilisateurController {
                 });
             }
 
+            let hikvisionEnrollmentQueued = false;
+            let hikvisionEnrollmentWarning: string | undefined;
+            if (userRole === RolesUtilisateur.ENSEIGNANT || isStaff) {
+                try {
+                    const { default: HikvisionEnrollmentService } = await import("../../inscription/services/HikvisionEnrollmentService");
+                    hikvisionEnrollmentQueued = (await HikvisionEnrollmentService.enqueueStaffProfile(Number(utilisateur.id))) > 0;
+                } catch (error) {
+                    console.error(`[Hikvision] Enrôlement non planifié pour le compte ${utilisateur.id}:`, error);
+                    hikvisionEnrollmentWarning = "Le compte est créé, mais l’enrôlement Hikvision n’a pas pu être planifié.";
+                }
+            }
+
             return res.status(201).json({
                 success: true,
                 utilisateur,
                 ...(enseignantBadge ? { enseignant: enseignantBadge } : {}),
+                ...(userRole === RolesUtilisateur.ENSEIGNANT || isStaff
+                    ? { hikvisionEnrollmentQueued, ...(hikvisionEnrollmentWarning ? { hikvisionEnrollmentWarning } : {}) }
+                    : {}),
             });
         } catch (error) {
             return res.status(500).json({ success: false, message: "Erreur interne du serveur" });
