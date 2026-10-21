@@ -134,6 +134,20 @@ services:
     init: true
     security_opt:
       - no-new-privileges:true
+    # ─────────────────────────────────────────────────────────────────────────
+    # `user: "0:0"` — demarrage en root UNIQUEMENT le temps de reparer les
+    # droits des bind mounts hote (/app/public, /app/uploads, /app/storage…),
+    # qui sont crees par Dokploy en root:root (755) et masquent les
+    # sous-dossiers de l'image. Sans cette phase, `mkdir /app/public/uploads`
+    # echoue en « Permission denied », l'entrypoint sort en erreur et le
+    # conteneur reste « unhealthy » => « dependency backend failed to start ».
+    # Le conteneur s'auto-repare puis RE-EXECUTE l'entrypoint en `node`
+    # (uid 1000) : l'application, les seeds et les migrations tournent donc
+    # toujours en utilisateur non-root.
+    # Voir bloc « 0a » de easy-ecole-backend/docker-entrypoint.sh.
+    # Le service `worker` conserve l'USER node de l'image (il n'ecrit que
+    # dans les repertoires deja repares par le backend).
+    user: "0:0"
     # Base INTERNE : DB_HOST = `db` (nom du service), PAS localhost ni une IP.
     environment:
       NODE_ENV: production

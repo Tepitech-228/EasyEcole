@@ -68,11 +68,15 @@ WORKDIR /app
 # Dépendances système requises par :
 #  - puppeteer/Chromium (cartes étudiantes, docgen PDF)   -> libs Chrome
 #  - fluent-ffmpeg (vidéos eLearning)                     -> ffmpeg
+#  - util-linux                                          -> setpriv / runuser
+#    (utilisés par docker-entrypoint.sh pour ABANDONNER les privilèges root
+#     après la réparation des droits des bind mounts — voir bloc 0a)
 # ---------------------------------------------------------------------------
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     unzip \
     fonts-liberation \
+    util-linux \
     libasound2 \
     libatk-bridge2.0-0 \
     libatk1.0-0 \
