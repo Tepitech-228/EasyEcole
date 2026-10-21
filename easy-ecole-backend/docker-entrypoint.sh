@@ -2,6 +2,12 @@
 # =============================================================================
 # docker-entrypoint.sh — Entrypoint Dokploy
 #
+# 0a. Répare les droits des BIND MOUNTS hôte (/app/public, /app/uploads,
+#     /app/storage, /app/config, /app/.keys, /app/backups) qui sont créés par
+#     Dokploy en root:root, puis RE-EXÉCUTE ce script en `node` (uid 1000).
+#     Indispensable : sinon `mkdir /app/public/uploads` échoue en
+#     « Permission denied » → conteneur unhealthy → déploiement en échec.
+#     L'application, les seeds et les migrations tournent en non-root.
 # 0. Vérifie/crée le stockage persistant des PDF (/app/storage/pdfs)
 # 0b. Vérifie/crée les répertoires fichiers sous les bind mounts hôte
 #     (/app/public, /app/uploads) — multer ne crée pas ses dossiers.
@@ -26,6 +32,90 @@
 # =============================================================================
 
 set -e
+
+# -----------------------------------------------------------------------------
+# 0a. REPARATION DES DROITS DES BIND MOUNTS (phase root, une seule fois)
+# -----------------------------------------------------------------------------
+# PROBLEME (deploiement Dokploy) :
+#   /app/public, /app/uploads, /app/storage… sont des BIND MOUNTS HOSTE crees
+#   par Dokploy en root:root (755). Les sous-dossiers crees DANS l'image
+#   (Dockerfile) sont MASQUES par ces montages. Le conteneur demarre en
+#   `node` (uid 1000) → il ne peut PAS creer /app/public/uploads :
+#       mkdir: cannot create directory '/app/public/uploads': Permission denied
+#   → l'entree sort en erreur (fail-fast) → le conteneur reste « unhealthy »
+#   → `docker compose up` echoue :
+#       Error dependency backend failed to start
+#       container easyecole-backend is unhealthy
+#
+# CORRECTIF :
+#   Le service backend demarre en root (docker-compose.yml : `user: "0:0"`),
+#   aligne les droits des repertoires montes sur l'utilisateur applicatif
+#   `node` (uid 1000), puis RE-EXECUTE cet entrypoint en tant que `node`.
+#   L'application, les seeds et les migrations tournent donc TOUJOURS en
+#   utilisateur non-root : seul ce court passage de preparation s'execute
+#   en root. Aucune intervention manuelle sur l'hote n'est necessaire.
+#
+#   L'operateur `node` est celui de l'image node:*-bookworm-slim (uid 1000).
+# -----------------------------------------------------------------------------
+if [ "$(id -u)" = "0" ]; then
+  echo "[entrypoint] Phase root : alignement des droits des repertoires montes..."
+
+  MOUNT_DIRS="/app/public /app/uploads /app/storage /app/config /app/.keys /app/backups"
+  for d in $MOUNT_DIRS; do
+    mkdir -p "$d" 2>/dev/null || true
+  done
+
+  # `chown -R` : les fichiers ecrits par une version anterieure du conteneur
+  # (en root) doivent redevenir accessibles a `node`. Idempotent, sans
+  # suppression de donnees. `chmod` : on laisse l'acces au groupe, comme
+  # documente dans le message d'erreur ci-dessous.
+  #
+  # On ne lance la passe recursive QUE s'il existe reellement une entite non
+  # possedee par 1000 (detection par `find -quit`, lecture seule) : sur un
+  # serveur deja en bons droits, le demarrage ne coute qu'une simple lecture
+  # au lieu d'un renommage de masse sur le GED. Si `find` echoue (droits,
+  # volume indisponible), on repasse en mode "reparer" pour ne pas laisser
+  # un deploiement dans le meme etat qu'avant.
+  for d in $MOUNT_DIRS; do
+    OFFENDERS="$(find "$d" ! -user 1000 -print -quit 2>/dev/null)"
+    FIND_RC=$?
+    if [ -n "$OFFENDERS" ] || [ "$FIND_RC" -ne 0 ]; then
+      echo "[entrypoint]   → droits non conformes dans $d : reparation…"
+      chown -R 1000:1000 "$d" 2>/dev/null || true
+      chmod -R u+rwX,g+rwX "$d" 2>/dev/null || true
+    fi
+  done
+
+  echo "[entrypoint] Droits alignes (uid 1000 = node). Reprise en tant que 'node'..."
+
+  # Abandon des privileges : setpriv (util-linux) prioritaire, runuser en repli.
+  # Chemin ABSOLU du script : la re-execution doit retrouver le script quel que
+  # soit le repertoire courant du process re-execute.
+  SCRIPT_PATH="$(readlink -f "$0" 2>/dev/null || echo "$0")"
+  if command -v setpriv >/dev/null 2>&1; then
+    exec setpriv --reuid=1000 --regid=1000 --init-groups "$SCRIPT_PATH" "$@"
+  fi
+  if command -v runuser >/dev/null 2>&1; then
+    exec runuser -u node -- "$SCRIPT_PATH" "$@"
+  fi
+  # Repli final : Node est TOUJOURS present dans l'image et sait poser les
+  # identites lui-meme (process.setuid/setgid). Aucune dependance systeme.
+  if command -v node >/dev/null 2>&1; then
+    echo "[entrypoint] Repli : changement d'identite realise via Node."
+    exec node -e '
+      const { spawnSync } = require("child_process");
+      process.setgroups([]);
+      process.setgid(1000);
+      process.setuid(1000);
+      const r = spawnSync(process.argv[1], process.argv.slice(2), { stdio: "inherit" });
+      process.exit(r.status === null ? 1 : r.status);
+    ' "$SCRIPT_PATH" "$@"
+  fi
+
+  echo "[entrypoint] ERREUR : impossible d'abandonner les privilèges root."
+  echo "[entrypoint] → Installer util-linux dans l'image (Dockerfile, étape runtime)."
+  exit 1
+fi
 
 # -----------------------------------------------------------------------------
 # 0. STOCKAGE PERSISTANT DES PDF — /app/storage/pdfs

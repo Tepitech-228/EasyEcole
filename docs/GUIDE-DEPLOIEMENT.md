@@ -161,11 +161,78 @@ Avant toute restauration, valider le dump sur une base de test distincte. Ne jam
 | Problème | Vérification / solution |
 |---|---|
 | Le backend ne démarre pas | `docker logs easyecole-backend` ; vérifier `DB_HOST=db` dans les variables ; `docker exec easyecole-backend ping db` |
+| Le déploiement échoue avec « dependency backend failed to start: container easyecole-backend is unhealthy » et les logs montrent `mkdir: cannot create directory '/app/public/uploads': Permission denied` | Voir §12.1 — droits des bind mounts hôte |
 | L'application ne répond pas sur le domaine | Vérifier l'onglet Domains du service frontend (port 80) ; `docker logs easyecole-frontend` |
 | Erreur 502 / 504 sur l'API | Le backend est redémarré : attendre la fin du `depends_on` MySQL ; vérifier la mémoire du serveur (`free -h`) |
 | Le build Angular échoue (mémoire) | Dokploy : augmenter les ressources de la machine (4 Go minimum) ; la limite de heap 3072 Mo est déjà configurée dans le Dockerfile |
 | WebSocket chat ne fonctionne pas | Vérifier que le domaine frontend est en HTTPS et que Dokploy redirige bien le port 80 (le proxy `/socket.io/` est déjà configuré dans nginx.conf) |
 | Port 3306 en conflit | Le conteneur MySQL n'expose pas le port sur l'hôte : aucun conflit possible |
+
+### 12.1 Déploiement bloqué : « Permission denied » sur les bind mounts
+
+**Symptôme.** Le déploiement Dokploy s'arrête en échec :
+
+```
+Error: ❌ Docker command failed
+dependency backend failed to start: container easyecole-backend is unhealthy
+```
+
+et les logs du backend répètent toutes les ~60 s :
+
+```
+[entrypoint] mkdir: cannot create directory '/app/public/uploads': Permission denied
+```
+
+**Cause.** `/app/public`, `/app/uploads`, `/app/storage`, `/app/config`, `/app/.keys` et
+`/app/backups` sont des **bind mounts hôte** créés par Dokploy en `root:root` (755).
+Les sous-dossiers créés *dans l'image* (Dockerfile) sont **masqués** par ces montages.
+Le conteneur backend s'exécute en `USER node` (uid 1000) : il ne peut donc pas créer
+`/app/public/uploads`. L'entrypoint étant en `fail-fast`, le conteneur sort en erreur,
+reste `unhealthy` et fait échouer le déploiement.
+
+**Correctif livré dans le dépôt** (aucune action manuelle requise après redéploiement) :
+
+| Fichier | Modification |
+|---|---|
+| `easy-ecole-backend/docker-entrypoint.sh` | Nouvelle phase **0a** : démarrage en root → `mkdir` + `chown -R 1000:1000` + `chmod -R u+rwX,g+rwX` sur les répertoires montés → **ré-exécution du script en `node`** via `setpriv` (repli `runuser`) |
+| `easy-ecole-backend/Dockerfile` | Ajout de `util-linux` (garantit `setpriv` / `runuser`) dans le stage runtime |
+| `docker-compose.yml` | `user: "0:0"` sur le service `backend` **uniquement** |
+
+L'application, les seeds et les migrations continuent de tourner **en utilisateur non-root**
+(uid 1000) : seul le court passage de préparation s'exécute en root. Le service `worker`
+conserve l'`USER node` de l'image et démarre après `backend: service_healthy`, donc après
+la réparation.
+
+**Déblocage immédiat, sans reconstruction d'image** (à faire sur l'hôte pendant que le
+correctif n'est pas encore déployé) :
+
+```bash
+sudo mkdir -p /opt/mon-app/{public,uploads,storage,config,keys,backups}
+sudo chown -R 1000:1000 /opt/mon-app
+sudo chmod -R u+rwX,g+rwX /opt/mon-app
+```
+
+> `1000:1000` correspond à l'utilisateur `node` de l'image. Vérifier avec
+> `docker run --rm node:22-bookworm-slim id node` si l'image est modifiée.
+
+**Procédure de redéploiement (chemin nominal)**
+
+1. Pousser le correctif sur la branche de déploiement.
+2. Dans Dokploy, relancer le déploiement (le backend doit être **reconstruit** : l'ajout de
+   `util-linux` est dans l'image, `docker compose up` seul ne suffit pas).
+3. Contrôler les logs : les lignes attendues sont
+   `[entrypoint] Phase root : alignement des droits des repertoires montes...`
+   puis `[entrypoint] Droits alignes (uid 1000 = node). Reprise en tant que 'node'...`
+   puis `[entrypoint] Répertoires fichiers OK (public/, uploads/)`.
+4. Vérifier que le conteneur tourne bien en `node` (et non en root) :
+   `docker exec easyecole-backend ps -o user,pid,cmd` → l'application doit apparaître
+   sous `node`.
+5. Contrôler l'API : `docker exec easyecole-backend node -e "require('http').get('http://127.0.0.1:3000/api/v1/health', r => console.log(r.statusCode))"` → `200`.
+
+**Si l'erreur persiste** : les chemins hôte réels peuvent différer des valeurs par défaut.
+Vérifier les variables `PUBLIC_HOST_PATH`, `UPLOADS_HOST_PATH`, `STORAGE_HOST_PATH`,
+`CONFIG_HOST_PATH`, `KEYS_HOST_PATH`, `BACKUPS_HOST_PATH` dans Dokploy, puis appliquer le
+`chown` sur les chemins **effectivement** utilisés.
 
 ## 13. Checklist de mise en production
 
