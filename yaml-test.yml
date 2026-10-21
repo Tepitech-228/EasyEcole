@@ -130,6 +130,13 @@ services:
     init: true
     security_opt:
       - no-new-privileges:true
+    # `user: "0:0"` — démarrage root UNIQUEMENT le temps de réaligner les
+    # droits des bind mounts hôte sur l'utilisateur applicatif `node` (uid
+    # 1000), puis le conteneur RE-EXÉCUTE l'entrypoint en `node` (phase 0a
+    # de easy-ecole-backend/docker-entrypoint.sh). Sans cette phase, le
+    # mkdir de /app/storage/pdfs échoue en « Permission denied » et le
+    # conteneur reste « unhealthy » => « dependency backend failed to start ».
+    user: "0:0"
     # Variables DB explicites : DB_HOST DOIT valoir `db` (nom du service),
     # PAS localhost. Les autres variables applicatives sont configurées dans
     # l'environnement du déploiement.
