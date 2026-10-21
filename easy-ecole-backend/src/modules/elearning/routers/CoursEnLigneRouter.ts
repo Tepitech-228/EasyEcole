@@ -24,6 +24,7 @@ const router = express.Router()
  *         description: Liste des cours en ligne
  */
 router
+    .get('/catalogue', [Authenticate], CoursEnLigneController.catalogue)
     .get('/', [Authenticate], CoursEnLigneController.getAll)
 
 /**

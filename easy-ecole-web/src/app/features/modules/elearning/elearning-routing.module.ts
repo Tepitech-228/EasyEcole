@@ -17,6 +17,7 @@ import { CertificatsPageComponent } from './pages/certificats-page/certificats-p
 import { DevoirsPageComponent } from './pages/devoirs-page/devoirs-page.component';
 import { DevoirDetailPageComponent } from './pages/devoir-detail-page/devoir-detail-page.component';
 import { CatalogueElearningPageComponent } from './pages/catalogue-elearning-page/catalogue-elearning-page.component';
+import { ExamensAdminPageComponent } from './pages/examens-admin-page/examens-admin-page.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -31,6 +32,7 @@ const routes: Routes = [
   { path: 'devoirs/:id', component: DevoirDetailPageComponent },
   { path: 'devoirs', component: DevoirsPageComponent },
   { path: 'admin/gestion', component: GestionElearningPageComponent },
+  { path: 'admin/examens', component: ExamensAdminPageComponent },
   { path: 'catalogue', component: CatalogueElearningPageComponent },
   { path: ':id/player', component: CoursPlayerPageComponent },
   { path: ':id/chat', component: ChatPageComponent },
@@ -43,4 +45,3 @@ const routes: Routes = [
   exports: [RouterModule]
 })
 export class ElearningRoutingModule { }
-

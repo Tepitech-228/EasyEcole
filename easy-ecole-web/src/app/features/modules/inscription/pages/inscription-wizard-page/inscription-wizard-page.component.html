@@ -110,7 +110,10 @@
 
     <div class="field-wrapper">
       <label for="inscription-site-filter">Site d'inscription *</label>
-      <select id="inscription-site-filter" name="etablissementIdFilter"
+      <div *ngIf="siteVerrouille" class="form-control" role="status">
+        {{ nomSiteSelectionne() }}
+      </div>
+      <select *ngIf="!siteVerrouille" id="inscription-site-filter" name="etablissementIdFilter"
           [(ngModel)]="infos.etablissementId"
           (change)="surChoixSite()"
           required
@@ -121,7 +124,7 @@
       </select>
       <p *ngIf="sitesError" class="text-red-600" role="alert">{{ sitesError }}</p>
       <p *ngIf="!sitesLoading && !sitesError && sitesDisponibles.length === 0" class="text-red-600" role="alert">
-        Aucun site actif ne vous est affecté. Contactez l’administration avant de poursuivre.
+        Aucun site actif n’est disponible pour votre inscription. Contactez l’administration.
       </p>
     </div>
 
@@ -131,6 +134,7 @@
       <select
         class="form-control native-select"
         [ngModel]="sessionSelectionneeId"
+        [disabled]="sessionVerrouillee"
         (change)="surChoixSession($event)">
         <option value="">— Choisir une session —</option>
         <option *ngFor="let s of sessionsDuSite" [value]="s.id">
@@ -140,14 +144,17 @@
       <p *ngIf="infos.etablissementId && sessionsDuSite.length === 0" class="text-amber-700" role="status">
         Aucune session n’est disponible pour ce site.
       </p>
+      <small *ngIf="sessionVerrouillee" class="text-gray-500" role="status">
+        Cette session est déjà associée à votre demande. Pour en choisir une autre, revenez à la liste des sessions et démarrez une nouvelle demande.
+      </small>
       <p *ngIf="motifCorrection" class="muted mt-2" style="font-size: 0.85rem;">
         {{ libelleCorrectionNote }}
       </p>
     </div>
 
-    <div *ngIf="documentsRequis.length > 0">
+    <div>
       <!-- Documents requis -->
-      <div class="section-title">
+      <div *ngIf="documentsRequis.length > 0" class="section-title">
         <div class="section-title__icon">
           <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -155,6 +162,10 @@
         </div>
         <h3>Documents requis pour cette session</h3>
       </div>
+
+      <p *ngIf="documentsRequis.length === 0" class="muted" role="status">
+        Aucun document n’est requis pour cette session.
+      </p>
 
       <div *ngFor="let d of documentsRequis; let i = index"
            class="doc-row"
@@ -272,7 +283,10 @@
     <div class="mt-3">
       <div class="form-group">
         <label for="inscription-site">Site d'inscription *</label>
-        <select id="inscription-site" name="etablissementId"
+        <div *ngIf="siteVerrouille" class="form-control" role="status">
+          {{ nomSiteSelectionne() }}
+        </div>
+        <select *ngIf="!siteVerrouille" id="inscription-site" name="etablissementId"
             [(ngModel)]="infos.etablissementId"
             required
             [disabled]="sitesLoading || sitesDisponibles.length === 0 || !!sessionSelectionneeId"
@@ -286,10 +300,10 @@
         <small *ngIf="sitesLoading" role="status">Chargement des sites autorisés…</small>
         <small *ngIf="sitesError" class="text-red-600" role="alert">{{ sitesError }}</small>
         <small *ngIf="!sitesLoading && !sitesError && sitesDisponibles.length === 0" class="text-red-600" role="alert">
-          Aucun site actif ne vous est affecté. Contactez l’administration avant de poursuivre.
+          Aucun site actif n’est disponible pour votre inscription. Contactez l’administration.
         </small>
         <small *ngIf="infos.etablissementId && !siteSelectionValide" class="text-amber-700" role="status">
-          Le site doit être actif, vous être affecté et correspondre à la session sélectionnée.
+          Le site choisi doit être actif et correspondre à la session sélectionnée.
         </small>
       </div>
       <button class="btn btn-primary" [disabled]="!infosCompletes || sitesLoading || !!sitesError" (click)="passerEtape4()">
@@ -376,11 +390,7 @@
     </table>
 
     <div class="biometric-consent">
-      <label>
-        <input type="checkbox" [(ngModel)]="consentementHikvision" />
-        <span>J'accepte que ma photo soit transmise au terminal biométrique Hikvision de l'établissement afin d'y créer mon profil de reconnaissance faciale après validation de mon inscription.</span>
-      </label>
-      <p>Facultatif. Si vous ne cochez pas cette case, votre inscription continue normalement, mais aucun profil facial ne sera créé sur le terminal.</p>
+      <p>Après validation de votre inscription, votre photo sera transmise au terminal biométrique Hikvision de l'établissement afin d'y créer votre profil de reconnaissance faciale. Cette opération est réalisée de façon systématique, conformément au règlement de l'établissement.</p>
     </div>
 
     <div class="mt-4">

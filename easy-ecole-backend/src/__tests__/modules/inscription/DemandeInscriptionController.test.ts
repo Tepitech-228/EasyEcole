@@ -26,6 +26,14 @@ jest.mock('../../../modules/inscription/models/Session', () => ({
   Session: { findOne: jest.fn() },
 }))
 
+jest.mock('../../../modules/auth/models/SiteUtilisateur', () => ({
+  SiteUtilisateur: { findAll: jest.fn(), findOrCreate: jest.fn() },
+}))
+
+jest.mock('../../../modules/etablissement/models/Etablissement', () => ({
+  Etablissement: { findOne: jest.fn() },
+}))
+
 jest.mock('../../../core/helpers/IDGenerator', () => ({
   IDGenerator: {
     getInstance: () => ({ generateInscriptionMatricule: () => 'EI-2026-0042' }),
@@ -40,12 +48,22 @@ jest.mock('../../../core/helpers/EmailSender', () => ({
 
 const { DemandeInscription } = require('../../../modules/inscription/models/DemandeInscription')
 const { Session } = require('../../../modules/inscription/models/Session')
+const { SiteUtilisateur } = require('../../../modules/auth/models/SiteUtilisateur')
+const { Etablissement } = require('../../../modules/etablissement/models/Etablissement')
 
 import Ctrl from '../../../modules/inscription/controllers/DemandeInscriptionController'
 
 beforeEach(() => {
   jest.clearAllMocks()
-  ;(Session.findOne as jest.Mock).mockResolvedValue({ id: 3, etablissementId: 4 })
+  ;(Session.findOne as jest.Mock).mockResolvedValue({
+    id: 3,
+    etablissementId: null,
+    dateDebut: new Date(Date.now() - 60_000),
+    dateFin: new Date(Date.now() + 60_000),
+  })
+  ;(SiteUtilisateur.findAll as jest.Mock).mockResolvedValue([])
+  ;(SiteUtilisateur.findOrCreate as jest.Mock).mockResolvedValue([{}, false])
+  ;(Etablissement.findOne as jest.Mock).mockResolvedValue({ id: 4 })
 })
 
 describe('DemandeInscriptionController.getAllDemandesInscription', () => {
@@ -69,6 +87,19 @@ describe('DemandeInscriptionController.getAllDemandesInscription', () => {
 
     expect(res.status).toHaveBeenCalledWith(403)
     expect(DemandeInscription.findAndCountAll).not.toHaveBeenCalled()
+  })
+
+  it('lets an applicant list only their own requests before selecting a site', async () => {
+    const req = mockRequest({ utilisateurRole: 'apprenant', utilisateurId: 7 } as any)
+    const res = mockResponse()
+    ;(DemandeInscription.findAndCountAll as jest.Mock).mockResolvedValue({ rows: [], count: 0 })
+
+    await Ctrl.getAllDemandesInscription(req, res)
+
+    expect(DemandeInscription.findAndCountAll).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { utilisateurId: 7 } })
+    )
+    expect(res.status).toHaveBeenCalledWith(200)
   })
 })
 
@@ -152,54 +183,80 @@ describe('DemandeInscriptionController.createDemandeInscription — 1ère inscri
     expect(res.status).toHaveBeenCalledWith(201)
   })
 
-  it('refuses to create a request without an active site', async () => {
-    const req = mockRequest({
-      utilisateurRole: 'apprenant',
-      utilisateurId: 7,
-      body: { sessionId: 3 },
-    } as any)
-    const res = mockResponse()
-
-    await Ctrl.createDemandeInscription(req, res)
-
-    expect(res.status).toHaveBeenCalledWith(403)
-    expect(Session.findOne).not.toHaveBeenCalled()
-    expect(DemandeInscription.findOne).not.toHaveBeenCalled()
-  })
-
-  it('refuses a session owned by another site', async () => {
+  it('uses the active site when the applicant omits it from the request body', async () => {
     const req = mockRequest({
       utilisateurRole: 'apprenant',
       utilisateurId: 7,
       etablissementId: 4,
-      body: { sessionId: 3, etablissementId: 4 },
+      body: { sessionId: 3, dateDemande: '2026-09-01' },
     } as any)
     const res = mockResponse()
-    ;(Session.findOne as jest.Mock).mockResolvedValue(null)
+
+    const saved = { id: 10, sessionId: 3, matricule: 'EI-2026-0042', utilisateurId: 7 }
+    const mockSave = jest.fn().mockResolvedValue(saved)
+    ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue(null)
+    ;(DemandeInscription as jest.Mock).mockReturnValueOnce({ save: mockSave })
 
     await Ctrl.createDemandeInscription(req, res)
 
     expect(Session.findOne).toHaveBeenCalledWith({
-      where: { id: 3, etablissementId: 4 },
-      attributes: ['id', 'etablissementId'],
+      where: { id: 3 },
+      attributes: ['id', 'etablissementId', 'dateDebut', 'dateFin'],
     })
-    expect(res.status).toHaveBeenCalledWith(404)
-    expect(DemandeInscription.findOne).not.toHaveBeenCalled()
+    expect((DemandeInscription as jest.Mock).mock.results[0].value.etablissementId).toBe(4)
+    expect(SiteUtilisateur.findOrCreate).toHaveBeenCalledWith({
+      where: { utilisateurId: 7, etablissementId: 4 },
+      defaults: { utilisateurId: 7, etablissementId: 4 },
+    })
+    expect(res.status).toHaveBeenCalledWith(201)
   })
 
-  it('requires the submitted site to match the authenticated active site', async () => {
+  it('allows an unassigned applicant to select a site for a global session', async () => {
     const req = mockRequest({
       utilisateurRole: 'apprenant',
       utilisateurId: 7,
-      etablissementId: 4,
-      body: { sessionId: 3 },
+      body: { sessionId: 3, etablissementId: 4, dateDemande: '2026-09-01' },
     } as any)
     const res = mockResponse()
+    const saved = { id: 10, sessionId: 3, matricule: 'EI-2026-0042', utilisateurId: 7 }
+    const mockSave = jest.fn().mockResolvedValue(saved)
+    ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue(null)
+    ;(DemandeInscription as jest.Mock).mockReturnValueOnce({ save: mockSave })
 
     await Ctrl.createDemandeInscription(req, res)
 
-    expect(res.status).toHaveBeenCalledWith(400)
-    expect(Session.findOne).not.toHaveBeenCalled()
+    expect(Etablissement.findOne).toHaveBeenCalledWith({
+      where: { id: 4, actif: true },
+      attributes: ['id'],
+    })
+    expect(Session.findOne).toHaveBeenCalledWith({
+      where: { id: 3 },
+      attributes: ['id', 'etablissementId', 'dateDebut', 'dateFin'],
+    })
+    expect(res.status).toHaveBeenCalledWith(201)
+  })
+
+  it('allows the same global session to be selected for a different site', async () => {
+    const req = mockRequest({
+      utilisateurRole: 'apprenant',
+      utilisateurId: 7,
+      etablissementId: 8,
+      body: { sessionId: 3, etablissementId: 8 },
+    } as any)
+    const res = mockResponse()
+    ;(SiteUtilisateur.findAll as jest.Mock).mockResolvedValue([])
+    ;(Etablissement.findOne as jest.Mock).mockResolvedValue({ id: 8 })
+    ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue(null)
+    const mockSave = jest.fn().mockResolvedValue({ id: 10 })
+    ;(DemandeInscription as jest.Mock).mockReturnValueOnce({ save: mockSave })
+
+    await Ctrl.createDemandeInscription(req, res)
+
+    expect(Session.findOne).toHaveBeenCalledWith({
+      where: { id: 3 },
+      attributes: ['id', 'etablissementId', 'dateDebut', 'dateFin'],
+    })
+    expect(res.status).toHaveBeenCalledWith(201)
   })
 
   it('rejects a submitted site that differs from the active site', async () => {
@@ -210,6 +267,7 @@ describe('DemandeInscriptionController.createDemandeInscription — 1ère inscri
       body: { sessionId: 3, etablissementId: 9 },
     } as any)
     const res = mockResponse()
+    ;(Session.findOne as jest.Mock).mockResolvedValue(null)
 
     await Ctrl.createDemandeInscription(req, res)
 

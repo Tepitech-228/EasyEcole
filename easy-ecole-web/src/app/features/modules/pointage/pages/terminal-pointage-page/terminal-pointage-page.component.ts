@@ -220,11 +220,24 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     this.lastAttendanceName = this.formatPersonName(event)
     this.lastAttendanceRole = this.roleLabel(event.role)
     this.scanError = ''
-    this.scanSuccess = event.mode === 'arrivee'
-      ? `Arrivée enregistrée à ${event.time}`
-      : `Départ enregistré à ${event.time}`
+
+    if (event.mode === 'refuse') {
+      this.scanSuccess = ''
+      this.scanError = event.motifRefus || 'Accès refusé'
+      this.playBeepRefus()
+      this.announceAttendance(event, 'refuse', event.time)
+      return
+    }
+
+    if (event.mode === 'depart') {
+      this.scanSuccess = `Départ enregistré à ${event.time}`
+    } else if (event.mode === 'passage') {
+      this.scanSuccess = `Passage enregistré à ${event.time}`
+    } else {
+      this.scanSuccess = `Arrivée enregistrée à ${event.time}`
+    }
     this.playBeepSucces()
-    this.announceAttendance(event, event.mode)
+    this.announceAttendance(event, event.mode, event.time)
   }
 
   ngOnDestroy(): void {
@@ -365,6 +378,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       next: (res) => {
         this.displayScannedResult(res, false)
         if (res.statut !== 'vert' || !res.utilisateurId) {
+          this.announceAttendance(this.scannedUser || {}, 'refuse')
           this.playBeepRefus()
           this.finishReaderScan()
           return
@@ -376,11 +390,16 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
             const pointage = result.pointage
             this.lastAttendanceName = this.formatPersonName(this.scannedUser)
             this.lastAttendanceRole = this.roleLabel(this.scannedUser?.role)
-            this.announceAttendance(this.scannedUser, result.mode)
+            const heure = result.mode === 'passage'
+              ? pointage.heureArrivee
+              : (result.mode === 'depart' ? pointage.heureDepart : pointage.heureArrivee)
+            this.announceAttendance(this.scannedUser, result.mode, heure || undefined)
             this.playBeepSucces()
-            this.scanSuccess = result.mode === 'arrivee'
-              ? 'Arrivée enregistrée à ' + pointage.heureArrivee
-              : 'Départ enregistré à ' + pointage.heureDepart
+            this.scanSuccess = result.mode === 'depart'
+              ? 'Départ enregistré à ' + pointage.heureDepart
+              : (result.mode === 'passage'
+                ? 'Passage enregistré à ' + pointage.heureArrivee
+                : 'Arrivée enregistrée à ' + pointage.heureArrivee)
             this.scannedUser = null
             this.finishReaderScan()
           },
@@ -864,7 +883,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   pointerScannedUser(mode: 'arrivee' | 'depart'): void {
     if (!this.scannedUser?.userId) return
     const codeQR = this.scannedCodeQR
-    let actualMode = mode
+    let actualMode: 'arrivee' | 'depart' | 'passage' = mode
     const serviceCall = codeQR?.startsWith('CARTE|v=1|')
       ? this.pointageService.pointerParQR(codeQR).pipe(map((response) => {
         actualMode = response.mode
@@ -878,11 +897,14 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       next: (res: Pointage) => {
         this.lastAttendanceName = this.formatPersonName(this.scannedUser)
         this.lastAttendanceRole = this.roleLabel(this.scannedUser?.role)
-        this.announceAttendance(this.scannedUser, actualMode)
+        const heure = actualMode === 'depart' ? res.heureDepart : res.heureArrivee
+        this.announceAttendance(this.scannedUser, actualMode, heure || undefined)
         this.playBeepSucces()
-        this.scanSuccess = actualMode === 'arrivee'
-          ? 'Arrivée pointée à ' + res.heureArrivee
-          : 'Départ pointé à ' + res.heureDepart
+        this.scanSuccess = actualMode === 'depart'
+          ? 'Départ pointé à ' + res.heureDepart
+          : (actualMode === 'passage'
+            ? 'Passage enregistré à ' + res.heureArrivee
+            : 'Arrivée pointée à ' + res.heureArrivee)
         this.scannedUser = null
         this.scannedCodeQR = null
         setTimeout(() => this.scanSuccess = '', 4000)
@@ -928,12 +950,35 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     this.speak('Bonjour chef Mohamed.')
   }
 
-  private announceAttendance(user: any, mode: 'arrivee' | 'depart'): void {
+  private announceAttendance(user: any, mode: 'arrivee' | 'depart' | 'passage' | 'refuse', time?: string): void {
     if (!this.voiceAnnouncementsEnabled) return
-    const name = this.formatPersonName(user)
-    const role = this.roleLabel(user?.role)
-    const action = mode === 'arrivee' ? 'Arrivée enregistrée.' : 'Départ enregistré.'
-    this.speak(`${name}. ${role}. ${action}`)
+    const prenom = (user?.prenoms || '').trim() || this.formatPersonName(user)
+    const nomComplet = this.formatPersonName(user)
+    const heure = this.formatHeureCourte(time)
+    const estApprenant = String(user?.role || '').toLowerCase() === 'apprenant'
+
+    if (mode === 'refuse') {
+      this.speak('Accès refusé. Veuillez vous adresser à l’administration.')
+      return
+    }
+
+    if (estApprenant) {
+      this.speak(`${nomComplet}. Passage enregistré${heure ? ' à ' + heure : ''}.`)
+      return
+    }
+
+    if (mode === 'depart') {
+      this.speak(`Au revoir ${prenom}. Départ${heure ? ' à ' + heure : ''}.`)
+      return
+    }
+
+    this.speak(`Bonjour ${prenom}. Bonne arrivée${heure ? ' à ' + heure : ''}.`)
+  }
+
+  private formatHeureCourte(time?: string): string {
+    if (!time) return ''
+    const match = String(time).match(/^(\d{2}):(\d{2})/)
+    return match ? `${match[1]}:${match[2]}` : ''
   }
 
   private speak(text: string): void {

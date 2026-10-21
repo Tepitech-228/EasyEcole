@@ -8,8 +8,9 @@ export interface TerminalAttendanceUpdate {
   employeeNoString: string;
   date: string;
   time: string;
-  mode: "arrivee" | "depart";
+  mode: "arrivee" | "depart" | "passage" | "refuse";
   etablissementId: number;
+  motifRefus?: string | null;
 }
 
 export default class PointageRealtimeService {

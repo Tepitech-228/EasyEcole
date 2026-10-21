@@ -11,6 +11,8 @@ import { NiveauEtudeService } from 'src/app/data/modules/inscription/services/ni
 import { AnneeAcademiqueService } from 'src/app/data/modules/inscription/services/annee-academique.service';
 import { ParcoursService } from 'src/app/data/modules/inscription/services/parcours.service';
 import { environment } from 'src/environments/environment';
+import { AuthService, SiteUtilisateur } from 'src/app/data/modules/auth/services/auth.service';
+import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 
 /**
  * Page de choix de session d'inscription (réservée aux apprenants).
@@ -33,6 +35,12 @@ export class ChoisirSessionPageComponent extends BaseComponentClass implements O
   creationLoading: boolean = false
 
   sessions: Session[] = []
+  private sessionsChargees: Session[] = []
+  sitesDisponibles: SiteUtilisateur[] = []
+  siteSelectionneId = ''
+  siteVerrouille = false
+  sitesLoading = false
+  sitesError = ''
   niveaux: NiveauEtude[] = []
   annees: AnneeAcademique[] = []
   parcoursList: Parcours[] = []
@@ -63,6 +71,8 @@ export class ChoisirSessionPageComponent extends BaseComponentClass implements O
     private niveauEtudeService: NiveauEtudeService,
     private anneeAcademiqueService: AnneeAcademiqueService,
     private parcoursService: ParcoursService,
+    private authService: AuthService,
+    private localStorage: LocalStorageService,
   ) {
     super()
   }
@@ -70,8 +80,54 @@ export class ChoisirSessionPageComponent extends BaseComponentClass implements O
   ngOnInit(): void {
     this.loadAnneesEtNiveaux()
     this.loadParcours()
+    this.loadSites()
     this.loadSessions()
     this.loadMesDemandes()
+  }
+
+  private loadSites(): void {
+    this.sitesLoading = true
+    this.sitesError = ''
+    this.authService.getSitesMoi().subscribe({
+      next: sites => {
+        this.sitesDisponibles = sites
+        this.sitesLoading = false
+      },
+      error: () => {
+        this.sitesLoading = false
+        this.sitesError = 'Impossible de charger les sites disponibles pour votre inscription.'
+      }
+    })
+  }
+
+  onChoixSite(): void {
+    if (this.siteVerrouille) return
+    const siteId = Number(this.siteSelectionneId)
+    if (Number.isSafeInteger(siteId) && siteId > 0) {
+      this.activerSiteSelectionne(siteId)
+    }
+  }
+
+  private activerSiteSelectionne(siteId: number): void {
+    this.sitesLoading = true
+    this.authService.definirSiteActif(siteId).subscribe({
+      next: response => {
+        if (!response.accessToken) {
+          this.sitesError = 'Le site choisi n’a pas pu être activé.'
+          this.sitesLoading = false
+          return
+        }
+        this.localStorage.set(LocalStorageService.AUTH_TOKEN, response.accessToken)
+        this.siteSelectionneId = String(response.etablissementId)
+        this.siteVerrouille = true
+        this.sitesError = ''
+        this.sitesLoading = false
+      },
+      error: err => {
+        this.sitesError = err?.error?.message || 'Le site choisi n’a pas pu être affecté à votre compte.'
+        this.sitesLoading = false
+      }
+    })
   }
 
   private loadAnneesEtNiveaux(): void {
@@ -111,9 +167,10 @@ export class ChoisirSessionPageComponent extends BaseComponentClass implements O
       next: (res: any) => {
         const all = Array.isArray(res) ? res : (res?.data || [])
         // Ne montrer que les sessions ouvertes
-        this.sessions = all.filter(
+        this.sessionsChargees = all.filter(
           (s: any) => Session.getEtat(s.dateDebut, s.dateFin) === EtatsSession.OUVERTE
         )
+        this.sessions = this.sessionsChargees
         this.loading = false
       },
       error: () => {
@@ -134,6 +191,10 @@ export class ChoisirSessionPageComponent extends BaseComponentClass implements O
 
   getEtatLabel(s: Session): string {
     return Session.getEtat(s.dateDebut, s.dateFin) === EtatsSession.OUVERTE ? 'Ouverte' : 'Fermée'
+  }
+
+  get siteNomSelectionne(): string {
+    return this.sitesDisponibles.find(site => String(site.id) === this.siteSelectionneId)?.nom || ''
   }
 
   get filteredSessions(): Session[] {
@@ -211,28 +272,40 @@ export class ChoisirSessionPageComponent extends BaseComponentClass implements O
   choisirSession(session: Session): void {
     if (this.creationLoading) return
 
-    // 1) Une demande existe déjà pour cette session → on continue le wizard
-    const existante = this.findDemandeForSession(session.id)
-    if (existante && existante.id) {
-      this.router.navigate(['/inscription/demandes', existante.id], {
-        queryParams: { sessionId: session.id, niveauEtudeId: session.niveauEtudeId }
-      })
+    const etablissementId = Number(this.siteSelectionneId)
+    if (!Number.isSafeInteger(etablissementId) || etablissementId <= 0) {
+      this.errorMessage = 'Choisissez d’abord votre site d’inscription.'
+      return
+    }
+    if (!this.siteVerrouille) {
+      this.errorMessage = 'Le site choisi doit être activé avant de poursuivre.'
       return
     }
 
-    // 2) Sinon on crée la demande puis on redirige vers le wizard
     this.creationLoading = true
     this.errorMessage = null
-    const body = { dateDemande: new Date(), sessionId: session.id }
-    this.http.post(`${this.API_URL}/inscription/demandesInscription`, body).subscribe({
-      next: (res: any) => {
-        this.creationLoading = false
-        if (res && res.id) {
-          this.router.navigate(['/inscription/demandes', res.id], {
-            queryParams: { sessionId: session.id, niveauEtudeId: session.niveauEtudeId }
-          })
+    const ouvrirWizard = (demandeId: string): void => {
+      this.creationLoading = false
+      this.router.navigate(['/inscription/demandes', demandeId], {
+        queryParams: { sessionId: session.id, niveauEtudeId: session.niveauEtudeId }
+      })
+    }
+
+    // Une demande existe déjà pour cette session : on reprend le wizard.
+    const existante = this.findDemandeForSession(session.id)
+    if (existante?.id) {
+      ouvrirWizard(String(existante.id))
+      return
+    }
+
+    const body = { dateDemande: new Date(), sessionId: session.id, etablissementId }
+    this.http.post<any>(`${this.API_URL}/inscription/demandesInscription`, body).subscribe({
+      next: demande => {
+        if (demande?.id) {
+          ouvrirWizard(String(demande.id))
         } else {
-          this.router.navigate(['/inscription/demandes'])
+          this.creationLoading = false
+          this.errorMessage = 'La demande a été créée sans identifiant exploitable. Rechargez « Mes demandes ».'
         }
       },
       error: (err: HttpErrorResponse) => {
@@ -240,7 +313,7 @@ export class ChoisirSessionPageComponent extends BaseComponentClass implements O
         if (err.error?.alreadySignUp) {
           this.errorMessage = 'Vous avez déjà une demande d\'inscription en cours pour cette session.'
         } else {
-          this.errorMessage = 'Une erreur est survenue lors de la création de votre demande. Réessayez.'
+          this.errorMessage = err.error?.message || 'Une erreur est survenue lors de la création de votre demande. Réessayez.'
         }
       }
     })

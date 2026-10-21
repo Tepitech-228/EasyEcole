@@ -59,7 +59,7 @@ beforeEach(() => {
 })
 
 describe('getAllSessions', () => {
-  it('should return all sessions with niveauEtude and anneeAcademique', async () => {
+  it('lists global sessions for an institution regardless of its active site', async () => {
     const req = mockRequest({ utilisateurRole: 'institution', etablissementId: 4 } as any)
     const res = mockResponse()
     const mockData = [{ id: 1 }]
@@ -69,21 +69,39 @@ describe('getAllSessions', () => {
 
     expect(Session.findAll).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { etablissementId: 4 },
+        where: {},
         include: ['niveauEtude', 'anneeAcademique']
       })
     )
     expect(res.send).toHaveBeenCalledWith(mockData)
   })
 
-  it('refuses to list sessions without an active site', async () => {
+  it('lists global sessions without requiring an active site', async () => {
     const req = mockRequest({ utilisateurRole: 'institution' } as any)
     const res = mockResponse()
+    ;(Session.findAll as jest.Mock).mockResolvedValue([])
 
     await Ctrl.getAllSessions(req, res)
 
-    expect(res.status).toHaveBeenCalledWith(403)
-    expect(Session.findAll).not.toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(Session.findAll).toHaveBeenCalled()
+  })
+
+  it('allows an applicant to browse sessions before selecting a site', async () => {
+    const req = mockRequest({ utilisateurRole: 'apprenant', utilisateurId: 7 } as any)
+    const res = mockResponse()
+    const sessions = [{ id: 1, etablissementId: 4 }]
+    ;(Session.findAll as jest.Mock).mockResolvedValue(sessions)
+
+    await Ctrl.getAllSessions(req, res)
+
+    expect(Session.findAll).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {},
+        include: ['niveauEtude', 'anneeAcademique']
+      })
+    )
+    expect(res.send).toHaveBeenCalledWith(sessions)
   })
 })
 
@@ -98,7 +116,7 @@ describe('getSession', () => {
 
     expect(Session.findOne).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: '1', etablissementId: 4 },
+        where: { id: '1' },
         include: [
           'niveauEtude',
           'anneeAcademique',
@@ -121,14 +139,34 @@ describe('getSession', () => {
     expect(res.status).toHaveBeenCalledWith(404)
   })
 
-  it('refuses detail requests without an active site', async () => {
+  it('allows session details without an active site', async () => {
     const req = mockRequest({ utilisateurRole: 'institution', params: { id: '1' } } as any)
     const res = mockResponse()
+    ;(Session.findOne as jest.Mock).mockResolvedValue({ id: 1 })
 
     await Ctrl.getSession(req, res)
 
-    expect(res.status).toHaveBeenCalledWith(403)
-    expect(Session.findOne).not.toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(Session.findOne).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: '1' }
+    }))
+  })
+
+  it('lets an applicant read session requirements without exposing other applicants', async () => {
+    const req = mockRequest({ utilisateurRole: 'apprenant', utilisateurId: 7, params: { id: '1' } } as any)
+    const res = mockResponse()
+    ;(Session.findOne as jest.Mock).mockResolvedValue({ id: 1 })
+
+    await Ctrl.getSession(req, res)
+
+    const query = (Session.findOne as jest.Mock).mock.calls[0][0]
+    expect(query.where).toEqual({ id: '1' })
+    expect(query.include).toEqual([
+      'niveauEtude',
+      'anneeAcademique',
+      'fraisInscription',
+      'dossiersInscription'
+    ])
   })
 })
 
@@ -168,7 +206,10 @@ describe('createSession', () => {
     await Ctrl.createSession(req, res)
 
     expect(sequelize.transaction).toHaveBeenCalled()
-    expect(Session.create).toHaveBeenCalledWith(expect.any(Object), { transaction: mockTransaction })
+    expect(Session.create).toHaveBeenCalledWith(
+      expect.objectContaining({ etablissementId: null }),
+      { transaction: mockTransaction }
+    )
     expect(FraisInscription.findOne).toHaveBeenCalled()
     expect(FraisInscription.create).toHaveBeenCalledWith(expect.any(Object), { transaction: mockTransaction })
     expect(DossierInscription.findOne).toHaveBeenCalled()

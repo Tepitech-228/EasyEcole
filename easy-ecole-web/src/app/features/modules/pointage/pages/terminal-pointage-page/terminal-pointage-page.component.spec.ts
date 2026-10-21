@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { of, Subject, throwError } from 'rxjs';
+import { Observable, of, Subject, throwError } from 'rxjs';
 import { PointageService } from 'src/app/data/modules/inscription/services/pointage.service';
 import { AuthService } from 'src/app/data/modules/auth/services/auth.service';
 import { SocketService, TerminalAttendanceEvent } from 'src/app/core/services/socket.service';
@@ -113,12 +113,13 @@ describe('TerminalPointagePageComponent', () => {
   it('retries the failed request and clears the previous error', () => {
     pointageService.getToday.and.returnValues(
       throwError(() => new Error('network unavailable')),
+      throwError(() => new Error('network unavailable')),
       of(null)
     );
     fixture.detectChanges();
     fixture.componentInstance.retryLoadTodayPointage();
 
-    expect(pointageService.getToday).toHaveBeenCalledTimes(2);
+    expect(pointageService.getToday).toHaveBeenCalledTimes(3);
     expect(fixture.componentInstance.loadError).toBe('');
     expect(fixture.componentInstance.loading).toBeFalse();
   });
@@ -296,7 +297,8 @@ describe('TerminalPointagePageComponent', () => {
     expect(pointageService.pointerParQR).toHaveBeenCalledWith('CARTE|v=1|network-recovered');
   });
 
-  it('announces the name, role and confirmed attendance after a QR pointage succeeds', () => {
+  it('announces a staff arrival with the name and hour after a QR pointage succeeds', () => {
+    pointageService.verifierStatutByQR.and.returnValue(of({ statut: 'vert', utilisateurId: 'u1', nom: 'Test', prenoms: 'Paul', role: 'enseignant' }));
     const speak = spyOn(window.speechSynthesis, 'speak');
     fixture.detectChanges();
 
@@ -307,12 +309,13 @@ describe('TerminalPointagePageComponent', () => {
     expect(speak).toHaveBeenCalledTimes(1);
     const utterance = speak.calls.mostRecent().args[0] as SpeechSynthesisUtterance;
     expect(utterance.lang).toBe('fr-FR');
-    expect(utterance.text).toContain('Test');
-    expect(utterance.text).toContain('Enseignant autorisé');
-    expect(utterance.text).toContain('Arrivée enregistrée');
+    expect(utterance.text).toContain('Bonjour');
+    expect(utterance.text).toContain('Bonne arrivée');
+    expect(utterance.text).toContain('08:00');
   });
 
   it('uses the server-selected departure mode for the announcement', () => {
+    pointageService.verifierStatutByQR.and.returnValue(of({ statut: 'vert', utilisateurId: 'u1', nom: 'Test', prenoms: 'Paul', role: 'enseignant' }));
     pointageService.pointerParQR.and.returnValue(of({
       success: true,
       mode: 'depart',
@@ -326,14 +329,80 @@ describe('TerminalPointagePageComponent', () => {
 
     expect(speak).toHaveBeenCalledTimes(1);
     const utterance = speak.calls.mostRecent().args[0] as SpeechSynthesisUtterance;
-    expect(utterance.text).toContain('Départ enregistré');
+    expect(utterance.text).toContain('Au revoir');
+    expect(utterance.text).toContain('Départ');
+    expect(utterance.text).toContain('17:00');
     expect(fixture.componentInstance.scanSuccess).toContain('17:00:00');
   });
 
+  it('announces a recorded student passage with the hour on a QR scan', () => {
+    pointageService.verifierStatutByQR.and.returnValue(of({ statut: 'vert', utilisateurId: 'u1', nom: 'Test', prenoms: 'Ada', role: 'apprenant' }));
+    pointageService.pointerParQR.and.returnValue(of({
+      success: true,
+      mode: 'passage',
+      pointage: { heureArrivee: '10:30:00', heureDepart: null } as any
+    }));
+    const speak = spyOn(window.speechSynthesis, 'speak');
+    fixture.detectChanges();
+
+    typeFast('CARTE|v=1|voice-passage');
+    dispatchKey('Enter');
+
+    expect(speak).toHaveBeenCalledTimes(1);
+    const utterance = speak.calls.mostRecent().args[0] as SpeechSynthesisUtterance;
+    expect(utterance.text).toContain('Ada');
+    expect(utterance.text).toContain('Passage enregistré');
+    expect(utterance.text).toContain('10:30');
+  });
+
+  it('announces the refusal when the scanned identity is not up to date', () => {
+    pointageService.verifierStatutByQR.and.returnValue(of({
+      statut: 'rouge',
+      utilisateurId: 'u1',
+      nom: 'Test',
+      prenoms: 'Ada',
+      role: 'apprenant'
+    }));
+    const speak = spyOn(window.speechSynthesis, 'speak');
+    fixture.detectChanges();
+
+    typeFast('CARTE|v=1|voice-refused');
+    dispatchKey('Enter');
+
+    expect(pointageService.pointerParQR).not.toHaveBeenCalled();
+    expect(speak).toHaveBeenCalledTimes(1);
+    const utterance = speak.calls.mostRecent().args[0] as SpeechSynthesisUtterance;
+    expect(utterance.text).toContain('Accès refusé');
+  });
+
+  it('announces the refusal for a Hikvision refuse event', () => {
+    const speak = spyOn(window.speechSynthesis, 'speak');
+    fixture.detectChanges();
+
+    terminalAttendanceEvents.next({
+      utilisateurId: 12,
+      nom: 'Doe',
+      prenoms: 'Jane',
+      role: 'apprenant',
+      employeeNoString: 'ESA001',
+      date: '2026-10-18',
+      time: '09:18:22',
+      mode: 'refuse',
+      etablissementId: 1,
+      motifRefus: 'Dossier non à jour'
+    });
+
+    expect(speak).toHaveBeenCalledTimes(1);
+    const utterance = speak.calls.mostRecent().args[0] as SpeechSynthesisUtterance;
+    expect(utterance.text).toContain('Accès refusé');
+    expect(fixture.componentInstance.scanError).toContain('Dossier non à jour');
+  });
+
   it('does not announce a QR scan when the server did not record the attendance', () => {
-    pointageService.pointerParQR.and.returnValue(
-      throwError(() => ({ error: { message: 'Pointage déjà effectué' } }))
-    );
+    const failure = { error: { message: 'Pointage déjà effectué' } };
+    pointageService.pointerParQR.and.callFake(() => new Observable<never>((subscriber) => {
+      subscriber.error(failure);
+    }));
     const speak = spyOn(window.speechSynthesis, 'speak');
     fixture.detectChanges();
 

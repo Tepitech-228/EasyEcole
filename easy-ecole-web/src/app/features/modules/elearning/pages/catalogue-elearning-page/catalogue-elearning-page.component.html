@@ -3,9 +3,21 @@
     <!-- En-tête : titre + totaux -->
     <div class="page-head">
         <div class="page-head-left">
-            <h2>Catalogue e-learning</h2>
-            <p>Arborescence complète : Année → Parcours → Niveau → Classe → Cours → Cours en ligne</p>
+            <h2>Catalogue des cours en ligne</h2>
+            <p>Supports et devoirs accessibles après sélection du cours</p>
         </div>
+
+        <div *ngIf="isStudent && budget" class="budget-banner">
+            <div>
+                <strong>Budget e-learning — {{ budget.anneeAcademique }}</strong>
+                <span>Alloué : {{ budget.montantAlloue | number:'1.0-0' }} FCFA</span>
+                <span>Utilisé : {{ budget.montantConsomme | number:'1.0-0' }} FCFA</span>
+            </div>
+            <strong class="budget-balance">Disponible : {{ budget.soldeDisponible | number:'1.0-0' }} FCFA</strong>
+        </div>
+        <p *ngIf="budgetError" class="error-state">{{ budgetError }}</p>
+        <p *ngIf="actionError" class="error-state">{{ actionError }}</p>
+        <p *ngIf="successMessage" class="success-state">{{ successMessage }}</p>
         <div class="totaux" *ngIf="totaux">
             <span class="totaux-badge total" title="Cours en ligne au total">{{ totaux.coursEnLigne }} cours en ligne</span>
             <span class="totaux-badge rattaches" title="Cours en ligne rattachés à un cours">{{ totaux.coursEnLigneRattaches }} rattachés</span>
@@ -73,6 +85,17 @@
                     <svg *ngIf="node.type === 'nonRattaches'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                 </span>
                 <span class="label" [title]="node.label">{{ node.label }}</span>
+                <span *ngIf="node.type === 'coursEnLigne'" class="course-pricing">
+                    <span>{{ node.nbCredits }} crédit(s)</span>
+                    <strong>{{ node.coutTotal | number:'1.0-0' }} FCFA</strong>
+                </span>
+                <span *ngIf="isStudent && node.type === 'coursEnLigne' && node.selection?.statut === 'acces_ouvert'" class="acquired-badge">Acquis</span>
+                <button *ngIf="isStudent && node.type === 'coursEnLigne' && !node.selection"
+                    type="button" class="choose-course"
+                    [disabled]="selectionLoadingId !== null || !budget || (node.coutTotal || 0) > budget.soldeDisponible"
+                    (click)="choisirCours(node, $event)">
+                    {{ selectionLoadingId === node.id ? 'Validation…' : 'Choisir' }}
+                </button>
                 <span *ngIf="node.type === 'nonRattaches'" class="admin-badge" title="Rubrique réservée aux administrateurs">Admin</span>
                 <span *ngIf="node.virtuel" class="virtual-badge" title="Classe virtuelle">Sans classe</span>
                 <span class="counts">

@@ -23,6 +23,13 @@ interface AttendanceLog {
     eventId?: number;
 }
 
+export interface AttendanceProcessingResult {
+    recorded: boolean;
+    mode: "arrivee" | "depart" | "passage" | "refuse";
+    role: string | null;
+    motifRefus: string | null;
+}
+
 function normalizedIp(ip: string): string {
     return ip.startsWith("::ffff:") ? ip.slice(7) : ip;
 }
@@ -206,7 +213,7 @@ export default class PointageTerminalController {
         }
     }
 
-    static async processAttendanceEvent(terminal: PointageTerminal, log: AttendanceLog): Promise<boolean> {
+    static async processAttendanceEvent(terminal: PointageTerminal, log: AttendanceLog): Promise<AttendanceProcessingResult> {
         const parsedPin = Number(log.pin);
         const utilisateur = log.utilisateurId
             ? await Utilisateur.findByPk(log.utilisateurId)
@@ -260,7 +267,7 @@ export default class PointageTerminalController {
                     }
                     if (pendingEvent.statut !== "en_attente") {
                         await transaction.commit();
-                        return false;
+                        return { recorded: false, mode: "passage", role: utilisateur?.role ?? null, motifRefus: null };
                     }
                     event = pendingEvent;
                 } else {
@@ -287,29 +294,37 @@ export default class PointageTerminalController {
                         motifRefus
                     }, { transaction });
                     await transaction.commit();
-                    return false;
+                    return { recorded: false, mode: "refuse", role: utilisateur?.role ?? null, motifRefus };
                 }
 
+                const estApprenant = utilisateur.role === RolesUtilisateur.APPRENANT;
+                let mode: "arrivee" | "depart" | "passage";
                 let pointage = await Pointage.findOne({
                     where: { utilisateurId: utilisateur.id, date: log.date },
                     transaction,
                     lock: transaction.LOCK.UPDATE
                 });
                 if (!pointage) {
+                    // Première détection de la journée : ligne conteneur (arrivée).
                     pointage = await Pointage.create({
                         utilisateurId: Number(utilisateur.id),
                         date: log.date,
                         heureArrivee: log.time,
                         heureDepart: null
                     }, { transaction });
-                } else if (utilisateur.role === RolesUtilisateur.APPRENANT) {
-                    const depart = pointage.heureDepart ? String(pointage.heureDepart).slice(0, 8) : null;
-                    if (!depart || log.time > depart) await pointage.update({ heureDepart: log.time }, { transaction });
+                    mode = estApprenant ? "passage" : "arrivee";
+                } else if (estApprenant) {
+                    // Étudiant : chaque détection est un passage, jamais un départ.
+                    mode = "passage";
                 } else if (!pointage.heureDepart) {
                     await pointage.update({ heureDepart: log.time }, { transaction });
+                    mode = "depart";
+                } else {
+                    // Personnel/enseignant : départ déjà pointé, rien à mettre à jour.
+                    mode = "depart";
                 }
 
-                if (utilisateur.role === RolesUtilisateur.APPRENANT) {
+                if (estApprenant) {
                     await PointageScan.create({ pointageId: pointage.id, heure: log.time }, { transaction });
                 }
                 await event.update({
@@ -319,12 +334,12 @@ export default class PointageTerminalController {
                     motifRefus: null
                 }, { transaction });
                 await transaction.commit();
-                return true;
+                return { recorded: true, mode, role: utilisateur.role, motifRefus: null };
             } catch (error) {
                 await transaction.rollback();
                 if (estErreurUnique(error)) {
                     const duplicate = await PointageTerminalEvent.findOne({ where: { fingerprint } });
-                    if (duplicate) return false;
+                    if (duplicate) return { recorded: false, mode: "passage", role: utilisateur?.role ?? null, motifRefus: null };
                     if (attempt === 0) continue;
                 }
                 throw error;

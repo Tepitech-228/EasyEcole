@@ -5,7 +5,6 @@ import { PersonnelAdministratif } from "../../auth/models/PersonnelAdministratif
 import { Enseignant } from "../../auth/models/Enseignant";
 import { SiteUtilisateur } from "../../auth/models/SiteUtilisateur";
 import { DossierEtudiant } from "../models/DossierEtudiant";
-import { Pointage } from "../models/Pointage";
 import { PointageTerminal } from "../models/PointageTerminal";
 import { PointageTerminalEvent } from "../models/PointageTerminalEvent";
 import { Op } from "sequelize";
@@ -124,12 +123,28 @@ async function traiterEvenement(terminal: PointageTerminal, eventId: number): Pr
       utilisateurId: utilisateur ? Number(utilisateur.id) : undefined,
       eventId: Number(pendingEvent.id)
     };
-    const before = utilisateur
-      ? await Pointage.findOne({ where: { utilisateurId: utilisateur.id, date: pendingEvent.date } })
-      : null;
-
     const recorded = await PointageTerminalController.processAttendanceEvent(terminal, log);
-    if (!recorded || !utilisateur) return;
+    if (!utilisateur) return;
+
+    if (!recorded.recorded) {
+      // Refus (paiement non à jour, compte non autorisé, déjà traité…) : on
+      // notifie tout de même l’application pour qu’elle annonce le refus.
+      if (recorded.mode === "refuse") {
+        PointageRealtimeService.emitTerminalAttendance({
+          utilisateurId: Number(utilisateur.id),
+          nom: utilisateur.nom,
+          prenoms: utilisateur.prenoms,
+          role: utilisateur.role,
+          employeeNoString: pendingEvent.pin,
+          date: pendingEvent.date,
+          time: pendingEvent.heure,
+          mode: "refuse",
+          etablissementId: Number(terminal.etablissementId),
+          motifRefus: recorded.motifRefus
+        });
+      }
+      return;
+    }
 
     PointageRealtimeService.emitTerminalAttendance({
       utilisateurId: Number(utilisateur.id),
@@ -139,7 +154,7 @@ async function traiterEvenement(terminal: PointageTerminal, eventId: number): Pr
       employeeNoString: pendingEvent.pin,
       date: pendingEvent.date,
       time: pendingEvent.heure,
-      mode: before ? "depart" : "arrivee",
+      mode: recorded.mode,
       etablissementId: Number(terminal.etablissementId)
     });
   } catch (error) {

@@ -13,6 +13,10 @@ export class Support extends Model<InferAttributes<Support>, InferCreationAttrib
   declare fichierCompresse: CreationOptional<string>
   declare dureeVideo: CreationOptional<string>
   declare taille: CreationOptional<string>
+  declare anneeAcademiqueId: CreationOptional<number | null>
+  declare accessibilite: CreationOptional<"libre" | "paye">
+  declare titre: CreationOptional<string | null>
+  declare cheminFichier: CreationOptional<string | null>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -58,6 +62,10 @@ Support.init({
     type: new DataTypes.STRING,
     allowNull: true
   },
+  anneeAcademiqueId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
+  accessibilite: { type: DataTypes.ENUM("libre", "paye"), allowNull: false, defaultValue: "paye" },
+  titre: { type: DataTypes.STRING(255), allowNull: true },
+  cheminFichier: { type: DataTypes.STRING(500), allowNull: true },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
 }, {

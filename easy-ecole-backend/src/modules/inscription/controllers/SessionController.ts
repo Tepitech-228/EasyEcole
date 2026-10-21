@@ -11,12 +11,6 @@ import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { AnneeAcademique } from "../models/AnneeAcademique";
 import { DossierStorageService } from "../services/DossierStorageService";
 
-const getSiteScope = (req: Request): number | null | undefined => {
-    if (req.utilisateurRole === RolesUtilisateur.ADMIN) return null;
-    const etablissementId = Number(req.etablissementId);
-    return Number.isSafeInteger(etablissementId) && etablissementId > 0 ? etablissementId : undefined;
-};
-
 /** '' / undefined / non numérique -> null (colonne DOUBLE nullable). */
 const normaliserTailleMax = (v: unknown): number | null => {
     if (v === null || v === undefined || v === '') return null;
@@ -29,13 +23,7 @@ export default class SessionController {
     constructor() { }
 
     static async getAllSessions(req: Request, res: Response): Promise<Response> {
-        const siteScope = getSiteScope(req);
-        if (siteScope === undefined) {
-            return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
-        }
-
         const where: any = {};
-        if (siteScope !== null) where.etablissementId = siteScope;
 
         if (req.query.anneeAcademiqueId) {
             where.anneeAcademiqueId = req.query.anneeAcademiqueId;
@@ -92,15 +80,29 @@ export default class SessionController {
     }
 
     static async getSession(req: Request, res: Response): Promise<Response> {
-        const siteScope = getSiteScope(req);
-        if (siteScope === undefined) {
-            return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
-        }
-
         let options: FindOptions<InferAttributes<Session>> = {}
+        const include = [
+            Session.associations.niveauEtude,
+            Session.associations.anneeAcademique,
+            Session.associations.fraisInscription,
+            Session.associations.dossiersInscription,
+        ];
+        if (req.utilisateurRole !== RolesUtilisateur.APPRENANT) {
+            include.push({
+                association: Session.associations.demandesInscription,
+                include: [
+                    {
+                        association: DemandeInscription.associations.utilisateur,
+                        include: [{ model: Apprenant, as: 'apprenant' }]
+                    },
+                    DemandeInscription.associations.reponseInscription,
+                    DemandeInscription.associations.parcoursChoisis
+                ]
+            } as any);
+        }
         options = {
-            where: { id: req.params.id, ...(siteScope !== null ? { etablissementId: siteScope } : {}) },
-            include: [Session.associations.niveauEtude, Session.associations.anneeAcademique, Session.associations.fraisInscription, Session.associations.dossiersInscription, { association: Session.associations.demandesInscription, include: [{ association: DemandeInscription.associations.utilisateur, include: [{ model: Apprenant, as: 'apprenant' }] }, DemandeInscription.associations.reponseInscription, DemandeInscription.associations.parcoursChoisis] }]
+            where: { id: req.params.id },
+            include
         }
 
         try {
@@ -162,6 +164,7 @@ export default class SessionController {
                     anneeAcademiqueId: req.body.anneeAcademiqueId,
                     niveauEtudeId: req.body.niveauEtudeId,
                     description: req.body.description,
+                    etablissementId: null,
                 }, { transaction: t });
 
                 if (req.body.frais && Array.isArray(req.body.frais)) {
@@ -312,6 +315,7 @@ export default class SessionController {
                     dateFin: req.body.dateFin,
                     anneeAcademiqueId: req.body.anneeAcademiqueId,
                     niveauEtudeId: req.body.niveauEtudeId,
+                    etablissementId: null,
                 })
                     .then(async (session) => {
                         return res.status(200).send(session);

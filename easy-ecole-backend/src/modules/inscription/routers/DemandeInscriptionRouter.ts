@@ -77,6 +77,7 @@ router
  *         description: Demande d'inscription créée
  */
     .post('/', [validerEmail, validerIdentifiantX], DemandeInscriptionController.createDemandeInscription)
+    .post('/:id/soumettre', DemandeInscriptionController.soumettreDemande)
 
 /**
  * @openapi

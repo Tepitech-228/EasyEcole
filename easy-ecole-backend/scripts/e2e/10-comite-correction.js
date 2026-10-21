@@ -24,6 +24,13 @@ const { DatabaseConnection } = require('../../src/core/helpers/DatabaseConnectio
 
 const db = DatabaseConnection.getInstance().sequelize
 
+/**
+ * Site de rattachement des comptes de test (multi-sites, commit 91f810fb).
+ * Sans site actif + affectation, les routes scopées « site » renvoient
+ * 403 « Aucun site actif sélectionné » et le flux d'inscription est bloqué.
+ */
+const SITE_ID = 1
+
 let failures = 0
 
 function assert(condition, label) {
@@ -68,6 +75,7 @@ async function createPieceReference(sessionId, titre) {
 async function createDemandeParApi(token, sessionId) {
   let r = await apiRequest('POST', '/inscription/demandesInscription', token, {
     sessionId,
+    etablissementId: SITE_ID,
     dateDemande: new Date().toISOString(),
   })
   let demandeId = r.json?.id ?? r.json?.data?.id
@@ -115,6 +123,13 @@ async function createBordereau(token, label) {
 async function phase10() {
   console.log('\n========== PHASE 10 : Comité — décisions, pièces fautives et correction ==========\n')
 
+  // ── Identifiant d'exécution ──
+  // L'API d'inscription est idempotente (1 demande par étudiant et par session) :
+  // rejouer la phase avec les mêmes comptes retombe sur un dossier DÉJÀ traité
+  // (statut 'valide', bordereau déjà authentifié) et produit des échecs
+  // parasites. On crée donc des étudiants et des bordereaux neufs à chaque run.
+  const RUN = Date.now().toString().slice(-8)
+
   // ── 0. Données de référence (idempotent) ──
   const anneeAcademiqueId = await createAnneeAcademique()
   const sessionId = await createSession(anneeAcademiqueId)
@@ -127,7 +142,7 @@ async function phase10() {
   for (let i = 0; i < 3; i++) {
     const { user, token } = await createUserAndToken({
       nom: `ComiteCorr${i}`, prenoms: `MembreCorr${i}`, email: `comitecorr${i}@test.com`,
-      identifiant: `comitecorr${i}`, role: ROLES.COMITE_ORIENTATION,
+      identifiant: `comitecorr${i}`, role: ROLES.COMITE_ORIENTATION, etablissementId: SITE_ID,
     })
     comiteTokens.push(token)
   }
@@ -141,7 +156,7 @@ async function phase10() {
   console.log(`[INFO] Quorum du comité : ${totalMembres} membre(s) actif(s)`)
 
   // ── 2. Étudiant A : circuit complet + correction + unanimité ──
-  const etuA = await createUserAndToken({ nom: 'CorrEtu', prenoms: 'Alpha', email: 'corretua@test.com', identifiant: 'corretua', role: ROLES.APPRENANT })
+  const etuA = await createUserAndToken({ nom: `CorrEtuA${RUN}`, prenoms: 'Alpha', email: `corretua-${RUN}@test.com`, identifiant: `corretua${RUN}`, role: ROLES.APPRENANT, etablissementId: SITE_ID })
   await setApprenantPeriode(etuA.user.id, 'matin')
   const demandeA = await createDemandeParApi(etuA.token, sessionId)
   console.log(`[INFO] Étudiant A — demande #${demandeA}`)
@@ -162,14 +177,14 @@ async function phase10() {
   assert(!listeDossiers.some((d) => Number(d.id) === Number(demandeA)), 'A. dossier invisible au comité avant authentification')
 
   // ── 3. Authentification Audit/Cabinet ──
-  const cabinet = await createUserAndToken({ nom: 'CabinetCorr', prenoms: 'Audit', email: 'cabinetcorr@test.com', identifiant: 'cabinetcorr', role: ROLES.CABINET_COMPTABLE })
+  const cabinet = await createUserAndToken({ nom: 'CabinetCorr', prenoms: 'Audit', email: 'cabinetcorr@test.com', identifiant: 'cabinetcorr', role: ROLES.CABINET_COMPTABLE, etablissementId: SITE_ID })
   r = await apiRequest('PUT', `/inscription/bordereaux/${bordereauA}/valider`, cabinet.token, {
-    referenceBancaire: 'CORR-REF-A', numeroBordereau: 'CORR-NUM-A', // datePaiement manquante
+    referenceBancaire: `CORR-REF-A-${RUN}`, numeroBordereau: `CORR-NUM-A-${RUN}`, // datePaiement manquante
   })
   assert(r.status === 400, `A. authentification sans datePaiement refusée (statut ${r.status})`)
 
   r = await apiRequest('PUT', `/inscription/bordereaux/${bordereauA}/valider`, cabinet.token, {
-    referenceBancaire: 'CORR-REF-A', numeroBordereau: 'CORR-NUM-A', datePaiement: '2026-10-07',
+    referenceBancaire: `CORR-REF-A-${RUN}`, numeroBordereau: `CORR-NUM-A-${RUN}`, datePaiement: '2026-10-07',
   })
   assert(r.status === 200, `A. authentification bordereau par le Cabinet (statut ${r.status})`)
   let etat = await getDemande(demandeA)
@@ -181,7 +196,7 @@ async function phase10() {
   assert(listeDossiers.some((d) => Number(d.id) === Number(demandeA)), 'A. dossier visible au comité après authentification')
 
   // ── 4. Saisie ESA-COMPTA → transmission au comité ──
-  const esa = await createUserAndToken({ nom: 'EsaCorr', prenoms: 'Compta', email: 'esacorr@test.com', identifiant: 'esacorr', role: ROLES.ESA_COMPTA })
+  const esa = await createUserAndToken({ nom: 'EsaCorr', prenoms: 'Compta', email: 'esacorr@test.com', identifiant: 'esacorr', role: ROLES.ESA_COMPTA, etablissementId: SITE_ID })
   r = await apiRequest('PUT', `/inscription/finance/bordereaux/${bordereauA}/saisir`, esa.token, { montantPaiement: 50000 })
   assert(r.status === 200, `A. saisie ESA-COMPTA (statut ${r.status})${r.status !== 200 ? ' :: ' + JSON.stringify(r.json) : ''}`)
   etat = await getDemande(demandeA)
@@ -246,7 +261,7 @@ async function phase10() {
   assert(!!matriculeFinal, `A. matricule généré par la validation finale (${matriculeFinal || 'ABSENT'})`)
 
   // ── 9. Étudiant B : rejet (vote bloquant) + bordereau seul écarté ──
-  const etuB = await createUserAndToken({ nom: 'CorrEtu', prenoms: 'Beta', email: 'corretub@test.com', identifiant: 'corretub', role: ROLES.APPRENANT })
+  const etuB = await createUserAndToken({ nom: `CorrEtuB${RUN}`, prenoms: 'Beta', email: `corretub-${RUN}@test.com`, identifiant: `corretub${RUN}`, role: ROLES.APPRENANT, etablissementId: SITE_ID })
   await setApprenantPeriode(etuB.user.id, 'matin')
   const demandeB = await createDemandeParApi(etuB.token, sessionId)
   console.log(`[INFO] Étudiant B — demande #${demandeB}`)
@@ -260,7 +275,7 @@ async function phase10() {
   assert(r.status === 201, `B. upload bordereau réel (statut ${r.status})`)
   const bordereauB = r.json.id
   r = await apiRequest('PUT', `/inscription/bordereaux/${bordereauB}/valider`, cabinet.token, {
-    referenceBancaire: 'CORR-REF-B', numeroBordereau: 'CORR-NUM-B', datePaiement: '2026-10-07',
+    referenceBancaire: `CORR-REF-B-${RUN}`, numeroBordereau: `CORR-NUM-B-${RUN}`, datePaiement: '2026-10-07',
   })
   assert(r.status === 200, `B. authentification bordereau (statut ${r.status})`)
   etat = await getDemande(demandeB)

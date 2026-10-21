@@ -39,6 +39,13 @@ export class DemandeInscriptionService {
     return this.httpClient.post<DemandeInscription>(`${this.SERVICE_URL}`, demandeInscription)
   }
 
+  soumettre(id: string): Observable<{ success: boolean; demandeId: number; statutPipeline: string }> {
+    return this.httpClient.post<{ success: boolean; demandeId: number; statutPipeline: string }>(
+      `${this.SERVICE_URL}/${id}/soumettre`,
+      {}
+    )
+  }
+
   updateHikvisionConsent(id: string, consentement: boolean): Observable<{ success: boolean }> {
     return this.httpClient.put<{ success: boolean }>(
       `${this.SERVICE_URL}/${id}/consentement-hikvision`,

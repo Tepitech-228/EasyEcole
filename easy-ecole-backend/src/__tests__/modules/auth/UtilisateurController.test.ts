@@ -45,11 +45,11 @@ jest.mock('../../../modules/auth/models/PersonnelAdministratif', () => ({
 }))
 
 jest.mock('../../../modules/etablissement/models/Etablissement', () => ({
-  Etablissement: { findByPk: jest.fn(), findAll: jest.fn(), count: jest.fn() },
+  Etablissement: { findByPk: jest.fn(), findOne: jest.fn(), findAll: jest.fn(), count: jest.fn() },
 }))
 
 jest.mock('../../../modules/auth/models/SiteUtilisateur', () => ({
-  SiteUtilisateur: { findAll: jest.fn(), bulkCreate: jest.fn(), destroy: jest.fn() },
+  SiteUtilisateur: { findAll: jest.fn(), findOne: jest.fn(), findOrCreate: jest.fn(), bulkCreate: jest.fn(), destroy: jest.fn() },
 }))
 
 const { Utilisateur } = require('../../../modules/auth/models/Utilisateur')
@@ -317,5 +317,65 @@ describe('UtilisateurController.getCount', () => {
 
     expect(res.status).toHaveBeenCalledWith(200)
     expect(res.json).toHaveBeenCalledWith({ success: true, count: 42 })
+  })
+})
+
+describe('UtilisateurController.definirSiteActif for applicants', () => {
+  it('persists the selected site and its assignment', async () => {
+    const req = mockRequest({
+      utilisateurId: 7,
+      utilisateurRole: 'apprenant',
+      body: { etablissementId: 4 },
+    } as any)
+    const res = mockResponse()
+    const update = jest.fn().mockResolvedValue({})
+    ;(Etablissement.findOne as jest.Mock).mockResolvedValue({ id: 4 })
+    ;(Utilisateur.findByPk as jest.Mock).mockResolvedValue({ id: 7, etablissementId: null, update })
+    ;(SiteUtilisateur.findOne as jest.Mock).mockResolvedValue(null)
+    ;(SiteUtilisateur.findOrCreate as jest.Mock).mockResolvedValue([{ id: 1 }, true])
+
+    await UtilisateurController.definirSiteActif(req, res)
+
+    expect(SiteUtilisateur.findOrCreate).toHaveBeenCalledWith({
+      where: { utilisateurId: 7, etablissementId: 4 },
+      defaults: { utilisateurId: 7, etablissementId: 4 },
+    })
+    expect(update).toHaveBeenCalledWith({ etablissementId: 4 })
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('does not let an applicant change an already selected site', async () => {
+    const req = mockRequest({
+      utilisateurId: 7,
+      utilisateurRole: 'apprenant',
+      body: { etablissementId: 5 },
+    } as any)
+    const res = mockResponse()
+    ;(Etablissement.findOne as jest.Mock).mockResolvedValue({ id: 5 })
+    ;(Utilisateur.findByPk as jest.Mock).mockResolvedValue({ id: 7, etablissementId: 4 })
+
+    await UtilisateurController.definirSiteActif(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(SiteUtilisateur.findOne).not.toHaveBeenCalled()
+  })
+})
+
+describe('UtilisateurController.getSitesMoi for applicants', () => {
+  it('returns only the persisted site after it has been chosen', async () => {
+    const req = mockRequest({ utilisateurId: 7, utilisateurRole: 'apprenant' } as any)
+    const res = mockResponse()
+    const sites = [{ id: 4, nom: 'Site choisi' }]
+    ;(SiteUtilisateur.findAll as jest.Mock).mockResolvedValue([])
+    ;(Utilisateur.findByPk as jest.Mock).mockResolvedValue({ etablissementId: 4 })
+    ;(Etablissement.findAll as jest.Mock).mockResolvedValue(sites)
+
+    await UtilisateurController.getSitesMoi(req, res)
+
+    expect(Etablissement.findAll).toHaveBeenCalledWith({
+      where: { id: 4, actif: true },
+      order: [['nom', 'ASC']],
+    })
+    expect(res.json).toHaveBeenCalledWith(sites)
   })
 })

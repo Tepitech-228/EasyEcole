@@ -671,7 +671,10 @@ export default class DemandeDocumentController {
 
         let demande: DemandeDocument | null = await DemandeDocument.findOne({
             where: { id: req.params.id },
-            include: [{ model: TypeDocument, as: 'typeDocument' }]
+            include: [
+                { model: TypeDocument, as: 'typeDocument' },
+                { model: Utilisateur, as: 'etudiant' }
+            ]
         });
 
         if (demande == null) {
@@ -698,10 +701,12 @@ export default class DemandeDocumentController {
                 typeDocument = (await TypeDocument.findOne({ where: { id: demande.typeDocumentId } })) ?? undefined
             }
 
+            const coordonnees = await SecretariatWorkflowService.construireCoordonneesEtudiant(demande);
             const filename = DocumentPDFGenerator.generateDocument(
                 demande.id,
                 typeDocument?.libelle || 'Document',
-                "public/scolarite/documents/"
+                "public/scolarite/documents/",
+                coordonnees
             )
 
             let docDelivre = new DocumentDelivre();

@@ -16,6 +16,31 @@
     {{ errorMessage }}
   </div>
 
+  <div class="choisir-session__filiere-filter">
+    <label for="siteInscription" class="choisir-session__filiere-label">Site d'inscription</label>
+    <div *ngIf="siteVerrouille" class="choisir-session__filiere-select" role="status">
+      {{ siteNomSelectionne }}
+    </div>
+    <select
+      *ngIf="!siteVerrouille"
+      id="siteInscription"
+      class="choisir-session__filiere-select"
+      [(ngModel)]="siteSelectionneId"
+      (change)="onChoixSite()"
+      [disabled]="sitesLoading || sitesDisponibles.length === 0"
+    >
+      <option value="">— Choisir un site —</option>
+      <option *ngFor="let site of sitesDisponibles" [value]="site.id">{{ site.nom }}</option>
+    </select>
+    <p *ngIf="sitesError" class="choisir-session__alerte" role="alert">{{ sitesError }}</p>
+    <p *ngIf="!sitesLoading && !sitesError && sitesDisponibles.length === 0" class="choisir-session__alerte" role="alert">
+      Aucun site actif n’est disponible pour votre inscription. Contactez l’administration.
+    </p>
+    <p *ngIf="!siteVerrouille && siteSelectionneId && sitesLoading" role="status">
+      Activation du site sélectionné…
+    </p>
+  </div>
+
   <div *ngIf="creationLoading" class="choisir-session__chargement-creation">
     <div class="spinner"></div>
     <span>Création de votre demande d'inscription…</span>
@@ -55,7 +80,7 @@
       class="carte-session"
       *ngFor="let session of filteredSessions"
       (click)="choisirSession(session)"
-      [disabled]="creationLoading"
+      [disabled]="creationLoading || !siteVerrouille"
     >
       <div class="carte-session__icone">
         <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">

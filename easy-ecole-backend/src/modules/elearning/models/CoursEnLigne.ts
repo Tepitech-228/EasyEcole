@@ -5,14 +5,24 @@ import { ModuleElearning } from "./ModuleElearning";
 import { Salon } from "./Salon";
 
 export class CoursEnLigne extends Model<InferAttributes<CoursEnLigne>, InferCreationAttributes<CoursEnLigne>> {
-  declare id: CreationOptional<string>
-  declare coursId: CreationOptional<string>
+  declare id: CreationOptional<number>
+  declare coursId: CreationOptional<string | null>
   declare titre: string
   declare description: CreationOptional<string>
   declare image: CreationOptional<string>
-  declare statut: CreationOptional<string>
-  declare enseignantId: CreationOptional<number>
+  declare statut: CreationOptional<"brouillon" | "publie" | "desactive" | string>
+  declare enseignantId: CreationOptional<number | null>
   declare format: CreationOptional<string>
+  declare code: CreationOptional<string | null>
+  declare ueId: CreationOptional<number | null>
+  declare niveauEtudeId: CreationOptional<number | null>
+  declare anneeAcademiqueId: CreationOptional<number | null>
+  declare nbCredits: CreationOptional<number>
+  declare coutUnitaire: CreationOptional<number | null>
+  declare coutTotal: CreationOptional<number | null>
+  declare chargeSupportId: CreationOptional<number | null>
+  declare professeurId: CreationOptional<number | null>
+  declare datePublication: CreationOptional<Date | null>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -61,6 +71,16 @@ CoursEnLigne.init({
     allowNull: true,
     defaultValue: 'mixte'
   },
+  code: { type: DataTypes.STRING(50), allowNull: true },
+  ueId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
+  niveauEtudeId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
+  anneeAcademiqueId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
+  nbCredits: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false, defaultValue: 0 },
+  coutUnitaire: { type: DataTypes.DECIMAL(15, 2), allowNull: true },
+  coutTotal: { type: DataTypes.DECIMAL(15, 2), allowNull: true },
+  chargeSupportId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
+  professeurId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
+  datePublication: { type: DataTypes.DATE, allowNull: true },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
 }, {

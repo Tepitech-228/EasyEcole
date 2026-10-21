@@ -5,15 +5,17 @@ import { Devoir } from "./Devoir";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 
 export class SoumissionDevoir extends Model<InferAttributes<SoumissionDevoir>, InferCreationAttributes<SoumissionDevoir>> {
-  declare id: CreationOptional<string>
+  declare id: CreationOptional<number>
   declare devoirId: ForeignKey<Devoir['id']>
   declare devoir?: NonAttribute<Devoir>
   declare apprenantId: ForeignKey<Utilisateur['id']>
   declare apprenant?: NonAttribute<Utilisateur>
   declare fichier: string
-  declare note: CreationOptional<number>
+  declare note: CreationOptional<number | null>
   declare commentaire: CreationOptional<string>
   declare dateSoumission: CreationOptional<Date>
+  declare dateCorrection: CreationOptional<Date | null>
+  declare corrigePar: CreationOptional<number | null>
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
   declare static associations: {
@@ -32,6 +34,8 @@ SoumissionDevoir.init({
   note: { type: DataTypes.FLOAT, allowNull: true },
   commentaire: { type: DataTypes.TEXT, allowNull: true },
   dateSoumission: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+  dateCorrection: { type: DataTypes.DATE, allowNull: true },
+  corrigePar: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
 }, {

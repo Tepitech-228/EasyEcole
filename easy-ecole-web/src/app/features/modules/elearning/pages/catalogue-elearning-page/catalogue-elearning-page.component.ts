@@ -1,12 +1,18 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
-import {
-  ArborescenceElearningResponse,
-  ArborescenceService,
-  CoursEnLigneArbre,
-  TotauxArborescence
-} from '../../services/arborescence.service';
+import { ElearningBudget, ElearningCourse, ElearningFinanceService } from 'src/app/data/modules/elearning/services/elearning-finance.service';
+
+interface TotauxArborescence {
+  annees: number;
+  parcours: number;
+  niveaux: number;
+  classes: number;
+  cours: number;
+  coursEnLigne: number;
+  coursEnLigneRattaches: number;
+  coursEnLigneNonRattaches: number;
+}
 
 type ArbreType =
   | 'annee'
@@ -29,6 +35,9 @@ export interface ArbreNode {
   id?: number | string;
   statut?: string;
   format?: string | null;
+  nbCredits?: number;
+  coutTotal?: number | null;
+  selection?: ElearningCourse['selection'];
 }
 
 @Component({
@@ -37,30 +46,52 @@ export interface ArbreNode {
   styleUrls: ['./catalogue-elearning-page.component.scss']
 })
 export class CatalogueElearningPageComponent extends BaseComponentClass implements OnInit {
+  private catalogue: ElearningCourse[] = [];
   fullTree: ArbreNode[] = [];
   filteredTree: ArbreNode[] = [];
   totaux: TotauxArborescence | null = null;
   loading = false;
   error = false;
   searchQuery = '';
+  isStudent = false;
+  budget: ElearningBudget | null = null;
+  budgetError = '';
+  actionError = '';
+  successMessage = '';
+  selectionLoadingId: number | null = null;
 
-  constructor(private arborescenceService: ArborescenceService, private router: Router) {
+  constructor(
+    private financeService: ElearningFinanceService,
+    private router: Router
+  ) {
     super();
   }
 
   ngOnInit(): void {
+    this.isStudent = this.rolesValue.isApprenant;
     this.loadArborescence();
+    if (this.isStudent) this.loadBudget();
   }
 
   loadArborescence(): void {
     this.loading = true;
     this.error = false;
     this.searchQuery = '';
-    this.arborescenceService.getArborescence().subscribe({
-      next: (data: ArborescenceElearningResponse) => {
+    this.financeService.getCatalogue().subscribe({
+      next: (data: ElearningCourse[]) => {
+        this.catalogue = data;
         this.fullTree = this.buildTree(data);
         this.filteredTree = this.fullTree;
-        this.totaux = data.totaux;
+        this.totaux = {
+          annees: 1,
+          parcours: 0,
+          niveaux: 0,
+          classes: 0,
+          cours: 0,
+          coursEnLigne: data.length,
+          coursEnLigneRattaches: data.filter(c => !!c.ue).length,
+          coursEnLigneNonRattaches: data.filter(c => !c.ue).length
+        };
         this.loading = false;
       },
       error: () => {
@@ -82,12 +113,45 @@ export class CatalogueElearningPageComponent extends BaseComponentClass implemen
   }
 
   onNodeClick(node: ArbreNode): void {
-    // Clic sur un cours en ligne → page de détails existante (cours-details-page)
-    if (node.type === 'coursEnLigne' && node.id) {
+    if (node.type === 'coursEnLigne' && node.id && (!this.isStudent || node.selection?.statut === 'acces_ouvert')) {
       this.router.navigate(['/elearning', node.id]);
       return;
     }
     this.toggle(node);
+  }
+
+  loadBudget(): void {
+    this.budgetError = '';
+    this.financeService.getBudget().subscribe({
+      next: budget => {
+        this.budget = budget;
+        if (this.fullTree.length) {
+          this.fullTree = this.buildTree(this.catalogue);
+          this.applySearch();
+        }
+      },
+      error: err => this.budgetError = err.error?.message || 'Impossible de charger votre budget e-learning.'
+    });
+  }
+
+  choisirCours(node: ArbreNode, event: Event): void {
+    event.stopPropagation();
+    if (!node.id || this.selectionLoadingId !== null) return;
+    this.actionError = '';
+    this.successMessage = '';
+    this.selectionLoadingId = Number(node.id);
+    this.financeService.choisirCours(Number(node.id)).subscribe({
+      next: () => {
+        this.selectionLoadingId = null;
+        this.successMessage = `Le cours « ${node.label} » est ajouté à vos cours.`;
+        this.loadArborescence();
+        this.loadBudget();
+      },
+      error: err => {
+        this.selectionLoadingId = null;
+        this.actionError = err.error?.message || 'La sélection du cours a échoué.';
+      }
+    });
   }
 
   applySearch(): void {
@@ -113,64 +177,25 @@ export class CatalogueElearningPageComponent extends BaseComponentClass implemen
     );
   }
 
-  private buildTree(data: ArborescenceElearningResponse): ArbreNode[] {
-    const annees: ArbreNode[] = data.annees.map((a) => ({
+  private buildTree(courses: ElearningCourse[]): ArbreNode[] {
+    return [{
       type: 'annee',
-      label: a.libelle,
-      compteur: a.compteurCoursEnLigne,
+      label: this.budget?.anneeAcademique || 'Cours proposés',
+      compteur: courses.length,
       expanded: true,
-      children: a.parcours.map((p) => ({
-        type: 'parcours',
-        label: p.titre,
-        compteur: p.compteurCoursEnLigne,
+      children: courses.map(course => ({
+        type: 'coursEnLigne',
+        label: [course.code, course.titre].filter(Boolean).join(' — '),
+        compteur: 0,
         expanded: true,
-        children: p.niveaux.map((n) => ({
-          type: 'niveau',
-          label: n.libelle,
-          compteur: n.compteurCoursEnLigne,
-          expanded: true,
-          children: n.classes.map((cl) => ({
-            type: 'classe',
-            label: cl.libelle,
-            compteur: cl.compteurCoursEnLigne,
-            expanded: true,
-            virtuel: cl.estVirtuel,
-            children: cl.cours.map((c) => ({
-              type: 'cours',
-              label: [c.code, c.intitule].filter(Boolean).join(' — '),
-              compteur: c.compteurCoursEnLigne,
-              expanded: true,
-              children: c.coursEnLigne.map((cel) => this.toCoursEnLigneNode(cel))
-            }))
-          }))
-        }))
+        children: [],
+        id: course.id,
+        statut: course.statut,
+        nbCredits: Number(course.nbCredits),
+        coutTotal: course.selection?.coutFige ?? course.coutTotal,
+        selection: course.selection
       }))
-    }));
-
-    if (data.nonRattaches.length > 0 && this.showNonRattaches) {
-      annees.push({
-        type: 'nonRattaches',
-        label: 'Non rattachés',
-        compteur: data.nonRattaches.length,
-        expanded: true,
-        children: data.nonRattaches.map((cel) => this.toCoursEnLigneNode(cel))
-      });
-    }
-
-    return annees;
-  }
-
-  private toCoursEnLigneNode(cel: CoursEnLigneArbre): ArbreNode {
-    return {
-      type: 'coursEnLigne',
-      label: cel.titre,
-      compteur: 0,
-      expanded: true,
-      children: [],
-      id: cel.id,
-      statut: cel.statut,
-      format: cel.format
-    };
+    }];
   }
 
   private matchesQuery(node: ArbreNode, ql: string): boolean {

@@ -72,13 +72,15 @@
 
       <!-- Support content -->
       <div class="support-content" *ngIf="supportActif">
+        <p *ngIf="mediaLoading" class="loading-state">Chargement du support…</p>
+        <p *ngIf="mediaError" class="error-state">{{ mediaError }}</p>
         <!-- Video -->
-        <div class="media-player" *ngIf="typeMedia(supportActif) === 'video'">
-          <app-video-player [src]="'/elearning/videos/' + (supportActif.fichierCompresse || supportActif.fichierOriginal)" (ended)="marquerTermine(supportActif)"></app-video-player>
+        <div class="media-player" *ngIf="typeMedia(supportActif) === 'video' && mediaSrc">
+          <app-video-player [src]="mediaSrc" (ended)="marquerTermine(supportActif)"></app-video-player>
         </div>
 
         <!-- PDF -->
-        <div class="media-pdf pdf-preview-shell" *ngIf="typeMedia(supportActif) === 'pdf'">
+        <div class="media-pdf pdf-preview-shell" *ngIf="typeMedia(supportActif) === 'pdf' && pdfUrl">
           <iframe [src]="pdfUrl" title="Support PDF" class="pdf-frame pdf-preview-frame"></iframe>
         </div>
 
@@ -88,7 +90,7 @@
           <h3>{{ supportActif.fichierOriginal }}</h3>
           <p>Type: {{ supportActif.type }} · Taille: {{ supportActif.taille || '—' }}</p>
           <div class="doc-actions">
-            <a [href]="'/elearning/videos/' + (supportActif.fichierCompresse || supportActif.fichierOriginal)" target="_blank" class="btn-primary">Télécharger</a>
+            <a *ngIf="mediaSrc" [href]="mediaSrc" target="_blank" download class="btn-primary">Télécharger</a>
             <button class="btn-outline" (click)="marquerTermine(supportActif)">Marquer terminé</button>
           </div>
         </div>

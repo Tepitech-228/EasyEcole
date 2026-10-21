@@ -61,8 +61,8 @@ export class PointageService {
     return this.httpClient.post<Pointage>(`${this.SERVICE_URL}/scan/depart`, { userId })
   }
 
-  pointerParQR(codeQR: string): Observable<{ success: boolean, mode: 'arrivee' | 'depart', pointage: Pointage }> {
-    return this.httpClient.post<{ success: boolean, mode: 'arrivee' | 'depart', pointage: Pointage }>(
+  pointerParQR(codeQR: string): Observable<{ success: boolean, mode: 'arrivee' | 'depart' | 'passage', pointage: Pointage }> {
+    return this.httpClient.post<{ success: boolean, mode: 'arrivee' | 'depart' | 'passage', pointage: Pointage }>(
       `${this.SERVICE_URL}/scan/pointage`,
       { codeQR }
     )

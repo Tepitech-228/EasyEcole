@@ -1,24 +1,32 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { environment } from 'src/environments/environment';
-import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 
 @Component({
   selector: 'app-cours-player-page',
   templateUrl: './cours-player-page.component.html',
   styleUrls: ['./cours-player-page.component.scss']
 })
-export class CoursPlayerPageComponent implements OnInit {
+export class CoursPlayerPageComponent implements OnInit, OnDestroy {
   cours: any = null;
   loading = false;
   moduleActif: any = null;
   supportActif: any = null;
   sidebarOuverte = true;
   afficherQuiz = false;
+  mediaSrc: string | null = null;
+  pdfUrl: SafeResourceUrl | null = null;
+  mediaLoading = false;
+  mediaError = '';
+  private mediaObjectUrl: string | null = null;
 
-  constructor(private route: ActivatedRoute, private http: HttpClient, private router: Router, private sanitizer: DomSanitizer, private localStorage: LocalStorageService) { }
+  constructor(private route: ActivatedRoute, private http: HttpClient, private router: Router, private sanitizer: DomSanitizer) { }
+
+  ngOnDestroy(): void {
+    this.revokeMediaUrl();
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -76,12 +84,40 @@ export class CoursPlayerPageComponent implements OnInit {
   ouvrirSupport(support: any): void {
     this.supportActif = support;
     this.afficherQuiz = false;
+    this.loadProtectedSupport(support);
     if (this.cours?.progressionApprenant) {
       const prog = this.cours.progressionApprenant[support.id];
       if (!prog?.termine) {
         this.marquerAcces(support.id);
       }
     }
+  }
+
+  private loadProtectedSupport(support: any): void {
+    this.revokeMediaUrl();
+    this.mediaLoading = true;
+    this.mediaError = '';
+    this.http.get(`${environment.API_URL}/elearning/supports/${support.id}/fichier`, {
+      responseType: 'blob'
+    }).subscribe({
+      next: blob => {
+        this.mediaObjectUrl = URL.createObjectURL(blob);
+        this.mediaSrc = this.mediaObjectUrl;
+        this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.mediaObjectUrl);
+        this.mediaLoading = false;
+      },
+      error: err => {
+        this.mediaLoading = false;
+        this.mediaError = err.error?.message || 'Impossible de charger ce support.';
+      }
+    });
+  }
+
+  private revokeMediaUrl(): void {
+    if (this.mediaObjectUrl) URL.revokeObjectURL(this.mediaObjectUrl);
+    this.mediaObjectUrl = null;
+    this.mediaSrc = null;
+    this.pdfUrl = null;
   }
 
   marquerAcces(supportId: number): void {
@@ -154,11 +190,4 @@ export class CoursPlayerPageComponent implements OnInit {
     return 'document';
   }
 
-  get pdfUrl(): SafeResourceUrl | null {
-    if (!this.supportActif) return null;
-    const base = `/media/videos/${this.supportActif.fichierOriginal}`;
-    const token = this.localStorage.get(LocalStorageService.AUTH_TOKEN);
-    const url = token ? `${base}?token=${encodeURIComponent(token)}` : base;
-    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
-  }
 }

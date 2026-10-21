@@ -240,7 +240,7 @@ describe('PointageController.pointerParQR', () => {
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'ALREADY_EXISTS' }))
   })
 
-  it('allows student scans repeatedly and updates only the daily departure summary', async () => {
+  it('records every student scan as a passage without touching the departure', async () => {
     jest.useFakeTimers().setSystemTime(new Date('2026-10-20T12:00:00'))
     Utilisateur.findByPk.mockResolvedValue({ id: 42, role: 'apprenant' })
     const update = jest.fn().mockResolvedValue(undefined)
@@ -249,17 +249,17 @@ describe('PointageController.pointerParQR', () => {
 
     await PointageController.pointerParQR(request({ codeQR: validCode, mode: 'arrivee' }), res)
 
-    expect(update).toHaveBeenCalledWith(expect.objectContaining({ heureDepart: expect.any(String) }), expect.any(Object))
+    expect(update).not.toHaveBeenCalled()
     expect(PointageScan.create).toHaveBeenCalledWith(
       expect.objectContaining({ pointageId: 7, heure: expect.any(String) }),
       expect.any(Object)
     )
     expect(res.status).toHaveBeenCalledWith(200)
-    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ mode: 'depart' }))
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ mode: 'passage' }))
     jest.useRealTimers()
   })
 
-  it('registers the first student scan as both the daily arrival and first history event', async () => {
+  it('registers the first student scan as a passage and first history event', async () => {
     Utilisateur.findByPk.mockResolvedValue({ id: 42, role: 'apprenant' })
     const res = mockResponse()
 
@@ -270,7 +270,7 @@ describe('PointageController.pointerParQR', () => {
       heureArrivee: expect.any(String)
     }), expect.any(Object))
     expect(PointageScan.create).toHaveBeenCalled()
-    expect(res.status).toHaveBeenCalledWith(201)
-    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ mode: 'arrivee' }))
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ mode: 'passage' }))
   })
 })

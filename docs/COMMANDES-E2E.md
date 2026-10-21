@@ -55,6 +55,37 @@ node easy-ecole-backend/e2e-demandes-documents.cjs
 node easy-ecole-backend/e2e-notes-releve.cjs
 ```
 
+### 2 bis. Rejeu complet du workflow d'inscription (A → Z, API)
+
+Rejoue l'intégralité du parcours d'un étudiant « MAKI TOTO » : compte → demande → parcours →
+pièces → pré-inscription → bordereau → Cabinet → ESA → comité (correction) → reprise →
+votes → validation finale + matricule.
+
+```powershell
+# 1) D'abord le harnais backend (il purge les tables ins_*)
+npm run test:e2e --prefix easy-ecole-backend
+
+# 2) Ensuite le rejeu (mode --reset : purge les données de l'étudiant et repart de zéro)
+node easy-ecole-backend/scripts/replay-inscription-maki-toto.cjs --reset
+```
+
+*   Sortie attendue : 20 étapes `[OK]`, `pipeline = valide`, un matricule, un
+    `ins_cursus_apprenants` et 9 votes de comité.
+*   ⚠️ **Ordre obligatoire** : `cleanE2EData()` (`scripts/e2e/helpers/seeds.js`) supprime
+    toutes les lignes des tables `ins_*` — un rejeu lancé avant le harnais verrait son
+    dossier effacé, et le harnais efface les artefacts d'un rejeu antérieur.
+*   Pré-requis : backend démarré (`http://localhost:3000`) et base migrée.
+
+**Règles métier vérifiées par ce rejeu :**
+
+| Règle | Conséquence si non respectée |
+|---|---|
+| La pré-inscription doit être `valide` avant la saisie ESA | `400 « La préinscription doit être validée »` |
+| La pré-inscription n'est auto-validée que sur le **premier** bordereau d'un étudiant **sans dossier étudiant** (`estPremierBordereau = !dossierExistant`, `FinanceRouter.ts` l. 558) | Un étudiant déjà Scaffoldé doit faire valider sa pré-inscription par le comité (`PUT /inscription/pre-inscriptions/:demandeId/valider`) |
+| L'étudiant doit renseigner sa période de cours (`matin` / `soir` / `en_ligne`) | `400 « L'étudiant doit renseigner sa période… »` au vote final |
+| Le parcours choisi doit porter `choixFinal = true` | `400 « Aucun parcours choisi »` |
+| Le compte non-admin doit porter `etablissementId` (JWT) + une affectation `aut_utilisateur_etablissements` | `403 « Aucun site actif sélectionné »` |
+
 ---
 
 ## 3. Test exhaustif des 408 endpoints — Vérification opérationnelle
@@ -137,6 +168,25 @@ npm run test:e2e --prefix easy-ecole-web
 *   Lance Cypress sur `http://localhost:4200`
 *   Nécessite backend + frontend lancés (`npm run dev` à la racine = les 2)
 
+### 6 bis. Spec « flux d'inscription réel » (wizard → bordereau → comité)
+
+```powershell
+# 1) Générer les jetons (écrit easy-ecole-web/cypress.env.json)
+node easy-ecole-backend/scripts/cypress-tokens.cjs
+
+# 2) Lancer le spec ciblé
+cd easy-ecole-web
+npx cypress run --spec "cypress/e2e/inscription/inscription-workflows.cy.ts"
+```
+
+*   4 tests : wizard de première inscription, pipeline complet + mode correction,
+    smoke comité d'orientation, smoke Cabinet.
+*   L'apprenant est créé à chaque exécution (identifiant unique) : le backend étant
+    idempotent (1 demande par étudiant et par session), un apprenant réutilisé rejouerait
+    sur un dossier déjà traité.
+*   Prérequis d'état : lancer d'abord le harnais backend (`npm run test:e2e`), qui
+    normalise sessions, pièces requises et membres du comité.
+
 ---
 
 ## 7. Variables d'environnement utiles
@@ -185,6 +235,10 @@ const token = jwt.sign(
 | `500 WHERE parameter "code" has invalid undefined` | `typeCode` manquant | Corrigé : validation `400` si `!typeCode` |
 | `500 Erreur lors de la récupération` (absences) | `IN ()` vide | Corrigé : `if (cpIds.length===0) return []` |
 | `Token invalide (session expirée)` | `tokenVersion` désynchronisé | Régénérer le token avec le bon `tokenVersion` (42 pour `tepitechbuild`) |
+| `403 Aucun site actif sélectionné` | JWT sans `etablissementId` ou sans affectation `aut_utilisateur_etablissements` | Utiliser `scripts/cypress-tokens.cjs` (multi-sites, commit `91f810fb`) |
+| `400 La préinscription doit être validée` (saisie ESA) | Pré-inscription absente ou non validée | Étapes F2 + H2 du rejeu : `POST /inscription/pre-inscriptions/:demandeId/soumettre` puis `PUT /inscription/pre-inscriptions/:demandeId/valider` |
+| `400 L'étudiant doit renseigner sa période…` (vote comité) | `aut_apprenants.periode` vide | Renseigner `periode` ∈ {`matin`,`soir`,`en_ligne`} |
+| Artefacts E2E disparus après un run | `cleanE2EData()` purge toutes les tables `ins_*` | Lancer le rejeu **après** `npm run test:e2e` (voir § 2 bis) |
 
 ---
 

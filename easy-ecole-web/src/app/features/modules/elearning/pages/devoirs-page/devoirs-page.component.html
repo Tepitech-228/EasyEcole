@@ -68,8 +68,20 @@
         <label class="form-label">Date limite</label>
         <input [(ngModel)]="createForm.dateLimite" type="date" class="form-input">
       </div>
+      <div class="form-group">
+        <label class="form-label">Semestre</label>
+        <select [(ngModel)]="createForm.semestre" class="form-select">
+          <option [ngValue]="1">Semestre 1</option>
+          <option [ngValue]="2">Semestre 2</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sujet PDF</label>
+        <input type="file" accept="application/pdf,.pdf" (change)="onFileSelected($event)" class="form-file">
+      </div>
+      <p *ngIf="createError" class="alert alert--warning">{{ createError }}</p>
       <div class="modal__actions">
-        <button (click)="createDevoir()" class="btn btn--primary">Créer</button>
+        <button (click)="createDevoir()" [disabled]="!createForm.titre || !createForm.coursId || !createForm.dateLimite || !selectedFile" class="btn btn--primary">Publier le devoir</button>
         <button (click)="showCreateModal = false" class="btn btn--outline">Annuler</button>
       </div>
     </div>

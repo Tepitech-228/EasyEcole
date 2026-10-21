@@ -2,6 +2,20 @@ import PDFDocument from 'pdfkit';
 import * as fs from 'fs';
 import * as path from 'path';
 
+/**
+ * Coordonnées de l'étudiant imprimées sur un document officiel.
+ * Tous les champs sont optionnels : un document reste générable même si
+ * une donnée (ex. matricule non encore attribué) est indisponible.
+ */
+export interface CoordonneesEtudiant {
+    nomComplet?: string | null;
+    matricule?: string | null;
+    parcours?: string | null;
+    niveauEtude?: string | null;
+    classe?: string | null;
+    anneeAcademique?: string | null;
+}
+
 export class DocumentPDFGenerator {
 
     static generateAutorisationProvisoire(
@@ -243,7 +257,7 @@ export class DocumentPDFGenerator {
         return filename;
     }
 
-    static generateDocument(demandeId: string | number, libelle: string, outputDir: string): string {
+    static generateDocument(demandeId: string | number, libelle: string, outputDir: string, etudiant?: CoordonneesEtudiant | null): string {
         const dir = path.resolve(outputDir);
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
@@ -275,6 +289,18 @@ export class DocumentPDFGenerator {
         doc.moveDown();
         doc.fontSize(10).text(`Référence: ${libelle.toUpperCase().replace(/\s+/g, '_')}_${demandeId}`, { align: 'right' });
         doc.moveDown(2);
+
+        if (etudiant && (etudiant.nomComplet || etudiant.matricule || etudiant.parcours || etudiant.classe)) {
+            doc.fontSize(12).text('IDENTIFICATION DE L\'ÉTUDIANT', { underline: true });
+            doc.moveDown(0.5);
+            if (etudiant.nomComplet) doc.fontSize(11).text(`Nom et prénoms: ${etudiant.nomComplet}`);
+            if (etudiant.matricule) doc.fontSize(11).text(`Matricule: ${etudiant.matricule}`);
+            if (etudiant.parcours) doc.fontSize(11).text(`Parcours: ${etudiant.parcours}`);
+            if (etudiant.niveauEtude) doc.fontSize(11).text(`Niveau: ${etudiant.niveauEtude}`);
+            if (etudiant.classe) doc.fontSize(11).text(`Classe: ${etudiant.classe}`);
+            if (etudiant.anneeAcademique) doc.fontSize(11).text(`Année académique: ${etudiant.anneeAcademique}`);
+            doc.moveDown(1.5);
+        }
 
         doc.fontSize(12).text(`Document délivré à l'étudiant(e)`, { align: 'left' });
         doc.moveDown();
@@ -319,8 +345,8 @@ export class DocumentPDFGenerator {
      * réellement présent sur disque. À utiliser partout où le succès métier dépend
      * de la présence effective du fichier.
      */
-    static async generateDocumentVerifie(demandeId: string | number, libelle: string, outputDir: string): Promise<string> {
-        const filename = DocumentPDFGenerator.generateDocument(demandeId, libelle, outputDir);
+    static async generateDocumentVerifie(demandeId: string | number, libelle: string, outputDir: string, etudiant?: CoordonneesEtudiant | null): Promise<string> {
+        const filename = DocumentPDFGenerator.generateDocument(demandeId, libelle, outputDir, etudiant);
         await DocumentPDFGenerator.attendreEcritureFichier(path.resolve(outputDir, filename));
         return filename;
     }
