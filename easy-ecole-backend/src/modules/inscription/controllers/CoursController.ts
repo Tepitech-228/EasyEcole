@@ -8,6 +8,7 @@ import { Enseignant } from "../../auth/models/Enseignant";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { CoursParticipant } from "../models/CoursParticipant";
 import { SiteUtilisateur } from "../../auth/models/SiteUtilisateur";
+import { getSurveillantSiteId } from "../../../core/helpers/SurveillantSiteScope";
 
 export default class CoursController {
 
@@ -22,7 +23,10 @@ export default class CoursController {
         const orderDir = (req.query.orderDir as string)?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
         const filters: any = {};
-        const etablissementId = Number((req as any).etablissementId);
+        let etablissementId = Number((req as any).etablissementId);
+        if ((req as any).utilisateurRole === RolesUtilisateur.SURVEILLANT) {
+            etablissementId = (await getSurveillantSiteId(req)) ?? 0;
+        }
         if (Number.isSafeInteger(etablissementId) && etablissementId > 0) {
             filters.etablissementId = etablissementId;
         } else if ((req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
@@ -47,7 +51,8 @@ export default class CoursController {
             (req as any).utilisateurRole == RolesUtilisateur.APPRENANT ||
             (req as any).utilisateurRole == RolesUtilisateur.INSTITUTION ||
             (req as any).utilisateurRole == RolesUtilisateur.ADMIN ||
-            (req as any).utilisateurRole == RolesUtilisateur.SUPERVISEUR_GENERAL
+            (req as any).utilisateurRole == RolesUtilisateur.SUPERVISEUR_GENERAL ||
+            (req as any).utilisateurRole == RolesUtilisateur.SURVEILLANT
         ) {
             options = {
                 ...options,

@@ -370,7 +370,7 @@ export default class UtilisateurController {
                     message: "Une institution ne peut pas créer un compte administrateur ou institution."
                 });
             }
-            const siteIds = await this.validerSites(this.sitesDemandes(req));
+            const siteIds = await UtilisateurController.validerSites(UtilisateurController.sitesDemandes(req));
             if (siteIds === null && (req.body.siteIds !== undefined || req.body.etablissementIds !== undefined || req.body.etablissementId || req.etablissementId)) {
                 return res.status(400).json({ success: false, message: "Un site demandé n’existe pas ou est inactif" });
             }
@@ -382,7 +382,7 @@ export default class UtilisateurController {
                         message: "Sélectionnez au moins un site auquel vous êtes affecté."
                     });
                 }
-                const sitesAccessibles = await this.sitesAccessibles(req);
+                const sitesAccessibles = await UtilisateurController.sitesAccessibles(req);
                 if (affectations.some(etablissementId => !sitesAccessibles.includes(etablissementId))) {
                     return res.status(403).json({
                         success: false,
@@ -390,7 +390,7 @@ export default class UtilisateurController {
                     });
                 }
             }
-            if (!this.nombreSitesAutorise(userRole, affectations)) {
+            if (!UtilisateurController.nombreSitesAutorise(userRole, affectations)) {
                 return res.status(400).json({
                     success: false,
                     message: userRole === RolesUtilisateur.APPRENANT
@@ -544,7 +544,7 @@ export default class UtilisateurController {
                         try {
                             personnel = await PersonnelAdministratif.create({
                                 utilisateurId: utilisateur.id,
-                                fonction: req.body.fonction || this.roleToFonction(userRole),
+                                fonction: req.body.fonction || UtilisateurController.roleToFonction(userRole),
                                 matricule: matricule,
                                 statut: req.body.statut || 'Permanent',
                                 directionService: req.body.directionService || null,
@@ -641,12 +641,12 @@ export default class UtilisateurController {
         try {
             const utilisateur = await Utilisateur.findByPk(req.params.id);
             if (!utilisateur) return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
-            const siteIds = await this.validerSites(req.body?.siteIds);
+            const siteIds = await UtilisateurController.validerSites(req.body?.siteIds);
             if (siteIds === null && (!Array.isArray(req.body?.siteIds) || req.body.siteIds.length > 0)) {
                 return res.status(400).json({ success: false, message: "Un ou plusieurs sites n’existent pas ou sont inactifs" });
             }
             const affectations = siteIds || [];
-            if (!this.nombreSitesAutorise(utilisateur.role, affectations)) {
+            if (!UtilisateurController.nombreSitesAutorise(utilisateur.role, affectations)) {
                 return res.status(400).json({
                     success: false,
                     message: utilisateur.role === RolesUtilisateur.APPRENANT

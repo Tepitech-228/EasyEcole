@@ -104,7 +104,7 @@ export default class PointageController {
                     return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
                 }
                 options.where = {
-                    utilisateurId: { [Op.in]: await this.getUtilisateurIdsDuSite(etablissementId) }
+                    utilisateurId: { [Op.in]: await PointageController.getUtilisateurIdsDuSite(etablissementId) }
                 } as any;
             }
             let pointages: Pointage[];
@@ -161,7 +161,7 @@ export default class PointageController {
                 if (!etablissementId) {
                     return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
                 }
-                where.utilisateurId = { [Op.in]: await this.getUtilisateurIdsDuSite(etablissementId) };
+                where.utilisateurId = { [Op.in]: await PointageController.getUtilisateurIdsDuSite(etablissementId) };
             }
             const pointages = await Pointage.findAll({
                 where,

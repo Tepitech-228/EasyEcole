@@ -289,7 +289,9 @@ export class ListePresencesPageComponent extends BaseComponentClass implements O
   // Modals
   openNouvelleListePresenceModal(): void {
     this.getCours()
-    this.getEnseignants()
+    if (!this.rolesValue.isSurveillant) {
+      this.getEnseignants()
+    }
 
     this.showNouvelleListePresenceModal = true
   }

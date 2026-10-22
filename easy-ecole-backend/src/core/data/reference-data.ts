@@ -573,6 +573,7 @@ export const REF_ROLE_PERMISSIONS: RefRolePermission[] = [
   { roleNom: 'Surveillant', permissionKey: 'menu.parametres.mon-compte' },
   { roleNom: 'Surveillant', permissionKey: 'menu.parametres.mon-profil' },
   { roleNom: 'Surveillant', permissionKey: 'menu.pointage' },
+  { roleNom: 'Surveillant', permissionKey: 'menu.pointage.terminal' },
   { roleNom: 'Surveillant', permissionKey: 'menu.pointage.absences' },
   { roleNom: 'Surveillant', permissionKey: 'menu.pointage.historique' },
   { roleNom: 'Surveillant', permissionKey: 'menu.pointage.rapports' },

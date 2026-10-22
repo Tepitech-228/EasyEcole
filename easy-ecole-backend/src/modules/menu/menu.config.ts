@@ -284,7 +284,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
     {
         label: 'Ressources Humaines',
         icon: 'badge',
-        allowedRoles: [RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.ADMIN, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.SUPERVISEUR_GENERAL],
+        allowedRoles: [RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.ADMIN, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.SUPERVISEUR_GENERAL, RolesUtilisateur.SURVEILLANT],
         groups: [
             {
                 label: 'RH',

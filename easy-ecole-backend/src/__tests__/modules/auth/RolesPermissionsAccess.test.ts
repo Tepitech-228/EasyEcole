@@ -1,5 +1,7 @@
 import { ROLE_PERMISSIONS } from '../../../modules/auth/seed/RoleSeed'
 import { REF_ROLE_PERMISSIONS } from '../../../core/data/reference-data'
+import { MENU_CONFIG } from '../../../modules/menu/menu.config'
+import { RolesUtilisateur } from '../../../core/enums/RolesUtilisateur'
 
 describe('ROLE_PERMISSIONS d’administration', () => {
   it('donne accès aux écrans de rôles et permissions aux profils administrateurs', () => {
@@ -22,6 +24,7 @@ describe('ROLE_PERMISSIONS d’administration', () => {
       'menu.cours.cahiers-de-texte',
       'menu.cours.emplois-du-temps',
       'menu.pointage',
+      'menu.pointage.terminal',
       'menu.pointage.historique',
       'menu.pointage.rapports',
       'menu.pointage.absences',
@@ -32,9 +35,18 @@ describe('ROLE_PERMISSIONS d’administration', () => {
         'menu.cours.cahiers-de-texte',
         'menu.cours.emplois-du-temps',
         'menu.pointage',
+        'menu.pointage.terminal',
         'menu.pointage.historique',
         'menu.pointage.rapports',
         'menu.pointage.absences',
       ]))
+  })
+
+  it('affiche le pôle RH au surveillant avec le menu Terminal', () => {
+    const poleRh = MENU_CONFIG.find(pole => pole.label === 'Ressources Humaines')
+    const groupePointage = poleRh?.groups.find(group => group.label === 'Pointage')
+
+    expect(poleRh?.allowedRoles).toContain(RolesUtilisateur.SURVEILLANT)
+    expect(groupePointage?.items.some(item => item.label === 'Terminal' && item.route === '/pointage')).toBe(true)
   })
 })
