@@ -15,9 +15,36 @@ import { Certificat } from "./Certificat";
 import { ProgressionApprenant } from "./ProgressionApprenant";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { Cours } from "../../inscription/models/Cours";
+import { TarifCredit } from "./TarifCredit";
+import { Enveloppe } from "./Enveloppe";
+import { Mouvement } from "./Mouvement";
+import { Encaissement } from "./Encaissement";
+import { SelectionCours } from "./SelectionCours";
+import { Audit } from "./Audit";
+import { AnneeElearning } from "./AnneeElearning";
+import { Examen } from "./Examen";
+import { NoteExamen } from "./NoteExamen";
 
 CoursEnLigne.belongsTo(Cours, { as: 'coursPedagogique', foreignKey: 'coursId', constraints: false });
 Cours.hasMany(CoursEnLigne, { foreignKey: 'coursId', as: 'coursEnLigne', constraints: false });
+CoursEnLigne.belongsTo(Cours, { as: 'ue', foreignKey: 'ueId', constraints: false });
+CoursEnLigne.belongsTo(Utilisateur, { as: 'chargeSupport', foreignKey: 'chargeSupportId', constraints: false });
+CoursEnLigne.belongsTo(Utilisateur, { as: 'professeurResponsable', foreignKey: 'professeurId', constraints: false });
+
+Enveloppe.hasMany(Mouvement, { foreignKey: 'enveloppeId', as: 'mouvements' });
+Mouvement.belongsTo(Enveloppe, { foreignKey: 'enveloppeId', as: 'enveloppe' });
+Enveloppe.hasMany(Encaissement, { foreignKey: 'enveloppeId', as: 'encaissements' });
+Encaissement.belongsTo(Enveloppe, { foreignKey: 'enveloppeId', as: 'enveloppe' });
+Enveloppe.hasMany(SelectionCours, { foreignKey: 'enveloppeId', as: 'selections' });
+SelectionCours.belongsTo(Enveloppe, { foreignKey: 'enveloppeId', as: 'enveloppe' });
+CoursEnLigne.hasMany(SelectionCours, { foreignKey: 'coursId', as: 'selections' });
+SelectionCours.belongsTo(CoursEnLigne, { foreignKey: 'coursId', as: 'cours' });
+Utilisateur.hasMany(Enveloppe, { foreignKey: 'utilisateurId', as: 'enveloppesElearning' });
+Enveloppe.belongsTo(Utilisateur, { foreignKey: 'utilisateurId', as: 'utilisateur' });
+Utilisateur.hasMany(Encaissement, { foreignKey: 'utilisateurId', as: 'encaissementsElearning' });
+Encaissement.belongsTo(Utilisateur, { foreignKey: 'utilisateurId', as: 'utilisateur' });
+Utilisateur.hasMany(Audit, { foreignKey: 'acteurId', as: 'auditsElearning' });
+Audit.belongsTo(Utilisateur, { foreignKey: 'acteurId', as: 'acteur' });
 
 CoursEnLigne.hasMany(ModuleElearning, { foreignKey: 'coursId', as: 'modules' })
 ModuleElearning.belongsTo(CoursEnLigne, { as: 'cours', foreignKey: 'coursId' })
@@ -42,6 +69,10 @@ ParticipantSalon.belongsTo(Salon, { as: 'salon', foreignKey: 'salonId' })
 
 CoursEnLigne.hasMany(Devoir, { foreignKey: 'coursId', as: 'devoirs' })
 Devoir.belongsTo(CoursEnLigne, { as: 'cours', foreignKey: 'coursId' })
+CoursEnLigne.hasMany(Examen, { foreignKey: 'coursId', as: 'examens' })
+Examen.belongsTo(CoursEnLigne, { as: 'cours', foreignKey: 'coursId' })
+Examen.hasMany(NoteExamen, { foreignKey: 'examenId', as: 'notes' })
+NoteExamen.belongsTo(Examen, { foreignKey: 'examenId', as: 'examen' })
 Utilisateur.hasMany(Devoir, { foreignKey: 'enseignantId', as: 'devoirs' })
 Devoir.belongsTo(Utilisateur, { as: 'enseignant', foreignKey: 'enseignantId' })
 

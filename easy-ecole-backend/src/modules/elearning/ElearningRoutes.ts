@@ -11,12 +11,26 @@ import ProgressionRouter from "./routers/ProgressionRouter"
 import CertificatRouter from "./routers/CertificatRouter"
 import ProgressionApprenantRouter from "./routers/ProgressionApprenantRouter"
 import ArborescenceRouter from "./routers/ArborescenceRouter"
+import FinanceController from "./controllers/FinanceController"
+import ExamenRouter from "./routers/ExamenRouter"
 import Authenticate from "../../core/middlewares/Authenticate"
 import { InscriptionComplete } from "../../core/middlewares/InscriptionComplete"
 
 const router = express.Router()
 
 router
+    .get('/annees', [Authenticate], FinanceController.listAnnees)
+    .post('/annees', [Authenticate], FinanceController.createAnnee)
+    .put('/annees/:id/activer', [Authenticate], FinanceController.activerAnnee)
+    .get('/tarif-credit', [Authenticate], FinanceController.getTarif)
+    .post('/tarif-credit', [Authenticate], FinanceController.definirTarif)
+    .get('/budget', [Authenticate], FinanceController.getBudget)
+    .get('/encaissements', [Authenticate], FinanceController.listEncaissements)
+    .post('/encaissements', [Authenticate], FinanceController.saisirEncaissement)
+    .put('/encaissements/:id/valider', [Authenticate], FinanceController.validerEncaissement)
+    .get('/selections', [Authenticate], FinanceController.getSelections)
+    .post('/selections', [Authenticate], FinanceController.choisirCours)
+    .use('/examens', [Authenticate], ExamenRouter)
     .use('/cours', [Authenticate, InscriptionComplete], CoursEnLigneRouter)
     .use('/modules', [Authenticate, InscriptionComplete], ModuleRouter)
     .use('/supports', [Authenticate, InscriptionComplete], SupportRouter)

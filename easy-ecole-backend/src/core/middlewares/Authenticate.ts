@@ -84,8 +84,17 @@ export default async (req: Request, res: Response, next: Function) => {
                     where: { utilisateurId: decoded.id, etablissementId: req.etablissementId },
                     attributes: ['id']
                 })
-                if (!affectation) {
+                if (!affectation && decoded.role !== RolesUtilisateur.APPRENANT) {
                     return res.status(403).json({ success: false, message: "Vous n’êtes pas affecté au site actif" })
+                }
+                if (!affectation && decoded.role === RolesUtilisateur.APPRENANT) {
+                    const autreAffectation = await SiteUtilisateur.findOne({
+                        where: { utilisateurId: decoded.id },
+                        attributes: ['id']
+                    })
+                    if (autreAffectation) {
+                        return res.status(403).json({ success: false, message: "Vous n’êtes pas affecté au site actif" })
+                    }
                 }
             }
         }

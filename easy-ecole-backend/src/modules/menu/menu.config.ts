@@ -60,7 +60,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
     {
         label: 'Pedagogique',
         icon: 'school',
-        allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN, RolesUtilisateur.COMITE_ORIENTATION, RolesUtilisateur.SUPERVISEUR_GENERAL],
+        allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN, RolesUtilisateur.COMITE_ORIENTATION, RolesUtilisateur.SUPERVISEUR_GENERAL, RolesUtilisateur.SURVEILLANT],
         groups: [
             {
                 label: 'Admission & Inscription',
@@ -109,7 +109,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                 label: 'Planning',
                 icon: 'calendar_view_week',
                 items: [
-                    { label: 'Emplois du temps', route: '/cours/emplois-du-temps', icon: 'event_note', permissionKey: 'menu.cours.emplois-du-temps', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN, RolesUtilisateur.SUPERVISEUR_GENERAL] },
+                    { label: 'Emplois du temps', route: '/cours/emplois-du-temps', icon: 'event_note', permissionKey: 'menu.cours.emplois-du-temps', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN, RolesUtilisateur.SUPERVISEUR_GENERAL, RolesUtilisateur.SURVEILLANT] },
                     { label: 'Calendrier', route: '/scolarite/calendrier', icon: 'calendar_month', permissionKey: 'menu.scolarite.calendrier', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN, RolesUtilisateur.SUPERVISEUR_GENERAL] },
                     { label: 'Sessions examens', route: '/bulletins/sessions', icon: 'event', permissionKey: 'menu.evaluations.sessions', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN, RolesUtilisateur.SUPERVISEUR_GENERAL] },
                     { label: 'Rattrapages', route: '/bulletins/rattrapages', icon: 'autorenew', permissionKey: 'menu.evaluations.rattrapages', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN, RolesUtilisateur.SUPERVISEUR_GENERAL] },
@@ -133,10 +133,10 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                     // ── Cours & Enseignants ──
                     { label: 'Enseignants', route: '/cours/enseignants', icon: 'cycle', permissionKey: 'menu.cours.enseignants', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN, RolesUtilisateur.SUPERVISEUR_GENERAL] },
                     { label: "Unités d'enseignements", route: '/cours/cours', icon: 'book', permissionKey: 'menu.cours.liste', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN, RolesUtilisateur.SUPERVISEUR_GENERAL] },
-                    { label: 'Cahiers de texte', route: '/cours/cahiers-de-texte', icon: 'note_stack', permissionKey: 'menu.cours.cahiers-de-texte', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN, RolesUtilisateur.SUPERVISEUR_GENERAL] },
+                    { label: 'Cahiers de texte', route: '/cours/cahiers-de-texte', icon: 'note_stack', permissionKey: 'menu.cours.cahiers-de-texte', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN, RolesUtilisateur.SUPERVISEUR_GENERAL, RolesUtilisateur.SURVEILLANT] },
 
                     // ── Présences & Notes ──
-                    { label: 'Cahier de présence', route: '/cours/presences', icon: 'checklist', permissionKey: 'menu.cours.presences', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN, RolesUtilisateur.SUPERVISEUR_GENERAL] },
+                    { label: 'Cahier de présence', route: '/cours/presences', icon: 'checklist', permissionKey: 'menu.cours.presences', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN, RolesUtilisateur.SUPERVISEUR_GENERAL, RolesUtilisateur.SURVEILLANT] },
                     { label: 'Notes', route: '/cours/notes', icon: 'lab_profile', permissionKey: 'menu.cours.notes', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN, RolesUtilisateur.SUPERVISEUR_GENERAL] },
 
                     // ── Scolarité ──
@@ -284,7 +284,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
     {
         label: 'Ressources Humaines',
         icon: 'badge',
-        allowedRoles: [RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.ADMIN, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.SUPERVISEUR_GENERAL],
+        allowedRoles: [RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.ADMIN, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.SUPERVISEUR_GENERAL, RolesUtilisateur.SURVEILLANT],
         groups: [
             {
                 label: 'RH',

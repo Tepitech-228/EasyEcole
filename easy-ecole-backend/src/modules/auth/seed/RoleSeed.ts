@@ -239,12 +239,23 @@ export class RoleSeed {
                     where: { nom: roleData.nom },
                     defaults: { nom: roleData.nom, description: roleData.description },
                 });
-                if (!created) {
-                    const existingPermissionCount = await RolePermission.count({ where: { roleId: role.id } });
-                    if (existingPermissionCount > 0) continue;
-                }
+                const existingPermissionCount = created
+                    ? 0
+                    : await RolePermission.count({ where: { roleId: role.id } });
+                if (existingPermissionCount > 0 && roleData.nom !== 'Surveillant') continue;
 
-                const permissionKeys = ROLE_PERMISSIONS[roleData.nom] || [];
+                const permissionKeys = roleData.nom === 'Surveillant' && existingPermissionCount > 0
+                    ? [
+                        'menu.cours.presences',
+                        'menu.cours.cahiers-de-texte',
+                        'menu.cours.emplois-du-temps',
+                        'menu.pointage',
+                        'menu.pointage.terminal',
+                        'menu.pointage.absences',
+                        'menu.pointage.historique',
+                        'menu.pointage.rapports',
+                    ]
+                    : ROLE_PERMISSIONS[roleData.nom] || [];
                 if (permissionKeys.length > 0) {
                     const permissions = await Permission.findAll({ where: { key: permissionKeys } });
                     for (const perm of permissions) {

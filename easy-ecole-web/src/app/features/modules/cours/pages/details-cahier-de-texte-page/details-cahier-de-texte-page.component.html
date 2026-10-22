@@ -15,7 +15,7 @@
             </div>
         </app-header-title>
         <div class="flex justify-end items-center gap-x-4">
-            <app-custom-button *ngIf="(rolesValue.isEnseignant || rolesValue.isInstitution)" text="Nouveau bloc" (click)="openNouveauBlocCahierDeTexteModal()"></app-custom-button>
+            <app-custom-button *ngIf="(rolesValue.isEnseignant || rolesValue.isInstitution || rolesValue.isSurveillant)" text="Nouveau bloc" (click)="openNouveauBlocCahierDeTexteModal()"></app-custom-button>
         </div>
     </div>
 

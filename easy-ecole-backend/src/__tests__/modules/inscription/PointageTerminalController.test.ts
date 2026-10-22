@@ -130,7 +130,7 @@ describe("PointageTerminalController ADMS", () => {
     expect(res.send).toHaveBeenCalledWith("OK");
   });
 
-  it("stores each student attendance event and keeps the latest time as departure", async () => {
+  it("records a student attendance event as a passage without touching departure", async () => {
     const update = jest.fn().mockResolvedValue(undefined);
     Pointage.findOne.mockResolvedValue({ id: 77, heureArrivee: "08:00:00", heureDepart: "12:00:00", update });
     Utilisateur.findByPk.mockResolvedValue({ id: 42, role: "apprenant", etablissementId: 3 });
@@ -142,7 +142,7 @@ describe("PointageTerminalController ADMS", () => {
 
     await PointageTerminalController.recevoirDonneesAdms(req, res);
 
-    expect(update).toHaveBeenCalledWith({ heureDepart: "17:02:15" }, { transaction });
+    expect(update).not.toHaveBeenCalled();
     expect(PointageScan.create).toHaveBeenCalledWith({ pointageId: 77, heure: "17:02:15" }, { transaction });
     expect(res.send).toHaveBeenCalledWith("OK");
   });
@@ -174,7 +174,8 @@ describe("PointageTerminalController ADMS", () => {
       }
     );
 
-    expect(recorded).toBe(true);
+    expect(recorded.recorded).toBe(true);
+    expect(recorded.mode).toBe("arrivee");
     expect(PointageTerminalEvent.create).not.toHaveBeenCalled();
     expect(update).toHaveBeenCalledWith(expect.objectContaining({
       utilisateurId: 42,

@@ -2,6 +2,9 @@ import { Request, Response } from "express";
 import { CountOptions, FindOptions, InferAttributes } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { BlocCahierDeTexte } from "../models/BlocCahierDeTexte";
+import { CahierDeTexte } from "../models/CahierDeTexte";
+import { Cours } from "../models/Cours";
+import { getSurveillantSiteId } from "../../../core/helpers/SurveillantSiteScope";
 
 export default class BlocCahierDeTexteController {
 
@@ -9,6 +12,21 @@ export default class BlocCahierDeTexteController {
 
     static async getAllBlocsCahierDeTextes(req: Request, res: Response): Promise<Response> {
         let options: FindOptions<InferAttributes<BlocCahierDeTexte>> = {}
+        if ((req as any).utilisateurRole === RolesUtilisateur.SURVEILLANT) {
+            const etablissementId = await getSurveillantSiteId(req);
+            if (!etablissementId) {
+                return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
+            }
+            options.include = [{
+                association: BlocCahierDeTexte.associations.cahierDeTexte,
+                required: true,
+                include: [{
+                    association: CahierDeTexte.associations.cours,
+                    where: { etablissementId },
+                    required: true,
+                }],
+            }];
+        }
 
         try {
             let blocsCahierDeTexte: BlocCahierDeTexte[];
@@ -24,7 +42,11 @@ export default class BlocCahierDeTexteController {
     static async getBlocCahierDeTexte(req: Request, res: Response): Promise<Response> {
         let options: FindOptions<InferAttributes<BlocCahierDeTexte>> = {}
         options = {
-            where: { id: req.params.id }
+            where: { id: req.params.id },
+            include: [{
+                association: BlocCahierDeTexte.associations.cahierDeTexte,
+                include: [CahierDeTexte.associations.cours],
+            }],
         }
 
         try {
@@ -32,6 +54,13 @@ export default class BlocCahierDeTexteController {
 
             if (blocCahierDeTexte == null)
                 return res.status(404).json({ success: false, message: "BlocCahierDeTexte non trouvé" });
+            if ((req as any).utilisateurRole === RolesUtilisateur.SURVEILLANT) {
+                const etablissementId = await getSurveillantSiteId(req);
+                const cahier = (blocCahierDeTexte as any).cahierDeTexte;
+                if (!etablissementId || Number(cahier?.cours?.etablissementId) !== etablissementId) {
+                    return res.status(403).json({ success: false, message: "Vous n'avez pas accès à ce bloc" });
+                }
+            }
 
             return res.status(200).send(blocCahierDeTexte);
         } catch (error) {
@@ -42,8 +71,26 @@ export default class BlocCahierDeTexteController {
 
     static async createBlocCahierDeTexte(req: Request, res: Response): Promise<Response | null> {
 
-        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT) {
+        const role = (req as any).utilisateurRole;
+        if (role !== RolesUtilisateur.INSTITUTION && role !== RolesUtilisateur.ENSEIGNANT && role !== RolesUtilisateur.SURVEILLANT) {
             return res.status(403).json({ success: false })
+        }
+
+        if (role === RolesUtilisateur.SURVEILLANT) {
+            const etablissementId = await getSurveillantSiteId(req);
+            const cahier = etablissementId
+                ? await CahierDeTexte.findOne({
+                    where: { id: req.body.cahierDeTexteId },
+                    include: [{
+                        association: CahierDeTexte.associations.cours,
+                        where: { etablissementId },
+                        required: true,
+                    }],
+                })
+                : null;
+            if (!cahier) {
+                return res.status(403).json({ success: false, message: "Ce cahier de texte n'appartient pas à votre site" });
+            }
         }
 
         let blocCahierDeTexte: BlocCahierDeTexte | null = await BlocCahierDeTexte.findOne({ where: { date: req.body.date, heureDebut: req.body.heureDebut, heureFin: req.body.heureFin, } });

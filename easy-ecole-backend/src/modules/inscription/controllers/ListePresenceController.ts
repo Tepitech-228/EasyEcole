@@ -7,6 +7,7 @@ import { Parcours } from "../models/Parcours";
 import { ListePresence } from "../models/ListePresence";
 import { Presence } from "../models/Presence";
 import { CoursParticipant } from "../models/CoursParticipant";
+import { getSurveillantSiteId } from "../../../core/helpers/SurveillantSiteScope";
 
 export default class ListePresenceController {
 
@@ -43,6 +44,16 @@ export default class ListePresenceController {
         }
 
         try {
+            if (role === RolesUtilisateur.SURVEILLANT) {
+                const etablissementId = await getSurveillantSiteId(req);
+                if (!etablissementId) {
+                    return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
+                }
+                const coursInclude = (options.include as any[])[0];
+                coursInclude.where = { etablissementId };
+                coursInclude.required = true;
+            }
+
             let listesPresences: ListePresence[];
             listesPresences = await ListePresence.findAll(options);
 
@@ -92,6 +103,11 @@ export default class ListePresenceController {
                 if (!enseignant || listePresence.enseignantId !== enseignant.id) {
                     return res.status(403).json({ success: false, message: "Vous n'avez pas accès à cette liste de présence" });
                 }
+            } else if (role === RolesUtilisateur.SURVEILLANT) {
+                const etablissementId = await getSurveillantSiteId(req);
+                if (!etablissementId || Number((listePresence as any).cours?.etablissementId) !== etablissementId) {
+                    return res.status(403).json({ success: false, message: "Vous n'avez pas accès à cette liste de présence" });
+                }
             }
 
             return res.status(200).send(listePresence);
@@ -103,8 +119,24 @@ export default class ListePresenceController {
 
     static async createListePresence(req: Request, res: Response): Promise<Response | null> {
 
-        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT) {
+        const role = (req as any).utilisateurRole;
+        if (role !== RolesUtilisateur.INSTITUTION && role !== RolesUtilisateur.ENSEIGNANT && role !== RolesUtilisateur.SURVEILLANT) {
             return res.status(403).json({ success: false })
+        }
+
+        let enseignantId = req.body.enseignantId;
+        if (role === RolesUtilisateur.SURVEILLANT) {
+            const etablissementId = await getSurveillantSiteId(req);
+            const cours = etablissementId
+                ? await Cours.findOne({
+                    where: { id: req.body.coursId, etablissementId },
+                    attributes: ["id", "enseignantId"],
+                })
+                : null;
+            if (!cours) {
+                return res.status(403).json({ success: false, message: "Ce cours n'appartient pas à votre site" });
+            }
+            enseignantId = cours.enseignantId;
         }
 
         let listePresence: ListePresence | null = await ListePresence.findOne({ where: { titre: req.body.titre } });
@@ -117,7 +149,7 @@ export default class ListePresenceController {
             listePresence.titre = req.body.titre
             listePresence.description = req.body.description
             listePresence.coursId = req.body.coursId
-            listePresence.enseignantId = req.body.enseignantId
+            listePresence.enseignantId = enseignantId
 
             await listePresence.save()
                 .then((listePresence) => {

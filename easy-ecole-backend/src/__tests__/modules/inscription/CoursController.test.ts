@@ -35,7 +35,12 @@ jest.mock('../../../modules/auth/models/Enseignant', () => ({
   }
 }))
 
+jest.mock('../../../core/helpers/SurveillantSiteScope', () => ({
+  getSurveillantSiteId: jest.fn(),
+}))
+
 const { Cours } = require('../../../modules/inscription/models/Cours')
+const { getSurveillantSiteId } = require('../../../core/helpers/SurveillantSiteScope')
 import Ctrl from '../../../modules/inscription/controllers/CoursController'
 
 beforeEach(() => {
@@ -104,6 +109,28 @@ describe('getAllCours', () => {
         ]
       })
     )
+    expect(res.send).toHaveBeenCalledWith(mockData)
+  })
+
+  it('returns only courses for the active site to SURVEILLANT', async () => {
+    const req = mockRequest({ utilisateurRole: 'surveillant', etablissementId: 3 } as any)
+    const res = mockResponse()
+    const mockData = [{ id: 1, etablissementId: 3 }]
+    ;(getSurveillantSiteId as jest.Mock).mockResolvedValue(3)
+    ;(Cours.findAll as jest.Mock).mockResolvedValue(mockData)
+
+    await Ctrl.getAllCours(req, res)
+
+    expect(Cours.findAll).toHaveBeenCalledWith(expect.objectContaining({
+      where: { etablissementId: 3 },
+      include: [
+        'classe',
+        { association: 'enseignant', include: ['utilisateur'] },
+        { association: 'parcours', include: ['niveauEtude'] },
+        'ecues'
+      ]
+    }))
+    expect(res.status).toHaveBeenCalledWith(200)
     expect(res.send).toHaveBeenCalledWith(mockData)
   })
 

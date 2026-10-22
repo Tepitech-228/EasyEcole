@@ -32,6 +32,7 @@ import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
 import HikvisionEnrollmentService from "../services/HikvisionEnrollmentService";
 import { creerEcritureComptable } from "../../comptabilite/helpers/ComptabiliteHelper";
 import { Etablissement } from "../../etablissement/models/Etablissement";
+import { SiteUtilisateur } from "../../auth/models/SiteUtilisateur";
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 
@@ -39,6 +40,11 @@ const getSiteScope = (req: Request): number | null | undefined => {
     if (req.utilisateurRole === RolesUtilisateur.ADMIN) return null;
     const etablissementId = Number(req.etablissementId);
     return Number.isSafeInteger(etablissementId) && etablissementId > 0 ? etablissementId : undefined;
+};
+
+const getReadSiteScope = (req: Request): number | null | undefined => {
+    if (req.utilisateurRole === RolesUtilisateur.APPRENANT) return null;
+    return getSiteScope(req);
 };
 
 const hasChoixFinalValue = (value: unknown): boolean => {
@@ -65,6 +71,71 @@ export default class DemandeInscriptionController {
 
     constructor() { }
 
+    static async soumettreDemande(req: Request, res: Response): Promise<Response> {
+        if (req.utilisateurRole !== RolesUtilisateur.APPRENANT) {
+            return res.status(403).json({ success: false, message: "Seul l'apprenant peut soumettre sa demande." });
+        }
+
+        try {
+            const demandeId = Number(req.params.id);
+            if (!Number.isSafeInteger(demandeId) || demandeId <= 0) {
+                return res.status(400).json({ success: false, message: "Identifiant de demande invalide." });
+            }
+
+            const demande = await DemandeInscription.findOne({
+                where: { id: demandeId, utilisateurId: req.utilisateurId }
+            });
+            if (!demande) {
+                return res.status(404).json({ success: false, message: "Demande d'inscription introuvable." });
+            }
+
+            const [parcoursChoisi, dossiersRequis, dossiersDeposes] = await Promise.all([
+                ParcoursChoisi.findOne({ where: { demandeInscriptionId: demandeId } }),
+                DossierInscription.findAll({
+                    where: { sessionId: demande.sessionId },
+                    attributes: ['id']
+                }),
+                DemandeInscriptionDossier.findAll({
+                    where: { demandeId },
+                    attributes: ['dossierId']
+                })
+            ]);
+            if (!parcoursChoisi) {
+                return res.status(400).json({ success: false, message: "Veuillez d'abord choisir une filière." });
+            }
+
+            const dossiersDeposesIds = new Set(dossiersDeposes.map(dossier => Number(dossier.dossierId)));
+            const documentsManquants = dossiersRequis.filter(
+                dossier => !dossiersDeposesIds.has(Number(dossier.id))
+            );
+            if (documentsManquants.length > 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Veuillez téléverser tous les documents requis avant de soumettre la demande.",
+                    documentsManquants: documentsManquants.map(dossier => dossier.id)
+                });
+            }
+
+            if (demande.statutPipeline && demande.statutPipeline !== 'soumis') {
+                return res.status(409).json({ success: false, message: "Cette demande ne peut plus être soumise à cette étape." });
+            }
+
+            await demande.update({
+                statutPipeline: 'soumis',
+                soumissionComite: false,
+                motifPipeline: null
+            });
+            return res.status(200).json({
+                success: true,
+                demandeId,
+                statutPipeline: demande.statutPipeline
+            });
+        } catch (error) {
+            console.error('[soumettreDemandeInscription]', error);
+            return res.status(500).json({ success: false, message: "La demande n'a pas pu être soumise." });
+        }
+    }
+
     static async enregistrerConsentementHikvision(req: Request, res: Response): Promise<Response> {
         if (req.utilisateurRole !== RolesUtilisateur.APPRENANT) {
             return res.status(403).json({ success: false, message: "Seul l'étudiant peut donner ou retirer cet accord." });
@@ -88,7 +159,7 @@ export default class DemandeInscriptionController {
     }
 
     static async getAllDemandesInscription(req: Request, res: Response): Promise<Response> {
-        const siteScope = getSiteScope(req);
+        const siteScope = getReadSiteScope(req);
         if (siteScope === undefined) {
             return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
         }
@@ -165,7 +236,7 @@ export default class DemandeInscriptionController {
     }
 
     static async getDemandeInscription(req: Request, res: Response): Promise<Response> {
-        const siteScope = getSiteScope(req);
+        const siteScope = getReadSiteScope(req);
         if (siteScope === undefined) {
             return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
         }
@@ -385,35 +456,77 @@ export default class DemandeInscriptionController {
         let options: FindOptions<InferAttributes<DemandeInscription>> = {}
         let demandeSiteId: number | undefined
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
-            const siteScope = getSiteScope(req);
-            if (siteScope === undefined) {
-                return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
-            }
-            const submittedSiteId = Number(req.body?.etablissementId);
-            if (!Number.isSafeInteger(submittedSiteId) || submittedSiteId <= 0) {
-                return res.status(400).json({ success: false, message: "L'établissement est obligatoire" });
-            }
-            if (submittedSiteId !== siteScope) {
-                return res.status(403).json({ success: false, message: "L'établissement ne correspond pas au site actif" });
-            }
+            let submittedSiteId = Number(req.body?.etablissementId);
+            const sessionId = Number(req.body?.sessionId);
+            const activeSiteId = Number(req.etablissementId);
 
+            if (!Number.isSafeInteger(sessionId) || sessionId <= 0) {
+                return res.status(400).json({ success: false, message: "La session est obligatoire" });
+            }
+            if (!Number.isSafeInteger(submittedSiteId) || submittedSiteId <= 0) {
+                submittedSiteId = activeSiteId;
+            }
+            if (!Number.isSafeInteger(submittedSiteId) || submittedSiteId <= 0) {
+                return res.status(400).json({ success: false, message: "Choisissez votre site d'inscription avant la session." });
+            }
+            if (
+                Number.isSafeInteger(activeSiteId)
+                && activeSiteId > 0
+                && activeSiteId !== submittedSiteId
+            ) {
+                return res.status(403).json({ success: false, message: "Le site choisi ne correspond pas au site actif." });
+            }
             const session = await Session.findOne({
-                where: { id: req.body.sessionId, etablissementId: siteScope },
-                attributes: ['id', 'etablissementId']
+                where: { id: sessionId },
+                attributes: ['id', 'etablissementId', 'dateDebut', 'dateFin']
             });
             if (!session) {
                 return res.status(404).json({ success: false, message: "Session non trouvée" });
             }
-            demandeSiteId = Number(session.etablissementId)
+            const maintenant = Date.now();
+            if (
+                !session.dateDebut
+                || !session.dateFin
+                || new Date(session.dateDebut).getTime() > maintenant
+                || new Date(session.dateFin).getTime() < maintenant
+            ) {
+                return res.status(400).json({ success: false, message: "Cette session d'inscription n'est pas ouverte." });
+            }
+
+            const affectations = await SiteUtilisateur.findAll({
+                where: { utilisateurId: (req as any).utilisateurId },
+                attributes: ["etablissementId"],
+            });
+            const estAffecteAuSite = affectations.some(
+                affectation => Number(affectation.etablissementId) === submittedSiteId
+            );
+            if (affectations.length > 0 && !estAffecteAuSite) {
+                return res.status(403).json({ success: false, message: "Vous n'êtes pas affecté à ce site." });
+            }
+            const site = await Etablissement.findOne({
+                where: { id: submittedSiteId, actif: true },
+                attributes: ["id"],
+            });
+            if (!site) {
+                return res.status(400).json({ success: false, message: "L'établissement choisi est indisponible." });
+            }
+
+            await SiteUtilisateur.findOrCreate({
+                where: { utilisateurId: req.utilisateurId!, etablissementId: submittedSiteId },
+                defaults: { utilisateurId: req.utilisateurId!, etablissementId: submittedSiteId }
+            });
+            demandeSiteId = submittedSiteId
             options = { where: { sessionId: req.body.sessionId, utilisateurId: (req as any).utilisateurId } }
         }
         else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
             return res.status(403).json({ success: false })
         }
 
-        const siteScope = getSiteScope(req);
-        if (siteScope === undefined) {
-            return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+        if ((req as any).utilisateurRole !== RolesUtilisateur.APPRENANT) {
+            const siteScope = getSiteScope(req);
+            if (siteScope === undefined) {
+                return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+            }
         }
 
         let demandeInscription: DemandeInscription | null = await DemandeInscription.findOne(options);
@@ -729,18 +842,19 @@ export default class DemandeInscriptionController {
             dossierEtudiant.nbMensualites = req.body.dossierEtudiant?.nbMensualites ?? 10
             dossierEtudiant.demarrageParcours = req.body.dossierEtudiant?.demarrageParcours ?? new Date()
             await dossierEtudiant.save()
-            if (demandeInscription.consentementHikvisionAt && savedCursus.etablissementId) {
+            // Enrôlement facial systématique : indépendant du consentement facultatif.
+            if (savedCursus.etablissementId) {
                 try {
                     await HikvisionEnrollmentService.enqueueStudent(
                         Number(demandeInscription.utilisateurId),
                         Number(savedCursus.etablissementId),
                         matriculeFinal,
-                        demandeInscription.consentementHikvisionAt
+                        demandeInscription.consentementHikvisionAt ?? null
                     )
                 } catch (error) {
                     console.error(`[Hikvision] Enrôlement non planifié pour le dossier ${dossierEtudiant.id}:`, error)
                 }
-            } else if (demandeInscription.consentementHikvisionAt) {
+            } else {
                 console.warn(`[Hikvision] Enrôlement non planifié pour le dossier ${dossierEtudiant.id}: aucun site n'est associé au cursus validé.`)
             }
 

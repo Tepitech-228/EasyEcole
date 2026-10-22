@@ -104,7 +104,7 @@ export default class PointageController {
                     return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
                 }
                 options.where = {
-                    utilisateurId: { [Op.in]: await this.getUtilisateurIdsDuSite(etablissementId) }
+                    utilisateurId: { [Op.in]: await PointageController.getUtilisateurIdsDuSite(etablissementId) }
                 } as any;
             }
             let pointages: Pointage[];
@@ -161,7 +161,7 @@ export default class PointageController {
                 if (!etablissementId) {
                     return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
                 }
-                where.utilisateurId = { [Op.in]: await this.getUtilisateurIdsDuSite(etablissementId) };
+                where.utilisateurId = { [Op.in]: await PointageController.getUtilisateurIdsDuSite(etablissementId) };
             }
             const pointages = await Pointage.findAll({
                 where,
@@ -469,22 +469,19 @@ export default class PointageController {
                         lock: transaction.LOCK.UPDATE
                     });
 
-                    let actualMode: 'arrivee' | 'depart';
+                    let actualMode: 'arrivee' | 'depart' | 'passage';
                     let updated: Pointage;
 
                     if (!pointage) {
-                        actualMode = 'arrivee';
                         updated = await Pointage.create({
                             date: today,
                             heureArrivee: time,
                             utilisateurId: utilisateur.id
                         }, { transaction });
+                        actualMode = isStudent ? 'passage' : 'arrivee';
                     } else if (isStudent) {
-                        actualMode = 'depart';
-                        const lastDeparture = pointage.heureDepart ? String(pointage.heureDepart).slice(0, 8) : null;
-                        if (!lastDeparture || time > lastDeparture) {
-                            await pointage.update({ heureDepart: time }, { transaction });
-                        }
+                        // Étudiant : chaque scan est un passage, jamais un départ.
+                        actualMode = 'passage';
                         updated = pointage;
                     } else {
                         if (pointage.heureDepart) {

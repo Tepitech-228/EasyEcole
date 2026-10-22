@@ -11,6 +11,7 @@ export class ModuleElearning extends Model<InferAttributes<ModuleElearning>, Inf
   declare description: CreationOptional<string>
   declare ordre: CreationOptional<number>
   declare dateDisponible: CreationOptional<Date>
+  declare anneeAcademiqueId: CreationOptional<number | null>
 
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
@@ -50,6 +51,7 @@ ModuleElearning.init({
     type: DataTypes.DATEONLY,
     allowNull: true
   },
+  anneeAcademiqueId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
 }, {

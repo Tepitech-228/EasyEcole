@@ -122,7 +122,6 @@ app.use(express.urlencoded({ extended: false, limit: '10mb' }))
 app.use('/media/photos/apprenants', express.static(path.resolve('public', 'auth', 'apprenants', 'photos')))
 app.use('/media/photos/enseignants', express.static(path.resolve('public', 'auth', 'enseignants', 'photos')))
 app.use('/media/profiles', express.static(path.resolve('public', 'auth', 'profiles')))
-app.use('/media/videos', express.static(path.resolve('public', 'elearning', 'videos')))
 app.use('/media/scolarite/documents', Authenticate, express.static(path.resolve('public', 'scolarite', 'documents')))
 app.use('/media/inscription/bordereaux', express.static(path.resolve('public', 'inscription', 'bordereaux')))
 

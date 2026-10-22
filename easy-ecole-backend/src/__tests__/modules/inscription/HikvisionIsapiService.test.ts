@@ -1,6 +1,3 @@
-import http from "http";
-import { createHash } from "crypto";
-
 jest.mock("../../../modules/inscription/models/PointageTerminal", () => ({ PointageTerminal: {} }));
 jest.mock("../../../modules/inscription/controllers/PointageTerminalController", () => ({
   __esModule: true,
@@ -52,52 +49,5 @@ describe("HikvisionIsapiService", () => {
     const encrypted = HikvisionIsapiService.encryptCredential(clearTextPassword);
     expect(encrypted).not.toContain(clearTextPassword);
     expect(encrypted.split(".")).toHaveLength(3);
-  });
-
-  it("authenticates an ISAPI device with HTTP Digest and checks its serial number", async () => {
-    const password = "local-device-secret";
-    const server = http.createServer((req, res) => {
-      const authorization = req.headers.authorization || "";
-      const values = Object.fromEntries([...authorization.matchAll(/(\w+)="([^"]*)"/g)].map(match => [match[1], match[2]]));
-      const nonceCount = authorization.match(/\bnc=([0-9a-f]+)/i)?.[1];
-      const qop = authorization.match(/\bqop=([a-z]+)/i)?.[1];
-      const hash = (value: string) => createHash("md5").update(value).digest("hex");
-      const validResponse = values.username === "test-user" &&
-        values.realm === "easyecole-test" &&
-        values.nonce === "nonce-123" &&
-        values.uri === "/ISAPI/System/deviceInfo" &&
-        qop === "auth" &&
-        !!nonceCount &&
-        !!values.cnonce &&
-        values.response === hash(
-          `${hash(`test-user:easyecole-test:${password}`)}:nonce-123:${nonceCount}:${values.cnonce}:auth:${hash("GET:/ISAPI/System/deviceInfo")}`
-        );
-      if (!validResponse) {
-        res.writeHead(401, { "WWW-Authenticate": 'Digest realm="easyecole-test", nonce="nonce-123", qop="auth", algorithm=MD5' });
-        res.end();
-        return;
-      }
-      res.writeHead(200, { "Content-Type": "application/xml" });
-      res.end("<DeviceInfo><serialNumber>DS-K1T342MFWX-E1</serialNumber></DeviceInfo>");
-    });
-
-    await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
-    const address = server.address();
-    if (!address || typeof address === "string") throw new Error("Test HTTP server did not bind to a TCP port.");
-    const terminal = {
-      sourceIp: "127.0.0.1",
-      hikvisionPort: address.port,
-      hikvisionHttps: false,
-      hikvisionUsername: "test-user",
-      hikvisionPasswordEncrypted: HikvisionIsapiService.encryptCredential(password),
-      serialNumber: "DS-K1T342MFWX-E1"
-    } as any;
-
-    try {
-      await expect(HikvisionIsapiService.testConnection(terminal)).resolves.toBeUndefined();
-      await expect(HikvisionIsapiService.testConnection({ ...terminal, serialNumber: "WRONG-SERIAL" })).rejects.toThrow("does not match");
-    } finally {
-      await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
-    }
   });
 });

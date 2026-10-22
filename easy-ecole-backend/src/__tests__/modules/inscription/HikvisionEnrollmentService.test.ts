@@ -40,11 +40,16 @@ const HikvisionIsapiService = require("../../../modules/inscription/services/Hik
 describe("HikvisionEnrollmentService", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("does not queue biometric enrollment without explicit consent", async () => {
+  it("queues biometric enrollment on every active terminal even without explicit consent", async () => {
+    PointageTerminal.findAll.mockResolvedValue([{ id: 8 }, { id: 9 }]);
+    HikvisionEnrollment.findOrCreate.mockResolvedValue([{}, true]);
+
     await HikvisionEnrollmentService.enqueueStudent(42, 3, "ESA001", null);
 
-    expect(PointageTerminal.findAll).not.toHaveBeenCalled();
-    expect(HikvisionEnrollment.findOrCreate).not.toHaveBeenCalled();
+    expect(PointageTerminal.findAll).toHaveBeenCalledWith({
+      where: { etablissementId: 3, protocol: "hikvision_isapi", actif: true }
+    });
+    expect(HikvisionEnrollment.findOrCreate).toHaveBeenCalledTimes(2);
   });
 
   it("queues the student on every active Hikvision terminal for the site after consent", async () => {

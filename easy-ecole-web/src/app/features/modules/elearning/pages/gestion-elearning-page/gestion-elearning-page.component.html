@@ -6,20 +6,27 @@
       <div class="flex items-center gap-2 text-sm text-gray-500">
         <span class="font-medium text-gray-900">{{ coursList.length }}</span> cours
       </div>
-      <app-custom-button (click)="toggleCreateForm()" [text]="showCreateForm ? 'Annuler' : 'Nouveau cours'" color="indigo"></app-custom-button>
+      <div class="flex items-center gap-3">
+        <a *ngIf="canManageExams()" routerLink="/elearning/admin/examens" class="rounded-lg border border-indigo-200 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50">Examens présentiels</a>
+        <app-custom-button (click)="toggleCreateForm()" [text]="showCreateForm ? 'Annuler' : 'Nouveau cours'" color="indigo"></app-custom-button>
+      </div>
     </div>
   </div>
 
   <div *ngIf="showCreateForm" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
-    <h3 class="text-lg font-semibold text-gray-900 mb-4">Créer un nouveau cours</h3>
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ editingCoursId ? 'Modifier le cours' : 'Créer un nouveau cours' }}</h3>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Code du cours *</label>
+        <input [(ngModel)]="newCours.code" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2" placeholder="Ex. INFO-101" />
+      </div>
       <div>
         <label class="block text-xs font-medium text-gray-500 mb-1">Titre *</label>
         <input [(ngModel)]="newCours.titre" type="text" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" placeholder="Titre du cours" />
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-500 mb-1">Professeur</label>
-        <select [(ngModel)]="newCours.enseignantId" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+        <label class="block text-xs font-medium text-gray-500 mb-1">Professeur responsable</label>
+        <select [(ngModel)]="newCours.professeurId" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
           <option [ngValue]="null">— Sélectionner —</option>
           <option *ngFor="let e of enseignants" [ngValue]="e.utilisateur?.id || e.id">
             {{ e.utilisateur?.prenoms || e.prenoms }} {{ e.utilisateur?.nom || e.nom }}
@@ -27,13 +34,35 @@
         </select>
       </div>
       <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Chargé de support</label>
+        <select [(ngModel)]="newCours.chargeSupportId" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2">
+          <option [ngValue]="null">— Sélectionner —</option>
+          <option *ngFor="let e of enseignants" [ngValue]="e.utilisateur?.id || e.id">
+            {{ e.utilisateur?.prenoms || e.prenoms }} {{ e.utilisateur?.nom || e.nom }}
+          </option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Année académique *</label>
+        <select [(ngModel)]="newCours.anneeAcademiqueId" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2">
+          <option [ngValue]="null">— Sélectionner —</option>
+          <option *ngFor="let annee of annees" [ngValue]="annee.id">{{ annee.libelle }}{{ annee.active ? ' (active)' : '' }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Nombre de crédits *</label>
+        <input [(ngModel)]="newCours.nbCredits" type="number" min="1" step="1" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2" />
+        <small class="text-gray-500">Prix estimé : {{ newCours.nbCredits * prixCredit | number:'1.0-0' }} FCFA</small>
+      </div>
+      <div *ngIf="!editingCoursId">
         <label class="block text-xs font-medium text-indigo-600 font-semibold mb-1">Rattachement Pédagogique (Cours académique)</label>
-        <select [(ngModel)]="newCours.coursId" class="w-full text-sm border border-indigo-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-indigo-50/20">
+        <select [(ngModel)]="newCours.coursId" (ngModelChange)="onCoursPedagogiqueChange($event)" class="w-full text-sm border border-indigo-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-indigo-50/20">
           <option value="">— Non rattaché (Général) —</option>
           <option *ngFor="let cp of coursPedagogiques" [value]="cp.id">
             {{ cp.code }} - {{ cp.intitule }}
           </option>
         </select>
+        <small class="text-gray-500">La filière et le niveau sont repris depuis l'UE sélectionnée.</small>
       </div>
       <div class="sm:col-span-2">
         <label class="block text-xs font-medium text-gray-500 mb-1">Description</label>
@@ -54,7 +83,7 @@
     </div>
     <div class="flex justify-end gap-3">
       <app-custom-button (click)="toggleCreateForm()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
-      <app-custom-button (click)="createCours()" [disabled]="!newCours.titre || creating" [text]="creating ? 'Création...' : 'Créer le cours'" color="indigo"></app-custom-button>
+      <app-custom-button (click)="createCours()" [disabled]="!newCours.titre || !newCours.code || !newCours.anneeAcademiqueId || creating" [text]="creating ? 'Enregistrement...' : (editingCoursId ? 'Enregistrer' : 'Créer le cours')" color="indigo"></app-custom-button>
     </div>
   </div>
 
@@ -64,6 +93,7 @@
         <thead>
           <tr class="bg-gray-50/50">
             <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Titre</th>
+            <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Crédits / coût</th>
             <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Format</th>
             <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Professeur</th>
             <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Statut</th>
@@ -76,6 +106,7 @@
             <td class="px-5 py-4 whitespace-nowrap">
               <a [routerLink]="['/elearning', cours.id]" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">{{ cours.titre }}</a>
             </td>
+            <td class="px-5 py-4 text-sm text-gray-700">{{ cours.nbCredits || 0 }} crédit(s) · {{ cours.coutTotal | number:'1.0-0' }} FCFA</td>
             <td class="px-5 py-4">
               <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                 [class.bg-blue-50]="cours.format === 'video'" [class.text-blue-700]="cours.format === 'video'"
@@ -87,8 +118,8 @@
             <td class="px-5 py-4 text-sm text-gray-500">{{ cours.enseignant?.prenoms }} {{ cours.enseignant?.nom }}</td>
             <td class="px-5 py-4">
               <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                [class.bg-green-50]="cours.statut === 'actif'" [class.text-green-700]="cours.statut === 'actif'"
-                [class.bg-gray-100]="cours.statut !== 'actif'" [class.text-gray-600]="cours.statut !== 'actif'">
+                [class.bg-green-50]="cours.statut === 'publie'" [class.text-green-700]="cours.statut === 'publie'"
+                [class.bg-gray-100]="cours.statut !== 'publie'" [class.text-gray-600]="cours.statut !== 'publie'">
                 {{ cours.statut }}
               </span>
             </td>
@@ -96,7 +127,9 @@
             <td class="px-5 py-4 text-right">
               <div class="flex justify-end gap-2">
                 <a [routerLink]="['/elearning', cours.id, 'upload']" class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-100">Upload</a>
-                <app-custom-button (click)="deleteCours(cours.id)" text="Supprimer" color="primary" [outlined]="true"></app-custom-button>
+                <button type="button" (click)="editCours(cours)" class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg text-gray-700 bg-gray-100">Modifier</button>
+                <button *ngIf="cours.statut !== 'publie'" type="button" (click)="changeStatus(cours, 'publie')" class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg text-green-700 bg-green-50">Publier</button>
+                <button *ngIf="cours.statut === 'publie'" type="button" (click)="changeStatus(cours, 'desactive')" class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg text-amber-700 bg-amber-50">Désactiver</button>
               </div>
             </td>
           </tr>

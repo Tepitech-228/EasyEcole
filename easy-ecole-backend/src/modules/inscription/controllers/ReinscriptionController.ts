@@ -499,7 +499,7 @@ export default class ReinscriptionController {
                     dateDemande: new Date(),
                     sessionId: Number(sessionId),
                     utilisateurId: userId,
-                    etablissementId: session.etablissementId,
+                    etablissementId: dossier.etablissementId,
                 }, { transaction })
 
                 // 2) Persister les 6 documents (déjà écrits par multer vers le disque).

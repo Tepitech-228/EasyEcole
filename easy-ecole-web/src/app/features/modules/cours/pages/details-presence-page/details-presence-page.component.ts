@@ -189,6 +189,29 @@ export class DetailsPresencePageComponent extends BaseComponentClass implements 
     return EtatsDePresence.NON_RENSEIGNE
   }
 
+  modifierEtatPresence(presence: Presence, coursParticipant: CoursParticipant, event: Event): void {
+    const etatDePresence = (event.target as HTMLSelectElement).value as EtatsDePresence
+    const presenceCoursParticipant = new PresenceCoursParticipant()
+    presenceCoursParticipant.presenceId = presence.id
+    presenceCoursParticipant.coursParticipantId = coursParticipant.id
+    presenceCoursParticipant.etatDePresence = etatDePresence
+
+    const existingPresence = presence.presencesCoursParticipants?.find(
+      item => item.coursParticipantId === coursParticipant.id
+    )
+    const save$ = existingPresence
+      ? this.presenceCoursParticipantService.update(presenceCoursParticipant)
+      : this.presenceCoursParticipantService.create(presenceCoursParticipant)
+
+    save$.subscribe({
+      next: () => this.getListePresence(),
+      error: error => {
+        console.error('Impossible de modifier cet état de présence', error)
+        this.getListePresence()
+      }
+    })
+  }
+
   ajouterPresence(): void {
     console.log(this.nouvellePresenceForm.valid, this.nouvellePresenceForm.value)
     this.nouvellePresenceForm.markAllAsTouched()

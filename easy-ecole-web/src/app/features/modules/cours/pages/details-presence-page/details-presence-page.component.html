@@ -15,7 +15,7 @@
             </div>
         </app-header-title>
         <div class="flex justify-end items-center gap-x-4">
-            <app-custom-button *ngIf="(rolesValue.isEnseignant || rolesValue.isInstitution)" text="Nouvelle présence" (click)="openNouvellePresenceModal()"></app-custom-button>
+            <app-custom-button *ngIf="(rolesValue.isEnseignant || rolesValue.isInstitution || rolesValue.isSurveillant)" text="Nouvelle présence" (click)="openNouvellePresenceModal()"></app-custom-button>
             <app-custom-button *ngIf="rolesValue.isEnseignant && presences.length > 0"
                 text="Signer la feuille"
                 color="primary"
@@ -94,7 +94,14 @@
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td *ngFor="let presence of presences; index as presenceIndex" class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2" [ngSwitch]="getEtatPresence(presenceIndex, coursParticipant.id!)">
+                                            <td *ngFor="let presence of presences; index as presenceIndex" class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                                <select *ngIf="rolesValue.isSurveillant"
+                                                    class="block mx-auto rounded-md border border-gray-300 bg-white px-2 py-1 text-sm"
+                                                    [value]="getEtatPresence(presenceIndex, coursParticipant.id!)"
+                                                    (change)="modifierEtatPresence(presence, coursParticipant, $event)">
+                                                    <option *ngFor="let etat of etatsDePresenceTextAndColor" [value]="etat.type">{{ etat.text }}</option>
+                                                </select>
+                                                <div *ngIf="!rolesValue.isSurveillant" [ngSwitch]="getEtatPresence(presenceIndex, coursParticipant.id!)">
                                                 <div *ngSwitchCase="etatsDePresence.PRESENT" class="flex justify-center">
                                                     <app-custom-badge color="green" text="Présent"></app-custom-badge>
                                                 </div>
@@ -106,6 +113,7 @@
                                                 </div>
                                                 <div *ngSwitchDefault class="flex justify-center">
                                                     <app-custom-badge color="gray" text="Non renseigné"></app-custom-badge>
+                                                </div>
                                                 </div>
                                             </td>
                                             <!-- <td

@@ -1,9 +1,15 @@
 import { Transaction } from "sequelize";
 import { DemandeDocument } from "../models/DemandeDocument";
 import { JournalSecretariat } from "../models/JournalSecretariat";
-import { DocumentPDFGenerator } from "../../../core/helpers/DocumentPDFGenerator";
+import { DocumentPDFGenerator, CoordonneesEtudiant } from "../../../core/helpers/DocumentPDFGenerator";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { EmailSender } from "../../../core/helpers/EmailSender";
+import { CursusApprenant } from "../../inscription/models/CursusApprenant";
+import { Parcours } from "../../inscription/models/Parcours";
+import { NiveauEtude } from "../../inscription/models/NiveauEtude";
+import { Classe } from "../../inscription/models/Classe";
+import { AnneeAcademique } from "../../inscription/models/AnneeAcademique";
+import { DemandeInscription } from "../../inscription/models/DemandeInscription";
 
 /**
  * Erreur métier du workflow secrétariat.
@@ -25,6 +31,46 @@ export class SecretariatWorkflowService {
      */
     private static async journaliser(action: string, utilisateurId: number | null, demandeDocumentId: number | null, details: string | null, transaction?: Transaction): Promise<void> {
         await JournalSecretariat.create({ action, utilisateurId, demandeDocumentId, details }, { transaction });
+    }
+
+    /**
+     * Construit les coordonnées étudiant imprimées sur le document officiel.
+     * Le matricule officiel provient du cursus (demande d'inscription) : on le
+     * privilégie, avec repli sur l'identifiant de connexion si absent.
+     */
+    static async construireCoordonneesEtudiant(demande: DemandeDocument): Promise<CoordonneesEtudiant> {
+        const etudiant = demande.etudiant;
+        const nomComplet = etudiant ? `${etudiant.nom || ''} ${etudiant.prenoms || ''}`.trim() : '';
+
+        const coordonnees: CoordonneesEtudiant = {
+            nomComplet: nomComplet || null,
+            matricule: etudiant?.identifiant || null
+        };
+
+        if (!etudiant) return coordonnees;
+
+        const cursus = await CursusApprenant.findOne({
+            where: { utilisateurId: etudiant.id },
+            include: [
+                { model: Parcours, as: 'parcours', required: false },
+                { model: NiveauEtude, as: 'niveauEtude', required: false },
+                { model: Classe, as: 'classe', required: false },
+                { model: AnneeAcademique, as: 'anneeAcademique', required: false },
+                { model: DemandeInscription, as: 'demandeInscription', required: false }
+            ],
+            order: [['createdAt', 'DESC']]
+        });
+
+        if (cursus) {
+            const demandeInscription = (cursus as any).demandeInscription;
+            if (demandeInscription?.matricule) coordonnees.matricule = demandeInscription.matricule;
+            coordonnees.parcours = (cursus as any).parcours?.titre || cursus.intituleParcours || null;
+            coordonnees.niveauEtude = (cursus as any).niveauEtude?.libelle || null;
+            coordonnees.classe = (cursus as any).classe?.libelle || (cursus.classeId ? `Classe #${cursus.classeId}` : null);
+            coordonnees.anneeAcademique = (cursus as any).anneeAcademique?.libelle || null;
+        }
+
+        return coordonnees;
     }
 
     static async passerEnPreparation(demande: DemandeDocument, utilisateurId: number | null): Promise<DemandeDocument> {
@@ -62,10 +108,12 @@ export class SecretariatWorkflowService {
         const typeDocument = demande.typeDocument;
         let filename: string;
         try {
+            const coordonnees = await this.construireCoordonneesEtudiant(demande);
             filename = await DocumentPDFGenerator.generateDocumentVerifie(
                 demande.id,
                 typeDocument?.libelle || 'Document',
-                "public/scolarite/documents/"
+                "public/scolarite/documents/",
+                coordonnees
             );
         } catch (e: any) {
             console.error('[WORKFLOW][GENERATION_PDF] demande:', demande.id, 'erreur:', e?.message || e);

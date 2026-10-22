@@ -1,20 +1,13 @@
-import { createCipheriv, createHash, createDecipheriv, randomBytes } from "crypto";
+import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
 import * as fs from "fs/promises";
 import * as path from "path";
+import { spawn } from "child_process";
 import { PointageTerminal } from "../models/PointageTerminal";
 
 export interface HikvisionAccessEvent {
     pin: string;
     date: string;
     time: string;
-}
-
-interface DigestChallenge {
-    realm: string;
-    nonce: string;
-    qop?: string;
-    opaque?: string;
-    algorithm: "MD5" | "MD5-sess" | "SHA-256";
 }
 
 function encryptPassword(password: string): string {
@@ -44,69 +37,35 @@ function decryptPassword(encryptedValue: string): string {
     ]).toString("utf8");
 }
 
-function md5(value: string): string {
-    return createHash("md5").update(value).digest("hex");
-}
-
-function digestHash(algorithm: DigestChallenge["algorithm"], value: string): string {
-    return createHash(algorithm === "SHA-256" ? "sha256" : "md5").update(value).digest("hex");
-}
-
-function parseDigestChallenge(header: string | null): DigestChallenge | null {
-    if (!header || !/^Digest\s/i.test(header)) return null;
-    const values: Record<string, string> = {};
-    const pattern = /([a-zA-Z]+)=(?:"((?:\\.|[^"])*)"|([^,\s]+))/g;
-    let match: RegExpExecArray | null;
-    while ((match = pattern.exec(header))) values[match[1].toLowerCase()] = (match[2] ?? match[3]).replace(/\\(.)/g, "$1");
-    const algorithmValue = (values.algorithm || "MD5").toUpperCase();
-    const algorithm = algorithmValue === "MD5-SESS" ? "MD5-sess" : algorithmValue;
-    if (
-        !values.realm ||
-        !values.nonce ||
-        !["MD5", "MD5-sess", "SHA-256"].includes(algorithm) ||
-        (values.qop && !values.qop.split(",").map(value => value.trim()).includes("auth"))
-    ) return null;
-    return {
-        realm: values.realm,
-        nonce: values.nonce,
-        qop: values.qop ? "auth" : undefined,
-        opaque: values.opaque,
-        algorithm: algorithm as DigestChallenge["algorithm"]
-    };
-}
-
-function createDigestAuthorization(
-    challenge: DigestChallenge,
-    username: string,
-    password: string,
-    method: string,
-    uri: string
-): string {
-    const cnonce = randomBytes(16).toString("hex");
-    const nonceCount = "00000001";
-    let ha1 = digestHash(challenge.algorithm, `${username}:${challenge.realm}:${password}`);
-    if (challenge.algorithm === "MD5-sess") ha1 = md5(`${ha1}:${challenge.nonce}:${cnonce}`);
-    const ha2 = digestHash(challenge.algorithm, `${method}:${uri}`);
-    const response = challenge.qop
-        ? digestHash(challenge.algorithm, `${ha1}:${challenge.nonce}:${nonceCount}:${cnonce}:auth:${ha2}`)
-        : digestHash(challenge.algorithm, `${ha1}:${challenge.nonce}:${ha2}`);
-    const fields = [
-        `username="${username}"`,
-        `realm="${challenge.realm}"`,
-        `nonce="${challenge.nonce}"`,
-        `uri="${uri}"`,
-        `response="${response}"`,
-        `algorithm=${challenge.algorithm}`
-    ];
-    if (challenge.opaque) fields.push(`opaque="${challenge.opaque}"`);
-    if (challenge.qop) fields.push(`qop=auth`, `nc=${nonceCount}`, `cnonce="${cnonce}"`);
-    return `Digest ${fields.join(", ")}`;
-}
-
 function terminalUrl(terminal: PointageTerminal, path: string): URL {
     const scheme = terminal.hikvisionHttps ? "https" : "http";
     const host = terminal.sourceIp.includes(":") ? `[${terminal.sourceIp}]` : terminal.sourceIp;
     return new URL(`${scheme}://${host}:${terminal.hikvisionPort}${path}`);
+}
+
+interface CurlResponse {
+    status: number;
+    body: string;
+}
+
+function runCurl(args: string[], timeoutMs: number): Promise<CurlResponse> {
+    return new Promise((resolve, reject) => {
+        const curlArgs = [...args, "-s", "-w", "\\n__HTTP_CODE__%{http_code}"];
+        const proc = spawn("curl.exe", curlArgs, { windowsHide: true });
+        let stdout = "";
+        let stderr = "";
+        proc.stdout.on("data", (d: Buffer) => { stdout += d.toString("utf8"); });
+        proc.stderr.on("data", (d: Buffer) => { stderr += d.toString("utf8"); });
+        const timer = setTimeout(() => { proc.kill(); reject(new Error("Hikvision curl request timeout")); }, timeoutMs);
+        proc.on("close", () => {
+            clearTimeout(timer);
+            const marker = stdout.lastIndexOf("__HTTP_CODE__");
+            const codeText = marker >= 0 ? stdout.slice(marker + "__HTTP_CODE__".length).trim() : "0";
+            const body = marker >= 0 ? stdout.slice(0, marker).replace(/\n$/, "") : stdout;
+            resolve({ status: Number(codeText) || 0, body: body || stderr });
+        });
+        proc.on("error", (err) => { clearTimeout(timer); reject(err); });
+    });
 }
 
 async function requestWithDigest(
@@ -116,42 +75,32 @@ async function requestWithDigest(
     method = "GET",
     body?: string | FormData,
     contentType?: string
-): Promise<Response> {
+): Promise<CurlResponse> {
     const url = terminalUrl(terminal, path);
     const username = terminal.hikvisionUsername;
     const encryptedPassword = terminal.hikvisionPasswordEncrypted;
     if (!username || !encryptedPassword) throw new Error("Hikvision terminal credentials are not configured.");
     const password = decryptPassword(encryptedPassword);
-    const headers: Record<string, string> = { Accept: "application/xml, application/json" };
-    if (contentType) headers["Content-Type"] = contentType;
-    const requestOptions: RequestInit = {
-        method,
-        headers,
-        body,
-        redirect: "manual",
-        signal
-    };
-    const challengeResponse = await fetch(url, requestOptions);
-    if (challengeResponse.status !== 401) {
-        await challengeResponse.body?.cancel();
-        throw new Error(`Hikvision must challenge requests with HTTP Digest authentication (received HTTP ${challengeResponse.status}).`);
+    const args = ["--digest", "-u", `${username}:${password}`, "-X", method, "--connect-timeout", "10", "--max-time", "25"];
+    if (signal?.aborted) throw new Error("Hikvision request aborted.");
+    if (typeof body === "string") {
+        args.push("-H", `Content-Type: ${contentType || "application/json"}`, "--data-binary", body);
+    } else if (body instanceof FormData) {
+        throw new Error("Multipart FormData must be sent through the dedicated face upload path.");
     }
-    await challengeResponse.body?.cancel();
-    const challenge = parseDigestChallenge(challengeResponse.headers.get("www-authenticate"));
-    if (!challenge) throw new Error("Hikvision returned an unsupported or malformed HTTP Digest challenge.");
-    const authorization = createDigestAuthorization(challenge, username, password, method, `${url.pathname}${url.search}`);
-    return fetch(url, {
-        ...requestOptions,
-        headers: { ...requestOptions.headers, Authorization: authorization }
-    });
+    args.push(url.toString());
+    const result = await runCurl(args, 30000);
+    if (result.status === 401) throw new Error("Hikvision rejected the HTTP Digest credentials.");
+    return result;
 }
 
-async function isSuccessfulHikvisionResponse(response: Response): Promise<{ success: boolean; detail: string }> {
-    const body = await response.text();
+async function isSuccessfulHikvisionResponse(response: Response | CurlResponse): Promise<{ success: boolean; detail: string }> {
+    const body = "text" in response && typeof response.text === "function" ? await response.text() : (response as CurlResponse).body;
+    const statusOk = "ok" in response ? (response as Response).ok : ((response as CurlResponse).status >= 200 && (response as CurlResponse).status < 300);
     const statusCode = body.match(/<(?:\w+:)?statusCode\b[^>]*>\s*(\d+)\s*<\//i)?.[1]
         || body.match(/"statusCode"\s*:\s*"?(\d+)"?/i)?.[1];
     return {
-        success: response.ok && (!statusCode || statusCode === "1"),
+        success: statusOk && (!statusCode || statusCode === "1"),
         detail: body.slice(0, 300)
     };
 }
@@ -201,8 +150,8 @@ export default class HikvisionIsapiService {
         const timer = setTimeout(() => controller.abort(), 8000);
         try {
             const response = await requestWithDigest(terminal, "/ISAPI/System/deviceInfo", controller.signal);
-            if (!response.ok) throw new Error(`Hikvision device returned HTTP ${response.status}.`);
-            const body = await response.text();
+            if (response.status < 200 || response.status >= 300) throw new Error(`Hikvision device returned HTTP ${response.status}.`);
+            const body = response.body;
             if (!body.includes("deviceInfo") && !body.includes("DeviceInfo")) {
                 throw new Error("The configured address did not return a Hikvision deviceInfo response.");
             }
@@ -252,7 +201,14 @@ export default class HikvisionIsapiService {
             throw new Error("Profile photo is empty or exceeds the Hikvision upload limit.");
         }
         const extension = path.extname(photoPath).toLowerCase();
-        const contentType = extension === ".png" ? "image/png" : extension === ".webp" ? "image/webp" : "image/jpeg";
+        let uploadImage = photo;
+        let uploadExtension = extension || ".jpg";
+        if (extension === ".webp") {
+            const sharp = (await import("sharp")).default;
+            uploadImage = await sharp(photo).jpeg({ quality: 92 }).toBuffer();
+            uploadExtension = ".jpg";
+        }
+        const contentType = uploadExtension === ".png" ? "image/png" : uploadExtension === ".jpg" || uploadExtension === ".jpeg" ? "image/jpeg" : "image/jpeg";
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), 15000);
         try {
@@ -292,24 +248,38 @@ export default class HikvisionIsapiService {
                 }
             }
 
-            const form = new FormData();
-            form.append("person", JSON.stringify({
+            const faceUrl = terminalUrl(terminal, "/ISAPI/Intelligent/FDLib/FaceDataRecord?format=json");
+            const username = terminal.hikvisionUsername!;
+            const password = decryptPassword(terminal.hikvisionPasswordEncrypted!);
+            const personJson = JSON.stringify({
                 faceLibType: "blackFD",
                 FDID: "1",
                 FPID: student.employeeNo,
                 name: student.name.trim().slice(0, 120)
-            }));
-            form.append("image", new Blob([photo], { type: contentType }), path.basename(photoPath));
-            const faceResponse = await requestWithDigest(
-                terminal,
-                "/ISAPI/Intelligent/FDLib/FaceDataRecord?format=json",
-                controller.signal,
-                "POST",
-                form
-            );
-            const faceResult = await isSuccessfulHikvisionResponse(faceResponse);
-            if (!faceResult.success) {
-                throw new Error(`Hikvision face enrollment failed (HTTP ${faceResponse.status}): ${faceResult.detail}`);
+            });
+            const tempDir = path.join(process.cwd(), "tmp");
+            await fs.mkdir(tempDir, { recursive: true });
+            const personPath = path.join(tempDir, `hikvision-person-${Date.now()}.json`);
+            const imagePath = path.join(tempDir, `hikvision-face-${Date.now()}${uploadExtension}`);
+            await fs.writeFile(personPath, personJson, "utf8");
+            await fs.writeFile(imagePath, uploadImage);
+            try {
+                const curlResult = await runCurl([
+                    "--digest", "-u", `${username}:${password}`,
+                    "-X", "POST",
+                    "-F", `person=@${personPath};type=application/json`,
+                    "-F", `image=@${imagePath};type=${contentType}`,
+                    "--connect-timeout", "10",
+                    "--max-time", "25",
+                    faceUrl.toString()
+                ], 30000);
+                const faceResult = await isSuccessfulHikvisionResponse(curlResult);
+                if (!faceResult.success) {
+                    throw new Error(`Hikvision face enrollment failed (HTTP ${curlResult.status}): ${faceResult.detail || curlResult.body}`);
+                }
+            } finally {
+                await fs.unlink(personPath).catch(() => { });
+                await fs.unlink(imagePath).catch(() => { });
             }
         } finally {
             clearTimeout(timer);

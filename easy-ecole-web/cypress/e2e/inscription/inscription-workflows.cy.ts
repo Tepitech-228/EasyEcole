@@ -124,28 +124,77 @@ function choisirSession(liste: any[]): any {
 }
 
 /**
+ * Parcours choisi (choix final) de l'étudiant : PRÉREQUIS de la saisie ESA-COMPTA
+ * (« Aucun parcours choisi » sinon — cf. BordereauDossierService côté backend).
+ * Dans le parcours réel, l'étudiant choisit sa filière dans le wizard et le parcours
+ * n'est persisté qu'à la soumission ; ici on rejoue l'étape métier en choisissant
+ * une filière RÉELLE de la session (arborescence filtrée sur la session).
+ * Idempotent : un parcours déjà choisi n'est pas dupliqué.
+ */
+function assurerParcoursChoisi(token: string, demandeId: number, sessionId: number) {
+  return api('GET', `/demandesInscription/${demandeId}`, token).then(({ status, json }: any) => {
+    expect(status, 'lecture de la demande avant le choix du parcours').to.eq(200)
+    const demande = unwrap(json)
+    const dejaChoisis = Array.isArray(demande?.parcoursChoisis) ? demande.parcoursChoisis : []
+    if (dejaChoisis.length > 0) {
+      cy.log('[pipeline] parcours déjà choisi — étape non rejouée')
+      return cy.wrap(null, { log: false })
+    }
+    return api('GET', `/parcours/arborescence?sessionId=${sessionId}`, token).then((arb: any) => {
+      expect(arb.status, 'arborescence des filières de la session ciblée').to.eq(200)
+      const arborescence = (unwrap(arb.json) || []) as any[]
+      const filieres: any[] = arborescence.reduce(
+        (acc: any[], t: any) => acc.concat((t.grades || []).reduce((a2: any[], g: any) => a2.concat(g.filieres || []), [])),
+        []
+      )
+      expect(filieres.length, 'au moins une filière disponible pour la session ciblée').to.be.greaterThan(0)
+      const filiere = filieres[0]
+      return api('POST', '/parcoursChoisis', token, {
+        parcoursId: filiere.id,
+        demandeInscriptionId: demandeId,
+        choixFinal: true,
+      }).then((post: any) => {
+        expect(post.status, `choix du parcours « ${filiere.titre} » (choix final)`).to.eq(201)
+        return cy.wrap(null, { log: false })
+      })
+    })
+  })
+}
+
+/**
  * POST /demandesInscription puis lecture de LA demande de cette session.
  * Le backend renvoie 400 { alreadySignUp: true } si la demande existe déjà pour
  * (session, apprenant) : on la récupère alors depuis la liste de l'apprenant,
  * filtrée sur CETTE session (jamais « la plus récente » quelconque).
+ *
+ * Le parcours choisi est assuré dans les DEUX cas (demande fraîche ou reprise) :
+ * sans lui, la saisie ESA-COMPTA échoue avec « Aucun parcours choisi ».
+ *
+ * Depuis le commit multi-sites (91f810fb), le body doit porter `etablissementId`
+ * et celui-ci doit être EXACTEMENT le site du JWT de l'apprenant, sinon le
+ * backend répond 400 « L'établissement est obligatoire » ou 403 « L'établissement
+ * ne correspond pas au site actif ». On prend donc le site de la session ciblée.
  */
-function demandePourLaSession(token: string, sessionId: number) {
+function demandePourLaSession(token: string, sessionId: number, etablissementId: number | string) {
   const creer = api('POST', '/demandesInscription', token, {
     sessionId,
+    etablissementId,
     dateDemande: new Date().toISOString(),
   })
   return creer.then((postRes: any) => {
     if (postRes.status === 201) {
       const id = postRes.json?.id ?? postRes.json?.data?.id
       expect(id, 'demande créée pour la session ciblée').to.be.a('number')
-      return cy.wrap(id)
+      return cy.wrap(id).then((demandeId: number) =>
+        assurerParcoursChoisi(token, demandeId, sessionId).then(() => cy.wrap(demandeId)))
     }
     expect(postRes.json?.alreadySignUp, 'demande déjà existante signalée par le backend').to.eq(true)
     return api('GET', '/demandesInscription', token).then((listRes: any) => {
       const liste = Array.isArray(unwrap(listRes.json)) ? unwrap(listRes.json) : listRes.json || []
       const deLaSession = liste.find((d: any) => Number(d.sessionId) === Number(sessionId))
       expect(deLaSession?.id, `demande existante pour la session ${sessionId}`).to.be.a('number')
-      return cy.wrap(deLaSession.id)
+      return cy.wrap(deLaSession.id).then((demandeId: number) =>
+        assurerParcoursChoisi(token, demandeId, sessionId).then(() => cy.wrap(demandeId)))
     })
   })
 }
@@ -218,6 +267,7 @@ describe('Inscription — flux réel : bordereau, comité et reprise en correcti
         // 3) Création de la demande et lecture des pièces RÉELLEMENT requises par la session.
         api('POST', '/demandesInscription', token, {
           sessionId: session.id,
+          etablissementId: session.etablissementId,
           dateDemande: new Date().toISOString(),
         }).then((postRes: any) => {
           expect(postRes.status, 'création de la demande').to.eq(201)
@@ -232,14 +282,21 @@ describe('Inscription — flux réel : bordereau, comité et reprise en correcti
             // 4) Wizard : filière choisie PAR SON LIBELLÉ (jamais la 1re option muette).
             cy.visit(`/inscription/demandes/${demandeId}`)
             cy.contains('h2', 'Choix de la filière', { timeout: 15000 }).should('be.visible')
-            cy.get('#filiereSelect', { timeout: 10000 }).should('exist')
+              cy.get('#filiereSelect', { timeout: 10000 }).should('exist')
 
-            cy.get('#filiereSelect').then(($select: any) => {
-              const options = $select.find('option')
-              const premiere = Array.from(options).find((o: any) => o.text?.trim().length > 0 && o.value)
-              expect(premiere, 'au moins une filière proposée dans le sélecteur').to.exist
-              const filiereValue = (premiere as HTMLOptionElement).value
-              const filiereLabel = (premiere as HTMLOptionElement).text.trim()
+              // Les options sont injectées APRÈS la résolution de l'appel
+              // GET /parcours/arborescence : l'attente doit donc être RÉ-ESSAYABLE
+              // (un `expect` nu dans un `.then()` échoue sur un état transitoire
+              //  et échouerait à tort sur un simple délai réseau).
+              cy.get('#filiereSelect option[value]:not([value=""])', { timeout: 20000 })
+                .should('have.length.greaterThan', 0)
+
+              cy.get('#filiereSelect').then(($select: any) => {
+                const options = $select.find('option[value]:not([value=""])')
+                const premiere = options.get(0) as HTMLOptionElement
+                expect(premiere, 'au moins une filière proposée dans le sélecteur').to.exist
+                const filiereValue = premiere.value
+                const filiereLabel = premiere.text.trim()
               cy.log(`[wizard] filière ciblée : « ${filiereLabel} »`)
 
               cy.get('#filiereSelect').select(filiereValue)
@@ -248,10 +305,14 @@ describe('Inscription — flux réel : bordereau, comité et reprise en correcti
               // 5) Étape 2 : session ciblée = CELLE choisie en 1), jamais la 1re du select.
               cy.contains('h2', "Demande d'autorisation provisoire d'inscription", { timeout: 10000 }).should('be.visible')
               cy.contains('Session d\'inscription', { timeout: 10000 }).should('be.visible')
-              cy.get('select.native-select', { timeout: 10000 }).should('exist')
 
-              cy.get('select.native-select').select(String(session.id))
-              cy.get('select.native-select').invoke('val').should('eq', String(session.id))
+              // L'étape 2 contient DEUX .native-select (site d'inscription puis session) :
+              // on cible le sélecteur de session par son option par défaut, jamais par index.
+              const selectSession = 'select.native-select:contains("Choisir une session")'
+              cy.get(selectSession, { timeout: 10000 }).should('have.length', 1)
+
+              cy.get(selectSession).select(String(session.id))
+              cy.get(selectSession).invoke('val').should('eq', String(session.id))
 
               // 6) Pièces : le nombre de lignes du wizard doit refléter les pièces requises
               //    par la session (comparaison API ↔ DOM), chacune avec un vrai PDF unique.
@@ -284,16 +345,18 @@ describe('Inscription — flux réel : bordereau, comité et reprise en correcti
     api('GET', '/sessions', tokenApprenant).then(({ json }) => {
       const sessions = Array.isArray(unwrap(json)) ? unwrap(json) : json || []
       const session = choisirSession(sessions)
-      expect(session.dossiersInscription?.length ?? 0, 'session avec les pièces requises minimum').to.be.greaterThanOrEqual(2)
 
       // 2) Demande pour CETTE session (création ou reprise explicite par sessionId).
-      demandePourLaSession(tokenApprenant, session.id).then((demandeId: number) => {
+      demandePourLaSession(tokenApprenant, session.id, session.etablissementId).then((demandeId: number) => {
         cy.log(`[pipeline] demande ${demandeId} pour la session ${session.id}`)
 
         // 3) Lecture des pièces requises réelles → on désigne CNI et Bordereau par leur intitulé.
         api('GET', `/demandesInscription/${demandeId}`, tokenApprenant).then((detailRes: any) => {
           const detail = unwrap(detailRes.json)
           const requis: any[] = detail.session?.dossiersInscription ?? []
+          // Les pièces requises ne sont PAS dans le payload de LISTE des sessions
+          // (GET /sessions) : seul le DÉTAIL de la demande les expose.
+          expect(requis.length, 'session avec les pièces requises minimum').to.be.greaterThanOrEqual(2)
           const bordereauDoc = requis.find((d: any) => /bordereau/i.test(d.titre || ''))
           const cniDoc = requis.find((d: any) => /cni/i.test(d.titre || '')) || requis.find((d: any) => d.id !== bordereauDoc?.id)
           expect(bordereauDoc, 'pièce « Bordereau de paiement » requise').to.exist
@@ -377,7 +440,7 @@ describe('Inscription — flux réel : bordereau, comité et reprise en correcti
     loginAs('comite')
     cy.visit('/inscription/comite-validation')
     cy.contains('Validation finale des inscriptions', { timeout: 15000 }).should('be.visible')
-    cy.contains('Afficher tout l’historique du pipeline').should('be.visible')
+    cy.contains("Afficher tout l'historique du pipeline").should('be.visible')
     cy.get('body', { timeout: 10000 }).should('be.visible')
   })
 

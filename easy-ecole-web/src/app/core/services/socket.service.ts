@@ -12,8 +12,9 @@ export interface TerminalAttendanceEvent {
   employeeNoString: string;
   date: string;
   time: string;
-  mode: 'arrivee' | 'depart';
+  mode: 'arrivee' | 'depart' | 'passage' | 'refuse';
   etablissementId: number;
+  motifRefus?: string | null;
 }
 
 @Injectable({

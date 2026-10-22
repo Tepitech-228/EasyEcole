@@ -48,9 +48,26 @@ export default class UtilisateurController {
                 where: { utilisateurId: req.utilisateurId! },
                 attributes: ['etablissementId']
             });
+            if (role === RolesUtilisateur.APPRENANT) {
+                const utilisateur = await Utilisateur.findByPk(req.utilisateurId!, {
+                    attributes: ['etablissementId']
+                });
+                const siteChoisi = Number(utilisateur?.etablissementId || req.etablissementId);
+                if (Number.isSafeInteger(siteChoisi) && siteChoisi > 0) {
+                    const sites = await Etablissement.findAll({
+                        where: { id: siteChoisi, actif: true },
+                        order: [['nom', 'ASC']]
+                    });
+                    return res.status(200).json(sites);
+                }
+                if (affectations.length === 0) {
+                    const sites = await Etablissement.findAll({ where: { actif: true }, order: [['nom', 'ASC']] });
+                    return res.status(200).json(sites);
+                }
+            }
             const siteIds = [...new Set([
                 ...affectations.map(item => Number(item.etablissementId)),
-                ...(req.etablissementId ? [Number(req.etablissementId)] : [])
+                ...(role !== RolesUtilisateur.APPRENANT && req.etablissementId ? [Number(req.etablissementId)] : [])
             ])];
             const sites = siteIds.length
                 ? await Etablissement.findAll({ where: { id: { [Op.in]: siteIds }, actif: true }, order: [['nom', 'ASC']] })
@@ -70,14 +87,44 @@ export default class UtilisateurController {
         try {
             const site = await Etablissement.findOne({ where: { id: etablissementId, actif: true } });
             if (!site) return res.status(404).json({ success: false, message: "Site inexistant ou inactif" });
+            const utilisateur = await Utilisateur.findByPk(req.utilisateurId!);
+            if (!utilisateur) return res.status(401).json({ success: false, message: "Utilisateur non trouvé" });
+            const siteDejaChoisi = Number(utilisateur.etablissementId);
+            if (
+                req.utilisateurRole === RolesUtilisateur.APPRENANT
+                && Number.isSafeInteger(siteDejaChoisi)
+                && siteDejaChoisi > 0
+                && siteDejaChoisi !== etablissementId
+            ) {
+                return res.status(403).json({ success: false, message: "Vous avez déjà choisi votre site d’inscription" });
+            }
             if (req.utilisateurRole !== RolesUtilisateur.ADMIN) {
                 const affectation = await SiteUtilisateur.findOne({
                     where: { utilisateurId: req.utilisateurId!, etablissementId }
                 });
-                if (!affectation) return res.status(403).json({ success: false, message: "Vous n’êtes pas affecté à ce site" });
+                if (!affectation) {
+                    if (req.utilisateurRole !== RolesUtilisateur.APPRENANT) {
+                        return res.status(403).json({ success: false, message: "Vous n’êtes pas affecté à ce site" });
+                    }
+                    const autreAffectation = await SiteUtilisateur.findOne({
+                        where: { utilisateurId: req.utilisateurId! },
+                        attributes: ['id']
+                    });
+                    if (autreAffectation && siteDejaChoisi !== etablissementId) {
+                        return res.status(403).json({ success: false, message: "Vous n’êtes pas affecté à ce site" });
+                    }
+                    await SiteUtilisateur.findOrCreate({
+                        where: { utilisateurId: req.utilisateurId!, etablissementId },
+                        defaults: { utilisateurId: req.utilisateurId!, etablissementId }
+                    });
+                }
             }
-            const utilisateur = await Utilisateur.findByPk(req.utilisateurId!);
-            if (!utilisateur) return res.status(401).json({ success: false, message: "Utilisateur non trouvé" });
+            if (
+                req.utilisateurRole === RolesUtilisateur.APPRENANT
+                && siteDejaChoisi !== etablissementId
+            ) {
+                await utilisateur.update({ etablissementId });
+            }
 
             const accessToken = jwt.sign({
                 exp: Math.floor(Date.now() / 1000) + 10 * 60 * 60,
@@ -323,7 +370,7 @@ export default class UtilisateurController {
                     message: "Une institution ne peut pas créer un compte administrateur ou institution."
                 });
             }
-            const siteIds = await this.validerSites(this.sitesDemandes(req));
+            const siteIds = await UtilisateurController.validerSites(UtilisateurController.sitesDemandes(req));
             if (siteIds === null && (req.body.siteIds !== undefined || req.body.etablissementIds !== undefined || req.body.etablissementId || req.etablissementId)) {
                 return res.status(400).json({ success: false, message: "Un site demandé n’existe pas ou est inactif" });
             }
@@ -335,7 +382,7 @@ export default class UtilisateurController {
                         message: "Sélectionnez au moins un site auquel vous êtes affecté."
                     });
                 }
-                const sitesAccessibles = await this.sitesAccessibles(req);
+                const sitesAccessibles = await UtilisateurController.sitesAccessibles(req);
                 if (affectations.some(etablissementId => !sitesAccessibles.includes(etablissementId))) {
                     return res.status(403).json({
                         success: false,
@@ -343,7 +390,7 @@ export default class UtilisateurController {
                     });
                 }
             }
-            if (!this.nombreSitesAutorise(userRole, affectations)) {
+            if (!UtilisateurController.nombreSitesAutorise(userRole, affectations)) {
                 return res.status(400).json({
                     success: false,
                     message: userRole === RolesUtilisateur.APPRENANT
@@ -497,7 +544,7 @@ export default class UtilisateurController {
                         try {
                             personnel = await PersonnelAdministratif.create({
                                 utilisateurId: utilisateur.id,
-                                fonction: req.body.fonction || this.roleToFonction(userRole),
+                                fonction: req.body.fonction || UtilisateurController.roleToFonction(userRole),
                                 matricule: matricule,
                                 statut: req.body.statut || 'Permanent',
                                 directionService: req.body.directionService || null,
@@ -594,12 +641,12 @@ export default class UtilisateurController {
         try {
             const utilisateur = await Utilisateur.findByPk(req.params.id);
             if (!utilisateur) return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
-            const siteIds = await this.validerSites(req.body?.siteIds);
+            const siteIds = await UtilisateurController.validerSites(req.body?.siteIds);
             if (siteIds === null && (!Array.isArray(req.body?.siteIds) || req.body.siteIds.length > 0)) {
                 return res.status(400).json({ success: false, message: "Un ou plusieurs sites n’existent pas ou sont inactifs" });
             }
             const affectations = siteIds || [];
-            if (!this.nombreSitesAutorise(utilisateur.role, affectations)) {
+            if (!UtilisateurController.nombreSitesAutorise(utilisateur.role, affectations)) {
                 return res.status(400).json({
                     success: false,
                     message: utilisateur.role === RolesUtilisateur.APPRENANT

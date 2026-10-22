@@ -4,7 +4,7 @@
         <app-custom-button *ngIf="rolesValue.isInstitution" text="Nouveau cours" link="/orientation/cours/nouveau"></app-custom-button>
     </div> -->
     <div class="flex justify-end items-center gap-x-4">
-        <app-custom-button *ngIf="(rolesValue.isEnseignant || rolesValue.isInstitution || rolesValue.isAdmin)" text="Nouvelle liste" (click)="openNouvelleListePresenceModal()"></app-custom-button>
+        <app-custom-button *ngIf="(rolesValue.isEnseignant || rolesValue.isInstitution || rolesValue.isAdmin || rolesValue.isSurveillant)" text="Nouvelle liste" (click)="openNouvelleListePresenceModal()"></app-custom-button>
     </div>
 </div>
 
@@ -53,7 +53,7 @@
             <div class="col-span-full">
                 <div class="flex justify-between items-center">
                     <label for="titre" class="mb-2 block text-sm leading-6 text-gray-600">Titre</label>
-                    <div class="flex items-center gap-x-3">
+                    <div *ngIf="!rolesValue.isSurveillant" class="flex items-center gap-x-3">
                         <label for="choisirParmiLesCours" class="text-sm text-gray-600">Choisir parmi les cours</label>
                         <input id="choisirParmiLesCours" type="checkbox" formControlName="choisirParmiLesCours" class="h-4 w-4 border-gray-600 text-indigo-600 focus:ring-indigo-600">
                     </div>
@@ -85,7 +85,7 @@
                         text="Veuillez saisir le titre ou choisir un cours"></app-form-message>
                 </div>
             </div>
-            <div class="col-span-full">
+            <div *ngIf="!rolesValue.isSurveillant" class="col-span-full">
                 <label for="enseignant" class="mb-2 block text-sm leading-6 text-gray-600">Enseignant</label>
                 <ng-select
                     [items]="enseignants"

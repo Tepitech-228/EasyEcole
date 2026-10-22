@@ -6,10 +6,36 @@ import { Presence } from "../models/Presence";
 import { ListePresence } from "../models/ListePresence";
 import { CoursParticipant } from "../models/CoursParticipant";
 import { Enseignant } from "../../auth/models/Enseignant";
+import { Cours } from "../models/Cours";
+import { getSurveillantSiteId } from "../../../core/helpers/SurveillantSiteScope";
 
 export default class PresenceCoursParticipantController {
 
     constructor() { }
+
+    private static async surveillantCanManagePresence(
+        req: Request,
+        presenceId: number | string,
+        coursParticipantId: number | string
+    ): Promise<boolean> {
+        const etablissementId = await getSurveillantSiteId(req);
+        if (!etablissementId) return false;
+
+        const [presence, coursParticipant] = await Promise.all([
+            Presence.findByPk(presenceId),
+            CoursParticipant.findByPk(coursParticipantId),
+        ]);
+        if (!presence || !coursParticipant) return false;
+
+        const listePresence = await ListePresence.findByPk(presence.listePresenceId);
+        if (!listePresence || Number(listePresence.coursId) !== Number(coursParticipant.coursId)) return false;
+
+        const cours = await Cours.findOne({
+            where: { id: listePresence.coursId, etablissementId },
+            attributes: ["id"],
+        });
+        return Boolean(cours);
+    }
 
     static async getAllPresencesCoursParticipants(req: Request, res: Response): Promise<Response> {
         const role = (req as any).utilisateurRole;
@@ -43,6 +69,27 @@ export default class PresenceCoursParticipantController {
                     PresenceCoursParticipant.associations.coursParticipant
                 ];
             }
+        } else if (role === RolesUtilisateur.SURVEILLANT) {
+            const etablissementId = await getSurveillantSiteId(req);
+            if (!etablissementId) {
+                return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
+            }
+            options.include = [
+                {
+                    association: PresenceCoursParticipant.associations.presence,
+                    required: true,
+                    include: [{
+                        association: Presence.associations.listePresence,
+                        required: true,
+                        include: [{
+                            association: ListePresence.associations.cours,
+                            where: { etablissementId },
+                            required: true,
+                        }],
+                    }],
+                },
+                PresenceCoursParticipant.associations.coursParticipant,
+            ];
         }
 
         try {
@@ -92,6 +139,17 @@ export default class PresenceCoursParticipantController {
                 if (!listePresence || listePresence.enseignantId !== enseignant.id) {
                     return res.status(403).json({ success: false, message: "Vous n'avez pas accès à cette présence" });
                 }
+            } else if (role === RolesUtilisateur.SURVEILLANT) {
+                const presence = (presenceCoursParticipant as any).presence;
+                const coursParticipant = (presenceCoursParticipant as any).coursParticipant;
+                if (!presence || !coursParticipant ||
+                    !await PresenceCoursParticipantController.surveillantCanManagePresence(
+                        req,
+                        presence.id,
+                        coursParticipant.id
+                    )) {
+                    return res.status(403).json({ success: false, message: "Vous n'avez pas accès à cette présence" });
+                }
             }
 
             return res.status(200).send(presenceCoursParticipant);
@@ -103,8 +161,18 @@ export default class PresenceCoursParticipantController {
 
     static async createPresenceCoursParticipant(req: Request, res: Response): Promise<Response | null> {
 
-        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT) {
+        const role = (req as any).utilisateurRole;
+        if (role !== RolesUtilisateur.INSTITUTION && role !== RolesUtilisateur.ENSEIGNANT && role !== RolesUtilisateur.SURVEILLANT) {
             return res.status(403).json({ success: false })
+        }
+
+        if (role === RolesUtilisateur.SURVEILLANT &&
+            !await PresenceCoursParticipantController.surveillantCanManagePresence(
+                req,
+                req.body.presenceId,
+                req.body.coursParticipantId
+            )) {
+            return res.status(403).json({ success: false, message: "Cette présence n'appartient pas à votre site" });
         }
 
         let presenceCoursParticipant: PresenceCoursParticipant = new PresenceCoursParticipant();
@@ -125,19 +193,27 @@ export default class PresenceCoursParticipantController {
 
     static async updatePresenceCoursParticipant(req: Request, res: Response): Promise<Response | null> {
         let options: FindOptions<InferAttributes<PresenceCoursParticipant>> = {}
-        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT) {
+        const role = (req as any).utilisateurRole;
+        if (role !== RolesUtilisateur.INSTITUTION && role !== RolesUtilisateur.ENSEIGNANT && role !== RolesUtilisateur.SURVEILLANT) {
             return res.status(403).json({ success: false })
         }
         else {
             options = { where: { presenceId: req.params.id, coursParticipantId: req.body.coursParticipantId } }
         }
 
+        if (role === RolesUtilisateur.SURVEILLANT &&
+            !await PresenceCoursParticipantController.surveillantCanManagePresence(
+                req,
+                req.params.id,
+                req.body.coursParticipantId
+            )) {
+            return res.status(403).json({ success: false, message: "Cette présence n'appartient pas à votre site" });
+        }
+
         let presenceCoursParticipant: PresenceCoursParticipant | null = await PresenceCoursParticipant.findOne(options);
         if (presenceCoursParticipant != null) {
 
             await presenceCoursParticipant.update({
-                presenceId: req.body.presenceId,
-                coursParticipantId: req.body.coursParticipantId,
                 etatDePresence: req.body.etatDePresence
             })
                 .then(async (presenceCoursParticipant) => {

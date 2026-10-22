@@ -12,6 +12,7 @@ import { QrTokenService } from "../../../core/services/QrTokenService";
 import { VerificationPaiementService, VerificationPaiementResult } from "../services/VerificationPaiementService";
 import * as fs from "fs"
 import * as path from "path"
+import { getSurveillantSiteId } from "../../../core/helpers/SurveillantSiteScope";
 
 export default class PresenceController {
 
@@ -46,6 +47,21 @@ export default class PresenceController {
                 where.listePresenceId = { [Op.in]: listesPresences.map(lp => lp.id) };
             }
         }
+        else if (role === RolesUtilisateur.SURVEILLANT) {
+            const etablissementId = await getSurveillantSiteId(req);
+            if (!etablissementId) {
+                return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
+            }
+            const listesPresences = await ListePresence.findAll({
+                include: [{
+                    association: ListePresence.associations.cours,
+                    where: { etablissementId },
+                    required: true,
+                }],
+                attributes: ['id'],
+            });
+            where.listePresenceId = { [Op.in]: listesPresences.map(liste => liste.id) };
+        }
 
         let options: FindOptions<InferAttributes<Presence>> = {
             where,
@@ -64,7 +80,6 @@ export default class PresenceController {
             return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
     }
-
     static async getPresence(req: Request, res: Response): Promise<Response> {
         let options: FindOptions<InferAttributes<Presence>> = {}
         options = {
@@ -96,6 +111,15 @@ export default class PresenceController {
                 if (!enseignant || !listePresence || listePresence.enseignantId !== enseignant.id) {
                     return res.status(403).json({ success: false, message: "Vous n'avez pas accès à cette présence" });
                 }
+            } else if (role === RolesUtilisateur.SURVEILLANT) {
+                const etablissementId = await getSurveillantSiteId(req);
+                const listePresence = (presence as any).listePresence;
+                const cours = listePresence
+                    ? await Cours.findOne({ where: { id: listePresence.coursId, etablissementId }, attributes: ["id"] })
+                    : null;
+                if (!etablissementId || !cours) {
+                    return res.status(403).json({ success: false, message: "Vous n'avez pas accès à cette présence" });
+                }
             }
 
             return res.status(200).send(presence);
@@ -107,8 +131,26 @@ export default class PresenceController {
 
     static async createPresence(req: Request, res: Response): Promise<Response | null> {
 
-        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole != RolesUtilisateur.ENSEIGNANT) {
+        const role = (req as any).utilisateurRole;
+        if (role !== RolesUtilisateur.INSTITUTION && role !== RolesUtilisateur.ENSEIGNANT && role !== RolesUtilisateur.SURVEILLANT) {
             return res.status(403).json({ success: false })
+        }
+
+        if (role === RolesUtilisateur.SURVEILLANT) {
+            const etablissementId = await getSurveillantSiteId(req);
+            const listePresence = etablissementId
+                ? await ListePresence.findOne({
+                    where: { id: req.body.listePresenceId },
+                    include: [{
+                        association: ListePresence.associations.cours,
+                        where: { etablissementId },
+                        required: true,
+                    }],
+                })
+                : null;
+            if (!listePresence) {
+                return res.status(403).json({ success: false, message: "Cette liste de présence n'appartient pas à votre site" });
+            }
         }
 
         let presence: Presence | null = await Presence.findOne({ where: { date: req.body.date, heureDebut: req.body.heureDebut, heureFin: req.body.heureFin, } });

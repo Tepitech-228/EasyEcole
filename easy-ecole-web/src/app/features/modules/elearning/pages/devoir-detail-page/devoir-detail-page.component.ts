@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DevoirService } from 'src/app/data/modules/elearning/services/devoir.service';
 import { JwtTokenService } from 'src/app/core/services/jwt-token.service';
@@ -9,7 +9,7 @@ import { LocalStorageService } from 'src/app/core/services/local-storage.service
   templateUrl: './devoir-detail-page.component.html',
   styleUrls: ['./devoir-detail-page.component.scss']
 })
-export class DevoirDetailPageComponent implements OnInit {
+export class DevoirDetailPageComponent implements OnInit, OnDestroy {
   devoir: any = null;
   loading = true;
   selectedFile: File | null = null;
@@ -17,7 +17,9 @@ export class DevoirDetailPageComponent implements OnInit {
   showNoterModal = false;
   selectedSoumissionId: string = '';
   noteValue: number = 0;
+  commentaireCorrection = '';
   soumissions: any[] = [];
+  private sujetUrl: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -25,6 +27,10 @@ export class DevoirDetailPageComponent implements OnInit {
     private devoirService: DevoirService,
     private jwtTokenService: JwtTokenService
   ) { }
+
+  ngOnDestroy(): void {
+    if (this.sujetUrl) URL.revokeObjectURL(this.sujetUrl);
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -59,12 +65,29 @@ export class DevoirDetailPageComponent implements OnInit {
   openNoterModal(soumissionId: string): void {
     this.selectedSoumissionId = soumissionId;
     this.noteValue = 0;
+    this.commentaireCorrection = '';
     this.showNoterModal = true;
   }
 
   noterSoumission(): void {
-    this.devoirService.noter(this.devoir.id, this.selectedSoumissionId, { note: this.noteValue }).subscribe({
+    this.devoirService.noter(this.devoir.id, this.selectedSoumissionId, {
+      note: this.noteValue,
+      commentaire: this.commentaireCorrection
+    }).subscribe({
       next: () => { this.showNoterModal = false; this.loadDevoir(this.devoir.id); }
+    });
+  }
+
+  telechargerSujet(): void {
+    this.devoirService.downloadSujet(this.devoir.id).subscribe({
+      next: blob => {
+        if (this.sujetUrl) URL.revokeObjectURL(this.sujetUrl);
+        this.sujetUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = this.sujetUrl;
+        link.download = 'sujet-devoir.pdf';
+        link.click();
+      }
     });
   }
 
@@ -83,7 +106,10 @@ export class DevoirDetailPageComponent implements OnInit {
 
   canSubmit(): boolean {
     const roleComputed = this.getRole();
-    return (this.devoir?.statut === 'à rendre' || !this.devoir?.statut) && roleComputed === 'apprenant';
+    return this.devoir?.statut === 'publie'
+      && roleComputed === 'apprenant'
+      && new Date(this.devoir.dateLimite) >= new Date()
+      && !(this.devoir?.soumissions || []).length;
   }
 
   isLate(): boolean { return this.devoir && new Date(this.devoir.dateLimite) < new Date(); }
@@ -94,7 +120,7 @@ export class DevoirDetailPageComponent implements OnInit {
     this.jwtTokenService.setToken(token);
     const decoded: any = this.jwtTokenService.getDecodeToken();
     const role = decoded?.role;
-    return role === 'institution' || role === 'admin' || role === 'enseignant';
+    return role === 'institution' || role === 'admin' || role === 'enseignant' || role === 'charge_support';
   }
 
   private getRole(): string | null {

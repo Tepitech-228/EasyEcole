@@ -33,16 +33,55 @@ async function buildToken(user) {
   return jwt.sign(payload, JWT_SECRET)
 }
 
+/**
+ * Affecte un compte à un site (multi-sites).
+ * Depuis le commit 91f810fb, tout appel non-ADMIN doit porter un `etablissementId`
+ * dans son JWT ET une affectation en base, sinon les contrôleurs de site renvoient
+ * 403 « Aucun site actif sélectionné ».
+ */
+async function ensureAffectation(db, utilisateurId, etablissementId) {
+  const rows = await db.query(
+    'SELECT id FROM aut_utilisateur_etablissements WHERE utilisateurId = ? AND etablissementId = ? LIMIT 1',
+    { replacements: [utilisateurId, etablissementId], type: db.QueryTypes.SELECT }
+  )
+  const existing = Array.isArray(rows) ? rows[0] : rows
+  if (existing && existing.id) return
+  await db.query(
+    'INSERT INTO aut_utilisateur_etablissements (utilisateurId, etablissementId, createdAt, updatedAt) VALUES (?, ?, NOW(), NOW())',
+    { replacements: [utilisateurId, etablissementId], type: db.QueryTypes.INSERT }
+  )
+}
+
 async function createUserAndToken({
   nom, prenoms, email, identifiant, role = ROLES.APPRENANT, password = 'Test123!', etablissementId = null
 }) {
   const db = DatabaseConnection.getInstance().sequelize
+  // Les comptes « soft-supprimés » (deletedAt renseigné) doivent être écartés :
+  // Sequelize est en mode paranoid, donc findByPk renvoie null → le middleware
+  // Authenticate répond 401 « Token invalide (session expirée) » pour tout token
+  // construit sur ces lignes. On les ressuscite plutôt que de les dupliquer
+  // (email / identifiant sont uniques, l'INSERT échouerait).
   const existingRows = await db.query(
-    'SELECT id, nom, prenoms, identifiant, email, role, tokenVersion, etablissementId FROM aut_utilisateurs WHERE email = ? OR identifiant = ? LIMIT 1',
+    'SELECT id, nom, prenoms, identifiant, email, role, tokenVersion, etablissementId, deletedAt FROM aut_utilisateurs WHERE email = ? OR identifiant = ? ORDER BY deletedAt IS NULL DESC, id ASC LIMIT 1',
     { replacements: [email, identifiant], type: db.QueryTypes.SELECT }
   )
   const existing = Array.isArray(existingRows) ? existingRows[0] : existingRows
   if (existing && existing.id) {
+    if (existing.deletedAt) {
+      await db.query(
+        'UPDATE aut_utilisateurs SET deletedAt = NULL, updatedAt = NOW() WHERE id = ?',
+        { replacements: [existing.id], type: db.QueryTypes.UPDATE }
+      )
+      existing.deletedAt = null
+    }
+    if (etablissementId && !existing.etablissementId) {
+      await db.query(
+        'UPDATE aut_utilisateurs SET etablissementId = ?, updatedAt = NOW() WHERE id = ?',
+        { replacements: [etablissementId, existing.id], type: db.QueryTypes.UPDATE }
+      )
+      existing.etablissementId = etablissementId
+    }
+    if (etablissementId) await ensureAffectation(db, existing.id, etablissementId)
     const token = await buildToken(existing)
     return { user: existing, token }
   }
@@ -78,6 +117,7 @@ async function createUserAndToken({
     { replacements: [userId], type: db.QueryTypes.SELECT }
   )
   const user = Array.isArray(userRows) ? userRows[0] : userRows
+  if (etablissementId && userId) await ensureAffectation(db, userId, etablissementId)
   const token = await buildToken(user)
   return { user, token }
 }

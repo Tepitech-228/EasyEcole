@@ -4,6 +4,12 @@ import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Parcours } from "../models/Parcours";
 import { PrerequisParcours } from "../models/PrerequisParcours";
 import { Cours } from "../models/Cours";
+import { Session } from "../models/Session";
+
+const getTypeCycle = (libelleNiveau: unknown): string | null => {
+    const libelle = String(libelleNiveau || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+    return ['LICENCE', 'MASTER', 'DOCTORAT', 'BTS', 'MBA'].find(type => libelle.includes(type)) || null;
+};
 
 export default class ParcoursController {
 
@@ -164,18 +170,17 @@ export default class ParcoursController {
             if (req.query.grade) filtres.grade = req.query.grade as string
 
             // ── Filtrage par sessionId ──────────────────────────────────────
-            // Si un sessionId est fourni, on résout le niveauEtudeId de la
-            // session et on filtre les parcours dont le niveauEtudeId ou le
-            // type correspond au cycle de cette session.
+            // Les parcours renseignés au niveau exact restent prioritaires.
+            // On garde le type de cycle en secours pour les catalogues où les
+            // filières sont rattachées au cycle ou à un autre niveau du cycle.
+            let typeCycleSession: string | null = null
             if (req.query.sessionId) {
-                try {
-                    const { Session } = require('../models/Session')
-                    const session = await Session.findByPk(req.query.sessionId as string)
-                    if (session && session.niveauEtudeId) {
-                        filtres.niveauEtudeId = session.niveauEtudeId
-                    }
-                } catch (_e) {
-                    // Si la session n'est pas trouvée, on ignore le filtre
+                const session = await Session.findByPk(req.query.sessionId as string, {
+                    include: [Session.associations.niveauEtude]
+                })
+                if (session?.niveauEtudeId) {
+                    filtres.niveauEtudeId = session.niveauEtudeId
+                    typeCycleSession = getTypeCycle(session.niveauEtude?.libelle)
                 }
             }
 
@@ -184,11 +189,25 @@ export default class ParcoursController {
                 filtres.niveauEtudeId = req.query.niveauEtudeId as string
             }
 
-            const parcoursList: Parcours[] = await Parcours.findAll({
+            let parcoursList: Parcours[] = await Parcours.findAll({
                 where: filtres,
                 order: [['type', 'ASC'], ['titre', 'ASC']],
                 include: [Parcours.associations.niveauEtude]
             })
+            if (
+                parcoursList.length === 0
+                && req.query.sessionId
+                && typeCycleSession
+                && !req.query.type
+            ) {
+                const filtresCycle = { ...filtres, type: typeCycleSession }
+                delete filtresCycle.niveauEtudeId
+                parcoursList = await Parcours.findAll({
+                    where: filtresCycle,
+                    order: [['type', 'ASC'], ['titre', 'ASC']],
+                    include: [Parcours.associations.niveauEtude]
+                })
+            }
 
             // Parcours (types) distincts, dans un ordre stable
             const types = Array.from(new Set(parcoursList.map(p => p.type).filter(Boolean))) as string[]

@@ -54,9 +54,17 @@ Le backend peut tester ISAPI en se connectant au terminal sur son IP et son port
 
 ## Enrôlement automatique après inscription
 
-À la soumission de sa demande, l'étudiant peut donner un consentement facultatif à l'envoi de sa photo au terminal Hikvision. Le choix est horodaté et lié à la demande. Après validation de l'inscription, EasyEcole crée une tâche d'enrôlement par terminal actif du site, avec le matricule final comme numéro d'employé. La file est traitée en arrière-plan et réessaie avec délai si le terminal est indisponible.
+Après validation de l'inscription par le comité, EasyEcole crée une tâche d'enrôlement par terminal actif du site, avec le matricule final comme numéro d'employé. L'envoi de la photo au terminal est **systématique** : il ne dépend d'aucun consentement facultatif de l'étudiant (voir « Base légale et information » ci-dessous). La file est traitée en arrière-plan et réessaie avec délai si le terminal est indisponible. Le personnel et les enseignants disposant d'une photo de profil sont également éligibles.
 
-Sans consentement explicite, aucun compte ni visage n'est envoyé à Hikvision. Sans photo de profil ou terminal actif configuré pour le site au moment de la validation, l'enrôlement automatique n'est pas garanti. Vérifiez les journaux `[Hikvision]` et le support de `/ISAPI/Intelligent/FDLib/FaceDataRecord` par le firmware du DS-K1T342MFWX-E1 : les API et formats d'image varient avec le firmware. Une réponse positive de la connexion ISAPI ne prouve pas à elle seule que l'enrôlement facial est pris en charge.
+Sans photo de profil ou terminal actif configuré pour le site au moment de la validation, l'enrôlement automatique n'est pas garanti (la tâche est conservée et reprise si une photo ou un terminal devient disponible). Vérifiez les journaux `[Hikvision]` et le support de `/ISAPI/Intelligent/FDLib/FaceDataRecord` par le firmware du DS-K1T342MFWX-E1 : les API et formats d'image varient avec le firmware. Une réponse positive de la connexion ISAPI ne prouve pas à elle seule que l'enrôlement facial est pris en charge.
+
+## Base légale et information
+
+L'envoi de la photo à un terminal de reconnaissance faciale constitue un traitement de données biométriques. La base légale retenue par l'établissement est **autre que le consentement facultatif** (règlement intérieur / contrat de scolarité / intérêt légitime de sécurité). En conséquence :
+
+- Le parcours d'inscription affiche une **information** sur la transmission systématique de la photo ; il ne recueille plus de case à cocher facultative.
+- Le champ `DemandeInscription.consentementHikvisionAt` et l'endpoint `PUT /inscription/demandes/:id/consentement-hikvision` sont **conservés en base et en API** (compatibilité, historique) mais **ne conditionnent plus** l'enrôlement.
+- Toute évolution de cette base légale doit être validée avec le responsable de la protection des données de l'établissement avant mise en production.
 
 ## Test de bout en bout
 

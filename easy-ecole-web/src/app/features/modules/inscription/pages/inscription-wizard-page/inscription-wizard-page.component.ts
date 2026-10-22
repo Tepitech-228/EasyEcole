@@ -16,6 +16,7 @@ import { DossierInscriptionService } from 'src/app/data/modules/inscription/serv
 import { InscriptionWizardStoreService, FichierMeta } from 'src/app/data/modules/inscription/services/inscription-wizard-store.service';
 import { WizardItemType } from 'src/app/data/types/WizardItemType';
 import { AuthService, SiteUtilisateur } from 'src/app/data/modules/auth/services/auth.service';
+import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 
 interface FiliereSelection {
   id: string;
@@ -50,7 +51,6 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
 
   loading = false
   submitting = false
-  consentementHikvision = false
   errorMessage = ''
   successMessage = ''
 
@@ -64,9 +64,11 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   // Session
   sessions: any[] = []
   sessionSelectionneeId?: number
+  sessionVerrouillee = false
   sitesDisponibles: SiteUtilisateur[] = []
   sitesLoading = false
   sitesError = ''
+  siteVerrouille = false
 
   // Filtre transmis par la page de choix de session
   sessionIdFromRoute?: string
@@ -104,6 +106,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   etape = 1
 
   resultat: any = null
+  private parcoursDejaRattache = false
 
   /** Mode correction du dossier : 'bordereau' (refus Audit/Cabinet) ou 'comite' (document(s) rejeté(s) au comité). */
   modeCorrection: 'bordereau' | 'comite' | null = null
@@ -128,7 +131,8 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     private apprenantService: ApprenantService,
     private wizardStore: InscriptionWizardStoreService,
     private toastService: ToastService,
-    private authService: AuthService
+    private authService: AuthService,
+    private localStorage: LocalStorageService
   ) {
     super()
     if (!this.rolesValue.isApprenant) {
@@ -328,10 +332,12 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
 
         // Brouillon / correction : pré-remplit depuis le serveur.
         this.sessionSelectionneeId = demande.sessionId != null ? Number(demande.sessionId) : undefined
+        this.sessionVerrouillee = this.sessionSelectionneeId != null
         const choix = Array.isArray(demande.parcoursChoisis)
           ? demande.parcoursChoisis.find((p: any) => p.choixFinal === true || p.choixFinal === 1) || demande.parcoursChoisis[0]
           : null
         if (choix?.parcours) {
+          this.parcoursDejaRattache = true
           this.filiereChoisie = {
             id: String(choix.parcoursId ?? choix.parcours?.id ?? ''),
             titre: choix.parcours?.titre || '',
@@ -596,7 +602,8 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.sessionService.getAll().subscribe({
       next: (sessions: any) => {
         this.sessions = Array.isArray(sessions) ? sessions : []
-        // Auto-sélection de la session si transmise via la route.
+        // L'identifiant porté par une demande existante fait foi. Le paramètre
+        // sessionId de l'URL ne doit pas remplacer sa session pendant le chargement.
         // IMPORTANT : on ne charge PAS les documents ici car loadArborescence()
         // est lancé en parallèle et this.gradeChoisi est potentiellement encore
         // vide. Charger les documents avec un grade vide ferait appel à
@@ -604,12 +611,14 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
         // de la table seraient retournés (150 lignes, tous niveaux).
         // Le chargement des documents est délégué à passerEtape2() qui est
         // appelé APRÈS que la filière (et donc le grade) ait été choisi.
-        if (this.sessionIdFromRoute) {
+        const demandeExistanteId = this.route.snapshot.paramMap.get('id')
+        if (!demandeExistanteId && this.sessionIdFromRoute && !this.sessionSelectionneeId) {
           const sessionAuto = this.sessions.find((s) => String(s.id) === String(this.sessionIdFromRoute))
           if (sessionAuto) {
             this.sessionSelectionneeId = Number(sessionAuto.id)
           }
         }
+        this.synchroniserSiteDepuisSession()
       },
       error: () => {
         this.errorMessage = 'Impossible de charger les sessions d\'inscription.'
@@ -704,7 +713,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   }
 
   get documentsComplets(): boolean {
-    return this.documentsRequis.length > 0 && this.documentsRequis.every(
+    return this.documentsRequis.every(
       (d) => !!this.documents[d.id] || this.piecesServeur.has(String(d.id))
     )
   }
@@ -886,9 +895,6 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
       next: sites => {
         this.sitesDisponibles = sites
         this.sitesLoading = false
-        if (!this.infos.etablissementId && sites.length === 1) {
-          this.infos.etablissementId = String(sites[0].id)
-        }
         this.synchroniserSiteDepuisSession()
       },
       error: () => {
@@ -900,15 +906,11 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   }
 
   private synchroniserSiteDepuisSession(): void {
-    if (!this.sessionSelectionneeId) return
-    const session = this.sessions.find(item => Number(item.id) === Number(this.sessionSelectionneeId))
-    const sessionSiteId = Number(session?.etablissementId)
     if (
-      Number.isSafeInteger(sessionSiteId)
-      && sessionSiteId > 0
-      && this.sitesDisponibles.some(site => Number(site.id) === sessionSiteId)
+      this.infos.etablissementId
+      && this.sitesDisponibles.some(site => Number(site.id) === Number(this.infos.etablissementId))
     ) {
-      this.infos.etablissementId = String(sessionSiteId)
+      this.siteVerrouille = true
     }
   }
 
@@ -918,17 +920,16 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     const siteAccessible = this.sitesDisponibles.some(site => Number(site.id) === siteId)
     if (!siteAccessible) return false
     if (!this.sessionSelectionneeId) return false
-    const session = this.sessions.find(item => Number(item.id) === Number(this.sessionSelectionneeId))
-    return Number(session?.etablissementId) === siteId
+    return this.sessions.some(item => Number(item.id) === Number(this.sessionSelectionneeId))
   }
 
   get sessionsDuSite(): any[] {
-    const siteId = Number(this.infos.etablissementId)
-    if (!Number.isSafeInteger(siteId) || siteId <= 0) return []
-    return this.sessions.filter(session => Number(session.etablissementId) === siteId)
+    return this.sessions
   }
 
   surChoixSite(): void {
+    if (this.siteVerrouille) return
+    const siteId = Number(this.infos.etablissementId)
     this.sessionSelectionneeId = undefined
     this.documentsRequis = []
     this.documents = {}
@@ -936,7 +937,28 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.documentsAReposer = {}
     this.bordereauAReposer = null
     this.errorMessage = ''
+    this.sitesError = ''
     this.sauvegarder()
+    if (Number.isSafeInteger(siteId) && siteId > 0) {
+      this.activerSiteSelectionne(siteId)
+    }
+  }
+
+  private activerSiteSelectionne(siteId: number): void {
+    this.authService.definirSiteActif(siteId).subscribe({
+      next: response => {
+        if (!response.accessToken) {
+          this.sitesError = 'Le site choisi n’a pas pu être activé.'
+          return
+        }
+        this.localStorage.set(LocalStorageService.AUTH_TOKEN, response.accessToken)
+        this.siteVerrouille = true
+        this.sitesError = ''
+      },
+      error: err => {
+        this.sitesError = err?.error?.message || 'Le site choisi n’a pas pu être affecté à votre compte.'
+      }
+    })
   }
 
   nomSiteSelectionne(): string {
@@ -1154,8 +1176,16 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     parcoursChoisi.demandeInscriptionId = demandeId
     parcoursChoisi.choixFinal = true
 
+    if (this.parcoursDejaRattache) {
+      this.finaliserFichiers(demandeId)
+      return
+    }
+
     this.parcoursChoisiService.create(parcoursChoisi).subscribe({
-      next: () => this.finaliserFichiers(demandeId),
+      next: () => {
+        this.parcoursDejaRattache = true
+        this.finaliserFichiers(demandeId)
+      },
       error: (err) => {
         // Dossier NON transmis : on ne saute pas à l'étape « réussi ».
         this.echouerSoumission(err?.error?.message || 'La demande a été créée mais le parcours n\'a pas pu être rattaché.')
@@ -1172,6 +1202,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.typeChoisi = ''
     this.gradeChoisi = ''
     this.filiereChoisie = undefined
+    this.parcoursDejaRattache = false
     this.sessionSelectionneeId = undefined
     this.documentsRequis = []
     this.documents = {}
@@ -1184,7 +1215,21 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.successMessage = ''
   }
 
-  private finaliserSoumission(statutPipeline?: string): void {
+  private finaliserSoumission(demandeId: string, statutPipeline?: string): void {
+    if (!this.modeCorrection) {
+      this.demandeInscriptionService.soumettre(demandeId).subscribe({
+        next: (reponse) => this.afficherSoumissionFinalisee(reponse.statutPipeline),
+        error: (err) => this.echouerSoumission(
+          err?.error?.message || 'La demande n\'a pas pu être soumise. Veuillez réessayer.'
+        )
+      })
+      return
+    }
+
+    this.afficherSoumissionFinalisee(statutPipeline)
+  }
+
+  private afficherSoumissionFinalisee(statutPipeline?: string): void {
     this.submitting = false
     // En correction comité, le backend renvoie le statut réel du dossier
     // ('transmis_comite' une fois toutes les pièces signalées re-téléversées) :
@@ -1211,14 +1256,11 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
    * Le bordereau suit le pipeline Audit → Service Recouvrement → Comité (BordereauService).
    * En cas d'échec d'un téléversement, on arrête (pas de continuation silencieuse
    * ni de « dossier soumis » abusif).
+   * L'enrôlement facial Hikvision est systématique et géré côté backend à la
+   * validation du dossier : aucun consentement n'est requis à la soumission.
    */
   private finaliserFichiers(demandeId: string): void {
-    this.demandeInscriptionService.updateHikvisionConsent(demandeId, this.consentementHikvision).subscribe({
-      next: () => this.televerserFichiers(demandeId),
-      error: (err) => this.echouerSoumission(
-        err?.error?.message || "Le choix relatif à l'enrôlement Hikvision n'a pas pu être enregistré."
-      )
-    })
+    this.televerserFichiers(demandeId)
   }
 
   private televerserFichiers(demandeId: string): void {
@@ -1241,7 +1283,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
 
     const televerserSuivant = (index: number): void => {
       if (index >= dossierDocs.length) {
-        this.televerserBordereau(bordereauFichier, dernierStatut)
+        this.televerserBordereau(bordereauFichier, dernierStatut, demandeId)
         return
       }
       const item = dossierDocs[index]
@@ -1262,18 +1304,19 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     televerserSuivant(0)
   }
 
-  private televerserBordereau(fichier: File | null, dernierStatut?: string | null): void {
+  private televerserBordereau(fichier: File | null, dernierStatut: string | null | undefined, demandeId: string): void {
     if (!fichier) {
       // Aucun bordereau re-téléversé (correction comité) : on conserve le statut
       // renvoyé par le dernier téléversement de document (ex. 'transmis_comite').
-      this.finaliserSoumission(dernierStatut || undefined)
+      this.finaliserSoumission(demandeId, dernierStatut || undefined)
       return
     }
     const formData = new FormData()
     formData.append('fichier', fichier)
     formData.append('type', 'inscription')
+    formData.append('demandeId', demandeId)
     this.bordereauService.upload(formData).subscribe({
-      next: () => this.finaliserSoumission(),
+      next: () => this.finaliserSoumission(demandeId),
       error: () => this.echouerSoumission('Le bordereau de paiement n\'a pas pu être téléversé. Veuillez réessayer.')
     })
   }

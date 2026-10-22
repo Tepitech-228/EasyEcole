@@ -15,7 +15,9 @@ export class DevoirsPageComponent implements OnInit {
   coursList: any[] = [];
   loading = true;
   showCreateModal = false;
-  createForm: any = { titre: '', description: '', dateLimite: '', coursId: '' };
+  createForm: any = { titre: '', description: '', dateLimite: '', coursId: '', semestre: 1, poids: 50 };
+  selectedFile: File | null = null;
+  createError = '';
 
   constructor(
     private router: Router,
@@ -50,17 +52,33 @@ export class DevoirsPageComponent implements OnInit {
   }
 
   openCreateModal(): void {
+    this.createError = '';
     this.showCreateModal = true;
   }
 
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.selectedFile = input.files?.[0] || null;
+  }
+
   createDevoir(): void {
-    this.devoirService.create(this.createForm).subscribe({
+    if (!this.selectedFile || this.selectedFile.type !== 'application/pdf') {
+      this.createError = 'Le sujet du devoir doit être un fichier PDF.';
+      return;
+    }
+    const formData = new FormData();
+    Object.entries(this.createForm).forEach(([key, value]) => formData.append(key, String(value)));
+    formData.append('statut', 'publie');
+    formData.append('sujet', this.selectedFile);
+    this.createError = '';
+    this.devoirService.create(formData).subscribe({
       next: () => {
         this.showCreateModal = false;
-        this.createForm = { titre: '', description: '', dateLimite: '', coursId: '' };
+        this.createForm = { titre: '', description: '', dateLimite: '', coursId: '', semestre: 1, poids: 50 };
+        this.selectedFile = null;
         this.loadDevoirs();
       },
-      error: () => {}
+      error: (error) => this.createError = error.error?.message || 'Impossible de créer le devoir.'
     });
   }
 

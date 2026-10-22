@@ -46,18 +46,23 @@ export default class HikvisionEnrollmentService {
     }
   }
 
+  /**
+   * Met en file l'enrôlement facial d'un apprenant à l'inscription.
+   * Envoi systématique : indépendant de tout consentement facultatif.
+   * Le paramètre `_consentementAt` est conservé pour compatibilité d'appel
+   * mais n'agit plus comme verrou.
+   */
   static async enqueueStudent(
     utilisateurId: number,
     etablissementId: number,
     employeeNo: string,
-    consentementAt: Date | null
+    _consentementAt: Date | null = null
   ): Promise<void> {
-    if (!consentementAt) return;
     const terminals = await PointageTerminal.findAll({
       where: { etablissementId, protocol: "hikvision_isapi", actif: true }
     });
     if (terminals.length === 0) {
-      console.warn(`[Hikvision] Aucun terminal actif pour l'inscription consentie de l'utilisateur ${utilisateurId}, site ${etablissementId}.`);
+      console.warn(`[Hikvision] Aucun terminal actif pour l'inscription de l'utilisateur ${utilisateurId}, site ${etablissementId}.`);
       return;
     }
     for (const terminal of terminals) {
@@ -83,20 +88,17 @@ export default class HikvisionEnrollmentService {
       include: [{ association: DossierEtudiant.associations.utilisateur }]
     });
     const utilisateurIds = dossiers.map(dossier => Number(dossier.utilisateurId));
+    // Envoi systématique : on ne filtre plus sur le consentement facultatif.
+    // Seuls les dossiers effectivement validés d'un utilisateur réel sont éligibles.
     const demandes = await DemandeInscription.findAll({
       where: {
         utilisateurId: { [Op.in]: utilisateurIds },
-        dateValidation: { [Op.ne]: null },
-        consentementHikvisionAt: { [Op.ne]: null }
+        dateValidation: { [Op.ne]: null }
       }
     });
-    const consentis = new Map(demandes.map(demande => [
-      Number(demande.utilisateurId),
-      demande.consentementHikvisionAt ?? null
-    ]));
+    const utilisateursValides = new Set(demandes.map(demande => Number(demande.utilisateurId)));
     for (const dossier of dossiers) {
-      const consentementAt = consentis.get(Number(dossier.utilisateurId));
-      if (!consentementAt || !dossier.matricule) continue;
+      if (!utilisateursValides.has(Number(dossier.utilisateurId)) || !dossier.matricule) continue;
       await HikvisionEnrollment.findOrCreate({
         where: { terminalId: terminal.id, utilisateurId: dossier.utilisateurId },
         defaults: {

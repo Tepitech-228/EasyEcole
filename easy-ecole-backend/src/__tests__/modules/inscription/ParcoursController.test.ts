@@ -26,7 +26,15 @@ jest.mock('../../../modules/inscription/models/PrerequisParcours', () => ({
   }
 }))
 
+jest.mock('../../../modules/inscription/models/Session', () => ({
+  Session: {
+    findByPk: jest.fn(),
+    associations: { niveauEtude: 'niveauEtude' }
+  }
+}))
+
 const { Parcours } = require('../../../modules/inscription/models/Parcours')
+const { Session } = require('../../../modules/inscription/models/Session')
 import Ctrl from '../../../modules/inscription/controllers/ParcoursController'
 
 beforeEach(() => {
@@ -94,6 +102,73 @@ describe('getParcours', () => {
     await Ctrl.getParcours(req, res)
 
     expect(res.status).toHaveBeenCalledWith(404)
+  })
+})
+
+describe('getArborescence', () => {
+  it('keeps the exact study-level results when available', async () => {
+    const req = mockRequest({ query: { sessionId: '5' } })
+    const res = mockResponse()
+    const exactParcours = [{
+      id: 3,
+      titre: 'Génie logiciel',
+      type: 'LICENCE',
+      grade: 'Licence 3',
+      niveauEtudeId: 3,
+      niveauEtude: { libelle: 'Licence 3' }
+    }]
+    ;(Session.findByPk as jest.Mock).mockResolvedValue({
+      niveauEtudeId: 3,
+      niveauEtude: { libelle: 'Licence 3' }
+    })
+    ;(Parcours.findAll as jest.Mock).mockResolvedValue(exactParcours)
+
+    await Ctrl.getArborescence(req, res)
+
+    expect(Parcours.findAll).toHaveBeenCalledTimes(1)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      success: true,
+      data: [expect.objectContaining({
+        type: 'LICENCE',
+        grades: [expect.objectContaining({ filieres: [expect.objectContaining({ id: 3 })] })]
+      })]
+    }))
+  })
+
+  it('falls back to the session cycle when no parcours match its exact study level', async () => {
+    const req = mockRequest({ query: { sessionId: '5' } })
+    const res = mockResponse()
+    const cycleParcours = [{
+      id: 12,
+      titre: 'Informatique',
+      type: 'LICENCE',
+      grade: 'Licence 1',
+      niveauEtudeId: 1,
+      niveauEtude: { libelle: 'Licence 1' }
+    }]
+    ;(Session.findByPk as jest.Mock).mockResolvedValue({
+      niveauEtudeId: 3,
+      niveauEtude: { libelle: 'Licence 3' }
+    })
+    ;(Parcours.findAll as jest.Mock)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce(cycleParcours)
+
+    await Ctrl.getArborescence(req, res)
+
+    expect(Parcours.findAll).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      where: { niveauEtudeId: 3 }
+    }))
+    expect(Parcours.findAll).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      where: { type: 'LICENCE' }
+    }))
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      success: true,
+      data: [expect.objectContaining({
+        type: 'LICENCE',
+        grades: [expect.objectContaining({ filieres: [expect.objectContaining({ id: 12 })] })]
+      })]
+    }))
   })
 })
 
