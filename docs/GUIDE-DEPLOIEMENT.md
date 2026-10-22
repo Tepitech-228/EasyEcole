@@ -124,18 +124,17 @@ docker cp easyecole_dump.sql easyecole-db:/tmp/easyecole_dump.sql
 docker exec -i easyecole-db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" easyecole' < /dev/null
 docker exec easyecole-db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" easyecole < /tmp/easyecole_dump.sql'
 
-# Appliquer les migrations SQL du dépôt (dossier migrations/)
-docker exec -i easyecole-db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" easyecole' < migrations/001_salleId_bulletins.sql
-docker exec -i easyecole-db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" easyecole' < migrations/002_modalite_bordereaux.sql
+# Au prochain démarrage du backend, les migrations du dépôt sont appliquées
+# automatiquement et suivies dans schema_migrations.
 ```
 
 > **Jamais** `db:seed` en production : le seed écrase les données (`TRUNCATE`). Les données de référence (types d'évaluation, permissions, modèles de documents) sont initialisées par les seeds exécutés au démarrage de l'application.
 
 ## 10. Mises à jour
 
-1. Pousser le code sur la branche `main` (ou la branche configurée).
+1. Pousser le code sur la branche configurée dans Dokploy.
 2. Dokploy détecte le push et redéploie automatiquement (reconstruction des images modifiées, conteneurs recréés).
-3. Si de nouvelles migrations SQL sont ajoutées : les appliquer manuellement (section 9) **avant ou juste après** le redéploiement, selon la migration.
+3. Les migrations du dépôt sont appliquées automatiquement par l'entrypoint du backend avant les seeds et le démarrage de l'API. En cas d'erreur, le backend s'arrête volontairement et Dokploy marque le déploiement en échec ; consulter §12.2.
 
 ## 11. Sauvegardes
 
@@ -162,6 +161,7 @@ Avant toute restauration, valider le dump sur une base de test distincte. Ne jam
 |---|---|
 | Le backend ne démarre pas | `docker logs easyecole-backend` ; vérifier `DB_HOST=db` dans les variables ; `docker exec easyecole-backend ping db` |
 | Le déploiement échoue avec « dependency backend failed to start: container easyecole-backend is unhealthy » et les logs montrent `mkdir: cannot create directory '/app/public/uploads': Permission denied` | Voir §12.1 — droits des bind mounts hôte |
+| Le backend est `unhealthy` et les logs montrent `[migrations][ERREUR] échec de la migration ...` avec `ER_PARSE_ERROR` | Voir §12.2 — syntaxe de migration incompatible avec MySQL |
 | L'application ne répond pas sur le domaine | Vérifier l'onglet Domains du service frontend (port 80) ; `docker logs easyecole-frontend` |
 | Erreur 502 / 504 sur l'API | Le backend est redémarré : attendre la fin du `depends_on` MySQL ; vérifier la mémoire du serveur (`free -h`) |
 | Le build Angular échoue (mémoire) | Dokploy : augmenter les ressources de la machine (4 Go minimum) ; la limite de heap 3072 Mo est déjà configurée dans le Dockerfile |
@@ -234,6 +234,90 @@ Vérifier les variables `PUBLIC_HOST_PATH`, `UPLOADS_HOST_PATH`, `STORAGE_HOST_P
 `CONFIG_HOST_PATH`, `KEYS_HOST_PATH`, `BACKUPS_HOST_PATH` dans Dokploy, puis appliquer le
 `chown` sur les chemins **effectivement** utilisés.
 
+### 12.2 Déploiement bloqué par une syntaxe SQL incompatible avec MySQL
+
+**Symptôme observé sur `test-ESA` (22 octobre 2026).** Le build des images Docker
+réussit, puis Dokploy échoue avec :
+
+```
+dependency failed to start: container easyecole-backend is unhealthy
+```
+
+Les logs montrent que le setup de production et les seeds se terminent, puis que le
+runner de migrations s'arrête sur une erreur SQL, par exemple :
+
+```
+[migrations][ERREUR] échec de la migration 052_elearning_assessments.sql
+[migrations][ERREUR]   code    : ER_PARSE_ERROR
+[migrations][ERREUR]   message : ... near 'IF NOT EXISTS `semestre` ...'
+```
+
+**Cause.** Les migrations `051_elearning_socle_cours_en_ligne.sql` et
+`052_elearning_assessments.sql` utilisaient des formes `ALTER TABLE ... ADD COLUMN
+IF NOT EXISTS`, `ADD KEY IF NOT EXISTS` et `FOREIGN KEY IF NOT EXISTS` qui ne sont
+pas acceptées par le serveur MySQL utilisé en production. Ces formes peuvent être
+acceptées par MariaDB, mais ne sont pas portables vers MySQL. Le runner est
+volontairement *fail-fast* : la migration en erreur n'est pas enregistrée dans
+`schema_migrations`, l'API n'est pas lancée et le healthcheck échoue.
+
+Dans l'incident observé, la migration 051 était déjà enregistrée ; le redéploiement
+suivant a donc progressé jusqu'à la 052 et a révélé le même problème à cette étape.
+Le succès de 051 ne signifiait pas encore que toute la séquence de migrations était
+passée.
+
+**Correctif.** Les migrations 051 et 052 vérifient maintenant
+`information_schema.COLUMNS`, `information_schema.STATISTICS` et
+`information_schema.TABLE_CONSTRAINTS`, puis ajoutent uniquement les éléments
+absents avec du SQL dynamique compatible MySQL. Les tables et données existantes
+sont conservées. Correctifs livrés sur `test-ESA` dans les commits `b19044dc` et
+`946d5e1b` (et le correctif 051 sur `Vpr` dans `fcda99ee`).
+
+**Vérification après redéploiement :**
+
+```bash
+docker logs --tail 250 easyecole-backend
+```
+
+Confirmer que les logs n'affichent plus `[migrations][ERREUR]` et que la version du
+schéma atteint au moins `052_elearning_assessments.sql`, puis vérifier l'API :
+
+```bash
+docker exec easyecole-backend node -e "require('http').get('http://127.0.0.1:3000/api/v1/health', r => { console.log(r.statusCode); process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', e => { console.error(e.message); process.exit(1) })"
+```
+
+Ne pas supprimer ni modifier manuellement les lignes de `schema_migrations` et ne
+pas désactiver `MIGRATIONS_ON_BOOT` pour contourner l'erreur. Si une migration
+échoue encore, relever son nom et le premier message SQL d'erreur : une migration
+ultérieure peut contenir une incompatibilité similaire.
+
+### 12.2.1 Erreur MySQL `ER_TOO_LONG_IDENT` pendant le sync Sequelize
+
+**Symptôme observé après application des migrations** (22 octobre 2026) :
+
+```
+code: 'ER_TOO_LONG_IDENT'
+Identifier name 'elearning_selections_cours_utilisateur_id_cours_id_annee_academique_id' is too long
+```
+
+Le SQL fautif est émis par Sequelize pour l'index unique de
+`elearning_selections_cours`. Le nom d'index généré automatiquement à partir du
+nom de la table et des colonnes compte 70 caractères, alors que MySQL limite les
+identifiants d'index à 64 caractères. La migration 051 crée déjà l'index avec le
+nom court `uq_elearning_selections_cours`, mais le modèle Sequelize n'avait pas
+de nom explicite et cherchait donc à créer un index différent.
+
+**Correctif.** Le modèle
+[`SelectionCours`](../easy-ecole-backend/src/modules/elearning/models/SelectionCours.ts)
+déclare maintenant explicitement `uq_elearning_selections_cours`, le même nom que
+la migration 051. Sequelize reconnaît ainsi l'index existant au démarrage au lieu
+d'en créer un avec un nom trop long. Aucune suppression ni modification des lignes
+de données n'est nécessaire.
+
+Après le redéploiement, vérifier les logs pour confirmer l'absence de
+`ER_TOO_LONG_IDENT`, puis contrôler l'API et les opérations qui accèdent à la base.
+Un `GET /api/v1/health` qui répond `200` ne suffit pas à lui seul à confirmer que
+toutes les initialisations de la base ont réussi.
+
 ## 13. Checklist de mise en production
 
 - [ ] Ubuntu à jour, ports 22/80/443 ouverts (ufw)
@@ -257,5 +341,5 @@ Vérifier les variables `PUBLIC_HOST_PATH`, `UPLOADS_HOST_PATH`, `STORAGE_HOST_P
 | `easy-ecole-backend/Dockerfile` | Image backend (build Babel → runtime Node 22, Chromium + ffmpeg inclus) |
 | `easy-ecole-web/Dockerfile` | Image frontend (build Angular 12 → nginx) |
 | `easy-ecole-web/nginx.conf` | Proxy `/api`, `/media`, `/socket.io`, `/api-docs` vers le backend |
-| `migrations/*.sql` | Migrations de schéma à appliquer manuellement |
+| `migrations/*.sql` | Migrations de schéma appliquées automatiquement au démarrage du backend |
 | `easy-ecole-backend/.env.example` | Référence des variables (aucun secret) |

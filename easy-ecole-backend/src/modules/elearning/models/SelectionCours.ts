@@ -55,5 +55,9 @@ SelectionCours.init({
   modelName: MODULE_MODEL_PREFIX + "SelectionCours",
   tableName: MODULE_TABLE_PREFIX + "selections_cours",
   timestamps: true,
-  indexes: [{ unique: true, fields: ["utilisateurId", "coursId", "anneeAcademiqueId"] }],
+  indexes: [{
+    name: "uq_elearning_selections_cours",
+    unique: true,
+    fields: ["utilisateurId", "coursId", "anneeAcademiqueId"],
+  }],
 });
