@@ -18,9 +18,9 @@
 --
 -- Garanties :
 --   - NON DESTRUCTIVE : aucun DROP, aucun TRUNCATE, aucune donnee supprimee.
---   - IDEMPOTENTE    : ADD COLUMN IF NOT EXISTS / ADD KEY IF NOT EXISTS /
---                      ADD CONSTRAINT IF NOT EXISTS / CREATE TABLE IF NOT EXISTS /
---                      INSERT ... WHERE NOT EXISTS / INSERT ... ON DUPLICATE KEY.
+--   - IDEMPOTENTE    : verifications information_schema avant les ALTER,
+--                      CREATE TABLE IF NOT EXISTS, INSERT ... WHERE NOT EXISTS,
+--                      INSERT ... ON DUPLICATE KEY.
 --   - REJOUABLE      : le fichier peut etre reexecute sans effet de bord.
 --   - CHARSET        : utf8mb3_general_ci (identique aux tables deja en base).
 --   - FK             : toutes les references pointees existent et sont en
@@ -43,38 +43,47 @@
 -- Pas de colonne `filiereId` : aucun referentiel filiere n'existe en base.
 -- D10 : les montants monetaires sont en DECIMAL(15,2) (FCFA) ; les « credits »
 -- sont un entier separe (`nbCredits`).
-ALTER TABLE `elearning_cours`
-  ADD COLUMN IF NOT EXISTS `code` VARCHAR(50) NULL,
-  ADD COLUMN IF NOT EXISTS `ueId` INT UNSIGNED NULL,
-  ADD COLUMN IF NOT EXISTS `niveauEtudeId` INT UNSIGNED NULL,
-  ADD COLUMN IF NOT EXISTS `anneeAcademiqueId` INT UNSIGNED NULL,
-  ADD COLUMN IF NOT EXISTS `nbCredits` INT UNSIGNED NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS `coutUnitaire` DECIMAL(15,2) NULL,
-  ADD COLUMN IF NOT EXISTS `coutTotal` DECIMAL(15,2) NULL,
-  ADD COLUMN IF NOT EXISTS `chargeSupportId` INT UNSIGNED NULL,
-  ADD COLUMN IF NOT EXISTS `professeurId` INT UNSIGNED NULL,
-  ADD COLUMN IF NOT EXISTS `datePublication` DATETIME NULL;
+SET @sql := CONCAT(
+  'ALTER TABLE `elearning_cours` ',
+  CONCAT_WS(', ',
+    IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_cours' AND COLUMN_NAME = 'code') = 0, 'ADD COLUMN `code` VARCHAR(50) NULL', NULL),
+    IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_cours' AND COLUMN_NAME = 'ueId') = 0, 'ADD COLUMN `ueId` INT UNSIGNED NULL', NULL),
+    IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_cours' AND COLUMN_NAME = 'niveauEtudeId') = 0, 'ADD COLUMN `niveauEtudeId` INT UNSIGNED NULL', NULL),
+    IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_cours' AND COLUMN_NAME = 'anneeAcademiqueId') = 0, 'ADD COLUMN `anneeAcademiqueId` INT UNSIGNED NULL', NULL),
+    IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_cours' AND COLUMN_NAME = 'nbCredits') = 0, 'ADD COLUMN `nbCredits` INT UNSIGNED NOT NULL DEFAULT 0', NULL),
+    IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_cours' AND COLUMN_NAME = 'coutUnitaire') = 0, 'ADD COLUMN `coutUnitaire` DECIMAL(15,2) NULL', NULL),
+    IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_cours' AND COLUMN_NAME = 'coutTotal') = 0, 'ADD COLUMN `coutTotal` DECIMAL(15,2) NULL', NULL),
+    IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_cours' AND COLUMN_NAME = 'chargeSupportId') = 0, 'ADD COLUMN `chargeSupportId` INT UNSIGNED NULL', NULL),
+    IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_cours' AND COLUMN_NAME = 'professeurId') = 0, 'ADD COLUMN `professeurId` INT UNSIGNED NULL', NULL),
+    IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_cours' AND COLUMN_NAME = 'datePublication') = 0, 'ADD COLUMN `datePublication` DATETIME NULL', NULL)
+  )
+);
+SET @sql := IF(@sql = 'ALTER TABLE `elearning_cours` ', 'SELECT 1', @sql);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-ALTER TABLE `elearning_cours`
-  ADD KEY IF NOT EXISTS `idx_elearning_cours_code` (`code`);
+SET @idxExists := (
+  SELECT COUNT(*) FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_cours' AND INDEX_NAME = 'idx_elearning_cours_code'
+);
+SET @sql := IF(@idxExists = 0,
+  'ALTER TABLE `elearning_cours` ADD KEY `idx_elearning_cours_code` (`code`)',
+  'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- `chargeSupportId` et `professeurId` pointent tous deux vers
 -- `aut_utilisateurs`.`id` : aucun role « charge_support » n'existe (lot L7).
--- NOTE MariaDB : la forme `ADD CONSTRAINT IF NOT EXISTS <nom> FOREIGN KEY ...`
--- est une ERREUR DE SYNTAXE. La forme acceptee par MariaDB 11.4 est
--- `ADD CONSTRAINT <nom> FOREIGN KEY IF NOT EXISTS (<col>) REFERENCES ...` :
--- le `IF NOT EXISTS` se place APRES `FOREIGN KEY`. L'idempotence est la meme.
-ALTER TABLE `elearning_cours`
-  ADD CONSTRAINT `fk_elearning_cours_ue` FOREIGN KEY IF NOT EXISTS (`ueId`)
-    REFERENCES `ins_cours` (`id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `fk_elearning_cours_niveau` FOREIGN KEY IF NOT EXISTS (`niveauEtudeId`)
-    REFERENCES `ins_niveaux_etudes` (`id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `fk_elearning_cours_annee` FOREIGN KEY IF NOT EXISTS (`anneeAcademiqueId`)
-    REFERENCES `ins_annees_academiques` (`id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `fk_elearning_cours_charge_support` FOREIGN KEY IF NOT EXISTS (`chargeSupportId`)
-    REFERENCES `aut_utilisateurs` (`id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `fk_elearning_cours_professeur` FOREIGN KEY IF NOT EXISTS (`professeurId`)
-    REFERENCES `aut_utilisateurs` (`id`) ON DELETE SET NULL;
+SET @sql := CONCAT(
+  'ALTER TABLE `elearning_cours` ',
+  CONCAT_WS(', ',
+    IF((SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_cours' AND CONSTRAINT_NAME = 'fk_elearning_cours_ue' AND CONSTRAINT_TYPE = 'FOREIGN KEY') = 0, 'ADD CONSTRAINT `fk_elearning_cours_ue` FOREIGN KEY (`ueId`) REFERENCES `ins_cours` (`id`) ON DELETE SET NULL', NULL),
+    IF((SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_cours' AND CONSTRAINT_NAME = 'fk_elearning_cours_niveau' AND CONSTRAINT_TYPE = 'FOREIGN KEY') = 0, 'ADD CONSTRAINT `fk_elearning_cours_niveau` FOREIGN KEY (`niveauEtudeId`) REFERENCES `ins_niveaux_etudes` (`id`) ON DELETE SET NULL', NULL),
+    IF((SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_cours' AND CONSTRAINT_NAME = 'fk_elearning_cours_annee' AND CONSTRAINT_TYPE = 'FOREIGN KEY') = 0, 'ADD CONSTRAINT `fk_elearning_cours_annee` FOREIGN KEY (`anneeAcademiqueId`) REFERENCES `ins_annees_academiques` (`id`) ON DELETE SET NULL', NULL),
+    IF((SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_cours' AND CONSTRAINT_NAME = 'fk_elearning_cours_charge_support' AND CONSTRAINT_TYPE = 'FOREIGN KEY') = 0, 'ADD CONSTRAINT `fk_elearning_cours_charge_support` FOREIGN KEY (`chargeSupportId`) REFERENCES `aut_utilisateurs` (`id`) ON DELETE SET NULL', NULL),
+    IF((SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_cours' AND CONSTRAINT_NAME = 'fk_elearning_cours_professeur' AND CONSTRAINT_TYPE = 'FOREIGN KEY') = 0, 'ADD CONSTRAINT `fk_elearning_cours_professeur` FOREIGN KEY (`professeurId`) REFERENCES `aut_utilisateurs` (`id`) ON DELETE SET NULL', NULL)
+  )
+);
+SET @sql := IF(@sql = 'ALTER TABLE `elearning_cours` ', 'SELECT 1', @sql);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- 1) Legacy 'actif' -> 'publie' (avant toute conversion de type).
 UPDATE `elearning_cours` SET `statut` = 'publie' WHERE `statut` = 'actif';
@@ -93,27 +102,51 @@ ALTER TABLE `elearning_cours`
 -- -----------------------------------------------------------------------------
 -- 1b) elearning_modules — annee academique de rattachement
 -- -----------------------------------------------------------------------------
-ALTER TABLE `elearning_modules`
-  ADD COLUMN IF NOT EXISTS `anneeAcademiqueId` INT UNSIGNED NULL;
+SET @colExists := (
+  SELECT COUNT(*) FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_modules' AND COLUMN_NAME = 'anneeAcademiqueId'
+);
+SET @sql := IF(@colExists = 0,
+  'ALTER TABLE `elearning_modules` ADD COLUMN `anneeAcademiqueId` INT UNSIGNED NULL',
+  'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-ALTER TABLE `elearning_modules`
-  ADD CONSTRAINT `fk_elearning_modules_annee` FOREIGN KEY IF NOT EXISTS (`anneeAcademiqueId`)
-    REFERENCES `ins_annees_academiques` (`id`) ON DELETE SET NULL;
+SET @fkExists := (
+  SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
+  WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_modules'
+    AND CONSTRAINT_NAME = 'fk_elearning_modules_annee' AND CONSTRAINT_TYPE = 'FOREIGN KEY'
+);
+SET @sql := IF(@fkExists = 0,
+  'ALTER TABLE `elearning_modules` ADD CONSTRAINT `fk_elearning_modules_annee` FOREIGN KEY (`anneeAcademiqueId`) REFERENCES `ins_annees_academiques` (`id`) ON DELETE SET NULL',
+  'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- -----------------------------------------------------------------------------
 -- 1c) elearning_supports — annee, accessibilite, titre et chemin reel du fichier
 -- -----------------------------------------------------------------------------
 -- D15 : le chemin reel du fichier n'etait stocké nulle part : la colonne
 -- `cheminFichier` est indispensable au correctif de diffusion du lot L4.
-ALTER TABLE `elearning_supports`
-  ADD COLUMN IF NOT EXISTS `anneeAcademiqueId` INT UNSIGNED NULL,
-  ADD COLUMN IF NOT EXISTS `accessibilite` ENUM('libre', 'paye') NOT NULL DEFAULT 'libre',
-  ADD COLUMN IF NOT EXISTS `titre` VARCHAR(255) NULL,
-  ADD COLUMN IF NOT EXISTS `cheminFichier` VARCHAR(500) NULL;
+SET @sql := CONCAT(
+  'ALTER TABLE `elearning_supports` ',
+  CONCAT_WS(', ',
+    IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_supports' AND COLUMN_NAME = 'anneeAcademiqueId') = 0, 'ADD COLUMN `anneeAcademiqueId` INT UNSIGNED NULL', NULL),
+    IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_supports' AND COLUMN_NAME = 'accessibilite') = 0, 'ADD COLUMN `accessibilite` ENUM(''libre'', ''paye'') NOT NULL DEFAULT ''libre''', NULL),
+    IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_supports' AND COLUMN_NAME = 'titre') = 0, 'ADD COLUMN `titre` VARCHAR(255) NULL', NULL),
+    IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_supports' AND COLUMN_NAME = 'cheminFichier') = 0, 'ADD COLUMN `cheminFichier` VARCHAR(500) NULL', NULL)
+  )
+);
+SET @sql := IF(@sql = 'ALTER TABLE `elearning_supports` ', 'SELECT 1', @sql);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-ALTER TABLE `elearning_supports`
-  ADD CONSTRAINT `fk_elearning_supports_annee`
-    FOREIGN KEY IF NOT EXISTS (`anneeAcademiqueId`) REFERENCES `ins_annees_academiques` (`id`) ON DELETE SET NULL;
+SET @fkExists := (
+  SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
+  WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_supports'
+    AND CONSTRAINT_NAME = 'fk_elearning_supports_annee' AND CONSTRAINT_TYPE = 'FOREIGN KEY'
+);
+SET @sql := IF(@fkExists = 0,
+  'ALTER TABLE `elearning_supports` ADD CONSTRAINT `fk_elearning_supports_annee` FOREIGN KEY (`anneeAcademiqueId`) REFERENCES `ins_annees_academiques` (`id`) ON DELETE SET NULL',
+  'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- -----------------------------------------------------------------------------
 -- 1d) elearning_annees — « annee courante » du module e-learning (D13)

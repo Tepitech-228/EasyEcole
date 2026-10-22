@@ -284,11 +284,19 @@ async function printReport(
     }
 
     // Vérification des tables critiques
-    const criticalTables = ['Utilisateur', 'Permission', 'RolePermission', 'UserRole'];
+    const criticalTables = [
+      'aut_utilisateurs',
+      'aut_permissions',
+      'aut_role_permissions',
+      'aut_user_roles',
+    ];
     console.log('');
     console.log('  Vérification tables critiques :');
     for (const table of criticalTables) {
-      const [result] = await sequelize.query(`SHOW TABLES LIKE '${table}'`);
+      const [result] = await sequelize.query(
+        'SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table',
+        { replacements: { table } }
+      );
       if ((result as any[]).length > 0) {
         const [countResult] = await sequelize.query(`SELECT COUNT(*) as count FROM \`${table}\``);
         const count = (countResult[0] as any).count;
