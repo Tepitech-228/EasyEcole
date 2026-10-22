@@ -1,28 +1,60 @@
 -- Online-only assessment cycle: two semester assignments and one confidential
 -- in-person exam per course and academic year. Existing assessment records are
 -- retained; legacy rows remain outside the new semester uniqueness constraint.
-ALTER TABLE `elearning_devoirs`
-  ADD COLUMN IF NOT EXISTS `semestre` TINYINT UNSIGNED NULL,
-  ADD COLUMN IF NOT EXISTS `anneeAcademiqueId` INT UNSIGNED NULL,
-  ADD COLUMN IF NOT EXISTS `statut` ENUM('brouillon', 'publie', 'ferme') NOT NULL DEFAULT 'brouillon',
-  ADD COLUMN IF NOT EXISTS `consignes` TEXT NULL,
-  ADD COLUMN IF NOT EXISTS `poids` DECIMAL(5,2) NOT NULL DEFAULT 50.00,
-  ADD COLUMN IF NOT EXISTS `datePublication` DATETIME NULL,
-  ADD COLUMN IF NOT EXISTS `sujetFichier` VARCHAR(500) NULL;
+SET @sql := CONCAT(
+  'ALTER TABLE `elearning_devoirs` ',
+  CONCAT_WS(', ',
+    IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_devoirs' AND COLUMN_NAME = 'semestre') = 0, 'ADD COLUMN `semestre` TINYINT UNSIGNED NULL', NULL),
+    IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_devoirs' AND COLUMN_NAME = 'anneeAcademiqueId') = 0, 'ADD COLUMN `anneeAcademiqueId` INT UNSIGNED NULL', NULL),
+    IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_devoirs' AND COLUMN_NAME = 'statut') = 0, 'ADD COLUMN `statut` ENUM(''brouillon'', ''publie'', ''ferme'') NOT NULL DEFAULT ''brouillon''', NULL),
+    IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_devoirs' AND COLUMN_NAME = 'consignes') = 0, 'ADD COLUMN `consignes` TEXT NULL', NULL),
+    IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_devoirs' AND COLUMN_NAME = 'poids') = 0, 'ADD COLUMN `poids` DECIMAL(5,2) NOT NULL DEFAULT 50.00', NULL),
+    IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_devoirs' AND COLUMN_NAME = 'datePublication') = 0, 'ADD COLUMN `datePublication` DATETIME NULL', NULL),
+    IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_devoirs' AND COLUMN_NAME = 'sujetFichier') = 0, 'ADD COLUMN `sujetFichier` VARCHAR(500) NULL', NULL)
+  )
+);
+SET @sql := IF(@sql = 'ALTER TABLE `elearning_devoirs` ', 'SELECT 1', @sql);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-ALTER TABLE `elearning_devoirs`
-  ADD CONSTRAINT `fk_elearning_devoirs_annee` FOREIGN KEY IF NOT EXISTS (`anneeAcademiqueId`)
-    REFERENCES `ins_annees_academiques` (`id`) ON DELETE SET NULL,
-  ADD UNIQUE KEY IF NOT EXISTS `uq_elearning_devoir_cours_annee_semestre`
-    (`coursId`, `anneeAcademiqueId`, `semestre`);
+SET @fkExists := (
+  SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
+  WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_devoirs'
+    AND CONSTRAINT_NAME = 'fk_elearning_devoirs_annee' AND CONSTRAINT_TYPE = 'FOREIGN KEY'
+);
+SET @sql := IF(@fkExists = 0,
+  'ALTER TABLE `elearning_devoirs` ADD CONSTRAINT `fk_elearning_devoirs_annee` FOREIGN KEY (`anneeAcademiqueId`) REFERENCES `ins_annees_academiques` (`id`) ON DELETE SET NULL',
+  'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-ALTER TABLE `elearning_soumissions_devoirs`
-  ADD COLUMN IF NOT EXISTS `dateCorrection` DATETIME NULL,
-  ADD COLUMN IF NOT EXISTS `corrigePar` INT UNSIGNED NULL;
+SET @idxExists := (
+  SELECT COUNT(*) FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_devoirs'
+    AND INDEX_NAME = 'uq_elearning_devoir_cours_annee_semestre'
+);
+SET @sql := IF(@idxExists = 0,
+  'ALTER TABLE `elearning_devoirs` ADD UNIQUE KEY `uq_elearning_devoir_cours_annee_semestre` (`coursId`, `anneeAcademiqueId`, `semestre`)',
+  'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-ALTER TABLE `elearning_soumissions_devoirs`
-  ADD CONSTRAINT `fk_elearning_soumissions_corrige_par` FOREIGN KEY IF NOT EXISTS (`corrigePar`)
-    REFERENCES `aut_utilisateurs` (`id`) ON DELETE SET NULL;
+SET @sql := CONCAT(
+  'ALTER TABLE `elearning_soumissions_devoirs` ',
+  CONCAT_WS(', ',
+    IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_soumissions_devoirs' AND COLUMN_NAME = 'dateCorrection') = 0, 'ADD COLUMN `dateCorrection` DATETIME NULL', NULL),
+    IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_soumissions_devoirs' AND COLUMN_NAME = 'corrigePar') = 0, 'ADD COLUMN `corrigePar` INT UNSIGNED NULL', NULL)
+  )
+);
+SET @sql := IF(@sql = 'ALTER TABLE `elearning_soumissions_devoirs` ', 'SELECT 1', @sql);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @fkExists := (
+  SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
+  WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'elearning_soumissions_devoirs'
+    AND CONSTRAINT_NAME = 'fk_elearning_soumissions_corrige_par' AND CONSTRAINT_TYPE = 'FOREIGN KEY'
+);
+SET @sql := IF(@fkExists = 0,
+  'ALTER TABLE `elearning_soumissions_devoirs` ADD CONSTRAINT `fk_elearning_soumissions_corrige_par` FOREIGN KEY (`corrigePar`) REFERENCES `aut_utilisateurs` (`id`) ON DELETE SET NULL',
+  'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 CREATE TABLE IF NOT EXISTS `elearning_examens` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
