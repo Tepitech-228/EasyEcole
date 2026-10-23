@@ -351,6 +351,19 @@ describe('DossierInscriptionController.deleteDossierInscription', () => {
     expect(res.status).toHaveBeenCalledWith(200)
   })
 
+  it('autorise un administrateur à supprimer un dossier', async () => {
+    const req = mockRequest({ utilisateurRole: 'admin', params: { id: '877' } } as any)
+    const res = mockResponse()
+    const mockDestroy = jest.fn().mockResolvedValue(undefined)
+    ;(DossierInscription.findOne as jest.Mock).mockResolvedValue({ id: 877, destroy: mockDestroy })
+
+    await DossierInscriptionController.deleteDossierInscription(req, res)
+
+    expect(DossierInscription.findOne).toHaveBeenCalledWith({ where: { id: '877' } })
+    expect(mockDestroy).toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
   it('retourne 500 si erreur destroy', async () => {
     const req = mockRequest({ utilisateurRole: 'institution', params: { id: '1' } } as any)
     const res = mockResponse()

@@ -717,39 +717,6 @@
   box-shadow: 0 7px 20px rgba(28, 45, 73, 0.055);
 }
 
-.pointage-card {
-  border-color: #e6eaf1;
-  border-radius: 22px;
-  box-shadow: 0 9px 28px rgba(20, 37, 64, 0.065);
-}
-
-.pointage-card:hover {
-  border-color: #d9e2ef;
-  box-shadow: 0 14px 34px rgba(20, 37, 64, 0.1);
-}
-
-.pointage-card-header {
-  min-height: 72px;
-  padding: 1rem 1.25rem;
-  border-bottom-color: #edf0f5;
-}
-
-.pointage-card-body {
-  padding: 1.25rem;
-}
-
-.pointage-scan-placeholder {
-  border-color: #cfd9e8;
-  background:
-    radial-gradient(circle at 50% 20%, rgba(217, 231, 250, 0.46), transparent 55%),
-    #fbfcfe;
-
-  &:hover {
-    border-color: #8faed7;
-    background-color: #f7faff;
-  }
-}
-
 .scanner-wrapper {
   max-width: 440px;
   border: 5px solid #fff;
@@ -1083,6 +1050,7 @@
   min-height: 78px;
   padding: 1.15rem 1.35rem;
   background: linear-gradient(180deg, #fff, #fcfdff);
+  border-bottom-color: #edf0f5;
 }
 
 .pointage-card-icon {
@@ -1124,6 +1092,11 @@
   background:
     radial-gradient(ellipse at 50% 8%, rgba(219, 233, 252, 0.78), transparent 52%),
     linear-gradient(145deg, #f5f8fd, #fbfcff 68%);
+
+  &:hover {
+    border-color: #8faed7;
+    background-color: #f7faff;
+  }
 }
 
 .pointage-scan-placeholder .scan-big-icon {

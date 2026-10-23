@@ -295,11 +295,8 @@ export default class DossierInscriptionController {
     }
 
     static async deleteDossierInscription(req: Request, res: Response): Promise<Response | null> {
-        let options: FindOptions<InferAttributes<DossierInscription>> = {}
-        if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
-            options = { where: { id: req.params.id } }
-        }
-        else {
+        const role = req.utilisateurRole;
+        if (role !== RolesUtilisateur.INSTITUTION && role !== RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false })
         }
 
