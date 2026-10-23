@@ -15,6 +15,8 @@ export interface TerminalAttendanceEvent {
   mode: 'arrivee' | 'depart' | 'passage' | 'refuse';
   etablissementId: number;
   motifRefus?: string | null;
+  photo?: string;
+  photoType?: 'apprenant' | 'enseignant' | 'profile';
 }
 
 @Injectable({

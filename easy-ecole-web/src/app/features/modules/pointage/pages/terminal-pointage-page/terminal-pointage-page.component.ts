@@ -25,6 +25,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   scannedUser: any = null
   private scannedCodeQR: string | null = null
   scanError: string = ''
+  scanWarning: string = ''
   scanSuccess: string = ''
   scanTimeout: boolean = false
   selfSuccess: string = ''
@@ -33,6 +34,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   voiceError: string = ''
   lastAttendanceName: string = ''
   lastAttendanceRole: string = ''
+  lastAttendancePhotoUrl: string = ''
   manualId: string = ''
   showManualInput: boolean = false
   readonly isAdmin: boolean
@@ -219,7 +221,9 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   private afficherPointageHikvision(event: TerminalAttendanceEvent): void {
     this.lastAttendanceName = this.formatPersonName(event)
     this.lastAttendanceRole = this.roleLabel(event.role)
+    this.lastAttendancePhotoUrl = this.buildPhotoUrl(event.photo, event.photoType)
     this.scanError = ''
+    this.scanWarning = ''
 
     if (event.mode === 'refuse') {
       this.scanSuccess = ''
@@ -372,6 +376,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     this.readerScanInProgress = true
     this.scanProcessing = true
     this.scanError = ''
+    this.scanWarning = ''
     this.scanSuccess = ''
     this.scannedUser = null
     this.pointageService.verifierStatutByQR(scan.codeQR).subscribe({
@@ -390,6 +395,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
             const pointage = result.pointage
             this.lastAttendanceName = this.formatPersonName(this.scannedUser)
             this.lastAttendanceRole = this.roleLabel(this.scannedUser?.role)
+            this.lastAttendancePhotoUrl = this.scannedUser?.photoUrl || ''
             const heure = result.mode === 'passage'
               ? pointage.heureArrivee
               : (result.mode === 'depart' ? pointage.heureDepart : pointage.heureArrivee)
@@ -405,8 +411,12 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
           },
           error: (err) => {
             this.scannedUser = null
-            this.scanError = err.error?.message || 'Le pointage n’a pas pu être enregistré. Réessayez.'
-            this.playBeepRefus()
+            if (this.isDuplicateAttendanceError(err)) {
+              this.scanWarning = err.error?.message || 'Arrivée et départ déjà pointées aujourd’hui. Aucun nouveau pointage n’a été ajouté.'
+            } else {
+              this.scanError = err.error?.message || 'Le pointage n’a pas pu être enregistré. Réessayez.'
+              this.playBeepRefus()
+            }
             this.finishReaderScan()
           }
         })
@@ -584,6 +594,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     this.scanMode = mode
     this.scannedUser = null
     this.scanError = ''
+    this.scanWarning = ''
     this.scanSuccess = ''
     this.scanTimeout = false
     this.showManualInput = false
@@ -796,6 +807,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     input.value = ''
     if (!file) return
     this.scanError = ''
+    this.scanWarning = ''
     const reader = new Html5Qrcode('qr-reader-pointage')
     try {
       const decoded = await reader.scanFile(file, false)
@@ -834,11 +846,6 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
         this.playBeepRefus()
       }
     }
-    const photoBase = res.photoType === 'enseignant'
-      ? this.TEACHER_PHOTOS_PATH
-      : res.photoType === 'profile'
-        ? this.PROFILE_PHOTOS_PATH
-        : this.PHOTOS_PATH
     this.scannedUser = {
       userId: res.utilisateurId,
       matricule: res.matricule || '',
@@ -848,9 +855,23 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       statut: autorise ? 'vert' : 'rouge',
       message: res.message || (autorise ? 'Accès autorisé' : 'Accès refusé'),
       photo: res.photo || '',
-      photoUrl: res.photo ? photoBase + encodeURIComponent(res.photo) : '',
+      photoUrl: this.buildPhotoUrl(res.photo, res.photoType),
       situationFinanciere: res.situationFinanciere || null
     }
+  }
+
+  private buildPhotoUrl(photo?: string | null, photoType?: string): string {
+    if (!photo) return ''
+    const photoBase = photoType === 'enseignant'
+      ? this.TEACHER_PHOTOS_PATH
+      : photoType === 'profile'
+        ? this.PROFILE_PHOTOS_PATH
+        : this.PHOTOS_PATH
+    return photoBase + encodeURIComponent(photo)
+  }
+
+  photoPointageIndisponible(): void {
+    this.lastAttendancePhotoUrl = ''
   }
 
   photoIndisponible(): void {
@@ -867,6 +888,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   private verifierStatut(codeQR: string): void {
     this.scannedUser = null
     this.scanError = ''
+    this.scanWarning = ''
     this.scanSuccess = ''
     this.pointageService.verifierStatutByQR(codeQR).subscribe({
       next: (res) => {
@@ -897,6 +919,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       next: (res: Pointage) => {
         this.lastAttendanceName = this.formatPersonName(this.scannedUser)
         this.lastAttendanceRole = this.roleLabel(this.scannedUser?.role)
+        this.lastAttendancePhotoUrl = this.scannedUser?.photoUrl || ''
         const heure = actualMode === 'depart' ? res.heureDepart : res.heureArrivee
         this.announceAttendance(this.scannedUser, actualMode, heure || undefined)
         this.playBeepSucces()
@@ -910,24 +933,32 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
         setTimeout(() => this.scanSuccess = '', 4000)
       },
       error: (err) => {
-        this.playBeepRefus()
-        if (err.error?.alreadyExists) {
-          this.scanError = mode === 'arrivee'
+        if (this.isDuplicateAttendanceError(err)) {
+          this.scanWarning = err.error?.message || (mode === 'arrivee'
             ? 'Arrivée déjà pointée aujourd\'hui'
-            : 'Départ déjà pointé aujourd\'hui'
+            : 'Départ déjà pointé aujourd\'hui')
         } else {
           this.scanError = err.error?.message || 'Erreur lors du pointage'
+          this.playBeepRefus()
         }
         this.scannedUser = null
         this.scannedCodeQR = null
-        setTimeout(() => this.scanError = '', 4000)
+        setTimeout(() => {
+          this.scanError = ''
+          this.scanWarning = ''
+        }, 4000)
       }
     })
+  }
+
+  private isDuplicateAttendanceError(err: any): boolean {
+    return err.error?.alreadyExists === true || err.error?.code === 'ALREADY_EXISTS'
   }
 
   resetScan(): void {
     this.scannedUser = null
     this.scanError = ''
+    this.scanWarning = ''
     this.scanSuccess = ''
     this.scanTimeout = false
     this.manualId = ''

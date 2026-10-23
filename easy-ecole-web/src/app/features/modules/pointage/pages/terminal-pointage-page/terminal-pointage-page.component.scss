@@ -513,6 +513,13 @@
   .state-desc  { @apply text-yellow-600; }
 }
 
+.pointage-state-card--warning {
+  @apply border border-yellow-200 bg-yellow-50;
+  .state-icon { @apply bg-yellow-100; svg { @apply text-yellow-600; } }
+  .state-title { @apply text-yellow-800; }
+  .state-desc  { @apply text-yellow-700; }
+}
+
 .pointage-state-card--error {
   @apply border border-red-200 bg-red-50;
   .state-icon { @apply bg-red-100; svg { @apply text-red-600; } }

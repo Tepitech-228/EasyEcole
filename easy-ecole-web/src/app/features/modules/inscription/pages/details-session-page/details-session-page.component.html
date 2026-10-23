@@ -1,6 +1,6 @@
 <app-custom-alert [show]="error || alreadyExists" title="Erreur">
     {{ error ? 'Une erreur est survenue lors de l\'opération' : '' }}
-    {{ alreadyExists ? 'Ce frais d\'inscripton existe déjà.\nVeuillez changer le titre' : '' }}
+    {{ alreadyExists ? 'Un élément portant ce titre existe déjà pour cette session. Veuillez choisir un autre titre.' : '' }}
 </app-custom-alert>
 
 <app-return-back></app-return-back>
@@ -310,13 +310,12 @@
 
     <div class="w-full mb-8">
         <app-details-section text="Dossiers à fournir">
-            <div *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" class="relative">
-                <div>
-                    <button (click)="showNouveauDossierModal = true"
-                        class="p-1 rounded focus:ring-1 focus:ring-gray-300">
-                        <img src="assets/icons/add.svg" alt="add">
-                    </button>
-                </div>
+            <div *ngIf="rolesValue.isInstitution || rolesValue.isAdmin">
+                <button type="button" (click)="showNouveauDossierModal = true"
+                    class="inline-flex items-center gap-2 rounded-md bg-primary-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2">
+                    <img src="assets/icons/add.svg" alt="" class="h-4 w-4 brightness-0 invert">
+                    Ajouter un document requis
+                </button>
             </div>
         </app-details-section>
         <div *ngIf="session.dossiersInscription!.length == 0" class="text-sm text-gray-400 text-center py-8">Aucun dossier</div>

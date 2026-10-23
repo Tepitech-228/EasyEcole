@@ -249,7 +249,7 @@ export class DetailsSessionPageComponent extends BaseComponentClass implements O
         },
         error: (err) => {
           console.log(err)
-          this.alreadyExists = err.error.alreadyExists
+          this.alreadyExists = err?.error?.alreadyExists === true
           if (!this.alreadyExists) {
             this.error = true
           }
@@ -282,7 +282,7 @@ export class DetailsSessionPageComponent extends BaseComponentClass implements O
         },
         error: (err) => {
           console.log(err)
-          this.alreadyExists = err.error.alreadyExists
+          this.alreadyExists = err?.error?.alreadyExists === true
           if (!this.alreadyExists) {
             this.error = true
           }
@@ -332,7 +332,7 @@ export class DetailsSessionPageComponent extends BaseComponentClass implements O
         },
         error: (err) => {
           console.log(err)
-          this.alreadyExists = err.error.alreadyExists
+          this.alreadyExists = err?.error?.alreadyExists === true
           if (!this.alreadyExists) {
             this.error = true
           }

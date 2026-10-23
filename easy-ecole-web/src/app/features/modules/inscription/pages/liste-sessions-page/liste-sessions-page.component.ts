@@ -12,6 +12,7 @@ import { AnneeAcademique } from 'src/app/data/modules/inscription/models/AnneeAc
 import { AnneeAcademiqueService } from 'src/app/data/modules/inscription/services/annee-academique.service';
 import { DossierNode, BatchAction } from 'src/app/shared/components/dossier-view/dossier-view.component';
 import { ModaliteFraisScolarite } from 'src/app/data/modules/inscription/models/FraisScolarite.model';
+import { PermissionStateService } from 'src/app/core/services/permission-state.service';
 
 @Component({
   selector: 'app-liste-sessions-page',
@@ -21,6 +22,12 @@ import { ModaliteFraisScolarite } from 'src/app/data/modules/inscription/models/
 export class ListeSessionsPageComponent extends BaseComponentClass implements OnInit {
 
   showNouvelleSessionModal: boolean = false
+  sessionToEdit: Session | null = null
+  sessionFormError: string = ''
+  sessionActionError: string = ''
+  isSavingSession: boolean = false
+  canModifySession: boolean = false
+  canDeleteSession: boolean = false
   TODAY_DATE: string = (new Date()).toISOString().split('T')[0]
 
   sessions: Session[] = []
@@ -47,6 +54,8 @@ export class ListeSessionsPageComponent extends BaseComponentClass implements On
   ]
   itemActions: BatchAction[] = [
     { label: 'Détails', color: 'indigo', action: 'details', icon: 'visibility' },
+    { label: 'Modifier', color: 'blue', action: 'edit', icon: 'edit' },
+    { label: 'Supprimer', color: 'red', action: 'delete', icon: 'delete' },
   ]
 
   nouveauxFrais: Array<{ titre: string, montant: number, description: string, fraisDesCours: boolean }> = []
@@ -73,14 +82,23 @@ export class ListeSessionsPageComponent extends BaseComponentClass implements On
     private router: Router,
     private niveauEtudeService: NiveauEtudeService,
     private sessionService: SessionService,
-    private anneeAcademiqueService: AnneeAcademiqueService) {
+    private anneeAcademiqueService: AnneeAcademiqueService,
+    private permissionState: PermissionStateService) {
     super()
+    this.canModifySession = this.rolesValue.isAdmin
+    this.canDeleteSession = this.rolesValue.isAdmin
     if (!this.rolesValue.isInstitution && !this.rolesValue.isAdmin) {
       this.router.navigate(['/'])
     }
   }
 
   ngOnInit(): void {
+    this.permissionState.ensureLoaded().subscribe(() => {
+      this.canModifySession = this.rolesValue.isAdmin
+        || this.permissionState.hasPermission('action.inscription.session.modifier')
+      this.canDeleteSession = this.rolesValue.isAdmin
+        || this.permissionState.hasPermission('action.inscription.session.supprimer')
+    })
     combineLatest([
       this.anneeAcademiqueService.getAll(),
       this.niveauEtudeService.getAll(),
@@ -171,9 +189,22 @@ export class ListeSessionsPageComponent extends BaseComponentClass implements On
   }
 
   onItemAction(event: { item: any; action: string }): void {
-    if (event.action === 'details' && event.item._session?.id) {
-      this.router.navigate(['/inscription/sessions/' + event.item._session.id])
+    const session: Session | undefined = event.item._session
+    if (!session?.id) return
+    this.sessionActionError = ''
+    if (event.action === 'details') {
+      this.router.navigate(['/inscription/sessions/' + session.id])
+    } else if (event.action === 'edit' && this.canModifySession) {
+      this.openEditSessionModal(session)
+    } else if (event.action === 'delete' && this.canDeleteSession) {
+      this.supprimerSession(session)
     }
+  }
+
+  readonly canShowSessionAction = (_item: any, action: string): boolean => {
+    if (action === 'edit') return this.canModifySession
+    if (action === 'delete') return this.canDeleteSession
+    return true
   }
 
   getEtatSession(dateDebut: Date, dateFin: Date): EtatsSession {
@@ -203,10 +234,74 @@ export class ListeSessionsPageComponent extends BaseComponentClass implements On
           this.router.navigate(['/inscription/sessions/' + res.id])
         },
         error: (err) => {
-          console.log(err)
+          this.sessionFormError = err.error?.message || 'La session n’a pas pu être créée. Réessayez.'
         },
       })
     }
+  }
+
+  modifierSession(): void {
+    if (!this.sessionToEdit) return
+    this.sessionForm.markAllAsTouched()
+    if (!this.sessionForm.valid) return
+
+    const session = {
+      dateDebut: this.sessionForm.get('dateDebut')!.value,
+      dateFin: this.sessionForm.get('dateFin')!.value,
+      niveauEtudeId: this.sessionForm.get('niveauEtude')!.value,
+      anneeAcademiqueId: this.sessionForm.get('anneeAcademique')!.value,
+      description: this.sessionForm.get('description')!.value || ''
+    }
+    this.isSavingSession = true
+    this.sessionService.update(this.sessionToEdit.id, session).subscribe({
+      next: () => {
+        this.closeNouvelleSessionModal()
+        this.getSessions()
+      },
+      error: (err) => {
+        this.sessionFormError = err.error?.message || 'La session n’a pas pu être modifiée. Réessayez.'
+        this.isSavingSession = false
+      }
+    })
+  }
+
+  private openEditSessionModal(session: Session): void {
+    this.getNiveauxEtude()
+    this.getAnneesAcademiques(session.anneeAcademiqueId)
+    this.sessionToEdit = session
+    this.sessionFormError = ''
+    this.sessionForm.patchValue({
+      dateDebut: this.toDateInputValue(session.dateDebut),
+      dateFin: this.toDateInputValue(session.dateFin),
+      niveauEtude: session.niveauEtudeId,
+      anneeAcademique: session.anneeAcademiqueId,
+      description: session.description || ''
+    })
+    this.showNouvelleSessionModal = true
+  }
+
+  private supprimerSession(session: Session): void {
+    const confirme = window.confirm(
+      `Voulez-vous vraiment supprimer cette session du ${this.toDateInputValue(session.dateDebut)} au ${this.toDateInputValue(session.dateFin)} ?`
+    )
+    if (!confirme) return
+
+    this.sessionService.delete(session.id).subscribe({
+      next: () => {
+        this.sessionActionError = ''
+        this.getSessions()
+      },
+      error: (err) => {
+        this.sessionActionError = err.error?.message || 'La session n’a pas pu être supprimée.'
+      }
+    })
+  }
+
+  private toDateInputValue(value: Date | string): string {
+    if (!value) return ''
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return ''
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
   }
 
   ajouterNouveauFrais(): void {
@@ -238,13 +333,24 @@ export class ListeSessionsPageComponent extends BaseComponentClass implements On
   openNouvelleSessionModal(): void {
     this.getNiveauxEtude()
     this.getAnneesAcademiques()
+    this.sessionToEdit = null
+    this.sessionFormError = ''
     this.TODAY_DATE = (new Date()).toISOString().split('T')[0]
-    this.sessionForm.get('dateDebut')!.setValue(this.TODAY_DATE)
+    this.sessionForm.reset({
+      dateDebut: this.TODAY_DATE,
+      dateFin: null,
+      niveauEtude: null,
+      anneeAcademique: null,
+      description: ''
+    })
     this.showNouvelleSessionModal = true
   }
 
   closeNouvelleSessionModal(): void {
     this.showNouvelleSessionModal = false
+    this.sessionToEdit = null
+    this.sessionFormError = ''
+    this.isSavingSession = false
     this.sessionForm.reset()
     this.nouveauxFrais = []
     this.nouveauxDossiers = []
@@ -264,12 +370,15 @@ export class ListeSessionsPageComponent extends BaseComponentClass implements On
       })
   }
 
-  private getAnneesAcademiques(): void {
+  private getAnneesAcademiques(selectedId?: string): void {
     this.anneeAcademiqueService.getAll()
     .subscribe({
       next: (res) => {
         this.annees = res
-        this.sessionForm.get('anneeAcademique')!.setValue(this.annees[0].id)
+        const selectedYear = selectedId
+          ? this.annees.find(annee => String(annee.id) === String(selectedId))
+          : this.annees[0]
+        if (selectedYear) this.sessionForm.get('anneeAcademique')!.setValue(selectedYear.id)
       },
       error: (err) => {
         console.log(err)

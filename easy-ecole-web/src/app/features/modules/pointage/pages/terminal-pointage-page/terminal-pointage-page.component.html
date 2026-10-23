@@ -302,7 +302,7 @@
               </p>
             </div>
           </div>
-          <div *ngIf="scannedUser || scanError || scanSuccess" class="no-print">
+          <div *ngIf="scannedUser || scanError || scanWarning || scanSuccess" class="no-print">
             <button (click)="resetScan()" class="pointage-btn pointage-btn--outline pointage-btn--sm">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
@@ -348,7 +348,7 @@
           </div>
 
           <!-- ===== SCAN STATE ===== -->
-          <div *ngIf="!scanProcessing && !scannedUser && !scanError && !scanSuccess && !scanTimeout && !showManualInput">
+          <div *ngIf="!scanProcessing && !scannedUser && !scanError && !scanWarning && !scanSuccess && !scanTimeout && !showManualInput">
 
             <div class="mb-4 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-center text-sm text-indigo-800">
               Le système détermine automatiquement l’entrée ou la sortie selon le profil et les scans de la journée.
@@ -421,7 +421,7 @@
           </div>
 
           <!-- ===== SAISIE MANUELLE ===== -->
-          <div *ngIf="showManualInput && !scannedUser && !scanError && !scanSuccess" class="pointage-manual-input">
+          <div *ngIf="showManualInput && !scannedUser && !scanError && !scanWarning && !scanSuccess" class="pointage-manual-input">
             <label for="pointage-manual-id" class="text-sm text-gray-500 mb-3 block">Saisissez l'identifiant ou matricule</label>
             <input id="pointage-manual-id" [(ngModel)]="manualId" type="text" placeholder="ex: UTIL001 ou MAT-2024-001"
               autocomplete="off" aria-describedby="pointage-manual-hint"
@@ -560,6 +560,20 @@
             </div>
           </div>
 
+          <!-- ===== AVERTISSEMENT SCAN ===== -->
+          <div *ngIf="scanWarning && !scannedUser" class="pointage-state-card pointage-state-card--warning" role="status">
+            <div class="state-icon">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86l-7.5 13A2 2 0 004.52 20h14.96a2 2 0 001.73-3.14l-7.5-13a2 2 0 00-3.46 0z"/>
+              </svg>
+            </div>
+            <div class="state-title">Pointage déjà effectué</div>
+            <div class="state-desc">{{ scanWarning }}</div>
+            <button (click)="resetScan()" class="pointage-btn pointage-btn--outline pointage-btn--sm">
+              Scanner un autre
+            </button>
+          </div>
+
           <!-- ===== ERREUR SCAN ===== -->
           <div *ngIf="scanError && !scannedUser" class="pointage-state-card pointage-state-card--error">
             <div class="state-icon">
@@ -583,6 +597,11 @@
             </div>
             <div class="state-title">Pointage effectué</div>
             <div *ngIf="lastAttendanceName" class="my-2 flex flex-col text-green-900">
+              <img *ngIf="lastAttendancePhotoUrl"
+                [src]="lastAttendancePhotoUrl"
+                [alt]="'Photo de ' + lastAttendanceName"
+                class="mx-auto mb-2 h-20 w-20 rounded-full object-cover ring-2 ring-green-200"
+                (error)="photoPointageIndisponible()">
               <strong class="text-base">{{ lastAttendanceName }}</strong>
               <span class="text-xs">{{ lastAttendanceRole }}</span>
             </div>

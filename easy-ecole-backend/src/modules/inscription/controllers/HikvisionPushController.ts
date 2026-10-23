@@ -1,6 +1,8 @@
 import { createHash } from "crypto";
 import { Request, Response } from "express";
+import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Utilisateur } from "../../auth/models/Utilisateur";
+import { Apprenant } from "../../auth/models/Apprenant";
 import { PersonnelAdministratif } from "../../auth/models/PersonnelAdministratif";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { SiteUtilisateur } from "../../auth/models/SiteUtilisateur";
@@ -106,6 +108,43 @@ async function resolveUtilisateur(employeeNo: string, etablissementId: number): 
   return null;
 }
 
+async function getUtilisateurPhoto(
+  utilisateur: Utilisateur,
+  etablissementId: number
+): Promise<{ photo: string; photoType: "apprenant" | "enseignant" | "profile" } | null> {
+  try {
+    if (utilisateur.role === RolesUtilisateur.APPRENANT) {
+      const [dossier, apprenant] = await Promise.all([
+        DossierEtudiant.findOne({
+          where: { utilisateurId: utilisateur.id, etablissementId },
+          attributes: ["photo"]
+        }),
+        Apprenant.findOne({
+          where: { utilisateurId: utilisateur.id },
+          attributes: ["photo"]
+        })
+      ]);
+      const photo = dossier?.photo || apprenant?.photo;
+      return photo ? { photo, photoType: "apprenant" } : null;
+    }
+
+    if (utilisateur.role === RolesUtilisateur.ENSEIGNANT) {
+      const enseignant = await Enseignant.findOne({
+        where: { utilisateurId: utilisateur.id },
+        attributes: ["photo"]
+      });
+      return enseignant?.photo ? { photo: enseignant.photo, photoType: "enseignant" } : null;
+    }
+
+    return utilisateur.photoDeProfil
+      ? { photo: utilisateur.photoDeProfil, photoType: "profile" }
+      : null;
+  } catch (error) {
+    console.error(`[Hikvision] Impossible de récupérer la photo du compte ${utilisateur.id}:`, error);
+    return null;
+  }
+}
+
 async function traiterEvenement(terminal: PointageTerminal, eventId: number): Promise<void> {
   try {
     const pendingEvent = await PointageTerminalEvent.findOne({
@@ -125,6 +164,7 @@ async function traiterEvenement(terminal: PointageTerminal, eventId: number): Pr
     };
     const recorded = await PointageTerminalController.processAttendanceEvent(terminal, log);
     if (!utilisateur) return;
+    const photo = await getUtilisateurPhoto(utilisateur, Number(terminal.etablissementId));
 
     if (!recorded.recorded) {
       // Refus (paiement non à jour, compte non autorisé, déjà traité…) : on
@@ -140,7 +180,8 @@ async function traiterEvenement(terminal: PointageTerminal, eventId: number): Pr
           time: pendingEvent.heure,
           mode: "refuse",
           etablissementId: Number(terminal.etablissementId),
-          motifRefus: recorded.motifRefus
+          motifRefus: recorded.motifRefus,
+          ...photo
         });
       }
       return;
@@ -155,7 +196,8 @@ async function traiterEvenement(terminal: PointageTerminal, eventId: number): Pr
       date: pendingEvent.date,
       time: pendingEvent.heure,
       mode: recorded.mode,
-      etablissementId: Number(terminal.etablissementId)
+      etablissementId: Number(terminal.etablissementId),
+      ...photo
     });
   } catch (error) {
     console.error(`[Hikvision] Échec du traitement d’un événement du terminal ${terminal.id}:`, error);

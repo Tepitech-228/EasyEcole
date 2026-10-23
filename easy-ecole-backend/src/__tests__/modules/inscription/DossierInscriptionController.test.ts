@@ -171,6 +171,24 @@ describe('DossierInscriptionController.createDossierInscription', () => {
     expect(res.send).toHaveBeenCalledWith(saved)
   })
 
+  it('autorise aussi un administrateur à ajouter un dossier à une session', async () => {
+    const req = mockRequest({ utilisateurRole: 'admin', body: { titre: 'Nouveau', sessionId: 's1' } } as any)
+    const res = mockResponse()
+    const saved = { id: 1, titre: 'Nouveau' }
+    const mockSave = jest.fn().mockResolvedValue(saved)
+    ;(DossierInscription.findOne as jest.Mock).mockResolvedValue(null)
+    ;(DossierInscription as jest.Mock).mockReturnValue({ save: mockSave })
+
+    await DossierInscriptionController.createDossierInscription(req, res)
+
+    expect(DossierInscription.findOne).toHaveBeenCalledWith({
+      where: { titre: 'Nouveau', sessionId: 's1' },
+    })
+    expect(mockSave).toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(201)
+    expect(res.send).toHaveBeenCalledWith(saved)
+  })
+
   it('retourne 400 si erreur save', async () => {
     const req = mockRequest({ utilisateurRole: 'institution', body: { titre: 'Nouveau', sessionId: 's1' } } as any)
     const res = mockResponse()

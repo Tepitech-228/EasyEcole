@@ -48,10 +48,14 @@ interface CurlResponse {
     body: string;
 }
 
+export function getCurlExecutable(platform: NodeJS.Platform = process.platform): string {
+    return platform === "win32" ? "curl.exe" : "curl";
+}
+
 function runCurl(args: string[], timeoutMs: number): Promise<CurlResponse> {
     return new Promise((resolve, reject) => {
         const curlArgs = [...args, "-s", "-w", "\\n__HTTP_CODE__%{http_code}"];
-        const proc = spawn("curl.exe", curlArgs, { windowsHide: true });
+        const proc = spawn(getCurlExecutable(), curlArgs, { windowsHide: true });
         let stdout = "";
         let stderr = "";
         proc.stdout.on("data", (d: Buffer) => { stdout += d.toString("utf8"); });

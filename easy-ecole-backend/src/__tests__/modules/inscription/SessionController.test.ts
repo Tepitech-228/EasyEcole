@@ -247,6 +247,7 @@ describe('updateSession', () => {
 
     await Ctrl.updateSession(req, res)
 
+    expect(Session.findOne).toHaveBeenCalledWith({ where: { id: '1' } })
     expect(mockUpdate).toHaveBeenCalled()
     expect(res.status).toHaveBeenCalledWith(200)
   })

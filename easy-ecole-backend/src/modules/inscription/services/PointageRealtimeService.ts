@@ -11,6 +11,8 @@ export interface TerminalAttendanceUpdate {
   mode: "arrivee" | "depart" | "passage" | "refuse";
   etablissementId: number;
   motifRefus?: string | null;
+  photo?: string;
+  photoType?: "apprenant" | "enseignant" | "profile";
 }
 
 export default class PointageRealtimeService {

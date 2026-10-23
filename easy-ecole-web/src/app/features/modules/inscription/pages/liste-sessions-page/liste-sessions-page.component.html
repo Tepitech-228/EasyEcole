@@ -6,6 +6,10 @@
 </div>
 
 <div class="flex flex-col gap-y-4">
+    <div *ngIf="sessionActionError" class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+        {{ sessionActionError }}
+    </div>
+
     <app-filters-annee-niveau-parcours
         [annees]="annees"
         [niveaux]="niveaux"
@@ -21,9 +25,11 @@
     <app-dossier-view
         [nodes]="treeNodes"
         [columns]="itemColumns"
-        [batchActions]="itemActions"
+        [itemActions]="itemActions"
+        [includeBatchInRowActions]="false"
         [loading]="false"
         [renderItemActions]="true"
+        [canShowItemAction]="canShowSessionAction"
         [totalItems]="totalItems"
         [currentPage]="currentPage"
         [totalPages]="totalPages"
@@ -35,12 +41,15 @@
 
 
 <!-- // Modals -->
-<app-custom-modal title="Nouvelle session" subtitle="Ajouter une nouvelle session à votre catalogue" (onCloseModal)="showNouvelleSessionModal = false" [center]="true" [showModal]="showNouvelleSessionModal">
+<app-custom-modal [title]="sessionToEdit ? 'Modifier la session' : 'Nouvelle session'" [subtitle]="sessionToEdit ? 'Mettre à jour les informations de la session' : 'Ajouter une nouvelle session à votre catalogue'" (onCloseModal)="closeNouvelleSessionModal()" [center]="true" [showModal]="showNouvelleSessionModal">
     <form [formGroup]="sessionForm">
+        <div *ngIf="sessionFormError" class="mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+            {{ sessionFormError }}
+        </div>
         <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
             <div class="col-span-3">
                 <span class="mb-2 block text-sm text-gray-400">Date de début</span>
-                <input type="date" id="dateDebut" [min]="TODAY_DATE" formControlName="dateDebut" placeholder="Saisir la date de début ici..."
+                <input type="date" id="dateDebut" [min]="sessionToEdit ? null : TODAY_DATE" formControlName="dateDebut" placeholder="Saisir la date de début ici..."
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
 
                 <div class="mb-8"
@@ -90,7 +99,7 @@
             </div>
 
             <!-- Frais d'inscription -->
-            <div class="col-span-full border-t border-gray-200 pt-6 mt-4">
+            <div *ngIf="!sessionToEdit" class="col-span-full border-t border-gray-200 pt-6 mt-4">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-base font-semibold text-gray-700">Frais d'inscription</h3>
                     <button type="button" (click)="ajouterNouveauFrais()"
@@ -140,7 +149,7 @@
             </div>
 
             <!-- Frais de scolarité -->
-            <div class="col-span-full border-t border-gray-200 pt-6 mt-4">
+            <div *ngIf="!sessionToEdit" class="col-span-full border-t border-gray-200 pt-6 mt-4">
                 <h3 class="text-base font-semibold text-gray-700 mb-4">Frais de scolarité</h3>
                 <div class="border border-gray-200 rounded-md p-4">
                     <div class="grid grid-cols-6 gap-x-4 gap-y-4">
@@ -163,7 +172,7 @@
             </div>
 
             <!-- Dossiers à fournir -->
-            <div class="col-span-full border-t border-gray-200 pt-6 mt-4">
+            <div *ngIf="!sessionToEdit" class="col-span-full border-t border-gray-200 pt-6 mt-4">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-base font-semibold text-gray-700">Dossiers à fournir</h3>
                     <button type="button" (click)="ajouterNouveauDossier()"
@@ -200,6 +209,7 @@
     </form>
     <div class="flex items-center justify-between py-3">
         <app-custom-button (click)="closeNouvelleSessionModal()" text="Annuler" color="gray" [outlined]="true"></app-custom-button>
-        <app-custom-button (click)="ajouterSession()" text="Enregistrer"></app-custom-button>
+        <app-custom-button *ngIf="!sessionToEdit" (click)="ajouterSession()" text="Enregistrer"></app-custom-button>
+        <app-custom-button *ngIf="sessionToEdit" (click)="modifierSession()" [text]="isSavingSession ? 'Enregistrement…' : 'Enregistrer les modifications'"></app-custom-button>
     </div>
 </app-custom-modal>

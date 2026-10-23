@@ -25,6 +25,14 @@ export class SessionService {
     return this.httpClient.post<Session>(`${this.SERVICE_URL}`, session)
   }
 
+  update(id: string, session: Partial<Session>): Observable<Session> {
+    return this.httpClient.put<Session>(`${this.SERVICE_URL}/${id}`, session)
+  }
+
+  delete(id: string): Observable<{ success: boolean, message?: string }> {
+    return this.httpClient.delete<{ success: boolean, message?: string }>(`${this.SERVICE_URL}/${id}`)
+  }
+
   getCount(): Observable<{ success: boolean, count: number }> {
     return this.httpClient.get<{ success: boolean, count: number }>(`${this.SERVICE_URL}/statistics/count`)
   }

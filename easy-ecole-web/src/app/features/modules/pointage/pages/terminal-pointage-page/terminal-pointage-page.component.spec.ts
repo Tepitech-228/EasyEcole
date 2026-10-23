@@ -84,6 +84,9 @@ describe('TerminalPointagePageComponent', () => {
   });
 
   it('announces a saved Hikvision attendance event received over Socket.IO', () => {
+    pointageService.getToday.and.returnValue(of(null));
+    fixture.componentInstance.loading = false;
+    fixture.componentInstance.loadError = '';
     fixture.detectChanges();
     terminalAttendanceEvents.next({
       utilisateurId: 12,
@@ -94,12 +97,18 @@ describe('TerminalPointagePageComponent', () => {
       date: '2026-10-18',
       time: '09:18:22',
       mode: 'arrivee',
-      etablissementId: 1
+      etablissementId: 1,
+      photo: 'jane-doe.jpg',
+      photoType: 'apprenant'
     });
 
     expect(fixture.componentInstance.lastAttendanceName).toBe('Jane Doe');
     expect(fixture.componentInstance.lastAttendanceRole).toBe('Étudiant autorisé');
+    expect(fixture.componentInstance.lastAttendancePhotoUrl).toContain('/media/photos/apprenants/jane-doe.jpg');
     expect(fixture.componentInstance.scanSuccess).toBe('Arrivée enregistrée à 09:18:22');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.pointage-state-card--success img')?.getAttribute('src'))
+      .toContain('/media/photos/apprenants/jane-doe.jpg');
   });
 
   it('shows Hikvision as the only facial terminal on the attendance page', () => {
@@ -411,6 +420,31 @@ describe('TerminalPointagePageComponent', () => {
 
     expect(speak).not.toHaveBeenCalled();
     expect(fixture.componentInstance.scanError).toBe('Pointage déjà effectué');
+  });
+
+  it('shows a duplicate QR attendance as a yellow warning instead of an error', () => {
+    pointageService.getToday.and.returnValue(of(null));
+    fixture.componentInstance.loading = false;
+    fixture.componentInstance.loadError = '';
+    pointageService.pointerParQR.and.callFake(() => new Observable<never>((subscriber) => {
+      subscriber.error({
+        error: {
+          alreadyExists: true,
+          code: 'ALREADY_EXISTS',
+          message: 'Départ déjà pointé aujourd’hui'
+        }
+      });
+    }));
+    fixture.detectChanges();
+
+    typeFast('CARTE|v=1|duplicate-attendance');
+    dispatchKey('Enter');
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.scanWarning).toBe('Départ déjà pointé aujourd’hui');
+    expect(fixture.componentInstance.scanError).toBe('');
+    expect(fixture.nativeElement.querySelector('.pointage-state-card--warning')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.pointage-state-card--error')).toBeNull();
   });
 
   it('provides a voice test action so the browser can initialize speech playback', () => {

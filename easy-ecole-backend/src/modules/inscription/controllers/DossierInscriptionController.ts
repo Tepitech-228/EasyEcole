@@ -72,14 +72,14 @@ export default class DossierInscriptionController {
     }
 
     static async createDossierInscription(req: Request, res: Response): Promise<Response | null> {
-        let options: FindOptions<InferAttributes<DossierInscription>> = {}
-        if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
-            options = { where: { titre: req.body.titre, sessionId: req.body.sessionId } }
-        }
-        else {
+        const role = req.utilisateurRole;
+        if (role !== RolesUtilisateur.INSTITUTION && role !== RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false })
         }
 
+        const options: FindOptions<InferAttributes<DossierInscription>> = {
+            where: { titre: req.body.titre, sessionId: req.body.sessionId }
+        };
         let dossierInscription: DossierInscription | null = await DossierInscription.findOne(options);
         if (dossierInscription == null) {
             let dossierInscription: DossierInscription = new DossierInscription();

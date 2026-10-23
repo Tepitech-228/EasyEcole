@@ -297,17 +297,13 @@ export default class SessionController {
 
     static async updateSession(req: Request, res: Response): Promise<Response | null> {
         try {
-            let options: FindOptions<InferAttributes<Session>> = {}
             if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
                 return res.status(403).json({ success: false })
-            }
-            else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
-                options = { where: { id: req.params.id } }
             }
 
             //TODO:: Vérifier s'il n'y a pas d'inscription en cours pour cette session
 
-            let session: Session | null = await Session.findOne(options);
+            const session: Session | null = await Session.findOne({ where: { id: req.params.id } });
             if (session != null) {
 
                 await session.update({
@@ -315,6 +311,7 @@ export default class SessionController {
                     dateFin: req.body.dateFin,
                     anneeAcademiqueId: req.body.anneeAcademiqueId,
                     niveauEtudeId: req.body.niveauEtudeId,
+                    description: req.body.description ?? session.description,
                     etablissementId: null,
                 })
                     .then(async (session) => {

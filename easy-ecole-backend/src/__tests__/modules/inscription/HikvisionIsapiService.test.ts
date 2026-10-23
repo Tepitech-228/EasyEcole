@@ -4,7 +4,10 @@ jest.mock("../../../modules/inscription/controllers/PointageTerminalController",
   default: { processAttendanceEvent: jest.fn() }
 }));
 
-import HikvisionIsapiService, { parseHikvisionAccessEvents } from "../../../modules/inscription/services/HikvisionIsapiService";
+import HikvisionIsapiService, {
+  getCurlExecutable,
+  parseHikvisionAccessEvents
+} from "../../../modules/inscription/services/HikvisionIsapiService";
 
 const DEVICE_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <EventNotificationAlert>
@@ -42,6 +45,11 @@ describe("HikvisionIsapiService", () => {
     }]);
     expect(parseHikvisionAccessEvents(deniedEvent)).toEqual([]);
     expect(parseHikvisionAccessEvents(fingerprintEvent)).toEqual([]);
+  });
+
+  it("selects the curl executable available on the current operating system", () => {
+    expect(getCurlExecutable("linux")).toBe("curl");
+    expect(getCurlExecutable("win32")).toBe("curl.exe");
   });
 
   it("encrypts terminal credentials instead of retaining clear text", () => {
