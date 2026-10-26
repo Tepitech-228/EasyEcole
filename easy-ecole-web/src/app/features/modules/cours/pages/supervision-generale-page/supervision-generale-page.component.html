@@ -1,61 +1,186 @@
-<section class="mx-auto max-w-7xl space-y-6 p-6">
-  <header class="rounded-2xl bg-gradient-to-r from-slate-900 to-blue-800 p-7 text-white">
-    <p class="text-sm font-semibold uppercase tracking-wider text-blue-200">Pilotage pédagogique</p>
-    <h1 class="mt-2 text-3xl font-bold">Tableau de bord — Superviseur Général</h1>
-    <p class="mt-2 text-blue-100">Suivi transversal des classes, des enseignants, des cours et des évaluations.</p>
+<section class="supervision-shell">
+  <!-- ============ HERO ============ -->
+  <header class="sup-hero">
+    <div class="sup-hero__body">
+      <p class="sup-hero__kicker">Pilotage pédagogique</p>
+      <h1 class="sup-hero__title">Tableau de bord — Superviseur Général</h1>
+      <p class="sup-hero__subtitle">Suivi transversal des classes, des enseignants, des cours et des évaluations.</p>
+
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4">
+        <span class="live-badge">
+          <span class="live-dot" aria-hidden="true"></span>
+          <span>Temps réel</span>
+        </span>
+        <span class="sup-hero__updated">
+          <span *ngIf="lastUpdated">Dernière mise à jour à {{ lastUpdated | date:'HH:mm:ss' }}</span>
+          <span *ngIf="!lastUpdated">Synchronisation en cours…</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="w-full sm:w-auto">
+      <button type="button" class="hero-btn w-full sm:w-auto" (click)="reload()" [disabled]="loading">
+        <svg class="hero-btn__icon" [class.is-spinning]="loading" aria-hidden="true" focusable="false"
+          fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        <span>Actualiser</span>
+      </button>
+    </div>
   </header>
 
-  <app-custom-alert *ngIf="error" [show]="true" [title]="error" type="danger" [inline]="true"></app-custom-alert>
-  <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+  <!-- ============ ERREUR ============ -->
+  <div *ngIf="error" class="error-card flex flex-wrap items-start gap-3.5" role="alert">
+    <span class="error-card__icon" aria-hidden="true">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" focusable="false">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    </span>
+    <div class="error-card__text">
+      <p class="error-card__title">Une erreur est survenue</p>
+      <p class="error-card__message">{{ error }}</p>
+    </div>
+    <button type="button" class="retry-btn" (click)="reload()" [disabled]="loading">
+      {{ loading ? 'Chargement…' : 'Réessayer' }}
+    </button>
+  </div>
+
+  <!-- ============ CHARGEMENT ============ -->
+  <div *ngIf="loading" class="flex flex-col gap-5" role="status" aria-live="polite">
+    <span class="sr-only">Chargement des données de supervision…</span>
+    <div class="kpi-grid" aria-hidden="true">
+      <div class="sk-card" *ngFor="let item of [1, 2, 3, 4]">
+        <div class="sk sk--icon"></div>
+        <div class="sk sk--value"></div>
+        <div class="sk sk--line"></div>
+      </div>
+    </div>
+    <div class="sk-panel" aria-hidden="true">
+      <div class="sk sk--title"></div>
+      <div class="sk sk--row" *ngFor="let item of [1, 2, 3, 4]"></div>
+    </div>
+  </div>
 
   <ng-container *ngIf="!loading">
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <article class="rounded-xl border bg-white p-5 shadow-sm">
-        <p class="text-sm text-gray-500">Enseignants suivis ce mois</p>
-        <p class="mt-2 text-3xl font-bold text-slate-900">{{ totalTeachers }}</p>
+    <!-- ============ KPI ============ -->
+    <div class="kpi-grid">
+      <article class="kpi-card">
+        <div class="flex items-center justify-between gap-2 mb-0.5">
+          <span class="kpi-icon kpi-icon--navy" aria-hidden="true">
+            <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" focusable="false">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 7a4 4 0 100 8 4 4 0 000-8zm13 14v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+            </svg>
+          </span>
+          <span class="kpi-chip">Mois en cours</span>
+        </div>
+        <p class="kpi-value">{{ totalTeachers }}</p>
+        <p class="kpi-label">Enseignants suivis</p>
+        <p class="kpi-foot">Planning cumulé : {{ totalHoursPlanned | number:'1.0-1' }} h</p>
       </article>
-      <article class="rounded-xl border bg-white p-5 shadow-sm">
-        <p class="text-sm text-gray-500">Heures prévues</p>
-        <p class="mt-2 text-3xl font-bold text-blue-700">{{ totalHoursPlanned | number:'1.0-1' }} h</p>
+
+      <article class="kpi-card kpi-card--indigo">
+        <div class="flex items-center justify-between gap-2 mb-0.5">
+          <span class="kpi-icon kpi-icon--indigo" aria-hidden="true">
+            <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" focusable="false">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+          </span>
+          <span class="kpi-chip">Référentiel</span>
+        </div>
+        <p class="kpi-value">{{ totalCourses }}</p>
+        <p class="kpi-label">Cours suivis</p>
+        <p class="kpi-foot">Volumes horaires déclarés</p>
       </article>
-      <article class="rounded-xl border bg-white p-5 shadow-sm">
-        <p class="text-sm text-gray-500">Heures effectuées</p>
-        <p class="mt-2 text-3xl font-bold text-emerald-700">{{ totalHoursDone | number:'1.0-1' }} h</p>
-      </article>
-      <article class="rounded-xl border bg-white p-5 shadow-sm">
-        <p class="text-sm text-gray-500">Retards / absences en cours</p>
-        <p class="mt-2 text-3xl font-bold" [class.text-red-700]="tardyTeachers.length" [class.text-emerald-700]="!tardyTeachers.length">
-          {{ tardyTeachers.length }}
+
+      <article class="kpi-card kpi-card--amber">
+        <div class="flex items-center justify-between gap-2 mb-0.5">
+          <span class="kpi-icon kpi-icon--amber" aria-hidden="true">
+            <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" focusable="false">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            </svg>
+          </span>
+          <span class="kpi-chip kpi-chip--live">Temps réel</span>
+        </div>
+        <p class="kpi-value" [class.kpi-value--warn]="tardyTeachers.length">{{ tardyTeachers.length }}</p>
+        <p class="kpi-label">Alertes de pointage</p>
+        <p class="kpi-foot">
+          <span *ngIf="tardyTeachers.length">Retards et absences à traiter en priorité</span>
+          <span *ngIf="!tardyTeachers.length">Aucune alerte en cours</span>
         </p>
-        <p class="mt-1 text-xs text-gray-400">Actualisation automatique chaque minute</p>
+      </article>
+
+      <article class="kpi-card kpi-card--teal">
+        <div class="flex items-center justify-between gap-2 mb-0.5">
+          <span class="kpi-icon kpi-icon--teal" aria-hidden="true">
+            <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" focusable="false">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </span>
+          <span class="kpi-chip">{{ completionRate }} % du planning</span>
+        </div>
+        <p class="kpi-value">{{ totalHoursDone | number:'1.0-1' }}<span class="kpi-unit"> h</span></p>
+        <p class="kpi-label">Total heures effectuées</p>
+        <p class="kpi-foot">sur {{ totalHoursPlanned | number:'1.0-1' }} h planifiées</p>
       </article>
     </div>
 
-    <section class="rounded-xl border bg-white shadow-sm">
-      <div class="flex items-center justify-between border-b px-5 py-4">
-        <div>
-          <h2 class="font-semibold text-gray-900">Alertes de pointage</h2>
-          <p class="text-sm text-gray-500">Séances commencées sans pointage enseignant</p>
+    <!-- ============ ALERTES DE POINTAGE ============ -->
+    <section class="sup-panel" aria-labelledby="sup-alerts-title">
+      <div class="panel-head flex flex-wrap items-center justify-between gap-x-4 gap-y-3 px-5 py-4">
+        <div class="flex items-center gap-3 min-w-0">
+          <span class="panel-icon panel-icon--amber" aria-hidden="true">
+            <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" focusable="false">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </span>
+          <div>
+            <h2 id="sup-alerts-title" class="panel-title">Alertes de pointage</h2>
+            <p class="panel-sub">Séances commencées sans pointage enseignant</p>
+          </div>
         </div>
-        <a routerLink="/pointage/rapports" class="text-sm font-medium text-blue-700 hover:underline">Voir les rapports</a>
+        <a routerLink="/pointage/rapports" class="panel-link">Voir les rapports</a>
       </div>
-      <div *ngIf="!tardyTeachers.length" class="p-5 text-sm text-emerald-700">Aucune alerte de retard ou d’absence en cours.</div>
-      <div *ngIf="tardyTeachers.length" class="overflow-x-auto">
-        <table class="w-full text-left text-sm">
-          <thead class="bg-gray-50 text-xs uppercase text-gray-500">
-            <tr><th class="px-5 py-3">Enseignant</th><th class="px-5 py-3">Cours</th><th class="px-5 py-3">Horaire</th><th class="px-5 py-3">État</th></tr>
+
+      <div *ngIf="!tardyTeachers.length" class="flex flex-col items-center gap-1 px-5 py-9 text-center">
+        <span class="empty-state__icon" aria-hidden="true">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" focusable="false">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </span>
+        <p class="empty-state__title">Aucune alerte en cours</p>
+        <p class="empty-state__text">Tous les enseignants ont pointé leurs séances en cours.</p>
+      </div>
+
+      <div *ngIf="tardyTeachers.length" class="table-wrap">
+        <table class="sup-table sup-table--alerts" data-card-table>
+          <caption class="sr-only">Alertes de retard et d’absence en cours</caption>
+          <thead>
+            <tr>
+              <th scope="col">Enseignant</th>
+              <th scope="col">Cours</th>
+              <th scope="col">Horaire</th>
+              <th scope="col">État</th>
+            </tr>
           </thead>
-          <tbody class="divide-y">
+          <tbody>
             <tr *ngFor="let item of tardyTeachers">
-              <td class="px-5 py-3">{{ item.enseignant?.prenoms }} {{ item.enseignant?.nom }}</td>
-              <td class="px-5 py-3">{{ item.cours || '—' }}</td>
-              <td class="px-5 py-3">{{ item.heureDebut }}–{{ item.heureFin }}</td>
-              <td class="px-5 py-3">
-                <span class="rounded-full px-2.5 py-1 text-xs font-semibold"
-                  [class.bg-amber-100]="item.statut === 'en_retard'"
-                  [class.text-amber-800]="item.statut === 'en_retard'"
-                  [class.bg-red-100]="item.statut === 'absent'"
-                  [class.text-red-800]="item.statut === 'absent'">
+              <td>
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <span class="avatar" aria-hidden="true">{{ initials(tardyTeacherName(item)) }}</span>
+                  <span class="cell-person__name">{{ tardyTeacherName(item) }}</span>
+                </div>
+              </td>
+              <td>{{ item.cours || '—' }}</td>
+              <td class="cell-number">{{ hhmm(item.heureDebut) }}–{{ hhmm(item.heureFin) }}</td>
+              <td>
+                <span class="status-badge"
+                  [class.status-badge--late]="item.statut === 'en_retard'"
+                  [class.status-badge--absent]="item.statut === 'absent'">
+                  <span class="status-badge__dot" aria-hidden="true"></span>
                   {{ item.statut === 'absent' ? 'Absent' : 'En retard' }}
                 </span>
               </td>
@@ -65,62 +190,207 @@
       </div>
     </section>
 
-    <section class="rounded-xl border bg-white shadow-sm">
-      <div class="border-b px-5 py-4">
-        <h2 class="font-semibold text-gray-900">Heures par enseignant</h2>
-        <p class="text-sm text-gray-500">Planning et présence enregistrée par pointage</p>
+    <!-- ============ HEURES PAR ENSEIGNANT ============ -->
+    <section class="sup-panel" aria-labelledby="sup-teachers-title">
+      <div class="panel-head flex flex-wrap items-center justify-between gap-x-4 gap-y-3 px-5 py-4">
+        <div class="flex items-center gap-3 min-w-0">
+          <span class="panel-icon panel-icon--navy" aria-hidden="true">
+            <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" focusable="false">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 7a4 4 0 100 8 4 4 0 000-8z" />
+            </svg>
+          </span>
+          <div>
+            <h2 id="sup-teachers-title" class="panel-title">Heures par enseignant</h2>
+            <p class="panel-sub">Planning et présence enregistrée par pointage</p>
+          </div>
+        </div>
+        <span class="panel-count">{{ totalTeachers }} enseignant{{ totalTeachers > 1 ? 's' : '' }}</span>
       </div>
-      <div *ngIf="!teachers.length" class="p-5 text-sm text-gray-500">Aucune séance planifiée pour ce mois.</div>
-      <div *ngIf="teachers.length" class="overflow-x-auto">
-        <table class="w-full text-left text-sm">
-          <thead class="bg-gray-50 text-xs uppercase text-gray-500">
-            <tr><th class="px-5 py-3">Enseignant</th><th class="px-5 py-3">Heures prévues</th><th class="px-5 py-3">Effectuées</th><th class="px-5 py-3">Restantes au contrat</th><th class="px-5 py-3">Séances sans pointage</th></tr>
+
+      <div *ngIf="!teachers.length" class="flex flex-col items-center gap-1 px-5 py-9 text-center">
+        <span class="empty-state__icon" aria-hidden="true">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" focusable="false">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+          </svg>
+        </span>
+        <p class="empty-state__title">Aucune séance planifiée</p>
+        <p class="empty-state__text">Aucune séance n’est planifiée pour le mois en cours.</p>
+      </div>
+
+      <div *ngIf="teachers.length" class="table-wrap">
+        <table class="sup-table" data-card-table>
+          <caption class="sr-only">Heures planifiées, effectuées et restantes par enseignant</caption>
+          <thead>
+            <tr>
+              <th scope="col">Enseignant</th>
+              <th scope="col">Prévues</th>
+              <th scope="col">Effectuées</th>
+              <th scope="col">Restantes au contrat</th>
+              <th scope="col">Séances sans pointage</th>
+              <th scope="col">Progression</th>
+            </tr>
           </thead>
-          <tbody class="divide-y">
+          <tbody>
             <tr *ngFor="let teacher of teachers">
-              <td class="px-5 py-3 font-medium">{{ teacher.nom }}</td>
-              <td class="px-5 py-3">{{ teacher.heuresPlanifiees }} h</td>
-              <td class="px-5 py-3">{{ teacher.heuresEffectuees }} h</td>
-              <td class="px-5 py-3">{{ teacher.heuresRestantes }} h</td>
-              <td class="px-5 py-3">{{ teacher.absences }}</td>
+              <td>
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <span class="avatar" aria-hidden="true">{{ initials(teacher.nom) }}</span>
+                  <span class="cell-person__name">{{ teacher.nom }}</span>
+                </div>
+              </td>
+              <td class="cell-number">{{ teacher.heuresPlanifiees }} h</td>
+              <td class="cell-number">{{ teacher.heuresEffectuees }} h</td>
+              <td class="cell-number">{{ teacher.heuresRestantes }} h</td>
+              <td>
+                <span class="badge-count"
+                  [class.badge-count--warn]="teacher.absences > 0"
+                  [class.badge-count--ok]="teacher.absences === 0">
+                  {{ teacher.absences }}
+                </span>
+              </td>
+              <td>
+                <div class="progress flex items-center gap-2">
+                  <div class="progress__track">
+                    <div class="progress__bar" [style.width.%]="teacherBarWidth(teacher)"
+                      role="progressbar" aria-valuemin="0" aria-valuemax="100"
+                      [attr.aria-valuenow]="teacherBarWidth(teacher)"
+                      [attr.aria-label]="'Progression des heures effectuées de ' + teacher.nom"></div>
+                  </div>
+                  <span class="progress__value">{{ teacherBarWidth(teacher) }} %</span>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
     </section>
 
-    <section class="rounded-xl border bg-white shadow-sm">
-      <div class="border-b px-5 py-4">
-        <h2 class="font-semibold text-gray-900">Volumes horaires des cours</h2>
-        <p class="text-sm text-gray-500">Volume déclaré comparé aux heures attestées par pointage</p>
+    <!-- ============ HEURES PAR COURS ============ -->
+    <section class="sup-panel" aria-labelledby="sup-courses-title">
+      <div class="panel-head flex flex-wrap items-center justify-between gap-x-4 gap-y-3 px-5 py-4">
+        <div class="flex items-center gap-3 min-w-0">
+          <span class="panel-icon panel-icon--indigo" aria-hidden="true">
+            <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" focusable="false">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+          </span>
+          <div>
+            <h2 id="sup-courses-title" class="panel-title">Volumes horaires des cours</h2>
+            <p class="panel-sub">Volume déclaré comparé aux heures attestées par pointage</p>
+          </div>
+        </div>
+        <span class="panel-count">{{ totalCourses }} cours</span>
       </div>
-      <div *ngIf="!courses.length" class="p-5 text-sm text-gray-500">Aucun volume horaire configuré.</div>
-      <div *ngIf="courses.length" class="overflow-x-auto">
-        <table class="w-full text-left text-sm">
-          <thead class="bg-gray-50 text-xs uppercase text-gray-500">
-            <tr><th class="px-5 py-3">Code UE</th><th class="px-5 py-3">Cours</th><th class="px-5 py-3">Prévu</th><th class="px-5 py-3">Consommé</th><th class="px-5 py-3">Restant</th></tr>
+
+      <div *ngIf="!courses.length" class="flex flex-col items-center gap-1 px-5 py-9 text-center">
+        <span class="empty-state__icon" aria-hidden="true">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" focusable="false">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253" />
+          </svg>
+        </span>
+        <p class="empty-state__title">Aucun volume horaire configuré</p>
+        <p class="empty-state__text">Renseignez les volumes horaires des cours pour suivre leur consommation.</p>
+      </div>
+
+      <div *ngIf="courses.length" class="table-wrap">
+        <table class="sup-table" data-card-table>
+          <caption class="sr-only">Volume horaire prévu, consommé et restant par cours</caption>
+          <thead>
+            <tr>
+              <th scope="col">Code UE</th>
+              <th scope="col">Cours</th>
+              <th scope="col">Prévu</th>
+              <th scope="col">Consommé</th>
+              <th scope="col">Restant</th>
+              <th scope="col">Progression</th>
+            </tr>
           </thead>
-          <tbody class="divide-y">
+          <tbody>
             <tr *ngFor="let course of courses">
-              <td class="px-5 py-3">{{ course.code }}</td>
-              <td class="px-5 py-3">{{ course.intitule }}</td>
-              <td class="px-5 py-3">{{ course.volumeHoraire }} h</td>
-              <td class="px-5 py-3">{{ course.volumeConsomme }} h</td>
-              <td class="px-5 py-3" [class.text-red-700]="course.depassement">{{ course.volumeRestant }} h</td>
+              <td><span class="code-chip">{{ course.code || '—' }}</span></td>
+              <td>
+                <div class="cell-course flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                  <span>{{ course.intitule }}</span>
+                  <span *ngIf="course.depassement" class="status-badge status-badge--absent">Dépassement</span>
+                </div>
+              </td>
+              <td class="cell-number">{{ course.volumeHoraire }} h</td>
+              <td class="cell-number">{{ course.volumeConsomme }} h</td>
+              <td class="cell-number" [class.cell-danger]="course.depassement">{{ course.volumeRestant }} h</td>
+              <td>
+                <div class="progress flex items-center gap-2">
+                  <div class="progress__track">
+                    <div class="progress__bar" [class.progress__bar--over]="course.depassement"
+                      [style.width.%]="courseBarWidth(course)"
+                      role="progressbar" aria-valuemin="0" aria-valuemax="100"
+                      [attr.aria-valuenow]="courseBarWidth(course)"
+                      [attr.aria-label]="'Progression du volume consommé de ' + course.intitule"></div>
+                  </div>
+                  <span class="progress__value">{{ courseBarWidth(course) }} %</span>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
     </section>
 
-    <nav class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Accès rapides de pilotage pédagogique">
-      <a routerLink="/cours/emplois-du-temps" class="rounded-lg border bg-white p-4 font-medium text-blue-800 hover:bg-blue-50">Emplois du temps</a>
-      <a routerLink="/inscription/salles-de-classe" class="rounded-lg border bg-white p-4 font-medium text-blue-800 hover:bg-blue-50">Gestion des salles</a>
-      <a routerLink="/cours/presences" class="rounded-lg border bg-white p-4 font-medium text-blue-800 hover:bg-blue-50">Cahiers de présence</a>
-      <a routerLink="/cours/cahiers-de-texte" class="rounded-lg border bg-white p-4 font-medium text-blue-800 hover:bg-blue-50">Cahiers de cours</a>
-      <a routerLink="/bulletins" class="rounded-lg border bg-white p-4 font-medium text-blue-800 hover:bg-blue-50">Bulletins et PV de notes</a>
-      <a routerLink="/bulletins/rattrapages" class="rounded-lg border bg-white p-4 font-medium text-blue-800 hover:bg-blue-50">Sessions de rattrapage</a>
-      <a routerLink="/bulletins/deliberations-jury" class="rounded-lg border bg-white p-4 font-medium text-blue-800 hover:bg-blue-50">PV / délibérations</a>
+    <!-- ============ ACCÈS RAPIDES ============ -->
+    <nav class="quick-grid" aria-label="Accès rapides de pilotage pédagogique">
+      <a routerLink="/cours/emplois-du-temps" class="quick-link">
+        <span>Emplois du temps</span>
+        <svg class="quick-link__icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </a>
+      <a routerLink="/inscription/salles-de-classe" class="quick-link">
+        <span>Gestion des salles</span>
+        <svg class="quick-link__icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </a>
+      <a routerLink="/cours/presences" class="quick-link">
+        <span>Cahiers de présence</span>
+        <svg class="quick-link__icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </a>
+      <a routerLink="/cours/cahiers-de-texte" class="quick-link">
+        <span>Cahiers de cours</span>
+        <svg class="quick-link__icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </a>
+      <a routerLink="/bulletins" class="quick-link">
+        <span>Bulletins et PV de notes</span>
+        <svg class="quick-link__icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </a>
+      <a routerLink="/bulletins/rattrapages" class="quick-link">
+        <span>Sessions de rattrapage</span>
+        <svg class="quick-link__icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </a>
+      <a routerLink="/bulletins/deliberations-jury" class="quick-link">
+        <span>PV / délibérations</span>
+        <svg class="quick-link__icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </a>
     </nav>
+
+    <p class="flex items-center gap-1.5 px-1 text-xs text-gray-500">
+      <svg class="quick-link__icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+      </svg>
+      Alertes de pointage synchronisées automatiquement toutes les 60 secondes.
+    </p>
   </ng-container>
 </section>

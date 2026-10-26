@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import {
   StoredFile,
@@ -35,6 +35,9 @@ export class GedStorageFilesComponent implements OnInit, OnDestroy {
   classeId = '';
   previewTitle = '';
   previewUrl: SafeResourceUrl | null = null;
+  /** État visuel du glisser-déposer sur la zone d'import. */
+  dragging = false;
+  private fileInputElement: HTMLInputElement | null = null;
   private previewObjectUrl: string | null = null;
 
   readonly categories: Array<{ value: StoredFile['categorie']; label: string }> = [
@@ -46,6 +49,30 @@ export class GedStorageFilesComponent implements OnInit, OnDestroy {
 
   get totalPages(): number {
     return Math.max(1, Math.ceil(this.total / this.pageSize));
+  }
+
+  /** Statistiques d'en-tête : elles portent sur la page courante, pas sur tout l'inventaire. */
+  get presentCount(): number {
+    return this.files.filter(file => file.status === 'present').length;
+  }
+
+  get missingCount(): number {
+    return this.files.filter(file => file.status === 'missing').length;
+  }
+
+  get verifiedCount(): number {
+    return this.files.filter(file => !!file.integrityHash).length;
+  }
+
+  get activeFilterCount(): number {
+    return Object.keys(this.filters).filter(key => {
+      const value = this.filters[key as keyof StoredFileFilters];
+      return value !== undefined && value !== null && String(value).trim() !== '';
+    }).length;
+  }
+
+  get selectedSizeLabel(): string {
+    return this.selectedFile ? this.formatSize(this.selectedFile.size) : '';
   }
 
   constructor(private service: StoredFilesService, private sanitizer: DomSanitizer) {}
@@ -63,6 +90,12 @@ export class GedStorageFilesComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.releasePreview();
+  }
+
+  /** Fermeture de l'aperçu au clavier (Échap) pour rester accessible. */
+  @HostListener('document:keydown.escape')
+  closePreviewOnEscape(): void {
+    if (this.previewUrl) this.closePreview();
   }
 
   load(): void {
@@ -94,8 +127,34 @@ export class GedStorageFilesComponent implements OnInit, OnDestroy {
 
   selectFile(event: Event): void {
     const input = event.target as HTMLInputElement;
+    this.fileInputElement = input;
     this.selectedFile = input.files?.[0] || null;
     if (this.selectedFile && !this.titre) this.titre = this.selectedFile.name.replace(/\.pdf$/i, '');
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    this.dragging = true;
+  }
+
+  onDragLeave(event: DragEvent): void {
+    const zone = event.currentTarget as HTMLElement | null;
+    const next = event.relatedTarget as Node | null;
+    if (!zone || !next || !zone.contains(next)) this.dragging = false;
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    this.dragging = false;
+    const dropped = event.dataTransfer?.files?.[0] || null;
+    if (!dropped) return;
+    if (!/\.pdf$/i.test(dropped.name)) {
+      this.error = 'Seuls les fichiers PDF sont acceptés.';
+      return;
+    }
+    this.selectedFile = dropped;
+    if (!this.titre) this.titre = dropped.name.replace(/\.pdf$/i, '');
+    this.error = '';
   }
 
   importFile(): void {
@@ -121,6 +180,7 @@ export class GedStorageFilesComponent implements OnInit, OnDestroy {
         this.importing = false;
         this.message = 'PDF importé, classé et enregistré avec son empreinte SHA-256.';
         this.selectedFile = null;
+        if (this.fileInputElement) this.fileInputElement.value = '';
         this.titre = '';
         this.load();
       },
@@ -191,6 +251,11 @@ export class GedStorageFilesComponent implements OnInit, OnDestroy {
 
   labelFor(choices: StoredFileChoice[], id: number | null): string {
     return choices.find(choice => choice.id === id)?.label || (id ? `#${id}` : '—');
+  }
+
+  /** Libellé accentué d'une catégorie (l'API renvoie la valeur technique). */
+  categoryLabel(value: StoredFile['categorie']): string {
+    return this.categories.find(category => category.value === value)?.label || value;
   }
 
   formatSize(bytes: number): string {

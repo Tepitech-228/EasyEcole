@@ -1,73 +1,265 @@
 <app-custom-alert [show]="success" title="Succès" color="green">Paramètres de l'école enregistrés</app-custom-alert>
 
-<div class="flex justify-between items-start mb-8">
-    <app-header-title title="École" subtitle="Paramètres généraux de l'établissement"></app-header-title>
-</div>
+<div class="ecole-page">
 
-<app-loading-spinner *ngIf="loading"></app-loading-spinner>
+    <!-- En-tête de page -->
+    <header class="page-head">
+        <div class="page-head__titles">
+            <span class="page-head__eyebrow">Paramètres</span>
+            <h1 class="page-head__title">École</h1>
+            <p class="page-head__subtitle">
+                Paramètres généraux de l'établissement : identité, coordonnées et année scolaire en cours.
+            </p>
+        </div>
+        <span class="page-head__badge">
+            <span class="material-symbols-outlined" aria-hidden="true">school</span>
+            <span class="page-head__badge-text">{{ etablissement?.nom || 'Nouvel établissement' }}</span>
+        </span>
+    </header>
 
-<div *ngIf="!loading" class="bg-white rounded-lg shadow border border-gray-100 p-8">
-    <form [formGroup]="ecoleForm">
-        <app-parametres-section title="Informations générales" subtitle="Nom, contact et localisation de l'établissement">
-            <div class="grid grid-cols-1 gap-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Nom de l'établissement</label>
-                    <input type="text" formControlName="nom" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+    <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+    <!-- Échec du chargement : on évite d'afficher un formulaire vide trompeur -->
+    <div *ngIf="!loading && erreurChargement" class="notice notice--error" role="alert">
+        <span class="material-symbols-outlined" aria-hidden="true">error</span>
+        <p>
+            Impossible de charger les paramètres de l'établissement.
+            Vérifiez votre connexion, puis réessayez.
+        </p>
+        <app-custom-button (click)="chargerEtablissement()" text="Réessayer" [outlined]="true" color="indigo">
+        </app-custom-button>
+    </div>
+
+    <div *ngIf="!loading" class="ecole-content">
+
+        <!-- Bandeau de création -->
+        <div *ngIf="estNouvelEtablissement && !erreurChargement" class="notice" role="status">
+            <span class="material-symbols-outlined" aria-hidden="true">info</span>
+            <p>
+                Aucun établissement n'est encore enregistré. Renseignez les informations ci-dessous,
+                puis cliquez sur <strong>Enregistrer</strong> pour créer votre établissement.
+            </p>
+        </div>
+
+        <form *ngIf="!erreurChargement" [formGroup]="ecoleForm" (submit)="$event.preventDefault()" novalidate>
+
+            <!-- Informations générales -->
+            <section class="card" aria-labelledby="section-general-titre">
+                <header class="card__head">
+                    <span class="card__icon material-symbols-outlined" aria-hidden="true">apartment</span>
+                    <div>
+                        <h2 id="section-general-titre" class="card__title">Informations générales</h2>
+                        <p class="card__desc">Nom, type et code de l'établissement.</p>
+                    </div>
+                </header>
+
+                <div class="card__body">
+                    <div class="form-grid">
+
+                        <div class="field field--full">
+                            <label class="field__label" for="ecole-nom">
+                                Nom de l'établissement <span class="field__req" aria-hidden="true">*</span>
+                            </label>
+                            <div class="field__control" [class.field__control--invalid]="estInvalide('nom')">
+                                <input id="ecole-nom" type="text" formControlName="nom" aria-required="true"
+                                    [attr.aria-invalid]="estInvalide('nom')"
+                                    placeholder="Ex : Institut Les Palmiers">
+                            </div>
+                            <div *ngIf="ecoleForm.get('nom')!.invalid && (ecoleForm.get('nom')!.dirty || ecoleForm.get('nom')!.touched)">
+                                <app-form-message *ngIf="ecoleForm.get('nom')!.errors?.['required']"
+                                    text="Veuillez saisir le nom de l'établissement"></app-form-message>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label" for="ecole-type">Type d'établissement</label>
+                            <div class="field__control field__control--select">
+                                <select id="ecole-type" formControlName="type">
+                                    <option value="">— Sélectionner —</option>
+                                    <option *ngFor="let type of typesEtablissement" [value]="type">{{ type }}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label" for="ecole-code">Code / Sigle</label>
+                            <div class="field__control" [class.field__control--readonly]="codeVerrouille">
+                                <input id="ecole-code" type="text" formControlName="code"
+                                    [readonly]="codeVerrouille" [attr.aria-readonly]="codeVerrouille"
+                                    aria-describedby="ecole-code-hint" placeholder="Ex : ESA">
+                                <span *ngIf="codeVerrouille" class="field__lock material-symbols-outlined"
+                                    aria-hidden="true">lock</span>
+                            </div>
+                            <p id="ecole-code-hint" class="field__hint">
+                                {{ codeVerrouille
+                                    ? 'Le code est figé après création : il sert de base aux matricules.'
+                                    : 'Choisissez un sigle court et stable (il servira aux matricules).' }}
+                            </p>
+                        </div>
+
+                        <div class="field field--full">
+                            <label class="field__label" for="ecole-site">
+                                Site <span class="field__req" aria-hidden="true">*</span>
+                            </label>
+                            <div class="field__control" [class.field__control--invalid]="estInvalide('site')">
+                                <input id="ecole-site" type="text" formControlName="site" aria-required="true"
+                                    [attr.aria-invalid]="estInvalide('site')"
+                                    aria-describedby="ecole-site-hint" placeholder="Ex : Super Taco">
+                            </div>
+                            <p id="ecole-site-hint" class="field__hint">
+                                Utilisé pour le matricule : les premières lettres sont reprises (Super Taco = ST).
+                            </p>
+                            <div *ngIf="ecoleForm.get('site')!.invalid && (ecoleForm.get('site')!.dirty || ecoleForm.get('site')!.touched)">
+                                <app-form-message *ngIf="ecoleForm.get('site')!.errors?.['required']"
+                                    text="Veuillez renseigner le site"></app-form-message>
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
+            </section>
+
+            <!-- Coordonnées -->
+            <section class="card" aria-labelledby="section-coordonnees-titre">
+                <header class="card__head">
+                    <span class="card__icon card__icon--teal material-symbols-outlined" aria-hidden="true">contact_mail</span>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Type d'établissement</label>
-                        <input type="text" formControlName="type" placeholder="Ex: Institut privé" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        <h2 id="section-coordonnees-titre" class="card__title">Coordonnées</h2>
+                        <p class="card__desc">Comment joindre l'établissement.</p>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Devise monétaire</label>
-                        <input type="text" formControlName="devise" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Code / Sigle</label>
-                        <input type="text" formControlName="code" placeholder="Ex: ESA" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Année scolaire courante</label>
-                        <input type="text" formControlName="anneeScolaireCourante" placeholder="Ex: 2025-2026" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Email</label>
-                        <input type="email" formControlName="email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Téléphone</label>
-                        <input type="text" formControlName="telephone" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Adresse</label>
-                    <input type="text" formControlName="adresse" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Ville</label>
-                        <input type="text" formControlName="ville" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Pays</label>
-                        <input type="text" formControlName="pays" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                </header>
+
+                <div class="card__body">
+                    <div class="form-grid">
+
+                        <div class="field">
+                            <label class="field__label" for="ecole-email">Email</label>
+                            <div class="field__control" [class.field__control--invalid]="estInvalide('email')">
+                                <input id="ecole-email" type="email" formControlName="email" autocomplete="email"
+                                    [attr.aria-invalid]="estInvalide('email')"
+                                    placeholder="contact@etablissement.com">
+                            </div>
+                            <div *ngIf="ecoleForm.get('email')!.invalid && (ecoleForm.get('email')!.dirty || ecoleForm.get('email')!.touched)">
+                                <app-form-message *ngIf="ecoleForm.get('email')!.errors?.['email']"
+                                    text="Veuillez saisir une adresse email valide"></app-form-message>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label" for="ecole-telephone">Téléphone</label>
+                            <div class="field__control">
+                                <input id="ecole-telephone" type="tel" formControlName="telephone" autocomplete="tel"
+                                    placeholder="Ex : +225 01 02 03 04 05">
+                            </div>
+                        </div>
+
                     </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Site <span class="text-red-500">*</span> <span class="text-xs text-gray-500">(ex: Super Taco -> ST, utilisé pour le matricule)</span></label>
-                    <input type="text" formControlName="site" placeholder="Ex: Super Taco" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                    <p class="mt-1 text-xs text-gray-500">Premières lettres prises pour le matricule : Super Taco = ST</p>
+            </section>
+
+            <!-- Localisation -->
+            <section class="card" aria-labelledby="section-localisation-titre">
+                <header class="card__head">
+                    <span class="card__icon material-symbols-outlined" aria-hidden="true">location_on</span>
+                    <div>
+                        <h2 id="section-localisation-titre" class="card__title">Localisation</h2>
+                        <p class="card__desc">Adresse postale et implantation géographique.</p>
+                    </div>
+                </header>
+
+                <div class="card__body">
+                    <div class="form-grid">
+
+                        <div class="field field--full">
+                            <label class="field__label" for="ecole-adresse">Adresse</label>
+                            <div class="field__control">
+                                <input id="ecole-adresse" type="text" formControlName="adresse"
+                                    autocomplete="street-address" placeholder="Ex : 12 rue des Écoles, Cocody">
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label" for="ecole-ville">Ville</label>
+                            <div class="field__control">
+                                <input id="ecole-ville" type="text" formControlName="ville"
+                                    autocomplete="address-level2" placeholder="Ex : Abidjan">
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label" for="ecole-pays">Pays</label>
+                            <div class="field__control">
+                                <input id="ecole-pays" type="text" formControlName="pays" list="ecole-pays-liste"
+                                    autocomplete="country-name" placeholder="Ex : Côte d'Ivoire">
+                                <datalist id="ecole-pays-liste">
+                                    <option *ngFor="let pays of paysProposes" [value]="pays"></option>
+                                </datalist>
+                            </div>
+                            <p class="field__hint">Saisie libre : choisissez une suggestion ou tapez le pays.</p>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- Paramètres académiques -->
+            <section class="card" aria-labelledby="section-academique-titre">
+                <header class="card__head">
+                    <span class="card__icon card__icon--teal material-symbols-outlined" aria-hidden="true">calendar_month</span>
+                    <div>
+                        <h2 id="section-academique-titre" class="card__title">Paramètres académiques</h2>
+                        <p class="card__desc">Année scolaire en cours et devise utilisée pour les montants.</p>
+                    </div>
+                </header>
+
+                <div class="card__body">
+                    <div class="form-grid">
+
+                        <div class="field">
+                            <label class="field__label" for="ecole-annee">Année scolaire courante</label>
+                            <div class="field__control field__control--select">
+                                <select id="ecole-annee" formControlName="anneeScolaireCourante">
+                                    <option value="">— Sélectionner —</option>
+                                    <option *ngFor="let annee of anneesScolaires" [value]="annee">{{ annee }}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label" for="ecole-devise">Devise monétaire</label>
+                            <div class="field__control field__control--select">
+                                <select id="ecole-devise" formControlName="devise">
+                                    <option *ngFor="let devise of devises" [value]="devise.code">{{ devise.libelle }}</option>
+                                </select>
+                            </div>
+                            <p class="field__hint">Utilisée pour l'affichage des frais et paiements.</p>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- Barre d'action -->
+            <div class="action-bar">
+                <span *ngIf="ecoleForm.dirty" class="action-bar__state action-bar__state--dirty">
+                    <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+                    Modifications non enregistrées
+                </span>
+                <span *ngIf="!ecoleForm.dirty" class="action-bar__state">
+                    <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+                    Formulaire à jour
+                </span>
+
+                <div class="action-bar__buttons">
+                    <app-custom-button (click)="annuler()" text="Annuler" [outlined]="true" color="indigo"
+                        [disabled]="saving || !ecoleForm.dirty">
+                    </app-custom-button>
+                    <app-custom-button (click)="save()" [text]="saving ? 'Enregistrement...' : 'Enregistrer'"
+                        [loading]="saving" [disabled]="saving || ecoleForm.invalid">
+                    </app-custom-button>
                 </div>
             </div>
-        </app-parametres-section>
 
-        <div class="flex justify-end mt-6">
-            <app-custom-button (click)="save()" [text]="saving ? 'Enregistrement...' : 'Enregistrer'" [disabled]="saving || ecoleForm.invalid"></app-custom-button>
-        </div>
-    </form>
+        </form>
+    </div>
 </div>

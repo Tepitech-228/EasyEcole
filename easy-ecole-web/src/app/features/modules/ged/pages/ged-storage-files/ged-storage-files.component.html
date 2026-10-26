@@ -1,142 +1,205 @@
-<main class="storage-page">
-  <header class="page-heading">
-    <div>
-      <span class="eyebrow">DOCUMENTS CENTRALISÉS</span>
-      <h1>Stockage des fichiers</h1>
+<main class="ged-stage" aria-labelledby="ged-title">
+  <!-- ============ HERO ============ -->
+  <header class="hero">
+    <div class="hero-main">
+      <span class="hero-kicker"><span class="hero-dot" aria-hidden="true"></span>Documents centralisés</span>
+      <h1 id="ged-title">Stockage des fichiers</h1>
       <p>Retrouvez, classez et vérifiez les PDF importés ou déjà utilisés dans l’application.</p>
+
+      <div class="hero-stats">
+        <div class="stat">
+          <span>Documents indexés</span>
+          <strong>{{ total }}</strong>
+        </div>
+        <div class="stat">
+          <span>Présents (page)</span>
+          <strong>{{ presentCount }}</strong>
+        </div>
+        <div class="stat">
+          <span>Introuvables (page)</span>
+          <strong>{{ missingCount }}</strong>
+        </div>
+        <div class="stat">
+          <span>Empreintes SHA-256</span>
+          <strong>{{ verifiedCount }}</strong>
+        </div>
+      </div>
     </div>
-    <button type="button" class="button button-secondary" (click)="exportCsv()">Exporter le catalogue CSV</button>
+
+    <div class="hero-side">
+      <span class="pill pill-secure">
+        <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+        Stockage persistant · SHA-256
+      </span>
+      <button type="button" class="btn btn-ghost" (click)="exportCsv()">
+        <span class="material-symbols-outlined" aria-hidden="true">download</span>
+        Exporter le catalogue CSV
+      </button>
+    </div>
   </header>
 
-  <div class="notice success" *ngIf="message">{{ message }}</div>
-  <div class="notice error" *ngIf="error">{{ error }}</div>
+  <!-- ============ NOTIFICATIONS ============ -->
+  <div class="alerts" *ngIf="message || error" aria-live="polite">
+    <div class="alert alert-success" *ngIf="message" role="status">
+      <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+      <span>{{ message }}</span>
+    </div>
+    <div class="alert alert-error" *ngIf="error" role="alert">
+      <span class="material-symbols-outlined" aria-hidden="true">error</span>
+      <span>{{ error }}</span>
+    </div>
+  </div>
 
-  <section class="panel import-panel">
-    <div class="section-heading">
+  <!-- ============ IMPORT ============ -->
+  <section class="glass import-card" aria-labelledby="import-title">
+    <div class="card-head">
       <div>
-        <span class="eyebrow">NOUVEAU DOCUMENT</span>
-        <h2>Importer un PDF</h2>
+        <span class="section-kicker">Nouveau document</span>
+        <h2 id="import-title">Importer un PDF</h2>
       </div>
-      <span class="secure-badge">Stockage persistant · SHA-256</span>
+      <span class="pill">
+        <span class="material-symbols-outlined" aria-hidden="true">fingerprint</span>
+        Contrôle d’intégrité SHA-256
+      </span>
     </div>
 
-    <div class="form-grid">
-      <label class="file-picker">
-        <span>Fichier PDF</span>
-        <input type="file" accept="application/pdf,.pdf" (change)="selectFile($event)">
+    <div class="import-body">
+      <label class="dropzone" [class.is-dragging]="dragging"
+             (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
+        <input class="sr-only" type="file" accept="application/pdf,.pdf" (change)="selectFile($event)">
+        <span class="dropzone-glyph" aria-hidden="true">
+          <span class="material-symbols-outlined">upload_file</span>
+        </span>
+        <span class="dropzone-title">{{ selectedFile?.name || 'Déposez un PDF ou cliquez pour parcourir' }}</span>
+        <span class="dropzone-hint">
+          {{ selectedSizeLabel ? selectedSizeLabel + ' · prêt à importer' : 'PDF uniquement · 50 Mo maximum' }}
+        </span>
       </label>
-      <label>
-        <span>Titre</span>
-        <input type="text" [(ngModel)]="titre" name="titre" maxlength="255" placeholder="Titre du document">
-      </label>
-      <label>
-        <span>Catégorie</span>
-        <select [(ngModel)]="categorie" name="categorie">
-          <option *ngFor="let category of categories" [value]="category.value">{{ category.label }}</option>
-        </select>
-      </label>
-      <label>
-        <span>Site</span>
-        <select [(ngModel)]="etablissementId" name="site">
-          <option value="">Sélectionner un site</option>
-          <option *ngFor="let site of options.sites" [value]="site.id">{{ site.label }}</option>
-        </select>
-      </label>
-      <label>
-        <span>Année académique</span>
-        <select [(ngModel)]="anneeAcademiqueId" name="annee">
-          <option value="">Non précisée</option>
-          <option *ngFor="let year of options.annees" [value]="year.id">{{ year.label }}</option>
-        </select>
-      </label>
-      <label>
-        <span>Filière</span>
-        <input type="text" [(ngModel)]="filiere" name="filiere" maxlength="191" placeholder="Nom de la filière">
-      </label>
-      <label>
-        <span>Niveau</span>
-        <select [(ngModel)]="niveauEtudeId" name="niveau">
-          <option value="">Non précisé</option>
-          <option *ngFor="let level of options.niveaux" [value]="level.id">{{ level.label }}</option>
-        </select>
-      </label>
-      <label>
-        <span>Parcours</span>
-        <select [(ngModel)]="parcoursId" name="parcours">
-          <option value="">Non précisé</option>
-          <option *ngFor="let program of options.parcours" [value]="program.id">{{ program.label }}</option>
-        </select>
-      </label>
-      <label>
-        <span>Classe</span>
-        <select [(ngModel)]="classeId" name="classe">
-          <option value="">Non précisée</option>
-          <option *ngFor="let classroom of options.classes" [value]="classroom.id">{{ classroom.label }}</option>
-        </select>
-      </label>
+
+      <div class="form-grid">
+        <label class="field field-titre">
+          <span>Titre</span>
+          <input type="text" [(ngModel)]="titre" name="titre" maxlength="255" placeholder="Titre du document">
+        </label>
+        <label class="field">
+          <span>Catégorie</span>
+          <select [(ngModel)]="categorie" name="categorie">
+            <option *ngFor="let category of categories" [value]="category.value">{{ category.label }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Site</span>
+          <select [(ngModel)]="etablissementId" name="site">
+            <option value="">Sélectionner un site</option>
+            <option *ngFor="let site of options.sites" [value]="site.id">{{ site.label }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Année académique</span>
+          <select [(ngModel)]="anneeAcademiqueId" name="annee">
+            <option value="">Non précisée</option>
+            <option *ngFor="let year of options.annees" [value]="year.id">{{ year.label }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Filière</span>
+          <input type="text" [(ngModel)]="filiere" name="filiere" maxlength="191" placeholder="Nom de la filière">
+        </label>
+        <label class="field">
+          <span>Niveau</span>
+          <select [(ngModel)]="niveauEtudeId" name="niveau">
+            <option value="">Non précisé</option>
+            <option *ngFor="let level of options.niveaux" [value]="level.id">{{ level.label }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Parcours</span>
+          <select [(ngModel)]="parcoursId" name="parcours">
+            <option value="">Non précisé</option>
+            <option *ngFor="let program of options.parcours" [value]="program.id">{{ program.label }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Classe</span>
+          <select [(ngModel)]="classeId" name="classe">
+            <option value="">Non précisée</option>
+            <option *ngFor="let classroom of options.classes" [value]="classroom.id">{{ classroom.label }}</option>
+          </select>
+        </label>
+      </div>
     </div>
+
     <div class="import-footer">
-      <span class="selected-name">{{ selectedFile?.name || 'PDF uniquement · 50 Mo maximum' }}</span>
-      <button type="button" class="button button-primary" [disabled]="importing || !selectedFile" (click)="importFile()">
+      <span class="meta-line">L’empreinte SHA-256 est calculée et conservée à l’import.</span>
+      <button type="button" class="btn btn-primary" [disabled]="importing || !selectedFile" (click)="importFile()">
+        <span class="spinner" *ngIf="importing" aria-hidden="true"></span>
+        <span class="material-symbols-outlined" *ngIf="!importing" aria-hidden="true">cloud_upload</span>
         {{ importing ? 'Import en cours…' : 'Importer le fichier' }}
       </button>
     </div>
   </section>
 
-  <section class="panel catalog-panel">
-    <div class="section-heading">
+  <!-- ============ CATALOGUE ============ -->
+  <section class="glass catalog-card" aria-labelledby="catalog-title" [attr.aria-busy]="loading ? 'true' : 'false'">
+    <div class="card-head">
       <div>
-        <span class="eyebrow">INVENTAIRE UNIFIÉ</span>
-        <h2>Fichiers disponibles <span class="count">{{ total }}</span></h2>
+        <span class="section-kicker">Inventaire unifié</span>
+        <h2 id="catalog-title">Fichiers disponibles <span class="count-badge">{{ total }}</span></h2>
       </div>
-      <button type="button" class="button button-plain" (click)="load()">Actualiser</button>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="load()">
+        <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
+        Actualiser
+      </button>
     </div>
 
-    <div class="filters">
-      <label class="search-filter">
+    <div class="filters" role="group" aria-label="Filtres du catalogue">
+      <label class="field field-search">
         <span>Rechercher</span>
-        <input type="search" [(ngModel)]="filters.q" name="search" placeholder="Titre ou nom du fichier">
+        <span class="input-wrap">
+          <span class="material-symbols-outlined" aria-hidden="true">search</span>
+          <input type="search" [(ngModel)]="filters.q" name="search" placeholder="Titre ou nom du fichier">
+        </span>
       </label>
-      <label>
+      <label class="field">
         <span>Catégorie</span>
         <select [(ngModel)]="filters.categorie" name="filterCategory">
           <option value="">Toutes</option>
           <option *ngFor="let category of categories" [value]="category.value">{{ category.label }}</option>
         </select>
       </label>
-      <label>
+      <label class="field">
         <span>Site</span>
         <select [(ngModel)]="filters.etablissementId" name="filterSite">
           <option value="">Tous</option>
           <option *ngFor="let site of options.sites" [value]="site.id">{{ site.label }}</option>
         </select>
       </label>
-      <label>
+      <label class="field">
         <span>Année</span>
         <select [(ngModel)]="filters.anneeAcademiqueId" name="filterYear">
           <option value="">Toutes</option>
           <option *ngFor="let year of options.annees" [value]="year.id">{{ year.label }}</option>
         </select>
       </label>
-      <label>
+      <label class="field">
         <span>Filière</span>
         <input type="text" [(ngModel)]="filters.filiere" name="filterFiliere" placeholder="Toutes">
       </label>
-      <label>
+      <label class="field">
         <span>Niveau</span>
         <select [(ngModel)]="filters.niveauEtudeId" name="filterLevel">
           <option value="">Tous</option>
           <option *ngFor="let level of options.niveaux" [value]="level.id">{{ level.label }}</option>
         </select>
       </label>
-      <label>
+      <label class="field">
         <span>Parcours</span>
         <select [(ngModel)]="filters.parcoursId" name="filterProgram">
           <option value="">Tous</option>
           <option *ngFor="let program of options.parcours" [value]="program.id">{{ program.label }}</option>
         </select>
       </label>
-      <label>
+      <label class="field">
         <span>Classe</span>
         <select [(ngModel)]="filters.classeId" name="filterClass">
           <option value="">Toutes</option>
@@ -144,8 +207,11 @@
         </select>
       </label>
       <div class="filter-actions">
-        <button type="button" class="button button-primary button-small" (click)="applyFilters()">Filtrer</button>
-        <button type="button" class="button button-plain button-small" (click)="resetFilters()">Effacer</button>
+        <button type="button" class="btn btn-primary btn-sm" (click)="applyFilters()">
+          <span class="material-symbols-outlined" aria-hidden="true">filter_alt</span>
+          Filtrer
+        </button>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="resetFilters()">Effacer</button>
       </div>
     </div>
 
@@ -153,57 +219,106 @@
       <table>
         <thead>
           <tr>
-            <th>Document</th><th>Classement</th><th>Origine</th><th>Stockage</th><th>Intégrité</th><th>Actions</th>
+            <th scope="col">Document</th>
+            <th scope="col">Classement</th>
+            <th scope="col">Origine</th>
+            <th scope="col">Stockage</th>
+            <th scope="col">Intégrité</th>
+            <th scope="col">Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let file of files">
-            <td class="document-cell">
-              <strong>{{ file.titre }}</strong>
-              <small>{{ file.nomFichier }} · {{ formatSize(file.taille) }}</small>
+            <td>
+              <div class="doc">
+                <span class="doc-mark" aria-hidden="true">PDF</span>
+                <span class="doc-text">
+                  <strong>{{ file.titre }}</strong>
+                  <small>{{ file.nomFichier }} · {{ formatSize(file.taille) }}</small>
+                </span>
+              </div>
             </td>
             <td>
-              <span class="category-chip">{{ file.categorie }}</span>
-              <small>{{ labelFor(options.sites, file.etablissementId) }} · {{ labelFor(options.annees, file.anneeAcademiqueId) }}</small>
-              <small>{{ file.filiere || 'Filière —' }} · {{ labelFor(options.niveaux, file.niveauEtudeId) }}</small>
-              <small>{{ labelFor(options.parcours, file.parcoursId) }} · {{ labelFor(options.classes, file.classeId) }}</small>
+              <span class="chip" [ngClass]="'chip-' + file.categorie">{{ categoryLabel(file.categorie) }}</span>
+              <small class="meta-line">{{ labelFor(options.sites, file.etablissementId) }} · {{ labelFor(options.annees, file.anneeAcademiqueId) }}</small>
+              <small class="meta-line">{{ file.filiere || 'Filière —' }} · {{ labelFor(options.niveaux, file.niveauEtudeId) }}</small>
+              <small class="meta-line">{{ labelFor(options.parcours, file.parcoursId) }} · {{ labelFor(options.classes, file.classeId) }}</small>
             </td>
-            <td>{{ file.originType === 'legacy' ? 'Module existant' : 'Import central' }}</td>
-            <td><span class="status" [class.status-missing]="file.status === 'missing'">
-              {{ file.status === 'present' ? 'Présent' : 'Introuvable' }}
-            </span></td>
             <td>
-              <code *ngIf="file.integrityHash">{{ file.integrityHash | slice:0:12 }}…</code>
-              <span *ngIf="!file.integrityHash">À vérifier</span>
+              <span class="tag" [class.tag-legacy]="file.originType === 'legacy'">
+                {{ file.originType === 'legacy' ? 'Module existant' : 'Import central' }}
+              </span>
+            </td>
+            <td>
+              <span class="status" [class.is-missing]="file.status === 'missing'">
+                {{ file.status === 'present' ? 'Présent' : 'Introuvable' }}
+              </span>
+            </td>
+            <td>
+              <code class="hash" *ngIf="file.integrityHash">{{ file.integrityHash | slice:0:12 }}…</code>
+              <span class="meta-line" *ngIf="!file.integrityHash">À vérifier</span>
             </td>
             <td class="actions">
-              <button type="button" class="text-action" [disabled]="file.status !== 'present'" (click)="preview(file)">Afficher</button>
-              <button type="button" class="text-action" [disabled]="file.status !== 'present'" (click)="download(file)">Télécharger</button>
-              <button type="button" class="text-action" [disabled]="file.status !== 'present'" (click)="verify(file)">Vérifier</button>
+              <button type="button" class="icon-btn" title="Afficher" [attr.aria-label]="'Afficher ' + file.titre"
+                      [disabled]="file.status !== 'present'" (click)="preview(file)">
+                <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+              </button>
+              <button type="button" class="icon-btn" title="Télécharger" [attr.aria-label]="'Télécharger ' + file.titre"
+                      [disabled]="file.status !== 'present'" (click)="download(file)">
+                <span class="material-symbols-outlined" aria-hidden="true">download</span>
+              </button>
+              <button type="button" class="icon-btn" title="Vérifier l’intégrité" [attr.aria-label]="'Vérifier l’intégrité de ' + file.titre"
+                      [disabled]="file.status !== 'present'" (click)="verify(file)">
+                <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="loading">
+            <td colspan="6">
+              <div class="state"><span class="spinner" aria-hidden="true"></span> Chargement du catalogue…</div>
             </td>
           </tr>
           <tr *ngIf="!loading && files.length === 0">
-            <td colspan="6" class="empty-state">Aucun fichier ne correspond à ces filtres.</td>
-          </tr>
-          <tr *ngIf="loading">
-            <td colspan="6" class="empty-state">Chargement du catalogue…</td>
+            <td colspan="6">
+              <div class="state">
+                <span class="material-symbols-outlined" aria-hidden="true">folder_open</span>
+                Aucun fichier ne correspond à ces filtres.
+              </div>
+            </td>
           </tr>
         </tbody>
       </table>
     </div>
+
     <footer class="pagination">
-      <span>{{ total }} document(s) · page {{ page }} / {{ totalPages }}</span>
-      <div>
-        <button type="button" class="button button-plain button-small" [disabled]="page <= 1" (click)="changePage(-1)">Précédent</button>
-        <button type="button" class="button button-plain button-small" [disabled]="page * pageSize >= total" (click)="changePage(1)">Suivant</button>
+      <span class="pagination-meta">{{ total }} document(s) · page <strong>{{ page }}</strong> / {{ totalPages }}<ng-container *ngIf="activeFilterCount"> · {{ activeFilterCount }} filtre(s)</ng-container></span>
+      <div class="pagination-pills">
+        <button type="button" class="btn btn-ghost btn-sm pill-btn" [disabled]="page <= 1" (click)="changePage(-1)">
+          <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+          Précédent
+        </button>
+        <button type="button" class="btn btn-ghost btn-sm pill-btn" [disabled]="page * pageSize >= total" (click)="changePage(1)">
+          Suivant
+          <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+        </button>
       </div>
     </footer>
   </section>
 </main>
 
+<!-- ============ APERÇU PDF ============ -->
 <div class="preview-backdrop" *ngIf="previewUrl" (click)="closePreview()">
-  <section class="preview-dialog" (click)="$event.stopPropagation()">
-    <header><strong>{{ previewTitle }}</strong><button type="button" aria-label="Fermer" (click)="closePreview()">×</button></header>
+  <section class="preview-dialog" role="dialog" aria-modal="true" aria-labelledby="preview-title"
+           (click)="$event.stopPropagation()">
+    <header class="preview-head">
+      <div class="preview-id">
+        <span class="pdf-mark" aria-hidden="true">PDF</span>
+        <strong id="preview-title">{{ previewTitle }}</strong>
+      </div>
+      <button type="button" class="preview-close" aria-label="Fermer l’aperçu" title="Fermer" (click)="closePreview()">
+        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+      </button>
+    </header>
     <iframe [src]="previewUrl" title="Aperçu du document PDF"></iframe>
   </section>
 </div>

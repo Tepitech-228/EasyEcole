@@ -1,128 +1,386 @@
-<div class="flex justify-between items-start mb-8">
-    <app-header-title title="Gestion des permissions" subtitle="Configurer les permissions par utilisateur"></app-header-title>
-</div>
+<div class="perm-page w-full max-w-screen-xl mx-auto">
 
-<!-- Sélection utilisateur -->
-<div class="bg-white border border-gray-200 rounded-lg p-4 mb-6">
-    <ng-container *ngIf="!selectedUtilisateur">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Rechercher un utilisateur</label>
-        <input type="text" [(ngModel)]="searchTerm" placeholder="Nom, prénom, email ou identifiant..."
-            class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-        <div class="mt-3 max-h-60 overflow-y-auto border border-gray-200 rounded-md">
-            <div *ngFor="let u of filteredUtilisateurs"
-                (click)="selectUtilisateur(u)"
-                class="px-4 py-3 hover:bg-indigo-50 cursor-pointer border-b border-gray-100 last:border-b-0 flex items-center gap-x-3">
-                <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-sm font-medium">
-                    {{ (u.nom?.charAt(0) || '') + (u.prenoms?.charAt(0) || '') }}
-                </div>
-                <div>
-                    <div class="text-sm font-medium text-gray-900">{{ u.nom }} {{ u.prenoms }}</div>
-                    <div class="text-xs text-gray-500">{{ u.email }} · {{ u.role }}</div>
-                </div>
-            </div>
-            <div *ngIf="filteredUtilisateurs.length == 0" class="px-4 py-6 text-center text-sm text-gray-500">
-                Aucun utilisateur trouvé
-            </div>
-        </div>
-    </ng-container>
-
-    <ng-container *ngIf="selectedUtilisateur">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center gap-x-3">
-                <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-sm font-bold">
-                    {{ (selectedUtilisateur.nom?.charAt(0) || '') + (selectedUtilisateur.prenoms?.charAt(0) || '') }}
-                </div>
-                <div>
-                    <div class="text-sm font-semibold text-gray-900">{{ selectedUtilisateur.nom }} {{ selectedUtilisateur.prenoms }}</div>
-                    <div class="text-xs text-gray-500">{{ selectedUtilisateur.email }} · {{ selectedUtilisateur.role }}</div>
-                </div>
-            </div>
-            <div class="flex items-center gap-x-2">
-                <button (click)="openCopyModal()"
-                    class="text-xs text-indigo-600 hover:text-indigo-800 underline">Copier depuis...</button>
-                <button (click)="clearSelection()"
-                    class="text-xs text-gray-500 hover:text-gray-700 underline">Changer</button>
-            </div>
-        </div>
-    </ng-container>
-</div>
-
-<!-- Loading -->
-<div *ngIf="loading" class="text-center py-12">
-    <p class="text-gray-500">Chargement...</p>
-</div>
-
-<!-- Grille des permissions -->
-<div *ngIf="!loading && selectedUtilisateur" class="space-y-6">
-    <div *ngFor="let module of getObjectKeys(permissionsGrouped)" class="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        <div class="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
-            <h3 class="text-sm font-semibold text-gray-800">{{ module }}</h3>
-            <div class="flex items-center gap-x-3">
-                <button (click)="toggleModule(module, true)"
-                    class="inline-flex items-center gap-x-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-green-50 text-green-700 ring-1 ring-inset ring-green-200 hover:bg-green-100 transition">Tout cocher</button>
-                <button (click)="toggleModule(module, false)"
-                    class="inline-flex items-center gap-x-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-red-50 text-red-700 ring-1 ring-inset ring-red-200 hover:bg-red-100 transition">Tout décocher</button>
-            </div>
-        </div>
-        <div class="divide-y divide-gray-100">
-            <div *ngFor="let perm of permissionsGrouped[module]"
-                class="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50">
-                <div class="flex items-center gap-x-2">
-                    <span [ngClass]="{'text-xs px-1.5 py-0.5 rounded font-medium': true,
-                        'bg-blue-100 text-blue-700': perm.type === 'menu',
-                        'bg-purple-100 text-purple-700': perm.type === 'action'}">
-                        {{ perm.type === 'menu' ? 'Menu' : 'Action' }}
-                    </span>
-                    <span class="text-sm text-gray-700">{{ perm.libelle }}</span>
-                    <span *ngIf="perm.parentKey" class="text-xs text-gray-400">({{ perm.key }})</span>
-                </div>
-                <label class="perm-switch">
-                    <input type="checkbox" [checked]="hasPermission(perm.id)"
-                        (change)="togglePermission(perm.id, $any($event.target).checked)">
-                    <span class="perm-switch__track"></span>
-                    <span class="perm-switch__thumb"></span>
-                </label>
-            </div>
-        </div>
+  <!-- ── En-tête de page ─────────────────────────────────────────────────── -->
+  <header class="perm-hero">
+    <div class="perm-hero__intro">
+      <span class="perm-eyebrow">
+        <span class="material-symbols-outlined" aria-hidden="true">admin_panel_settings</span>
+        Administration
+      </span>
+      <h1 class="perm-title">Gestion des permissions</h1>
+      <p class="perm-subtitle">
+        Attribuez finement les menus et les actions accessibles à chaque utilisateur de votre établissement.
+      </p>
     </div>
 
-    <!-- Bouton enregistrer -->
-    <div class="flex justify-end sticky bottom-0 bg-white border-t border-gray-200 px-4 py-3 rounded-b-lg">
-        <button (click)="savePermissions()" [disabled]="saving"
-            class="px-6 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">
-            {{ saving ? 'Enregistrement...' : 'Enregistrer les permissions' }}
+    <div class="grid grid-cols-3 gap-2" role="list" aria-label="Statistiques des permissions">
+      <div class="flex flex-col gap-1 rounded-xl border border-white border-opacity-20 bg-white bg-opacity-10 px-3 py-2" role="listitem">
+        <span class="text-xl font-bold leading-tight">{{ utilisateurs.length }}</span>
+        <span class="text-xs font-semibold leading-tight text-white text-opacity-75 break-words">Comptes</span>
+      </div>
+      <div class="flex flex-col gap-1 rounded-xl border border-white border-opacity-20 bg-white bg-opacity-10 px-3 py-2" role="listitem">
+        <span class="text-xl font-bold leading-tight">{{ modules.length }}</span>
+        <span class="text-xs font-semibold leading-tight text-white text-opacity-75 break-words">Modules</span>
+      </div>
+      <div class="flex flex-col gap-1 rounded-xl border border-white border-opacity-20 bg-white bg-opacity-10 px-3 py-2" role="listitem">
+        <span class="text-xl font-bold leading-tight">{{ selectedUtilisateur ? activePermissionsCount : totalPermissionsCount }}</span>
+        <span class="text-xs font-semibold leading-tight text-white text-opacity-75 break-words">Droits</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="perm-layout grid grid-cols-1 gap-4 lg:grid-cols-3">
+
+    <!-- ── Sidebar utilisateurs ─────────────────────────────────────────── -->
+    <aside class="perm-sidebar lg:col-span-1" aria-label="Liste des utilisateurs">
+      <div class="perm-sidebar__head">
+        <h2 class="text-sm font-bold text-gray-900">Utilisateurs</h2>
+        <span class="inline-flex items-center justify-center h-6 px-2 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold" aria-hidden="true">{{ filteredUtilisateurs.length }}</span>
+      </div>
+
+      <div class="perm-search">
+        <span class="material-symbols-outlined" aria-hidden="true">search</span>
+        <input
+          #userSearch
+          type="search"
+          name="permUserSearch"
+          autocomplete="off"
+          placeholder="Nom, prénom, identifiant, email…"
+          aria-label="Rechercher un utilisateur"
+          [(ngModel)]="searchTerm" />
+        <button
+          *ngIf="searchTerm"
+          type="button"
+          class="perm-search__clear"
+          aria-label="Effacer la recherche"
+          (click)="searchTerm = ''">
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
         </button>
-    </div>
-</div>
+      </div>
 
-<!-- Message si aucun utilisateur sélectionné -->
-<div *ngIf="!loading && !selectedUtilisateur" class="text-center py-12 bg-white border border-gray-200 rounded-lg">
-    <span class="material-symbols-outlined text-5xl text-gray-300 mb-4">security</span>
-    <p class="text-gray-500">Sélectionnez un utilisateur pour gérer ses permissions</p>
-</div>
+      <div class="perm-users" [attr.aria-busy]="loadingUsers">
+        <!-- Squelette de chargement -->
+        <div *ngIf="loadingUsers" class="perm-skel-users" aria-hidden="true">
+          <span class="perm-skel-line perm-skel-line--md"></span>
+          <span class="perm-skel-line"></span>
+          <span class="perm-skel-line perm-skel-line--sm"></span>
+        </div>
 
-<!-- Modal Copier depuis -->
-<div *ngIf="showCopyModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Copier les permissions depuis...</h3>
-        <input type="text" [(ngModel)]="searchTerm" placeholder="Rechercher un utilisateur..."
-            class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 mb-3">
-        <div class="max-h-60 overflow-y-auto border border-gray-200 rounded-md">
-            <div *ngFor="let u of filteredUtilisateurs"
-                (click)="copyFromUser(u)"
-                class="px-4 py-3 hover:bg-indigo-50 cursor-pointer border-b border-gray-100 last:border-b-0 flex items-center gap-x-3">
-                <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-700 text-sm font-medium">
-                    {{ (u.nom?.charAt(0) || '') + (u.prenoms?.charAt(0) || '') }}
-                </div>
-                <div>
-                    <div class="text-sm font-medium text-gray-900">{{ u.nom }} {{ u.prenoms }}</div>
-                    <div class="text-xs text-gray-500">{{ u.email }} · {{ u.role }}</div>
-                </div>
-            </div>
+        <!-- Liste -->
+        <ng-container *ngIf="!loadingUsers">
+          <button
+            type="button"
+            class="perm-user"
+            *ngFor="let u of filteredUtilisateurs; trackBy: trackByUserId"
+            [class.is-active]="selectedUtilisateur?.id === u.id"
+            [attr.aria-pressed]="selectedUtilisateur?.id === u.id"
+            [attr.aria-label]="'Sélectionner ' + displayName(u)"
+            (click)="selectUtilisateur(u)">
+            <span class="perm-avatar" [ngClass]="avatarTone(u)" aria-hidden="true">{{ initials(u) }}</span>
+            <span class="perm-user__body">
+              <span class="perm-user__name">{{ displayName(u) }}</span>
+              <span class="perm-user__meta">{{ u.identifiant || u.email || 'Identifiant non renseigné' }}</span>
+              <span class="perm-role">{{ getRoleLabel(u.role) }}</span>
+            </span>
+          </button>
+
+          <!-- Aucun résultat -->
+          <div *ngIf="filteredUtilisateurs.length === 0" class="perm-empty perm-empty--sm">
+            <span class="perm-empty__icon material-symbols-outlined" aria-hidden="true">search_off</span>
+            <p *ngIf="searchTerm">Aucun utilisateur ne correspond à « {{ searchTerm }} ».</p>
+            <p *ngIf="!searchTerm && !usersError">Aucun utilisateur disponible pour le moment.</p>
+            <p *ngIf="!searchTerm && usersError" class="text-red-600">{{ usersError }}</p>
+            <button *ngIf="searchTerm" type="button" class="perm-btn perm-btn--ghost perm-btn--sm" (click)="searchTerm = ''">
+              Réinitialiser la recherche
+            </button>
+          </div>
+        </ng-container>
+      </div>
+    </aside>
+
+    <!-- ── Panneau des permissions ──────────────────────────────────────── -->
+    <section #permPanel class="perm-panel lg:col-span-2 flex min-w-0 flex-col gap-3" aria-label="Permissions de l'utilisateur sélectionné">
+
+      <!-- Lecture seule : le backend réserve les mutations au rôle ADMIN -->
+      <div *ngIf="!canManage" class="perm-notice perm-notice--warning" role="status">
+        <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+        <div>
+          <strong>Consultation en lecture seule.</strong>
+          Seul un compte ayant le rôle Administrateur peut modifier les permissions. Vous pouvez consulter les droits existants.
         </div>
-        <div class="flex justify-end mt-4">
-            <button (click)="closeCopyModal()"
-                class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
+      </div>
+
+      <!-- Aucun utilisateur sélectionné -->
+      <div *ngIf="!selectedUtilisateur" class="perm-empty perm-empty--lg">
+        <span class="perm-empty__icon material-symbols-outlined" aria-hidden="true">shield_person</span>
+        <h2>Sélectionnez un utilisateur</h2>
+        <p>Choisissez un compte dans la liste de gauche pour consulter et ajuster ses accès.</p>
+      </div>
+
+      <ng-container *ngIf="selectedUtilisateur">
+        <!-- Carte utilisateur -->
+        <div class="perm-user-card">
+          <span class="perm-avatar perm-avatar--lg" [ngClass]="avatarTone(selectedUtilisateur)" aria-hidden="true">
+            {{ initials(selectedUtilisateur) }}
+          </span>
+          <div class="perm-user-card__id">
+            <h2 class="perm-user-card__name">{{ displayName(selectedUtilisateur) }}</h2>
+            <p class="perm-user-card__meta">
+              {{ selectedUtilisateur?.email || 'Email non renseigné' }}
+              <span *ngIf="selectedUtilisateur?.identifiant"> · {{ selectedUtilisateur?.identifiant }}</span>
+            </p>
+          </div>
+          <span class="perm-role">{{ getRoleLabel(selectedUtilisateur?.role) }}</span>
+          <button type="button" class="perm-btn perm-btn--ghost perm-btn--sm" (click)="clearSelection()">
+            <span class="material-symbols-outlined" aria-hidden="true">swap_horiz</span>
+            Changer
+          </button>
         </div>
+
+        <!-- Erreur 403 remontée par le serveur -->
+        <div *ngIf="accessDeniedMessage" class="perm-notice perm-notice--danger" role="alert">
+          <span class="material-symbols-outlined" aria-hidden="true">gpp_bad</span>
+          <div>{{ accessDeniedMessage }}</div>
+        </div>
+
+        <!-- Barre d'actions sticky -->
+        <div class="perm-actionbar">
+          <div class="perm-actionbar__count" aria-live="polite">
+            <span class="inline-flex items-baseline gap-1 text-base font-bold text-primary">
+              <strong class="text-xl text-indigo-600">{{ activePermissionsCount }}</strong>
+              / {{ totalPermissionsCount }}
+            </span>
+            <span class="text-xs text-gray-500">
+              permissions actives · {{ activeModulesCount }} module(s)
+            </span>
+            <span *ngIf="isDirty" class="px-2 py-0.5 rounded-full bg-yellow-50 border border-yellow-200 text-xs font-semibold text-yellow-800">Modifications non enregistrées</span>
+          </div>
+
+          <div class="perm-actionbar__actions">
+            <button
+              type="button"
+              class="perm-btn perm-btn--ghost"
+              [disabled]="!isDirty || saving || loadingPermissions || !canManage"
+              (click)="resetPermissions()">
+              <span class="material-symbols-outlined" aria-hidden="true">undo</span>
+              Réinitialiser
+            </button>
+
+            <button
+              type="button"
+              class="perm-btn perm-btn--outline"
+              [disabled]="saving || loadingPermissions || loadingCatalogue || !canManage"
+              (click)="openCopyModal()">
+              <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>
+              Copier les permissions
+            </button>
+
+            <button
+              type="button"
+              class="perm-btn perm-btn--primary"
+              [disabled]="!isDirty || saving || loadingPermissions || loadingCatalogue || !canManage"
+              (click)="savePermissions()">
+              <span *ngIf="saving" class="perm-spinner" aria-hidden="true"></span>
+              <span *ngIf="!saving" class="material-symbols-outlined" aria-hidden="true">save</span>
+              {{ saving ? 'Enregistrement…' : 'Enregistrer' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Squelette des modules -->
+        <div *ngIf="loadingPermissions || loadingCatalogue" class="perm-grid grid grid-cols-1 gap-3 xl:grid-cols-2" aria-hidden="true">
+          <div class="perm-card perm-skel-card" *ngFor="let card of skeletonCards">
+            <span class="perm-skel-line perm-skel-line--sm"></span>
+            <span class="perm-skel-line perm-skel-line--md"></span>
+            <span class="perm-skel-line"></span>
+            <span class="perm-skel-line perm-skel-line--sm"></span>
+          </div>
+        </div>
+
+        <!-- Modules -->
+        <ng-container *ngIf="!loadingPermissions && !loadingCatalogue">
+          <div *ngIf="modules.length > 0" class="perm-grid grid grid-cols-1 gap-3 xl:grid-cols-2">
+            <article class="perm-card" *ngFor="let module of modules; trackBy: trackByModule">
+              <header class="perm-card__head">
+                <div class="perm-card__title">
+                  <span class="perm-card__icon material-symbols-outlined" aria-hidden="true">folder_open</span>
+                  <div>
+                    <h3>{{ module }}</h3>
+                    <p class="perm-card__count">{{ moduleActiveCount(module) }} / {{ moduleTotal(module) }} actives</p>
+                  </div>
+                </div>
+
+                <!-- Toggle global du module (tri-state) -->
+                <button
+                  type="button"
+                  role="checkbox"
+                  class="perm-switch"
+                  [class.is-on]="isModuleFullyChecked(module)"
+                  [class.is-partial]="isModulePartiallyChecked(module)"
+                  [attr.aria-checked]="isModuleFullyChecked(module) ? 'true' : (isModulePartiallyChecked(module) ? 'mixed' : 'false')"
+                  [attr.aria-label]="'Activer toutes les permissions du module ' + module"
+                  [disabled]="!canManage || saving"
+                  (click)="toggleModule(module)">
+                  <span class="perm-switch__track" aria-hidden="true">
+                    <span class="perm-switch__thumb"></span>
+                  </span>
+                </button>
+              </header>
+
+              <ul class="perm-list">
+                <li
+                  class="perm-row"
+                  *ngFor="let perm of permissionsGrouped[module]; trackBy: trackByPermissionId"
+                  [class.perm-row--child]="perm.parentKey">
+                  <div class="perm-row__info">
+                    <span
+                      class="px-1.5 py-0.5 rounded text-xs font-bold uppercase tracking-wide bg-indigo-50 text-indigo-700"
+                      [class.bg-teal-50]="perm.type === 'action'"
+                      [class.text-teal-700]="perm.type === 'action'">
+                      {{ perm.type === 'menu' ? 'Menu' : 'Action' }}
+                    </span>
+                    <span class="perm-row__label">{{ perm.libelle }}</span>
+                    <code class="font-mono text-xs text-gray-400" [title]="perm.key">{{ perm.key }}</code>
+                  </div>
+
+                  <button
+                    type="button"
+                    role="switch"
+                    class="perm-switch perm-switch--sm"
+                    [class.is-on]="hasPermission(perm.id)"
+                    [attr.aria-checked]="hasPermission(perm.id) ? 'true' : 'false'"
+                    [attr.aria-label]="'Permission ' + perm.libelle + ' du module ' + module"
+                    [disabled]="!canManage || saving"
+                    (click)="togglePermission(perm.id)">
+                    <span class="perm-switch__track" aria-hidden="true">
+                      <span class="perm-switch__thumb"></span>
+                    </span>
+                  </button>
+                </li>
+              </ul>
+            </article>
+          </div>
+
+          <!-- Catalogue vide -->
+          <div *ngIf="modules.length === 0" class="perm-empty">
+            <span class="perm-empty__icon material-symbols-outlined" aria-hidden="true">key_off</span>
+            <h2>Aucune permission configurée</h2>
+            <p>Le catalogue des permissions est vide. Contactez un administrateur pour l'initialiser.</p>
+            <button type="button" class="perm-btn perm-btn--ghost perm-btn--sm" (click)="loadPermissions()">
+              <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
+              Recharger
+            </button>
+          </div>
+        </ng-container>
+      </ng-container>
+    </section>
+  </div>
+
+  <!-- ── Modal : copier les permissions ─────────────────────────────────── -->
+  <div *ngIf="showCopyModal" class="perm-modal-backdrop" (click)="closeCopyModal()">
+    <div
+      class="perm-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="perm-copy-title"
+      aria-describedby="perm-copy-desc"
+      (click)="$event.stopPropagation()">
+
+      <header class="perm-modal__head">
+        <span class="perm-modal__icon material-symbols-outlined" aria-hidden="true">content_copy</span>
+        <div class="perm-modal__heading">
+          <h2 id="perm-copy-title">Copier les permissions</h2>
+          <p id="perm-copy-desc">
+            Dupliquez les droits d'un autre compte vers
+            <strong>{{ displayName(selectedUtilisateur) }}</strong>.
+          </p>
+        </div>
+        <button type="button" class="perm-iconbtn" aria-label="Fermer la fenêtre" [disabled]="copying" (click)="closeCopyModal()">
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+
+      <div class="perm-notice perm-notice--info" role="note">
+        <span class="material-symbols-outlined" aria-hidden="true">info</span>
+        <div>Cette action remplace intégralement les permissions actuelles du compte cible.</div>
+      </div>
+
+      <div class="perm-search perm-search--modal">
+        <span class="material-symbols-outlined" aria-hidden="true">search</span>
+        <input
+          #copySearchInput
+          type="search"
+          name="permCopySearch"
+          autocomplete="off"
+          placeholder="Rechercher le compte source…"
+          aria-label="Rechercher l'utilisateur source"
+          [(ngModel)]="copySearchTerm" />
+        <button
+          *ngIf="copySearchTerm"
+          type="button"
+          class="perm-search__clear"
+          aria-label="Effacer la recherche"
+          (click)="copySearchTerm = ''">
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+      </div>
+
+      <div class="perm-copy-list" role="group" aria-label="Choisir l'utilisateur source">
+        <button
+          type="button"
+          class="perm-copy-item"
+          *ngFor="let u of copyCandidates; trackBy: trackByUserId"
+          [class.is-selected]="copySourceUser?.id === u.id"
+          [attr.aria-pressed]="copySourceUser?.id === u.id"
+          [disabled]="copying"
+          (click)="selectCopySource(u)">
+          <span class="perm-avatar" [ngClass]="avatarTone(u)" aria-hidden="true">{{ initials(u) }}</span>
+          <span class="perm-copy-item__body">
+            <span class="perm-copy-item__name">{{ displayName(u) }}</span>
+            <span class="perm-copy-item__meta">{{ u.identifiant || u.email || 'Identifiant non renseigné' }}</span>
+          </span>
+          <span class="perm-role">{{ getRoleLabel(u.role) }}</span>
+          <span class="material-symbols-outlined perm-copy-item__check" aria-hidden="true">check_circle</span>
+        </button>
+
+        <div *ngIf="copyCandidates.length === 0" class="perm-empty perm-empty--sm">
+          <span class="perm-empty__icon material-symbols-outlined" aria-hidden="true">search_off</span>
+          <p *ngIf="copySearchTerm">Aucun compte source ne correspond à « {{ copySearchTerm }} ».</p>
+          <p *ngIf="!copySearchTerm">Aucun autre utilisateur disponible.</p>
+        </div>
+      </div>
+
+      <div *ngIf="copyError" class="perm-notice perm-notice--danger" role="alert">
+        <span class="material-symbols-outlined" aria-hidden="true">error</span>
+        <div>{{ copyError }}</div>
+      </div>
+
+      <div *ngIf="copySourceUser" class="perm-modal__summary">
+        <div class="perm-modal__summary-user">
+          <span class="perm-avatar" [ngClass]="avatarTone(copySourceUser)" aria-hidden="true">{{ initials(copySourceUser) }}</span>
+          <span>
+            <span class="perm-modal__summary-name">{{ displayName(copySourceUser) }}</span>
+          </span>
+        </div>
+        <span class="material-symbols-outlined perm-modal__arrow" aria-hidden="true">arrow_forward</span>
+        <div class="perm-modal__summary-user">
+          <span class="perm-avatar" [ngClass]="avatarTone(selectedUtilisateur)" aria-hidden="true">{{ initials(selectedUtilisateur) }}</span>
+          <span>
+            <span class="perm-modal__summary-name">{{ displayName(selectedUtilisateur) }}</span>
+          </span>
+        </div>
+      </div>
+
+      <footer class="perm-modal__foot">
+        <button type="button" class="perm-btn perm-btn--ghost" [disabled]="copying" (click)="closeCopyModal()">
+          Annuler
+        </button>
+        <button type="button" class="perm-btn perm-btn--primary" [disabled]="!copySourceUser || copying" (click)="confirmCopy()">
+          <span *ngIf="copying" class="perm-spinner" aria-hidden="true"></span>
+          <span *ngIf="!copying" class="material-symbols-outlined" aria-hidden="true">content_copy</span>
+          {{ copying ? 'Copie en cours…' : 'Copier les permissions' }}
+        </button>
+      </footer>
     </div>
+  </div>
 </div>
