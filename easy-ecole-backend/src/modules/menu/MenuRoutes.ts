@@ -1,20 +1,30 @@
 import { Router, Request, Response } from "express";
+import { Op } from "sequelize";
 import Authenticate from "../../core/middlewares/Authenticate";
 import { MENU_CONFIG, MenuPoleConfig, MenuGroupConfig, MenuItemConfig } from "./menu.config";
 import { RolesUtilisateur } from "../../core/enums/RolesUtilisateur";
 import { Permission } from "../auth/models/Permission";
 import { Role } from "../auth/models/Role";
+import { RoleMenuGrant } from "../auth/models/RoleMenuGrant";
 import { UserPermission } from "../auth/models/UserPermission";
 import { UserRole } from "../auth/models/UserRole";
 import { VerificationPaiementService } from "../inscription/services/VerificationPaiementService";
 
 const router = Router();
 
+function adminOnly(req: Request, res: Response, next: () => void) {
+    if (req.utilisateurRole !== RolesUtilisateur.ADMIN && req.utilisateurRole !== RolesUtilisateur.INSTITUTION) {
+        return res.status(403).json({ success: false, message: "Réservé à l'administration" });
+    }
+    next();
+}
+
 function filterMenuByPermissions(
     menu: MenuPoleConfig[],
     userRole: RolesUtilisateur,
     userPermissionKeys: Set<string>,
-    hasAssignedProfiles: boolean
+    hasAssignedProfiles: boolean,
+    grantedKeys: Set<string> = new Set()
 ): MenuPoleConfig[] {
     return menu.reduce<MenuPoleConfig[]>((poles, pole) => {
         const filteredGroups = pole.groups.reduce<MenuGroupConfig[]>((groups, group) => {
@@ -23,6 +33,13 @@ function filterMenuByPermissions(
             }
 
             const filteredItems = group.items.filter(item => {
+                // Ajout additif par profil : un pôle/menu accordé à un profil
+                // rend ses entrées visibles même si allowedRoles ne contient
+                // pas l'énumération du rôle (profils personnalisés).
+                if (item.permissionKey && grantedKeys.has(item.permissionKey) && !item.roleRestricted) {
+                    return true;
+                }
+
                 // Assigned profiles use explicit grants as the source of truth.
                 if (hasAssignedProfiles && item.permissionKey && !item.roleRestricted) {
                     return userPermissionKeys.has(item.permissionKey);
@@ -107,6 +124,23 @@ export function filtrerMenuPourRegularisation(menu: MenuPoleConfig[]): MenuPoleC
     }, []);
 }
 
+async function chargerGrantsDeRole(roleIds: number[]): Promise<Set<string>> {
+    const keys = new Set<string>();
+    if (roleIds.length === 0) return keys;
+    const grants = await RoleMenuGrant.findAll({
+        where: { roleId: { [Op.in]: roleIds } },
+        attributes: ['permissionKey']
+    });
+    for (const grant of grants) {
+        keys.add(grant.permissionKey);
+    }
+    return keys;
+}
+
+router.get('/structure', [Authenticate, adminOnly], (_req: Request, res: Response) => {
+    return res.status(200).json(MENU_CONFIG);
+});
+
 router    /**
      * @openapi
      * /:
@@ -132,10 +166,11 @@ router    /**
         }
 
         const userPermissionKeys = new Set<string>();
+        let grantedKeys = new Set<string>();
 
         const userRoles = await UserRole.findAll({ where: { utilisateurId } });
         if (userRoles.length > 0) {
-            const roleIds = userRoles.map(ur => ur.roleId);
+            const roleIds = userRoles.map(ur => Number(ur.roleId));
             const roles = await Role.findAll({
                 where: { id: roleIds },
                 include: [{ model: Permission, as: 'permissions', attributes: ['key'] }]
@@ -145,6 +180,10 @@ router    /**
                 for (const p of perms) {
                     userPermissionKeys.add(p.key);
                 }
+            }
+            grantedKeys = await chargerGrantsDeRole(roleIds);
+            for (const key of grantedKeys) {
+                userPermissionKeys.add(key);
             }
         } else {
             const roleNameMap: Record<string, string> = {
@@ -177,6 +216,10 @@ router    /**
                     for (const p of perms) {
                         userPermissionKeys.add(p.key);
                     }
+                    grantedKeys = await chargerGrantsDeRole([Number(fallbackRole.id)]);
+                    for (const key of grantedKeys) {
+                        userPermissionKeys.add(key);
+                    }
                 }
             }
         }
@@ -192,7 +235,7 @@ router    /**
             }
         }
 
-        const filteredMenu = filterMenuByPermissions(MENU_CONFIG, userRole, userPermissionKeys, userRoles.length > 0);
+        const filteredMenu = filterMenuByPermissions(MENU_CONFIG, userRole, userPermissionKeys, userRoles.length > 0, grantedKeys);
 
         // ── Blocage partiel du menu pour les étudiants en situation de paiement
         //    en retard (chantier modalités 1x/3x/10x) ─────────────────────────────

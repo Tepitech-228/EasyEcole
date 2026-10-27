@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { StorageInterface, StorageOptions, StorageResult } from "./StorageInterface";
 import { EncryptionService } from "../EncryptionService";
 import { GED_CONFIG } from "../../config/GedConfig";
+import { resolveStoredDocumentPath } from "../DocumentStorageService";
 
 const DEFAULT_STORAGE_DIR = GED_CONFIG.STORAGE_DIR;
 
@@ -95,7 +96,8 @@ export class LocalStorageService implements StorageInterface {
   }
 
   async retrieve(filePath: string): Promise<Buffer> {
-    const fullPath = path.resolve(this.baseDir, filePath);
+    const resolved = resolveStoredDocumentPath(filePath, [this.baseDir]);
+    const fullPath = resolved || path.resolve(this.baseDir, filePath);
     const encryptedPath = fullPath + ".enc";
 
     if (fs.existsSync(encryptedPath)) {
@@ -111,7 +113,8 @@ export class LocalStorageService implements StorageInterface {
   }
 
   async delete(filePath: string): Promise<void> {
-    const fullPath = path.resolve(this.baseDir, filePath);
+    const resolved = resolveStoredDocumentPath(filePath, [this.baseDir]);
+    const fullPath = resolved || path.resolve(this.baseDir, filePath);
 
     for (const suffix of ["", ".enc", ".enc.meta"]) {
       const p = fullPath + suffix;
@@ -122,7 +125,8 @@ export class LocalStorageService implements StorageInterface {
   }
 
   async exists(filePath: string): Promise<boolean> {
-    const fullPath = path.resolve(this.baseDir, filePath);
+    const resolved = resolveStoredDocumentPath(filePath, [this.baseDir]);
+    const fullPath = resolved || path.resolve(this.baseDir, filePath);
     return (
       fs.existsSync(fullPath) ||
       fs.existsSync(fullPath + ".enc")

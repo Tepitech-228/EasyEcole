@@ -123,7 +123,7 @@ export default class ParcoursChoisiController {
 
     static async deleteParcoursChoisi(req: Request, res: Response): Promise<Response | null> {
         let options: FindOptions<InferAttributes<ParcoursChoisi>> = {}
-        if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
+        if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false })
         }
         else if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {

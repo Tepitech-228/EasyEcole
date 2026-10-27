@@ -12,51 +12,11 @@ import { PointageTerminalEvent } from "../models/PointageTerminalEvent";
 import { Op } from "sequelize";
 import PointageTerminalController from "./PointageTerminalController";
 import PointageRealtimeService from "../services/PointageRealtimeService";
-
-interface HikvisionPushEvent {
-  employeeNoString: string;
-  name: string;
-  date: string;
-  time: string;
-  major: number;
-  minor: number;
-}
+import { normalizeHikvisionEmployeeNo } from "../services/HikvisionIsapiService";
+import { isHikvisionHeartbeat, parseHikvisionPushEvent } from "../services/HikvisionPushEventParser";
 
 function normalizedIp(ip: string): string {
   return ip.startsWith("::ffff:") ? ip.slice(7) : ip;
-}
-
-export function parseHikvisionPushEvent(body: unknown): HikvisionPushEvent | null {
-  if (!body || typeof body !== "object") return null;
-  const payload = body as Record<string, unknown>;
-  const rawEvent = payload.AccessControllerEvent;
-  if (!rawEvent || typeof rawEvent !== "object") return null;
-  const event = rawEvent as Record<string, unknown>;
-  const employeeNoString = typeof event.employeeNoString === "string" ? event.employeeNoString.trim() : "";
-  const name = typeof event.name === "string" ? event.name.trim() : "";
-  const rawTime = typeof event.time === "string" ? event.time.trim() : "";
-  const timestamp = new Date(rawTime);
-  const major = Number(event.major);
-  const minor = Number(event.minor);
-
-  if (
-    !employeeNoString || employeeNoString.length > 64 ||
-    name.length > 120 ||
-    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(rawTime) ||
-    !Number.isFinite(timestamp.getTime()) ||
-    !Number.isSafeInteger(major) || major < 0 || major > 65535 ||
-    !Number.isSafeInteger(minor) || minor < 0 || minor > 65535
-  ) return null;
-
-  const isoTime = timestamp.toISOString();
-  return {
-    employeeNoString,
-    name,
-    date: isoTime.slice(0, 10),
-    time: isoTime.slice(11, 19),
-    major,
-    minor
-  };
 }
 
 async function resolveUtilisateur(employeeNo: string, etablissementId: number): Promise<Utilisateur | null> {
@@ -103,6 +63,39 @@ async function resolveUtilisateur(employeeNo: string, etablissementId: number): 
   );
   if (matchingIds.size === 1) return Utilisateur.findByPk(Array.from(matchingIds)[0]);
   if (matchingIds.size > 1) return null;
+
+  // Les terminaux recovent un employeeNo alphanumerique (sans - ni _).
+  // On retrouve le profil en comparant les matricules normalises du site.
+  const normalized = normalizeHikvisionEmployeeNo(employeeNo);
+  if (normalized) {
+    const [siteDossiers, sitePersonnels, siteEnseignants] = await Promise.all([
+      DossierEtudiant.findAll({
+        where: { etablissementId },
+        attributes: ["matricule", "utilisateurId"]
+      }),
+      PersonnelAdministratif.findAll({
+        where: {
+          [Op.or]: [
+            { utilisateurId: { [Op.in]: siteUserIds } },
+            { etablissementId }
+          ]
+        },
+        attributes: ["matricule", "utilisateurId"]
+      }),
+      Enseignant.findAll({
+        where: { utilisateurId: { [Op.in]: siteUserIds } },
+        attributes: ["matricule", "utilisateurId"]
+      })
+    ]);
+    const normalizedIds = new Set<number>();
+    for (const profil of [...siteDossiers, ...sitePersonnels, ...siteEnseignants]) {
+      if (profil.matricule && normalizeHikvisionEmployeeNo(String(profil.matricule)) === normalized) {
+        normalizedIds.add(Number(profil.utilisateurId));
+      }
+    }
+    if (normalizedIds.size === 1) return Utilisateur.findByPk(Array.from(normalizedIds)[0]);
+    if (normalizedIds.size > 1) return null;
+  }
 
   if (/^\d+$/.test(employeeNo)) return Utilisateur.findByPk(Number(employeeNo));
   return null;
@@ -229,8 +222,24 @@ export default class HikvisionPushController {
   }
 
   static async receive(req: Request, res: Response): Promise<Response> {
+    // Le heartbeat emprunte le meme canal que les evenements : il faut
+    // l'acquitter avant le parsing, sinon le terminal desactive le push.
+    if (isHikvisionHeartbeat(req.body)) {
+      return res.status(200).type("text/plain").send("OK");
+    }
+
     const event = parseHikvisionPushEvent(req.body);
     if (!event) {
+      // Le terminal envoie aussi des evenements système (ouverture/fermeture
+      // de porte, minor 21/22) sans employeeNoString. Les refuser le bloque :
+      // il rejoue la même file en boucle et les vrais pointages n'arrivent plus.
+      const body = req.body as Record<string, unknown> | undefined;
+      const rawEvent = body && typeof body === "object" && typeof body.AccessControllerEvent === "string"
+        ? body.AccessControllerEvent
+        : "";
+      if (!/"employeeNoString"\s*:\s*"[^"]+"/.test(rawEvent)) {
+        return res.status(200).type("text/plain").send("OK");
+      }
       return res.status(400).type("text/plain").send("INVALID EVENT");
     }
 

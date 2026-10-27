@@ -20,6 +20,7 @@ import GedSignature from "../models/GedSignature";
 import { NotificationGedService } from "../services/NotificationGedService";
 import { NamingConventionService } from "../services/NamingConventionService";
 import { GED_CONFIG } from "../../../core/config/GedConfig";
+import { resolveStoredDocumentPath } from "../../../core/services/DocumentStorageService";
 
 function parseJsonField(value: any): any {
   if (!value) return null;
@@ -32,6 +33,12 @@ function parseJsonField(value: any): any {
 }
 
 const UPLOAD_DIR = GED_CONFIG.UPLOAD_DIR;
+
+/** Resout un fichier GED stocke (nouveau chemin documents/ ou ancien public/ged/). */
+function resolveGedDocumentPath(storedPath: string): string {
+    return resolveStoredDocumentPath(storedPath, [path.resolve(process.cwd(), UPLOAD_DIR)])
+        || path.resolve(process.cwd(), UPLOAD_DIR, storedPath);
+}
 
 function resolveFolderPath(folderId: unknown): string | null {
     const value = String(folderId ?? '');
@@ -657,7 +664,7 @@ export default class DocumentGedController {
             }
 
             if (req.file) {
-                const oldFilePath = path.resolve(process.cwd(), UPLOAD_DIR, document.fichier);
+                const oldFilePath = resolveGedDocumentPath(document.fichier);
                 if (fs.existsSync(oldFilePath)) fs.unlinkSync(oldFilePath);
 
                 const folderId = req.body.folderId || document.folderId;
@@ -706,7 +713,7 @@ export default class DocumentGedController {
                 return;
             }
 
-            const filePath = path.resolve(process.cwd(), UPLOAD_DIR, document.fichier);
+            const filePath = resolveGedDocumentPath(document.fichier);
             if (!fs.existsSync(filePath)) {
                 res.status(404).json({ success: false, message: "Fichier introuvable" });
                 return;
@@ -821,7 +828,7 @@ export default class DocumentGedController {
                 return res.status(423).json({ success: false, message: "Document verrouillé par un autre utilisateur" });
             }
 
-            const originalFilePath = path.resolve(process.cwd(), UPLOAD_DIR, original.fichier);
+            const originalFilePath = resolveGedDocumentPath(original.fichier);
             if (!fs.existsSync(originalFilePath)) {
                 return res.status(404).json({ success: false, message: "Fichier original introuvable" });
             }
@@ -1017,7 +1024,7 @@ export default class DocumentGedController {
                 });
             }
 
-            const filePath = path.resolve(process.cwd(), UPLOAD_DIR, document.fichier);
+            const filePath = resolveGedDocumentPath(document.fichier);
             if (fs.existsSync(filePath)) {
                 fs.unlinkSync(filePath);
             }
@@ -1083,7 +1090,7 @@ export default class DocumentGedController {
             }
 
             // Supprimer le fichier physique
-            const filePath = path.resolve(process.cwd(), UPLOAD_DIR, document.fichier);
+            const filePath = resolveGedDocumentPath(document.fichier);
             if (fs.existsSync(filePath)) {
                 fs.unlinkSync(filePath);
             }

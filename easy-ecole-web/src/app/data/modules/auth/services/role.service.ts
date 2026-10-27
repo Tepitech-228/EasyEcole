@@ -40,6 +40,14 @@ export class RoleService {
     return this.httpClient.put(`${this.SERVICE_URL}/${id}/permissions`, data)
   }
 
+  getRoleMenuGrants(id: string): Observable<any> {
+    return this.httpClient.get(`${this.SERVICE_URL}/${id}/menu-grants`)
+  }
+
+  updateRoleMenuGrants(id: string, permissionKeys: string[]): Observable<any> {
+    return this.httpClient.put(`${this.SERVICE_URL}/${id}/menu-grants`, { permissionKeys })
+  }
+
   getRoleUtilisateurs(id: string): Observable<any> {
     return this.httpClient.get(`${this.SERVICE_URL}/${id}/utilisateurs`)
   }

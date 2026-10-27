@@ -464,11 +464,21 @@ table {
   font-size: 12.5px;
 }
 
-thead th {
+/* Surcharges scopées sur le conteneur : styles.scss impose
+   `table thead/thead th` (#1F3C75 + blanc, en !important),
+   `table tbody tr:nth-child(even)` (#f8faff) et `table tbody tr:hover`
+   (#eef2ff). Sur ce thème glass sombre, ces surfaces claires rendaient
+   le texte #e6ecff illisible. `.table-scroll table …` garde la priorité
+   sans toucher aux autres écrans. */
+.table-scroll table thead {
+  background-color: transparent !important;
+}
+
+.table-scroll table thead th {
   padding: 11px 14px;
   border-bottom: 1px solid rgba(255, 255, 255, .14);
-  background: rgba(255, 255, 255, .05);
-  color: rgba(199, 210, 254, .7);
+  background-color: rgba(255, 255, 255, .06) !important;
+  color: rgba(226, 232, 255, .9) !important;
   font-size: 9.5px;
   font-weight: 800;
   letter-spacing: .14em;
@@ -476,16 +486,26 @@ thead th {
   white-space: nowrap;
 }
 
-tbody td {
+.table-scroll table tbody td {
   padding: 13px 14px;
   border-bottom: 1px solid rgba(255, 255, 255, .08);
   vertical-align: middle;
   color: #e6ecff;
 }
 
-tbody tr { transition: background .16s ease; }
-tbody tr:hover { background: rgba(255, 255, 255, .055); }
-tbody tr:last-child td { border-bottom: 0; }
+.table-scroll table tbody tr { transition: background-color .16s ease; }
+
+.table-scroll table tbody tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, .04);
+}
+
+/* Déclaré après la règle « even » : à spécificité égale, l'ordre tranche. */
+.table-scroll table tbody tr:hover,
+.table-scroll table tbody tr:focus-within {
+  background-color: rgba(129, 140, 248, .18);
+}
+
+.table-scroll table tbody tr:last-child td { border-bottom: 0; }
 
 .doc { display: flex; align-items: center; gap: 11px; min-width: 220px; }
 

@@ -10,7 +10,7 @@ import { SidebarStateService } from 'src/app/features/layout/services/sidebar-st
 import { PermissionStateService } from 'src/app/core/services/permission-state.service';
 import { environment } from 'src/environments/environment';
 import { NotificationService } from 'src/app/data/modules/elearning/services/notification.service';
-import { SseService } from 'src/app/data/services/sse.service';
+import { SseNotification, SseService } from 'src/app/data/services/sse.service';
 import { NotificationSoundService } from 'src/app/data/services/notification-sound.service';
 import { StatutPaiementService } from 'src/app/data/modules/inscription/services/statut-paiement.service';
 
@@ -32,7 +32,10 @@ export class BaseLayoutComponent extends BaseComponentClass implements OnInit, O
   nonLuesCount: number = 0
   notifications: any[] = []
   private notifSub: Subscription | null = null
-  private notifCountSub: Subscription | null = null
+  /** Ids déjà connus : évite doublons, incréments et sons en rafale sur les réémissions. */
+  private readonly knownNotificationIds = new Set<number>()
+  /** Borne la liste affichée pour éviter une croissance infinie. */
+  private readonly MAX_NOTIFICATIONS = 100
 
   // Blocage paiement (apprenant / parent)
   paiementBloque: boolean = false
@@ -82,7 +85,6 @@ export class BaseLayoutComponent extends BaseComponentClass implements OnInit, O
 
   ngOnDestroy(): void {
     this.notifSub?.unsubscribe()
-    this.notifCountSub?.unsubscribe()
     this.statutPaiementNavigationSub?.unsubscribe()
   }
 
@@ -128,10 +130,30 @@ export class BaseLayoutComponent extends BaseComponentClass implements OnInit, O
   }
 
   private subscribeToSse(): void {
-    this.notifSub = this.sseService.notifications$.subscribe(notif => {
+    this.notifSub = this.sseService.notifications$.subscribe((notif: SseNotification) => {
+      if (!notif || typeof notif.id !== 'number') return
+
+      if (this.knownNotificationIds.has(notif.id)) {
+        // Déjà connue : simple mise à jour, sans unshift / incrément / son.
+        const existante = this.notifications.find(n => n.id === notif.id)
+        if (existante) {
+          if (notif.message !== undefined) existante.message = notif.message
+          if (notif.date !== undefined) existante.date = notif.date
+          if (notif.lien !== undefined) existante.lien = notif.lien
+          if (notif.titre !== undefined) existante.titre = notif.titre
+          if (notif.type) existante.type = notif.type
+          // Le statut "lu" ne doit jamais régresser suite à une réémission tardive.
+          existante.lu = existante.lu === true || notif.lu === true
+        }
+        this.recalculerNonLues()
+        return
+      }
+
+      this.knownNotificationIds.add(notif.id)
       this.notifications.unshift(notif)
+      this.bornerNotifications()
+      this.recalculerNonLues()
       if (!notif.lu) {
-        this.nonLuesCount++
         this.soundService.play(notif.type)
       }
     })
@@ -142,8 +164,12 @@ export class BaseLayoutComponent extends BaseComponentClass implements OnInit, O
 
     this.notificationService.getAll().subscribe({
       next: (data) => {
-        this.notifications = data;
-        this.nonLuesCount = data.filter(n => !n.lu).length;
+        const liste = data || []
+        this.notifications = liste.slice()
+        this.knownNotificationIds.clear()
+        liste.forEach(n => this.knownNotificationIds.add(n.id))
+        this.bornerNotifications()
+        this.recalculerNonLues()
       }
     });
   }
@@ -151,9 +177,23 @@ export class BaseLayoutComponent extends BaseComponentClass implements OnInit, O
   marquerLu(id: number): void {
     this.notificationService.marquerLu(id).subscribe();
     const notif = this.notifications.find(n => n.id === id);
-    if (notif) {
+    if (notif && !notif.lu) {
       notif.lu = true;
-      this.nonLuesCount = Math.max(0, this.nonLuesCount - 1);
+      this.recalculerNonLues()
+    }
+  }
+
+  /** Recalcule le badge depuis la liste courante (borné entre 0 et le total affiché). */
+  private recalculerNonLues(): void {
+    const total = this.notifications.length
+    const nonLues = this.notifications.reduce((acc, n) => acc + (n && !n.lu ? 1 : 0), 0)
+    this.nonLuesCount = Math.min(total, Math.max(0, nonLues))
+  }
+
+  /** Conserve les notifications les plus récentes (liste bornée en tête). */
+  private bornerNotifications(): void {
+    if (this.notifications.length > this.MAX_NOTIFICATIONS) {
+      this.notifications.splice(this.MAX_NOTIFICATIONS)
     }
   }
 

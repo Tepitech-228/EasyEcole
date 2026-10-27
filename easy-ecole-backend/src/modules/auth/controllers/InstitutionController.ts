@@ -27,6 +27,9 @@ export default class InstitutionController {
         if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
             options = { where: { utilisateurId: (req as any).utilisateurId }, }
         }
+        else if ((req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
+            options = { where: { id: req.params.id || (req as any).utilisateurId } }
+        }
         else {
             return res.status(403).json({ success: false })
         }
@@ -52,6 +55,9 @@ export default class InstitutionController {
 
         if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
             options = { where: { utilisateurId: (req as any).utilisateurId } }
+        }
+        else if ((req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
+            options = { where: { id: req.params.id || (req as any).utilisateurId } }
         }
         else {
             return res.status(403).json({ success: false })
@@ -103,7 +109,7 @@ export default class InstitutionController {
         if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
             return res.status(403).json({ success: false })
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
+        else if ((req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
             options = { where: { id: req.params.id } }
         }
 
@@ -129,6 +135,9 @@ export default class InstitutionController {
         let options: CountOptions<InferAttributes<Institution>> = {}
 
         if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
+            return res.status(403).json({ success: false })
+        }
+        if ((req as any).utilisateurRole != RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false })
         }
 

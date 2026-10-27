@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
@@ -13,6 +13,15 @@ export interface PointageTerminalConfig {
   actif: boolean;
   attStamp: number;
   lastSeenAt: string | null;
+}
+
+export interface PointageExportParams {
+  format: 'xlsx' | 'docx';
+  debut?: string;
+  fin?: string;
+  role?: string;
+  search?: string;
+  statut?: string;
 }
 
 export interface HikvisionTerminalConfig {
@@ -111,6 +120,19 @@ export class PointageService {
 
   modifierEtatTerminalHikvision(id: number, actif: boolean): Observable<HikvisionTerminalConfig> {
     return this.httpClient.put<HikvisionTerminalConfig>(`${this.SERVICE_URL}/hikvision-terminaux/${id}`, { actif });
+  }
+
+  exportPointages(params: PointageExportParams): Observable<Blob> {
+    let httpParams = new HttpParams().set('format', params.format)
+    if (params.debut) httpParams = httpParams.set('debut', params.debut)
+    if (params.fin) httpParams = httpParams.set('fin', params.fin)
+    if (params.role) httpParams = httpParams.set('role', params.role)
+    if (params.search) httpParams = httpParams.set('search', params.search)
+    if (params.statut) httpParams = httpParams.set('statut', params.statut)
+    return this.httpClient.get(`${this.SERVICE_URL}/export`, {
+      params: httpParams,
+      responseType: 'blob'
+    })
   }
 
   getRapport(debut?: string, fin?: string): Observable<any> {

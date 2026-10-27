@@ -4,6 +4,7 @@ import fs from 'fs';
 import { getPuppeteerBrowser } from '../../../core/services/PuppeteerBrowserPool';
 import { Etablissement } from '../../etablissement/models/Etablissement';
 import { QrTokenService } from '../../../core/services/QrTokenService';
+import { savePdf } from '../../../core/services/PdfStorageService';
 
 function escapeHtml(str: string): string {
   if (!str) return '';
@@ -95,26 +96,31 @@ export class GenerateurCarteService {
 </body></html>`;
 
     const filename = `carte_${data.matricule}_${Date.now()}.pdf`;
-    const outputDir = path.resolve('storage', 'cartes');
-    if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
-    const outputPath = path.join(outputDir, filename);
 
     const browser = await getPuppeteerBrowser();
     let page: any;
+    let pdfBuffer: Buffer;
     try {
       page = await browser.newPage();
       await page.setContent(html, { waitUntil: 'networkidle0' as any });
-      await page.pdf({
-        path: outputPath,
+      const pdf = await page.pdf({
         width: '85.6mm',
         height: '54mm',
         printBackground: true,
         margin: { top: 0, bottom: 0, left: 0, right: 0 },
       });
+      pdfBuffer = Buffer.from(pdf);
     } finally {
       await page?.close();
     }
 
-    return `storage/cartes/${filename}`;
+    const saved = savePdf(pdfBuffer, {
+      type: 'inscription',
+      subcategory: 'cartes',
+      fileName: filename,
+      academicYear: data.anneeAcademique,
+    });
+
+    return saved.relativePath;
   }
 }

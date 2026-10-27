@@ -49,8 +49,8 @@ export default class ApprenantController {
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
             options = { where: { utilisateurId: (req as any).utilisateurId }, }
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
-            options = { where: { utilisateurId: req.body.utilisateurId } }
+        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
+            options = { where: { utilisateurId: req.body.utilisateurId || req.params.id } }
         }
         options.include = [
             Apprenant.associations.adresse,
@@ -93,7 +93,7 @@ export default class ApprenantController {
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
             options = { where: { utilisateurId: (req as any).utilisateurId } }
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
+        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
             options = { where: { utilisateurId: req.body.utilisateurId } }
         }
 

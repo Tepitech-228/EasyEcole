@@ -1,7 +1,7 @@
-<div class="flex justify-between items-start mb-8">
+<div class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
     <app-header-title title="Utilisateurs" subtitle="Gestion de tous les utilisateurs du système"></app-header-title>
     <button (click)="openAddModal()"
-        class="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-md hover:bg-indigo-700 flex items-center gap-x-2">
+        class="inline-flex w-full items-center justify-center gap-x-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 sm:w-auto">
         <span class="material-symbols-outlined text-lg">add</span>
         Nouvel utilisateur
     </button>
@@ -9,13 +9,13 @@
 
 <div class="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
     <div class="p-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-4">
-        <div class="relative">
+        <div class="relative w-full sm:w-auto">
             <input type="text" [(ngModel)]="searchTerm" placeholder="Rechercher un utilisateur..."
-                class="w-64 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:w-64 sm:text-sm">
         </div>
-        <div class="flex gap-2">
+        <div class="flex w-full gap-2 sm:w-auto">
             <select [(ngModel)]="roleFilter"
-                class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:w-auto sm:text-sm">
                 <option value="">Tous les rôles</option>
                 <option *ngFor="let k of roleKeys" [value]="RolesUtilisateur[k]">{{ roleLabels[RolesUtilisateur[k]] }}
                 </option>
@@ -85,15 +85,28 @@
 </div>
 
 <!-- Modal Ajouter / Modifier -->
-<div *ngIf="showModal"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 overflow-y-auto py-8">
-    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl mx-4 my-auto">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">
-            {{ editingUser ? 'Modifier l\'utilisateur' : 'Nouvel utilisateur' }}
-        </h3>
-        <div class="space-y-4">
+<div *ngIf="showModal" class="premium-modal-backdrop">
+    <div class="premium-modal">
+        <div class="premium-modal__header">
+            <div class="premium-modal__identity">
+                <span class="premium-modal__icon">
+                    <span class="material-symbols-outlined">{{ editingUser ? 'manage_accounts' : 'person_add' }}</span>
+                </span>
+                <div>
+                    <p class="premium-modal__eyebrow">Administration</p>
+                    <h3>{{ editingUser ? 'Modifier l’utilisateur' : 'Nouvel utilisateur' }}</h3>
+                    <p>{{ editingUser ? 'Mettez à jour les informations du compte et ses rattachements.' : 'Créez un compte, choisissez son profil et rattachez-le à un site.' }}</p>
+                </div>
+            </div>
+            <button type="button" class="premium-modal__close" (click)="closeModal()" aria-label="Fermer">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <div class="premium-modal__body">
+        <div class="premium-form space-y-4">
             <!-- === Informations de base === -->
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
                     <input type="text" [(ngModel)]="formData.nom" required
@@ -105,7 +118,7 @@
                         class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
                 </div>
             </div>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
                     <input type="email" [(ngModel)]="formData.email" required
@@ -117,7 +130,7 @@
                         class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
                 </div>
             </div>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">
                         {{ editingUser ? 'Nouveau mot de passe (laisser vide)' : 'Mot de passe' }}
@@ -191,7 +204,7 @@
 
                 <!-- Tous les rôles staff (personnel_administratif, caissier, comite, cabinet, RH, esa_compta, secretaire) -->
                 <ng-container *ngIf="isStaff">
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Fonction</label>
                             <input type="text" [(ngModel)]="formData.fonction"
@@ -206,7 +219,7 @@
                             Matricule + QR générés automatiquement — utilisables au pointage arrivée / départ.
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-4 mt-3">
+                    <div class="grid grid-cols-1 gap-4 mt-3 sm:grid-cols-2">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Statut</label>
                             <select [(ngModel)]="formData.statut"
@@ -222,7 +235,7 @@
                                 class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
                         </div>
                     </div>
-                    <div class="grid grid-cols-3 gap-4 mt-3">
+                    <div class="grid grid-cols-1 gap-4 mt-3 sm:grid-cols-3">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">CNI</label>
                             <input type="text" [(ngModel)]="formData.cni"
@@ -239,7 +252,7 @@
                                 class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-4 mt-3">
+                    <div class="grid grid-cols-1 gap-4 mt-3 sm:grid-cols-2">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Sexe</label>
                             <select [(ngModel)]="formData.sexe"
@@ -276,7 +289,7 @@
 
                 <!-- Enseignant -->
                 <ng-container *ngIf="isEnseignant">
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Spécialité</label>
                             <input type="text" [(ngModel)]="formData.specialite"
@@ -288,7 +301,7 @@
                                 class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
                         </div>
                     </div>
-                    <div class="grid grid-cols-3 gap-4 mt-3">
+                    <div class="grid grid-cols-1 gap-4 mt-3 sm:grid-cols-3">
                         <div *ngIf="editingUser">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Matricule (auto)</label>
                             <input type="text" [(ngModel)]="formData.matricule" readonly
@@ -312,7 +325,7 @@
                                 class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
                         </div>
                     </div>
-                    <div class="grid grid-cols-3 gap-4 mt-3">
+                    <div class="grid grid-cols-1 gap-4 mt-3 sm:grid-cols-3">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">CNI</label>
                             <input type="text" [(ngModel)]="formData.cni"
@@ -329,7 +342,7 @@
                                 class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
                         </div>
                     </div>
-                    <div class="grid grid-cols-3 gap-4 mt-3">
+                    <div class="grid grid-cols-1 gap-4 mt-3 sm:grid-cols-3">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Sexe</label>
                             <select [(ngModel)]="formData.sexe"
@@ -354,7 +367,7 @@
 
                 <!-- Apprenant -->
                 <ng-container *ngIf="isApprenant">
-                    <div class="grid grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Date de naissance *</label>
                             <input type="date" [(ngModel)]="formData.dateNaissance" required
@@ -375,7 +388,7 @@
                             </select>
                         </div>
                     </div>
-                    <div class="grid grid-cols-3 gap-4 mt-3">
+                    <div class="grid grid-cols-1 gap-4 mt-3 sm:grid-cols-3">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Nationalité</label>
                             <input type="text" [(ngModel)]="formData.nationalite"
@@ -396,7 +409,7 @@
                             </select>
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-4 mt-3">
+                    <div class="grid grid-cols-1 gap-4 mt-3 sm:grid-cols-2">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Statut étudiant</label>
                             <select [(ngModel)]="formData.statutEtudiant"
@@ -409,36 +422,68 @@
                 </ng-container>
             </div>
         </div>
-        <div class="flex justify-end gap-x-3 mt-6">
-            <button (click)="closeModal()"
-                class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 font-medium">Annuler</button>
-            <button (click)="saveUser()" [disabled]="saving || (!editingUser && sitesLoading)"
-                class="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-md hover:bg-indigo-700 disabled:opacity-50">
-                {{ saving ? 'Enregistrement...' : (editingUser ? 'Modifier' : 'Créer') }}
-            </button>
+        </div>
+
+        <div class="premium-modal__footer">
+            <span class="premium-modal__hint">
+                <span class="material-symbols-outlined">info</span>
+                Les champs marqués * sont obligatoires.
+            </span>
+            <div class="premium-modal__actions">
+                <button type="button" (click)="closeModal()" class="premium-btn premium-btn--ghost">Annuler</button>
+                <button type="button" (click)="saveUser()" [disabled]="saving || (!editingUser && sitesLoading)" class="premium-btn premium-btn--primary">
+                    <span class="material-symbols-outlined" *ngIf="!saving">{{ editingUser ? 'save' : 'person_add' }}</span>
+                    <span class="premium-spinner" *ngIf="saving"></span>
+                    {{ saving ? 'Enregistrement…' : (editingUser ? 'Enregistrer' : 'Créer le compte') }}
+                </button>
+            </div>
         </div>
     </div>
 </div>
 
 <!-- Modal Confirmation Suppression Définitive -->
-<div *ngIf="showDeleteModal"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm mx-4">
-        <h3 class="text-lg font-semibold text-red-600 mb-2">Suppression définitive</h3>
-        <p class="text-sm text-gray-600 mb-1">
-            Êtes-vous sûr de vouloir procéder à la <strong class="text-red-600">suppression définitive</strong>
-            de l'utilisateur <strong>{{ deletingUser?.nom }} {{ deletingUser?.prenoms }}</strong> ?
-        </p>
-        <p class="text-xs text-red-500 font-medium mb-4">
-            ⚠️ Cette action est irréversible : le compte et ses profils seront définitivement retirés de la base de données.
-        </p>
-        <div class="flex justify-end gap-x-3">
-            <button (click)="closeDeleteModal()"
-                class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 font-medium">Annuler</button>
-            <button (click)="deleteUser()" [disabled]="saving"
-                class="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-md hover:bg-red-700 disabled:opacity-50">
-                {{ saving ? 'Suppression...' : 'Supprimer définitivement' }}
+<div *ngIf="showDeleteModal" class="premium-modal-backdrop">
+    <div class="premium-modal premium-modal--sm">
+        <div class="premium-modal__header premium-modal__header--danger">
+            <div class="premium-modal__identity">
+                <span class="premium-modal__icon premium-modal__icon--danger">
+                    <span class="material-symbols-outlined">delete_forever</span>
+                </span>
+                <div>
+                    <p class="premium-modal__eyebrow">Action irréversible</p>
+                    <h3>Suppression définitive</h3>
+                    <p>Le compte et ses profils seront retirés de la base de données.</p>
+                </div>
+            </div>
+            <button type="button" class="premium-modal__close" (click)="closeDeleteModal()" aria-label="Fermer">
+                <span class="material-symbols-outlined">close</span>
             </button>
+        </div>
+
+        <div class="premium-modal__body premium-modal__body--compact">
+            <div class="premium-danger-panel">
+                <span class="material-symbols-outlined">warning</span>
+                <p>
+                    Voulez-vous vraiment supprimer définitivement
+                    <strong>{{ deletingUser?.nom }} {{ deletingUser?.prenoms }}</strong> ?
+                    Cette action ne peut pas être annulée.
+                </p>
+            </div>
+        </div>
+
+        <div class="premium-modal__footer">
+            <span class="premium-modal__hint">
+                <span class="material-symbols-outlined">shield</span>
+                Vérifiez l’identité avant de confirmer.
+            </span>
+            <div class="premium-modal__actions">
+                <button type="button" (click)="closeDeleteModal()" class="premium-btn premium-btn--ghost">Annuler</button>
+                <button type="button" (click)="deleteUser()" [disabled]="saving" class="premium-btn premium-btn--danger">
+                    <span class="material-symbols-outlined" *ngIf="!saving">delete_forever</span>
+                    <span class="premium-spinner" *ngIf="saving"></span>
+                    {{ saving ? 'Suppression…' : 'Supprimer définitivement' }}
+                </button>
+            </div>
         </div>
     </div>
 </div>

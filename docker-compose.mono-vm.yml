@@ -1,0 +1,384 @@
+# =============================================================================
+# EasyEcole — Docker Compose (ARCHIVE : variante MONO-VM historique)
+#
+# ⚠️ NE PLUS DEPLOYER EN PRODUCTION.
+#    Le fichier principal `docker-compose.yml` est la configuration PROD
+#    (VM APP + DB EXTERNE, stockage /mnt/easyecole-documents et
+#    /mnt/easyecole-storage). Ce fichier est conserve uniquement pour un
+#    deploiement mono-VM avec MySQL embarque (labo / secours).
+#
+# CIBLE : UNE SEULE machine virtuelle (cloud), tout-en-un.
+#   La base MySQL 8.0 est EMBARQUEE dans cette stack (service `db`) : il n'y a
+#   PAS de serveur de base externe. (L'ancienne topologie 2 VM — VM APP +
+#   VM DB 192.168.100.20 — est abandonnee pour ce deploiement.)
+#
+# 6 services :
+#   - db       : MySQL 8.0 (volume persistant mysql_data)
+#   - mysql-backup : dump quotidien de la base et des fichiers persistants
+#   - backend  : API Express/Node (migrations + seeds au boot)
+#   - worker   : workers BullMQ (OCR, PDF, import Excel) — meme image que backend
+#   - redis    : Redis 7 (cache reponse API, fail-safe, volume redis_data)
+#   - frontend : nginx servant le build Angular + proxy /api -> backend:3000
+#
+# PORTS :
+#   - ${FRONTEND_PORT:-80} (hote) -> 80 (frontend/nginx) : app web + proxy API
+#   - 3000 n'est PAS expose.
+#   - 3306 est expose UNIQUEMENT sur l'interface privee (DB_REPLICATION_BIND)
+#     pour le replica MySQL WS22. Ne jamais l'exposer sur Internet.
+#
+# VARIABLES D'ENVIRONNEMENT (DOKPLOY, onglet "Environment" du projet) :
+#   MYSQL_ROOT_PASSWORD  (mot de passe root MySQL, cree au 1er demarrage)
+#   DB_NAME, DB_USER, DB_PASS  (compte applicatif, cree au 1er demarrage)
+#   JWT_SECRET, DOCGEN_SECRET
+#   CORS_ORIGIN          (REQUIS ; ex. http://<IP_PUBLIQUE> ou https://mon-domaine)
+#   SMTP_*, TZ, REDIS_URL (optionnel)…
+#   - DB_HOST vaut `db` (service interne) — NE PAS le pointer ailleurs.
+#   - PAS de fichier .env dans le repo : Dokploy injecte les variables.
+#
+# PERSISTANCE (bind mounts hote) :
+#   - Fichiers applicatifs : /data/application/{public,uploads,storage}
+#   - Documents PDF unifies : /data/documents
+#   - Sauvegardes : /data/backups
+#   - Config/cles/tmp : /opt/mon-app/{config,keys,tmp}
+#   Ces chemins sont les points de montage CIFS du partage WS22
+#   (voir .env.ws22.example). En local, surcharger ces variables dans .env.
+#   PREPARER LES DOSSIERS HOTE AVANT le 1er deploiement :
+#     sudo mkdir -p /data/application/{public,uploads,storage} /data/documents /data/backups
+#     sudo mkdir -p /opt/mon-app/{config,keys,tmp}
+#     sudo chown -R 1000:1000 /data/application /data/documents /data/backups /opt/mon-app
+#   (1000:1000 = utilisateur `node` du conteneur ; verifier : id node)
+#
+# LOCAL (dev) : docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
+#
+# RESEAUX : `app` relie nginx au backend ; `data` (interne) relie db, backend,
+#   worker, Redis et mysql-backup. La base et Redis ne sont pas joignables depuis nginx.
+# =============================================================================
+
+name: easyecole
+
+services:
+  # ---------------------------------------------------------------------------
+  # 1) BASE DE DONNEES MySQL 8.0 (EMBARQUEE — mono-VM)
+  # ---------------------------------------------------------------------------
+  db:
+    image: mysql:8.0
+    container_name: easyecole-db
+    restart: unless-stopped
+    mem_limit: 1g
+    pids_limit: 200
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      # Mot de passe root (A DEFINIR dans Dokploy).
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD must be set}
+      # Base + compte applicatif crees UNIQUEMENT au premier demarrage (volume vide).
+      MYSQL_DATABASE: ${DB_NAME:-easyecole}
+      MYSQL_USER: ${DB_USER:-easyecole_app}
+      MYSQL_PASSWORD: ${DB_PASS:?DB_PASS must be set}
+      TZ: ${TZ:-UTC}
+    volumes:
+      # Donnees MySQL : persistentes entre recreations de conteneur.
+      - mysql_data:/var/lib/mysql
+      # Binlog + GTID pour la replication vers WS22 (voir mysql-config/my.cnf).
+      - ./mysql-config/my.cnf:/etc/mysql/conf.d/zz-easyecole.cnf:ro
+    ports:
+      # Replication MySQL : n'expose que sur l'interface privee.
+      # En production, definir DB_REPLICATION_BIND=192.168.100.10 dans .env.
+      - "${DB_REPLICATION_BIND:-127.0.0.1}:3306:3306"
+    healthcheck:
+      # Le backend attend que MySQL reponde (service_healthy).
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - data
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # 1b) SAUVEGARDE MYSQL QUOTIDIENNE
+  # ---------------------------------------------------------------------------
+  mysql-backup:
+    image: mysql:8.0
+    container_name: easyecole-mysql-backup
+    restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-easyecole}
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD must be set}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      BACKUP_RETRY_SECONDS: ${BACKUP_RETRY_SECONDS:-900}
+      # Optionnel : copie du dump SQL vers le partage WS22 (Sauvegardes).
+      # Laisser vide pour desactiver (dev local).
+      BACKUP_OFFSITE_DIR: ${BACKUP_OFFSITE_DIR:-}
+      # Refuse de sauvegarder des dossiers locaux vides si le montage WS22 manque.
+      REQUIRE_WS22_MOUNT: ${REQUIRE_WS22_MOUNT:-false}
+      TZ: ${TZ:-UTC}
+    volumes:
+      - mysql_backups:/backups/mysql
+      - ${PUBLIC_HOST_PATH:-/data/application/public}:/data/uploads:ro
+      - ${STORAGE_HOST_PATH:-/data/application/storage}:/data/storage:ro
+      - ${UPLOADS_HOST_PATH:-/data/application/uploads}:/data/pv:ro
+      - ${DOCUMENTS_HOST_PATH:-/data/documents}:/data/documents:ro
+      - ${BACKUPS_HOST_PATH:-/data/backups}:/backups/offsite
+      - ./scripts/mysql-backup.sh:/usr/local/bin/mysql-backup.sh:ro
+    entrypoint: ["/bin/sh", "/usr/local/bin/mysql-backup.sh"]
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - data
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # 2) BACKEND API Express/Node
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: easy-ecole-backend/Dockerfile
+    container_name: easyecole-backend
+    restart: unless-stopped
+    mem_limit: 2g
+    shm_size: 1g
+    pids_limit: 300
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    # ─────────────────────────────────────────────────────────────────────────
+    # `user: "0:0"` — demarrage en root UNIQUEMENT le temps de reparer les
+    # droits des bind mounts hote (/app/public, /app/uploads, /app/storage…),
+    # qui sont crees par Dokploy en root:root (755) et masquent les
+    # sous-dossiers de l'image. Sans cette phase, `mkdir /app/public/uploads`
+    # echoue en « Permission denied », l'entrypoint sort en erreur et le
+    # conteneur reste « unhealthy » => « dependency backend failed to start ».
+    # Le conteneur s'auto-repare puis RE-EXECUTE l'entrypoint en `node`
+    # (uid 1000) : l'application, les seeds et les migrations tournent donc
+    # toujours en utilisateur non-root.
+    # Voir bloc « 0a » de easy-ecole-backend/docker-entrypoint.sh.
+    # Le service `worker` conserve l'USER node de l'image (il n'ecrit que
+    # dans les repertoires deja repares par le backend).
+    user: "0:0"
+    # Base INTERNE : DB_HOST = `db` (nom du service), PAS localhost ni une IP.
+    environment:
+      NODE_ENV: production
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-easyecole}
+      DB_USER: ${DB_USER:-easyecole_app}
+      DB_PASS: ${DB_PASS:?DB_PASS must be set}
+      DB_SSL: ${DB_SSL:-off}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      JWT_SECRET: ${JWT_SECRET}
+      DOCGEN_SECRET: ${DOCGEN_SECRET}
+      ENCRYPTION_MASTER_KEY: ${ENCRYPTION_MASTER_KEY:-}
+      HIKVISION_POLLING_ENABLED: ${HIKVISION_POLLING_ENABLED:-true}
+      # ⚠️ REQUIS : src/app.ts leve une erreur au chargement si CORS_ORIGIN est
+      # absent/vide -> crash du conteneur au boot (jamais « healthy »).
+      # Valeur attendue : http://<IP_PUBLIQUE> (ou https://mon-domaine).
+      CORS_ORIGIN: ${CORS_ORIGIN:?CORS_ORIGIN must be set (ex. http://<IP_PUBLIQUE>)}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      TZ: ${TZ:-UTC}
+      # Migrations SQL automatiques au boot (idempotentes, fail-fast).
+      MIGRATIONS_ON_BOOT: ${MIGRATIONS_ON_BOOT:-true}
+      # Amorçage du schema de BASE avant migrations (tables MANQUANTES seulement,
+      # sans ALTER) : indispensable sur une base NEUVE. Non bloquant.
+      DB_BOOTSTRAP_SCHEMA: ${DB_BOOTSTRAP_SCHEMA:-true}
+      # Stockage unifie des PDF (PdfStorageService) sur le montage WS22.
+      DOCUMENTS_STORAGE_DIR: /data/documents
+      TMP_DIR: /data/tmp
+      # Garde-fou : si true, le conteneur refuse de demarrer quand un montage
+      # WS22 (public/uploads/storage/documents/backups) est absent.
+      REQUIRE_WS22_MOUNT: ${REQUIRE_WS22_MOUNT:-false}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app
+      - data
+    volumes:
+      # ── Fichiers UPLOADES (multer, GED, dossiers, bordereaux, rattrapage…)
+      # /app/public dans le conteneur (chemins relatifs a process.cwd()).
+      - ${PUBLIC_HOST_PATH:-/data/application/public}:/app/public
+      # ── PV de deliberation (GenerateurPVService / DeliberationController).
+      - ${UPLOADS_HOST_PATH:-/data/application/uploads}:/app/uploads
+      # ── Stockage PDF persistant : /app/storage (docgen, pdfs, cartes, qr-codes).
+      - ${STORAGE_HOST_PATH:-/data/application/storage}:/app/storage
+      # ── Configuration de stockage modifiable (StorageConfigController).
+      - ${CONFIG_HOST_PATH:-/opt/mon-app/config}:/app/config
+      # ── Cle maitresse AES (EncryptionService, dossier /app/.keys).
+      # ⚠️ NE JAMAIS perdre ce dossier : sa disparition rend INDECHIFFRABLES
+      # toutes les donnees deja chiffrees en base.
+      - ${KEYS_HOST_PATH:-/opt/mon-app/keys}:/app/.keys
+      # ── Sauvegardes d'INTEGRITE GED (IntegrityController -> backups/ged_<ts>).
+      - ${BACKUPS_HOST_PATH:-/data/backups}:/app/backups
+      # Stockage unifie des documents PDF
+      - ${DOCUMENTS_HOST_PATH:-/data/documents}:/data/documents
+      - ${TMP_HOST_PATH:-/opt/mon-app/tmp}:/data/tmp
+    # Port 3000 NON expose : le frontend passe par le proxy nginx.
+    healthcheck:
+      # ⚠️ 127.0.0.1 (et NON localhost) : le serveur ecoute sur 0.0.0.0 (IPv4).
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:3000/api/v1/health', r => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))\""]
+      interval: 15s
+      timeout: 5s
+      # Fenetre large : amorcage schema (<=300 s) + migrations + 6 seeds au boot.
+      retries: 20
+      start_period: 420s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # 2b) WORKERS BullMQ (OCR, PDF, import Excel)
+  # ---------------------------------------------------------------------------
+  worker:
+    build:
+      context: .
+      dockerfile: easy-ecole-backend/Dockerfile
+    container_name: easyecole-worker
+    restart: unless-stopped
+    mem_limit: 2g
+    shm_size: 1g
+    pids_limit: 300
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    # Le worker court-circuite l'entrypoint (pas de migrations) : il ne demarre
+    # qu'apres le backend healthy (depends_on).
+    entrypoint: ["node", "lib/core/workers/index.js"]
+    command: []
+    environment:
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-easyecole}
+      DB_USER: ${DB_USER:-easyecole_app}
+      DB_PASS: ${DB_PASS:?DB_PASS must be set}
+      DB_SSL: ${DB_SSL:-off}
+      NODE_ENV: production
+      # Memes chemins de stockage que le backend (bind mounts WS22).
+      DOCUMENTS_STORAGE_DIR: /data/documents
+      TMP_DIR: /data/tmp
+    depends_on:
+      backend:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app
+      - data
+    volumes:
+      # Memes bind mounts hote que le backend : le worker OCR/PDF ecrit dans les
+      # memes dossiers.
+      - ${PUBLIC_HOST_PATH:-/data/application/public}:/app/public
+      - ${UPLOADS_HOST_PATH:-/data/application/uploads}:/app/uploads
+      - ${STORAGE_HOST_PATH:-/data/application/storage}:/app/storage
+      - ${CONFIG_HOST_PATH:-/opt/mon-app/config}:/app/config
+      - ${KEYS_HOST_PATH:-/opt/mon-app/keys}:/app/.keys
+      - ${BACKUPS_HOST_PATH:-/data/backups}:/app/backups
+      # Stockage unifie des documents PDF
+      - ${DOCUMENTS_HOST_PATH:-/data/documents}:/data/documents
+      - ${TMP_HOST_PATH:-/opt/mon-app/tmp}:/data/tmp
+
+  # ---------------------------------------------------------------------------
+  # 3) CACHE REDIS 7 (cache reponse middleware `cache()` — fail-safe)
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: easyecole-redis
+    restart: unless-stopped
+    mem_limit: 256m
+    pids_limit: 100
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - data
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # 4) FRONTEND nginx (build Angular + proxy)
+  # ---------------------------------------------------------------------------
+  frontend:
+    build: ./easy-ecole-web
+    container_name: easyecole-frontend
+    restart: unless-stopped
+    mem_limit: 256m
+    ports:
+      # Port HTTP public : hote ${FRONTEND_PORT} -> nginx (conteneur) 80.
+      # Sur une VM cloud, le port 80 est generalement libre (defaut 80).
+      # Si 80 est occupe : FRONTEND_PORT=8080 dans Dokploy.
+      - "${FRONTEND_PORT:-8080}:80"
+    networks:
+      - app
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    pids_limit: 100
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+# =============================================================================
+# VOLUMES NOMES
+# =============================================================================
+volumes:
+  # Donnees MySQL (MONO-VM : la base vit dans ce volume).
+  mysql_data:
+  # Dumps MySQL quotidiens, conserves independamment du cycle de vie du service.
+  mysql_backups:
+  # Persistance du cache Redis (fichiers AOF dans /data).
+  redis_data:
+
+networks:
+  app:
+    driver: bridge
+  data:
+    driver: bridge
+    internal: true

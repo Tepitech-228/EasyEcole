@@ -60,10 +60,29 @@ set -e
 if [ "$(id -u)" = "0" ]; then
   echo "[entrypoint] Phase root : alignement des droits des repertoires montes..."
 
-  MOUNT_DIRS="/app/public /app/uploads /app/storage /app/config /app/.keys /app/backups"
+  MOUNT_DIRS="/app/public /app/uploads /app/storage /app/config /app/.keys /app/backups /app/documents"
   for d in $MOUNT_DIRS; do
     mkdir -p "$d" 2>/dev/null || true
   done
+
+  # Garde-fou stockage : en production (REQUIRE_DOCUMENTS_MOUNT=true),
+  # refuser de demarrer si /mnt/easyecole-documents ou /mnt/easyecole-storage
+  # n'est pas monte. Les marqueurs sont crees automatiquement par le service
+  # init-storage (scripts/init-document-storage.sh). Sans ce test, Docker
+  # creerait un dossier local vide et l'application ecrirait hors du stockage.
+  if [ "${REQUIRE_DOCUMENTS_MOUNT:-${REQUIRE_WS22_MOUNT:-false}}" = "true" ]; then
+    for marker in \
+      /app/documents/.easyecole-mounted \
+      /app/backups/.easyecole-mounted
+    do
+      if [ ! -f "$marker" ]; then
+        echo "[entrypoint] ERREUR : stockage persistant absent ou incomplet ($marker)."
+        echo "[entrypoint] Verifier les montages /mnt/easyecole-documents et /mnt/easyecole-storage"
+        echo "[entrypoint] sur la VM APP, puis le service init-storage (docker compose logs init-storage)."
+        exit 1
+      fi
+    done
+  fi
 
   # `chown -R` : les fichiers ecrits par une version anterieure du conteneur
   # (en root) doivent redevenir accessibles a `node`. Idempotent, sans
@@ -120,9 +139,10 @@ fi
 # -----------------------------------------------------------------------------
 # 0. STOCKAGE PERSISTANT DES PDF — /app/storage/pdfs
 # -----------------------------------------------------------------------------
-# En production, /app/storage est un BIND MOUNT sur l'hôte
-# (${STORAGE_HOST_PATH:-/opt/mon-app/storage}) : tout fichier écrit ici
-# survit aux redéploiements, rollbacks et recréations de conteneur.
+# En production, /app/storage est un BIND MOUNT historique sur l'hôte
+# (${STORAGE_HOST_PATH:-/mnt/easyecole-documents/created/_legacy/storage}) :
+# tout fichier écrit ici survit aux redéploiements, rollbacks et recréations
+# de conteneur. Les nouveaux PDF générés vont dans /app/documents/created/.
 #
 # On vérifie ICI, AVANT migrations et seeds, que :
 #   - le dossier existe — création idempotente : `mkdir -p` ne crée que ce
@@ -136,17 +156,14 @@ fi
 PDFS_DIR="/app/storage/pdfs"
 if ! mkdir -p "$PDFS_DIR"; then
   echo "[entrypoint] ERREUR : impossible de créer $PDFS_DIR."
-  echo "[entrypoint] → le bind mount /app/storage est-il présent dans docker-compose.yml ?"
+  echo "[entrypoint] → le bind mount /app/storage est-il présent dans docker-compose.prod.yml ?"
   exit 1
 fi
 if [ ! -w "$PDFS_DIR" ]; then
   echo "[entrypoint] ERREUR : $PDFS_DIR n'est pas accessible en écriture (uid=$(id -u))."
-  echo "[entrypoint] → Sur l'hôte (VM Linux), exécuter AVANT le déploiement :"
-  echo "[entrypoint]    sudo mkdir -p /opt/mon-app/storage/pdfs"
-  echo "[entrypoint]    sudo chown -R 1000:1000 /opt/mon-app/storage"
-  echo "[entrypoint]    sudo chmod -R u+rwX,g+rwX /opt/mon-app/storage"
-  echo "[entrypoint]   (1000:1000 = utilisateur node ; vérifier avec : id node)"
-  echo "[entrypoint]   Puis relancer le déploiement."
+  echo "[entrypoint] → Verifier le service init-storage (docker compose logs init-storage)"
+  echo "[entrypoint]   et les montages /mnt/easyecole-documents / /mnt/easyecole-storage."
+  echo "[entrypoint]   Puis relancer le deploiement."
   exit 1
 fi
 echo "[entrypoint] Stockage PDF OK : $PDFS_DIR (écriture autorisée — aucun fichier existant modifié)"
@@ -163,7 +180,7 @@ echo "[entrypoint] Stockage PDF OK : $PDFS_DIR (écriture autorisée — aucun f
 # sur un hôte neuf.
 # On (re)crée donc ici, de façon IDEMPOTENTE (mkdir -p ne supprime jamais
 # rien), tous les dossiers d'écriture runtime attendus sous ces montages.
-FILE_DIRS="/app/public/uploads/images /app/public/uploads/documents /app/public/uploads/videos /app/public/docgen/cachets /app/public/auth/profiles /app/public/auth/apprenants/photos /app/public/auth/enseignants/photos /app/public/elearning/videos /app/public/inscription/bordereaux /app/public/inscription/dossiers /app/uploads/pv"
+FILE_DIRS="/app/public/uploads/images /app/public/uploads/documents /app/public/uploads/videos /app/public/docgen/cachets /app/public/auth/profiles /app/public/auth/apprenants/photos /app/public/auth/enseignants/photos /app/public/elearning/videos /app/public/inscription/bordereaux /app/public/inscription/dossiers /app/uploads/pv /app/documents/uploads /app/documents/created"
 for d in $FILE_DIRS; do
   if ! mkdir -p "$d"; then
     echo "[entrypoint] ERREUR : impossible de créer $d."
@@ -171,19 +188,16 @@ for d in $FILE_DIRS; do
     exit 1
   fi
 done
-for d in /app/public /app/uploads /app/config /app/.keys /app/backups; do
+for d in /app/public /app/uploads /app/config /app/.keys /app/backups /app/documents; do
   if [ ! -w "$d" ]; then
     echo "[entrypoint] ERREUR : $d n'est pas accessible en écriture (uid=$(id -u))."
-    echo "[entrypoint] → Sur l'hôte (VM Linux), exécuter AVANT le déploiement :"
-    echo "[entrypoint]    sudo mkdir -p /opt/mon-app/{public,uploads,storage,config,keys,backups}"
-    echo "[entrypoint]    sudo chown -R 1000:1000 /opt/mon-app"
-    echo "[entrypoint]    sudo chmod -R u+rwX,g+rwX /opt/mon-app"
-    echo "[entrypoint]   (1000:1000 = utilisateur node ; vérifier avec : id node)"
-    echo "[entrypoint]   Puis relancer le déploiement."
+    echo "[entrypoint] → Verifier le service init-storage (docker compose logs init-storage)"
+    echo "[entrypoint]   et les montages /mnt/easyecole-documents / /mnt/easyecole-storage."
+    echo "[entrypoint]   Puis relancer le deploiement."
     exit 1
   fi
 done
-echo "[entrypoint] Répertoires fichiers OK (public/, uploads/) — écriture autorisée"
+echo "[entrypoint] Répertoires fichiers OK (public/, uploads/, documents/) — écriture autorisée"
 
 # -----------------------------------------------------------------------------
 # 0c. AMORÇAGE DU SCHÉMA DE BASE (AVANT les migrations) — base NEUVE uniquement

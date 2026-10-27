@@ -11,6 +11,7 @@ import fs from "fs"
 import path from "path"
 import { Server as SocketIOServer } from "socket.io"
 import swaggerUi from 'swagger-ui-express'
+import multer from 'multer'
 import router from "./routes"
 import { swaggerSpec } from './core/swagger'
 import { DatabaseConnection } from './core/helpers/DatabaseConnection'
@@ -328,8 +329,12 @@ RedisClient.getInstance().init().catch(err => {
 })
 
 const API_BASE_URL = "/api/v1"
+const hikvisionEventUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 8 * 1024 * 1024, fields: 20, files: 2 }
+}).any()
 app.use('/iclock', PointageTerminalAdmsRouter)
-app.post('/api/hikvision/event', HikvisionPushController.receive)
+app.post('/api/hikvision/event', hikvisionEventUpload, HikvisionPushController.receive)
 app.use(API_BASE_URL, router)
 
 app.use(errorHandler)
@@ -357,7 +362,7 @@ let hikvisionCallbackServer: http.Server | null = null
 if (hikvisionCallbackHost && hikvisionCallbackHost !== hostname) {
   const callbackApp = express()
   callbackApp.use(express.json({ limit: '10mb' }))
-  callbackApp.post('/api/hikvision/event', HikvisionPushController.receive)
+  callbackApp.post('/api/hikvision/event', hikvisionEventUpload, HikvisionPushController.receive)
   hikvisionCallbackServer = http.createServer(callbackApp)
   hikvisionCallbackServer.listen(port, hikvisionCallbackHost)
   hikvisionCallbackServer.on('listening', () => {

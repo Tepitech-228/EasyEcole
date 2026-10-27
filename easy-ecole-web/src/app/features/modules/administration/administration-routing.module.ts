@@ -6,6 +6,7 @@ import { EnseignantQrCodesPageComponent } from './pages/enseignant-qr-codes-page
 import { PersonnelQrCodesPageComponent } from './pages/personnel-qr-codes-page/personnel-qr-codes-page.component';
 import { UtilisateursPageComponent } from './pages/utilisateurs-page/utilisateurs-page.component';
 import { RolesPageComponent } from './pages/roles-page/roles-page.component';
+import { PolesMenusPageComponent } from './pages/poles-menus-page/poles-menus-page.component';
 import { AuditLogsPageComponent } from './pages/audit-logs-page/audit-logs-page.component';
 import { ConfigurationPageComponent } from './pages/configuration-page/configuration-page.component';
 import { ComiteMembresPageComponent } from './pages/comite-membres-page/comite-membres-page.component';
@@ -20,6 +21,7 @@ const routes: Routes = [
   { path: 'cartes', redirectTo: '/inscription/cartes', pathMatch: 'full' },
   { path: 'utilisateurs', component: UtilisateursPageComponent },
   { path: 'roles', component: RolesPageComponent },
+  { path: 'poles-menus', component: PolesMenusPageComponent },
   { path: 'audit-logs', component: AuditLogsPageComponent },
   { path: 'configuration', component: ConfigurationPageComponent },
   { path: 'comite-membres', component: ComiteMembresPageComponent },

@@ -1,0 +1,223 @@
+<div class="poles-menus">
+  <div class="poles-menus__header">
+    <app-header-title title="Pôles & menus" subtitle="Composez les accès des profils par pôle et par menu"></app-header-title>
+    <span class="pm-pill">
+      <span class="material-symbols-outlined">add_circle</span>
+      Accès additif
+    </span>
+  </div>
+
+  <section class="pm-hero">
+    <div class="pm-hero__glow pm-hero__glow--one"></div>
+    <div class="pm-hero__glow pm-hero__glow--two"></div>
+
+    <div class="pm-hero__content">
+      <div class="pm-hero__intro">
+        <p class="pm-hero__eyebrow">Composition des accès</p>
+        <h2>Un pôle accordé s'ajoute aux menus du profil</h2>
+        <p>Le retrait ne supprime que l'ajout effectué ici. Les permissions natives du profil restent intactes.</p>
+      </div>
+
+      <div class="pm-hero__stats">
+        <div class="pm-stat">
+          <span class="material-symbols-outlined">badge</span>
+          <div>
+            <strong>{{ roles.length }}</strong>
+            <small>profils</small>
+          </div>
+        </div>
+        <div class="pm-stat">
+          <span class="material-symbols-outlined">workspaces</span>
+          <div>
+            <strong>{{ poles.length }}</strong>
+            <small>pôles</small>
+          </div>
+        </div>
+        <div class="pm-stat">
+          <span class="material-symbols-outlined">checklist</span>
+          <div>
+            <strong>{{ grantedCount }}</strong>
+            <small>ajouts</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="pm-layout">
+    <aside class="pm-roles">
+      <div class="pm-roles__head">
+        <div>
+          <p class="pm-roles__title">Profils d'accès</p>
+          <p class="pm-roles__subtitle">Choisissez le profil à composer</p>
+        </div>
+        <span class="pm-roles__count">{{ roles.length }}</span>
+      </div>
+
+      <div *ngIf="loadingRoles" class="pm-roles__loading">
+        <div class="pm-skeleton" *ngFor="let item of [1, 2, 3, 4]"></div>
+      </div>
+
+      <div *ngIf="!loadingRoles" class="pm-roles__list">
+        <button type="button" *ngFor="let role of roles" class="pm-role" [class.pm-role--active]="selectedRole?.id === role.id" (click)="selectRole(role)">
+          <span class="pm-role__avatar">{{ role.nom?.charAt(0)?.toUpperCase() }}</span>
+          <span class="pm-role__body">
+            <span class="pm-role__name">{{ role.nom }}</span>
+            <span class="pm-role__desc">{{ role.description || 'Aucune description' }}</span>
+          </span>
+          <span class="material-symbols-outlined pm-role__arrow">chevron_right</span>
+        </button>
+
+        <div *ngIf="roles.length === 0" class="pm-empty pm-empty--compact">
+          <span class="material-symbols-outlined">badge</span>
+          <p>Aucun profil disponible</p>
+        </div>
+      </div>
+    </aside>
+
+    <main class="pm-content">
+      <div *ngIf="!selectedRole" class="pm-empty pm-empty--large">
+        <div class="pm-empty__icon">
+          <span class="material-symbols-outlined">tune</span>
+        </div>
+        <h3>Sélectionnez un profil</h3>
+        <p>Choisissez un profil d'accès pour composer ses pôles et menus.</p>
+      </div>
+
+      <ng-container *ngIf="selectedRole">
+        <div class="pm-toolbar">
+          <div class="pm-toolbar__identity">
+            <span class="pm-toolbar__avatar">{{ selectedRole.nom?.charAt(0)?.toUpperCase() }}</span>
+            <div>
+              <div class="pm-toolbar__name-row">
+                <h3>{{ selectedRole.nom }}</h3>
+                <span *ngIf="dirty" class="pm-dirty">Modifications non enregistrées</span>
+              </div>
+              <p>{{ selectedRole.description || 'Aucune description' }}</p>
+            </div>
+          </div>
+
+          <div class="pm-toolbar__actions">
+            <button type="button" class="pm-btn pm-btn--ghost" [disabled]="!dirty || saving" (click)="resetChanges()">
+              <span class="material-symbols-outlined">restart_alt</span>
+              Réinitialiser
+            </button>
+            <button type="button" class="pm-btn pm-btn--primary" [disabled]="!dirty || saving" (click)="save()">
+              <span class="material-symbols-outlined" *ngIf="!saving">save</span>
+              <span class="pm-spinner" *ngIf="saving"></span>
+              {{ saving ? 'Enregistrement…' : 'Enregistrer' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="pm-meta">
+          <div class="pm-meta__item">
+            <strong>{{ grantedCount }}</strong>
+            <span>ajout(s) accordé(s)</span>
+          </div>
+          <div class="pm-meta__item">
+            <strong>{{ inheritedCount }}</strong>
+            <span>menu(s) hérité(s) du profil</span>
+          </div>
+          <div class="pm-meta__item">
+            <strong>{{ totalGrantable }}</strong>
+            <span>menu(s) accordable(s)</span>
+          </div>
+        </div>
+
+        <div class="pm-search">
+          <span class="material-symbols-outlined">search</span>
+          <input type="text" placeholder="Rechercher un pôle, un groupe ou un menu…" [(ngModel)]="searchTerm">
+          <button type="button" *ngIf="searchTerm" (click)="searchTerm = ''">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div *ngIf="inheritedCount > 0" class="pm-note">
+          <span class="material-symbols-outlined">verified_user</span>
+          <p>Les menus marqués <strong>Profil</strong> sont déjà autorisés par le profil et ne peuvent pas être retirés depuis cet écran.</p>
+        </div>
+
+        <div *ngIf="loadingGrants" class="pm-content__loading">
+          <div class="pm-skeleton pm-skeleton--card" *ngFor="let item of [1, 2, 3]"></div>
+        </div>
+
+        <div *ngIf="!loadingGrants && errorMessage" class="pm-alert">
+          <span class="material-symbols-outlined">error</span>
+          <p>{{ errorMessage }}</p>
+          <button type="button" (click)="loadMenu()">Réessayer</button>
+        </div>
+
+        <div *ngIf="!loadingGrants && !errorMessage" class="pm-poles">
+          <div class="pm-pole" *ngFor="let pole of filteredPoles">
+            <div class="pm-pole__head">
+              <div class="pm-pole__identity">
+                <span class="pm-pole__icon">
+                  <span class="material-symbols-outlined">{{ pole.icon || 'workspaces' }}</span>
+                </span>
+                <div>
+                  <h4>{{ pole.label }}</h4>
+                  <p>{{ countCoveredPole(pole) }} / {{ poleKeys(pole).length }} menu(s) couvert(s)</p>
+                </div>
+              </div>
+
+              <div class="pm-pole__actions">
+                <span *ngIf="countGrantedPole(pole) > 0" class="pm-badge pm-badge--granted">+{{ countGrantedPole(pole) }}</span>
+                <span *ngIf="countInheritedPole(pole) > 0" class="pm-badge pm-badge--inherited">{{ countInheritedPole(pole) }} profil</span>
+                <button type="button" *ngIf="poleKeys(pole).length > 0" class="pm-check" [class.pm-check--all]="stateFor(poleKeys(pole)) === 'all'" [class.pm-check--partial]="stateFor(poleKeys(pole)) === 'partial'" [disabled]="isNodeFullyInherited(poleKeys(pole))" (click)="togglePole(pole, stateFor(poleKeys(pole)) !== 'all')">
+                  <span class="material-symbols-outlined">{{ stateFor(poleKeys(pole)) === 'all' ? 'check_box' : stateFor(poleKeys(pole)) === 'partial' ? 'indeterminate_check_box' : 'check_box_outline_blank' }}</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="pm-pole__groups">
+              <div class="pm-group" *ngFor="let group of pole.groups">
+                <div class="pm-group__head">
+                  <div class="pm-group__identity">
+                    <span class="material-symbols-outlined">{{ group.icon || 'folder' }}</span>
+                    <h5>{{ group.label }}</h5>
+                  </div>
+
+                  <button type="button" *ngIf="groupKeys(group).length > 0" class="pm-check pm-check--sm" [class.pm-check--all]="stateFor(groupKeys(group)) === 'all'" [class.pm-check--partial]="stateFor(groupKeys(group)) === 'partial'" [disabled]="isNodeFullyInherited(groupKeys(group))" (click)="toggleGroup(group, stateFor(groupKeys(group)) !== 'all')">
+                    <span class="material-symbols-outlined">{{ stateFor(groupKeys(group)) === 'all' ? 'check_box' : stateFor(groupKeys(group)) === 'partial' ? 'indeterminate_check_box' : 'check_box_outline_blank' }}</span>
+                  </button>
+                  <span *ngIf="groupKeys(group).length === 0" class="pm-badge pm-badge--locked">
+                    <span class="material-symbols-outlined">lock</span>
+                    Réservé au rôle
+                  </span>
+                </div>
+
+                <div class="pm-items">
+                  <div class="pm-item" *ngFor="let item of group.items" [class.pm-item--inherited]="isInherited(item.permissionKey)" [class.pm-item--granted]="isGranted(item.permissionKey)">
+                    <span class="pm-item__icon material-symbols-outlined">{{ item.icon || 'chevron_right' }}</span>
+
+                    <div class="pm-item__body">
+                      <p>{{ item.label }}</p>
+                      <span>{{ item.route }}</span>
+                    </div>
+
+                    <div class="pm-item__badges">
+                      <span *ngIf="isInherited(item.permissionKey)" class="pm-badge pm-badge--inherited">Profil</span>
+                      <span *ngIf="isGranted(item.permissionKey)" class="pm-badge pm-badge--granted">Ajout</span>
+                      <span *ngIf="!isGrantableItem(item, group)" class="pm-badge pm-badge--locked" title="Accès déterminé par le rôle">
+                        <span class="material-symbols-outlined">lock</span>
+                      </span>
+                      <button type="button" *ngIf="isGrantableItem(item, group)" class="pm-check pm-check--sm" [class.pm-check--all]="isCovered(item.permissionKey)" [disabled]="isInherited(item.permissionKey) && !isGranted(item.permissionKey)" (click)="toggleItem(item, group, !isCovered(item.permissionKey))">
+                        <span class="material-symbols-outlined">{{ isCovered(item.permissionKey) ? 'check_box' : 'check_box_outline_blank' }}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="filteredPoles.length === 0" class="pm-empty">
+            <span class="material-symbols-outlined">search_off</span>
+            <p>Aucun pôle ne correspond à « {{ searchTerm }} »</p>
+          </div>
+        </div>
+      </ng-container>
+    </main>
+  </div>
+</div>

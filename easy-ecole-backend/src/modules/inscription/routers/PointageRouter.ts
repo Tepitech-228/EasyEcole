@@ -28,6 +28,40 @@ router
     .get('/', [Authenticate], PointageController.getAllPointages)
     .get('/today', [Authenticate], PointageController.getTodayPointage)
     .get('/rapport', [Authenticate], PointageController.getRapport)
+    /**
+     * @openapi
+     * /inscription/pointages/export:
+     *   get:
+     *     tags: [Pointage]
+     *     summary: Exporte l'historique des pointages (Excel ou Word)
+     *     security:
+     *       - bearerAuth: []
+     *     parameters:
+     *       - in: query
+     *         name: format
+     *         schema: { type: string, enum: [xlsx, docx], default: xlsx }
+     *       - in: query
+     *         name: debut
+     *         schema: { type: string, format: date }
+     *       - in: query
+     *         name: fin
+     *         schema: { type: string, format: date }
+     *       - in: query
+     *         name: role
+     *         schema: { type: string }
+     *       - in: query
+     *         name: search
+     *         schema: { type: string }
+     *       - in: query
+     *         name: statut
+     *         schema: { type: string, enum: [complet, en_cours] }
+     *     responses:
+     *       200:
+     *         description: Fichier Excel ou Word
+     *       404:
+     *         description: Aucun pointage pour ces critères
+     */
+    .get('/export', [Authenticate], PointageController.exportPointages)
     .post('/arrivee', [Authenticate], PointageController.pointerArrivee)
     .post('/depart', [Authenticate], PointageController.pointerDepart)
     .post('/scan/arrivee', [Authenticate], PointageController.pointerArriveeByScan)

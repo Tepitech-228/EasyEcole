@@ -1,5 +1,8 @@
 import { Request, Response } from "express";
+import { Op } from "sequelize";
 import { Permission } from "../models/Permission";
+import { RoleMenuGrant } from "../models/RoleMenuGrant";
+import { RolePermission } from "../models/RolePermission";
 import { UserPermission } from "../models/UserPermission";
 import { UserRole } from "../models/UserRole";
 import { Role } from "../models/Role";
@@ -53,7 +56,7 @@ export default class PermissionController {
             }
 
             const userPermissions = await UserPermission.findAll({
-                where: { utilisateurId },
+                where: { utilisateurId, estActif: true },
                 include: [{ model: Permission, as: 'permission' }]
             });
 
@@ -80,10 +83,23 @@ export default class PermissionController {
 
             for (const item of permissions) {
                 if (item.estActif) {
-                    await UserPermission.findOrCreate({
+                    // findOrCreate ne réactive pas une ligne existante passée à
+                    // estActif=false : c'est le bug qui empêchait de ré-accorder
+                    // une permission après l'avoir retirée.
+                    const existante = await UserPermission.findOne({
                         where: { utilisateurId, permissionId: item.permissionId },
-                        defaults: { utilisateurId, permissionId: item.permissionId, estActif: true }
+                        paranoid: false
                     });
+                    if (existante) {
+                        if ((existante as any).deletedAt) await existante.restore();
+                        if (!existante.estActif) await existante.update({ estActif: true });
+                    } else {
+                        await UserPermission.create({
+                            utilisateurId,
+                            permissionId: item.permissionId,
+                            estActif: true
+                        } as any);
+                    }
                 } else {
                     await UserPermission.destroy({
                         where: { utilisateurId, permissionId: item.permissionId }
@@ -142,8 +158,28 @@ export default class PermissionController {
             const userPermission = await UserPermission.findOne({
                 where: { utilisateurId, permissionId: permission.id, estActif: true }
             });
+            if (userPermission) {
+                return res.status(200).json({ granted: true });
+            }
 
-            return res.status(200).json({ granted: !!userPermission });
+            const userRoles = await UserRole.findAll({ where: { utilisateurId }, attributes: ['roleId'] });
+            const roleIds = userRoles.map(ur => Number(ur.roleId));
+            if (roleIds.length > 0) {
+                const rolePermission = await RolePermission.findOne({
+                    where: { roleId: { [Op.in]: roleIds }, permissionId: permission.id }
+                });
+                if (rolePermission) {
+                    return res.status(200).json({ granted: true });
+                }
+                const menuGrant = await RoleMenuGrant.findOne({
+                    where: { roleId: { [Op.in]: roleIds }, permissionKey: key }
+                });
+                if (menuGrant) {
+                    return res.status(200).json({ granted: true });
+                }
+            }
+
+            return res.status(200).json({ granted: false });
         } catch (error) {
             console.error(error);
             return res.status(500).json({ success: false, message: 'Erreur interne serveur' });
@@ -167,7 +203,7 @@ export default class PermissionController {
             const userRoles = await UserRole.findAll({ where: { utilisateurId } });
             if (userRoles.length > 0) {
                 configured = true;
-                const roleIds = userRoles.map(ur => ur.roleId);
+                const roleIds = userRoles.map(ur => Number(ur.roleId));
                 const roles = await Role.findAll({
                     where: { id: roleIds },
                     include: [{ model: Permission, as: 'permissions', attributes: ['key'] }]
@@ -177,6 +213,13 @@ export default class PermissionController {
                     for (const p of perms) {
                         userPermissionKeys.add(p.key);
                     }
+                }
+                const grants = await RoleMenuGrant.findAll({
+                    where: { roleId: { [Op.in]: roleIds } },
+                    attributes: ['permissionKey']
+                });
+                for (const grant of grants) {
+                    userPermissionKeys.add(grant.permissionKey);
                 }
             } else {
                 const roleNameMap: Record<string, string> = {
@@ -205,6 +248,13 @@ export default class PermissionController {
                         const perms = (fallbackRole as any).permissions || [];
                         for (const p of perms) {
                             userPermissionKeys.add(p.key);
+                        }
+                        const grants = await RoleMenuGrant.findAll({
+                            where: { roleId: fallbackRole.id },
+                            attributes: ['permissionKey']
+                        });
+                        for (const grant of grants) {
+                            userPermissionKeys.add(grant.permissionKey);
                         }
                     }
                 }

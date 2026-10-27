@@ -1,5 +1,6 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
 import * as fs from "fs/promises";
+import * as os from "os";
 import * as path from "path";
 import { spawn } from "child_process";
 import { PointageTerminal } from "../models/PointageTerminal";
@@ -9,6 +10,23 @@ export interface HikvisionAccessEvent {
     date: string;
     time: string;
 }
+
+/**
+ * Certains firmwares Hikvision refusent les separateurs (-, _) dans employeeNo.
+ * On conserve le matricule en base et on n'envoie qu'une forme alphanumerique
+ * stable a l'appareil.
+ */
+export function normalizeHikvisionEmployeeNo(value: string): string {
+    return value.replace(/[^A-Za-z0-9]/g, "").slice(0, 32);
+}
+
+/**
+ * Droits d'acces appliques par defaut aux comptes synchronises.
+ * Sans doorRight ni planTemplateNo, le terminal reconnait le visage mais
+ * affiche "aucune autorisation" et ne journalise aucun evenement.
+ */
+const DEFAULT_DOOR_RIGHT = "1";
+const DEFAULT_RIGHT_PLAN = [{ doorNo: 1, planTemplateNo: "1" }];
 
 function encryptPassword(password: string): string {
     const masterKeyHex = process.env.ENCRYPTION_MASTER_KEY;
@@ -86,6 +104,9 @@ async function requestWithDigest(
     if (!username || !encryptedPassword) throw new Error("Hikvision terminal credentials are not configured.");
     const password = decryptPassword(encryptedPassword);
     const args = ["--digest", "-u", `${username}:${password}`, "-X", method, "--connect-timeout", "10", "--max-time", "25"];
+    // Les terminaux Hikvision exposent un certificat auto-signe : sans -k, curl
+    // echoue en verification TLS et l'API renvoie un 502 trompeur.
+    if (terminal.hikvisionHttps) args.push("-k");
     if (signal?.aborted) throw new Error("Hikvision request aborted.");
     if (typeof body === "string") {
         args.push("-H", `Content-Type: ${contentType || "application/json"}`, "--data-binary", body);
@@ -190,6 +211,10 @@ export default class HikvisionIsapiService {
         if (!/^[A-Za-z0-9._-]{1,64}$/.test(student.employeeNo) || !student.name.trim()) {
             throw new Error("Matricule or profile name is invalid for Hikvision enrollment.");
         }
+        const deviceEmployeeNo = normalizeHikvisionEmployeeNo(student.employeeNo);
+        if (!deviceEmployeeNo) {
+            throw new Error("Matricule incompatible avec le terminal Hikvision (caracteres alphanumeriques requis).");
+        }
         const photoDirectory = student.photoCategory === "apprenant"
             ? ["apprenants", "photos"]
             : student.photoCategory === "enseignant"
@@ -214,10 +239,12 @@ export default class HikvisionIsapiService {
         }
         const contentType = uploadExtension === ".png" ? "image/png" : uploadExtension === ".jpg" || uploadExtension === ".jpeg" ? "image/jpeg" : "image/jpeg";
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 15000);
+        // La reprise d'un visage existant supprime puis recree l'utilisateur :
+        // elle peut depasser le delai d'un simple appel ISAPI.
+        const timer = setTimeout(() => controller.abort(), 60000);
         try {
             const userInfo = {
-                employeeNo: student.employeeNo,
+                employeeNo: deviceEmployeeNo,
                 name: student.name.trim().slice(0, 120),
                 userType: "normal",
                 Valid: {
@@ -225,7 +252,9 @@ export default class HikvisionIsapiService {
                     beginTime: "2020-01-01T00:00:00",
                     endTime: "2037-12-31T23:59:59",
                     timeType: "local"
-                }
+                },
+                doorRight: DEFAULT_DOOR_RIGHT,
+                RightPlan: DEFAULT_RIGHT_PLAN
             };
             const recordBody = JSON.stringify({ UserInfo: userInfo });
             const updateResponse = await requestWithDigest(
@@ -258,32 +287,66 @@ export default class HikvisionIsapiService {
             const personJson = JSON.stringify({
                 faceLibType: "blackFD",
                 FDID: "1",
-                FPID: student.employeeNo,
+                FPID: deviceEmployeeNo,
                 name: student.name.trim().slice(0, 120)
             });
-            const tempDir = path.join(process.cwd(), "tmp");
+            const tempDir = os.tmpdir();
             await fs.mkdir(tempDir, { recursive: true });
-            const personPath = path.join(tempDir, `hikvision-person-${Date.now()}.json`);
-            const imagePath = path.join(tempDir, `hikvision-face-${Date.now()}${uploadExtension}`);
-            await fs.writeFile(personPath, personJson, "utf8");
-            await fs.writeFile(imagePath, uploadImage);
-            try {
-                const curlResult = await runCurl([
-                    "--digest", "-u", `${username}:${password}`,
-                    "-X", "POST",
-                    "-F", `person=@${personPath};type=application/json`,
-                    "-F", `image=@${imagePath};type=${contentType}`,
-                    "--connect-timeout", "10",
-                    "--max-time", "25",
-                    faceUrl.toString()
-                ], 30000);
-                const faceResult = await isSuccessfulHikvisionResponse(curlResult);
-                if (!faceResult.success) {
-                    throw new Error(`Hikvision face enrollment failed (HTTP ${curlResult.status}): ${faceResult.detail || curlResult.body}`);
+            const uploadFace = async () => {
+                const personPath = path.join(tempDir, `hikvision-person-${Date.now()}.json`);
+                const imagePath = path.join(tempDir, `hikvision-face-${Date.now()}${uploadExtension}`);
+                await fs.writeFile(personPath, personJson, "utf8");
+                await fs.writeFile(imagePath, uploadImage);
+                try {
+                    const curlResult = await runCurl([
+                        "--digest", "-u", `${username}:${password}`,
+                        ...(terminal.hikvisionHttps ? ["-k"] : []),
+                        "-X", "POST",
+                        "-F", `person=@${personPath};type=application/json`,
+                        "-F", `image=@${imagePath};type=${contentType}`,
+                        "--connect-timeout", "10",
+                        "--max-time", "25",
+                        faceUrl.toString()
+                    ], 30000);
+                    return { curlResult, faceResult: await isSuccessfulHikvisionResponse(curlResult) };
+                } finally {
+                    await fs.unlink(personPath).catch(() => { });
+                    await fs.unlink(imagePath).catch(() => { });
                 }
-            } finally {
-                await fs.unlink(personPath).catch(() => { });
-                await fs.unlink(imagePath).catch(() => { });
+            };
+            let faceAttempt = await uploadFace();
+            if (!faceAttempt.faceResult.success && faceAttempt.faceResult.detail.includes("deviceUserAlreadyExistFace")) {
+                // Le terminal refuse d'ajouter un second visage a un compte existant.
+                // On supprime le compte puis on le recree avec ses droits avant de
+                // reessayer l'enrolement.
+                const deleteResponse = await requestWithDigest(
+                    terminal,
+                    "/ISAPI/AccessControl/UserInfo/Delete?format=json",
+                    controller.signal,
+                    "PUT",
+                    JSON.stringify({ UserInfoDelCond: { EmployeeNoList: [{ employeeNo: deviceEmployeeNo }] } }),
+                    "application/json"
+                );
+                const deleteResult = await isSuccessfulHikvisionResponse(deleteResponse);
+                if (!deleteResult.success) {
+                    throw new Error(`Hikvision could not reset the face (HTTP ${deleteResponse.status}): ${deleteResult.detail}`);
+                }
+                const recreateResponse = await requestWithDigest(
+                    terminal,
+                    "/ISAPI/AccessControl/UserInfo/Record?format=json",
+                    controller.signal,
+                    "POST",
+                    recordBody,
+                    "application/json"
+                );
+                const recreateResult = await isSuccessfulHikvisionResponse(recreateResponse);
+                if (!recreateResult.success) {
+                    throw new Error(`Hikvision could not recreate the user after the face reset (HTTP ${recreateResponse.status}): ${recreateResult.detail}`);
+                }
+                faceAttempt = await uploadFace();
+            }
+            if (!faceAttempt.faceResult.success) {
+                throw new Error(`Hikvision face enrollment failed (HTTP ${faceAttempt.curlResult.status}): ${faceAttempt.faceResult.detail || faceAttempt.curlResult.body}`);
             }
         } finally {
             clearTimeout(timer);

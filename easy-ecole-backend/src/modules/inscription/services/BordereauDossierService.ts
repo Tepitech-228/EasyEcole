@@ -26,6 +26,7 @@ import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
 import { EmailSender } from "../../../core/helpers/EmailSender";
 import { GenerateurCarteService } from "../services/GenerateurCarteService";
 import { DossierStorageService } from "../services/DossierStorageService";
+import { resolveStoredDocumentPath } from "../../../core/services/DocumentStorageService";
 import { FolderAutoService } from "../../ged/services/FolderAutoService";
 import { GenerateurEcheancierService, estModalitePaiement } from "../services/GenerateurEcheancierService";
 import { GenerateurEcheancierScolariteService } from "../services/GenerateurEcheancierScolariteService";
@@ -342,8 +343,11 @@ export class BordereauDossierService {
                 })
                 await dossier.update({ cartePath, carteGeneree: true }, { transaction })
 
-                const carteSource = path.resolve(process.cwd(), 'public', cartePath)
-                if (fs.existsSync(carteSource)) {
+                const carteSource = resolveStoredDocumentPath(cartePath, [
+                    process.cwd(),
+                    path.resolve(process.cwd(), 'public'),
+                ])
+                if (carteSource) {
                     DossierStorageService.copierFichier(
                         carteSource,
                         anneeLibelle, parcoursNom, classeNom, niveauNom, matricule, 'cartes'
@@ -848,8 +852,11 @@ export class BordereauDossierService {
                 })
                 await dossier.update({ cartePath, carteGeneree: true }, { transaction })
 
-                const carteSource = path.resolve(process.cwd(), 'public', cartePath)
-                if (fs.existsSync(carteSource)) {
+                const carteSource = resolveStoredDocumentPath(cartePath, [
+                    process.cwd(),
+                    path.resolve(process.cwd(), 'public'),
+                ])
+                if (carteSource) {
                     DossierStorageService.copierFichier(carteSource, anneeLibelle, parcoursNom, classeNom, niveauNom, matricule, 'cartes')
                 }
             } catch (cardError) {

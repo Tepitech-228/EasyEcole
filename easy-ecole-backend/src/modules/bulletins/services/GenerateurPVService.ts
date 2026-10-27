@@ -1,5 +1,3 @@
-import * as path from "path";
-import * as fs from "fs";
 import PDFDocument from "pdfkit";
 import { Deliberation } from "../models/Deliberation";
 import { ResultatDeliberation } from "../models/ResultatDeliberation";
@@ -7,10 +5,11 @@ import { Classe } from "../../inscription/models/Classe";
 import { AnneeAcademique } from "../../inscription/models/AnneeAcademique";
 import { JuryMembre } from "../models/JuryMembre";
 import { DECISION_LABELS, DecisionType } from "../enums/DecisionType";
+import { savePdf, SavedPdf } from "../../../core/services/PdfStorageService";
 
 export class GenerateurPVService {
 
-  static async generer(deliberationId: number): Promise<string> {
+  static async generer(deliberationId: number): Promise<SavedPdf> {
     const deliberation = await Deliberation.findByPk(deliberationId, {
       include: [
         { association: Deliberation.associations.classe },
@@ -29,16 +28,14 @@ export class GenerateurPVService {
       include: [{ association: 'utilisateur' }]
     });
 
-    const uploadDir = path.join(process.cwd(), 'uploads', 'pv');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
     const filename = `pv_deliberation_${deliberationId}_${Date.now()}.pdf`;
-    const filePath = path.join(uploadDir, filename);
     const doc = new PDFDocument({ margin: 40, size: 'A4' });
-    const stream = fs.createWriteStream(filePath);
-    doc.pipe(stream);
+    const chunks: Buffer[] = [];
+    const pdfBuffer = new Promise<Buffer>((resolve, reject) => {
+      doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+    });
 
     const classe = deliberation.classe as any;
     const anneeAcademique = deliberation.anneeAcademique as any;
@@ -125,10 +122,13 @@ export class GenerateurPVService {
     doc.text('Le Président du jury', { align: 'center' });
 
     doc.end();
+    const content = await pdfBuffer;
 
-    return new Promise((resolve, reject) => {
-      stream.on('finish', () => resolve(filename));
-      stream.on('error', reject);
+    return savePdf(content, {
+      type: 'pedagogique',
+      subcategory: 'pv',
+      fileName: filename,
+      academicYear: anneeAcademique?.libelle,
     });
   }
 }

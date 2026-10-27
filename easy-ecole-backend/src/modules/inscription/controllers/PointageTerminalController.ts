@@ -222,7 +222,13 @@ export default class PointageTerminalController {
             : null;
         let motifRefus: string | null = null;
 
-        if (!utilisateur || utilisateur.role === RolesUtilisateur.PARENT) {
+        if (log.verifyType === 6 || log.verifyType === 76) {
+            // Sur ce terminal, 75 = authentification faciale réussie (la porte
+            // s'ouvre), tandis que 6/76 = visage reconnu mais accès refusé
+            // (droits insuffisants ou échec de vérification). Ces événements ne
+            // doivent jamais créer ni modifier un pointage.
+            motifRefus = "Le terminal a refusé l'accès (authentification ou droits insuffisants).";
+        } else if (!utilisateur || utilisateur.role === RolesUtilisateur.PARENT) {
             motifRefus = "Le PIN ne correspond pas à un compte de pointage autorisé.";
         } else {
             const affectation = await SiteUtilisateur.findOne({

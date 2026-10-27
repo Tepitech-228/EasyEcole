@@ -1,6 +1,5 @@
 import fs from "fs";
 import path from "path";
-import crypto from "crypto";
 import { Op } from "sequelize";
 import { DocumentGed } from "../../modules/ged/models/DocumentGed";
 import Domain from "../../modules/ged/models/Domain";
@@ -9,10 +8,12 @@ import Folder from "../../modules/ged/models/Folder";
 import { ProcessusGenerateur } from "../../modules/ged/models/ProcessusGenerateur";
 import { ReferenceService } from "./ReferenceService";
 import { AuditService } from "./AuditService";
-import { GED_CONFIG } from "../config/GedConfig";
 import { RolesUtilisateur } from "../enums/RolesUtilisateur";
-
-const GED_DIR = GED_CONFIG.STORAGE_DIR;
+import {
+  currentAcademicYear,
+  resolveStoredDocumentPath,
+  saveDocument,
+} from "./DocumentStorageService";
 const PROCESSUS_CODES = {
   INSCRIPTION: 'INSCRIPTION',
   BORDEREAU: 'BORDEREAU',
@@ -134,6 +135,40 @@ export class ArchiveGedService {
     throw new Error("Aucun compte utilisateur utilisable pour l'archivage GED");
   }
 
+  /** Libelle de l'annee academique, avec repli sur l'annee courante. */
+  private static async resolveAcademicYearLabel(anneeAcademiqueId?: number): Promise<string> {
+    if (!anneeAcademiqueId) return currentAcademicYear();
+    try {
+      const { AnneeAcademique } = require("../../modules/inscription/models/AnneeAcademique") as typeof import("../../modules/inscription/models/AnneeAcademique");
+      const annee = await AnneeAcademique.findByPk(anneeAcademiqueId, {
+        attributes: ["libelle"],
+      });
+      return (annee as any)?.libelle || currentAcademicYear();
+    } catch {
+      return currentAcademicYear();
+    }
+  }
+
+  /**
+   * Ecrit un fichier GED genere dans documents/created/<annee>/ged/<sous-type>/.
+   * Retourne le chemin relatif a stocker en base (et non un simple basename).
+   */
+  private static async storeGedFile(
+    content: Buffer | string,
+    fileName: string,
+    anneeAcademiqueId: number | undefined,
+    subcategory: string
+  ) {
+    const academicYear = await ArchiveGedService.resolveAcademicYearLabel(anneeAcademiqueId);
+    return saveDocument(content, {
+      origin: "created",
+      academicYear,
+      category: "ged",
+      subcategory,
+      fileName,
+    });
+  }
+
   static async archiverDepuisFichier(params: {
     fichierSource: string;
     domaineCode: string;
@@ -158,8 +193,8 @@ export class ArchiveGedService {
     bordereauId?: number;
     inscriptionDossierId?: number;
   }): Promise<DocumentGed | null> {
-    const sourcePath = path.resolve(process.cwd(), params.fichierSource);
-    if (!fs.existsSync(sourcePath)) return null;
+    const sourcePath = resolveStoredDocumentPath(params.fichierSource, [process.cwd()]);
+    if (!sourcePath) return null;
 
     const domain = await Domain.findOne({ where: { code: params.domaineCode } });
     const docType = await DocumentType.findOne({ where: { code: params.typeDocumentCode } });
@@ -170,16 +205,17 @@ export class ArchiveGedService {
     const year = new Date().getFullYear();
     const reference = await ReferenceService.generer(domain.code, docType.shortCode, year);
 
-    const destDir = path.resolve(process.cwd(), GED_DIR);
-    if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
-    const sourceBasename = path.basename(params.fichierSource);
+    const sourceBasename = path.basename(sourcePath);
     const destFilename = `${reference}_${sourceBasename}`;
-    const destPath = path.join(destDir, destFilename);
-    fs.copyFileSync(sourcePath, destPath);
+    const saved = await ArchiveGedService.storeGedFile(
+      fs.readFileSync(sourcePath),
+      destFilename,
+      params.anneeAcademiqueId,
+      'archives'
+    );
 
-    const fileBuffer = fs.readFileSync(destPath);
-    const integrityHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
-    const stats = fs.statSync(destPath);
+    const integrityHash = saved.sha256;
+    const stats = { size: saved.size };
 
     const classificationPath = [
       ...(params.anneeAcademiqueId ? [`annee:${params.anneeAcademiqueId}`] : []),
@@ -197,7 +233,7 @@ export class ArchiveGedService {
       reference,
       type: 'PDF',
       statut: 'Disponible',
-      fichier: destFilename,
+      fichier: saved.relativePath,
       taille: `${(stats.size / 1024).toFixed(1)} Ko`,
       uploaderId,
       folderId,
@@ -250,8 +286,10 @@ export class ArchiveGedService {
       uploaderId?: number;
     }
   ): Promise<DocumentGed | null> {
-    const sourcePath = path.resolve(process.cwd(), "public/inscription/dossiers", sourceFilename);
-    if (!fs.existsSync(sourcePath)) return null;
+    const sourcePath = resolveStoredDocumentPath(sourceFilename, [
+      path.resolve(process.cwd(), "public/inscription/dossiers"),
+    ]);
+    if (!sourcePath) return null;
 
     const domain = await Domain.findOne({ where: { code: 'SCOL' } });
     const docType = await DocumentType.findOne({ where: { code: 'fiche_inscription' } });
@@ -262,15 +300,16 @@ export class ArchiveGedService {
     const year = new Date().getFullYear();
     const reference = await ReferenceService.generer(domain.code, docType.shortCode, year);
 
-    const destDir = path.resolve(process.cwd(), GED_DIR);
-    if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
-    const destFilename = `${reference}_${sourceFilename}`;
-    const destPath = path.join(destDir, destFilename);
-    fs.copyFileSync(sourcePath, destPath);
+    const destFilename = `${reference}_${path.basename(sourcePath)}`;
+    const saved = await ArchiveGedService.storeGedFile(
+      fs.readFileSync(sourcePath),
+      destFilename,
+      options.anneeAcademiqueId,
+      'inscription'
+    );
 
-    const fileBuffer = fs.readFileSync(destPath);
-    const integrityHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
-    const stats = fs.statSync(destPath);
+    const integrityHash = saved.sha256;
+    const stats = { size: saved.size };
 
     const classificationPath = [
       `annee:${options.anneeAcademiqueId}`,
@@ -293,7 +332,7 @@ export class ArchiveGedService {
       reference,
       type: 'PDF',
       statut: 'Disponible',
-      fichier: destFilename,
+      fichier: saved.relativePath,
       taille: `${(stats.size / 1024).toFixed(1)} Ko`,
       uploaderId,
       folderId,
@@ -343,8 +382,10 @@ export class ArchiveGedService {
       uploaderId?: number;
     }
   ): Promise<DocumentGed | null> {
-    const sourcePath = path.resolve(process.cwd(), "public/inscription/bordereaux", sourceFilename);
-    if (!fs.existsSync(sourcePath)) return null;
+    const sourcePath = resolveStoredDocumentPath(sourceFilename, [
+      path.resolve(process.cwd(), "public/inscription/bordereaux"),
+    ]);
+    if (!sourcePath) return null;
 
     const domain = await Domain.findOne({ where: { code: 'FIN' } });
     const docType = await DocumentType.findOne({ where: { code: 'bordereau' } });
@@ -355,15 +396,16 @@ export class ArchiveGedService {
     const year = new Date().getFullYear();
     const reference = await ReferenceService.generer(domain.code, docType.shortCode, year);
 
-    const destDir = path.resolve(process.cwd(), GED_DIR);
-    if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
-    const destFilename = `${reference}_${sourceFilename}`;
-    const destPath = path.join(destDir, destFilename);
-    fs.copyFileSync(sourcePath, destPath);
+    const destFilename = `${reference}_${path.basename(sourcePath)}`;
+    const saved = await ArchiveGedService.storeGedFile(
+      fs.readFileSync(sourcePath),
+      destFilename,
+      options.anneeAcademiqueId,
+      'bordereaux'
+    );
 
-    const fileBuffer = fs.readFileSync(destPath);
-    const integrityHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
-    const stats = fs.statSync(destPath);
+    const integrityHash = saved.sha256;
+    const stats = { size: saved.size };
 
     const classificationPath = [
       `annee:${options.anneeAcademiqueId}`,
@@ -386,7 +428,7 @@ export class ArchiveGedService {
       reference,
       type: 'PDF',
       statut: 'Disponible',
-      fichier: destFilename,
+      fichier: saved.relativePath,
       taille: `${(stats.size / 1024).toFixed(1)} Ko`,
       uploaderId,
       folderId,
@@ -448,21 +490,17 @@ export class ArchiveGedService {
     const year = new Date().getFullYear();
     const reference = await ReferenceService.generer(domain.code, docType.shortCode, year);
 
-    const destDir = path.resolve(process.cwd(), GED_DIR);
-    if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
     const destFilename = `${reference}_bulletin_${bulletin.id}.pdf`;
-    const destPath = path.join(destDir, destFilename);
+    const content = pdfBuffer || `Bulletin #${bulletin.id}`;
+    const saved = await ArchiveGedService.storeGedFile(
+      content,
+      destFilename,
+      bulletin.anneeAcademiqueId,
+      'bulletins'
+    );
 
-    if (pdfBuffer) {
-      fs.writeFileSync(destPath, pdfBuffer);
-    } else {
-      const placeholderContent = `Bulletin #${bulletin.id}`;
-      fs.writeFileSync(destPath, placeholderContent);
-    }
-
-    const fileBuffer = fs.readFileSync(destPath);
-    const integrityHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
-    const stats = fs.statSync(destPath);
+    const integrityHash = saved.sha256;
+    const stats = { size: saved.size };
 
     const classificationPath = [
       `annee:${bulletin.anneeAcademiqueId}`,
@@ -485,7 +523,7 @@ export class ArchiveGedService {
       reference,
       type: 'PDF',
       statut: 'Disponible',
-      fichier: destFilename,
+      fichier: saved.relativePath,
       taille: `${(stats.size / 1024).toFixed(1)} Ko`,
       uploaderId,
       folderId,
@@ -545,21 +583,17 @@ export class ArchiveGedService {
     const year = new Date().getFullYear();
     const reference = await ReferenceService.generer(domain.code, docType.shortCode, year);
 
-    const destDir = path.resolve(process.cwd(), GED_DIR);
-    if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
     const destFilename = `${reference}_${params.fichier}`;
-    const destPath = path.join(destDir, destFilename);
+    const content = params.pdfBuffer || `${params.titre}`;
+    const saved = await ArchiveGedService.storeGedFile(
+      content,
+      destFilename,
+      params.anneeAcademiqueId,
+      'scolarite'
+    );
 
-    if (params.pdfBuffer) {
-      fs.writeFileSync(destPath, params.pdfBuffer);
-    } else {
-      const placeholderContent = `${params.titre}`;
-      fs.writeFileSync(destPath, placeholderContent);
-    }
-
-    const fileBuffer = fs.readFileSync(destPath);
-    const integrityHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
-    const stats = fs.statSync(destPath);
+    const integrityHash = saved.sha256;
+    const stats = { size: saved.size };
 
     const classificationPath = [
       `annee:${params.anneeAcademiqueId}`,
@@ -582,7 +616,7 @@ export class ArchiveGedService {
       reference,
       type: 'PDF',
       statut: 'Disponible',
-      fichier: destFilename,
+      fichier: saved.relativePath,
       taille: `${(stats.size / 1024).toFixed(1)} Ko`,
       uploaderId,
       folderId,
@@ -639,20 +673,17 @@ export class ArchiveGedService {
     const year = new Date().getFullYear();
     const reference = await ReferenceService.generer(domain.code, docType.shortCode, year);
 
-    const destDir = path.resolve(process.cwd(), GED_DIR);
-    if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
     const destFilename = `${reference}_${params.fichier}`;
-    const destPath = path.join(destDir, destFilename);
+    const content = params.pdfBuffer || `Délibération - ${params.titre}`;
+    const saved = await ArchiveGedService.storeGedFile(
+      content,
+      destFilename,
+      params.anneeAcademiqueId,
+      'deliberations'
+    );
 
-    if (params.pdfBuffer) {
-      fs.writeFileSync(destPath, params.pdfBuffer);
-    } else {
-      fs.writeFileSync(destPath, `Délibération - ${params.titre}`);
-    }
-
-    const fileBuffer = fs.readFileSync(destPath);
-    const integrityHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
-    const stats = fs.statSync(destPath);
+    const integrityHash = saved.sha256;
+    const stats = { size: saved.size };
 
     const classificationPath = [
       `annee:${params.anneeAcademiqueId}`,
@@ -675,7 +706,7 @@ export class ArchiveGedService {
       reference,
       type: 'PDF',
       statut: 'Disponible',
-      fichier: destFilename,
+      fichier: saved.relativePath,
       taille: `${(stats.size / 1024).toFixed(1)} Ko`,
       uploaderId,
       folderId,
@@ -729,20 +760,17 @@ export class ArchiveGedService {
     const year = new Date().getFullYear();
     const reference = await ReferenceService.generer(domain.code, docType.shortCode, year);
 
-    const destDir = path.resolve(process.cwd(), GED_DIR);
-    if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
     const destFilename = `${reference}_${params.fichier}`;
-    const destPath = path.join(destDir, destFilename);
+    const content = params.pdfBuffer || `Diplôme - ${params.titre}`;
+    const saved = await ArchiveGedService.storeGedFile(
+      content,
+      destFilename,
+      params.anneeAcademiqueId,
+      'diplomes'
+    );
 
-    if (params.pdfBuffer) {
-      fs.writeFileSync(destPath, params.pdfBuffer);
-    } else {
-      fs.writeFileSync(destPath, `Diplôme - ${params.titre}`);
-    }
-
-    const fileBuffer = fs.readFileSync(destPath);
-    const integrityHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
-    const stats = fs.statSync(destPath);
+    const integrityHash = saved.sha256;
+    const stats = { size: saved.size };
 
     const classificationPath = [
       `annee:${params.anneeAcademiqueId}`,
@@ -763,7 +791,7 @@ export class ArchiveGedService {
       reference,
       type: 'PDF',
       statut: 'Disponible',
-      fichier: destFilename,
+      fichier: saved.relativePath,
       taille: `${(stats.size / 1024).toFixed(1)} Ko`,
       uploaderId,
       folderId,

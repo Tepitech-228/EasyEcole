@@ -204,13 +204,16 @@ RUN mkdir -p \
     /app/config \
     /app/uploads/pv \
     /app/backups \
+    /app/documents/uploads \
+    /app/documents/created \
     && chown -R node:node \
         /app/public \
         /app/storage \
         /app/.keys \
         /app/config \
         /app/uploads \
-        /app/backups
+        /app/backups \
+        /app/documents
 
 # Utilisateur non-root (les processus Node/Chromium tournent avec --no-sandbox
 # côté application, déjà géré dans le code : voir GenerateurCarteService /

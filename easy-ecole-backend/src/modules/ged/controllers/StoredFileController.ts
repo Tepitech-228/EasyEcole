@@ -69,7 +69,8 @@ function parseOptionalId(value: unknown): number | null {
 }
 
 function allowedRoots(): string[] {
-  return ["public", "storage", "uploads"].map(folder => path.resolve(process.cwd(), folder));
+  return ["public", "storage", "uploads", process.env.DOCUMENTS_DIR || "documents"]
+    .map(folder => path.resolve(process.cwd(), folder));
 }
 
 function withinAllowedRoot(candidate: string): boolean {
@@ -79,8 +80,10 @@ function withinAllowedRoot(candidate: string): boolean {
 
 function resolveLegacyPath(value: string, directory: string): string {
   const normalized = value.trim().replace(/\\/g, "/");
+  const documentsRoot = path.resolve(process.cwd(), process.env.DOCUMENTS_DIR || "documents");
   const direct = path.isAbsolute(value) ? [path.resolve(value)] : [
     path.resolve(process.cwd(), normalized.replace(/^\/+/, "")),
+    path.resolve(documentsRoot, normalized.replace(/^\/+/, "")),
     path.resolve(process.cwd(), "public", normalized.replace(/^\/+/, "")),
     path.resolve(process.cwd(), "storage", normalized.replace(/^\/+/, "")),
     path.resolve(process.cwd(), directory, path.basename(normalized))

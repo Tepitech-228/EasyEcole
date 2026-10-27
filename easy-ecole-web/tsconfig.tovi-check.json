@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "outDir": "./out-tsc/tovi-check"
+  },
+  "files": [
+    "src/app/features/modules/pointage/pages/terminal-pointage-page/terminal-pointage-page.component.ts",
+    "src/app/features/modules/pointage/pages/terminal-pointage-page/terminal-pointage-page.component.spec.ts"
+  ],
+  "include": []
+}

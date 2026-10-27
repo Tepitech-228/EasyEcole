@@ -1,0 +1,328 @@
+# =============================================================================
+# EasyEcole - Docker Compose PRODUCTION (VM APP + base EXTERNE)
+#
+# TOPOLOGIE :
+#   - VM APP (192.168.100.10) : backend, worker, redis, frontend, mysql-backup
+#   - VM DB  (192.168.100.20) : MySQL 8.0 NATIF, HORS Docker
+#
+# STOCKAGE (montages directs sur la VM APP) :
+#   /mnt/easyecole-documents -> /app/documents
+#     uploads/<annee-academique>/<type>/<sous-type?>/   documents importes
+#     created/<annee-academique>/<type>/<sous-type?>/   documents generes
+#     Exemple : uploads/2025-2026/finances/filieres/recu.pdf
+#
+#   /mnt/easyecole-storage -> /app/backups
+#     mysql/  ged/  files/  tmp/                        sauvegardes et archives
+#
+#   Les anciens chemins (public/, uploads/pv, storage/) restent montes sous
+#   documents/{uploads,created}/_legacy/ pendant la migration du code.
+#
+# INITIALISATION AUTOMATIQUE DU STOCKAGE :
+#   le service one-shot `init-storage` execute scripts/init-document-storage.sh
+#   avant le backend (arborescence, marqueurs .easyecole-mounted, annees
+#   academiques jusqu'a ACADEMIC_YEAR_UNTIL). Aucune commande manuelle sur la VM.
+#
+# VARIABLES DOKPLOY : DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS,
+#   JWT_SECRET, DOCGEN_SECRET, CORS_ORIGIN, SMTP_*, REDIS_URL, TZ,
+#   ACADEMIC_YEAR_UNTIL (defaut 2050), ACADEMIC_YEAR_FROM, ACADEMIC_YEARS.
+#   Les chemins de stockage ont des defauts production ; les surcharger
+#   uniquement si les montages changent.
+#
+# BASE EXTERNE : aucun service `db` ici. Le backend se connecte a DB_HOST
+#   (defaut 192.168.100.20:3306). Le port 3306 n'est PAS publie par cette stack.
+# =============================================================================
+
+name: easyecole
+
+services:
+  # ---------------------------------------------------------------------------
+  # 0) INITIALISATION DU STOCKAGE (one-shot, avant le backend)
+  # ---------------------------------------------------------------------------
+  # Execute le meme script que l'ancienne preparation manuelle. Le conteneur
+  # tourne en root, uniquement pour creer l'arborescence sur les bind mounts.
+  # L'image mysql:8.0 est deja utilisee par mysql-backup : elle fournit bash,
+  # le client mysql (decouverte des annees en base) et les commandes POSIX.
+  init-storage:
+    image: mysql:8.0
+    container_name: easyecole-init-storage
+    restart: "no"
+    user: "0:0"
+    mem_limit: 256m
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      DOCUMENTS_ROOT: /documents
+      BACKUP_STORAGE_ROOT: /storage
+      # Les deux bind mounts sont crees par Docker : le script n'a pas besoin
+      # de verifier mountpoint a l'interieur du conteneur.
+      SKIP_MOUNT_CHECK: "true"
+      # Les droits sont alignes par docker-entrypoint.sh du backend (phase root).
+      FIX_PERMISSIONS: "false"
+      # Derniere annee pre-creee (2050 => 2050-2051).
+      ACADEMIC_YEAR_UNTIL: ${ACADEMIC_YEAR_UNTIL:-2050}
+      # Annees supplementaires explicites, ex. "2023-2024 2024-2025".
+      ACADEMIC_YEARS: ${ACADEMIC_YEARS:-}
+      ACADEMIC_YEAR_FROM: ${ACADEMIC_YEAR_FROM:-2025-2026}
+      # Decouverte des annees dans ins_annees_academiques.
+      DB_HOST: ${DB_HOST:-192.168.100.20}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-easyecole}
+      DB_USER: ${DB_USER:-easyecole_app}
+      DB_PASS: ${DB_PASS:?DB_PASS must be set}
+    volumes:
+      - ${DOCUMENTS_HOST_PATH:-/mnt/easyecole-documents}:/documents
+      - ${BACKUP_STORAGE_HOST_PATH:-/mnt/easyecole-storage}:/storage
+      - ./scripts/init-document-storage.sh:/usr/local/bin/init-document-storage.sh:ro
+    entrypoint: ["/bin/bash", "/usr/local/bin/init-document-storage.sh"]
+    command: []
+    networks:
+      - app
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # 1) BACKEND API Express/Node
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: easy-ecole-backend/Dockerfile
+    container_name: easyecole-backend
+    restart: unless-stopped
+    mem_limit: 2g
+    shm_size: 1g
+    pids_limit: 300
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    # Le stockage doit etre initialise (marqueurs .easyecole-mounted) avant
+    # que le backend ne tente de demarrer.
+    depends_on:
+      init-storage:
+        condition: service_completed_successfully
+    # Demarrage en root uniquement pour reparer les droits des bind mounts
+    # crees par Dokploy (root:root), puis re-execution en `node` (uid 1000).
+    # Voir bloc 0a de easy-ecole-backend/docker-entrypoint.sh.
+    user: "0:0"
+    environment:
+      NODE_ENV: production
+      DB_HOST: ${DB_HOST:-192.168.100.20}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-easyecole}
+      DB_USER: ${DB_USER:-easyecole_app}
+      DB_PASS: ${DB_PASS:?DB_PASS must be set}
+      DB_SSL: ${DB_SSL:-off}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      JWT_SECRET: ${JWT_SECRET}
+      DOCGEN_SECRET: ${DOCGEN_SECRET}
+      ENCRYPTION_MASTER_KEY: ${ENCRYPTION_MASTER_KEY:-}
+      # Requis : src/app.ts leve une erreur au chargement si absent.
+      CORS_ORIGIN: ${CORS_ORIGIN:?CORS_ORIGIN must be set (ex. http://192.168.100.10:8080)}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      TZ: ${TZ:-UTC}
+      MIGRATIONS_ON_BOOT: ${MIGRATIONS_ON_BOOT:-true}
+      DB_BOOTSTRAP_SCHEMA: ${DB_BOOTSTRAP_SCHEMA:-true}
+      # Stockage documentaire unifie (voir DocumentStorageService / PdfStorageService).
+      DOCUMENTS_STORAGE_DIR: ${DOCUMENTS_STORAGE_DIR:-/app/documents}
+      TMP_DIR: ${TMP_DIR:-/tmp/easyecole}
+      ACADEMIC_YEAR: ${ACADEMIC_YEAR:-}
+      # Refuse de demarrer si les marqueurs .easyecole-mounted sont absents :
+      # evite d'ecrire silencieusement sur le disque local au lieu du montage.
+      REQUIRE_DOCUMENTS_MOUNT: ${REQUIRE_DOCUMENTS_MOUNT:-true}
+    networks:
+      - app
+      - data
+    volumes:
+      # Nouveau stockage documentaire (documents importes + generes).
+      - ${DOCUMENTS_HOST_PATH:-/mnt/easyecole-documents}:/app/documents
+      # Sauvegardes : dumps MySQL, archives de fichiers, sauvegardes GED.
+      - ${BACKUP_STORAGE_HOST_PATH:-/mnt/easyecole-storage}:/app/backups
+      # --- Compatibilite avec les chemins historiques du code -------------
+      # public/ (multer, GED, dossiers, bordereaux...)
+      - ${PUBLIC_HOST_PATH:-/mnt/easyecole-documents/uploads/_legacy/public}:/app/public
+      # PV de deliberation (GenerateurPVService)
+      - ${UPLOADS_HOST_PATH:-/mnt/easyecole-documents/created/_legacy/pv}:/app/uploads
+      # PDF historiques, cartes, qr-codes, recus
+      - ${STORAGE_HOST_PATH:-/mnt/easyecole-documents/created/_legacy/storage}:/app/storage
+      # Configuration de stockage modifiable (StorageConfigController)
+      - ${CONFIG_HOST_PATH:-/opt/mon-app/config}:/app/config
+      # Cle maitresse AES : NE JAMAIS PERDRE ce dossier.
+      - ${KEYS_HOST_PATH:-/opt/mon-app/keys}:/app/.keys
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:3000/api/v1/health', r => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))\""]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 420s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # 2) WORKERS BullMQ (OCR, PDF, import Excel)
+  # ---------------------------------------------------------------------------
+  worker:
+    build:
+      context: .
+      dockerfile: easy-ecole-backend/Dockerfile
+    container_name: easyecole-worker
+    restart: unless-stopped
+    mem_limit: 2g
+    shm_size: 1g
+    pids_limit: 300
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    # Le worker ne passe pas par docker-entrypoint.sh : il ne demarre qu'apres
+    # le backend healthy, qui a deja repare les droits des montages.
+    entrypoint: ["node", "lib/core/workers/index.js"]
+    command: []
+    environment:
+      NODE_ENV: production
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      DB_HOST: ${DB_HOST:-192.168.100.20}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-easyecole}
+      DB_USER: ${DB_USER:-easyecole_app}
+      DB_PASS: ${DB_PASS:?DB_PASS must be set}
+      DB_SSL: ${DB_SSL:-off}
+      ENCRYPTION_MASTER_KEY: ${ENCRYPTION_MASTER_KEY:-}
+      DOCUMENTS_STORAGE_DIR: ${DOCUMENTS_STORAGE_DIR:-/app/documents}
+      TMP_DIR: ${TMP_DIR:-/tmp/easyecole}
+      ACADEMIC_YEAR: ${ACADEMIC_YEAR:-}
+    depends_on:
+      backend:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app
+      - data
+    volumes:
+      - ${DOCUMENTS_HOST_PATH:-/mnt/easyecole-documents}:/app/documents
+      - ${BACKUP_STORAGE_HOST_PATH:-/mnt/easyecole-storage}:/app/backups
+      - ${PUBLIC_HOST_PATH:-/mnt/easyecole-documents/uploads/_legacy/public}:/app/public
+      - ${UPLOADS_HOST_PATH:-/mnt/easyecole-documents/created/_legacy/pv}:/app/uploads
+      - ${STORAGE_HOST_PATH:-/mnt/easyecole-documents/created/_legacy/storage}:/app/storage
+      - ${CONFIG_HOST_PATH:-/opt/mon-app/config}:/app/config
+      - ${KEYS_HOST_PATH:-/opt/mon-app/keys}:/app/.keys
+
+  # ---------------------------------------------------------------------------
+  # 3) CACHE REDIS 7
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: easyecole-redis
+    restart: unless-stopped
+    mem_limit: 256m
+    pids_limit: 100
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - data
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # 4) FRONTEND nginx (build Angular + proxy /api)
+  # ---------------------------------------------------------------------------
+  frontend:
+    build: ./easy-ecole-web
+    container_name: easyecole-frontend
+    restart: unless-stopped
+    mem_limit: 256m
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    networks:
+      - app
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    pids_limit: 100
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # 5) SAUVEGARDE MySQL EXTERNE + ARCHIVE DES DOCUMENTS
+  # ---------------------------------------------------------------------------
+  # Dump quotidien de la base externe (DB_HOST) et archive des documents.
+  # Ecrit dans /mnt/easyecole-storage (mysql/ et files/).
+  # Test ponctuel : BACKUP_RUN_ONCE=true docker compose ... up mysql-backup
+  mysql-backup:
+    image: mysql:8.0
+    container_name: easyecole-mysql-backup
+    restart: unless-stopped
+    init: true
+    mem_limit: 512m
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      init-storage:
+        condition: service_completed_successfully
+    environment:
+      DB_HOST: ${DB_HOST:-192.168.100.20}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-easyecole}
+      DB_USER: ${DB_USER:-easyecole_app}
+      DB_PASS: ${DB_PASS:?DB_PASS must be set}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+      BACKUP_SET_GTID_PURGED: ${BACKUP_SET_GTID_PURGED:-ON}
+      BACKUP_RUN_ONCE: ${BACKUP_RUN_ONCE:-false}
+      TZ: ${TZ:-UTC}
+    volumes:
+      - ${DOCUMENTS_HOST_PATH:-/mnt/easyecole-documents}:/app/documents:ro
+      - ${BACKUP_STORAGE_HOST_PATH:-/mnt/easyecole-storage}:/app/backups
+      - ./scripts/mysql-backup-external.sh:/usr/local/bin/mysql-backup.sh:ro
+    entrypoint: ["/bin/sh", "/usr/local/bin/mysql-backup.sh"]
+    # Reseau `app` (non interne) : le conteneur doit joindre la VM DB externe.
+    networks:
+      - app
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+volumes:
+  redis_data:
+
+networks:
+  app:
+    driver: bridge
+  data:
+    driver: bridge
+    internal: true

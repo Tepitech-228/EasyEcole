@@ -156,6 +156,24 @@ async function ensureUserPermissionCompositeIndex(sequelize: Sequelize): Promise
     }
 }
 
+async function ensureRoleMenuGrantCompositeIndex(sequelize: Sequelize): Promise<void> {
+    try {
+        await sequelize.query(`
+            DELETE g1 FROM aut_role_menu_grants g1
+            INNER JOIN aut_role_menu_grants g2
+                ON g1.roleId = g2.roleId
+               AND g1.permissionKey = g2.permissionKey
+               AND g1.id > g2.id
+        `);
+        await sequelize.query(
+            'CREATE UNIQUE INDEX `uq_role_menu_grant` ON `aut_role_menu_grants` (`roleId`, `permissionKey`)'
+        );
+    } catch (err: any) {
+        const code = err?.parent?.code;
+        if (code !== 'ER_DUP_KEYNAME' && code !== 'ER_NO_SUCH_TABLE') throw err;
+    }
+}
+
 /** Nom d'index nominatif (± 64 caractères max côté MySQL). */
 export const buildIndexName = (table: string, column: string): string =>
     `uq_${table}_${column}`.slice(0, 64);
@@ -184,6 +202,7 @@ export async function ensureUniqueIndexes(sequelize: Sequelize): Promise<EnsureU
     }
 
     await ensureUserPermissionCompositeIndex(sequelize);
+    await ensureRoleMenuGrantCompositeIndex(sequelize);
 
     // 1. Tables existantes (une table absente est simplement ignorée :
     //    l'installation fraîche / le sync la créera avant un futur boot).

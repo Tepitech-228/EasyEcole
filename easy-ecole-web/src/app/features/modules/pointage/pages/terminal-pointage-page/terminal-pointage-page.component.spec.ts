@@ -454,6 +454,6 @@ describe('TerminalPointagePageComponent', () => {
     fixture.componentInstance.testVoiceAnnouncement();
 
     expect(speak).toHaveBeenCalledTimes(1);
-    expect((speak.calls.mostRecent().args[0] as SpeechSynthesisUtterance).text).toBe('Bonjour chef Mohamed.');
+    expect((speak.calls.mostRecent().args[0] as SpeechSynthesisUtterance).text).toBe('ESA, le label des diplômes de qualité');
   });
 });

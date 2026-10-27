@@ -14,6 +14,7 @@ import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { MoteurCalculService } from "../services/MoteurCalculService";
 import { GenerateurPVService } from "../services/GenerateurPVService";
 import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
+import { findDocumentByFileName } from "../../../core/services/DocumentStorageService";
 import { DecisionType } from "../enums/DecisionType";
 import { logger } from "../../../core/helpers/Logger";
 
@@ -372,13 +373,14 @@ export default class DeliberationController {
         return res.status(404).json({ message: 'Délibération non trouvée' });
       }
 
-      const filename = await GenerateurPVService.generer(deliberationId);
+      const saved = await GenerateurPVService.generer(deliberationId);
 
       const classe = deliberation.classe as any;
       // Archivage automatique dans la GED
       await ArchiveGedService.archiverDocumentDeliberation({
         titre: `PV Délibération - ${classe?.libelle || ''} - ${deliberation.periode} - ${deliberation.date?.toLocaleDateString('fr-FR') || ''}`,
-        fichier: filename,
+        fichier: saved.fileName,
+        pdfBuffer: fs.readFileSync(saved.absolutePath),
         anneeAcademiqueId: deliberation.anneeAcademiqueId,
         parcoursId: classe?.parcoursId || undefined,
         niveauEtudeId: classe?.niveauEtudeId || undefined,
@@ -387,7 +389,11 @@ export default class DeliberationController {
         uploaderId: (req as any).utilisateurId || 1
       });
 
-      return res.json({ message: 'PV généré et archivé avec succès', filename });
+      return res.json({
+        message: 'PV généré et archivé avec succès',
+        filename: saved.fileName,
+        relativePath: saved.relativePath,
+      });
     } catch (error) {
       logger.error('Erreur génération PV:', error);
       return res.status(500).json({ message: 'Erreur lors de la génération du PV' });
@@ -397,12 +403,20 @@ export default class DeliberationController {
   async telechargerPV(req: Request, res: Response) {
     try {
       const filename = path.basename(req.params.filename);
-      const pvDirectory = path.resolve(process.cwd(), 'uploads', 'pv');
-      const filePath = path.resolve(pvDirectory, filename);
-      if (filePath !== path.join(pvDirectory, filename) || filename !== req.params.filename) {
+      if (!filename || filename !== req.params.filename) {
         return res.status(400).json({ message: 'Nom de fichier invalide' });
       }
-      if (!fs.existsSync(filePath)) {
+
+      const legacyPath = path.resolve(process.cwd(), 'uploads', 'pv', filename);
+      const filePath = fs.existsSync(legacyPath)
+        ? legacyPath
+        : findDocumentByFileName(filename, {
+            origin: 'created',
+            category: 'pedagogique',
+            subcategory: 'pv',
+          });
+
+      if (!filePath) {
         return res.status(404).json({ message: 'Fichier non trouvé' });
       }
       res.download(filePath, filename);

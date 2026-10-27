@@ -471,6 +471,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                 roleRestricted: true,
                 items: [
                     { label: 'Profils d’accès', route: '/administration/roles', icon: 'manage_accounts', permissionKey: 'menu.administration.roles', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Pôles & menus', route: '/administration/poles-menus', icon: 'workspaces', permissionKey: 'menu.administration.poles-menus', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Permissions directes', route: '/parametres/permissions', icon: 'security', permissionKey: 'menu.administration.permissions', allowedRoles: [RolesUtilisateur.ADMIN], roleRestricted: true },
                 ]
             },

@@ -47,7 +47,7 @@ export default class EnseignantController {
         if ((req as any).utilisateurRole == RolesUtilisateur.ENSEIGNANT) {
             options = { where: { utilisateurId: (req as any).utilisateurId }, }
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
+        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
             let enseignantId = req.params.id
 
             if (enseignantId) {
@@ -82,8 +82,11 @@ export default class EnseignantController {
         if ((req as any).utilisateurRole == RolesUtilisateur.ENSEIGNANT) {
             options = { where: { utilisateurId: (req as any).utilisateurId } }
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
-            options = { where: { utilisateurId: req.body.utilisateurId } }
+        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
+            options = { where: { id: req.params.id || req.body.enseignantId || null } }
+            if (!req.params.id && !req.body.enseignantId) {
+                options = { where: { utilisateurId: req.body.utilisateurId } }
+            }
         }
 
         let enseignant: Enseignant | null = await Enseignant.findOne(options);

@@ -68,7 +68,7 @@ export default class PaiementInscriptionController {
                 ]
             }
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
+        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
             options = { where: { id: req.params.id } }
         }
 
@@ -88,7 +88,7 @@ export default class PaiementInscriptionController {
 
     static async createPaiementInscription(req: Request, res: Response): Promise<Response | null> {
         let options: FindOptions<InferAttributes<DemandeInscription>> = {}
-        if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
+        if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
             options = { where: { matricule: req.body.matriculeInscription } }
             req.body.type = TypesPaiement.ESPECE
         }
@@ -331,7 +331,7 @@ export default class PaiementInscriptionController {
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
             return res.status(403).json({ success: false })
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
+        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
             options = { where: { id: req.params.id } }
         }
         else if ((req as any).utilisateurRole == RolesUtilisateur.CAISSIER_BANQUE) {
@@ -369,7 +369,7 @@ export default class PaiementInscriptionController {
 
     static async deletePaiementInscription(req: Request, res: Response): Promise<Response | null> {
         let options: FindOptions<InferAttributes<PaiementInscription>> = {}
-        if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
+        if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
             options = { where: { id: req.params.id } }
         }
         else if ((req as any).utilisateurRole == RolesUtilisateur.CAISSIER_BANQUE) {

@@ -27,6 +27,7 @@ import { Classe } from "../models/Classe";
 import { SalleDeClasse } from "../models/SalleDeClasse";
 import { Bordereau } from "../models/Bordereau";
 import { GenerateurCarteService } from "../services/GenerateurCarteService";
+import { resolveStoredDocumentPath } from "../../../core/services/DocumentStorageService";
 import fs from "fs";
 import path from "path";
 
@@ -703,8 +704,11 @@ export default class DossierEtudiantController {
                 return
             }
 
-            const filePath = path.resolve(process.cwd(), 'public', dossier.cartePath)
-            if (!fs.existsSync(filePath)) {
+            const filePath = resolveStoredDocumentPath(dossier.cartePath, [
+                process.cwd(),
+                path.resolve(process.cwd(), 'public'),
+            ])
+            if (!filePath) {
                 res.status(404).json({ success: false, message: "Fichier carte introuvable" })
                 return
             }

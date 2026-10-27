@@ -1,131 +1,360 @@
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-  <div class="mb-8">
-    <app-header-title title="Historique des pointages" subtitle="Consultez l'historique des pointages"></app-header-title>
+<div class="historique-page">
+
+  <!-- ================================================================ En-tête -->
+  <header class="page-head">
+    <div class="page-head__titles">
+      <span class="page-head__eyebrow">Pointage</span>
+      <h1 class="page-head__title">Historique des pointages</h1>
+      <p class="page-head__subtitle">
+        Suivez les arrivées, les départs et les durées de présence sur la période de votre choix.
+      </p>
+    </div>
+    <div class="page-head__badges">
+      <span class="page-badge">
+        <span class="material-symbols-outlined" aria-hidden="true">group</span>
+        {{ nbPersonnes }} personne(s)
+      </span>
+      <span class="page-badge page-badge--accent">
+        <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+        {{ dureeTotaleLabel }} cumulées
+      </span>
+    </div>
+  </header>
+
+  <!-- =============================================================== Squelette -->
+  <div *ngIf="loading" class="skeleton" aria-hidden="true">
+    <div class="skeleton__stats">
+      <span *ngFor="let carte of [1, 2, 3, 4, 5]"></span>
+    </div>
+    <div class="skeleton__toolbar"></div>
+    <div class="skeleton__table">
+      <span *ngFor="let ligne of [1, 2, 3, 4, 5, 6, 7]"></span>
+    </div>
   </div>
 
-  <div *ngIf="loading" class="text-center py-8 text-gray-500">Chargement...</div>
+  <!-- ================================================================== Erreur -->
+  <div *ngIf="!loading && loadError" class="notice notice--error" role="alert">
+    <span class="material-symbols-outlined" aria-hidden="true">error</span>
+    <p>{{ loadError }}</p>
+    <button type="button" class="btn btn--ghost" (click)="loadPointages()">Réessayer</button>
+  </div>
 
-  <ng-container *ngIf="!loading">
-    <!-- ===== STATISTIQUES ===== -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 text-center">
-        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Total</p>
-        <p class="text-2xl font-bold text-gray-900">{{ nbTotal }}</p>
-        <p class="text-xs text-gray-400">pointage(s)</p>
-      </div>
-      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 text-center">
-        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Aujourd'hui</p>
-        <p class="text-2xl font-bold text-indigo-600">{{ nbToday }}</p>
-        <p class="text-xs text-gray-400">pointage(s)</p>
-      </div>
-      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 text-center">
-        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Journées complètes</p>
-        <p class="text-2xl font-bold text-green-600">{{ nbComplets }}</p>
-        <p class="text-xs text-gray-400">arrivée + départ</p>
-      </div>
-      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 text-center">
-        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Sans départ</p>
-        <p class="text-2xl font-bold text-orange-500">{{ nbEnCours }}</p>
-        <p class="text-xs text-gray-400">en cours</p>
-      </div>
-    </div>
+  <ng-container *ngIf="!loading && !loadError">
 
-    <!-- ===== FILTRES ===== -->
-    <div class="bg-white border border-gray-200 rounded-2xl p-4 mb-6">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <div class="md:col-span-2">
-          <label class="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wider">Rechercher une personne</label>
-          <input [(ngModel)]="searchTerm" type="text" placeholder="Nom, prénoms ou identifiant..." autocomplete="off"
-            class="block w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100">
+    <!-- =============================================================== Période -->
+    <section class="toolbar" aria-label="Période et export">
+      <div class="toolbar__row">
+        <div class="periods" role="group" aria-label="Raccourcis de période">
+          <button
+            *ngFor="let choix of periodes"
+            type="button"
+            class="period-chip"
+            [class.period-chip--active]="periode === choix.key"
+            [attr.aria-pressed]="periode === choix.key"
+            (click)="appliquerPeriode(choix.key)">
+            {{ choix.label }}
+          </button>
         </div>
+
+        <div class="exports">
+          <button
+            type="button"
+            class="export-btn export-btn--excel"
+            [disabled]="!exportDisponible || !!exporting"
+            (click)="exporter('xlsx')"
+            title="Exporter la période filtrée au format Excel">
+            <span class="material-symbols-outlined" aria-hidden="true">table_view</span>
+            <span>{{ exporting === 'xlsx' ? 'Génération…' : 'Excel' }}</span>
+          </button>
+          <button
+            type="button"
+            class="export-btn export-btn--word"
+            [disabled]="!exportDisponible || !!exporting"
+            (click)="exporter('docx')"
+            title="Exporter la période filtrée au format Word">
+            <span class="material-symbols-outlined" aria-hidden="true">description</span>
+            <span>{{ exporting === 'docx' ? 'Génération…' : 'Word' }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="toolbar__row toolbar__row--dates">
+        <div class="date-range">
+          <label class="date-field">
+            <span class="date-field__label">Du</span>
+            <input
+              type="date"
+              [(ngModel)]="dateDebut"
+              (ngModelChange)="onDateChange()"
+              [max]="dateFin || ''"
+              aria-label="Date de début">
+          </label>
+          <span class="date-range__separator" aria-hidden="true">→</span>
+          <label class="date-field">
+            <span class="date-field__label">Au</span>
+            <input
+              type="date"
+              [(ngModel)]="dateFin"
+              (ngModelChange)="onDateChange()"
+              [min]="dateDebut || ''"
+              aria-label="Date de fin">
+          </label>
+        </div>
+
+        <p class="toolbar__hint">
+          Période analysée : <strong>{{ periodeLabel }}</strong>
+          <span class="toolbar__dot" aria-hidden="true">·</span>
+          {{ nbTotal }} pointage(s)
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================================================ Statistiques -->
+    <section class="stats" aria-label="Indicateurs de la période">
+      <article class="stat stat--indigo">
+        <span class="stat__icon material-symbols-outlined" aria-hidden="true">fingerprint</span>
+        <div class="stat__body">
+          <p class="stat__label">Pointages</p>
+          <p class="stat__value">{{ nbTotal }}</p>
+          <p class="stat__meta">sur la période</p>
+        </div>
+      </article>
+
+      <article class="stat stat--teal">
+        <span class="stat__icon material-symbols-outlined" aria-hidden="true">group</span>
+        <div class="stat__body">
+          <p class="stat__label">Personnes</p>
+          <p class="stat__value">{{ nbPersonnes }}</p>
+          <p class="stat__meta">distinctes</p>
+        </div>
+      </article>
+
+      <article class="stat stat--green">
+        <span class="stat__icon material-symbols-outlined" aria-hidden="true">task_alt</span>
+        <div class="stat__body">
+          <p class="stat__label">Journées complètes</p>
+          <p class="stat__value">{{ nbComplets }}</p>
+          <p class="stat__meta">{{ tauxCompletude }} % de complétude</p>
+        </div>
+      </article>
+
+      <article class="stat stat--amber">
+        <span class="stat__icon material-symbols-outlined" aria-hidden="true">pending</span>
+        <div class="stat__body">
+          <p class="stat__label">En cours</p>
+          <p class="stat__value">{{ nbEnCours }}</p>
+          <p class="stat__meta">sans départ</p>
+        </div>
+      </article>
+
+      <article class="stat stat--navy">
+        <span class="stat__icon material-symbols-outlined" aria-hidden="true">avg_pace</span>
+        <div class="stat__body">
+          <p class="stat__label">Durée cumulée</p>
+          <p class="stat__value">{{ dureeTotaleLabel }}</p>
+          <p class="stat__meta">de présence</p>
+        </div>
+      </article>
+    </section>
+
+    <!-- ================================================================ Filtres -->
+    <section class="filters" aria-label="Filtres de recherche">
+      <div class="search">
+        <span class="material-symbols-outlined search__icon" aria-hidden="true">search</span>
+        <input
+          type="text"
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="onFilterChange()"
+          placeholder="Rechercher un nom, un prénom ou un identifiant…"
+          autocomplete="off"
+          aria-label="Rechercher une personne">
+        <button
+          *ngIf="searchTerm"
+          type="button"
+          class="search__clear"
+          (click)="searchTerm = ''; onFilterChange()"
+          aria-label="Effacer la recherche">
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+      </div>
+
+      <select
+        class="filter-select"
+        [(ngModel)]="roleFilter"
+        (ngModelChange)="onFilterChange()"
+        aria-label="Filtrer par rôle">
+        <option value="">Tous les rôles</option>
+        <option *ngFor="let role of rolesList" [value]="role.value">{{ role.label }}</option>
+      </select>
+
+      <select
+        class="filter-select"
+        [(ngModel)]="statutFilter"
+        (ngModelChange)="onFilterChange()"
+        aria-label="Filtrer par statut">
+        <option value="">Tous les statuts</option>
+        <option value="complet">Journées complètes</option>
+        <option value="en_cours">En cours</option>
+      </select>
+
+      <select
+        class="filter-select"
+        [(ngModel)]="sortBy"
+        (ngModelChange)="onFilterChange()"
+        aria-label="Trier les pointages">
+        <option value="date_desc">Plus récents d'abord</option>
+        <option value="date_asc">Plus anciens d'abord</option>
+        <option value="nom_asc">Nom (A → Z)</option>
+        <option value="duree_desc">Durée décroissante</option>
+      </select>
+
+      <button
+        *ngIf="hasFiltres"
+        type="button"
+        class="reset-btn"
+        (click)="resetFiltres()">
+        <span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>
+        Réinitialiser
+      </button>
+    </section>
+
+    <!-- ================================================================= Tableau -->
+    <section class="table-card">
+
+      <header class="table-card__head">
         <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wider">Rôle</label>
-          <select [(ngModel)]="roleFilter"
-            class="block w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100">
-            <option value="">Tous les rôles</option>
-            <option *ngFor="let r of rolesList" [value]="r.value">{{ r.label }}</option>
+          <h2 class="table-card__title">Journal des pointages</h2>
+          <p class="table-card__subtitle">
+            {{ nbTotal }} résultat(s) affiché(s) sur {{ pointages.length }} pointage(s) au total
+          </p>
+        </div>
+        <label class="page-size">
+          <span>Lignes</span>
+          <select [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()" aria-label="Nombre de lignes par page">
+            <option [ngValue]="10">10</option>
+            <option [ngValue]="15">15</option>
+            <option [ngValue]="25">25</option>
+            <option [ngValue]="50">50</option>
           </select>
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wider">Date</label>
-          <div class="flex gap-2">
-            <input [(ngModel)]="dateFilter" type="date"
-              class="block w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100">
-            <button *ngIf="hasFiltres" (click)="effacerFiltres()" title="Effacer les filtres"
-              class="shrink-0 inline-flex items-center justify-center w-10 rounded-xl bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition">
-              <span class="material-symbols-outlined text-lg">close</span>
-            </button>
-          </div>
-        </div>
+        </label>
+      </header>
+
+      <!-- État vide -->
+      <div *ngIf="nbTotal === 0" class="empty-state">
+        <span class="empty-state__icon material-symbols-outlined" aria-hidden="true">event_busy</span>
+        <h3 class="empty-state__title">Aucun pointage sur cette période</h3>
+        <p class="empty-state__text">
+          Ajustez les dates ou les filtres pour retrouver des pointages.
+          Vous pouvez aussi revenir aux 30 derniers jours.
+        </p>
+        <button type="button" class="btn btn--primary" (click)="resetFiltres()">
+          <span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>
+          Réinitialiser les filtres
+        </button>
       </div>
-      <p class="text-xs text-gray-400 mt-3">{{ filteredPointages.length }} résultat(s) sur {{ nbTotal }}</p>
-    </div>
 
-    <!-- ===== TABLEAU ===== -->
-    <div *ngIf="filteredPointages.length == 0" class="text-center py-8 text-gray-500 bg-white border border-gray-200 rounded-2xl">Aucun pointage trouvé</div>
-
-    <div *ngIf="filteredPointages.length > 0" class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="min-w-full">
-          <thead class="bg-gray-50 border-b border-gray-200">
+      <!-- Tableau -->
+      <div *ngIf="nbTotal > 0" class="table-wrap">
+        <table class="pointage-table">
+          <thead>
             <tr>
-              <th scope="col" class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 text-left">#</th>
-              <th scope="col" class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 text-left">Personne</th>
-              <th scope="col" class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 text-left">Rôle</th>
-              <th scope="col" class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 text-left">Date</th>
-              <th scope="col" class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 text-left">Arrivée</th>
-              <th scope="col" class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 text-left">Départ</th>
-              <th scope="col" class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 text-left">Scans étudiants</th>
-              <th scope="col" class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 text-left">Durée</th>
-              <th scope="col" class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 text-left">Statut</th>
+              <th scope="col">Personne</th>
+              <th scope="col">Rôle</th>
+              <th scope="col">Date</th>
+              <th scope="col">Arrivée</th>
+              <th scope="col">Départ</th>
+              <th scope="col">Durée</th>
+              <th scope="col">Passages</th>
+              <th scope="col">Statut</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
-            <tr *ngFor="let pointage of filteredPointages; index as index" class="hover:bg-gray-50 transition">
-              <td class="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">{{ index + 1 }}</td>
-              <td class="px-4 py-3 whitespace-nowrap">
-                <div class="flex items-center gap-3">
-                  <div class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold shrink-0">
+          <tbody>
+            <tr *ngFor="let pointage of pagedPointages; trackBy: trackByPointage">
+              <td>
+                <div class="person">
+                  <span class="person__avatar" [ngClass]="'person__avatar--' + roleTone(pointage.utilisateur?.role)">
                     {{ getInitiales(pointage) }}
-                  </div>
-                  <div>
-                    <p class="text-sm font-semibold text-gray-900">{{ getNom(pointage) }}</p>
-                    <p *ngIf="pointage.utilisateur?.identifiant" class="text-xs text-gray-400 font-mono">{{ pointage.utilisateur?.identifiant }}</p>
-                  </div>
-                </div>
-              </td>
-              <td class="px-4 py-3 whitespace-nowrap">
-                <app-custom-badge color="blue" [text]="getRoleLabel(pointage.utilisateur?.role)"></app-custom-badge>
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{{ pointage.date | date: 'dd/MM/YYYY' }}</td>
-              <td class="px-4 py-3 whitespace-nowrap">
-                <app-custom-badge *ngIf="pointage.heureArrivee" color="green" [text]="pointage.heureArrivee"></app-custom-badge>
-                <span *ngIf="!pointage.heureArrivee" class="text-sm text-gray-300">---</span>
-              </td>
-              <td class="px-4 py-3 whitespace-nowrap">
-                <app-custom-badge *ngIf="pointage.heureDepart" color="orange" [text]="pointage.heureDepart"></app-custom-badge>
-                <span *ngIf="!pointage.heureDepart" class="text-sm text-gray-300">---</span>
-              </td>
-              <td class="px-4 py-3 text-sm whitespace-nowrap">
-                <div *ngIf="pointage.scans?.length; else noStudentScans" class="flex flex-col gap-1">
-                  <span *ngFor="let scan of pointage.scans; index as scanIndex" class="text-gray-600">
-                    {{ scan.heure }}
-                    <span class="text-xs text-gray-400">
-                      {{ scanIndex === 0 ? 'Entrée' : scanIndex === (pointage.scans?.length || 0) - 1 ? 'Sortie retenue' : 'Intermédiaire' }}
+                  </span>
+                  <span class="person__text">
+                    <span class="person__name">{{ getNom(pointage) }}</span>
+                    <span class="person__id" *ngIf="pointage.utilisateur?.identifiant">
+                      {{ pointage.utilisateur?.identifiant }}
                     </span>
                   </span>
                 </div>
-                <ng-template #noStudentScans><span class="text-gray-300">—</span></ng-template>
               </td>
-              <td class="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap">{{ getDuree(pointage) }}</td>
-              <td class="px-4 py-3 whitespace-nowrap">
-                <app-custom-badge *ngIf="estComplet(pointage)" color="green" text="Complet"></app-custom-badge>
-                <app-custom-badge *ngIf="!estComplet(pointage)" color="orange" text="En cours"></app-custom-badge>
+              <td>
+                <span class="role-badge" [ngClass]="'role-badge--' + roleTone(pointage.utilisateur?.role)">
+                  {{ getRoleLabel(pointage.utilisateur?.role) }}
+                </span>
+              </td>
+              <td>
+                <span class="date-cell">{{ pointage.date | date: 'dd/MM/yyyy' }}</span>
+                <span class="date-cell__day">{{ getJour(pointage.date) }}</span>
+              </td>
+              <td>
+                <span class="time-chip time-chip--in" *ngIf="pointage.heureArrivee">
+                  {{ getHeure(pointage.heureArrivee) }}
+                </span>
+                <span class="muted" *ngIf="!pointage.heureArrivee">—</span>
+              </td>
+              <td>
+                <span class="time-chip time-chip--out" *ngIf="pointage.heureDepart">
+                  {{ getHeure(pointage.heureDepart) }}
+                </span>
+                <span class="muted" *ngIf="!pointage.heureDepart">—</span>
+              </td>
+              <td>
+                <span class="duration" [class.duration--empty]="!estComplet(pointage)">{{ getDuree(pointage) }}</span>
+              </td>
+              <td>
+                <span class="scans" *ngIf="getPassages(pointage).length > 0; else aucunScan" [title]="getPassagesTooltip(pointage)">
+                  <span class="scans__pill" *ngFor="let heure of getPassages(pointage) | slice:0:3">{{ heure }}</span>
+                  <span class="scans__more" *ngIf="getPassages(pointage).length > 3">
+                    +{{ getPassages(pointage).length - 3 }}
+                  </span>
+                </span>
+                <ng-template #aucunScan><span class="muted">—</span></ng-template>
+              </td>
+              <td>
+                <span class="status" [ngClass]="estComplet(pointage) ? 'status--done' : 'status--live'">
+                  <span class="status__dot" aria-hidden="true"></span>
+                  {{ estComplet(pointage) ? 'Complet' : 'En cours' }}
+                </span>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-    </div>
+
+      <!-- Pagination -->
+      <footer class="table-card__foot" *ngIf="nbTotal > 0">
+        <p class="table-card__count">
+          Affichage de <strong>{{ debutAffichage }}–{{ finAffichage }}</strong> sur
+          <strong>{{ sortedPointages.length }}</strong>
+        </p>
+        <div class="pager">
+          <button
+            type="button"
+            class="pager__btn"
+            (click)="changerPage(pageCourante - 1)"
+            [disabled]="pageCourante <= 1"
+            aria-label="Page précédente">
+            <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+          </button>
+          <span class="pager__label">Page {{ pageCourante }} / {{ totalPages }}</span>
+          <button
+            type="button"
+            class="pager__btn"
+            (click)="changerPage(pageCourante + 1)"
+            [disabled]="pageCourante >= totalPages"
+            aria-label="Page suivante">
+            <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+          </button>
+        </div>
+      </footer>
+
+    </section>
+
   </ng-container>
 </div>

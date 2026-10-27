@@ -15,6 +15,8 @@ import { DemandeInscription } from "../models/DemandeInscription";
 import { SiteUtilisateur } from "../../auth/models/SiteUtilisateur";
 import { getSurveillantSiteId } from "../../../core/helpers/SurveillantSiteScope";
 import QRCode from 'qrcode';
+import ExcelJS from "exceljs";
+import { AlignmentType, Document, PageOrientation, Packer, Paragraph, Table, TableCell, TableLayoutType, TableRow, TextRun, WidthType } from "docx";
 
 const ROLES_POINTAGE = [
   RolesUtilisateur.APPRENANT,
@@ -233,6 +235,431 @@ export default class PointageController {
             console.error('Erreur', error);
             return res.status(500).json({ success: false, message: 'Erreur interne' });
         }
+    }
+
+    // ========================================================================
+    //  EXPORT DE L'HISTORIQUE (EXCEL / WORD)
+    // ========================================================================
+
+    private static readonly ROLE_LABELS_EXPORT: { [key: string]: string } = {
+        [RolesUtilisateur.ADMIN]: 'Administrateur',
+        [RolesUtilisateur.APPRENANT]: 'Apprenant',
+        [RolesUtilisateur.INSTITUTION]: 'Institution',
+        [RolesUtilisateur.ENSEIGNANT]: 'Enseignant',
+        [RolesUtilisateur.CAISSIER_BANQUE]: 'Caissier banque',
+        [RolesUtilisateur.RESSOURCES_HUMAINES]: 'Ressources humaines',
+        [RolesUtilisateur.CABINET_COMPTABLE]: 'Cabinet comptable',
+        [RolesUtilisateur.COMITE_ORIENTATION]: "Comité d'orientation",
+        [RolesUtilisateur.PERSONNEL_ADMINISTRATIF]: 'Personnel administratif',
+        [RolesUtilisateur.ESA_COMPTA]: 'ESA Compta',
+        [RolesUtilisateur.PARENT]: 'Parent',
+        [RolesUtilisateur.SECRETAIRE]: 'Secrétaire',
+        [RolesUtilisateur.SURVEILLANT]: 'Surveillant',
+        [RolesUtilisateur.SUPERVISEUR_GENERAL]: 'Superviseur général',
+    };
+
+    private static normaliserTexte(valeur: unknown): string {
+        return String(valeur ?? '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .trim();
+    }
+
+    private static heureCourte(valeur: any): string {
+        if (valeur === null || valeur === undefined || valeur === '') return '';
+        if (valeur instanceof Date) {
+            const heures = String(valeur.getHours()).padStart(2, '0');
+            const minutes = String(valeur.getMinutes()).padStart(2, '0');
+            return `${heures}:${minutes}`;
+        }
+        const correspondance = String(valeur).match(/(\d{1,2}):(\d{2})/);
+        if (!correspondance) return '';
+        return `${correspondance[1].padStart(2, '0')}:${correspondance[2]}`;
+    }
+
+    private static minutesDepuisHeure(valeur: any): number | null {
+        const heure = PointageController.heureCourte(valeur);
+        if (!heure) return null;
+        const [heures, minutes] = heure.split(':').map(Number);
+        return heures * 60 + minutes;
+    }
+
+    private static dureeMinutes(arrivee: any, depart: any): number | null {
+        const debut = PointageController.minutesDepuisHeure(arrivee);
+        const fin = PointageController.minutesDepuisHeure(depart);
+        if (debut === null || fin === null) return null;
+        return Math.max(0, fin - debut);
+    }
+
+    private static formatDuree(minutes: number | null): string {
+        if (minutes === null) return '—';
+        const heures = Math.floor(minutes / 60);
+        const reste = minutes % 60;
+        if (heures === 0) return `${reste} min`;
+        return `${heures}h${reste > 0 ? String(reste).padStart(2, '0') : ''}`;
+    }
+
+    private static formatDateFr(valeur: any): string {
+        const iso = String(valeur ?? '').slice(0, 10);
+        const correspondance = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!correspondance) return iso || '—';
+        return `${correspondance[3]}/${correspondance[2]}/${correspondance[1]}`;
+    }
+
+    private static formatJourFr(valeur: any): string {
+        const iso = String(valeur ?? '').slice(0, 10);
+        const correspondance = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!correspondance) return '';
+        const jours = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+        const date = new Date(Date.UTC(Number(correspondance[1]), Number(correspondance[2]) - 1, Number(correspondance[3])));
+        return jours[date.getUTCDay()] || '';
+    }
+
+    private static formatHorodatage(date: Date): string {
+        const pad = (valeur: number) => String(valeur).padStart(2, '0');
+        return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} à ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+
+    /**
+     * Exporte l'historique des pointages filtré (période, rôle, recherche, statut).
+     * GET /inscription/pointages/export?format=xlsx|docx&debut=YYYY-MM-DD&fin=YYYY-MM-DD
+     */
+    static async exportPointages(req: Request, res: Response): Promise<Response> {
+        const format = typeof req.query.format === 'string' ? req.query.format.toLowerCase() : 'xlsx';
+        if (format !== 'xlsx' && format !== 'docx') {
+            return res.status(400).json({ success: false, message: "Format d'export non pris en charge (xlsx ou docx)" });
+        }
+
+        const dateValide = (valeur: string) => /^\d{4}-\d{2}-\d{2}$/.test(valeur);
+        if ((req.query.debut !== undefined && (typeof req.query.debut !== 'string' || !dateValide(req.query.debut))) ||
+            (req.query.fin !== undefined && (typeof req.query.fin !== 'string' || !dateValide(req.query.fin)))) {
+            return res.status(400).json({ success: false, message: 'Dates invalides (format attendu : YYYY-MM-DD)' });
+        }
+        const debut = typeof req.query.debut === 'string' ? req.query.debut : '';
+        const fin = typeof req.query.fin === 'string' ? req.query.fin : '';
+        if (debut && fin && debut > fin) {
+            return res.status(400).json({ success: false, message: 'La date de début doit précéder la date de fin' });
+        }
+
+        const recherche = typeof req.query.search === 'string' ? PointageController.normaliserTexte(req.query.search) : '';
+        const roleFiltre = typeof req.query.role === 'string' ? req.query.role : '';
+        const statutFiltre = typeof req.query.statut === 'string' ? req.query.statut : '';
+
+        const where: any = {};
+        if (debut || fin) {
+            where.date = {};
+            if (debut) where.date[Op.gte] = debut;
+            if (fin) where.date[Op.lte] = fin;
+        }
+
+        const role = (req as any).utilisateurRole;
+        if (role == RolesUtilisateur.APPRENANT || role == RolesUtilisateur.ENSEIGNANT) {
+            where.utilisateurId = (req as any).utilisateurId;
+        } else if (role === RolesUtilisateur.SURVEILLANT) {
+            const etablissementId = await getSurveillantSiteId(req);
+            if (!etablissementId) {
+                return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
+            }
+            where.utilisateurId = { [Op.in]: await PointageController.getUtilisateurIdsDuSite(etablissementId) };
+        }
+
+        try {
+            const pointages = await Pointage.findAll({
+                where,
+                include: [
+                    { association: Pointage.associations.utilisateur, attributes: ['id', 'nom', 'prenoms', 'identifiant', 'role'] },
+                    Pointage.associations.scans,
+                ],
+                order: [
+                    ['date', 'DESC'],
+                    ['heureArrivee', 'DESC'],
+                    [{ model: PointageScan, as: 'scans' }, 'heure', 'ASC'],
+                    [{ model: PointageScan, as: 'scans' }, 'id', 'ASC'],
+                ],
+            });
+
+            const pointagesFiltres = (pointages as any[]).filter(pointage => {
+                const utilisateur = pointage.utilisateur || {};
+                if (roleFiltre && utilisateur.role !== roleFiltre) return false;
+                if (recherche) {
+                    const contenu = PointageController.normaliserTexte(
+                        `${utilisateur.nom || ''} ${utilisateur.prenoms || ''} ${utilisateur.identifiant || ''}`
+                    );
+                    if (!contenu.includes(recherche)) return false;
+                }
+                const complet = !!pointage.heureArrivee && !!pointage.heureDepart;
+                if (statutFiltre === 'complet' && !complet) return false;
+                if (statutFiltre === 'en_cours' && complet) return false;
+                return true;
+            });
+
+            if (pointagesFiltres.length === 0) {
+                return res.status(404).json({ success: false, message: 'Aucun pointage à exporter pour ces critères' });
+            }
+
+            const lignes = pointagesFiltres.map((pointage, index) => {
+                const minutes = PointageController.dureeMinutes(pointage.heureArrivee, pointage.heureDepart);
+                const passages = (pointage.scans || [])
+                    .map((scan: any) => PointageController.heureCourte(scan.heure))
+                    .filter((heure: string) => !!heure);
+                return {
+                    numero: index + 1,
+                    date: PointageController.formatDateFr(pointage.date),
+                    jour: PointageController.formatJourFr(pointage.date),
+                    nom: pointage.utilisateur?.nom || '',
+                    prenoms: pointage.utilisateur?.prenoms || '',
+                    identifiant: pointage.utilisateur?.identifiant || '',
+                    role: PointageController.ROLE_LABELS_EXPORT[pointage.utilisateur?.role] || pointage.utilisateur?.role || '—',
+                    arrivee: PointageController.heureCourte(pointage.heureArrivee) || '—',
+                    depart: PointageController.heureCourte(pointage.heureDepart) || '—',
+                    duree: PointageController.formatDuree(minutes),
+                    dureeMinutes: minutes,
+                    passages: passages.join(' · '),
+                    statut: minutes !== null ? 'Complet' : 'En cours',
+                };
+            });
+
+            const personnes = new Set(pointagesFiltres.map(pointage => Number(pointage.utilisateurId))).size;
+            const totalMinutes = lignes.reduce((somme, ligne) => somme + (ligne.dureeMinutes || 0), 0);
+            const complets = lignes.filter(ligne => ligne.dureeMinutes !== null).length;
+            const taux = Math.round((complets / lignes.length) * 100);
+            const periodeLabel = debut || fin
+                ? `Période : ${debut ? PointageController.formatDateFr(debut) : 'début'} → ${fin ? PointageController.formatDateFr(fin) : "aujourd'hui"}`
+                : 'Période : toutes les données disponibles';
+            const resumeLabel = `${lignes.length} pointage(s) · ${personnes} personne(s) · ${PointageController.formatDuree(totalMinutes)} cumulées · ${taux} % de journées complètes`;
+            const nomFichier = `pointages_${debut || 'debut'}_${fin || 'fin'}`;
+
+            const meta = { periodeLabel, resumeLabel, nomFichier };
+            return format === 'xlsx'
+                ? PointageController.envoyerExportExcel(res, lignes, meta)
+                : PointageController.envoyerExportWord(res, lignes, meta);
+        } catch (error) {
+            console.error('Erreur export pointages', error);
+            return res.status(500).json({ success: false, message: "Erreur lors de la génération de l'export" });
+        }
+    }
+
+    private static async envoyerExportExcel(
+        res: Response,
+        lignes: any[],
+        meta: { periodeLabel: string; resumeLabel: string; nomFichier: string }
+    ): Promise<Response> {
+        const workbook = new ExcelJS.Workbook();
+        workbook.creator = 'EasyEcole';
+        workbook.created = new Date();
+
+        const feuille = workbook.addWorksheet('Pointages', {
+            views: [{ state: 'frozen', ySplit: 5 }],
+            pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
+        });
+        feuille.columns = [
+            { width: 6 }, { width: 12 }, { width: 12 }, { width: 22 }, { width: 24 },
+            { width: 16 }, { width: 22 }, { width: 10 }, { width: 10 }, { width: 11 }, { width: 20 }, { width: 11 },
+        ];
+
+        const bordure: Partial<ExcelJS.Borders> = {
+            top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+        };
+
+        feuille.mergeCells('A1:L1');
+        const titre = feuille.getCell('A1');
+        titre.value = 'Historique des pointages';
+        titre.font = { name: 'Calibri', size: 16, bold: true, color: { argb: 'FF1F3C75' } };
+        titre.alignment = { vertical: 'middle', horizontal: 'left' };
+        feuille.getRow(1).height = 30;
+
+        feuille.mergeCells('A2:L2');
+        const sousTitre = feuille.getCell('A2');
+        sousTitre.value = meta.periodeLabel;
+        sousTitre.font = { name: 'Calibri', size: 10, color: { argb: 'FF64748B' } };
+
+        feuille.mergeCells('A3:L3');
+        const resume = feuille.getCell('A3');
+        resume.value = meta.resumeLabel;
+        resume.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF334155' } };
+
+        const entetes = ['N°', 'Date', 'Jour', 'Nom', 'Prénoms', 'Identifiant', 'Rôle', 'Arrivée', 'Départ', 'Durée', 'Passages', 'Statut'];
+        const ligneEntete = 5;
+        entetes.forEach((entete, indexColonne) => {
+            const cellule = feuille.getCell(ligneEntete, indexColonne + 1);
+            cellule.value = entete;
+            cellule.font = { name: 'Calibri', size: 9, bold: true, color: { argb: 'FFFFFFFF' } };
+            cellule.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F3C75' } };
+            cellule.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+            cellule.border = bordure;
+        });
+        feuille.getRow(ligneEntete).height = 24;
+
+        lignes.forEach((ligne, indexLigne) => {
+            const numeroLigne = ligneEntete + 1 + indexLigne;
+            const valeurs = [
+                ligne.numero, ligne.date, ligne.jour, ligne.nom, ligne.prenoms, ligne.identifiant,
+                ligne.role, ligne.arrivee, ligne.depart, ligne.duree, ligne.passages || '—', ligne.statut,
+            ];
+            valeurs.forEach((valeur, indexColonne) => {
+                const cellule = feuille.getCell(numeroLigne, indexColonne + 1);
+                cellule.value = valeur;
+                cellule.font = {
+                    name: 'Calibri',
+                    size: 9,
+                    bold: indexColonne === 9,
+                    color: { argb: indexColonne === 11 && ligne.statut === 'En cours' ? 'FFB45309' : 'FF334155' },
+                };
+                cellule.alignment = {
+                    vertical: 'middle',
+                    horizontal: [3, 4, 6, 10].includes(indexColonne) ? 'left' : 'center',
+                    wrapText: true,
+                };
+                cellule.border = bordure;
+                if (indexLigne % 2 === 1) {
+                    cellule.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+                }
+            });
+            feuille.getRow(numeroLigne).height = 18;
+        });
+
+        const ligneTotal = ligneEntete + lignes.length + 1;
+        feuille.mergeCells(`A${ligneTotal}:L${ligneTotal}`);
+        const total = feuille.getCell(`A${ligneTotal}`);
+        total.value = `TOTAL — ${meta.resumeLabel}`;
+        total.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF1F3C75' } };
+        total.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEEF2FF' } };
+        total.alignment = { vertical: 'middle', horizontal: 'left' };
+        total.border = bordure;
+        feuille.getRow(ligneTotal).height = 22;
+
+        feuille.autoFilter = {
+            from: { row: ligneEntete, column: 1 },
+            to: { row: ligneEntete + lignes.length, column: 12 },
+        };
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${meta.nomFichier}.xlsx"`);
+        const buffer = await workbook.xlsx.writeBuffer();
+        return res.status(200).send(Buffer.from(buffer));
+    }
+
+    private static async envoyerExportWord(
+        res: Response,
+        lignes: any[],
+        meta: { periodeLabel: string; resumeLabel: string; nomFichier: string }
+    ): Promise<Response> {
+        const entetes = ['Date', 'Nom & prénoms', 'Identifiant', 'Rôle', 'Arrivée', 'Départ', 'Durée', 'Passages', 'Statut'];
+        const largeurs = [9, 21, 13, 16, 8, 8, 8, 9, 8];
+        const bordure = {
+            top: { style: 'single' as const, size: 4, color: 'E2E8F0' },
+            bottom: { style: 'single' as const, size: 4, color: 'E2E8F0' },
+            left: { style: 'single' as const, size: 4, color: 'E2E8F0' },
+            right: { style: 'single' as const, size: 4, color: 'E2E8F0' },
+        };
+
+        const creerCellule = (valeur: string, indexColonne: number, ombre: boolean) => new TableCell({
+            width: { size: largeurs[indexColonne], type: WidthType.PERCENTAGE },
+            shading: ombre ? { fill: 'F8FAFC' } : undefined,
+            margins: { top: 40, bottom: 40, left: 70, right: 70 },
+            borders: bordure,
+            children: [new Paragraph({
+                alignment: [1, 2, 3, 7].includes(indexColonne) ? AlignmentType.LEFT : AlignmentType.CENTER,
+                children: [new TextRun({
+                    text: valeur,
+                    size: 16,
+                    font: 'Calibri',
+                    color: indexColonne === 4 && valeur !== '—'
+                        ? '047857'
+                        : indexColonne === 8 && valeur === 'En cours'
+                            ? 'B45309'
+                            : '334155',
+                })],
+            })],
+        });
+
+        const ligneEntete = new TableRow({
+            tableHeader: true,
+            children: entetes.map((entete, indexColonne) => new TableCell({
+                width: { size: largeurs[indexColonne], type: WidthType.PERCENTAGE },
+                shading: { fill: '1F3C75' },
+                margins: { top: 50, bottom: 50, left: 70, right: 70 },
+                borders: bordure,
+                children: [new Paragraph({
+                    alignment: AlignmentType.CENTER,
+                    children: [new TextRun({ text: entete, bold: true, size: 16, font: 'Calibri', color: 'FFFFFF' })],
+                })],
+            })),
+        });
+
+        const lignesTable = lignes.map((ligne, indexLigne) => {
+            const valeurs = [
+                ligne.date,
+                `${ligne.nom} ${ligne.prenoms}`.trim() || ligne.identifiant || '—',
+                ligne.identifiant || '—',
+                ligne.role,
+                ligne.arrivee,
+                ligne.depart,
+                ligne.duree,
+                ligne.passages || '—',
+                ligne.statut,
+            ];
+            return new TableRow({
+                cantSplit: true,
+                children: valeurs.map((valeur, indexColonne) =>
+                    creerCellule(String(valeur), indexColonne, indexLigne % 2 === 1)
+                ),
+            });
+        });
+
+        const document = new Document({
+            creator: 'EasyEcole',
+            title: 'Historique des pointages',
+            sections: [{
+                properties: {
+                    page: {
+                        size: { width: 16838, height: 11906, orientation: PageOrientation.LANDSCAPE },
+                        margin: { top: 720, right: 720, bottom: 720, left: 720 },
+                    },
+                },
+                children: [
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 80 },
+                        children: [new TextRun({ text: 'Historique des pointages', bold: true, size: 30, font: 'Calibri', color: '1F3C75' })],
+                    }),
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 60 },
+                        children: [new TextRun({ text: meta.periodeLabel, size: 18, font: 'Calibri', color: '64748B' })],
+                    }),
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 240 },
+                        children: [new TextRun({ text: meta.resumeLabel, bold: true, size: 18, font: 'Calibri', color: '334155' })],
+                    }),
+                    new Table({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        layout: TableLayoutType.FIXED,
+                        rows: [ligneEntete, ...lignesTable],
+                    }),
+                    new Paragraph({
+                        spacing: { before: 200 },
+                        children: [new TextRun({
+                            text: `Document généré le ${PointageController.formatHorodatage(new Date())} — EasyEcole`,
+                            italics: true,
+                            size: 14,
+                            font: 'Calibri',
+                            color: '94A3B8',
+                        })],
+                    }),
+                ],
+            }],
+        });
+
+        const buffer = await Packer.toBuffer(document);
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        res.setHeader('Content-Disposition', `attachment; filename="${meta.nomFichier}.docx"`);
+        return res.status(200).send(buffer);
     }
 
     static async pointerArrivee(req: Request, res: Response): Promise<Response | null> {

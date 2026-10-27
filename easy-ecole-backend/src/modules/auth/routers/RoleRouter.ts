@@ -20,6 +20,8 @@ router
     .delete('/:id', [Authenticate, adminOnly], RoleController.deleteRole)
     .get('/:id/permissions', [Authenticate, adminOnly], RoleController.getRolePermissions)
     .put('/:id/permissions', [Authenticate, adminOnly], RoleController.updateRolePermissions)
+    .get('/:id/menu-grants', [Authenticate, adminOnly], RoleController.getRoleMenuGrants)
+    .put('/:id/menu-grants', [Authenticate, adminOnly], RoleController.updateRoleMenuGrants)
     .get('/:id/utilisateurs', [Authenticate, adminOnly], RoleController.getRoleUtilisateurs)
     .post('/:id/utilisateurs', [Authenticate, adminOnly], RoleController.assignRoleToUser)
     .delete('/:id/utilisateurs/:utilisateurId', [Authenticate, adminOnly], RoleController.removeRoleFromUser)

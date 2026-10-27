@@ -978,7 +978,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
 
   testVoiceAnnouncement(): void {
     if (!this.voiceAnnouncementsEnabled) return
-    this.speak('Bonjour chef Mohamed.')
+    this.speak('ESA, le label des diplômes de qualité')
   }
 
   private announceAttendance(user: any, mode: 'arrivee' | 'depart' | 'passage' | 'refuse', time?: string): void {

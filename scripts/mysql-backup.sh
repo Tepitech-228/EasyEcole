@@ -3,6 +3,7 @@
 set -eu
 
 backup_dir=${BACKUP_DIR:-/backups/mysql}
+offsite_dir=${BACKUP_OFFSITE_DIR:-}
 retention_days=${BACKUP_RETENTION_DAYS:-14}
 retry_seconds=${BACKUP_RETRY_SECONDS:-900}
 export TZ=${TZ:-UTC}
@@ -37,6 +38,22 @@ create_backup() {
   dump_temporary="${target}.tmp"
   files_temporary="${files_target}.tmp"
 
+  # Garde-fou WS22 : ne jamais sauvegarder des dossiers locaux vides si les
+  # montages CIFS ne sont pas presents.
+  if [ "${REQUIRE_WS22_MOUNT:-false}" = "true" ]; then
+    for marker in \
+      /data/uploads/.ws22-mounted \
+      /data/storage/.ws22-mounted \
+      /data/pv/.ws22-mounted \
+      /data/documents/.ws22-mounted
+    do
+      if [ ! -f "$marker" ]; then
+        echo "[backup][error] montage WS22 absent : $marker" >&2
+        return 1
+      fi
+    done
+  fi
+
   if ! wait_for_database; then
     return 1
   fi
@@ -64,10 +81,27 @@ create_backup() {
     return 1
   fi
 
-  if ! tar -czf "$files_temporary" -C /data uploads storage pv || ! tar -tzf "$files_temporary" >/dev/null; then
+  if ! tar -czf "$files_temporary" -C /data uploads storage pv documents || ! tar -tzf "$files_temporary" >/dev/null; then
     echo "[backup][error] uploaded files archive failed; backup pair not published" >&2
     rm -f "$sql_temporary" "$dump_temporary" "$files_temporary"
     return 1
+  fi
+
+  # Copie du dump SQL vers le partage WS22 (optionnel).
+  # On ne copie PAS l'archive des fichiers : elle serait une copie de la
+  # source sur le meme serveur WS22. L'archive reste dans le volume local.
+  if [ -n "$offsite_dir" ]; then
+    if [ ! -f "${offsite_dir}/.ws22-mounted" ]; then
+      echo "[backup][error] montage offsite absent : ${offsite_dir}" >&2
+      rm -f "$sql_temporary" "$dump_temporary" "$files_temporary"
+      return 1
+    fi
+    offsite_target="${offsite_dir}/$(basename "$target")"
+    if ! cp -f "$dump_temporary" "$offsite_target" || ! gzip -t "$offsite_target"; then
+      echo "[backup][error] copie offsite du dump SQL invalide" >&2
+      rm -f "$sql_temporary" "$dump_temporary" "$files_temporary" "$offsite_target"
+      return 1
+    fi
   fi
 
   rm -f "$sql_temporary"
@@ -75,6 +109,9 @@ create_backup() {
   mv "$files_temporary" "$files_target"
   find "$backup_dir" -type f -name '*.sql.gz' -mtime "+${retention_days}" -delete
   find "$backup_dir" -type f -name '*_files.tar.gz' -mtime "+${retention_days}" -delete
+  if [ -n "$offsite_dir" ]; then
+    find "$offsite_dir" -type f -name '*.sql.gz' -mtime "+${retention_days}" -delete
+  fi
   echo "[backup] verified database and files backup created: ${target}"
   return 0
 }

@@ -19,6 +19,7 @@ import { Utilisateur } from "./Utilisateur";
 import { UserPermission } from "./UserPermission";
 import { Permission } from "./Permission";
 import { Role } from "./Role";
+import { RoleMenuGrant } from "./RoleMenuGrant";
 import { RolePermission } from "./RolePermission";
 import { UserRole } from "./UserRole";
 import { SiteUtilisateur } from "./SiteUtilisateur";
@@ -105,6 +106,10 @@ Role.hasMany(RolePermission, { as: 'rolePermissions', foreignKey: 'roleId' })
 // Role - Utilisateur (via UserRole)
 Role.belongsToMany(Utilisateur, { through: UserRole, as: 'utilisateurs', foreignKey: 'roleId' })
 Utilisateur.belongsToMany(Role, { through: UserRole, as: 'roles', foreignKey: 'utilisateurId' })
+
+// Role - grants de pôles/menus (ajouts additifs au profil)
+RoleMenuGrant.belongsTo(Role, { as: 'role', foreignKey: 'roleId' })
+Role.hasMany(RoleMenuGrant, { as: 'menuGrants', foreignKey: 'roleId' })
 
 // Associations directes pour UserRole (utilisées par getRoleUtilisateurs)
 UserRole.belongsTo(Utilisateur, { as: 'utilisateur', foreignKey: 'utilisateurId' })

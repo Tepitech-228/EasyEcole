@@ -518,7 +518,7 @@ export default class DemandeInscriptionController {
             demandeSiteId = submittedSiteId
             options = { where: { sessionId: req.body.sessionId, utilisateurId: (req as any).utilisateurId } }
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
+        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false })
         }
 
@@ -647,7 +647,7 @@ export default class DemandeInscriptionController {
 
     static async updateDemandeInscriptionCours(req: Request, res: Response): Promise<Response | null> {
         let options: FindOptions<InferAttributes<DemandeInscriptionCours>> = {}
-        if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
+        if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
             options = { where: { coursId: req.body.coursId, demandeInscriptionId: req.params.id } }
         }
         else {
@@ -967,7 +967,7 @@ export default class DemandeInscriptionController {
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
             return res.status(403).json({ success: false })
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION) {
+        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
             options = { where: { id: req.params.id } }
         }
 

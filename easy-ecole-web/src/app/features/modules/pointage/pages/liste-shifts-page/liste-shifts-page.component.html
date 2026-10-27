@@ -1,73 +1,259 @@
-<div class="flex justify-between items-start mb-8">
-    <app-header-title title="Gestion des shifts" subtitle="Créez et gérez les horaires de travail"></app-header-title>
-    <app-custom-button (click)="nouvelleShift()" text="Nouveau shift"></app-custom-button>
-</div>
+<div class="shifts-page">
 
-<div *ngIf="loading" class="text-center py-8 text-gray-500">Chargement...</div>
-
-<div *ngIf="!loading && loadError" class="text-center py-8 text-red-500">
-    {{ loadError }}
-    <div class="mt-3"><app-custom-button (click)="loadShifts()" text="Réessayer"></app-custom-button></div>
-</div>
-
-<div *ngIf="!loading && !loadError && shifts.length == 0" class="text-center py-8 text-gray-500">Aucun shift trouvé. Créez le premier avec « Nouveau shift ».</div>
-
-<div *ngIf="!loading && !loadError && shifts.length > 0" class="flex flex-col">
-    <div class="overflow-x-auto">
-        <div class="py-2 inline-block min-w-full">
-            <div class="overflow-hidden">
-                <table class="min-w-full">
-                    <thead class="bg-gray-100 border-b">
-                        <tr>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">#</div></th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Nom</div></th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Début</div></th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Fin</div></th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Jours</div></th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Statut</div></th>
-                            <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left"><div class="px-2">Actions</div></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngFor="let shift of shifts; index as index"
-                            class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
-                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ index + 1 }}</div>
-                            </td>
-                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ shift.nom }}</div>
-                            </td>
-                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
-                                    <app-custom-badge color="blue" [text]="formatHeure(shift.heureDebut)"></app-custom-badge>
-                                </div>
-                            </td>
-                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
-                                    <app-custom-badge color="orange" [text]="formatHeure(shift.heureFin)"></app-custom-badge>
-                                </div>
-                            </td>
-                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ formatJours(shift.jours) }}</div>
-                            </td>
-                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
-                                    <button type="button" (click)="toggleActif(shift)" [title]="shift.actif ? 'Désactiver' : 'Activer'" class="border-0 bg-transparent cursor-pointer p-0">
-                                        <app-custom-badge *ngIf="shift.actif" color="green" text="Actif"></app-custom-badge>
-                                        <app-custom-badge *ngIf="!shift.actif" color="primary" text="Inactif"></app-custom-badge>
-                                    </button>
-                                </div>
-                            </td>
-                            <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                <div class="flex items-center gap-2 border-0 m-0 px-2 py-4">
-                                    <app-custom-button (click)="editShift(shift.id)" text="Modifier" color="blue"></app-custom-button>
-                                    <app-custom-button (click)="deleteShift(shift)" [text]="deletingId === shift.id ? '...' : 'Supprimer'" color="primary" [disabled]="deletingId === shift.id"></app-custom-button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+  <!-- ================================================================ En-tête -->
+  <header class="page-head">
+    <div class="page-head__titles">
+      <span class="page-head__eyebrow">Pointage</span>
+      <h1 class="page-head__title">Shifts &amp; horaires</h1>
+      <p class="page-head__subtitle">
+        Définissez les plages horaires de référence de l'établissement et leur couverture hebdomadaire.
+      </p>
     </div>
+    <div class="page-head__aside">
+      <span class="page-badge">
+        <span class="material-symbols-outlined" aria-hidden="true">calendar_view_week</span>
+        {{ nbTotal }} shift(s)
+      </span>
+      <button type="button" class="btn btn--primary" (click)="nouvelleShift()">
+        <span class="material-symbols-outlined" aria-hidden="true">add</span>
+        Nouveau shift
+      </button>
+    </div>
+  </header>
+
+  <!-- =============================================================== Squelette -->
+  <div *ngIf="loading" class="skeleton" aria-hidden="true">
+    <div class="skeleton__stats">
+      <span *ngFor="let carte of [1, 2, 3, 4]"></span>
+    </div>
+    <div class="skeleton__grid">
+      <span *ngFor="let carte of [1, 2, 3]"></span>
+    </div>
+  </div>
+
+  <!-- ================================================================== Erreur -->
+  <div *ngIf="!loading && loadError" class="notice notice--error" role="alert">
+    <span class="material-symbols-outlined" aria-hidden="true">error</span>
+    <p>{{ loadError }}</p>
+    <button type="button" class="btn btn--ghost" (click)="loadShifts()">Réessayer</button>
+  </div>
+
+  <ng-container *ngIf="!loading && !loadError">
+
+    <!-- ========================================================== Indicateurs -->
+    <section class="stats" aria-label="Indicateurs des shifts">
+      <article class="stat stat--indigo">
+        <span class="stat__icon material-symbols-outlined" aria-hidden="true">view_week</span>
+        <div class="stat__body">
+          <p class="stat__label">Shifts</p>
+          <p class="stat__value">{{ nbTotal }}</p>
+          <p class="stat__meta">configurés</p>
+        </div>
+      </article>
+
+      <article class="stat stat--green">
+        <span class="stat__icon material-symbols-outlined" aria-hidden="true">toggle_on</span>
+        <div class="stat__body">
+          <p class="stat__label">Actifs</p>
+          <p class="stat__value">{{ nbActifs }}</p>
+          <p class="stat__meta">{{ nbInactifs }} inactif(s)</p>
+        </div>
+      </article>
+
+      <article class="stat stat--teal">
+        <span class="stat__icon material-symbols-outlined" aria-hidden="true">event_available</span>
+        <div class="stat__body">
+          <p class="stat__label">Jours couverts</p>
+          <p class="stat__value">{{ nbJoursCouverts }}<span class="stat__suffix">/7</span></p>
+          <p class="stat__meta">par les shifts actifs</p>
+        </div>
+      </article>
+
+      <article class="stat stat--navy">
+        <span class="stat__icon material-symbols-outlined" aria-hidden="true">timelapse</span>
+        <div class="stat__body">
+          <p class="stat__label">Couverture hebdo</p>
+          <p class="stat__value">{{ couvertureHebdomadaire }}</p>
+          <p class="stat__meta">cumulées sur la semaine</p>
+        </div>
+      </article>
+    </section>
+
+    <!-- ================================================================= Note -->
+    <div class="info-strip">
+      <span class="material-symbols-outlined" aria-hidden="true">info</span>
+      <p>
+        Les shifts sont des horaires de référence : ils structurent l'organisation du travail.
+        Ils ne sont pas encore rattachés automatiquement aux pointages des personnes.
+      </p>
+    </div>
+
+    <!-- =============================================================== Filtres -->
+    <section class="filters" aria-label="Filtres des shifts">
+      <div class="search">
+        <span class="material-symbols-outlined search__icon" aria-hidden="true">search</span>
+        <input
+          type="text"
+          [(ngModel)]="searchTerm"
+          placeholder="Rechercher un shift…"
+          autocomplete="off"
+          aria-label="Rechercher un shift">
+        <button
+          *ngIf="searchTerm"
+          type="button"
+          class="search__clear"
+          (click)="searchTerm = ''"
+          aria-label="Effacer la recherche">
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+      </div>
+
+      <div class="segmented" role="group" aria-label="Filtrer par statut">
+        <button
+          type="button"
+          class="segmented__item"
+          [class.segmented__item--active]="statutFilter === 'tous'"
+          (click)="statutFilter = 'tous'">
+          Tous
+        </button>
+        <button
+          type="button"
+          class="segmented__item"
+          [class.segmented__item--active]="statutFilter === 'actif'"
+          (click)="statutFilter = 'actif'">
+          Actifs
+        </button>
+        <button
+          type="button"
+          class="segmented__item"
+          [class.segmented__item--active]="statutFilter === 'inactif'"
+          (click)="statutFilter = 'inactif'">
+          Inactifs
+        </button>
+      </div>
+
+      <button
+        *ngIf="hasFiltres"
+        type="button"
+        class="reset-btn"
+        (click)="resetFiltres()">
+        <span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>
+        Réinitialiser
+      </button>
+    </section>
+
+    <!-- ========================================================== Aucun shift -->
+    <section *ngIf="nbTotal === 0" class="empty-state">
+      <span class="empty-state__icon material-symbols-outlined" aria-hidden="true">calendar_month</span>
+      <h2 class="empty-state__title">Aucun shift configuré</h2>
+      <p class="empty-state__text">
+        Créez votre premier horaire de référence (matin, après-midi, journée complète…)
+        pour structurer l'organisation du travail.
+      </p>
+      <button type="button" class="btn btn--primary" (click)="nouvelleShift()">
+        <span class="material-symbols-outlined" aria-hidden="true">add</span>
+        Créer un shift
+      </button>
+    </section>
+
+    <!-- ===================================================== Aucun résultat -->
+    <section *ngIf="nbTotal > 0 && filteredShifts.length === 0" class="empty-state">
+      <span class="empty-state__icon material-symbols-outlined" aria-hidden="true">search_off</span>
+      <h2 class="empty-state__title">Aucun shift ne correspond</h2>
+      <p class="empty-state__text">Modifiez votre recherche ou revenez à la liste complète.</p>
+      <button type="button" class="btn btn--ghost" (click)="resetFiltres()">
+        <span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>
+        Réinitialiser les filtres
+      </button>
+    </section>
+
+    <!-- ============================================================== Grille -->
+    <section *ngIf="filteredShifts.length > 0" class="shifts-grid">
+      <article
+        *ngFor="let shift of filteredShifts; trackBy: trackById"
+        class="shift-card"
+        [class.shift-card--inactive]="!shift.actif">
+
+        <header class="shift-card__head">
+          <div class="shift-card__title">
+            <span class="shift-card__icon material-symbols-outlined" aria-hidden="true">schedule</span>
+            <div>
+              <h2 class="shift-card__name">{{ shift.nom }}</h2>
+              <p class="shift-card__duration">{{ dureeShift(shift) }} par jour</p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="switch"
+            [class.switch--on]="shift.actif"
+            role="switch"
+            [attr.aria-checked]="shift.actif"
+            [attr.aria-label]="'Activer ou désactiver le shift ' + shift.nom"
+            [disabled]="toggleEnCours === shift.id"
+            (click)="toggleActif(shift)">
+            <span class="switch__track">
+              <span class="switch__thumb"></span>
+            </span>
+            <span class="switch__label">
+              {{ toggleEnCours === shift.id ? '…' : (shift.actif ? 'Actif' : 'Inactif') }}
+            </span>
+          </button>
+        </header>
+
+        <div class="shift-card__times">
+          <span class="time-block">
+            <span class="time-block__label">Début</span>
+            <span class="time-block__value">{{ formatHeure(shift.heureDebut) }}</span>
+          </span>
+          <span class="time-block__arrow material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+          <span class="time-block time-block--end">
+            <span class="time-block__label">Fin</span>
+            <span class="time-block__value">{{ formatHeure(shift.heureFin) }}</span>
+          </span>
+          <span class="night-badge" *ngIf="estDeNuit(shift)">
+            <span class="material-symbols-outlined" aria-hidden="true">bedtime</span>
+            Nuit
+          </span>
+        </div>
+
+        <div class="week">
+          <span
+            *ngFor="let jour of joursSemaine"
+            class="week__day"
+            [class.week__day--on]="hasJour(shift, jour.court)"
+            [attr.title]="jour.long">
+            {{ jour.court }}
+          </span>
+        </div>
+
+        <footer class="shift-card__foot">
+          <span class="shift-card__meta">
+            <span class="material-symbols-outlined" aria-hidden="true">event_repeat</span>
+            {{ shift.jours?.length || 0 }} jour(s) / semaine
+          </span>
+          <div class="shift-card__actions">
+            <button
+              type="button"
+              class="icon-btn"
+              title="Modifier"
+              aria-label="Modifier le shift"
+              (click)="editShift(shift.id)">
+              <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+            </button>
+            <button
+              type="button"
+              class="icon-btn icon-btn--danger"
+              title="Supprimer"
+              aria-label="Supprimer le shift"
+              [disabled]="deletingId === shift.id"
+              (click)="deleteShift(shift)">
+              <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+            </button>
+          </div>
+        </footer>
+      </article>
+    </section>
+
+  </ng-container>
 </div>

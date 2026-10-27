@@ -47,7 +47,10 @@ export class SocketService implements OnDestroy {
       return;
     }
     const token = localStorage.getItem('_token') || localStorage.getItem('token');
-    this.socket = io(environment.API_URL, {
+    // Socket.IO est monté à la racine du serveur, pas sous /api/v1.
+    // Utiliser API_URL revient à viser le namespace "/api/v1", qui n'existe
+    // pas : le client ne rejoint alors aucun salon temps réel.
+    this.socket = io(environment.API_BASE_URL.replace(/\/$/, ""), {
       auth: { token }
     });
     this.socket.on('new:message', (message: any) => {

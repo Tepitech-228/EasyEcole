@@ -6,6 +6,12 @@ import { TypeDocument } from '../models/TypeDocument';
 import { Utilisateur } from '../../auth/models/Utilisateur';
 import { SecretariatService } from './SecretariatService';
 import { PdfGeneratorService } from '../../docgen/services/PdfGeneratorService';
+import {
+  currentAcademicYear,
+  findDocumentByFileName,
+  resolveStoredDocumentPath,
+} from '../../../core/services/DocumentStorageService';
+import { savePdf } from '../../../core/services/PdfStorageService';
 
 const STORAGE_DIR = 'storage/recus-caisse';
 
@@ -21,12 +27,6 @@ export class RecuCaisseGeneratorService {
    * Retourne les chemins des fichiers PDF générés.
    */
   static async genererRecu(recu: RecuCaisse): Promise<{ originalPath: string; copiePath: string }> {
-    // S'assurer que le dossier de stockage existe
-    const storageAbs = path.resolve(STORAGE_DIR);
-    if (!fs.existsSync(storageAbs)) {
-      fs.mkdirSync(storageAbs, { recursive: true });
-    }
-
     // Recharger le reçu avec toutes les associations nécessaires
     const recuComplet = await RecuCaisse.findByPk(recu.id, {
       include: [
@@ -89,20 +89,37 @@ export class RecuCaisseGeneratorService {
       disableHeader: true
     });
 
-    // Sauvegarder l'original
+    // Annee academique du reçu : libelle de la demande si disponible, sinon
+    // annee deduite de la date de paiement.
+    const academicYear =
+      (demande as any).anneeAcademique?.libelle ||
+      currentAcademicYear(new Date(recuComplet.datePaiement));
+
+    // Sauvegarder l'original dans documents/created/<annee>/finances/recus-caisse
     const originalFilename = `RCU-${recuComplet.numero}.pdf`;
-    const originalPath = path.join(STORAGE_DIR, originalFilename);
-    fs.writeFileSync(originalPath, pdfBuffer);
+    const original = savePdf(pdfBuffer, {
+      type: 'finances',
+      subcategory: 'recus-caisse',
+      fileName: originalFilename,
+      academicYear,
+    });
 
     // Sauvegarder la copie compta (même contenu, nommé différemment)
     const copieFilename = `RCU-COMPTA-${recuComplet.numero}.pdf`;
-    const copiePath = path.join(STORAGE_DIR, copieFilename);
-    fs.writeFileSync(copiePath, pdfBuffer);
+    const copie = savePdf(pdfBuffer, {
+      type: 'finances',
+      subcategory: 'recus-caisse',
+      fileName: copieFilename,
+      academicYear,
+    });
 
-    // Mettre à jour le fichierPDF sur le reçu
-    await recuComplet.update({ fichierPDF: originalPath });
+    // Mettre à jour le fichierPDF sur le reçu (chemin relatif au stockage)
+    await recuComplet.update({ fichierPDF: original.relativePath });
 
-    return { originalPath, copiePath };
+    return {
+      originalPath: original.relativePath,
+      copiePath: copie.relativePath,
+    };
   }
 
   /**
@@ -457,25 +474,43 @@ export class RecuCaisseGeneratorService {
    */
   static telechargerRecu(recu: RecuCaisse): string | null {
     if (!recu.fichierPDF) return null;
-    const absPath = path.resolve(recu.fichierPDF);
-    if (!fs.existsSync(absPath)) return null;
-    return absPath;
+
+    return resolveStoredDocumentPath(recu.fichierPDF, [
+      path.resolve(process.cwd(), STORAGE_DIR),
+      process.cwd(),
+    ]);
   }
 
   /**
    * Récupère le chemin du fichier PDF original (pour l'étudiant).
+   * Conserve la compatibilité avec l'ancien dossier storage/recus-caisse.
    */
   static getOriginalPath(numero: string): string | null {
-    const absPath = path.resolve(STORAGE_DIR, `RCU-${numero}.pdf`);
-    return fs.existsSync(absPath) ? absPath : null;
+    const filename = `RCU-${numero}.pdf`;
+    const legacyPath = path.resolve(STORAGE_DIR, filename);
+    if (fs.existsSync(legacyPath)) return legacyPath;
+
+    return findDocumentByFileName(filename, {
+      origin: 'created',
+      category: 'finances',
+      subcategory: 'recus-caisse',
+    });
   }
 
   /**
    * Récupère le chemin du fichier PDF copie compta.
+   * Conserve la compatibilité avec l'ancien dossier storage/recus-caisse.
    */
   static getCopieComptaPath(numero: string): string | null {
-    const absPath = path.resolve(STORAGE_DIR, `RCU-COMPTA-${numero}.pdf`);
-    return fs.existsSync(absPath) ? absPath : null;
+    const filename = `RCU-COMPTA-${numero}.pdf`;
+    const legacyPath = path.resolve(STORAGE_DIR, filename);
+    if (fs.existsSync(legacyPath)) return legacyPath;
+
+    return findDocumentByFileName(filename, {
+      origin: 'created',
+      category: 'finances',
+      subcategory: 'recus-caisse',
+    });
   }
 
   private static modePaiementLibelle(mode: string): string {

@@ -1,11 +1,33 @@
 import { Request, Response } from "express";
 import { Role } from "../models/Role";
+import { RoleMenuGrant } from "../models/RoleMenuGrant";
 import { RolePermission } from "../models/RolePermission";
 import { Permission } from "../models/Permission";
 import { UserRole } from "../models/UserRole";
 import { UserPermission } from "../models/UserPermission";
 import { Utilisateur } from "../models/Utilisateur";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
+import { MENU_CONFIG } from "../../menu/menu.config";
+
+/**
+ * Clés de menu réellement accordables à un profil via l'écran « Pôles & menus ».
+ * Les entrées roleRestricted restent réservées au rôle : un grant ne doit pas
+ * contourner cette barrière de sécurité.
+ */
+function clesMenuAccordables(): Set<string> {
+    const cles = new Set<string>();
+    for (const pole of MENU_CONFIG) {
+        for (const group of pole.groups) {
+            if (group.roleRestricted) continue;
+            for (const item of group.items) {
+                if (item.permissionKey && !item.roleRestricted) {
+                    cles.add(item.permissionKey);
+                }
+            }
+        }
+    }
+    return cles;
+}
 
 export default class RoleController {
 
@@ -33,10 +55,27 @@ export default class RoleController {
 
     static async createRole(req: Request, res: Response): Promise<Response> {
         try {
-            const { nom, description } = req.body;
+            const nom = typeof req.body?.nom === 'string' ? req.body.nom.trim() : '';
+            const description = typeof req.body?.description === 'string' && req.body.description.trim()
+                ? req.body.description.trim()
+                : null;
             if (!nom) {
                 return res.status(400).json({ success: false, message: "Le nom est requis" });
             }
+
+            // Un profil supprimé reste en base (paranoid) et son nom reste
+            // bloqué par l'index UNIQUE. On le restaure au lieu de renvoyer une
+            // fausse erreur « ce nom existe déjà ».
+            const existant = await Role.findOne({ where: { nom }, paranoid: false });
+            if (existant) {
+                if (!(existant as any).deletedAt) {
+                    return res.status(400).json({ success: false, message: "Ce nom de rôle existe déjà" });
+                }
+                await existant.restore();
+                await existant.update({ description });
+                return res.status(201).send(existant);
+            }
+
             const role = await Role.create({ nom, description });
             return res.status(201).send(role);
         } catch (error: any) {
@@ -73,6 +112,7 @@ export default class RoleController {
                 return res.status(404).json({ success: false, message: "Rôle non trouvé" });
             }
             await RolePermission.destroy({ where: { roleId: id } });
+            await RoleMenuGrant.destroy({ where: { roleId: id }, force: true });
             await UserRole.destroy({ where: { roleId: id } });
             await role.destroy();
             return res.status(200).json({ success: true, message: "Rôle supprimé" });
@@ -143,6 +183,108 @@ export default class RoleController {
 
             await transaction.commit();
             return res.status(200).json({ success: true, message: "Permissions du rôle mises à jour" });
+        } catch (error) {
+            await transaction.rollback();
+            return res.status(500).json({ success: false, error });
+        }
+    }
+
+    static async getRoleMenuGrants(req: Request, res: Response): Promise<Response> {
+        try {
+            const { id } = req.params;
+            const role = await Role.findByPk(id);
+            if (!role) {
+                return res.status(404).json({ success: false, message: "Rôle non trouvé" });
+            }
+
+            const grants = await RoleMenuGrant.findAll({
+                where: { roleId: id },
+                attributes: ['permissionKey']
+            });
+            const rolePermissions = await RolePermission.findAll({
+                where: { roleId: id },
+                include: [{ model: Permission, as: 'permission', attributes: ['key'] }]
+            });
+
+            return res.status(200).json({
+                success: true,
+                roleId: Number(id),
+                grantedKeys: grants.map(grant => grant.permissionKey),
+                rolePermissionKeys: rolePermissions
+                    .map(rp => (rp as any).permission?.key)
+                    .filter((key: string | undefined): key is string => !!key && key.startsWith('menu.'))
+            });
+        } catch (error) {
+            return res.status(500).json({ success: false, error });
+        }
+    }
+
+    /**
+     * Remplace les grants additifs d'un profil. Le rôle conserve ses
+     * RolePermission intacts : retirer un pôle ne révoque que le grant.
+     */
+    static async updateRoleMenuGrants(req: Request, res: Response): Promise<Response> {
+        const { permissionKeys } = req.body ?? {};
+        if (!Array.isArray(permissionKeys)) {
+            return res.status(400).json({ success: false, message: "Le champ 'permissionKeys' doit être un tableau" });
+        }
+
+        const accordables = clesMenuAccordables();
+        const clesDemandees = [...new Set(
+            permissionKeys
+                .filter((key: unknown): key is string => typeof key === 'string')
+                .map(key => key.trim())
+                .filter(Boolean)
+        )];
+        const inconnues = clesDemandees.filter(key => !accordables.has(key));
+        if (inconnues.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: `Clé(s) de menu non accordable(s) : ${inconnues.join(', ')}`
+            });
+        }
+
+        const transaction = await DatabaseConnection.getInstance().sequelize.transaction();
+        try {
+            const { id } = req.params;
+            const role = await Role.findByPk(id, { transaction });
+            if (!role) {
+                await transaction.rollback();
+                return res.status(404).json({ success: false, message: "Rôle non trouvé" });
+            }
+
+            const existants = await RoleMenuGrant.findAll({
+                where: { roleId: id },
+                paranoid: false,
+                transaction
+            });
+            const desired = new Set(clesDemandees);
+            const existingByKey = new Map(existants.map(grant => [grant.permissionKey, grant]));
+
+            for (const grant of existants) {
+                if (!desired.has(grant.permissionKey)) {
+                    if (!(grant as any).deletedAt) {
+                        await grant.destroy({ transaction });
+                    }
+                    continue;
+                }
+                if ((grant as any).deletedAt) {
+                    await grant.restore({ transaction });
+                }
+            }
+
+            for (const key of clesDemandees) {
+                if (!existingByKey.has(key)) {
+                    await RoleMenuGrant.create({ roleId: Number(id), permissionKey: key } as any, { transaction });
+                }
+            }
+
+            await transaction.commit();
+            return res.status(200).json({
+                success: true,
+                message: "Pôles et menus du profil mis à jour",
+                grantedKeys: clesDemandees
+            });
         } catch (error) {
             await transaction.rollback();
             return res.status(500).json({ success: false, error });

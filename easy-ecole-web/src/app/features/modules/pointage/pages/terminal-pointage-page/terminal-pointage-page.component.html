@@ -16,52 +16,60 @@
 
   <div class="mb-8">
     <div class="pointage-methods-bar grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
-      <div class="flex min-w-0 items-center gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-3 shadow-sm">
-        <span class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-800">
+      <div class="pointage-method-card">
+        <span class="pointage-method-icon pointage-method-icon--qr">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2v6h-2zM14 18h2v2h-2z"/>
           </svg>
         </span>
-        <span class="flex min-w-0 flex-1 flex-col gap-1">
-          <strong class="truncate text-sm font-semibold text-gray-900">QR USB Tovi</strong>
-          <small class="text-xs leading-snug text-gray-500">Lecteur clavier prêt · scan automatique</small>
+        <span class="pointage-method-copy">
+          <strong>QR USB Tovi</strong>
+          <small>Lecteur clavier prêt · scan automatique</small>
         </span>
-        <span class="flex-shrink-0 rounded-full bg-green-100 px-2 py-1 text-xs font-bold tracking-wide text-green-700">ACTIF</span>
+        <span class="pointage-method-badge pointage-method-badge--actif">ACTIF</span>
       </div>
 
-      <div class="pointage-hikvision-device flex min-w-0 items-center gap-3 rounded-2xl p-3 shadow-sm">
-        <span class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl">
+      <div class="pointage-method-card pointage-hikvision-device">
+        <span class="pointage-method-icon pointage-method-icon--face">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 9V6a2 2 0 012-2h3m9 0h3a2 2 0 012 2v3m0 6v3a2 2 0 01-2 2h-3m-9 0H6a2 2 0 01-2-2v-3"/>
             <circle cx="12" cy="10" r="3" stroke-width="1.8"/>
             <path stroke-linecap="round" stroke-width="1.8" d="M7.5 18c.8-2.2 2.3-3.4 4.5-3.4s3.7 1.2 4.5 3.4"/>
           </svg>
         </span>
-        <span class="flex min-w-0 flex-1 flex-col gap-1">
-          <strong class="truncate text-sm font-semibold text-gray-900">Hikvision MinMoe</strong>
-          <small class="text-xs leading-snug text-gray-500">Pointage facial · ISAPI</small>
+        <span class="pointage-method-copy">
+          <strong>Hikvision MinMoe</strong>
+          <small>Pointage facial · ISAPI</small>
         </span>
-        <span class="pointage-hikvision-badge flex-shrink-0 rounded-full px-2 py-1 text-xs font-bold tracking-wide"
-              [class.online]="hikvisionStatusLabel === 'CONNECTÉ'">{{ hikvisionStatusLabel }}</span>
+        <span class="pointage-method-badge pointage-hikvision-badge" [class.online]="hikvisionStatusLabel === 'CONNECTÉ'">
+          {{ hikvisionStatusLabel }}
+        </span>
       </div>
 
-      <div class="pointage-voice-control flex min-w-0 flex-col items-start justify-center gap-1 lg:items-end">
-        <button type="button" class="pointage-voice-toggle inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors"
-          [ngClass]="voiceAnnouncementsEnabled ? 'border-green-200 bg-green-50 text-green-700' : 'border-gray-200 bg-white text-gray-600'"
-          [attr.aria-pressed]="voiceAnnouncementsEnabled"
-          (click)="toggleVoiceAnnouncements()">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <div class="pointage-method-card pointage-voice-control">
+        <span class="pointage-method-icon pointage-method-icon--voice">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5L6 9H3v6h3l5 4V5zM15.5 8.5a5 5 0 010 7m3-10a9 9 0 010 13"/>
           </svg>
-          {{ voiceAnnouncementsEnabled ? 'Voix activée' : 'Activer la voix' }}
-        </button>
-        <button type="button" class="text-xs font-semibold text-blue-700 underline underline-offset-2 disabled:cursor-not-allowed disabled:text-gray-400"
-          [disabled]="!voiceAnnouncementsEnabled"
-          (click)="testVoiceAnnouncement()">
-          Tester la voix
-        </button>
-        <small *ngIf="voiceError" class="max-w-xs text-xs text-red-700" role="status">{{ voiceError }}</small>
-        <small *ngIf="!voiceError" class="max-w-xs text-xs text-gray-500 lg:text-right">Annonce le nom et le statut après validation</small>
+        </span>
+        <span class="pointage-method-copy">
+          <strong>Annonce vocale</strong>
+          <small *ngIf="!voiceError">Annonce le nom et le statut après validation</small>
+          <small *ngIf="voiceError" class="pointage-voice-error" role="status">{{ voiceError }}</small>
+        </span>
+        <span class="pointage-voice-actions">
+          <button type="button" class="pointage-voice-toggle"
+            [class.is-on]="voiceAnnouncementsEnabled"
+            [attr.aria-pressed]="voiceAnnouncementsEnabled"
+            (click)="toggleVoiceAnnouncements()">
+            {{ voiceAnnouncementsEnabled ? 'Voix activée' : 'Activer la voix' }}
+          </button>
+          <button type="button" class="pointage-voice-test"
+            [disabled]="!voiceAnnouncementsEnabled"
+            (click)="testVoiceAnnouncement()">
+            Tester la voix
+          </button>
+        </span>
       </div>
     </div>
   </div>
@@ -74,9 +82,12 @@
           <path stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 8a4 4 0 100 8 4 4 0 000-8zm8 4a8 8 0 01-.12 1.38l1.3 1.02-1.3 2.26-1.55-.57a8.05 8.05 0 01-2.38 1.38L15.7 19h-2.6l-.25-1.53a8.05 8.05 0 01-2.38-1.38l-1.55.57-1.3-2.26 1.3-1.02a8 8 0 010-2.76l-1.3-1.02 1.3-2.26 1.55.57a8.05 8.05 0 012.38-1.38L13.1 5h2.6l.25 1.53a8.05 8.05 0 012.38 1.38l1.55-.57 1.3 2.26-1.3 1.02A8 8 0 0120 12z"/>
         </svg>
       </span>
-      <span class="min-w-0 flex-1 text-left">
+      <span class="pointage-terminal-config-heading">
         <strong>Configuration du terminal Hikvision</strong>
         <small>Connexion ISAPI MinMoe</small>
+      </span>
+      <span class="pointage-terminal-config-status">
+        {{ hikvisionTerminals.length ? hikvisionTerminals.length + ' terminal' + (hikvisionTerminals.length > 1 ? 'x' : '') : 'Aucun terminal' }}
       </span>
       <span class="pointage-config-chevron" [class.open]="terminalConfigOpen">⌄</span>
     </button>
@@ -125,7 +136,7 @@
             <option *ngFor="let site of terminalSites" [ngValue]="site.id">{{ site.nom }}</option>
           </select>
         </label>
-        <label class="flex items-center gap-2">
+        <label class="pointage-terminal-check">
           <input name="hikvisionHttps" type="checkbox" [(ngModel)]="hikvisionDraft.https" (change)="definirPortHikvision()">
           <span>Utiliser HTTPS (certificat du terminal vérifié par le serveur)</span>
         </label>
@@ -170,41 +181,46 @@
 
   <div *ngIf="!loading && !loadError" class="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
-    <!-- ============================================= -->
-    <!-- LEFT: Self Pointage & Quick Access             -->
-    <!-- ============================================= -->
     <div class="lg:col-span-2 space-y-6">
 
-      <!-- Self Pointage Card -->
-      <div class="pointage-card">
+      <div class="pointage-card pointage-self-card">
         <div class="pointage-card-header">
-          <div class="pointage-card-icon" style="background:#eef2ff;">
-            <svg class="w-5 h-5" style="color:#1F3C75;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="pointage-card-icon pointage-card-icon--indigo">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
           </div>
-          <div>
-            <h3 class="text-sm font-semibold text-gray-900">Mon pointage</h3>
-            <p class="text-xs text-gray-400">{{ todayPointage ? 'Aujourd\'hui' : 'Aucun pointage aujourd\'hui' }}</p>
+          <div class="pointage-card-heading">
+            <h3>Mon pointage</h3>
+            <p>{{ todayPointage ? 'Aujourd\'hui' : 'Aucun pointage aujourd\'hui' }}</p>
           </div>
+          <span class="pointage-card-status" *ngIf="todayPointage" [class.is-done]="todayPointage.heureDepart">
+            {{ todayPointage.heureDepart ? 'Journée terminée' : 'En cours' }}
+          </span>
         </div>
 
         <div class="pointage-card-body">
-          <!-- Heures pointées -->
-          <div *ngIf="todayPointage" class="space-y-2.5">
-            <div class="pointage-self-time">
-              <span class="label">Arrivée</span>
-              <span class="value value--arrivee">{{ todayPointage.heureArrivee }}</span>
+          <div *ngIf="todayPointage" class="pointage-self-grid">
+            <div class="pointage-self-tile pointage-self-tile--arrivee">
+              <span class="pointage-self-tile-icon">
+                <span class="material-symbols-outlined">login</span>
+              </span>
+              <span class="pointage-self-tile-copy">
+                <small>Arrivée</small>
+                <strong>{{ todayPointage.heureArrivee }}</strong>
+              </span>
             </div>
-            <div class="pointage-self-time">
-              <span class="label">Départ</span>
-              <span class="value" [ngClass]="todayPointage.heureDepart ? 'value--depart' : 'value--empty'">
-                {{ todayPointage.heureDepart || '---' }}
+            <div class="pointage-self-tile" [class.pointage-self-tile--depart]="todayPointage.heureDepart" [class.pointage-self-tile--empty]="!todayPointage.heureDepart">
+              <span class="pointage-self-tile-icon">
+                <span class="material-symbols-outlined">logout</span>
+              </span>
+              <span class="pointage-self-tile-copy">
+                <small>Départ</small>
+                <strong>{{ todayPointage.heureDepart || '---' }}</strong>
               </span>
             </div>
           </div>
 
-          <!-- Aucun pointage aujourd'hui -->
           <div *ngIf="!todayPointage" class="pointage-self-empty">
             <div class="empty-icon">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -212,27 +228,22 @@
               </svg>
             </div>
             <p class="empty-text">Vous n'avez pas encore pointé aujourd'hui</p>
+            <p class="empty-hint">Utilisez le scanner ou votre QR personnel pour démarrer la journée.</p>
           </div>
 
-          <!-- Boutons auto-pointage -->
-          <div class="flex gap-3 mt-4">
+          <div class="pointage-self-actions">
             <button *ngIf="!todayPointage" (click)="pointerArrivee()"
               class="pointage-btn pointage-btn--arrivee flex-1">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/>
-              </svg>
+              <span class="material-symbols-outlined">login</span>
               Pointer arrivée
             </button>
             <button *ngIf="todayPointage && !todayPointage.heureDepart" (click)="pointerDepart()"
               class="pointage-btn pointage-btn--depart flex-1">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-              </svg>
+              <span class="material-symbols-outlined">logout</span>
               Pointer départ
             </button>
           </div>
 
-          <!-- Messages -->
           <div *ngIf="selfSuccess" class="pointage-message pointage-message--success mt-3">
             <p>{{ selfSuccess }}</p>
           </div>
@@ -242,60 +253,66 @@
         </div>
       </div>
 
-      <!-- Quick Access -->
-      <div class="pointage-card">
+      <div class="pointage-card pointage-quick-card">
         <div class="pointage-card-header">
-          <div class="pointage-card-icon" style="background:#f0fdf4;">
-            <svg class="w-5 h-5" style="color:#059669;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-            </svg>
+          <div class="pointage-card-icon pointage-card-icon--emerald">
+            <span class="material-symbols-outlined">bolt</span>
           </div>
-          <div>
-            <h3 class="text-sm font-semibold text-gray-900">Accès rapide</h3>
+          <div class="pointage-card-heading">
+            <h3>Accès rapide</h3>
+            <p>Vos outils de suivi</p>
           </div>
         </div>
         <div class="pointage-card-body">
-          <div class="space-y-1">
+          <div class="pointage-quick-list">
             <a routerLink="/pointage/historique" class="pointage-quick-link">
-              <svg class="link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-              </svg>
-              Historique des pointages
+              <span class="pointage-quick-icon">
+                <span class="material-symbols-outlined">history</span>
+              </span>
+              <span class="pointage-quick-copy">
+                <strong>Historique des pointages</strong>
+                <small>Consulter les passages enregistrés</small>
+              </span>
+              <span class="pointage-quick-chevron material-symbols-outlined">chevron_right</span>
             </a>
             <a routerLink="/pointage/rapports" class="pointage-quick-link">
-              <svg class="link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-              </svg>
-              Rapports et statistiques
+              <span class="pointage-quick-icon">
+                <span class="material-symbols-outlined">bar_chart</span>
+              </span>
+              <span class="pointage-quick-copy">
+                <strong>Rapports et statistiques</strong>
+                <small>Analyser la présence et les retards</small>
+              </span>
+              <span class="pointage-quick-chevron material-symbols-outlined">chevron_right</span>
             </a>
             <a routerLink="/pointage/planning" class="pointage-quick-link">
-              <svg class="link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-              </svg>
-              Planning des shifts
+              <span class="pointage-quick-icon">
+                <span class="material-symbols-outlined">calendar_month</span>
+              </span>
+              <span class="pointage-quick-copy">
+                <strong>Planning des shifts</strong>
+                <small>Organiser les équipes et horaires</small>
+              </span>
+              <span class="pointage-quick-chevron material-symbols-outlined">chevron_right</span>
             </a>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ============================================= -->
-    <!-- RIGHT: Scanner QR Code                        -->
-    <!-- ============================================= -->
     <div class="lg:col-span-3">
-      <div class="pointage-card">
+      <div class="pointage-card pointage-scanner-card">
 
-        <!-- Scanner Header -->
-        <div class="pointage-card-header" style="justify-content: space-between;">
-          <div style="display:flex;align-items:center;gap:0.75rem;">
-            <div class="pointage-card-icon" style="background:#eef2ff;">
-              <svg class="w-5 h-5" style="color:#1F3C75;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="pointage-card-header pointage-scanner-header">
+          <div class="pointage-scanner-heading">
+            <div class="pointage-card-icon pointage-card-icon--indigo">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
               </svg>
             </div>
-            <div>
-              <h3 class="text-sm font-semibold text-gray-900">Scanner un QR code</h3>
-              <p class="text-xs text-gray-400">Scannez le QR d'un étudiant ou personnel</p>
+            <div class="pointage-card-heading">
+              <h3>Scanner un QR code</h3>
+              <p>Scannez le QR d'un étudiant ou personnel</p>
               <p class="pointage-reader-hint">
                 <span class="hint-dot"></span>
                 Lecteur USB clavier : validation et pointage automatiques côté serveur
@@ -304,41 +321,38 @@
           </div>
           <div *ngIf="scannedUser || scanError || scanWarning || scanSuccess" class="no-print">
             <button (click)="resetScan()" class="pointage-btn pointage-btn--outline pointage-btn--sm">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-              </svg>
+              <span class="material-symbols-outlined">refresh</span>
               Nouveau scan
             </button>
           </div>
         </div>
 
-        <!-- Scanner Body -->
-        <div class="pointage-card-body">
+        <div class="pointage-card-body pointage-scanner-body">
 
-          <div *ngIf="scanProcessing" class="pointage-state-card border border-blue-200 bg-blue-50" role="status" aria-live="polite">
+          <div class="pointage-scanner-intro">
+            <span class="pointage-scanner-intro-icon material-symbols-outlined">auto_mode</span>
+            <span>Le système détermine automatiquement l’entrée ou la sortie selon le profil et les scans de la journée.</span>
+          </div>
+
+          <div *ngIf="scanProcessing" class="pointage-state-card pointage-state-card--processing" role="status" aria-live="polite">
             <div class="state-icon">
-              <svg class="w-6 h-6 animate-spin text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-6 h-6 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582M20 12a8 8 0 01-14.9 4M20 12a8 8 0 01-14.9-4M20 12v-5h-.582"/>
               </svg>
             </div>
-            <div class="state-title text-blue-900">Traitement du scan</div>
-            <div class="state-desc text-blue-700">{{ scanProcessingMessage }}</div>
+            <div class="state-title">Traitement du scan</div>
+            <div class="state-desc">{{ scanProcessingMessage }}</div>
           </div>
 
-          <!-- ===== TIMEOUT ===== -->
           <div *ngIf="scanTimeout" class="pointage-state-card pointage-state-card--timeout">
             <div class="state-icon">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
+              <span class="material-symbols-outlined">timer_off</span>
             </div>
             <div class="state-title">Temps écoulé</div>
             <div class="state-desc">Aucun QR code détecté. Réactivez le scan ou saisissez l'identifiant manuellement.</div>
             <div class="flex items-center justify-center gap-3">
               <button (click)="startScanner(scanMode)" class="pointage-btn pointage-btn--outline pointage-btn--sm">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                </svg>
+                <span class="material-symbols-outlined">restart_alt</span>
                 Réactiver
               </button>
               <button (click)="resetScan(); showManualInput = true" class="pointage-btn pointage-btn--outline pointage-btn--sm">
@@ -347,37 +361,27 @@
             </div>
           </div>
 
-          <!-- ===== SCAN STATE ===== -->
           <div *ngIf="!scanProcessing && !scannedUser && !scanError && !scanWarning && !scanSuccess && !scanTimeout && !showManualInput">
 
-            <div class="mb-4 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-center text-sm text-indigo-800">
-              Le système détermine automatiquement l’entrée ou la sortie selon le profil et les scans de la journée.
-            </div>
-
-            <!-- Scanner placeholder (inactif) ou caméra active -->
             <div *ngIf="!scanning" class="text-center">
               <div class="pointage-scan-placeholder">
+                <span class="pointage-scan-halo" aria-hidden="true"></span>
                 <div class="scan-big-icon">
-                  <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
-                  </svg>
+                  <span class="material-symbols-outlined">qr_code_scanner</span>
                 </div>
-                <p class="text-sm text-gray-500 mb-1">Scannez un code QR</p>
-                <p class="text-xs text-gray-400 mb-4">Positionnez le QR dans le cadre</p>
+                <p class="pointage-scan-title">Scannez un code QR</p>
+                <p class="pointage-scan-subtitle">Positionnez le QR dans le cadre</p>
                 <button (click)="startScanner(scanMode)" class="pointage-btn pointage-btn--arrivee">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
-                  </svg>
+                  <span class="material-symbols-outlined">photo_camera</span>
                   Activer la caméra
                 </button>
+                <div class="pointage-scan-divider"><span>ou</span></div>
+                <button (click)="showManualInput = true" class="pointage-scan-manual-link">
+                  Saisir l'identifiant manuellement
+                </button>
               </div>
-              <button (click)="showManualInput = true" class="mt-3 text-xs text-gray-400 hover:text-gray-600 underline border-0 bg-transparent cursor-pointer">
-                Ou saisir l'identifiant manuellement
-              </button>
             </div>
 
-            <!-- Camera active with scan frame -->
             <div *ngIf="scanning">
               <div class="scanner-wrapper">
                 <div id="qr-reader-pointage" class="scanner-camera"></div>
@@ -388,30 +392,28 @@
                   <div class="scanner-corner bottom-right"></div>
                   <div class="scanner-line"></div>
                 </div>
+                <span class="scanner-live-badge"><span></span> SCAN EN COURS</span>
               </div>
               <div class="scanner-status">
                 <p class="scanner-status-text">Recherche de QR code… Présentez le code bien à plat, à 15-30 cm, sans reflet</p>
-                <p *ngIf="streamRes" class="text-xs text-gray-400 mt-1">Détection {{ decoderNatif ? 'native' : 'standard' }} · Flux {{ streamRes }}</p>
-                <div class="flex items-center justify-center gap-2 mt-2">
+                <p *ngIf="streamRes" class="scanner-status-meta">Détection {{ decoderNatif ? 'native' : 'standard' }} · Flux {{ streamRes }}</p>
+                <div class="scanner-actions">
                   <button (click)="stopScanner()" class="pointage-btn pointage-btn--outline pointage-btn--sm">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
+                    <span class="material-symbols-outlined">close</span>
                     Arrêter le scan
                   </button>
                   <button *ngIf="torchSupported" (click)="toggleTorch()" class="pointage-btn pointage-btn--outline pointage-btn--sm">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                    </svg>
+                    <span class="material-symbols-outlined">flashlight_on</span>
                     {{ torchOn ? 'Éteindre la lampe' : 'Allumer la lampe' }}
                   </button>
                 </div>
-                <div *ngIf="zoomSupported" class="flex items-center justify-center gap-2 mt-2">
-                  <span class="text-xs text-gray-400">Zoom</span>
+                <div *ngIf="zoomSupported" class="scanner-zoom">
+                  <span>Zoom</span>
                   <input type="range" [min]="zoomMin" [max]="zoomMax" [step]="zoomStep" [(ngModel)]="zoomValue" (change)="setZoom(zoomValue)" class="w-40" aria-label="Zoom de la caméra">
                 </div>
-                <div class="flex items-center justify-center gap-2 mt-2">
-                  <label class="pointage-btn pointage-btn--outline pointage-btn--sm" style="cursor:pointer;">
+                <div class="scanner-actions">
+                  <label class="pointage-btn pointage-btn--outline pointage-btn--sm pointage-file-btn">
+                    <span class="material-symbols-outlined">image</span>
                     Tester avec une photo
                     <input type="file" accept="image/*" capture="environment" class="sr-only" (change)="scannerDepuisImage($event)">
                   </label>
@@ -420,14 +422,16 @@
             </div>
           </div>
 
-          <!-- ===== SAISIE MANUELLE ===== -->
           <div *ngIf="showManualInput && !scannedUser && !scanError && !scanWarning && !scanSuccess" class="pointage-manual-input">
-            <label for="pointage-manual-id" class="text-sm text-gray-500 mb-3 block">Saisissez l'identifiant ou matricule</label>
+            <div class="pointage-manual-icon">
+              <span class="material-symbols-outlined">keyboard</span>
+            </div>
+            <label for="pointage-manual-id">Saisissez l'identifiant ou matricule</label>
             <input id="pointage-manual-id" [(ngModel)]="manualId" type="text" placeholder="ex: UTIL001 ou MAT-2024-001"
               autocomplete="off" aria-describedby="pointage-manual-hint"
               (keyup.enter)="verifierParIdManuel()">
             <p id="pointage-manual-hint" class="sr-only">Saisissez un identifiant puis validez avec Entrée ou le bouton Vérifier.</p>
-            <div class="flex items-center justify-center gap-3 mt-3">
+            <div class="pointage-manual-actions">
               <button (click)="showManualInput = false" class="pointage-btn pointage-btn--outline pointage-btn--sm">
                 Annuler
               </button>
@@ -437,10 +441,9 @@
             </div>
           </div>
 
-          <!-- ===== UTILISATEUR SCANNÉ ===== -->
-            <div *ngIf="scannedUser" class="pointage-scanned-card"
+          <div *ngIf="scannedUser" class="pointage-scanned-card"
                 [ngClass]="scannedUser.statut === 'vert' ? 'pointage-scanned-card--vert' : 'pointage-scanned-card--rouge'">
-            <div class="p-5 text-center">
+            <div class="pointage-scanned-head">
               <div *ngIf="scannedUser.photoUrl" class="pointage-scanned-photo-wrapper">
                 <img [src]="scannedUser.photoUrl" [alt]="'Photo de ' + scannedUser.nom"
                   class="pointage-scanned-photo" (error)="photoIndisponible()">
@@ -450,10 +453,10 @@
                 [ngClass]="scannedUser.statut === 'vert' ? 'avatar--vert' : 'avatar--rouge'">
                 {{ (scannedUser.nom || '?')[0] }}{{ (scannedUser.prenoms || '')[0] }}
               </div>
-              <h4 class="text-lg font-bold text-gray-900">{{ scannedUser.nom }} {{ scannedUser.prenoms }}</h4>
+              <h4>{{ scannedUser.nom }} {{ scannedUser.prenoms }}</h4>
               <p class="pointage-scanned-role">{{ scannedUser.role }}</p>
-              <p *ngIf="scannedUser.matricule" class="text-xs font-mono font-semibold text-gray-700">{{ scannedUser.matricule }}</p>
-              <p *ngIf="scannedUser.message" class="mb-3 text-sm text-gray-600">{{ scannedUser.message }}</p>
+              <p *ngIf="scannedUser.matricule" class="pointage-scanned-matricule">{{ scannedUser.matricule }}</p>
+              <p *ngIf="scannedUser.message" class="pointage-scanned-message">{{ scannedUser.message }}</p>
               <span class="pointage-scanned-badge"
                   [ngClass]="scannedUser.statut === 'vert' ? 'pointage-scanned-badge--vert' : 'pointage-scanned-badge--rouge'">
                 <span class="dot"></span>
@@ -461,111 +464,84 @@
               </span>
             </div>
 
-            <!-- Situation financière -->
-            <div *ngIf="scannedUser.situationFinanciere" class="px-5 pb-5">
-              <div class="border-t border-gray-100 pt-4">
-                <h5 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Situation financière</h5>
+            <div *ngIf="scannedUser.situationFinanciere" class="pointage-finance">
+              <div class="pointage-finance-head">
+                <h5>Situation financière</h5>
+                <span class="pointage-finance-status"
+                  [ngClass]="scannedUser.situationFinanciere.estAJour ? 'is-ok' : 'is-late'">
+                  <span class="material-symbols-outlined">{{ scannedUser.situationFinanciere.estAJour ? 'check_circle' : 'warning' }}</span>
+                  {{ scannedUser.situationFinanciere.estAJour ? 'À jour' : 'En retard' }}
+                </span>
+              </div>
 
-                <!-- Statut à jour / en retard -->
-                <div class="flex items-center gap-2 mb-3">
-                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-                    [ngClass]="scannedUser.situationFinanciere.estAJour ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
-                    <span class="material-symbols-outlined text-sm">{{ scannedUser.situationFinanciere.estAJour ? 'check_circle' : 'warning' }}</span>
-                    {{ scannedUser.situationFinanciere.estAJour ? 'À jour' : 'En retard' }}
-                  </span>
+              <div class="pointage-finance-grid">
+                <div class="pointage-finance-tile">
+                  <p>Somme globale</p>
+                  <strong>{{ formatCurrency(scannedUser.situationFinanciere.sommeGlobale) }}</strong>
                 </div>
-
-                <!-- Montants -->
-                <div class="grid grid-cols-3 gap-3 text-center">
-                  <div class="bg-gray-50 rounded-lg p-2.5">
-                    <p class="text-xs text-gray-500 mb-1">Somme globale</p>
-                    <p class="text-sm font-bold text-gray-900">{{ formatCurrency(scannedUser.situationFinanciere.sommeGlobale) }}</p>
-                  </div>
-                  <div class="bg-green-50 rounded-lg p-2.5">
-                    <p class="text-xs text-gray-500 mb-1">Payé</p>
-                    <p class="text-sm font-bold text-green-600">{{ formatCurrency(scannedUser.situationFinanciere.montantPaye) }}</p>
-                  </div>
-                  <div class="bg-red-50 rounded-lg p-2.5">
-                    <p class="text-xs text-gray-500 mb-1">Reste à payer</p>
-                    <p class="text-sm font-bold text-red-600">{{ formatCurrency(scannedUser.situationFinanciere.resteAPayer) }}</p>
-                  </div>
+                <div class="pointage-finance-tile pointage-finance-tile--paid">
+                  <p>Payé</p>
+                  <strong>{{ formatCurrency(scannedUser.situationFinanciere.montantPaye) }}</strong>
                 </div>
-
-                <!-- Échéance du mois en cours -->
-                <div *ngIf="scannedUser.situationFinanciere.moisEnCours" class="mt-3 bg-amber-50 border border-amber-200 rounded-lg p-3">
-                  <p class="text-xs font-medium text-amber-800 mb-1">Échéance du mois en cours (délai : le 5)</p>
-                  <div class="flex items-center justify-between text-sm">
-                    <span class="text-gray-600">{{ libelleMois(scannedUser.situationFinanciere.moisEnCours.mois) }}</span>
-                    <span class="font-medium" [ngClass]="scannedUser.situationFinanciere.moisEnCours.estPaye ? 'text-green-600' : 'text-red-600'">
-                      {{ scannedUser.situationFinanciere.moisEnCours.estPaye ? 'Payée' : (scannedUser.situationFinanciere.moisEnCours.enRetard ? 'En retard' : 'À régler avant le 5') }}
-                    </span>
-                  </div>
-                  <div class="flex items-center justify-between text-sm mt-1">
-                    <span class="text-gray-600">Reste</span>
-                    <span class="font-medium text-gray-900">{{ formatCurrency(scannedUser.situationFinanciere.moisEnCours.resteAPayer) }}</span>
-                  </div>
+                <div class="pointage-finance-tile pointage-finance-tile--due">
+                  <p>Reste à payer</p>
+                  <strong>{{ formatCurrency(scannedUser.situationFinanciere.resteAPayer) }}</strong>
                 </div>
+              </div>
 
-                <!-- Détail des échéances (payées + restantes) -->
-                <div *ngIf="scannedUser.situationFinanciere.echeances?.length" class="mt-4">
-                  <div class="flex items-center justify-between mb-2">
-                    <h6 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Échéances</h6>
-                    <span class="text-xs text-gray-400">
-                      {{ scannedUser.situationFinanciere.echeancesPayees }}/{{ scannedUser.situationFinanciere.echeancesTotales }} payée(s)
-                    </span>
-                  </div>
-                  <ul class="space-y-1.5">
-                    <li *ngFor="let ech of scannedUser.situationFinanciere.echeances"
-                      class="flex items-center justify-between text-sm rounded-lg px-3 py-2"
-                      [ngClass]="ech.estPaye ? 'bg-green-50' : (ech.enRetard ? 'bg-red-50' : 'bg-gray-50')">
-                      <div class="flex items-center gap-2 min-w-0">
-                        <span class="material-symbols-outlined text-sm"
-                          [ngClass]="ech.estPaye ? 'text-green-600' : (ech.enRetard ? 'text-red-600' : 'text-gray-400')">
-                          {{ ech.estPaye ? 'check_circle' : (ech.enRetard ? 'error' : 'schedule') }}
-                        </span>
-                        <div class="min-w-0">
-                          <p class="text-gray-800 truncate">{{ libelleMois(ech.mois) }} <span class="text-gray-400">· n°{{ ech.numeroEcheance }}</span></p>
-                          <p class="text-xs" [ngClass]="ech.estPaye ? 'text-green-600' : (ech.enRetard ? 'text-red-600' : 'text-gray-500')">
-                            {{ ech.estPaye ? 'Payée' : (ech.enRetard ? 'En retard' : 'À venir') }}
-                          </p>
-                        </div>
+              <div *ngIf="scannedUser.situationFinanciere.moisEnCours" class="pointage-finance-current">
+                <p class="pointage-finance-current-title">Échéance du mois en cours (délai : le 5)</p>
+                <div class="pointage-finance-line">
+                  <span>{{ libelleMois(scannedUser.situationFinanciere.moisEnCours.mois) }}</span>
+                  <strong [ngClass]="scannedUser.situationFinanciere.moisEnCours.estPaye ? 'is-ok' : 'is-late'">
+                    {{ scannedUser.situationFinanciere.moisEnCours.estPaye ? 'Payée' : (scannedUser.situationFinanciere.moisEnCours.enRetard ? 'En retard' : 'À régler avant le 5') }}
+                  </strong>
+                </div>
+                <div class="pointage-finance-line">
+                  <span>Reste</span>
+                  <strong>{{ formatCurrency(scannedUser.situationFinanciere.moisEnCours.resteAPayer) }}</strong>
+                </div>
+              </div>
+
+              <div *ngIf="scannedUser.situationFinanciere.echeances?.length" class="pointage-finance-echeances">
+                <div class="pointage-finance-echeances-head">
+                  <h6>Échéances</h6>
+                  <span>{{ scannedUser.situationFinanciere.echeancesPayees }}/{{ scannedUser.situationFinanciere.echeancesTotales }} payée(s)</span>
+                </div>
+                <ul>
+                  <li *ngFor="let ech of scannedUser.situationFinanciere.echeances"
+                    [ngClass]="ech.estPaye ? 'is-paid' : (ech.enRetard ? 'is-late' : 'is-upcoming')">
+                    <div class="pointage-echeance-copy">
+                      <span class="material-symbols-outlined">{{ ech.estPaye ? 'check_circle' : (ech.enRetard ? 'error' : 'schedule') }}</span>
+                      <div>
+                        <p>{{ libelleMois(ech.mois) }} <span>· n°{{ ech.numeroEcheance }}</span></p>
+                        <small>{{ ech.estPaye ? 'Payée' : (ech.enRetard ? 'En retard' : 'À venir') }}</small>
                       </div>
-                      <div class="text-right shrink-0 pl-2">
-                        <p class="font-medium text-gray-900">{{ formatCurrency(ech.montant) }}</p>
-                        <p *ngIf="!ech.estPaye" class="text-xs text-red-600">reste {{ formatCurrency(ech.resteAPayer) }}</p>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
+                    </div>
+                    <div class="pointage-echeance-amount">
+                      <p>{{ formatCurrency(ech.montant) }}</p>
+                      <small *ngIf="!ech.estPaye">reste {{ formatCurrency(ech.resteAPayer) }}</small>
+                    </div>
+                  </li>
+                </ul>
               </div>
             </div>
 
-            <div *ngIf="scannedUser.statut === 'vert'" class="px-5 pb-5">
-              <div class="flex gap-3">
-                <button (click)="pointerScannedUser('arrivee')"
-                  class="pointage-btn pointage-btn--success flex-1">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/>
-                  </svg>
-                  Pointer arrivée
-                </button>
-                <button (click)="pointerScannedUser('depart')"
-                  class="pointage-btn pointage-btn--depart flex-1">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                  </svg>
-                  Pointer départ
-                </button>
-              </div>
+            <div *ngIf="scannedUser.statut === 'vert'" class="pointage-scanned-actions">
+              <button (click)="pointerScannedUser('arrivee')" class="pointage-btn pointage-btn--success flex-1">
+                <span class="material-symbols-outlined">login</span>
+                Pointer arrivée
+              </button>
+              <button (click)="pointerScannedUser('depart')" class="pointage-btn pointage-btn--depart flex-1">
+                <span class="material-symbols-outlined">logout</span>
+                Pointer départ
+              </button>
             </div>
           </div>
 
-          <!-- ===== AVERTISSEMENT SCAN ===== -->
           <div *ngIf="scanWarning && !scannedUser" class="pointage-state-card pointage-state-card--warning" role="status">
             <div class="state-icon">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86l-7.5 13A2 2 0 004.52 20h14.96a2 2 0 001.73-3.14l-7.5-13a2 2 0 00-3.46 0z"/>
-              </svg>
+              <span class="material-symbols-outlined">info</span>
             </div>
             <div class="state-title">Pointage déjà effectué</div>
             <div class="state-desc">{{ scanWarning }}</div>
@@ -574,12 +550,9 @@
             </button>
           </div>
 
-          <!-- ===== ERREUR SCAN ===== -->
           <div *ngIf="scanError && !scannedUser" class="pointage-state-card pointage-state-card--error">
             <div class="state-icon">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
+              <span class="material-symbols-outlined">error</span>
             </div>
             <div class="state-title">Scan non validé</div>
             <div class="state-desc">{{ scanError }}</div>
@@ -588,22 +561,18 @@
             </button>
           </div>
 
-          <!-- ===== SUCCÈS SCAN ===== -->
           <div *ngIf="scanSuccess" class="pointage-state-card pointage-state-card--success">
             <div class="state-icon">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
+              <span class="material-symbols-outlined">check_circle</span>
             </div>
             <div class="state-title">Pointage effectué</div>
-            <div *ngIf="lastAttendanceName" class="my-2 flex flex-col text-green-900">
+            <div *ngIf="lastAttendanceName" class="pointage-success-person">
               <img *ngIf="lastAttendancePhotoUrl"
                 [src]="lastAttendancePhotoUrl"
                 [alt]="'Photo de ' + lastAttendanceName"
-                class="mx-auto mb-2 h-20 w-20 rounded-full object-cover ring-2 ring-green-200"
                 (error)="photoPointageIndisponible()">
-              <strong class="text-base">{{ lastAttendanceName }}</strong>
-              <span class="text-xs">{{ lastAttendanceRole }}</span>
+              <strong>{{ lastAttendanceName }}</strong>
+              <span>{{ lastAttendanceRole }}</span>
             </div>
             <div class="state-desc">{{ scanSuccess }}</div>
             <button (click)="resetScan()" class="pointage-btn pointage-btn--success pointage-btn--sm">
