@@ -32,9 +32,23 @@ export interface HikvisionTerminalConfig {
   protocol: 'hikvision_isapi';
   hikvisionPort: number;
   hikvisionHttps: boolean;
+  username: string | null;
   etablissementId: number;
   actif: boolean;
   lastSeenAt: string | null;
+}
+
+/** Corps du PUT /hikvision-terminaux/:id (le mot de passe n'est jamais relu). */
+export interface HikvisionTerminalUpdatePayload {
+  serialNumber: string;
+  nom: string;
+  sourceIp: string;
+  port: number;
+  https: boolean;
+  username?: string;
+  password?: string;
+  etablissementId: number;
+  actif?: boolean;
 }
 
 @Injectable({
@@ -112,6 +126,10 @@ export class PointageService {
     etablissementId: number;
   }): Observable<HikvisionTerminalConfig> {
     return this.httpClient.post<HikvisionTerminalConfig>(`${this.SERVICE_URL}/hikvision-terminaux`, data);
+  }
+
+  modifierTerminalHikvision(id: number, data: HikvisionTerminalUpdatePayload): Observable<HikvisionTerminalConfig> {
+    return this.httpClient.put<HikvisionTerminalConfig>(`${this.SERVICE_URL}/hikvision-terminaux/${id}`, data);
   }
 
   testerTerminalHikvision(id: number): Observable<{ success: boolean; message: string }> {

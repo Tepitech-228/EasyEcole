@@ -29,6 +29,8 @@ export function normalizeHikvisionEmployeeNo(value: string): string {
 const DEFAULT_DOOR_RIGHT = "1";
 const DEFAULT_RIGHT_PLAN = [{ doorNo: 1, planTemplateNo: "1" }];
 
+const ACCESS_CONTROL_DENIED_MESSAGE = "Le compte ISAPI est authentifié mais n'a pas les droits nécessaires pour gérer les utilisateurs/visages (AccessControl). Utilisez le compte administrateur du terminal ou accordez les droits ISAPI.";
+
 /**
  * Clé de chiffrement des identifiants ISAPI.
  * Priorité à la variable d'environnement (si valide), sinon repli sur la clé
@@ -187,7 +189,7 @@ export default class HikvisionIsapiService {
 
     static async testConnection(terminal: PointageTerminal): Promise<void> {
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 8000);
+        let timer = setTimeout(() => controller.abort(), 8000);
         try {
             const response = await requestWithDigest(terminal, "/ISAPI/System/deviceInfo", controller.signal);
             if (response.status < 200 || response.status >= 300) throw new Error(`Hikvision device returned HTTP ${response.status}.`);
@@ -198,6 +200,34 @@ export default class HikvisionIsapiService {
             const serialNumber = body.match(/<(?:\w+:)?serialNumber\b[^>]*>([^<]+)<\//i)?.[1]?.trim();
             if (serialNumber && serialNumber !== terminal.serialNumber) {
                 throw new Error("The serial number returned by the device does not match the configured terminal.");
+            }
+
+            // Lire deviceInfo ne prouve pas que le compte peut gérer les utilisateurs :
+            // un compte restreint est refuse en 401/403 sur AccessControl, ce qui fait
+            // echouer tous les enrolements. On verifie donc explicitement ce droit.
+            clearTimeout(timer);
+            timer = setTimeout(() => controller.abort(), 8000);
+            let accessControlResponse: CurlResponse;
+            try {
+                accessControlResponse = await requestWithDigest(
+                    terminal,
+                    "/ISAPI/AccessControl/UserInfo/Count?format=json",
+                    controller.signal
+                );
+            } catch (error) {
+                if (error instanceof Error && error.message === "Hikvision rejected the HTTP Digest credentials.") {
+                    throw new Error(ACCESS_CONTROL_DENIED_MESSAGE);
+                }
+                throw error;
+            }
+            if (accessControlResponse.status === 401 || accessControlResponse.status === 403) {
+                throw new Error(ACCESS_CONTROL_DENIED_MESSAGE);
+            }
+            if (accessControlResponse.status === 404) {
+                // Certains firmwares anciens n'exposent pas cet endpoint : on n'echoue pas le test.
+                console.warn(`[Hikvision] Le firmware du terminal ${terminal.serialNumber} ne supporte pas /ISAPI/AccessControl/UserInfo/Count : contrôle des droits AccessControl ignoré.`);
+            } else if (accessControlResponse.status < 200 || accessControlResponse.status >= 300) {
+                throw new Error(`Hikvision AccessControl returned HTTP ${accessControlResponse.status}.`);
             }
         } finally {
             clearTimeout(timer);

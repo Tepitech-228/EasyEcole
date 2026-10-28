@@ -23,7 +23,7 @@ router
     .put('/terminaux/:id', [Authenticate], PointageTerminalController.modifierTerminal)
     .get('/hikvision-terminaux', [Authenticate], HikvisionTerminalController.getAll)
     .post('/hikvision-terminaux', [Authenticate], HikvisionTerminalController.create)
-    .put('/hikvision-terminaux/:id', [Authenticate], HikvisionTerminalController.updateActive)
+    .put('/hikvision-terminaux/:id', [Authenticate], HikvisionTerminalController.update)
     .post('/hikvision-terminaux/:id/test', [Authenticate], HikvisionTerminalController.testConnection)
     .get('/', [Authenticate], PointageController.getAllPointages)
     .get('/today', [Authenticate], PointageController.getTodayPointage)

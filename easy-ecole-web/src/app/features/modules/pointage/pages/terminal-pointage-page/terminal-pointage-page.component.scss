@@ -319,6 +319,25 @@
   }
 }
 
+.pointage-terminal-edit-badge {
+  grid-column: 1 / -1;
+  justify-self: start;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  color: #315b91;
+  background: #edf4fd;
+  font-size: 0.64rem;
+  font-weight: 700;
+}
+
+.pointage-terminal-form-actions {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .pointage-terminal-check {
   display: flex !important;
   align-items: center;

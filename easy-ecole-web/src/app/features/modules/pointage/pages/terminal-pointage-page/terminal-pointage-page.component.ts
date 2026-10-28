@@ -3,7 +3,11 @@ import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { map } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
-import { HikvisionTerminalConfig, PointageService } from 'src/app/data/modules/inscription/services/pointage.service';
+import {
+  HikvisionTerminalConfig,
+  HikvisionTerminalUpdatePayload,
+  PointageService
+} from 'src/app/data/modules/inscription/services/pointage.service';
 import { Pointage } from 'src/app/data/modules/inscription/models/Pointage.model';
 import { AuthService, SiteUtilisateur } from 'src/app/data/modules/auth/services/auth.service';
 import { SocketService, TerminalAttendanceEvent } from 'src/app/core/services/socket.service';
@@ -46,6 +50,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   terminalSites: SiteUtilisateur[] = []
   hikvisionTerminals: HikvisionTerminalConfig[] = []
   hikvisionTestingId: number | null = null
+  /** Id du terminal en cours d'édition ; null = formulaire en création. */
+  editingTerminalId: number | null = null
   hikvisionDraft = {
     serialNumber: '',
     nom: 'Hikvision MinMoe',
@@ -128,16 +134,53 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     this.terminalConfigSuccess = ''
     const draft = this.hikvisionDraft
     const etablissementId = Number(draft.etablissementId)
+    const editingId = this.editingTerminalId
+    // En édition, le mot de passe est facultatif : vide = conserver l'actuel.
+    const identifiantsValides = !!draft.username.trim() && (editingId !== null || !!draft.password)
     if (
       !draft.serialNumber.trim() || !draft.nom.trim() || !draft.sourceIp.trim() ||
-      !draft.username.trim() || !draft.password ||
+      !identifiantsValides ||
       !Number.isSafeInteger(draft.port) || draft.port < 1 || draft.port > 65535 ||
       !Number.isSafeInteger(etablissementId) || etablissementId <= 0
     ) {
-      this.terminalConfigError = 'Renseignez le numéro de série, le nom, l’IP du terminal, le port, le compte, le mot de passe et le site.'
+      this.terminalConfigError = editingId !== null
+        ? 'Renseignez le numéro de série, le nom, l’IP du terminal, le port, le compte et le site. Le mot de passe peut rester vide pour conserver l’actuel.'
+        : 'Renseignez le numéro de série, le nom, l’IP du terminal, le port, le compte, le mot de passe et le site.'
       return
     }
+
     this.terminalConfigSaving = true
+
+    if (editingId !== null) {
+      const payload: HikvisionTerminalUpdatePayload = {
+        serialNumber: draft.serialNumber.trim(),
+        nom: draft.nom.trim(),
+        sourceIp: draft.sourceIp.trim(),
+        port: draft.port,
+        https: draft.https,
+        username: draft.username.trim(),
+        etablissementId
+      }
+      // Champ omis (et non envoyé vide) : le backend conserve le mot de passe actuel.
+      if (draft.password) payload.password = draft.password
+
+      this.pointageService.modifierTerminalHikvision(editingId, payload).subscribe({
+        next: updated => {
+          this.hikvisionTerminals = this.hikvisionTerminals.map(item => item.id === updated.id ? updated : item)
+          this.editingTerminalId = null
+          this.reinitialiserBrouillonTerminal()
+          this.terminalConfigSuccess = 'Terminal modifié. Les enrôlements en attente seront relancés.'
+          this.terminalConfigSaving = false
+          this.testerTerminalHikvision(updated)
+        },
+        error: err => {
+          this.terminalConfigError = err.error?.message || 'Le terminal Hikvision n’a pas pu être modifié.'
+          this.terminalConfigSaving = false
+        }
+      })
+      return
+    }
+
     this.pointageService.creerTerminalHikvision({
       serialNumber: draft.serialNumber.trim(),
       nom: draft.nom.trim(),
@@ -160,6 +203,47 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
         this.terminalConfigSaving = false
       }
     })
+  }
+
+  /** Charge un terminal existant dans le formulaire et bascule en mode édition. */
+  modifierTerminalHikvision(terminal: HikvisionTerminalConfig): void {
+    this.editingTerminalId = terminal.id
+    this.terminalConfigError = ''
+    this.terminalConfigSuccess = ''
+    this.hikvisionDraft = {
+      serialNumber: terminal.serialNumber,
+      nom: terminal.nom,
+      sourceIp: terminal.sourceIp,
+      port: terminal.hikvisionPort,
+      https: terminal.hikvisionHttps,
+      username: terminal.username || '',
+      password: '',
+      etablissementId: terminal.etablissementId
+    }
+    if (typeof document !== 'undefined') {
+      document.querySelector('.pointage-terminal-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }
+
+  annulerModificationTerminal(): void {
+    this.editingTerminalId = null
+    this.terminalConfigError = ''
+    this.terminalConfigSuccess = ''
+    this.reinitialiserBrouillonTerminal()
+  }
+
+  /** Brouillon vierge : site par défaut = premier site disponible. */
+  private reinitialiserBrouillonTerminal(): void {
+    this.hikvisionDraft = {
+      serialNumber: '',
+      nom: 'Hikvision MinMoe',
+      sourceIp: '',
+      port: 80,
+      https: false,
+      username: '',
+      password: '',
+      etablissementId: this.terminalSites.length ? this.terminalSites[0].id : null
+    }
   }
 
   testerTerminalHikvision(terminal: HikvisionTerminalConfig): void {

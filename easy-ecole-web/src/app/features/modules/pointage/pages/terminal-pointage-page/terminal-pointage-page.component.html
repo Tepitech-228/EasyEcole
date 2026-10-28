@@ -105,6 +105,9 @@
       </div>
 
       <form (ngSubmit)="enregistrerTerminalHikvision()" class="pointage-terminal-form mt-4">
+        <div *ngIf="editingTerminalId" class="pointage-terminal-edit-badge" role="status">
+          Modification du terminal
+        </div>
         <label>
           <span>Numéro de série Hikvision</span>
           <input name="hikvisionSerial" [(ngModel)]="hikvisionDraft.serialNumber" required maxlength="64" autocomplete="off" placeholder="N° sur l’étiquette">
@@ -127,7 +130,10 @@
         </label>
         <label>
           <span>Mot de passe du terminal</span>
-          <input name="hikvisionPassword" type="password" [(ngModel)]="hikvisionDraft.password" required maxlength="256" autocomplete="new-password">
+          <input name="hikvisionPassword" type="password" [(ngModel)]="hikvisionDraft.password"
+            [required]="!editingTerminalId"
+            [placeholder]="editingTerminalId ? 'Laisser vide pour conserver le mot de passe actuel' : ''"
+            maxlength="256" autocomplete="new-password">
         </label>
         <label>
           <span>Site rattaché</span>
@@ -140,9 +146,15 @@
           <input name="hikvisionHttps" type="checkbox" [(ngModel)]="hikvisionDraft.https" (change)="definirPortHikvision()">
           <span>Utiliser HTTPS (certificat du terminal vérifié par le serveur)</span>
         </label>
-        <button type="submit" class="pointage-btn pointage-btn--arrivee" [disabled]="terminalConfigSaving || terminalConfigLoading || !terminalSites.length">
-          {{ terminalConfigSaving ? 'Enregistrement…' : 'Enregistrer et tester' }}
-        </button>
+        <div class="pointage-terminal-form-actions">
+          <button type="submit" class="pointage-btn pointage-btn--arrivee" [disabled]="terminalConfigSaving || terminalConfigLoading || !terminalSites.length">
+            {{ terminalConfigSaving ? 'Enregistrement…' : (editingTerminalId ? 'Enregistrer les modifications' : 'Enregistrer et tester') }}
+          </button>
+          <button *ngIf="editingTerminalId" type="button" class="pointage-btn pointage-btn--outline"
+                  [disabled]="terminalConfigSaving" (click)="annulerModificationTerminal()">
+            Annuler
+          </button>
+        </div>
       </form>
 
       <div *ngIf="hikvisionTerminals.length" class="pointage-terminal-list">
@@ -161,6 +173,10 @@
                   [disabled]="hikvisionTestingId === terminal.id"
                   (click)="testerTerminalHikvision(terminal)">
             {{ hikvisionTestingId === terminal.id ? 'Test…' : 'Tester ISAPI' }}
+          </button>
+          <button type="button" class="pointage-btn pointage-btn--outline pointage-btn--sm"
+                  (click)="modifierTerminalHikvision(terminal)">
+            Modifier
           </button>
           <button type="button" class="pointage-btn pointage-btn--outline pointage-btn--sm" (click)="basculerTerminalHikvision(terminal)">
             {{ terminal.actif ? 'Désactiver' : 'Réactiver' }}
