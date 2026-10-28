@@ -271,6 +271,50 @@ done
 echo "[entrypoint] Répertoires fichiers OK (public/, uploads/, documents/) — écriture autorisée"
 
 # -----------------------------------------------------------------------------
+# 0d. CLÉ MAÎTRESSE DE CHIFFREMENT — génération automatique si absente
+# -----------------------------------------------------------------------------
+# ENCRYPTION_MASTER_KEY est utilisée par HikvisionIsapiService pour chiffrer
+# les mots de passe ISAPI (AES-256-GCM) et par EncryptionService pour protéger
+# les clés de fichiers. La définir dans Dokploy reste possible et prioritaire.
+# Si elle est absente, on génère 32 octets aléatoires (64 caractères hex) et on
+# les persiste dans /app/.keys/master.key (volume KEYS_HOST_PATH). Au
+# redémarrage, la même clé est relue : les identifiants déjà chiffrés restent
+# lisibles.
+#
+# ⚠️ NE JAMAIS supprimer /app/.keys/master.key sans avoir sauvegardé la clé :
+#    les mots de passe ISAPI enregistrés deviendraient indéchiffrables.
+if [ -z "${ENCRYPTION_MASTER_KEY:-}" ]; then
+  KEY_FILE="/app/.keys/master.key"
+  if [ -f "$KEY_FILE" ]; then
+    if ! ENCRYPTION_MASTER_KEY="$(node -e 'process.stdout.write(require("fs").readFileSync("/app/.keys/master.key").toString("hex"))')"; then
+      echo "[entrypoint] ERREUR : lecture impossible de $KEY_FILE."
+      exit 1
+    fi
+    echo "[entrypoint] ENCRYPTION_MASTER_KEY chargée depuis $KEY_FILE."
+  else
+    if ! ENCRYPTION_MASTER_KEY="$(node -e 'const fs=require("fs"),c=require("crypto");fs.mkdirSync("/app/.keys",{recursive:true});const k=c.randomBytes(32);fs.writeFileSync("/app/.keys/master.key",k,{mode:0o600});process.stdout.write(k.toString("hex"))')"; then
+      echo "[entrypoint] ERREUR : génération impossible de $KEY_FILE."
+      exit 1
+    fi
+    echo "[entrypoint] ENCRYPTION_MASTER_KEY générée dans $KEY_FILE — sauvegardez ce fichier."
+  fi
+  # Format attendu par HikvisionIsapiService : exactement 64 caractères hex.
+  case "$ENCRYPTION_MASTER_KEY" in
+    ""|*[!0-9a-fA-F]*)
+      echo "[entrypoint] ERREUR : $KEY_FILE ne contient pas une clé hexadécimale valide."
+      exit 1
+      ;;
+  esac
+  if [ "${#ENCRYPTION_MASTER_KEY}" -ne 64 ]; then
+    echo "[entrypoint] ERREUR : la clé de $KEY_FILE fait ${#ENCRYPTION_MASTER_KEY} caractères (64 attendus)."
+    exit 1
+  fi
+  export ENCRYPTION_MASTER_KEY
+else
+  echo "[entrypoint] ENCRYPTION_MASTER_KEY fournie par l'environnement."
+fi
+
+# -----------------------------------------------------------------------------
 # 0c. AMORÇAGE DU SCHÉMA DE BASE (AVANT les migrations) — base NEUVE uniquement
 # -----------------------------------------------------------------------------
 # POURQUOI ICI (et pas après) : les fichiers `migrations/*.sql` sont des

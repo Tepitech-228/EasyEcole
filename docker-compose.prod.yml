@@ -131,6 +131,9 @@ services:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       JWT_SECRET: ${JWT_SECRET}
       DOCGEN_SECRET: ${DOCGEN_SECRET}
+      # Optionnelle : si vide, l'entrypoint genere une cle persistante dans
+      # /app/.keys/master.key (volume KEYS_HOST_PATH). La definir dans Dokploy
+      # reste possible et prioritaire.
       ENCRYPTION_MASTER_KEY: ${ENCRYPTION_MASTER_KEY:-}
       # Requis : src/app.ts leve une erreur au chargement si absent.
       CORS_ORIGIN: ${CORS_ORIGIN:?CORS_ORIGIN must be set (ex. http://192.168.100.10:8080)}
