@@ -141,55 +141,70 @@ if [ "$(id -u)" = "0" ]; then
     fi
   done
 
+  SKIP_PRIVDROP=0
   if [ -n "$PERM_ERRORS" ]; then
-    echo "[entrypoint] ERREUR : ecriture impossible en uid 1000 dans :$PERM_ERRORS"
-    echo "[entrypoint] Le systeme de fichiers des montages n'applique pas chown/chmod."
-    if command -v findmnt >/dev/null 2>&1; then
-      for d in $PERM_ERRORS; do
-        echo "[entrypoint]   $d : $(findmnt -T "$d" -no FSTYPE,OPTIONS 2>/dev/null)"
-      done
+    if [ "${ALLOW_ROOT_FALLBACK:-false}" = "true" ]; then
+      echo "[entrypoint] AVERTISSEMENT : ecriture impossible en uid 1000 dans :$PERM_ERRORS"
+      echo "[entrypoint] ALLOW_ROOT_FALLBACK=true : demarrage en root pour ne pas bloquer le service."
+      echo "[entrypoint] Corriger les droits du montage cote hote, puis repasser ALLOW_ROOT_FALLBACK=false."
+      if command -v findmnt >/dev/null 2>&1; then
+        for d in $PERM_ERRORS; do
+          echo "[entrypoint]   $d : $(findmnt -T "$d" -no FSTYPE,OPTIONS 2>/dev/null)"
+        done
+      fi
+      SKIP_PRIVDROP=1
+    else
+      echo "[entrypoint] ERREUR : ecriture impossible en uid 1000 dans :$PERM_ERRORS"
+      echo "[entrypoint] Le systeme de fichiers des montages n'applique pas chown/chmod."
+      if command -v findmnt >/dev/null 2>&1; then
+        for d in $PERM_ERRORS; do
+          echo "[entrypoint]   $d : $(findmnt -T "$d" -no FSTYPE,OPTIONS 2>/dev/null)"
+        done
+      fi
+      echo "[entrypoint] Cas 1 - disque ext4/xfs/btrfs (POSIX) : chown doit fonctionner."
+      echo "[entrypoint]   sudo chown -R 1000:1000 /mnt/easyecole-documents /mnt/easyecole-storage"
+      echo "[entrypoint]   verifier aussi que le disque n'est pas monte en 'ro'."
+      echo "[entrypoint] Cas 2 - disque NTFS/exFAT/vfat : les droits viennent du montage."
+      echo "[entrypoint]   /etc/fstab : uid=1000,gid=1000,umask=0002 (ajouter permissions si ntfs-3g)"
+      echo "[entrypoint]   sudo mount -a"
+      echo "[entrypoint] Cas 3 - Docker avec userns-remap : 'root' conteneur != root hote."
+      echo "[entrypoint]   docker info | grep -i userns  (desactiver userns-remap pour ce service)"
+      echo "[entrypoint] Controle : sudo -u '#1000' touch /mnt/easyecole-documents/created/_legacy/storage/.write-test"
+      exit 1
     fi
-    echo "[entrypoint] Cas 1 - disque ext4/xfs/btrfs (POSIX) : chown doit fonctionner."
-    echo "[entrypoint]   sudo chown -R 1000:1000 /mnt/easyecole-documents /mnt/easyecole-storage"
-    echo "[entrypoint]   verifier aussi que le disque n'est pas monte en 'ro'."
-    echo "[entrypoint] Cas 2 - disque NTFS/exFAT/vfat : les droits viennent du montage."
-    echo "[entrypoint]   /etc/fstab : uid=1000,gid=1000,umask=0002 (ajouter permissions si ntfs-3g)"
-    echo "[entrypoint]   sudo mount -a"
-    echo "[entrypoint] Cas 3 - Docker avec userns-remap : 'root' conteneur != root hote."
-    echo "[entrypoint]   docker info | grep -i userns  (desactiver userns-remap pour ce service)"
-    echo "[entrypoint] Controle : sudo -u '#1000' touch /mnt/easyecole-documents/created/_legacy/storage/.write-test"
+  fi
+
+  if [ "$SKIP_PRIVDROP" = "0" ]; then
+    echo "[entrypoint] Droits alignes (uid 1000 = node). Reprise en tant que 'node'..."
+
+    # Abandon des privileges : setpriv (util-linux) prioritaire, runuser en repli.
+    # Chemin ABSOLU du script : la re-execution doit retrouver le script quel que
+    # soit le repertoire courant du process re-execute.
+    SCRIPT_PATH="$(readlink -f "$0" 2>/dev/null || echo "$0")"
+    if command -v setpriv >/dev/null 2>&1; then
+      exec setpriv --reuid=1000 --regid=1000 --init-groups "$SCRIPT_PATH" "$@"
+    fi
+    if command -v runuser >/dev/null 2>&1; then
+      exec runuser -u node -- "$SCRIPT_PATH" "$@"
+    fi
+    # Repli final : Node est TOUJOURS present dans l'image et sait poser les
+    # identites lui-meme (process.setuid/setgid). Aucune dependance systeme.
+    if command -v node >/dev/null 2>&1; then
+      echo "[entrypoint] Repli : changement d'identite realise via Node."
+      exec node -e '
+        const { spawnSync } = require("child_process");
+        process.setgroups([]);
+        process.setgid(1000);
+        process.setuid(1000);
+        const r = spawnSync(process.argv[1], process.argv.slice(2), { stdio: "inherit" });
+        process.exit(r.status === null ? 1 : r.status);
+      ' "$SCRIPT_PATH" "$@"
+    fi
+
+    echo "[entrypoint] ERREUR : impossible d'abandonner les privilèges root."
+    echo "[entrypoint] → Installer util-linux dans l'image (Dockerfile, étape runtime)."
     exit 1
   fi
-
-  echo "[entrypoint] Droits alignes (uid 1000 = node). Reprise en tant que 'node'..."
-
-  # Abandon des privileges : setpriv (util-linux) prioritaire, runuser en repli.
-  # Chemin ABSOLU du script : la re-execution doit retrouver le script quel que
-  # soit le repertoire courant du process re-execute.
-  SCRIPT_PATH="$(readlink -f "$0" 2>/dev/null || echo "$0")"
-  if command -v setpriv >/dev/null 2>&1; then
-    exec setpriv --reuid=1000 --regid=1000 --init-groups "$SCRIPT_PATH" "$@"
-  fi
-  if command -v runuser >/dev/null 2>&1; then
-    exec runuser -u node -- "$SCRIPT_PATH" "$@"
-  fi
-  # Repli final : Node est TOUJOURS present dans l'image et sait poser les
-  # identites lui-meme (process.setuid/setgid). Aucune dependance systeme.
-  if command -v node >/dev/null 2>&1; then
-    echo "[entrypoint] Repli : changement d'identite realise via Node."
-    exec node -e '
-      const { spawnSync } = require("child_process");
-      process.setgroups([]);
-      process.setgid(1000);
-      process.setuid(1000);
-      const r = spawnSync(process.argv[1], process.argv.slice(2), { stdio: "inherit" });
-      process.exit(r.status === null ? 1 : r.status);
-    ' "$SCRIPT_PATH" "$@"
-  fi
-
-  echo "[entrypoint] ERREUR : impossible d'abandonner les privilèges root."
-  echo "[entrypoint] → Installer util-linux dans l'image (Dockerfile, étape runtime)."
-  exit 1
 fi
 
 # -----------------------------------------------------------------------------

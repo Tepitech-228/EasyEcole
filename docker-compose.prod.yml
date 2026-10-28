@@ -148,6 +148,10 @@ services:
       # Refuse de demarrer si les marqueurs .easyecole-mounted sont absents :
       # evite d'ecrire silencieusement sur le disque local au lieu du montage.
       REQUIRE_DOCUMENTS_MOUNT: ${REQUIRE_DOCUMENTS_MOUNT:-true}
+      # Deblocage temporaire : si les montages hote refusent l'ecriture en
+      # uid 1000, demarrer en root au lieu de boucler. Repasser a false des
+      # que les droits du montage sont corriges cote hote.
+      ALLOW_ROOT_FALLBACK: ${ALLOW_ROOT_FALLBACK:-true}
     networks:
       - app
       - data
