@@ -28,6 +28,12 @@
 #   Les chemins de stockage ont des defauts production ; les surcharger
 #   uniquement si les montages changent.
 #
+# POINTAGE HIKVISION : le backend publie HIKVISION_PORT (defaut 8000) sur
+#   l'hote -> port 3000 du conteneur (PORT de l'API).
+#   Terminaux : http://192.168.100.10:8000/api/hikvision/event
+#   Ne PAS definir HIKVISION_CALLBACK_HOST en production : app.ts ouvrirait un
+#   second listener sur la meme IP/port, absente dans le conteneur -> crash.
+#
 # BASE EXTERNE : aucun service `db` ici. Le backend se connecte a DB_HOST
 #   (defaut 192.168.100.20:3306). Le port 3306 n'est PAS publie par cette stack.
 # =============================================================================
@@ -107,6 +113,13 @@ services:
     # crees par Dokploy (root:root), puis re-execution en `node` (uid 1000).
     # Voir bloc 0a de easy-ecole-backend/docker-entrypoint.sh.
     user: "0:0"
+    ports:
+      # Push des terminaux Hikvision (HTTP, pas HTTPS) :
+      #   http://<VM_APP>:HIKVISION_PORT/api/hikvision/event
+      # 8000 (hote, defaut) -> 3000 (conteneur) : on NE change PAS PORT, sinon
+      # le healthcheck et le proxy nginx (backend:3000) cassent.
+      # Restreindre l'acces a ce port aux IP des terminaux (firewall VM APP).
+      - "${HIKVISION_BIND_IP:-0.0.0.0}:${HIKVISION_PORT:-8000}:3000"
     environment:
       NODE_ENV: production
       DB_HOST: ${DB_HOST:-192.168.100.20}

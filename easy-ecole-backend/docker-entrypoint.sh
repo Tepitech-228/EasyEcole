@@ -95,15 +95,71 @@ if [ "$(id -u)" = "0" ]; then
   # au lieu d'un renommage de masse sur le GED. Si `find` echoue (droits,
   # volume indisponible), on repasse en mode "reparer" pour ne pas laisser
   # un deploiement dans le meme etat qu'avant.
+  #
+  # ATTENTION FS SANS PROPRIETE POSIX : sur un disque NTFS/exFAT/vfat ou un
+  # partage CIFS/NFS monte sans uid=1000, `chown` echoue en EPERM et `chmod`
+  # est sans effet : les droits sont FIXES par les options de montage de
+  # l'hote. On affiche donc l'erreur (plus de 2>/dev/null) et on VERIFIE
+  # l'ecriture reelle en uid 1000 avant de continuer, pour ne pas boucler
+  # indefiniment sur « Permission denied ».
+  can_write_as_node() {
+    _dir="$1"
+    if command -v setpriv >/dev/null 2>&1; then
+      setpriv --reuid=1000 --regid=1000 --init-groups test -w "$_dir" 2>/dev/null
+    elif command -v runuser >/dev/null 2>&1; then
+      runuser -u node -- test -w "$_dir" 2>/dev/null
+    else
+      # Aucun outil fiable pour tester : on laisse la suite echouer avec
+      # son propre message (block 0 / 0b).
+      return 0
+    fi
+  }
+
+  PERM_ERRORS=""
   for d in $MOUNT_DIRS; do
     OFFENDERS="$(find "$d" ! -user 1000 -print -quit 2>/dev/null)"
     FIND_RC=$?
     if [ -n "$OFFENDERS" ] || [ "$FIND_RC" -ne 0 ]; then
       echo "[entrypoint]   → droits non conformes dans $d : reparation…"
-      chown -R 1000:1000 "$d" 2>/dev/null || true
-      chmod -R u+rwX,g+rwX "$d" 2>/dev/null || true
+      # Journal borne : un chown refuse sur un gros GED peut produire des
+      # milliers de lignes EPERM ; on n'en garde que la premiere.
+      CHOWN_LOG="$(mktemp 2>/dev/null || echo /tmp/easyecole-chown.log)"
+      if chown -R 1000:1000 "$d" 2>"$CHOWN_LOG"; then
+        rm -f "$CHOWN_LOG"
+        chmod -R u+rwX,g+rwX "$d" 2>/dev/null || true
+      else
+        echo "[entrypoint]   ⚠ chown refuse sur $d : $(head -n 1 "$CHOWN_LOG" 2>/dev/null)"
+        rm -f "$CHOWN_LOG"
+        echo "[entrypoint]     (NTFS/exFAT/SMB/NFS ignorent chown : corriger les options de montage cote hote)"
+        # Dernier recours non recursif : si le FS honore chmod sans chown,
+        # cela suffit pour creer des sous-dossiers a la racine du montage.
+        chmod a+rwX "$d" 2>/dev/null || true
+      fi
+    fi
+    if ! can_write_as_node "$d"; then
+      PERM_ERRORS="$PERM_ERRORS $d"
     fi
   done
+
+  if [ -n "$PERM_ERRORS" ]; then
+    echo "[entrypoint] ERREUR : ecriture impossible en uid 1000 dans :$PERM_ERRORS"
+    echo "[entrypoint] Le systeme de fichiers des montages n'applique pas chown/chmod."
+    if command -v findmnt >/dev/null 2>&1; then
+      for d in $PERM_ERRORS; do
+        echo "[entrypoint]   $d : $(findmnt -T "$d" -no FSTYPE,OPTIONS 2>/dev/null)"
+      done
+    fi
+    echo "[entrypoint] Cas 1 - disque ext4/xfs/btrfs (POSIX) : chown doit fonctionner."
+    echo "[entrypoint]   sudo chown -R 1000:1000 /mnt/easyecole-documents /mnt/easyecole-storage"
+    echo "[entrypoint]   verifier aussi que le disque n'est pas monte en 'ro'."
+    echo "[entrypoint] Cas 2 - disque NTFS/exFAT/vfat : les droits viennent du montage."
+    echo "[entrypoint]   /etc/fstab : uid=1000,gid=1000,umask=0002 (ajouter permissions si ntfs-3g)"
+    echo "[entrypoint]   sudo mount -a"
+    echo "[entrypoint] Cas 3 - Docker avec userns-remap : 'root' conteneur != root hote."
+    echo "[entrypoint]   docker info | grep -i userns  (desactiver userns-remap pour ce service)"
+    echo "[entrypoint] Controle : sudo -u '#1000' touch /mnt/easyecole-documents/created/_legacy/storage/.write-test"
+    exit 1
+  fi
 
   echo "[entrypoint] Droits alignes (uid 1000 = node). Reprise en tant que 'node'..."
 
