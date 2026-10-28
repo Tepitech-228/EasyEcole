@@ -3,7 +3,9 @@ import { Request, Response } from "express";
 import { Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Etablissement } from "../../etablissement/models/Etablissement";
+import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { PointageTerminal } from "../models/PointageTerminal";
+import { PointageTerminalEvent } from "../models/PointageTerminalEvent";
 import { HikvisionEnrollment } from "../models/HikvisionEnrollment";
 import HikvisionIsapiService from "../services/HikvisionIsapiService";
 import HikvisionEnrollmentService from "../services/HikvisionEnrollmentService";
@@ -300,6 +302,64 @@ export default class HikvisionTerminalController {
             }
             console.error("[Hikvision] terminal update failed:", error);
             return res.status(500).json({ success: false, message: "Le terminal Hikvision n’a pas pu être modifié." });
+        }
+    }
+
+    /**
+     * Suppression définitive d'un terminal Hikvision.
+     * Un terminal ayant déjà remonté des pointages est protégé (409) : l'historique
+     * ne doit pas être orphelin, la désactivation reste la seule issue.
+     */
+    static async remove(req: Request, res: Response): Promise<Response> {
+        if (!HikvisionTerminalController.adminOnly(req, res)) return res;
+        const id = Number(req.params.id);
+        if (!Number.isSafeInteger(id) || id <= 0) {
+            return res.status(400).json({ success: false, message: "Identifiant de terminal invalide." });
+        }
+
+        try {
+            const terminal = await PointageTerminal.findOne({ where: { id, protocol: "hikvision_isapi" } });
+            if (!terminal) return res.status(404).json({ success: false, message: "Terminal Hikvision non trouvé." });
+
+            // Garde-fou historique : on refuse la suppression dès qu'un événement référence le terminal.
+            const pointagesCount = await PointageTerminalEvent.count({ where: { terminalId: id } });
+            if (pointagesCount > 0) {
+                return res.status(409).json({
+                    success: false,
+                    message: "Ce terminal possède des pointages enregistrés. Désactivez-le au lieu de le supprimer."
+                });
+            }
+
+            // Les attributs sont capturés avant destruction : l'instance détruite ne doit plus servir de source.
+            const etablissementId = Number(terminal.etablissementId);
+            const terminalId = Number(terminal.id);
+
+            const sequelize = DatabaseConnection.getInstance().sequelize;
+            await sequelize.transaction(async transaction => {
+                // Les enrôlements du terminal n'ont plus de sens sans lui (pas de pointage associé).
+                await HikvisionEnrollment.destroy({ where: { terminalId }, transaction });
+                await terminal.destroy({ transaction });
+            });
+
+            // Relance des photos sur les autres terminaux du site : le profil doit rester
+            // enrôlé ailleurs. Les erreurs sont absorbées pour ne pas masquer une suppression réussie.
+            try {
+                const remainingTerminals = await PointageTerminal.findAll({
+                    where: { etablissementId, protocol: "hikvision_isapi", actif: true }
+                });
+                for (const remaining of remainingTerminals) {
+                    void HikvisionEnrollmentService.enqueueEligibleProfilesForTerminal(remaining).catch(error => {
+                        console.error(`[Hikvision] Impossible de préparer les enrôlements admissibles pour le terminal ${remaining.id}:`, error);
+                    });
+                }
+            } catch (error) {
+                console.error(`[Hikvision] La relance des enrôlements après suppression du terminal ${terminalId} a échoué:`, error);
+            }
+
+            return res.status(200).json({ success: true, message: "Terminal supprimé." });
+        } catch (error) {
+            console.error("[Hikvision] terminal deletion failed:", error);
+            return res.status(500).json({ success: false, message: "Le terminal Hikvision n’a pas pu être supprimé." });
         }
     }
 }

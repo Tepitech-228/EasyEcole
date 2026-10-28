@@ -178,6 +178,11 @@
                   (click)="modifierTerminalHikvision(terminal)">
             Modifier
           </button>
+          <button type="button" class="pointage-btn pointage-btn--outline pointage-btn--sm text-red-600 border-red-200 hover:bg-red-50"
+                  [disabled]="hikvisionDeletingId === terminal.id"
+                  (click)="supprimerTerminalHikvision(terminal)">
+            {{ hikvisionDeletingId === terminal.id ? 'Suppression…' : 'Supprimer' }}
+          </button>
           <button type="button" class="pointage-btn pointage-btn--outline pointage-btn--sm" (click)="basculerTerminalHikvision(terminal)">
             {{ terminal.actif ? 'Désactiver' : 'Réactiver' }}
           </button>

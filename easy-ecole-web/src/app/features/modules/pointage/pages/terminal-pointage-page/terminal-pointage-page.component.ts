@@ -50,6 +50,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   terminalSites: SiteUtilisateur[] = []
   hikvisionTerminals: HikvisionTerminalConfig[] = []
   hikvisionTestingId: number | null = null
+  /** Id du terminal en cours de suppression ; null = aucune suppression. */
+  hikvisionDeletingId: number | null = null
   /** Id du terminal en cours d'édition ; null = formulaire en création. */
   editingTerminalId: number | null = null
   hikvisionDraft = {
@@ -270,6 +272,37 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       },
       error: err => {
         this.terminalConfigError = err.error?.message || 'L’état du terminal Hikvision n’a pas pu être modifié.'
+      }
+    })
+  }
+
+  /** Supprime un terminal après confirmation explicite (action définitive). */
+  supprimerTerminalHikvision(terminal: HikvisionTerminalConfig): void {
+    if (typeof window !== 'undefined') {
+      const confirme = window.confirm(
+        `Supprimer le terminal « ${terminal.nom} » (n° de série ${terminal.serialNumber}) ?\n\n`
+        + 'Cette action est définitive : le terminal devra être réenregistré pour pointer à nouveau.'
+      )
+      if (!confirme) return
+    }
+
+    this.terminalConfigError = ''
+    this.terminalConfigSuccess = ''
+    this.hikvisionDeletingId = terminal.id
+
+    this.pointageService.supprimerTerminalHikvision(terminal.id).subscribe({
+      next: result => {
+        this.hikvisionTerminals = this.hikvisionTerminals.filter(item => item.id !== terminal.id)
+        if (this.editingTerminalId === terminal.id) {
+          // annulerModificationTerminal() réinitialise les messages : on le fait avant le succès.
+          this.annulerModificationTerminal()
+        }
+        this.terminalConfigSuccess = result?.message || 'Terminal supprimé.'
+        this.hikvisionDeletingId = null
+      },
+      error: err => {
+        this.terminalConfigError = err.error?.message || 'Le terminal Hikvision n’a pas pu être supprimé.'
+        this.hikvisionDeletingId = null
       }
     })
   }

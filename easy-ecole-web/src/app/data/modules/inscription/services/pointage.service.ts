@@ -140,6 +140,11 @@ export class PointageService {
     return this.httpClient.put<HikvisionTerminalConfig>(`${this.SERVICE_URL}/hikvision-terminaux/${id}`, { actif });
   }
 
+  /** Supprime un terminal Hikvision. 409 si le terminal possède déjà des pointages. */
+  supprimerTerminalHikvision(id: number): Observable<{ success: boolean; message: string }> {
+    return this.httpClient.delete<{ success: boolean; message: string }>(`${this.SERVICE_URL}/hikvision-terminaux/${id}`);
+  }
+
   exportPointages(params: PointageExportParams): Observable<Blob> {
     let httpParams = new HttpParams().set('format', params.format)
     if (params.debut) httpParams = httpParams.set('debut', params.debut)
