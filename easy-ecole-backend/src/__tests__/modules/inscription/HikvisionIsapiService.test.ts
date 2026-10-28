@@ -3,6 +3,9 @@ jest.mock("../../../modules/inscription/controllers/PointageTerminalController",
   __esModule: true,
   default: { processAttendanceEvent: jest.fn() }
 }));
+jest.mock("../../../core/services/EncryptionService", () => ({
+  getPersistedMasterKey: jest.fn(() => Buffer.alloc(32, 7))
+}));
 
 import HikvisionIsapiService, {
   getCurlExecutable,
@@ -57,5 +60,13 @@ describe("HikvisionIsapiService", () => {
     const encrypted = HikvisionIsapiService.encryptCredential(clearTextPassword);
     expect(encrypted).not.toContain(clearTextPassword);
     expect(encrypted.split(".")).toHaveLength(3);
+  });
+
+  it("falls back to the persisted key when the environment variable is absent or invalid", () => {
+    delete process.env.ENCRYPTION_MASTER_KEY;
+    expect(HikvisionIsapiService.encryptCredential("fallback-secret").split(".")).toHaveLength(3);
+
+    process.env.ENCRYPTION_MASTER_KEY = "not-a-valid-key";
+    expect(HikvisionIsapiService.encryptCredential("fallback-secret").split(".")).toHaveLength(3);
   });
 });

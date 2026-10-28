@@ -8,21 +8,51 @@ const KEY_LENGTH = 32;
 const IV_LENGTH = 16;
 const AUTH_TAG_LENGTH = 16;
 
-function getMasterKey(): Buffer {
-  const envKey = process.env.ENCRYPTION_MASTER_KEY;
-  if (envKey) {
-    return Buffer.from(envKey, "hex");
+function readPersistedMasterKey(masterKeyPath: string): Buffer {
+  const key = fs.readFileSync(masterKeyPath);
+  if (key.length !== KEY_LENGTH) {
+    throw new Error(`La cle persistee ${masterKeyPath} est invalide (${key.length} octets, ${KEY_LENGTH} attendus).`);
   }
+  return key;
+}
+
+function readOrCreatePersistedMasterKey(): Buffer {
   if (!fs.existsSync(KEY_DIR)) {
     fs.mkdirSync(KEY_DIR, { recursive: true });
   }
   const masterKeyPath = path.join(KEY_DIR, "master.key");
   if (fs.existsSync(masterKeyPath)) {
-    return fs.readFileSync(masterKeyPath);
+    return readPersistedMasterKey(masterKeyPath);
   }
   const key = crypto.randomBytes(KEY_LENGTH);
-  fs.writeFileSync(masterKeyPath, key, { mode: 0o600 });
-  return key;
+  try {
+    // "wx" evite la course entre backend et worker : le premier cree,
+    // le second relit la cle gagnante au lieu d'en generer une autre.
+    fs.writeFileSync(masterKeyPath, key, { mode: 0o600, flag: "wx" });
+    return key;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "EEXIST") {
+      return readPersistedMasterKey(masterKeyPath);
+    }
+    throw error;
+  }
+}
+
+function getMasterKey(): Buffer {
+  const envKey = process.env.ENCRYPTION_MASTER_KEY;
+  if (envKey) {
+    return Buffer.from(envKey, "hex");
+  }
+  return readOrCreatePersistedMasterKey();
+}
+
+/**
+ * Clé persistée dans .keys/master.key, indépendamment de la variable
+ * d'environnement. Sert de repli aux services qui doivent fonctionner même
+ * si l'entrypoint n'a pas exporté ENCRYPTION_MASTER_KEY.
+ */
+export function getPersistedMasterKey(): Buffer {
+  return readOrCreatePersistedMasterKey();
 }
 
 export class EncryptionService {

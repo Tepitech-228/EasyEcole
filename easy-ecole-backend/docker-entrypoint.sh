@@ -283,8 +283,8 @@ echo "[entrypoint] Répertoires fichiers OK (public/, uploads/, documents/) — 
 #
 # ⚠️ NE JAMAIS supprimer /app/.keys/master.key sans avoir sauvegardé la clé :
 #    les mots de passe ISAPI enregistrés deviendraient indéchiffrables.
+KEY_FILE="/app/.keys/master.key"
 if [ -z "${ENCRYPTION_MASTER_KEY:-}" ]; then
-  KEY_FILE="/app/.keys/master.key"
   if [ -f "$KEY_FILE" ]; then
     if ! ENCRYPTION_MASTER_KEY="$(node -e 'process.stdout.write(require("fs").readFileSync("/app/.keys/master.key").toString("hex"))')"; then
       echo "[entrypoint] ERREUR : lecture impossible de $KEY_FILE."
@@ -292,7 +292,7 @@ if [ -z "${ENCRYPTION_MASTER_KEY:-}" ]; then
     fi
     echo "[entrypoint] ENCRYPTION_MASTER_KEY chargée depuis $KEY_FILE."
   else
-    if ! ENCRYPTION_MASTER_KEY="$(node -e 'const fs=require("fs"),c=require("crypto");fs.mkdirSync("/app/.keys",{recursive:true});const k=c.randomBytes(32);fs.writeFileSync("/app/.keys/master.key",k,{mode:0o600});process.stdout.write(k.toString("hex"))')"; then
+    if ! ENCRYPTION_MASTER_KEY="$(node -e 'const fs=require("fs"),c=require("crypto"),p="/app/.keys/master.key";fs.mkdirSync("/app/.keys",{recursive:true});let k;try{k=c.randomBytes(32);fs.writeFileSync(p,k,{mode:0o600,flag:"wx"});}catch(e){if(e.code==="EEXIST")k=fs.readFileSync(p);else throw e;}process.stdout.write(k.toString("hex"));')"; then
       echo "[entrypoint] ERREUR : génération impossible de $KEY_FILE."
       exit 1
     fi
@@ -311,7 +311,15 @@ if [ -z "${ENCRYPTION_MASTER_KEY:-}" ]; then
   fi
   export ENCRYPTION_MASTER_KEY
 else
-  echo "[entrypoint] ENCRYPTION_MASTER_KEY fournie par l'environnement."
+  echo "[entrypoint] ENCRYPTION_MASTER_KEY fournie par l'environnement (${#ENCRYPTION_MASTER_KEY} caracteres)."
+  case "$ENCRYPTION_MASTER_KEY" in
+    *[!0-9a-fA-F]*)
+      echo "[entrypoint] AVERTISSEMENT : ENCRYPTION_MASTER_KEY n'est pas hexadecimale ; repli applicatif sur $KEY_FILE."
+      ;;
+  esac
+  if [ "${#ENCRYPTION_MASTER_KEY}" -ne 64 ]; then
+    echo "[entrypoint] AVERTISSEMENT : ENCRYPTION_MASTER_KEY fait ${#ENCRYPTION_MASTER_KEY} caracteres (64 attendus) ; repli applicatif sur $KEY_FILE."
+  fi
 fi
 
 # -----------------------------------------------------------------------------

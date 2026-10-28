@@ -23,5 +23,8 @@ src/core/scripts/_controle-regul-tmp.ts
 src/core/config/mail.json
 src/core/scripts/clean-etudiants.ts
 
+# Clé maîtresse générée localement (.keys/master.key) — ne jamais versionner
+.keys/
+
 # Config runtime générée par StorageConfigController (bind mount /app/config en prod)
 /config/

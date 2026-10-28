@@ -4,6 +4,7 @@ import * as os from "os";
 import * as path from "path";
 import { spawn } from "child_process";
 import { PointageTerminal } from "../models/PointageTerminal";
+import { getPersistedMasterKey } from "../../../core/services/EncryptionService";
 
 export interface HikvisionAccessEvent {
     pin: string;
@@ -28,12 +29,29 @@ export function normalizeHikvisionEmployeeNo(value: string): string {
 const DEFAULT_DOOR_RIGHT = "1";
 const DEFAULT_RIGHT_PLAN = [{ doorNo: 1, planTemplateNo: "1" }];
 
-function encryptPassword(password: string): string {
-    const masterKeyHex = process.env.ENCRYPTION_MASTER_KEY;
-    if (!masterKeyHex || !/^[a-fA-F0-9]{64}$/.test(masterKeyHex)) {
-        throw new Error("ENCRYPTION_MASTER_KEY must be set to a 64-character hexadecimal key to configure Hikvision credentials.");
+/**
+ * Clé de chiffrement des identifiants ISAPI.
+ * Priorité à la variable d'environnement (si valide), sinon repli sur la clé
+ * persistée .keys/master.key, créée automatiquement si elle n'existe pas.
+ * Ce repli évite un 503 quand l'entrypoint n'a pas pu exporter la clé.
+ */
+function getMasterKey(): Buffer {
+    const masterKeyHex = process.env.ENCRYPTION_MASTER_KEY?.trim();
+    if (masterKeyHex && /^[a-fA-F0-9]{64}$/.test(masterKeyHex)) {
+        return Buffer.from(masterKeyHex, "hex");
     }
-    const key = Buffer.from(masterKeyHex, "hex");
+    if (masterKeyHex) {
+        console.warn("[Hikvision] ENCRYPTION_MASTER_KEY invalide (64 caracteres hex attendus) — repli sur .keys/master.key.");
+    }
+    try {
+        return getPersistedMasterKey();
+    } catch (error) {
+        throw new Error(`ENCRYPTION_MASTER_KEY absente et cle persistee illisible: ${(error as Error).message}`);
+    }
+}
+
+function encryptPassword(password: string): string {
+    const key = getMasterKey();
     const iv = randomBytes(12);
     const cipher = createCipheriv("aes-256-gcm", key, iv);
     const encrypted = Buffer.concat([cipher.update(password, "utf8"), cipher.final()]);
@@ -41,13 +59,10 @@ function encryptPassword(password: string): string {
 }
 
 function decryptPassword(encryptedValue: string): string {
-    const masterKeyHex = process.env.ENCRYPTION_MASTER_KEY;
-    if (!masterKeyHex || !/^[a-fA-F0-9]{64}$/.test(masterKeyHex)) {
-        throw new Error("ENCRYPTION_MASTER_KEY must be set to a 64-character hexadecimal key to connect to Hikvision.");
-    }
+    const key = getMasterKey();
     const [ivValue, tagValue, encryptedValuePart] = encryptedValue.split(".");
     if (!ivValue || !tagValue || !encryptedValuePart) throw new Error("Stored Hikvision credential is malformed.");
-    const decipher = createDecipheriv("aes-256-gcm", Buffer.from(masterKeyHex, "hex"), Buffer.from(ivValue, "base64"));
+    const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(ivValue, "base64"));
     decipher.setAuthTag(Buffer.from(tagValue, "base64"));
     return Buffer.concat([
         decipher.update(Buffer.from(encryptedValuePart, "base64")),
