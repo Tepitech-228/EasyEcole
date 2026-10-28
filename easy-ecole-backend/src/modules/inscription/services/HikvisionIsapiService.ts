@@ -198,8 +198,23 @@ export default class HikvisionIsapiService {
                 throw new Error("The configured address did not return a Hikvision deviceInfo response.");
             }
             const serialNumber = body.match(/<(?:\w+:)?serialNumber\b[^>]*>([^<]+)<\//i)?.[1]?.trim();
-            if (serialNumber && serialNumber !== terminal.serialNumber) {
-                throw new Error("The serial number returned by the device does not match the configured terminal.");
+            const configuredSerialNumber = (terminal.serialNumber || "").trim();
+            // Hikvision renvoie parfois une série composite (modèle + date + firmware + série courte).
+            // La fiche peut contenir la série courte de l'étiquette : on accepte donc le suffixe.
+            const normaliserSerie = (valeur: string) => valeur.replace(/\s+/g, "").toUpperCase();
+            const serieAppareil = normaliserSerie(serialNumber || "");
+            const serieFiche = normaliserSerie(configuredSerialNumber);
+            const serieCompatible = !serieAppareil || (
+                !!serieFiche && (
+                    serieAppareil === serieFiche ||
+                    (serieFiche.length >= 4 && serieAppareil.endsWith(serieFiche))
+                )
+            );
+            if (!serieCompatible) {
+                throw new Error(
+                    `Numéro de série incompatible : l'appareil ${terminal.sourceIp} renvoie « ${serialNumber} », ` +
+                    `la fiche du terminal contient « ${configuredSerialNumber} ».`
+                );
             }
 
             // Lire deviceInfo ne prouve pas que le compte peut gérer les utilisateurs :
