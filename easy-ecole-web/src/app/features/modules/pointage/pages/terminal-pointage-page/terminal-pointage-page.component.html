@@ -100,7 +100,8 @@
 
       <div class="pointage-hikvision-info">
         <strong>Connexion du terminal MinMoe</strong>
-        <p>Renseignez l’adresse IP du terminal (pas localhost), le port ISAPI, son numéro de série, le compte administrateur et le site. Le serveur EasyEcole doit pouvoir joindre le terminal sur le réseau local. Le formulaire teste l’authentification ISAPI après l’enregistrement.</p>
+        <p>Renseignez l’adresse IP joignable du terminal, son port ISAPI, son numéro de série, le compte ISAPI et le site. Un terminal sur un autre réseau est pris en charge si le serveur EasyEcole peut le joindre par une route VPN (TCP 80 ou 443 selon le terminal). Le flux de pointage est lu automatiquement par EasyEcole : aucune URL Push n’est à saisir sur la pointeuse.</p>
+        <p>Pour un terminal distant, la route VPN et le pare-feu doivent aussi permettre au conteneur backend de joindre son réseau. N’exposez pas le port ISAPI du terminal sur Internet. Le formulaire teste l’authentification ISAPI après l’enregistrement.</p>
         <p>Le mot de passe est chiffré avant d’être conservé. Après validation d’un dossier, l’enrôlement facial est mis en file de façon systématique. La compatibilité de l’envoi du visage doit être confirmée sur le firmware du terminal.</p>
       </div>
 

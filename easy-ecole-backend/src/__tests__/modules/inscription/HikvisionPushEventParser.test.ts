@@ -99,6 +99,19 @@ describe("parseHikvisionPushEvent", () => {
     expect(event?.employeeNoString).toBe("ETBSURST0001");
   });
 
+  it("accepts firmware events that use employeeNo instead of employeeNoString", () => {
+    const event = parseHikvisionPushEvent({
+      dateTime: "2026-10-27T09:00:00+01:00",
+      AccessControllerEvent: {
+        employeeNo: 12345,
+        majorEventType: 5,
+        subEventType: 75
+      }
+    });
+
+    expect(event?.employeeNoString).toBe("12345");
+  });
+
   it("rejects a payload without employee number", () => {
     const event = parseHikvisionPushEvent({
       AccessControllerEvent: {

@@ -1,17 +1,17 @@
 # Configuration du terminal Hikvision MinMoe DS-K1T342MFWX-E1
 
-Ce guide décrit le flux push Hikvision vers EasyEcole. La configuration ISAPI dans l'application sert au test de connexion au terminal ; les pointages temps réel sont reçus par le backend.
+Ce guide décrit la connexion ISAPI sortante d’EasyEcole vers le terminal. Le backend lit son flux d’événements `alertStream` et enregistre automatiquement les pointages ; aucune URL Push n’est à configurer sur la pointeuse.
 
 ## Sécurité avant le raccordement
 
 - Changez le mot de passe administrateur partagé dans la conversation avant de connecter l'appareil.
 - Ne copiez aucun mot de passe ou secret dans ce guide, dans Git ou dans un ticket.
 - Gardez le terminal sur un réseau privé. N'exposez ni son interface d'administration ni son port ISAPI à Internet.
-- Réservez une adresse IP au terminal. EasyEcole autorise le push en vérifiant l'adresse IP source de la requête ; un changement d'IP ou un proxy/NAT qui masque l'adresse du terminal empêchera cette vérification.
+- Réservez une adresse IP au terminal et autorisez le serveur EasyEcole à l’atteindre sur le port ISAPI configuré (80 ou 443).
 
 ## Fonctionnement
 
-Le terminal envoie chaque événement à `POST http://<IP_DU_PC>:3000/api/hikvision/event` sous forme JSON, par exemple :
+Le backend ouvre une connexion authentifiée vers `http(s)://<IP_DU_TERMINAL>:<PORT>/ISAPI/Event/notification/alertStream`. Il lit le flux multipart, extrait les événements JSON et les transmet au traitement de pointage existant. L’endpoint HTTP `/api/hikvision/event` reste disponible pour compatibilité, mais n’est pas requis pour ce mode.
 
 ```json
 {
@@ -28,29 +28,26 @@ Le terminal envoie chaque événement à `POST http://<IP_DU_PC>:3000/api/hikvis
 }
 ```
 
-Le backend valide le format, l'adresse IP et l'existence d'un terminal Hikvision actif configuré avec cette IP. Il enregistre l'événement en attente avant de répondre `200 OK`, puis l'intègre au pointage existant et le diffuse via Socket.IO aux utilisateurs autorisés. Les événements en attente sont repris au démarrage et périodiquement. Un événement déjà reçu n'est pas compté deux fois.
+Chaque événement est dédupliqué et enregistré dans la file durable avant son intégration au pointage existant, puis diffusé via Socket.IO aux utilisateurs autorisés. La connexion au flux est relancée automatiquement si elle tombe.
 
 `employeeNoString` doit correspondre sans ambiguïté à un identifiant EasyEcole : ID numérique du compte, identifiant de compte ou matricule associé au site. Le nom transmis par l'appareil n'est jamais utilisé seul pour identifier une personne ; le nom et le rôle affichés proviennent du compte EasyEcole. Un identifiant absent, ambigu ou non affecté au site est refusé et conservé dans le journal des événements.
 
 ## Préparer le terminal et le réseau
 
 1. Relever le modèle complet, le numéro de série, la version firmware et l'adresse IP réservée.
-2. Connecter le terminal et le PC serveur au même LAN, ou établir un réseau privé équivalent.
-3. Configurer la destination push de l'appareil vers `http://<IP_DU_PC>:3000/api/hikvision/event`.
-4. Autoriser dans le pare-feu du PC les requêtes entrantes depuis l'adresse IP du terminal vers le port du backend (`3000` par défaut).
-5. Vérifier que le terminal peut joindre le PC ; `localhost` ne doit pas être utilisé comme adresse de destination.
-
-Les menus et paramètres exacts du push Hikvision peuvent varier selon le firmware. Vérifiez la disponibilité du mécanisme de notification HTTP et le format JSON sur le firmware installé avant la mise en service.
+2. Connecter le terminal et le serveur par le même LAN ou par un VPN routé. Pour un site distant, le backend (y compris son conteneur Docker) doit pouvoir joindre l’IP du terminal sur le port ISAPI.
+3. N’activez pas de destination HTTP Push pour ce mode : l’API EasyEcole s’abonne elle-même à `alertStream`.
+4. N’ouvrez aucun port entrant vers le terminal depuis Internet. Autorisez seulement le trafic ISAPI depuis le réseau serveur/VPN.
 
 ## Préparer le backend
 
 1. Depuis `easy-ecole-backend`, appliquer les migrations : `npm run db:migrate`. La migration `046_hikvision_minmoe_isapi.sql` ajoute les paramètres Hikvision, `048_hikvision_push_events.sql` autorise le statut durable `en_attente` et `049_hikvision_enrollment.sql` prépare la file d'enrôlement consenti.
-2. Dans l'écran **Pointage > Configuration des terminaux**, enregistrer le terminal en protocole Hikvision avec son IP source, son site et ses informations ISAPI. Le numéro de série doit être celui de l'appareil.
-3. En développement local, garder `HOST=localhost` pour l'interface EasyEcole et définir `HIKVISION_CALLBACK_HOST=<IP_WI-FI_DU_PC>`. Le backend expose alors uniquement le callback Hikvision sur cette interface réseau, sans rendre toutes les routes de l'API accessibles au terminal.
+2. Dans l'écran **Pointage > Configuration des terminaux**, enregistrer le terminal en protocole Hikvision avec son adresse joignable, son site et ses informations ISAPI. Le numéro de série doit être celui de l'appareil.
+3. Pour un terminal distant, établir une route VPN entre le réseau du conteneur backend et le réseau du terminal ; aucune variable `HIKVISION_CALLBACK_HOST` n’est nécessaire pour `alertStream`.
 4. Garder `ENCRYPTION_MASTER_KEY` configurée et stable pour les tests ISAPI. Les identifiants sont chiffrés en base et ne sont pas transmis au navigateur.
-5. Redémarrer le backend et vérifier les journaux `[Hikvision]` ainsi que `Hikvision callback listening`.
+5. Redémarrer le backend et vérifier les journaux `[Hikvision]` ainsi que l’établissement du flux `alertStream`.
 
-Le backend peut tester ISAPI en se connectant au terminal sur son IP et son port configurés. Aucun polling ISAPI n'est lancé pour les pointages : ceux-ci arrivent par le callback push ci-dessus.
+Le test de connexion et le flux de pointage utilisent tous deux une connexion ISAPI sortante du backend vers le terminal.
 
 ## Enrôlement automatique après inscription
 
@@ -68,17 +65,17 @@ L'envoi de la photo à un terminal de reconnaissance faciale constitue un traite
 
 ## Test de bout en bout
 
-1. Confirmer que l'IP source vue par le backend correspond à l'IP enregistrée pour le terminal.
-2. Dans EasyEcole, tester la connexion ISAPI et vérifier que le terminal est actif et associé au bon site.
+1. Depuis le serveur/conteneur backend, confirmer que l’IP du terminal répond sur son port ISAPI à travers le LAN ou le VPN.
+2. Dans EasyEcole, tester la connexion ISAPI et vérifier que le terminal est actif et associé au bon site ; consulter les journaux pour confirmer l’abonnement `alertStream`.
 3. Faire un pointage facial avec un compte de test dont `employeeNoString` correspond à EasyEcole.
 4. Vérifier la ligne de pointage, le journal des événements du terminal et l'affichage temps réel sur la page Pointage.
 5. Vérifier qu'un identifiant inconnu ou ambigu ne crée pas de pointage et qu'un même événement rejoué ne crée pas de doublon.
 
-En cas d'échec après le `200 OK`, l'événement reste `en_attente`, une erreur est journalisée et la reprise périodique réessaie son traitement. Ne pas créer de table de pointage générique : le flux utilise les tables `ins_pointages` et `ins_pointage_terminal_events` de l'application.
+En cas d’échec de traitement, l’événement reste `en_attente`, une erreur est journalisée et la reprise périodique réessaie son traitement. Ne pas créer de table de pointage générique : le flux utilise les tables `ins_pointages` et `ins_pointage_terminal_events` de l’application.
 
 ## Utilisation en production
 
-N'exposez pas le callback en HTTP sur Internet. Utilisez un VPN ou un réseau privé entre le terminal et le backend. Si un reverse proxy est nécessaire, configurez-le de façon à conserver l'IP source réelle et vérifiez celle-ci côté backend avant d'activer le terminal.
+Utilisez un VPN ou un réseau privé routé entre le terminal et le backend. Pour un site distant sous Docker, vérifiez la route depuis l’hôte et le conteneur backend, ainsi que le pare-feu et le chemin retour. N’exposez jamais le port ISAPI du terminal sur Internet.
 
 ## Références
 

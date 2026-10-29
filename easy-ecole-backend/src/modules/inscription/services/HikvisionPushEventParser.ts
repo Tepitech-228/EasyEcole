@@ -76,8 +76,13 @@ export function parseHikvisionPushEvent(body: unknown): HikvisionPushEvent | nul
   const event = asRecord(payload.AccessControllerEvent);
   if (!event) return null;
 
+  const rawEmployeeNo = event.employeeNoString ?? event.employeeNo;
   const employeeNoString =
-    typeof event.employeeNoString === "string" ? event.employeeNoString.trim() : "";
+    typeof rawEmployeeNo === "string"
+      ? rawEmployeeNo.trim()
+      : typeof rawEmployeeNo === "number" && Number.isSafeInteger(rawEmployeeNo)
+        ? String(rawEmployeeNo)
+        : "";
   const name = typeof event.name === "string" ? event.name.trim() : "";
   const rawTime =
     typeof payload.dateTime === "string"
