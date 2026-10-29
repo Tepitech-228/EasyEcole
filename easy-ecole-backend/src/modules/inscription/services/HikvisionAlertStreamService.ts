@@ -21,6 +21,7 @@ export default class HikvisionAlertStreamService {
   static start(): void {
     if (this.started) return;
     this.started = true;
+    console.info("[Hikvision] Supervision alertStream démarrée.");
     void this.reconcile();
     this.reconcileTimer = setInterval(() => void this.reconcile(), 15_000);
   }
@@ -38,6 +39,7 @@ export default class HikvisionAlertStreamService {
       const terminals = await PointageTerminal.findAll({
         where: { protocol: "hikvision_isapi", actif: true }
       });
+      console.info(`[Hikvision] ${terminals.length} terminal(aux) actif(s) à superviser.`);
       const activeTerminals = new Map(terminals.map(terminal => [Number(terminal.id), terminal]));
 
       for (const [id, connection] of this.connections) {
@@ -53,20 +55,26 @@ export default class HikvisionAlertStreamService {
         const id = Number(terminal.id);
         if (this.connections.has(id)) continue;
         try {
+          console.info(`[Hikvision] Connexion alertStream au terminal ${id} (${terminal.sourceIp}:${terminal.hikvisionPort}).`);
           const child = HikvisionIsapiService.startAccessEventStream(terminal, value => {
+            console.info(`[Hikvision] Données JSON reçues du terminal ${id}.`);
             void HikvisionPushController.receiveFromStream(terminal, value).catch(error => {
               console.error(`[Hikvision] Événement alertStream du terminal ${id} non traité:`, error);
             });
           });
           const connection = { child, configKey: this.configKey(terminal) };
           this.connections.set(id, connection);
+          let stderr = "";
+          child.stderr.on("data", (chunk: Buffer) => {
+            stderr = `${stderr}${chunk.toString("utf8")}`.slice(-1000);
+          });
           child.on("error", error => {
             console.error(`[Hikvision] Connexion alertStream du terminal ${id} impossible:`, error.message);
           });
           child.on("close", code => {
             if (this.connections.get(id) === connection) this.connections.delete(id);
             if (this.started && activeTerminals.has(id)) {
-              console.warn(`[Hikvision] Flux alertStream du terminal ${id} fermé (code ${code ?? "inconnu"}); reconnexion automatique sous 15 s.`);
+              console.warn(`[Hikvision] Flux alertStream du terminal ${id} fermé (code ${code ?? "inconnu"})${stderr ? ` : ${stderr.trim()}` : ""}; reconnexion automatique sous 15 s.`);
             }
           });
         } catch (error) {

@@ -259,7 +259,7 @@ export default class HikvisionIsapiService {
         if (!username || !encryptedPassword) throw new Error("Hikvision terminal credentials are not configured.");
 
         const url = terminalUrl(terminal, "/ISAPI/Event/notification/alertStream");
-        const args = ["--digest", "-u", `${username}:${decryptPassword(encryptedPassword)}`, "-N", "-i", "-sS", "--connect-timeout", "10"];
+        const args = ["--digest", "-u", `${username}:${decryptPassword(encryptedPassword)}`, "-N", "-i", "-sS", "--fail", "--connect-timeout", "10"];
         if (terminal.hikvisionHttps) args.push("-k");
         args.push(url.toString());
 
