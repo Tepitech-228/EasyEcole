@@ -198,6 +198,41 @@ async function traiterEvenement(terminal: PointageTerminal, eventId: number): Pr
 }
 
 export default class HikvisionPushController {
+  static async receiveFromStream(terminal: PointageTerminal, body: unknown): Promise<void> {
+    if (isHikvisionHeartbeat(body)) {
+      await terminal.update({ lastSeenAt: new Date() });
+      return;
+    }
+
+    const event = parseHikvisionPushEvent(body);
+    if (!event) return;
+
+    const fingerprint = createHash("sha256")
+      .update([terminal.serialNumber, event.employeeNoString, event.date, event.time, event.major, event.minor].join("|"))
+      .digest("hex");
+    const [received] = await PointageTerminalEvent.findOrCreate({
+      where: { fingerprint },
+      defaults: {
+        terminalId: Number(terminal.id),
+        utilisateurId: null,
+        etablissementId: Number(terminal.etablissementId),
+        pointageId: null,
+        pin: event.employeeNoString,
+        date: event.date,
+        heure: event.time,
+        statusCode: event.major,
+        verifyType: event.minor,
+        statut: "en_attente",
+        motifRefus: null,
+        fingerprint
+      }
+    });
+    await terminal.update({ lastSeenAt: new Date() });
+    if (received.statut === "en_attente") {
+      void traiterEvenement(terminal, Number(received.id));
+    }
+  }
+
   static async resumePendingEvents(): Promise<void> {
     let lastEventId = 0;
     while (true) {

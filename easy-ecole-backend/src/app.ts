@@ -35,6 +35,7 @@ import PointageTerminalAdmsRouter from './modules/inscription/routers/PointageTe
 import HikvisionPushController from './modules/inscription/controllers/HikvisionPushController'
 import PointageRealtimeService from './modules/inscription/services/PointageRealtimeService'
 import HikvisionEnrollmentService from './modules/inscription/services/HikvisionEnrollmentService'
+import HikvisionAlertStreamService from './modules/inscription/services/HikvisionAlertStreamService'
 
 // ── Dernière barrière de diagnostic (cf. audit erreurs silencieuses §28) ──
 // Ces handlers ne remplacent PAS la gestion locale des erreurs : ils garantissent
@@ -378,6 +379,7 @@ server.on("listening", async () => {
     // Database Connection initialisation
     const databaseConnection = DatabaseConnection.getInstance();
     await databaseConnection.init();
+    HikvisionAlertStreamService.start();
     let hikvisionRecoveryInProgress = false;
     const resumeHikvisionEvents = async (): Promise<void> => {
         if (hikvisionRecoveryInProgress) return;
@@ -443,6 +445,7 @@ server.on("listening", async () => {
 })
 
 const stopServer = (): void => {
+  HikvisionAlertStreamService.stop()
     server.close()
     hikvisionCallbackServer?.close()
 }

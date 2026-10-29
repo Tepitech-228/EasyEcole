@@ -2,9 +2,10 @@ import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
 import * as fs from "fs/promises";
 import * as os from "os";
 import * as path from "path";
-import { spawn } from "child_process";
+import { ChildProcess, spawn } from "child_process";
 import { PointageTerminal } from "../models/PointageTerminal";
 import { getPersistedMasterKey } from "../../../core/services/EncryptionService";
+import { HikvisionAlertStreamParser } from "./HikvisionAlertStreamParser";
 
 export interface HikvisionAccessEvent {
     pin: string;
@@ -247,6 +248,25 @@ export default class HikvisionIsapiService {
         } finally {
             clearTimeout(timer);
         }
+    }
+
+    static startAccessEventStream(
+        terminal: PointageTerminal,
+        onEvent: (value: unknown) => void
+    ): ChildProcess {
+        const username = terminal.hikvisionUsername;
+        const encryptedPassword = terminal.hikvisionPasswordEncrypted;
+        if (!username || !encryptedPassword) throw new Error("Hikvision terminal credentials are not configured.");
+
+        const url = terminalUrl(terminal, "/ISAPI/Event/notification/alertStream");
+        const args = ["--digest", "-u", `${username}:${decryptPassword(encryptedPassword)}`, "-N", "-i", "-sS", "--connect-timeout", "10"];
+        if (terminal.hikvisionHttps) args.push("-k");
+        args.push(url.toString());
+
+        const child = spawn(getCurlExecutable(), args, { windowsHide: true });
+        const parser = new HikvisionAlertStreamParser(onEvent);
+        child.stdout.on("data", (chunk: Buffer) => parser.push(chunk));
+        return child;
     }
 
     static enrollStudent(

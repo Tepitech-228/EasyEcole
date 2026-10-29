@@ -1,4 +1,5 @@
 import { isHikvisionHeartbeat, parseHikvisionPushEvent } from "../../../modules/inscription/services/HikvisionPushEventParser";
+import { HikvisionAlertStreamParser } from "../../../modules/inscription/services/HikvisionAlertStreamParser";
 
 const realMultipartPayload = JSON.stringify({
   ipAddress: "192.168.137.188",
@@ -133,5 +134,31 @@ describe("parseHikvisionPushEvent", () => {
     expect(isHikvisionHeartbeat(JSON.stringify({ eventType: "heartBeat", dateTime: "2026-10-27T13:00:00+01:00" }))).toBe(true);
     expect(isHikvisionHeartbeat({ heartbeat: "{\"eventType\":\"heartBeat\"}" })).toBe(true);
     expect(isHikvisionHeartbeat({ AccessControllerEvent: realMultipartPayload })).toBe(false);
+  });
+});
+
+describe("HikvisionAlertStreamParser", () => {
+  it("extracts JSON events from multipart responses and skips binary parts", () => {
+    const events: unknown[] = [];
+    const parser = new HikvisionAlertStreamParser(event => events.push(event));
+    const event = JSON.stringify({
+      dateTime: "2026-10-29T08:15:30+01:00",
+      AccessControllerEvent: {
+        majorEventType: 5,
+        subEventType: 6,
+        employeeNoString: "ESA001"
+      }
+    });
+    const response = Buffer.from(
+      "HTTP/1.1 200 OK\r\nContent-Type: multipart/mixed; boundary=frame\r\n\r\n" +
+      "--frame\r\nContent-Type: application/json\r\nContent-Length: " + Buffer.byteLength(event) + "\r\n\r\n" + event + "\r\n" +
+      "--frame\r\nContent-Type: image/jpeg\r\nContent-Length: 4\r\n\r\n" + "\\xff\\xd8\\xff\\xd9" + "\r\n--frame\r\n"
+    );
+
+    for (let offset = 0; offset < response.length; offset += 17) {
+      parser.push(response.subarray(offset, offset + 17));
+    }
+
+    expect(events).toEqual([JSON.parse(event)]);
   });
 });
