@@ -39,8 +39,11 @@ export default class HikvisionAlertStreamService {
       const terminals = await PointageTerminal.findAll({
         where: { protocol: "hikvision_isapi", actif: true }
       });
-      console.info(`[Hikvision] ${terminals.length} terminal(aux) actif(s) à superviser.`);
-      const activeTerminals = new Map(terminals.map(terminal => [Number(terminal.id), terminal]));
+      // L'alertStream est une connexion sortante : un terminal sans IP locale
+      // (déploiement tunnel uniquement) n'est pas supervisable par ce canal.
+      const supervisables = terminals.filter(terminal => Boolean(terminal.sourceIp));
+      console.info(`[Hikvision] ${supervisables.length}/${terminals.length} terminal(aux) actif(s) à superviser.`);
+      const activeTerminals = new Map(supervisables.map(terminal => [Number(terminal.id), terminal]));
 
       for (const [id, connection] of this.connections) {
         const terminal = activeTerminals.get(id);
@@ -50,7 +53,7 @@ export default class HikvisionAlertStreamService {
         }
       }
 
-      for (const terminal of terminals) {
+      for (const terminal of supervisables) {
         if (!this.started) return;
         const id = Number(terminal.id);
         if (this.connections.has(id)) continue;
@@ -65,7 +68,7 @@ export default class HikvisionAlertStreamService {
           const connection = { child, configKey: this.configKey(terminal) };
           this.connections.set(id, connection);
           let stderr = "";
-          child.stderr.on("data", (chunk: Buffer) => {
+          child.stderr?.on("data", (chunk: Buffer) => {
             stderr = `${stderr}${chunk.toString("utf8")}`.slice(-1000);
           });
           child.on("error", error => {

@@ -15,6 +15,20 @@ export interface PointageTerminalConfig {
   lastSeenAt: string | null;
 }
 
+/** Réponse du serveur quand un départ doit être confirmé explicitement. */
+export interface DepartureConfirmation {
+  success: boolean;
+  requiresConfirmation: true;
+  mode: 'depart';
+  heureDepart: string;
+  confirmationToken: string;
+  utilisateurId?: number;
+}
+
+export type PointageScanResponse =
+  | { success: boolean; mode: 'arrivee' | 'depart' | 'passage'; pointage: Pointage }
+  | DepartureConfirmation;
+
 export interface PointageExportParams {
   format: 'xlsx' | 'docx';
   debut?: string;
@@ -28,7 +42,7 @@ export interface HikvisionTerminalConfig {
   id: number;
   serialNumber: string;
   nom: string;
-  sourceIp: string;
+  sourceIp: string | null;
   protocol: 'hikvision_isapi';
   hikvisionPort: number;
   hikvisionHttps: boolean;
@@ -36,6 +50,13 @@ export interface HikvisionTerminalConfig {
   etablissementId: number;
   actif: boolean;
   lastSeenAt: string | null;
+  /** Vrai dès qu'un jeton a été généré (le secret lui-même n'est jamais relu). */
+  hasDeviceToken?: boolean;
+}
+
+/** Réponse de création : le jeton en clair n'est renvoyé qu'une seule fois. */
+export interface HikvisionTerminalCreationResult extends HikvisionTerminalConfig {
+  deviceToken?: string;
 }
 
 /** Corps du PUT /hikvision-terminaux/:id (le mot de passe n'est jamais relu). */
@@ -72,22 +93,28 @@ export class PointageService {
     return this.httpClient.post<Pointage>(`${this.SERVICE_URL}/arrivee`, {})
   }
 
-  pointerDepart(): Observable<Pointage> {
-    return this.httpClient.post<Pointage>(`${this.SERVICE_URL}/depart`, {})
+  pointerDepart(confirmationToken?: string): Observable<Pointage | DepartureConfirmation> {
+    return this.httpClient.post<Pointage | DepartureConfirmation>(
+      `${this.SERVICE_URL}/depart`,
+      confirmationToken ? { confirmationToken } : {}
+    )
   }
 
   pointerArriveeByScan(userId: string): Observable<Pointage> {
     return this.httpClient.post<Pointage>(`${this.SERVICE_URL}/scan/arrivee`, { userId })
   }
 
-  pointerDepartByScan(userId: string): Observable<Pointage> {
-    return this.httpClient.post<Pointage>(`${this.SERVICE_URL}/scan/depart`, { userId })
+  pointerDepartByScan(userId: string, confirmationToken?: string): Observable<Pointage | PointageScanResponse> {
+    return this.httpClient.post<Pointage | PointageScanResponse>(
+      `${this.SERVICE_URL}/scan/depart`,
+      confirmationToken ? { userId, confirmationToken } : { userId }
+    )
   }
 
-  pointerParQR(codeQR: string): Observable<{ success: boolean, mode: 'arrivee' | 'depart' | 'passage', pointage: Pointage }> {
-    return this.httpClient.post<{ success: boolean, mode: 'arrivee' | 'depart' | 'passage', pointage: Pointage }>(
+  pointerParQR(codeQR: string, confirmationToken?: string): Observable<PointageScanResponse> {
+    return this.httpClient.post<PointageScanResponse>(
       `${this.SERVICE_URL}/scan/pointage`,
-      { codeQR }
+      confirmationToken ? { codeQR, confirmationToken } : { codeQR }
     )
   }
 
@@ -124,12 +151,17 @@ export class PointageService {
     username: string;
     password: string;
     etablissementId: number;
-  }): Observable<HikvisionTerminalConfig> {
-    return this.httpClient.post<HikvisionTerminalConfig>(`${this.SERVICE_URL}/hikvision-terminaux`, data);
+  }): Observable<HikvisionTerminalCreationResult> {
+    return this.httpClient.post<HikvisionTerminalCreationResult>(`${this.SERVICE_URL}/hikvision-terminaux`, data);
   }
 
   modifierTerminalHikvision(id: number, data: HikvisionTerminalUpdatePayload): Observable<HikvisionTerminalConfig> {
     return this.httpClient.put<HikvisionTerminalConfig>(`${this.SERVICE_URL}/hikvision-terminaux/${id}`, data);
+  }
+
+  /** Génère un nouveau jeton ; l'ancien est invalidé immédiatement. */
+  regenererJetonTerminalHikvision(id: number): Observable<{ success: boolean; deviceToken: string }> {
+    return this.httpClient.post<{ success: boolean; deviceToken: string }>(`${this.SERVICE_URL}/hikvision-terminaux/${id}/token`, {});
   }
 
   testerTerminalHikvision(id: number): Observable<{ success: boolean; message: string }> {

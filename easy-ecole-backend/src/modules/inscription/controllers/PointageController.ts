@@ -16,6 +16,8 @@ import { SiteUtilisateur } from "../../auth/models/SiteUtilisateur";
 import { getSurveillantSiteId } from "../../../core/helpers/SurveillantSiteScope";
 import QRCode from 'qrcode';
 import ExcelJS from "exceljs";
+import jwt, { JwtPayload } from "jsonwebtoken";
+import { JWT_SECRET } from "../../../core/config/jwt";
 import { AlignmentType, Document, PageOrientation, Packer, Paragraph, Table, TableCell, TableLayoutType, TableRow, TextRun, WidthType } from "docx";
 
 const ROLES_POINTAGE = [
@@ -42,6 +44,26 @@ const ROLES_POINTAGE_SCAN = [
   RolesUtilisateur.CABINET_COMPTABLE,
   RolesUtilisateur.ESA_COMPTA,
 ];
+
+function createDepartureConfirmation(userId: number, date: string, time: string): string {
+    return jwt.sign({ purpose: "pointage-depart", userId, date, time }, JWT_SECRET, { expiresIn: "2m" });
+}
+
+function verifyDepartureConfirmation(token: unknown, userId: number, date: string): string | null {
+    if (typeof token !== "string" || !token) return null;
+    try {
+        const claims = jwt.verify(token, JWT_SECRET) as JwtPayload;
+        return claims.purpose === "pointage-depart"
+            && Number(claims.userId) === userId
+            && claims.date === date
+            && typeof claims.time === "string"
+            && /^\d{2}:\d{2}:\d{2}$/.test(claims.time)
+            ? claims.time
+            : null;
+    } catch {
+        return null;
+    }
+}
 
 export default class PointageController {
 
@@ -707,7 +729,12 @@ export default class PointageController {
 
         const today = new Date().toISOString().split('T')[0]
         const now = new Date()
-        const time = now.toTimeString().split(' ')[0]
+        const userId = Number((req as any).utilisateurId)
+        const confirmedTime = verifyDepartureConfirmation(req.body?.confirmationToken, userId, today)
+        if (req.body?.confirmationToken && !confirmedTime) {
+            return res.status(400).json({ success: false, code: 'INVALID_DEPARTURE_CONFIRMATION', message: 'La confirmation du départ a expiré. Recommencez le pointage.' })
+        }
+        const time = confirmedTime || now.toTimeString().split(' ')[0]
 
         try {
             const pointage: Pointage | null = await Pointage.findOne({
@@ -723,6 +750,16 @@ export default class PointageController {
 
             if (pointage.heureDepart) {
                 return res.status(400).json({ success: false, alreadyExists: true, message: "Départ déjà pointé aujourd'hui" });
+            }
+
+            if (!confirmedTime) {
+                return res.status(200).json({
+                    success: true,
+                    requiresConfirmation: true,
+                    mode: 'depart',
+                    heureDepart: time,
+                    confirmationToken: createDepartureConfirmation(userId, today, time)
+                });
             }
 
             const updated = await PointageController.enregistrerDepart(pointage, time)
@@ -791,14 +828,18 @@ export default class PointageController {
             return res.status(403).json({ success: false, message: "Rôle non autorisé" })
         }
 
-        const { userId } = req.body
-        if (!userId) {
+        const userId = Number(req.body?.userId)
+        if (!Number.isSafeInteger(userId) || userId <= 0) {
             return res.status(400).json({ success: false, message: "userId requis" });
         }
 
         const today = new Date().toISOString().split('T')[0]
         const now = new Date()
-        const time = now.toTimeString().split(' ')[0]
+        const confirmedTime = verifyDepartureConfirmation(req.body?.confirmationToken, userId, today)
+        if (req.body?.confirmationToken && !confirmedTime) {
+            return res.status(400).json({ success: false, code: 'INVALID_DEPARTURE_CONFIRMATION', message: 'La confirmation du départ a expiré. Recommencez le pointage.' })
+        }
+        const time = confirmedTime || now.toTimeString().split(' ')[0]
 
         try {
             const pointage: Pointage | null = await Pointage.findOne({
@@ -814,6 +855,17 @@ export default class PointageController {
 
             if (pointage.heureDepart) {
                 return res.status(400).json({ success: false, alreadyExists: true, message: "Départ déjà pointé pour cet utilisateur" });
+            }
+
+            if (!confirmedTime) {
+                return res.status(200).json({
+                    success: true,
+                    requiresConfirmation: true,
+                    mode: 'depart',
+                    utilisateurId: Number(userId),
+                    heureDepart: time,
+                    confirmationToken: createDepartureConfirmation(Number(userId), today, time)
+                });
             }
 
             const updated = await PointageController.enregistrerDepart(pointage, time)
@@ -921,8 +973,25 @@ export default class PointageController {
                             });
                         }
 
+                        const confirmedTime = verifyDepartureConfirmation(req.body?.confirmationToken, utilisateur.id, today);
+                        if (req.body?.confirmationToken && !confirmedTime) {
+                            await transaction.rollback();
+                            return res.status(400).json({ success: false, code: 'INVALID_DEPARTURE_CONFIRMATION', message: 'La confirmation du départ a expiré. Recommencez le pointage.' });
+                        }
+                        const departureTime = confirmedTime || time;
+                        if (!confirmedTime) {
+                            await transaction.rollback();
+                            return res.status(200).json({
+                                success: true,
+                                requiresConfirmation: true,
+                                mode: 'depart',
+                                heureDepart: departureTime,
+                                confirmationToken: createDepartureConfirmation(utilisateur.id, today, departureTime)
+                            });
+                        }
+
                         actualMode = 'depart';
-                        await pointage.update({ heureDepart: time }, { transaction });
+                        await pointage.update({ heureDepart: departureTime }, { transaction });
                         updated = pointage;
                     }
 

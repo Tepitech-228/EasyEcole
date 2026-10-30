@@ -336,6 +336,9 @@ const hikvisionEventUpload = multer({
 }).any()
 app.use('/iclock', PointageTerminalAdmsRouter)
 app.post('/api/hikvision/event', hikvisionEventUpload, HikvisionPushController.receive)
+// Variante acceptée par les firmwares qui ne savent pas ajouter de query string :
+// le jeton du terminal voyage alors dans le chemin.
+app.post('/api/hikvision/event/:deviceToken', hikvisionEventUpload, HikvisionPushController.receive)
 app.use(API_BASE_URL, router)
 
 app.use(errorHandler)
@@ -364,6 +367,7 @@ if (hikvisionCallbackHost && hikvisionCallbackHost !== hostname) {
   const callbackApp = express()
   callbackApp.use(express.json({ limit: '10mb' }))
   callbackApp.post('/api/hikvision/event', hikvisionEventUpload, HikvisionPushController.receive)
+  callbackApp.post('/api/hikvision/event/:deviceToken', hikvisionEventUpload, HikvisionPushController.receive)
   hikvisionCallbackServer = http.createServer(callbackApp)
   hikvisionCallbackServer.listen(port, hikvisionCallbackHost)
   hikvisionCallbackServer.on('listening', () => {

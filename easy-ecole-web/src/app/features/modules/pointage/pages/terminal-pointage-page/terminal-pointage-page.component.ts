@@ -1,17 +1,29 @@
 import { Component, HostListener, NgZone, OnDestroy } from '@angular/core';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
-import { map } from 'rxjs/operators';
-import { Subscription } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import {
+  DepartureConfirmation,
   HikvisionTerminalConfig,
   HikvisionTerminalUpdatePayload,
+  PointageScanResponse,
   PointageService
 } from 'src/app/data/modules/inscription/services/pointage.service';
 import { Pointage } from 'src/app/data/modules/inscription/models/Pointage.model';
 import { AuthService, SiteUtilisateur } from 'src/app/data/modules/auth/services/auth.service';
 import { SocketService, TerminalAttendanceEvent } from 'src/app/core/services/socket.service';
 import { environment } from 'src/environments/environment';
+
+interface PendingDepartureConfirmation {
+  codeQR: string | null;
+  userId: string;
+  confirmationToken: string;
+  heure: string;
+  nom: string;
+  prenoms: string;
+  role: string;
+  photoUrl: string;
+}
 
 @Component({
   selector: 'app-terminal-pointage-page',
@@ -31,9 +43,18 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   scanError: string = ''
   scanWarning: string = ''
   scanSuccess: string = ''
+  /** Départ personnel en attente de double confirmation (2e scan du jour). */
+  departureConfirmation: PendingDepartureConfirmation | null = null
+  departureConfirmationStep: 'choix' | 'avertissement' = 'choix'
+  departureConfirmationSaving: boolean = false
   scanTimeout: boolean = false
   selfSuccess: string = ''
   selfError: string = ''
+  selfWarning: string = ''
+  /** Départ self-service en attente de double confirmation. */
+  selfDepartureConfirmation: { confirmationToken: string, heure: string } | null = null
+  selfDepartureStep: 'choix' | 'avertissement' = 'choix'
+  selfDepartureSaving: boolean = false
   voiceAnnouncementsEnabled: boolean = true
   voiceError: string = ''
   lastAttendanceName: string = ''
@@ -52,6 +73,12 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   hikvisionTestingId: number | null = null
   /** Id du terminal en cours de suppression ; null = aucune suppression. */
   hikvisionDeletingId: number | null = null
+  /** Id du terminal dont le jeton est en cours de renouvellement. */
+  hikvisionRotatingId: number | null = null
+  /** Jeton en clair affiché une seule fois après création ou rotation. */
+  terminalDeviceToken = ''
+  terminalDeviceTokenLabel = ''
+  terminalDeviceTokenCopied = false
   /** Id du terminal en cours d'édition ; null = formulaire en création. */
   editingTerminalId: number | null = null
   hikvisionDraft = {
@@ -140,14 +167,14 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     // En édition, le mot de passe est facultatif : vide = conserver l'actuel.
     const identifiantsValides = !!draft.username.trim() && (editingId !== null || !!draft.password)
     if (
-      !draft.serialNumber.trim() || !draft.nom.trim() || !draft.sourceIp.trim() ||
+      !draft.serialNumber.trim() || !draft.nom.trim() ||
       !identifiantsValides ||
       !Number.isSafeInteger(draft.port) || draft.port < 1 || draft.port > 65535 ||
       !Number.isSafeInteger(etablissementId) || etablissementId <= 0
     ) {
       this.terminalConfigError = editingId !== null
-        ? 'Renseignez le numéro de série, le nom, l’IP du terminal, le port, le compte et le site. Le mot de passe peut rester vide pour conserver l’actuel.'
-        : 'Renseignez le numéro de série, le nom, l’IP du terminal, le port, le compte, le mot de passe et le site.'
+        ? 'Renseignez le numéro de série, le nom, le port, le compte et le site. Le mot de passe peut rester vide pour conserver l’actuel.'
+        : 'Renseignez le numéro de série, le nom, le port, le compte, le mot de passe et le site.'
       return
     }
 
@@ -196,8 +223,9 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       next: terminal => {
         this.hikvisionTerminals = [...this.hikvisionTerminals, terminal]
         this.hikvisionDraft = { ...this.hikvisionDraft, serialNumber: '', sourceIp: '', username: '', password: '', etablissementId }
-        this.terminalConfigSuccess = 'Terminal enregistré. Testez la connexion ISAPI avant le premier pointage.'
+        this.terminalConfigSuccess = 'Terminal enregistré. Copiez son jeton, puis testez la connexion ISAPI avant le premier pointage.'
         this.terminalConfigSaving = false
+        this.afficherJetonTerminal(terminal, terminal.deviceToken)
         this.testerTerminalHikvision(terminal)
       },
       error: err => {
@@ -215,7 +243,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     this.hikvisionDraft = {
       serialNumber: terminal.serialNumber,
       nom: terminal.nom,
-      sourceIp: terminal.sourceIp,
+      sourceIp: terminal.sourceIp || '',
       port: terminal.hikvisionPort,
       https: terminal.hikvisionHttps,
       username: terminal.username || '',
@@ -272,6 +300,58 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       },
       error: err => {
         this.terminalConfigError = err.error?.message || 'L’état du terminal Hikvision n’a pas pu être modifié.'
+      }
+    })
+  }
+
+  /**
+   * Affiche un jeton en clair : c'est la seule occasion où il est visible,
+   * le backend ne conservant que son empreinte SHA-256.
+   */
+  private afficherJetonTerminal(terminal: HikvisionTerminalConfig, token?: string): void {
+    if (!token) return
+    this.terminalDeviceToken = token
+    this.terminalDeviceTokenLabel = terminal.nom
+    this.terminalDeviceTokenCopied = false
+  }
+
+  copierJetonTerminal(): void {
+    if (!this.terminalDeviceToken || typeof navigator === 'undefined' || !navigator.clipboard) return
+    navigator.clipboard.writeText(this.terminalDeviceToken).then(
+      () => this.terminalDeviceTokenCopied = true,
+      () => this.terminalDeviceTokenCopied = false
+    )
+  }
+
+  fermerJetonTerminal(): void {
+    this.terminalDeviceToken = ''
+    this.terminalDeviceTokenLabel = ''
+    this.terminalDeviceTokenCopied = false
+  }
+
+  /** Renouvelle le jeton : l'ancien est invalidé, le nouveau est affiché une fois. */
+  regenererJetonTerminalHikvision(terminal: HikvisionTerminalConfig): void {
+    if (this.hikvisionRotatingId !== null) return
+    if (typeof window !== 'undefined') {
+      const confirme = window.confirm(
+        `Renouveler le jeton de « ${terminal.nom} » ?\n\n`
+        + 'L’ancien jeton cessera immédiatement de fonctionner : la pointeuse devra être reconfigurée avec le nouveau.'
+      )
+      if (!confirme) return
+    }
+
+    this.terminalConfigError = ''
+    this.terminalConfigSuccess = ''
+    this.hikvisionRotatingId = terminal.id
+    this.pointageService.regenererJetonTerminalHikvision(terminal.id).subscribe({
+      next: result => {
+        this.hikvisionRotatingId = null
+        this.afficherJetonTerminal(terminal, result.deviceToken)
+        this.terminalConfigSuccess = 'Nouveau jeton généré. Copiez-le maintenant : il ne sera plus affiché.'
+      },
+      error: err => {
+        this.terminalConfigError = err.error?.message || 'Le jeton du terminal n’a pas pu être renouvelé.'
+        this.hikvisionRotatingId = null
       }
     })
   }
@@ -509,6 +589,11 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
         this.scanProcessingMessage = 'Identité confirmée. Enregistrement du pointage…'
         this.pointageService.pointerParQR(scan.codeQR).subscribe({
           next: (result) => {
+            if (this.isDepartureConfirmation(result)) {
+              this.presentDepartureConfirmation(scan.codeQR, result, this.scannedUser?.userId)
+              this.finishReaderScan()
+              return
+            }
             const pointage = result.pointage
             this.lastAttendanceName = this.formatPersonName(this.scannedUser)
             this.lastAttendanceRole = this.roleLabel(this.scannedUser?.role)
@@ -549,7 +634,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
 
   private finishReaderScan(): void {
     this.readerScanInProgress = false
-    if (this.readerQueue.length > 0) {
+    if (this.readerQueue.length > 0 && !this.departureConfirmation) {
       this.processNextReaderScan()
     } else {
       this.scanProcessing = false
@@ -692,8 +777,16 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   }
 
   pointerDepart(): void {
+    this.selfWarning = ''
     this.pointageService.pointerDepart().subscribe({
       next: (res) => {
+        if (this.isDepartureConfirmation(res)) {
+          this.selfDepartureConfirmation = { confirmationToken: res.confirmationToken, heure: res.heureDepart }
+          this.selfDepartureStep = 'choix'
+          this.selfDepartureSaving = false
+          this.selfSuccess = ''
+          return
+        }
         this.todayPointage = res
         this.selfSuccess = 'Départ pointé à ' + res.heureDepart
         this.playBeepSucces()
@@ -701,6 +794,55 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       },
       error: (err) => {
         this.selfError = err.error?.message || 'Erreur lors du pointage'
+        this.playBeepRefus()
+        setTimeout(() => this.selfError = '', 4000)
+      }
+    })
+  }
+
+  get utilisateurCourantLabel(): string {
+    const utilisateur = BaseComponentClass.utilisateur
+    return this.formatPersonName({ nom: utilisateur?.nom, prenoms: utilisateur?.prenoms })
+  }
+
+  demanderConfirmationDepartPerso(): void {
+    if (!this.selfDepartureConfirmation) return
+    this.selfDepartureStep = 'avertissement'
+  }
+
+  annulerConfirmationDepartPerso(): void {
+    this.selfDepartureConfirmation = null
+    this.selfDepartureStep = 'choix'
+    this.selfDepartureSaving = false
+    this.selfWarning = 'Départ annulé. Aucun enregistrement n’a été effectué.'
+    setTimeout(() => this.selfWarning = '', 4000)
+  }
+
+  confirmerDepartPerso(): void {
+    const pending = this.selfDepartureConfirmation
+    if (!pending || this.selfDepartureSaving) return
+    this.selfDepartureSaving = true
+    this.pointageService.pointerDepart(pending.confirmationToken).subscribe({
+      next: (res) => {
+        this.selfDepartureSaving = false
+        if (this.isDepartureConfirmation(res)) {
+          this.selfDepartureConfirmation = { confirmationToken: res.confirmationToken, heure: res.heureDepart }
+          this.selfDepartureStep = 'choix'
+          this.selfWarning = 'La confirmation a expiré. Recommencez le pointage du départ.'
+          return
+        }
+        this.todayPointage = res
+        this.selfDepartureConfirmation = null
+        this.selfDepartureStep = 'choix'
+        this.selfSuccess = 'Départ enregistré à ' + res.heureDepart
+        this.playBeepSucces()
+        setTimeout(() => this.selfSuccess = '', 4000)
+      },
+      error: (err) => {
+        this.selfDepartureSaving = false
+        this.selfDepartureConfirmation = null
+        this.selfDepartureStep = 'choix'
+        this.selfError = err.error?.message || 'Le départ n’a pas pu être enregistré. Réessayez.'
         this.playBeepRefus()
         setTimeout(() => this.selfError = '', 4000)
       }
@@ -1022,29 +1164,33 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   pointerScannedUser(mode: 'arrivee' | 'depart'): void {
     if (!this.scannedUser?.userId) return
     const codeQR = this.scannedCodeQR
-    let actualMode: 'arrivee' | 'depart' | 'passage' = mode
-    const serviceCall = codeQR?.startsWith('CARTE|v=1|')
-      ? this.pointageService.pointerParQR(codeQR).pipe(map((response) => {
-        actualMode = response.mode
-        return response.pointage
-      }))
+    const request$: Observable<PointageScanResponse | Pointage> = codeQR
+      ? this.pointageService.pointerParQR(codeQR)
       : mode === 'arrivee'
         ? this.pointageService.pointerArriveeByScan(this.scannedUser.userId)
         : this.pointageService.pointerDepartByScan(this.scannedUser.userId)
 
-    serviceCall.subscribe({
-      next: (res: Pointage) => {
+    request$.subscribe({
+      next: (response) => {
+        if (this.isDepartureConfirmation(response)) {
+          this.presentDepartureConfirmation(codeQR, response, this.scannedUser?.userId)
+          return
+        }
+        const pointage = this.extractPointage(response)
+        const actualMode: 'arrivee' | 'depart' | 'passage' = codeQR
+          ? (response as { mode: 'arrivee' | 'depart' | 'passage' }).mode
+          : mode
         this.lastAttendanceName = this.formatPersonName(this.scannedUser)
         this.lastAttendanceRole = this.roleLabel(this.scannedUser?.role)
         this.lastAttendancePhotoUrl = this.scannedUser?.photoUrl || ''
-        const heure = actualMode === 'depart' ? res.heureDepart : res.heureArrivee
+        const heure = actualMode === 'depart' ? pointage.heureDepart : pointage.heureArrivee
         this.announceAttendance(this.scannedUser, actualMode, heure || undefined)
         this.playBeepSucces()
         this.scanSuccess = actualMode === 'depart'
-          ? 'Départ pointé à ' + res.heureDepart
+          ? 'Départ pointé à ' + pointage.heureDepart
           : (actualMode === 'passage'
-            ? 'Passage enregistré à ' + res.heureArrivee
-            : 'Arrivée pointée à ' + res.heureArrivee)
+            ? 'Passage enregistré à ' + pointage.heureArrivee
+            : 'Arrivée pointée à ' + pointage.heureArrivee)
         this.scannedUser = null
         this.scannedCodeQR = null
         setTimeout(() => this.scanSuccess = '', 4000)
@@ -1068,6 +1214,112 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     })
   }
 
+  private isDepartureConfirmation(response: Pointage | PointageScanResponse): response is DepartureConfirmation {
+    return (response as DepartureConfirmation)?.requiresConfirmation === true
+  }
+
+  private extractPointage(response: Pointage | PointageScanResponse): Pointage {
+    const wrapped = response as { pointage?: Pointage }
+    return wrapped.pointage ?? (response as Pointage)
+  }
+
+  /**
+   * Le serveur demande une confirmation : le départ du personnel n'est pas
+   * encore enregistré. On fige l'identité affichée puis on attend le choix
+   * de l'opérateur (Enregistrer / Annuler).
+   */
+  private presentDepartureConfirmation(
+    codeQR: string | null,
+    confirmation: DepartureConfirmation,
+    userId: string | number | undefined
+  ): void {
+    this.departureConfirmation = {
+      codeQR,
+      userId: String(confirmation.utilisateurId ?? userId ?? ''),
+      confirmationToken: confirmation.confirmationToken,
+      heure: confirmation.heureDepart,
+      nom: this.scannedUser?.nom || '',
+      prenoms: this.scannedUser?.prenoms || '',
+      role: this.scannedUser?.role || '',
+      photoUrl: this.scannedUser?.photoUrl || ''
+    }
+    this.departureConfirmationStep = 'choix'
+    this.departureConfirmationSaving = false
+    this.scanError = ''
+    this.scanWarning = ''
+    this.scanSuccess = ''
+    this.scannedUser = null
+  }
+
+  /** Bouton « Enregistrer » : affiche le panneau d'avertissement. */
+  demanderConfirmationDepart(): void {
+    if (!this.departureConfirmation) return
+    this.departureConfirmationStep = 'avertissement'
+  }
+
+  /** « Annuler » : aucun départ n'est enregistré. */
+  annulerConfirmationDepart(): void {
+    this.departureConfirmation = null
+    this.departureConfirmationStep = 'choix'
+    this.departureConfirmationSaving = false
+    this.resetScan()
+    this.resumeReaderQueue()
+  }
+
+  /** « Oui » : enregistre le départ définitivement avec le jeton signé. */
+  confirmerDepart(): void {
+    const pending = this.departureConfirmation
+    if (!pending || this.departureConfirmationSaving) return
+    this.departureConfirmationSaving = true
+    const request$: Observable<Pointage | PointageScanResponse> = pending.codeQR
+      ? this.pointageService.pointerParQR(pending.codeQR, pending.confirmationToken)
+      : this.pointageService.pointerDepartByScan(pending.userId, pending.confirmationToken)
+    request$.subscribe({
+      next: (response) => {
+        this.departureConfirmationSaving = false
+        if (this.isDepartureConfirmation(response)) {
+          this.departureConfirmation = {
+            ...pending,
+            confirmationToken: response.confirmationToken,
+            heure: response.heureDepart
+          }
+          this.departureConfirmationStep = 'choix'
+          this.scanError = 'La confirmation a expiré. Recommencez l’enregistrement du départ.'
+          this.playBeepRefus()
+          return
+        }
+        const pointage = this.extractPointage(response)
+        const personne = { nom: pending.nom, prenoms: pending.prenoms, role: pending.role }
+        const heure = pointage.heureDepart || pending.heure
+        this.lastAttendanceName = this.formatPersonName(personne)
+        this.lastAttendanceRole = this.roleLabel(pending.role)
+        this.lastAttendancePhotoUrl = pending.photoUrl
+        this.announceAttendance(personne, 'depart', heure)
+        this.playBeepSucces()
+        this.scanSuccess = 'Départ enregistré à ' + heure
+        this.departureConfirmation = null
+        this.departureConfirmationStep = 'choix'
+        this.scannedUser = null
+        this.scannedCodeQR = null
+        this.resumeReaderQueue()
+      },
+      error: (err) => {
+        this.departureConfirmationSaving = false
+        this.departureConfirmation = null
+        this.departureConfirmationStep = 'choix'
+        this.scanError = err.error?.message || 'Le départ n’a pas pu être enregistré. Réessayez.'
+        this.playBeepRefus()
+        this.resumeReaderQueue()
+      }
+    })
+  }
+
+  private resumeReaderQueue(): void {
+    if (this.readerQueue.length > 0) {
+      this.processNextReaderScan()
+    }
+  }
+
   private isDuplicateAttendanceError(err: any): boolean {
     return err.error?.alreadyExists === true || err.error?.code === 'ALREADY_EXISTS'
   }
@@ -1081,6 +1333,9 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     this.manualId = ''
     this.showManualInput = false
     this.scannedCodeQR = null
+    this.departureConfirmation = null
+    this.departureConfirmationStep = 'choix'
+    this.departureConfirmationSaving = false
   }
 
   toggleVoiceAnnouncements(): void {

@@ -33,12 +33,14 @@ jest.mock("../../../modules/inscription/services/VerificationPaiementService", (
 }));
 
 import PointageTerminalController from "../../../modules/inscription/controllers/PointageTerminalController";
+import PointageTerminalTokenService from "../../../modules/inscription/services/PointageTerminalTokenService";
 
 const { DatabaseConnection } = require("../../../core/helpers/DatabaseConnection");
 const { PointageTerminal } = require("../../../modules/inscription/models/PointageTerminal");
 const { PointageTerminalEvent } = require("../../../modules/inscription/models/PointageTerminalEvent");
 const { Utilisateur } = require("../../../modules/auth/models/Utilisateur");
 const { SiteUtilisateur } = require("../../../modules/auth/models/SiteUtilisateur");
+const { Etablissement } = require("../../../modules/etablissement/models/Etablissement");
 const { Pointage } = require("../../../modules/inscription/models/Pointage");
 const { PointageScan } = require("../../../modules/inscription/models/PointageScan");
 const { DossierEtudiant } = require("../../../modules/inscription/models/DossierEtudiant");
@@ -236,5 +238,87 @@ describe("PointageTerminalController ADMS", () => {
     expect(PointageTerminalEvent.create).not.toHaveBeenCalled();
     expect(Pointage.create).not.toHaveBeenCalled();
     expect(res.send).toHaveBeenCalledWith("OK");
+  });
+
+  it("accepts ADMS traffic authenticated by the terminal token behind a tunnel", async () => {
+    const token = `ptk_${"a".repeat(43)}`;
+    PointageTerminal.findOne.mockResolvedValue({
+      id: 5,
+      serialNumber: "ZK12345",
+      etablissementId: 3,
+      sourceIp: null,
+      deviceTokenHash: PointageTerminalTokenService.hash(token),
+      attStamp: 4,
+      update: jest.fn().mockResolvedValue(undefined)
+    });
+    const res = protocolResponse();
+    const req = admsRequest({ SN: "ZK12345", token });
+    req.ip = "203.0.113.50";
+
+    await PointageTerminalController.optionsAdms(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.send).toHaveBeenCalledWith(expect.stringContaining("TransFlag=TransData AttLog"));
+  });
+
+  it("rejects a wrong token even when the request comes from the allowlisted IP", async () => {
+    PointageTerminal.findOne.mockResolvedValue({
+      id: 5,
+      serialNumber: "ZK12345",
+      etablissementId: 3,
+      sourceIp: "192.168.1.12",
+      deviceTokenHash: PointageTerminalTokenService.hash(`ptk_${"a".repeat(43)}`),
+      attStamp: 4,
+      update: jest.fn().mockResolvedValue(undefined)
+    });
+    const res = protocolResponse();
+    const req = admsRequest({ SN: "ZK12345", token: `ptk_${"b".repeat(43)}` });
+
+    await PointageTerminalController.optionsAdms(req, res);
+
+    expect(res.send).toHaveBeenCalledWith("ERROR");
+  });
+
+  it("returns the device token once at creation and stores only its hash", async () => {
+    Etablissement.findOne.mockResolvedValue({ id: 3 });
+    PointageTerminal.create.mockImplementation((payload: any) => Promise.resolve({
+      id: 12,
+      protocol: "zkteco_adms",
+      actif: true,
+      lastSeenAt: null,
+      ...payload
+    }));
+    const req = mockRequest({
+      utilisateurRole: "admin",
+      body: { serialNumber: "ZK99999", nom: "Portail", sourceIp: "", etablissementId: 3 }
+    } as any);
+    const res: any = mockResponse();
+
+    await PointageTerminalController.creerTerminal(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    const payload = PointageTerminal.create.mock.calls[0][0];
+    expect(payload.sourceIp).toBeNull();
+    expect(payload.deviceTokenHash).toMatch(/^[a-f0-9]{64}$/);
+    const body = res.json.mock.calls[0][0];
+    expect(body.deviceToken).toMatch(/^ptk_[A-Za-z0-9_-]{43}$/);
+    expect(PointageTerminalTokenService.hash(body.deviceToken)).toBe(payload.deviceTokenHash);
+    expect(body.deviceTokenHash).toBeUndefined();
+  });
+
+  it("rotates the token and invalidates the previous one", async () => {
+    const update = jest.fn().mockResolvedValue(undefined);
+    PointageTerminal.findOne.mockResolvedValue({ id: 5, protocol: "zkteco_adms", update });
+    const req = mockRequest({ utilisateurRole: "admin", params: { id: "5" } } as any);
+    const res: any = mockResponse();
+
+    await PointageTerminalController.regenererToken(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    const body = res.json.mock.calls[0][0];
+    expect(body.deviceToken).toMatch(/^ptk_[A-Za-z0-9_-]{43}$/);
+    expect(update).toHaveBeenCalledWith({
+      deviceTokenHash: PointageTerminalTokenService.hash(body.deviceToken)
+    });
   });
 });

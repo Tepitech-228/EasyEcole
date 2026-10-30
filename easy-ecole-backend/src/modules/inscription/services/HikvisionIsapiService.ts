@@ -74,6 +74,9 @@ function decryptPassword(encryptedValue: string): string {
 }
 
 function terminalUrl(terminal: PointageTerminal, path: string): URL {
+    // Les terminaux pilotés à distance (tunnel) n'ont pas d'adresse directe :
+    // l'ISAPI entrant/sortant reste réservé aux terminaux joignables sur le LAN.
+    if (!terminal.sourceIp) throw new Error("Ce terminal n’a pas d’adresse IP locale configurée pour ISAPI.");
     const scheme = terminal.hikvisionHttps ? "https" : "http";
     const host = terminal.sourceIp.includes(":") ? `[${terminal.sourceIp}]` : terminal.sourceIp;
     return new URL(`${scheme}://${host}:${terminal.hikvisionPort}${path}`);
@@ -213,7 +216,7 @@ export default class HikvisionIsapiService {
             );
             if (!serieCompatible) {
                 throw new Error(
-                    `Numéro de série incompatible : l'appareil ${terminal.sourceIp} renvoie « ${serialNumber} », ` +
+                    `Numéro de série incompatible : l'appareil ${terminal.sourceIp || terminal.serialNumber} renvoie « ${serialNumber} », ` +
                     `la fiche du terminal contient « ${configuredSerialNumber} ».`
                 );
             }

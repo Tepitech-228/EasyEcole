@@ -100,9 +100,23 @@
 
       <div class="pointage-hikvision-info">
         <strong>Connexion du terminal MinMoe</strong>
-        <p>Renseignez l’adresse IP joignable du terminal, son port ISAPI, son numéro de série, le compte ISAPI et le site. Un terminal sur un autre réseau est pris en charge si le serveur EasyEcole peut le joindre par une route VPN (TCP 80 ou 443 selon le terminal). Le flux de pointage est lu automatiquement par EasyEcole : aucune URL Push n’est à saisir sur la pointeuse.</p>
-        <p>Pour un terminal distant, la route VPN et le pare-feu doivent aussi permettre au conteneur backend de joindre son réseau. N’exposez pas le port ISAPI du terminal sur Internet. Le formulaire teste l’authentification ISAPI après l’enregistrement.</p>
+        <p>Renseignez le numéro de série, le compte ISAPI et le site. L’adresse IP locale est facultative : elle n’est nécessaire que si le serveur EasyEcole doit joindre le terminal (test ISAPI, enrôlement des visages). Un terminal distant peut pointer uniquement en Push via le tunnel Cloudflare, avec le jeton généré à l’enregistrement.</p>
+        <p>Configurez ensuite sur la pointeuse l’URL d’événement <code>/api/hikvision/event</code> avec le jeton (paramètre <code>token</code>, chemin ou en-tête <code>X-Pointage-Token</code>). Le jeton n’est affiché qu’une seule fois : copiez-le avant de fermer l’encart.</p>
         <p>Le mot de passe est chiffré avant d’être conservé. Après validation d’un dossier, l’enrôlement facial est mis en file de façon systématique. La compatibilité de l’envoi du visage doit être confirmée sur le firmware du terminal.</p>
+      </div>
+
+      <div *ngIf="terminalDeviceToken" class="pointage-terminal-token" role="status">
+        <strong>Jeton du terminal « {{ terminalDeviceTokenLabel }} »</strong>
+        <p>Copiez ce jeton maintenant : il ne sera plus affiché. Toute rotation invalide immédiatement l’ancien.</p>
+        <code class="pointage-terminal-token-value">{{ terminalDeviceToken }}</code>
+        <div class="pointage-terminal-token-actions">
+          <button type="button" class="pointage-btn pointage-btn--arrivee pointage-btn--sm" (click)="copierJetonTerminal()">
+            {{ terminalDeviceTokenCopied ? 'Jeton copié' : 'Copier le jeton' }}
+          </button>
+          <button type="button" class="pointage-btn pointage-btn--outline pointage-btn--sm" (click)="fermerJetonTerminal()">
+            J’ai noté le jeton
+          </button>
+        </div>
       </div>
 
       <form (ngSubmit)="enregistrerTerminalHikvision()" class="pointage-terminal-form mt-4">
@@ -118,8 +132,8 @@
           <input name="hikvisionName" [(ngModel)]="hikvisionDraft.nom" required maxlength="120" autocomplete="off">
         </label>
         <label>
-          <span>Adresse IP du terminal</span>
-          <input name="hikvisionIp" [(ngModel)]="hikvisionDraft.sourceIp" required autocomplete="off" placeholder="Ex. 192.168.1.50">
+          <span>Adresse IP locale (facultative)</span>
+          <input name="hikvisionIp" [(ngModel)]="hikvisionDraft.sourceIp" autocomplete="off" placeholder="Ex. 192.168.1.50 — vide si tunnel uniquement">
         </label>
         <label>
           <span>Port ISAPI</span>
@@ -163,9 +177,10 @@
         <article *ngFor="let terminal of hikvisionTerminals" class="pointage-terminal-row">
           <div class="min-w-0">
             <strong>{{ terminal.nom }}</strong>
-            <span>{{ terminal.serialNumber }} · {{ terminal.sourceIp }}:{{ terminal.hikvisionPort }}</span>
+            <span>{{ terminal.serialNumber }} · {{ terminal.sourceIp ? terminal.sourceIp + ':' + terminal.hikvisionPort : 'Sans IP locale (push tunnel)' }}</span>
             <span>Site : {{ nomSiteTerminal(terminal) }}</span>
-            <small>{{ terminalEstEnLigne(terminal) ? 'Connexion ISAPI récente' : (terminal.lastSeenAt ? 'Dernier contact : ' + (terminal.lastSeenAt | date:'short') : 'En attente de connexion ISAPI') }}</small>
+            <small>{{ terminalEstEnLigne(terminal) ? 'Connexion ISAPI récente' : (terminal.lastSeenAt ? 'Dernier contact : ' + (terminal.lastSeenAt | date:'short') : 'En attente de connexion') }}</small>
+            <small>{{ terminal.hasDeviceToken ? 'Jeton configuré' : 'Aucun jeton : authentification par IP uniquement' }}</small>
           </div>
           <span class="pointage-terminal-status" [class.online]="terminalEstEnLigne(terminal)">
             {{ terminal.actif ? (terminalEstEnLigne(terminal) ? 'CONNECTÉ' : 'EN ATTENTE') : 'DÉSACTIVÉ' }}
@@ -178,6 +193,11 @@
           <button type="button" class="pointage-btn pointage-btn--outline pointage-btn--sm"
                   (click)="modifierTerminalHikvision(terminal)">
             Modifier
+          </button>
+          <button type="button" class="pointage-btn pointage-btn--outline pointage-btn--sm"
+                  [disabled]="hikvisionRotatingId === terminal.id"
+                  (click)="regenererJetonTerminalHikvision(terminal)">
+            {{ hikvisionRotatingId === terminal.id ? 'Rotation…' : 'Renouveler le jeton' }}
           </button>
           <button type="button" class="pointage-btn pointage-btn--outline pointage-btn--sm text-red-600 border-red-200 hover:bg-red-50"
                   [disabled]="hikvisionDeletingId === terminal.id"
@@ -259,11 +279,51 @@
               <span class="material-symbols-outlined">login</span>
               Pointer arrivée
             </button>
-            <button *ngIf="todayPointage && !todayPointage.heureDepart" (click)="pointerDepart()"
+            <button *ngIf="todayPointage && !todayPointage.heureDepart && !selfDepartureConfirmation" (click)="pointerDepart()"
               class="pointage-btn pointage-btn--depart flex-1">
               <span class="material-symbols-outlined">logout</span>
               Pointer départ
             </button>
+          </div>
+
+          <div *ngIf="selfDepartureConfirmation" class="pointage-message pointage-message--warning mt-3" role="alertdialog" aria-live="assertive">
+            <ng-container *ngIf="selfDepartureStep === 'choix'">
+              <p>
+                Départ prévu à <strong>{{ selfDepartureConfirmation.heure }}</strong>.
+                Vérifiez qu’il ne s’agit pas d’un clic accidentel.
+              </p>
+              <div class="pointage-departure-actions">
+                <button (click)="demanderConfirmationDepartPerso()" class="pointage-btn pointage-btn--depart">
+                  <span class="material-symbols-outlined">save</span>
+                  Enregistrer
+                </button>
+                <button (click)="annulerConfirmationDepartPerso()" class="pointage-btn pointage-btn--outline">
+                  <span class="material-symbols-outlined">close</span>
+                  Annuler
+                </button>
+              </div>
+            </ng-container>
+            <ng-container *ngIf="selfDepartureStep === 'avertissement'">
+              <p>
+                Voulez-vous vraiment enregistrer le départ de
+                <strong>{{ utilisateurCourantLabel }}</strong>
+                à <strong>{{ selfDepartureConfirmation.heure }}</strong> ?
+              </p>
+              <div class="pointage-departure-actions">
+                <button (click)="confirmerDepartPerso()" [disabled]="selfDepartureSaving" class="pointage-btn pointage-btn--success">
+                  <span class="material-symbols-outlined">check_circle</span>
+                  {{ selfDepartureSaving ? 'Enregistrement…' : 'Oui, enregistrer le départ' }}
+                </button>
+                <button (click)="annulerConfirmationDepartPerso()" [disabled]="selfDepartureSaving" class="pointage-btn pointage-btn--outline">
+                  <span class="material-symbols-outlined">undo</span>
+                  Non, annuler
+                </button>
+              </div>
+            </ng-container>
+          </div>
+
+          <div *ngIf="selfWarning" class="pointage-message pointage-message--warning mt-3">
+            <p>{{ selfWarning }}</p>
           </div>
 
           <div *ngIf="selfSuccess" class="pointage-message pointage-message--success mt-3">
@@ -383,7 +443,7 @@
             </div>
           </div>
 
-          <div *ngIf="!scanProcessing && !scannedUser && !scanError && !scanWarning && !scanSuccess && !scanTimeout && !showManualInput">
+          <div *ngIf="!scanProcessing && !scannedUser && !scanError && !scanWarning && !scanSuccess && !scanTimeout && !showManualInput && !departureConfirmation">
 
             <div *ngIf="!scanning" class="text-center">
               <div class="pointage-scan-placeholder">
@@ -559,6 +619,57 @@
                 Pointer départ
               </button>
             </div>
+          </div>
+
+          <div *ngIf="departureConfirmation" class="pointage-state-card pointage-state-card--warning pointage-departure-confirmation" role="alertdialog" aria-live="assertive">
+            <ng-container *ngIf="departureConfirmationStep === 'choix'">
+              <div class="state-icon">
+                <span class="material-symbols-outlined">logout</span>
+              </div>
+              <div class="state-title">Départ détecté</div>
+              <div *ngIf="departureConfirmation.photoUrl" class="pointage-success-person">
+                <img [src]="departureConfirmation.photoUrl"
+                  [alt]="'Photo de ' + departureConfirmation.prenoms + ' ' + departureConfirmation.nom"
+                  (error)="departureConfirmation.photoUrl = ''">
+                <strong>{{ departureConfirmation.prenoms }} {{ departureConfirmation.nom }}</strong>
+                <span>{{ departureConfirmation.role }}</span>
+              </div>
+              <div class="state-desc">
+                Deuxième pointage du jour : départ prévu à <strong>{{ departureConfirmation.heure }}</strong>.
+                Vérifiez qu’il ne s’agit pas d’un scan accidentel.
+              </div>
+              <div class="pointage-departure-actions">
+                <button (click)="demanderConfirmationDepart()" class="pointage-btn pointage-btn--depart">
+                  <span class="material-symbols-outlined">save</span>
+                  Enregistrer
+                </button>
+                <button (click)="annulerConfirmationDepart()" class="pointage-btn pointage-btn--outline">
+                  <span class="material-symbols-outlined">close</span>
+                  Annuler
+                </button>
+              </div>
+            </ng-container>
+            <ng-container *ngIf="departureConfirmationStep === 'avertissement'">
+              <div class="state-icon">
+                <span class="material-symbols-outlined">warning</span>
+              </div>
+              <div class="state-title">Confirmer le départ</div>
+              <div class="state-desc">
+                Voulez-vous vraiment enregistrer le départ de
+                <strong>{{ departureConfirmation.prenoms }} {{ departureConfirmation.nom }}</strong>
+                à <strong>{{ departureConfirmation.heure }}</strong> ?
+              </div>
+              <div class="pointage-departure-actions">
+                <button (click)="confirmerDepart()" [disabled]="departureConfirmationSaving" class="pointage-btn pointage-btn--success">
+                  <span class="material-symbols-outlined">check_circle</span>
+                  {{ departureConfirmationSaving ? 'Enregistrement…' : 'Oui, enregistrer le départ' }}
+                </button>
+                <button (click)="annulerConfirmationDepart()" [disabled]="departureConfirmationSaving" class="pointage-btn pointage-btn--outline">
+                  <span class="material-symbols-outlined">undo</span>
+                  Non, annuler
+                </button>
+              </div>
+            </ng-container>
           </div>
 
           <div *ngIf="scanWarning && !scannedUser" class="pointage-state-card pointage-state-card--warning" role="status">

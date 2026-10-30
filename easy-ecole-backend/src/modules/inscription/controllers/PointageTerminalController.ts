@@ -11,6 +11,7 @@ import { Pointage } from "../models/Pointage";
 import { PointageScan } from "../models/PointageScan";
 import { PointageTerminal } from "../models/PointageTerminal";
 import { PointageTerminalEvent } from "../models/PointageTerminalEvent";
+import PointageTerminalTokenService from "../services/PointageTerminalTokenService";
 import { VerificationPaiementService } from "../services/VerificationPaiementService";
 
 interface AttendanceLog {
@@ -85,13 +86,28 @@ export default class PointageTerminalController {
         const serialNumber = typeof req.query.SN === "string" ? req.query.SN.trim() : "";
         if (!serialNumber) return null;
         const terminal = await PointageTerminal.findOne({ where: { serialNumber, protocol: "zkteco_adms", actif: true } });
-        if (!terminal || normalizedIp(req.ip || "") !== terminal.sourceIp) return null;
+        if (!terminal || !PointageTerminalTokenService.authorize(terminal, req)) return null;
         await terminal.update({ lastSeenAt: new Date() });
         return terminal;
     }
 
     private static repondreProtocole(res: Response, body: string): Response {
         return res.status(200).type("text/plain").send(body);
+    }
+
+    private static toClientTerminal(terminal: PointageTerminal, deviceToken?: string): Record<string, unknown> {
+        return {
+            id: terminal.id,
+            serialNumber: terminal.serialNumber,
+            nom: terminal.nom,
+            sourceIp: terminal.sourceIp,
+            etablissementId: terminal.etablissementId,
+            protocol: terminal.protocol,
+            actif: terminal.actif,
+            lastSeenAt: terminal.lastSeenAt,
+            hasDeviceToken: Boolean(terminal.deviceTokenHash),
+            ...(deviceToken ? { deviceToken } : {})
+        };
     }
 
     static async getTerminaux(req: Request, res: Response): Promise<Response> {
@@ -101,7 +117,7 @@ export default class PointageTerminalController {
                 where: { protocol: "zkteco_adms" },
                 order: [["nom", "ASC"]]
             });
-            return res.status(200).json(terminaux);
+            return res.status(200).json(terminaux.map(terminal => PointageTerminalController.toClientTerminal(terminal)));
         } catch (error) {
             console.error("[PointageTerminal] erreur de chargement des terminaux:", error);
             return res.status(500).json({ success: false, message: "Les terminaux n’ont pas pu être chargés." });
@@ -112,17 +128,28 @@ export default class PointageTerminalController {
         if (!PointageTerminalController.adminOnly(req, res)) return res;
         const serialNumber = typeof req.body?.serialNumber === "string" ? req.body.serialNumber.trim() : "";
         const nom = typeof req.body?.nom === "string" ? req.body.nom.trim() : "";
-        const sourceIp = typeof req.body?.sourceIp === "string" ? normalizedIp(req.body.sourceIp.trim()) : "";
+        const sourceIpValue = typeof req.body?.sourceIp === "string" ? normalizedIp(req.body.sourceIp.trim()) : "";
+        const sourceIp = sourceIpValue || null;
         const etablissementId = Number(req.body?.etablissementId);
-        if (!/^[A-Za-z0-9._-]{2,64}$/.test(serialNumber) || !nom || nom.length > 120 || isIP(sourceIp) === 0
+        if (!/^[A-Za-z0-9._-]{2,64}$/.test(serialNumber) || !nom || nom.length > 120
+            || (sourceIp !== null && isIP(sourceIp) === 0)
             || !Number.isSafeInteger(etablissementId) || etablissementId <= 0) {
             return res.status(400).json({ success: false, message: "Numéro de série, nom, IP autorisée ou site invalide." });
         }
         try {
             const site = await Etablissement.findOne({ where: { id: etablissementId, actif: true } });
             if (!site) return res.status(400).json({ success: false, message: "Le site n’existe pas ou est inactif." });
-            const terminal = await PointageTerminal.create({ serialNumber, nom, sourceIp, etablissementId, actif: true, lastSeenAt: null });
-            return res.status(201).json(terminal);
+            const generated = PointageTerminalTokenService.generate();
+            const terminal = await PointageTerminal.create({
+                serialNumber,
+                nom,
+                sourceIp,
+                deviceTokenHash: generated.hash,
+                etablissementId,
+                actif: true,
+                lastSeenAt: null
+            });
+            return res.status(201).json(PointageTerminalController.toClientTerminal(terminal, generated.token));
         } catch (error) {
             if (estErreurUnique(error)) return res.status(409).json({ success: false, message: "Ce numéro de série est déjà enregistré." });
             console.error("[PointageTerminal] erreur de création du terminal:", error);
@@ -140,17 +167,40 @@ export default class PointageTerminalController {
             if (!terminal) {
                 return res.status(404).json({ success: false, message: "Terminal non trouvé." });
             }
-            const sourceIp = typeof req.body?.sourceIp === "string" ? normalizedIp(req.body.sourceIp.trim()) : undefined;
+            const sourceIpValue = typeof req.body?.sourceIp === "string" ? normalizedIp(req.body.sourceIp.trim()) : undefined;
+            const sourceIp = sourceIpValue === undefined ? undefined : (sourceIpValue || null);
             const nom = typeof req.body?.nom === "string" ? req.body.nom.trim() : undefined;
             const actif = typeof req.body?.actif === "boolean" ? req.body.actif : undefined;
-            if (sourceIp !== undefined && isIP(sourceIp) === 0) return res.status(400).json({ success: false, message: "L’adresse IP autorisée est invalide." });
+            if (sourceIp !== undefined && sourceIp !== null && isIP(sourceIp) === 0) return res.status(400).json({ success: false, message: "L’adresse IP autorisée est invalide." });
             if (nom !== undefined && (!nom || nom.length > 120)) return res.status(400).json({ success: false, message: "Le nom du terminal est invalide." });
             if (sourceIp === undefined && nom === undefined && actif === undefined) return res.status(400).json({ success: false, message: "Aucune modification valide." });
             await terminal.update({ ...(sourceIp !== undefined ? { sourceIp } : {}), ...(nom !== undefined ? { nom } : {}), ...(actif !== undefined ? { actif } : {}) });
-            return res.status(200).json(terminal);
+            return res.status(200).json(PointageTerminalController.toClientTerminal(terminal));
         } catch (error) {
             console.error("[PointageTerminal] erreur de modification du terminal:", error);
             return res.status(500).json({ success: false, message: "Le terminal n’a pas pu être modifié." });
+        }
+    }
+
+    /**
+     * Génère un nouveau jeton et invalide immédiatement l'ancien.
+     * Le secret en clair n'est renvoyé qu'une seule fois, à cet appel.
+     */
+    static async regenererToken(req: Request, res: Response): Promise<Response> {
+        if (!PointageTerminalController.adminOnly(req, res)) return res;
+        const id = Number(req.params.id);
+        if (!Number.isSafeInteger(id) || id <= 0) {
+            return res.status(400).json({ success: false, message: "Identifiant de terminal invalide." });
+        }
+        try {
+            const terminal = await PointageTerminal.findOne({ where: { id, protocol: "zkteco_adms" } });
+            if (!terminal) return res.status(404).json({ success: false, message: "Terminal non trouvé." });
+            const generated = PointageTerminalTokenService.generate();
+            await terminal.update({ deviceTokenHash: generated.hash });
+            return res.status(200).json({ success: true, deviceToken: generated.token });
+        } catch (error) {
+            console.error("[PointageTerminal] erreur de rotation du jeton:", error);
+            return res.status(500).json({ success: false, message: "Le jeton du terminal n’a pas pu être renouvelé." });
         }
     }
 

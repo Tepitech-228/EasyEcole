@@ -12,6 +12,7 @@ import { PointageTerminalEvent } from "../models/PointageTerminalEvent";
 import { Op } from "sequelize";
 import PointageTerminalController from "./PointageTerminalController";
 import PointageRealtimeService from "../services/PointageRealtimeService";
+import PointageTerminalTokenService from "../services/PointageTerminalTokenService";
 import { normalizeHikvisionEmployeeNo } from "../services/HikvisionIsapiService";
 import { isHikvisionHeartbeat, parseHikvisionPushEvent } from "../services/HikvisionPushEventParser";
 
@@ -278,13 +279,27 @@ export default class HikvisionPushController {
       return res.status(400).type("text/plain").send("INVALID EVENT");
     }
 
-    const remoteIp = normalizedIp(req.socket.remoteAddress || "");
-    if (!remoteIp) return res.status(403).type("text/plain").send("FORBIDDEN");
-
     try {
-      const terminals = await PointageTerminal.findAll({
-        where: { protocol: "hikvision_isapi", sourceIp: remoteIp, actif: true }
-      });
+      // Jeton du terminal (recommandé dès que le push transite par un tunnel) :
+      // il identifie le terminal même si toutes les requêtes viennent de Cloudflare.
+      // Sans jeton, on retombe sur l'ancienne authentification par IP source.
+      const token = PointageTerminalTokenService.extract(req);
+      let terminals: PointageTerminal[];
+      if (token) {
+        const hashedToken = PointageTerminalTokenService.hash(token);
+        terminals = await PointageTerminal.findAll({
+          where: { protocol: "hikvision_isapi", deviceTokenHash: hashedToken, actif: true }
+        });
+        if (terminals.length === 1 && !PointageTerminalTokenService.matches(token, terminals[0].deviceTokenHash)) {
+          terminals = [];
+        }
+      } else {
+        const remoteIp = normalizedIp(req.socket.remoteAddress || "");
+        if (!remoteIp) return res.status(403).type("text/plain").send("FORBIDDEN");
+        terminals = await PointageTerminal.findAll({
+          where: { protocol: "hikvision_isapi", sourceIp: remoteIp, actif: true }
+        });
+      }
       if (terminals.length !== 1) {
         return res.status(403).type("text/plain").send("TERMINAL NOT AUTHORIZED");
       }

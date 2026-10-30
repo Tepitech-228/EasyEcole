@@ -7,7 +7,10 @@ export class PointageTerminal extends Model<InferAttributes<PointageTerminal>, I
   declare id: CreationOptional<number>
   declare serialNumber: string
   declare nom: string
-  declare sourceIp: string
+  /** IP locale du terminal (nullable : la pointeuse peut pousser via tunnel). */
+  declare sourceIp: CreationOptional<string | null>
+  /** SHA-256 hex du jeton secret du terminal ; null = auth par IP conservée. */
+  declare deviceTokenHash: CreationOptional<string | null>
   declare etablissementId: ForeignKey<Etablissement["id"]>
   declare protocol: CreationOptional<"zkteco_adms" | "hikvision_isapi">
   declare hikvisionPort: CreationOptional<number | null>
@@ -38,7 +41,11 @@ PointageTerminal.init({
   },
   sourceIp: {
     type: DataTypes.STRING(45),
-    allowNull: false
+    allowNull: true
+  },
+  deviceTokenHash: {
+    type: DataTypes.CHAR(64),
+    allowNull: true
   },
   etablissementId: {
     type: DataTypes.INTEGER.UNSIGNED,

@@ -9,8 +9,9 @@ import { PointageTerminalEvent } from "../models/PointageTerminalEvent";
 import { HikvisionEnrollment } from "../models/HikvisionEnrollment";
 import HikvisionIsapiService from "../services/HikvisionIsapiService";
 import HikvisionEnrollmentService from "../services/HikvisionEnrollmentService";
+import PointageTerminalTokenService from "../services/PointageTerminalTokenService";
 
-function toClientTerminal(terminal: PointageTerminal): Record<string, unknown> {
+function toClientTerminal(terminal: PointageTerminal, deviceToken?: string): Record<string, unknown> {
     return {
         id: terminal.id,
         serialNumber: terminal.serialNumber,
@@ -23,7 +24,9 @@ function toClientTerminal(terminal: PointageTerminal): Record<string, unknown> {
         username: terminal.hikvisionUsername || null,
         etablissementId: terminal.etablissementId,
         actif: terminal.actif,
-        lastSeenAt: terminal.lastSeenAt
+        lastSeenAt: terminal.lastSeenAt,
+        hasDeviceToken: Boolean(terminal.deviceTokenHash),
+        ...(deviceToken ? { deviceToken } : {})
     };
 }
 
@@ -53,7 +56,7 @@ export default class HikvisionTerminalController {
                 where: { protocol: "hikvision_isapi" },
                 order: [["nom", "ASC"]]
             });
-            return res.status(200).json(terminals.map(toClientTerminal));
+            return res.status(200).json(terminals.map(terminal => toClientTerminal(terminal)));
         } catch (error) {
             console.error("[Hikvision] configuration loading failed:", error);
             return res.status(500).json({ success: false, message: "Les terminaux Hikvision n’ont pas pu être chargés." });
@@ -64,7 +67,8 @@ export default class HikvisionTerminalController {
         if (!HikvisionTerminalController.adminOnly(req, res)) return res;
         const serialNumber = typeof req.body?.serialNumber === "string" ? req.body.serialNumber.trim() : "";
         const nom = typeof req.body?.nom === "string" ? req.body.nom.trim() : "";
-        const sourceIp = typeof req.body?.sourceIp === "string" ? req.body.sourceIp.trim() : "";
+        const sourceIpValue = typeof req.body?.sourceIp === "string" ? req.body.sourceIp.trim() : "";
+        const sourceIp = sourceIpValue || null;
         const username = typeof req.body?.username === "string" ? req.body.username.trim() : "";
         const password = typeof req.body?.password === "string" ? req.body.password : "";
         const etablissementId = Number(req.body?.etablissementId);
@@ -74,7 +78,7 @@ export default class HikvisionTerminalController {
         if (
             !/^[A-Za-z0-9._-]{2,64}$/.test(serialNumber) ||
             !nom || nom.length > 120 ||
-            isIP(sourceIp) === 0 ||
+            (sourceIp !== null && isIP(sourceIp) === 0) ||
             !/^[A-Za-z0-9._-]{1,120}$/.test(username) ||
             !password || password.length > 256 ||
             !Number.isSafeInteger(etablissementId) || etablissementId <= 0 ||
@@ -94,10 +98,12 @@ export default class HikvisionTerminalController {
         try {
             const site = await Etablissement.findOne({ where: { id: etablissementId, actif: true } });
             if (!site) return res.status(400).json({ success: false, message: "Le site n’existe pas ou est inactif." });
+            const generated = PointageTerminalTokenService.generate();
             const terminal = await PointageTerminal.create({
                 serialNumber,
                 nom,
                 sourceIp,
+                deviceTokenHash: generated.hash,
                 etablissementId,
                 protocol: "hikvision_isapi",
                 hikvisionPort: port,
@@ -110,7 +116,7 @@ export default class HikvisionTerminalController {
             void HikvisionEnrollmentService.enqueueEligibleProfilesForTerminal(terminal).catch(error => {
                 console.error(`[Hikvision] Impossible de préparer les enrôlements admissibles pour le terminal ${terminal.id}:`, error);
             });
-            return res.status(201).json(toClientTerminal(terminal));
+            return res.status(201).json(toClientTerminal(terminal, generated.token));
         } catch (error) {
             if ((error as { name?: string } | null)?.name === "SequelizeUniqueConstraintError") {
                 return res.status(409).json({ success: false, message: "Ce numéro de série est déjà enregistré." });
@@ -201,7 +207,8 @@ export default class HikvisionTerminalController {
                 : typeof body.nom === "string" ? body.nom.trim() : null;
             const sourceIp = body.sourceIp === undefined
                 ? undefined
-                : typeof body.sourceIp === "string" ? body.sourceIp.trim() : null;
+                : typeof body.sourceIp === "string" ? (body.sourceIp.trim() || null) : null;
+            const sourceIpInvalide = body.sourceIp !== undefined && typeof body.sourceIp !== "string";
             const username = body.username === undefined
                 ? undefined
                 : typeof body.username === "string" ? body.username.trim() : null;
@@ -216,7 +223,7 @@ export default class HikvisionTerminalController {
             if (
                 serialNumber === null || (serialNumber !== undefined && !/^[A-Za-z0-9._-]{2,64}$/.test(serialNumber)) ||
                 nom === null || (nom !== undefined && (!nom || nom.length > 120)) ||
-                sourceIp === null || (sourceIp !== undefined && isIP(sourceIp) === 0) ||
+                sourceIpInvalide || (sourceIp !== undefined && sourceIp !== null && isIP(sourceIp) === 0) ||
                 username === null || (username !== undefined && !/^[A-Za-z0-9._-]{1,120}$/.test(username)) ||
                 password === null || (password !== undefined && password.length > 256) ||
                 (port !== undefined && (!Number.isSafeInteger(port) || port < 1 || port > 65535)) ||
@@ -254,7 +261,7 @@ export default class HikvisionTerminalController {
             const updates: {
                 serialNumber?: string;
                 nom?: string;
-                sourceIp?: string;
+                sourceIp?: string | null;
                 etablissementId?: number;
                 hikvisionPort?: number;
                 hikvisionHttps?: boolean;
@@ -302,6 +309,28 @@ export default class HikvisionTerminalController {
             }
             console.error("[Hikvision] terminal update failed:", error);
             return res.status(500).json({ success: false, message: "Le terminal Hikvision n’a pas pu être modifié." });
+        }
+    }
+
+    /**
+     * Génère un nouveau jeton et invalide immédiatement l'ancien.
+     * Le secret en clair n'est renvoyé qu'une seule fois, à cet appel.
+     */
+    static async regenererToken(req: Request, res: Response): Promise<Response> {
+        if (!HikvisionTerminalController.adminOnly(req, res)) return res;
+        const id = Number(req.params.id);
+        if (!Number.isSafeInteger(id) || id <= 0) {
+            return res.status(400).json({ success: false, message: "Identifiant de terminal invalide." });
+        }
+        try {
+            const terminal = await PointageTerminal.findOne({ where: { id, protocol: "hikvision_isapi" } });
+            if (!terminal) return res.status(404).json({ success: false, message: "Terminal Hikvision non trouvé." });
+            const generated = PointageTerminalTokenService.generate();
+            await terminal.update({ deviceTokenHash: generated.hash });
+            return res.status(200).json({ success: true, deviceToken: generated.token });
+        } catch (error) {
+            console.error("[Hikvision] token rotation failed:", error);
+            return res.status(500).json({ success: false, message: "Le jeton du terminal n’a pas pu être renouvelé." });
         }
     }
 

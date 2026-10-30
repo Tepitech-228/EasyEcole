@@ -447,6 +447,115 @@ describe('TerminalPointagePageComponent', () => {
     expect(fixture.nativeElement.querySelector('.pointage-state-card--error')).toBeNull();
   });
 
+  it('asks for confirmation instead of saving a staff departure on the second scan', () => {
+    pointageService.verifierStatutByQR.and.returnValue(of({
+      statut: 'vert', utilisateurId: 'u1', nom: 'Test', prenoms: 'Paul', role: 'enseignant'
+    }));
+    pointageService.pointerParQR.and.returnValue(of({
+      success: true,
+      requiresConfirmation: true,
+      mode: 'depart',
+      heureDepart: '17:00:00',
+      confirmationToken: 'tok-123'
+    } as any));
+    const speak = spyOn(window.speechSynthesis, 'speak');
+    fixture.detectChanges();
+
+    typeFast('CARTE|v=1|departure-pending');
+    dispatchKey('Enter');
+    fixture.detectChanges();
+
+    expect(pointageService.pointerParQR).toHaveBeenCalledTimes(1);
+    expect(fixture.componentInstance.departureConfirmation?.confirmationToken).toBe('tok-123');
+    expect(fixture.componentInstance.departureConfirmation?.heure).toBe('17:00:00');
+    expect(fixture.componentInstance.scanSuccess).toBe('');
+    expect(speak).not.toHaveBeenCalled();
+    const buttons = fixture.nativeElement.querySelectorAll('.pointage-departure-actions .pointage-btn');
+    expect(buttons.length).toBe(2);
+    expect(buttons[0].textContent).toContain('Enregistrer');
+    expect(buttons[1].textContent).toContain('Annuler');
+  });
+
+  it('shows the warning panel with the name and hour when Enregistrer is clicked', () => {
+    pointageService.verifierStatutByQR.and.returnValue(of({
+      statut: 'vert', utilisateurId: 'u1', nom: 'Test', prenoms: 'Paul', role: 'enseignant'
+    }));
+    pointageService.pointerParQR.and.returnValue(of({
+      success: true,
+      requiresConfirmation: true,
+      mode: 'depart',
+      heureDepart: '17:00:00',
+      confirmationToken: 'tok-123'
+    } as any));
+    fixture.detectChanges();
+
+    typeFast('CARTE|v=1|departure-warning');
+    dispatchKey('Enter');
+    fixture.componentInstance.demanderConfirmationDepart();
+    fixture.detectChanges();
+
+    const panel = fixture.nativeElement.querySelector('.pointage-departure-confirmation') as HTMLElement;
+    expect(panel.textContent).toContain('Voulez-vous vraiment enregistrer le départ de');
+    expect(panel.textContent).toContain('Paul Test');
+    expect(panel.textContent).toContain('17:00:00');
+    expect(fixture.componentInstance.departureConfirmationStep).toBe('avertissement');
+  });
+
+  it('records the departure only after the operator confirms with Oui', () => {
+    pointageService.verifierStatutByQR.and.returnValue(of({
+      statut: 'vert', utilisateurId: 'u1', nom: 'Test', prenoms: 'Paul', role: 'enseignant'
+    }));
+    pointageService.pointerParQR.and.returnValues(
+      of({
+        success: true,
+        requiresConfirmation: true,
+        mode: 'depart',
+        heureDepart: '17:00:00',
+        confirmationToken: 'tok-123'
+      } as any),
+      of({
+        success: true,
+        mode: 'depart',
+        pointage: { heureArrivee: '08:00:00', heureDepart: '17:00:00' } as any
+      } as any)
+    );
+    const speak = spyOn(window.speechSynthesis, 'speak');
+    fixture.detectChanges();
+
+    typeFast('CARTE|v=1|departure-confirmed');
+    dispatchKey('Enter');
+    fixture.componentInstance.demanderConfirmationDepart();
+    fixture.componentInstance.confirmerDepart();
+
+    expect(pointageService.pointerParQR).toHaveBeenCalledWith('CARTE|v=1|departure-confirmed', 'tok-123');
+    expect(fixture.componentInstance.departureConfirmation).toBeNull();
+    expect(fixture.componentInstance.scanSuccess).toContain('17:00:00');
+    expect(speak).toHaveBeenCalledTimes(1);
+    expect((speak.calls.mostRecent().args[0] as SpeechSynthesisUtterance).text).toContain('Au revoir');
+  });
+
+  it('cancels a pending departure without saving it', () => {
+    pointageService.verifierStatutByQR.and.returnValue(of({
+      statut: 'vert', utilisateurId: 'u1', nom: 'Test', prenoms: 'Paul', role: 'enseignant'
+    }));
+    pointageService.pointerParQR.and.returnValue(of({
+      success: true,
+      requiresConfirmation: true,
+      mode: 'depart',
+      heureDepart: '17:00:00',
+      confirmationToken: 'tok-123'
+    } as any));
+    fixture.detectChanges();
+
+    typeFast('CARTE|v=1|departure-cancelled');
+    dispatchKey('Enter');
+    fixture.componentInstance.annulerConfirmationDepart();
+
+    expect(pointageService.pointerParQR).toHaveBeenCalledTimes(1);
+    expect(fixture.componentInstance.departureConfirmation).toBeNull();
+    expect(fixture.componentInstance.scanSuccess).toBe('');
+  });
+
   it('provides a voice test action so the browser can initialize speech playback', () => {
     const speak = spyOn(window.speechSynthesis, 'speak');
     fixture.detectChanges();
