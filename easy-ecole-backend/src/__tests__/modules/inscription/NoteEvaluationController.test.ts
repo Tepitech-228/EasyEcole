@@ -32,7 +32,7 @@ jest.mock('../../../modules/inscription/models/SemestreAcademique', () => ({
 }))
 
 jest.mock('../../../modules/inscription/models/Cours', () => ({
-  Cours: { findByPk: jest.fn() }
+  Cours: { findByPk: jest.fn(), associations: { classe: 'classe' } }
 }))
 
 jest.mock('../../../modules/inscription/services/SemestreAcademiqueService', () => ({
@@ -68,7 +68,7 @@ describe('NoteEvaluationController bulk CRUD', () => {
   it('rejects invalid notes before querying or writing', async () => {
     const req = mockRequest({
       body: { listeNoteEvaluationId: 3, notes: [{ coursParticipantId: 8, note: 25 }] },
-      utilisateurRole: 'institution',
+      utilisateurRole: 'enseignant',
       utilisateurId: 2
     } as any)
     const res = mockResponse()
@@ -81,13 +81,14 @@ describe('NoteEvaluationController bulk CRUD', () => {
   })
 
   it('refuses teachers who do not own the evaluation course', async () => {
-    ListeNoteEvaluation.findByPk.mockResolvedValue({ id: 3, coursId: 5 })
+    ListeNoteEvaluation.findByPk.mockResolvedValue({ id: 3, coursId: 5, statutGestion: 'publie' })
     Enseignant.findOne.mockResolvedValue({ id: 7 })
     Cours.findByPk.mockResolvedValue({ id: 5, enseignantId: 9 })
     const req = mockRequest({
       body: { listeNoteEvaluationId: 3, notes: [{ coursParticipantId: 8, note: 15 }] },
       utilisateurRole: 'enseignant',
-      utilisateurId: 2
+      utilisateurId: 2,
+      etablissementId: 1
     } as any)
     const res = mockResponse()
 
@@ -103,17 +104,21 @@ describe('NoteEvaluationController bulk CRUD', () => {
     ListeNoteEvaluation.findByPk.mockResolvedValue({
       id: 3,
       coursId: 5,
+      statutGestion: 'publie',
       anneeAcademiqueId: 2026,
       getCours: jest.fn().mockResolvedValue({ parcoursId: null })
     })
+    Enseignant.findOne.mockResolvedValue({ id: 7 })
+    Cours.findByPk.mockResolvedValue({ id: 5, enseignantId: 7 })
     CoursParticipant.findAll.mockResolvedValue([{ id: 8 }])
     const existing = { id: 11, coursParticipantId: 8, note: 12, statut: 'brouillon', save: jest.fn().mockResolvedValue(undefined) }
     NoteEvaluation.findAll.mockResolvedValue([existing])
     AuditNote.create.mockResolvedValue({})
     const req = mockRequest({
       body: { listeNoteEvaluationId: 3, notes: [{ coursParticipantId: 8, note: 16.5 }] },
-      utilisateurRole: 'institution',
-      utilisateurId: 2
+      utilisateurRole: 'enseignant',
+      utilisateurId: 2,
+      etablissementId: 1
     } as any)
     const res = mockResponse()
 
@@ -135,14 +140,18 @@ describe('NoteEvaluationController bulk CRUD', () => {
     ListeNoteEvaluation.findByPk.mockResolvedValue({
       id: 3,
       coursId: 5,
+      statutGestion: 'publie',
       anneeAcademiqueId: 2026,
       getCours: jest.fn().mockResolvedValue({ parcoursId: 4, semestre: 'semestre1' })
     })
+    Enseignant.findOne.mockResolvedValue({ id: 7 })
+    Cours.findByPk.mockResolvedValue({ id: 5, enseignantId: 7 })
     SemestreAcademique.findOne.mockRejectedValue(new Error('database unavailable'))
     const req = mockRequest({
       body: { listeNoteEvaluationId: 3, notes: [{ coursParticipantId: 8, note: 16 }] },
-      utilisateurRole: 'institution',
-      utilisateurId: 2
+      utilisateurRole: 'enseignant',
+      utilisateurId: 2,
+      etablissementId: 1
     } as any)
     const res = mockResponse()
 
@@ -161,7 +170,7 @@ describe('NoteEvaluationController bulk CRUD', () => {
       statut: 'brouillon',
       destroy: jest.fn()
     })
-    ListeNoteEvaluation.findByPk.mockResolvedValue({ id: 3, coursId: 5 })
+    ListeNoteEvaluation.findByPk.mockResolvedValue({ id: 3, coursId: 5, statutGestion: 'publie' })
     CoursParticipant.findByPk.mockResolvedValue({ id: 8, coursId: 5 })
     Enseignant.findOne.mockResolvedValue({ id: 7 })
     Cours.findByPk.mockResolvedValue({ id: 5, enseignantId: 9 })
@@ -169,7 +178,8 @@ describe('NoteEvaluationController bulk CRUD', () => {
       params: { id: '11' },
       body: {},
       utilisateurRole: 'enseignant',
-      utilisateurId: 2
+      utilisateurId: 2,
+      etablissementId: 1
     } as any)
     const res = mockResponse()
 

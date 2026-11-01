@@ -47,10 +47,21 @@ export class GenerateurCarteService {
     const classeEsc = escapeHtml(data.classe);
     const filiereEsc = escapeHtml(data.filiere);
     const anneeEsc = escapeHtml(data.anneeAcademique);
-    const photoEsc = escapeHtml(data.photo || '');
+    const publicRoot = path.resolve('public');
+    const photoCandidates = data.photo
+      ? [
+          data.photo,
+          path.join('auth', 'apprenants', 'photos', data.photo),
+          path.join('auth', 'enseignants', 'photos', data.photo),
+          path.join('auth', 'profiles', data.photo),
+        ]
+      : [];
+    const resolvedPhoto = photoCandidates
+      .map(candidate => path.resolve(publicRoot, candidate))
+      .find(candidate => candidate.startsWith(publicRoot + path.sep) && fs.existsSync(candidate));
 
-    const photoStyle = data.photo && fs.existsSync(path.resolve('public', data.photo))
-      ? `<img src="file:///${path.resolve('public', data.photo).replace(/\\/g, '/')}" alt="Photo" class="photo" />`
+    const photoStyle = resolvedPhoto
+      ? `<img src="file:///${resolvedPhoto.replace(/\\/g, '/')}" alt="Photo" class="photo" />`
       : `<div class="photo-placeholder">${nomEsc.charAt(0)}${prenomEsc.charAt(0)}</div>`;
 
     const html = `<!DOCTYPE html>

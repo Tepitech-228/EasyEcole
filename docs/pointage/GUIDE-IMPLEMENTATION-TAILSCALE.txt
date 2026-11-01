@@ -1,0 +1,1112 @@
+================================================================================
+GUIDE D'IMPLÉMENTATION TAILSCALE - POINTEUSES HIKVISION / EASYECOLE
+================================================================================
+Version      : 1.0
+Date         : 30/10/2026
+Public       : administrateur EasyEcole / infrastructure
+Durée estimée: 45 à 90 minutes
+Objectif     : permettre au backend EasyEcole (Docker/Dokploy sur VM Linux)
+               de joindre une pointeuse Hikvision distante pour le test ISAPI
+               et l'envoi des photos, sans exposer la pointeuse sur Internet.
+
+Résultat attendu :
+  - Le serveur joint la pointeuse par son IP privée (ex. 192.168.137.11).
+  - Le test ISAPI et l'envoi des photos fonctionnent depuis EasyEcole.
+  - Le push des pointages reste inchangé (pointeuse -> domaine public).
+  - Aucun port entrant n'est ouvert sur le site ni sur le serveur.
+
+================================================================================
+SOMMAIRE
+================================================================================
+  1. Comprendre l'architecture
+  2. Prérequis
+  3. Choix du matériel côté site
+  4. Étape 1 - Créer le tailnet Tailscale
+  5. Étape 2 - Installer Tailscale sur le serveur Linux
+  6. Étape 3 - Installer Tailscale sur le routeur du site
+  7. Étape 4 - Approuver la route et vérifier le serveur
+  8. Étape 5 - Faire communiquer Docker/Dokploy avec Tailscale
+  9. Étape 6 - Configurer EasyEcole
+ 10. Étape 7 - Sécurité et ACL
+ 11. Multi-sites
+ 12. Tests de validation
+ 13. Dépannage
+ 14. Maintenance et désinstallation
+ 15. Checklist finale
+ 16. Annexe - Commandes utiles
+ 17. Glossaire
+
+================================================================================
+1. COMPRENDRE L'ARCHITECTURE
+================================================================================
+
+Tailscale est un VPN maillé basé sur WireGuard. Chaque appareil installe un
+client, rejoint le même "tailnet" et obtient une adresse stable 100.x.y.z.
+Les appareils se parlent directement quand c'est possible, sinon via des
+relais chiffrés (DERP). Aucun port entrant n'est nécessaire.
+
+Architecture cible :
+
+    [Pointeuse Hikvision]
+      192.168.137.11
+            |
+       LAN du site
+            |
+    [Routeur du site + Tailscale]  <---- Internet ---->  [VM Linux + Tailscale]
+     subnet router                                      Docker / Dokploy
+     annonce 192.168.137.0/24                           backend EasyEcole
+            |
+       Pointeuse
+
+Points clés :
+
+  - Le "site" est le lieu physique où se trouve la pointeuse (école, bureau).
+    Ce n'est pas le lieu où se trouve le serveur.
+  - Il y a DEUX extrémités Tailscale :
+      1. le serveur (VM Linux qui héberge Docker/Dokploy) ;
+      2. le routeur du site (GL.iNet, OpenWrt, Raspberry Pi ou PC Windows).
+  - La pointeuse n'a PAS besoin de Tailscale. Elle reste sur son LAN.
+  - Le routeur du site annonce le réseau 192.168.137.0/24 dans Tailscale.
+  - Le serveur accepte cette route ("--accept-routes").
+  - Le backend sort vers la pointeuse via l'interface tailscale0.
+  - Le routeur du site relaie vers la pointeuse.
+
+Flux :
+
+  Backend EasyEcole -> tailscale0 -> routeur du site -> pointeuse:80
+  Pointeuse -> routeur du site -> tailscale0 -> backend EasyEcole
+
+Le push des pointages est indépendant :
+
+  Pointeuse -> HTTPS -> https://easyecole.esaecole.com/api/hikvision/event/ptk_...
+
+Tailscale ne remplace pas ce flux. Il sert uniquement au backend pour joindre
+la pointeuse (test ISAPI, envoi des photos, synchronisation).
+
+================================================================================
+2. PRÉREQUIS
+================================================================================
+
+Matériel / accès :
+
+  [ ] Un compte Tailscale (gratuit pour usage personnel, à vérifier pour un
+      établissement).
+  [ ] Un accès administrateur (sudo) à la VM Linux du serveur.
+  [ ] Un accès administrateur au routeur du site (GL.iNet, OpenWrt) ou au PC
+      Windows qui partage la connexion.
+  [ ] La pointeuse est joignable sur son LAN et possède une IP fixe
+      (ex. 192.168.137.11).
+  [ ] HTTP et ISAPI sont activés sur la pointeuse.
+  [ ] Un compte administrateur Hikvision valide.
+  [ ] Docker et Dokploy fonctionnent sur la VM Linux.
+  [ ] Le serveur a accès à Internet en sortie (UDP 41641 et TCP 443).
+  [ ] Les sous-réseaux des différents sites sont uniques (voir section 11).
+
+Informations à noter avant de commencer :
+
+  IP de la pointeuse        : ................................
+  Port HTTP de la pointeuse : ................................ (souvent 80)
+  Identifiant Hikvision     : ................................
+  Mot de passe Hikvision    : ................................
+  IP LAN du routeur du site : ................................ (souvent 192.168.137.1)
+  Nom du serveur            : ................................
+  Nom du routeur du site    : ................................
+
+================================================================================
+3. CHOIX DU MATÉRIEL CÔTÉ SITE
+================================================================================
+
+Option A - Routeur GL.iNet (RECOMMANDÉ)
+  - Un boîtier dédié, toujours allumé, avec Tailscale intégré.
+  - Rien à installer sur les PC du site.
+  - Interface graphique simple.
+  - Exemples : GL-MT3000, GL-AXT1800, GL-MT2500.
+  - Vous pouvez soit remplacer la box du site, soit ajouter le GL.iNet
+    derrière la box (double NAT) avec un LAN dédié à la pointeuse.
+
+Option B - Raspberry Pi ou mini-PC Linux
+  - Installation Tailscale identique au serveur.
+  - Doit rester allumé et avoir une IP fixe sur le LAN.
+  - Plus flexible, mais demande un peu d'administration.
+
+Option C - PC Windows qui partage la connexion (hotspot)
+  - Tailscale s'installe sur le PC.
+  - Le PC doit activer le routage IP et le pare-feu doit autoriser le passage.
+  - Moins fiable qu'un routeur Linux.
+  - Le partage de connexion Windows utilise souvent 192.168.137.0/24 :
+    plusieurs sites en hotspot Windows entrent en conflit.
+
+Option D - Box du site avec Tailscale/OpenWrt
+  - Possible si la box supporte Tailscale ou OpenWrt.
+  - Sinon, ajouter un boîtier dédié (option A ou B).
+
+Cas particulier :
+  Si la pointeuse est sur le MÊME réseau que le serveur, Tailscale est inutile.
+  Utilisez directement l'IP 192.168.137.11 dans EasyEcole.
+
+================================================================================
+4. ÉTAPE 1 - CRÉER LE TAILNET TAILSCALE
+================================================================================
+
+4.1 Créer le compte
+
+  1. Ouvrir https://login.tailscale.com
+  2. Se connecter avec Google, Microsoft, GitHub ou une adresse e-mail.
+  3. Créer le tailnet (le réseau privé).
+  4. Noter le nom du tailnet.
+
+4.2 (Optionnel) Activer l'approbation des appareils
+
+  Admin console -> Settings -> Device approval -> Enable device approval.
+  Chaque nouvel appareil devra être approuvé avant de rejoindre le réseau.
+
+4.3 (Optionnel) Créer des tags
+
+  Admin console -> Access controls -> tagOwners.
+
+  Exemple :
+
+      {
+        "tagOwners": {
+          "tag:server": ["autogroup:admin"],
+          "tag:site-a": ["autogroup:admin"],
+          "tag:site-b": ["autogroup:admin"]
+        }
+      }
+
+  Les tags servent à appliquer des ACL précises et à identifier les rôles.
+  Ils sont optionnels pour la première mise en service.
+
+4.4 Installer les clients
+
+  - Serveur : voir section 5.
+  - Routeur du site : voir section 6.
+  - Poste d'administration : installer Tailscale pour Windows/macOS/Linux
+    depuis https://tailscale.com/download si vous voulez administrer les
+    équipements à distance.
+
+================================================================================
+5. ÉTAPE 2 - INSTALLER TAILSCALE SUR LE SERVEUR LINUX
+================================================================================
+
+Rappel : le serveur est une VM Linux hébergée sur Windows Server.
+On installe Tailscale DANS LA VM LINUX, pas sur Windows Server.
+
+5.1 Vérifier la VM
+
+      uname -a
+      ip address
+      ping -c 2 8.8.8.8
+      curl -I https://tailscale.com
+
+  Si le ping ou le curl échoue, corrigez d'abord la connexion Internet de la VM
+  (commutateur virtuel Hyper-V, NAT, pare-feu).
+
+5.2 Installer Tailscale
+
+      curl -fsSL https://tailscale.com/install.sh | sh
+      sudo systemctl enable --now tailscaled
+      sudo systemctl status tailscaled --no-pager
+
+5.3 Activer le forwarding IP
+
+      echo 'net.ipv4.ip_forward=1' | sudo tee /etc/sysctl.d/99-tailscale.conf
+      echo 'net.ipv6.conf.all.forwarding=1' | sudo tee -a /etc/sysctl.d/99-tailscale.conf
+      sudo sysctl --system
+
+  Vérification :
+
+      sysctl net.ipv4.ip_forward
+      # doit afficher : net.ipv4.ip_forward = 1
+
+5.4 Connecter le serveur au tailnet
+
+      sudo tailscale up --accept-routes
+
+  Une URL d'authentification s'affiche. Ouvrez-la dans un navigateur et
+  connectez-vous avec le compte Tailscale. Autorisez la machine.
+
+  Si vous utilisez des tags (optionnel) :
+
+      sudo tailscale up --accept-routes --advertise-tags=tag:server
+
+5.5 Vérifier
+
+      tailscale status
+      tailscale ip -4
+      ip route | grep tailscale
+
+  Le serveur doit apparaître "online" dans la console Tailscale.
+
+5.6 Désactiver l'expiration de clé (recommandé)
+
+  Admin console -> Machines -> sélectionner le serveur -> menu "..." ->
+  Disable key expiry.
+
+  Sans cela, la clé peut expirer (souvent après 180 jours) et la connexion
+  s'arrête sans intervention.
+
+================================================================================
+6. ÉTAPE 3 - INSTALLER TAILSCALE SUR LE ROUTEUR DU SITE
+================================================================================
+
+Le routeur du site est l'équipement qui se trouve sur le LAN de la pointeuse.
+Il doit annoncer le sous-réseau 192.168.137.0/24 dans Tailscale.
+
+6.1 Option A - Routeur GL.iNet
+
+  1. Connectez-vous à l'interface d'administration du GL.iNet.
+  2. Mettez le firmware à jour.
+  3. Applications -> Tailscale -> Enable.
+  4. Connectez-vous avec le même compte Tailscale.
+  5. Activez l'accès au LAN / "Allow remote access to LAN" ou renseignez
+     la route 192.168.137.0/24 dans les "Subnet routes".
+  6. Validez.
+
+  En SSH sur le routeur, la commande équivalente est :
+
+      tailscale up --advertise-routes=192.168.137.0/24 --accept-routes
+
+  Vérification :
+
+      tailscale status
+      ip route
+
+6.2 Option B - OpenWrt
+
+  Si le paquet Tailscale est disponible dans les dépôts de votre firmware :
+
+      opkg update
+      opkg install tailscale
+      /etc/init.d/tailscale enable
+      /etc/init.d/tailscale start
+      tailscale up --advertise-routes=192.168.137.0/24 --accept-routes
+
+  Activer le forwarding :
+
+      echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf
+      sysctl -p
+
+  Pare-feu OpenWrt :
+  - Ajoutez l'interface tailscale0 à la zone LAN, ou créez une zone dédiée
+    qui autorise le forwarding vers le LAN.
+  - Vérifiez que le trafic de tailscale0 vers le LAN et le retour sont acceptés.
+
+  Si le paquet n'est pas disponible, utilisez un GL.iNet ou un Raspberry Pi.
+
+6.3 Option C - Raspberry Pi / mini-PC Linux
+
+  Même installation que le serveur :
+
+      curl -fsSL https://tailscale.com/install.sh | sh
+      sudo systemctl enable --now tailscaled
+      echo 'net.ipv4.ip_forward=1' | sudo tee /etc/sysctl.d/99-tailscale.conf
+      sudo sysctl --system
+      sudo tailscale up --advertise-routes=192.168.137.0/24 --accept-routes
+
+  Le Raspberry Pi doit avoir une IP fixe sur le LAN de la pointeuse et être
+  toujours alimenté.
+
+6.4 Option D - PC Windows hotspot
+
+  Avertissement : cette option est moins fiable qu'un routeur Linux.
+
+  1. Installez Tailscale pour Windows depuis https://tailscale.com/download
+  2. Connectez-vous avec le même compte.
+  3. Activez le routage IP dans le registre (invite de commandes administrateur) :
+
+         reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v IPEnableRouter /t REG_DWORD /d 1 /f
+
+  4. Redémarrez le PC.
+  5. Annoncez la route :
+
+         tailscale up --advertise-routes=192.168.137.0/24 --accept-routes
+
+  6. Pare-feu Windows :
+     - Autorisez le partage de connexion (ICS).
+     - Autorisez ICMP et HTTP entre l'interface Tailscale et le réseau du
+       hotspot.
+     - Vérifiez que le pare-feu ne bloque pas le forwarding.
+
+  7. Vérifiez que le partage de connexion Windows est actif et que la pointeuse
+     a bien 192.168.137.11 comme IP et 192.168.137.1 comme passerelle.
+
+  Limites :
+  - Le partage Windows utilise presque toujours 192.168.137.0/24.
+  - Plusieurs sites en hotspot Windows ne peuvent pas coexister.
+  - Le PC doit rester allumé.
+  - Le forwarding Windows est plus fragile après une mise à jour.
+
+6.5 Approuver la route dans Tailscale
+
+  1. Admin console -> Machines.
+  2. Cliquez sur le routeur du site.
+  3. Menu "..." -> Edit route settings.
+  4. Cochez / approuvez 192.168.137.0/24.
+  5. Enregistrez.
+
+  Sans cette approbation, le serveur ne verra jamais la route, même si le
+  routeur l'annonce.
+
+6.6 Désactiver l'expiration de clé du routeur
+
+  Admin console -> Machines -> routeur du site -> "..." -> Disable key expiry.
+
+6.7 Vérifier depuis le routeur
+
+      tailscale status
+      ip route
+      ping -c 3 192.168.137.11
+
+  Le routeur doit pouvoir joindre la pointeuse sur son LAN.
+
+================================================================================
+7. ÉTAPE 4 - APPROUVER LA ROUTE ET VÉRIFIER LE SERVEUR
+================================================================================
+
+7.1 Vérifier que la route est visible sur le serveur
+
+      ip route | grep 192.168.137
+      ip route get 192.168.137.11
+
+  Résultat attendu :
+
+      192.168.137.0/24 dev tailscale0
+      192.168.137.11 via ... dev tailscale0
+
+  Si la route est absente :
+
+      sudo tailscale up --accept-routes
+      tailscale status
+
+  Vérifiez aussi que la route est bien approuvée dans la console Tailscale.
+
+7.2 Tester la connectivité depuis le serveur
+
+      tailscale ping <nom_du_routeur_du_site>
+      ping -c 3 192.168.137.11
+      curl -v --max-time 5 http://192.168.137.11/ISAPI/System/deviceInfo
+
+  - tailscale ping réussi : le tunnel Tailscale fonctionne.
+  - ping 192.168.137.11 réussi : le routeur du site forwarde correctement.
+  - curl 401 : la connectivité est bonne, il faut juste les identifiants.
+  - curl timeout : problème de route, de pare-feu ou de forwarding côté site.
+
+7.3 Tester ISAPI avec authentification
+
+      curl --digest -u admin:VOTRE_MOT_DE_PASSE \
+        http://192.168.137.11/ISAPI/System/deviceInfo
+
+  Remplacez admin et le mot de passe par ceux de la pointeuse.
+
+  Codes fréquents :
+  - 200 : OK.
+  - 401 : identifiants incorrects ou authentification digest mal utilisée.
+  - 403 : ISAPI désactivé, restriction d'IP ou compte sans droits.
+  - timeout : route ou pare-feu.
+
+================================================================================
+8. ÉTAPE 5 - FAIRE COMMUNIQUER DOCKER/DOKPLOY AVEC TAILSCALE
+================================================================================
+
+Le backend EasyEcole tourne dans un conteneur Docker. Ce conteneur ne voit pas
+Tailscale directement. La VM Linux doit faire le pont entre le réseau Docker
+et l'interface tailscale0.
+
+8.1 Identifier le conteneur backend
+
+      docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}'
+
+  Repérez le conteneur EasyEcole (le nom dépend de Dokploy).
+
+8.2 Identifier le réseau Docker et le sous-réseau
+
+      docker inspect <nom_du_conteneur> \
+        --format '{{range $k,$v := .NetworkSettings.Networks}}{{$k}} -> {{$v.IPAddress}}/{{$v.IPPrefixLen}}{{"\n"}}{{end}}'
+
+  Exemple de sortie :
+
+      dokploy-network -> 172.20.0.3/16
+
+  Le sous-réseau est alors 172.20.0.0/16.
+
+  Si plusieurs réseaux apparaissent, choisissez celui qui porte l'IP du
+  conteneur (souvent dokploy-network).
+
+  Cas particulier : si le conteneur backend utilise le réseau "host"
+  (network_mode: host), il partage le réseau de la VM et joint Tailscale
+  directement. Dans ce cas, les règles iptables Docker de la section 8.4 ne
+  sont pas nécessaires. Vérifiez avec :
+
+      docker inspect <nom_du_conteneur> --format '{{.HostConfig.NetworkMode}}'
+
+  Si la réponse est "host", passez directement à l'étape 8.5.
+
+8.3 Identifier l'interface bridge
+
+      NET=dokploy-network
+      BR="br-$(docker network inspect "$NET" --format '{{.Id}}' | cut -c1-12)"
+      echo "Réseau : $NET"
+      echo "Interface : $BR"
+      ip -brief link show "$BR"
+
+  Exemple :
+
+      Réseau : dokploy-network
+      Interface : br-1234567890ab
+
+  Le nom de l'interface est br- suivi des 12 premiers caractères de l'ID du
+  réseau Docker. Si le réseau est le bridge par défaut, l'interface est docker0.
+
+8.4 Appliquer les règles iptables
+
+  Vérifiez d'abord que la chaîne DOCKER-USER existe :
+
+      sudo iptables -L DOCKER-USER -n
+
+  Puis :
+
+      sudo iptables -I DOCKER-USER -i "$BR" -o tailscale0 -j ACCEPT
+      sudo iptables -I DOCKER-USER -i tailscale0 -o "$BR" \
+        -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+      sudo iptables -t nat -A POSTROUTING -s 172.20.0.0/16 -o tailscale0 \
+        -j MASQUERADE
+
+  Remplacez 172.20.0.0/16 par le sous-réseau trouvé à l'étape 8.2.
+
+  Si la chaîne DOCKER-USER n'existe pas, utilisez FORWARD :
+
+      sudo iptables -I FORWARD 1 -i "$BR" -o tailscale0 -j ACCEPT
+      sudo iptables -I FORWARD 2 -i tailscale0 -o "$BR" \
+        -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+
+  Remarque sur le MASQUERADE :
+  Docker ajoute souvent déjà une règle de NAT pour le sous-réseau. La règle
+  ci-dessus est alors redondante mais sans danger. Vérifiez avec :
+
+      sudo iptables -t nat -L POSTROUTING -n -v | grep 172.20
+
+  Si une règle Docker existe déjà et que le test fonctionne, vous pouvez
+  ignorer le MASQUERADE manuel.
+
+8.5 Vérifier depuis le conteneur
+
+      docker exec -it <nom_du_conteneur> sh -c \
+        "curl -v --max-time 5 http://192.168.137.11/ISAPI/System/deviceInfo"
+
+  Si curl n'est pas installé dans le conteneur :
+
+      docker exec -it <nom_du_conteneur> sh -c \
+        "wget -qO- --timeout=5 http://192.168.137.11/ISAPI/System/deviceInfo"
+
+  Si le ping fonctionne depuis la VM mais pas depuis le conteneur, le problème
+  est presque toujours dans les règles de forwarding/NAT ou dans le nom de
+  l'interface bridge.
+
+8.6 Rendre les règles persistantes
+
+  Les règles iptables ne survivent pas à un redémarrage. Deux méthodes.
+
+  Méthode 1 - Script systemd (recommandée, car le nom de l'interface Docker
+  peut changer) :
+
+  Créez /usr/local/sbin/tailscale-docker-forward.sh :
+
+      #!/bin/sh
+      set -eu
+
+      NET="${NET:-dokploy-network}"
+
+      i=0
+      while [ $i -lt 30 ]; do
+        if docker network inspect "$NET" >/dev/null 2>&1; then
+          break
+        fi
+        i=$((i+1))
+        sleep 2
+      done
+
+      docker network inspect "$NET" >/dev/null 2>&1 || exit 1
+
+      BR="br-$(docker network inspect "$NET" --format '{{.Id}}' | cut -c1-12)"
+      SUBNET="$(docker network inspect "$NET" \
+        --format '{{range .IPAM.Config}}{{.Subnet}}{{"\n"}}{{end}}' \
+        | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/' | head -n1)"
+
+      [ -n "$BR" ] || exit 1
+      [ -n "$SUBNET" ] || exit 1
+
+      iptables -C DOCKER-USER -i "$BR" -o tailscale0 -j ACCEPT 2>/dev/null \
+        || iptables -I DOCKER-USER -i "$BR" -o tailscale0 -j ACCEPT
+
+      iptables -C DOCKER-USER -i tailscale0 -o "$BR" \
+        -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null \
+        || iptables -I DOCKER-USER -i tailscale0 -o "$BR" \
+        -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+
+      iptables -t nat -C POSTROUTING -s "$SUBNET" -o tailscale0 -j MASQUERADE 2>/dev/null \
+        || iptables -t nat -A POSTROUTING -s "$SUBNET" -o tailscale0 -j MASQUERADE
+
+  Rendre le script exécutable :
+
+      sudo chmod +x /usr/local/sbin/tailscale-docker-forward.sh
+
+  Créez /etc/systemd/system/tailscale-docker-forward.service :
+
+      [Unit]
+      Description=Forward Docker traffic to Tailscale
+      After=docker.service tailscaled.service
+      Requires=docker.service tailscaled.service
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/sbin/tailscale-docker-forward.sh
+      RemainAfterExit=yes
+
+      [Install]
+      WantedBy=multi-user.target
+
+  Activez le service :
+
+      sudo systemctl daemon-reload
+      sudo systemctl enable --now tailscale-docker-forward
+      sudo systemctl status tailscale-docker-forward --no-pager
+
+  Si votre réseau Docker n'est pas dokploy-network, modifiez la ligne NET=
+  dans le script.
+
+  Méthode 2 - iptables-persistent :
+
+      sudo apt-get update
+      sudo apt-get install -y iptables-persistent
+      sudo netfilter-persistent save
+
+  Cette méthode sauvegarde les règles actuelles. Elle est simple, mais si
+  Dokploy recrée le réseau Docker avec un nouvel ID, l'interface bridge change
+  et les règles sauvegardées ne correspondent plus. La méthode systemd est
+  plus robuste.
+
+8.7 Vérifier après redémarrage
+
+      sudo reboot
+
+  Après le redémarrage :
+
+      sudo systemctl status tailscaled --no-pager
+      sudo systemctl status tailscale-docker-forward --no-pager
+      sudo iptables -L DOCKER-USER -n -v
+      ip route get 192.168.137.11
+      docker exec -it <nom_du_conteneur> sh -c \
+        "curl -v --max-time 5 http://192.168.137.11/ISAPI/System/deviceInfo"
+
+================================================================================
+9. ÉTAPE 6 - CONFIGURER EASYECOLE
+================================================================================
+
+9.1 Saisir l'adresse de la pointeuse
+
+  1. Connectez-vous à EasyEcole en administrateur.
+  2. Allez dans Pointage -> Terminaux.
+  3. Modifiez le terminal concerné.
+  4. Renseignez :
+       Adresse : 192.168.137.11
+       Port    : 80
+       Protocole : HTTP
+  5. Enregistrez.
+
+  Si votre version affiche "Adresse IP ou hostname (facultative)", saisissez
+  simplement l'IP 192.168.137.11.
+
+  Si votre version n'affiche que "Adresse IP", c'est aussi l'IP.
+
+9.2 Tester la connexion
+
+  Cliquez sur "Tester" (ou "Tester la connexion").
+  Résultat attendu : connexion réussie avec les informations de l'appareil.
+
+  Le backend utilise ISAPI via Tailscale. Aucun port public n'est nécessaire.
+
+9.3 Envoyer les photos / synchroniser
+
+  Utilisez la fonction d'envoi des photos ou d'enrôlement du terminal.
+  Le backend appelle la pointeuse via Tailscale.
+
+9.4 Vérifier le push
+
+  Le push des pointages ne change pas :
+
+      https://easyecole.esaecole.com/api/hikvision/event/ptk_...
+
+  - Le jeton reste celui configuré sur la pointeuse.
+  - Tailscale n'intervient pas dans ce flux.
+  - Si le jeton a été exposé, utilisez "Renouveler le jeton" dans EasyEcole,
+    puis mettez à jour la pointeuse.
+
+9.5 En cas d'échec du test
+
+  - Vérifiez d'abord le test ISAPI depuis le serveur (section 7.3).
+  - Puis depuis le conteneur (section 8.5).
+  - Si le serveur fonctionne mais pas le conteneur, revoyez les règles iptables.
+  - Si le conteneur fonctionne mais pas EasyEcole, vérifiez l'adresse, le port
+    et le protocole saisis dans l'interface.
+
+================================================================================
+10. ÉTAPE 7 - SÉCURITÉ ET ACL
+================================================================================
+
+10.1 Principe du moindre privilège
+
+  Par défaut, tous les appareils du tailnet peuvent se parler. Il est
+  recommandé de restreindre l'accès :
+
+  - le serveur ne doit joindre que le port 80 (ou 443) de la pointeuse ;
+  - les postes d'administration ne doivent joindre que les routeurs ;
+  - les pointeuses ne doivent joindre personne.
+
+10.2 Exemple d'ACL Tailscale
+
+  Admin console -> Access controls.
+
+  Exemple minimal avec tags :
+
+      {
+        "tagOwners": {
+          "tag:server": ["autogroup:admin"],
+          "tag:site-a": ["autogroup:admin"]
+        },
+        "acls": [
+          {
+            "action": "accept",
+            "src": ["tag:server"],
+            "dst": ["192.168.137.11:80"]
+          }
+        ]
+      }
+
+  Cet exemple autorise uniquement le serveur tagué tag:server à joindre
+  l'IP 192.168.137.11 sur le port 80.
+
+  ATTENTION : une ACL trop restrictive peut vous couper l'accès administrateur.
+  Utilisez le "ACL tester" de la console Tailscale avant d'enregistrer.
+  Ajoutez une règle pour vos postes d'administration si nécessaire.
+
+10.3 Bonnes pratiques
+
+  [ ] Activer l'approbation des appareils.
+  [ ] Activer le MFA sur le fournisseur d'identité (Google, Microsoft, etc.).
+  [ ] Désactiver l'expiration de clé uniquement sur les équipements
+      non surveillés (serveur, routeur du site).
+  [ ] Garder l'expiration de clé sur les PC portables d'administration.
+  [ ] Ne jamais activer Tailscale Funnel pour la pointeuse.
+  [ ] Ne pas ouvrir de port entrant sur la box du site.
+  [ ] Utiliser un mot de passe Hikvision fort, différent du mot de passe par
+      défaut.
+  [ ] Révoquer immédiatement un appareil perdu ou volé dans la console.
+  [ ] Mettre à jour Tailscale régulièrement.
+  [ ] Sauvegarder la politique ACL.
+
+10.4 Journalisation
+
+  Sur le serveur :
+
+      sudo journalctl -u tailscaled -n 100 --no-pager
+
+  Sur le routeur GL.iNet/OpenWrt, consultez les logs de l'interface
+  d'administration.
+
+================================================================================
+11. MULTI-SITES
+================================================================================
+
+Chaque site doit avoir un sous-réseau LAN UNIQUE. Sinon, Tailscale ne peut pas
+savoir à quel site envoyer le trafic.
+
+Exemple :
+
+  Site A : LAN 192.168.137.0/24, pointeuse 192.168.137.11
+  Site B : LAN 192.168.138.0/24, pointeuse 192.168.138.11
+  Site C : LAN 192.168.139.0/24, pointeuse 192.168.139.11
+
+Pour chaque site :
+
+  1. Le routeur du site annonce son sous-réseau :
+         tailscale up --advertise-routes=192.168.138.0/24 --accept-routes
+
+  2. La route est approuvée dans la console Tailscale.
+
+  3. Dans EasyEcole, le terminal du site B utilise 192.168.138.11.
+
+  4. Les ACL autorisent le serveur vers chaque IP de pointeuse.
+
+Si un site utilise déjà 192.168.137.0/24 et que vous ne pouvez pas changer la
+box :
+
+  - Option 1 : ajouter un GL.iNet derrière la box avec un LAN différent
+    (ex. 192.168.138.0/24) et connecter la pointeuse à ce GL.iNet.
+  - Option 2 : utiliser une fonction avancée de Tailscale (4via6) pour les
+    sous-réseaux qui se chevauchent.
+  - Option 3 : ne pas mettre ce site dans le même tailnet que les autres.
+
+Recommandation : changez le LAN de chaque site pour avoir des plages uniques.
+C'est plus simple et plus fiable.
+
+Nommage conseillé :
+
+  srv-easyecole
+  site-a-router
+  site-b-router
+  site-c-router
+
+================================================================================
+12. TESTS DE VALIDATION
+================================================================================
+
+Effectuez les tests dans cet ordre.
+
+12.1 Tailscale
+
+      tailscale status
+      tailscale ping <nom_du_routeur_du_site>
+      tailscale netcheck
+
+  - Les deux appareils doivent être "online".
+  - tailscale ping doit répondre.
+  - netcheck indique si une connexion directe est possible.
+
+12.2 Route
+
+      ip route | grep 192.168.137
+      ip route get 192.168.137.11
+
+  La route doit passer par tailscale0.
+
+12.3 Serveur
+
+      ping -c 3 192.168.137.11
+      curl --digest -u admin:MOT_DE_PASSE \
+        http://192.168.137.11/ISAPI/System/deviceInfo
+
+12.4 Conteneur
+
+      docker exec -it <nom_du_conteneur> sh -c \
+        "curl -v --max-time 5 http://192.168.137.11/ISAPI/System/deviceInfo"
+
+12.5 EasyEcole
+
+  - Test du terminal : OK.
+  - Envoi des photos : OK.
+  - Push d'un pointage : OK (vérifier les logs backend).
+
+12.6 Redémarrage
+
+      sudo reboot
+
+  Après redémarrage, refaites les tests 12.1 à 12.5.
+
+================================================================================
+13. DÉPANNAGE
+================================================================================
+
+Symptôme : tailscale status indique "offline" pour le serveur.
+  Cause possible : service arrêté, pas d'accès Internet, authentification non
+  terminée.
+  Solution :
+      sudo systemctl status tailscaled --no-pager
+      sudo tailscale up --accept-routes
+      ping -c 2 8.8.8.8
+
+Symptôme : la route 192.168.137.0/24 est absente sur le serveur.
+  Cause possible : route non annoncée, non approuvée, ou --accept-routes absent.
+  Solution :
+      sudo tailscale up --accept-routes
+      # console Tailscale -> Machines -> routeur -> Edit route settings
+      ip route | grep 192.168.137
+
+Symptôme : tailscale ping fonctionne, mais ping 192.168.137.11 échoue.
+  Cause possible : forwarding ou pare-feu du routeur du site.
+  Solution :
+      # sur le routeur
+      sysctl net.ipv4.ip_forward
+      # GL.iNet : activer "Allow remote access to LAN"
+      # OpenWrt : ajouter tailscale0 à la zone LAN
+      # Windows : IPEnableRouter=1 + pare-feu + ICS
+
+Symptôme : ping fonctionne depuis la VM mais pas depuis le conteneur.
+  Cause possible : interface bridge incorrecte, règles iptables absentes,
+  forwarding IP désactivé.
+  Solution :
+      sysctl net.ipv4.ip_forward
+      ip -brief link show "$BR"
+      sudo iptables -L DOCKER-USER -n -v
+      sudo iptables -t nat -L POSTROUTING -n -v | grep 172.20
+      # recalculer BR et SUBNET, réappliquer les règles
+
+Symptôme : curl renvoie 401.
+  Cause possible : identifiants incorrects ou authentification digest absente.
+  Solution :
+      curl --digest -u admin:MOT_DE_PASSE http://192.168.137.11/ISAPI/System/deviceInfo
+      # vérifier le mot de passe dans l'interface Hikvision
+
+Symptôme : curl renvoie 403.
+  Cause possible : ISAPI désactivé, restriction d'IP, compte sans droits.
+  Solution :
+      # interface web Hikvision -> Système -> Sécurité -> ISAPI
+      # activer ISAPI, autoriser l'IP du serveur (ou désactiver la restriction)
+      # utiliser un compte administrateur
+
+Symptôme : curl timeout.
+  Cause possible : route absente, pare-feu, pointeuse HTTP désactivé, mauvaise
+  passerelle de la pointeuse.
+  Solution :
+      ip route get 192.168.137.11
+      ping 192.168.137.11
+      # vérifier la passerelle de la pointeuse (192.168.137.1)
+      # vérifier que HTTP est activé sur la pointeuse
+
+Symptôme : tout fonctionnait, puis arrêt après quelques mois.
+  Cause possible : expiration de clé Tailscale.
+  Solution :
+      # console Tailscale -> Machines -> appareil -> Disable key expiry
+
+Symptôme : connexion lente.
+  Cause possible : relais DERP au lieu d'une connexion directe.
+  Solution :
+      tailscale netcheck
+      # autoriser UDP 41641 en sortie
+      # vérifier le NAT/la box du site
+      # une connexion directe n'est pas toujours possible ; DERP reste chiffré
+
+Symptôme : deux sites utilisent 192.168.137.0/24.
+  Cause possible : conflit de sous-réseaux.
+  Solution :
+      # changer le LAN d'un des sites (ex. 192.168.138.0/24)
+      # mettre à jour l'IP de la pointeuse dans EasyEcole
+      # réapprouver la nouvelle route
+
+Symptôme : le hotspot Windows perd la connexion Tailscale.
+  Cause possible : ICS, pare-feu, mise à jour Windows, PC en veille.
+  Solution :
+      # désactiver la veille
+      # vérifier IPEnableRouter
+      # vérifier le pare-feu
+      # remplacer par un GL.iNet
+
+Symptôme : le réseau Docker change après un redéploiement Dokploy.
+  Cause possible : réseau recréé avec un nouvel ID, donc une nouvelle interface
+  bridge.
+  Solution :
+      # relancer le script systemd ou recalculer BR/SUBNET
+      sudo systemctl restart tailscale-docker-forward
+      sudo systemctl status tailscale-docker-forward --no-pager
+
+Symptôme : DOCKER-USER n'existe pas.
+  Cause possible : Docker configuré sans iptables ou version particulière.
+  Solution :
+      # utiliser la chaîne FORWARD
+      sudo iptables -I FORWARD 1 -i "$BR" -o tailscale0 -j ACCEPT
+      sudo iptables -I FORWARD 2 -i tailscale0 -o "$BR" \
+        -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+
+Symptôme : UFW bloque le forwarding.
+  Cause possible : UFW actif.
+  Solution :
+      sudo ufw status
+      sudo ufw allow in on tailscale0
+      sudo ufw allow out on tailscale0
+      # ou vérifier DEFAULT_FORWARD_POLICY dans /etc/default/ufw
+
+Symptôme : firewalld bloque Tailscale.
+  Cause possible : zone firewall.
+  Solution :
+      sudo firewall-cmd --permanent --zone=trusted --add-interface=tailscale0
+      sudo firewall-cmd --reload
+
+Symptôme : la VM Linux n'a pas Internet.
+  Cause possible : commutateur virtuel Hyper-V, NAT, pare-feu Windows Server.
+  Solution :
+      ping -c 2 8.8.8.8
+      curl -I https://tailscale.com
+      # vérifier le commutateur virtuel et la passerelle de la VM
+
+================================================================================
+14. MAINTENANCE ET DÉSINSTALLATION
+================================================================================
+
+14.1 Mise à jour
+
+  Serveur Linux :
+
+      sudo tailscale update
+
+  ou via le gestionnaire de paquets :
+
+      sudo apt-get update
+      sudo apt-get install --only-upgrade tailscale
+
+  Routeur GL.iNet : mettre à jour le firmware et l'application Tailscale.
+  Routeur OpenWrt : mettre à jour le paquet tailscale.
+
+14.2 Vérifications périodiques
+
+  [ ] Les appareils sont "online" dans la console Tailscale.
+  [ ] La route est toujours approuvée.
+  [ ] L'expiration de clé est désactivée sur les équipements non surveillés.
+  [ ] Les ACL sont à jour.
+  [ ] Les anciens appareils sont révoqués.
+  [ ] Le test ISAPI fonctionne depuis EasyEcole.
+
+14.3 Désinstallation
+
+  Serveur :
+
+      sudo tailscale down
+      sudo systemctl disable --now tailscaled
+      sudo apt-get remove tailscale
+      sudo rm -f /etc/sysctl.d/99-tailscale.conf
+      sudo sysctl --system
+
+  Supprimer les règles iptables :
+
+      sudo iptables -D DOCKER-USER -i "$BR" -o tailscale0 -j ACCEPT
+      sudo iptables -D DOCKER-USER -i tailscale0 -o "$BR" \
+        -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+      sudo iptables -t nat -D POSTROUTING -s "$SUBNET" -o tailscale0 -j MASQUERADE
+
+  Désactiver le service systemd :
+
+      sudo systemctl disable --now tailscale-docker-forward
+      sudo rm -f /etc/systemd/system/tailscale-docker-forward.service
+      sudo rm -f /usr/local/sbin/tailscale-docker-forward.sh
+      sudo systemctl daemon-reload
+
+  Routeur du site :
+
+      tailscale down
+      # désinstaller Tailscale via l'interface du routeur
+
+  Console Tailscale :
+
+      Machines -> sélectionner l'appareil -> Remove device
+
+================================================================================
+15. CHECKLIST FINALE
+================================================================================
+
+  [ ] Compte Tailscale créé.
+  [ ] Serveur Linux : Tailscale installé et "online".
+  [ ] Serveur Linux : forwarding IP activé.
+  [ ] Serveur Linux : --accept-routes appliqué.
+  [ ] Routeur du site : Tailscale installé et "online".
+  [ ] Routeur du site : route 192.168.137.0/24 annoncée.
+  [ ] Route approuvée dans la console Tailscale.
+  [ ] Expiration de clé désactivée sur le serveur et le routeur.
+  [ ] ip route sur le serveur montre 192.168.137.0/24 via tailscale0.
+  [ ] ping 192.168.137.11 fonctionne depuis le serveur.
+  [ ] curl ISAPI fonctionne depuis le serveur.
+  [ ] Réseau Docker et interface bridge identifiés.
+  [ ] Règles iptables appliquées.
+  [ ] Règles persistantes après redémarrage.
+  [ ] ping/curl fonctionnent depuis le conteneur.
+  [ ] Test du terminal EasyEcole : OK.
+  [ ] Envoi des photos : OK.
+  [ ] Push des pointages : OK.
+  [ ] ACL appliquées et testées.
+  [ ] Sous-réseaux uniques si plusieurs sites.
+  [ ] Redémarrage complet testé.
+
+================================================================================
+16. ANNEXE - COMMANDES UTILES
+================================================================================
+
+Serveur / routeur Linux :
+
+  curl -fsSL https://tailscale.com/install.sh | sh
+  sudo systemctl enable --now tailscaled
+  sudo tailscale up --accept-routes
+  sudo tailscale up --advertise-routes=192.168.137.0/24 --accept-routes
+  tailscale status
+  tailscale ip -4
+  tailscale ping <nom>
+  tailscale netcheck
+  tailscale update
+
+Forwarding :
+
+  echo 'net.ipv4.ip_forward=1' | sudo tee /etc/sysctl.d/99-tailscale.conf
+  sudo sysctl --system
+  sysctl net.ipv4.ip_forward
+
+Docker :
+
+  docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}'
+  docker inspect <conteneur> --format '{{range $k,$v := .NetworkSettings.Networks}}{{$k}} -> {{$v.IPAddress}}/{{$v.IPPrefixLen}}{{"\n"}}{{end}}'
+  docker network inspect <reseau> --format '{{range .IPAM.Config}}{{.Subnet}}{{"\n"}}{{end}}'
+  docker network inspect <reseau> --format '{{.Id}}' | cut -c1-12
+  ip -brief link show type bridge
+
+iptables :
+
+  sudo iptables -L DOCKER-USER -n -v
+  sudo iptables -t nat -L POSTROUTING -n -v
+  sudo iptables -I DOCKER-USER -i "$BR" -o tailscale0 -j ACCEPT
+  sudo iptables -I DOCKER-USER -i tailscale0 -o "$BR" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+  sudo iptables -t nat -A POSTROUTING -s "$SUBNET" -o tailscale0 -j MASQUERADE
+
+Tests :
+
+  ip route get 192.168.137.11
+  ping -c 3 192.168.137.11
+  curl -v --max-time 5 http://192.168.137.11/ISAPI/System/deviceInfo
+  curl --digest -u admin:MOT_DE_PASSE http://192.168.137.11/ISAPI/System/deviceInfo
+  docker exec -it <conteneur> sh -c "curl -v --max-time 5 http://192.168.137.11/ISAPI/System/deviceInfo"
+
+Logs :
+
+  sudo journalctl -u tailscaled -n 100 --no-pager
+  sudo journalctl -u tailscale-docker-forward -n 50 --no-pager
+
+================================================================================
+17. GLOSSAIRE
+================================================================================
+
+Tailnet
+  Réseau privé Tailscale auquel appartiennent vos appareils.
+
+Subnet router (routeur de sous-réseau)
+  Appareil Tailscale qui annonce un réseau LAN entier (ex. 192.168.137.0/24)
+  pour que les autres appareils du tailnet puissent le joindre.
+
+Route approuvée
+  Autorisation donnée dans la console Tailscale pour qu'un sous-réseau annoncé
+  soit utilisable par les autres appareils.
+
+DERP
+  Relais Tailscale utilisé quand une connexion directe entre deux appareils
+  n'est pas possible. Le trafic reste chiffré.
+
+ACL
+  Règles d'accès Tailscale qui définissent qui peut joindre quoi.
+
+MagicDNS
+  Nom DNS automatique des appareils Tailscale. Optionnel ; ce guide utilise
+  les adresses IP pour éviter toute dépendance DNS.
+
+DOCKER-USER
+  Chaîne iptables créée par Docker pour les règles utilisateur, évaluée avant
+  les règles Docker.
+
+NAT / MASQUERADE
+  Réécriture de l'adresse source des paquets pour que la pointeuse puisse
+  répondre au serveur via Tailscale.
+
+ISAPI
+  API HTTP Hikvision utilisée par EasyEcole pour interroger la pointeuse et
+  envoyer les photos.
+
+Push
+  Flux pointeuse -> backend EasyEcole via HTTPS, utilisé pour remonter les
+  pointages. Indépendant de Tailscale.
+
+================================================================================
+FIN DU GUIDE
+================================================================================

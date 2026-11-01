@@ -369,6 +369,11 @@ if (hikvisionCallbackHost && hikvisionCallbackHost !== hostname) {
   callbackApp.post('/api/hikvision/event', hikvisionEventUpload, HikvisionPushController.receive)
   callbackApp.post('/api/hikvision/event/:deviceToken', hikvisionEventUpload, HikvisionPushController.receive)
   hikvisionCallbackServer = http.createServer(callbackApp)
+  // Un hôte de callback invalide (IP absente de la machine, DHCP changé…)
+  // ne doit JAMAIS faire tomber l'API principale : on journalise et on continue.
+  hikvisionCallbackServer.on('error', (error: NodeJS.ErrnoException) => {
+    console.error(`[Hikvision] Callback indisponible sur ${hikvisionCallbackHost}:${port} (${error.code || 'ERROR'}) : ${error.message}`)
+  })
   hikvisionCallbackServer.listen(port, hikvisionCallbackHost)
   hikvisionCallbackServer.on('listening', () => {
     console.log(`Hikvision callback listening on http://${hikvisionCallbackHost}:${port}/api/hikvision/event`)

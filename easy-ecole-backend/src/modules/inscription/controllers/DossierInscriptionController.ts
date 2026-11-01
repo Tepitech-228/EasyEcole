@@ -184,6 +184,17 @@ export default class DossierInscriptionController {
                 }
             }
 
+            const dossierRequis = await DossierInscription.findByPk(dossierId)
+            if (!dossierRequis
+                || (Number(dossierRequis.sessionId) !== Number(demandeExiste.sessionId)
+                    && !/bordereau/i.test(dossierRequis.titre || ''))) {
+                nettoyerFichiersUpload();
+                return res.status(400).json({
+                    success: false,
+                    message: "Cette pièce ne correspond pas aux documents requis pour cette inscription"
+                });
+            }
+
             // Remplacement propre : on supprime les anciens fichiers de CE dossier
             // pour éviter les doublons qui cassent le comptage front/back.
             //

@@ -217,12 +217,21 @@ describe('PointageController.pointerParQR', () => {
     expect(Pointage.create).not.toHaveBeenCalled()
   })
 
-  it('uses the second scan as the staff departure regardless of the requested mode', async () => {
+  it('uses the second scan as the staff departure after confirmation', async () => {
     const update = jest.fn().mockResolvedValue(undefined)
     Pointage.findOne.mockResolvedValue({ id: 7, heureDepart: null, update })
-    const res = mockResponse()
+    const first = mockResponse()
 
-    await PointageController.pointerParQR(request({ codeQR: validCode, mode: 'arrivee' }), res)
+    await PointageController.pointerParQR(request({ codeQR: validCode, mode: 'arrivee' }), first)
+
+    expect(first.status).toHaveBeenCalledWith(200)
+    expect(first.json).toHaveBeenCalledWith(expect.objectContaining({ requiresConfirmation: true, mode: 'depart' }))
+    expect(update).not.toHaveBeenCalled()
+    const confirmationToken = (first.json as unknown as jest.Mock).mock.calls[0][0].confirmationToken
+    expect(confirmationToken).toEqual(expect.any(String))
+
+    const res = mockResponse()
+    await PointageController.pointerParQR(request({ codeQR: validCode, mode: 'arrivee', confirmationToken }), res)
 
     expect(update).toHaveBeenCalledWith(expect.objectContaining({ heureDepart: expect.any(String) }), expect.any(Object))
     expect(res.status).toHaveBeenCalledWith(200)

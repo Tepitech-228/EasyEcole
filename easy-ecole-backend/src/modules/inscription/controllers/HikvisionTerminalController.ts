@@ -1,4 +1,3 @@
-import { isIP } from "net";
 import { Request, Response } from "express";
 import { Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
@@ -10,6 +9,7 @@ import { HikvisionEnrollment } from "../models/HikvisionEnrollment";
 import HikvisionIsapiService from "../services/HikvisionIsapiService";
 import HikvisionEnrollmentService from "../services/HikvisionEnrollmentService";
 import PointageTerminalTokenService from "../services/PointageTerminalTokenService";
+import { isHikvisionTerminalAddressAllowed } from "../services/HikvisionTerminalAddressService";
 
 function toClientTerminal(terminal: PointageTerminal, deviceToken?: string): Record<string, unknown> {
     return {
@@ -78,13 +78,13 @@ export default class HikvisionTerminalController {
         if (
             !/^[A-Za-z0-9._-]{2,64}$/.test(serialNumber) ||
             !nom || nom.length > 120 ||
-            (sourceIp !== null && isIP(sourceIp) === 0) ||
+            (sourceIp !== null && !isHikvisionTerminalAddressAllowed(sourceIp)) ||
             !/^[A-Za-z0-9._-]{1,120}$/.test(username) ||
             !password || password.length > 256 ||
             !Number.isSafeInteger(etablissementId) || etablissementId <= 0 ||
             !Number.isSafeInteger(port) || port < 1 || port > 65535
         ) {
-            return res.status(400).json({ success: false, message: "Modèle, adresse IP, port, compte, mot de passe ou site invalide." });
+            return res.status(400).json({ success: false, message: "Modèle, adresse (IP ou hostname), port, compte, mot de passe ou site invalide." });
         }
 
         let encryptedPassword: string;
@@ -223,14 +223,14 @@ export default class HikvisionTerminalController {
             if (
                 serialNumber === null || (serialNumber !== undefined && !/^[A-Za-z0-9._-]{2,64}$/.test(serialNumber)) ||
                 nom === null || (nom !== undefined && (!nom || nom.length > 120)) ||
-                sourceIpInvalide || (sourceIp !== undefined && sourceIp !== null && isIP(sourceIp) === 0) ||
+                sourceIpInvalide || (sourceIp !== undefined && sourceIp !== null && !isHikvisionTerminalAddressAllowed(sourceIp)) ||
                 username === null || (username !== undefined && !/^[A-Za-z0-9._-]{1,120}$/.test(username)) ||
                 password === null || (password !== undefined && password.length > 256) ||
                 (port !== undefined && (!Number.isSafeInteger(port) || port < 1 || port > 65535)) ||
                 (etablissementId !== undefined && (!Number.isSafeInteger(etablissementId) || etablissementId <= 0)) ||
                 https === null || actif === null
             ) {
-                return res.status(400).json({ success: false, message: "Modèle, adresse IP, port, compte, mot de passe ou état du terminal invalide." });
+                return res.status(400).json({ success: false, message: "Modèle, adresse (IP ou hostname), port, compte, mot de passe ou état du terminal invalide." });
             }
 
             const siteChanged = etablissementId !== undefined && etablissementId !== Number(terminal.etablissementId);

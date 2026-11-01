@@ -37,6 +37,28 @@ export default class UtilisateurController {
         return map[role] || role;
     }
 
+    private static isUniqueViolation(error: any): boolean {
+        return error?.name === 'SequelizeUniqueConstraintError'
+            || error?.parent?.code === 'ER_DUP_ENTRY'
+            || error?.original?.code === 'ER_DUP_ENTRY';
+    }
+
+    private static isMatriculeConflict(error: any): boolean {
+        const champs = (error?.errors || [])
+            .map((item: any) => String(item?.path || ''))
+            .filter(Boolean);
+        if (champs.length) {
+            return champs.some((champ: string) => champ.toLowerCase().includes('matricule'));
+        }
+        const message = String(
+            error?.parent?.sqlMessage
+            || error?.original?.sqlMessage
+            || error?.parent?.message
+            || ''
+        );
+        return /matricule/i.test(message);
+    }
+
     static async getSitesMoi(req: Request, res: Response): Promise<Response> {
         try {
             const role = req.utilisateurRole;
@@ -145,7 +167,7 @@ export default class UtilisateurController {
     private static async validerSites(ids: unknown): Promise<number[] | null> {
         if (!Array.isArray(ids) || ids.some(id => !Number.isSafeInteger(Number(id)) || Number(id) <= 0)) return null;
         const siteIds = [...new Set(ids.map(Number))];
-        if (!siteIds.length) return null;
+        if (!siteIds.length) return [];
         const sites = await Etablissement.findAll({
             where: { id: { [Op.in]: siteIds }, actif: true },
             attributes: ['id']
@@ -406,25 +428,6 @@ export default class UtilisateurController {
                 });
             }
 
-            const utilisateur = await Utilisateur.create({
-                nom: req.body.nom,
-                prenoms: req.body.prenoms,
-                email: req.body.email,
-                identifiant: req.body.identifiant,
-                motDePasse: bcrypt.hashSync(req.body.motDePasse, 12),
-                role: userRole,
-                contact: req.body.contact || null,
-                photoDeProfil: photo.filename,
-                etablissementId: affectations[0] || null,
-            });
-            if (affectations.length) {
-                await SiteUtilisateur.bulkCreate(affectations.map(etablissementId => ({
-                    utilisateurId: utilisateur.id,
-                    etablissementId,
-                    affectePar: (req as any).utilisateurId || null
-                })));
-            }
-
             // Création du profil lié selon le rôle
             // Hors apprenant/enseignant/parent → tous = PersonnelAdministratif (fonction = rôle)
             const isStaff = [
@@ -438,9 +441,34 @@ export default class UtilisateurController {
                 RolesUtilisateur.SURVEILLANT,
                 RolesUtilisateur.SUPERVISEUR_GENERAL,
             ].includes(userRole);
+            const MAX_RETRIES = 5;
+            let utilisateur!: Utilisateur;
+            let enseignant: Enseignant | null = null;
+            let personnel: PersonnelAdministratif | null = null;
             let enseignantBadge: { matricule: string; qrCode: string } | undefined;
+            const transaction = await DatabaseConnection.getInstance().sequelize.transaction();
+            let transactionCommitted = false;
 
             try {
+                utilisateur = await Utilisateur.create({
+                    nom: req.body.nom,
+                    prenoms: req.body.prenoms,
+                    email: req.body.email,
+                    identifiant: req.body.identifiant,
+                    motDePasse: bcrypt.hashSync(req.body.motDePasse, 12),
+                    role: userRole,
+                    contact: req.body.contact || null,
+                    photoDeProfil: photo.filename,
+                    etablissementId: affectations[0] || null,
+                }, { transaction });
+                if (affectations.length) {
+                    await SiteUtilisateur.bulkCreate(affectations.map(etablissementId => ({
+                        utilisateurId: utilisateur.id,
+                        etablissementId,
+                        affectePar: (req as any).utilisateurId || null
+                    })), { transaction });
+                }
+
                 if (userRole === RolesUtilisateur.APPRENANT) {
                     await Apprenant.create({
                         utilisateurId: utilisateur.id,
@@ -452,7 +480,7 @@ export default class UtilisateurController {
                         cni: req.body.cni || null,
                         statutEtudiant: req.body.statutEtudiant || 'nouveau',
                         periode: req.body.periode || 'matin',
-                    });
+                    }, { transaction });
                 } else if (userRole === RolesUtilisateur.ENSEIGNANT) {
                     let matricule = req.body.matricule || null
 
@@ -470,8 +498,6 @@ export default class UtilisateurController {
                         matricule = IDGenerator.generateMatricule(etabCode, matiereCode, siteCode, count + 1)
                     }
 
-                    const MAX_RETRIES = 5
-                    let enseignant: Enseignant | null = null
                     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
                         try {
                             enseignant = await Enseignant.create({
@@ -490,12 +516,12 @@ export default class UtilisateurController {
                                 nationalite: req.body.nationalite || 'Ivoirienne',
                                 contact: req.body.contact || null,
                                 plusHautDiplome: req.body.plusHautDiplome || null,
-                            });
+                            }, { transaction });
                             break
                         } catch (createErr: any) {
-                            const errCode = createErr?.parent?.code || createErr?.original?.code || ''
-                            const errName = createErr?.name || ''
-                            if ((errCode === 'ER_DUP_ENTRY' || errName === 'SequelizeUniqueConstraintError') && attempt < MAX_RETRIES - 1) {
+                            if (UtilisateurController.isUniqueViolation(createErr)
+                                && UtilisateurController.isMatriculeConflict(createErr)
+                                && attempt < MAX_RETRIES - 1) {
                                 const etabId = (req as any).etablissementId || req.body.etablissementId || null
                                 let etablissement: Etablissement | null = null
                                 if (etabId) {
@@ -516,10 +542,6 @@ export default class UtilisateurController {
                     if (!enseignant) {
                         throw new Error("Le profil enseignant n'a pas été créé.");
                     }
-                    enseignantBadge = await EnseignantBadgeService.ensureIdentity(
-                        enseignant,
-                        (req as any).etablissementId || req.body.etablissementId || null,
-                    );
 
                 } else if (isStaff) {
                     let matricule = req.body.matricule || null
@@ -538,8 +560,6 @@ export default class UtilisateurController {
                         matricule = IDGenerator.generateMatricule(etabCode, serviceCode, siteCode, count + 1)
                     }
 
-                    const MAX_RETRIES = 5
-                    let personnel: PersonnelAdministratif | null = null
                     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
                         try {
                             personnel = await PersonnelAdministratif.create({
@@ -553,12 +573,12 @@ export default class UtilisateurController {
                                 lieuNaissance: req.body.lieuNaissance || null,
                                 sexe: req.body.sexe || 'M',
                                 nationalite: req.body.nationalite || 'Ivoirienne',
-                            });
+                            }, { transaction });
                             break
                         } catch (createErr: any) {
-                            const errCode = createErr?.parent?.code || createErr?.original?.code || ''
-                            const errName = createErr?.name || ''
-                            if ((errCode === 'ER_DUP_ENTRY' || errName === 'SequelizeUniqueConstraintError') && attempt < MAX_RETRIES - 1) {
+                            if (UtilisateurController.isUniqueViolation(createErr)
+                                && UtilisateurController.isMatriculeConflict(createErr)
+                                && attempt < MAX_RETRIES - 1) {
                                 const etabId = (req as any).etablissementId || req.body.etablissementId || null
                                 let etablissement: Etablissement | null = null
                                 if (etabId) {
@@ -576,27 +596,69 @@ export default class UtilisateurController {
                         }
                     }
 
-                    try {
-                        const dir: string = path.resolve(process.cwd(), 'storage', 'qr-codes', 'personnel')
-                        if (!fs.existsSync(dir)) { fs.mkdirSync(dir, { recursive: true }) }
-                        const userId = String(utilisateur.id)
-                        const qrData = QrTokenService.signer(utilisateur.id)
-                        const fileName = `${userId}.png`
-                        const filePath = path.join(dir, fileName)
-                        await QRCode.toFile(filePath, qrData, {
-                            type: 'png', width: 600, margin: 4,
-                            errorCorrectionLevel: 'M',
-                            color: { dark: '#000000', light: '#ffffff' }
-                        })
-                        if (personnel) { await personnel.update({ qrCode: fileName }) }
-                    } catch (qrError) { console.error('Erreur génération QR personnel:', qrError) }
+                    if (!personnel) {
+                        throw new Error("Le profil du personnel n'a pas été créé.");
+                    }
                 }
+                await transaction.commit();
+                transactionCommitted = true;
             } catch (profileError: any) {
+                if (!transactionCommitted) {
+                    try {
+                        await transaction.rollback();
+                    } catch (rollbackError: any) {
+                        console.error('[UtilisateurController] Rollback de création utilisateur impossible:', rollbackError?.message);
+                    }
+                }
+                if (photo?.path) {
+                    try {
+                        fs.unlinkSync(photo.path);
+                    } catch (cleanupError: any) {
+                        console.warn('[UtilisateurController] Photo non supprimée après échec:', cleanupError?.message);
+                    }
+                }
+                if (UtilisateurController.isUniqueViolation(profileError)) {
+                    const champs = (profileError?.errors || []).map((e: any) => e.path).filter(Boolean).join(", ");
+                    return res.status(409).json({
+                        success: false,
+                        message: champs
+                            ? `Conflit de valeur unique sur : ${champs}. Cette valeur est déjà utilisée.`
+                            : "Cette valeur est déjà utilisée par un autre compte."
+                    });
+                }
                 console.error('Erreur création profil:', profileError?.message);
                 return res.status(500).json({
                     success: false,
-                    message: "Le compte a été créé, mais la génération du profil enseignant ou de son badge a échoué. Relancez la génération du QR code depuis la gestion des QR codes.",
+                    message: "Le compte n’a pas été créé : le profil associé n’a pas pu être enregistré. Vérifiez les informations saisies, puis réessayez.",
                 });
+            }
+
+            if (userRole === RolesUtilisateur.ENSEIGNANT && enseignant) {
+                try {
+                    enseignantBadge = await EnseignantBadgeService.ensureIdentity(
+                        enseignant,
+                        (req as any).etablissementId || req.body.etablissementId || null,
+                    );
+                } catch (badgeError: any) {
+                    console.error('Erreur génération badge enseignant:', badgeError?.message);
+                }
+            }
+
+            if (isStaff && personnel) {
+                try {
+                    const dir: string = path.resolve(process.cwd(), 'storage', 'qr-codes', 'personnel')
+                    if (!fs.existsSync(dir)) { fs.mkdirSync(dir, { recursive: true }) }
+                    const userId = String(utilisateur.id)
+                    const qrData = QrTokenService.signer(utilisateur.id)
+                    const fileName = `${userId}.png`
+                    const filePath = path.join(dir, fileName)
+                    await QRCode.toFile(filePath, qrData, {
+                        type: 'png', width: 600, margin: 4,
+                        errorCorrectionLevel: 'M',
+                        color: { dark: '#000000', light: '#ffffff' }
+                    })
+                    await personnel.update({ qrCode: fileName })
+                } catch (qrError) { console.error('Erreur génération QR personnel:', qrError) }
             }
 
             let hikvisionEnrollmentQueued = false;

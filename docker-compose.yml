@@ -155,6 +155,12 @@ services:
       # uid 1000, demarrer en root au lieu de boucler. Repasser a false des
       # que les droits du montage sont corriges cote hote.
       ALLOW_ROOT_FALLBACK: ${ALLOW_ROOT_FALLBACK:-true}
+      # Pointage Hikvision distant via Cloudflare Tunnel (Service Token Access).
+      # HIKVISION_TUNNEL_HOSTS : liste separee par virgules, sans https://
+      # (ex. pointeuse-1.example.com,pointeuse-2.example.com).
+      HIKVISION_TUNNEL_ACCESS_CLIENT_ID: ${HIKVISION_TUNNEL_ACCESS_CLIENT_ID:-}
+      HIKVISION_TUNNEL_ACCESS_CLIENT_SECRET: ${HIKVISION_TUNNEL_ACCESS_CLIENT_SECRET:-}
+      HIKVISION_TUNNEL_HOSTS: ${HIKVISION_TUNNEL_HOSTS:-}
     networks:
       - app
       - data

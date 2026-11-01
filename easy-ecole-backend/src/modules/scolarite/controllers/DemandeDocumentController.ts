@@ -6,6 +6,7 @@ import { TypeDocument } from "../models/TypeDocument";
 import { DocumentDelivre } from "../models/DocumentDelivre";
 import { DocumentPDFGenerator } from "../../../core/helpers/DocumentPDFGenerator";
 import { CursusApprenant } from "../../inscription/models/CursusApprenant";
+import { DossierEtudiant } from "../../inscription/models/DossierEtudiant";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
 import DemandeDocumentPaiementService from "../services/DemandeDocumentPaiementService";
@@ -21,6 +22,15 @@ import * as crypto from "crypto";
 
 const UPLOAD_DOCUMENTS_DIR = path.resolve(process.cwd(), 'storage', 'private', 'demandes-documents');
 const STATUTS_MODIFIABLES_PAR_ETUDIANT = ['brouillon', 'rejetee'];
+const ROLES_INTERNES_DOCUMENTS: string[] = [
+    RolesUtilisateur.SECRETAIRE,
+    RolesUtilisateur.PERSONNEL_ADMINISTRATIF,
+    RolesUtilisateur.INSTITUTION,
+    RolesUtilisateur.ADMIN,
+    RolesUtilisateur.COMITE_ORIENTATION,
+    RolesUtilisateur.CAISSIER_BANQUE,
+    RolesUtilisateur.SUPERVISEUR_GENERAL
+];
 
 function fichiersCourantsParCle(pieces: DemandeDocumentPiece[]): Map<string, DemandeDocumentPiece> {
     return new Map(pieces.filter(piece => piece.estCourante).map(piece => [piece.cle, piece]));
@@ -36,6 +46,11 @@ export default class DemandeDocumentController {
     constructor() { }
 
     static async getAllDemandesDocument(req: Request, res: Response): Promise<Response> {
+        const role = (req as any).utilisateurRole
+        if (role !== RolesUtilisateur.APPRENANT && !ROLES_INTERNES_DOCUMENTS.includes(role)) {
+            return res.status(403).json({ success: false })
+        }
+
         const page = parseInt(req.query.page as string) || 1
         const limit = Math.min(parseInt(req.query.limit as string) || 20, 100)
         const offset = (page - 1) * limit
@@ -52,12 +67,38 @@ export default class DemandeDocumentController {
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
             where.etudiantId = (req as any).utilisateurId
         }
-
         const orderBy = (req.query.orderBy as string) || 'createdAt'
         const orderDir = (req.query.orderDir as string) || 'DESC'
         const order = [[orderBy, orderDir]] as any
 
         try {
+            const recherche = String(req.query.search || '').trim()
+            if (recherche && role !== RolesUtilisateur.APPRENANT) {
+                const jeton = `%${recherche}%`
+                const [utilisateurs, dossiers] = await Promise.all([
+                    Utilisateur.findAll({
+                        where: {
+                            [Op.or]: [
+                                { nom: { [Op.like]: jeton } },
+                                { prenoms: { [Op.like]: jeton } },
+                                { identifiant: { [Op.like]: jeton } }
+                            ]
+                        },
+                        attributes: ['id'],
+                        raw: true
+                    }),
+                    DossierEtudiant.findAll({
+                        where: { matricule: { [Op.like]: jeton } },
+                        attributes: ['utilisateurId'],
+                        raw: true
+                    })
+                ])
+                const etudiantIds = new Set<number>()
+                utilisateurs.forEach(u => etudiantIds.add(Number(u.id)))
+                dossiers.forEach(d => { if (d.utilisateurId) etudiantIds.add(Number(d.utilisateurId)) })
+                where.etudiantId = { [Op.in]: [...etudiantIds] }
+            }
+
             const { rows, count: total } = await DemandeDocument.findAndCountAll({
                 where,
                 include: [
@@ -130,19 +171,29 @@ export default class DemandeDocumentController {
         }
     }
 
-    static async telechargerAutorisationProvisoire(req: Request, res: Response): Promise<Response> {
-        const demande = await DemandeDocument.findByPk(req.params.id);
-        if (!demande || demande.source !== 'automatique' || !demande.fichierPDF) {
-            return res.status(404).json({ success: false, message: "Autorisation provisoire introuvable" });
-        }
-        const fichier = path.resolve(demande.fichierPDF);
-        if (!fs.existsSync(fichier)) return res.status(404).json({ success: false, message: "Fichier PDF indisponible" });
-        return new Promise<Response>((resolve, reject) => {
-            res.download(fichier, `autorisation-provisoire-${demande.numeroDemande || demande.id}.pdf`, (error) => {
-                if (error) reject(error);
-                else resolve(res);
+    static async telechargerAutorisationProvisoire(req: Request, res: Response): Promise<Response | void> {
+        try {
+            const demande = await DemandeDocument.findByPk(req.params.id);
+            if (!demande || demande.source !== 'automatique' || !demande.fichierPDF) {
+                return res.status(404).json({ success: false, message: "Autorisation provisoire introuvable" });
+            }
+            const fichier = path.resolve(demande.fichierPDF);
+            if (!fs.existsSync(fichier)) return res.status(404).json({ success: false, message: "Fichier PDF indisponible" });
+            return await new Promise<void>((resolve) => {
+                res.download(fichier, `autorisation-provisoire-${demande.numeroDemande || demande.id}.pdf`, (error) => {
+                    if (error) {
+                        console.error('[autorisationProvisoire][download]', error);
+                        if (!res.headersSent) {
+                            res.status(500).json({ success: false, message: "Téléchargement impossible" });
+                        }
+                    }
+                    resolve();
+                });
             });
-        });
+        } catch (error) {
+            console.error('[autorisationProvisoire]', error);
+            if (!res.headersSent) return res.status(500).json({ success: false, message: "Téléchargement impossible" });
+        }
     }
 
     static async getDemandeDocument(req: Request, res: Response): Promise<Response> {
@@ -665,6 +716,16 @@ export default class DemandeDocumentController {
     }
 
     static async traiterDemandeDocument(req: Request, res: Response): Promise<Response | null> {
+        try {
+            return await DemandeDocumentController.traiterDemandeDocumentInterne(req, res)
+        } catch (error: any) {
+            console.error('[traiterDemandeDocument]', error)
+            if (res.headersSent) return null
+            return res.status(500).json({ success: false, message: "Erreur lors du traitement de la demande" })
+        }
+    }
+
+    private static async traiterDemandeDocumentInterne(req: Request, res: Response): Promise<Response | null> {
         if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION) {
             return res.status(403).json({ success: false })
         }
@@ -701,36 +762,39 @@ export default class DemandeDocumentController {
                 typeDocument = (await TypeDocument.findOne({ where: { id: demande.typeDocumentId } })) ?? undefined
             }
 
-            const coordonnees = await SecretariatWorkflowService.construireCoordonneesEtudiant(demande);
-            const filename = DocumentPDFGenerator.generateDocument(
-                demande.id,
-                typeDocument?.libelle || 'Document',
-                "public/scolarite/documents/",
-                coordonnees
-            )
+            const documentExistant = await DocumentDelivre.findOne({ where: { demandeId: demande.id } })
+            if (!documentExistant) {
+                const coordonnees = await SecretariatWorkflowService.construireCoordonneesEtudiant(demande);
+                const filename = DocumentPDFGenerator.generateDocument(
+                    demande.id,
+                    typeDocument?.libelle || 'Document',
+                    "public/scolarite/documents/",
+                    coordonnees
+                )
 
-            let docDelivre = new DocumentDelivre();
-            docDelivre.demandeId = demande.id
-            docDelivre.fichierPDF = filename
-            await docDelivre.save()
+                const docDelivre = new DocumentDelivre();
+                docDelivre.demandeId = demande.id
+                docDelivre.fichierPDF = filename
+                await docDelivre.save()
 
-            // Archivage avec le service dédié (plus de champs contextuels renseignés)
-            const aai = Number(demande.anneeAcademiqueId) || 0;
-            const pi = Number(demande.parcoursId) || 0;
-            const nei = Number(demande.niveauEtudeId) || 0;
-            if (aai && pi && nei) {
-                ArchiveGedService.archiverDocumentScolarite({
-                    titre: `${typeDocument?.libelle || 'Document'} - ${demande.id}`,
-                    documentTypeCode: 'attestation',
-                    fichier: filename,
-                    anneeAcademiqueId: aai,
-                    parcoursId: pi,
-                    niveauEtudeId: nei,
-                    classeId: Number(demande.classeId) || undefined,
-                    semestre: undefined,
-                    cursusApprenantId: undefined,
-                    uploaderId: (req as any).utilisateurId || 1,
-                }).catch((err: any) => console.error("Erreur archivage document scolarite:", err));
+                // Archivage avec le service dédié (plus de champs contextuels renseignés)
+                const aai = Number(demande.anneeAcademiqueId) || 0;
+                const pi = Number(demande.parcoursId) || 0;
+                const nei = Number(demande.niveauEtudeId) || 0;
+                if (aai && pi && nei) {
+                    ArchiveGedService.archiverDocumentScolarite({
+                        titre: `${typeDocument?.libelle || 'Document'} - ${demande.id}`,
+                        documentTypeCode: 'attestation',
+                        fichier: filename,
+                        anneeAcademiqueId: aai,
+                        parcoursId: pi,
+                        niveauEtudeId: nei,
+                        classeId: Number(demande.classeId) || undefined,
+                        semestre: undefined,
+                        cursusApprenantId: undefined,
+                        uploaderId: (req as any).utilisateurId || 1,
+                    }).catch((err: any) => console.error("Erreur archivage document scolarite:", err));
+                }
             }
         }
 
@@ -746,7 +810,9 @@ export default class DemandeDocumentController {
     }
 
     static async deleteDemandeDocument(req: Request, res: Response): Promise<Response | null> {
-        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
+        const role = (req as any).utilisateurRole
+        if (![RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF,
+              RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN].includes(role)) {
             return res.status(403).json({ success: false })
         }
 
@@ -870,7 +936,7 @@ export default class DemandeDocumentController {
     }
 
     static async getCount(req: Request, res: Response): Promise<Response | null> {
-        if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
+        if (!ROLES_INTERNES_DOCUMENTS.includes((req as any).utilisateurRole)) {
             return res.status(403).json({ success: false })
         }
 

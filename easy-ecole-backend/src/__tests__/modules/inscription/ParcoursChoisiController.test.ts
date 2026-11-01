@@ -134,14 +134,14 @@ describe('deleteParcoursChoisi', () => {
     expect(res.status).toHaveBeenCalledWith(403)
   })
 
-  it('should return 404 if not found for role admin', async () => {
+  it('should return 403 for role admin', async () => {
     const req = mockRequest({ params: { id: '999' }, utilisateurRole: 'admin' } as any)
     const res = mockResponse()
-    ;(ParcoursChoisi.findOne as jest.Mock).mockResolvedValue(null)
 
     await Ctrl.deleteParcoursChoisi(req, res)
 
-    expect(res.status).toHaveBeenCalledWith(404)
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(ParcoursChoisi.findOne).not.toHaveBeenCalled()
   })
 
   it('should return 200 on success for AP role', async () => {

@@ -243,10 +243,11 @@ describe('DossierInscriptionController.uploadDossierInscription', () => {
       files: [{ filename: 'document.pdf' }],
     } as any)
     const res = mockResponse()
-    const demande = { utilisateurId: 7, statutPipeline: 'brouillon' }
+    const demande = { utilisateurId: 7, statutPipeline: 'brouillon', sessionId: 3 }
     ;(DemandeInscription.findByPk as jest.Mock)
       .mockResolvedValueOnce(demande)
       .mockResolvedValueOnce(demande)
+    ;(DossierInscription.findByPk as jest.Mock).mockResolvedValue({ id: 2, sessionId: 3, titre: 'Diplôme' })
     ;(DemandeInscriptionDossier.findAll as jest.Mock).mockResolvedValue([])
     ;(DemandeInscriptionDossier.create as jest.Mock).mockResolvedValue({})
 

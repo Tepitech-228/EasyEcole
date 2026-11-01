@@ -92,16 +92,22 @@ async function createAnneeAcademique() {
  * Crée la session (niveauEtudeId nullable, idempotent sur annee+dates).
  */
 async function createSession(anneeAcademiqueId) {
-  const [existing] = await db.query("SELECT id FROM ins_sessions WHERE anneeAcademiqueId=? AND dateDebut='2025-09-01' LIMIT 1", { replacements: [anneeAcademiqueId], type: db.QueryTypes.SELECT })
+  const [existing] = await db.query('SELECT id FROM ins_sessions WHERE anneeAcademiqueId=? ORDER BY id LIMIT 1', { replacements: [anneeAcademiqueId], type: db.QueryTypes.SELECT })
   const existingRow = Array.isArray(existing) ? existing[0] : existing
   if (existingRow && existingRow.id) {
-    await db.query("UPDATE ins_sessions SET statut='ouverte' WHERE id=?", { replacements: [existingRow.id], type: db.QueryTypes.UPDATE })
-    console.log('[SEED] Session déjà existante (id=%d), statut réinitialisé à ouverte', existingRow.id)
+    // La création d'une demande via l'API vérifie la fenêtre dateDebut/dateFin :
+    // on la recentre sur la date du jour pour que le scénario reste jouable
+    // quelle que soit la date d'exécution de la suite E2E.
+    await db.query(
+      "UPDATE ins_sessions SET statut='ouverte', dateDebut=DATE_SUB(CURDATE(), INTERVAL 30 DAY), dateFin=DATE_ADD(CURDATE(), INTERVAL 270 DAY) WHERE id=?",
+      { replacements: [existingRow.id], type: db.QueryTypes.UPDATE }
+    )
+    console.log('[SEED] Session déjà existante (id=%d), statut et fenêtre réinitialisés', existingRow.id)
     return existingRow.id
   }
   const [result] = await db.query(
-    'INSERT INTO ins_sessions (dateDebut, dateFin, description, statut, anneeAcademiqueId, niveauEtudeId, etablissementId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
-    { replacements: ['2025-09-01', '2026-06-30', 'Session principale 2025-2026', 'ouverte', anneeAcademiqueId, null, 1], type: db.QueryTypes.INSERT }
+    "INSERT INTO ins_sessions (dateDebut, dateFin, description, statut, anneeAcademiqueId, niveauEtudeId, etablissementId, createdAt, updatedAt) VALUES (DATE_SUB(CURDATE(), INTERVAL 30 DAY), DATE_ADD(CURDATE(), INTERVAL 270 DAY), ?, ?, ?, ?, ?, NOW(), NOW())",
+    { replacements: ['Session principale E2E', 'ouverte', anneeAcademiqueId, null, 1], type: db.QueryTypes.INSERT }
   )
   const sessionId = typeof result === 'number' ? result : result.insertId
   console.log('[SEED] Session créée (id=%d)', sessionId)

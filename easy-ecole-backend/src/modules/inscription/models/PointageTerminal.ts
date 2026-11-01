@@ -7,7 +7,7 @@ export class PointageTerminal extends Model<InferAttributes<PointageTerminal>, I
   declare id: CreationOptional<number>
   declare serialNumber: string
   declare nom: string
-  /** IP locale du terminal (nullable : la pointeuse peut pousser via tunnel). */
+  /** IP locale ou hostname de tunnel inverse (nullable : la pointeuse peut pousser seule). */
   declare sourceIp: CreationOptional<string | null>
   /** SHA-256 hex du jeton secret du terminal ; null = auth par IP conservée. */
   declare deviceTokenHash: CreationOptional<string | null>
@@ -40,7 +40,7 @@ PointageTerminal.init({
     allowNull: false
   },
   sourceIp: {
-    type: DataTypes.STRING(45),
+    type: DataTypes.STRING(255),
     allowNull: true
   },
   deviceTokenHash: {

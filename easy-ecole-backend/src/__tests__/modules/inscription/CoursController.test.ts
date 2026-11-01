@@ -70,7 +70,7 @@ describe('getAllCours', () => {
   })
 
   it('should filter by enseignant.utilisateurId for EN role', async () => {
-    const req = mockRequest({ utilisateurRole: 'enseignant', utilisateurId: 5 } as any)
+    const req = mockRequest({ utilisateurRole: 'enseignant', utilisateurId: 5, etablissementId: 1 } as any)
     const res = mockResponse()
     ;(Cours.findAll as jest.Mock).mockResolvedValue([])
 
@@ -92,7 +92,7 @@ describe('getAllCours', () => {
   })
 
   it('should return all cours for SUPERVISEUR_GENERAL', async () => {
-    const req = mockRequest({ utilisateurRole: 'superviseur_general' } as any)
+    const req = mockRequest({ utilisateurRole: 'superviseur_general', etablissementId: 1 } as any)
     const res = mockResponse()
     const mockData = [{ id: 1 }]
     ;(Cours.findAll as jest.Mock).mockResolvedValue(mockData)
@@ -157,7 +157,7 @@ describe('getAllCours', () => {
 
 describe('getCours', () => {
   it('should return cours with full includes for AP/IN role', async () => {
-    const req = mockRequest({ params: { id: '1' }, utilisateurRole: 'apprenant' } as any)
+    const req = mockRequest({ params: { id: '1' }, utilisateurRole: 'apprenant', etablissementId: 1 } as any)
     const res = mockResponse()
     const mockData = { id: 1 }
     ;(Cours.findOne as jest.Mock).mockResolvedValue(mockData)
@@ -166,7 +166,7 @@ describe('getCours', () => {
 
     expect(Cours.findOne).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: '1' },
+        where: { id: '1', etablissementId: 1 },
         include: [
           'classe',
           'chapitresCours',
@@ -181,7 +181,7 @@ describe('getCours', () => {
   })
 
   it('should return course details for SUPERVISEUR_GENERAL', async () => {
-    const req = mockRequest({ params: { id: '1' }, utilisateurRole: 'superviseur_general' } as any)
+    const req = mockRequest({ params: { id: '1' }, utilisateurRole: 'superviseur_general', etablissementId: 1 } as any)
     const res = mockResponse()
     const mockData = { id: 1 }
     ;(Cours.findOne as jest.Mock).mockResolvedValue(mockData)
@@ -190,7 +190,7 @@ describe('getCours', () => {
 
     expect(Cours.findOne).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: '1' },
+        where: { id: '1', etablissementId: 1 },
         include: [
           'classe',
           'chapitresCours',
@@ -226,7 +226,7 @@ describe('createCours', () => {
   })
 
   it('should return 400 if duplicate {code, parcoursId} exists', async () => {
-    const req = mockRequest({ body: { code: 'C001', parcoursId: 1 }, utilisateurRole: 'admin' } as any)
+    const req = mockRequest({ body: { code: 'C001', parcoursId: 1 }, utilisateurRole: 'admin', etablissementId: 1 } as any)
     const res = mockResponse()
     ;(Cours.findOne as jest.Mock).mockResolvedValue({ id: 1 })
 
@@ -237,7 +237,7 @@ describe('createCours', () => {
   })
 
   it('should return 200 on successful creation', async () => {
-    const req = mockRequest({ body: { code: 'C002', parcoursId: 1 }, utilisateurRole: 'admin' } as any)
+    const req = mockRequest({ body: { code: 'C002', parcoursId: 1 }, utilisateurRole: 'admin', etablissementId: 1 } as any)
     const res = mockResponse()
     ;(Cours.findOne as jest.Mock).mockResolvedValue(null)
     ;(Cours.create as jest.Mock).mockResolvedValue({ id: 1 })

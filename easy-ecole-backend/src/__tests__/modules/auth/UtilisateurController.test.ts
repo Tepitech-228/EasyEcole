@@ -6,7 +6,13 @@ jest.mock('../../../core/helpers/DatabaseConnection', () => ({
     getInstance: jest.fn().mockReturnValue({
       sequelize: {
         query: jest.fn().mockResolvedValue([{}, []]),
-        transaction: jest.fn().mockImplementation((fn: any) => fn({})),
+        transaction: jest.fn().mockImplementation((fn?: any) => {
+          const transaction = {
+            commit: jest.fn().mockResolvedValue(undefined),
+            rollback: jest.fn().mockResolvedValue(undefined),
+          }
+          return typeof fn === 'function' ? fn(transaction) : Promise.resolve(transaction)
+        }),
       },
     }),
   },
@@ -17,11 +23,13 @@ jest.mock('../../../modules/auth/models/Utilisateur', () => {
   const mockFindAll = jest.fn()
   const mockFindByPk = jest.fn()
   const mockCount = jest.fn()
+  const mockCreate = jest.fn()
   const MockUtilisateur: any = jest.fn()
   MockUtilisateur.findOne = mockFindOne
   MockUtilisateur.findAll = mockFindAll
   MockUtilisateur.findByPk = mockFindByPk
   MockUtilisateur.count = mockCount
+  MockUtilisateur.create = mockCreate
 
   MockUtilisateur.associations = {
     apprenant: 'apprenant',
@@ -53,8 +61,10 @@ jest.mock('../../../modules/auth/models/SiteUtilisateur', () => ({
 }))
 
 const { Utilisateur } = require('../../../modules/auth/models/Utilisateur')
+const { PersonnelAdministratif } = require('../../../modules/auth/models/PersonnelAdministratif')
 const { Etablissement } = require('../../../modules/etablissement/models/Etablissement')
 const { SiteUtilisateur } = require('../../../modules/auth/models/SiteUtilisateur')
+const { DatabaseConnection } = require('../../../core/helpers/DatabaseConnection')
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -176,6 +186,66 @@ describe('UtilisateurController.adminCreateUtilisateur site scope', () => {
 
     expect(res.status).toHaveBeenCalledWith(403)
     expect(Etablissement.findAll).not.toHaveBeenCalled()
+  })
+
+  it('autorise un rôle central sans site de rattachement', async () => {
+    const req = mockRequest({
+      utilisateurRole: 'admin',
+      utilisateurId: 12,
+      body: {
+        nom: 'Central',
+        prenoms: 'User',
+        email: 'central@example.com',
+        identifiant: 'central-user',
+        motDePasse: 'secret123',
+        role: 'admin',
+        siteIds: [],
+      },
+      file: { filename: 'photo.jpg', path: 'public/auth/profiles/photo.jpg' },
+    } as any)
+    const res = mockResponse()
+    ;(Utilisateur.findOne as jest.Mock).mockResolvedValue(null)
+    ;(Utilisateur.create as jest.Mock).mockResolvedValueOnce({ id: 50, nom: 'Central' })
+
+    await UtilisateurController.adminCreateUtilisateur(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(201)
+    expect(SiteUtilisateur.bulkCreate).not.toHaveBeenCalled()
+  })
+
+  it('annule la création du compte quand le profil personnel est en conflit CNI', async () => {
+    const req = mockRequest({
+      utilisateurRole: 'admin',
+      utilisateurId: 12,
+      body: {
+        nom: 'Agent',
+        prenoms: 'Test',
+        email: 'agent@example.com',
+        identifiant: 'agent-test',
+        motDePasse: 'secret123',
+        role: 'personnel_administratif',
+        siteIds: [3],
+        matricule: 'ETB-ADM-ST-0001',
+      },
+      file: { filename: 'photo.jpg', path: 'public/auth/profiles/photo.jpg' },
+    } as any)
+    const res = mockResponse()
+    ;(Utilisateur.findOne as jest.Mock).mockResolvedValue(null)
+    ;(Etablissement.findAll as jest.Mock).mockResolvedValue([{ id: 3 }])
+    ;(Utilisateur.create as jest.Mock).mockResolvedValueOnce({ id: 51, nom: 'Agent' })
+    ;(PersonnelAdministratif.create as jest.Mock).mockRejectedValueOnce({
+      name: 'SequelizeUniqueConstraintError',
+      errors: [{ path: 'cni' }],
+      parent: { code: 'ER_DUP_ENTRY' },
+    })
+
+    await UtilisateurController.adminCreateUtilisateur(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(409)
+    expect(PersonnelAdministratif.create).toHaveBeenCalledTimes(1)
+    const transaction = await (DatabaseConnection.getInstance().sequelize.transaction as jest.Mock).mock.results[0].value
+    expect(transaction.rollback).toHaveBeenCalled()
+    expect(transaction.commit).not.toHaveBeenCalled()
   })
 })
 

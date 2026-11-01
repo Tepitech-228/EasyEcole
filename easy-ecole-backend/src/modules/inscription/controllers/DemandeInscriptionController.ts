@@ -674,6 +674,19 @@ export default class DemandeInscriptionController {
     }
 
     static async validerDemandeInscription(req: Request, res: Response): Promise<Response | null> {
+        try {
+            return await DemandeInscriptionController.validerDemandeInscriptionInterne(req, res)
+        } catch (error: any) {
+            console.error('[validerDemandeInscription]', error)
+            if (res.headersSent) return null
+            return res.status(500).json({
+                success: false,
+                message: "Erreur lors de la validation de la demande d'inscription. Veuillez réessayer ou contacter l'administration."
+            })
+        }
+    }
+
+    private static async validerDemandeInscriptionInterne(req: Request, res: Response): Promise<Response | null> {
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
             return res.status(403).json({ success: false })
         }
@@ -716,13 +729,33 @@ export default class DemandeInscriptionController {
         // Vérifier documents uploadés
         const dossiersRequis = demandeInscription.session?.dossiersInscription || []
         const dossiersUploades = demandeInscription.dossiersDemande || []
-        if (dossiersRequis.length > 0 && dossiersUploades.length != dossiersRequis.length) {
-            return res.status(400).json({ success: false, message: "Tous les documents requis doivent être téléversés" })
+        const dossiersRequisIds = new Set(dossiersRequis.map(dossier => Number(dossier.id)))
+        const dossiersUploadesIds = new Set(dossiersUploades.map(dossier => Number(dossier.dossierId)))
+        const dossiersManquants = [...dossiersRequisIds].filter(id => !dossiersUploadesIds.has(id))
+        if (dossiersManquants.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: `Des documents requis sont manquants (${dossiersManquants.length})`
+            })
         }
 
         // Vérifier préinscription validée
         if (!demandeInscription.preInscription || demandeInscription.preInscription.statut != EtatPreInscription.VALIDE) {
             return res.status(400).json({ success: false, message: "La préinscription doit être validée" })
+        }
+
+        const cursusExistant = await CursusApprenant.findOne({
+            where: { demandeInscriptionId: demandeInscription.id }
+        })
+        if (cursusExistant
+            && demandeInscription.matricule
+            && /^[0-9]+-[A-Z]+[0-9]?[JS]-[0-9]{2}-[A-Z]+$/.test(demandeInscription.matricule)) {
+            const dossierExistant = await DossierEtudiant.findOne({
+                where: { matricule: demandeInscription.matricule }
+            })
+            if (dossierExistant) {
+                return res.status(409).json({ success: false, message: "Cette demande d'inscription a déjà été validée" })
+            }
         }
 
         // Vérifier cours choisis
@@ -811,37 +844,53 @@ export default class DemandeInscriptionController {
                 ? await Classe.findByPk(req.body.cursusApprenant.classeId)
                 : null
             const anneeLibelle = demandeInscription.session?.anneeAcademique?.libelle || new Date().getFullYear().toString()
-            
-            const ordre = savedCursus.classeId && savedCursus.anneeAcademiqueId
-                ? await CursusApprenant.count({ where: { classeId: savedCursus.classeId, anneeAcademiqueId: savedCursus.anneeAcademiqueId } }) + 1
-                : await DossierEtudiant.prochainOrdreMatricule()
-            
+
             const etablissement = demandeInscription.etablissementId
                 ? await Etablissement.findByPk(demandeInscription.etablissementId)
                 : null
-            
-            const matriculeFinal = IDGenerator.getInstance().generateMatriculeFinal(
-                parcoursChoisiFinal?.parcours!,
-                anneeLibelle,
-                classeMatricule,
-                ordre,
-                etablissement,
-                'jour'
-            )
-            await demandeInscription.update({ matricule: matriculeFinal })
 
-            const codeQR = JSON.stringify({ matricule: matriculeFinal, utilisateurId: demandeInscription.utilisateurId })
-            const dossierEtudiant = new DossierEtudiant()
-            dossierEtudiant.utilisateurId = demandeInscription.utilisateurId
-            dossierEtudiant.etablissementId = savedCursus.etablissementId
-            dossierEtudiant.matricule = matriculeFinal
-            dossierEtudiant.codeQR = codeQR
-            dossierEtudiant.statut = 'actif'
-            dossierEtudiant.fraisScolarite = req.body.dossierEtudiant?.fraisScolarite ?? fraisTotal
-            dossierEtudiant.modePaiement = req.body.dossierEtudiant?.modePaiement ?? 'mensuel'
-            dossierEtudiant.nbMensualites = req.body.dossierEtudiant?.nbMensualites ?? 10
-            dossierEtudiant.demarrageParcours = req.body.dossierEtudiant?.demarrageParcours ?? new Date()
-            await dossierEtudiant.save()
+            // Le matricule final est unique en base. En cas de validation
+            // concurrente, deux demandes peuvent calculer le même ordre :
+            // on réessaie avec l'ordre suivant sur conflit d'unicité.
+            let matriculeFinal = ''
+            let dossierEtudiant: DossierEtudiant | null = null
+            for (let tentative = 1; tentative <= 3; tentative++) {
+                const ordre = await DossierEtudiant.prochainOrdreMatricule()
+                matriculeFinal = IDGenerator.getInstance().generateMatriculeFinal(
+                    parcoursChoisiFinal?.parcours!,
+                    anneeLibelle,
+                    classeMatricule,
+                    ordre,
+                    etablissement,
+                    'jour'
+                )
+                await demandeInscription.update({ matricule: matriculeFinal })
+
+                const codeQR = JSON.stringify({ matricule: matriculeFinal, utilisateurId: demandeInscription.utilisateurId })
+                const candidat = new DossierEtudiant()
+                candidat.utilisateurId = demandeInscription.utilisateurId
+                candidat.etablissementId = savedCursus.etablissementId
+                candidat.matricule = matriculeFinal
+                candidat.codeQR = codeQR
+                candidat.statut = 'actif'
+                candidat.fraisScolarite = req.body.dossierEtudiant?.fraisScolarite ?? fraisTotal
+                candidat.modePaiement = req.body.dossierEtudiant?.modePaiement ?? 'mensuel'
+                candidat.nbMensualites = req.body.dossierEtudiant?.nbMensualites ?? 10
+                candidat.demarrageParcours = req.body.dossierEtudiant?.demarrageParcours ?? new Date()
+
+                try {
+                    await candidat.save()
+                    dossierEtudiant = candidat
+                    break
+                } catch (error: any) {
+                    const estConflit = error?.name === 'SequelizeUniqueConstraintError'
+                        || error?.parent?.code === 'ER_DUP_ENTRY'
+                    if (!estConflit || tentative === 3) throw error
+                }
+            }
+            if (!dossierEtudiant) {
+                throw new Error('Impossible de générer un matricule unique après 3 tentatives')
+            }
             // Enrôlement facial systématique : indépendant du consentement facultatif.
             if (savedCursus.etablissementId) {
                 try {
@@ -867,7 +916,7 @@ export default class DemandeInscriptionController {
                 prenom: user.prenoms,
                 matricule: matriculeFinal,
                 dateNaissance: String(apprenant?.dateNaissance || ''),
-                photo: dossierEtudiant.photo || undefined,
+                photo: apprenant?.photo || dossierEtudiant.photo || undefined,
                 classe: savedCursus.classe?.libelle || req.body.cursusApprenant?.classeLibelle || '',
                 filiere: parcoursChoisiFinal?.parcours?.titre || '',
                 anneeAcademique: savedCursus.anneeAcademique?.libelle || req.body.cursusApprenant?.anneeAcademiqueLibelle || '',

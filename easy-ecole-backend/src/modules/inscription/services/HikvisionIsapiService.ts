@@ -1,4 +1,5 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
+import { isIP } from "net";
 import * as fs from "fs/promises";
 import * as os from "os";
 import * as path from "path";
@@ -73,13 +74,30 @@ function decryptPassword(encryptedValue: string): string {
     ]).toString("utf8");
 }
 
-function terminalUrl(terminal: PointageTerminal, path: string): URL {
-    // Les terminaux pilotés à distance (tunnel) n'ont pas d'adresse directe :
-    // l'ISAPI entrant/sortant reste réservé aux terminaux joignables sur le LAN.
-    if (!terminal.sourceIp) throw new Error("Ce terminal n’a pas d’adresse IP locale configurée pour ISAPI.");
+export function buildTerminalUrl(terminal: PointageTerminal, path: string): URL {
+    // L'adresse peut etre une IP du LAN ou un hostname de tunnel inverse
+    // (Cloudflare Tunnel, VPN + DNS interne) pour un terminal distant.
+    if (!terminal.sourceIp) throw new Error("Ce terminal n’a pas d’adresse (IP ou hostname) configurée pour ISAPI.");
+    const address = terminal.sourceIp.trim();
     const scheme = terminal.hikvisionHttps ? "https" : "http";
-    const host = terminal.sourceIp.includes(":") ? `[${terminal.sourceIp}]` : terminal.sourceIp;
-    return new URL(`${scheme}://${host}:${terminal.hikvisionPort}${path}`);
+    const host = isIP(address) === 6 ? `[${address}]` : address;
+    const port = terminal.hikvisionPort ?? (terminal.hikvisionHttps ? 443 : 80);
+    return new URL(`${scheme}://${host}:${port}${path}`);
+}
+
+/**
+ * Cloudflare Access peut proteger le hostname du tunnel inverse. Le jeton de
+ * service n'est envoye qu'aux cibles non-IP pour ne pas le divulguer aux
+ * pointeuses du LAN. Variables optionnelles :
+ * HIKVISION_TUNNEL_ACCESS_CLIENT_ID / HIKVISION_TUNNEL_ACCESS_CLIENT_SECRET.
+ */
+export function getTunnelAccessHeaders(url: URL): string[] {
+    const hostname = url.hostname.replace(/^\[|\]$/g, "");
+    if (isIP(hostname) !== 0) return [];
+    const clientId = process.env.HIKVISION_TUNNEL_ACCESS_CLIENT_ID?.trim();
+    const clientSecret = process.env.HIKVISION_TUNNEL_ACCESS_CLIENT_SECRET?.trim();
+    if (!clientId || !clientSecret) return [];
+    return ["-H", `CF-Access-Client-Id: ${clientId}`, "-H", `CF-Access-Client-Secret: ${clientSecret}`];
 }
 
 interface CurlResponse {
@@ -119,12 +137,13 @@ async function requestWithDigest(
     body?: string | FormData,
     contentType?: string
 ): Promise<CurlResponse> {
-    const url = terminalUrl(terminal, path);
+    const url = buildTerminalUrl(terminal, path);
     const username = terminal.hikvisionUsername;
     const encryptedPassword = terminal.hikvisionPasswordEncrypted;
     if (!username || !encryptedPassword) throw new Error("Hikvision terminal credentials are not configured.");
     const password = decryptPassword(encryptedPassword);
     const args = ["--digest", "-u", `${username}:${password}`, "-X", method, "--connect-timeout", "10", "--max-time", "25"];
+    args.push(...getTunnelAccessHeaders(url));
     // Les terminaux Hikvision exposent un certificat auto-signe : sans -k, curl
     // echoue en verification TLS et l'API renvoie un 502 trompeur.
     if (terminal.hikvisionHttps) args.push("-k");
@@ -137,6 +156,13 @@ async function requestWithDigest(
     args.push(url.toString());
     const result = await runCurl(args, 30000);
     if (result.status === 401) throw new Error("Hikvision rejected the HTTP Digest credentials.");
+    if (result.status === 0) {
+        const detail = result.body.trim().replace(/\s+/g, " ").slice(0, 180);
+        throw new Error(
+            `Terminal Hikvision injoignable à l’adresse ${url.hostname}:${url.port || (terminal.hikvisionHttps ? "443" : "80")}.` +
+            (detail ? ` (${detail})` : " Vérifiez l’adresse, le port et le tunnel.")
+        );
+    }
     return result;
 }
 
@@ -261,9 +287,10 @@ export default class HikvisionIsapiService {
         const encryptedPassword = terminal.hikvisionPasswordEncrypted;
         if (!username || !encryptedPassword) throw new Error("Hikvision terminal credentials are not configured.");
 
-        const url = terminalUrl(terminal, "/ISAPI/Event/notification/alertStream");
+        const url = buildTerminalUrl(terminal, "/ISAPI/Event/notification/alertStream");
         const args = ["--digest", "-u", `${username}:${decryptPassword(encryptedPassword)}`, "-N", "-i", "-sS", "--fail", "--connect-timeout", "10"];
         if (terminal.hikvisionHttps) args.push("-k");
+        args.push(...getTunnelAccessHeaders(url));
         args.push(url.toString());
 
         const child = spawn(getCurlExecutable(), args, { windowsHide: true });
@@ -364,7 +391,7 @@ export default class HikvisionIsapiService {
                 }
             }
 
-            const faceUrl = terminalUrl(terminal, "/ISAPI/Intelligent/FDLib/FaceDataRecord?format=json");
+            const faceUrl = buildTerminalUrl(terminal, "/ISAPI/Intelligent/FDLib/FaceDataRecord?format=json");
             const username = terminal.hikvisionUsername!;
             const password = decryptPassword(terminal.hikvisionPasswordEncrypted!);
             const personJson = JSON.stringify({
@@ -389,6 +416,7 @@ export default class HikvisionIsapiService {
                         "-F", `image=@${imagePath};type=${contentType}`,
                         "--connect-timeout", "10",
                         "--max-time", "25",
+                        ...getTunnelAccessHeaders(faceUrl),
                         faceUrl.toString()
                     ], 30000);
                     return { curlResult, faceResult: await isSuccessfulHikvisionResponse(curlResult) };

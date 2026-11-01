@@ -1,0 +1,345 @@
+================================================================================
+PROCEDURE - POINTEUSES HIKVISION DISTANTES
+Cloudflare Tunnel + EasyEcole
+================================================================================
+
+OBJECTIF
+--------
+Permettre au serveur EasyEcole (Lome) de joindre les pointeuses Hikvision
+installees dans des ecoles distantes, afin d'envoyer les photos / visages
+via ISAPI.
+
+IMPORTANT - DEUX FLUX DIFFERENTS
+--------------------------------
+1) Pointages (la pointeuse remonte vers EasyEcole)
+   Pointeuse -> Internet -> https://<domaine>/api/hikvision/event/<jeton>
+   Ce flux fonctionne deja et ne depend PAS du tunnel.
+
+2) Photos / visages (EasyEcole remonte vers la pointeuse)
+   Backend EasyEcole -> Cloudflare Tunnel -> pointeuse (ISAPI)
+   C'est CE flux que la procedure met en place.
+
+Sans tunnel, le backend ne peut pas joindre une pointeuse d'un autre reseau.
+C'est pour cela que l'enrolement fonctionne en local mais pas a distance.
+
+ORDRE DES OPERATIONS
+--------------------
+Partie 1 (Cloudflare) -> Partie 2 (mini PC Windows) -> Partie 3 (EasyEcole)
+
+Remplacez partout :
+  KARA             par le nom du site
+  notre-domaine.com par votre domaine reel
+  192.168.1.201    par l'IP locale reelle de la pointeuse
+
+
+================================================================================
+PARTIE 1 - DANS LE DASHBOARD CLOUDFLARE
+================================================================================
+
+A faire une fois par site, par la personne qui a acces au compte Cloudflare.
+
+1.1 CREER LE TUNNEL
+-------------------
+Zero Trust > Networks > Tunnels > Create a tunnel
+  - Type : Cloudflared
+  - Nom  : pointeuse-KARA
+  - Copier le TOKEN affiche et le transmettre a la personne qui installe
+    le mini PC. Ce token sert a l'etape 2.4.
+
+1.2 CREER LES HOSTNAMES PUBLICS
+-------------------------------
+Dans le tunnel, onglet "Public Hostname" > Add a public hostname :
+
+  Subdomain : pointeuse1-kara
+  Domain    : notre-domaine.com
+  Service   : http://192.168.1.201:80
+
+  Subdomain : pointeuse2-kara
+  Domain    : notre-domaine.com
+  Service   : http://192.168.1.202:80
+
+Resultat :
+  https://pointeuse1-kara.notre-domaine.com  ->  http://192.168.1.201:80
+  https://pointeuse2-kara.notre-domaine.com  ->  http://192.168.1.202:80
+
+Note : le tunnel fait le HTTPS cote Internet. En interne, la pointeuse
+reste en HTTP port 80. C'est normal.
+
+1.3 CREER LE SERVICE TOKEN (protection Access)
+----------------------------------------------
+Zero Trust > Access > Service Auth > Service Tokens > Create Service Token
+  - Nom : easyecole-backend
+  - Copier immediatement :
+      CLIENT ID      (se termine par .access)
+      CLIENT SECRET  (affiche une seule fois, non recuperable)
+
+Ces deux valeurs seront mises dans EasyEcole (Partie 3).
+
+1.4 CREER L'APPLICATION ACCESS
+------------------------------
+Zero Trust > Access > Applications > Add an application > Self-hosted
+
+  Application 1 :
+    Domaine : pointeuse1-kara.notre-domaine.com
+    Policy 1 : Action = Service Auth
+               Include = Service Token "easyecole-backend"
+    Policy 2 (optionnelle) : Action = Allow
+               Include = emails des admins autorises a ouvrir la page
+                         dans un navigateur
+
+  Application 2 : idem pour pointeuse2-kara.notre-domaine.com
+
+Sans Access, l'ISAPI de la pointeuse devient accessible publiquement.
+Access + Service Token est fortement recommande.
+
+Si vous choisissez de NE PAS activer Access : laissez vides les variables
+HIKVISION_TUNNEL_ACCESS_CLIENT_ID et HIKVISION_TUNNEL_ACCESS_CLIENT_SECRET
+a la Partie 3, et ne remplissez pas les Policies ci-dessus.
+
+
+================================================================================
+PARTIE 2 - SUR LE MINI PC WINDOWS (SITE DISTANT)
+================================================================================
+
+A faire sur place, par l'equipe du site.
+Le TOKEN de l'etape 1.1 est necessaire pour l'etape 2.4.
+
+2.1 INSTALLATION PHYSIQUE
+-------------------------
+  - Brancher le mini PC en Ethernet sur la meme box que les pointeuses.
+  - Le placer dans la salle des surveillants, branche sur secteur.
+  - Il ne doit jamais etre eteint.
+
+2.2 RELEVER LES IP DES POINTEUSES
+---------------------------------
+  - Utiliser le SADP Tool.
+  - Noter les IP (ex. 192.168.1.201 et 192.168.1.202).
+  - Les fixer en reservation DHCP dans la box.
+
+2.3 INSTALLER CLOUDFLARED
+-------------------------
+Ouvrir PowerShell EN ADMINISTRATEUR, puis :
+
+  winget install --id Cloudflare.cloudflared -e
+
+Si winget est indisponible, telecharger le MSI ici :
+  https://github.com/cloudflare/cloudflared/releases
+
+2.4 INSTALLER LE SERVICE AVEC LE TOKEN
+--------------------------------------
+Toujours en PowerShell admin :
+
+  cloudflared service install <TOKEN>
+
+Le service demarre automatiquement et redemarre au boot.
+Aucun fichier config.yml a creer avec cette methode : la configuration
+vient du dashboard Cloudflare.
+
+2.5 EMPECHER LA MISE EN VEILLE
+------------------------------
+Parametres Windows > Systeme > Alimentation > Veille : Jamais
+
+2.6 VERIFIER
+------------
+PowerShell :
+
+  Get-Service cloudflared
+
+Doit afficher : Status = Running
+
+Le tunnel doit aussi apparaitre "HEALTHY" dans
+Zero Trust > Networks > Tunnels.
+
+
+================================================================================
+PARTIE 3 - SUR LE SERVEUR EASYECOLE (LOME)
+================================================================================
+
+3.1 VALEURS A METTRE DANS LES VARIABLES D'ENVIRONNEMENT
+-------------------------------------------------------
+  HIKVISION_TUNNEL_ACCESS_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxx.access
+  HIKVISION_TUNNEL_ACCESS_CLIENT_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  HIKVISION_TUNNEL_HOSTS=pointeuse1-kara.notre-domaine.com,pointeuse2-kara.notre-domaine.com
+
+Details :
+  - CLIENT_ID     = valeur de l'etape 1.3 (se termine par .access)
+  - CLIENT_SECRET = valeur de l'etape 1.3 (secret affiche une seule fois)
+  - HIKVISION_TUNNEL_HOSTS = liste des hostnames exacts de l'etape 1.2,
+    separes par des virgules, sans https://, sans espaces.
+    Cette variable est optionnelle. Si elle est vide, tout hostname
+    valide est accepte.
+
+Regles de saisie :
+  - Pas de guillemets.
+  - Pas d'espace autour du signe =.
+  - Ne pas ajouter https:// devant les hostnames.
+  - Si Cloudflare Access n'est PAS active : laisser CLIENT_ID et
+    CLIENT_SECRET vides.
+
+3.2 OU METTRE CES VARIABLES
+---------------------------
+A) Dans Dokploy > Environment du projet (ou dans le fichier .env.prod
+   utilise par le deploiement).
+
+B) ATTENTION - ETAPE OBLIGATOIRE :
+   Les fichiers docker-compose.yml et docker-compose.prod.yml ne transmettent
+   PAS ces variables au conteneur backend. Il faut les ajouter dans le bloc
+   "environment:" du service "backend" :
+
+      HIKVISION_TUNNEL_ACCESS_CLIENT_ID: ${HIKVISION_TUNNEL_ACCESS_CLIENT_ID:-}
+      HIKVISION_TUNNEL_ACCESS_CLIENT_SECRET: ${HIKVISION_TUNNEL_ACCESS_CLIENT_SECRET:-}
+      HIKVISION_TUNNEL_HOSTS: ${HIKVISION_TUNNEL_HOSTS:-}
+
+   Sans cette etape, le backend ne voit pas les variables et Cloudflare
+   Access renvoie sa page de login au lieu du XML ISAPI.
+
+   Le service "worker" n'a pas besoin de ces variables.
+
+3.3 REDEMARRER ET VERIFIER QUE LE CONTENEUR LES VOIT
+----------------------------------------------------
+  docker compose -f docker-compose.prod.yml up -d backend
+  docker exec easyecole-backend printenv | grep HIKVISION_TUNNEL
+
+Doit afficher les 3 lignes avec vos valeurs.
+
+3.4 ENREGISTRER LE TERMINAL DANS EASYECOLE
+------------------------------------------
+Pointage > Configuration des terminaux :
+
+  Adresse IP ou hostname : pointeuse1-kara.notre-domaine.com
+                           (sans https://, sans /, sans port)
+  Port ISAPI             : 443
+  Utiliser HTTPS         : coche
+  Compte / mot de passe  : compte ISAPI du terminal avec droits AccessControl
+                           (pas un compte restreint)
+  Site                   : le site correspondant
+
+Puis cliquer sur "Tester".
+Attendu : "Connexion ISAPI authentifiee".
+
+Note importante : ces en-tetes Cloudflare ne sont envoyes qu'aux hostnames,
+jamais aux IP locales. Les pointeuses du LAN ne sont donc pas impactees.
+
+3.5 RELANCER L'ENROLEMENT DES PHOTOS
+------------------------------------
+Les profils deja enroles ("termine") ne sont pas renvoyes automatiquement.
+
+  - Desactiver puis reactiver le terminal dans EasyEcole, OU
+  - changer puis remettre la bonne valeur d'adresse pour forcer la remise
+    en file des enrolements non termines.
+
+Verifier ensuite en base :
+
+  SELECT id, terminalId, utilisateurId, employeeNo, statut,
+         tentatives, prochaineTentativeAt, derniereErreur
+  FROM ins_hikvision_enrollments
+  WHERE terminalId = <ID_DU_TERMINAL>
+  ORDER BY id DESC;
+
+Attendu a terme : statut = 'termine' et derniereErreur = NULL.
+
+
+================================================================================
+PARTIE 4 - TEST FINAL
+================================================================================
+
+Le seul test qui prouve que le flux EasyEcole -> pointeuse fonctionne est
+un appel ISAPI DEPUIS LE CONTENEUR BACKEND (pas depuis un navigateur,
+pas depuis l'hote Docker).
+
+4.1 AVEC CLOUDFLARE ACCESS ACTIVE
+---------------------------------
+  docker exec -it easyecole-backend curl -k --digest -u <USER>:<PASS> \
+    -H "CF-Access-Client-Id: <CLIENT_ID>" \
+    -H "CF-Access-Client-Secret: <CLIENT_SECRET>" \
+    -s -o /dev/null -w "%{http_code}\n" \
+    https://pointeuse1-kara.notre-domaine.com/ISAPI/System/deviceInfo
+
+4.2 SANS CLOUDFLARE ACCESS
+--------------------------
+  docker exec -it easyecole-backend curl -k --digest -u <USER>:<PASS> \
+    -s -o /dev/null -w "%{http_code}\n" \
+    https://pointeuse1-kara.notre-domaine.com/ISAPI/System/deviceInfo
+
+Resultat attendu : 200
+
+
+================================================================================
+PARTIE 5 - DEPANNAGE
+================================================================================
+
+200 = OK, le tunnel et l'authentification ISAPI fonctionnent.
+
+403 = Service Token absent, faux, ou non autorise dans la policy Access.
+      Verifier l'etape 1.3, la policy Service Auth (1.4) et les variables
+      dans le conteneur (3.3).
+
+502 / 1033 / timeout = cloudflared n'est pas en marche sur le mini PC,
+      ou l'IP interne de la pointeuse est fausse / pointeuse eteinte.
+      Verifier Get-Service cloudflared et le Public Hostname (1.2).
+
+Page HTML de login Cloudflare Access = le backend n'envoie pas les en-tetes
+      du Service Token. Les variables ne sont pas dans le conteneur
+      (revoir 3.2 et 3.3).
+
+Page de login Hikvision dans le navigateur = normal si Access est active
+      et que l'email est autorise par la policy Allow. Cela ne prouve pas
+      que les droits AccessControl de la pointeuse sont suffisants.
+
+"Terminal Hikvision injoignable" dans les logs backend =
+      verifier derniereErreur dans ins_hikvision_enrollments, puis refaire
+      le test 4.1.
+
+"Le compte ISAPI est authentifie mais n'a pas les droits AccessControl" =
+      utiliser un compte administrateur de la pointeuse pour l'enrolement.
+
+
+================================================================================
+ANNEXE - SI LE DASHBOARD CLOUDFLARE EST INDISPONIBLE
+================================================================================
+
+Tout se fait alors sur le mini PC Windows, y compris la creation du tunnel.
+
+  cloudflared tunnel login
+  cloudflared tunnel create pointeuse-KARA
+  cloudflared tunnel route dns pointeuse-KARA pointeuse1-kara.notre-domaine.com
+
+Creer le fichier :
+  C:\Windows\System32\config\systemprofile\.cloudflared\config.yml
+
+Attention : c'est le profil Local System, PAS le profil de votre utilisateur.
+Le service Windows ne lit pas C:\Users\VOTRE_USER\.cloudflared\config.yml.
+
+Contenu :
+
+  tunnel: pointeuse-KARA
+  credentials-file: C:\Windows\System32\config\systemprofile\.cloudflared\<ID_DU_TUNNEL>.json
+  ingress:
+    - hostname: pointeuse1-kara.notre-domaine.com
+      service: http://192.168.1.201:80
+    - hostname: pointeuse2-kara.notre-domaine.com
+      service: http://192.168.1.202:80
+    - service: http_status:404
+
+Puis :
+
+  cloudflared service install
+
+
+================================================================================
+INFORMATIONS A REMONTER A LOME
+================================================================================
+
+Pour chaque site :
+
+  Nom du site                  : ........................................
+  IP locale pointeuse 1        : ........................................
+  IP locale pointeuse 2        : ........................................
+  Hostname public pointeuse 1  : ........................................
+  Hostname public pointeuse 2  : ........................................
+  Service Token CLIENT ID      : ........................................
+  Service Token CLIENT SECRET  : ........................................ (canal securise)
+  Utiliser Cloudflare Access   : OUI / NON
+
+Tant que ces informations ne sont pas remontees, la Partie 3 ne peut pas
+etre finalisee.

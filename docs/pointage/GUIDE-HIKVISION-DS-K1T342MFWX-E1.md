@@ -7,11 +7,16 @@ Ce guide décrit la connexion ISAPI sortante d’EasyEcole vers le terminal. Le 
 - Changez le mot de passe administrateur partagé dans la conversation avant de connecter l'appareil.
 - Ne copiez aucun mot de passe ou secret dans ce guide, dans Git ou dans un ticket.
 - Gardez le terminal sur un réseau privé. N'exposez ni son interface d'administration ni son port ISAPI à Internet.
-- Réservez une adresse IP au terminal et autorisez le serveur EasyEcole à l’atteindre sur le port ISAPI configuré (80 ou 443).
+- Réservez une adresse IP au terminal et autorisez le serveur EasyEcole à l’atteindre sur le port ISAPI configuré (80 ou 443), directement, par VPN ou via un hostname de tunnel inverse protégé.
 
 ## Fonctionnement
 
-Le backend ouvre une connexion authentifiée vers `http(s)://<IP_DU_TERMINAL>:<PORT>/ISAPI/Event/notification/alertStream`. Il lit le flux multipart, extrait les événements JSON et les transmet au traitement de pointage existant. L’endpoint HTTP `/api/hikvision/event` reste disponible pour compatibilité, mais n’est pas requis pour ce mode.
+Deux modes sont pris en charge :
+
+- **Push** : le terminal envoie ses événements à `https://<domaine>/api/hikvision/event/<jeton>`. C’est le mode recommandé pour un site distant sans VPN.
+- **alertStream** : le backend ouvre une connexion authentifiée vers `http(s)://<ADRESSE_DU_TERMINAL>:<PORT>/ISAPI/Event/notification/alertStream`, lit le flux multipart, extrait les événements JSON et les transmet au traitement de pointage existant.
+
+Le jeton du terminal est généré à l’enregistrement et affiché une seule fois. L’adresse ISAPI peut être une IP du LAN ou un hostname de tunnel inverse (Cloudflare Tunnel, VPN + DNS interne) pour l’enrôlement des visages.
 
 ```json
 {
@@ -35,15 +40,15 @@ Chaque événement est dédupliqué et enregistré dans la file durable avant so
 ## Préparer le terminal et le réseau
 
 1. Relever le modèle complet, le numéro de série, la version firmware et l'adresse IP réservée.
-2. Connecter le terminal et le serveur par le même LAN ou par un VPN routé. Pour un site distant, le backend (y compris son conteneur Docker) doit pouvoir joindre l’IP du terminal sur le port ISAPI.
-3. N’activez pas de destination HTTP Push pour ce mode : l’API EasyEcole s’abonne elle-même à `alertStream`.
-4. N’ouvrez aucun port entrant vers le terminal depuis Internet. Autorisez seulement le trafic ISAPI depuis le réseau serveur/VPN.
+2. Pour `alertStream` ou l’enrôlement, connecter le terminal et le serveur par le même LAN, un VPN routé ou un tunnel inverse. Le backend (y compris son conteneur Docker) doit pouvoir joindre l’adresse du terminal sur le port ISAPI.
+3. Pour le Push, configurer sur le terminal l’URL `https://<domaine>/api/hikvision/event/<jeton>` (HTTP Listening en HTTPS/443). Pour `alertStream`, ne pas activer de destination Push.
+4. N’ouvrez aucun port entrant vers le terminal depuis Internet. Autorisez seulement le trafic ISAPI depuis le réseau serveur/VPN ou via le tunnel inverse protégé.
 
 ## Préparer le backend
 
-1. Depuis `easy-ecole-backend`, appliquer les migrations : `npm run db:migrate`. La migration `046_hikvision_minmoe_isapi.sql` ajoute les paramètres Hikvision, `048_hikvision_push_events.sql` autorise le statut durable `en_attente` et `049_hikvision_enrollment.sql` prépare la file d'enrôlement consenti.
-2. Dans l'écran **Pointage > Configuration des terminaux**, enregistrer le terminal en protocole Hikvision avec son adresse joignable, son site et ses informations ISAPI. Le numéro de série doit être celui de l'appareil.
-3. Pour un terminal distant, établir une route VPN entre le réseau du conteneur backend et le réseau du terminal ; aucune variable `HIKVISION_CALLBACK_HOST` n’est nécessaire pour `alertStream`.
+1. Depuis `easy-ecole-backend`, appliquer les migrations : `npm run db:migrate`. Les migrations `046_hikvision_minmoe_isapi.sql`, `048_hikvision_push_events.sql` et `049_hikvision_enrollment.sql` préparent ISAPI, la file durable et l’enrôlement ; `055_pointage_terminaux_token.sql` ajoute le jeton Push et `056_pointage_terminaux_hostname.sql` autorise les hostnames de tunnel inverse.
+2. Dans l'écran **Pointage > Configuration des terminaux**, enregistrer le terminal en protocole Hikvision avec son adresse joignable (IP ou hostname), son site et ses informations ISAPI. Le numéro de série doit être celui de l'appareil.
+3. Pour un terminal distant, établir une route VPN ou un tunnel inverse entre le réseau du conteneur backend et le terminal. Pour un hostname protégé par Cloudflare Access, renseigner `HIKVISION_TUNNEL_ACCESS_CLIENT_ID` et `HIKVISION_TUNNEL_ACCESS_CLIENT_SECRET` ; `HIKVISION_TUNNEL_HOSTS` permet de restreindre les hostnames acceptés.
 4. Garder `ENCRYPTION_MASTER_KEY` configurée et stable pour les tests ISAPI. Les identifiants sont chiffrés en base et ne sont pas transmis au navigateur.
 5. Redémarrer le backend et vérifier les journaux `[Hikvision]` ainsi que l’établissement du flux `alertStream`.
 

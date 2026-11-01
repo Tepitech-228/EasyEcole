@@ -4,11 +4,16 @@ Ce guide est une checklist à emporter lors de l’installation d’un terminal 
 
 ## 1. Comprendre le trajet des événements
 
-Le backend EasyEcole ouvre une connexion ISAPI vers le terminal et lit son flux `alertStream`. Après une reconnaissance, l’événement suit le traitement de pointage existant puis est diffusé en temps réel :
+Deux modes coexistent :
+
+- **Push (recommandé pour un site distant)** : le terminal envoie chaque événement à `/api/hikvision/event/<jeton>` par HTTPS. Aucun flux entrant vers le terminal n’est requis pour les pointages.
+- **alertStream (LAN ou VPN)** : le backend EasyEcole ouvre une connexion ISAPI vers le terminal et lit son flux `alertStream`. Ce mode exige une route backend → terminal.
+
+Après une reconnaissance, l’événement suit le traitement de pointage existant puis est diffusé en temps réel :
 
 ```text
-Backend EasyEcole → ISAPI alertStream du terminal → base de données
-                                                  └→ page Pointage (Socket.IO)
+Terminal Hikvision → HTTPS /api/hikvision/event/<jeton> → base de données
+                                                        └→ page Pointage (Socket.IO)
 ```
 
 La page peut également afficher la **photo de profil déjà enregistrée dans EasyEcole** si elle est disponible. Il s’agit de la photo du dossier ou du profil associée au compte, pas d’une capture du visage prise à l’instant par le terminal. Le terminal et le navigateur doivent pouvoir charger le fichier image depuis le serveur EasyEcole.
@@ -19,7 +24,7 @@ Le flux utilisé par l’application est :
 http(s)://<IP_DU_TERMINAL>:<PORT_ISAPI>/ISAPI/Event/notification/alertStream
 ```
 
-Le backend doit pouvoir atteindre cette adresse. Aucune destination Push ni URL de callback n’est à saisir sur le terminal. L’endpoint `/api/hikvision/event` reste disponible pour compatibilité, mais n’est pas requis pour le flux `alertStream`.
+Cette URL `alertStream` doit être joignable depuis le backend. En mode Push, configurez plutôt sur le terminal l’URL `https://<domaine>/api/hikvision/event/<jeton>` (voir la section 2). L’enrôlement des visages reste une opération backend → terminal : il nécessite le VPN ou le tunnel inverse décrit ci-dessous.
 
 ## 2. Architecture réseau recommandée pour un site distant
 
@@ -31,7 +36,7 @@ Ne publiez pas les ports d’administration/ISAPI du terminal sur Internet et ne
 
 ### Limite réseau à valider avant l’installation
 
-Le champ **Adresse IP du terminal** sert d’hôte cible pour la connexion ISAPI sortante. Pour un site distant, cette adresse doit être routée depuis l’hôte Docker et le conteneur backend via le VPN. Le NAT peut masquer l’adresse source du serveur, mais il ne doit pas empêcher le chemin retour des paquets. Les reverse proxies HTTP de l’application ne participent pas à cette connexion.
+Le champ **Adresse IP ou hostname** sert d’hôte cible pour la connexion ISAPI sortante. Pour un site distant, cette adresse doit être routée depuis l’hôte Docker et le conteneur backend via le VPN, ou pointer vers un hostname de tunnel inverse. Le NAT peut masquer l’adresse source du serveur, mais il ne doit pas empêcher le chemin retour des paquets. Les reverse proxies HTTP de l’application ne participent pas à cette connexion.
 
 ### Configurer le VPN IPsec site-à-site pfSense
 
@@ -111,12 +116,28 @@ Le VPN peut être actif sur la passerelle ou l’hôte sans que le conteneur bac
 
 Ne publiez pas les ports ISAPI du terminal sur Internet. La configuration du tunnel et des routes relève de l’administrateur réseau ; le code applicatif ne peut pas créer cette connectivité à lui seul.
 
+#### Variante sans VPN site-à-site : tunnel inverse Cloudflare
+
+Si le site ne dispose pas de pfSense ou si le VPN site-à-site n’est pas disponible, un tunnel inverse Cloudflare peut relier le backend au terminal :
+
+1. Sur le réseau du site, installez `cloudflared` sur une machine toujours allumée (PC, Raspberry Pi ou serveur local).
+2. Créez un tunnel Cloudflare et une route publique, par exemple `pointeuse-site-a.esaecole.com`, vers `http://<IP_LAN_DU_TERMINAL>:80` (ou `https://...` si le terminal expose ISAPI en TLS).
+3. Dans EasyEcole, enregistrez le terminal avec :
+   - **Adresse IP ou hostname** : `pointeuse-site-a.esaecole.com` ;
+   - **Port ISAPI** : `443` ;
+   - **Utiliser HTTPS** : coché.
+4. Protégez le hostname avec **Cloudflare Access** et un jeton de service, puis renseignez `HIKVISION_TUNNEL_ACCESS_CLIENT_ID` et `HIKVISION_TUNNEL_ACCESS_CLIENT_SECRET` dans l’environnement du backend. Le backend envoie ces en-têtes uniquement vers les hostnames, jamais vers les IP du LAN.
+5. Optionnel : limitez les hostnames autorisés avec `HIKVISION_TUNNEL_HOSTS` (liste séparée par des virgules ; une entrée `pointeuses.esaecole.com` accepte aussi ses sous-domaines).
+6. Testez la connexion dans EasyEcole, puis lancez un enrôlement facial réel.
+
+Le tunnel inverse ne remplace pas le Push : les deux peuvent coexister. Le Push sert aux pointages, le hostname ISAPI sert au test de connexion et à l’envoi des visages. Le flux `alertStream` peut aussi passer par ce hostname si le tunnel supporte les connexions longues.
+
 #### E. Valider puis mettre en service
 
 1. Depuis le tableau de bord IPsec pfSense, confirmez les phases 1 et 2.
 2. Vérifiez le routage dans les deux sens sans désactiver le pare-feu et sans autoriser tout le trafic.
 3. Testez depuis le conteneur backend l’accès à l’IP du terminal sur le port ISAPI configuré.
-4. Enregistrez le terminal dans EasyEcole avec son IP routée, son port, son site et ses identifiants ISAPI.
+4. Enregistrez le terminal dans EasyEcole avec son adresse routée (IP ou hostname), son port, son site et ses identifiants ISAPI.
 5. Vérifiez dans les journaux backend que le flux `alertStream` est ouvert, puis effectuez un pointage facial réel de test.
 6. Vérifiez l’événement et le pointage dans EasyEcole ; rejouez uniquement un événement de test et confirmez qu’il n’est pas compté deux fois.
 7. Documentez les IP, réseaux, règles, date de test et responsables. N’y consignez ni PSK ni mots de passe.
