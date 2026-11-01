@@ -274,4 +274,108 @@ describe('DemandeInscriptionController.createDemandeInscription — 1ère inscri
     expect(res.status).toHaveBeenCalledWith(403)
     expect(Session.findOne).not.toHaveBeenCalled()
   })
+
+  it('persiste le mode de formation en ligne dès la création', async () => {
+    const req = mockRequest({
+      utilisateurRole: 'apprenant',
+      utilisateurId: 7,
+      etablissementId: 4,
+      body: { sessionId: 3, etablissementId: 4, dateDemande: '2026-09-01', modeFormation: 'en_ligne' },
+    } as any)
+    const res = mockResponse()
+    const mockSave = jest.fn().mockResolvedValue({ id: 11 })
+    ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue(null)
+    ;(DemandeInscription as jest.Mock).mockReturnValueOnce({ save: mockSave })
+
+    await Ctrl.createDemandeInscription(req, res)
+
+    expect((DemandeInscription as jest.Mock).mock.results[0].value.modeFormation).toBe('en_ligne')
+    expect(res.status).toHaveBeenCalledWith(201)
+  })
+
+  it('refuse un mode de formation inconnu avant toute écriture', async () => {
+    const req = mockRequest({
+      utilisateurRole: 'apprenant',
+      utilisateurId: 7,
+      etablissementId: 4,
+      body: { sessionId: 3, etablissementId: 4, modeFormation: 'hybride' },
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.createDemandeInscription(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(DemandeInscription.findOne).not.toHaveBeenCalled()
+  })
+})
+
+describe('DemandeInscriptionController.updateModeFormation', () => {
+  it('bascule la demande en e-learning avant la transmission au comité', async () => {
+    const update = jest.fn().mockResolvedValue(undefined)
+    const demande = { id: 1, modeFormation: 'presentiel', statutPipeline: 'soumis', update }
+    ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue(demande)
+
+    const req = mockRequest({
+      utilisateurRole: 'apprenant',
+      utilisateurId: 7,
+      params: { id: '1' },
+      body: { modeFormation: 'en_ligne' },
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.updateModeFormation(req, res)
+
+    expect(DemandeInscription.findOne).toHaveBeenCalledWith({ where: { id: 1, utilisateurId: 7 } })
+    expect(update).toHaveBeenCalledWith({ modeFormation: 'en_ligne' })
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.json).toHaveBeenCalledWith({ success: true, modeFormation: 'en_ligne' })
+  })
+
+  it('refuse un mode invalide (400)', async () => {
+    const req = mockRequest({
+      utilisateurRole: 'apprenant',
+      utilisateurId: 7,
+      params: { id: '1' },
+      body: { modeFormation: 'hybride' },
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.updateModeFormation(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(DemandeInscription.findOne).not.toHaveBeenCalled()
+  })
+
+  it('verrouille le mode une fois la demande engagée dans la validation (409)', async () => {
+    const update = jest.fn()
+    ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue({
+      id: 1,
+      modeFormation: 'presentiel',
+      statutPipeline: 'transmis_comite',
+      update,
+    })
+
+    const req = mockRequest({
+      utilisateurRole: 'apprenant',
+      utilisateurId: 7,
+      params: { id: '1' },
+      body: { modeFormation: 'en_ligne' },
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.updateModeFormation(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(409)
+    expect(update).not.toHaveBeenCalled()
+  })
+
+  it('refuse un rôle autre qu’apprenant (403)', async () => {
+    const req = mockRequest({ utilisateurRole: 'institution', utilisateurId: 7, params: { id: '1' } } as any)
+    const res = mockResponse()
+
+    await Ctrl.updateModeFormation(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(DemandeInscription.findOne).not.toHaveBeenCalled()
+  })
 })

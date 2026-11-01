@@ -26,6 +26,14 @@ export class DemandeInscription extends Model<InferAttributes<DemandeInscription
    */
   declare typeDemande: CreationOptional<'inscription' | 'reinscription' | null>
   /**
+   * Mode de formation choisi pour CETTE demande :
+   *   - 'presentiel' (défaut, dossiers historiques) : parcours classique ;
+   *   - 'en_ligne' : parcours e-learning (sélection d'UE après recouvrement).
+   * `aut_apprenants.periode` est calé sur 'en_ligne' à la finalisation du
+   * comité afin que la génération du matricule reste possible.
+   */
+  declare modeFormation: CreationOptional<'presentiel' | 'en_ligne'>
+  /**
    * Pipeline d'inscription (flux définitif) :
    *   soumis → authentifie (Audit) → saisie_validee / transmis_comite (SERVICE RECOUVREMENT)
    *   → valide | correction_demandee | rejete (comité, étape finale).
@@ -90,6 +98,11 @@ DemandeInscription.init({
     type: new DataTypes.STRING(20),
     allowNull: true,
     defaultValue: 'inscription'
+  },
+  modeFormation: {
+    type: DataTypes.ENUM('presentiel', 'en_ligne'),
+    allowNull: false,
+    defaultValue: 'presentiel'
   },
   statutPipeline: {
     type: new DataTypes.STRING(30),

@@ -529,11 +529,22 @@ export default class DemandeInscriptionController {
             }
         }
 
+        const modeFormationBody = req.body?.modeFormation;
+        if (
+            modeFormationBody !== undefined
+            && modeFormationBody !== 'presentiel'
+            && modeFormationBody !== 'en_ligne'
+        ) {
+            return res.status(400).json({ success: false, message: "Mode de formation invalide (presentiel ou en_ligne)." });
+        }
+        const modeFormation: 'presentiel' | 'en_ligne' = modeFormationBody === 'en_ligne' ? 'en_ligne' : 'presentiel';
+
         let demandeInscription: DemandeInscription | null = await DemandeInscription.findOne(options);
         if (demandeInscription == null) {
             let demandeInscription: DemandeInscription = new DemandeInscription();
             demandeInscription.dateDemande = req.body.dateDemande
             demandeInscription.sessionId = req.body.sessionId
+            demandeInscription.modeFormation = modeFormation
             if (demandeSiteId !== undefined) demandeInscription.etablissementId = demandeSiteId
             demandeInscription.matricule = IDGenerator.getInstance().generateInscriptionMatricule()
             demandeInscription.utilisateurId = (req as any).utilisateurId
@@ -558,6 +569,56 @@ export default class DemandeInscriptionController {
         }
 
         return null
+    }
+
+    /**
+     * PUT /inscription/demandesInscription/:id/mode-formation
+     * Body : { modeFormation: 'presentiel' | 'en_ligne' }
+     *
+     * Permet à l'apprenant de basculer sa demande entre présentiel et
+     * e-learning AVANT la transmission au comité (statut null, 'soumis' ou
+     * 'correction_demandee'). Le mode est figé dès que la demande entre dans
+     * le pipeline de validation collégiale.
+     */
+    static async updateModeFormation(req: Request, res: Response): Promise<Response> {
+        if ((req as any).utilisateurRole !== RolesUtilisateur.APPRENANT) {
+            return res.status(403).json({ success: false, message: "Seul l'apprenant peut modifier le mode de sa demande." });
+        }
+
+        const demandeId = Number(req.params.id);
+        if (!Number.isSafeInteger(demandeId) || demandeId <= 0) {
+            return res.status(400).json({ success: false, message: "Identifiant de demande invalide." });
+        }
+
+        const modeFormation = req.body?.modeFormation;
+        if (modeFormation !== 'presentiel' && modeFormation !== 'en_ligne') {
+            return res.status(400).json({ success: false, message: "Mode de formation invalide (presentiel ou en_ligne)." });
+        }
+
+        try {
+            const demande = await DemandeInscription.findOne({
+                where: { id: demandeId, utilisateurId: (req as any).utilisateurId },
+            });
+            if (!demande) {
+                return res.status(404).json({ success: false, message: "Demande d'inscription introuvable." });
+            }
+
+            if (demande.statutPipeline && !['soumis', 'correction_demandee'].includes(demande.statutPipeline)) {
+                return res.status(409).json({
+                    success: false,
+                    message: "Le mode de formation est verrouillé : la demande est déjà engagée dans la validation.",
+                });
+            }
+
+            if (demande.modeFormation !== modeFormation) {
+                await demande.update({ modeFormation });
+            }
+
+            return res.status(200).json({ success: true, modeFormation });
+        } catch (error) {
+            console.error('[updateModeFormation]', error);
+            return res.status(500).json({ success: false, message: "Le mode de formation n'a pas pu être mis à jour." });
+        }
     }
 
     static async createDemandeInscriptionCours(req: Request, res: Response): Promise<Response | null> {

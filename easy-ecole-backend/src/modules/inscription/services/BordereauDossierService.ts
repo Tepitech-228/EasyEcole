@@ -106,9 +106,14 @@ export class BordereauDossierService {
         // lorsque la pédagogie est différée.
         let typeCoursPeriode: 'jour' | 'soir' = 'jour'
         if (!options?.pedagogieDifferee) {
-            const periodeEtudiant = demande.utilisateur?.apprenant?.periode
+            const periodeEtudiant = demande.modeFormation === 'en_ligne'
+                ? 'en_ligne'
+                : demande.utilisateur?.apprenant?.periode
             if (periodeEtudiant !== 'matin' && periodeEtudiant !== 'soir' && periodeEtudiant !== 'en_ligne') {
                 throw new Error("L'étudiant doit renseigner sa période (cours du matin, du soir ou en ligne) dans ses informations personnelles avant validation")
+            }
+            if (demande.modeFormation === 'en_ligne' && demande.utilisateur?.apprenant && demande.utilisateur.apprenant.periode !== 'en_ligne') {
+                await demande.utilisateur.apprenant.update({ periode: 'en_ligne' }, { transaction })
             }
             typeCoursPeriode = periodeEtudiant === 'soir' ? 'soir' : 'jour'
 
@@ -605,9 +610,17 @@ export class BordereauDossierService {
         if (!demande) throw new Error("Aucune demande d'inscription trouvée")
         if (!demande.utilisateur?.apprenant) throw new Error("Informations personnelles incomplètes")
 
-        const periodeEtudiant = demande.utilisateur?.apprenant?.periode
+        const periodeEtudiant = demande.modeFormation === 'en_ligne'
+            ? 'en_ligne'
+            : demande.utilisateur?.apprenant?.periode
         if (periodeEtudiant !== 'matin' && periodeEtudiant !== 'soir' && periodeEtudiant !== 'en_ligne') {
             throw new Error("L'étudiant doit renseigner sa période (cours du matin, du soir ou en ligne) dans ses informations personnelles avant validation")
+        }
+        // Le mode 'en_ligne' est porté par la demande (source de vérité) et
+        // répercuté sur le profil : la génération du matricule et les écrans
+        // historiques continuent de lire `aut_apprenants.periode`.
+        if (demande.modeFormation === 'en_ligne' && demande.utilisateur?.apprenant && demande.utilisateur.apprenant.periode !== 'en_ligne') {
+            await demande.utilisateur.apprenant.update({ periode: 'en_ligne' }, { transaction })
         }
         const typeCoursPeriode: 'jour' | 'soir' = periodeEtudiant === 'soir' ? 'soir' : 'jour'
 
