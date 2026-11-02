@@ -10,7 +10,7 @@ import { AnneeAcademiqueService } from 'src/app/data/modules/inscription/service
 import { RolesUtilisateur } from 'src/app/data/enums/RolesUtilisateur';
 
 export type ExportType = 'ue' | 'etudiants' | 'modele-client' | 'enseignants' | 'utilisateurs';
-export type ImportType = 'ue' | 'parcours' | 'etudiants' | 'enseignants' | 'utilisateurs' | 'migration';
+export type ImportType = 'ue' | 'etudiants' | 'enseignants' | 'utilisateurs' | 'migration';
 
 @Component({
   selector: 'app-import-export-excel-page',
@@ -67,7 +67,6 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
 
   readonly importTypes = [
     { value: 'ue' as ImportType, label: 'UE et ECUE' },
-    { value: 'parcours' as ImportType, label: 'Filières / parcours' },
     { value: 'etudiants' as ImportType, label: 'Nouveaux étudiants (base client)' },
     { value: 'enseignants' as ImportType, label: 'Enseignants' },
     { value: 'utilisateurs' as ImportType, label: 'Utilisateurs par rôle' },
@@ -222,9 +221,6 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
     if (this.importType === 'ue') {
       download$ = this.importFormat === 'docx' ? this.excelService.downloadUeWordTemplate() : this.excelService.downloadUeTemplate();
       filename = `template-ue-ecue.${this.importFormat}`;
-    } else if (this.importType === 'parcours') {
-      download$ = this.excelService.downloadParcoursTemplate();
-      filename = 'template-filieres.xlsx';
     } else if (this.importType === 'etudiants') {
       download$ = this.importFormat === 'docx' ? this.excelService.downloadApprenantWordTemplate() : this.excelService.downloadApprenantTemplate();
       filename = `template-apprenants.${this.importFormat}`;
@@ -357,14 +353,7 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
       return;
     }
 
-    if (this.importType === 'parcours') {
-      if (!/\.xlsx$/i.test(this.selectedFile.name)) {
-        this.importing = false;
-        this.errorMessage = 'L’import des filières accepte uniquement un fichier Excel (.xlsx).';
-        return;
-      }
-      import$ = this.excelService.importParcours(this.selectedFile);
-    } else if (this.importType === 'ue') {
+    if (this.importType === 'ue') {
       const parcours = this.parcoursList.find(item => String(item.id) === this.selectedImportParcoursId);
       if (!parcours && this.selectedFile.name.toLowerCase().endsWith('.docx')) {
         import$ = this.excelService.importUe(this.selectedFile, undefined, this.selectedImportSemestre);
@@ -388,17 +377,7 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
         this.importResult = result;
         this.importing = false;
         if (result.success) {
-          const ignored = result.ignoredCount || 0;
-          this.successMessage = this.importType === 'parcours'
-            ? `Import terminé : ${result.importedCount} filière(s) créée(s), ${ignored} ignorée(s), ${result.errorCount} erreur(s).`
-            : `Import terminé : ${result.importedCount} réussi(s), ${result.errorCount} erreur(s).`;
-          if (this.importType === 'parcours') {
-            this.parcoursService.invalidate();
-            this.parcoursService.getAll().subscribe({
-              next: (parcours) => { this.parcoursList = parcours || []; },
-              error: () => { this.parcoursLoadError = true; }
-            });
-          }
+          this.successMessage = `Import terminé : ${result.importedCount} réussi(s), ${result.errorCount} erreur(s).`;
           if (this.importType === 'ue') {
             const grouped = this.getGroupedUe();
             if (grouped.length > 0) this.expandedUeCode = grouped[0].code;
@@ -424,7 +403,7 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
 
    importTypeChanged(): void {
      this.detailFilter = 'all';
-      if (this.importType === 'migration' || this.importType === 'parcours') {
+      if (this.importType === 'migration') {
         this.importFormat = 'xlsx';
       }
    }
@@ -432,7 +411,6 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
   getImportFileTypeLabel(): string {
     switch (this.importType) {
       case 'ue': return 'UE et ECUE';
-      case 'parcours': return 'Filières / parcours';
       case 'etudiants': return 'Étudiants';
       case 'enseignants': return 'Enseignants';
       case 'migration': return 'Migration Complète';
@@ -443,7 +421,6 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
   getImportAcceptLabel(): string {
     switch (this.importType) {
       case 'ue': return 'Maquette UE/ECUE';
-      case 'parcours': return 'Fichier des filières';
       case 'etudiants': return 'Fichier Apprenants';
       case 'enseignants': return 'Fichier Enseignants';
       case 'migration': return 'Fichier Migration 5 onglets';

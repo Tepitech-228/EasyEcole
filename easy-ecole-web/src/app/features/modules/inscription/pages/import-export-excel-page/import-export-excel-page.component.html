@@ -223,11 +223,6 @@
         </select>
       </div>
 
-      <div *ngIf="importType === 'parcours'" class="mb-6 rounded-xl border border-blue-100 bg-blue-50/70 p-4 text-sm text-blue-950">
-        <p class="font-semibold">Importer des filières / parcours</p>
-        <p class="mt-1">Téléchargez le modèle Excel (.xlsx) et renseignez les titres et informations facultatives. Les filières sont communes à tous les sites ; celles déjà présentes ne seront pas modifiées.</p>
-      </div>
-
       <!-- Sélections spécifiques aux UE -->
       <div *ngIf="importType === 'ue'" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div>
@@ -258,7 +253,7 @@
       <div class="mb-6">
         <div (click)="openFilePicker()" (dragover)="onDragOver($event)" (drop)="onDrop($event)"
           class="upload-zone border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-gray-50/50 transition-colors">
-          <input type="file" id="fileInput" [accept]="importType === 'parcours' || importType === 'migration' ? '.xlsx' : '.xlsx,.xls,.docx'" (change)="onFileSelected($event)" class="hidden">
+          <input type="file" id="fileInput" [accept]="importType === 'migration' ? '.xlsx' : '.xlsx,.xls,.docx'" (change)="onFileSelected($event)" class="hidden">
           <span class="material-symbols-outlined mx-auto block text-5xl text-gray-400" aria-hidden="true">cloud_upload</span>
           <p class="mt-4 text-sm text-gray-600">
             <span class="font-semibold">Cliquez pour sélectionner</span> ou glissez-déposez votre fichier ici
