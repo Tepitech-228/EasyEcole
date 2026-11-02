@@ -172,6 +172,45 @@ describe("HikvisionEnrollmentService", () => {
     });
   });
 
+  it("moves an enrollment from an inactive terminal to the site's active terminal", async () => {
+    const enrollment = {
+      id: 68,
+      terminalId: 3,
+      utilisateurId: 71,
+      etablissementId: 5,
+      employeeNo: "ESA071",
+      tentatives: 242,
+      update: jest.fn().mockResolvedValue(undefined)
+    };
+    const activeTerminal = { id: 7, etablissementId: 5 };
+    HikvisionEnrollment.update
+      .mockResolvedValueOnce([0])
+      .mockResolvedValueOnce([1]);
+    HikvisionEnrollment.findAll.mockResolvedValue([enrollment]);
+    PointageTerminal.findOne
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(activeTerminal);
+
+    await HikvisionEnrollmentService.processPending();
+
+    expect(PointageTerminal.findOne).toHaveBeenNthCalledWith(2, {
+      where: {
+        etablissementId: 5,
+        protocol: "hikvision_isapi",
+        actif: true
+      },
+      order: [["id", "ASC"]]
+    });
+    expect(enrollment.update).toHaveBeenCalledWith({
+      terminalId: 7,
+      statut: "en_attente",
+      tentatives: 0,
+      prochaineTentativeAt: expect.any(Date),
+      derniereErreur: null
+    });
+    expect(HikvisionIsapiService.enrollPerson).not.toHaveBeenCalled();
+  });
+
   it("retries an idempotent queue update after a lost database connection", async () => {
     HikvisionEnrollment.update
       .mockRejectedValueOnce({ parent: { code: "PROTOCOL_CONNECTION_LOST" } })

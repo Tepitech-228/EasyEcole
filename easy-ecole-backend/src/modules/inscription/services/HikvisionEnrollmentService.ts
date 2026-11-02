@@ -295,18 +295,48 @@ export default class HikvisionEnrollmentService {
 
   private static async processOne(enrollment: HikvisionEnrollment): Promise<void> {
     try {
-      const [terminal, utilisateur] = await Promise.all([
-        PointageTerminal.findOne({
+      let terminal = await PointageTerminal.findOne({
+        where: {
+          id: enrollment.terminalId,
+          etablissementId: enrollment.etablissementId,
+          protocol: "hikvision_isapi",
+          actif: true
+        }
+      });
+      if (!terminal) {
+        terminal = await PointageTerminal.findOne({
           where: {
-            id: enrollment.terminalId,
             etablissementId: enrollment.etablissementId,
             protocol: "hikvision_isapi",
             actif: true
-          }
-        }),
-        Utilisateur.findByPk(enrollment.utilisateurId, { include: [Utilisateur.associations.apprenant] })
-      ]);
-      if (!terminal) throw new Error("Le terminal Hikvision associé est absent ou inactif.");
+          },
+          order: [["id", "ASC"]]
+        });
+        const unavailableMessage = `Terminal ${enrollment.terminalId} absent ou inactif pour le site ${enrollment.etablissementId}.`;
+        if (terminal) {
+          await HikvisionEnrollmentService.withDatabaseRetry(() => enrollment.update({
+            terminalId: Number(terminal!.id),
+            statut: "en_attente",
+            tentatives: 0,
+            prochaineTentativeAt: new Date(),
+            derniereErreur: null
+          }));
+          console.warn(`[Hikvision] ${unavailableMessage} Enrôlement ${enrollment.id} réaffecté au terminal actif ${terminal.id}.`);
+        } else {
+          await HikvisionEnrollmentService.withDatabaseRetry(() => enrollment.update({
+            statut: "en_attente",
+            prochaineTentativeAt: new Date(Date.now() + 60 * 60 * 1000),
+            derniereErreur: unavailableMessage
+          }));
+          console.warn(`[Hikvision] ${unavailableMessage} Nouvel essai dans une heure.`);
+        }
+        return;
+      }
+
+      const utilisateur = await Utilisateur.findByPk(
+        enrollment.utilisateurId,
+        { include: [Utilisateur.associations.apprenant] }
+      );
       if (!utilisateur) throw new Error("Le compte associé à l'enrôlement n'est plus disponible.");
 
       let photoFilename: string | null = null;

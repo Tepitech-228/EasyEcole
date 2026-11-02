@@ -372,12 +372,10 @@ export default class PointageTerminalController {
                 } else if (estApprenant) {
                     // Étudiant : chaque détection est un passage, jamais un départ.
                     mode = "passage";
-                } else if (!pointage.heureDepart) {
-                    await pointage.update({ heureDepart: log.time }, { transaction });
-                    mode = "depart";
                 } else {
-                    // Personnel/enseignant : départ déjà pointé, rien à mettre à jour.
-                    mode = "depart";
+                    // Une détection biométrique ne suffit pas à valider un départ.
+                    // Le surveillant doit le confirmer depuis l'écran de pointage.
+                    mode = "passage";
                 }
 
                 if (estApprenant) {

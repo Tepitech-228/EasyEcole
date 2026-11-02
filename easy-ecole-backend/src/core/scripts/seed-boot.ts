@@ -73,6 +73,13 @@ const ETAPES: Etape[] = [
             await seedParametresFrais();
         },
     },
+    {
+        nom: "filières ESA (Licence, Master, MBA et BTS)",
+        run: async () => {
+            const { seedEsa } = require("./seed-esa");
+            await seedEsa();
+        },
+    },
 ];
 
 /**

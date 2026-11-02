@@ -92,8 +92,9 @@ router
      *                 description: Ignoré; le serveur détermine l'action selon le profil et les pointages du jour.
      *     description: >
      *       Le personnel a une arrivée au premier scan puis un départ au deuxième.
-     *       Pour un étudiant, chaque scan est conservé dans l'historique; le premier
-     *       fixe l'arrivée et le dernier scan fixe le départ de la journée.
+     *       Pour un étudiant, chaque scan est conservé dans l'historique. Pour le
+     *       personnel, un départ n'est enregistré qu'après confirmation par
+     *       l'opérateur connecté dans l'écran de pointage.
      *     responses:
      *       201:
      *         description: Arrivée enregistrée

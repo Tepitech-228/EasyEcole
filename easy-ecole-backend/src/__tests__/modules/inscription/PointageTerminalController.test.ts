@@ -149,6 +149,33 @@ describe("PointageTerminalController ADMS", () => {
     expect(res.send).toHaveBeenCalledWith("OK");
   });
 
+  it("does not count a staff member's second biometric scan as a departure", async () => {
+    const update = jest.fn().mockResolvedValue(undefined);
+    Pointage.findOne.mockResolvedValue({
+      id: 77,
+      heureArrivee: "08:00:00",
+      heureDepart: null,
+      update
+    });
+
+    const recorded = await PointageTerminalController.processAttendanceEvent(
+      { id: 5, serialNumber: "ZK12345", etablissementId: 3 } as any,
+      {
+        pin: "42",
+        date: "2026-10-17",
+        time: "17:02:15",
+        statusCode: 5,
+        verifyType: 75,
+        utilisateurId: 42
+      }
+    );
+
+    expect(recorded.recorded).toBe(true);
+    expect(recorded.mode).toBe("passage");
+    expect(update).not.toHaveBeenCalled();
+    expect(Pointage.create).not.toHaveBeenCalled();
+  });
+
   it("processes a durable Hikvision receipt without inserting a second event", async () => {
     const { createHash } = require("crypto");
     const fingerprint = createHash("sha256")
