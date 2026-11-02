@@ -30,8 +30,6 @@ export class ExcelImportDialogComponent {
   error: string = '';
   result: ExcelImportResult | null = null;
 
-  constructor() {}
-
   open(): void {
     this.showModal = true;
     this.selectedFile = null;
@@ -71,7 +69,6 @@ export class ExcelImportDialogComponent {
 
   onImport(): void {
     if (!this.selectedFile || !this.importFn) return;
-
     this.loading = true;
     this.error = '';
     this.result = null;

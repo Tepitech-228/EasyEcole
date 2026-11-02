@@ -64,6 +64,16 @@ export class ExcelService {
     return this.http.get(`${EXCEL_BASE}/ue/template-word`, { responseType: 'blob' });
   }
 
+  downloadParcoursTemplate(): Observable<Blob> {
+    return this.http.get(`${EXCEL_BASE}/parcours/template`, { responseType: 'blob' });
+  }
+
+  importParcours(file: File): Observable<ExcelImportResult> {
+    const formData = new FormData();
+    formData.append('fichier', file);
+    return this.http.post<ExcelImportResult>(`${EXCEL_BASE}/parcours/import`, formData);
+  }
+
   /** Importer des UE depuis un fichier Excel */
   importUe(file: File, parcoursTitre?: string, semestre?: string): Observable<ExcelImportResult> {
     const formData = new FormData();

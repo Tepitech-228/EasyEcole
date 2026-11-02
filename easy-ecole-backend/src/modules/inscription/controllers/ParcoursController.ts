@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CountOptions, FindOptions, InferAttributes } from "sequelize";
+import { CountOptions, FindOptions, InferAttributes, Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Parcours } from "../models/Parcours";
 import { PrerequisParcours } from "../models/PrerequisParcours";
@@ -70,6 +70,7 @@ export default class ParcoursController {
             parcours.type = req.body.type
             parcours.grade = req.body.grade != null ? String(req.body.grade).trim() : null
             parcours.niveauEtudeId = req.body.niveauEtudeId
+            parcours.etablissementId = null
 
             await parcours.save()
                 .then((parcours) => {
@@ -105,6 +106,7 @@ export default class ParcoursController {
                     type: req.body.type,
                     grade: req.body.grade != null ? String(req.body.grade).trim() : null,
                     niveauEtudeId: req.body.niveauEtudeId,
+                    etablissementId: null,
                 })
                     .then(async (parcours) => {
                         return res.status(200).send(parcours);
@@ -181,6 +183,13 @@ export default class ParcoursController {
                 if (session?.niveauEtudeId) {
                     filtres.niveauEtudeId = session.niveauEtudeId
                     typeCycleSession = getTypeCycle(session.niveauEtude?.libelle)
+                    if (typeCycleSession) {
+                        delete filtres.niveauEtudeId
+                        filtres[Op.or] = [
+                            { niveauEtudeId: session.niveauEtudeId },
+                            { niveauEtudeId: null, type: typeCycleSession }
+                        ]
+                    }
                 }
             }
 
@@ -202,6 +211,7 @@ export default class ParcoursController {
             ) {
                 const filtresCycle = { ...filtres, type: typeCycleSession }
                 delete filtresCycle.niveauEtudeId
+                delete filtresCycle[Op.or]
                 parcoursList = await Parcours.findAll({
                     where: filtresCycle,
                     order: [['type', 'ASC'], ['titre', 'ASC']],

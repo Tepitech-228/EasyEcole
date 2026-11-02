@@ -8,7 +8,6 @@ import { Enseignant } from "../../auth/models/Enseignant";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { CoursParticipant } from "../models/CoursParticipant";
 import { SiteUtilisateur } from "../../auth/models/SiteUtilisateur";
-import { getSurveillantSiteId } from "../../../core/helpers/SurveillantSiteScope";
 
 export default class CoursController {
 
@@ -23,15 +22,6 @@ export default class CoursController {
         const orderDir = (req.query.orderDir as string)?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
         const filters: any = {};
-        let etablissementId = Number((req as any).etablissementId);
-        if ((req as any).utilisateurRole === RolesUtilisateur.SURVEILLANT) {
-            etablissementId = (await getSurveillantSiteId(req)) ?? 0;
-        }
-        if (Number.isSafeInteger(etablissementId) && etablissementId > 0) {
-            filters.etablissementId = etablissementId;
-        } else if ((req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
-            return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
-        }
         if (req.query.parcoursId) filters.parcoursId = req.query.parcoursId as string;
         if (req.query.classeId) filters.classeId = req.query.classeId as string;
         if (req.query.semestre) filters.semestre = req.query.semestre as string;
@@ -104,18 +94,10 @@ export default class CoursController {
     }
 
     static async getCours(req: Request, res: Response): Promise<Response> {
-        const etablissementId = Number((req as any).etablissementId);
-        if ((!Number.isSafeInteger(etablissementId) || etablissementId <= 0)
-            && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
-            return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
-        }
         let options: FindOptions<InferAttributes<Cours>> = {}
         options = {
             include: [Cours.associations.classe],
-            where: {
-                id: req.params.id,
-                ...(Number.isSafeInteger(etablissementId) && etablissementId > 0 ? { etablissementId } : {})
-            }
+            where: { id: req.params.id }
         }
 
         if (
@@ -126,8 +108,7 @@ export default class CoursController {
         ) {
             options = {
                 where: {
-                    id: req.params.id,
-                    ...(Number.isSafeInteger(etablissementId) && etablissementId > 0 ? { etablissementId } : {})
+                    id: req.params.id
                 },
                 include: [
                     Cours.associations.classe,
@@ -142,8 +123,7 @@ export default class CoursController {
         else if ((req as any).utilisateurRole == RolesUtilisateur.ENSEIGNANT) {
             options = {
                 where: {
-                    id: req.params.id,
-                    ...(Number.isSafeInteger(etablissementId) && etablissementId > 0 ? { etablissementId } : {})
+                    id: req.params.id
                 },
                 include: [
                     Cours.associations.classe,
@@ -527,13 +507,6 @@ export default class CoursController {
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
             return res.status(403).json({ success: false })
         }
-        const etablissementId = Number((req as any).etablissementId);
-        if (Number.isSafeInteger(etablissementId) && etablissementId > 0) {
-            options.where = { etablissementId };
-        } else if ((req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
-            return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
-        }
-
         await Cours.count(options)
             .then((value) => {
                 return res.status(200).json({ success: true, count: value });

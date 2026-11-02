@@ -39,6 +39,7 @@ import { Echeance } from "../models/Echeance";
 import { TypeOperationBordereau } from "../models/TypeOperationBordereau";
 import { AuditNote } from "../../bulletins/models/AuditNote";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
+import { RedisClient } from "../../../core/cache/RedisClient";
 import { validateNoteValue } from "../../../core/validators/noteValidators";
 import { EnseignantBadgeService } from "../../auth/services/EnseignantBadgeService";
 
@@ -583,6 +584,143 @@ export default class ExcelController {
     }
   }
 
+  static async downloadParcoursTemplate(req: Request, res: Response): Promise<Response> {
+    try {
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = "EasyEcole";
+      const worksheet = workbook.addWorksheet("Filieres");
+      worksheet.columns = [
+        { header: "Titre", key: "titre", width: 40 },
+        { header: "Description", key: "description", width: 55 },
+        { header: "Type", key: "type", width: 18 },
+        { header: "Grade", key: "grade", width: 30 },
+      ];
+      applyHeaderStyle(worksheet.getRow(1));
+      worksheet.addRow({
+        titre: "Génie logiciel",
+        description: "Parcours de formation en informatique",
+        type: "LICENCE",
+        grade: "Licence professionnelle",
+      });
+
+      const instructions = workbook.addWorksheet("Instructions");
+      instructions.addRow(["Import des filières / parcours"]);
+      instructions.addRow([]);
+      instructions.addRow(["Titre : obligatoire et unique"]);
+      instructions.addRow(["Type : LICENCE, MASTER, DOCTORAT, BTS ou MBA (facultatif)"]);
+      instructions.addRow(["Description et Grade : facultatifs"]);
+      instructions.addRow(["Les filières sont partagées entre tous les sites."]);
+      instructions.addRow(["La ligne d'exemple peut être supprimée."]);
+
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.setHeader("Content-Disposition", "attachment; filename=\"template-filieres.xlsx\"");
+      await workbook.xlsx.write(res);
+      return res.status(200).end();
+    } catch (error) {
+      console.error("Erreur téléchargement template filières:", error);
+      return res.status(500).json({ success: false, message: "Erreur lors de la génération du template filières." });
+    }
+  }
+
+  static async importParcours(req: Request, res: Response): Promise<Response> {
+    if (!req.file) return res.status(400).json({ success: false, message: "Aucun fichier fourni." });
+    const filePath = req.file.path;
+    const results: { ligne: number; intitule?: string; statut: string; message: string }[] = [];
+
+    try {
+      if (!/\.xlsx$/i.test(req.file.originalname)) {
+        return res.status(400).json({ success: false, message: "L'import des filières accepte uniquement un fichier Excel (.xlsx)." });
+      }
+
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.readFile(filePath);
+      const worksheet = workbook.getWorksheet("Filieres") || workbook.worksheets[0];
+      if (!worksheet) {
+        return res.status(400).json({ success: false, message: "Le classeur ne contient aucune feuille exploitable." });
+      }
+      const matrix: string[][] = [];
+      worksheet.eachRow({ includeEmpty: false }, row => {
+        const values: string[] = [];
+        for (let columnIndex = 1; columnIndex <= worksheet.columnCount; columnIndex++) {
+          values.push(normalizeText(row.getCell(columnIndex).text));
+        }
+        matrix.push(values);
+      });
+      if (matrix.length < 2) {
+        return res.status(400).json({ success: false, message: "Le fichier ne contient aucune filière à importer." });
+      }
+      const headers = matrix[0].map(value => normalizeText(value).toLocaleLowerCase());
+      const column = (label: string, fallback: number) => {
+        const index = headers.findIndex(header => header === label);
+        return index >= 0 ? index : fallback;
+      };
+      const titreColumn = column("titre", 0);
+      const descriptionColumn = column("description", 1);
+      const typeColumn = column("type", 2);
+      const gradeColumn = column("grade", 3);
+      const validTypes = new Set(["LICENCE", "MASTER", "DOCTORAT", "BTS", "MBA"]);
+      let importedCount = 0;
+      let errorCount = 0;
+      let ignoredCount = 0;
+      let modified = false;
+
+      for (let index = 1; index < matrix.length; index++) {
+        const row = matrix[index];
+        const titre = (row[titreColumn] || "").trim();
+        const description = (row[descriptionColumn] || "").trim();
+        const rawType = (row[typeColumn] || "").trim();
+        const grade = (row[gradeColumn] || "").trim();
+        if (!titre && !description && !rawType && !grade) {
+          ignoredCount++;
+          continue;
+        }
+        if (!titre) {
+          errorCount++;
+          results.push({ ligne: index + 1, statut: "erreur", message: "Le titre de la filière est obligatoire." });
+          continue;
+        }
+        const type = rawType ? rawType.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() : null;
+        if (type && !validTypes.has(type)) {
+          errorCount++;
+          results.push({ ligne: index + 1, intitule: titre, statut: "erreur", message: `Type "${rawType}" invalide. Valeurs acceptées : LICENCE, MASTER, DOCTORAT, BTS, MBA.` });
+          continue;
+        }
+        try {
+          const exists = await Parcours.findOne({ where: { titre } });
+          if (exists) {
+            ignoredCount++;
+            results.push({ ligne: index + 1, intitule: titre, statut: "ignorée", message: "Cette filière existe déjà dans le catalogue commun; elle n'a pas été modifiée." });
+            continue;
+          }
+          await Parcours.create({
+            titre,
+            description: description || null,
+            type,
+            grade: grade || null,
+            niveauEtudeId: null,
+            etablissementId: null,
+          } as any);
+          importedCount++;
+          modified = true;
+          results.push({ ligne: index + 1, intitule: titre, statut: "succès", message: "Filière créée." });
+        } catch (error: any) {
+          errorCount++;
+          results.push({ ligne: index + 1, intitule: titre, statut: "erreur", message: error.message || "Erreur lors de la création." });
+        }
+      }
+
+      if (modified) {
+        await RedisClient.getInstance().delByPattern("cache:*:*:*inscription/parcours*");
+      }
+      return res.status(200).json({ success: errorCount === 0, importedCount, errorCount, ignoredCount, details: results });
+    } catch (error: any) {
+      console.error("Erreur import filières:", error);
+      return res.status(500).json({ success: false, message: error.message || "Erreur lors de l'import des filières." });
+    } finally {
+      fs.unlink(filePath, () => {});
+    }
+  }
+
   /**
    * POST /excel/ue/import
    * Importe des UE depuis un fichier Excel.
@@ -623,7 +761,7 @@ export default class ExcelController {
     const filePath = req.file.path;
     const isWord = /\.docx$/i.test(req.file.originalname);
     const enseignantIds = new Set<number>();
-
+    let coursModified = false;
     try {
       const matrix = isWord ? await lireTableauWord(filePath) : await lireTableauExcel(filePath);
       if (matrix.length < 1) return res.status(400).json({ success: false, message: "Le fichier ne contient aucun tableau exploitable" });
@@ -673,8 +811,9 @@ export default class ExcelController {
             const ecueType = (row[col('TYPE', 4) - 1] || '').toUpperCase() || null;
             const [cours, created] = await Cours.findOrCreate({
               where: { code, parcoursId: p.id },
-              defaults: { code, intitule, parcoursId: p.id, credit, creditEcts, semestre: semestreDemande || 'semestre1', coefficient: credit, volumeHoraire: cmHoraire + tdTpHoraire, estObligatoire: true, objectifs: null, enseignantId: null, categorieUe: null },
+              defaults: { code, intitule, parcoursId: p.id, etablissementId: null, credit, creditEcts, semestre: semestreDemande || 'semestre1', coefficient: credit, volumeHoraire: cmHoraire + tdTpHoraire, estObligatoire: true, objectifs: null, enseignantId: null, categorieUe: null },
             } as any);
+            coursModified = true;
             if (!created) await cours.update({ intitule, credit, creditEcts, semestre: semestreDemande || 'semestre1', coefficient: credit, volumeHoraire: cmHoraire + tdTpHoraire, estObligatoire: true, objectifs: null } as any);
             const ecueCode = row[col('CONTENUS DES ENSEIGNEMENTS', 3) - 1] || `${code}-${i}`;
             const ecueLibelle = row[col('CONTENUS DES ENSEIGNEMENTS', 3) - 1] || intitule;
@@ -700,7 +839,6 @@ export default class ExcelController {
         const parcours = await resolveParcours(parcoursTitre);
         if (!parcours) return res.status(400).json({ success: false, message: `Parcours "${parcoursTitre}" introuvable` });
         const parcoursId = parcours.id;
-
         const detectSemestre = (text: string): string | null => {
           const match = normalizeText(text).match(/(?:TOTAL\s+)?SEMESTRE\s*([1-6])/i);
           return match ? `semestre${match[1]}` : null;
@@ -731,8 +869,9 @@ export default class ExcelController {
             const volumeSum = blockEcueData.reduce((s, e) => s + e.cmHoraire + e.tdTpHoraire, 0);
             const [cours, created] = await Cours.findOrCreate({
               where: { code: blockUeCode, parcoursId },
-              defaults: { code: blockUeCode, intitule: blockUeIntitule, parcoursId, credit: creditSum || null, creditEcts: creditSum || null, semestre: blockSemestre || semestreDemande || 'semestre1', coefficient: creditSum || null, volumeHoraire: volumeSum || null, estObligatoire: true, objectifs: null, enseignantId: null, categorieUe: currentCategorieUe },
+              defaults: { code: blockUeCode, intitule: blockUeIntitule, parcoursId, etablissementId: null, credit: creditSum || null, creditEcts: creditSum || null, semestre: blockSemestre || semestreDemande || 'semestre1', coefficient: creditSum || null, volumeHoraire: volumeSum || null, estObligatoire: true, objectifs: null, enseignantId: null, categorieUe: currentCategorieUe },
             } as any);
+            coursModified = true;
             if (!created) await cours.update({ intitule: blockUeIntitule, credit: creditSum || null, creditEcts: creditSum || null, semestre: blockSemestre || semestreDemande || 'semestre1', coefficient: creditSum || null, volumeHoraire: volumeSum || null, estObligatoire: true, objectifs: null, categorieUe: currentCategorieUe } as any);
             for (const ed of blockEcueData) {
               const [ecue, ecueCreated] = await Ecue.findOrCreate({ where: { code: ed.ecueCode, coursId: cours.id }, defaults: { code: ed.ecueCode, libelle: ed.ecueLibelle, coursId: cours.id, creditEcts: ed.creditEcts, cmHoraire: ed.cmHoraire, tdTpHoraire: ed.tdTpHoraire, tpeHoraire: ed.tpeHoraire, type: ed.type, enseignantId: null } as any });
@@ -833,6 +972,9 @@ imported++;
       console.error("Erreur import UE:", error);
       return res.status(500).json({ success: false, message: error.message });
     } finally {
+      if (coursModified) {
+        await RedisClient.getInstance().delByPattern("cache:*:*:*inscription/cours*");
+      }
       fs.unlink(filePath, () => {});
     }
   }
