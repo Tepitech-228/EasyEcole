@@ -199,7 +199,7 @@
         <select [(ngModel)]="importType" (change)="importTypeChanged()" class="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white">
           <option *ngFor="let t of importTypes" [value]="t.value">{{ t.label }}</option>
         </select>
-        <select *ngIf="importType !== 'migration' && importType !== 'parcours'" [(ngModel)]="importFormat" class="ml-3 border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white">
+        <select *ngIf="importType !== 'migration'" [(ngModel)]="importFormat" class="ml-3 border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white">
           <option value="xlsx">Excel (.xlsx)</option>
           <option value="docx">Word (.docx)</option>
         </select>
