@@ -94,6 +94,12 @@ export default class ComiteOrientationController {
                         message: "Année académique de l'étudiant introuvable : renseignez anneeAcademiqueId."
                     });
                 }
+                if (parcours.niveauEtudeId == null) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Le cursus de l'étudiant ne peut pas être créé tant que le parcours n'est associé à aucun niveau."
+                    });
+                }
 
                 cursus = await CursusApprenant.create({
                     utilisateurId,

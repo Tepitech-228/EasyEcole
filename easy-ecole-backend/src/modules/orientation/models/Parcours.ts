@@ -16,7 +16,7 @@ export class Parcours extends Model<InferAttributes<Parcours>, InferCreationAttr
   declare contenu: string
   declare categorieId: ForeignKey<Categorie['id']>
   declare categorie?: NonAttribute<Categorie>
-  declare niveauEtudeId: ForeignKey<NiveauEtude['id']>
+  declare niveauEtudeId: ForeignKey<NiveauEtude['id'] | null>
   declare niveauEtude?: NonAttribute<NiveauEtude>
   declare debouchesParcours?: DeboucheParcours[]
   declare prerequisParcours?: NonAttribute<PrerequisParcours[]>

@@ -12,7 +12,7 @@ export class Parcours extends Model<InferAttributes<Parcours>, InferCreationAttr
   declare description: CreationOptional<string>
   declare type: CreationOptional<string>
   declare grade: CreationOptional<string | null>
-  declare niveauEtudeId: ForeignKey<NiveauEtude['id']>
+  declare niveauEtudeId: ForeignKey<NiveauEtude['id'] | null>
   declare niveauEtude?: NonAttribute<NiveauEtude>
   declare etablissementId: ForeignKey<Etablissement['id'] | null>
   declare etablissement?: NonAttribute<Etablissement>
